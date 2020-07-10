@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.kafka.source
 
 import javax.validation.constraints.NotBlank
 import org.apache.flink.api.common.serialization.DeserializationSchema
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
@@ -10,9 +9,9 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source
 import pl.touk.nussknacker.engine.api.test.TestDataSplit
 import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
 import pl.touk.nussknacker.engine.kafka.KafkaFactory._
 import pl.touk.nussknacker.engine.kafka.serialization.{FixedKafkaDeserializationSchemaFactory, KafkaDeserializationSchemaFactory}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
 
 import scala.reflect.ClassTag
 
@@ -30,10 +29,10 @@ import scala.reflect.ClassTag
   *
   * </pre>
   * */
-class KafkaSourceFactory[T: TypeInformation](deserializationSchemaFactory: KafkaDeserializationSchemaFactory[T],
-                                             timestampAssigner: Option[TimestampAssigner[T]],
-                                             testPrepareInfo: TestDataSplit,
-                                             processObjectDependencies: ProcessObjectDependencies)
+class KafkaSourceFactory[T: ClassTag](deserializationSchemaFactory: KafkaDeserializationSchemaFactory[T],
+                                      timestampAssigner: Option[TimestampAssigner[T]],
+                                      testPrepareInfo: TestDataSplit,
+                                      processObjectDependencies: ProcessObjectDependencies)
   extends BaseKafkaSourceFactory(deserializationSchemaFactory, timestampAssigner, testPrepareInfo, processObjectDependencies) {
 
   def this(deserializationSchema: DeserializationSchema[T],
@@ -60,11 +59,11 @@ class KafkaSourceFactory[T: TypeInformation](deserializationSchemaFactory: Kafka
   }
 }
 
-class SingleTopicKafkaSourceFactory[T: TypeInformation](topic: String,
-                                                        deserializationSchemaFactory: KafkaDeserializationSchemaFactory[T],
-                                                        timestampAssigner: Option[TimestampAssigner[T]],
-                                                        testPrepareInfo: TestDataSplit,
-                                                        processObjectDependencies: ProcessObjectDependencies)
+class SingleTopicKafkaSourceFactory[T: ClassTag](topic: String,
+                                                 deserializationSchemaFactory: KafkaDeserializationSchemaFactory[T],
+                                                 timestampAssigner: Option[TimestampAssigner[T]],
+                                                 testPrepareInfo: TestDataSplit,
+                                                 processObjectDependencies: ProcessObjectDependencies)
   extends BaseKafkaSourceFactory(deserializationSchemaFactory, timestampAssigner, testPrepareInfo, processObjectDependencies) {
 
   def this(topic: String,
@@ -87,11 +86,11 @@ class SingleTopicKafkaSourceFactory[T: TypeInformation](topic: String,
   }
 }
 
-abstract class BaseKafkaSourceFactory[T: TypeInformation](deserializationSchemaFactory: KafkaDeserializationSchemaFactory[T],
-                                                          timestampAssigner: Option[TimestampAssigner[T]],
-                                                          testPrepareInfo: TestDataSplit,
-                                                          processObjectDependencies: ProcessObjectDependencies)
-  extends FlinkSourceFactory[T]()(ClassTag[T](implicitly[TypeInformation[T]].getTypeClass)) with Serializable {
+abstract class BaseKafkaSourceFactory[T: ClassTag](deserializationSchemaFactory: KafkaDeserializationSchemaFactory[T],
+                                                   timestampAssigner: Option[TimestampAssigner[T]],
+                                                   testPrepareInfo: TestDataSplit,
+                                                   processObjectDependencies: ProcessObjectDependencies)
+  extends FlinkSourceFactory[T] with Serializable {
 
   // We currently not using processMetaData and nodeId but it is here in case if someone want to use e.g. some additional fields
   // in their own concrete implementation
@@ -101,6 +100,7 @@ abstract class BaseKafkaSourceFactory[T: TypeInformation](deserializationSchemaF
   protected def createSource(topics: List[String], kafkaConfig: KafkaConfig): KafkaSource[T] = {
     val preparedTopics = topics.map(KafkaUtils.prepareKafkaTopic(_, processObjectDependencies))
     val serializationSchema = deserializationSchemaFactory.create(topics, kafkaConfig)
+    serializationSchema.getProducedType
     new KafkaSource(preparedTopics, kafkaConfig, serializationSchema, timestampAssigner, None, testPrepareInfo)
   }
 }

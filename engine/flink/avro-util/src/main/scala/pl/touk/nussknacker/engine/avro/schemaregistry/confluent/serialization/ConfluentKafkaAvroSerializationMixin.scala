@@ -6,7 +6,7 @@ import org.apache.kafka.common.errors.SerializationException
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClient
 
-class ConfluentKafkaAvroSerializationMixin {
+trait ConfluentKafkaAvroSerializationMixin {
   def fetchSchema[T](confluentSchemaRegistryClient: ConfluentSchemaRegistryClient, topic: String, version: Option[Int], isKey: Boolean): Schema =
     confluentSchemaRegistryClient
       .getFreshSchema(topic, version, isKey)

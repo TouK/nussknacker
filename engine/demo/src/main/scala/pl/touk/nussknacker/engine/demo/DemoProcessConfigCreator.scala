@@ -24,6 +24,8 @@ import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.util.LoggingListener
 
+import scala.reflect.ClassTag
+
 class DemoProcessConfigCreator extends ProcessConfigCreator {
 
   def marketing[T](value: T): WithCategories[T] = WithCategories(value, "Recommendations")
@@ -72,7 +74,7 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
                                               testPrepareInfo: TestDataSplit,
                                               processObjectDependencies: ProcessObjectDependencies): SourceFactory[T] = {
     val schema = new EspDeserializationSchema[T](bytes => decode(bytes))
-    new KafkaSourceFactory[T](schema, timestampAssigner , testPrepareInfo, processObjectDependencies)
+    new KafkaSourceFactory[T](schema, timestampAssigner , testPrepareInfo, processObjectDependencies)(ClassTag(implicitly[TypeInformation[T]].getTypeClass))
   }
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {

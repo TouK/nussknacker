@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.Schema
-import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.avro.generic.GenericData
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor}
 import pl.touk.nussknacker.engine.api.namespaces.{KafkaUsageKey, NamingContext, ObjectNaming, ObjectNamingParameters}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
@@ -13,10 +13,12 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreamingProcessRegistrar}
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreamingProcessRegistrar}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.cache.DefaultCache
+
+import scala.reflect.ClassTag
 
 class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin {
 
@@ -36,7 +38,7 @@ class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin {
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def createSchemaProvider[T: TypeInformation](processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[T] =
+    override protected def createSchemaProvider[T: ClassTag](processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[T] =
       ConfluentSchemaRegistryProvider[T](factory, processObjectDependencies)
   }
 
@@ -53,7 +55,7 @@ class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin {
   }
 
   test("should create source with proper filtered and converted topics") {
-    val sourceFactory = createAvroSourceFactory(useSpecificAvroReader = false)
+    val sourceFactory = createAvroSourceFactory[GenericData.Record]
     val editor = Some(FixedValuesParameterEditor(List(
       FixedExpressionValue(s"'input_payment'", "input_payment"),
       FixedExpressionValue(s"'output_payment'", "output_payment")
@@ -63,13 +65,12 @@ class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin {
   }
 
   test("should create sink with proper filtered and converted topics") {
-    val sinkFactory = createAvroSinkFactory(useSpecificAvroReader = false)
     val editor = Some(FixedValuesParameterEditor(List(
       FixedExpressionValue(s"'input_payment'", "input_payment"),
       FixedExpressionValue(s"'output_payment'", "output_payment")
     )))
 
-    sinkFactory.initialParameters.find(_.name == "topic").head.editor shouldBe editor
+    avroSinkFactory.initialParameters.find(_.name == "topic").head.editor shouldBe editor
   }
 
   test("should read event in the same version as source requires and save it in the same version") {

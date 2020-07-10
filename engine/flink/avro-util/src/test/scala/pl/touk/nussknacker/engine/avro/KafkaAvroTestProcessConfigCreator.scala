@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.avro
 
 import org.apache.avro.generic.GenericData
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator}
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.avro.schema.GeneratedAvroClassWithLogicalTypes
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
@@ -16,17 +16,18 @@ import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformat
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
 
+import scala.reflect.ClassTag
+
 
 class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
 
-  import org.apache.flink.api.scala._
-
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
-    val schemaRegistryProvider = createSchemaProvider[GenericData.Record](processObjectDependencies)
-    val avroSourceFactory = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
+    val avroSourceFactory = new KafkaAvroSourceFactory(createSchemaProvider[GenericData.Record](processObjectDependencies), processObjectDependencies, None)
+    val avroSpecificSourceFactory = new KafkaAvroSourceFactory(createSchemaProvider[GeneratedAvroClassWithLogicalTypes](processObjectDependencies), processObjectDependencies, None)
 
     Map(
-      "kafka-avro" -> defaultCategory(avroSourceFactory)
+      "kafka-avro" -> defaultCategory(avroSourceFactory),
+      "kafka-avro-specific" -> defaultCategory(avroSpecificSourceFactory)
     )
   }
 
@@ -48,7 +49,7 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
 
   protected def defaultCategory[T](obj: T): WithCategories[T] = WithCategories(obj, "TestAvro")
 
-  protected def createSchemaProvider[T: TypeInformation](processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[T] =
+  protected def createSchemaProvider[T: ClassTag](processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[T] =
     ConfluentSchemaRegistryProvider[T](processObjectDependencies)
 
 

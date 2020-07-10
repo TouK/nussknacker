@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.genericmodel
 
 import org.apache.avro.generic.GenericData
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
@@ -16,9 +15,9 @@ import pl.touk.nussknacker.engine.kafka.generic.sinks.GenericKafkaJsonSink
 import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
 import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
 
-class GenericConfigCreator extends EmptyProcessConfigCreator {
+import scala.reflect.ClassTag
 
-  import org.apache.flink.api.scala._
+class GenericConfigCreator extends EmptyProcessConfigCreator {
 
   protected def defaultCategory[T](obj: T): WithCategories[T] = WithCategories(obj, "Default")
 
@@ -67,7 +66,7 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
     )
   }
 
-  protected def createSchemaProvider[T:TypeInformation](processObjectDependencies: ProcessObjectDependencies):SchemaRegistryProvider[T] =
+  protected def createSchemaProvider[T: ClassTag](processObjectDependencies: ProcessObjectDependencies):SchemaRegistryProvider[T] =
     ConfluentSchemaRegistryProvider[T](processObjectDependencies)
 
 }

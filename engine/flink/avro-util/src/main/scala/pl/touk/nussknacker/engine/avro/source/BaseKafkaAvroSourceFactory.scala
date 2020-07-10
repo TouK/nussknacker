@@ -1,8 +1,5 @@
 package pl.touk.nussknacker.engine.avro.source
 
-import org.apache.avro.specific.{SpecificRecord, SpecificRecordBase}
-import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.formats.avro.typeutils.{AvroTypeInfo, GenericRecordAvroTypeInfo}
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
@@ -32,14 +29,6 @@ abstract class BaseKafkaAvroSourceFactory[T: ClassTag](processObjectDependencies
                    nodeId: NodeId): KafkaSource[T] with ReturningType = {
 
     val returnTypeDefinition = kafkaAvroSchemaProvider.returnType(KafkaAvroFactory.handleSchemaRegistryError)
-
-    // See Flink's AvroDeserializationSchema
-    implicit val typeInformation: TypeInformation[T] = {
-      if (classOf[SpecificRecord].isAssignableFrom(clazz))
-        new AvroTypeInfo(clazz.asInstanceOf[Class[_ <: SpecificRecordBase]]).asInstanceOf[TypeInformation[T]]
-      else
-        new GenericRecordAvroTypeInfo(kafkaAvroSchemaProvider.fetchTopicValueSchema.valueOr(throw _)).asInstanceOf[TypeInformation[T]]
-    }
 
     new KafkaSource(
       List(preparedTopic),

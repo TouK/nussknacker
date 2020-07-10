@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization
 
 import io.confluent.kafka.serializers._
+import org.apache.avro.specific.{SpecificRecord, SpecificRecordBase}
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.formats.avro.typeutils.{LogicalTypesAvroTypeInfo, LogicalTypesGenericRecordAvroTypeInfo}
 import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
@@ -9,31 +11,43 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.Sc
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.serialization.{KafkaVersionAwareKeyValueDeserializationSchemaFactory, KafkaVersionAwareValueDeserializationSchemaFactory}
 
-trait ConfluentKafkaAvroDeserializerFactory {
+import scala.reflect._
+
+trait ConfluentKafkaAvroDeserializerFactory extends ConfluentKafkaAvroSerializationMixin {
   import collection.JavaConverters._
 
-  protected def createDeserializer[T](schemaDeterminingStrategy: SchemaDeterminingStrategy,
-                                      topic: String,
-                                      version: Option[Int],
-                                      schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
-                                      kafkaConfig: KafkaConfig,
-                                      isKey: Boolean,
-                                      useSpecificAvroReader: Boolean): Deserializer[T] = {
+  protected def createDeserializer[T: ClassTag](schemaDeterminingStrategy: SchemaDeterminingStrategy,
+                                                topic: String,
+                                                version: Option[Int],
+                                                schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
+                                                kafkaConfig: KafkaConfig,
+                                                isKey: Boolean): (Deserializer[T], TypeInformation[T]) = {
     val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
+    val clazz = classTag[T].runtimeClass.asInstanceOf[Class[T]]
+    val isSpecificRecord = classOf[SpecificRecord].isAssignableFrom(clazz)
 
-    val deserializer = schemaDeterminingStrategy match {
+    val (deserializer, typeInformation) = schemaDeterminingStrategy match {
       case SchemaDeterminingStrategy.FromSubjectVersion =>
-        ConfluentKafkaAvroDeserializer(schemaRegistryClient, topic, version, isKey = isKey)
+        val schema = fetchSchema(schemaRegistryClient, topic, version, isKey = isKey)
+        val d = new ConfluentKafkaAvroDeserializer(schema, schemaRegistryClient, isKey = isKey, isSpecificRecord)
+        val typeInfo = determineTypeInfo(clazz, new LogicalTypesGenericRecordAvroTypeInfo(schema).asInstanceOf[TypeInformation[T]])
+        (d, typeInfo)
       case SchemaDeterminingStrategy.FromRecord =>
-        new KafkaAvroDeserializer(schemaRegistryClient.client)
+        // Is type info is correct for non-specific-record case? We can't do too much more without schema.
+        val typeInfo = determineTypeInfo(clazz, TypeInformation.of(clazz))
+        (new KafkaAvroDeserializer(schemaRegistryClient.client), typeInfo)
     }
 
-    val props = kafkaConfig.kafkaProperties.getOrElse(Map.empty) + (
-      KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG -> useSpecificAvroReader
-    )
+    deserializer.configure(kafkaConfig.kafkaProperties.getOrElse(Map.empty).asJava, isKey)
+    (deserializer.asInstanceOf[Deserializer[T]], typeInformation)
+  }
 
-    deserializer.configure(props.asJava, isKey)
-    deserializer.asInstanceOf[Deserializer[T]]
+  // See Flink's AvroDeserializationSchema
+  private def determineTypeInfo[T](clazz: Class[T], nonSpecificRecordTypeInfo: => TypeInformation[T]) = {
+    if (classOf[SpecificRecord].isAssignableFrom(clazz))
+      new LogicalTypesAvroTypeInfo(clazz.asInstanceOf[Class[_ <: SpecificRecordBase]]).asInstanceOf[TypeInformation[T]]
+    else
+      nonSpecificRecordTypeInfo
   }
 
   protected def extractTopic(topics: List[String]): String = {
@@ -45,28 +59,27 @@ trait ConfluentKafkaAvroDeserializerFactory {
   }
 }
 
-class ConfluentKafkaAvroDeserializationSchemaFactory[T: TypeInformation](schemaDeterminingStrategy: SchemaDeterminingStrategy,
-                                                                         schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
-                                                                         useSpecificAvroReader: Boolean)
+class ConfluentKafkaAvroDeserializationSchemaFactory[T: ClassTag](schemaDeterminingStrategy: SchemaDeterminingStrategy,
+                                                                  schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
   extends KafkaVersionAwareValueDeserializationSchemaFactory[T] with ConfluentKafkaAvroDeserializerFactory {
 
-  override protected def createValueDeserializer(topics: List[String], version: Option[Int], kafkaConfig: KafkaConfig): Deserializer[T] =
-    createDeserializer[T](schemaDeterminingStrategy, extractTopic(topics), version, schemaRegistryClientFactory, kafkaConfig, isKey = false, useSpecificAvroReader)
+  override protected def createValueDeserializer(topics: List[String], version: Option[Int], kafkaConfig: KafkaConfig): (Deserializer[T], TypeInformation[T]) =
+    createDeserializer[T](schemaDeterminingStrategy, extractTopic(topics), version, schemaRegistryClientFactory, kafkaConfig, isKey = false)
+
 }
 
 object ConfluentKafkaAvroDeserializationSchemaFactory {
-  def apply[T: TypeInformation](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, useSpecificAvroReader: Boolean): ConfluentKafkaAvroDeserializationSchemaFactory[T] =
-    new ConfluentKafkaAvroDeserializationSchemaFactory(SchemaDeterminingStrategy.FromSubjectVersion, schemaRegistryClientFactory, useSpecificAvroReader)
+  def apply[T: ClassTag](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory): ConfluentKafkaAvroDeserializationSchemaFactory[T] =
+    new ConfluentKafkaAvroDeserializationSchemaFactory(SchemaDeterminingStrategy.FromSubjectVersion, schemaRegistryClientFactory)
 }
 
-abstract class ConfluentKeyValueKafkaAvroDeserializationFactory[T: TypeInformation](schemaDeterminingStrategy: SchemaDeterminingStrategy,
-                                                                                    schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
-                                                                                    useSpecificAvroReader: Boolean)
+abstract class ConfluentKeyValueKafkaAvroDeserializationFactory[T](schemaDeterminingStrategy: SchemaDeterminingStrategy,
+                                                                                    schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
   extends KafkaVersionAwareKeyValueDeserializationSchemaFactory[T] with ConfluentKafkaAvroDeserializerFactory {
 
-  override protected def createKeyDeserializer(topics: List[String], version: Option[Int], kafkaConfig: KafkaConfig): Deserializer[K] =
-    createDeserializer[K](schemaDeterminingStrategy, extractTopic(topics), version, schemaRegistryClientFactory, kafkaConfig, isKey = true, useSpecificAvroReader)
+  override protected def createKeyDeserializer(topics: List[String], version: Option[Int], kafkaConfig: KafkaConfig): (Deserializer[K], TypeInformation[K]) =
+    createDeserializer[K](schemaDeterminingStrategy, extractTopic(topics), version, schemaRegistryClientFactory, kafkaConfig, isKey = true)(keyClassTag)
 
-  override protected def createValueDeserializer(topics: List[String], version: Option[Int], kafkaConfig: KafkaConfig): Deserializer[V] =
-    createDeserializer[V](schemaDeterminingStrategy, extractTopic(topics), version, schemaRegistryClientFactory, kafkaConfig, isKey = false, useSpecificAvroReader)
+  override protected def createValueDeserializer(topics: List[String], version: Option[Int], kafkaConfig: KafkaConfig): (Deserializer[V], TypeInformation[V]) =
+    createDeserializer[V](schemaDeterminingStrategy, extractTopic(topics), version, schemaRegistryClientFactory, kafkaConfig, isKey = false)(valueClassTag)
 }

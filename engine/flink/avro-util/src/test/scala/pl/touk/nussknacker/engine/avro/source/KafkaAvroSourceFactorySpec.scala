@@ -5,9 +5,7 @@ import java.nio.charset.StandardCharsets
 import com.typesafe.config.ConfigFactory
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.Schema
-import org.apache.avro.generic.GenericRecord
-import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.scala._
+import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.scalatest.Assertion
 import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
@@ -32,6 +30,8 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
 
+import scala.reflect.ClassTag
+
 class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSourceSpecMixin {
 
   import KafkaAvroSourceMockSchemaRegistry._
@@ -41,28 +41,28 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
 
   test("should read generated record in v1") {
-    val sourceFactory = createAvroSourceFactory(useSpecificAvroReader = false)
+    val sourceFactory = createAvroSourceFactory[GenericData.Record]
     val givenObj = FullNameV1.createRecord("Jan", "Kowalski")
 
     roundTripSingleObject(sourceFactory, RecordTopic, 1, givenObj, FullNameV1.schema)
   }
 
   test("should read generated record in v2") {
-    val sourceFactory = createAvroSourceFactory(useSpecificAvroReader = false)
+    val sourceFactory = createAvroSourceFactory[GenericData.Record]
     val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
 
     roundTripSingleObject(sourceFactory, RecordTopic, 2, givenObj, FullNameV2.schema)
   }
 
   test("should read generated record in last version") {
-    val sourceFactory = createAvroSourceFactory(useSpecificAvroReader = false)
+    val sourceFactory = createAvroSourceFactory[GenericData.Record]
     val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
 
     roundTripSingleObject(sourceFactory, RecordTopic, null, givenObj, FullNameV2.schema)
   }
 
   test("should throw exception when schema doesn't exist") {
-    val sourceFactory = createAvroSourceFactory(useSpecificAvroReader = false)
+    val sourceFactory = createAvroSourceFactory[GenericData.Record]
     val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
 
     assertThrowsWithParent[SchemaSubjectNotFound] {
@@ -71,7 +71,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
   }
 
   test("should throw exception when schema version doesn't exist") {
-    val sourceFactory = createAvroSourceFactory(useSpecificAvroReader = false)
+    val sourceFactory = createAvroSourceFactory[GenericData.Record]
     val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
 
     assertThrowsWithParent[SchemaVersionNotFound] {
@@ -80,14 +80,14 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
   }
 
   test("should read last generated simple object") {
-    val sourceFactory = createAvroSourceFactory(useSpecificAvroReader = false)
+    val sourceFactory = createAvroSourceFactory[GenericData.Record]
     val givenObj = 123123
 
     roundTripSingleObject(sourceFactory, IntTopic, 1, givenObj, IntSchema)
   }
 
   test("should read last generated record as a specific class") {
-    val sourceFactory = createAvroSourceFactory(useSpecificAvroReader = true)
+    val sourceFactory = createAvroSourceFactory[FullNameV2]
     val givenObj = FullNameV2("Jan", "Maria", "Nowak")
 
     roundTripSingleObject(sourceFactory, RecordTopic, 2, givenObj, FullNameV2.schema)
@@ -158,17 +158,16 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     implicit val meta: MetaData = MetaData("processId", StreamMetaData())
     implicit val nodeId: NodeId = NodeId("id")
     val paramsList = params.toList.map(p => Parameter(p._1, p._2))
-    validator.validateNode(createAvroSourceFactory(false), paramsList, ValidationContext(), Some(Interpreter.InputParamName)).toOption.get
+    validator.validateNode(createAvroSourceFactory[GenericData.Record], paramsList, ValidationContext(), Some(Interpreter.InputParamName)).toOption.get
   }
 
-  private def createKeyValueAvroSourceFactory[K: TypeInformation, V: TypeInformation]: KafkaAvroSourceFactory[(K, V)] = {
+  private def createKeyValueAvroSourceFactory[K: ClassTag, V: ClassTag]: KafkaAvroSourceFactory[(K, V)] = {
     val deserializerFactory = new TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory[K, V](factory)
     val provider = ConfluentSchemaRegistryProvider(
       factory,
       None,
       Some(deserializerFactory),
       kafkaConfig,
-      useSpecificAvroReader = false,
       formatKey = true
     )
     new KafkaAvroSourceFactory(provider, testProcessObjectDependencies, None)

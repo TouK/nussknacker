@@ -9,20 +9,17 @@ import io.circe.generic.JsonCodec
 import javax.annotation.Nullable
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.functions.FilterFunction
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStreamSink
-import org.apache.flink.streaming.api.functions.TimestampAssigner
 import org.apache.flink.streaming.api.functions.co.RichCoMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
-import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.timestamps.{AscendingTimestampExtractor, BoundedOutOfOrdernessTimestampExtractor}
 import org.apache.flink.streaming.api.scala.{DataStream, _}
 import org.apache.flink.streaming.api.windowing.time.Time
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedParameter, FailedToDefineParameter, NodeDependencyValue, OutputVariableNameValue, SingleInputGenericNodeTransformation}
+import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency}
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
@@ -38,9 +35,8 @@ import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EspDeseri
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
-import pl.touk.nussknacker.engine.process.helpers.SampleNodes.GenericParametersSource
-import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.engine.util.Implicits._
+import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
