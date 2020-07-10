@@ -8,6 +8,13 @@ import pl.touk.nussknacker.engine.api.{Hidden, HideToString}
 
 /**
   * Settings for class extraction which is done to handle e.g. syntax suggestions in UI
+ *
+ * One-liner that will help to find list of interesting methods in class:
+ * {{{
+ * classOf[CLASS_NAME].getMethods.filterNot(m => java.lang.reflect.Modifier.isStatic(m.getModifiers)).map(_.getName)
+ *   .filterNot(Set("wait", "notify", "notifyAll", "equals", "hashCode", "getClass").contains).distinct.sorted.mkString("|")
+ * }}}
+ *
   * @param excludeClassPredicates - sequence of predicates to determine hidden classes
   * @param excludeClassMemberPredicates - sequence of predicates to determine excluded class members - will be
   *                                       used all predicates that matches given class
@@ -171,6 +178,9 @@ object ClassExtractionSettings {
       ClassMemberPatternPredicate(
         SuperClassPatternPredicate(Pattern.compile("java\\.util\\.Optional")),
         Pattern.compile(s"get|isPresent|orElse")),
+      ClassMemberPatternPredicate(
+        SuperClassPatternPredicate(Pattern.compile("java\\.util\\.UUID")),
+        Pattern.compile(s"clockSequence|getLeastSignificantBits|getMostSignificantBits|node|timestamp|$ToStringMethod|variant|version")),
       ClassMemberPatternPredicate(
         SuperClassPatternPredicate(Pattern.compile("(scala\\.collection\\.Traversable|scala\\.Option)")),
         Pattern.compile(s"apply|applyOrElse|contains|get|getOrDefault|indexOf|isDefined|isEmpty|size|values|keys|diff"))

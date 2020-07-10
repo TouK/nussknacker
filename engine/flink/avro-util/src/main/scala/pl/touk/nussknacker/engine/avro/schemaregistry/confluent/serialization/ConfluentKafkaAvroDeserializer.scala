@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization
 
 import java.util
 
-import io.confluent.kafka.serializers.{AbstractKafkaAvroDeserializer, KafkaAvroDeserializerConfig}
+import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
 import org.apache.avro.Schema
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClient
@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.Confluent
   * @tparam T
   */
 class ConfluentKafkaAvroDeserializer[T](schema: Schema, confluentSchemaRegistryClient: ConfluentSchemaRegistryClient, var isKey: Boolean)
-  extends AbstractKafkaAvroDeserializer with Deserializer[T] {
+  extends AbstractConfluentKafkaAvroDeserializer with Deserializer[T] {
 
   schemaRegistry = confluentSchemaRegistryClient.client
 
