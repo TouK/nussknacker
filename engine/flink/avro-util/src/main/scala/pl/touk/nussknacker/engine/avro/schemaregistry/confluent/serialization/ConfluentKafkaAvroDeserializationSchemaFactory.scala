@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization
 import io.confluent.kafka.serializers._
 import org.apache.avro.specific.{SpecificRecord, SpecificRecordBase}
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.formats.avro.typeutils.{AvroTypeInfo, GenericRecordAvroTypeInfo}
+import org.apache.flink.formats.avro.typeutils.{AvroTypeInfo, LogicalTypesGenericRecordAvroTypeInfo}
 import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
@@ -29,7 +29,7 @@ trait ConfluentKafkaAvroDeserializerFactory extends ConfluentKafkaAvroSerializat
       case SchemaDeterminingStrategy.FromSubjectVersion =>
         val schema = fetchSchema(schemaRegistryClient, topic, version, isKey = isKey)
         val d = new ConfluentKafkaAvroDeserializer(schema, schemaRegistryClient, isKey = isKey)
-        val typeInfo = determineTypeInfo(clazz, new GenericRecordAvroTypeInfo(schema).asInstanceOf[TypeInformation[T]])
+        val typeInfo = determineTypeInfo(clazz, new LogicalTypesGenericRecordAvroTypeInfo(schema).asInstanceOf[TypeInformation[T]])
         (d, typeInfo)
       case SchemaDeterminingStrategy.FromRecord =>
         // Is type info is correct for non-specific-record case? We can't do too much more without schema.

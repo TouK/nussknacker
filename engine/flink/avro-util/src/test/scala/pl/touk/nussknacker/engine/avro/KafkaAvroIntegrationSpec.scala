@@ -249,7 +249,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
     }
   }
 
-  test("should accept date fields") {
+  test("should accept logical types in generic record") {
     val topicConfig = createAndRegisterTopicConfig("date-fields", List(PaymentDate.schema))
     val sourceParam = SourceAvroParam(topicConfig, None)
     val sinkParam = SinkAvroParam(topicConfig, None, "#input")

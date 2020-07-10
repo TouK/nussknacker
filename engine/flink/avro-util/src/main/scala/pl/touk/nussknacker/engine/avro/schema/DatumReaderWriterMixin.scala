@@ -30,9 +30,9 @@ trait DatumReaderWriterMixin {
     * @return
     */
   def createDatumWriter(record: Any, schema: Schema, useSchemaReflection: Boolean): GenericDatumWriter[Any] = record match {
-    case _: SpecificRecord => new SpecificDatumWriter[Any](schema, AvroUtils.SpecificData)
-    case _ if useSchemaReflection => new ReflectDatumWriter[Any](schema, AvroUtils.ReflectData)
-    case _ => new GenericDatumWriter[Any](schema, AvroUtils.GenericData)
+    case _: SpecificRecord => new SpecificDatumWriter[Any](schema, AvroUtils.specificData)
+    case _ if useSchemaReflection => new ReflectDatumWriter[Any](schema, AvroUtils.reflectData)
+    case _ => new GenericDatumWriter[Any](schema, AvroUtils.genericData)
   }
 
   /**
@@ -42,9 +42,9 @@ trait DatumReaderWriterMixin {
     val writerSchemaIsPrimitive = primitives.values.exists(_.equals(writerSchema))
 
     record match {
-      case _: SpecificRecord if !writerSchemaIsPrimitive => new SpecificDatumReader(writerSchema, readerSchema, AvroUtils.SpecificData)
-      case _ if useSchemaReflection && !writerSchemaIsPrimitive => new ReflectDatumReader(writerSchema, readerSchema, AvroUtils.ReflectData)
-      case _ => new GenericDatumReader(writerSchema, readerSchema, AvroUtils.GenericData)
+      case _: SpecificRecord if !writerSchemaIsPrimitive => new SpecificDatumReader(writerSchema, readerSchema, AvroUtils.specificData)
+      case _ if useSchemaReflection && !writerSchemaIsPrimitive => new ReflectDatumReader(writerSchema, readerSchema, AvroUtils.reflectData)
+      case _ => new GenericDatumReader(writerSchema, readerSchema, AvroUtils.genericData)
     }
   }
 
@@ -52,11 +52,11 @@ trait DatumReaderWriterMixin {
     val writerSchemaIsPrimitive = primitives.values.exists(_.equals(readerSchema))
 
     if (useSchemaReflection && !writerSchemaIsPrimitive) {
-      new ReflectDatumReader(writerSchema, readerSchema, AvroUtils.ReflectData)
+      new ReflectDatumReader(writerSchema, readerSchema, AvroUtils.reflectData)
     } else if (useSpecificAvroReader && !writerSchemaIsPrimitive) {
-      new SpecificDatumReader(writerSchema, readerSchema, AvroUtils.SpecificData)
+      new SpecificDatumReader(writerSchema, readerSchema, AvroUtils.specificData)
     } else {
-      new GenericDatumReader(writerSchema, readerSchema, AvroUtils.GenericData)
+      new GenericDatumReader(writerSchema, readerSchema, AvroUtils.genericData)
     }
   }
 }

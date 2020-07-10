@@ -9,13 +9,14 @@ import org.apache.avro.specific.SpecificData
 
 object AvroUtils {
 
-  val GenericData: GenericData = addLogicalTypeConversions(new GenericData)
+  def genericData: GenericData = addLogicalTypeConversions(new GenericData(_))
 
-  val SpecificData: SpecificData = addLogicalTypeConversions(new SpecificData)
+  def specificData: SpecificData = addLogicalTypeConversions(new SpecificData(_))
 
-  val ReflectData: ReflectData = addLogicalTypeConversions(new ReflectData)
+  def reflectData: ReflectData = addLogicalTypeConversions(new ReflectData(_))
 
-  private def addLogicalTypeConversions[T <: GenericData](data: T): T = {
+  private def addLogicalTypeConversions[T <: GenericData](createData: ClassLoader => T): T = {
+    val data = createData(Thread.currentThread.getContextClassLoader)
     data.addLogicalTypeConversion(new TimeConversions.DateConversion)
     data.addLogicalTypeConversion(new TimeConversions.TimeMicrosConversion)
     data.addLogicalTypeConversion(new TimeConversions.TimeMillisConversion)
