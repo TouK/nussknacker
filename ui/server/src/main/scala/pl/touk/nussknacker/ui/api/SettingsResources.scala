@@ -60,19 +60,19 @@ class SettingsResources(config: FeatureTogglesConfig,
 @JsonCodec case class CommentSettings(matchExpression: String, link: String)
 @JsonCodec case class DeploySettings(requireComment: Boolean)
 @JsonCodec case class IntervalTimeSettings(processes: Int, healthCheck: Int)
-@JsonCodec case class DynamicTab(label: String, title: String, url: String)
+@JsonCodec case class DynamicTabs(name: String, url: String, id: String)
 
 @JsonCodec case class ToggleFeaturesOptions(counts: Boolean,
-                                 search: Option[KibanaSettings],
-                                 metrics: Option[MetricsSettings],
-                                 remoteEnvironment: Option[RemoteEnvironmentConfig],
-                                 environmentAlert: Option[EnvironmentAlert],
-                                 commentSettings: Option[CommentSettings],
-                                 deploySettings: Option[DeploySettings],
-                                 dynamicTabs: Option[List[DynamicTab]],
-                                 intervalTimeSettings: IntervalTimeSettings,
-                                 attachments: Boolean,
-                                 signals: Boolean)
+                                            search: Option[KibanaSettings],
+                                            metrics: Option[MetricsSettings],
+                                            remoteEnvironment: Option[RemoteEnvironmentConfig],
+                                            environmentAlert: Option[EnvironmentAlert],
+                                            commentSettings: Option[CommentSettings],
+                                            deploySettings: Option[DeploySettings],
+                                            dynamicTabs: Option[List[DynamicTabs]],
+                                            intervalTimeSettings: IntervalTimeSettings,
+                                            attachments: Boolean,
+                                            signals: Boolean)
 
 @JsonCodec case class AnalyticsSettings(engine: String, url: String, siteId: String)
 

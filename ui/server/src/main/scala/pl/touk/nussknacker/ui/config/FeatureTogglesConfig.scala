@@ -14,7 +14,7 @@ case class FeatureTogglesConfig(development: Boolean,
                                 environmentAlert:Option[EnvironmentAlert],
                                 commentSettings: Option[CommentSettings],
                                 deploySettings: Option[DeploySettings],
-                                dynamicTabs: Option[List[DynamicTab]],
+                                dynamicTabs: Option[List[DynamicTabs]],
                                 intervalTimeSettings: IntervalTimeSettings,
                                 attachments: Option[String])
 
@@ -34,7 +34,7 @@ object FeatureTogglesConfig extends LazyLogging{
     val search = parseOptionalConfig[KibanaSettings](config, "kibanaSettings")
     val commentSettings = parseOptionalConfig[CommentSettings](config, "commentSettings")
     val deploySettings = parseOptionalConfig[DeploySettings](config, "deploySettings")
-    val dynamicTabs = parseOptionalConfig[List[DynamicTab]](config, "dynamicTabs")
+    val dynamicTabs = parseOptionalConfig[List[DynamicTabs]](config, "dynamicTabs")
     val attachments = parseOptionalConfig[String](config, "attachmentsPath")
     val intervalTimeSettings = config.as[IntervalTimeSettings]("intervalTimeSettings")
 
