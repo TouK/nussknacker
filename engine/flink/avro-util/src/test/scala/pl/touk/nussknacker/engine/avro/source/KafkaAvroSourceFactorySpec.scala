@@ -19,7 +19,8 @@ import pl.touk.nussknacker.engine.avro.KafkaAvroFactory.{SchemaVersionParamName,
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client._
-import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaSubjectNotFound, SchemaVersionNotFound}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.ConfluentAvroSerializationSchemaFactory
+import pl.touk.nussknacker.engine.avro.schemaregistry.{BasedOnVersionAvroSchemaDeterminer, SchemaSubjectNotFound, SchemaVersionNotFound}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.avro.{KafkaAvroFactory, KafkaAvroSpecMixin}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
@@ -162,14 +163,13 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
   }
 
   private def createKeyValueAvroSourceFactory[K: ClassTag, V: ClassTag]: KafkaAvroSourceFactory[(K, V)] = {
-    val deserializerFactory = new TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory[K, V](factory)
-    val provider = ConfluentSchemaRegistryProvider(
+    val deserializerFactory = new TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory[K, V](new BasedOnVersionAvroSchemaDeterminer(() => factory.createSchemaRegistryClient(kafkaConfig), _, _), factory)
+    val provider = new ConfluentSchemaRegistryProvider(
       factory,
-      None,
-      Some(deserializerFactory),
+      ConfluentAvroSerializationSchemaFactory(kafkaConfig, factory),
+      deserializerFactory,
       kafkaConfig,
-      formatKey = true
-    )
+      formatKey = true)
     new KafkaAvroSourceFactory(provider, testProcessObjectDependencies, None)
   }
 

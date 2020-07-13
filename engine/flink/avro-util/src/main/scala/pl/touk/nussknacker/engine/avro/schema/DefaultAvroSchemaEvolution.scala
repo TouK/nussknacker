@@ -5,7 +5,8 @@ import java.nio.ByteBuffer
 
 import org.apache.avro.Schema
 import org.apache.avro.generic._
-import org.apache.avro.io.{DecoderFactory, EncoderFactory}
+import org.apache.avro.io.{DatumReader, DecoderFactory, EncoderFactory}
+import pl.touk.nussknacker.engine.avro.AvroUtils
 
 import scala.util.Try
 
@@ -30,14 +31,13 @@ class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWri
 
   protected final val decoderFactory = DecoderFactory.get
 
-  override def alignRecordToSchema[T <: GenericContainer](record: T, schema: Schema): T = {
+  override def alignRecordToSchema(record: GenericContainer, schema: Schema): Any = {
     val writerSchema = record.getSchema
     if (writerSchema.equals(schema)) {
       record
     } else {
       val serializedObject = serializeRecord(record)
-      val deserializedRecord = deserializePayloadToSchema(serializedObject, record, writerSchema, schema)
-      deserializedRecord.asInstanceOf[T]
+      deserializePayloadToSchema(serializedObject, writerSchema, schema)
     }
   }
 
@@ -47,16 +47,11 @@ class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWri
   /**
     * It's copy paste from AbstractKafkaAvroDeserializer#DeserializationContext.read with some modification.
     * We pass there record buffer data and schema which will be used to convert record.
-    *
-    * @param payload
-    * @param record
-    * @param writerSchema
-    * @param readerSchema
-    * @return
     */
-  protected def deserializePayloadToSchema(payload: Array[Byte], record: GenericContainer, writerSchema: Schema, readerSchema: Schema): Any = {
+  protected def deserializePayloadToSchema(payload: Array[Byte], writerSchema: Schema, readerSchema: Schema): Any = {
     try {
-      val reader = createDatumReader(record, writerSchema, readerSchema, useSchemaReflection = useSchemaReflection)
+      // We always want to create generic record at the end, because speecific can has other fields than expected
+      val reader = new GenericDatumReader(writerSchema, readerSchema, AvroUtils.genericData).asInstanceOf[DatumReader[Any]]
       val buffer = ByteBuffer.wrap(payload)
       val length = buffer.limit()
       if (writerSchema.getType == Schema.Type.BYTES) {
@@ -66,7 +61,7 @@ class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWri
       } else {
         val start = buffer.position() + buffer.arrayOffset
         val binaryDecoder = decoderFactory.binaryDecoder(buffer.array, start, length, null)
-        val result = reader.read(record, binaryDecoder)
+        val result = reader.read(null, binaryDecoder)
         if (writerSchema.getType == Schema.Type.STRING) result.toString else result
       }
     } catch {
@@ -85,9 +80,6 @@ class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWri
     * - we don't serialize MagicByte and version
     *
     * To serialization we use schema from record.
-    *
-    * @param record
-    * @return
     */
   protected def serializeRecord(record: GenericContainer): Array[Byte] = {
     try {

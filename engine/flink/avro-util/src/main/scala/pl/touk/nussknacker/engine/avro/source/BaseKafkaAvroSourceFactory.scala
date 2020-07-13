@@ -6,7 +6,9 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
-import pl.touk.nussknacker.engine.avro.{KafkaAvroFactory, KafkaAvroSchemaProvider}
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
+import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, KafkaAvroFactory}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
 import pl.touk.nussknacker.engine.flink.util.timestamp.BounedOutOfOrderPreviousElementAssigner
 import pl.touk.nussknacker.engine.kafka._
@@ -23,19 +25,22 @@ abstract class BaseKafkaAvroSourceFactory[T: ClassTag](processObjectDependencies
   // We currently not using processMetaData and nodeId but it is here in case if someone want to use e.g. some additional fields
   // in their own concrete implementation
   def createSource(preparedTopic: PreparedKafkaTopic,
+                   version: Option[Int],
                    kafkaConfig: KafkaConfig,
-                   kafkaAvroSchemaProvider: KafkaAvroSchemaProvider[T],
+                   schemaRegistryProvider: SchemaRegistryProvider[T],
+                   schemaDeterminer: AvroSchemaDeterminer,
                    processMetaData: MetaData,
                    nodeId: NodeId): KafkaSource[T] with ReturningType = {
 
-    val returnTypeDefinition = kafkaAvroSchemaProvider.returnType(KafkaAvroFactory.handleSchemaRegistryError)
+    val schema = schemaDeterminer.determineSchemaUsedInTyping.valueOr(KafkaAvroFactory.handleSchemaRegistryError)
+    val returnTypeDefinition = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)
 
     new KafkaSource(
       List(preparedTopic),
       kafkaConfig,
-      kafkaAvroSchemaProvider.deserializationSchema,
+      schemaRegistryProvider.deserializationSchemaFactory.create(List(preparedTopic.prepared), version, kafkaConfig),
       assignerToUse(kafkaConfig),
-      kafkaAvroSchemaProvider.recordFormatter,
+      schemaRegistryProvider.recordFormatter(preparedTopic.prepared),
       TestParsingUtils.newLineSplit
     ) with ReturningType {
       override def returnType: typing.TypingResult = returnTypeDefinition

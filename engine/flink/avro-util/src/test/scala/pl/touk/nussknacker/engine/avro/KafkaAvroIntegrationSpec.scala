@@ -270,7 +270,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
       GeneratedAvroClassWithLogicalTypesNewSchema.schema
     ))
     val sourceParam = SourceAvroParam.forSpecific(topicConfig)
-    val sinkParam = SinkAvroParam(topicConfig.output, None, "#input")
+    val sinkParam = SinkAvroParam(topicConfig.output, Some(2), "#input")
 
     val givenRecord = GeneratedAvroClassWithLogicalTypesOldSchema(
       PaymentDate.instant,

@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.avro
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import io.confluent.kafka.schemaregistry.avro.AvroSchemaUtils
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import io.confluent.kafka.serializers.KafkaAvroSerializer
 import org.apache.avro.Schema
@@ -269,11 +268,7 @@ class SimpleKafkaAvroSerializer(schemaRegistryClient: CSchemaRegistryClient) ext
   this.schemaRegistry = schemaRegistryClient
 
   def serialize(topic: String, obj: Any): Array[Byte] = {
-    val schema = AvroSchemaUtils.getSchema(obj, useSchemaReflection)
-    val parsedSchema = ConfluentUtils.convertToAvroSchema(schema)
-    val subject = getSubjectName(topic,false, obj, parsedSchema)
-    val schemaId = schemaRegistry.getId(subject, parsedSchema)
-    serialize(schema, schemaId, obj)
+    serialize(None, topic, obj, isKey = false)
   }
 
 }

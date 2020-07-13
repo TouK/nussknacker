@@ -28,7 +28,7 @@ object ConfluentUtils {
     case ValueSubjectPattern(value) => value
   }
 
-  def convertToAvroSchema(schema: Schema, version: Option[Int] = None): ParsedSchema =
+  def convertToAvroSchema(schema: Schema, version: Option[Int] = None): AvroSchema =
     version.map(new AvroSchema(schema, _)).getOrElse(new AvroSchema(schema))
 
   def extractSchema(parsedSchema: ParsedSchema): Schema =

@@ -9,20 +9,20 @@ import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor4}
 import pl.touk.nussknacker.engine.avro.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, PaymentV1, PaymentV2}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentAvroSerializationSchemaFactory, SchemaDeterminingStrategy}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.ConfluentAvroSerializationSchemaFactory
+import pl.touk.nussknacker.engine.avro.schemaregistry.{BasedOnVersionAvroSchemaDeterminer, UsingRecordSchemaInRuntimeAvroSchemaDeterminer}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaVersionAwareValueSerializationSchemaFactory
 
 class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableDrivenPropertyChecks with ConfluentKafkaAvroSeDeSpecMixin {
 
   import MockSchemaRegistry._
-  import SchemaDeterminingStrategy._
 
   override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
 
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
 
-  private val fromSubjectVersionFactory = new ConfluentAvroSerializationSchemaFactory(FromSubjectVersion, factory)
-  private val fromRecordFactory = new ConfluentAvroSerializationSchemaFactory(FromRecord, factory)
+  private val fromSubjectVersionFactory = new ConfluentAvroSerializationSchemaFactory(new BasedOnVersionAvroSchemaDeterminer(() => factory.createSchemaRegistryClient(kafkaConfig), _, _), factory)
+  private val fromRecordFactory = new ConfluentAvroSerializationSchemaFactory(new UsingRecordSchemaInRuntimeAvroSchemaDeterminer(() => factory.createSchemaRegistryClient(kafkaConfig), _, _), factory)
 
   test("should properly serialize avro object to record with same schema version") {
     val schemas = List(PaymentV1.schema)

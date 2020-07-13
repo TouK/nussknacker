@@ -1,20 +1,21 @@
 package pl.touk.nussknacker.engine.avro.source
 
 import javax.validation.constraints.NotBlank
+import org.apache.avro.specific.SpecificRecord
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.editor.{SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
-import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryKafkaAvroProvider, SchemaRegistryProvider}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryProvider, SpecificRecordEmbeddedSchemaDeterminer}
 import pl.touk.nussknacker.engine.kafka.KafkaFactory._
 import pl.touk.nussknacker.engine.kafka.source.KafkaSource
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
 
-import scala.reflect.ClassTag
+import scala.reflect._
 
-class NoVersionKafkaAvroSourceFactory[T: ClassTag](schemaRegistryProvider: SchemaRegistryProvider[T], processObjectDependencies: ProcessObjectDependencies, timestampAssigner: Option[TimestampAssigner[T]])
+class SpecificRecordKafkaAvroSourceFactory[T <: SpecificRecord: ClassTag](schemaRegistryProvider: SchemaRegistryProvider[T], processObjectDependencies: ProcessObjectDependencies, timestampAssigner: Option[TimestampAssigner[T]])
   extends BaseKafkaAvroSourceFactory[T](processObjectDependencies, timestampAssigner) {
 
   @MethodToInvoke
@@ -23,8 +24,8 @@ class NoVersionKafkaAvroSourceFactory[T: ClassTag](schemaRegistryProvider: Schem
                   (implicit nodeId: NodeId): KafkaSource[T] with ReturningType = {
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
     val preparedTopic = KafkaUtils.prepareKafkaTopic(topic, processObjectDependencies)
-    val schemaProvider = SchemaRegistryKafkaAvroProvider[T](schemaRegistryProvider, kafkaConfig, preparedTopic.prepared, null)
-    createSource(preparedTopic, kafkaConfig, schemaProvider, processMetaData, nodeId)
+    val schemaDeterminer = new SpecificRecordEmbeddedSchemaDeterminer(classTag[T].runtimeClass.asInstanceOf[Class[_ <: SpecificRecord]])
+    createSource(preparedTopic, None, kafkaConfig, schemaRegistryProvider, schemaDeterminer, processMetaData, nodeId)
   }
 
 }

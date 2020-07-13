@@ -1,3 +1,5 @@
+package pl.touk.nussknacker.engine.avro.serialization
+
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.Schema
 import org.apache.avro.generic.{GenericData, GenericRecord}
@@ -7,21 +9,20 @@ import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor4}
 import pl.touk.nussknacker.engine.avro.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, PaymentV1, PaymentV2}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentKafkaAvroDeserializationSchemaFactory, SchemaDeterminingStrategy}
-import pl.touk.nussknacker.engine.avro.serialization.ConfluentKafkaAvroSeDeSpecMixin
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.ConfluentKafkaAvroDeserializationSchemaFactory
+import pl.touk.nussknacker.engine.avro.schemaregistry.{BasedOnVersionAvroSchemaDeterminer, UsingRecordSchemaInRuntimeAvroSchemaDeterminer}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaVersionAwareValueDeserializationSchemaFactory
 
 class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpecMixin with TableDrivenPropertyChecks with ConfluentKafkaAvroSeDeSpecMixin {
 
   import MockSchemaRegistry._
-  import SchemaDeterminingStrategy._
 
   override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
 
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
 
-  private val fromSubjectVersionFactory = new ConfluentKafkaAvroDeserializationSchemaFactory[GenericData.Record](FromSubjectVersion, factory)
-  private val fromRecordFactory = new ConfluentKafkaAvroDeserializationSchemaFactory[GenericData.Record](FromRecord, factory)
+  private val fromSubjectVersionFactory = new ConfluentKafkaAvroDeserializationSchemaFactory[GenericData.Record](new BasedOnVersionAvroSchemaDeterminer(() => factory.createSchemaRegistryClient(kafkaConfig), _, _), factory)
+  private val fromRecordFactory = new ConfluentKafkaAvroDeserializationSchemaFactory[GenericData.Record](new UsingRecordSchemaInRuntimeAvroSchemaDeterminer(() => factory.createSchemaRegistryClient(kafkaConfig), _, _), factory)
 
   test("should properly deserialize record to avro object with same schema version") {
     val schemas = List(PaymentV1.schema)

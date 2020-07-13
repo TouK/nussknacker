@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.avro.sink
 import cats.Id
 import cats.data.WriterT
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedParameter, FailedToDefineParameter, NodeDependencyValue}
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
@@ -32,8 +32,8 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider[An
       (KafkaAvroFactory.SchemaVersionParamName, DefinedEagerParameter(version, _)) ::Nil, _) =>
         //we cast here, since null will not be matched in case...
         val preparedTopic = prepareTopic(topic)
-        val provider = createSchemaRegistryProvider(preparedTopic, version.asInstanceOf[java.lang.Integer])
-        val validationResult = validateOutput(output.returnType, provider).swap.toList
+        val schemaDeterminer = prepareSchemaDeterminer(preparedTopic, Option(version.asInstanceOf[java.lang.Integer]).map(_.intValue()))
+        val validationResult = validateOutput(output.returnType, schemaDeterminer).swap.toList
         FinalResults(context, validationResult)
     //edge case - for some reason Topic/Version is not defined
     case TransformationStep((KafkaAvroFactory.SinkOutputParamName, _) ::
@@ -50,11 +50,10 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider[An
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): FlinkSink = {
     val output = params(KafkaAvroFactory.SinkOutputParamName).asInstanceOf[LazyParameter[AnyRef]]
-    val preparedTopic = extractPreparedTopic(params)
 
-    createSink(preparedTopic, output, kafkaConfig, createSchemaRegistryProvider(params),
-      typedDependency[MetaData](dependencies),
-      typedDependency[NodeId](dependencies))
+    createSink(extractPreparedTopic(params), extractVersion(params), output,
+      kafkaConfig, schemaRegistryProvider, prepareSchemaDeterminer(params),
+      typedDependency[MetaData](dependencies), typedDependency[NodeId](dependencies))
   }
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]), TypedNodeDependency(classOf[NodeId]))

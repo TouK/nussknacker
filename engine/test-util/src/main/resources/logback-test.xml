@@ -22,7 +22,7 @@
     <logger name="com.spotify.docker.client.LoggingPullHandler" level="WARN"/>
     <logger name="com.spotify.docker.client.LoggingBuildHandler" level="WARN"/>
     <logger name="org.apache.flink.runtime.leaderretrieval.ZooKeeperLeaderRetrievalService" level="WARN"/>
-    <logger name="org.apache.flink" level="WARN"/>
+    <logger name="org.apache.flink" level="INFO"/>
 
     <logger name="org.apache.flink.runtime.webmonitor.WebMonitorUtils" level="ERROR"/>
     <logger name="kafka" level="ERROR"/>
