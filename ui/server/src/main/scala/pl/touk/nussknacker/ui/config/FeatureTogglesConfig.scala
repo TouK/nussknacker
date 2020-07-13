@@ -7,13 +7,13 @@ import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.process.migrate.HttpRemoteEnvironmentConfig
 
 case class FeatureTogglesConfig(development: Boolean,
-                                search: Option[KibanaSettings],
                                 metrics: Option[MetricsSettings],
                                 remoteEnvironment: Option[HttpRemoteEnvironmentConfig],
                                 counts: Option[Config],
                                 environmentAlert:Option[EnvironmentAlert],
                                 commentSettings: Option[CommentSettings],
                                 deploySettings: Option[DeploySettings],
+                                customTabs: Option[List[CustomTabs]],
                                 intervalTimeSettings: IntervalTimeSettings,
                                 attachments: Option[String])
 
@@ -30,20 +30,20 @@ object FeatureTogglesConfig extends LazyLogging{
     val counts = parseOptionalConfig[Config](config, "countsSettings")
 
     val remoteEnvironment = parseOptionalConfig[HttpRemoteEnvironmentConfig](config, "secondaryEnvironment")
-    val search = parseOptionalConfig[KibanaSettings](config, "kibanaSettings")
     val commentSettings = parseOptionalConfig[CommentSettings](config, "commentSettings")
     val deploySettings = parseOptionalConfig[DeploySettings](config, "deploySettings")
+    val customTabs = parseOptionalConfig[List[CustomTabs]](config, "customTabs")
     val attachments = parseOptionalConfig[String](config, "attachmentsPath")
     val intervalTimeSettings = config.as[IntervalTimeSettings]("intervalTimeSettings")
 
     FeatureTogglesConfig(
       development = isDevelopmentMode,
-      search = search,
       metrics = metrics,
       remoteEnvironment = remoteEnvironment,
       counts = counts,
       commentSettings = commentSettings,
       deploySettings = deploySettings,
+      customTabs = customTabs,
       intervalTimeSettings = intervalTimeSettings,
       environmentAlert = environmentAlert,
       attachments = attachments

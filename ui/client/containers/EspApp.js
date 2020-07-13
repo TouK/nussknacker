@@ -9,7 +9,6 @@ import NotFound from "./errors/NotFound"
 import {nkPath} from "../config"
 import {CSSTransition, TransitionGroup} from "react-transition-group"
 import Metrics from "./Metrics"
-import Search from "./Search"
 import Signals from "./Signals"
 import AdminPage from "./AdminPage"
 import DragArea from "../components/DragArea"
@@ -26,6 +25,7 @@ import "../assets/fonts/fonts.less"
 import "../stylesheets/main.styl"
 import "../app.styl"
 import ErrorHandler from "./ErrorHandler"
+import CustomTabs from "./CustomTabs"
 
 export class EspApp extends React.Component {
 
@@ -103,9 +103,9 @@ export class EspApp extends React.Component {
                           <Route path={Processes.path} component={Processes} exact/>
                           <Route path={Visualization.path} component={Visualization} exact/>
                           <Route path={Metrics.path} component={Metrics} exact/>
-                          <Route path={Search.path} component={Search} exact/>
                           <Route path={Signals.path} component={Signals} exact/>
                           <Route path={AdminPage.path} component={AdminPage} exact/>
+                          <Route path={`${CustomTabs.path}/:id`} component={CustomTabs} exact/>
                           <Redirect from={EspApp.path} to={Processes.path} exact/>
                           <Route component={NotFound}/>
                         </Switch>

@@ -7,10 +7,10 @@ import {Archive} from "../containers/Archive"
 import {EspApp} from "../containers/EspApp"
 import {Metrics} from "../containers/Metrics"
 import {Processes} from "../containers/Processes"
-import {Search} from "../containers/Search"
 import {Signals} from "../containers/Signals"
 import {SubProcesses} from "../containers/SubProcesses"
 import {Flex} from "./common/Flex"
+import {CustomTabs} from "../containers/CustomTabs"
 
 function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Dispatch<React.SetStateAction<T>>] {
   const [defaultValue] = useState<T>(startValue)
@@ -27,6 +27,18 @@ function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Di
   return [value, setValue]
 }
 
+function mapDynamicItems(title: string, id: string) {
+  return {show: true, path: `${CustomTabs.path}/${id}`, title: title}
+}
+
+function createMenuItem(show: boolean, path: string, title: string) {
+  return show && <MenuItem key={title} path={path} title={title}/>
+}
+
+function MenuItem({title, path}: { title: string, path: string }) {
+  return <li key={title}><NavLink to={path}>{title}</NavLink></li>
+}
+
 type Props = {
   app: typeof EspApp,
   rightElement?: ReactNode,
@@ -40,12 +52,36 @@ const Spacer = () => <Flex flex={1}/>
 export function MenuBar({rightElement = null, leftElement = null, ...props}: Props) {
   const {app: {path, header}, loggedUser, featuresSettings} = props
   const showMetrics = !_.isEmpty(featuresSettings.metrics)
-  const showSearch = !_.isEmpty(featuresSettings.search)
   const showSignals = featuresSettings.signals
   const showAdmin = loggedUser.globalPermissions.adminTab
+  const customTabs = [...featuresSettings.customTabs]
 
   const [expanded, setExpanded] = useStateWithRevertTimeout(false)
   const {t} = useTranslation()
+
+  function buildMenu() {
+    const defaultMenuItems = [
+      {show: true, path: Processes.path, title: t("menu.processes", "Processes")},
+      {show: true, path: SubProcesses.path, title: t("menu.subProcesses", "Subprocesses")},
+      {show: showMetrics, path: Metrics.basePath, title: t("menu.metrics", "Metrics")},
+      {show: showSignals, path: Signals.path, title: t("menu.signals", "Signals")},
+      {show: true, path: Archive.path, title: t("menu.archive", "Archive")},
+      {show: showAdmin, path: AdminPage.path, title: t("menu.adminPage", "Admin")},
+    ]
+
+    const dynamicMenuItems = customTabs
+      .map((element) => mapDynamicItems(element.name, element.id))
+
+    const menuItems = defaultMenuItems
+      .concat(dynamicMenuItems)
+      .map(o => createMenuItem(o.show, o.path, o.title))
+
+    return (
+      <ul id="menu-items" onClick={() => setExpanded(false)}>
+        {menuItems}
+      </ul>
+    )
+  }
 
   return (
     <header>
@@ -60,22 +96,10 @@ export function MenuBar({rightElement = null, leftElement = null, ...props}: Pro
           <button className="expand-button" onClick={() => setExpanded(!expanded)}>
             <span className={`glyphicon glyphicon-menu-${expanded ? "up" : "down"}`}/>
           </button>
-          <ul id="menu-items" onClick={() => setExpanded(false)}>
-            <MenuItem path={Processes.path} title={t("menu.processes", "Processes")}/>
-            <MenuItem path={SubProcesses.path} title={t("menu.subProcesses", "Subprocesses")}/>
-            {showMetrics && <MenuItem path={Metrics.basePath} title={t("menu.metrics", "Metrics")}/>}
-            {showSearch && <MenuItem path={Search.path} title={t("menu.search", "Search")}/>}
-            {showSignals && <MenuItem path={Signals.path} title={t("menu.signals", "Signals")}/>}
-            <MenuItem path={Archive.path} title={t("menu.archive", "Archive")}/>
-            {showAdmin && <MenuItem path={AdminPage.path} title={t("menu.adminPage", "Admin")}/>}
-          </ul>
+          {buildMenu()}
         </Flex>
       </nav>
     </header>
   )
-}
-
-function MenuItem({title, path}: { title: string, path: string }) {
-  return <li key={title}><NavLink to={path}>{title}</NavLink></li>
 }
 
