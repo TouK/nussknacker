@@ -13,7 +13,7 @@ case class FeatureTogglesConfig(development: Boolean,
                                 environmentAlert:Option[EnvironmentAlert],
                                 commentSettings: Option[CommentSettings],
                                 deploySettings: Option[DeploySettings],
-                                dynamicTabs: Option[List[DynamicTabs]],
+                                customTabs: Option[List[CustomTabs]],
                                 intervalTimeSettings: IntervalTimeSettings,
                                 attachments: Option[String])
 
@@ -32,7 +32,7 @@ object FeatureTogglesConfig extends LazyLogging{
     val remoteEnvironment = parseOptionalConfig[HttpRemoteEnvironmentConfig](config, "secondaryEnvironment")
     val commentSettings = parseOptionalConfig[CommentSettings](config, "commentSettings")
     val deploySettings = parseOptionalConfig[DeploySettings](config, "deploySettings")
-    val dynamicTabs = parseOptionalConfig[List[DynamicTabs]](config, "dynamicTabs")
+    val customTabs = parseOptionalConfig[List[CustomTabs]](config, "customTabs")
     val attachments = parseOptionalConfig[String](config, "attachmentsPath")
     val intervalTimeSettings = config.as[IntervalTimeSettings]("intervalTimeSettings")
 
@@ -43,7 +43,7 @@ object FeatureTogglesConfig extends LazyLogging{
       counts = counts,
       commentSettings = commentSettings,
       deploySettings = deploySettings,
-      dynamicTabs = dynamicTabs,
+      customTabs = customTabs,
       intervalTimeSettings = intervalTimeSettings,
       environmentAlert = environmentAlert,
       attachments = attachments

@@ -10,7 +10,7 @@ import {Processes} from "../containers/Processes"
 import {Signals} from "../containers/Signals"
 import {SubProcesses} from "../containers/SubProcesses"
 import {Flex} from "./common/Flex"
-import {DynamicTabs} from "../containers/DynamicTabs"
+import {CustomTabs} from "../containers/CustomTabs"
 
 function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Dispatch<React.SetStateAction<T>>] {
   const [defaultValue] = useState<T>(startValue)
@@ -28,7 +28,7 @@ function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Di
 }
 
 function mapDynamicItems(title: string, id: string) {
-  return {show: true, path: `${DynamicTabs.path}/${id}`, title: title}
+  return {show: true, path: `${CustomTabs.path}/${id}`, title: title}
 }
 
 function createMenuItem(show: boolean, path: string, title: string) {
@@ -54,7 +54,7 @@ export function MenuBar({rightElement = null, leftElement = null, ...props}: Pro
   const showMetrics = !_.isEmpty(featuresSettings.metrics)
   const showSignals = featuresSettings.signals
   const showAdmin = loggedUser.globalPermissions.adminTab
-  const dynamicTabs = [...featuresSettings.dynamicTabs]
+  const customTabs = [...featuresSettings.customTabs]
 
   const [expanded, setExpanded] = useStateWithRevertTimeout(false)
   const {t} = useTranslation()
@@ -69,7 +69,7 @@ export function MenuBar({rightElement = null, leftElement = null, ...props}: Pro
       {show: showAdmin, path: AdminPage.path, title: t("menu.adminPage", "Admin")},
     ]
 
-    const dynamicMenuItems = dynamicTabs
+    const dynamicMenuItems = customTabs
       .map((element) => mapDynamicItems(element.name, element.id))
 
     const menuItems = defaultMenuItems

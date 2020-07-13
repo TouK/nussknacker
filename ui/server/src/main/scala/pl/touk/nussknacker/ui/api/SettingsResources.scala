@@ -28,7 +28,7 @@ class SettingsResources(config: FeatureTogglesConfig,
             environmentAlert = config.environmentAlert,
             commentSettings = config.commentSettings,
             deploySettings = config.deploySettings,
-            dynamicTabs = config.dynamicTabs,
+            customTabs = config.customTabs,
             intervalTimeSettings = config.intervalTimeSettings,
             signals = signalsSupported,
             attachments = config.attachments.isDefined
@@ -58,7 +58,7 @@ class SettingsResources(config: FeatureTogglesConfig,
 @JsonCodec case class CommentSettings(matchExpression: String, link: String)
 @JsonCodec case class DeploySettings(requireComment: Boolean)
 @JsonCodec case class IntervalTimeSettings(processes: Int, healthCheck: Int)
-@JsonCodec case class DynamicTabs(name: String, url: String, id: String)
+@JsonCodec case class CustomTabs(name: String, url: String, id: String)
 
 @JsonCodec case class ToggleFeaturesOptions(counts: Boolean,
                                             metrics: Option[MetricsSettings],
@@ -66,7 +66,7 @@ class SettingsResources(config: FeatureTogglesConfig,
                                             environmentAlert: Option[EnvironmentAlert],
                                             commentSettings: Option[CommentSettings],
                                             deploySettings: Option[DeploySettings],
-                                            dynamicTabs: Option[List[DynamicTabs]],
+                                            customTabs: Option[List[CustomTabs]],
                                             intervalTimeSettings: IntervalTimeSettings,
                                             attachments: Boolean,
                                             signals: Boolean)
