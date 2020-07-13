@@ -266,7 +266,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
   test("should accept logical types in specific record") {
     val topicConfig = createAndRegisterTopicConfig("logical-fields-specific", List(
       GeneratedAvroClassWithLogicalTypesOldSchema.schema,
-      GeneratedAvroClassWithLogicalTypes.SCHEMA$
+      GeneratedAvroClassWithLogicalTypes.SCHEMA$,
+      GeneratedAvroClassWithLogicalTypesNewSchema.schema
     ))
     val sourceParam = SourceAvroParam.forSpecific(topicConfig)
     val sinkParam = SinkAvroParam(topicConfig.output, None, "#input")
