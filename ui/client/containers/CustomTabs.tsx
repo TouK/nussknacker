@@ -1,6 +1,7 @@
 import PropTypes, {Validator} from "prop-types"
 import React from "react"
 import {connect} from "react-redux"
+import NotFound from "./errors/NotFound"
 
 export class CustomTabs extends React.Component<{ settings: $TodoType[], match: $TodoType }> {
 
@@ -16,7 +17,7 @@ export class CustomTabs extends React.Component<{ settings: $TodoType[], match: 
   }
 
   render() {
-    const {match: {params: {id}}}  = this.props
+    const id = this.props.match.params.id
     const ref = "customTabsFrame"
     const tab = this.props.settings
       .find(o => o.id == id)
@@ -33,9 +34,9 @@ export class CustomTabs extends React.Component<{ settings: $TodoType[], match: 
           />
         </div>
       )
+    } else {
+      return (<NotFound/>)
     }
-
-    return (<div/>)
   }
 }
 
