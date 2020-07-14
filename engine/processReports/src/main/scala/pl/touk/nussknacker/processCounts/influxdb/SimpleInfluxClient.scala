@@ -10,7 +10,8 @@ import pl.touk.nussknacker.engine.sttp.SttpJson
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-case class InfluxConfig(influxUrl: String, user: String, password: String, database: String = "esp", metricsConfig: Option[MetricsConfig])
+case class InfluxConfig(influxViaGrafanaUrl: String, user: String, password: String, database: String = "esp",
+                        influxUrl: Option[String], metricsConfig: Option[MetricsConfig])
 
 class InfluxException(cause: Throwable) extends Exception(cause)
 case class InvalidInfluxResponse(message: String, cause: Throwable) extends InfluxException(cause) {
@@ -23,7 +24,11 @@ case class InfluxHttpError(influxUrl: String, body: String, cause: Throwable) ex
 //we use simplistic InfluxClient, as we only need queries
 class SimpleInfluxClient(config: InfluxConfig)(implicit backend: SttpBackend[Future, Nothing, NothingT]) {
 
-  private val uri = uri"${config.influxUrl}"
+  private val defaultUrl = config.influxViaGrafanaUrl
+  private val directUrl = config.influxUrl
+  private val url = directUrl.getOrElse(defaultUrl)
+
+  private val uri = uri"${url}"
 
   def query(query: String)(implicit ec: ExecutionContext): Future[List[InfluxSerie]] = {
     basicRequest.get(uri.params("db" -> config.database, "q" -> query))
@@ -33,7 +38,7 @@ class SimpleInfluxClient(config: InfluxConfig)(implicit backend: SttpBackend[Fut
       .flatMap(SttpJson.failureToFuture[InfluxResponse])
       .recoverWith {
         case ex: DeserializationError[_] => Future.failed(InvalidInfluxResponse(ex.getMessage, ex))
-        case ex: HttpError => Future.failed(InfluxHttpError(config.influxUrl, ex.body, ex))
+        case ex: HttpError => Future.failed(InfluxHttpError(config.influxViaGrafanaUrl, ex.body, ex))
       }
       //we assume only one query
       .map(_.results.head.series)
