@@ -66,7 +66,7 @@ jobs:
       - uses: olafurpg/setup-scala@v5
       - name: Slow tests
         shell: bash
-        run: ../ciRunSbt.sh clean ui/slow:test
+        run: ./ciRunSbt.sh clean ui/slow:test
 
   frontendTests:
     name: FrontendTests
