@@ -23,7 +23,7 @@ class AbstractConfluentKafkaAvroSerializer(avroSchemaEvolution: AvroSchemaEvolut
 
   protected val encoderFactory: EncoderFactory = EncoderFactory.get
 
-  def serialize(schemaOpt: Option[AvroSchema], topic: String, data: AnyRef, isKey: Boolean): Array[Byte] = {
+  def serialize(schemaOpt: Option[AvroSchema], topic: String, data: Any, isKey: Boolean): Array[Byte] = {
     if (data == null) {
       null
     } else {

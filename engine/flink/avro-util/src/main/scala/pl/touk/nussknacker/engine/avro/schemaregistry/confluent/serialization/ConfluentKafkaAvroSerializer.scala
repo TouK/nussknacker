@@ -17,7 +17,7 @@ import scala.collection.JavaConverters._
   */
 class ConfluentKafkaAvroSerializer(kafkaConfig: KafkaConfig, confluentSchemaRegistryClient: ConfluentSchemaRegistryClient, schemaEvolutionHandler: AvroSchemaEvolution,
                                    schemaOpt: Option[AvroSchema], var isKey: Boolean)
-  extends AbstractConfluentKafkaAvroSerializer(schemaEvolutionHandler) with Serializer[AnyRef] {
+  extends AbstractConfluentKafkaAvroSerializer(schemaEvolutionHandler) with Serializer[Any] {
 
   schemaRegistry = confluentSchemaRegistryClient.client
 
@@ -30,7 +30,7 @@ class ConfluentKafkaAvroSerializer(kafkaConfig: KafkaConfig, confluentSchemaRegi
     this.isKey = isKey
   }
 
-  override def serialize(topic: String, data: AnyRef): Array[Byte] =
+  override def serialize(topic: String, data: Any): Array[Byte] =
     serialize(schemaOpt, topic, data, isKey)
 
   override def close(): Unit = {}
