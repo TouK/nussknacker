@@ -376,9 +376,18 @@ protected trait ProcessCompilerBase {
     (Map[String, ExpressionTypingInfo], Validated[NonEmptyList[ProcessCompilationError], ValidationContext], ValidatedNel[ProcessCompilationError, T]) = {
     val branchParameters = data.cast[Join].map(_.branchParameters).getOrElse(List.empty)
     val parameters = data.parameters
-    val generic = compileGenericTransformer(ctx, parameters, branchParameters, outputVar)
+    val generic = validateGenericTransformer(ctx, parameters, branchParameters, outputVar)
     if (generic.isDefinedAt(nodeDefinition)) {
-      generic(nodeDefinition)
+      val afterValidation = generic(nodeDefinition).map {
+        case TransformationResult(Nil, computedParameters, outputContext) =>
+          val (typingInfo, validProcessObject) = createProcessObject[T](nodeDefinition, parameters,
+            branchParameters, outputVar, ctx, Some(computedParameters))
+          (typingInfo, outputContext, validProcessObject)
+        case TransformationResult(h::t, _, outputContext) =>
+          //TODO: typing info here??
+          (Map.empty[String, ExpressionTypingInfo], outputContext, Invalid(NonEmptyList(h, t)))
+      }
+      (afterValidation.map(_._1).valueOr(_ => Map.empty), afterValidation.map(_._2), afterValidation.andThen(_._3))
     } else {
       val (typingInfo, validProcessObject) = createProcessObject[T](nodeDefinition, parameters,
         branchParameters, outputVar, ctx)
@@ -423,37 +432,18 @@ protected trait ProcessCompilerBase {
     }
   }
 
-  private def compileGenericTransformer[T](ctx: Either[ValidationContext, BranchEndContexts],
+  private def validateGenericTransformer[T](ctx: Either[ValidationContext, BranchEndContexts],
                                         parameters: List[evaluatedparam.Parameter],
                                         branchParameters: List[BranchParameters], outputVar: Option[String])
                                        (implicit metaData: MetaData, nodeId: NodeId):
-    PartialFunction[ObjectWithMethodDef,
-      (Map[String, ExpressionTypingInfo], Validated[NonEmptyList[ProcessCompilationError], ValidationContext], Validated[NonEmptyList[ProcessCompilationError], T])] = {
+    PartialFunction[ObjectWithMethodDef, Validated[NonEmptyList[ProcessCompilationError], TransformationResult]] = {
 
     case nodeDefinition if nodeDefinition.obj.isInstanceOf[SingleInputGenericNodeTransformation[_]] && ctx.isLeft =>
       val transformer = nodeDefinition.obj.asInstanceOf[SingleInputGenericNodeTransformation[_]]
-      val afterValidation = nodeValidator.validateNode(transformer, parameters, branchParameters, outputVar)(ctx.left.get).map {
-        case TransformationResult(Nil, computedParameters, outputContext) =>
-          val (typingInfo, validProcessObject) = createProcessObject[T](nodeDefinition, parameters,
-            branchParameters, outputVar, ctx, Some(computedParameters))
-          (typingInfo, outputContext, validProcessObject)
-        case TransformationResult(h::t, _, outputContext) =>
-          //TODO: typing info here??
-          (Map.empty[String, ExpressionTypingInfo], outputContext, Invalid(NonEmptyList(h, t)))
-      }
-      (afterValidation.map(_._1).valueOr(_ => Map.empty), afterValidation.map(_._2), afterValidation.andThen(_._3))
+      nodeValidator.validateNode(transformer, parameters, branchParameters, outputVar)(ctx.left.get)
     case nodeDefinition if nodeDefinition.obj.isInstanceOf[JoinGenericNodeTransformation[_]] && ctx.isRight  =>
       val transformer = nodeDefinition.obj.asInstanceOf[JoinGenericNodeTransformation[_]]
-      val afterValidation = nodeValidator.validateNode(transformer, parameters, branchParameters, outputVar)(ctx.right.get.contexts).map {
-        case TransformationResult(Nil, computedParameters, outputContext) =>
-          val (typingInfo, validProcessObject) = createProcessObject[T](nodeDefinition, parameters,
-            branchParameters, outputVar, ctx, Some(computedParameters))
-          (typingInfo, outputContext, validProcessObject)
-        case TransformationResult(h::t, _, outputContext) =>
-          //TODO: typing info here??
-          (Map.empty[String, ExpressionTypingInfo], outputContext, Invalid(NonEmptyList(h, t)))
-      }
-      (afterValidation.map(_._1).valueOr(_ => Map.empty), afterValidation.map(_._2), afterValidation.andThen(_._3))
+      nodeValidator.validateNode(transformer, parameters, branchParameters, outputVar)(ctx.right.get.contexts)
   }
 
   private def createProcessObject[T](nodeDefinition: ObjectWithMethodDef,
