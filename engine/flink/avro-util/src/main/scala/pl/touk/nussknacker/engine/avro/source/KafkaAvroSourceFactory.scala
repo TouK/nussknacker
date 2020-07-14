@@ -15,12 +15,10 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSource
 
-import scala.reflect.ClassTag
-
-class KafkaAvroSourceFactory[T: ClassTag](val schemaRegistryProvider: SchemaRegistryProvider[T],
-                                          val processObjectDependencies: ProcessObjectDependencies,
-                                          timestampAssigner: Option[TimestampAssigner[T]])
-  extends BaseKafkaAvroSourceFactory(processObjectDependencies, timestampAssigner) with KafkaAvroBaseTransformer[FlinkSource[T], T]{
+class KafkaAvroSourceFactory(val schemaRegistryProvider: SchemaRegistryProvider,
+                             val processObjectDependencies: ProcessObjectDependencies,
+                             timestampAssigner: Option[TimestampAssigner[Any]])
+  extends BaseKafkaAvroSourceFactory(processObjectDependencies, timestampAssigner) with KafkaAvroBaseTransformer[FlinkSource[Any]]{
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
                                     (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
@@ -62,10 +60,10 @@ class KafkaAvroSourceFactory[T: ClassTag](val schemaRegistryProvider: SchemaRegi
     List(topicParam(NodeId("")).value)
   }
 
-  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): FlinkSource[T] = {
+  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): FlinkSource[Any] = {
     createSource(extractPreparedTopic(params), extractVersion(params), kafkaConfig,
       schemaRegistryProvider.deserializationSchemaFactory, schemaRegistryProvider.recordFormatter, prepareSchemaDeterminer(params),
-      typedDependency[MetaData](dependencies), typedDependency[NodeId](dependencies))
+      typedDependency[MetaData](dependencies))(typedDependency[NodeId](dependencies))
   }
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]),

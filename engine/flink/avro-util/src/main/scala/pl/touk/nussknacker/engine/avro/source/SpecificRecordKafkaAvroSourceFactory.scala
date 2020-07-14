@@ -18,7 +18,7 @@ import scala.reflect._
 /**
  * Source factory for specific records - mainly generated from schema.
  */
-class SpecificRecordKafkaAvroSourceFactory[T <: SpecificRecord: ClassTag](schemaRegistryProvider: SchemaRegistryProvider[T], processObjectDependencies: ProcessObjectDependencies, timestampAssigner: Option[TimestampAssigner[T]])
+class SpecificRecordKafkaAvroSourceFactory[T <: SpecificRecord: ClassTag](schemaRegistryProvider: SchemaRegistryProvider, processObjectDependencies: ProcessObjectDependencies, timestampAssigner: Option[TimestampAssigner[T]])
   extends BaseKafkaAvroSourceFactory[T](processObjectDependencies, timestampAssigner) {
 
   // TODO: it should return suggestions for topics like it is in generic version (KafkaAvroSourceFactory)

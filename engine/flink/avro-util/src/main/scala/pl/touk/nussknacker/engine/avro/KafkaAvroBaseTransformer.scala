@@ -15,11 +15,11 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, PreparedKafkaT
 
 import scala.reflect.ClassTag
 
-trait KafkaAvroBaseTransformer[T, Y] extends SingleInputGenericNodeTransformation[T] {
+trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T] {
 
   type WithError[V] = Writer[List[ProcessCompilationError], V]
 
-  def schemaRegistryProvider: SchemaRegistryProvider[Y]
+  def schemaRegistryProvider: SchemaRegistryProvider
 
   def processObjectDependencies: ProcessObjectDependencies
 

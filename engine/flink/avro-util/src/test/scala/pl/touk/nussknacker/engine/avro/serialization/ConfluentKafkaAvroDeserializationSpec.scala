@@ -10,8 +10,6 @@ import pl.touk.nussknacker.engine.avro.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, PaymentV1, PaymentV2}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.ConfluentKafkaAvroDeserializationSchemaFactory
-import pl.touk.nussknacker.engine.avro.schemaregistry.{BasedOnVersionAvroSchemaDeterminer, UsingRecordSchemaInRuntimeAvroSchemaDeterminer}
-import pl.touk.nussknacker.engine.kafka.serialization.KafkaVersionAwareValueDeserializationSchemaFactory
 
 class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpecMixin with TableDrivenPropertyChecks with ConfluentKafkaAvroSeDeSpecMixin {
 
@@ -21,17 +19,16 @@ class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpecMixin with Tabl
 
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
 
-  private val fromSubjectVersionFactory = new ConfluentKafkaAvroDeserializationSchemaFactory[GenericData.Record](new BasedOnVersionAvroSchemaDeterminer(() => factory.createSchemaRegistryClient(kafkaConfig), _, _), factory)
-  private val fromRecordFactory = new ConfluentKafkaAvroDeserializationSchemaFactory[GenericData.Record](new UsingRecordSchemaInRuntimeAvroSchemaDeterminer(() => factory.createSchemaRegistryClient(kafkaConfig), _, _), factory)
+  private val confluentDeserializationSchemaFactory = new ConfluentKafkaAvroDeserializationSchemaFactory(factory)
 
   test("should properly deserialize record to avro object with same schema version") {
     val schemas = List(PaymentV1.schema)
     val version = Some(1)
 
-    val table = Table[KafkaVersionAwareValueDeserializationSchemaFactory[_], GenericRecord, GenericRecord, String](
-      ("factory", "givenObj", "expectedObj", "topic"),
-      (fromRecordFactory, PaymentV1.record, PaymentV1.record, "simple.from-record"),
-      (fromSubjectVersionFactory, PaymentV1.record, PaymentV1.record, "simple.from-subject-version")
+    val table = Table[Boolean, GenericRecord, GenericRecord, String](
+      ("schemaEvolution", "givenObj", "expectedObj", "topic"),
+      (false, PaymentV1.record, PaymentV1.record, "simple.from-record"),
+      (true, PaymentV1.record, PaymentV1.record, "simple.from-subject-version")
     )
 
     runDeserializationTest(table, version, schemas)
@@ -41,10 +38,10 @@ class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpecMixin with Tabl
     val schemas = List(PaymentV1.schema, PaymentV2.schema)
     val version = Some(2)
 
-    val table = Table[KafkaVersionAwareValueDeserializationSchemaFactory[_], GenericRecord, GenericRecord, String](
-      ("factory", "givenObj", "expectedObj", "topic"),
-      (fromRecordFactory, PaymentV1.record, PaymentV1.record, "forward.from-record"),
-      (fromSubjectVersionFactory, PaymentV1.record, PaymentV2.record, "forward.from-subject-version")
+    val table = Table[Boolean, GenericRecord, GenericRecord, String](
+      ("schemaEvolution", "givenObj", "expectedObj", "topic"),
+      (false, PaymentV1.record, PaymentV1.record, "forward.from-record"),
+      (true, PaymentV1.record, PaymentV2.record, "forward.from-subject-version")
     )
 
     runDeserializationTest(table, version, schemas)
@@ -54,10 +51,10 @@ class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpecMixin with Tabl
     val schemas = List(PaymentV1.schema, PaymentV2.schema)
     val version = None
 
-    val table = Table[KafkaVersionAwareValueDeserializationSchemaFactory[_], GenericRecord, GenericRecord, String](
-      ("factory", "givenObj", "expectedObj", "topic"),
-      (fromRecordFactory, PaymentV1.record, PaymentV1.record, "forward.latest.from-record"),
-      (fromSubjectVersionFactory, PaymentV1.record, PaymentV2.record, "forward.latest.from-subject-version")
+    val table = Table[Boolean, GenericRecord, GenericRecord, String](
+      ("schemaEvolution", "givenObj", "expectedObj", "topic"),
+      (false, PaymentV1.record, PaymentV1.record, "forward.latest.from-record"),
+      (true, PaymentV1.record, PaymentV2.record, "forward.latest.from-subject-version")
     )
 
     runDeserializationTest(table, version, schemas)
@@ -67,10 +64,10 @@ class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpecMixin with Tabl
     val schemas = List(PaymentV1.schema, PaymentV2.schema)
     val version = Some(1)
 
-    val table = Table[KafkaVersionAwareValueDeserializationSchemaFactory[_], GenericRecord, GenericRecord, String](
-      ("factory", "givenObj", "expectedObj", "topic"),
-      (fromRecordFactory, PaymentV2.record, PaymentV2.record, "backward.from-record"),
-      (fromSubjectVersionFactory, PaymentV2.record, PaymentV1.record, "backward..from-subject-version")
+    val table = Table[Boolean, GenericRecord, GenericRecord, String](
+      ("schemaEvolution", "givenObj", "expectedObj", "topic"),
+      (false, PaymentV2.record, PaymentV2.record, "backward.from-record"),
+      (true, PaymentV2.record, PaymentV1.record, "backward..from-subject-version")
     )
 
     runDeserializationTest(table, version, schemas)
@@ -80,13 +77,12 @@ class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpecMixin with Tabl
     val schemas = List(PaymentV1.schema)
     val fromRecordTopic = createAndRegisterTopicConfig("wrong.from-record", schemas)
     val fromSubjectVersionTopic = createAndRegisterTopicConfig("wrong.from-subject-version", schemas)
-    val version = None
 
     pushMessage(FullNameV1.record, fullNameTopic, Some(fromRecordTopic.input))
     pushMessage(FullNameV1.record, fullNameTopic, Some(fromSubjectVersionTopic.input))
 
-    val fromRecordDeserializer = fromRecordFactory.create(List(fromRecordTopic.input), version, kafkaConfig)
-    val fromSubjectVersionDeserializer = fromSubjectVersionFactory.create(List(fromSubjectVersionTopic.input), version, kafkaConfig)
+    val fromRecordDeserializer = confluentDeserializationSchemaFactory.create(None, kafkaConfig)
+    val fromSubjectVersionDeserializer = confluentDeserializationSchemaFactory.create(Some(PaymentV1.schema), kafkaConfig)
 
     consumeAndVerifyMessages(fromRecordDeserializer, fromRecordTopic.input, List(FullNameV1.record))
 
@@ -95,29 +91,10 @@ class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpecMixin with Tabl
     }
   }
 
-  test("trying to deserialize record to avro object with not exists schema version") {
-    val schemas = List(PaymentV1.schema)
-    val fromRecordTopic = createAndRegisterTopicConfig("not-exist-version.from-record", schemas)
-    val fromSubjectVersionTopic = createAndRegisterTopicConfig("not-exist-version.from-subject-version", schemas)
-    val version = Some(100)
-
-    pushMessage(PaymentV1.record, fromRecordTopic.input)
-    pushMessage(PaymentV1.record, fromSubjectVersionTopic.input)
-
-    val fromRecordDeserializer = fromRecordFactory.create(List(fromRecordTopic.input), version, kafkaConfig)
-    val fromSubjectVersionDeserializer = fromSubjectVersionFactory.create(List(fromSubjectVersionTopic.input), version, kafkaConfig)
-
-    consumeAndVerifyMessages(fromRecordDeserializer, fromRecordTopic.input, List(PaymentV1.record))
-
-    assertThrows[SerializationException] {
-      consumeMessages(fromSubjectVersionDeserializer, fromSubjectVersionTopic.input, count = 1)
-    }
-  }
-
-  private def runDeserializationTest(table: TableFor4[KafkaVersionAwareValueDeserializationSchemaFactory[_], GenericRecord, GenericRecord, String], version: Option[Int], schemas: List[Schema]): Assertion =
-    forAll(table) { (factory: KafkaVersionAwareValueDeserializationSchemaFactory[_], givenObj: GenericRecord, expectedObj: GenericRecord, topic: String) =>
+  private def runDeserializationTest(table: TableFor4[Boolean, GenericRecord, GenericRecord, String], version: Option[Int], schemas: List[Schema]): Assertion =
+    forAll(table) { (schemaEvolution: Boolean, givenObj: GenericRecord, expectedObj: GenericRecord, topic: String) =>
       val topicConfig = createAndRegisterTopicConfig(topic, schemas)
-      val deserializer = factory.create(List(topicConfig.input), version, kafkaConfig)
+      val deserializer = confluentDeserializationSchemaFactory.create(if (schemaEvolution) Option(expectedObj.getSchema) else None, kafkaConfig)
 
       pushMessage(givenObj, topicConfig.input)
 

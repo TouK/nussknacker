@@ -13,7 +13,8 @@ trait AvroSchemaDeterminer extends Serializable {
    * just as a addition that have little influence on processing. See `UsingRecordSchemaInRuntimeAvroSchemaDeterminer`
    * for more info.
    */
-  def determineSchemaInRuntime: Validated[SchemaDeterminerError, Option[Schema]]
+  def toRuntimeSchema(schemaUsedInTyping: Schema): Option[Schema]
+
 }
 
 class SchemaDeterminerError(message: String, cause: Throwable) extends RuntimeException(message, cause)

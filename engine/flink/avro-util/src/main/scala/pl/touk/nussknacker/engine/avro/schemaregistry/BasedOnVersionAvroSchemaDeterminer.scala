@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry
 
 import cats.data.Validated
-import cats.data.Validated.Valid
 import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, SchemaDeterminerError}
 
@@ -11,14 +10,12 @@ class BasedOnVersionAvroSchemaDeterminer(createSchemaRegistryClient: () => Schem
 
   @transient private lazy val schemaRegistryClient: SchemaRegistryClient = createSchemaRegistryClient()
 
-
-  override def determineSchemaInRuntime: Validated[SchemaDeterminerError, Option[Schema]] =
-    determineSchemaUsedInTyping.map(Some(_))
-
   override def determineSchemaUsedInTyping: Validated[SchemaDeterminerError, Schema] =
     schemaRegistryClient
       .getFreshSchema(topic, version, isKey = false)
       .leftMap(err => new SchemaDeterminerError(s"Fetching schema error for topic: $topic, version: $version", err))
+
+  override def toRuntimeSchema(schemaUsedInTyping: Schema): Option[Schema] = Some(schemaUsedInTyping)
 
 }
 
@@ -34,6 +31,6 @@ class UsingRecordSchemaInRuntimeAvroSchemaDeterminer(createSchemaRegistryClient:
                                                      topic: String,
                                                      version: Option[Int]) extends BasedOnVersionAvroSchemaDeterminer(createSchemaRegistryClient, topic, version) {
 
-  override def determineSchemaInRuntime: Validated[SchemaDeterminerError, Option[Schema]] = Valid(None)
+  override def toRuntimeSchema(schemaUsedInTyping: Schema): Option[Schema] = None
 
 }

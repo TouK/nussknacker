@@ -9,10 +9,9 @@ import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, AvroUtils, SchemaD
 
 class SpecificRecordEmbeddedSchemaDeterminer(clazz: Class[_ <: SpecificRecord]) extends AvroSchemaDeterminer {
 
-  override def determineSchemaInRuntime: Validated[SchemaDeterminerError, Option[Schema]] =
-    determineSchemaUsedInTyping.map(Some(_))
-
   override def determineSchemaUsedInTyping: Validated[SchemaDeterminerError, Schema] =
     Valid(LogicalTypesAvroFactory.extractAvroSpecificSchema(clazz, AvroUtils.specificData))
+
+  override def toRuntimeSchema(schemaUsedInTyping: Schema): Option[Schema] = Some(schemaUsedInTyping)
 
 }
