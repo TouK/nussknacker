@@ -4,8 +4,6 @@ services:
   influxdb:
     container_name: nussknacker_influxdb
     image: influxdb:${INFLUXDB_VERSION-1.7.10-alpine}
-    ports:
-      - "8086:8086"
     environment:
       INFLUXDB_DB: esp
     volumes:
