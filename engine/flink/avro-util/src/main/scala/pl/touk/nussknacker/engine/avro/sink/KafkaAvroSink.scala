@@ -7,8 +7,8 @@ import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import pl.touk.nussknacker.engine.api.{InterpretationResult, LazyParameter}
 import pl.touk.nussknacker.engine.avro.AvroSchemaDeterminer
 import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
+import pl.touk.nussknacker.engine.kafka.serialization.KafkaVersionAwareSerializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaProducer, PreparedKafkaTopic}
 
 /**
@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaPr
   * because flink on scala 2.11 has problem with serialization it.
   */
 class KafkaAvroSink(preparedTopic: PreparedKafkaTopic, version: Option[Int], output: LazyParameter[AnyRef],
-                    kafkaConfig: KafkaConfig, schemaRegistryProvider: SchemaRegistryProvider[_], schemaDeterminer: AvroSchemaDeterminer, clientId: String)
+                    kafkaConfig: KafkaConfig, serializationSchemaFactory: KafkaVersionAwareSerializationSchemaFactory[AnyRef], schemaDeterminer: AvroSchemaDeterminer, clientId: String)
   extends FlinkSink with Serializable with LazyLogging {
 
   import org.apache.flink.streaming.api.scala._
@@ -52,5 +52,5 @@ class KafkaAvroSink(preparedTopic: PreparedKafkaTopic, version: Option[Int], out
 
   private def toFlinkFunction: SinkFunction[AnyRef] =
     PartitionByKeyFlinkKafkaProducer(kafkaConfig, preparedTopic.prepared,
-      schemaRegistryProvider.serializationSchemaFactory.create(preparedTopic.prepared, version, kafkaConfig), clientId)
+      serializationSchemaFactory.create(preparedTopic.prepared, version, kafkaConfig), clientId)
 }

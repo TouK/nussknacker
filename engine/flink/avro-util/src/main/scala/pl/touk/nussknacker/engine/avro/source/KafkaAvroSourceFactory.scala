@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer
-import pl.touk.nussknacker.engine.avro.KafkaAvroFactory.{SchemaVersionParamName, TopicParamName}
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, TopicParamName}
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSource
@@ -63,7 +63,8 @@ class KafkaAvroSourceFactory[T: ClassTag](val schemaRegistryProvider: SchemaRegi
   }
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): FlinkSource[T] = {
-    createSource(extractPreparedTopic(params), extractVersion(params), kafkaConfig, schemaRegistryProvider, prepareSchemaDeterminer(params),
+    createSource(extractPreparedTopic(params), extractVersion(params), kafkaConfig,
+      schemaRegistryProvider.deserializationSchemaFactory, schemaRegistryProvider.recordFormatter, prepareSchemaDeterminer(params),
       typedDependency[MetaData](dependencies), typedDependency[NodeId](dependencies))
   }
 

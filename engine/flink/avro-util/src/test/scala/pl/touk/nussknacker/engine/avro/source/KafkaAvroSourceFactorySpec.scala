@@ -15,14 +15,14 @@ import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator, TestDa
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.avro.KafkaAvroFactory.{SchemaVersionParamName, TopicParamName}
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, TopicParamName}
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2}
+import pl.touk.nussknacker.engine.avro.schemaregistry.BasedOnVersionAvroSchemaDeterminer
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client._
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.ConfluentAvroSerializationSchemaFactory
-import pl.touk.nussknacker.engine.avro.schemaregistry.{BasedOnVersionAvroSchemaDeterminer, SchemaSubjectNotFound, SchemaVersionNotFound}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.avro.{KafkaAvroFactory, KafkaAvroSpecMixin}
+import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, KafkaAvroSpecMixin, SchemaDeterminerError}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodevalidation.{GenericNodeTransformationValidator, TransformationResult}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -66,7 +66,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     val sourceFactory = createAvroSourceFactory[GenericData.Record]
     val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
 
-    assertThrowsWithParent[SchemaSubjectNotFound] {
+    assertThrowsWithParent[SchemaDeterminerError] {
       readLastMessageAndVerify(sourceFactory, "fake-topic", 1, givenObj, FullNameV2.schema)
     }
   }
@@ -75,7 +75,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     val sourceFactory = createAvroSourceFactory[GenericData.Record]
     val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
 
-    assertThrowsWithParent[SchemaVersionNotFound] {
+    assertThrowsWithParent[SchemaDeterminerError] {
       readLastMessageAndVerify(sourceFactory, RecordTopic, 3, givenObj, FullNameV2.schema)
     }
   }
@@ -122,8 +122,9 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
   test("Should return sane error on invalid topic") {
     val result = validate(TopicParamName -> "'terefere'", SchemaVersionParamName -> "")
 
-    result.errors shouldBe CustomNodeError("id", "Schema subject doesn't exist.", Some(TopicParamName)) ::
-      CustomNodeError("id", "Schema subject doesn't exist.", Some(SchemaVersionParamName)) :: Nil
+    result.errors shouldBe
+      CustomNodeError("id", "Schema subject doesn't exist.", Some(TopicParamName)) ::
+      CustomNodeError("id", "Fetching schema error for topic: terefere, version: None", Some(SchemaVersionParamName)) :: Nil
     result.outputContext shouldBe ValidationContext(Map(Interpreter.InputParamName -> Unknown))
   }
 
@@ -131,7 +132,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     val result = validate(TopicParamName -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic}'",
       SchemaVersionParamName -> "12345")
 
-    result.errors shouldBe CustomNodeError("id", "Schema version doesn't exist.", Some(SchemaVersionParamName)) :: Nil
+    result.errors shouldBe CustomNodeError("id", "Fetching schema error for topic: testAvroRecordTopic1, version: Some(12345)", Some(SchemaVersionParamName)) :: Nil
     result.outputContext shouldBe ValidationContext(Map(Interpreter.InputParamName -> Unknown))
   }
 
@@ -190,7 +191,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
 
   private def createAndVerifySource(sourceFactory: KafkaAvroSourceFactory[_], topic: String, version: Integer, expectedSchema: Schema): Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef] with ReturningType = {
     val source = sourceFactory
-      .implementation(Map(KafkaAvroFactory.TopicParamName -> topic, KafkaAvroFactory.SchemaVersionParamName -> version),
+      .implementation(Map(KafkaAvroBaseTransformer.TopicParamName -> topic, KafkaAvroBaseTransformer.SchemaVersionParamName -> version),
         List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)))
       .asInstanceOf[Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef] with ReturningType]
 

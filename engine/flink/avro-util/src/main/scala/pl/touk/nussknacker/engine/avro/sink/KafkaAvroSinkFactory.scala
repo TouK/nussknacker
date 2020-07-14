@@ -8,8 +8,8 @@ import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, Validati
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
-import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, KafkaAvroFactory}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
 
 class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider[Any], val processObjectDependencies: ProcessObjectDependencies)
@@ -20,25 +20,25 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider[An
     case TransformationStep(Nil, _) =>
       val initial = initialParametersForNode
       NextParameters(initial.value, initial.written)
-    case TransformationStep((KafkaAvroFactory.SinkOutputParamName, _) ::
-      (KafkaAvroFactory.TopicParamName, DefinedEagerParameter(topic:String, _)) :: Nil, _) =>
+    case TransformationStep((KafkaAvroBaseTransformer.SinkOutputParamName, _) ::
+      (KafkaAvroBaseTransformer.TopicParamName, DefinedEagerParameter(topic:String, _)) :: Nil, _) =>
         val preparedTopic = prepareTopic(topic)
         val version = versionParam(preparedTopic)
         NextParameters(List(version.value), version.written, None)
-    case TransformationStep((KafkaAvroFactory.SinkOutputParamName, _) ::
-      (KafkaAvroFactory.TopicParamName, _) :: Nil, _) => fallbackVersionParam
-    case TransformationStep((KafkaAvroFactory.SinkOutputParamName, output:DefinedParameter) ::
-      (KafkaAvroFactory.TopicParamName, DefinedEagerParameter(topic:String, _)) ::
-      (KafkaAvroFactory.SchemaVersionParamName, DefinedEagerParameter(version, _)) ::Nil, _) =>
+    case TransformationStep((KafkaAvroBaseTransformer.SinkOutputParamName, _) ::
+      (KafkaAvroBaseTransformer.TopicParamName, _) :: Nil, _) => fallbackVersionParam
+    case TransformationStep((KafkaAvroBaseTransformer.SinkOutputParamName, output:DefinedParameter) ::
+      (KafkaAvroBaseTransformer.TopicParamName, DefinedEagerParameter(topic:String, _)) ::
+      (KafkaAvroBaseTransformer.SchemaVersionParamName, DefinedEagerParameter(version, _)) ::Nil, _) =>
         //we cast here, since null will not be matched in case...
         val preparedTopic = prepareTopic(topic)
         val schemaDeterminer = prepareSchemaDeterminer(preparedTopic, Option(version.asInstanceOf[java.lang.Integer]).map(_.intValue()))
         val validationResult = validateOutput(output.returnType, schemaDeterminer).swap.toList
         FinalResults(context, validationResult)
     //edge case - for some reason Topic/Version is not defined
-    case TransformationStep((KafkaAvroFactory.SinkOutputParamName, _) ::
-          (KafkaAvroFactory.TopicParamName, _) ::
-          (KafkaAvroFactory.SchemaVersionParamName, _) ::Nil, _) => FinalResults(context, Nil)
+    case TransformationStep((KafkaAvroBaseTransformer.SinkOutputParamName, _) ::
+          (KafkaAvroBaseTransformer.TopicParamName, _) ::
+          (KafkaAvroBaseTransformer.SchemaVersionParamName, _) ::Nil, _) => FinalResults(context, Nil)
   }
 
   override def initialParameters: List[Parameter] = {
@@ -46,13 +46,13 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider[An
   }
 
   private def initialParametersForNode(implicit nodeId: NodeId): WriterT[Id, List[ProcessCompilationError], List[Parameter]] =
-    topicParam.map(List(Parameter[AnyRef](KafkaAvroFactory.SinkOutputParamName).copy(isLazyParameter = true), _))
+    topicParam.map(List(Parameter[AnyRef](KafkaAvroBaseTransformer.SinkOutputParamName).copy(isLazyParameter = true), _))
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): FlinkSink = {
-    val output = params(KafkaAvroFactory.SinkOutputParamName).asInstanceOf[LazyParameter[AnyRef]]
+    val output = params(KafkaAvroBaseTransformer.SinkOutputParamName).asInstanceOf[LazyParameter[AnyRef]]
 
     createSink(extractPreparedTopic(params), extractVersion(params), output,
-      kafkaConfig, schemaRegistryProvider, prepareSchemaDeterminer(params),
+      kafkaConfig, schemaRegistryProvider.serializationSchemaFactory, prepareSchemaDeterminer(params),
       typedDependency[MetaData](dependencies), typedDependency[NodeId](dependencies))
   }
 

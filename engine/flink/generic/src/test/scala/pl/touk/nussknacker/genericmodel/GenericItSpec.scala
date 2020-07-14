@@ -118,16 +118,16 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
       .source(
         "start",
         "kafka-avro",
-        KafkaAvroFactory.TopicParamName -> s"'${topicConfig.input}'",
-        KafkaAvroFactory.SchemaVersionParamName -> versionParam(version)
+        KafkaAvroBaseTransformer.TopicParamName -> s"'${topicConfig.input}'",
+        KafkaAvroBaseTransformer.SchemaVersionParamName -> versionParam(version)
       )
       .filter("name-filter", "#input.first == 'Jan'")
       .emptySink(
         "end",
         "kafka-avro",
-        KafkaAvroFactory.SinkOutputParamName  -> "#input",
-        KafkaAvroFactory.TopicParamName  -> s"'${topicConfig.output}'",
-        KafkaAvroFactory.SchemaVersionParamName -> ""
+        KafkaAvroBaseTransformer.SinkOutputParamName  -> "#input",
+        KafkaAvroBaseTransformer.TopicParamName  -> s"'${topicConfig.output}'",
+        KafkaAvroBaseTransformer.SchemaVersionParamName -> ""
       )
 
   private def avroFromScratchProcess(topicConfig: TopicConfig, version: Integer) =
@@ -138,15 +138,15 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
       .source(
         "start",
         "kafka-avro",
-        KafkaAvroFactory.TopicParamName -> s"'${topicConfig.input}'",
-        KafkaAvroFactory.SchemaVersionParamName -> versionParam(version)
+        KafkaAvroBaseTransformer.TopicParamName -> s"'${topicConfig.input}'",
+        KafkaAvroBaseTransformer.SchemaVersionParamName -> versionParam(version)
       )
       .emptySink(
         "end",
         "kafka-avro",
-        KafkaAvroFactory.SinkOutputParamName -> s"{first: #input.first, last: #input.last}",
-        KafkaAvroFactory.TopicParamName -> s"'${topicConfig.output}'",
-        KafkaAvroFactory.SchemaVersionParamName -> "1"
+        KafkaAvroBaseTransformer.SinkOutputParamName -> s"{first: #input.first, last: #input.last}",
+        KafkaAvroBaseTransformer.TopicParamName -> s"'${topicConfig.output}'",
+        KafkaAvroBaseTransformer.SchemaVersionParamName -> "1"
       )
 
   private def versionParam(version: Integer) =

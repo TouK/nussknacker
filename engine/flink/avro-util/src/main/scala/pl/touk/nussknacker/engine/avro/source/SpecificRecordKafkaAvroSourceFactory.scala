@@ -15,9 +15,13 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
 
 import scala.reflect._
 
+/**
+ * Source factory for specific records - mainly generated from schema.
+ */
 class SpecificRecordKafkaAvroSourceFactory[T <: SpecificRecord: ClassTag](schemaRegistryProvider: SchemaRegistryProvider[T], processObjectDependencies: ProcessObjectDependencies, timestampAssigner: Option[TimestampAssigner[T]])
   extends BaseKafkaAvroSourceFactory[T](processObjectDependencies, timestampAssigner) {
 
+  // TODO: it should return suggestions for topics like it is in generic version (KafkaAvroSourceFactory)
   @MethodToInvoke
   def createSource(processMetaData: MetaData,
                    @ParamName(`TopicParamName`) @NotBlank @SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR) topic: String)
@@ -25,7 +29,7 @@ class SpecificRecordKafkaAvroSourceFactory[T <: SpecificRecord: ClassTag](schema
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
     val preparedTopic = KafkaUtils.prepareKafkaTopic(topic, processObjectDependencies)
     val schemaDeterminer = new SpecificRecordEmbeddedSchemaDeterminer(classTag[T].runtimeClass.asInstanceOf[Class[_ <: SpecificRecord]])
-    createSource(preparedTopic, None, kafkaConfig, schemaRegistryProvider, schemaDeterminer, processMetaData, nodeId)
+    createSource(preparedTopic, None, kafkaConfig, schemaRegistryProvider.deserializationSchemaFactory, schemaRegistryProvider.recordFormatter, schemaDeterminer, processMetaData, nodeId)
   }
 
 }

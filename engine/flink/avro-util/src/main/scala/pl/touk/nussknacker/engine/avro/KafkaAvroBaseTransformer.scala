@@ -34,9 +34,9 @@ trait KafkaAvroBaseTransformer[T, Y] extends SingleInputGenericNodeTransformatio
 
     (topics match {
       case Valid(topics) => Writer[List[ProcessCompilationError], List[String]](Nil, topics)
-      case Invalid(e) => Writer[List[ProcessCompilationError], List[String]](List(CustomNodeError(e.getMessage, Some(KafkaAvroFactory.TopicParamName))), Nil)
+      case Invalid(e) => Writer[List[ProcessCompilationError], List[String]](List(CustomNodeError(e.getMessage, Some(KafkaAvroBaseTransformer.TopicParamName))), Nil)
     }).map { topics =>
-      Parameter[String](KafkaAvroFactory.TopicParamName).copy(editor = Some(FixedValuesParameterEditor(
+      Parameter[String](KafkaAvroBaseTransformer.TopicParamName).copy(editor = Some(FixedValuesParameterEditor(
         topics
           .flatMap(topic => processObjectDependencies.objectNaming.decodeName(topic, processObjectDependencies.config, KafkaUtils.KafkaTopicUsageKey))
           .sorted
@@ -49,13 +49,13 @@ trait KafkaAvroBaseTransformer[T, Y] extends SingleInputGenericNodeTransformatio
     val versions = schemaRegistryClient.getAllVersions(preparedTopic.prepared, isKey = false)
     (versions match {
       case Valid(versions) => Writer[List[ProcessCompilationError], List[Integer]](Nil, versions)
-      case Invalid(e) => Writer[List[ProcessCompilationError], List[Integer]](List(CustomNodeError(e.getMessage, Some(KafkaAvroFactory.TopicParamName))), Nil)
+      case Invalid(e) => Writer[List[ProcessCompilationError], List[Integer]](List(CustomNodeError(e.getMessage, Some(KafkaAvroBaseTransformer.TopicParamName))), Nil)
     }).map(versionParam)
   }
 
   protected def versionParam(versions: List[Integer]): Parameter = {
     val versionValues = FixedExpressionValue("", "Latest version") :: versions.sorted.map(v => FixedExpressionValue(v.toString, v.toString))
-    Parameter[java.lang.Integer](KafkaAvroFactory.SchemaVersionParamName).copy(editor = Some(FixedValuesParameterEditor(versionValues)), validators = Nil)
+    Parameter[java.lang.Integer](KafkaAvroBaseTransformer.SchemaVersionParamName).copy(editor = Some(FixedValuesParameterEditor(versionValues)), validators = Nil)
   }
 
   protected def typedDependency[C:ClassTag](list: List[NodeDependencyValue]): C = list.collectFirst {
@@ -63,11 +63,11 @@ trait KafkaAvroBaseTransformer[T, Y] extends SingleInputGenericNodeTransformatio
   }.getOrElse(throw new CustomNodeValidationException(s"No node dependency: ${implicitly[ClassTag[C]].runtimeClass}", None, null))
 
   protected def extractPreparedTopic(params: Map[String, Any]): PreparedKafkaTopic = prepareTopic(
-    params(KafkaAvroFactory.TopicParamName).asInstanceOf[String]
+    params(KafkaAvroBaseTransformer.TopicParamName).asInstanceOf[String]
   )
 
   protected def extractVersion(params: Map[String, Any]): Option[Int] =
-    Option(params(KafkaAvroFactory.SchemaVersionParamName).asInstanceOf[Integer]).map(_.intValue())
+    Option(params(KafkaAvroBaseTransformer.SchemaVersionParamName).asInstanceOf[Integer]).map(_.intValue())
 
   protected def prepareTopic(topic: String): PreparedKafkaTopic =
     KafkaUtils.prepareKafkaTopic(topic, processObjectDependencies)
@@ -85,11 +85,19 @@ trait KafkaAvroBaseTransformer[T, Y] extends SingleInputGenericNodeTransformatio
   protected def fetchSchema(preparedTopic: PreparedKafkaTopic, version: Option[Int])(implicit nodeId: NodeId): WriterT[Id, List[ProcessCompilationError], Option[Schema]] = {
     schemaRegistryProvider.createSchemaRegistryClient.getSchema(preparedTopic.prepared, version, isKey = false) match {
       case Valid(schema) => Writer[List[ProcessCompilationError], Option[Schema]](Nil, Some(schema))
-      case Invalid(e) => Writer[List[ProcessCompilationError], Option[Schema]](List(CustomNodeError(e.getMessage, Some(KafkaAvroFactory.SchemaVersionParamName))), None)
+      case Invalid(e) => Writer[List[ProcessCompilationError], Option[Schema]](List(CustomNodeError(e.getMessage, Some(KafkaAvroBaseTransformer.SchemaVersionParamName))), None)
     }
   }
 
   //edge case - for some reason Topic is not defined
   protected val fallbackVersionParam: NextParameters = NextParameters(List(versionParam(Nil)), Nil, None)
+
+}
+
+object KafkaAvroBaseTransformer {
+
+  final val SchemaVersionParamName = "Schema version"
+  final val TopicParamName = "topic"
+  final val SinkOutputParamName = "Output"
 
 }
