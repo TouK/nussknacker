@@ -30,7 +30,7 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
 
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = {
-    Map("extractAndTransformTimestmp" -> defaultCategory(ExtractAndTransformTimestmp))
+    Map("extractAndTransformTimestmp" -> defaultCategory(ExtractAndTransformTimestamp))
   }
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
@@ -52,7 +52,7 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
 
 }
 
-object ExtractAndTransformTimestmp extends CustomStreamTransformer {
+object ExtractAndTransformTimestamp extends CustomStreamTransformer {
 
   @MethodToInvoke(returnType = classOf[Long])
   def methodToInvoke(@ParamName("timestampToSet") timestampToSet: Long): FlinkCustomStreamTransformation

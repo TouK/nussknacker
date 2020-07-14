@@ -12,6 +12,4 @@ class SpecificRecordEmbeddedSchemaDeterminer(clazz: Class[_ <: SpecificRecord]) 
   override def determineSchemaUsedInTyping: Validated[SchemaDeterminerError, Schema] =
     Valid(LogicalTypesAvroFactory.extractAvroSpecificSchema(clazz, AvroUtils.specificData))
 
-  override def toRuntimeSchema(schemaUsedInTyping: Schema): Option[Schema] = Some(schemaUsedInTyping)
-
 }

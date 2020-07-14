@@ -29,7 +29,7 @@ class SpecificRecordKafkaAvroSourceFactory[T <: SpecificRecord: ClassTag](schema
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
     val preparedTopic = KafkaUtils.prepareKafkaTopic(topic, processObjectDependencies)
     val schemaDeterminer = new SpecificRecordEmbeddedSchemaDeterminer(classTag[T].runtimeClass.asInstanceOf[Class[_ <: SpecificRecord]])
-    createSource(preparedTopic, None, kafkaConfig, schemaRegistryProvider.deserializationSchemaFactory, schemaRegistryProvider.recordFormatter, schemaDeterminer, processMetaData, nodeId)
+    createSource(preparedTopic, None, kafkaConfig, schemaRegistryProvider.deserializationSchemaFactory, schemaRegistryProvider.recordFormatter, schemaDeterminer, processMetaData)
   }
 
 }

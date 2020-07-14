@@ -72,13 +72,7 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
   protected def prepareTopic(topic: String): PreparedKafkaTopic =
     KafkaUtils.prepareKafkaTopic(topic, processObjectDependencies)
 
-  protected def prepareSchemaDeterminer(params: Map[String, Any]): BasedOnVersionAvroSchemaDeterminer = {
-    val preparedTopic = extractPreparedTopic(params)
-    val version = extractVersion(params)
-    prepareSchemaDeterminer(preparedTopic, version)
-  }
-
-  protected def prepareSchemaDeterminer(preparedTopic: PreparedKafkaTopic, version: Option[Int]): BasedOnVersionAvroSchemaDeterminer = {
+  protected def prepareSchemaDeterminer(preparedTopic: PreparedKafkaTopic, version: Option[Int]): AvroSchemaDeterminer = {
     new BasedOnVersionAvroSchemaDeterminer(schemaRegistryProvider.createSchemaRegistryClient _, preparedTopic.prepared, version)
   }
 
