@@ -6,7 +6,7 @@ import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.avro.KafkaAvroFactory.{SchemaVersionParamName, SinkOutputParamName, TopicParamName}
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, SinkOutputParamName, TopicParamName}
 import pl.touk.nussknacker.engine.avro.schema._
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
@@ -53,7 +53,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
   test("should read event in the same version as source requires and save it in the same version") {
     val topicConfig = createAndRegisterTopicConfig("simple", PaymentV1.schema)
-    val sourceParam = SourceAvroParam(topicConfig, Some(1))
+    val sourceParam = SourceAvroParam.forGeneric(topicConfig, Some(1))
     val sinkParam = SinkAvroParam(topicConfig, Some(1), "#input")
     val process = createAvroProcess(sourceParam, sinkParam)
 
@@ -62,7 +62,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
   test("should read newer compatible event then source requires and save it in older compatible version") {
     val topicConfig = createAndRegisterTopicConfig("newer-older-older", paymentSchemas)
-    val sourceParam = SourceAvroParam(topicConfig, Some(1))
+    val sourceParam = SourceAvroParam.forGeneric(topicConfig, Some(1))
     val sinkParam = SinkAvroParam(topicConfig, Some(1), "#input")
     val process = createAvroProcess(sourceParam, sinkParam)
 
@@ -71,7 +71,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
   test("should read older compatible event then source requires and save it in newer compatible version") {
     val topicConfig = createAndRegisterTopicConfig("older-newer-newer", paymentSchemas)
-    val sourceParam = SourceAvroParam(topicConfig, Some(2))
+    val sourceParam = SourceAvroParam.forGeneric(topicConfig, Some(2))
     val sinkParam = SinkAvroParam(topicConfig, Some(2), "#input")
     val process = createAvroProcess(sourceParam, sinkParam)
 
@@ -80,7 +80,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
   test("should read event in the same version as source requires and save it in newer compatible version") {
     val topicConfig = createAndRegisterTopicConfig("older-older-newer", paymentSchemas)
-    val sourceParam = SourceAvroParam(topicConfig, Some(1))
+    val sourceParam = SourceAvroParam.forGeneric(topicConfig, Some(1))
     val sinkParam = SinkAvroParam(topicConfig, Some(2), "#input")
     val process = createAvroProcess(sourceParam, sinkParam)
 
@@ -89,7 +89,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
   test("should read older compatible event then source requires and save it in older compatible version") {
     val topicConfig = createAndRegisterTopicConfig("older-newer-older", paymentSchemas)
-    val sourceParam = SourceAvroParam(topicConfig, Some(2))
+    val sourceParam = SourceAvroParam.forGeneric(topicConfig, Some(2))
     val sinkParam = SinkAvroParam(topicConfig, Some(1), "#input")
     val process = createAvroProcess(sourceParam, sinkParam)
 
@@ -98,7 +98,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
   test("should read older compatible event with source and save it in latest compatible version") {
     val topicConfig = createAndRegisterTopicConfig("older-latest-latest", paymentSchemas)
-    val sourceParam = SourceAvroParam(topicConfig, None)
+    val sourceParam = SourceAvroParam.forGeneric(topicConfig, None)
     val sinkParam = SinkAvroParam(topicConfig, None, "#input")
     val process = createAvroProcess(sourceParam, sinkParam)
 
@@ -107,7 +107,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
   test("should read older compatible event then source requires, filter and save it in older compatible version") {
     val topicConfig = createAndRegisterTopicConfig("older-newer-filter-older", paymentSchemas)
-    val sourceParam = SourceAvroParam(topicConfig, Some(2))
+    val sourceParam = SourceAvroParam.forGeneric(topicConfig, Some(2))
     val sinkParam = SinkAvroParam(topicConfig, Some(1), "#input")
     val filerParam = Some("#input.cnt == 0")
     val process = createAvroProcess(sourceParam, sinkParam, filerParam)
@@ -117,7 +117,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
   test("should read compatible events with source, filter and save only one") {
     val topicConfig = createAndRegisterTopicConfig("two-source-filter-one", paymentSchemas)
-    val sourceParam = SourceAvroParam(topicConfig, Some(2))
+    val sourceParam = SourceAvroParam.forGeneric(topicConfig, Some(2))
     val sinkParam = SinkAvroParam(topicConfig, Some(2), "#input")
     val filerParam = Some("#input.cnt == 1")
     val process = createAvroProcess(sourceParam, sinkParam, filerParam)
@@ -128,7 +128,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
   test("should read newer (back-compatible) newer event with source and save it in older compatible version") {
     val topicConfig = createAndRegisterTopicConfig("bc-older-older", payment2Schemas)
-    val sourceParam = SourceAvroParam(topicConfig, Some(2))
+    val sourceParam = SourceAvroParam.forGeneric(topicConfig, Some(2))
     val sinkParam = SinkAvroParam(topicConfig, Some(1), "#input")
     val process = createAvroProcess(sourceParam, sinkParam)
 
@@ -137,7 +137,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
   test("should read older compatible event with source and save it in latest compatible version with map output") {
     val topicConfig = createAndRegisterTopicConfig("older-output-with-map", List(PaymentV1.schema, PaymentV2.schema))
-    val sourceParam = SourceAvroParam(topicConfig, Some(1))
+    val sourceParam = SourceAvroParam.forGeneric(topicConfig, Some(1))
     val sinkParam = SinkAvroParam(topicConfig, None, PaymentV2.jsonMap)
     val process = createAvroProcess(sourceParam, sinkParam)
 
@@ -146,7 +146,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
   test("should read newer compatible event with source and save it in older compatible version with map output") {
     val topicConfig = createAndRegisterTopicConfig("newer-output-with-map", List(PaymentV1.schema, PaymentV2.schema))
-    val sourceParam = SourceAvroParam(topicConfig, Some(2))
+    val sourceParam = SourceAvroParam.forGeneric(topicConfig, Some(2))
     val sinkParam = SinkAvroParam(topicConfig, Some(1), PaymentV1.jsonMap)
     val process = createAvroProcess(sourceParam, sinkParam)
 
@@ -155,7 +155,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
   test("should rise exception when we provide wrong data map for #Avro helper output") {
     val topicConfig = createAndRegisterTopicConfig("bad-data-with-helper", List(PaymentV1.schema, PaymentV2.schema))
-    val sourceParam = SourceAvroParam(topicConfig, Some(2))
+    val sourceParam = SourceAvroParam.forGeneric(topicConfig, Some(2))
     val sinkParam = SinkAvroParam(topicConfig, Some(1), """{id: "bad"}""")
     val process = createAvroProcess(sourceParam, sinkParam)
 
@@ -166,7 +166,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
   test("should throw exception when try to filter by missing field") {
     val topicConfig = createAndRegisterTopicConfig("try-filter-by-missing-field", paymentSchemas)
-    val sourceParam = SourceAvroParam(topicConfig, Some(1))
+    val sourceParam = SourceAvroParam.forGeneric(topicConfig, Some(1))
     val sinkParam = SinkAvroParam(topicConfig, Some(1), "#input")
     val filerParam = Some("#input.cnt == 1")
     val events = List(PaymentV1.record, PaymentV2.record)
@@ -179,7 +179,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
   test("should throw exception when try to convert not compatible event") {
     val topicConfig = createAndRegisterTopicConfig("try-to-convert-not-compatible", payment2Schemas)
-    val sourceParam = SourceAvroParam(topicConfig, Some(3))
+    val sourceParam = SourceAvroParam.forGeneric(topicConfig, Some(3))
     val sinkParam = SinkAvroParam(topicConfig, Some(3), "#input")
     val process = createAvroProcess(sourceParam, sinkParam)
 
@@ -251,7 +251,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
   test("should accept logical types in generic record") {
     val topicConfig = createAndRegisterTopicConfig("logical-fields-generic", List(PaymentDate.schema))
-    val sourceParam = SourceAvroParam(topicConfig, None)
+    val sourceParam = SourceAvroParam.forGeneric(topicConfig, None)
     val sinkParam = SinkAvroParam(topicConfig, None, "#input")
     val process = createAvroProcess(sourceParam, sinkParam, Some(
       s"#input.dateTime.toEpochMilli == ${PaymentDate.instant.toEpochMilli}L AND " +
@@ -264,11 +264,21 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
   }
 
   test("should accept logical types in specific record") {
-    val topicConfig = createAndRegisterTopicConfig("logical-fields-specific", List(GeneratedAvroClassWithLogicalTypes.SCHEMA$))
-    val sourceParam = SourceAvroParam(topicConfig.input, None, "kafka-avro-specific")
-    val sinkParam = SinkAvroParam(topicConfig.output, None, "#input")
+    val topicConfig = createAndRegisterTopicConfig("logical-fields-specific", List(
+      GeneratedAvroClassWithLogicalTypesOldSchema.schema,
+      GeneratedAvroClassWithLogicalTypes.SCHEMA$,
+      GeneratedAvroClassWithLogicalTypesNewSchema.schema
+    ))
+    val sourceParam = SourceAvroParam.forSpecific(topicConfig)
+    val sinkParam = SinkAvroParam(topicConfig.output, Some(2), "#input")
 
-    val record = GeneratedAvroClassWithLogicalTypes.newBuilder()
+    val givenRecord = GeneratedAvroClassWithLogicalTypesOldSchema(
+      PaymentDate.instant,
+      PaymentDate.date.toLocalDate,
+      PaymentDate.date.toLocalTime,
+      java.math.BigDecimal.valueOf(PaymentDate.decimal))
+
+    val expectedRecord = GeneratedAvroClassWithLogicalTypes.newBuilder()
       .setDateTime(PaymentDate.instant)
       .setDate(PaymentDate.date.toLocalDate)
       .setTime(PaymentDate.date.toLocalTime)
@@ -279,9 +289,10 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
       s"#input.dateTime.toEpochMilli == ${PaymentDate.instant.toEpochMilli}L AND " +
         s"#input.date.year == ${PaymentDate.date.getYear} AND #input.date.monthValue == ${PaymentDate.date.getMonthValue} AND #input.date.dayOfMonth == ${PaymentDate.date.getDayOfMonth} AND " +
         s"#input.time.hour == ${PaymentDate.date.getHour} AND #input.time.minute == ${PaymentDate.date.getMinute} AND #input.time.second == ${PaymentDate.date.getSecond} AND " +
-        s"#input.decimal == ${PaymentDate.decimal}"))
+        s"#input.decimal == ${PaymentDate.decimal} AND" +
+        s"#input.text.toString == '123'")) // default value
 
-    runAndVerifyResult(process, topicConfig, record, record, useSpecificAvroReader = true)
+    runAndVerifyResult(process, topicConfig, givenRecord, expectedRecord, useSpecificAvroReader = true)
   }
 
 }

@@ -10,8 +10,9 @@ import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer
-import pl.touk.nussknacker.engine.avro.KafkaAvroFactory.{SchemaVersionParamName, TopicParamName}
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, TopicParamName}
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSource
 
 import scala.reflect.ClassTag
@@ -36,9 +37,10 @@ class KafkaAvroSourceFactory[T: ClassTag](val schemaRegistryProvider: SchemaRegi
       (SchemaVersionParamName, DefinedEagerParameter(version, _)) ::Nil, _) =>
       //we do casting here and not in case, as version can be null...
       val preparedTopic = prepareTopic(topic)
-      val result = createSchemaRegistryProvider(preparedTopic, version.asInstanceOf[Integer]).typeDefinition
-      val finalCtxValue = finalCtx(context, dependencies, result.getOrElse(Unknown))
-      val finalErrors = result.swap.map(error => CustomNodeError(error.getMessage, Some(SchemaVersionParamName))).toList
+      val schemaDeterminer = prepareSchemaDeterminer(preparedTopic, Option(version.asInstanceOf[Integer]).map(_.intValue()))
+      val validType = schemaDeterminer.determineSchemaUsedInTyping.map(AvroSchemaTypeDefinitionExtractor.typeDefinition)
+      val finalCtxValue = finalCtx(context, dependencies, validType.getOrElse(Unknown))
+      val finalErrors = validType.swap.map(error => CustomNodeError(error.getMessage, Some(SchemaVersionParamName))).toList
       FinalResults(finalCtxValue, finalErrors)
     //edge case - for some reason Topic/Version is not defined
     case TransformationStep((TopicParamName, _) ::
@@ -61,7 +63,8 @@ class KafkaAvroSourceFactory[T: ClassTag](val schemaRegistryProvider: SchemaRegi
   }
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): FlinkSource[T] = {
-    createSource(extractPreparedTopic(params), kafkaConfig, createSchemaRegistryProvider(params),
+    createSource(extractPreparedTopic(params), extractVersion(params), kafkaConfig,
+      schemaRegistryProvider.deserializationSchemaFactory, schemaRegistryProvider.recordFormatter, prepareSchemaDeterminer(params),
       typedDependency[MetaData](dependencies), typedDependency[NodeId](dependencies))
   }
 

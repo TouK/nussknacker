@@ -3,25 +3,24 @@ package pl.touk.nussknacker.engine.avro.sink
 import com.typesafe.config.ConfigFactory
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.generic.GenericContainer
-import org.apache.flink.api.scala._
 import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
-import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.TypedNodeDependencyValue
 import pl.touk.nussknacker.engine.api.process.Sink
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
-import pl.touk.nussknacker.engine.avro.KafkaAvroFactory.{SchemaVersionParamName, SinkOutputParamName, TopicParamName}
-import pl.touk.nussknacker.engine.avro.{KafkaAvroFactory, KafkaAvroSpecMixin}
+import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, SinkOutputParamName, TopicParamName}
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2, PaymentV1}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, KafkaAvroSpecMixin}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodevalidation.{GenericNodeTransformationValidator, TransformationResult}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
 import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
 
 class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpecMixin {
 
@@ -44,8 +43,8 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
 
   protected def createSink(topic: String, version: Integer, output: LazyParameter[GenericContainer]): Sink =
     avroSinkFactory.implementation(
-      Map(KafkaAvroFactory.TopicParamName -> topic,
-          KafkaAvroFactory.SchemaVersionParamName -> version, KafkaAvroFactory.SinkOutputParamName -> output),
+      Map(KafkaAvroBaseTransformer.TopicParamName -> topic,
+        KafkaAvroBaseTransformer.SchemaVersionParamName -> version, KafkaAvroBaseTransformer.SinkOutputParamName -> output),
             List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)))
 
   test("should throw exception when schema doesn't exist") {
@@ -110,7 +109,7 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
       SchemaVersionParamName -> "1")
 
     result.errors shouldBe CustomNodeError("id", "Schema subject doesn't exist.", Some(TopicParamName)) ::
-      CustomNodeError("id", "Schema subject doesn't exist.", Some(SchemaVersionParamName))::Nil
+      CustomNodeError("id", "Fetching schema error for topic: tereferer, version: Some(1)", Some(TopicParamName))::Nil
   }
 
   test("should return sane error on invalid version") {
@@ -119,7 +118,7 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> "343543")
 
-    result.errors shouldBe CustomNodeError("id", "Schema version doesn't exist.", Some(SchemaVersionParamName))::Nil
+    result.errors shouldBe CustomNodeError("id", "Fetching schema error for topic: fullname, version: Some(343543)", Some(SchemaVersionParamName))::Nil
   }
 
   test("should validate output") {

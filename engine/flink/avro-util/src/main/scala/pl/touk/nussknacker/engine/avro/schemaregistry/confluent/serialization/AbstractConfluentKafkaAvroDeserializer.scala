@@ -19,12 +19,12 @@ abstract class AbstractConfluentKafkaAvroDeserializer extends AbstractKafkaAvroD
 
   protected lazy val decoderFactory: DecoderFactory = DecoderFactory.get()
 
-  protected def deserialize(topic: String, isKey: Boolean, payload: Array[Byte], readerSchema: Schema): Any = {
+  override protected def deserialize(topic: String, isKey: java.lang.Boolean, payload: Array[Byte], readerSchema: Schema): AnyRef = {
     val buffer = ConfluentUtils.parsePayloadToByteBuffer(payload).valueOr(ex => throw ex)
     read(buffer, readerSchema)
   }
 
-  protected def read(buffer: ByteBuffer, expectedSchema: Schema): Any = {
+  protected def read(buffer: ByteBuffer, expectedSchema: Schema): AnyRef = {
     var schemaId = -1
 
     try {
