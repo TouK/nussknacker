@@ -63,14 +63,14 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
       val rightName = right(role)
       val key = params(keyParameter).asInstanceOf[Map[String, LazyParameter[String]]]
       new FlinkCustomJoinTransformation {
-        override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[Any]] = {
+        override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]] = {
           val leftSide = inputs(leftName.get)
           val rightSide = inputs(rightName.get)
           leftSide
             .map(context.lazyParameterHelper.lazyMapFunction(key(leftName.get)))
             .connect(rightSide.map(context.lazyParameterHelper.lazyMapFunction(key(rightName.get))))
             .keyBy(_.value, _.value)
-            .process(new EnrichWithAdditionalDataFunction(params(additionalDataValueParameter).asInstanceOf[LazyParameter[Any]], context.lazyParameterHelper))
+            .process(new EnrichWithAdditionalDataFunction(params(additionalDataValueParameter).asInstanceOf[LazyParameter[AnyRef]], context.lazyParameterHelper))
         }
       }
     }
@@ -79,20 +79,20 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
 
 }
 
-class EnrichWithAdditionalDataFunction(val parameter: LazyParameter[Any], val lazyParameterHelper: FlinkLazyParameterFunctionHelper)
-  extends KeyedCoProcessFunction[String, ValueWithContext[String], ValueWithContext[String], ValueWithContext[Any]]
-    with OneParamLazyParameterFunction[Any]{
+class EnrichWithAdditionalDataFunction(val parameter: LazyParameter[AnyRef], val lazyParameterHelper: FlinkLazyParameterFunctionHelper)
+  extends KeyedCoProcessFunction[String, ValueWithContext[String], ValueWithContext[String], ValueWithContext[AnyRef]]
+    with OneParamLazyParameterFunction[AnyRef]{
 
-  private lazy val state = getRuntimeContext.getState[Any](new ValueStateDescriptor[Any]("right", classOf[Any]))
+  private lazy val state = getRuntimeContext.getState[AnyRef](new ValueStateDescriptor[AnyRef]("right", classOf[AnyRef]))
 
   override def processElement1(value: ValueWithContext[String], ctx: KeyedCoProcessFunction[String, ValueWithContext[String],
-    ValueWithContext[String], ValueWithContext[Any]]#Context, out: Collector[ValueWithContext[Any]]): Unit = {
+    ValueWithContext[String], ValueWithContext[AnyRef]]#Context, out: Collector[ValueWithContext[AnyRef]]): Unit = {
     val currentValue = state.value()
     out.collect(ValueWithContext(currentValue, value.context))
   }
 
   override def processElement2(value: ValueWithContext[String], ctx: KeyedCoProcessFunction[String, ValueWithContext[String],
-    ValueWithContext[String], ValueWithContext[Any]]#Context, out: Collector[ValueWithContext[Any]]): Unit = {
+    ValueWithContext[String], ValueWithContext[AnyRef]]#Context, out: Collector[ValueWithContext[AnyRef]]): Unit = {
     val currentValue = evaluateParameter(value.context)
     state.update(currentValue)
   }

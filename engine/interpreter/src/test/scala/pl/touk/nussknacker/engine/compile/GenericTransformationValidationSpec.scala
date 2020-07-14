@@ -127,13 +127,13 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
     override def contextTransformation(contexts: Map[String, ValidationContext],
                                        dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): DynamicParameterJoinTransformer.NodeTransformationDefinition = {
       case TransformationStep(Nil, _) => NextParameters(initialParameters)
-      case TransformationStep(("isLeft", DefinedEagerBranchParameter(byBranch: Map[String, Boolean], _)) ::Nil, _) =>
+      case TransformationStep(("isLeft", DefinedEagerBranchParameter(byBranch: Map[String, Boolean]@unchecked, _)) ::Nil, _) =>
         val error = if (byBranch.values.toList.sorted != List(false, true)) List(CustomNodeError("Has to be exactly one left and right",
           Some("isLeft"))) else Nil
         NextParameters(
           List(Parameter[Any]("rightValue").copy(additionalVariables = contexts(right(byBranch)).localVariables)), error
         )
-      case TransformationStep(("isLeft", DefinedEagerBranchParameter(byBranch: Map[String, Boolean], _)) :: ("rightValue", rightValue: DefinedSingleParameter) ::Nil, _)
+      case TransformationStep(("isLeft", DefinedEagerBranchParameter(byBranch: Map[String, Boolean]@unchecked, _)) :: ("rightValue", rightValue: DefinedSingleParameter) ::Nil, _)
         =>
         val out = rightValue.returnType
         val outName = dependencies.collectFirst { case OutputVariableNameValue(name) => name}.get
