@@ -26,7 +26,7 @@ type Props = {
   formatter: Formatter,
 }
 
-const SPEL_DURATION_SWITCHABLE_TO_REGEX = /^T\(java\.time\.Duration\)\.parse\('P([0-9]{1,}D)?(T([0-9]{1,}H)?([0-9]{1,}M)?)?'\)$/
+const SPEL_DURATION_SWITCHABLE_TO_REGEX = /^T\(java\.time\.Duration\)\.parse\('(-)?P([0-9]{1,}D)?(T((-)?[0-9]{1,}H)?((-)?[0-9]{1,}M)?)?'\)$/
 const NONE_DURATION = {
   days: () => null,
   hours: () => null,
@@ -39,8 +39,14 @@ export default function DurationEditor(props: Props) {
 
   const durationFormatter = formatter == null ? typeFormatters[FormatterType.Duration] : formatter
 
+  function isValueNotNullAndNotZero(value: number) {
+    return value != null && value != 0
+  }
+
   function isDurationDefined(value: Duration) {
-    return value.days != null || value.hours != null || value.minutes != null
+    return isValueNotNullAndNotZero(value.days) ||
+      isValueNotNullAndNotZero(value.hours) ||
+      isValueNotNullAndNotZero(value.minutes)
   }
 
   function encode(value: Duration): string {
