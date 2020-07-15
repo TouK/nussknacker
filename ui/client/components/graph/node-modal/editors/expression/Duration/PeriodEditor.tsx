@@ -38,8 +38,14 @@ export default function PeriodEditor(props: Props) {
 
   const periodFormatter = formatter == null ? typeFormatters[FormatterType.Period] : formatter
 
+  function isValueNotNullAndNotZero(value: number) {
+    return value != null && value != 0
+  }
+
   function isPeriodDefined(period: Period): boolean {
-    return period.years != null || period.months != null || period.days != null
+    return isValueNotNullAndNotZero(period.years) ||
+      isValueNotNullAndNotZero(period.months) ||
+      isValueNotNullAndNotZero(period.days)
   }
 
   function encode(period: Period): string {
