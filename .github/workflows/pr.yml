@@ -1,0 +1,88 @@
+name: PR Build
+on:
+  pull_request:
+    branches:
+      - master
+      - staging
+
+jobs:
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Cache ivy packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.ivy2
+          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
+          restore-keys: ${{ runner.os }}-sbt
+      - uses: olafurpg/setup-scala@v5
+      - name: Backend tests
+        shell: bash
+        run: ./ciBackendTest.sh
+
+  crossCompile:
+    name: CrossCompile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Cache ivy packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.ivy2
+          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
+          restore-keys: ${{ runner.os }}-sbt
+      - uses: olafurpg/setup-scala@v5
+      - name: Compile
+        shell: bash
+        run: CROSS_BUILD=true ./ciRunSbt.sh clean compile:compile test:compile
+  integrationTests:
+    name: IntegrationTests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Cache ivy packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.ivy2
+          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
+          restore-keys: ${{ runner.os }}-sbt
+      - uses: olafurpg/setup-scala@v5
+      - name: Integration tests
+        shell: bash
+        run: ./ciRunSbt.sh clean management/it:test engineStandalone/it:test
+  slowTest:
+    name: Slow tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Cache ivy packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.ivy2
+          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
+          restore-keys: ${{ runner.os }}-sbt
+      - uses: olafurpg/setup-scala@v5
+      - name: Slow tests
+        shell: bash
+        run: ./ciRunSbt.sh clean ui/slow:test
+
+  frontendTests:
+    name: FrontendTests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Cache npm
+        uses: actions/cache@v2
+        with:
+          path: |
+            **/node_modules
+          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: 13.2
+      - run: ./ciFrontendTest.sh
+
+
