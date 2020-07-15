@@ -39,6 +39,7 @@ Nussknacker versions
     [#1001](https://github.com/TouK/nussknacker/pull/1001),
     [#1011](https://github.com/TouK/nussknacker/pull/1011)
 * [#988](https://github.com/TouK/nussknacker/pull/988) Json editor
+* [#1066](https://github.com/TouK/nussknacker/pull/1066) Duration and period editors fixes
 
 0.1.2
 ------------------------
