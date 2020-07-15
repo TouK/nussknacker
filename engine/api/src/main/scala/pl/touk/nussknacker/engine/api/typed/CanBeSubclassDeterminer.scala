@@ -79,7 +79,7 @@ private[typed] object CanBeSubclassDeterminer {
     //throw validation errors in this case. It's better to accept to much than too little
       superclassCandidate.params.zip(givenClass.params).forall(t => canBeSubclassOf(t._1, t._2) || canBeSubclassOf(t._2, t._1))
 
-    val canBeSubclass = givenClass == superclassCandidate || ClassUtils.isAssignable(givenClass.klass, superclassCandidate.klass) && hasSameTypeParams
+    val canBeSubclass = givenClass == superclassCandidate || isAssignable(givenClass.klass, superclassCandidate.klass) && hasSameTypeParams
     canBeSubclass || canBeConvertedTo(givenClass, superclassCandidate)
   }
 
@@ -90,12 +90,14 @@ private[typed] object CanBeSubclassDeterminer {
     // We can't check precision here so we need to be loose here
     // TODO: Add feature flag: strictNumberPrecisionChecking (default false?) and rename strictTypeChecking to strictClassesTypeChecking
     if (NumberTypesPromotionStrategy.isFloatingNumber(boxedSuperclassCandidate) || boxedSuperclassCandidate == classOf[java.math.BigDecimal]) {
-      ClassUtils.isAssignable(boxedGivenClass, classOf[Number])
+      isAssignable(boxedGivenClass, classOf[Number])
     } else if (NumberTypesPromotionStrategy.isDecimalNumber(boxedSuperclassCandidate)) {
-      ConversionFromClassesForDecimals.exists(ClassUtils.isAssignable(boxedGivenClass, _))
+      ConversionFromClassesForDecimals.exists(isAssignable(boxedGivenClass, _))
     } else {
       false
     }
   }
 
+  //we use explicit autoboxing = true flag, as ClassUtils in commons-lang3:3.3 (used in Flink) cannot handle JDK 11...
+  private def isAssignable(from: Class[_], to: Class[_]) = ClassUtils.isAssignable(from, to, true)
 }
