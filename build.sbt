@@ -165,9 +165,7 @@ val forkSettings = Seq(
   javaOptions := Seq(
     "-Xmx512M",
     "-XX:ReservedCodeCacheSize=128M",
-    "-Xss4M",
-    "-XX:+UseConcMarkSweepGC",
-    "-XX:+CMSClassUnloadingEnabled"
+    "-Xss4M"
   )
 )
 
