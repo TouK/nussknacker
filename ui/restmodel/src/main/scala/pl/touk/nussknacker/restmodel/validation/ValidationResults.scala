@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.restmodel.validation
 
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import cats.implicits._
-import io.circe.{Decoder, Encoder, Json}
 import io.circe.generic.JsonCodec
+import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.restmodel.definition.UIParameter
 
 object ValidationResults {
@@ -36,7 +36,7 @@ object ValidationResults {
     )
 
     def withTypes(variableTypes: Map[String, Map[String, TypingResult]]): ValidationResult
-      = copy(variableTypes = variableTypes)
+    = copy(variableTypes = variableTypes)
 
     def withTypingInfo(typingInfo: Map[String, Map[String, ExpressionTypingInfo]]): ValidationResult
     = copy(typingInfo = typingInfo)
@@ -52,30 +52,40 @@ object ValidationResults {
       allErrors.filter(_.errorType == NodeValidationErrorType.SaveNotAllowed)
     }
 
+    def withClearedTypingInfo: ValidationResult = copy(typingInfo = Map.empty)
+
     private def allErrors: List[NodeValidationError] = {
       (errors.invalidNodes.values.flatten ++ errors.processPropertiesErrors ++ errors.globalErrors).toList
     }
 
-    def withClearedTypingInfo: ValidationResult = copy(typingInfo = Map.empty)
-
   }
 
   @JsonCodec case class ValidationErrors(invalidNodes: Map[String, List[NodeValidationError]],
-                              processPropertiesErrors: List[NodeValidationError],
-                              globalErrors: List[NodeValidationError]) {
+                                         processPropertiesErrors: List[NodeValidationError],
+                                         globalErrors: List[NodeValidationError]) {
     def isEmpty: Boolean = invalidNodes.isEmpty && processPropertiesErrors.isEmpty && globalErrors.isEmpty
   }
+
+  @JsonCodec case class ValidationWarnings(invalidNodes: Map[String, List[NodeValidationError]])
+
+  @JsonCodec case class NodeValidationError(typ: String,
+                                            message: String,
+                                            description: String,
+                                            fieldName: Option[String],
+                                            errorType: NodeValidationErrorType.Value)
+
   object ValidationErrors {
     val success = ValidationErrors(Map.empty, List(), List())
   }
 
-  @JsonCodec case class ValidationWarnings(invalidNodes: Map[String, List[NodeValidationError]])
   object ValidationWarnings {
     val success = ValidationWarnings(Map.empty)
   }
 
   object ValidationResult {
     val success = ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty, Map.empty, Map.empty)
+    implicit val typingInfoEncoder: Encoder[ExpressionTypingInfo] = Encoder.instance(_ => Json.Null)
+    implicit val typingInfoDecoder: Decoder[ExpressionTypingInfo] = Decoder.failedWithMessage("typingInfo shouldn't be decoded")
 
     def errors(invalidNodes: Map[String, List[NodeValidationError]],
                processPropertiesErrors: List[NodeValidationError],
@@ -98,23 +108,13 @@ object ValidationResults {
       )
     }
 
-    implicit val typingInfoEncoder: Encoder[ExpressionTypingInfo] = Encoder.instance(_ => Json.Null)
-    implicit val typingInfoDecoder: Decoder[ExpressionTypingInfo] = Decoder.failedWithMessage("typingInfo shouldn't be decoded")
-
   }
-
-  @JsonCodec case class NodeValidationError(typ: String,
-                                 message: String,
-                                 description: String,
-                                 fieldName: Option[String],
-                                 errorType: NodeValidationErrorType.Value)
 
   object NodeValidationErrorType extends Enumeration {
 
+    type NodeValidationErrorType = Value
     implicit val encoder: Encoder[NodeValidationErrorType.Value] = Encoder.enumEncoder(NodeValidationErrorType)
     implicit val decoder: Decoder[NodeValidationErrorType.Value] = Decoder.enumDecoder(NodeValidationErrorType)
-
-    type NodeValidationErrorType = Value
     val RenderNotAllowed, SaveNotAllowed, SaveAllowed = Value
   }
 

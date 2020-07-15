@@ -81,12 +81,16 @@ object CompilationResult extends Applicative[CompilationResult] {
           logger.warn(s"Merging expression typing info for the same node ids, overlapping expression ids: ${expressionsIntersection.mkString(", ")}. " +
             s"This can be a bug in code or duplicated node ids with same expression ids")
         }
+        if (x.parameters.isDefined && y.parameters.isDefined) {
+          logger.warn(s"Merging different parameters: ${x.parameters} and ${y.parameters}. " +
+            s"This can be a bug in code or duplicated node ids with same expression ids")
+        }
       }
 
       // we should be lax here because we want to detect duplicate nodes and context can be different then
       // also process of collecting of expressionsTypingInfo is splitted for some nodes e.g. expressionsTypingInfo for
       // sink parameters is collected in ProcessCompiler but for final expression is in PartSubGraphCompiler
-      NodeTypingInfo(y.inputValidationContext, x.expressionsTypingInfo ++ y.expressionsTypingInfo, y.parameters)
+      NodeTypingInfo(y.inputValidationContext, x.expressionsTypingInfo ++ y.expressionsTypingInfo, y.parameters.orElse(x.parameters))
     }
   }
 
