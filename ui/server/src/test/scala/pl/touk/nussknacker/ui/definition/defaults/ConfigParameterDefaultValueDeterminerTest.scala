@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.definition.defaults
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ParameterConfig
-import pl.touk.nussknacker.ui.definition.UIParameter
+import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory.createUIParameter
 
 import scala.reflect.ClassTag
 
@@ -16,7 +16,7 @@ class ConfigParameterDefaultValueDeterminerTest extends FlatSpec with Matchers {
   private def verifyDeterminer[T:ClassTag](paramName: String, determinedDefaultValue: Option[String]) = {
     val param = Parameter[T](paramName)
     it should s"determine default value of $param to $determinedDefaultValue" in {
-      determiner.determineParameterDefaultValue(node, UIParameter(param, ParameterConfig.empty)) shouldBe determinedDefaultValue
+      determiner.determineParameterDefaultValue(node, createUIParameter(param, ParameterConfig.empty)) shouldBe determinedDefaultValue
     }
   }
 

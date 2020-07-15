@@ -1,9 +1,10 @@
-import {TypingResult} from "./definition"
+import {TypingResult, UIParameter} from "./definition"
 
 export type ValidationResult = {
     validationErrors: ValidationErrors[],
     validationWarnings: ValidationWarnings[],
     variableTypes: VariableTypes,
+    parameters: Record<string, UIParameter[]>,
 }
 
 export type VariableTypes = Record<string, Record<string, TypingResult>>

@@ -60,7 +60,7 @@ class TestModelMigrations(migrations: ProcessingTypeDataProvider[ProcessMigratio
         after.errors.processPropertiesErrors.diff(before.errors.processPropertiesErrors),
         after.errors.globalErrors.diff(before.errors.globalErrors)
       ),
-      ValidationWarnings(diffOnMap(before.warnings.invalidNodes, after.warnings.invalidNodes)), Map.empty, Map.empty
+      ValidationWarnings(diffOnMap(before.warnings.invalidNodes, after.warnings.invalidNodes)), Map.empty, Map.empty, Map.empty
     )
   }
 

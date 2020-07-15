@@ -58,8 +58,9 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
   def compile(n: SplittedNode[_], ctx: ValidationContext) : CompilationResult[compiledgraph.node.Node] = {
     implicit val nodeId: NodeId = NodeId(n.id)
 
-    def toCompilationResult[T](validated: ValidatedNel[ProcessCompilationError, T], expressionsTypingInfo: Map[String, ExpressionTypingInfo]) =
-      CompilationResult(Map(n.id -> NodeTypingInfo(ctx, expressionsTypingInfo)), validated)
+    def toCompilationResult[T](validated: ValidatedNel[ProcessCompilationError, T],
+                               expressionsTypingInfo: Map[String, ExpressionTypingInfo]) =
+      CompilationResult(Map(n.id -> NodeTypingInfo(ctx, expressionsTypingInfo, None)), validated)
 
     n match {
       case splittednode.SourceNode(nodeData, next) => handleSourceNode(nodeData, ctx, next)
@@ -106,7 +107,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
 
   private def compileEndingNode(ctx: ValidationContext, data: EndingNodeData)(implicit nodeId: NodeId): CompilationResult[compiledgraph.node.Node] = {
     def toCompilationResult[T](validated: ValidatedNel[ProcessCompilationError, T], expressionsTypingInfo: Map[String, ExpressionTypingInfo]) =
-      CompilationResult(Map(nodeId.id -> NodeTypingInfo(ctx, expressionsTypingInfo)), validated)
+      CompilationResult(Map(nodeId.id -> NodeTypingInfo(ctx, expressionsTypingInfo, None)), validated)
 
     data match {
       case graph.node.Processor(id, ref, disabled, _) =>
@@ -149,7 +150,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
 
   private def compileSubsequent(ctx: ValidationContext, data: OneOutputSubsequentNodeData, next: Next)(implicit nodeId: NodeId): CompilationResult[Node] = {
     def toCompilationResult[T](validated: ValidatedNel[ProcessCompilationError, T], expressionsTypingInfo: Map[String, ExpressionTypingInfo]) =
-      CompilationResult(Map(data.id -> NodeTypingInfo(ctx, expressionsTypingInfo)), validated)
+      CompilationResult(Map(data.id -> NodeTypingInfo(ctx, expressionsTypingInfo, None)), validated)
 
     data match {
       case graph.node.Variable(id, varName, expression, _) =>
@@ -238,7 +239,7 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
     next match {
       case splittednode.NextNode(n) => compile(n, ctx).map(cn => compiledgraph.node.NextNode(cn))
       case splittednode.PartRef(ref) =>
-        CompilationResult(Map(ref -> NodeTypingInfo(ctx, Map.empty)), Valid(compiledgraph.node.PartRef(ref)))
+        CompilationResult(Map(ref -> NodeTypingInfo(ctx, Map.empty, None)), Valid(compiledgraph.node.PartRef(ref)))
     }
   }
 

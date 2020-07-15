@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessD
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
+import pl.touk.nussknacker.restmodel.definition.{NodeEdges, NodeGroup, NodeTypeId}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType._
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions}
 import pl.touk.nussknacker.ui.definition.defaults.{DefaultValueDeterminerChain, ParamDefaultValueConfig}
@@ -122,7 +123,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
                             processDefinition: ProcessDefinition[ObjectDefinition] = ProcessTestData.processDefinition): List[NodeGroup] = {
     // TODO: this is a copy paste from UIProcessObjects.prepareUIProcessObjects - should be refactored somehow
     val subprocessInputs = Map[String, ObjectDefinition]()
-    val uiProcessDefinition = UIProcessDefinition(processDefinition, subprocessInputs, Set.empty)
+    val uiProcessDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, subprocessInputs, Set.empty)
     val dynamicNodesConfig = uiProcessDefinition.allDefinitions.mapValues(_.nodeConfig)
     val nodesConfig = NodesConfigCombiner.combine(fixedNodesConfig.mapValues(v => SingleNodeConfig(None, None, None, Some(v))), dynamicNodesConfig)
 
@@ -146,7 +147,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
     val processDefinition = services.foldRight(ProcessDefinitionBuilder.empty)((s, p) => p.withService(s))
     val groups = DefinitionPreparer.prepareNodesToAdd(
       user = TestFactory.adminUser("aa"),
-      processDefinition = UIProcessDefinition(processDefinition, Map(), Set.empty),
+      processDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, Map(), Set.empty),
       isSubprocess = false,
       defaultsStrategy = DefaultValueDeterminerChain(ParamDefaultValueConfig(Map())),
       nodesConfig = Map(),

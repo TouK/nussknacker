@@ -152,6 +152,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
       ValidationErrors(_, Nil, errors),
       ValidationWarnings.success,
       _,
+      _,
       _
       ) if errors == List(PrettyValidationErrors.noValidatorKnown(TestProcessingTypes.RequestResponse)) =>
     }
@@ -252,7 +253,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     val (processValidation, process) = mockProcessValidationAndProcess(subprocess = invalidSubprocess)
 
     processValidation.validate(process) should matchPattern {
-      case ValidationResult(ValidationErrors(invalidNodes, Nil, Nil), ValidationWarnings.success, _, _
+      case ValidationResult(ValidationErrors(invalidNodes, Nil, Nil), ValidationWarnings.success, _, _, _
       ) if invalidNodes("subIn").size == 1 && invalidNodes("subIn-subVar").size == 1 =>
     }
   }

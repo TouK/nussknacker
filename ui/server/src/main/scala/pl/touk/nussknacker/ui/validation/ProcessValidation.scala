@@ -7,13 +7,14 @@ import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.expression.ExpressionParser
-import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.process.{AdditionalPropertyConfig, ParameterConfig}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.{NodeTypingInfo, ProcessValidator}
 import pl.touk.nussknacker.engine.graph.node.{Disableable, NodeData, Source, SubprocessInputDefinition}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
@@ -80,7 +81,10 @@ class ProcessValidation(validators: ProcessingTypeDataProvider[ProcessValidator]
             case Valid(process) =>
               val validated = processValidator.validate(process)
               validated.result.fold(formatErrors, _ => ValidationResult.success)
-                .withTypes(validated.variablesInNodes).withTypingInfo(validated.expressionsInNodes)
+                .withTypes(validated.variablesInNodes)
+                .withTypingInfo(validated.expressionsInNodes)
+                .withParameters(validated.parametersInNodes.mapValues(_.map(
+                  UIProcessObjectsFactory.createUIParameter(_, ParameterConfig.empty))))
             case Invalid(e) => formatErrors(e)
           }
     }

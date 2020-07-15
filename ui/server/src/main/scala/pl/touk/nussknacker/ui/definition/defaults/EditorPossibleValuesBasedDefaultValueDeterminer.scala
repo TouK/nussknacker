@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.definition.defaults
 
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, FixedValuesParameterEditor}
-import pl.touk.nussknacker.ui.definition.UIParameter
+import pl.touk.nussknacker.restmodel.definition.UIParameter
 
 protected object EditorPossibleValuesBasedDefaultValueDeterminer extends ParameterDefaultValueDeterminer {
 

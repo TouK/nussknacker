@@ -6,20 +6,23 @@ import io.circe.{Decoder, Encoder, Json}
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.restmodel.definition.UIParameter
 
 object ValidationResults {
 
   private implicit val typingResultDecoder: Decoder[TypingResult] = Decoder.decodeJson.map(_ => typing.Unknown)
 
+  //TODO: consider extracting additional DTO class
   @JsonCodec case class ValidationResult(errors: ValidationErrors, warnings: ValidationWarnings,
                                          variableTypes: Map[String, Map[String, TypingResult]],
+                                         parameters: Map[String, List[UIParameter]],
                                          // currently we not showing typing info in gui but maybe in near future will
                                          // be used for enhanced typing in FE
                                          typingInfo: Map[String, Map[String, ExpressionTypingInfo]]) {
     val isOk: Boolean = errors == ValidationErrors.success && warnings == ValidationWarnings.success
     val saveAllowed: Boolean = allErrors.forall(_.errorType == NodeValidationErrorType.SaveAllowed)
 
-    def add(other: ValidationResult) = ValidationResult(
+    def add(other: ValidationResult): ValidationResult = ValidationResult(
       ValidationErrors(
         errors.invalidNodes.combine(other.errors.invalidNodes),
         errors.processPropertiesErrors ++ other.errors.processPropertiesErrors,
@@ -28,6 +31,7 @@ object ValidationResults {
         warnings.invalidNodes.combine(other.warnings.invalidNodes)
       ),
       variableTypes ++ other.variableTypes,
+      parameters ++ other.parameters,
       typingInfo ++ other.typingInfo
     )
 
@@ -36,6 +40,9 @@ object ValidationResults {
 
     def withTypingInfo(typingInfo: Map[String, Map[String, ExpressionTypingInfo]]): ValidationResult
     = copy(typingInfo = typingInfo)
+
+    def withParameters(parameters: Map[String, List[UIParameter]]): ValidationResult
+    = copy(parameters = parameters)
 
     def renderNotAllowedErrors: List[NodeValidationError] = {
       allErrors.filter(_.errorType == NodeValidationErrorType.RenderNotAllowed)
@@ -68,7 +75,7 @@ object ValidationResults {
   }
 
   object ValidationResult {
-    val success = ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty, Map.empty)
+    val success = ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty, Map.empty, Map.empty)
 
     def errors(invalidNodes: Map[String, List[NodeValidationError]],
                processPropertiesErrors: List[NodeValidationError],
@@ -80,14 +87,14 @@ object ValidationResults {
         ),
         ValidationWarnings.success,
         variableTypes,
-        Map.empty
+        Map.empty, Map.empty
       )
     }
 
     def warnings(invalidNodes: Map[String, List[NodeValidationError]]): ValidationResult = {
       ValidationResult(
         ValidationErrors.success,
-        ValidationWarnings(invalidNodes = invalidNodes), Map.empty, Map.empty
+        ValidationWarnings(invalidNodes = invalidNodes), Map.empty, Map.empty, Map.empty
       )
     }
 

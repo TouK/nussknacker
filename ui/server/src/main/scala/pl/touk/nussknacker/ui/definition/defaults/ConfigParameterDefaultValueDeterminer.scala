@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.definition.defaults
 
 import pl.touk.nussknacker.engine.api.process.ParameterConfig
-import pl.touk.nussknacker.ui.definition.UIParameter
+import pl.touk.nussknacker.restmodel.definition.UIParameter
 
 protected class ConfigParameterDefaultValueDeterminer(config: ParamDefaultValueConfig) extends ParameterDefaultValueDeterminer {
   override def determineParameterDefaultValue(nodeDefinition: UINodeDefinition,

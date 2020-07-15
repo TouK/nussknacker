@@ -7,6 +7,7 @@ import cats.kernel.Semigroup
 import cats.{Applicative, Traverse}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ProcessUncanonizationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonize.{MaybeArtificial, MaybeArtificialExtractor}
@@ -36,6 +37,10 @@ case class CompilationResult[+Result](private [compile] val typing: Map[String, 
 
   // node -> expressionId -> ExpressionTypingInfo
   def expressionsInNodes: Map[String, Map[String, ExpressionTypingInfo]] = typing.mapValues(_.expressionsTypingInfo)
+
+  def parametersInNodes: Map[String, List[Parameter]] = typing.mapValues(_.parameters).collect {
+    case (k, Some(v)) => (k, v)
+  }
 
 }
 
@@ -81,13 +86,15 @@ object CompilationResult extends Applicative[CompilationResult] {
       // we should be lax here because we want to detect duplicate nodes and context can be different then
       // also process of collecting of expressionsTypingInfo is splitted for some nodes e.g. expressionsTypingInfo for
       // sink parameters is collected in ProcessCompiler but for final expression is in PartSubGraphCompiler
-      NodeTypingInfo(y.inputValidationContext, x.expressionsTypingInfo ++ y.expressionsTypingInfo)
+      NodeTypingInfo(y.inputValidationContext, x.expressionsTypingInfo ++ y.expressionsTypingInfo, y.parameters)
     }
   }
 
 }
 
-case class NodeTypingInfo(inputValidationContext: ValidationContext, expressionsTypingInfo: Map[String, ExpressionTypingInfo])
+case class NodeTypingInfo(inputValidationContext: ValidationContext,
+                          expressionsTypingInfo: Map[String, ExpressionTypingInfo],
+                          parameters: Option[List[Parameter]])
 
 object NodeTypingInfo {
 
