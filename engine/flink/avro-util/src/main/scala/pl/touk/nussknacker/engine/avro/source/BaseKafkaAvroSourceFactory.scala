@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.avro.source
 import org.apache.flink.streaming.api.functions.TimestampAssigner
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroDeserializationSchemaFactory
@@ -16,20 +15,18 @@ import pl.touk.nussknacker.engine.kafka.source.KafkaSource
 
 import scala.reflect.ClassTag
 
-abstract class BaseKafkaAvroSourceFactory[T: ClassTag](processObjectDependencies: ProcessObjectDependencies,
-                                                       timestampAssigner: Option[TimestampAssigner[T]])
+abstract class BaseKafkaAvroSourceFactory[T: ClassTag](timestampAssigner: Option[TimestampAssigner[T]])
   extends FlinkSourceFactory[T] with Serializable {
 
   private val defaultMaxOutOfOrdernessMillis = 60000
 
   def createSource(preparedTopic: PreparedKafkaTopic,
-                   version: Option[Int],
                    kafkaConfig: KafkaConfig,
                    deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory,
                    createRecordFormatter: String => Option[RecordFormatter],
-                   schemaDeterminer: AvroSchemaDeterminer,
-                   processMetaData: MetaData)
-                  (implicit nodeId: NodeId): KafkaSource[T] with ReturningType = {
+                   schemaDeterminer: AvroSchemaDeterminer)
+                  (implicit processMetaData: MetaData,
+                   nodeId: NodeId): KafkaSource[T] with ReturningType = {
 
     val schema = schemaDeterminer.determineSchemaUsedInTyping.valueOr(SchemaDeterminerErrorHandler.handleSchemaRegistryErrorAndThrowException)
     val returnTypeDefinition = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)

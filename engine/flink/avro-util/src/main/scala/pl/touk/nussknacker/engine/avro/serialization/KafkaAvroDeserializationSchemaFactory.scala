@@ -15,6 +15,14 @@ import scala.reflect._
   */
 trait KafkaAvroDeserializationSchemaFactory extends Serializable {
 
+  /**
+   * Prepare Flink's KafkaDeserializationSchema based on provided information.
+   * @param schemaOpt Schema to which will be used as a reader schema. In case of None, will be used the same schema as writer schema.
+   * @param kafkaConfig Configuration of integration with Kafka
+   * @tparam T Type that should be produced by deserialization schema. It is important parameter, because factory can
+   *           use other deserialization strategy base on it or provide different TypeInformation
+   * @return KafkaDeserializationSchema
+   */
   def create[T: ClassTag](schemaOpt: Option[Schema], kafkaConfig: KafkaConfig): KafkaDeserializationSchema[T]
 
 }

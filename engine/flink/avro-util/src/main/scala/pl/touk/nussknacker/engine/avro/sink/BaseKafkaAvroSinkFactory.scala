@@ -25,9 +25,9 @@ abstract class BaseKafkaAvroSinkFactory extends SinkFactory {
                            output: LazyParameter[AnyRef],
                            kafkaConfig: KafkaConfig,
                            serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
-                           schemaDeterminer: AvroSchemaDeterminer,
-                           processMetaData: MetaData)
-                          (implicit nodeId: NodeId): FlinkSink = {
+                           schemaDeterminer: AvroSchemaDeterminer)
+                          (implicit processMetaData: MetaData,
+                           nodeId: NodeId): FlinkSink = {
     //This is a bit redundant, since we already validate during creation
     val schema = schemaDeterminer.determineSchemaUsedInTyping.valueOr(SchemaDeterminerErrorHandler.handleSchemaRegistryErrorAndThrowException)
     validateOutput(output.returnType, schema).valueOr(err => throw new CustomNodeValidationException(err.message, err.paramName, null))

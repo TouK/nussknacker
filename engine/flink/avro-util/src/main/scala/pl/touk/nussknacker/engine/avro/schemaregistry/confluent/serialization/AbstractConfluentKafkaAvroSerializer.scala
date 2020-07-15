@@ -23,17 +23,17 @@ class AbstractConfluentKafkaAvroSerializer(avroSchemaEvolution: AvroSchemaEvolut
 
   protected val encoderFactory: EncoderFactory = EncoderFactory.get
 
-  def serialize(schemaOpt: Option[AvroSchema], topic: String, data: Any, isKey: Boolean): Array[Byte] = {
+  def serialize(avroSchemaOpt: Option[AvroSchema], topic: String, data: Any, isKey: Boolean): Array[Byte] = {
     if (data == null) {
       null
     } else {
-      val schema = schemaOpt.getOrElse(new AvroSchema(AvroSchemaUtils.getSchema(data, this.useSchemaReflection)))
+      val avroSchema = avroSchemaOpt.getOrElse(new AvroSchema(AvroSchemaUtils.getSchema(data, this.useSchemaReflection)))
       try {
-        val subject = getSubjectName(topic, isKey, data, schema)
+        val subject = getSubjectName(topic, isKey, data, avroSchema)
         val schemaId = if (this.autoRegisterSchema) {
-          this.schemaRegistry.register(subject, schema)
+          this.schemaRegistry.register(subject, avroSchema)
         } else {
-          this.schemaRegistry.getId(subject, schema)
+          this.schemaRegistry.getId(subject, avroSchema)
         }
 
         val out = new ByteArrayOutputStream
@@ -47,11 +47,11 @@ class AbstractConfluentKafkaAvroSerializer(avroSchemaEvolution: AvroSchemaEvolut
 
             val record = data match {
               //We try to convert record to provided schema if it's possible
-              case record: GenericContainer if schemaOpt.isDefined => avroSchemaEvolution.alignRecordToSchema(record, schema.rawSchema())
+              case record: GenericContainer if avroSchemaOpt.isDefined => avroSchemaEvolution.alignRecordToSchema(record, avroSchema.rawSchema())
               case _ => data
             }
 
-            val writer = createDatumWriter(record, schema.rawSchema(), useSchemaReflection = useSchemaReflection)
+            val writer = createDatumWriter(record, avroSchema.rawSchema(), useSchemaReflection = useSchemaReflection)
 
             writer.write(record, encoder)
             encoder.flush()
@@ -62,7 +62,7 @@ class AbstractConfluentKafkaAvroSerializer(avroSchemaEvolution: AvroSchemaEvolut
         bytes
       } catch {
         case exc: RestClientException =>
-          throw new SerializationException(s"Error registering/retrieving Avro schema: " + schema.rawSchema(), exc)
+          throw new SerializationException(s"Error registering/retrieving Avro schema: " + avroSchema.rawSchema(), exc)
         case exc@(_: RuntimeException | _: IOException) =>
           throw new SerializationException("Error serializing Avro message", exc)
       }

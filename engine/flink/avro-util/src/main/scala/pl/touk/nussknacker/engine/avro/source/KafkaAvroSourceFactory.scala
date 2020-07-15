@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.flink.api.process.FlinkSource
 class KafkaAvroSourceFactory(val schemaRegistryProvider: SchemaRegistryProvider,
                              val processObjectDependencies: ProcessObjectDependencies,
                              timestampAssigner: Option[TimestampAssigner[Any]])
-  extends BaseKafkaAvroSourceFactory(processObjectDependencies, timestampAssigner) with KafkaAvroBaseTransformer[FlinkSource[Any]]{
+  extends BaseKafkaAvroSourceFactory(timestampAssigner) with KafkaAvroBaseTransformer[FlinkSource[Any]]{
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
                                     (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
@@ -64,9 +64,9 @@ class KafkaAvroSourceFactory(val schemaRegistryProvider: SchemaRegistryProvider,
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): FlinkSource[Any] = {
     val preparedTopic = extractPreparedTopic(params)
     val version = extractVersion(params)
-    createSource(preparedTopic, version, kafkaConfig,
-      schemaRegistryProvider.deserializationSchemaFactory, schemaRegistryProvider.recordFormatter, prepareSchemaDeterminer(preparedTopic, version),
-      typedDependency[MetaData](dependencies))(typedDependency[NodeId](dependencies))
+    createSource(preparedTopic, kafkaConfig, schemaRegistryProvider.deserializationSchemaFactory, schemaRegistryProvider.recordFormatter,
+      prepareSchemaDeterminer(preparedTopic, version))(
+      typedDependency[MetaData](dependencies), typedDependency[NodeId](dependencies))
   }
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]),

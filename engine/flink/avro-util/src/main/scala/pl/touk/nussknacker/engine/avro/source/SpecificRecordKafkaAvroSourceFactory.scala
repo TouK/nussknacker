@@ -19,17 +19,16 @@ import scala.reflect._
  * Source factory for specific records - mainly generated from schema.
  */
 class SpecificRecordKafkaAvroSourceFactory[T <: SpecificRecord: ClassTag](schemaRegistryProvider: SchemaRegistryProvider, processObjectDependencies: ProcessObjectDependencies, timestampAssigner: Option[TimestampAssigner[T]])
-  extends BaseKafkaAvroSourceFactory[T](processObjectDependencies, timestampAssigner) {
+  extends BaseKafkaAvroSourceFactory[T](timestampAssigner) {
 
   // TODO: it should return suggestions for topics like it is in generic version (KafkaAvroSourceFactory)
   @MethodToInvoke
-  def createSource(processMetaData: MetaData,
-                   @ParamName(`TopicParamName`) @NotBlank @SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR) topic: String)
-                  (implicit nodeId: NodeId): KafkaSource[T] with ReturningType = {
+  def createSource(@ParamName(`TopicParamName`) @NotBlank @SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR) topic: String)
+                  (implicit processMetaData: MetaData, nodeId: NodeId): KafkaSource[T] with ReturningType = {
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
     val preparedTopic = KafkaUtils.prepareKafkaTopic(topic, processObjectDependencies)
     val schemaDeterminer = new SpecificRecordEmbeddedSchemaDeterminer(classTag[T].runtimeClass.asInstanceOf[Class[_ <: SpecificRecord]])
-    createSource(preparedTopic, None, kafkaConfig, schemaRegistryProvider.deserializationSchemaFactory, schemaRegistryProvider.recordFormatter, schemaDeterminer, processMetaData)
+    createSource(preparedTopic, kafkaConfig, schemaRegistryProvider.deserializationSchemaFactory, schemaRegistryProvider.recordFormatter, schemaDeterminer)
   }
 
 }

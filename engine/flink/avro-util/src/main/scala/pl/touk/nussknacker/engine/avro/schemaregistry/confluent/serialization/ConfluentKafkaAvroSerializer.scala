@@ -16,7 +16,7 @@ import scala.collection.JavaConverters._
   * This is Kafka Avro Serializer class. All events will be serialized to provided schema.
   */
 class ConfluentKafkaAvroSerializer(kafkaConfig: KafkaConfig, confluentSchemaRegistryClient: ConfluentSchemaRegistryClient, schemaEvolutionHandler: AvroSchemaEvolution,
-                                   schemaOpt: Option[AvroSchema], var isKey: Boolean)
+                                   avroSchemaOpt: Option[AvroSchema], var isKey: Boolean)
   extends AbstractConfluentKafkaAvroSerializer(schemaEvolutionHandler) with Serializer[Any] {
 
   schemaRegistry = confluentSchemaRegistryClient.client
@@ -31,13 +31,13 @@ class ConfluentKafkaAvroSerializer(kafkaConfig: KafkaConfig, confluentSchemaRegi
   }
 
   override def serialize(topic: String, data: Any): Array[Byte] =
-    serialize(schemaOpt, topic, data, isKey)
+    serialize(avroSchemaOpt, topic, data, isKey)
 
   override def close(): Unit = {}
 }
 
 object ConfluentKafkaAvroSerializer {
-  def apply(kafkaConfig: KafkaConfig, confluentSchemaRegistryClient: ConfluentSchemaRegistryClient, schemaOpt: Option[AvroSchema], isKey: Boolean): ConfluentKafkaAvroSerializer = {
-    new ConfluentKafkaAvroSerializer(kafkaConfig, confluentSchemaRegistryClient, new DefaultAvroSchemaEvolution, schemaOpt, isKey = isKey)
+  def apply(kafkaConfig: KafkaConfig, confluentSchemaRegistryClient: ConfluentSchemaRegistryClient, avroSchemaOpt: Option[AvroSchema], isKey: Boolean): ConfluentKafkaAvroSerializer = {
+    new ConfluentKafkaAvroSerializer(kafkaConfig, confluentSchemaRegistryClient, new DefaultAvroSchemaEvolution, avroSchemaOpt, isKey = isKey)
   }
 }
