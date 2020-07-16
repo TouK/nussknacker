@@ -61,10 +61,10 @@ class ProcessCompiler(protected val classLoader: ClassLoader,
     super.compile(process)
   }
 
-  override protected def factory: ProcessObjectFactory = new ProcessObjectFactory(expressionEvaluator)
-
   override def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): ProcessCompiler =
     new ProcessCompiler(classLoader, sub.withExpressionParsers(modify), definitions, objectParametersExpressionCompiler.withExpressionParsers(modify))
+
+  override protected def factory: ProcessObjectFactory = new ProcessObjectFactory(expressionEvaluator)
 
 }
 
@@ -91,39 +91,42 @@ trait ProcessValidator extends LazyLogging {
 }
 
 protected trait ProcessCompilerBase {
-  
-  protected def definitions: ProcessDefinition[ObjectWithMethodDef]
-  protected def sourceFactories: Map[String, ObjectWithMethodDef] = definitions.sourceFactories
-  protected def sinkFactories: Map[String, (ObjectWithMethodDef, ProcessDefinitionExtractor.SinkAdditionalData)] = definitions.sinkFactories
-  protected def exceptionHandlerFactory: ObjectWithMethodDef = definitions.exceptionHandlerFactory
+
+  private lazy val globalVariablesPreparer = GlobalVariablesPreparer(expressionConfig)
+  implicit val typeableJoin: Typeable[Join] = Typeable.simpleTypeable(classOf[Join])
   protected val customStreamTransformers: Map[String, (ObjectWithMethodDef, ProcessDefinitionExtractor.CustomTransformerAdditionalData)] = definitions.customStreamTransformers
   protected val expressionConfig: ProcessDefinitionExtractor.ExpressionDefinition[ObjectWithMethodDef] = definitions.expressionConfig
-
-  protected def sub: PartSubGraphCompiler
-
   private val syntax = ValidatedSyntax[ProcessCompilationError]
+
+  protected def definitions: ProcessDefinition[ObjectWithMethodDef]
+
+  protected def sourceFactories: Map[String, ObjectWithMethodDef] = definitions.sourceFactories
+
+  protected def sinkFactories: Map[String, (ObjectWithMethodDef, ProcessDefinitionExtractor.SinkAdditionalData)] = definitions.sinkFactories
 
   import syntax._
 
-  implicit val typeableJoin: Typeable[Join] = Typeable.simpleTypeable(classOf[Join])
+  protected def exceptionHandlerFactory: ObjectWithMethodDef = definitions.exceptionHandlerFactory
+
+  protected def sub: PartSubGraphCompiler
 
   protected def classLoader: ClassLoader
 
   protected def objectParametersExpressionCompiler: ExpressionCompiler
-
-  private lazy val globalVariablesPreparer = GlobalVariablesPreparer(expressionConfig)
-
-  private def contextWithOnlyGlobalVariables(implicit metaData: MetaData): ValidationContext
-    = globalVariablesPreparer.emptyValidationContext(metaData)
-
-  private def nodeValidator(implicit metaData: MetaData)
-    = new GenericNodeTransformationValidator(objectParametersExpressionCompiler, expressionConfig)
 
   protected def compile(process: EspProcess): CompilationResult[CompiledProcessParts] = {
     ThreadUtils.withThisAsContextClassLoader(classLoader) {
       compile(ProcessSplitter.split(process))
     }
   }
+
+  protected def factory: ProcessObjectFactory
+
+  private def contextWithOnlyGlobalVariables(implicit metaData: MetaData): ValidationContext
+  = globalVariablesPreparer.emptyValidationContext(metaData)
+
+  private def nodeValidator(implicit metaData: MetaData)
+  = new GenericNodeTransformationValidator(objectParametersExpressionCompiler, expressionConfig)
 
   private def compile(splittedProcess: SplittedProcess): CompilationResult[CompiledProcessParts] = {
     implicit val metaData: MetaData = splittedProcess.metaData
@@ -147,10 +150,10 @@ protected trait ProcessCompilerBase {
     //we use fold here (and not map/sequence), because we can compile part which starts from Join only when we
     //know compilation results (stored in BranchEndContexts) of all branches that end in this join
     val (result, _) = PartSort.sort(sources.toList).foldLeft(zeroAcc) { case ((resultSoFar, branchContexts), nextSourcePart) =>
-        val compiledPart = compile(nextSourcePart, branchContexts)
-        //we don't use andThen on CompilationResult, since we don't want to stop if there are errors in part
-        val nextResult = CompilationResult.map2(resultSoFar, compiledPart)(_ :+ _)
-        (nextResult, branchContexts.addPart(nextSourcePart, compiledPart))
+      val compiledPart = compile(nextSourcePart, branchContexts)
+      //we don't use andThen on CompilationResult, since we don't want to stop if there are errors in part
+      val nextResult = CompilationResult.map2(resultSoFar, compiledPart)(_ :+ _)
+      (nextResult, branchContexts.addPart(nextSourcePart, compiledPart))
     }
     result.map(NonEmptyList.fromListUnsafe)
   }
@@ -204,7 +207,7 @@ protected trait ProcessCompilerBase {
   }
 
   private def compileSubsequentPart(part: SubsequentPart, ctx: ValidationContext)
-                     (implicit metaData: MetaData): CompilationResult[compiledgraph.part.SubsequentPart] = {
+                                   (implicit metaData: MetaData): CompilationResult[compiledgraph.part.SubsequentPart] = {
     implicit val nodeId: NodeId = NodeId(part.id)
     part match {
       case SinkPart(node) =>
@@ -213,6 +216,131 @@ protected trait ProcessCompilerBase {
         CustomNodeCompiler.compileEndingCustomNodePart(node, data, ctx)
       case CustomNodePart(node@splittednode.OneOutputSubsequentNode(data, _), _, _) =>
         CustomNodeCompiler.compileCustomNodePart(part, node, data, Left(ctx))
+    }
+  }
+
+  private def compileObjectWithTransformation[T](data: NodeData with WithParameters,
+                                                 ctx: Either[ValidationContext, BranchEndContexts],
+                                                 outputVar: Option[String],
+                                                 nodeDefinition: ObjectWithMethodDef,
+                                                 defaultCtxForCreatedObject: Option[T] => ValidatedNel[ProcessCompilationError, ValidationContext])
+                                                (implicit metaData: MetaData, nodeId: NodeId):
+  (Map[String, ExpressionTypingInfo], Validated[NonEmptyList[ProcessCompilationError], ValidationContext], ValidatedNel[ProcessCompilationError, T]) = {
+    val branchParameters = data.cast[Join].map(_.branchParameters).getOrElse(List.empty)
+    val parameters = data.parameters
+    val generic = validateGenericTransformer(ctx, parameters, branchParameters, outputVar)
+    if (generic.isDefinedAt(nodeDefinition)) {
+      val afterValidation = generic(nodeDefinition).map {
+        case TransformationResult(Nil, computedParameters, outputContext) =>
+          val (typingInfo, validProcessObject) = createProcessObject[T](nodeDefinition, parameters,
+            branchParameters, outputVar, ctx, Some(computedParameters))
+          (typingInfo, outputContext, validProcessObject)
+        case TransformationResult(h :: t, _, outputContext) =>
+          //TODO: typing info here??
+          (Map.empty[String, ExpressionTypingInfo], outputContext, Invalid(NonEmptyList(h, t)))
+      }
+      (afterValidation.map(_._1).valueOr(_ => Map.empty), afterValidation.map(_._2), afterValidation.andThen(_._3))
+    } else {
+      val (typingInfo, validProcessObject) = createProcessObject[T](nodeDefinition, parameters,
+        branchParameters, outputVar, ctx)
+      val nextCtx = validProcessObject.fold(_ => defaultCtxForCreatedObject(None), cNode =>
+        contextAfterNode(data, cNode, ctx, (c: T) => defaultCtxForCreatedObject(Some(c)))
+      )
+      (typingInfo, nextCtx, validProcessObject)
+    }
+  }
+
+  private def contextAfterNode[T](node: NodeData, cNode: T,
+                                  validationContexts: Either[ValidationContext, BranchEndContexts],
+                                  legacy: T => ValidatedNel[ProcessCompilationError, ValidationContext])
+                                 (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, ValidationContext] = {
+    val contextTransformationDefOpt = cNode.cast[AbstractContextTransformation].map(_.definition)
+    (contextTransformationDefOpt, validationContexts) match {
+      case (Some(transformation: ContextTransformationDef), Left(validationContext)) =>
+        // copying global variables because custom transformation may override them -> todo in ValidationContext
+        transformation.transform(validationContext).map(_.copy(globalVariables = validationContext.globalVariables))
+      case (Some(transformation: JoinContextTransformationDef), Right(branchEndContexts)) =>
+        // TODO JOIN: better error
+        val joinNode = node.cast[Join].getOrElse(throw new IllegalArgumentException(s"Should be used join element in node ${nodeId.id}"))
+        val contexts = joinNode.branchParameters
+          .groupBy(_.branchId).keys.map(k => k -> branchEndContexts.contextForId(k)).toMap
+        // copying global variables because custom transformation may override them -> todo in ValidationContext
+        transformation.transform(contexts).map(_.copy(globalVariables = contextWithOnlyGlobalVariables.globalVariables))
+      case (Some(transformation), ctx) =>
+        Invalid(FatalUnknownError(s"Invalid ContextTransformation class $transformation for contexts: $ctx")).toValidatedNel
+      case (None, _) =>
+        legacy(cNode)
+    }
+  }
+
+  private def returnType(nodeDefinition: ObjectWithMethodDef, obj: Any): Option[TypingResult] = {
+    if (obj.isInstanceOf[ReturningType]) {
+      Some(obj.asInstanceOf[ReturningType].returnType)
+    } else if (nodeDefinition.hasNoReturn) {
+      None
+    } else {
+      Some(nodeDefinition.returnType)
+    }
+  }
+
+  private def validateGenericTransformer[T](ctx: Either[ValidationContext, BranchEndContexts],
+                                            parameters: List[evaluatedparam.Parameter],
+                                            branchParameters: List[BranchParameters], outputVar: Option[String])
+                                           (implicit metaData: MetaData, nodeId: NodeId):
+  PartialFunction[ObjectWithMethodDef, Validated[NonEmptyList[ProcessCompilationError], TransformationResult]] = {
+
+    case nodeDefinition if nodeDefinition.obj.isInstanceOf[SingleInputGenericNodeTransformation[_]] && ctx.isLeft =>
+      val transformer = nodeDefinition.obj.asInstanceOf[SingleInputGenericNodeTransformation[_]]
+      nodeValidator.validateNode(transformer, parameters, branchParameters, outputVar)(ctx.left.get)
+    case nodeDefinition if nodeDefinition.obj.isInstanceOf[JoinGenericNodeTransformation[_]] && ctx.isRight =>
+      val transformer = nodeDefinition.obj.asInstanceOf[JoinGenericNodeTransformation[_]]
+      nodeValidator.validateNode(transformer, parameters, branchParameters, outputVar)(ctx.right.get.contexts)
+  }
+
+  private def createProcessObject[T](nodeDefinition: ObjectWithMethodDef,
+                                     parameters: List[evaluatedparam.Parameter],
+                                     branchParameters: List[BranchParameters],
+                                     outputVariableNameOpt: Option[String],
+                                     ctxOrBranches: Either[ValidationContext, BranchEndContexts],
+                                     parameterDefinitionsToUse: Option[List[Parameter]] = None
+                                    )
+                                    (implicit nodeId: NodeId,
+                                     metaData: MetaData): (Map[String, ExpressionTypingInfo], ValidatedNel[ProcessCompilationError, T]) = {
+    val ctx = ctxOrBranches.left.getOrElse(contextWithOnlyGlobalVariables)
+    val branchContexts = ctxOrBranches.right.map { ctxs =>
+      branchParameters.map(_.branchId).map(branchId => branchId -> ctxs.contextForId(branchId)).toMap
+    }.right.getOrElse(Map.empty)
+
+    val compiledObjectWithTypingInfo = objectParametersExpressionCompiler.compileObjectParameters(parameterDefinitionsToUse.getOrElse(nodeDefinition.parameters),
+      parameters, branchParameters, ctx, branchContexts, eager = false).andThen { compiledParameters =>
+      factory.createObject[T](nodeDefinition, outputVariableNameOpt, compiledParameters).map { obj =>
+        val typingInfo = compiledParameters.flatMap {
+          case (TypedParameter(name, TypedExpression(_, _, typingInfo)), _) =>
+            List(name -> typingInfo)
+          case (TypedParameter(paramName, TypedExpressionMap(valueByBranch)), _) =>
+            valueByBranch.map {
+              case (branch, TypedExpression(_, _, typingInfo)) =>
+                val expressionId = NodeTypingInfo.branchParameterExpressionId(paramName, branch)
+                expressionId -> typingInfo
+            }
+        }.toMap
+        (typingInfo, obj)
+      }
+    }
+    (compiledObjectWithTypingInfo.map(_._1).valueOr(_ => Map.empty), compiledObjectWithTypingInfo.map(_._2))
+  }
+
+  private case class BranchEndContexts(contexts: Map[String, ValidationContext]) {
+
+    def addPart(part: ProcessPart, result: CompilationResult[_]): BranchEndContexts = {
+      val branchEnds = NodesCollector.collectNodesInAllParts(part).collect {
+        case splittednode.EndingNode(BranchEndData(definition)) => definition.id -> result.typing.apply(definition.artificialNodeId)
+      }.toMap
+      copy(contexts = contexts ++ branchEnds.mapValues(_.inputValidationContext))
+    }
+
+    def contextForId(id: String)(implicit metaData: MetaData): ValidationContext = {
+      contexts(id)
     }
   }
 
@@ -242,6 +370,7 @@ protected trait ProcessCompilerBase {
           case Some(definition) =>
             def defaultContextTransformation(compiled: Option[Any]) =
               contextWithOnlyGlobalVariables.withVariable(Interpreter.InputParamName, compiled.flatMap(a => returnType(definition, a)).getOrElse(Unknown))
+
             compileObjectWithTransformation[Source[_]](a, Left(contextWithOnlyGlobalVariables), Some(Interpreter.InputParamName), definition, defaultContextTransformation)
           case None =>
             val error = Invalid(NonEmptyList.of(MissingSourceFactory(ref.typ)))
@@ -250,7 +379,7 @@ protected trait ProcessCompilerBase {
             (Map.empty, defaultCtx, error)
         }
       case SubprocessInputDefinition(_, params, _) =>
-        (Map.empty, Valid(contextWithOnlyGlobalVariables.copy(localVariables = params.map(p => p.name -> loadFromParameter(p)).toMap)), Valid(new Source[Any]{}))
+        (Map.empty, Valid(contextWithOnlyGlobalVariables.copy(localVariables = params.map(p => p.name -> loadFromParameter(p)).toMap)), Valid(new Source[Any] {}))
     }
 
     //TODO: better classloader error handling
@@ -277,7 +406,7 @@ protected trait ProcessCompilerBase {
       sinkFactories.get(ref.typ) match {
         case Some(definition) =>
           val (typeInfo, _, validSinkFactory) =
-            compileObjectWithTransformation[api.process.Sink](sink, Left(ctx), None, definition._1, (_:Any) => Valid(ctx))
+            compileObjectWithTransformation[api.process.Sink](sink, Left(ctx), None, definition._1, (_: Any) => Valid(ctx))
           (typeInfo, validSinkFactory)
         case None =>
           val error = invalid(MissingSinkFactory(sink.ref.typ)).toValidatedNel
@@ -349,6 +478,7 @@ protected trait ProcessCompilerBase {
                                    (implicit nodeId: NodeId, metaData: MetaData): Option[AnyRef] => ValidatedNel[ProcessCompilationError, ValidationContext] = maybeCNode => {
       val validationContext = branchCtx.left.getOrElse(contextWithOnlyGlobalVariables)
       val maybeClearedContext = if (additionalData.clearsContext) validationContext.clearVariables else validationContext
+
       def ctxWithVar(varName: String, typ: TypingResult) = maybeClearedContext.withVariable(varName, typ)
         //ble... NonEmptyList is invariant...
         .asInstanceOf[ValidatedNel[ProcessCompilationError, ValidationContext]]
@@ -366,134 +496,6 @@ protected trait ProcessCompilerBase {
       }
     }
   }
-
-  private def compileObjectWithTransformation[T](data: NodeData with WithParameters,
-                                                 ctx: Either[ValidationContext, BranchEndContexts],
-                                                 outputVar: Option[String],
-                                                 nodeDefinition: ObjectWithMethodDef,
-                                                 defaultCtxForCreatedObject: Option[T] => ValidatedNel[ProcessCompilationError, ValidationContext])
-                                                (implicit metaData: MetaData, nodeId: NodeId):
-    (Map[String, ExpressionTypingInfo], Validated[NonEmptyList[ProcessCompilationError], ValidationContext], ValidatedNel[ProcessCompilationError, T]) = {
-    val branchParameters = data.cast[Join].map(_.branchParameters).getOrElse(List.empty)
-    val parameters = data.parameters
-    val generic = validateGenericTransformer(ctx, parameters, branchParameters, outputVar)
-    if (generic.isDefinedAt(nodeDefinition)) {
-      val afterValidation = generic(nodeDefinition).map {
-        case TransformationResult(Nil, computedParameters, outputContext) =>
-          val (typingInfo, validProcessObject) = createProcessObject[T](nodeDefinition, parameters,
-            branchParameters, outputVar, ctx, Some(computedParameters))
-          (typingInfo, outputContext, validProcessObject)
-        case TransformationResult(h::t, _, outputContext) =>
-          //TODO: typing info here??
-          (Map.empty[String, ExpressionTypingInfo], outputContext, Invalid(NonEmptyList(h, t)))
-      }
-      (afterValidation.map(_._1).valueOr(_ => Map.empty), afterValidation.map(_._2), afterValidation.andThen(_._3))
-    } else {
-      val (typingInfo, validProcessObject) = createProcessObject[T](nodeDefinition, parameters,
-        branchParameters, outputVar, ctx)
-      val nextCtx = validProcessObject.fold(_ => defaultCtxForCreatedObject(None), cNode =>
-        contextAfterNode(data, cNode, ctx, (c:T) => defaultCtxForCreatedObject(Some(c)))
-      )
-      (typingInfo, nextCtx, validProcessObject)
-    }
-  }
-
-
-  private def contextAfterNode[T](node: NodeData, cNode: T,
-                               validationContexts: Either[ValidationContext, BranchEndContexts],
-                               legacy: T =>  ValidatedNel[ProcessCompilationError, ValidationContext])
-                              (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, ValidationContext] = {
-    val contextTransformationDefOpt = cNode.cast[AbstractContextTransformation].map(_.definition)
-    (contextTransformationDefOpt, validationContexts) match {
-      case (Some(transformation: ContextTransformationDef), Left(validationContext)) =>
-        // copying global variables because custom transformation may override them -> todo in ValidationContext
-        transformation.transform(validationContext).map(_.copy(globalVariables = validationContext.globalVariables))
-      case (Some(transformation: JoinContextTransformationDef), Right(branchEndContexts)) =>
-        // TODO JOIN: better error
-        val joinNode = node.cast[Join].getOrElse(throw new IllegalArgumentException(s"Should be used join element in node ${nodeId.id}"))
-        val contexts = joinNode.branchParameters
-          .groupBy(_.branchId).keys.map(k => k -> branchEndContexts.contextForId(k)).toMap
-        // copying global variables because custom transformation may override them -> todo in ValidationContext
-        transformation.transform(contexts).map(_.copy(globalVariables = contextWithOnlyGlobalVariables.globalVariables))
-      case (Some(transformation), ctx) =>
-        Invalid(FatalUnknownError(s"Invalid ContextTransformation class $transformation for contexts: $ctx")).toValidatedNel
-      case (None, _) =>
-        legacy(cNode)
-    }
-  }
-
-  private def returnType(nodeDefinition: ObjectWithMethodDef, obj: Any): Option[TypingResult] = {
-    if (obj.isInstanceOf[ReturningType]) {
-      Some(obj.asInstanceOf[ReturningType].returnType)
-    } else if (nodeDefinition.hasNoReturn) {
-      None
-    } else {
-      Some(nodeDefinition.returnType)
-    }
-  }
-
-  private def validateGenericTransformer[T](ctx: Either[ValidationContext, BranchEndContexts],
-                                        parameters: List[evaluatedparam.Parameter],
-                                        branchParameters: List[BranchParameters], outputVar: Option[String])
-                                       (implicit metaData: MetaData, nodeId: NodeId):
-    PartialFunction[ObjectWithMethodDef, Validated[NonEmptyList[ProcessCompilationError], TransformationResult]] = {
-
-    case nodeDefinition if nodeDefinition.obj.isInstanceOf[SingleInputGenericNodeTransformation[_]] && ctx.isLeft =>
-      val transformer = nodeDefinition.obj.asInstanceOf[SingleInputGenericNodeTransformation[_]]
-      nodeValidator.validateNode(transformer, parameters, branchParameters, outputVar)(ctx.left.get)
-    case nodeDefinition if nodeDefinition.obj.isInstanceOf[JoinGenericNodeTransformation[_]] && ctx.isRight  =>
-      val transformer = nodeDefinition.obj.asInstanceOf[JoinGenericNodeTransformation[_]]
-      nodeValidator.validateNode(transformer, parameters, branchParameters, outputVar)(ctx.right.get.contexts)
-  }
-
-  private def createProcessObject[T](nodeDefinition: ObjectWithMethodDef,
-                                      parameters: List[evaluatedparam.Parameter],
-                                      branchParameters: List[BranchParameters],
-                                      outputVariableNameOpt: Option[String],
-                                      ctxOrBranches: Either[ValidationContext, BranchEndContexts],
-                                      parameterDefinitionsToUse: Option[List[Parameter]] = None
-                                     )
-                                     (implicit nodeId: NodeId,
-                                      metaData: MetaData): (Map[String, ExpressionTypingInfo], ValidatedNel[ProcessCompilationError, T]) = {
-    val ctx = ctxOrBranches.left.getOrElse(contextWithOnlyGlobalVariables)
-    val branchContexts = ctxOrBranches.right.map { ctxs =>
-      branchParameters.map(_.branchId).map(branchId => branchId -> ctxs.contextForId(branchId)).toMap
-    }.right.getOrElse(Map.empty)
-
-    val compiledObjectWithTypingInfo = objectParametersExpressionCompiler.compileObjectParameters(parameterDefinitionsToUse.getOrElse(nodeDefinition.parameters),
-      parameters, branchParameters, ctx, branchContexts, eager = false).andThen { compiledParameters =>
-        factory.createObject[T](nodeDefinition, outputVariableNameOpt, compiledParameters).map { obj =>
-          val typingInfo = compiledParameters.flatMap {
-            case (TypedParameter(name, TypedExpression(_, _, typingInfo)), _) =>
-              List(name -> typingInfo)
-            case (TypedParameter(paramName, TypedExpressionMap(valueByBranch)), _) =>
-              valueByBranch.map {
-                case (branch, TypedExpression(_, _, typingInfo)) =>
-                  val expressionId = NodeTypingInfo.branchParameterExpressionId(paramName, branch)
-                  expressionId -> typingInfo
-              }
-          }.toMap
-          (typingInfo, obj)
-        }
-    }
-    (compiledObjectWithTypingInfo.map(_._1).valueOr(_ => Map.empty), compiledObjectWithTypingInfo.map(_._2))
-  }
-
-  private case class BranchEndContexts(contexts: Map[String, ValidationContext]) {
-
-    def addPart(part: ProcessPart, result: CompilationResult[_]): BranchEndContexts = {
-      val branchEnds = NodesCollector.collectNodesInAllParts(part).collect {
-        case splittednode.EndingNode(BranchEndData(definition)) => definition.id -> result.typing.apply(definition.artificialNodeId)
-      }.toMap
-      copy(contexts = contexts ++ branchEnds.mapValues(_.inputValidationContext))
-    }
-
-    def contextForId(id: String)(implicit metaData: MetaData): ValidationContext = {
-      contexts(id)
-    }
-  }
-
-  protected def factory: ProcessObjectFactory
 
 }
 
