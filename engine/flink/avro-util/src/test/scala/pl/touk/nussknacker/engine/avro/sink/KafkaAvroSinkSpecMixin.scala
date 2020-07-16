@@ -5,7 +5,7 @@ import org.apache.avro.generic.GenericContainer
 import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.avro.TestSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
+import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, CheckAllEncoderPolicy}
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2, PaymentV1}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
@@ -13,7 +13,7 @@ import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchema
 
 trait KafkaAvroSinkSpecMixin {
 
-  final protected val avroEncoder = BestEffortAvroEncoder()
+  final protected val avroEncoder = BestEffortAvroEncoder(CheckAllEncoderPolicy)
 
   protected def createLazyParam(schema: Schema, data: Map[String, Any]): LazyParameter[GenericContainer] = {
     val record = avroEncoder.encodeRecordOrError(data, schema)

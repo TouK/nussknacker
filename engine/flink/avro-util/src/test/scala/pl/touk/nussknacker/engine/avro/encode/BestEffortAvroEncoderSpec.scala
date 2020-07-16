@@ -18,7 +18,7 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers with EitherValues 
 
   import collection.JavaConverters._
 
-  final protected val avroEncoder = BestEffortAvroEncoder()
+  final protected val avroEncoder = BestEffortAvroEncoder(CheckAllEncoderPolicy)
 
   it("should create simple record") {
     val schema = wrapWithRecordSchema(

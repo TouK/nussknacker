@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.avro.schema.{AvroSchemaEvolution, DefaultAvroS
 
 import scala.math.BigDecimal.RoundingMode
 
-class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution) {
+class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, encoderPolicy: EncoderPolicy) {
 
   import scala.collection.JavaConverters._
 
@@ -136,8 +136,8 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution) {
     fields.asScala.map {
       case (fieldName, value) =>
         val field = schema.getField(fieldName)
-        if (field == null) {
-          error(s"Not expected field with name: $fieldName for schema: $schema")
+        if (field == null && !encoderPolicy.acceptRedundant) {
+          error(s"Not expected field with name: $fieldName for schema: $schema and policy $encoderPolicy does not allow redundant")
         } else {
           val fieldSchema = field.schema()
           encode(value, fieldSchema).map(fieldName -> _)
@@ -149,6 +149,7 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution) {
       }
       builder.build()
     }
+    //TODO: Check optional?
   }
 
   private def encodeGenericContainer(container: GenericContainer, schema: Schema): WithError[GenericContainer] = {
@@ -196,5 +197,5 @@ object BestEffortAvroEncoder {
 
   final private val DefaultSchemaEvolution = new DefaultAvroSchemaEvolution
 
-  def apply(): BestEffortAvroEncoder = new BestEffortAvroEncoder(DefaultSchemaEvolution)
+  def apply(encoderPolicy: EncoderPolicy): BestEffortAvroEncoder = new BestEffortAvroEncoder(DefaultSchemaEvolution, encoderPolicy)
 }

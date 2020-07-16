@@ -3,16 +3,18 @@ package pl.touk.nussknacker.engine.avro.sink
 import cats.Id
 import cats.data.WriterT
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, BaseDefinedParameter, NodeDependencyValue}
+import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
+import pl.touk.nussknacker.engine.avro.encode.EncoderPolicy
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
 
-class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, val processObjectDependencies: ProcessObjectDependencies)
+class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider,
+                           val processObjectDependencies: ProcessObjectDependencies, encoderPolicy: EncoderPolicy)
   extends BaseKafkaAvroSinkFactory with KafkaAvroBaseTransformer[FlinkSink]{
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
@@ -35,7 +37,7 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, v
         val schemaDeterminer = prepareSchemaDeterminer(preparedTopic, Option(version.asInstanceOf[java.lang.Integer]).map(_.intValue()))
         val validationResult = schemaDeterminer.determineSchemaUsedInTyping
           .leftMap(SchemaDeterminerErrorHandler.handleSchemaRegistryError)
-          .andThen(schema => validateValueType(value.returnType, schema)).swap.toList
+          .andThen(schema => validateValueType(value.returnType, schema, encoderPolicy)).swap.toList
         FinalResults(context, validationResult)
     //edge case - for some reason Topic/Version is not defined
     case TransformationStep((KafkaAvroBaseTransformer.SinkKeyParamName, _) :: (KafkaAvroBaseTransformer.SinkValueParamName, _) ::
@@ -59,7 +61,7 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, v
     val value = params(KafkaAvroBaseTransformer.SinkValueParamName).asInstanceOf[LazyParameter[AnyRef]]
 
     createSink(preparedTopic, version, key, value,
-      kafkaConfig, schemaRegistryProvider.serializationSchemaFactory, prepareSchemaDeterminer(preparedTopic, version))(
+      kafkaConfig, schemaRegistryProvider.serializationSchemaFactory, prepareSchemaDeterminer(preparedTopic, version), encoderPolicy)(
       typedDependency[MetaData](dependencies), typedDependency[NodeId](dependencies))
   }
 

@@ -6,14 +6,14 @@ import org.apache.avro.generic.GenericContainer
 import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.avro.{AvroUtils, TestSchemaRegistryClientFactory}
-import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
+import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, CheckAllEncoderPolicy}
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 
 trait KafkaAvroSourceSpecMixin {
 
-  final private val avroEncoder = BestEffortAvroEncoder()
+  final private val avroEncoder = BestEffortAvroEncoder(CheckAllEncoderPolicy)
 
   protected def createOutput(schema: Schema, data: Map[String, Any]): LazyParameter[GenericContainer] = {
     val record = avroEncoder.encodeRecordOrError(data, schema)
