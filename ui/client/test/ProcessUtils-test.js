@@ -156,10 +156,10 @@ const process = {
 
 const processWithVariableTypes = {
   ...process,
-  "validationResult": { "errors": {"invalidNodes": {}}, variableTypes: {
-      "start": {},
-      "processVariables": {"input": {refClazzName:"java.lang.String"}},
-      "variableNode": {"input": {refClazzName:"java.lang.String"}, "processVariables": {refClazzName:"java.util.Map", fields: {field1: {refClazzName: "java.lang.String"}}}}
+  "validationResult": { "errors": {"invalidNodes": {}}, nodeResults: {
+    "start": {},
+    "processVariables": {variableTypes: {"input": {refClazzName:"java.lang.String"}}},
+    "variableNode": {variableTypes: {"input": {refClazzName:"java.lang.String"}, "processVariables": {refClazzName:"java.util.Map", fields: {field1: {refClazzName: "java.lang.String"}}}}}
     }
   }
 }

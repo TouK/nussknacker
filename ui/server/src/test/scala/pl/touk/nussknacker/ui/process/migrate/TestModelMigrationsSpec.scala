@@ -23,7 +23,7 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
 
     val results = testMigration.testMigrations(List(process), List())
 
-    results.head.newErrors shouldBe ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty, Map.empty, Map.empty)
+    results.head.newErrors shouldBe ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty)
   }
 
   test("should perform test migration on multiple source process") {
@@ -32,7 +32,7 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
 
     val results = testMigration.testMigrations(List(process), List())
 
-    results.head.newErrors shouldBe ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty, Map.empty, Map.empty)
+    results.head.newErrors shouldBe ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty)
     results.head.converted.nodes.collect { case s: Source => s.ref.typ } shouldBe List(ProcessTestData.otherExistingSourceFactory, ProcessTestData.otherExistingSourceFactory)
   }
 
@@ -42,7 +42,7 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
 
     val results = testMigration.testMigrations(List(process), List())
 
-    results.head.newErrors shouldBe ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty, Map.empty, Map.empty)
+    results.head.newErrors shouldBe ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty)
     results.head.shouldFail shouldBe false
     results.head.shouldFailOnNewErrors shouldBe true
   }

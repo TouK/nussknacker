@@ -738,11 +738,11 @@ function mapState(state, props) {
     processDefinitionData: processDefinitionData,
     processId: mainProcess.id,
     processProperties: mainProcess.properties,
-    variableTypes: mainProcess?.validationResult?.variableTypes[props.node.id] || {},
+    variableTypes: mainProcess?.validationResult?.nodeResults?.[props.node.id]?.variableTypes || {},
     findAvailableVariables: findAvailableVariables,
     currentErrors: state.nodeDetails.validationPerformed ? state.nodeDetails.validationErrors : props.nodeErrors,
     dynamicParameterDefinitions: state.nodeDetails.validationPerformed ? state.nodeDetails.parameters :
-        state.graphReducer.processToDisplay?.validationResult?.parameters[props.node.id],
+        state.graphReducer.processToDisplay?.validationResult?.nodeResults?.[props.node.id]?.parameters,
   }
 }
 

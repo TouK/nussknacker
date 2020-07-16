@@ -27,7 +27,7 @@ import pl.touk.nussknacker.engine.variables.MetaVariables
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.FilterTrue
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationResult}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, NodeValidationError, NodeValidationErrorType, ValidationResult}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider, sampleResolver}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.validation.ProcessValidation
@@ -97,7 +97,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
       )
 
       val validated = displayableCanonical(process.toDisplayable)
-      val withoutTypes = validated.copy(validationResult = validated.validationResult.withTypes(Map.empty))
+      val withoutTypes = validated.copy(validationResult = validated.validationResult.copy(nodeResults = Map.empty))
       withoutTypes shouldBe process
     }
   }
@@ -114,12 +114,11 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
       ValidationResult.errors(
         Map("e" -> List(NodeValidationError("InvalidTailOfBranch", "Invalid end of process", "Process branch can only end with sink, processor or ending custom transformer", None, errorType = NodeValidationErrorType.SaveAllowed))),
         List.empty,
-        List.empty,
-        Map(
-          ExceptionHandlerNodeId -> Map("meta" -> MetaVariables.typingResult(meta)),
-          "s" -> Map("meta" -> MetaVariables.typingResult(meta)),
-          "v" -> Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta)),
-          "e" -> Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta), "test" -> Typed[String]))
+        List.empty).copy(nodeResults = Map(
+          ExceptionHandlerNodeId -> NodeTypingData(Map("meta" -> MetaVariables.typingResult(meta)), None, Map.empty),
+          "s" -> NodeTypingData(Map("meta" -> MetaVariables.typingResult(meta)), None, Map.empty),
+          "v" -> NodeTypingData(Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta)), None, Map.empty),
+          "e" -> NodeTypingData(Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta), "test" -> Typed[String]), None, Map.empty))
       )
     )
 

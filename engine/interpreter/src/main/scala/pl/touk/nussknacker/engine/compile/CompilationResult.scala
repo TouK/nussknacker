@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.canonize.{MaybeArtificial, MaybeArtificialExtr
 
 import scala.language.{higherKinds, reflectiveCalls}
 
-case class CompilationResult[+Result](private [compile] val typing: Map[String, NodeTypingInfo],
+case class CompilationResult[+Result](typing: Map[String, NodeTypingInfo],
                                      result: ValidatedNel[ProcessCompilationError, Result]) {
 
   import CompilationResult._
