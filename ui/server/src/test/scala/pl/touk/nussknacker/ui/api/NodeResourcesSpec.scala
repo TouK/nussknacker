@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties
 import io.circe.generic.semiauto.deriveDecoder
-import pl.touk.nussknacker.ui.definition.UIParameter
+import pl.touk.nussknacker.restmodel.definition.UIParameter
 import pl.touk.nussknacker.ui.validation.PrettyValidationErrors
 
 class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCirceSupport

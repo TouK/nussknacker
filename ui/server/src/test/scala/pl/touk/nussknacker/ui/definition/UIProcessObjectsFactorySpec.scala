@@ -13,7 +13,7 @@ import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import scala.concurrent.Future
 
-class UIProcessObjectsSpec extends FunSuite with Matchers {
+class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
 
   object TestService extends Service {
 
@@ -45,7 +45,7 @@ class UIProcessObjectsSpec extends FunSuite with Matchers {
         Map("enricher" -> WithCategories(TestService))
     })
 
-    val processObjects = UIProcessObjects.prepareUIProcessObjects(
+    val processObjects = UIProcessObjectsFactory.prepareUIProcessObjects(
       model,
       TestFactory.user("userId"),
       Set(),
@@ -75,7 +75,7 @@ class UIProcessObjectsSpec extends FunSuite with Matchers {
     })
 
     val processObjects =
-      UIProcessObjects.prepareUIProcessObjects(model, TestFactory.user("userId"), Set(), false,
+      UIProcessObjectsFactory.prepareUIProcessObjects(model, TestFactory.user("userId"), Set(), false,
         new ProcessTypesForCategories(ConfigWithScalaVersion.config))
 
     processObjects.nodesToAdd.filter(_.name == "hiddenCategory") shouldBe empty

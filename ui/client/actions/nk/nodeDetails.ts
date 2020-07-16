@@ -8,7 +8,7 @@ export type NodeValidationUpdated = { type: "NODE_VALIDATION_UPDATED", validatio
 export type NodeDetailsActions = NodeValidationUpdated
 
 export type ValidationData = {
-    parameters? : Map<string, UIParameter>,
+    parameters? : Record<string, UIParameter>,
     validationErrors: NodeValidationError[],
     validationPerformed: boolean,
 }

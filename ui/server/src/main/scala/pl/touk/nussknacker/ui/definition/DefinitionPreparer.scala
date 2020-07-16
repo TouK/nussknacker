@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.engine.graph.variable.Field
+import pl.touk.nussknacker.restmodel.definition.{NodeEdges, NodeGroup, NodeToAdd, NodeTypeId, UIObjectDefinition, UIProcessDefinition}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.{FilterFalse, FilterTrue}
 import pl.touk.nussknacker.ui.definition.defaults.{ParameterDefaultValueDeterminer, UINodeDefinition}

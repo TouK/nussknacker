@@ -48,19 +48,19 @@ class ProcessUtils {
   }
 
   //see BranchEndDefinition.artificialNodeId
-  findVariablesForBranches = (node, variableTypes) => {
+  findVariablesForBranches = (node, nodeResults) => {
     //we find all nodes matching pattern encoding branch and edge and extract branch id
-    return _.transform(variableTypes || {}, function(result, value, key) {
+    return _.transform(nodeResults || {}, function(result, value, key) {
       const branch = key.match(new RegExp(`^\\$edge-(.*)-${node.id}$`))
       if (branch && branch.length > 1) {
-        result[branch[1]] = value
+        result[branch[1]] = value.variableTypes
       }
     }, {})
   }
 
   findAvailableVariables = (processDefinition, processCategory, process) => (nodeId, parameterDefinition) => {
     const globalVariablesWithoutProcessCategory = this._findGlobalVariablesWithoutProcessCategory(processDefinition.globalVariables, processCategory)
-    const variablesFromValidation = _.get(process, ["validationResult", "variableTypes", nodeId])
+    const variablesFromValidation = process?.validationResult?.nodeResults?.[nodeId]?.variableTypes
     const variablesForNode = variablesFromValidation || this._findVariablesBasedOnGraph(nodeId, process, processDefinition)
     const additionalVariablesForParam = parameterDefinition?.additionalVariables || {}
     const variables = {...variablesForNode, ...additionalVariablesForParam}

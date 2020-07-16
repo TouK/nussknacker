@@ -1,6 +1,6 @@
 import {Edge} from "./edge"
 import {NodeType} from "./node"
-import {ValidationResult} from "../actions/nk"
+import {ValidationResult} from "./validation"
 
 export type Process = {
   nodes: NodeType[],

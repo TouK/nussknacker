@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.definition.defaults
 
-import pl.touk.nussknacker.ui.definition.UIParameter
+import pl.touk.nussknacker.restmodel.definition.UIParameter
 
 protected object OptionalityBasedDefaultValueDeterminer extends ParameterDefaultValueDeterminer {
 

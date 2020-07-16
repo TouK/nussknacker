@@ -68,6 +68,9 @@ services:
     depends_on:
       - zookeeper
       - kafka
+    #schema registry needs running kafka, depends_on is not enough, so let's restart when schema registry fails...
+    restart: on-failure
+
 
   jobmanager:
     container_name: nussknacker_jobmanager

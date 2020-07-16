@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.definition
 
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.restmodel.definition.UIParameter
 import pl.touk.nussknacker.ui.definition.defaults.{ParameterDefaultValueDeterminer, UINodeDefinition}
 
 class EvaluatedParameterPreparer(defaultValueEvaluator: ParameterDefaultValueDeterminer) {

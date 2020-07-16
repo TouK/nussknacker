@@ -27,7 +27,8 @@ import io.circe.generic.semiauto.deriveDecoder
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
-import pl.touk.nussknacker.ui.definition.UIParameter
+import pl.touk.nussknacker.restmodel.definition.UIParameter
+import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -70,7 +71,7 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
               NodeDataValidator.validate(nodeData.nodeData, modelData, validationContext, branchCtxs) match {
                 case ValidationNotPerformed => NodeValidationResult(None, Nil, validationPerformed = false)
                 case ValidationPerformed(errors, parameters) =>
-                  val uiParams = parameters.map(_.map(UIParameter(_, ParameterConfig.empty)))
+                  val uiParams = parameters.map(_.map(UIProcessObjectsFactory.createUIParameter(_, ParameterConfig.empty)))
                   //We don't return MissingParameter error when we are returning those missing parameters to be added - since
                   //it's not really exception ATM
                   def shouldIgnoreError(pce: ProcessCompilationError): Boolean = pce match {

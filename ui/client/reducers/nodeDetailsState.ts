@@ -3,7 +3,7 @@ import {ValidationData} from "../actions/nk"
 import {NodeValidationError, UIParameter} from "../types"
 
 export type NodeDetailsState = {
-    parameters? : Map<string, UIParameter>,
+    parameters? : Record<string, UIParameter>,
     validationErrors: NodeValidationError[],
     validationPerformed: boolean,
 }

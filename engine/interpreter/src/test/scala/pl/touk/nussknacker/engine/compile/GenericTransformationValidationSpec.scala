@@ -182,6 +182,15 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
       "val3" -> Typed.fromDetailedType[java.util.List[Boolean]]
     ))
 
+    val parameters = result.parametersInNodes("generic")
+    parameters shouldBe List(
+      Parameter[String]("par1"),
+      Parameter[Long]("lazyPar1").copy(isLazyParameter = true),
+      Parameter("val1", Unknown),
+      Parameter("val2", Unknown),
+      Parameter("val3", Unknown)
+    )
+
   }
 
   test("should validate sources") {
@@ -203,6 +212,15 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
        "val2" -> Typed[java.lang.Integer],
        "val3" -> Typed.fromDetailedType[java.util.List[Boolean]]
      ))
+
+    val parameters = result.parametersInNodes("sourceId")
+    parameters shouldBe List(
+      Parameter[String]("par1"),
+      Parameter[Long]("lazyPar1").copy(isLazyParameter = true),
+      Parameter("val1", Unknown),
+      Parameter("val2", Unknown),
+      Parameter("val3", Unknown)
+    )
   }
 
   test("should validate sinks") {
@@ -216,6 +234,15 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
          )
      )
      result.result shouldBe 'valid
+
+    val parameters = result.parametersInNodes("end")
+    parameters shouldBe List(
+      Parameter[String]("par1"),
+      Parameter[Long]("lazyPar1").copy(isLazyParameter = true),
+      Parameter("val1", Unknown),
+      Parameter("val2", Unknown),
+      Parameter("val3", Unknown)
+    )
   }
 
   test("should dependent parameter in sink") {
@@ -227,6 +254,14 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
       )
     )
     result.result shouldBe Invalid(NonEmptyList.of(MissingParameters(Set("val2"), "end")))
+
+    val parameters = result.parametersInNodes("end")
+    parameters shouldBe List(
+      Parameter[String]("par1"),
+      Parameter[Long]("lazyPar1").copy(isLazyParameter = true),
+      Parameter("val1", Unknown),
+      Parameter("val2", Unknown)
+    )
   }
 
   test("should find wrong determining parameter") {
@@ -244,6 +279,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
     val info1 = result.typing("end")
 
     info1.inputValidationContext("out1") shouldBe TypedObjectTypingResult(Map.empty[String, TypingResult])
+
   }
 
   test("should find wrong dependent parameters") {
@@ -264,6 +300,14 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
       "val1" -> Typed[String],
       "val2" -> Unknown
     ))
+
+    val parameters = result.parametersInNodes("generic")
+    parameters shouldBe List(
+      Parameter[String]("par1"),
+      Parameter[Long]("lazyPar1").copy(isLazyParameter = true),
+      Parameter("val1", Unknown),
+      Parameter("val2", Unknown)
+    )
   }
 
 

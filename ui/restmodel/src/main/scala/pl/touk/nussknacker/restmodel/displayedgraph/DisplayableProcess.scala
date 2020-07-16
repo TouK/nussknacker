@@ -20,10 +20,6 @@ import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 
   val metaData: MetaData = properties.toMetaData(id)
 
-  def withSuccessValidation(): ValidatedDisplayableProcess = {
-    new ValidatedDisplayableProcess(this, ValidationResult.success)
-  }
-
 }
 
 @JsonCodec case class ValidatedDisplayableProcess(id: String,

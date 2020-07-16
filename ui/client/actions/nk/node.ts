@@ -1,5 +1,5 @@
 import HttpService from "../../http/HttpService"
-import {NodeType, NodeId, ProcessDefinitionData} from "../../types"
+import {NodeType, NodeId, ProcessDefinitionData, ValidationResult} from "../../types"
 import {Action, ThunkAction} from "../reduxTypes"
 import {RootState} from "../../reducers"
 import {Position, layoutChanged} from "./ui/layout"
@@ -9,7 +9,6 @@ import {getProcessDefinitionData} from "../../reducers/selectors/settings"
 
 //TODO: identify
 type Edges = $TodoType[]
-export type ValidationResult = $TodoType
 type EdgeType = $TodoType
 
 export type NodesWithPositions = { node: NodeType, position: Position }[]

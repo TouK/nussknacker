@@ -42,7 +42,6 @@ export class NodeDetailsContent extends React.Component {
       codeCompletionEnabled: true,
       testResultsToHide: new Set(),
     }
-    this.updateNodeDataIfNeeded(props.node)
     this.generateUUID("fields", "parameters")
   }
 
@@ -73,11 +72,10 @@ export class NodeDetailsContent extends React.Component {
     this.initalizeWithProps(nextProps)
     const nextPropsNode = nextProps.node
 
-    //So the flow should be: first node is updated, then node details are updated from BE and only then we adjust parameters
-    //TODO: make it more explicit?
     if (!_.isEqual(this.props.node, nextPropsNode)) {
-      this.updateNodeDataIfNeeded(nextPropsNode)
-    } else if (!_.isEqual(this.props.dynamicParameterDefinitions, nextProps.dynamicParameterDefinitions)) {
+      this.setState({editedNode: nextPropsNode, unusedParameters: []})
+    }
+    if (!_.isEqual(this.props.dynamicParameterDefinitions, nextProps.dynamicParameterDefinitions)) {
       this.adjustStateWithParameters(this.state.editedNode)
     }
   }
@@ -738,17 +736,18 @@ function mapState(state, props) {
   const mainProcess = state.graphReducer.processToDisplay
   const findAvailableVariables = ProcessUtils.findAvailableVariables(processDefinitionData, getProcessCategory(state), mainProcess)
 
-  const branchVars = ProcessUtils.findVariablesForBranches(props.node, mainProcess?.validationResult?.variableTypes)
+  const branchVars = ProcessUtils.findVariablesForBranches(props.node, mainProcess?.validationResult?.nodeResults)
   return {
     additionalPropertiesConfig: processDefinitionData.additionalPropertiesConfig || {},
     processDefinitionData: processDefinitionData,
     processId: mainProcess.id,
     processProperties: mainProcess.properties,
-    variableTypes: mainProcess?.validationResult?.variableTypes[props.node.id] || {},
+    variableTypes: mainProcess?.validationResult?.nodeResults?.[props.node.id]?.variableTypes || {},
     branchVariableTypes: branchVars,
     findAvailableVariables: findAvailableVariables,
     currentErrors: state.nodeDetails.validationPerformed ? state.nodeDetails.validationErrors : props.nodeErrors,
-    dynamicParameterDefinitions: state.nodeDetails.validationPerformed ? state.nodeDetails.parameters : null,
+    dynamicParameterDefinitions: state.nodeDetails.validationPerformed ? state.nodeDetails.parameters :
+        state.graphReducer.processToDisplay?.validationResult?.nodeResults?.[props.node.id]?.parameters,
   }
 }
 
