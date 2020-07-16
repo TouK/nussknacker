@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, SinkOutputParamName, TopicParamName}
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValueParamName, TopicParamName}
 import pl.touk.nussknacker.engine.avro.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{AbstractConfluentKafkaAvroDeserializer, AbstractConfluentKafkaAvroSerializer}
@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, MiniClusterResourceFlink_1_7, StoppableExecutionEnvironment}
+import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec, KafkaZookeeperUtils}
 import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
@@ -84,8 +85,8 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
     kafkaClient.sendRawMessage(topic.getOrElse(objectTopic), Array.empty, serializedObj, None, timestamp).futureValue
   }
 
-  protected def pushMessage(kafkaSerializer: KafkaSerializationSchema[AnyRef], obj: AnyRef, topic: String): RecordMetadata = {
-    val record = kafkaSerializer.serialize(obj, null)
+  protected def pushMessage(kafkaSerializer: KafkaSerializationSchema[StringKeyedValue[AnyRef]], obj: AnyRef, topic: String): RecordMetadata = {
+    val record = kafkaSerializer.serialize(StringKeyedValue(null, obj), null)
     kafkaClient.sendRawMessage(topic, record.key(), record.value()).futureValue
   }
 
@@ -138,7 +139,7 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
   protected def createAndRegisterTopicConfig(name: String, schema: Schema): TopicConfig =
     createAndRegisterTopicConfig(name, List(schema))
 
-  protected def createAvroSourceFactory[T: ClassTag]: KafkaAvroSourceFactory = {
+  protected lazy val avroSourceFactory: KafkaAvroSourceFactory = {
     new KafkaAvroSourceFactory(schemaRegistryProvider, testProcessObjectDependencies, None)
   }
 
@@ -171,20 +172,21 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
       "kafka-avro",
       TopicParamName -> s"'${sink.topic}'",
       SchemaVersionParamName -> parseVersion(sink.version),
-      SinkOutputParamName -> s"${sink.output}"
+      SinkKeyParamName -> sink.key,
+      SinkValueParamName -> sink.value
     )
   }
 
   protected def parseVersion(version: Option[Int]): String =
     version.map(v => s"$v").getOrElse("")
 
-  protected def runAndVerifyResult(process: EspProcess, topic: TopicConfig, event: Any, expected: GenericContainer, useSpecificAvroReader: Boolean = false): Unit =
+  protected def runAndVerifyResult(process: EspProcess, topic: TopicConfig, event: Any, expected: AnyRef, useSpecificAvroReader: Boolean = false): Unit =
     runAndVerifyResult(process, topic, List(event), List(expected), useSpecificAvroReader)
 
-  protected def runAndVerifyResult(process: EspProcess, topic: TopicConfig, events: List[Any], expected: GenericContainer): Unit =
+  protected def runAndVerifyResult(process: EspProcess, topic: TopicConfig, events: List[Any], expected: AnyRef): Unit =
     runAndVerifyResult(process, topic, events, List(expected), useSpecificAvroReader = false)
 
-  private def runAndVerifyResult(process: EspProcess, topic: TopicConfig, events: List[Any], expected: List[GenericContainer], useSpecificAvroReader: Boolean): Unit = {
+  private def runAndVerifyResult(process: EspProcess, topic: TopicConfig, events: List[Any], expected: List[AnyRef], useSpecificAvroReader: Boolean): Unit = {
     kafkaClient.createTopic(topic.input, partitions = 1)
     events.foreach(obj => pushMessage(obj, topic.input))
     kafkaClient.createTopic(topic.output, partitions = 1)
@@ -238,11 +240,11 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
 
   }
 
-  case class SinkAvroParam(topic: String, version: Option[Int], output: String)
+  case class SinkAvroParam(topic: String, version: Option[Int], value: String, key: String)
 
   object SinkAvroParam {
-    def apply(topicConfig: TopicConfig, version: Option[Int], output: String): SinkAvroParam =
-      new SinkAvroParam(topicConfig.output, version, output)
+    def apply(topicConfig: TopicConfig, version: Option[Int], value: String, key: String = ""): SinkAvroParam =
+      new SinkAvroParam(topicConfig.output, version, value, key)
   }
 }
 

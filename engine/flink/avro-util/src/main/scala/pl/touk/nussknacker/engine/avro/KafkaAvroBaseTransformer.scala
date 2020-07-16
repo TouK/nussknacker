@@ -91,7 +91,8 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
 object KafkaAvroBaseTransformer {
 
   final val SchemaVersionParamName = "Schema version"
-  final val TopicParamName = "topic"
-  final val SinkOutputParamName = "Output"
+  final val TopicParamName = "Topic"
+  final val SinkKeyParamName = "Key"
+  final val SinkValueParamName = "Value"
 
 }

@@ -24,8 +24,12 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution) {
 
   type WithError[T] = ValidatedNel[String, T]
 
+  def encodeOrError(value: Any, schema: Schema): AnyRef = {
+    encode(value, schema).valueOr(l => throw new AvroRuntimeException(l.toList.mkString(",")))
+  }
+
   // It is quite similar logic to GenericDatumReader.readWithConversion but instead of reading from decoder, it read directly from value
-  def encode(value: Any, schema: Schema): WithError[Any] = {
+  def encode(value: Any, schema: Schema): WithError[AnyRef] = {
     (schema.getType, value) match {
       case (_, Some(nested)) =>
         encode(nested, schema)
@@ -79,13 +83,13 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution) {
       case (Schema.Type.FIXED | Schema.Type.BYTES, number: Number) if schema.getLogicalType != null && schema.getLogicalType.isInstanceOf[LogicalTypes.Decimal] =>
         Valid(alignDecimalScale(new java.math.BigDecimal(number.toString), schema))
       case (Schema.Type.INT, number: Number) =>
-        Valid(number.intValue())
+        Valid(number.intValue().underlying())
       case (Schema.Type.INT, time: LocalTime) if schema.getLogicalType == LogicalTypes.timeMillis() =>
         Valid(time)
       case (Schema.Type.INT, time: LocalDate) if schema.getLogicalType == LogicalTypes.date() =>
         Valid(time)
       case (Schema.Type.LONG, number: Number) =>
-        Valid(number.longValue())
+        Valid(number.longValue().underlying())
       case (Schema.Type.LONG, instant: Instant) if schema.getLogicalType == LogicalTypes.timestampMillis() || schema.getLogicalType == LogicalTypes.timestampMicros() =>
         Valid(instant)
       case (Schema.Type.LONG, zoned: ChronoZonedDateTime[_]) if schema.getLogicalType == LogicalTypes.timestampMillis() || schema.getLogicalType == LogicalTypes.timestampMicros() =>
@@ -95,10 +99,10 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution) {
       case (Schema.Type.LONG, time: LocalTime) if schema.getLogicalType == LogicalTypes.timeMicros() =>
         Valid(time)
       case (Schema.Type.FLOAT, number: Number) =>
-        Valid(number.floatValue())
+        Valid(number.floatValue().underlying())
       case (Schema.Type.DOUBLE, number: Number) =>
-        Valid(number.doubleValue())
-      case (Schema.Type.BOOLEAN, boolean: Boolean) =>
+        Valid(number.doubleValue().underlying())
+      case (Schema.Type.BOOLEAN, boolean: java.lang.Boolean) =>
         Valid(boolean)
       case (Schema.Type.NULL, null) =>
         Valid(null)
@@ -121,7 +125,7 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution) {
   }
 
   def encodeRecordOrError(fields: java.util.Map[String, _], schema: Schema): GenericData.Record = {
-    encodeRecord(fields, schema).fold(l => throw new AvroRuntimeException(l.toList.mkString(",")), identity[GenericData.Record])
+    encodeRecord(fields, schema).valueOr(l => throw new AvroRuntimeException(l.toList.mkString(",")))
   }
 
   def encodeRecord(fields: collection.Map[String, _], schema: Schema): WithError[GenericData.Record] = {
@@ -155,7 +159,7 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution) {
     }
   }
 
-  private def encodeMap(map: collection.Map[_, _], schema: Schema): WithError[util.Map[CharSequence, Any]] = {
+  private def encodeMap(map: collection.Map[_, _], schema: Schema): WithError[util.Map[CharSequence, AnyRef]] = {
     map.map {
       case (k: String, v) =>
         encode(v, schema.getValueType).map(encodeString(k) -> _)
@@ -166,7 +170,7 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution) {
     }.toList.sequence.map(m => new util.HashMap(m.toMap.asJava))
   }
 
-  private def encodeCollection(collection: Traversable[_], schema: Schema): WithError[Any] = {
+  private def encodeCollection(collection: Traversable[_], schema: Schema): WithError[java.util.List[AnyRef]] = {
     collection.map(el => encode(el, schema.getElementType)).toList.sequence.map(l => new util.ArrayList(l.asJava))
   }
 

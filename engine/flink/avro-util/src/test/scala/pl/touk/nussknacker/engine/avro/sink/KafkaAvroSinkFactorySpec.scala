@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.TypedNodeDependency
 import pl.touk.nussknacker.engine.api.process.Sink
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, SinkOutputParamName, TopicParamName}
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValueParamName, TopicParamName}
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2, PaymentV1}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, KafkaAvroSpecMixin}
@@ -40,52 +40,53 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
     validator.validateNode(avroSinkFactory, paramsList, Nil, Some(Interpreter.InputParamName))(ValidationContext()).toOption.get
   }
 
-  protected def createSink(topic: String, version: Integer, output: LazyParameter[GenericContainer]): Sink =
+  protected def createSink(topic: String, version: Integer, value: LazyParameter[GenericContainer]): Sink =
     avroSinkFactory.implementation(
       Map(KafkaAvroBaseTransformer.TopicParamName -> topic,
-        KafkaAvroBaseTransformer.SchemaVersionParamName -> version, KafkaAvroBaseTransformer.SinkOutputParamName -> output),
+        KafkaAvroBaseTransformer.SchemaVersionParamName -> version, KafkaAvroBaseTransformer.SinkKeyParamName -> null, KafkaAvroBaseTransformer.SinkValueParamName -> value),
             List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)))
 
   test("should throw exception when schema doesn't exist") {
     assertThrows[CustomNodeValidationException] {
-      val output = createOutput(FullNameV1.schema, FullNameV1.exampleData)
-      createSink("not-exists-subject", 1, output)
+      val valueParam = createLazyParam(FullNameV1.schema, FullNameV1.exampleData)
+      createSink("not-exists-subject", 1, valueParam)
     }
   }
 
   test("should throw exception when schema version doesn't exist") {
     assertThrows[CustomNodeValidationException] {
-      val output = createOutput(FullNameV1.schema, FullNameV1.exampleData)
-      createSink(fullnameTopic, 666, output)
+      val valueParam = createLazyParam(FullNameV1.schema, FullNameV1.exampleData)
+      createSink(fullnameTopic, 666, valueParam)
     }
   }
 
-  test("should allow to create sink when #output schema is the same as sink schema") {
-    val output = createOutput(FullNameV1.schema, FullNameV1.exampleData)
-    createSink(fullnameTopic, 1, output)
+  test("should allow to create sink when #value schema is the same as sink schema") {
+    val valueParam = createLazyParam(FullNameV1.schema, FullNameV1.exampleData)
+    createSink(fullnameTopic, 1, valueParam)
   }
 
-  test("should allow to create sink when #output schema is compatible with newer sink schema") {
-    val output = createOutput(FullNameV1.schema, FullNameV1.exampleData)
-    createSink(fullnameTopic, 2, output)
+  test("should allow to create sink when #value schema is compatible with newer sink schema") {
+    val valueParam = createLazyParam(FullNameV1.schema, FullNameV1.exampleData)
+    createSink(fullnameTopic, 2, valueParam)
   }
 
-  test("should allow to create sink when #output schema is compatible with older fxied sink schema") {
-    val output = createOutput(FullNameV2.schema, FullNameV2.exampleData)
-    createSink(fullnameTopic, 1, output)
+  test("should allow to create sink when #value schema is compatible with older fxied sink schema") {
+    val valueParam = createLazyParam(FullNameV2.schema, FullNameV2.exampleData)
+    createSink(fullnameTopic, 1, valueParam)
   }
 
-  test("should throw exception when #output schema is not compatible with sink schema") {
+  test("should throw exception when #value schema is not compatible with sink schema") {
     assertThrows[CustomNodeValidationException] {
-      val output = createOutput(PaymentV1.schema, PaymentV1.exampleData)
-      createSink(fullnameTopic, 2, output)
+      val valueParam = createLazyParam(PaymentV1.schema, PaymentV1.exampleData)
+      createSink(fullnameTopic, 2, valueParam)
     }
   }
 
 
   test("should validate specific version") {
     val result = validate(
-      SinkOutputParamName -> "",
+      SinkKeyParamName -> "",
+      SinkValueParamName -> "",
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> "1")
 
@@ -94,7 +95,8 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
 
   test("should validate latest version") {
     val result = validate(
-      SinkOutputParamName -> "",
+      SinkKeyParamName -> "",
+      SinkValueParamName -> "",
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> "")
 
@@ -103,7 +105,8 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
 
   test("should return sane error on invalid topic") {
     val result = validate(
-      SinkOutputParamName -> "",
+      SinkKeyParamName -> "",
+      SinkValueParamName -> "",
       TopicParamName -> "'tereferer'",
       SchemaVersionParamName -> "1")
 
@@ -113,20 +116,22 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
 
   test("should return sane error on invalid version") {
     val result = validate(
-      SinkOutputParamName -> "",
+      SinkKeyParamName -> "",
+      SinkValueParamName -> "",
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> "343543")
 
     result.errors shouldBe CustomNodeError("id", "Fetching schema error for topic: fullname, version: Some(343543)", Some(SchemaVersionParamName))::Nil
   }
 
-  test("should validate output") {
+  test("should validate value") {
     val result = validate(
-      SinkOutputParamName -> "''",
+      SinkKeyParamName -> "",
+      SinkValueParamName -> "''",
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> "")
 
-    result.errors shouldBe CustomNodeError("id", "Provided output doesn't match to selected avro schema.", Some(SinkOutputParamName))::Nil
+    result.errors shouldBe CustomNodeError("id", "Provided value doesn't match to selected avro schema.", Some(SinkValueParamName))::Nil
   }
 
 }

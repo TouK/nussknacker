@@ -9,9 +9,13 @@ import pl.touk.nussknacker.engine.api.{InterpretationResult, LazyParameter}
 import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroSerializationSchemaFactory
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
+import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.StringKeyedValueMapper
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaProducer, PreparedKafkaTopic}
 
-class KafkaAvroSink(preparedTopic: PreparedKafkaTopic, version: Option[Int], output: LazyParameter[AnyRef],
+import scala.util.control.NonFatal
+
+class KafkaAvroSink(preparedTopic: PreparedKafkaTopic, version: Option[Int], key: LazyParameter[CharSequence], value: LazyParameter[AnyRef],
                     kafkaConfig: KafkaConfig, serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
                     schema: NkSerializableAvroSchema, runtimeSchema: Option[NkSerializableAvroSchema], clientId: String)
   extends FlinkSink with Serializable with LazyLogging {
@@ -24,18 +28,21 @@ class KafkaAvroSink(preparedTopic: PreparedKafkaTopic, version: Option[Int], out
   override def registerSink(dataStream: DataStream[InterpretationResult], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] = {
     dataStream
       .map(_.finalContext)
-      .map(flinkNodeContext.lazyParameterHelper.lazyMapFunction(output))
-      .map(ctx => ctx.value match {
-          case data: java.util.Map[String@unchecked, Any@unchecked] => avroEncoder.encodeRecordOrError(data, schema.getAvroSchema)
-          case _: GenericContainer => ctx.value
-          case _ => {
-            //TODO: We should better handle this situation by using EspExceptionHandler
-            logger.error(s"Invalid output type error for topic: ${preparedTopic.prepared}.", ctx)
-            null
-          }
-        }
-      )
-      .filter(_ != null)
+      .map(new StringKeyedValueMapper(flinkNodeContext.lazyParameterHelper, key, value))
+      .map(ctx => ctx.value.map {
+          case container: GenericContainer => container
+          // We try to encode not only Map[String, AnyRef], but also other types because avro accept also primitive types
+          case data =>
+            try {
+              avroEncoder.encodeOrError(data, schema.getAvroSchema)
+            } catch {
+              case NonFatal(ex) =>
+                //TODO: We should better handle this situation by using EspExceptionHandler
+                logger.error(s"Invalid value for topic: ${preparedTopic.prepared} and version: $version: $data", ex)
+                null
+            }
+      })
+      .filter(_.value != null)
       .addSink(toFlinkFunction)
   }
 
@@ -44,7 +51,7 @@ class KafkaAvroSink(preparedTopic: PreparedKafkaTopic, version: Option[Int], out
     */
   override def testDataOutput: Option[Any => String] = None
 
-  private def toFlinkFunction: SinkFunction[AnyRef] =
+  private def toFlinkFunction: SinkFunction[StringKeyedValue[AnyRef]] =
     PartitionByKeyFlinkKafkaProducer(kafkaConfig, preparedTopic.prepared,
       serializationSchemaFactory.create(preparedTopic.prepared, version, runtimeSchema, kafkaConfig), clientId)
 }

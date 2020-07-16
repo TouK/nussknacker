@@ -20,14 +20,14 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, v
     case TransformationStep(Nil, _) =>
       val initial = initialParametersForNode
       NextParameters(initial.value, initial.written)
-    case TransformationStep((KafkaAvroBaseTransformer.SinkOutputParamName, _) ::
+    case TransformationStep((KafkaAvroBaseTransformer.SinkKeyParamName, _) :: (KafkaAvroBaseTransformer.SinkValueParamName, _) ::
       (KafkaAvroBaseTransformer.TopicParamName, DefinedEagerParameter(topic:String, _)) :: Nil, _) =>
         val preparedTopic = prepareTopic(topic)
         val version = versionParam(preparedTopic)
         NextParameters(List(version.value), version.written, None)
-    case TransformationStep((KafkaAvroBaseTransformer.SinkOutputParamName, _) ::
+    case TransformationStep((KafkaAvroBaseTransformer.SinkKeyParamName, _) :: (KafkaAvroBaseTransformer.SinkValueParamName, _) ::
       (KafkaAvroBaseTransformer.TopicParamName, _) :: Nil, _) => fallbackVersionParam
-    case TransformationStep((KafkaAvroBaseTransformer.SinkOutputParamName, output:BaseDefinedParameter) ::
+    case TransformationStep((KafkaAvroBaseTransformer.SinkKeyParamName, _: BaseDefinedParameter) :: (KafkaAvroBaseTransformer.SinkValueParamName, value: BaseDefinedParameter) ::
       (KafkaAvroBaseTransformer.TopicParamName, DefinedEagerParameter(topic:String, _)) ::
       (KafkaAvroBaseTransformer.SchemaVersionParamName, DefinedEagerParameter(version, _)) ::Nil, _) =>
         //we cast here, since null will not be matched in case...
@@ -35,10 +35,10 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, v
         val schemaDeterminer = prepareSchemaDeterminer(preparedTopic, Option(version.asInstanceOf[java.lang.Integer]).map(_.intValue()))
         val validationResult = schemaDeterminer.determineSchemaUsedInTyping
           .leftMap(SchemaDeterminerErrorHandler.handleSchemaRegistryError)
-          .andThen(schema => validateOutput(output.returnType, schema)).swap.toList
+          .andThen(schema => validateValueType(value.returnType, schema)).swap.toList
         FinalResults(context, validationResult)
     //edge case - for some reason Topic/Version is not defined
-    case TransformationStep((KafkaAvroBaseTransformer.SinkOutputParamName, _) ::
+    case TransformationStep((KafkaAvroBaseTransformer.SinkKeyParamName, _) :: (KafkaAvroBaseTransformer.SinkValueParamName, _) ::
           (KafkaAvroBaseTransformer.TopicParamName, _) ::
           (KafkaAvroBaseTransformer.SchemaVersionParamName, _) ::Nil, _) => FinalResults(context, Nil)
   }
@@ -48,14 +48,17 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, v
   }
 
   private def initialParametersForNode(implicit nodeId: NodeId): WriterT[Id, List[ProcessCompilationError], List[Parameter]] =
-    topicParam.map(List(Parameter[AnyRef](KafkaAvroBaseTransformer.SinkOutputParamName).copy(isLazyParameter = true), _))
+    topicParam.map(List(
+      Parameter.optional[CharSequence](KafkaAvroBaseTransformer.SinkKeyParamName).copy(isLazyParameter = true),
+      Parameter[AnyRef](KafkaAvroBaseTransformer.SinkValueParamName).copy(isLazyParameter = true), _))
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): FlinkSink = {
     val preparedTopic = extractPreparedTopic(params)
     val version = extractVersion(params)
-    val output = params(KafkaAvroBaseTransformer.SinkOutputParamName).asInstanceOf[LazyParameter[AnyRef]]
+    val key = params(KafkaAvroBaseTransformer.SinkKeyParamName).asInstanceOf[LazyParameter[CharSequence]]
+    val value = params(KafkaAvroBaseTransformer.SinkValueParamName).asInstanceOf[LazyParameter[AnyRef]]
 
-    createSink(preparedTopic, version, output,
+    createSink(preparedTopic, version, key, value,
       kafkaConfig, schemaRegistryProvider.serializationSchemaFactory, prepareSchemaDeterminer(preparedTopic, version))(
       typedDependency[MetaData](dependencies), typedDependency[NodeId](dependencies))
   }

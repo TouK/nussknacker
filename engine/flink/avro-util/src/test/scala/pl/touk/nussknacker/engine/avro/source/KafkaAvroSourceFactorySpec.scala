@@ -40,49 +40,43 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
 
   test("should read generated record in v1") {
-    val sourceFactory = createAvroSourceFactory[GenericData.Record]
     val givenObj = FullNameV1.createRecord("Jan", "Kowalski")
 
-    roundTripSingleObject(sourceFactory, RecordTopic, 1, givenObj, FullNameV1.schema)
+    roundTripSingleObject(avroSourceFactory, RecordTopic, 1, givenObj, FullNameV1.schema)
   }
 
   test("should read generated record in v2") {
-    val sourceFactory = createAvroSourceFactory[GenericData.Record]
     val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
 
-    roundTripSingleObject(sourceFactory, RecordTopic, 2, givenObj, FullNameV2.schema)
+    roundTripSingleObject(avroSourceFactory, RecordTopic, 2, givenObj, FullNameV2.schema)
   }
 
   test("should read generated record in last version") {
-    val sourceFactory = createAvroSourceFactory[GenericData.Record]
     val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
 
-    roundTripSingleObject(sourceFactory, RecordTopic, null, givenObj, FullNameV2.schema)
+    roundTripSingleObject(avroSourceFactory, RecordTopic, null, givenObj, FullNameV2.schema)
   }
 
   test("should throw exception when schema doesn't exist") {
-    val sourceFactory = createAvroSourceFactory[GenericData.Record]
     val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
 
     assertThrowsWithParent[SchemaDeterminerError] {
-      readLastMessageAndVerify(sourceFactory, "fake-topic", 1, givenObj, FullNameV2.schema)
+      readLastMessageAndVerify(avroSourceFactory, "fake-topic", 1, givenObj, FullNameV2.schema)
     }
   }
 
   test("should throw exception when schema version doesn't exist") {
-    val sourceFactory = createAvroSourceFactory[GenericData.Record]
     val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
 
     assertThrowsWithParent[SchemaDeterminerError] {
-      readLastMessageAndVerify(sourceFactory, RecordTopic, 3, givenObj, FullNameV2.schema)
+      readLastMessageAndVerify(avroSourceFactory, RecordTopic, 3, givenObj, FullNameV2.schema)
     }
   }
 
   test("should read last generated simple object") {
-    val sourceFactory = createAvroSourceFactory[GenericData.Record]
     val givenObj = 123123
 
-    roundTripSingleObject(sourceFactory, IntTopic, 1, givenObj, IntSchema)
+    roundTripSingleObject(avroSourceFactory, IntTopic, 1, givenObj, IntSchema)
   }
 
   test("should read last generated key-value object") {
@@ -151,7 +145,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     implicit val meta: MetaData = MetaData("processId", StreamMetaData())
     implicit val nodeId: NodeId = NodeId("id")
     val paramsList = params.toList.map(p => Parameter(p._1, p._2))
-    validator.validateNode(createAvroSourceFactory[GenericData.Record], paramsList, Nil, Some(Interpreter.InputParamName))(ValidationContext()).toOption.get
+    validator.validateNode(avroSourceFactory, paramsList, Nil, Some(Interpreter.InputParamName))(ValidationContext()).toOption.get
   }
 
   private def createKeyValueAvroSourceFactory[K: ClassTag, V: ClassTag]: KafkaAvroSourceFactory = {

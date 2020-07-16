@@ -10,7 +10,8 @@ import pl.touk.nussknacker.engine.api.context.transformation.{DefinedLazyParamet
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation, FlinkLazyParameterFunctionHelper, OneParamLazyParameterFunction}
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.KeyWithValueMapper
+import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.StringKeyedValueMapper
 
 /* This is example for GenericTransformation
    the idea is that we have two parameters:
@@ -54,21 +55,21 @@ object LastVariableFilterTransformer extends CustomStreamTransformer with Single
 
     FlinkCustomStreamTransformation((str: DataStream[Context], ctx: FlinkCustomNodeContext) => {
       str
-        .map(new KeyWithValueMapper(ctx.lazyParameterHelper, keyBy, value))
-        .keyBy(_.value._1)
+        .map(new StringKeyedValueMapper(ctx.lazyParameterHelper, keyBy, value))
+        .keyBy(_.value.key)
         .process(new ConditionalUpdateFunction(condition, ctx.lazyParameterHelper))
     })
   }
 
   class ConditionalUpdateFunction(override val parameter: LazyParameter[java.lang.Boolean], override val lazyParameterHelper: FlinkLazyParameterFunctionHelper)
-    extends KeyedProcessFunction[String, ValueWithContext[(String, AnyRef)], ValueWithContext[AnyRef]] with OneParamLazyParameterFunction[java.lang.Boolean] {
+    extends KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]] with OneParamLazyParameterFunction[java.lang.Boolean] {
 
     private lazy val state = getRuntimeContext.getState(new ValueStateDescriptor[AnyRef]("state", classOf[AnyRef]))
 
-    override def processElement(valueWithCtx: ValueWithContext[(String, AnyRef)], ctx: KeyedProcessFunction[String, ValueWithContext[(String, AnyRef)],
+    override def processElement(valueWithCtx: ValueWithContext[StringKeyedValue[AnyRef]], ctx: KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]],
       ValueWithContext[AnyRef]]#Context, out: Collector[ValueWithContext[AnyRef]]): Unit = {
       val previous = state.value()
-      val current = valueWithCtx.value
+      val current = valueWithCtx.value.value
       val ctx = valueWithCtx.context.withVariable("current", current).withVariable("previous", previous)
       val shouldUpdate = evaluateParameter(ctx)
       if (shouldUpdate) {

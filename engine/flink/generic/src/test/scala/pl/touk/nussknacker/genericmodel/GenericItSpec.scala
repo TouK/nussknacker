@@ -123,7 +123,8 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
       .emptySink(
         "end",
         "kafka-avro",
-        KafkaAvroBaseTransformer.SinkOutputParamName  -> "#input",
+        KafkaAvroBaseTransformer.SinkKeyParamName  -> "",
+        KafkaAvroBaseTransformer.SinkValueParamName  -> "#input",
         KafkaAvroBaseTransformer.TopicParamName  -> s"'${topicConfig.output}'",
         KafkaAvroBaseTransformer.SchemaVersionParamName -> ""
       )
@@ -142,7 +143,8 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
       .emptySink(
         "end",
         "kafka-avro",
-        KafkaAvroBaseTransformer.SinkOutputParamName -> s"{first: #input.first, last: #input.last}",
+        KafkaAvroBaseTransformer.SinkKeyParamName -> "",
+        KafkaAvroBaseTransformer.SinkValueParamName -> s"{first: #input.first, last: #input.last}",
         KafkaAvroBaseTransformer.TopicParamName -> s"'${topicConfig.output}'",
         KafkaAvroBaseTransformer.SchemaVersionParamName -> "1"
       )
