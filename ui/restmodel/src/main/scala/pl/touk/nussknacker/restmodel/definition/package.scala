@@ -21,14 +21,14 @@ package object definition {
                                                             defaultAsyncInterpretation: Boolean)
 
   @JsonCodec(encodeOnly = true) case class UIProcessDefinition(services: Map[String, UIObjectDefinition],
-                                 sourceFactories: Map[String, UIObjectDefinition],
-                                 sinkFactories: Map[String, UIObjectDefinition],
-                                 customStreamTransformers: Map[String, UIObjectDefinition],
-                                 signalsWithTransformers: Map[String, UIObjectDefinition],
-                                 exceptionHandlerFactory: UIObjectDefinition,
-                                 globalVariables: Map[String, UIObjectDefinition],
-                                 typesInformation: Set[UIClazzDefinition],
-                                 subprocessInputs: Map[String, UIObjectDefinition]) {
+                                                               sourceFactories: Map[String, UIObjectDefinition],
+                                                               sinkFactories: Map[String, UIObjectDefinition],
+                                                               customStreamTransformers: Map[String, UIObjectDefinition],
+                                                               signalsWithTransformers: Map[String, UIObjectDefinition],
+                                                               exceptionHandlerFactory: UIObjectDefinition,
+                                                               globalVariables: Map[String, UIObjectDefinition],
+                                                               typesInformation: Set[UIClazzDefinition],
+                                                               subprocessInputs: Map[String, UIObjectDefinition]) {
     // skipping exceptionHandlerFactory
     val allDefinitions: Map[String, UIObjectDefinition] = services ++ sourceFactories ++ sinkFactories ++
       customStreamTransformers ++ signalsWithTransformers ++ globalVariables ++ subprocessInputs
@@ -47,18 +47,12 @@ package object definition {
 
   }
 
-  object UIParameter {
-
-    implicit def decoder(implicit typing: Decoder[TypingResult]): Decoder[UIParameter] = deriveDecoder[UIParameter]
-
-  }
-
   @JsonCodec(encodeOnly = true) case class UIObjectDefinition(parameters: List[UIParameter],
-                                returnType: Option[TypingResult],
-                                categories: List[String],
-                                nodeConfig: SingleNodeConfig) {
+                                                              returnType: Option[TypingResult],
+                                                              categories: List[String],
+                                                              nodeConfig: SingleNodeConfig) {
 
-    def hasNoReturn : Boolean = returnType.isEmpty
+    def hasNoReturn: Boolean = returnType.isEmpty
 
   }
 
@@ -75,5 +69,11 @@ package object definition {
                                                    editor: ParameterEditor,
                                                    validators: List[ParameterValidator],
                                                    label: Option[String])
+
+  object UIParameter {
+
+    implicit def decoder(implicit typing: Decoder[TypingResult]): Decoder[UIParameter] = deriveDecoder[UIParameter]
+
+  }
 
 }
