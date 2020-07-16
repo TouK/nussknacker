@@ -449,7 +449,7 @@ object SampleNodes {
         outputParameters(context, dependencies, rest)
     }
 
-    private def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, DefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
+    private def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
       dependencies.collectFirst { case OutputVariableNameValue(name) => name } match {
         case Some(name) =>
           val result = TypedObjectTypingResult(rest.toMap.mapValuesNow(_.returnType))
@@ -561,7 +561,6 @@ object SampleNodes {
 
     override def nodeDependencies: List[NodeDependency] = Nil
   }
-
 
   object ProcessHelper {
 

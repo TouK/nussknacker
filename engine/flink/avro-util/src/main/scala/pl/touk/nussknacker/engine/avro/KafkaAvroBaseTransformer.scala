@@ -15,11 +15,11 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, PreparedKafkaT
 
 import scala.reflect.ClassTag
 
-trait KafkaAvroBaseTransformer[T, Y] extends SingleInputGenericNodeTransformation[T] {
+trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T] {
 
   type WithError[V] = Writer[List[ProcessCompilationError], V]
 
-  def schemaRegistryProvider: SchemaRegistryProvider[Y]
+  def schemaRegistryProvider: SchemaRegistryProvider
 
   def processObjectDependencies: ProcessObjectDependencies
 
@@ -72,13 +72,7 @@ trait KafkaAvroBaseTransformer[T, Y] extends SingleInputGenericNodeTransformatio
   protected def prepareTopic(topic: String): PreparedKafkaTopic =
     KafkaUtils.prepareKafkaTopic(topic, processObjectDependencies)
 
-  protected def prepareSchemaDeterminer(params: Map[String, Any]): BasedOnVersionAvroSchemaDeterminer = {
-    val preparedTopic = extractPreparedTopic(params)
-    val version = extractVersion(params)
-    prepareSchemaDeterminer(preparedTopic, version)
-  }
-
-  protected def prepareSchemaDeterminer(preparedTopic: PreparedKafkaTopic, version: Option[Int]): BasedOnVersionAvroSchemaDeterminer = {
+  protected def prepareSchemaDeterminer(preparedTopic: PreparedKafkaTopic, version: Option[Int]): AvroSchemaDeterminer = {
     new BasedOnVersionAvroSchemaDeterminer(schemaRegistryProvider.createSchemaRegistryClient _, preparedTopic.prepared, version)
   }
 

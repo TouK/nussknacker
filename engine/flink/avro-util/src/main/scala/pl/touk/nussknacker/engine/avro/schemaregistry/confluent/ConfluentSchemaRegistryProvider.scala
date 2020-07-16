@@ -5,16 +5,14 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.ConfluentAvroToJsonFormatter
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentAvroSerializationSchemaFactory, ConfluentKafkaAvroDeserializationSchemaFactory}
-import pl.touk.nussknacker.engine.kafka.serialization.{KafkaVersionAwareDeserializationSchemaFactory, KafkaVersionAwareSerializationSchemaFactory}
+import pl.touk.nussknacker.engine.avro.serialization.{KafkaAvroDeserializationSchemaFactory, KafkaAvroSerializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter}
 
-import scala.reflect.ClassTag
-
-class ConfluentSchemaRegistryProvider[T](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
-                                         val serializationSchemaFactory: KafkaVersionAwareSerializationSchemaFactory[AnyRef],
-                                         val deserializationSchemaFactory: KafkaVersionAwareDeserializationSchemaFactory[T],
-                                         kafkaConfig: KafkaConfig,
-                                         formatKey: Boolean) extends SchemaRegistryProvider[T] {
+class ConfluentSchemaRegistryProvider(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
+                                      val serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
+                                      val deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory,
+                                      kafkaConfig: KafkaConfig,
+                                      formatKey: Boolean) extends SchemaRegistryProvider {
 
   override def recordFormatter(topic: String): Option[RecordFormatter] =
     Some(ConfluentAvroToJsonFormatter(createSchemaRegistryClient, topic, formatKey))
@@ -26,24 +24,24 @@ class ConfluentSchemaRegistryProvider[T](schemaRegistryClientFactory: ConfluentS
 
 object ConfluentSchemaRegistryProvider extends Serializable {
 
-  def apply[T: ClassTag](processObjectDependencies: ProcessObjectDependencies): ConfluentSchemaRegistryProvider[T] =
+  def apply(processObjectDependencies: ProcessObjectDependencies): ConfluentSchemaRegistryProvider =
     ConfluentSchemaRegistryProvider(CachedConfluentSchemaRegistryClientFactory(), processObjectDependencies)
 
-  def apply[T: ClassTag](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, processObjectDependencies: ProcessObjectDependencies): ConfluentSchemaRegistryProvider[T] =
+  def apply(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, processObjectDependencies: ProcessObjectDependencies): ConfluentSchemaRegistryProvider =
     ConfluentSchemaRegistryProvider(
       schemaRegistryClientFactory,
       processObjectDependencies,
       formatKey = false
     )
 
-  def apply[T: ClassTag](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
-                         processObjectDependencies: ProcessObjectDependencies,
-                         formatKey: Boolean): ConfluentSchemaRegistryProvider[T] = {
+  def apply(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
+            processObjectDependencies: ProcessObjectDependencies,
+            formatKey: Boolean): ConfluentSchemaRegistryProvider = {
     val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config, "kafka")
     new ConfluentSchemaRegistryProvider(
       schemaRegistryClientFactory,
-      ConfluentAvroSerializationSchemaFactory(kafkaConfig, schemaRegistryClientFactory),
-      ConfluentKafkaAvroDeserializationSchemaFactory(kafkaConfig, schemaRegistryClientFactory),
+      new ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory),
+      new ConfluentKafkaAvroDeserializationSchemaFactory(schemaRegistryClientFactory),
       kafkaConfig,
       formatKey)
   }

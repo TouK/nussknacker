@@ -15,12 +15,10 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSource
 
-import scala.reflect.ClassTag
-
-class KafkaAvroSourceFactory[T: ClassTag](val schemaRegistryProvider: SchemaRegistryProvider[T],
-                                          val processObjectDependencies: ProcessObjectDependencies,
-                                          timestampAssigner: Option[TimestampAssigner[T]])
-  extends BaseKafkaAvroSourceFactory(processObjectDependencies, timestampAssigner) with KafkaAvroBaseTransformer[FlinkSource[T], T]{
+class KafkaAvroSourceFactory(val schemaRegistryProvider: SchemaRegistryProvider,
+                             val processObjectDependencies: ProcessObjectDependencies,
+                             timestampAssigner: Option[TimestampAssigner[Any]])
+  extends BaseKafkaAvroSourceFactory(timestampAssigner) with KafkaAvroBaseTransformer[FlinkSource[Any]]{
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
                                     (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
@@ -37,7 +35,8 @@ class KafkaAvroSourceFactory[T: ClassTag](val schemaRegistryProvider: SchemaRegi
       (SchemaVersionParamName, DefinedEagerParameter(version, _)) ::Nil, _) =>
       //we do casting here and not in case, as version can be null...
       val preparedTopic = prepareTopic(topic)
-      val schemaDeterminer = prepareSchemaDeterminer(preparedTopic, Option(version.asInstanceOf[Integer]).map(_.intValue()))
+      val versionOpt = Option(version.asInstanceOf[Integer]).map(_.intValue())
+      val schemaDeterminer = prepareSchemaDeterminer(preparedTopic, versionOpt)
       val validType = schemaDeterminer.determineSchemaUsedInTyping.map(AvroSchemaTypeDefinitionExtractor.typeDefinition)
       val finalCtxValue = finalCtx(context, dependencies, validType.getOrElse(Unknown))
       val finalErrors = validType.swap.map(error => CustomNodeError(error.getMessage, Some(SchemaVersionParamName))).toList
@@ -62,9 +61,11 @@ class KafkaAvroSourceFactory[T: ClassTag](val schemaRegistryProvider: SchemaRegi
     List(topicParam(NodeId("")).value)
   }
 
-  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): FlinkSource[T] = {
-    createSource(extractPreparedTopic(params), extractVersion(params), kafkaConfig,
-      schemaRegistryProvider.deserializationSchemaFactory, schemaRegistryProvider.recordFormatter, prepareSchemaDeterminer(params),
+  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): FlinkSource[Any] = {
+    val preparedTopic = extractPreparedTopic(params)
+    val version = extractVersion(params)
+    createSource(preparedTopic, kafkaConfig, schemaRegistryProvider.deserializationSchemaFactory, schemaRegistryProvider.recordFormatter,
+      prepareSchemaDeterminer(preparedTopic, version))(
       typedDependency[MetaData](dependencies), typedDependency[NodeId](dependencies))
   }
 

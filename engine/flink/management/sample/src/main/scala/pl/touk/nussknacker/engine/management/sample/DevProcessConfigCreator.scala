@@ -126,6 +126,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     // types
     "simpleTypesCustomNode" -> categories(new SimpleTypesCustomStreamTransformer).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types"))),
     "lastVariableWithFilter" -> all(LastVariableFilterTransformer),
+    "enrichWithAdditionalData" -> all(EnrichWithAdditionalDataTransformer),
     "sendCommunication" -> all(DynamicParametersTransformer)
   )
 

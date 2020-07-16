@@ -2,23 +2,23 @@ package pl.touk.nussknacker.engine.compile.nodevalidation
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.{Interpreter, ModelData}
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.context.transformation.SingleInputGenericNodeTransformation
+import pl.touk.nussknacker.engine.api.context.transformation.{JoinGenericNodeTransformation, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeTypingInfo}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
-import pl.touk.nussknacker.engine.graph.node.{CustomNode, Filter, NodeData, Sink, Source, WithParameters}
+import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
+import pl.touk.nussknacker.engine.{Interpreter, ModelData}
 
 /*
   Currently we only validate filter nodes. In the future we should implement validation/compilation for all node types
   and refactor compiler accordingly, to avoid duplication
  */
-trait NodeDataValidator[T<:NodeData] {
+trait NodeDataValidator[T <: NodeData] {
 
   def validate(nodeData: T, validationContext: ValidationContext)(implicit metaData: MetaData): ValidationResponse
 
@@ -32,12 +32,16 @@ case object ValidationNotPerformed extends ValidationResponse
 
 object NodeDataValidator {
 
-  def validate(nodeData: NodeData, modelData: ModelData, validationContext: ValidationContext)(implicit metaData: MetaData): ValidationResponse = {
+  def validate(nodeData: NodeData, modelData: ModelData,
+               validationContext: ValidationContext,
+               branchContexts: Map[String, ValidationContext]
+              )(implicit metaData: MetaData): ValidationResponse = {
     nodeData match {
-      case a:Filter => new FilterValidator(modelData).validate(a, validationContext)
-      case a:CustomNode => new CustomNodeValidator(modelData).validate(a, validationContext)
-      case a:Source => new SourceNodeValidator(modelData).validate(a, validationContext)
-      case a:Sink => new SinkNodeValidator(modelData).validate(a, validationContext)
+      case a: Filter => new FilterValidator(modelData).validate(a, validationContext)
+      case a: Join => new JoinValidator(modelData).validate(a, branchContexts)
+      case a: CustomNode => new CustomNodeValidator(modelData).validate(a, validationContext)
+      case a: Source => new SourceNodeValidator(modelData).validate(a, validationContext)
+      case a: Sink => new SinkNodeValidator(modelData).validate(a, validationContext)
       case a => EmptyValidator.validate(a, validationContext)
     }
   }
@@ -56,25 +60,27 @@ class FilterValidator(modelData: ModelData) extends NodeDataValidator[Filter] {
   }
 }
 
-trait WithParametersNodeValidator[T <: NodeData with WithParameters] extends NodeDataValidator[T] {
-
-  protected def modelData: ModelData
+trait WithGenericNodeTransformationValidator {
 
   private val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData)
 
-  private val expressionEvaluator
-  = ExpressionEvaluator.unOptimizedEvaluator(GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig))
+  protected val nodeValidator = new GenericNodeTransformationValidator(expressionCompiler, modelData.processWithObjectsDefinition.expressionConfig)
 
-  private val nodeValidator = new GenericNodeTransformationValidator(expressionCompiler, expressionEvaluator)
+  protected def modelData: ModelData
+
+}
+
+trait WithParametersNodeValidator[T <: NodeData with WithParameters] extends NodeDataValidator[T] with WithGenericNodeTransformationValidator {
 
   protected def validateGenericTransformer(obj: Any,
                                            nodeData: NodeData with WithParameters,
                                            validationContext: ValidationContext,
-                                           outputVar: Option[String], default: Any => ValidationResponse)(implicit metaData: MetaData): ValidationResponse = {
+                                           outputVar: Option[String],
+                                           default: Any => ValidationResponse)(implicit metaData: MetaData): ValidationResponse = {
     obj match {
-      case transform:SingleInputGenericNodeTransformation[_] =>
+      case transform: SingleInputGenericNodeTransformation[_] =>
         implicit val nodeId: NodeId = NodeId(nodeData.id)
-        nodeValidator.validateNode(transform, nodeData.parameters, validationContext, outputVar) match {
+        nodeValidator.validateNode(transform, nodeData.parameters, Nil, outputVar)(validationContext) match {
           case Valid(result) =>
             ValidationPerformed(result.errors, Some(result.parameters))
           case Invalid(e) => ValidationPerformed(e.toList, None)
@@ -110,6 +116,26 @@ class SourceNodeValidator(val modelData: ModelData) extends WithParametersNodeVa
     //TODO: handle standard case (non-generic transformer)
     validateGenericTransformer(transformer, nodeData, validationContext, Some(Interpreter.InputParamName), _ => ValidationNotPerformed)
   }
+}
+
+class JoinValidator(val modelData: ModelData) extends WithGenericNodeTransformationValidator {
+
+  def validate(nodeData: Join, validationContexts: Map[String, ValidationContext])(implicit metaData: MetaData): ValidationResponse = {
+    val transformer = modelData.processWithObjectsDefinition.customStreamTransformers(nodeData.nodeType)._1.obj
+    transformer match {
+      case transform: JoinGenericNodeTransformation[_] =>
+        implicit val nodeId: NodeId = NodeId(nodeData.id)
+        nodeValidator.validateNode(transform, nodeData.parameters, nodeData.branchParameters, nodeData.outputVar)(validationContexts) match {
+          case Valid(result) =>
+            ValidationPerformed(result.errors, Some(result.parameters))
+          case Invalid(e) => ValidationPerformed(e.toList, None)
+        }
+      case _ => ValidationNotPerformed
+    }
+
+
+  }
+
 }
 
 object EmptyValidator extends NodeDataValidator[NodeData] {

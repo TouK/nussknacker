@@ -17,7 +17,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResu
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, TopicParamName}
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2}
-import pl.touk.nussknacker.engine.avro.schemaregistry.BasedOnVersionAvroSchemaDeterminer
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client._
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.ConfluentAvroSerializationSchemaFactory
@@ -25,7 +24,6 @@ import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, KafkaAvroSpecMixin, SchemaDeterminerError}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodevalidation.{GenericNodeTransformationValidator, TransformationResult}
-import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -85,13 +83,6 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     val givenObj = 123123
 
     roundTripSingleObject(sourceFactory, IntTopic, 1, givenObj, IntSchema)
-  }
-
-  test("should read last generated record as a specific class") {
-    val sourceFactory = createAvroSourceFactory[FullNameV2]
-    val givenObj = FullNameV2("Jan", "Maria", "Nowak")
-
-    roundTripSingleObject(sourceFactory, RecordTopic, 2, givenObj, FullNameV2.schema)
   }
 
   test("should read last generated key-value object") {
@@ -155,31 +146,31 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     val modelData = LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator)
 
     val validator = new GenericNodeTransformationValidator(ExpressionCompiler.withoutOptimization(modelData),
-      ExpressionEvaluator.unOptimizedEvaluator(modelData))
+      modelData.processWithObjectsDefinition.expressionConfig)
 
     implicit val meta: MetaData = MetaData("processId", StreamMetaData())
     implicit val nodeId: NodeId = NodeId("id")
     val paramsList = params.toList.map(p => Parameter(p._1, p._2))
-    validator.validateNode(createAvroSourceFactory[GenericData.Record], paramsList, ValidationContext(), Some(Interpreter.InputParamName)).toOption.get
+    validator.validateNode(createAvroSourceFactory[GenericData.Record], paramsList, Nil, Some(Interpreter.InputParamName))(ValidationContext()).toOption.get
   }
 
-  private def createKeyValueAvroSourceFactory[K: ClassTag, V: ClassTag]: KafkaAvroSourceFactory[(K, V)] = {
-    val deserializerFactory = new TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory[K, V](new BasedOnVersionAvroSchemaDeterminer(() => factory.createSchemaRegistryClient(kafkaConfig), _, _), factory)
+  private def createKeyValueAvroSourceFactory[K: ClassTag, V: ClassTag]: KafkaAvroSourceFactory = {
+    val deserializerFactory = new TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory[K, V](factory)
     val provider = new ConfluentSchemaRegistryProvider(
       factory,
-      ConfluentAvroSerializationSchemaFactory(kafkaConfig, factory),
+      new ConfluentAvroSerializationSchemaFactory(factory),
       deserializerFactory,
       kafkaConfig,
       formatKey = true)
     new KafkaAvroSourceFactory(provider, testProcessObjectDependencies, None)
   }
 
-  private def roundTripSingleObject(sourceFactory: KafkaAvroSourceFactory[_], topic: String, version: Integer, givenObj: Any, expectedSchema: Schema) = {
+  private def roundTripSingleObject(sourceFactory: KafkaAvroSourceFactory, topic: String, version: Integer, givenObj: Any, expectedSchema: Schema) = {
     pushMessage(givenObj, topic)
     readLastMessageAndVerify(sourceFactory, topic, version, givenObj, expectedSchema)
   }
 
-  private def readLastMessageAndVerify(sourceFactory: KafkaAvroSourceFactory[_], topic: String, version: Integer, givenObj: Any, expectedSchema: Schema): Assertion = {
+  private def readLastMessageAndVerify(sourceFactory: KafkaAvroSourceFactory, topic: String, version: Integer, givenObj: Any, expectedSchema: Schema): Assertion = {
     val source = createAndVerifySource(sourceFactory, topic, version, expectedSchema)
 
     val bytes = source.generateTestData(1)
@@ -189,7 +180,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     deserializedObj shouldEqual List(givenObj)
   }
 
-  private def createAndVerifySource(sourceFactory: KafkaAvroSourceFactory[_], topic: String, version: Integer, expectedSchema: Schema): Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef] with ReturningType = {
+  private def createAndVerifySource(sourceFactory: KafkaAvroSourceFactory, topic: String, version: Integer, expectedSchema: Schema): Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef] with ReturningType = {
     val source = sourceFactory
       .implementation(Map(KafkaAvroBaseTransformer.TopicParamName -> topic, KafkaAvroBaseTransformer.SchemaVersionParamName -> version),
         List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)))

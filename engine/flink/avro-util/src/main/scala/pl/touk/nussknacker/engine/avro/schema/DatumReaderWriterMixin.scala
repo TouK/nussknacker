@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.avro.schema
 
 import io.confluent.kafka.schemaregistry.avro.AvroSchemaUtils
 import org.apache.avro.Schema
-import org.apache.avro.generic.{GenericContainer, GenericDatumReader, GenericDatumWriter}
+import org.apache.avro.generic.{GenericDatumReader, GenericDatumWriter}
 import org.apache.avro.io.DatumReader
 import org.apache.avro.reflect.{ReflectDatumReader, ReflectDatumWriter}
 import org.apache.avro.specific.{SpecificDatumReader, SpecificDatumWriter, SpecificRecord}

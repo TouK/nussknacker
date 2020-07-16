@@ -3,17 +3,17 @@ package pl.touk.nussknacker.engine.avro.sink
 import cats.Id
 import cats.data.WriterT
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedParameter, NodeDependencyValue}
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, BaseDefinedParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer
+import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
 
-class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider[Any], val processObjectDependencies: ProcessObjectDependencies)
-  extends BaseKafkaAvroSinkFactory with KafkaAvroBaseTransformer[FlinkSink, Any]{
+class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, val processObjectDependencies: ProcessObjectDependencies)
+  extends BaseKafkaAvroSinkFactory with KafkaAvroBaseTransformer[FlinkSink]{
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
                                     (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
@@ -27,13 +27,15 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider[An
         NextParameters(List(version.value), version.written, None)
     case TransformationStep((KafkaAvroBaseTransformer.SinkOutputParamName, _) ::
       (KafkaAvroBaseTransformer.TopicParamName, _) :: Nil, _) => fallbackVersionParam
-    case TransformationStep((KafkaAvroBaseTransformer.SinkOutputParamName, output:DefinedParameter) ::
+    case TransformationStep((KafkaAvroBaseTransformer.SinkOutputParamName, output:BaseDefinedParameter) ::
       (KafkaAvroBaseTransformer.TopicParamName, DefinedEagerParameter(topic:String, _)) ::
       (KafkaAvroBaseTransformer.SchemaVersionParamName, DefinedEagerParameter(version, _)) ::Nil, _) =>
         //we cast here, since null will not be matched in case...
         val preparedTopic = prepareTopic(topic)
         val schemaDeterminer = prepareSchemaDeterminer(preparedTopic, Option(version.asInstanceOf[java.lang.Integer]).map(_.intValue()))
-        val validationResult = validateOutput(output.returnType, schemaDeterminer).swap.toList
+        val validationResult = schemaDeterminer.determineSchemaUsedInTyping
+          .leftMap(SchemaDeterminerErrorHandler.handleSchemaRegistryError)
+          .andThen(schema => validateOutput(output.returnType, schema)).swap.toList
         FinalResults(context, validationResult)
     //edge case - for some reason Topic/Version is not defined
     case TransformationStep((KafkaAvroBaseTransformer.SinkOutputParamName, _) ::
@@ -49,10 +51,12 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider[An
     topicParam.map(List(Parameter[AnyRef](KafkaAvroBaseTransformer.SinkOutputParamName).copy(isLazyParameter = true), _))
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): FlinkSink = {
+    val preparedTopic = extractPreparedTopic(params)
+    val version = extractVersion(params)
     val output = params(KafkaAvroBaseTransformer.SinkOutputParamName).asInstanceOf[LazyParameter[AnyRef]]
 
-    createSink(extractPreparedTopic(params), extractVersion(params), output,
-      kafkaConfig, schemaRegistryProvider.serializationSchemaFactory, prepareSchemaDeterminer(params),
+    createSink(preparedTopic, version, output,
+      kafkaConfig, schemaRegistryProvider.serializationSchemaFactory, prepareSchemaDeterminer(preparedTopic, version))(
       typedDependency[MetaData](dependencies), typedDependency[NodeId](dependencies))
   }
 

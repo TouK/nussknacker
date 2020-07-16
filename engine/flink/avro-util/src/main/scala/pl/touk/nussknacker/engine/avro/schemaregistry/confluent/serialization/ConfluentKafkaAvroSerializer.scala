@@ -14,14 +14,10 @@ import scala.collection.JavaConverters._
 
 /**
   * This is Kafka Avro Serializer class. All events will be serialized to provided schema.
-  *
-  * @Important: there can be some delay between saved process schema and deploy schema, because
-  *            fetching schema for serializer has place at deploy moment. It can be happen when process has
-  *            set latest version and deploy was run after new schema was added.
   */
-class ConfluentKafkaAvroSerializer[T](kafkaConfig: KafkaConfig, confluentSchemaRegistryClient: ConfluentSchemaRegistryClient, schemaEvolutionHandler: AvroSchemaEvolution,
-                                      schemaOpt: Option[AvroSchema], var isKey: Boolean)
-  extends AbstractConfluentKafkaAvroSerializer(schemaEvolutionHandler) with Serializer[T] {
+class ConfluentKafkaAvroSerializer(kafkaConfig: KafkaConfig, confluentSchemaRegistryClient: ConfluentSchemaRegistryClient, schemaEvolutionHandler: AvroSchemaEvolution,
+                                   avroSchemaOpt: Option[AvroSchema], var isKey: Boolean)
+  extends AbstractConfluentKafkaAvroSerializer(schemaEvolutionHandler) with Serializer[Any] {
 
   schemaRegistry = confluentSchemaRegistryClient.client
 
@@ -34,14 +30,14 @@ class ConfluentKafkaAvroSerializer[T](kafkaConfig: KafkaConfig, confluentSchemaR
     this.isKey = isKey
   }
 
-  override def serialize(topic: String, data: T): Array[Byte] =
-    serialize(schemaOpt, topic, data, isKey)
+  override def serialize(topic: String, data: Any): Array[Byte] =
+    serialize(avroSchemaOpt, topic, data, isKey)
 
   override def close(): Unit = {}
 }
 
 object ConfluentKafkaAvroSerializer {
-  def apply[T](kafkaConfig: KafkaConfig, confluentSchemaRegistryClient: ConfluentSchemaRegistryClient, schema: Option[AvroSchema], isKey: Boolean): ConfluentKafkaAvroSerializer[T] = {
-    new ConfluentKafkaAvroSerializer(kafkaConfig, confluentSchemaRegistryClient, new DefaultAvroSchemaEvolution, schema, isKey = isKey)
+  def apply(kafkaConfig: KafkaConfig, confluentSchemaRegistryClient: ConfluentSchemaRegistryClient, avroSchemaOpt: Option[AvroSchema], isKey: Boolean): ConfluentKafkaAvroSerializer = {
+    new ConfluentKafkaAvroSerializer(kafkaConfig, confluentSchemaRegistryClient, new DefaultAvroSchemaEvolution, avroSchemaOpt, isKey = isKey)
   }
 }

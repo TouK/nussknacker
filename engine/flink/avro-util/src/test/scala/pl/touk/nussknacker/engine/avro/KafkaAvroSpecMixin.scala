@@ -76,8 +76,8 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
   protected def prepareValueDeserializer(useSpecificAvroReader: Boolean): SimpleKafkaAvroDeserializer = new SimpleKafkaAvroDeserializer(schemaRegistryClient, useSpecificAvroReader)
   protected lazy val valueSerializer: SimpleKafkaAvroSerializer = new SimpleKafkaAvroSerializer(schemaRegistryClient)
 
-  protected def createSchemaRegistryProvider[T: ClassTag]: ConfluentSchemaRegistryProvider[T] =
-    ConfluentSchemaRegistryProvider[T](confluentClientFactory, testProcessObjectDependencies)
+  protected lazy val schemaRegistryProvider: ConfluentSchemaRegistryProvider =
+    ConfluentSchemaRegistryProvider(confluentClientFactory, testProcessObjectDependencies)
 
   protected def pushMessage(obj: Any, objectTopic: String, topic: Option[String] = None, timestamp: java.lang.Long = null): RecordMetadata = {
     val serializedObj = valueSerializer.serialize(objectTopic, obj)
@@ -138,13 +138,11 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
   protected def createAndRegisterTopicConfig(name: String, schema: Schema): TopicConfig =
     createAndRegisterTopicConfig(name, List(schema))
 
-  protected def createAvroSourceFactory[T: ClassTag]: KafkaAvroSourceFactory[T] = {
-    val schemaRegistryProvider = createSchemaRegistryProvider[T]
+  protected def createAvroSourceFactory[T: ClassTag]: KafkaAvroSourceFactory = {
     new KafkaAvroSourceFactory(schemaRegistryProvider, testProcessObjectDependencies, None)
   }
 
   protected lazy val avroSinkFactory: KafkaAvroSinkFactory = {
-    val schemaRegistryProvider = createSchemaRegistryProvider[Any]
     new KafkaAvroSinkFactory(schemaRegistryProvider, testProcessObjectDependencies)
   }
 
