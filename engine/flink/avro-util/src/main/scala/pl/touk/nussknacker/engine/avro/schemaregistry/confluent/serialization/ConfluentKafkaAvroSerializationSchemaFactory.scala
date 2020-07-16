@@ -1,53 +1,41 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization
 
-import org.apache.kafka.common.errors.SerializationException
+import org.apache.avro.Schema
 import org.apache.kafka.common.serialization.Serializer
-import pl.touk.nussknacker.engine.avro.AvroSchemaDeterminer
-import pl.touk.nussknacker.engine.avro.schemaregistry.BasedOnVersionAvroSchemaDeterminer
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.avro.serialization.{KafkaAvroKeyValueSerializationSchemaFactory, KafkaAvroValueSerializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import pl.touk.nussknacker.engine.kafka.serialization.{KafkaVersionAwareKeyValueSerializationSchemaFactory, KafkaVersionAwareValueSerializationSchemaFactory}
 
 trait ConfluentAvroSerializerFactory {
 
-  protected def createSerializer[T](schemaDeterminer: AvroSchemaDeterminer,
-                                    schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
-                                    topic: String,
-                                    version: Option[Int],
+  protected def createSerializer[T](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
                                     kafkaConfig: KafkaConfig,
+                                    schemaOpt: Option[Schema],
+                                    version: Option[Int],
                                     isKey: Boolean): Serializer[T] = {
     val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
 
-    val schema = schemaDeterminer.determineSchemaInRuntime
-      .valueOr(exc => throw new SerializationException(s"Error determining Avro schema.", exc))
-      .map(ConfluentUtils.convertToAvroSchema(_, version))
+    val avroSchemaOpt = schemaOpt.map(ConfluentUtils.convertToAvroSchema(_, version))
 
-    val serializer = ConfluentKafkaAvroSerializer(kafkaConfig, schemaRegistryClient, schema, isKey = isKey)
+    val serializer = ConfluentKafkaAvroSerializer(kafkaConfig, schemaRegistryClient, avroSchemaOpt, isKey = isKey)
     serializer.asInstanceOf[Serializer[T]]
   }
 }
 
-class ConfluentAvroSerializationSchemaFactory(createSchemaDeterminer: (String, Option[Int]) => AvroSchemaDeterminer,
-                                              schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
-  extends KafkaVersionAwareValueSerializationSchemaFactory[AnyRef] with ConfluentAvroSerializerFactory {
+class ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
+  extends KafkaAvroValueSerializationSchemaFactory with ConfluentAvroSerializerFactory {
 
-  override protected def createValueSerializer(topic: String, version: Option[Int], kafkaConfig: KafkaConfig): Serializer[AnyRef] =
-    createSerializer[AnyRef](createSchemaDeterminer(topic, version), schemaRegistryClientFactory, topic, version, kafkaConfig, isKey = false)
+  override protected def createValueSerializer(schemaOpt: Option[Schema], version: Option[Int], kafkaConfig: KafkaConfig): Serializer[AnyRef] =
+    createSerializer[AnyRef](schemaRegistryClientFactory, kafkaConfig, schemaOpt, version, isKey = false)
 }
 
-object ConfluentAvroSerializationSchemaFactory {
-  def apply(kafkaConfig: KafkaConfig, schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory): ConfluentAvroSerializationSchemaFactory =
-    new ConfluentAvroSerializationSchemaFactory(new BasedOnVersionAvroSchemaDeterminer(() => schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig), _, _), schemaRegistryClientFactory)
-}
+abstract class ConfluentAvroKeyValueSerializationSchemaFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
+  extends KafkaAvroKeyValueSerializationSchemaFactory with ConfluentAvroSerializerFactory {
 
-abstract class ConfluentAvroKeyValueSerializationSchemaFactory(createSchemaDeterminer: (String, Option[Int]) => AvroSchemaDeterminer,
-                                                               schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
-  extends KafkaVersionAwareKeyValueSerializationSchemaFactory[AnyRef] with ConfluentAvroSerializerFactory {
+  override protected def createKeySerializer(kafkaConfig: KafkaConfig): Serializer[K] =
+    createSerializer[K](schemaRegistryClientFactory, kafkaConfig, None, None, isKey = true)
 
-  override protected def createKeySerializer(topic: String, version: Option[Int], kafkaConfig: KafkaConfig): Serializer[K] =
-    createSerializer[K](createSchemaDeterminer(topic, version), schemaRegistryClientFactory, topic, version, kafkaConfig, isKey = true)
-
-  override protected def createValueSerializer(topic: String, version: Option[Int], kafkaConfig: KafkaConfig): Serializer[V] =
-    createSerializer[V](createSchemaDeterminer(topic, version), schemaRegistryClientFactory, topic, version, kafkaConfig, isKey = false)
+  override protected def createValueSerializer(schemaOpt: Option[Schema], version: Option[Int], kafkaConfig: KafkaConfig): Serializer[V] =
+    createSerializer[V](schemaRegistryClientFactory, kafkaConfig, schemaOpt, version, isKey = false)
 }

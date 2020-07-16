@@ -12,10 +12,6 @@ import scala.collection.JavaConverters._
 
 /**
   * This is Kafka Avro Deserialization class. All events will be deserialized to provided schema.
-  *
-  * Important: there can be some delay between saved process schema and deploy schema, because
-  *            fetching schema for deserializer has place at deploy moment. It can be happen when process has
-  *            set latest version and deploy was run after new schema was added.
   */
 class ConfluentKafkaAvroDeserializer[T](kafkaConfig: KafkaConfig, schema: Schema, confluentSchemaRegistryClient: ConfluentSchemaRegistryClient,
                                         var isKey: Boolean, _useSpecificAvroReader: Boolean)

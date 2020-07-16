@@ -30,8 +30,6 @@ import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.cache.DefaultCache
 
-import scala.reflect.ClassTag
-
 class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with KafkaSpec with EitherValues with LazyLogging {
 
   import KafkaZookeeperUtils._
@@ -309,8 +307,8 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
   }
 
   private lazy val creator: GenericConfigCreator = new GenericConfigCreator {
-    override protected def createSchemaProvider[T: ClassTag](processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[T] =
-      ConfluentSchemaRegistryProvider[T](factory, processObjectDependencies)
+    override protected def createSchemaProvider(processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider =
+      ConfluentSchemaRegistryProvider(factory, processObjectDependencies)
   }
 
   private val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
@@ -343,10 +341,6 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
   /**
     * We should register difference input topic and output topic for each tests, because kafka topics are not cleaned up after test,
     * and we can have wrong results of tests..
-    *
-    * @param name
-    * @param schemas
-    * @return
     */
   private def createAndRegisterTopicConfig(name: String, schemas: List[Schema]): TopicConfig = {
     val topicConfig = TopicConfig(name, schemas)

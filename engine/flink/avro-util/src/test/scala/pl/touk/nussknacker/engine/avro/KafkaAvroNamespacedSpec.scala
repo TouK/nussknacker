@@ -18,8 +18,6 @@ import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreami
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.cache.DefaultCache
 
-import scala.reflect.ClassTag
-
 class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin {
 
   import KafkaAvroNamespacedMockSchemaRegistry._
@@ -38,8 +36,8 @@ class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin {
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def createSchemaProvider[T: ClassTag](processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[T] =
-      ConfluentSchemaRegistryProvider[T](factory, processObjectDependencies)
+    override protected def createSchemaRegistryProvider(processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider =
+      ConfluentSchemaRegistryProvider(factory, processObjectDependencies)
   }
 
   override protected def beforeAll(): Unit = {

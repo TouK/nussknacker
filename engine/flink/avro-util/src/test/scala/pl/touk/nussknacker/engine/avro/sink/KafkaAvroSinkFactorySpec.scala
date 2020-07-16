@@ -48,14 +48,14 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
             List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)))
 
   test("should throw exception when schema doesn't exist") {
-    assertThrowsWithParent[CustomNodeValidationException] {
+    assertThrows[CustomNodeValidationException] {
       val output = createOutput(FullNameV1.schema, FullNameV1.exampleData)
       createSink("not-exists-subject", 1, output)
     }
   }
 
   test("should throw exception when schema version doesn't exist") {
-    assertThrowsWithParent[CustomNodeValidationException] {
+    assertThrows[CustomNodeValidationException] {
       val output = createOutput(FullNameV1.schema, FullNameV1.exampleData)
       createSink(fullnameTopic, 666, output)
     }
@@ -77,7 +77,7 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
   }
 
   test("should throw exception when #output schema is not compatible with sink schema") {
-    assertThrowsWithParent[CustomNodeValidationException] {
+    assertThrows[CustomNodeValidationException] {
       val output = createOutput(PaymentV1.schema, PaymentV1.exampleData)
       createSink(fullnameTopic, 2, output)
     }
