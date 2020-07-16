@@ -1,88 +1,107 @@
 package pl.touk.nussknacker.engine.compile.nodevalidation
 
-import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
-import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.instances.list._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingParameters, NodeId, WrongParameters}
 import pl.touk.nussknacker.engine.api.context._
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedLazyParameter, DefinedParameter, FailedToDefineParameter, NodeDependencyValue, OutputVariableNameValue, SingleInputGenericNodeTransformation, TypedNodeDependencyValue}
+import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.expression.TypedExpression
+import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam
+import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 import scala.annotation.tailrec
 
-class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler, expressionEvaluator: ExpressionEvaluator) {
+class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
+                                         expressionConfig: ExpressionDefinition[ObjectWithMethodDef]) {
 
-  private val parameterEvaluator = new ParameterEvaluator(expressionEvaluator)
+  private val globalVariablesPreparer = GlobalVariablesPreparer(expressionConfig)
 
-  def validateNode(transformer: SingleInputGenericNodeTransformation[_],
+  private val parameterEvaluator = new ParameterEvaluator(ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer))
+
+  def validateNode(transformer: GenericNodeTransformation[_],
                    parametersFromNode: List[evaluatedparam.Parameter],
-                   validationContext: ValidationContext,
+                   branchParametersFromNode: List[evaluatedparam.BranchParameters],
                    outputVariable: Option[String]
-                  )(implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, TransformationResult] = {
+                  )(inputContext: transformer.InputContext)
+                  (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, TransformationResult] = {
 
-    val validation = new NodeInstanceValidation(transformer, parametersFromNode, validationContext, outputVariable)
+    val validation = new NodeInstanceValidation(transformer, parametersFromNode, branchParametersFromNode, outputVariable)(inputContext)
     validation.evaluatePart(Nil, None, Nil)
   }
 
-
-
-  class NodeInstanceValidation(tranformer: SingleInputGenericNodeTransformation[_],
+  class NodeInstanceValidation(transformer: GenericNodeTransformation[_],
                                parametersFromNode: List[evaluatedparam.Parameter],
-                               validationContext: ValidationContext,
+                               branchParametersFromNode: List[evaluatedparam.BranchParameters],
                                outputVariable: Option[String]
-                              )(implicit nodeId: NodeId, metaData: MetaData) {
+                              )(inputContextRaw: Any)(implicit nodeId: NodeId, metaData: MetaData) {
 
-    private val definition = tranformer.contextTransformation(validationContext,
+    private val inputContext = inputContextRaw.asInstanceOf[transformer.InputContext]
+
+    private val definition = transformer.contextTransformation(inputContext,
       List(TypedNodeDependencyValue(nodeId), TypedNodeDependencyValue(metaData)) ++ outputVariable.map(OutputVariableNameValue).toList)
 
     @tailrec
-    final def evaluatePart(evaluatedSoFar: List[(Parameter, DefinedParameter)], stateForFar: Option[tranformer.State],
-                      errors: List[ProcessCompilationError]): ValidatedNel[ProcessCompilationError, TransformationResult] = {
-      definition.lift.apply(tranformer.TransformationStep(evaluatedSoFar.map(a => a.copy(_1 = a._1.name)), stateForFar)) match {
+    final def evaluatePart(evaluatedSoFar: List[(Parameter, BaseDefinedParameter)], stateForFar: Option[transformer.State],
+                           errors: List[ProcessCompilationError]): ValidatedNel[ProcessCompilationError, TransformationResult] = {
+      val transformationStep = transformer.TransformationStep(evaluatedSoFar
+        //unfortunatelly, this cast is needed as we have no easy way to statically check if Parameter definitions
+        //are branch or not...
+        .map(a => (a._1.name, a._2.asInstanceOf[transformer.DefinedParameter])), stateForFar)
+      definition.lift.apply(transformationStep) match {
         case None =>
           //FIXME: proper exception
           Invalid(NonEmptyList.of(WrongParameters(Set.empty, evaluatedSoFar.map(_._1.name).toSet)))
         case Some(nextPart) =>
           val errorsCombined = errors ++ nextPart.errors
           nextPart match {
-            case tranformer.FinalResults(finalContext, _) =>
-              Valid(TransformationResult(errorsCombined, evaluatedSoFar.map(_._1), finalContext))
-            case tranformer.NextParameters(newParameters, _, state) =>
+            case transformer.FinalResults(finalContext, errors) =>
+              //we add distinct here, as multi-step, partial validation of parameters can cause duplicate errors if implementation is not v. careful
+              val allErrors = (errorsCombined ++ errors).distinct
+              Valid(TransformationResult(allErrors, evaluatedSoFar.map(_._1), finalContext))
+            case transformer.NextParameters(newParameters, newParameterErrors, state) =>
               val (parameterEvaluationErrors, newEvaluatedParameters) = newParameters
-                .map(prepareParameter(parametersFromNode)).unzip
+                .map(prepareParameter).map(prepared => prepared.fold(ne => (ne.toList, FailedToDefineParameter), par => (Nil, par))).unzip
               val parametersCombined = evaluatedSoFar ++ newParameters.zip(newEvaluatedParameters)
-              evaluatePart(parametersCombined, state, errorsCombined ++ parameterEvaluationErrors.flatten)
+              evaluatePart(parametersCombined, state, errorsCombined ++ parameterEvaluationErrors.flatten ++ newParameterErrors)
           }
       }
     }
 
-    private def prepareParameter(parametersFromNode: List[evaluatedparam.Parameter])(parameterDefinition: Parameter):
-    (List[ProcessCompilationError], DefinedParameter) = {
-      parametersFromNode.find(_.name == parameterDefinition.name) match {
-        case None =>
-          (List(MissingParameters(Set(parameterDefinition.name))), FailedToDefineParameter)
-        case Some(evaluated) =>
-          evaluateParameter(parameterDefinition, evaluated)
-      }
+    private def prepareParameter(parameter: Parameter): Validated[NonEmptyList[ProcessCompilationError], BaseDefinedParameter] = {
+      val compiledParameter = compileParameter(parameter)
+      compiledParameter.map(parameterEvaluator.prepareParameter(_, parameter)._2)
     }
 
-    private def evaluateParameter(parameterDefinition: Parameter, evaluated: evaluatedparam.Parameter) = {
-      expressionCompiler.compileParam(evaluated, validationContext, parameterDefinition, false).map { compiled =>
-        val typ = compiled.typedValue match {
-          case TypedExpression(_, returnType, _) => returnType
-          //FIXME: handle branches...
-          case other => throw new IllegalArgumentException("Not supported type: " + other)
+    //TODO: this method is a bit duplicating ExpressionCompiler.compileObjectParameters
+    //we should unify them a bit in the future
+    private def compileParameter(parameter: Parameter) = {
+      val syntax = ValidatedSyntax[ProcessCompilationError]
+      import syntax._
+      if (parameter.branchParam) {
+        val params = branchParametersFromNode
+          .map(bp => bp.parameters.find(_.name == parameter.name) match {
+            case Some(param) => Valid(bp.branchId -> param.expression)
+            case None => Invalid[ProcessCompilationError](MissingParameters(Set(parameter.name))).toValidatedNel
+          }).sequence
+        params.andThen { branchParam =>
+          expressionCompiler.compileBranchParam(branchParam, inputContext.asInstanceOf[Map[String, ValidationContext]], parameter)
         }
-        //TODO: handling exceptions here?
-        (typ, parameterEvaluator.prepareParameter(compiled, parameterDefinition))
-      } match {
-        case Valid((_, a: LazyParameter[_])) => (Nil, DefinedLazyParameter(a.returnType))
-        case Valid((typ, a)) => (Nil, DefinedEagerParameter(a, typ))
-        case Invalid(errors) => (errors.toList, FailedToDefineParameter)
+      } else {
+        val params = Validated.fromOption(parametersFromNode.find(_.name == parameter.name), MissingParameters(Set(parameter.name))).toValidatedNel
+        params.andThen { singleParam =>
+          val ctxToUse = inputContext match {
+            case e: ValidationContext => e
+            case _ => globalVariablesPreparer.emptyValidationContext(metaData)
+          }
+          expressionCompiler.compileParam(singleParam, ctxToUse, parameter, eager = false)
+        }
       }
     }
   }

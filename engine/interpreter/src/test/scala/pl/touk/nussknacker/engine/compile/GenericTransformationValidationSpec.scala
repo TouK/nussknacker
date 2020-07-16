@@ -6,15 +6,17 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, ExpressionParseError, MissingParameters, NodeId}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedParameter, FailedToDefineParameter, NodeDependencyValue, OutputVariableNameValue, SingleInputGenericNodeTransformation}
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerBranchParameter, DefinedEagerParameter, BaseDefinedParameter, DefinedSingleParameter, FailedToDefineParameter, JoinGenericNodeTransformation, NodeDependencyValue, OutputVariableNameValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MetaData, MethodToInvoke, process}
+import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MetaData, MethodToInvoke, StreamMetaData, process}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory, Source, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
+import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.{api, spel}
 import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
 
@@ -24,7 +26,8 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
 
   object MyProcessConfigCreator extends EmptyProcessConfigCreator {
     override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-      "genericParameters" -> WithCategories(GenericParametersTransformer)
+      "genericParameters" -> WithCategories(GenericParametersTransformer),
+      "genericJoin" -> WithCategories(DynamicParameterJoinTransformer)
     )
 
     override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
@@ -51,7 +54,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
 
   object GenericParametersTransformer extends CustomStreamTransformer with GenericParameters[Null] {
 
-    protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, DefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
+    protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
       dependencies.collectFirst { case OutputVariableNameValue(name) => name } match {
         case Some(name) =>
           finalResult(context, rest, name)
@@ -66,7 +69,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
   object GenericParametersSource extends SourceFactory[String] with GenericParameters[Source[String]] {
     override def clazz: Class[_] = classOf[String]
 
-    protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, DefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
+    protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
       finalResult(context, rest, "otherNameThanInput")
     }
     override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]))
@@ -74,7 +77,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
   }
 
   object GenericParametersSink extends SinkFactory with GenericParameters[Sink] {
-    protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, DefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
+    protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
       FinalResults(context)
     }
     override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]))
@@ -97,9 +100,9 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
         outputParameters(context, dependencies, rest)
     }
 
-    protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, DefinedParameter)])(implicit nodeId: NodeId): this.FinalResults
+    protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults
 
-    protected def finalResult(context: ValidationContext, rest: List[(String, DefinedParameter)], name: String)(implicit nodeId: NodeId): this.FinalResults = {
+    protected def finalResult(context: ValidationContext, rest: List[(String, BaseDefinedParameter)], name: String)(implicit nodeId: NodeId): this.FinalResults = {
       val result = TypedObjectTypingResult(rest.toMap.mapValues(_.returnType))
       context.withVariable(name, result).fold(
         errors => FinalResults(context, errors.toList),
@@ -114,6 +117,40 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
       null.asInstanceOf[T]
     }
 
+  }
+
+  object DynamicParameterJoinTransformer extends CustomStreamTransformer with JoinGenericNodeTransformation[AnyRef] {
+
+    override type State = Nothing
+
+    //isLeft, key (branch) ==> rightValue
+    override def contextTransformation(contexts: Map[String, ValidationContext],
+                                       dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): DynamicParameterJoinTransformer.NodeTransformationDefinition = {
+      case TransformationStep(Nil, _) => NextParameters(initialParameters)
+      case TransformationStep(("isLeft", DefinedEagerBranchParameter(byBranch: Map[String, Boolean]@unchecked, _)) ::Nil, _) =>
+        val error = if (byBranch.values.toList.sorted != List(false, true)) List(CustomNodeError("Has to be exactly one left and right",
+          Some("isLeft"))) else Nil
+        NextParameters(
+          List(Parameter[Any]("rightValue").copy(additionalVariables = contexts(right(byBranch)).localVariables)), error
+        )
+      case TransformationStep(("isLeft", DefinedEagerBranchParameter(byBranch: Map[String, Boolean]@unchecked, _)) :: ("rightValue", rightValue: DefinedSingleParameter) ::Nil, _)
+        =>
+        val out = rightValue.returnType
+        val outName = dependencies.collectFirst { case OutputVariableNameValue(name) => name}.get
+        val leftCtx = contexts(left(byBranch))
+        val context = leftCtx.withVariable(outName, out)
+        FinalResults(context.getOrElse(leftCtx), context.fold(_.toList, _ => Nil))
+    }
+
+    private def left(byBranch: Map[String, Boolean]): String = byBranch.find(_._2).get._1
+
+    private def right(byBranch: Map[String, Boolean]): String = byBranch.find(!_._2).get._1
+
+    override def initialParameters: List[Parameter] = List(Parameter[Boolean]("isLeft").copy(branchParam = true))
+
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): AnyRef = null
+
+    override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)
   }
 
   private val processBase = EspProcessBuilder.id("proc1").exceptionHandler().source("sourceId", "mySource")
@@ -245,6 +282,34 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
     val info1 = result.typing("end")
 
     info1.inputValidationContext("out1") shouldBe TypedObjectTypingResult(Map.empty[String, TypingResult])
+  }
+
+  test("should compute dynamic parameters in joins") {
+
+    val process =  EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+        GraphBuilder
+          .source("sourceId1", "mySource")
+          .buildSimpleVariable("var1", "intVal", "123")
+          .branchEnd("branch1", "join1"),
+        GraphBuilder
+          .source("sourceId2", "mySource")
+          .buildSimpleVariable("var2", "strVal", "'abc'")
+          .branchEnd("branch2", "join1"),
+        GraphBuilder
+          .branch("join1", "genericJoin", Some("outPutVar"),
+            List(
+              "branch1" -> List("isLeft" -> "true"),
+              "branch2" -> List("isLeft" -> "false")
+            ), "rightValue" -> "#strVal + 'dd'"
+          )
+          .emptySink("end", "dummySink")
+      ))
+    val validationResult = validator.validate(process)
+
+    val varsInEnd = validationResult.variablesInNodes("end")
+    varsInEnd("outPutVar") shouldBe Typed[String]
+    varsInEnd("intVal") shouldBe Typed[Integer]
+    varsInEnd.get("strVal") shouldBe None
   }
 
 
