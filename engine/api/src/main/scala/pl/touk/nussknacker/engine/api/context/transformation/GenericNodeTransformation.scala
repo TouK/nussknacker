@@ -56,6 +56,10 @@ trait SingleInputGenericNodeTransformation[T] extends GenericNodeTransformation[
   type DefinedParameter = DefinedSingleParameter
 }
 
+/*
+  NOTE: currently, due to FE limitations, it's *NOT* possible to defined dynamic branch parameters - that is,
+  branch parameters that are changed based on other parameter values
+ */
 trait JoinGenericNodeTransformation[T] extends GenericNodeTransformation[T] {
   type InputContext = Map[String, ValidationContext]
   type DefinedParameter = BaseDefinedParameter
