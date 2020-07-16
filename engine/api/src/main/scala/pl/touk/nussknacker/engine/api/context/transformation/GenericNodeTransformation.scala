@@ -20,6 +20,8 @@ trait GenericNodeTransformation[T] {
   //ValidationContext for single input, Map[String, ValidationContext] for joins
   type InputContext
 
+  type DefinedParameter <: BaseDefinedParameter
+
   //State is arbitrary data that can be passed between steps of NodeTransformationDefinition
   type State
 
@@ -51,8 +53,10 @@ trait GenericNodeTransformation[T] {
 
 trait SingleInputGenericNodeTransformation[T] extends GenericNodeTransformation[T] {
   type InputContext = ValidationContext
+  type DefinedParameter = DefinedSingleParameter
 }
 
 trait JoinGenericNodeTransformation[T] extends GenericNodeTransformation[T] {
   type InputContext = Map[String, ValidationContext]
+  type DefinedParameter = BaseDefinedParameter
 }

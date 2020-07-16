@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile.nodevalidation
 
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerBranchParameter, DefinedEagerParameter, DefinedLazyBranchParameter, DefinedLazyParameter, DefinedParameter}
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerBranchParameter, DefinedEagerParameter, DefinedLazyBranchParameter, DefinedLazyParameter, BaseDefinedParameter}
 import pl.touk.nussknacker.engine.api.definition.{Parameter => ParameterDef}
 import pl.touk.nussknacker.engine.api.expression.{TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.api.{Context, MetaData}
@@ -15,7 +15,7 @@ class ParameterEvaluator(expressionEvaluator: ExpressionEvaluator) {
 
   private val contextToUse: Context = Context("objectCreate")
 
-  def prepareParameter(typedParameter: TypedParameter, definition: ParameterDef)(implicit processMetaData: MetaData, nodeId: NodeId): (AnyRef, DefinedParameter) = {
+  def prepareParameter(typedParameter: TypedParameter, definition: ParameterDef)(implicit processMetaData: MetaData, nodeId: NodeId): (AnyRef, BaseDefinedParameter) = {
     if (definition.isLazyParameter) {
       prepareLazyParameter(typedParameter, definition)
     } else {
@@ -23,7 +23,7 @@ class ParameterEvaluator(expressionEvaluator: ExpressionEvaluator) {
     }
   }
 
-  private def prepareLazyParameter[T](param: TypedParameter, definition: ParameterDef)(implicit nodeId: NodeId): (AnyRef, DefinedParameter) = {
+  private def prepareLazyParameter[T](param: TypedParameter, definition: ParameterDef)(implicit nodeId: NodeId): (AnyRef, BaseDefinedParameter) = {
     param.typedValue match {
       case e:TypedExpression if !definition.branchParam =>
         (prepareLazyParameterExpression(definition, e), DefinedLazyParameter(e.returnType))
@@ -33,7 +33,7 @@ class ParameterEvaluator(expressionEvaluator: ExpressionEvaluator) {
   }
 
   private def evaluateParam[T](param: TypedParameter, definition: ParameterDef)
-                              (implicit processMetaData: MetaData, nodeId: NodeId): (AnyRef, DefinedParameter) = {
+                              (implicit processMetaData: MetaData, nodeId: NodeId): (AnyRef, BaseDefinedParameter) = {
 
     param.typedValue match {
       case e:TypedExpression if !definition.branchParam =>

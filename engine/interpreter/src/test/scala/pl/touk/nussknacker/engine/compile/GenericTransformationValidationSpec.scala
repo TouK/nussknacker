@@ -6,7 +6,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, ExpressionParseError, MissingParameters, NodeId}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerBranchParameter, DefinedEagerParameter, DefinedParameter, DefinedSingleParameter, FailedToDefineParameter, JoinGenericNodeTransformation, NodeDependencyValue, OutputVariableNameValue, SingleInputGenericNodeTransformation}
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerBranchParameter, DefinedEagerParameter, BaseDefinedParameter, DefinedSingleParameter, FailedToDefineParameter, JoinGenericNodeTransformation, NodeDependencyValue, OutputVariableNameValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MetaData, MethodToInvoke, StreamMetaData, process}
@@ -54,7 +54,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
 
   object GenericParametersTransformer extends CustomStreamTransformer with GenericParameters[Null] {
 
-    protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, DefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
+    protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
       dependencies.collectFirst { case OutputVariableNameValue(name) => name } match {
         case Some(name) =>
           finalResult(context, rest, name)
@@ -69,7 +69,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
   object GenericParametersSource extends SourceFactory[String] with GenericParameters[Source[String]] {
     override def clazz: Class[_] = classOf[String]
 
-    protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, DefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
+    protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
       finalResult(context, rest, "otherNameThanInput")
     }
     override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]))
@@ -77,7 +77,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
   }
 
   object GenericParametersSink extends SinkFactory with GenericParameters[Sink] {
-    protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, DefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
+    protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
       FinalResults(context)
     }
     override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]))
@@ -100,9 +100,9 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
         outputParameters(context, dependencies, rest)
     }
 
-    protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, DefinedParameter)])(implicit nodeId: NodeId): this.FinalResults
+    protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults
 
-    protected def finalResult(context: ValidationContext, rest: List[(String, DefinedParameter)], name: String)(implicit nodeId: NodeId): this.FinalResults = {
+    protected def finalResult(context: ValidationContext, rest: List[(String, BaseDefinedParameter)], name: String)(implicit nodeId: NodeId): this.FinalResults = {
       val result = TypedObjectTypingResult(rest.toMap.mapValues(_.returnType))
       context.withVariable(name, result).fold(
         errors => FinalResults(context, errors.toList),

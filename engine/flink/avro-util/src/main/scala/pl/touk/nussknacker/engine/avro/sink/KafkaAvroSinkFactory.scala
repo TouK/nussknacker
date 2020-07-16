@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.avro.sink
 import cats.Id
 import cats.data.WriterT
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedParameter, NodeDependencyValue}
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, BaseDefinedParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
@@ -27,7 +27,7 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider[An
         NextParameters(List(version.value), version.written, None)
     case TransformationStep((KafkaAvroBaseTransformer.SinkOutputParamName, _) ::
       (KafkaAvroBaseTransformer.TopicParamName, _) :: Nil, _) => fallbackVersionParam
-    case TransformationStep((KafkaAvroBaseTransformer.SinkOutputParamName, output:DefinedParameter) ::
+    case TransformationStep((KafkaAvroBaseTransformer.SinkOutputParamName, output:BaseDefinedParameter) ::
       (KafkaAvroBaseTransformer.TopicParamName, DefinedEagerParameter(topic:String, _)) ::
       (KafkaAvroBaseTransformer.SchemaVersionParamName, DefinedEagerParameter(version, _)) ::Nil, _) =>
         //we cast here, since null will not be matched in case...

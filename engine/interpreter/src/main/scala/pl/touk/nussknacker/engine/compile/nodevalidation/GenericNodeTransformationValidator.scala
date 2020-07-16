@@ -48,9 +48,13 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
       List(TypedNodeDependencyValue(nodeId), TypedNodeDependencyValue(metaData)) ++ outputVariable.map(OutputVariableNameValue).toList)
 
     @tailrec
-    final def evaluatePart(evaluatedSoFar: List[(Parameter, DefinedParameter)], stateForFar: Option[transformer.State],
+    final def evaluatePart(evaluatedSoFar: List[(Parameter, BaseDefinedParameter)], stateForFar: Option[transformer.State],
                            errors: List[ProcessCompilationError]): ValidatedNel[ProcessCompilationError, TransformationResult] = {
-      definition.lift.apply(transformer.TransformationStep(evaluatedSoFar.map(a => a.copy(_1 = a._1.name)), stateForFar)) match {
+      val transformationStep = transformer.TransformationStep(evaluatedSoFar
+        //unfortunatelly, this cast is needed as we have no easy way to statically check if Parameter definitions
+        //are branch or not...
+        .map(a => (a._1.name, a._2.asInstanceOf[transformer.DefinedParameter])), stateForFar)
+      definition.lift.apply(transformationStep) match {
         case None =>
           //FIXME: proper exception
           Invalid(NonEmptyList.of(WrongParameters(Set.empty, evaluatedSoFar.map(_._1.name).toSet)))
@@ -70,7 +74,7 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
       }
     }
 
-    private def prepareParameter(parameter: Parameter): Validated[NonEmptyList[ProcessCompilationError], DefinedParameter] = {
+    private def prepareParameter(parameter: Parameter): Validated[NonEmptyList[ProcessCompilationError], BaseDefinedParameter] = {
       val compiledParameter = compileParameter(parameter)
       compiledParameter.map(parameterEvaluator.prepareParameter(_, parameter)._2)
     }
