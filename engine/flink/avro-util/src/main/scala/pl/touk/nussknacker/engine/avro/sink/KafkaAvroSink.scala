@@ -9,13 +9,12 @@ import pl.touk.nussknacker.engine.api.{InterpretationResult, LazyParameter}
 import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroSerializationSchemaFactory
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
-import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.StringKeyedValueMapper
+import pl.touk.nussknacker.engine.flink.util.keyed.{KeyedValue, KeyedValueMapper}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaProducer, PreparedKafkaTopic}
 
 import scala.util.control.NonFatal
 
-class KafkaAvroSink(preparedTopic: PreparedKafkaTopic, version: Option[Int], key: LazyParameter[CharSequence], value: LazyParameter[AnyRef],
+class KafkaAvroSink(preparedTopic: PreparedKafkaTopic, version: Option[Int], key: LazyParameter[AnyRef], value: LazyParameter[AnyRef],
                     kafkaConfig: KafkaConfig, serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
                     schema: NkSerializableAvroSchema, runtimeSchema: Option[NkSerializableAvroSchema], clientId: String)
   extends FlinkSink with Serializable with LazyLogging {
@@ -28,8 +27,8 @@ class KafkaAvroSink(preparedTopic: PreparedKafkaTopic, version: Option[Int], key
   override def registerSink(dataStream: DataStream[InterpretationResult], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] = {
     dataStream
       .map(_.finalContext)
-      .map(new StringKeyedValueMapper(flinkNodeContext.lazyParameterHelper, key, value))
-      .map(ctx => ctx.value.map {
+      .map(new KeyedValueMapper(flinkNodeContext.lazyParameterHelper, key, value))
+      .map(ctx => ctx.value.mapValue {
           case container: GenericContainer => container
           // We try to encode not only Map[String, AnyRef], but also other types because avro accept also primitive types
           case data =>
@@ -51,7 +50,7 @@ class KafkaAvroSink(preparedTopic: PreparedKafkaTopic, version: Option[Int], key
     */
   override def testDataOutput: Option[Any => String] = None
 
-  private def toFlinkFunction: SinkFunction[StringKeyedValue[AnyRef]] =
+  private def toFlinkFunction: SinkFunction[KeyedValue[AnyRef, AnyRef]] =
     PartitionByKeyFlinkKafkaProducer(kafkaConfig, preparedTopic.prepared,
       serializationSchemaFactory.create(preparedTopic.prepared, version, runtimeSchema, kafkaConfig), clientId)
 }

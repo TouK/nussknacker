@@ -10,8 +10,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{DefinedLazyParamet
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation, FlinkLazyParameterFunctionHelper, OneParamLazyParameterFunction}
-import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.StringKeyedValueMapper
+import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyedValue, StringKeyedValueMapper}
 
 /* This is example for GenericTransformation
    the idea is that we have two parameters:

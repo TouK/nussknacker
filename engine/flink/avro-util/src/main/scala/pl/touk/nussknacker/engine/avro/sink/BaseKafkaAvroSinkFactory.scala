@@ -22,7 +22,7 @@ abstract class BaseKafkaAvroSinkFactory extends SinkFactory {
 
   protected def createSink(preparedTopic: PreparedKafkaTopic,
                            version: Option[Int],
-                           key: LazyParameter[CharSequence],
+                           key: LazyParameter[AnyRef],
                            value: LazyParameter[AnyRef],
                            kafkaConfig: KafkaConfig,
                            serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,

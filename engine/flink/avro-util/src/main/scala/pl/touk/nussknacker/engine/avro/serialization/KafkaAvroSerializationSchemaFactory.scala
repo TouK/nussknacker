@@ -1,16 +1,15 @@
 package pl.touk.nussknacker.engine.avro.serialization
 
 import java.lang
-import java.nio.charset.StandardCharsets
 
 import org.apache.avro.Schema
 import org.apache.flink.formats.avro.typeutils.NkSerializableAvroSchema
 import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.Serializer
-import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
+import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValue
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import pl.touk.nussknacker.engine.kafka.serialization.KafkaProducerHelper
+import pl.touk.nussknacker.engine.kafka.serialization.{CharSequenceSerializer, KafkaProducerHelper}
 
 /**
   * Factory class for Flink's KeyedSerializationSchema. It is extracted for purpose when for creation
@@ -19,7 +18,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.KafkaProducerHelper
   */
 trait KafkaAvroSerializationSchemaFactory extends Serializable {
 
-  def create(topic: String, version: Option[Int], schemaOpt: Option[NkSerializableAvroSchema], kafkaConfig: KafkaConfig): KafkaSerializationSchema[StringKeyedValue[AnyRef]]
+  def create(topic: String, version: Option[Int], schemaOpt: Option[NkSerializableAvroSchema], kafkaConfig: KafkaConfig): KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]]
 
 }
 
@@ -30,20 +29,24 @@ trait KafkaAvroSerializationSchemaFactory extends Serializable {
   */
 abstract class KafkaAvroValueSerializationSchemaFactory extends KafkaAvroSerializationSchemaFactory {
 
+  protected def createKeySerializer(kafkaConfig: KafkaConfig): Serializer[AnyRef] = new CharSequenceSerializer
+
   protected def createValueSerializer(schemaOpt: Option[Schema], version: Option[Int], kafkaConfig: KafkaConfig): Serializer[AnyRef]
 
-  override def create(topic: String, version: Option[Int], schemaOpt: Option[NkSerializableAvroSchema], kafkaConfig: KafkaConfig): KafkaSerializationSchema[StringKeyedValue[AnyRef]] = {
-    new KafkaSerializationSchema[StringKeyedValue[AnyRef]] {
+  override def create(topic: String, version: Option[Int], schemaOpt: Option[NkSerializableAvroSchema], kafkaConfig: KafkaConfig): KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] = {
+    new KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] {
+      private lazy val keySerializer = createKeySerializer(kafkaConfig)
       private lazy val valueSerializer = createValueSerializer(schemaOpt.map(_.getAvroSchema), version, kafkaConfig)
 
-      override def serialize(element: StringKeyedValue[AnyRef], timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
+      override def serialize(element: KeyedValue[AnyRef, AnyRef], timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
         KafkaProducerHelper.createRecord(topic,
-          Option(element.key).map(_.getBytes(StandardCharsets.UTF_8)).orNull,
+          keySerializer.serialize(topic, element.key),
           valueSerializer.serialize(topic, element.value),
           timestamp)
       }
     }
   }
+
 }
 
 /**
@@ -66,12 +69,12 @@ abstract class KafkaAvroKeyValueSerializationSchemaFactory extends KafkaAvroSeri
 
   protected def extractValue(obj: AnyRef): V
 
-  override def create(topic: String, version: Option[Int], schemaOpt: Option[NkSerializableAvroSchema], kafkaConfig: KafkaConfig): KafkaSerializationSchema[StringKeyedValue[AnyRef]] = {
-    new KafkaSerializationSchema[StringKeyedValue[AnyRef]] {
+  override def create(topic: String, version: Option[Int], schemaOpt: Option[NkSerializableAvroSchema], kafkaConfig: KafkaConfig): KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] = {
+    new KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] {
       private lazy val keySerializer = createKeySerializer(kafkaConfig)
       private lazy val valueSerializer = createValueSerializer(schemaOpt.map(_.getAvroSchema), version, kafkaConfig)
 
-      override def serialize(element: StringKeyedValue[AnyRef], timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
+      override def serialize(element: KeyedValue[AnyRef, AnyRef], timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
         val key = keySerializer.serialize(topic, extractKey(element.value))
         val value = valueSerializer.serialize(topic, extractValue(element.value))
         KafkaProducerHelper.createRecord(topic, key, value, timestamp)
