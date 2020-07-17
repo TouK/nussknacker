@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.avro._
-import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
+import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, CheckAllEncoderPolicy}
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClient, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentSchemaRegistryProvider, ConfluentUtils}
@@ -50,7 +50,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
   val JsonInTopic: String = "name.json.input"
   val JsonOutTopic: String = "name.json.output"
 
-  protected val avroEncoder = BestEffortAvroEncoder()
+  protected val avroEncoder = BestEffortAvroEncoder(CheckAllEncoderPolicy)
 
   private val givenNotMatchingJsonObj =
     """{

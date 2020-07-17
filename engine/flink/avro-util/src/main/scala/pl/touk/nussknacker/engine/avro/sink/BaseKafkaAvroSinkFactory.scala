@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.avro.sink
 
 import cats.data.Validated
-import cats.data.Validated.{Invalid, Valid}
 import org.apache.avro.Schema
 import org.apache.flink.formats.avro.typeutils.NkSerializableAvroSchema
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
@@ -9,11 +8,8 @@ import pl.touk.nussknacker.engine.api.process.SinkFactory
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.SinkValueParamName
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.SinkOutputParamName
 import pl.touk.nussknacker.engine.avro.encode.{EncoderPolicy, OutputValidator}
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroSerializationSchemaFactory
-import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
