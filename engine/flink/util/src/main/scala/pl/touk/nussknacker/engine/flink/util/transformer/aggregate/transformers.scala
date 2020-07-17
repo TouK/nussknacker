@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import org.apache.flink.annotation.PublicEvolving
-import org.apache.flink.api.common.functions.RichMapFunction
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.streaming.api.scala._
@@ -14,6 +13,7 @@ import pl.touk.nussknacker.engine.api.{Context => NkContext, _}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
+import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyedValue, StringKeyedValueMapper}
 
 import scala.collection.immutable.TreeMap
 import scala.concurrent.duration.Duration
@@ -43,8 +43,8 @@ object transformers {
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
           ExplicitUidInOperatorsSupport.setUidIfNeed(explicitUidInStatefulOperators(ctx), ctx.nodeId)(
             start
-              .map(new KeyWithValueMapper(ctx.lazyParameterHelper, keyBy, aggregateBy))
-              .keyBy(_.value._1)
+              .map(new StringKeyedValueMapper(ctx.lazyParameterHelper, keyBy, aggregateBy))
+              .keyBy(_.value.key)
               .process(new AggregatorFunction(aggregator, windowLength.toMillis, ctx.nodeId)))
         }))
 
@@ -68,47 +68,34 @@ object transformers {
       .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
           ExplicitUidInOperatorsSupport.setUidIfNeed(explicitUidInStatefulOperators(ctx), ctx.nodeId)(start
-            .map(new KeyWithValueMapper(ctx.lazyParameterHelper, keyBy, aggregateBy))
-            .keyBy(_.value._1)
+            .map(new StringKeyedValueMapper(ctx.lazyParameterHelper, keyBy, aggregateBy))
+            .keyBy(_.value.key)
             .window(TumblingProcessingTimeWindows.of(Time.milliseconds(windowLength.toMillis)))
+            // FIXME: It can't work - we should aggregate on unwrapped value  
             .aggregate(aggregator
               // this casting seems to be needed for Flink to infer TypeInformation correctly....
-              .asInstanceOf[org.apache.flink.api.common.functions.AggregateFunction[ValueWithContext[(String, AnyRef)], AnyRef, ValueWithContext[AnyRef]]]))
+              .asInstanceOf[org.apache.flink.api.common.functions.AggregateFunction[ValueWithContext[StringKeyedValue[AnyRef]], AnyRef, ValueWithContext[AnyRef]]]))
 
         }))
 
 }
 
-//TODO: how to handle keyBy in more elegant way?
-class KeyWithValueMapper(val lazyParameterHelper: FlinkLazyParameterFunctionHelper, key: LazyParameter[CharSequence], value: LazyParameter[AnyRef])
-  extends RichMapFunction[NkContext, ValueWithContext[(String, AnyRef)]] with LazyParameterInterpreterFunction {
-
-  implicit def lazyParameterInterpreterImpl: LazyParameterInterpreter = lazyParameterInterpreter
-
-  private lazy val interpreter = lazyParameterInterpreter.syncInterpretationFunction(key
-    .map[String](Option(_: CharSequence).map(_.toString).orNull)
-    .product(value))
-
-  override def map(ctx: NkContext): ValueWithContext[(String, AnyRef)] = ValueWithContext(interpreter(ctx), ctx)
-}
-
-
 //This function behaves a bit like SlidingWindow with slide 1min, trigger on each event, but we
 //do reduce on each emit and store partial aggregations for each minute, instead of storing aggregates for each slide
 //TODO: figure out if it's more convenient/faster to just use SlidingWindow with 60s slide and appropriate trigger?
 class AggregatorFunction(aggregator: Aggregator, lengthInMillis: Long, nodeId: String)
-  extends LatelyEvictableStateFunction[ValueWithContext[(String, AnyRef)], ValueWithContext[AnyRef], TreeMap[Long, AnyRef]] {
+  extends LatelyEvictableStateFunction[ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef], TreeMap[Long, AnyRef]] {
 
-  type FlinkCtx = KeyedProcessFunction[String, ValueWithContext[(String, AnyRef)], ValueWithContext[AnyRef]]#Context
+  type FlinkCtx = KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]#Context
 
   //TODO make it configurable
   private val minimalResolutionMs = 60000L
 
-  override def processElement(value: ValueWithContext[(String, AnyRef)], ctx: FlinkCtx, out: Collector[ValueWithContext[AnyRef]]): Unit = {
+  override def processElement(value: ValueWithContext[StringKeyedValue[AnyRef]], ctx: FlinkCtx, out: Collector[ValueWithContext[AnyRef]]): Unit = {
 
     moveEvictionTime(lengthInMillis, ctx)
 
-    val newElement = value.value._2.asInstanceOf[aggregator.Element]
+    val newElement = value.value.value.asInstanceOf[aggregator.Element]
     val newState: TreeMap[Long, aggregator.Aggregate] = computeNewState(newElement, ctx)
 
     state.update(newState)

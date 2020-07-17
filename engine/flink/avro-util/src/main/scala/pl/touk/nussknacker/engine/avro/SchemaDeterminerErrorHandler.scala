@@ -14,8 +14,8 @@ object SchemaDeterminerErrorHandler {
 
   def handleSchemaRegistryError(exc: SchemaDeterminerError)(implicit nodeId: NodeId): CustomNodeError = {
     val parameter = exc.getCause match {
-      case _: SchemaSubjectNotFound => Some(`TopicParamName`)
-      case _: SchemaVersionNotFound => Some(`SchemaVersionParamName`)
+      case _: SchemaSubjectNotFound => Some(TopicParamName)
+      case _: SchemaVersionNotFound => Some(SchemaVersionParamName)
       case _ => None
     }
     CustomNodeError(exc.getMessage, parameter)

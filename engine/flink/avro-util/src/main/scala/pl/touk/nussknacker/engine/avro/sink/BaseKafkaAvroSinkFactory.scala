@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.process.SinkFactory
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.SinkOutputParamName
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.SinkValueParamName
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroSerializationSchemaFactory
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, SchemaDeterminerErrorHandler}
@@ -22,7 +22,8 @@ abstract class BaseKafkaAvroSinkFactory extends SinkFactory {
 
   protected def createSink(preparedTopic: PreparedKafkaTopic,
                            version: Option[Int],
-                           output: LazyParameter[AnyRef],
+                           key: LazyParameter[AnyRef],
+                           value: LazyParameter[AnyRef],
                            kafkaConfig: KafkaConfig,
                            serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
                            schemaDeterminer: AvroSchemaDeterminer)
@@ -30,22 +31,22 @@ abstract class BaseKafkaAvroSinkFactory extends SinkFactory {
                            nodeId: NodeId): FlinkSink = {
     //This is a bit redundant, since we already validate during creation
     val schema = schemaDeterminer.determineSchemaUsedInTyping.valueOr(SchemaDeterminerErrorHandler.handleSchemaRegistryErrorAndThrowException)
-    validateOutput(output.returnType, schema).valueOr(err => throw new CustomNodeValidationException(err.message, err.paramName, null))
+    validateValueType(value.returnType, schema).valueOr(err => throw new CustomNodeValidationException(err.message, err.paramName, null))
     val schemaUsedInRuntime = schemaDeterminer.toRuntimeSchema(schema)
 
     val clientId = s"${processMetaData.id}-${preparedTopic.prepared}"
-    new KafkaAvroSink(preparedTopic, version, output, kafkaConfig, serializationSchemaFactory,
+    new KafkaAvroSink(preparedTopic, version, key, value, kafkaConfig, serializationSchemaFactory,
       new NkSerializableAvroSchema(schema), schemaUsedInRuntime.map(new NkSerializableAvroSchema(_)), clientId)
   }
 
   /**
     * Currently we check only required fields, because our typing mechanism doesn't support optionally fields
     */
-  protected def validateOutput(output: TypingResult, schema: Schema)(implicit nodeId: NodeId): Validated[CustomNodeError, Unit] = {
+  protected def validateValueType(valueType: TypingResult, schema: Schema)(implicit nodeId: NodeId): Validated[CustomNodeError, Unit] = {
     val possibleTypes = AvroSchemaTypeDefinitionExtractor.ExtendedPossibleTypes
     val returnType = AvroSchemaTypeDefinitionExtractor.typeDefinitionWithoutNullableFields(schema, possibleTypes)
-    if (!output.canBeSubclassOf(returnType)) {
-      Invalid(CustomNodeError("Provided output doesn't match to selected avro schema.", Some(SinkOutputParamName)))
+    if (!valueType.canBeSubclassOf(returnType)) {
+      Invalid(CustomNodeError("Provided value doesn't match to selected avro schema.", Some(SinkValueParamName)))
     } else {
       Valid(())
     }

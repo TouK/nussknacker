@@ -1,12 +1,14 @@
 package pl.touk.nussknacker.engine.avro
 
+import java.nio.charset.StandardCharsets
+
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.Schema
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, SinkOutputParamName, TopicParamName}
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValueParamName, TopicParamName}
 import pl.touk.nussknacker.engine.avro.schema._
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
@@ -56,6 +58,15 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, PaymentV1.record, PaymentV1.record)
+  }
+
+  test("should read primitive event and save it in the same format") {
+    val topicConfig = createAndRegisterTopicConfig("simple.primitive", Schema.create(Schema.Type.STRING))
+    val sourceParam = SourceAvroParam.forGeneric(topicConfig, None)
+    val sinkParam = SinkAvroParam(topicConfig, None, "#input")
+    val process = createAvroProcess(sourceParam, sinkParam)
+
+    runAndVerifyResult(process, topicConfig, "fooBar", "fooBar")
   }
 
   test("should read newer compatible event then source requires and save it in older compatible version") {
@@ -208,7 +219,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
         "kafka-avro",
         TopicParamName -> s"'${topicConfig.output}'",
         SchemaVersionParamName -> "",
-        SinkOutputParamName -> s"{field: #extractedTimestamp}"
+        SinkKeyParamName -> "",
+        SinkValueParamName -> s"{field: #extractedTimestamp}"
       )
 
     pushMessage(LongFieldV1.record, topicConfig.input)
@@ -235,7 +247,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
         "kafka-avro",
         TopicParamName -> s"'${topicConfig.output}'",
         SchemaVersionParamName -> "",
-        SinkOutputParamName -> s"{field: #extractedTimestamp}"
+        SinkKeyParamName -> "",
+        SinkValueParamName -> s"{field: #extractedTimestamp}"
       )
 
     //Can't be too long ago, otherwise retention could delete it
@@ -268,7 +281,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
       GeneratedAvroClassWithLogicalTypesNewSchema.schema
     ))
     val sourceParam = SourceAvroParam.forSpecific(topicConfig)
-    val sinkParam = SinkAvroParam(topicConfig.output, Some(2), "#input")
+    val sinkParam = SinkAvroParam(topicConfig.output, Some(2), "#input", "")
 
     val givenRecord = GeneratedAvroClassWithLogicalTypesOldSchema(
       PaymentDate.instant,
@@ -291,6 +304,41 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
         s"#input.text.toString == '123'")) // default value
 
     runAndVerifyResult(process, topicConfig, givenRecord, expectedRecord, useSpecificAvroReader = true)
+  }
+
+  test("should define kafka key for output record") {
+    val topicConfig = createAndRegisterTopicConfig("kafka-key", List(FullNameV1.schema))
+    val sourceParam = SourceAvroParam.forGeneric(topicConfig, None)
+    val sinkParam = SinkAvroParam(topicConfig, None, value = "#input", key = "#input.first")
+    val process = createAvroProcess(sourceParam, sinkParam, None)
+
+    kafkaClient.createTopic(topicConfig.input, partitions = 1)
+    pushMessage(FullNameV1.record, topicConfig.input)
+    kafkaClient.createTopic(topicConfig.output, partitions = 1)
+
+    run(process) {
+      val consumer = kafkaClient.createConsumer()
+      val consumed = consumer.consume(topicConfig.output, 20).take(1).head
+      val consumedKey = new String(consumed.key(), StandardCharsets.UTF_8)
+      consumedKey shouldEqual FullNameV1.BaseFirst
+    }
+  }
+
+  test("should use null key for empty key expression") {
+    val topicConfig = createAndRegisterTopicConfig("kafka-null-key", List(FullNameV1.schema))
+    val sourceParam = SourceAvroParam.forGeneric(topicConfig, None)
+    val sinkParam = SinkAvroParam(topicConfig, None, value = "#input")
+    val process = createAvroProcess(sourceParam, sinkParam, None)
+
+    kafkaClient.createTopic(topicConfig.input, partitions = 1)
+    pushMessage(FullNameV1.record, topicConfig.input)
+    kafkaClient.createTopic(topicConfig.output, partitions = 1)
+
+    run(process) {
+      val consumer = kafkaClient.createConsumer()
+      val consumed = consumer.consume(topicConfig.output, 20).take(1).head
+      consumed.key() shouldBe null
+    }
   }
 
 }

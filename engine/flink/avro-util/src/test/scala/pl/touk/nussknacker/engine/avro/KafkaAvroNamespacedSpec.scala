@@ -53,13 +53,12 @@ class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin {
   }
 
   test("should create source with proper filtered and converted topics") {
-    val sourceFactory = createAvroSourceFactory[GenericData.Record]
     val editor = Some(FixedValuesParameterEditor(List(
       FixedExpressionValue(s"'input_payment'", "input_payment"),
       FixedExpressionValue(s"'output_payment'", "output_payment")
     )))
 
-    sourceFactory.initialParameters.find(_.name == "topic").head.editor shouldBe editor
+    avroSourceFactory.initialParameters.find(_.name == KafkaAvroBaseTransformer.TopicParamName).head.editor shouldBe editor
   }
 
   test("should create sink with proper filtered and converted topics") {
@@ -68,7 +67,7 @@ class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin {
       FixedExpressionValue(s"'output_payment'", "output_payment")
     )))
 
-    avroSinkFactory.initialParameters.find(_.name == "topic").head.editor shouldBe editor
+    avroSinkFactory.initialParameters.find(_.name == KafkaAvroBaseTransformer.TopicParamName).head.editor shouldBe editor
   }
 
   test("should read event in the same version as source requires and save it in the same version") {
