@@ -15,9 +15,8 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, TopicParamName}
-import pl.touk.nussknacker.engine.avro.encode.CheckAllEncoderPolicy
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValueParamName, TopicParamName}
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValueParamName, TopicParamName, ValidationModeParameterName}
+import pl.touk.nussknacker.engine.avro.encode.EncoderPolicy
 import pl.touk.nussknacker.engine.avro.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{AbstractConfluentKafkaAvroDeserializer, AbstractConfluentKafkaAvroSerializer}
@@ -32,8 +31,6 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec, KafkaZookeeperU
 import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.test.{NussknackerAssertions, PatientScalaFutures}
-
-import scala.reflect.ClassTag
 
 trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec with Matchers with LazyLogging with NussknackerAssertions with PatientScalaFutures {
 
@@ -146,7 +143,7 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
   }
 
   protected lazy val avroSinkFactory: KafkaAvroSinkFactory = {
-    new KafkaAvroSinkFactory(schemaRegistryProvider, testProcessObjectDependencies, CheckAllEncoderPolicy)
+    new KafkaAvroSinkFactory(schemaRegistryProvider, testProcessObjectDependencies)
   }
 
   protected def createAvroProcess(source: SourceAvroParam, sink: SinkAvroParam, filterExpression: Option[String] = None): EspProcess = {
@@ -175,6 +172,7 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
       TopicParamName -> s"'${sink.topic}'",
       SchemaVersionParamName -> parseVersion(sink.version),
       SinkKeyParamName -> sink.key,
+      ValidationModeParameterName -> s"'${sink.validationMode.name}'",
       SinkValueParamName -> sink.value
     )
   }
@@ -242,11 +240,12 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
 
   }
 
-  case class SinkAvroParam(topic: String, version: Option[Int], value: String, key: String)
+  case class SinkAvroParam(topic: String, version: Option[Int], value: String, key: String,
+                           validationMode: EncoderPolicy)
 
   object SinkAvroParam {
-    def apply(topicConfig: TopicConfig, version: Option[Int], value: String, key: String = ""): SinkAvroParam =
-      new SinkAvroParam(topicConfig.output, version, value, key)
+    def apply(topicConfig: TopicConfig, version: Option[Int], value: String, key: String = "", validationMode: EncoderPolicy = EncoderPolicy.strict): SinkAvroParam =
+      new SinkAvroParam(topicConfig.output, version, value, key, validationMode)
   }
 }
 

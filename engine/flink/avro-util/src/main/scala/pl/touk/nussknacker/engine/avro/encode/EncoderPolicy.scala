@@ -1,30 +1,17 @@
 package pl.touk.nussknacker.engine.avro.encode
 
-sealed trait EncoderPolicy extends Serializable {
-  def acceptUnfilledOptional: Boolean
-  def acceptRedundant: Boolean
-}
+case class EncoderPolicy private (name: String, label: String, acceptUnfilledOptional: Boolean, acceptRedundant: Boolean)
 
-case object CheckMandatoryEncoderPolicy extends EncoderPolicy {
+object EncoderPolicy {
 
-  override def acceptUnfilledOptional: Boolean = true
+  val strict: EncoderPolicy = EncoderPolicy("strict", "Strict mode", acceptUnfilledOptional = false, acceptRedundant = false)
 
-  override def acceptRedundant: Boolean = true
+  val allowOptional: EncoderPolicy = EncoderPolicy("allowOptional", "No optional parameters validations", acceptUnfilledOptional = true, acceptRedundant = false)
 
-}
+  val allowRedundantAndOptional: EncoderPolicy =  EncoderPolicy("allowRedundantAndOptional", "Allow redundant parameters", acceptUnfilledOptional = true, acceptRedundant = true)
 
-case object CheckMandatoryAndRedundantEncoderPolicy extends EncoderPolicy {
+  val values: List[EncoderPolicy] = List(strict, allowOptional, allowRedundantAndOptional)
 
-  override def acceptUnfilledOptional: Boolean = true
-
-  override def acceptRedundant: Boolean = false
-
-}
-
-case object CheckAllEncoderPolicy extends EncoderPolicy {
-
-  override def acceptUnfilledOptional: Boolean = false
-
-  override def acceptRedundant: Boolean = false
+  def byName(name: String): Option[EncoderPolicy] = values.find(_.name == name)
 
 }

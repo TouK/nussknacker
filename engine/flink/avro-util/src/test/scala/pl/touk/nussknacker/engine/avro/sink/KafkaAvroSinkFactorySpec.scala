@@ -10,7 +10,8 @@ import pl.touk.nussknacker.engine.api.context.transformation.TypedNodeDependency
 import pl.touk.nussknacker.engine.api.process.Sink
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValueParamName, TopicParamName}
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValueParamName, TopicParamName, ValidationModeParameterName}
+import pl.touk.nussknacker.engine.avro.encode.EncoderPolicy
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2, PaymentV1}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, KafkaAvroSpecMixin}
@@ -40,45 +41,48 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
     validator.validateNode(avroSinkFactory, paramsList, Nil, Some(Interpreter.InputParamName))(ValidationContext()).toOption.get
   }
 
-  protected def createSink(topic: String, version: Integer, value: LazyParameter[GenericContainer]): Sink =
+  protected def createSink(topic: String, version: Integer, value: LazyParameter[GenericContainer], validationMode: EncoderPolicy): Sink =
     avroSinkFactory.implementation(
       Map(KafkaAvroBaseTransformer.TopicParamName -> topic,
-        KafkaAvroBaseTransformer.SchemaVersionParamName -> version, KafkaAvroBaseTransformer.SinkKeyParamName -> null, KafkaAvroBaseTransformer.SinkValueParamName -> value),
+        KafkaAvroBaseTransformer.SchemaVersionParamName -> version,
+        KafkaAvroBaseTransformer.SinkKeyParamName -> null,
+        KafkaAvroBaseTransformer.ValidationModeParameterName -> validationMode.name,
+        KafkaAvroBaseTransformer.SinkValueParamName -> value),
             List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)))
 
   test("should throw exception when schema doesn't exist") {
     assertThrows[CustomNodeValidationException] {
       val valueParam = createLazyParam(FullNameV1.schema, FullNameV1.exampleData)
-      createSink("not-exists-subject", 1, valueParam)
+      createSink("not-exists-subject", 1, valueParam, EncoderPolicy.strict)
     }
   }
 
   test("should throw exception when schema version doesn't exist") {
     assertThrows[CustomNodeValidationException] {
       val valueParam = createLazyParam(FullNameV1.schema, FullNameV1.exampleData)
-      createSink(fullnameTopic, 666, valueParam)
+      createSink(fullnameTopic, 666, valueParam, EncoderPolicy.strict)
     }
   }
 
   test("should allow to create sink when #value schema is the same as sink schema") {
     val valueParam = createLazyParam(FullNameV1.schema, FullNameV1.exampleData)
-    createSink(fullnameTopic, 1, valueParam)
+    createSink(fullnameTopic, 1, valueParam, EncoderPolicy.strict)
   }
 
   test("should allow to create sink when #value schema is compatible with newer sink schema") {
     val valueParam = createLazyParam(FullNameV1.schema, FullNameV1.exampleData)
-    createSink(fullnameTopic, 2, valueParam)
+    createSink(fullnameTopic, 2, valueParam, EncoderPolicy.allowOptional)
   }
 
-  test("should allow to create sink when #value schema is compatible with older fxied sink schema") {
+  test("should allow to create sink when #value schema is compatible with older fixed sink schema") {
     val valueParam = createLazyParam(FullNameV2.schema, FullNameV2.exampleData)
-    createSink(fullnameTopic, 1, valueParam)
+    createSink(fullnameTopic, 1, valueParam, EncoderPolicy.allowRedundantAndOptional)
   }
 
   test("should throw exception when #value schema is not compatible with sink schema") {
     assertThrows[CustomNodeValidationException] {
       val valueParam = createLazyParam(PaymentV1.schema, PaymentV1.exampleData)
-      createSink(fullnameTopic, 2, valueParam)
+      createSink(fullnameTopic, 2, valueParam, EncoderPolicy.strict)
     }
   }
 
@@ -87,6 +91,7 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
     val result = validate(
       SinkKeyParamName -> "",
       SinkValueParamName -> "",
+      ValidationModeParameterName -> s"'${EncoderPolicy.strict.name}'",
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> "1")
 
@@ -97,6 +102,7 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
     val result = validate(
       SinkKeyParamName -> "",
       SinkValueParamName -> "",
+      ValidationModeParameterName -> s"'${EncoderPolicy.strict.name}'",
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> "")
 
@@ -107,6 +113,7 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
     val result = validate(
       SinkKeyParamName -> "",
       SinkValueParamName -> "",
+      ValidationModeParameterName -> s"'${EncoderPolicy.strict.name}'",
       TopicParamName -> "'tereferer'",
       SchemaVersionParamName -> "1")
 
@@ -118,6 +125,7 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
     val result = validate(
       SinkKeyParamName -> "",
       SinkValueParamName -> "",
+      ValidationModeParameterName -> s"'${EncoderPolicy.strict.name}'",
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> "343543")
 
@@ -128,6 +136,7 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
     val result = validate(
       SinkKeyParamName -> "",
       SinkValueParamName -> "''",
+      ValidationModeParameterName -> s"'${EncoderPolicy.strict.name}'",
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> "")
 

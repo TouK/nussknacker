@@ -94,5 +94,6 @@ object KafkaAvroBaseTransformer {
   final val TopicParamName = "Topic"
   final val SinkKeyParamName = "Key"
   final val SinkValueParamName = "Value"
+  final val ValidationModeParameterName = "Value validation mode"
 
 }
