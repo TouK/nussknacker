@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.additionalInfo.{NodeAdditionalInfo, NodeAdditionalInfoProvider}
 import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.process.ParameterConfig
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compile.nodevalidation.{NodeDataValidator, ValidationNotPerformed, ValidationPerformed}
@@ -29,6 +29,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingPar
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.definition.UIParameter
+import pl.touk.nussknacker.ui.api.NodesResources.prepareValidationContext
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -60,15 +61,8 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
             complete {
               implicit val metaData: MetaData = nodeData.processProperties.toMetaData(process.id)
 
-              val emptyCtx = GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig).emptyValidationContext(metaData)
-
-              //It's a bit tricky, because FE does not distinguish between global and local vars...
-              def prepareContext(variableTypes: Map[String, TypingResult]) = {
-                val localVars = variableTypes.filterNot(e => emptyCtx.globalVariables.keys.toSet.contains(e._1))
-                emptyCtx.copy(localVariables = localVars)
-              }
-              val validationContext = prepareContext(nodeData.variableTypes)
-              val branchCtxs = nodeData.branchVariableTypes.getOrElse(Map.empty).mapValues(prepareContext)
+              val validationContext = prepareValidationContext(modelData)(nodeData.variableTypes)
+              val branchCtxs = nodeData.branchVariableTypes.getOrElse(Map.empty).mapValues(prepareValidationContext(modelData))
 
               NodeDataValidator.validate(nodeData.nodeData, modelData, validationContext, branchCtxs) match {
                 case ValidationNotPerformed => NodeValidationResult(None, Nil, validationPerformed = false)
@@ -100,6 +94,13 @@ object NodesResources {
   def prepareRequestDecoder(modelData: ModelData): Decoder[NodeValidationRequest] = {
     implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
     deriveDecoder[NodeValidationRequest]
+  }
+
+  def prepareValidationContext(modelData: ModelData)(variableTypes: Map[String, TypingResult])(implicit metaData: MetaData): ValidationContext = {
+    val emptyCtx = GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig).emptyValidationContext(metaData)
+    //It's a bit tricky, because FE does not distinguish between global and local vars...
+    val localVars = variableTypes.filterNot(e => emptyCtx.globalVariables.keys.toSet.contains(e._1))
+    emptyCtx.copy(localVariables = localVars)
   }
 
 }
