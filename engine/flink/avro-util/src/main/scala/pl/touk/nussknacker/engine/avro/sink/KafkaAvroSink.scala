@@ -7,6 +7,7 @@ import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import pl.touk.nussknacker.engine.api.{InterpretationResult, LazyParameter}
 import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaVersionOption}
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroSerializationSchemaFactory
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyedValue, KeyedValueMapper}
@@ -14,7 +15,7 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaPr
 
 import scala.util.control.NonFatal
 
-class KafkaAvroSink(preparedTopic: PreparedKafkaTopic, version: Option[Int], key: LazyParameter[AnyRef], value: LazyParameter[AnyRef],
+class KafkaAvroSink(preparedTopic: PreparedKafkaTopic, versionOption: SchemaVersionOption, key: LazyParameter[AnyRef], value: LazyParameter[AnyRef],
                     kafkaConfig: KafkaConfig, serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
                     schema: NkSerializableAvroSchema, runtimeSchema: Option[NkSerializableAvroSchema],
                     clientId: String, validationMode: ValidationMode)
@@ -38,7 +39,7 @@ class KafkaAvroSink(preparedTopic: PreparedKafkaTopic, version: Option[Int], key
             } catch {
               case NonFatal(ex) =>
                 //TODO: We should better handle this situation by using EspExceptionHandler
-                logger.error(s"Invalid value for topic: ${preparedTopic.prepared} and version: $version: $data", ex)
+                logger.error(s"Invalid value for topic: ${preparedTopic.prepared} and version: $versionOption: $data", ex)
                 null
             }
       })
@@ -51,7 +52,11 @@ class KafkaAvroSink(preparedTopic: PreparedKafkaTopic, version: Option[Int], key
     */
   override def testDataOutput: Option[Any => String] = None
 
-  private def toFlinkFunction: SinkFunction[KeyedValue[AnyRef, AnyRef]] =
+  private def toFlinkFunction: SinkFunction[KeyedValue[AnyRef, AnyRef]] = {
+    val versionOpt = Option(versionOption).collect {
+      case ExistingSchemaVersion(version) => version
+    }
     PartitionByKeyFlinkKafkaProducer(kafkaConfig, preparedTopic.prepared,
-      serializationSchemaFactory.create(preparedTopic.prepared, version, runtimeSchema, kafkaConfig), clientId)
+      serializationSchemaFactory.create(preparedTopic.prepared, versionOpt, runtimeSchema, kafkaConfig), clientId)
+  }
 }

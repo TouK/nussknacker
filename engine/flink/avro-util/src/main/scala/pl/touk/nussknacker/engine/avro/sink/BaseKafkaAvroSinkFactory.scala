@@ -8,7 +8,8 @@ import pl.touk.nussknacker.engine.api.process.SinkFactory
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
-import pl.touk.nussknacker.engine.avro.encode.{ValidationMode, OutputValidator}
+import pl.touk.nussknacker.engine.avro.encode.{OutputValidator, ValidationMode}
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroSerializationSchemaFactory
 import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
@@ -19,7 +20,7 @@ abstract class BaseKafkaAvroSinkFactory extends SinkFactory {
   override def requiresOutput: Boolean = false
 
   protected def createSink(preparedTopic: PreparedKafkaTopic,
-                           version: Option[Int],
+                           version: SchemaVersionOption,
                            key: LazyParameter[AnyRef],
                            value: LazyParameter[AnyRef],
                            kafkaConfig: KafkaConfig,
