@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValu
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
-import pl.touk.nussknacker.engine.avro.schemaregistry.{BasedOnVersionAvroSchemaDeterminer, SchemaRegistryClient, SchemaRegistryProvider}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{BasedOnVersionAvroSchemaDeterminer, SchemaRegistryClient, SchemaRegistryProvider, SchemaVersionOption}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, PreparedKafkaTopic}
 
 import scala.reflect.ClassTag
@@ -45,17 +45,17 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
     }
   }
 
-  protected def versionParam(preparedTopic: PreparedKafkaTopic)(implicit nodeId: NodeId): WithError[Parameter] = {
+  protected def versionOptionParam(preparedTopic: PreparedKafkaTopic)(implicit nodeId: NodeId): WithError[Parameter] = {
     val versions = schemaRegistryClient.getAllVersions(preparedTopic.prepared, isKey = false)
     (versions match {
       case Valid(versions) => Writer[List[ProcessCompilationError], List[Integer]](Nil, versions)
       case Invalid(e) => Writer[List[ProcessCompilationError], List[Integer]](List(CustomNodeError(e.getMessage, Some(KafkaAvroBaseTransformer.TopicParamName))), Nil)
-    }).map(versionParam)
+    }).map(versionOptionParam)
   }
 
-  protected def versionParam(versions: List[Integer]): Parameter = {
-    val versionValues = FixedExpressionValue("", "Latest version") :: versions.sorted.map(v => FixedExpressionValue(v.toString, v.toString))
-    Parameter[java.lang.Integer](KafkaAvroBaseTransformer.SchemaVersionParamName).copy(editor = Some(FixedValuesParameterEditor(versionValues)), validators = Nil)
+  protected def versionOptionParam(versions: List[Integer]): Parameter = {
+    val versionValues = FixedExpressionValue(s"'${SchemaVersionOption.LatestOptionName}'", "Latest version") :: versions.sorted.map(v => FixedExpressionValue(s"'$v''", v.toString))
+    Parameter[String](KafkaAvroBaseTransformer.SchemaVersionParamName).copy(editor = Some(FixedValuesParameterEditor(versionValues)), validators = Nil)
   }
 
   protected def typedDependency[C:ClassTag](list: List[NodeDependencyValue]): C = list.collectFirst {
@@ -66,13 +66,18 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
     params(KafkaAvroBaseTransformer.TopicParamName).asInstanceOf[String]
   )
 
-  protected def extractVersion(params: Map[String, Any]): Option[Int] =
-    Option(params(KafkaAvroBaseTransformer.SchemaVersionParamName).asInstanceOf[Integer]).map(_.intValue())
+  protected def extractVersionOption(params: Map[String, Any]): SchemaVersionOption = {
+    val optionName = params(KafkaAvroBaseTransformer.SchemaVersionParamName).asInstanceOf[String]
+    SchemaVersionOption.byName(optionName)
+  }
 
   protected def prepareTopic(topic: String): PreparedKafkaTopic =
     KafkaUtils.prepareKafkaTopic(topic, processObjectDependencies)
 
-  protected def prepareSchemaDeterminer(preparedTopic: PreparedKafkaTopic, version: Option[Int]): AvroSchemaDeterminer = {
+  protected def parseVersionOption(versionOptionName: String): SchemaVersionOption =
+    SchemaVersionOption.byName(versionOptionName)
+
+  protected def prepareSchemaDeterminer(preparedTopic: PreparedKafkaTopic, version: SchemaVersionOption): AvroSchemaDeterminer = {
     new BasedOnVersionAvroSchemaDeterminer(schemaRegistryProvider.createSchemaRegistryClient _, preparedTopic.prepared, version)
   }
 
@@ -84,7 +89,7 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
   }
 
   //edge case - for some reason Topic is not defined
-  protected val fallbackVersionParam: Parameter = versionParam(Nil)
+  protected val fallbackVersionOptionParam: Parameter = versionOptionParam(Nil)
 
 }
 

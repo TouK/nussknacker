@@ -27,16 +27,16 @@ class KafkaAvroSourceFactory(val schemaRegistryProvider: SchemaRegistryProvider,
       NextParameters(List(initial.value), initial.written)
     case TransformationStep((TopicParamName, DefinedEagerParameter(topic:String, _)) :: Nil, _) =>
       val preparedTopic = prepareTopic(topic)
-      val version = versionParam(preparedTopic)
-     NextParameters(List(version.value), version.written, None)
+      val versionOption = versionOptionParam(preparedTopic)
+     NextParameters(List(versionOption.value), versionOption.written, None)
     case TransformationStep((TopicParamName, _) :: Nil, _) =>
-      NextParameters(List(fallbackVersionParam), Nil, None)
+      NextParameters(List(fallbackVersionOptionParam), Nil, None)
     case TransformationStep((TopicParamName, DefinedEagerParameter(topic:String, _)) ::
-      (SchemaVersionParamName, DefinedEagerParameter(version, _)) ::Nil, _) =>
+      (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::Nil, _) =>
       //we do casting here and not in case, as version can be null...
       val preparedTopic = prepareTopic(topic)
-      val versionOpt = Option(version.asInstanceOf[Integer]).map(_.intValue())
-      val schemaDeterminer = prepareSchemaDeterminer(preparedTopic, versionOpt)
+      val versionOption = parseVersionOption(version)
+      val schemaDeterminer = prepareSchemaDeterminer(preparedTopic, versionOption)
       val validType = schemaDeterminer.determineSchemaUsedInTyping.map(AvroSchemaTypeDefinitionExtractor.typeDefinition)
       val finalCtxValue = finalCtx(context, dependencies, validType.getOrElse(Unknown))
       val finalErrors = validType.swap.map(error => CustomNodeError(error.getMessage, Some(SchemaVersionParamName))).toList
@@ -63,7 +63,7 @@ class KafkaAvroSourceFactory(val schemaRegistryProvider: SchemaRegistryProvider,
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): FlinkSource[Any] = {
     val preparedTopic = extractPreparedTopic(params)
-    val version = extractVersion(params)
+    val version = extractVersionOption(params)
     createSource(preparedTopic, kafkaConfig, schemaRegistryProvider.deserializationSchemaFactory, schemaRegistryProvider.recordFormatter,
       prepareSchemaDeterminer(preparedTopic, version))(
       typedDependency[MetaData](dependencies), typedDependency[NodeId](dependencies))

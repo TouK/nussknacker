@@ -6,13 +6,18 @@ import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, SchemaDeterminerEr
 
 class BasedOnVersionAvroSchemaDeterminer(createSchemaRegistryClient: () => SchemaRegistryClient,
                                          topic: String,
-                                         version: Option[Int]) extends AvroSchemaDeterminer {
+                                         versionOption: SchemaVersionOption) extends AvroSchemaDeterminer {
 
   @transient private lazy val schemaRegistryClient: SchemaRegistryClient = createSchemaRegistryClient()
 
-  override def determineSchemaUsedInTyping: Validated[SchemaDeterminerError, Schema] =
+  override def determineSchemaUsedInTyping: Validated[SchemaDeterminerError, Schema] = {
+    val version = versionOption match {
+      case ExistingSchemaVersion(v) => Some(v)
+      case LatestSchemaVersion => None
+    }
     schemaRegistryClient
       .getFreshSchema(topic, version, isKey = false)
-      .leftMap(err => new SchemaDeterminerError(s"Fetching schema error for topic: $topic, version: $version", err))
+      .leftMap(err => new SchemaDeterminerError(s"Fetching schema error for topic: $topic, version: $versionOption", err))
+  }
 
 }
