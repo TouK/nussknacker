@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.typed.typing._
   * conversion for types not in the same jvm class hierarchy like boxed Integer to boxed Long and so on".
   * WARNING: Evaluation of SpEL expressions fit into this spirit, for other language evaluation engines you need to provide such a compatibility.
   */
-object CanBeSubclassDeterminer {
+trait CanBeSubclassDeterminer {
 
   /**
     * java.math.BigDecimal is quite often returned as a wrapper for all kind of numbers (floating and without floating point).
@@ -27,20 +27,20 @@ object CanBeSubclassDeterminer {
     * This method checks if `givenType` can by subclass of `superclassCandidate`
     * It will return true if `givenType` is equals to `superclassCandidate` or `givenType` "extends" `superclassCandidate`
     */
-  def canBeSubclassOf(givenType: TypingResult, superclassCandidate: TypingResult, restrictions: SingleSubclassRestriction*): Boolean =
+  def canBeSubclassOf(givenType: TypingResult, superclassCandidate: TypingResult): Boolean =
     (givenType, superclassCandidate) match {
       case (_, Unknown) => true
       case (Unknown, _) => true
-      case (given: SingleTypingResult, superclass: TypedUnion) => canBeSubclassOf(Set(given), superclass.possibleTypes, restrictions:_*)
-      case (given: TypedUnion, superclass: SingleTypingResult) => canBeSubclassOf(given.possibleTypes, Set(superclass), restrictions:_*)
-      case (given: SingleTypingResult, superclass: SingleTypingResult) => singleCanBeSubclassOf(given, superclass, restrictions:_*)
-      case (given: TypedUnion, superclass: TypedUnion) => canBeSubclassOf(given.possibleTypes, superclass.possibleTypes, restrictions:_*)
+      case (given: SingleTypingResult, superclass: TypedUnion) => canBeSubclassOf(Set(given), superclass.possibleTypes)
+      case (given: TypedUnion, superclass: SingleTypingResult) => canBeSubclassOf(given.possibleTypes, Set(superclass))
+      case (given: SingleTypingResult, superclass: SingleTypingResult) => singleCanBeSubclassOf(given, superclass)
+      case (given: TypedUnion, superclass: TypedUnion) => canBeSubclassOf(given.possibleTypes, superclass.possibleTypes)
     }
 
-  private def canBeSubclassOf(givenTypes: Set[SingleTypingResult], superclassCandidates: Set[SingleTypingResult], restrictions: SingleSubclassRestriction*): Boolean =
-    givenTypes.exists(given => superclassCandidates.exists(singleCanBeSubclassOf(given, _, restrictions:_*)))
+  private def canBeSubclassOf(givenTypes: Set[SingleTypingResult], superclassCandidates: Set[SingleTypingResult]): Boolean =
+    givenTypes.exists(given => superclassCandidates.exists(singleCanBeSubclassOf(given, _)))
 
-  private def singleCanBeSubclassOf(givenType: SingleTypingResult, superclassCandidate: SingleTypingResult, restrictions: SingleSubclassRestriction*): Boolean = {
+  protected def singleCanBeSubclassOf(givenType: SingleTypingResult, superclassCandidate: SingleTypingResult): Boolean = {
     def typedObjectRestrictions = superclassCandidate match {
       case superclass: TypedObjectTypingResult =>
         val givenTypeFields = givenType match {
@@ -48,7 +48,7 @@ object CanBeSubclassDeterminer {
           case _ => Map.empty[String, TypingResult]
         }
         superclass.fields.forall {
-          case (name, typ) => givenTypeFields.get(name).exists(canBeSubclassOf(_, typ, restrictions:_*))
+          case (name, typ) => givenTypeFields.get(name).exists(canBeSubclassOf(_, typ))
         }
       case _ =>
         true
@@ -71,10 +71,10 @@ object CanBeSubclassDeterminer {
       case _ => true
     }
     klassCanBeSubclassOf(givenType.objType, superclassCandidate.objType) && typedObjectRestrictions && dictRestriction &&
-      taggedValueRestriction && restrictions.forall(_.canBeSubclassOf(givenType,superclassCandidate))
+      taggedValueRestriction
  }
 
-  private def klassCanBeSubclassOf(givenClass: TypedClass, superclassCandidate: TypedClass): Boolean = {
+  protected def klassCanBeSubclassOf(givenClass: TypedClass, superclassCandidate: TypedClass): Boolean = {
     def hasSameTypeParams =
     //we are lax here - the generic type may be co- or contra-variant - and we don't want to
     //throw validation errors in this case. It's better to accept to much than too little
@@ -103,6 +103,4 @@ object CanBeSubclassDeterminer {
   private def isAssignable(from: Class[_], to: Class[_]) = ClassUtils.isAssignable(from, to, true)
 }
 
-trait SingleSubclassRestriction {
-  def canBeSubclassOf(givenClass: SingleTypingResult, superclassCandidate: SingleTypingResult): Boolean
-}
+object CanBeSubclassDeterminer extends CanBeSubclassDeterminer

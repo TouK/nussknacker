@@ -133,15 +133,12 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
   }
 
   def encodeRecord(fields: util.Map[String, _], schema: Schema): WithError[GenericData.Record] = {
-    fields.asScala.map {
-      case (fieldName, value) =>
-        val field = schema.getField(fieldName)
-        if (field == null && !validationMode.acceptRedundant) {
-          error(s"Not expected field with name: $fieldName for schema: $schema and policy $validationMode does not allow redundant")
-        } else {
-          val fieldSchema = field.schema()
-          encode(value, fieldSchema).map(fieldName -> _)
-        }
+    fields.asScala.map(kv => (kv, schema.getField(kv._1))).collect {
+      case ((fieldName, value), field) if field != null =>
+        val fieldSchema = field.schema()
+        encode(value, fieldSchema).map(fieldName -> _)
+      case ((fieldName, _), null) if !validationMode.acceptRedundant =>
+        error(s"Not expected field with name: $fieldName for schema: $schema and policy $validationMode does not allow redundant")
     }.toList.sequence.map { values =>
       val builder = new GenericRecordBuilder(schema)
       values.foreach {

@@ -174,6 +174,16 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers with EitherValues 
     recordWithInt.get("foo") shouldBe 123
   }
 
+  it("should accept redundant parameters if validation modes allows this") {
+    val schema = wrapWithRecordSchema(
+      """[
+        |  { "name": "foo", "type": "string" }
+        |]""".stripMargin)
+
+    BestEffortAvroEncoder(ValidationMode.strict).encodeRecord(Map("foo" -> "bar", "redundant" -> 15).asJava, schema) shouldBe 'invalid
+    BestEffortAvroEncoder(ValidationMode.allowRedundantAndOptional).encodeRecord(Map("foo" -> "bar", "redundant" -> 15).asJava, schema) shouldBe 'valid
+  }
+
   it("should create record with logical type for timestamp-millis") {
     checkLogicalType("long", "timestamp-millis", Instant.ofEpochMilli(123L), Instant.ofEpochMilli(123L))
     checkLogicalType("long", "timestamp-millis", Instant.ofEpochMilli(123L).atOffset(ZoneOffset.ofHours(2)), Instant.ofEpochMilli(123L))
