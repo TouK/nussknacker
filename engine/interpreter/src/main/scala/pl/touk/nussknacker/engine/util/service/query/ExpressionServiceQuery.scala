@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.QueryResult
-import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -51,13 +50,8 @@ object ExpressionServiceQuery {
     new ExpressionServiceQuery(
       serviceQuery = serviceQuery,
       ctx = context,
-      expressionEvaluator = expressionEvaluator(modelData),
+      expressionEvaluator = ExpressionEvaluator.unOptimizedEvaluator(modelData),
       expressionCompiler = ExpressionCompiler.withoutOptimization(modelData)
     )
-
-  //TODO: extract shared part with TestInfoProvider
-  private def expressionEvaluator(modelData: ModelData): ExpressionEvaluator = {
-    ExpressionEvaluator.unOptimizedEvaluator(GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig))
-  }
 
 }
