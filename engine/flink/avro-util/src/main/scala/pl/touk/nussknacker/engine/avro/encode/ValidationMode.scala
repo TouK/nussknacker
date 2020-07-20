@@ -6,9 +6,9 @@ object ValidationMode {
 
   val strict: ValidationMode = ValidationMode("strict", "Strict mode", acceptUnfilledOptional = false, acceptRedundant = false)
 
-  val allowOptional: ValidationMode = ValidationMode("allowOptional", "No optional parameters validations", acceptUnfilledOptional = true, acceptRedundant = false)
+  val allowOptional: ValidationMode = ValidationMode("allowOptional", "Allow empty optional parameters", acceptUnfilledOptional = true, acceptRedundant = false)
 
-  val allowRedundantAndOptional: ValidationMode =  ValidationMode("allowRedundantAndOptional", "Allow redundant parameters", acceptUnfilledOptional = true, acceptRedundant = true)
+  val allowRedundantAndOptional: ValidationMode =  ValidationMode("allowRedundantAndOptional", "Allow empty optional and redundant parameters", acceptUnfilledOptional = true, acceptRedundant = true)
 
   val values: List[ValidationMode] = List(strict, allowOptional, allowRedundantAndOptional)
 

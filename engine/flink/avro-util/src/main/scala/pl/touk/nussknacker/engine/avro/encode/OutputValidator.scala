@@ -13,8 +13,9 @@ object OutputValidator {
 
   def validateOutput(value: TypingResult, schema: Schema, validationMode: ValidationMode)(implicit nodeId: NodeId): Validated[CustomNodeError, Unit] = {
     val possibleTypes = AvroSchemaTypeDefinitionExtractor.ExtendedPossibleTypes
-    //FIXME: this still does not handle optional fields validation properly for acceptUnfilledOptional == true?
-    val returnType = new AvroSchemaTypeDefinitionExtractor(skippNullableFields = validationMode.acceptUnfilledOptional).typeDefinition(schema, possibleTypes)
+    //TODO: this still does not handle optional fields validation properly for acceptUnfilledOptional == true.
+    //The optional fields types will not be validated, meaning that if e.g. String is used instead of Long, the error will not be detected during typing
+    val returnType = new AvroSchemaTypeDefinitionExtractor(skipOptionalFields = validationMode.acceptUnfilledOptional).typeDefinition(schema, possibleTypes)
     val restriction = new SingleSubclassRestriction {
       override def canBeSubclassOf(givenClass: typing.SingleTypingResult, superclassCandidate: typing.SingleTypingResult): Boolean = (givenClass, superclassCandidate) match {
         case (TypedObjectTypingResult(objFields, _), TypedObjectTypingResult(superFields, _)) if !validationMode.acceptRedundant =>
