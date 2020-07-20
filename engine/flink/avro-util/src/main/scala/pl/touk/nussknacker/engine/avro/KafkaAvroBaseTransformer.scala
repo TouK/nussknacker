@@ -84,7 +84,7 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
   }
 
   //edge case - for some reason Topic is not defined
-  protected val fallbackVersionParam: NextParameters = NextParameters(List(versionParam(Nil)), Nil, None)
+  protected val fallbackVersionParam: Parameter = versionParam(Nil)
 
 }
 
@@ -94,5 +94,6 @@ object KafkaAvroBaseTransformer {
   final val TopicParamName = "Topic"
   final val SinkKeyParamName = "Key"
   final val SinkValueParamName = "Value"
+  final val SinkValidationModeParameterName = "Value validation mode"
 
 }

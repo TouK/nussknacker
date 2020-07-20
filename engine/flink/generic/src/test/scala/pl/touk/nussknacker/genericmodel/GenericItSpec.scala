@@ -14,8 +14,8 @@ import org.scalatest.{BeforeAndAfterAll, EitherValues, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
-import pl.touk.nussknacker.engine.avro._
-import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
+import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, _}
+import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClient, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentSchemaRegistryProvider, ConfluentUtils}
@@ -50,7 +50,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
   val JsonInTopic: String = "name.json.input"
   val JsonOutTopic: String = "name.json.output"
 
-  protected val avroEncoder = BestEffortAvroEncoder()
+  protected val avroEncoder = BestEffortAvroEncoder(ValidationMode.strict)
 
   private val givenNotMatchingJsonObj =
     """{
@@ -108,7 +108,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
       .filter("name-filter", filter)
       .sink("end", "#input", "kafka-json", "topic" -> s"'$JsonOutTopic'")
 
-  private def avroProcess(topicConfig: TopicConfig, version: Integer) =
+  private def avroProcess(topicConfig: TopicConfig, version: Integer, validationMode: ValidationMode = ValidationMode.strict) =
     EspProcessBuilder
       .id("avro-test")
       .parallelism(1)
@@ -126,7 +126,9 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
         KafkaAvroBaseTransformer.SinkKeyParamName  -> "",
         KafkaAvroBaseTransformer.SinkValueParamName  -> "#input",
         KafkaAvroBaseTransformer.TopicParamName  -> s"'${topicConfig.output}'",
-        KafkaAvroBaseTransformer.SchemaVersionParamName -> ""
+        KafkaAvroBaseTransformer.SchemaVersionParamName -> "",
+        KafkaAvroBaseTransformer.SinkValidationModeParameterName -> s"'${validationMode.name}'"
+
       )
 
   private def avroFromScratchProcess(topicConfig: TopicConfig, version: Integer) =
@@ -146,6 +148,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
         KafkaAvroBaseTransformer.SinkKeyParamName -> "",
         KafkaAvroBaseTransformer.SinkValueParamName -> s"{first: #input.first, last: #input.last}",
         KafkaAvroBaseTransformer.TopicParamName -> s"'${topicConfig.output}'",
+        KafkaAvroBaseTransformer.SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'",
         KafkaAvroBaseTransformer.SchemaVersionParamName -> "1"
       )
 
@@ -181,7 +184,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
     send(givenNotMatchingAvroObj, topicConfig.input)
     send(givenMatchingAvroObj, topicConfig.input)
 
-    run(avroProcess(topicConfig, 1)) {
+    run(avroProcess(topicConfig, 1, validationMode = ValidationMode.allowOptional)) {
       val processed = consumeOneAvroMessage(topicConfig.output)
       processed shouldEqual List(givenMatchingAvroObjConvertedToV2)
     }
@@ -278,7 +281,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
     val converted = GenericData.get().deepCopy(RecordSchemaV2, givenMatchingAvroObjV2)
     converted.put("middle", null)
 
-    run(avroProcess(topicConfig,1)) {
+    run(avroProcess(topicConfig,1, validationMode = ValidationMode.allowOptional)) {
       val processed = consumeOneAvroMessage(topicConfig.output)
       processed shouldEqual List(converted)
     }

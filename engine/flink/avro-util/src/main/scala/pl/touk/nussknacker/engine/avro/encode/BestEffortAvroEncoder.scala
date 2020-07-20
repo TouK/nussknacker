@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.avro.schema.{AvroSchemaEvolution, DefaultAvroS
 
 import scala.math.BigDecimal.RoundingMode
 
-class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution) {
+class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validationMode: ValidationMode) {
 
   import scala.collection.JavaConverters._
 
@@ -133,15 +133,12 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution) {
   }
 
   def encodeRecord(fields: util.Map[String, _], schema: Schema): WithError[GenericData.Record] = {
-    fields.asScala.map {
-      case (fieldName, value) =>
-        val field = schema.getField(fieldName)
-        if (field == null) {
-          error(s"Not expected field with name: $fieldName for schema: $schema")
-        } else {
-          val fieldSchema = field.schema()
-          encode(value, fieldSchema).map(fieldName -> _)
-        }
+    fields.asScala.map(kv => (kv, schema.getField(kv._1))).collect {
+      case ((fieldName, value), field) if field != null =>
+        val fieldSchema = field.schema()
+        encode(value, fieldSchema).map(fieldName -> _)
+      case ((fieldName, _), null) if !validationMode.acceptRedundant =>
+        error(s"Not expected field with name: $fieldName for schema: $schema and policy $validationMode does not allow redundant")
     }.toList.sequence.map { values =>
       val builder = new GenericRecordBuilder(schema)
       values.foreach {
@@ -149,6 +146,7 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution) {
       }
       builder.build()
     }
+    //TODO: Check optional?
   }
 
   private def encodeGenericContainer(container: GenericContainer, schema: Schema): WithError[GenericContainer] = {
@@ -196,5 +194,5 @@ object BestEffortAvroEncoder {
 
   final private val DefaultSchemaEvolution = new DefaultAvroSchemaEvolution
 
-  def apply(): BestEffortAvroEncoder = new BestEffortAvroEncoder(DefaultSchemaEvolution)
+  def apply(validationMode: ValidationMode): BestEffortAvroEncoder = new BestEffortAvroEncoder(DefaultSchemaEvolution, validationMode)
 }

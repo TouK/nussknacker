@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.typed.typing._
   * conversion for types not in the same jvm class hierarchy like boxed Integer to boxed Long and so on".
   * WARNING: Evaluation of SpEL expressions fit into this spirit, for other language evaluation engines you need to provide such a compatibility.
   */
-private[typed] object CanBeSubclassDeterminer {
+trait CanBeSubclassDeterminer {
 
   /**
     * java.math.BigDecimal is quite often returned as a wrapper for all kind of numbers (floating and without floating point).
@@ -40,7 +40,7 @@ private[typed] object CanBeSubclassDeterminer {
   private def canBeSubclassOf(givenTypes: Set[SingleTypingResult], superclassCandidates: Set[SingleTypingResult]): Boolean =
     givenTypes.exists(given => superclassCandidates.exists(singleCanBeSubclassOf(given, _)))
 
-  private def singleCanBeSubclassOf(givenType: SingleTypingResult, superclassCandidate: SingleTypingResult): Boolean = {
+  protected def singleCanBeSubclassOf(givenType: SingleTypingResult, superclassCandidate: SingleTypingResult): Boolean = {
     def typedObjectRestrictions = superclassCandidate match {
       case superclass: TypedObjectTypingResult =>
         val givenTypeFields = givenType match {
@@ -70,10 +70,11 @@ private[typed] object CanBeSubclassDeterminer {
       case (_, _: TypedTaggedValue) => false
       case _ => true
     }
-    klassCanBeSubclassOf(givenType.objType, superclassCandidate.objType) && typedObjectRestrictions && dictRestriction && taggedValueRestriction
+    klassCanBeSubclassOf(givenType.objType, superclassCandidate.objType) && typedObjectRestrictions && dictRestriction &&
+      taggedValueRestriction
  }
 
-  private def klassCanBeSubclassOf(givenClass: TypedClass, superclassCandidate: TypedClass): Boolean = {
+  protected def klassCanBeSubclassOf(givenClass: TypedClass, superclassCandidate: TypedClass): Boolean = {
     def hasSameTypeParams =
     //we are lax here - the generic type may be co- or contra-variant - and we don't want to
     //throw validation errors in this case. It's better to accept to much than too little
@@ -101,3 +102,5 @@ private[typed] object CanBeSubclassDeterminer {
   //we use explicit autoboxing = true flag, as ClassUtils in commons-lang3:3.3 (used in Flink) cannot handle JDK 11...
   private def isAssignable(from: Class[_], to: Class[_]) = ClassUtils.isAssignable(from, to, true)
 }
+
+object CanBeSubclassDeterminer extends CanBeSubclassDeterminer
