@@ -8,8 +8,8 @@ import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValueParamName, TopicParamName, ValidationModeParameterName}
-import pl.touk.nussknacker.engine.avro.encode.EncoderPolicy
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValueParamName, TopicParamName, SinkValidationModeParameterName}
+import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.schema._
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
@@ -91,7 +91,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
   test("should read event in the same version as source requires and save it in newer compatible version") {
     val topicConfig = createAndRegisterTopicConfig("older-older-newer", paymentSchemas)
     val sourceParam = SourceAvroParam.forGeneric(topicConfig, Some(1))
-    val sinkParam = SinkAvroParam(topicConfig, Some(2), "#input", validationMode = EncoderPolicy.allowOptional)
+    val sinkParam = SinkAvroParam(topicConfig, Some(2), "#input", validationMode = ValidationMode.allowOptional)
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, PaymentV1.record, PaymentV2.record)
@@ -100,7 +100,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
   test("should read older compatible event then source requires and save it in older compatible version") {
     val topicConfig = createAndRegisterTopicConfig("older-newer-older", paymentSchemas)
     val sourceParam = SourceAvroParam.forGeneric(topicConfig, Some(2))
-    val sinkParam = SinkAvroParam(topicConfig, Some(1), "#input", validationMode = EncoderPolicy.allowRedundantAndOptional)
+    val sinkParam = SinkAvroParam(topicConfig, Some(1), "#input", validationMode = ValidationMode.allowRedundantAndOptional)
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, PaymentV1.record, PaymentV1.record)
@@ -118,7 +118,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
   test("should read older compatible event then source requires, filter and save it in older compatible version") {
     val topicConfig = createAndRegisterTopicConfig("older-newer-filter-older", paymentSchemas)
     val sourceParam = SourceAvroParam.forGeneric(topicConfig, Some(2))
-    val sinkParam = SinkAvroParam(topicConfig, Some(1), "#input", validationMode = EncoderPolicy.allowRedundantAndOptional)
+    val sinkParam = SinkAvroParam(topicConfig, Some(1), "#input", validationMode = ValidationMode.allowRedundantAndOptional)
     val filerParam = Some("#input.cnt == 0")
     val process = createAvroProcess(sourceParam, sinkParam, filerParam)
 
@@ -139,7 +139,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
   test("should read newer (back-compatible) newer event with source and save it in older compatible version") {
     val topicConfig = createAndRegisterTopicConfig("bc-older-older", payment2Schemas)
     val sourceParam = SourceAvroParam.forGeneric(topicConfig, Some(2))
-    val sinkParam = SinkAvroParam(topicConfig, Some(1), "#input", validationMode = EncoderPolicy.allowRedundantAndOptional)
+    val sinkParam = SinkAvroParam(topicConfig, Some(1), "#input", validationMode = ValidationMode.allowRedundantAndOptional)
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, PaymentNotCompatible.record, PaymentV1.record)
@@ -221,7 +221,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
         TopicParamName -> s"'${topicConfig.output}'",
         SchemaVersionParamName -> "",
         SinkKeyParamName -> "",
-        ValidationModeParameterName -> s"'${EncoderPolicy.strict.name}'",
+        SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
         SinkValueParamName -> s"{field: #extractedTimestamp}"
       )
 
@@ -250,7 +250,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
         TopicParamName -> s"'${topicConfig.output}'",
         SchemaVersionParamName -> "",
         SinkKeyParamName -> "",
-        ValidationModeParameterName -> s"'${EncoderPolicy.strict.name}'",
+        SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
         SinkValueParamName -> s"{field: #extractedTimestamp}"
       )
 

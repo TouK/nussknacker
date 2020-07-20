@@ -11,13 +11,13 @@ import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 
 object OutputValidator {
 
-  def validateOutput(value: TypingResult, schema: Schema, encoderPolicy: EncoderPolicy)(implicit nodeId: NodeId): Validated[CustomNodeError, Unit] = {
+  def validateOutput(value: TypingResult, schema: Schema, validationMode: ValidationMode)(implicit nodeId: NodeId): Validated[CustomNodeError, Unit] = {
     val possibleTypes = AvroSchemaTypeDefinitionExtractor.ExtendedPossibleTypes
     //FIXME: this still does not handle optional fields validation properly for acceptUnfilledOptional == true?
-    val returnType = new AvroSchemaTypeDefinitionExtractor(skippNullableFields = encoderPolicy.acceptUnfilledOptional).typeDefinition(schema, possibleTypes)
+    val returnType = new AvroSchemaTypeDefinitionExtractor(skippNullableFields = validationMode.acceptUnfilledOptional).typeDefinition(schema, possibleTypes)
     val restriction = new SingleSubclassRestriction {
       override def canBeSubclassOf(givenClass: typing.SingleTypingResult, superclassCandidate: typing.SingleTypingResult): Boolean = (givenClass, superclassCandidate) match {
-        case (TypedObjectTypingResult(objFields, _), TypedObjectTypingResult(superFields, _)) if !encoderPolicy.acceptRedundant =>
+        case (TypedObjectTypingResult(objFields, _), TypedObjectTypingResult(superFields, _)) if !validationMode.acceptRedundant =>
           objFields.keys.forall(superFields.keys.toSet.contains)
         case _ => true
       }

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.process.SinkFactory
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
-import pl.touk.nussknacker.engine.avro.encode.{EncoderPolicy, OutputValidator}
+import pl.touk.nussknacker.engine.avro.encode.{ValidationMode, OutputValidator}
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroSerializationSchemaFactory
 import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
@@ -24,24 +24,24 @@ abstract class BaseKafkaAvroSinkFactory extends SinkFactory {
                            value: LazyParameter[AnyRef],
                            kafkaConfig: KafkaConfig,
                            serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
-                           schemaDeterminer: AvroSchemaDeterminer, encoderPolicy: EncoderPolicy)
+                           schemaDeterminer: AvroSchemaDeterminer, validationMode: ValidationMode)
                           (implicit processMetaData: MetaData,
                            nodeId: NodeId): FlinkSink = {
     //This is a bit redundant, since we already validate during creation
     val schema = schemaDeterminer.determineSchemaUsedInTyping.valueOr(SchemaDeterminerErrorHandler.handleSchemaRegistryErrorAndThrowException)
-    validateValueType(value.returnType, schema, encoderPolicy).valueOr(err => throw new CustomNodeValidationException(err.message, err.paramName, null))
+    validateValueType(value.returnType, schema, validationMode).valueOr(err => throw new CustomNodeValidationException(err.message, err.paramName, null))
     val schemaUsedInRuntime = schemaDeterminer.toRuntimeSchema(schema)
 
     val clientId = s"${processMetaData.id}-${preparedTopic.prepared}"
     new KafkaAvroSink(preparedTopic, version, key, value, kafkaConfig, serializationSchemaFactory,
-      new NkSerializableAvroSchema(schema), schemaUsedInRuntime.map(new NkSerializableAvroSchema(_)), clientId, encoderPolicy)
+      new NkSerializableAvroSchema(schema), schemaUsedInRuntime.map(new NkSerializableAvroSchema(_)), clientId, validationMode)
   }
 
   /**
     * Currently we check only required fields, because our typing mechanism doesn't support optionally fields
     */
-  protected def validateValueType(valueType: TypingResult, schema: Schema, encoderPolicy: EncoderPolicy)(implicit nodeId: NodeId): Validated[CustomNodeError, Unit] = {
-    OutputValidator.validateOutput(valueType, schema, encoderPolicy)
+  protected def validateValueType(valueType: TypingResult, schema: Schema, validationMode: ValidationMode)(implicit nodeId: NodeId): Validated[CustomNodeError, Unit] = {
+    OutputValidator.validateOutput(valueType, schema, validationMode)
   }
 
 }

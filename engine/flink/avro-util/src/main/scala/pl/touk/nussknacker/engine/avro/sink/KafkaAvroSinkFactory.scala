@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
-import pl.touk.nussknacker.engine.avro.encode.EncoderPolicy
+import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
@@ -23,14 +23,14 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider,
     case TransformationStep(Nil, _) =>
       val initial = initialParametersForNode
       NextParameters(initial.value, initial.written)
-    case TransformationStep((KafkaAvroBaseTransformer.SinkKeyParamName, _) :: (KafkaAvroBaseTransformer.SinkValueParamName, _) :: (KafkaAvroBaseTransformer.ValidationModeParameterName, _) ::
+    case TransformationStep((KafkaAvroBaseTransformer.SinkKeyParamName, _) :: (KafkaAvroBaseTransformer.SinkValueParamName, _) :: (KafkaAvroBaseTransformer.SinkValidationModeParameterName, _) ::
       (KafkaAvroBaseTransformer.TopicParamName, DefinedEagerParameter(topic:String, _)) :: Nil, _) =>
         val preparedTopic = prepareTopic(topic)
         val version = versionParam(preparedTopic)
         NextParameters(List(version.value), version.written, None)
-    case TransformationStep((KafkaAvroBaseTransformer.SinkKeyParamName, _) :: (KafkaAvroBaseTransformer.SinkValueParamName, _) :: (KafkaAvroBaseTransformer.ValidationModeParameterName, _) ::
+    case TransformationStep((KafkaAvroBaseTransformer.SinkKeyParamName, _) :: (KafkaAvroBaseTransformer.SinkValueParamName, _) :: (KafkaAvroBaseTransformer.SinkValidationModeParameterName, _) ::
       (KafkaAvroBaseTransformer.TopicParamName, _) :: Nil, _) => fallbackVersionParam
-    case TransformationStep((KafkaAvroBaseTransformer.SinkKeyParamName, _: BaseDefinedParameter) :: (KafkaAvroBaseTransformer.SinkValueParamName, value: BaseDefinedParameter) :: (KafkaAvroBaseTransformer.ValidationModeParameterName, DefinedEagerParameter(mode:String, _)) ::
+    case TransformationStep((KafkaAvroBaseTransformer.SinkKeyParamName, _: BaseDefinedParameter) :: (KafkaAvroBaseTransformer.SinkValueParamName, value: BaseDefinedParameter) :: (KafkaAvroBaseTransformer.SinkValidationModeParameterName, DefinedEagerParameter(mode:String, _)) ::
       (KafkaAvroBaseTransformer.TopicParamName, DefinedEagerParameter(topic:String, _)) ::
       (KafkaAvroBaseTransformer.SchemaVersionParamName, DefinedEagerParameter(version, _)) ::Nil, _) =>
         //we cast here, since null will not be matched in case...
@@ -41,7 +41,7 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider,
           .andThen(schema => validateValueType(value.returnType, schema, extractValidationMode(mode))).swap.toList
         FinalResults(context, validationResult)
     //edge case - for some reason Topic/Version is not defined
-    case TransformationStep((KafkaAvroBaseTransformer.SinkKeyParamName, _) :: (KafkaAvroBaseTransformer.SinkValueParamName, _) :: (KafkaAvroBaseTransformer.ValidationModeParameterName, _) ::
+    case TransformationStep((KafkaAvroBaseTransformer.SinkKeyParamName, _) :: (KafkaAvroBaseTransformer.SinkValueParamName, _) :: (KafkaAvroBaseTransformer.SinkValidationModeParameterName, _) ::
           (KafkaAvroBaseTransformer.TopicParamName, _) ::
           (KafkaAvroBaseTransformer.SchemaVersionParamName, _) ::Nil, _) => FinalResults(context, Nil)
   }
@@ -54,23 +54,24 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider,
     topicParam.map(List(
       Parameter.optional[CharSequence](KafkaAvroBaseTransformer.SinkKeyParamName).copy(isLazyParameter = true),
       Parameter[AnyRef](KafkaAvroBaseTransformer.SinkValueParamName).copy(isLazyParameter = true),
-      Parameter[String](KafkaAvroBaseTransformer.ValidationModeParameterName)
-        .copy(editor = Some(FixedValuesParameterEditor(EncoderPolicy.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label))))), _))
+      //TODO: default value
+      Parameter[String](KafkaAvroBaseTransformer.SinkValidationModeParameterName)
+        .copy(editor = Some(FixedValuesParameterEditor(ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label))))), _))
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): FlinkSink = {
     val preparedTopic = extractPreparedTopic(params)
     val version = extractVersion(params)
     val key = params(KafkaAvroBaseTransformer.SinkKeyParamName).asInstanceOf[LazyParameter[CharSequence]]
     val value = params(KafkaAvroBaseTransformer.SinkValueParamName).asInstanceOf[LazyParameter[AnyRef]]
-    val validationMode = extractValidationMode(params(KafkaAvroBaseTransformer.ValidationModeParameterName).asInstanceOf[String])
+    val validationMode = extractValidationMode(params(KafkaAvroBaseTransformer.SinkValidationModeParameterName).asInstanceOf[String])
 
     createSink(preparedTopic, version, key, value,
       kafkaConfig, schemaRegistryProvider.serializationSchemaFactory, prepareSchemaDeterminer(preparedTopic, version), validationMode)(
       typedDependency[MetaData](dependencies), typedDependency[NodeId](dependencies))
   }
 
-  private def extractValidationMode(value: String): EncoderPolicy
-    = EncoderPolicy.byName(value).getOrElse(throw CustomNodeValidationException(s"Unknown validation mode: $value", Some(KafkaAvroBaseTransformer.ValidationModeParameterName)))
+  private def extractValidationMode(value: String): ValidationMode
+    = ValidationMode.byName(value).getOrElse(throw CustomNodeValidationException(s"Unknown validation mode: $value", Some(KafkaAvroBaseTransformer.SinkValidationModeParameterName)))
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]), TypedNodeDependency(classOf[NodeId]))
 
