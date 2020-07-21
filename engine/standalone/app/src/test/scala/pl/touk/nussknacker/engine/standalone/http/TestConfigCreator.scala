@@ -9,8 +9,8 @@ import pl.touk.nussknacker.engine.api.{JobData, MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.standalone.api.types.GenericResultType
 import pl.touk.nussknacker.engine.standalone.api.{ResponseEncoder, StandaloneGetSource, StandaloneSourceFactory}
 import pl.touk.nussknacker.engine.standalone.utils._
-import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 import scala.concurrent.Future
 

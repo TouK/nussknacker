@@ -398,7 +398,8 @@ lazy val managementSample = (project in engine("flink/management/sample")).
       )
     }
   ).
-  dependsOn(kafkaFlinkUtil, flinkModelUtil, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test")
+  // depends on interpreter because of SampleNodeAdditionalInfoProvider which takes NodeData as a parameter
+  dependsOn(kafkaFlinkUtil, flinkModelUtil, interpreter, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test")
 
 lazy val managementJavaSample = (project in engine("flink/management/java_sample")).
   settings(commonSettings).
