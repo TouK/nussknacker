@@ -480,16 +480,6 @@ lazy val interpreter = (project in engine("interpreter")).
       )
     }
   ).
-  enablePlugins(BuildInfoPlugin).
-  settings(
-    buildInfoKeys := Seq[BuildInfoKey](name, version),
-    buildInfoKeys ++= Seq[BuildInfoKey](
-      "buildTime" -> java.time.LocalDateTime.now().toString,
-      "gitCommit" -> git.gitHeadCommit.value.getOrElse("")
-    ),
-    buildInfoPackage := "pl.touk.nussknacker.engine.version",
-    buildInfoOptions ++= Seq(BuildInfoOption.ToMap)
-  ).
   dependsOn(util, testUtil % "test")
 
 lazy val benchmarks = (project in engine("benchmarks")).
@@ -583,7 +573,18 @@ lazy val util = (project in engine("util")).
         "io.circe" %% "circe-java8" % circeV
       )
     }
-  ).dependsOn(api, testUtil % "test")
+  ).
+  enablePlugins(BuildInfoPlugin).
+  settings(
+    buildInfoKeys := Seq[BuildInfoKey](name, version),
+    buildInfoKeys ++= Seq[BuildInfoKey](
+      "buildTime" -> java.time.LocalDateTime.now().toString,
+      "gitCommit" -> git.gitHeadCommit.value.getOrElse("")
+    ),
+    buildInfoPackage := "pl.touk.nussknacker.engine.version",
+    buildInfoOptions ++= Seq(BuildInfoOption.ToMap)
+  )
+  .dependsOn(api, testUtil % "test")
 
 lazy val testUtil = (project in engine("test-util")).
   settings(commonSettings).
