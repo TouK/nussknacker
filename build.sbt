@@ -373,7 +373,7 @@ lazy val management = (project in engine("flink/management")).
     }
   //FIXME: provided dependency is workaround for Idea, which is not able to handle test scope on module dependency
   //kafka module is (wrongly) added to classpath when running UI from Idea
-  ).dependsOn(interpreter, queryableState, httpUtils, kafka % "provided", kafkaTestUtil % "it,test", security)
+  ).dependsOn(interpreter, queryableState, httpUtils, kafka % "provided", kafkaTestUtil % "it,test")
 
 lazy val standaloneSample = (project in engine("standalone/engine/sample")).
   settings(commonSettings).
@@ -398,7 +398,7 @@ lazy val managementSample = (project in engine("flink/management/sample")).
       )
     }
   ).
-  dependsOn(flinkUtil, kafka, kafkaFlinkUtil, interpreter, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test", security)
+  dependsOn(kafkaFlinkUtil, flinkModelUtil, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test")
 
 lazy val managementJavaSample = (project in engine("flink/management/java_sample")).
   settings(commonSettings).
@@ -431,7 +431,7 @@ lazy val demo = (project in engine("demo")).
       )
     }
   )
-  .dependsOn(process, kafkaFlinkUtil, kafkaTestUtil % "test", flinkTestUtil % "test")
+  .dependsOn(process % "runtime,test", kafkaFlinkUtil, flinkModelUtil, kafkaTestUtil % "test", flinkTestUtil % "test")
 
 
 lazy val generic = (project in engine("flink/generic")).
@@ -446,7 +446,7 @@ lazy val generic = (project in engine("flink/generic")).
         "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
       )
     })
-  .dependsOn(process, kafkaFlinkUtil, avroFlinkUtil, flinkTestUtil % "test", kafkaTestUtil % "test")
+  .dependsOn(process % "runtime,test", avroFlinkUtil, flinkModelUtil, flinkTestUtil % "test", kafkaTestUtil % "test")
 
 lazy val process = (project in engine("flink/process")).
   settings(commonSettings).
@@ -460,7 +460,7 @@ lazy val process = (project in engine("flink/process")).
         "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
       )
     }
-  ).dependsOn(flinkApi, flinkUtil, interpreter, kafka % "test", kafkaTestUtil % "test", kafkaFlinkUtil % "test", flinkTestUtil % "test")
+  ).dependsOn(flinkUtil, interpreter, kafka % "test", kafkaTestUtil % "test", kafkaFlinkUtil % "test", flinkTestUtil % "test")
 
 lazy val interpreter = (project in engine("interpreter")).
   settings(commonSettings).
@@ -536,7 +536,7 @@ lazy val avroFlinkUtil = (project in engine("flink/avro-util")).
       )
     }
   )
-  .dependsOn(kafkaFlinkUtil, kafkaTestUtil % "test", flinkTestUtil % "test", interpreter % "test", process % "test")
+  .dependsOn(kafkaFlinkUtil, kafkaTestUtil % "test", flinkTestUtil % "test", process % "test")
 
 lazy val kafkaFlinkUtil = (project in engine("flink/kafka-util")).
   settings(commonSettings).
@@ -550,7 +550,7 @@ lazy val kafkaFlinkUtil = (project in engine("flink/kafka-util")).
       )
     }
   ).
-  dependsOn(flinkApi, kafka, flinkUtil, kafkaTestUtil % "test", flinkTestUtil % "test")
+  dependsOn(kafka, flinkUtil, kafkaTestUtil % "test", flinkTestUtil % "test")
 
 lazy val kafkaTestUtil = (project in engine("kafka-test-util")).
   settings(commonSettings).
@@ -609,6 +609,17 @@ lazy val flinkUtil = (project in engine("flink/util")).
       )
     }
   ).dependsOn(util, flinkApi)
+
+lazy val flinkModelUtil = (project in engine("flink/model-util")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-model-flink-util",
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
+      )
+    }
+  ).dependsOn(flinkUtil, flinkTestUtil % "test", process % "test")
 
 lazy val flinkTestUtil = (project in engine("flink/test-util")).
   settings(commonSettings).
@@ -753,7 +764,7 @@ lazy val queryableState = (project in engine("queryableState")).
         "com.typesafe" % "config" % configV
       )
     }
-  ).dependsOn(api, interpreter)
+  ).dependsOn(api)
 
 
 
@@ -775,6 +786,7 @@ lazy val restmodel = (project in file("ui/restmodel"))
       "io.circe" %% "circe-java8" % circeV
     )
   )
+  //interpreter needed for evaluatedparam etc
   .dependsOn(api, interpreter, testUtil % "test")
 
 lazy val listenerApi = (project in file("ui/listener-api"))
@@ -783,7 +795,7 @@ lazy val listenerApi = (project in file("ui/listener-api"))
     name := "nussknacker-listener-api",
   )
   //security needed for LoggedUser etc
-  .dependsOn(restmodel, api, util, security, testUtil % "test")
+  .dependsOn(restmodel, util, security, testUtil % "test")
 
 lazy val ui = (project in file("ui/server"))
   .configs(SlowTests)
@@ -845,14 +857,14 @@ lazy val ui = (project in file("ui/server"))
       )
     }
   )
-  .dependsOn(management, interpreter, engineStandalone, processReports, security, restmodel, listenerApi, testUtil % "test")
+  .dependsOn(management, interpreter, engineStandalone, processReports, security, listenerApi, testUtil % "test")
 
 
 lazy val root = (project in file("."))
   .aggregate(
     // TODO: get rid of this duplication
     engineStandalone, standaloneApp, management, standaloneSample, managementSample, managementJavaSample, demo, generic,
-    process, interpreter, benchmarks, kafka, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil,
+    process, interpreter, benchmarks, kafka, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
     flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils, queryableState,
     restmodel, listenerApi, ui,
   )

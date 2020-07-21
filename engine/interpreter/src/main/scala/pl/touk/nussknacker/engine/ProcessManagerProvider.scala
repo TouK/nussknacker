@@ -7,7 +7,7 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.api.TypeSpecificData
 import pl.touk.nussknacker.engine.api.deployment.ProcessManager
-import pl.touk.nussknacker.engine.queryablestate.QueryableClient
+import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 
 
 trait ProcessManagerProvider {

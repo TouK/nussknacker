@@ -6,8 +6,7 @@ import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.queryablestate.client.QueryableStateClient
 import org.apache.flink.streaming.api.scala._
-import pl.touk.nussknacker.engine.api.QueryableState
-import pl.touk.nussknacker.engine.queryablestate.QueryableClient
+import pl.touk.nussknacker.engine.api.queryablestate.{QueryableClient, QueryableState}
 
 import scala.compat.java8.FutureConverters
 import scala.concurrent.{ExecutionContext, Future}

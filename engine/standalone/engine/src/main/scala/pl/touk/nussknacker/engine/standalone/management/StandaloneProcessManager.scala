@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.definition._
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.queryablestate.QueryableClient
+import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import pl.touk.nussknacker.engine.standalone.api.types._
