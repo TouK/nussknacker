@@ -68,6 +68,17 @@
         .background
             position relative
             box-sizing border-box
+            overflow hidden
+
+    .left
+        .draggable .background
+            border-bottom-right-radius: 3px
+            border-top-right-radius: 3px
+
+    .right
+        .draggable .background
+            border-bottom-left-radius: 3px
+            border-top-left-radius: 3px
 
     .draggable.is-dragging
         .background

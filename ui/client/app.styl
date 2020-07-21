@@ -77,9 +77,9 @@ processActivityList()
   padding 0
   .header
     span
-      color #808080
+      color commentHeaderColor
       &.date
-        color panelTitleTextColor
+        color commentHeaderColor
         font-style italic
     p
       font-style italic
@@ -97,7 +97,7 @@ hr.list-separator
     margin 10px 0
 
 .process-comments
-  padding 5px 10px
+  padding 0 13px
   .process-comments-list
     processActivityList()
     .header
@@ -115,10 +115,11 @@ hr.list-separator
       width 100%
       height 45px
       font-size 12px
-      font-weight lighter
-      border 1px solid commentBorderColor
+      font-weight 400
+      border-radius 3px
+      border none
       background-color commentBkgColor
-      padding 4px
+      padding 4px 6px
       resize none
       &:focus
         outline-color: defaultTextColor
@@ -128,7 +129,7 @@ hr.list-separator
 
 .process-attachments
   cursor default
-  padding 0 10px
+  padding 0 13px
   display grid
   .process-attachments-list
     processActivityList()
@@ -152,7 +153,7 @@ hr.list-separator
     font-size 12px
     margin-bottom 15px
     height: 90px
-    border 1px solid buttonBorderColor
+    border none
     &:hover .attachment-drop-zone
       background-color lighten(#333, 5%)
     .attachments-container
@@ -178,12 +179,18 @@ hr.list-separator
       text-align center
       margin-top -45px
     .attachment-button
+      border-radius 3px
       svg
         margin-top 15px
         width 27px
         height 27px
 .label-info
   background-color labelBkgColor
+  padding 0 3px
+  margin: 0 4px;
+  color #ccc
+  font-weight 600
+  font-size 9px
 
 .typeSuggestion
   float: right

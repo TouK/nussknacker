@@ -1,19 +1,18 @@
 @require "../../stylesheets/_variables.styl"
 
-buttonBkgColor = #444444
-buttonTextColor = #b3b3b3
-
 :local
     .button
         position relative
         width buttonSize
         min-width buttonSize
         height @width
-        border 1px solid panelBorder
+        border 0px solid panelBorder
         padding 0
 
         font-weight 600
         font-size rightPanelButtonFontSize
+
+        border-radius 6px
 
         display flex
         flex-direction column
@@ -22,7 +21,6 @@ buttonTextColor = #b3b3b3
 
         background-color buttonBkgColor
         color buttonTextColor
-        transition background-color 0.2s
 
         cursor pointer
         user-select none
@@ -33,6 +31,7 @@ buttonTextColor = #b3b3b3
 
         &:not(.disabled):hover
             background-color buttonBkgHover
+            border 3px solid panelBackground
 
         .icon
             width (buttonSize / 2)
