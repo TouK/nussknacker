@@ -23,7 +23,7 @@ const MapVariable = ({isMarked, node, removeElement, addElement, onChange, readO
         isMarked={isMarked("id")}
         readOnly={readOnly}
         showValidation={showValidation}
-        validators={[mandatoryValueValidator, errorValidator(errors, "id")]}
+        validators={[mandatoryValueValidator]}
       />
 
       <LabeledInput

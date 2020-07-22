@@ -55,7 +55,7 @@ class SubprocessInputDefinition extends React.Component {
           isMarked={isMarked("id")}
           readOnly={readOnly}
           showValidation={showValidation}
-          validators={[mandatoryValueValidator, errorValidator(errors, "Id")]}
+          validators={[mandatoryValueValidator]}
         />
 
         <FieldsSelect

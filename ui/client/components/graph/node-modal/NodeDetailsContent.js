@@ -130,6 +130,8 @@ export class NodeDetailsContent extends React.Component {
     }
   }
 
+  idField = () => this.createField("input", "Name", "id", true, [mandatoryValueValidator])
+
   customNode = (fieldErrors) => {
     const {showValidation, showSwitch, isEditMode, findAvailableVariables, node} = this.props
     const variableTypes = findAvailableVariables(node.id)
@@ -185,7 +187,7 @@ export class NodeDetailsContent extends React.Component {
       case "Filter":
         return (
           <div className="node-table-body">
-            {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
+            {this.idField()}
             {this.createStaticExpressionField(
               "expression",
               "Expression",
@@ -200,7 +202,7 @@ export class NodeDetailsContent extends React.Component {
       case "Processor":
         return (
           <div className="node-table-body">
-            {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
+            {this.idField()}
             {this.state.editedNode.service.parameters.map((param, index) => {
               return (
                 <div className="node-block" key={this.props.node.id + param.name + index}>
@@ -227,7 +229,7 @@ export class NodeDetailsContent extends React.Component {
       case "SubprocessInput":
         return (
           <div className="node-table-body">
-            {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
+            {this.idField()}
             {this.createField("checkbox", "Disabled", "isDisabled")}
             <ParameterList
               processDefinitionData={this.props.processDefinitionData}
@@ -261,8 +263,7 @@ export class NodeDetailsContent extends React.Component {
       case "CustomNode":
         return (
           <div className="node-table-body">
-            {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
-
+            {this.idField()}
             {
               this.showOutputVar && this.createField(
                 "input",
@@ -338,7 +339,7 @@ export class NodeDetailsContent extends React.Component {
       case "Switch":
         return (
           <div className="node-table-body">
-            {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
+            {this.idField()}
             {this.createStaticExpressionField(
               "expression",
               "Expression",
@@ -352,7 +353,7 @@ export class NodeDetailsContent extends React.Component {
       case "Split":
         return (
           <div className="node-table-body">
-            {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
+            {this.idField()}
             {this.descriptionField()}
           </div>
         )
@@ -489,7 +490,7 @@ export class NodeDetailsContent extends React.Component {
   sourceSinkCommon(toAppend, fieldErrors) {
     return (
       <div className="node-table-body">
-        {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "Id")])}
+        {this.idField()}
         {this.state.editedNode.ref.parameters.map((param, index) => {
           return (
             <div className="node-block" key={this.props.node.id + param.name + index}>
