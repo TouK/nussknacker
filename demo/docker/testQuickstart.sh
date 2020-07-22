@@ -27,7 +27,7 @@ waitForOK() {
   URL_PATH=$1
   STATUS_CODE=$(checkCode "$URL_PATH")
 
-  while [[ $waitTime < $waitLimit && $STATUS_CODE != 200 ]]
+  while [[ $waitTime -lt $waitLimit && $STATUS_CODE != 200 ]]
   do
     sleep $sleep
     waitTime=$((waitTime+sleep))
