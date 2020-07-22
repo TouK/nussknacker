@@ -15,6 +15,7 @@ trap 'docker-compose -f docker-compose.yml -f docker-compose-env.yml kill && doc
 #TODO: Consider rewriting below, e.g. in Python
 waitTime=0
 sleep=10
+waitLimit=120
 
 checkCode() {
  echo "$(curl -s -o /dev/null -w "%{http_code}" "http://admin:admin@localhost:8081/$1")"
@@ -26,7 +27,7 @@ waitForOK() {
   URL_PATH=$1
   STATUS_CODE=$(checkCode "$URL_PATH")
 
-  while [[ $waitTime < 60 && $STATUS_CODE != 200 ]]
+  while [[ $waitTime < $waitLimit && $STATUS_CODE != 200 ]]
   do
     sleep $sleep
     waitTime=$((waitTime+sleep))
