@@ -26,6 +26,7 @@ waitForOK() {
 
   URL_PATH=$1
   STATUS_CODE=$(checkCode "$URL_PATH")
+  CONTAINER_FOR_LOGS=$4
 
   while [[ $waitTime -lt $waitLimit && $STATUS_CODE != 200 ]]
   do
@@ -41,11 +42,12 @@ waitForOK() {
   if [[ $STATUS_CODE != 200 ]]
   then
     echo "$3"
+    docker-compose -f docker-compose-env.yml -f docker-compose.yml logs --tail=200 $CONTAINER_FOR_LOGS
     exit 1
   fi
 }
 
-waitForOK "api/processes" "Checking Frontend API response.." "Frontend not started"
+waitForOK "api/processes" "Checking Frontend API response.." "Frontend not started" "app"
 
 echo "Creating process"
 CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "http://admin:admin@localhost:8081/api/processes/DetectLargeTransactions/FraudDetection?isSubprocess=false")
@@ -58,13 +60,13 @@ else
   exit 1
 fi
 
-waitForOK "api/processes/status" "Checking connect with Flink.." "Frontend not connected with flink"
+waitForOK "api/processes/status" "Checking connect with Flink.." "Frontend not connected with flink" "app"
 
-waitForOK "flink/" "Checking Flink response.." "Flink not started"
+waitForOK "flink/" "Checking Flink response.." "Flink not started" "jobmanager"
 
-waitForOK "metrics" "Checking Grafana response.." "Grafana not started"
+waitForOK "metrics" "Checking Grafana response.." "Grafana not started" "grafana"
 
-waitForOK "search" "Checking Kibana response.." "Kibana not started"
+waitForOK "search" "Checking Kibana response.." "Kibana not started" "kibana"
 
 #TODO:
 #check import process

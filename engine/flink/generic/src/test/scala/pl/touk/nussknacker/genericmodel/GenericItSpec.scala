@@ -37,6 +37,8 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
   import org.apache.flink.streaming.api.scala._
   import spel.Implicits._
 
+  private val secondsToWaitForAvro = 30
+
   override lazy val config: Config = ConfigFactory.load()
     .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
     .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
@@ -176,7 +178,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
       "#input.list2[0] != 15")
     run(validJsonProcess) {
       val consumer = kafkaClient.createConsumer()
-      val processed = consumer.consume(JsonOutTopic).map(_.message()).map(new String(_, StandardCharsets.UTF_8)).take(1).toList
+      val processed = consumer.consume(JsonOutTopic, secondsToWaitForAvro).map(_.message()).map(new String(_, StandardCharsets.UTF_8)).take(1).toList
       processed.map(parseJson) shouldEqual List(parseJson(givenMatchingJsonObj))
     }
   }
@@ -242,7 +244,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
     logger.info("Starting union process")
     run(process) {
       logger.info("Waiting for consumer")
-      val consumer = kafkaClient.createConsumer().consume(topicOut, 20)
+      val consumer = kafkaClient.createConsumer().consume(topicOut, secondsToWaitForAvro)
       logger.info("Waiting for messages")
       val processed = consumer.map(_.message()).map(new String(_, StandardCharsets.UTF_8)).take(2).toList
       processed.map(parseJson) should contain theSameElementsAs List(
@@ -309,7 +311,7 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
 
   private def consumeOneAvroMessage(topic: String) = {
     val consumer = kafkaClient.createConsumer()
-    consumer.consume(topic).map { record =>
+    consumer.consume(topic, secondsToWaitForAvro).map { record =>
       valueDeserializer.deserialize(topic, record.message())
     }.take(1).toList
   }
