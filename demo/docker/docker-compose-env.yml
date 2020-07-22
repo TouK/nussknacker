@@ -173,6 +173,7 @@ services:
       - "8081:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    restart: on-failure
     depends_on:
       - zookeeper
       - influxdb
@@ -183,6 +184,7 @@ services:
       - logstash
       - kibana
       - grafana
+
 
 volumes:
   nussknacker_storage_zookeeper_datalog:
