@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValue
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.{Lifecycle, ProcessListener}
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.LazyInterpreterDependencies
@@ -34,8 +35,9 @@ object CompiledProcess {
     // TODO: rethink if optimization for object's parameters is still a problem here because maybe we can use just ProcessCompiler.apply
     val objectParametersExpressionCompiler = ExpressionCompiler.withoutOptimization(userCodeClassLoader, dictRegistry, definitions.expressionConfig, definitions.settings)
     //for testing environment it's important to take classloader from user jar
-    val subCompiler = new PartSubGraphCompiler(userCodeClassLoader, expressionCompiler, definitions.expressionConfig, servicesDefs)
-    val processCompiler = new ProcessCompiler(userCodeClassLoader, subCompiler, definitions, objectParametersExpressionCompiler)
+    val nodeCompiler = new NodeCompiler(definitions, expressionCompiler, userCodeClassLoader)
+    val subCompiler = new PartSubGraphCompiler(userCodeClassLoader, expressionCompiler, nodeCompiler)
+    val processCompiler = new ProcessCompiler(userCodeClassLoader, subCompiler, GlobalVariablesPreparer(definitions.expressionConfig), nodeCompiler)
 
     processCompiler.compile(process).result.map { compiledProcess =>
       val globalVariablesPreparer = GlobalVariablesPreparer(definitions.expressionConfig)
