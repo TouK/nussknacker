@@ -41,7 +41,7 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
-import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
+import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.util.{LoggingListener, SynchronousExecutionContext}
 
 import scala.concurrent.duration._

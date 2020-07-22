@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.queryablestate
+package pl.touk.nussknacker.engine.api.queryablestate
 
 import scala.concurrent.{ExecutionContext, Future}
 

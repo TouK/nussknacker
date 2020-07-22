@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
 import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
-import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
+import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
 

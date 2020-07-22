@@ -11,6 +11,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator, TwoInputStreamOperator}
 import org.apache.flink.streaming.api.scala.{DataStream, _}
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
+import pl.touk.nussknacker.engine.api.queryablestate.QueryableState
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, _}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}

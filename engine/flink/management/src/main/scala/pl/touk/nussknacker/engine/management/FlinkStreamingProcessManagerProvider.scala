@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.{ModelData, ProcessManagerProvider, Processing
 import pl.touk.nussknacker.engine.api.{StreamMetaData, TypeSpecificData}
 import pl.touk.nussknacker.engine.api.deployment.ProcessManager
 import pl.touk.nussknacker.engine.flink.queryablestate.FlinkQueryableClient
-import pl.touk.nussknacker.engine.queryablestate.QueryableClient
+import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import sttp.client.{NothingT, SttpBackend}
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 

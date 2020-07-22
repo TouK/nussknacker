@@ -6,7 +6,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, ExpressionParseError, MissingParameters, NodeId}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerBranchParameter, DefinedEagerParameter, BaseDefinedParameter, DefinedSingleParameter, FailedToDefineParameter, JoinGenericNodeTransformation, NodeDependencyValue, OutputVariableNameValue, SingleInputGenericNodeTransformation}
+import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerBranchParameter, DefinedEagerParameter, DefinedSingleParameter, FailedToDefineParameter, JoinGenericNodeTransformation, NodeDependencyValue, OutputVariableNameValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MetaData, MethodToInvoke, StreamMetaData, process}
@@ -17,8 +17,8 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
+import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.{api, spel}
-import pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator
 
 class GenericTransformationValidationSpec extends FunSuite with Matchers with OptionValues {
 

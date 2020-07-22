@@ -12,7 +12,8 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentId, ProcessState, SavepointResult, StateStatus, User}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.flinkRestModel.{ExecutionConfig, GetSavepointStatusResponse, JobConfig, JobOverview, JobsResponse, SavepointOperation, SavepointStatus, SavepointTriggerResponse, UploadJarResponse}
-import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
+import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.test.PatientScalaFutures
 import sttp.client.testing.SttpBackendStub
 import sttp.client.{NothingT, Response, SttpBackend, SttpClientException}
