@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.compile.nodevalidation
+package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
