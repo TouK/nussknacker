@@ -21,7 +21,7 @@ trait CanBeSubclassDeterminer {
     * Be default we will be loose.
     */
     // TODO: Add feature flag: strictBigDecimalChecking (default false?) and rename strictTypeChecking to strictClassesTypeChecking
-  private val ConversionFromClassesForDecimals = NumberTypesPromotionStrategy.AllDecimalClasses + classOf[java.math.BigDecimal]
+  private val ConversionFromClassesForDecimals = NumberTypesPromotionStrategy.DecimalNumbers.toSet + classOf[java.math.BigDecimal]
 
   /**
     * This method checks if `givenType` can by subclass of `superclassCandidate`

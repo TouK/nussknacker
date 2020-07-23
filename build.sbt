@@ -567,6 +567,7 @@ lazy val util = (project in engine("util")).
     name := "nussknacker-util",
     libraryDependencies ++= {
       Seq(
+        "org.springframework" % "spring-core" % springV,
         "com.github.ben-manes.caffeine" % "caffeine" % caffeineCacheV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "com.iheart" %% "ficus" % ficusV,
