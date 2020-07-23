@@ -54,7 +54,7 @@ export function MenuBar({rightElement = null, leftElement = null, ...props}: Pro
   const showMetrics = !_.isEmpty(featuresSettings.metrics)
   const showSignals = featuresSettings.signals
   const showAdmin = loggedUser.globalPermissions.adminTab
-  const customTabs = [...featuresSettings.customTabs]
+  const customTabs = featuresSettings.customTabs ? [...featuresSettings.customTabs] : []
 
   const [expanded, setExpanded] = useStateWithRevertTimeout(false)
   const {t} = useTranslation()
