@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.compile.nodevalidation
+package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerBranchParameter, DefinedEagerParameter, DefinedLazyBranchParameter, DefinedLazyParameter, BaseDefinedParameter}

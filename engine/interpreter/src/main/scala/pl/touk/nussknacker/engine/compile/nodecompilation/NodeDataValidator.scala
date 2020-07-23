@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.compile.nodevalidation
+package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
@@ -9,9 +9,7 @@ import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, Validati
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeTypingInfo}
-import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.node._
-import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.engine.{Interpreter, ModelData}
 
 /*
