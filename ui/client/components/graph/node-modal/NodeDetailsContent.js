@@ -35,10 +35,13 @@ export class NodeDetailsContent extends React.Component {
     super(props)
 
     this.initalizeWithProps(props)
+    const nodeToAdjust = props.node
+    const {node, unusedParameters} = adjustParameters(nodeToAdjust, this.parameterDefinitions, this.nodeDefinitionByName(nodeToAdjust))
+
     this.state = {
       ...TestResultUtils.stateForSelectTestResults(null, this.props.testResults),
-      editedNode: props.node,
-      unusedParameters: [],
+      editedNode: node,
+      unusedParameters: unusedParameters,
       codeCompletionEnabled: true,
       testResultsToHide: new Set(),
     }
@@ -69,6 +72,7 @@ export class NodeDetailsContent extends React.Component {
 
   //TODO: get rid of this method as deprecated in React
   componentWillReceiveProps(nextProps) {
+
     this.initalizeWithProps(nextProps)
     const nextPropsNode = nextProps.node
 
