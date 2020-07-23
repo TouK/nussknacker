@@ -1,13 +1,43 @@
 package pl.touk.nussknacker.engine.api.typed.supertype
 
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import java.lang
 
-import scala.collection.mutable
+import org.apache.commons.lang3.ClassUtils
+import pl.touk.nussknacker.engine.api.typed.typing._
 
+trait NumberTypesPromotionStrategy extends Serializable {
 
-trait NumberTypesPromotionStrategy {
+  def promoteSingle(typ: TypingResult): TypingResult = promote(typ, typ)
 
-  def promote(left: Class[_], right: Class[_]): TypingResult
+  def promote(left: TypingResult, right: TypingResult): TypingResult = {
+    (toSingleTypesSet(left), toSingleTypesSet(right)) match {
+      case (Left(Unknown), _) => Unknown
+      case (_, Left(Unknown)) => Unknown
+      case (Right(lSet), Right(rSet)) =>
+        val allCombinations = for {
+          l <- lSet
+          r <- rSet
+        } yield promoteClasses(l.objType.klass, r.objType.klass)
+        Typed(allCombinations)
+    }
+  }
+
+  private def toSingleTypesSet(typ: TypingResult) : Either[Unknown.type, Set[SingleTypingResult]] =
+    typ match {
+      case s: SingleTypingResult => Right(Set(s))
+      case u: TypedUnion => Right(u.possibleTypes)
+      case Unknown => Left(Unknown)
+    }
+
+  final def promoteClasses(left: Class[_], right: Class[_]): TypingResult = {
+    val boxedLeft = ClassUtils.primitiveToWrapper(left)
+    val boxedRight = ClassUtils.primitiveToWrapper(right)
+    if (!classOf[Number].isAssignableFrom(boxedLeft) || !classOf[Number].isAssignableFrom(boxedRight))
+      throw new IllegalArgumentException(s"One of promoted classes is not a number: $boxedLeft, $boxedRight")
+    promoteClassesInternal(boxedLeft, boxedRight)
+  }
+
+  protected def promoteClassesInternal(left: Class[_], right: Class[_]): TypingResult
 
 }
 
@@ -21,29 +51,46 @@ object NumberTypesPromotionStrategy {
 
   def isFloatingNumber(clazz: Class[_]): Boolean = FloatingNumbers.contains(clazz)
 
-  private val DecimalNumbers: mutable.LinkedHashMap[Class[_], Class[_]] = mutable.LinkedHashMap(
-    classOf[java.math.BigInteger] -> classOf[java.math.BigInteger],
-    classOf[java.lang.Long] -> classOf[java.lang.Long],
-    classOf[java.lang.Integer] -> classOf[java.lang.Integer],
-    classOf[java.lang.Short] -> classOf[java.lang.Integer],
-    classOf[java.lang.Byte] -> classOf[java.lang.Integer]
+  val DecimalNumbers: Seq[Class[_]] = IndexedSeq(
+    classOf[java.math.BigInteger],
+    classOf[java.lang.Long],
+    classOf[java.lang.Integer],
+    classOf[java.lang.Short],
+    classOf[java.lang.Byte]
   )
 
-  private val DecimalNumbersKeys = DecimalNumbers.keys.toIndexedSeq
-
-  val AllDecimalClasses: Set[Class[_]] = DecimalNumbers.keySet.toSet
-
-  def isDecimalNumber(clazz: Class[_]): Boolean = AllDecimalClasses.contains(clazz)
+  def isDecimalNumber(clazz: Class[_]): Boolean = DecimalNumbers.contains(clazz)
 
   // See org.springframework.expression.spel.ast.OpPlus and so on for details
-  object ToCommonWidestType extends NumberTypesPromotionStrategy {
+  object ForMathOperation extends BaseToCommonWidestTypePromotionStrategy {
 
-    override def promote(left: Class[_], right: Class[_]): TypingResult = {
+    override protected def handleDecimalType(firstDecimal: Class[_]): TypingResult = {
+      if (firstDecimal == classOf[lang.Byte] || firstDecimal == classOf[lang.Short]) {
+        Typed(classOf[Integer])
+      } else {
+        Typed(firstDecimal)
+      }
+    }
+
+  }
+
+  object ForMinMax extends BaseToCommonWidestTypePromotionStrategy {
+
+    override protected def handleDecimalType(firstDecimal: Class[_]): TypingResult = {
+      Typed(firstDecimal)
+    }
+
+  }
+
+  abstract class BaseToCommonWidestTypePromotionStrategy extends NumberTypesPromotionStrategy {
+
+    override def promoteClassesInternal(left: Class[_], right: Class[_]): TypingResult = {
       val both = List(left, right)
       if (both.forall(FloatingNumbers.contains)) {
         Typed(both.map(n => FloatingNumbers.indexOf(n) -> n).sortBy(_._1).map(_._2).head)
       } else if (both.forall(DecimalNumbers.contains)) {
-        Typed(both.map(n => DecimalNumbersKeys.indexOf(n) -> DecimalNumbers(n)).sortBy(_._1).map(_._2).head)
+        val firstDecimal = both.map(n => DecimalNumbers.indexOf(n) -> n).sortBy(_._1).map(_._2).head
+        handleDecimalType(firstDecimal)
       } else if (both.exists(DecimalNumbers.contains) && both.exists(FloatingNumbers.contains)) {
         Typed(both.find(FloatingNumbers.contains).get)
       } else { // unknown Number
@@ -51,11 +98,13 @@ object NumberTypesPromotionStrategy {
       }
     }
 
+    protected def handleDecimalType(firstDecimal: Class[_]): TypingResult
+
   }
 
   object ToSupertype extends NumberTypesPromotionStrategy {
 
-    override def promote(left: Class[_], right: Class[_]): TypingResult = {
+    override def promoteClassesInternal(left: Class[_], right: Class[_]): TypingResult = {
       if (left.isAssignableFrom(right)) {
         Typed(left)
       } else if (right.isAssignableFrom(left)) {
@@ -70,7 +119,7 @@ object NumberTypesPromotionStrategy {
   // See org.springframework.expression.spel.ast.OperatorPower for details
   object ForPowerOperation extends NumberTypesPromotionStrategy {
 
-    override def promote(left: Class[_], right: Class[_]): TypingResult = {
+    override def promoteClassesInternal(left: Class[_], right: Class[_]): TypingResult = {
       if (left == classOf[java.math.BigDecimal]) {
         Typed[java.math.BigDecimal]
       } else if (left == classOf[java.math.BigInteger]) {

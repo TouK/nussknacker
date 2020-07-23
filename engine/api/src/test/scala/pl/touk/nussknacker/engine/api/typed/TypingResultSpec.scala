@@ -8,7 +8,7 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
 
   private val commonSuperTypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Intersection, true)
 
-  implicit val numberTypesPromotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ToCommonWidestType
+  implicit val numberTypesPromotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ForMathOperation
 
   private def typeMap(args: (String, TypingResult)*) = TypedObjectTypingResult(args.toMap)
 
