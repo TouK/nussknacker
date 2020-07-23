@@ -7,6 +7,8 @@ import pl.touk.nussknacker.engine.api.typed.typing._
 
 trait NumberTypesPromotionStrategy extends Serializable {
 
+  type ReturnedType <: TypingResult
+
   def promoteSingle(typ: TypingResult): TypingResult = promote(typ, typ)
 
   def promote(left: TypingResult, right: TypingResult): TypingResult = {
@@ -29,7 +31,7 @@ trait NumberTypesPromotionStrategy extends Serializable {
       case Unknown => Left(Unknown)
     }
 
-  final def promoteClasses(left: Class[_], right: Class[_]): TypingResult = {
+  final def promoteClasses(left: Class[_], right: Class[_]): ReturnedType = {
     val boxedLeft = ClassUtils.primitiveToWrapper(left)
     val boxedRight = ClassUtils.primitiveToWrapper(right)
     if (!classOf[Number].isAssignableFrom(boxedLeft) || !classOf[Number].isAssignableFrom(boxedRight))
@@ -37,7 +39,13 @@ trait NumberTypesPromotionStrategy extends Serializable {
     promoteClassesInternal(boxedLeft, boxedRight)
   }
 
-  protected def promoteClassesInternal(left: Class[_], right: Class[_]): TypingResult
+  protected def promoteClassesInternal(left: Class[_], right: Class[_]): ReturnedType
+
+}
+
+trait ReturningSingleClassPromotionStrategy extends NumberTypesPromotionStrategy {
+
+  override type ReturnedType = TypedClass
 
 }
 
@@ -66,11 +74,11 @@ object NumberTypesPromotionStrategy {
   // See org.springframework.expression.spel.ast.OpPlus and so on for details
   object ForMathOperation extends BaseToCommonWidestTypePromotionStrategy {
 
-    override protected def handleDecimalType(firstDecimal: Class[_]): TypingResult = {
+    override protected def handleDecimalType(firstDecimal: Class[_]): TypedClass = {
       if (firstDecimal == classOf[lang.Byte] || firstDecimal == classOf[lang.Short]) {
-        Typed(classOf[Integer])
+        Typed.typedClass(classOf[Integer])
       } else {
-        Typed(firstDecimal)
+        Typed.typedClass(firstDecimal)
       }
     }
 
@@ -78,41 +86,41 @@ object NumberTypesPromotionStrategy {
 
   object ForMinMax extends BaseToCommonWidestTypePromotionStrategy {
 
-    override protected def handleDecimalType(firstDecimal: Class[_]): TypingResult = {
-      Typed(firstDecimal)
+    override protected def handleDecimalType(firstDecimal: Class[_]): TypedClass = {
+      Typed.typedClass(firstDecimal)
     }
 
   }
 
-  abstract class BaseToCommonWidestTypePromotionStrategy extends NumberTypesPromotionStrategy {
+  abstract class BaseToCommonWidestTypePromotionStrategy extends ReturningSingleClassPromotionStrategy {
 
-    override def promoteClassesInternal(left: Class[_], right: Class[_]): TypingResult = {
+    override def promoteClassesInternal(left: Class[_], right: Class[_]): TypedClass = {
       val both = List(left, right)
       if (both.forall(FloatingNumbers.contains)) {
-        Typed(both.map(n => FloatingNumbers.indexOf(n) -> n).sortBy(_._1).map(_._2).head)
+        Typed.typedClass(both.map(n => FloatingNumbers.indexOf(n) -> n).sortBy(_._1).map(_._2).head)
       } else if (both.forall(DecimalNumbers.contains)) {
         val firstDecimal = both.map(n => DecimalNumbers.indexOf(n) -> n).sortBy(_._1).map(_._2).head
         handleDecimalType(firstDecimal)
       } else if (both.exists(DecimalNumbers.contains) && both.exists(FloatingNumbers.contains)) {
-        Typed(both.find(FloatingNumbers.contains).get)
+        Typed.typedClass(both.find(FloatingNumbers.contains).get)
       } else { // unknown Number
-        Typed[java.lang.Double]
+        Typed.typedClass[java.lang.Double]
       }
     }
 
-    protected def handleDecimalType(firstDecimal: Class[_]): TypingResult
+    protected def handleDecimalType(firstDecimal: Class[_]): TypedClass
 
   }
 
-  object ToSupertype extends NumberTypesPromotionStrategy {
+  object ToSupertype extends ReturningSingleClassPromotionStrategy {
 
-    override def promoteClassesInternal(left: Class[_], right: Class[_]): TypingResult = {
+    override def promoteClassesInternal(left: Class[_], right: Class[_]): TypedClass = {
       if (left.isAssignableFrom(right)) {
-        Typed(left)
+        Typed.typedClass(left)
       } else if (right.isAssignableFrom(left)) {
-        Typed(right)
+        Typed.typedClass(right)
       } else {
-        Typed[Number]
+        Typed.typedClass[Number]
       }
     }
 
@@ -120,6 +128,8 @@ object NumberTypesPromotionStrategy {
 
   // See org.springframework.expression.spel.ast.OperatorPower for details
   object ForPowerOperation extends NumberTypesPromotionStrategy {
+
+    override type ReturnedType = TypingResult
 
     override def promoteClassesInternal(left: Class[_], right: Class[_]): TypingResult = {
       if (left == classOf[java.math.BigDecimal]) {

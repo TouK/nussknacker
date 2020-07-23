@@ -3,13 +3,12 @@ package pl.touk.nussknacker.engine.util
 import java.math.BigInteger
 
 import org.springframework.util.{NumberUtils => SpringNumberUtils}
-import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed}
+import pl.touk.nussknacker.engine.api.typed.supertype.{NumberTypesPromotionStrategy, ReturningSingleClassPromotionStrategy}
 
 trait MathUtils {
 
   def max(n1: Number, n2: Number): Number = {
-    implicit val promotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ForMinMax
+    implicit val promotionStrategy: ReturningSingleClassPromotionStrategy = NumberTypesPromotionStrategy.ForMinMax
     withNotNullValues(n1, n2) {
       withValuesWithTheSameType(n1, n2)(new SameNumericTypeHandler {
         override def onBytes(n1: Byte, n2: Byte): Byte = Math.max(n1, n2).byteValue()
@@ -25,7 +24,7 @@ trait MathUtils {
   }
 
   def min(n1: Number, n2: Number): Number = {
-    implicit val promotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ForMinMax
+    implicit val promotionStrategy: ReturningSingleClassPromotionStrategy = NumberTypesPromotionStrategy.ForMinMax
     withNotNullValues(n1, n2) {
       withValuesWithTheSameType(n1, n2)(new SameNumericTypeHandler {
         override def onBytes(n1: Byte, n2: Byte): Byte = Math.min(n1, n2).byteValue()
@@ -41,7 +40,7 @@ trait MathUtils {
   }
 
   def sum(n1: Number, n2: Number): Number = {
-    implicit val promotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ForMathOperation
+    implicit val promotionStrategy: ReturningSingleClassPromotionStrategy = NumberTypesPromotionStrategy.ForMathOperation
     withNotNullValues(n1, n2) {
       withValuesWithTheSameType(n1, n2)(new SameNumericTypeHandler {
         override def onBytes(n1: Byte, n2: Byte): Byte = throw new IllegalStateException("Bytes should be promoted to Ints before addition")
@@ -57,7 +56,7 @@ trait MathUtils {
   }
   
   protected def withNotNullValues(n1: Number, n2: Number)(f: => Number)
-                                 (implicit promotionStrategy: NumberTypesPromotionStrategy): Number = {
+                                 (implicit promotionStrategy: ReturningSingleClassPromotionStrategy): Number = {
     if (n1 == null) {
       if (n2 == null) null else convertToPromotedType(n2)
     } else if (n2 == null) {
@@ -68,8 +67,8 @@ trait MathUtils {
   }
 
   protected def withValuesWithTheSameType(n1: Number, n2: Number)(handler: SameNumericTypeHandler)
-                                         (implicit promotionStrategy: NumberTypesPromotionStrategy): Number = {
-    val promotedClass = promotionStrategy.promoteClasses(n1.getClass, n2.getClass).asInstanceOf[SingleTypingResult].objType.klass
+                                         (implicit promotionStrategy: ReturningSingleClassPromotionStrategy): Number = {
+    val promotedClass = promotionStrategy.promoteClasses(n1.getClass, n2.getClass).klass
     if (promotedClass == classOf[java.lang.Byte]) {
       handler.onBytes(SpringNumberUtils.convertNumberToTargetClass(n1, classOf[java.lang.Byte]), SpringNumberUtils.convertNumberToTargetClass(n2, classOf[java.lang.Byte]))
     } else if (promotedClass == classOf[java.lang.Short]) {
@@ -91,10 +90,9 @@ trait MathUtils {
     }
   }
 
-  private def convertToPromotedType(n: Number)(implicit promotionStrategy: NumberTypesPromotionStrategy): Number = {
+  private def convertToPromotedType(n: Number)(implicit promotionStrategy: ReturningSingleClassPromotionStrategy): Number = {
     // In some cases type can be promoted to other class e.g. Byte is promoted to Int for sum
-    val promotedClass = promotionStrategy.promoteSingle(Typed(n.getClass))
-      .asInstanceOf[SingleTypingResult].objType.klass.asInstanceOf[Class[_ <: Number]]
+    val promotedClass = promotionStrategy.promoteClasses(n.getClass, n.getClass).klass.asInstanceOf[Class[_ <: Number]]
     SpringNumberUtils.convertNumberToTargetClass(n, promotedClass)
   }
 
