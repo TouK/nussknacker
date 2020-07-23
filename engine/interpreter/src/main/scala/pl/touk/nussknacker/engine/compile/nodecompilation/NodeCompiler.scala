@@ -29,24 +29,25 @@ import shapeless.Typeable
 import shapeless.syntax.typeable._
 
 class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
-                   val objectParametersExpressionCompiler: ExpressionCompiler,
-                   val classLoader: ClassLoader) {
+                   objectParametersExpressionCompiler: ExpressionCompiler,
+                   classLoader: ClassLoader) {
 
   type GenericValidationContext = Either[ValidationContext, Map[String, ValidationContext]]
 
   private lazy val globalVariablesPreparer = GlobalVariablesPreparer(expressionConfig)
-  implicit val typeableJoin: Typeable[Join] = Typeable.simpleTypeable(classOf[Join])
-  protected val expressionConfig: ProcessDefinitionExtractor.ExpressionDefinition[ObjectWithMethodDef] = definitions.expressionConfig
+  private implicit val typeableJoin: Typeable[Join] = Typeable.simpleTypeable(classOf[Join])
+  private val expressionConfig: ProcessDefinitionExtractor.ExpressionDefinition[ObjectWithMethodDef] = definitions.expressionConfig
 
   //FIXME: should it be here?
   private val expressionEvaluator =
     ExpressionEvaluator.unOptimizedEvaluator(GlobalVariablesPreparer(expressionConfig))
+  private val factory: ProcessObjectFactory = new ProcessObjectFactory(expressionEvaluator)
 
   def compileSource(nodeData: SourceNodeData)(implicit metaData: MetaData, nodeId: NodeId): (Map[String, ExpressionTypingInfo],
     Option[List[Parameter]], ValidatedNel[ProcessCompilationError, ValidationContext],
     ValidatedNel[ProcessCompilationError, Source[_]]) = nodeData match {
     case a@pl.touk.nussknacker.engine.graph.node.Source(_, ref, _) =>
-      sourceFactories.get(ref.typ) match {
+      definitions.sourceFactories.get(ref.typ) match {
         case Some(definition) =>
           def defaultContextTransformation(compiled: Option[Any]) =
             contextWithOnlyGlobalVariables.withVariable(Interpreter.InputParamName, compiled.flatMap(a => returnType(definition, a)).getOrElse(Unknown))
@@ -87,7 +88,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
                  (implicit nodeId: NodeId,
                   metaData: MetaData): (Map[String, ExpressionTypingInfo], Option[List[Parameter]], ValidatedNel[ProcessCompilationError, api.process.Sink]) = {
     val ref = sink.ref
-    sinkFactories.get(ref.typ) match {
+    definitions.sinkFactories.get(ref.typ) match {
       case Some(definition) =>
         val (typeInfo, parameters, _, validSinkFactory) =
           compileObjectWithTransformation[api.process.Sink](sink, Left(ctx), None, definition._1, (_: Any) => Valid(ctx))
@@ -107,17 +108,9 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
         override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {}
       }))
     } else {
-      createProcessObject[EspExceptionHandler](exceptionHandlerFactory, ref.parameters, List.empty, outputVariableNameOpt = None, Left(contextWithOnlyGlobalVariables))
+      createProcessObject[EspExceptionHandler](definitions.exceptionHandlerFactory, ref.parameters, List.empty, outputVariableNameOpt = None, Left(contextWithOnlyGlobalVariables))
     }
   }
-
-  protected def factory: ProcessObjectFactory = new ProcessObjectFactory(expressionEvaluator)
-
-  protected def sourceFactories: Map[String, ObjectWithMethodDef] = definitions.sourceFactories
-
-  protected def sinkFactories: Map[String, (ObjectWithMethodDef, ProcessDefinitionExtractor.SinkAdditionalData)] = definitions.sinkFactories
-
-  protected def exceptionHandlerFactory: ObjectWithMethodDef = definitions.exceptionHandlerFactory
 
   private def nodeValidator(implicit metaData: MetaData)
   = new GenericNodeTransformationValidator(objectParametersExpressionCompiler, expressionConfig)
