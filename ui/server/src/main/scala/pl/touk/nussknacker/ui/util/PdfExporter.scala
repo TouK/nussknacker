@@ -189,7 +189,7 @@ object PdfExporter extends LazyLogging {
       case Sink(_, SinkRef(typ, params), output, _, _) => ("Type", typ) :: output.map(expr => ("Output", expr.expression)).toList ++ params.map(p => (p.name, p.expression.expression))
       case CustomNode(_, output, typ, params, _) => ("Type", typ) :: ("Output", output) :: params.map(p => (p.name, p.expression.expression))
       case SubprocessInput(_, SubprocessRef(typ, params), _, _, _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
-      //TODO: variable, variable builder,
+      //TODO: variable, variable builder, split
       case _ => List()
     }
     val data = node.additionalFields
