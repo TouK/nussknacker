@@ -56,8 +56,8 @@ trait MathUtils {
     }
   }
   
-  private def withNotNullValues(n1: Number, n2: Number)(f: => Number)
-                               (implicit promotionStrategy: NumberTypesPromotionStrategy): Number = {
+  protected def withNotNullValues(n1: Number, n2: Number)(f: => Number)
+                                 (implicit promotionStrategy: NumberTypesPromotionStrategy): Number = {
     if (n1 == null) {
       if (n2 == null) null else convertToPromotedType(n2)
     } else if (n2 == null) {
@@ -67,8 +67,8 @@ trait MathUtils {
     }
   }
 
-  private def withValuesWithTheSameType(n1: Number, n2: Number)(handler: SameNumericTypeHandler)
-                                       (implicit promotionStrategy: NumberTypesPromotionStrategy): Number = {
+  protected def withValuesWithTheSameType(n1: Number, n2: Number)(handler: SameNumericTypeHandler)
+                                         (implicit promotionStrategy: NumberTypesPromotionStrategy): Number = {
     val promotedClass = promotionStrategy.promoteClasses(n1.getClass, n2.getClass).asInstanceOf[SingleTypingResult].objType.klass
     if (promotedClass == classOf[java.lang.Byte]) {
       handler.onBytes(SpringNumberUtils.convertNumberToTargetClass(n1, classOf[java.lang.Byte]), SpringNumberUtils.convertNumberToTargetClass(n2, classOf[java.lang.Byte]))
@@ -98,7 +98,7 @@ trait MathUtils {
     SpringNumberUtils.convertNumberToTargetClass(n, promotedClass)
   }
 
-  private trait SameNumericTypeHandler {
+  protected trait SameNumericTypeHandler {
     def onBytes(n1: Byte, n2: Byte): Byte
     def onShorts(n1: Short, n2: Short): Short
     def onInts(n1: Int, n2: Int): Int

@@ -43,6 +43,7 @@ trait NumberTypesPromotionStrategy extends Serializable {
 
 object NumberTypesPromotionStrategy {
 
+  // The order is important for determining promoted type (it is from widest to narrowest type)
   private val FloatingNumbers: Seq[Class[_]] = IndexedSeq(
     classOf[java.math.BigDecimal],
     classOf[java.lang.Double],
@@ -51,6 +52,7 @@ object NumberTypesPromotionStrategy {
 
   def isFloatingNumber(clazz: Class[_]): Boolean = FloatingNumbers.contains(clazz)
 
+  // The order is important for determining promoted type (it is from widest to narrowest type)
   val DecimalNumbers: Seq[Class[_]] = IndexedSeq(
     classOf[java.math.BigInteger],
     classOf[java.lang.Long],
