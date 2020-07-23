@@ -33,7 +33,7 @@ env:
     - SANITIZED_BRANCH=`echo ${SOURCE_BRANCH} | sed 's/[^a-zA-Z0-9]/\_/g' | awk '{print tolower($0)}'`
     - SANITIZED_TRAVIS_BRANCH=`echo ${TRAVIS_BRANCH} | sed 's/[^a-zA-Z0-9]/\_/g' | awk '{print tolower($0)}'`
     - FORMATTED_DATE=$(git show -s --date=format:'%Y-%m-%d-%H-%M' --format=%cd $TRAVIS_COMMIT)
-    - BUILD_VERSION=$(if [[ -n $TRAVIS_TAG ]]; then echo "${SANITIZED_BRANCH}"; else echo "${FORMATTED_DATE}-${SANITIZED_BRANCH}-$TRAVIS_COMMIT"; fi)
+    - BUILD_VERSION=$(if [[ -n $TRAVIS_TAG ]]; then echo "${SANITIZED_BRANCH}"; else echo "${SANITIZED_BRANCH}-${FORMATTED_DATE}-$TRAVIS_COMMIT"; fi)
     - DOCKER_SOURCE_TAG=`echo ${DOCKER_PACKAGE_USERNAME}/${DOCKER_PACKAGENAME}:${BUILD_VERSION}`
     - DOCKER_REPOSITORY=`echo ${DOCKER_PACKAGE_USERNAME}/${DOCKER_PACKAGENAME}`
     - COVERAGE=`[ "${SOURCE_BRANCH}" == "master" ] && echo "true" || echo "false"`
