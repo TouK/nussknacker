@@ -1,7 +1,7 @@
 language: scala
 
 jdk:
-  - oraclejdk8
+  - openjdk11
 
 sudo: required
 
@@ -19,8 +19,7 @@ branches:
     - staging
     - /^preview/.*$/
 
-#TODO: upgrade to newer (e.g. xenial) after upgrading java to > 8
-dist: trusty
+dist: bionic
 
 git:
   depth: false
