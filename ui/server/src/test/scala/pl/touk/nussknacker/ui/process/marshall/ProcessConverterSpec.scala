@@ -24,13 +24,14 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.variables.MetaVariables
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.FilterTrue
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, EdgeType}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.{FilterFalse, FilterTrue, NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, NodeValidationError, NodeValidationErrorType, ValidationResult}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider, sampleResolver}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.validation.ProcessValidation
+import pl.touk.nussknacker.engine.spel.Implicits._
 
 class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenPropertyChecks {
 
@@ -207,4 +208,34 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
     foundNodes.map(_.id).toSet shouldBe Set("sourceId1", "split1", "join1", "end")
 
   }
+
+  test("Handle switch/split/filter => union case") {
+
+    val branchEnd = GraphBuilder.branchEnd("branch1", "join1")
+    val nodeId: String = "problemNode"
+
+    def testCase(run: GraphBuilder[SourceNode] => SourceNode, typ: Option[EdgeType] = None, additionalEdges: Set[Edge] = Set.empty) = {
+      val process = ProcessCanonizer.canonize(EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+          run(GraphBuilder
+            .source("source1", "sourceType1")),
+          GraphBuilder
+            .branch("join1", "union", Some("outPutVar"),
+              List("branch1" -> Nil, "branch2" -> Nil)
+            )
+            .emptySink("end", "outType1")
+        )))
+      val edges = ProcessConverter.toDisplayable(process, "").edges
+      edges.toSet shouldBe Set(Edge("source1", nodeId, None), Edge(nodeId, "join1", typ), Edge("join1", "end", None)) ++ additionalEdges
+    }
+
+    testCase(_.split(nodeId, branchEnd))
+    testCase(_.filter(nodeId, "false", branchEnd).emptySink("end2", "out1"),
+      Some(FilterFalse), Set(Edge(nodeId, "end2", Some(FilterTrue))))
+    testCase(_.switch(nodeId, "false", "out1", Case("1", branchEnd)), Some(NextSwitch("1")))
+    testCase(_.switch(nodeId, "false", "out1", branchEnd, Case("1", GraphBuilder.emptySink("end2", "out1"))),
+      Some(SwitchDefault), Set(Edge(nodeId, "end2", Some(NextSwitch("1")))))
+
+
+  }
+
 }
