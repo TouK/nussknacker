@@ -133,11 +133,17 @@ lazy val commonSettings =
         "-language:postfixOps",
         "-language:existentials",
         "-Ypartial-unification",
+        //Flink image is available only for jdk8
         "-target:jvm-1.8"
       ),
       javacOptions := Seq(
         "-Xlint:deprecation",
         "-Xlint:unchecked",
+        //Flink image is available only for jdk8
+        "-source",
+        "1.8",
+        "-target",
+        "1.8",
         //we use it e.g. to provide consistent behaviour wrt extracting parameter names from scala and java
         "-parameters"
       ),
