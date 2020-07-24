@@ -19,3 +19,8 @@ addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.5.1")
 addSbtPlugin("org.scoverage" % "sbt-coveralls" % "1.2.7")
 
 addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.3.7")
+
+//????
+addSbtPlugin("org.scala-sbt" % "sbt-maven-resolver" % "0.1.0")
+
+addSbtPlugin("no.arktekk.sbt" % "aether-deploy" % "0.25.0")
