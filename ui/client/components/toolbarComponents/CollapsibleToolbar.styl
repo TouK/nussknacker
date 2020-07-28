@@ -1,7 +1,6 @@
 @require "../../stylesheets/_variables.styl"
 
 :local(.wrapper)
-    // backdrop-filter blur(8px)
     pointer-events auto
 
 :local(.panel)
@@ -47,7 +46,6 @@
         transition all .3s ease-in-out
 
     &:local(.collapsed)
-        // min-width 80px
         max-width @min-width
         opacity .86
 
