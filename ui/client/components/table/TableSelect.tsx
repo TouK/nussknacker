@@ -1,9 +1,9 @@
 import cn from "classnames"
+import {defaultsDeep} from "lodash"
 import React, {useCallback} from "react"
 import Select, {Props as SelectProps} from "react-select"
-import {StylesConfig} from "react-select/src/styles"
 import styles from "../../containers/processesTable.styl"
-import {defaultAppTheme} from "../../containers/theme"
+import {useNkTheme} from "../../containers/theme"
 import "../../stylesheets/processes.styl"
 
 type OptionType = $TodoType
@@ -16,41 +16,34 @@ type Props = {
   placeholder: string,
 }
 
-const {borderRadius, fontSize, inputHeight, colors} = defaultAppTheme
-
-const customSelectStyles: StylesConfig = {
-  control: styles => ({
-    ...styles,
-    fontSize,
-    minHeight: inputHeight,
-  }),
-  option: (styles, {theme, isDisabled, isSelected, isFocused}) => ({
-    ...styles,
-    fontSize,
-    color: isDisabled ?
-      theme.colors.neutral20 :
-      isSelected || isFocused ?
-        theme.colors.neutral0 :
-        theme.colors.neutral90,
-  }),
-}
-
 const className = "form-select"
 
 function StyledSelect<T>(props: SelectProps<T>) {
+  const {theme} = useNkTheme()
   return (
     <Select
       className={cn(className)}
       classNamePrefix={className}
-      styles={customSelectStyles}
-      theme={theme => ({
-        ...theme,
-        borderRadius,
-        colors: {
-          ...theme.colors,
-          ...colors,
-        },
-      })}
+      theme={provided => defaultsDeep(theme, provided)}
+      styles={{
+        control: (provided) => ({
+          ...provided,
+          fontSize: theme.fontSize,
+        }),
+        input: (provided, {theme}) => ({
+          ...provided,
+          color: theme.colors.neutral90,
+        }),
+        option: (provided, {theme, isDisabled, isSelected, isFocused}) => ({
+          ...provided,
+          fontSize: theme.fontSize,
+          color: isDisabled ?
+            theme.colors.neutral20 :
+            isSelected || isFocused ?
+              theme.colors.neutral0 :
+              theme.colors.neutral90,
+        }),
+      }}
       {...props}
     />
   )

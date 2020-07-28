@@ -12,6 +12,7 @@ import EspApp from "./containers/EspApp"
 
 import Notifications from "./containers/Notifications"
 import NussknackerInitializer from "./containers/NussknackerInitializer"
+import {NkThemeProvider} from "./containers/theme"
 import history from "./history"
 
 import "./i18n"
@@ -32,10 +33,12 @@ ReactDOM.render(
           <Provider store={store}>
             <PersistGate loading={null} persistor={persistor}>
               <Router history={history}>
-                <NussknackerInitializer>
-                  <Notifications/>
-                  <EspApp/>
-                </NussknackerInitializer>
+                <NkThemeProvider>
+                  <NussknackerInitializer>
+                    <Notifications/>
+                    <EspApp/>
+                  </NussknackerInitializer>
+                </NkThemeProvider>
               </Router>
             </PersistGate>
           </Provider>

@@ -139,6 +139,8 @@
     "babel-plugin-i18next-extract": "^0.6.1",
     "copy-webpack-plugin": "^5.1.1",
     "css-loader": "^3.6.0",
+    "emotion": "^10.0.27",
+    "emotion-theming": "^10.0.27",
     "enzyme": "^3.9.0",
     "enzyme-adapter-react-16": "^1.13.1",
     "eslint": "^6.8.0",

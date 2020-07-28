@@ -1,7 +1,9 @@
-import cn from "classnames"
+import {css, cx} from "emotion"
 import {isEmpty} from "lodash"
 import React, {PropsWithChildren} from "react"
 import processesTableStyles from "../../containers/processesTable.styl"
+import {useNkTheme} from "../../containers/theme"
+import bootstrapStyles from "../../stylesheets/bootstrap.styl"
 import processesStyles from "../../stylesheets/processes.styl"
 import SvgDiv from "../SvgDiv"
 import {InputWithFocus} from "../withFocus"
@@ -13,25 +15,29 @@ type InputProps = FilterProps & {
   className?: string,
 }
 
-function Input({value, onChange, placeholder, className, children}: PropsWithChildren<InputProps>) {
+function ThemedInput({value, onChange, placeholder, className, children}: PropsWithChildren<InputProps>) {
+  const {theme} = useNkTheme()
   return (
-    <div className={cn(children && searchIconStyles.withAddon)}>
+    <div className={cx(children && searchIconStyles.withAddon)}>
       <InputWithFocus
         type="text"
         placeholder={placeholder}
-        className={cn(processesStyles.formControl, className)}
+        className={cx(bootstrapStyles.formControl, css({
+          color: theme?.colors?.neutral90,
+          height: theme?.spacing?.controlHeight,
+        }), className)}
         value={value || ""}
         onChange={e => onChange(`${e.target.value}`)}
       />
       {children && (
-        <div className={cn(searchIconStyles.addon)}>{children}</div>
+        <div className={cx(searchIconStyles.addon)}>{children}</div>
       )}
     </div>
   )
 }
 
 function AddonIcon(props: {className?: string, svg: string}) {
-  return <SvgDiv className={cn(searchIconStyles.icon, props.className)} svgFile={props.svg}/>
+  return <SvgDiv className={cx(searchIconStyles.icon, props.className)} svgFile={props.svg}/>
 }
 
 function SearchIcon(props: {isEmpty: boolean}) {
@@ -40,7 +46,7 @@ function SearchIcon(props: {isEmpty: boolean}) {
 
 function TableFilter(props: PropsWithChildren<{className?: string}>) {
   return (
-    <div className={cn(processesStyles.tableFilter, props.className)}>
+    <div className={cx(processesStyles.tableFilter, props.className)}>
       {props.children}
     </div>
   )
@@ -49,9 +55,9 @@ function TableFilter(props: PropsWithChildren<{className?: string}>) {
 function SearchFilter(props: FilterProps) {
   return (
     <TableFilter className={processesTableStyles.filterInput}>
-      <Input {...props} placeholder="Filter by text...">
+      <ThemedInput {...props} placeholder="Filter by text...">
         <SearchIcon isEmpty={isEmpty(props.value)}/>
-      </Input>
+      </ThemedInput>
     </TableFilter>
   )
 }

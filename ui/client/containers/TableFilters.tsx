@@ -1,4 +1,4 @@
-import {isEqual} from "lodash"
+import {defaultsDeep, isEqual} from "lodash"
 import React, {useEffect} from "react"
 import {CategoriesFilter} from "../components/table/CategoriesFilter"
 import {DeployedFilter} from "../components/table/DeployedFilter"
@@ -7,6 +7,7 @@ import {SubprocessFilter} from "../components/table/SubprocessFilter"
 import {ensureArray} from "./EnsureArray"
 import {usePrevious} from "./hooks/usePrevious"
 import {useStateInSync} from "./hooks/useStateInSync"
+import {NkThemeProvider} from "./theme"
 
 export enum SearchItem {
   categories = "categories",
@@ -44,31 +45,34 @@ export function TableFilters(props: Props) {
 
   return (
     <>
-      <SearchFilter
-        onChange={search => setState(s => ({...s, search}))}
-        value={state.search}
-      />
-
-      {filters.includes(SearchItem.categories) && (
-        <CategoriesFilter
-          onChange={categories => setState(s => ({...s, categories}))}
-          value={ensureArray(state.categories)}
+      <NkThemeProvider theme={outerTheme => defaultsDeep({}, outerTheme)}>
+        <SearchFilter
+          onChange={search => setState(s => ({...s, search}))}
+          value={state.search}
         />
-      )}
 
-      {filters.includes(SearchItem.isSubprocess) && (
-        <SubprocessFilter
-          onChange={isSubprocess => setState(s => ({...s, isSubprocess}))}
-          value={state.isSubprocess}
-        />
-      )}
+        {filters.includes(SearchItem.categories) && (
+          <CategoriesFilter
+            onChange={categories => setState(s => ({...s, categories}))}
+            value={ensureArray(state.categories)}
+          />
+        )}
 
-      {filters.includes(SearchItem.isDeployed) && (
-        <DeployedFilter
-          onChange={isDeployed => setState(s => ({...s, isDeployed}))}
-          value={state.isDeployed}
-        />
-      )}
+        {filters.includes(SearchItem.isSubprocess) && (
+          <SubprocessFilter
+            onChange={isSubprocess => setState(s => ({...s, isSubprocess}))}
+            value={state.isSubprocess}
+          />
+        )}
+
+        {filters.includes(SearchItem.isDeployed) && (
+          <DeployedFilter
+            onChange={isDeployed => setState(s => ({...s, isDeployed}))}
+            value={state.isDeployed}
+          />
+        )}
+      </NkThemeProvider>
     </>
   )
 }
+
