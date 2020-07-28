@@ -5,6 +5,7 @@ import {errorValidator, mandatoryValueValidator} from "./editors/Validators"
 import LabeledInput from "./editors/field/LabeledInput"
 import LabeledTextarea from "./editors/field/LabeledTextarea"
 import Map from "./editors/map/Map"
+import React from "react"
 
 const MapVariable = ({isMarked, node, removeElement, addElement, onChange, readOnly, showValidation, errors, renderFieldLabel, variableTypes}) => {
 
@@ -23,7 +24,7 @@ const MapVariable = ({isMarked, node, removeElement, addElement, onChange, readO
         isMarked={isMarked("id")}
         readOnly={readOnly}
         showValidation={showValidation}
-        validators={[mandatoryValueValidator, errorValidator(errors, "id")]}
+        validators={[mandatoryValueValidator]}
       />
 
       <LabeledInput

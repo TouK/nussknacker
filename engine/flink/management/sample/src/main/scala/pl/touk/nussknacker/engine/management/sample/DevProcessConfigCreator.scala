@@ -53,8 +53,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "sendSms" -> all(SinkFactory.noParam(EmptySink)),
     "monitor" -> categories(SinkFactory.noParam(EmptySink)),
     "communicationSink" -> categories(DynamicParametersSink),
-    "kafka-string" -> all(new KafkaSinkFactory(new SimpleSerializationSchema[Any](_, _.toString),
-                                                processObjectDependencies))
+    "kafka-string" -> all(new KafkaSinkFactory(new SimpleSerializationSchema[Any](_, String.valueOf), processObjectDependencies))
   )
 
   override def listeners(processObjectDependencies: ProcessObjectDependencies) = List(LoggingListener)
@@ -126,6 +125,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     // types
     "simpleTypesCustomNode" -> categories(new SimpleTypesCustomStreamTransformer).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types"))),
     "lastVariableWithFilter" -> all(LastVariableFilterTransformer),
+    "enrichWithAdditionalData" -> all(EnrichWithAdditionalDataTransformer),
     "sendCommunication" -> all(DynamicParametersTransformer)
   )
 

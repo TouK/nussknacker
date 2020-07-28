@@ -84,22 +84,16 @@ object ProcessConverter {
         (data :: tailNodes, createNextEdge(data.id, tail) ::: tailEdges)
       case canonicalnode.FilterNode(data, nextFalse) :: tail =>
         val (nextFalseNodes, nextFalseEdges) = toGraphInner(nextFalse)
-        val nextFalseEdgesConnectedToFilter = nextFalseNodes match {
-          case Nil => nextFalseEdges
-          case h :: _ => displayablenode.Edge(data.id, h.id, Some(EdgeType.FilterFalse)) :: nextFalseEdges
-        }
+        val nextFalseEdgesConnectedToFilter = createNextEdge(data.id, nextFalse, Some(EdgeType.FilterFalse)) ::: nextFalseEdges
         val (tailNodes, tailEdges) = toGraphInner(tail)
         (data :: nextFalseNodes ::: tailNodes, createNextEdge(data.id, tail, Some(EdgeType.FilterTrue)) ::: nextFalseEdgesConnectedToFilter ::: tailEdges)
       case canonicalnode.SwitchNode(data, nexts, defaultNext) :: tail =>
         val (defaultNextNodes, defaultNextEdges) = toGraphInner(defaultNext)
-        val defaultNextEdgesConnectedToSwitch = defaultNextNodes match {
-          case Nil => defaultNextEdges
-          case h :: _ => displayablenode.Edge(data.id, h.id, Some(EdgeType.SwitchDefault)) :: defaultNextEdges
-        }
+        val defaultNextEdgesConnectedToSwitch = createNextEdge(data.id, defaultNext, Some(EdgeType.SwitchDefault)) ::: defaultNextEdges
         val (tailNodes, tailEdges) = toGraphInner(tail)
         val (nextNodes, nextEdges) = unzipListTuple(nexts.map { c =>
           val (nextNodeNodes, nextNodeEdges) = toGraphInner(c.nodes)
-          (nextNodeNodes, nextNodeNodes.headOption.map(n => displayablenode.Edge(data.id, n.id, Some(EdgeType.NextSwitch(c.expression)))).toList ::: nextNodeEdges)
+          (nextNodeNodes, createNextEdge(data.id, c.nodes, Some(EdgeType.NextSwitch(c.expression))) ::: nextNodeEdges)
         })
         (data :: defaultNextNodes ::: nextNodes ::: tailNodes, createNextEdge(data.id, tail) ::: nextEdges ::: defaultNextEdgesConnectedToSwitch ::: tailEdges)
       case canonicalnode.SplitNode(data, nexts) :: tail =>
@@ -107,7 +101,7 @@ object ProcessConverter {
         val nextInner = nexts.map(toGraphInner).unzip
         val nodes = nextInner._1.flatten
         val edges = nextInner._2.flatten
-        val connecting = nexts.flatMap(e => e.headOption.map(_.id).map(displayablenode.Edge(data.id, _, None)))
+        val connecting = nexts.flatMap(createNextEdge(data.id, _, None))
         (data :: nodes ::: tailNodes, connecting ::: edges ::: tailEdges)
       case canonicalnode.Subprocess(data, outputs) :: tail =>
         val (tailNodes, tailEdges) = toGraphInner(tail)

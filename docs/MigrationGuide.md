@@ -4,6 +4,11 @@ To see biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 0.2.0 (not released yet)
 
+* [#1077](https://github.com/TouK/nussknacker/pull/1077)
+  - `pl.touk.nussknacker.engine.queryablestate.QueryableClient` was moved from `queryableState` module to `pl.touk.nussknacker.engine.api.queryablestate` package in `api` module
+  - `pl.touk.nussknacker.engine.queryablestate.QueryableState` was moved to `pl.touk.nussknacker.engine.api.queryablestate`
+  - CustomTransformers from `pl.touk.nussknacker.engine.flink.util.transformer` in `flinkUtil` module were moved to new `flinkModelUtil` module.
+  - `pl.touk.nussknacker.engine.testing.EmptyProcessConfigCreator` was moved from `interpreter` module to `pl.touk.nussknacker.engine.util.process` package in `util` module
 * [#1039](https://github.com/TouK/nussknacker/pull/1039) Generic parameter of `LazyParameter[T]` has upper bound AnyRef now to avoid problems with bad type extraction.
 It caused changes `Any` to `AnyRef` in a few places - mainly `FlinkLazyParameterFunctionHelper` and `FlinkCustomStreamTransformation`
 * [#1039](https://github.com/TouK/nussknacker/pull/1039) `FlinkStreamingProcessRegistrar.apply` has a new parameter of type `ExecutionConfigPreparer`.

@@ -1,8 +1,7 @@
 import PropTypes from "prop-types"
 import React from "react"
 import ExpressionField from "./editors/expression/ExpressionField"
-
-const validationContextId = (branchId, node) => `$edge-${branchId}-${node.id}`
+import ProcessUtils from "../../../common/ProcessUtils"
 
 const BranchParameters = (props) => {
 
@@ -28,7 +27,7 @@ const BranchParameters = (props) => {
                   const paramValue = branchParameter.parameters[paramIndex]
                   const expressionPath = `branchParameters[${branchIndex}].parameters[${paramIndex}].expression`
 
-                  const contextId = validationContextId(branchId, node)
+                  const contextId = ProcessUtils.findContextForBranch(node, branchId)
                   const variables = findAvailableVariables(contextId, param)
 
                   return paramValue ? (

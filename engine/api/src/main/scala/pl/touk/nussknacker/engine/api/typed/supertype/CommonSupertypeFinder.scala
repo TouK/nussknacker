@@ -127,7 +127,7 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
   private def commonSuperTypeForSimpleTypes(left: Class[_], right: Class[_])
                                            (implicit numberPromotionStrategy: NumberTypesPromotionStrategy): TypingResult = {
     if (classOf[Number].isAssignableFrom(left) && classOf[Number].isAssignableFrom(right))
-      numberPromotionStrategy.promote(left, right)
+      numberPromotionStrategy.promoteClasses(left, right)
     else if (left == right)
       Typed(left)
     else

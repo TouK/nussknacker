@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.process.ParameterConfig
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.compile.nodevalidation.{NodeDataValidator, ValidationNotPerformed, ValidationPerformed}
+import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationNotPerformed, ValidationPerformed}
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
@@ -27,7 +27,10 @@ import io.circe.generic.semiauto.deriveDecoder
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
-import pl.touk.nussknacker.ui.definition.UIParameter
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
+import pl.touk.nussknacker.restmodel.definition.UIParameter
+import pl.touk.nussknacker.ui.api.NodesResources.prepareValidationContext
+import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -39,12 +42,6 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
   extends ProcessDirectives with FailFastCirceSupport with RouteWithUser {
 
   private val additionalInfoProvider = new AdditionalInfoProvider(typeToConfig)
-
-  private def prepareRequestDecoder(modelData: ModelData): Decoder[NodeValidationRequest] = {
-    implicit val typeDecoder: Decoder[TypingResult] =
-      new TypingResultDecoder(name => ClassUtils.forName(name, modelData.modelClassLoader.classLoader)).decodeTypingResults
-    deriveDecoder[NodeValidationRequest]
-  }
 
   def securedRoute(implicit loggedUser: LoggedUser): Route = {
     import akka.http.scaladsl.server.Directives._
@@ -59,16 +56,18 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
           }
         } ~ path("validation") {
           val modelData = typeToConfig.forTypeUnsafe(process.processingType)
-          implicit val requestDecoder: Decoder[NodeValidationRequest] = prepareRequestDecoder(modelData)
+          implicit val requestDecoder: Decoder[NodeValidationRequest] = NodesResources.prepareRequestDecoder(modelData)
           entity(as[NodeValidationRequest]) { nodeData =>
             complete {
-              val globals = modelData.processDefinition.expressionConfig.globalVariables.mapValues(_.returnType)
-              val validationContext = ValidationContext(nodeData.variableTypes, globals, None)
               implicit val metaData: MetaData = nodeData.processProperties.toMetaData(process.id)
-              NodeDataValidator.validate(nodeData.nodeData, modelData, validationContext) match {
+
+              val validationContext = prepareValidationContext(modelData)(nodeData.variableTypes)
+              val branchCtxs = nodeData.branchVariableTypes.getOrElse(Map.empty).mapValues(prepareValidationContext(modelData))
+
+              NodeDataValidator.validate(nodeData.nodeData, modelData, validationContext, branchCtxs) match {
                 case ValidationNotPerformed => NodeValidationResult(None, Nil, validationPerformed = false)
                 case ValidationPerformed(errors, parameters) =>
-                  val uiParams = parameters.map(_.map(UIParameter(_, ParameterConfig.empty)))
+                  val uiParams = parameters.map(_.map(UIProcessObjectsFactory.createUIParameter(_, ParameterConfig.empty)))
                   //We don't return MissingParameter error when we are returning those missing parameters to be added - since
                   //it's not really exception ATM
                   def shouldIgnoreError(pce: ProcessCompilationError): Boolean = pce match {
@@ -84,6 +83,26 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
       }
     }
   }
+}
+
+object NodesResources {
+
+  def prepareTypingResultDecoder(modelData: ModelData): Decoder[TypingResult] = {
+    new TypingResultDecoder(name => ClassUtils.forName(name, modelData.modelClassLoader.classLoader)).decodeTypingResults
+  }
+
+  def prepareRequestDecoder(modelData: ModelData): Decoder[NodeValidationRequest] = {
+    implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
+    deriveDecoder[NodeValidationRequest]
+  }
+
+  def prepareValidationContext(modelData: ModelData)(variableTypes: Map[String, TypingResult])(implicit metaData: MetaData): ValidationContext = {
+    val emptyCtx = GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig).emptyValidationContext(metaData)
+    //It's a bit tricky, because FE does not distinguish between global and local vars...
+    val localVars = variableTypes.filterNot(e => emptyCtx.globalVariables.keys.toSet.contains(e._1))
+    emptyCtx.copy(localVariables = localVars)
+  }
+
 }
 
 class AdditionalInfoProvider(typeToConfig: ProcessingTypeDataProvider[ModelData]) {
@@ -105,6 +124,6 @@ class AdditionalInfoProvider(typeToConfig: ProcessingTypeDataProvider[ModelData]
 
 @JsonCodec(encodeOnly = true) case class NodeValidationRequest(nodeData: NodeData,
                                             processProperties: ProcessProperties,
-                                            variableTypes: Map[String, TypingResult])
+                                            variableTypes: Map[String, TypingResult], branchVariableTypes: Option[Map[String, Map[String, TypingResult]]])
 
 

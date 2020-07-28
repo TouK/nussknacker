@@ -15,9 +15,9 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObje
   *
   * @TODO In future should do it in another way
   *
-  * @param skippNullableFields
+  * @param skipOptionalFields
   */
-class AvroSchemaTypeDefinitionExtractor(skippNullableFields: Boolean) {
+class AvroSchemaTypeDefinitionExtractor(skipOptionalFields: Boolean) {
 
   import collection.JavaConverters._
 
@@ -29,7 +29,7 @@ class AvroSchemaTypeDefinitionExtractor(skippNullableFields: Boolean) {
           .getFields
           .asScala
           //Field is marked as optional when field has default value
-          .filterNot(field => skippNullableFields && field.hasDefaultValue)
+          .filterNot(field => skipOptionalFields && field.hasDefaultValue)
           .map(field => field.name() -> typeDefinition(field.schema(), possibleTypes))
           .toMap
 
@@ -87,9 +87,9 @@ object AvroSchemaTypeDefinitionExtractor {
 
   val ExtendedPossibleTypes: Set[TypedClass] = DefaultPossibleTypes ++ Set(Typed.typedClass[java.util.Map[String, Any]])
 
-  private lazy val withoutOptionallyFieldsExtractor = new AvroSchemaTypeDefinitionExtractor(skippNullableFields = true)
+  private lazy val withoutOptionallyFieldsExtractor = new AvroSchemaTypeDefinitionExtractor(skipOptionalFields = true)
 
-  private lazy val withOptionallyFieldsExtractor = new AvroSchemaTypeDefinitionExtractor(skippNullableFields = false)
+  private lazy val withOptionallyFieldsExtractor = new AvroSchemaTypeDefinitionExtractor(skipOptionalFields = false)
 
   def typeDefinitionWithoutNullableFields(schema: Schema, possibleTypes: Set[TypedClass]): TypingResult =
     withoutOptionallyFieldsExtractor.typeDefinition(schema, possibleTypes)

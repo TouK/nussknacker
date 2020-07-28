@@ -24,7 +24,7 @@ const SubprocessOutputDefinition = ({isMarked, node, removeElement, addElement, 
         isMarked={isMarked("id")}
         readOnly={readOnly}
         showValidation={showValidation}
-        validators={[mandatoryValueValidator, errorValidator(errors, "id")]}
+        validators={[mandatoryValueValidator]}
       />
 
       <LabeledInput

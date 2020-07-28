@@ -7,13 +7,14 @@ import cats.kernel.Semigroup
 import cats.{Applicative, Traverse}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ProcessUncanonizationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonize.{MaybeArtificial, MaybeArtificialExtractor}
 
 import scala.language.{higherKinds, reflectiveCalls}
 
-case class CompilationResult[+Result](private [compile] val typing: Map[String, NodeTypingInfo],
+case class CompilationResult[+Result](typing: Map[String, NodeTypingInfo],
                                      result: ValidatedNel[ProcessCompilationError, Result]) {
 
   import CompilationResult._
@@ -36,6 +37,10 @@ case class CompilationResult[+Result](private [compile] val typing: Map[String, 
 
   // node -> expressionId -> ExpressionTypingInfo
   def expressionsInNodes: Map[String, Map[String, ExpressionTypingInfo]] = typing.mapValues(_.expressionsTypingInfo)
+
+  def parametersInNodes: Map[String, List[Parameter]] = typing.mapValues(_.parameters).collect {
+    case (k, Some(v)) => (k, v)
+  }
 
 }
 
@@ -76,18 +81,26 @@ object CompilationResult extends Applicative[CompilationResult] {
           logger.warn(s"Merging expression typing info for the same node ids, overlapping expression ids: ${expressionsIntersection.mkString(", ")}. " +
             s"This can be a bug in code or duplicated node ids with same expression ids")
         }
+        if (x.parameters.isDefined && y.parameters.isDefined) {
+          logger.warn(s"Merging different parameters: ${x.parameters} and ${y.parameters}. " +
+            s"This can be a bug in code or duplicated node ids with same expression ids")
+        }
       }
 
       // we should be lax here because we want to detect duplicate nodes and context can be different then
       // also process of collecting of expressionsTypingInfo is splitted for some nodes e.g. expressionsTypingInfo for
       // sink parameters is collected in ProcessCompiler but for final expression is in PartSubGraphCompiler
-      NodeTypingInfo(y.inputValidationContext, x.expressionsTypingInfo ++ y.expressionsTypingInfo)
+      NodeTypingInfo(y.inputValidationContext, x.expressionsTypingInfo ++ y.expressionsTypingInfo, y.parameters.orElse(x.parameters))
     }
   }
 
 }
 
-case class NodeTypingInfo(inputValidationContext: ValidationContext, expressionsTypingInfo: Map[String, ExpressionTypingInfo])
+case class NodeTypingInfo(inputValidationContext: ValidationContext,
+                          expressionsTypingInfo: Map[String, ExpressionTypingInfo],
+                         //Currently only parameters for dynamic nodes (implemented by GenericNodeTransformation) are returned
+                         //They are used on FE, to faster display correct node details modal (without need for additional validation request to BE)
+                          parameters: Option[List[Parameter]])
 
 object NodeTypingInfo {
 

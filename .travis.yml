@@ -1,7 +1,7 @@
 language: scala
 
 jdk:
-  - oraclejdk8
+  - openjdk11
 
 sudo: required
 
@@ -19,8 +19,7 @@ branches:
     - staging
     - /^preview/.*$/
 
-#TODO: upgrade to newer (e.g. xenial) after upgrading java to > 8
-dist: trusty
+dist: bionic
 
 git:
   depth: false
@@ -31,6 +30,7 @@ env:
     - AWS_DEFAULT_REGION=eu-west-1
     - SOURCE_BRANCH=`[ "${TRAVIS_PULL_REQUEST_BRANCH}" != "" ] && echo "${TRAVIS_PULL_REQUEST_BRANCH}" || echo "${TRAVIS_BRANCH}"`
     - SANITIZED_BRANCH=`echo ${SOURCE_BRANCH} | sed 's/[^a-zA-Z0-9]/\_/g' | awk '{print tolower($0)}'`
+    - SANITIZED_TRAVIS_BRANCH=`echo ${TRAVIS_BRANCH} | sed 's/[^a-zA-Z0-9]/\_/g' | awk '{print tolower($0)}'`
     - FORMATTED_DATE=$(git show -s --date=format:'%Y-%m-%d-%H-%M' --format=%cd $TRAVIS_COMMIT)
     - BUILD_VERSION=$(if [[ -n $TRAVIS_TAG ]]; then echo "${SANITIZED_BRANCH}"; else echo "${FORMATTED_DATE}-${SANITIZED_BRANCH}-$TRAVIS_COMMIT"; fi)
     - DOCKER_SOURCE_TAG=`echo ${DOCKER_PACKAGE_USERNAME}/${DOCKER_PACKAGENAME}:${BUILD_VERSION}`
@@ -112,15 +112,5 @@ jobs:
         - node -v
         - npm -v
       script:
-        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin;
-        - ./ciBuildDocker.sh --version=${BUILD_VERSION} --docker-publish-type=publishLocal --add-dev-model=$ADD_DEV_MODEL
-        - cd ./demo/docker && echo "NUSSKNACKER_VERSION=$BUILD_VERSION" > .env && ./testQuickstart.sh
-        - docker push ${DOCKER_SOURCE_TAG}
-        - if [[ "$TRAVIS_BRANCH" == "master" ]]; then docker tag ${DOCKER_SOURCE_TAG} ${DOCKER_REPOSITORY}:master-latest; fi
-        - if [[ "$TRAVIS_BRANCH" == "master" ]]; then docker tag ${DOCKER_SOURCE_TAG} ${DOCKER_REPOSITORY}:demo-latest; fi
-        - if [[ "$TRAVIS_BRANCH" == "master" ]]; then docker push ${DOCKER_REPOSITORY}:master-latest; fi
-        - if [[ "$TRAVIS_BRANCH" == "master" ]]; then docker push ${DOCKER_REPOSITORY}:demo-latest; fi
-        - if [[ "$TRAVIS_BRANCH" == "demo" ]]; then docker tag ${DOCKER_SOURCE_TAG} ${DOCKER_REPOSITORY}:demo-latest; fi
-        - if [[ "$TRAVIS_BRANCH" == "demo" ]]; then docker push ${DOCKER_REPOSITORY}:demo-latest; fi
-        - if [[ "$TRAVIS_BRANCH" == "staging" ]]; then docker tag ${DOCKER_SOURCE_TAG} ${DOCKER_REPOSITORY}:staging-latest; fi
-        - if [[ "$TRAVIS_BRANCH" == "staging" ]]; then docker push ${DOCKER_REPOSITORY}:staging-latest; fi
+        #We use separate script, as travis does not stop after command error: https://github.com/travis-ci/travis-ci/issues/1066
+        - ./.travis/buildPushDocker.sh

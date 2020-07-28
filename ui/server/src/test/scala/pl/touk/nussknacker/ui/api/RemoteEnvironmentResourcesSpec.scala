@@ -168,8 +168,8 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
   //we replace Types with Unkown because this is how types from RemoteEnvironment are decoded (to avoid classloading issues...)
   private def withDecodedTypes(process: ValidatedDisplayableProcess) = {
     val validationResult = process.validationResult
-    process.copy(validationResult = validationResult.copy(variableTypes = validationResult
-        .variableTypes.mapValues(_.mapValues(_ => Unknown))))
+    process.copy(validationResult = validationResult.copy(nodeResults = validationResult
+        .nodeResults.mapValues(v => v.copy(variableTypes = v.variableTypes.mapValues(_ => Unknown)))))
   }
 
   class MockRemoteEnvironment(testMigrationResults: List[TestMigrationResult] = List(),

@@ -18,7 +18,7 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers with EitherValues 
 
   import collection.JavaConverters._
 
-  final protected val avroEncoder = BestEffortAvroEncoder()
+  final protected val avroEncoder = BestEffortAvroEncoder(ValidationMode.strict)
 
   it("should create simple record") {
     val schema = wrapWithRecordSchema(
@@ -172,6 +172,16 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers with EitherValues 
 
     val recordWithInt = roundTripVerifyWriteRead(avroEncoder.encodeRecord(Map("foo" -> 123).asJava, schema))
     recordWithInt.get("foo") shouldBe 123
+  }
+
+  it("should accept redundant parameters if validation modes allows this") {
+    val schema = wrapWithRecordSchema(
+      """[
+        |  { "name": "foo", "type": "string" }
+        |]""".stripMargin)
+
+    BestEffortAvroEncoder(ValidationMode.strict).encodeRecord(Map("foo" -> "bar", "redundant" -> 15).asJava, schema) shouldBe 'invalid
+    BestEffortAvroEncoder(ValidationMode.allowRedundantAndOptional).encodeRecord(Map("foo" -> "bar", "redundant" -> 15).asJava, schema) shouldBe 'valid
   }
 
   it("should create record with logical type for timestamp-millis") {

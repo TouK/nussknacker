@@ -1,8 +1,7 @@
 import * as GraphUtils from "../../components/graph/GraphUtils"
 import HttpService from "../../http/HttpService"
-import {NodeType, Process} from "../../types"
+import {NodeType, Process, ValidationResult} from "../../types"
 import {ThunkAction} from "../reduxTypes"
-import {ValidationResult} from "./node"
 
 export type EditEdgeAction = {
   type: "EDIT_EDGE",

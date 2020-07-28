@@ -4,21 +4,18 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.Schema
-import org.apache.avro.generic.GenericData
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor}
 import pl.touk.nussknacker.engine.api.namespaces.{KafkaUsageKey, NamingContext, ObjectNaming, ObjectNamingParameters}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.schema.PaymentV1
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder, MockSchemaRegistryClient}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaRegistryProvider}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreamingProcessRegistrar}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.cache.DefaultCache
-
-import scala.reflect.ClassTag
 
 class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin {
 
@@ -38,8 +35,8 @@ class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin {
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def createSchemaProvider[T: ClassTag](processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[T] =
-      ConfluentSchemaRegistryProvider[T](factory, processObjectDependencies)
+    override protected def createSchemaRegistryProvider(processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider =
+      ConfluentSchemaRegistryProvider(factory, processObjectDependencies)
   }
 
   override protected def beforeAll(): Unit = {
@@ -55,13 +52,12 @@ class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin {
   }
 
   test("should create source with proper filtered and converted topics") {
-    val sourceFactory = createAvroSourceFactory[GenericData.Record]
     val editor = Some(FixedValuesParameterEditor(List(
       FixedExpressionValue(s"'input_payment'", "input_payment"),
       FixedExpressionValue(s"'output_payment'", "output_payment")
     )))
 
-    sourceFactory.initialParameters.find(_.name == "topic").head.editor shouldBe editor
+    avroSourceFactory.initialParameters.find(_.name == KafkaAvroBaseTransformer.TopicParamName).head.editor shouldBe editor
   }
 
   test("should create sink with proper filtered and converted topics") {
@@ -70,15 +66,15 @@ class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin {
       FixedExpressionValue(s"'output_payment'", "output_payment")
     )))
 
-    avroSinkFactory.initialParameters.find(_.name == "topic").head.editor shouldBe editor
+    avroSinkFactory.initialParameters.find(_.name == KafkaAvroBaseTransformer.TopicParamName).head.editor shouldBe editor
   }
 
   test("should read event in the same version as source requires and save it in the same version") {
     val topicConfig = TopicConfig(InputPaymentWithNamespaced, OutputPaymentWithNamespaced, PaymentV1.schema, isKey = false)
     // Process should be created from topic without namespace..
     val processTopicConfig = TopicConfig("input_payment", "output_payment", PaymentV1.schema, isKey = false)
-    val sourceParam = SourceAvroParam(processTopicConfig, Some(1))
-    val sinkParam = SinkAvroParam(processTopicConfig, Some(1), "#input")
+    val sourceParam = SourceAvroParam.forGeneric(processTopicConfig, ExistingSchemaVersion(1))
+    val sinkParam = SinkAvroParam(processTopicConfig, ExistingSchemaVersion(1), "#input")
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, PaymentV1.record, PaymentV1.record)

@@ -17,6 +17,8 @@ const propertiesPath = (node) => {
   switch (NodeUtils.nodeType(node)) {
     case "CustomNode":
       return "parameters"
+    case "Join":
+      return "parameters"
     case "Source":
     case "Sink":
       return "ref.parameters"
@@ -33,7 +35,8 @@ export const adjustParameters = (node: NodeType, parameterDefinitions: Array<UIP
   const baseNodeParameters = baseNode && get(baseNode, path)
   if (path) {
     const currentParameters = get(node, path)
-    const adjustedParameters = parameterDefinitions.map(def => {
+    //TODO: currently dynamic branch parameters are *not* supported...
+    const adjustedParameters = parameterDefinitions.filter(def => !def.branchParam).map(def => {
       const currentParam = currentParameters.find(p => p.name == def.name)
       const parameterFromBase = baseNodeParameters?.find(p => p.name == def.name)
       //TODO: pass default values from BE, then parameterFromBase wont' be needed

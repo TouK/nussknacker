@@ -20,7 +20,7 @@ const Variable = (props) => {
         isMarked={isMarked("id")}
         readOnly={readOnly}
         showValidation={showValidation}
-        validators={[mandatoryValueValidator, errorValidator(errors, "id")]}
+        validators={[mandatoryValueValidator]}
       />
       <LabeledInput
         renderFieldLabel={() => renderFieldLabel("Variable Name")}

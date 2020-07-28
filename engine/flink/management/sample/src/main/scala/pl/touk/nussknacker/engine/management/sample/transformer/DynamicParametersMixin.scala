@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management.sample.transformer
 
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedParameter, FailedToDefineParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, BaseDefinedParameter, FailedToDefineParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, NodeDependency, Parameter, TypedNodeDependency}
 import org.apache.flink.api.scala._
 import pl.touk.nussknacker.engine.api.{MetaData, ValueWithContext}
@@ -36,7 +36,7 @@ trait DynamicParametersMixin extends SingleInputGenericNodeTransformation[AnyRef
       result(context, otherParams)
   }
 
-  protected def result(validationContext: ValidationContext, otherParams: List[(String, DefinedParameter)])(implicit nodeId: NodeId): FinalResults = {
+  protected def result(validationContext: ValidationContext, otherParams: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): FinalResults = {
     FinalResults(validationContext)
   }
 

@@ -1,8 +1,7 @@
 import HttpService from "../../http/HttpService"
 import {calculateProcessAfterChange} from "./process"
-import {NodeType, Process} from "../../types"
+import {NodeType, Process, ValidationResult} from "../../types"
 import {ThunkAction} from "../reduxTypes"
-import {ValidationResult} from "./node"
 
 export type EditNodeAction = {
   type: "EDIT_NODE",

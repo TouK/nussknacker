@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, CustomNodeError, MissingParameters, NodeId}
-import pl.touk.nussknacker.engine.compile.nodevalidation.ParameterEvaluator
+import pl.touk.nussknacker.engine.compile.nodecompilation.ParameterEvaluator
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -21,7 +21,8 @@ class ProcessObjectFactory(expressionEvaluator: ExpressionEvaluator) extends Laz
 
   private val parameterEvaluator = new ParameterEvaluator(expressionEvaluator)
 
-  def createObject[T](nodeDefinition: ObjectWithMethodDef, outputVariableNameOpt: Option[String], compiledParameters: List[(TypedParameter, Parameter)])
+  def createObject[T](nodeDefinition: ObjectWithMethodDef, outputVariableNameOpt: Option[String],
+                      compiledParameters: List[(TypedParameter, Parameter)])
                              (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, T] = {
     try {
       Valid(create[T](nodeDefinition, compiledParameters, outputVariableNameOpt))
@@ -41,7 +42,7 @@ class ProcessObjectFactory(expressionEvaluator: ExpressionEvaluator) extends Laz
                 params: List[(evaluatedparam.TypedParameter, Parameter)],
                 outputVariableNameOpt: Option[String])(implicit processMetaData: MetaData, nodeId: NodeId): T = {
     val paramsMap = params.map {
-      case (tp, p) => p.name -> parameterEvaluator.prepareParameter(tp, p)
+      case (tp, p) => p.name -> parameterEvaluator.prepareParameter(tp, p)._1
     }.toMap
     objectWithMethodDef.invokeMethod(paramsMap, outputVariableNameOpt, Seq(processMetaData, nodeId)).asInstanceOf[T]
   }

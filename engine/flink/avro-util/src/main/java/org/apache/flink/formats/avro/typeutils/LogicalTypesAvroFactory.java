@@ -18,7 +18,6 @@
 
 package org.apache.flink.formats.avro.typeutils;
 
-import com.github.ghik.silencer.silent;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericDatumReader;
@@ -40,7 +39,6 @@ import org.apache.flink.formats.avro.utils.DataOutputEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pl.touk.nussknacker.engine.avro.AvroUtils;
-import scala.annotation.nowarn;
 
 import java.util.Optional;
 
@@ -52,7 +50,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
  * @param <T> The type to be serialized.
  */
 @Internal
-final class LogicalTypesAvroFactory<T> {
+public final class LogicalTypesAvroFactory<T> {
 
 	private static final Logger LOG = LoggerFactory.getLogger(LogicalTypesAvroFactory.class);
 
@@ -143,7 +141,7 @@ final class LogicalTypesAvroFactory<T> {
 	 * Extracts an Avro {@link Schema} from a {@link SpecificRecord}. We do this either via {@link
 	 * SpecificData} or by instantiating a record and extracting the schema from the instance.
 	 */
-	static <T> Schema extractAvroSpecificSchema(
+	public static <T> Schema extractAvroSpecificSchema(
 			Class<T> type,
 			SpecificData specificData) {
 		Optional<Schema> newSchemaOptional = tryExtractAvroSchemaViaInstance(type);

@@ -25,7 +25,7 @@ type Props = {
   formatter: Formatter,
 }
 
-const SPEL_PERIOD_SWITCHABLE_TO_REGEX = /^T\(java\.time\.Period\)\.parse\('P([0-9]{1,}Y)?([0-9]{1,}M)?([0-9]{1,}W)?([0-9]{1,}D)?'\)$/
+const SPEL_PERIOD_SWITCHABLE_TO_REGEX = /^T\(java\.time\.Period\)\.parse\('(-)?P([0-9]{1,}Y)?((-)?[0-9]{1,}M)?((-)?[0-9]{1,}W)?((-)?[0-9]{1,}D)?'\)$/
 const NONE_PERIOD = {
   years: () => null,
   months: () => null,
@@ -38,8 +38,14 @@ export default function PeriodEditor(props: Props) {
 
   const periodFormatter = formatter == null ? typeFormatters[FormatterType.Period] : formatter
 
+  function isValueNotNullAndNotZero(value: number) {
+    return value != null && value != 0
+  }
+
   function isPeriodDefined(period: Period): boolean {
-    return period.years != null || period.months != null || period.days != null
+    return isValueNotNullAndNotZero(period.years) ||
+      isValueNotNullAndNotZero(period.months) ||
+      isValueNotNullAndNotZero(period.days)
   }
 
   function encode(period: Period): string {

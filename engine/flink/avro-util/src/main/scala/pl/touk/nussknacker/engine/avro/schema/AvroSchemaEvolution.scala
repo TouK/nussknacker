@@ -4,7 +4,7 @@ import org.apache.avro.Schema
 import org.apache.avro.generic.GenericContainer
 
 trait AvroSchemaEvolution {
-  def alignRecordToSchema[T <: GenericContainer](record: T, schema: Schema): T
+  def alignRecordToSchema(record: GenericContainer, schema: Schema): Any
   def canBeEvolved(record: GenericContainer, schema: Schema): Boolean
 }
 

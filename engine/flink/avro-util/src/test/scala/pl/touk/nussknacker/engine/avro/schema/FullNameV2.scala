@@ -54,6 +54,6 @@ object FullNameV2 extends TestSchemaWithSpecificRecord {
   lazy val specificRecord: SpecificRecordBase =
     createSpecificRecord(FullNameV1.BaseFirst, BaseMiddle, FullNameV1.BaseLast)
 
-  def migratedSpecificRecordFromV1: SpecificRecordBase =
-    createSpecificRecord(FullNameV1.BaseFirst, null, FullNameV1.BaseLast)
+  def migratedGenericRecordFromV1: GenericData.Record =
+    avroEncoder.encodeRecordOrError(Map("first" -> FullNameV1.BaseFirst, "last" -> FullNameV1.BaseLast, "middle" -> null), schema)
 }

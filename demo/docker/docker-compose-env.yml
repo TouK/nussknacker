@@ -1,4 +1,4 @@
-version: '3.0'
+version: '3.7'
 
 services:
   influxdb:
@@ -68,6 +68,9 @@ services:
     depends_on:
       - zookeeper
       - kafka
+    #schema registry needs running kafka, depends_on is not enough, so let's restart when schema registry fails...
+    restart: on-failure
+
 
   jobmanager:
     container_name: nussknacker_jobmanager
@@ -170,6 +173,7 @@ services:
       - "8081:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    restart: on-failure
     depends_on:
       - zookeeper
       - influxdb
@@ -180,6 +184,7 @@ services:
       - logstash
       - kibana
       - grafana
+
 
 volumes:
   nussknacker_storage_zookeeper_datalog:

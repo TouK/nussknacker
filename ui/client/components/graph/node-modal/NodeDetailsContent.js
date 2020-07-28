@@ -35,14 +35,16 @@ export class NodeDetailsContent extends React.Component {
     super(props)
 
     this.initalizeWithProps(props)
+    const nodeToAdjust = props.node
+    const {node, unusedParameters} = adjustParameters(nodeToAdjust, this.parameterDefinitions, this.nodeDefinitionByName(nodeToAdjust))
+
     this.state = {
       ...TestResultUtils.stateForSelectTestResults(null, this.props.testResults),
-      editedNode: props.node,
-      unusedParameters: [],
+      editedNode: node,
+      unusedParameters: unusedParameters,
       codeCompletionEnabled: true,
       testResultsToHide: new Set(),
     }
-    this.updateNodeDataIfNeeded(props.node)
     this.generateUUID("fields", "parameters")
   }
 
@@ -70,14 +72,14 @@ export class NodeDetailsContent extends React.Component {
 
   //TODO: get rid of this method as deprecated in React
   componentWillReceiveProps(nextProps) {
+
     this.initalizeWithProps(nextProps)
     const nextPropsNode = nextProps.node
 
-    //So the flow should be: first node is updated, then node details are updated from BE and only then we adjust parameters
-    //TODO: make it more explicit?
     if (!_.isEqual(this.props.node, nextPropsNode)) {
-      this.updateNodeDataIfNeeded(nextPropsNode)
-    } else if (!_.isEqual(this.props.dynamicParameterDefinitions, nextProps.dynamicParameterDefinitions)) {
+      this.setState({editedNode: nextPropsNode, unusedParameters: []})
+    }
+    if (!_.isEqual(this.props.dynamicParameterDefinitions, nextProps.dynamicParameterDefinitions)) {
       this.adjustStateWithParameters(this.state.editedNode)
     }
   }
@@ -91,6 +93,7 @@ export class NodeDetailsContent extends React.Component {
     if (this.props.isEditMode) {
       this.props.actions.updateNodeData(this.props.processId,
         this.props.variableTypes,
+        this.props.branchVariableTypes,
         currentNode,
         this.props.processProperties)
     } else {
@@ -130,6 +133,8 @@ export class NodeDetailsContent extends React.Component {
       })
     }
   }
+
+  idField = () => this.createField("input", "Name", "id", true, [mandatoryValueValidator])
 
   customNode = (fieldErrors) => {
     const {showValidation, showSwitch, isEditMode, findAvailableVariables, node} = this.props
@@ -186,7 +191,7 @@ export class NodeDetailsContent extends React.Component {
       case "Filter":
         return (
           <div className="node-table-body">
-            {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
+            {this.idField()}
             {this.createStaticExpressionField(
               "expression",
               "Expression",
@@ -201,7 +206,7 @@ export class NodeDetailsContent extends React.Component {
       case "Processor":
         return (
           <div className="node-table-body">
-            {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
+            {this.idField()}
             {this.state.editedNode.service.parameters.map((param, index) => {
               return (
                 <div className="node-block" key={this.props.node.id + param.name + index}>
@@ -228,7 +233,7 @@ export class NodeDetailsContent extends React.Component {
       case "SubprocessInput":
         return (
           <div className="node-table-body">
-            {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
+            {this.idField()}
             {this.createField("checkbox", "Disabled", "isDisabled")}
             <ParameterList
               processDefinitionData={this.props.processDefinitionData}
@@ -262,8 +267,7 @@ export class NodeDetailsContent extends React.Component {
       case "CustomNode":
         return (
           <div className="node-table-body">
-            {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
-
+            {this.idField()}
             {
               this.showOutputVar && this.createField(
                 "input",
@@ -339,7 +343,7 @@ export class NodeDetailsContent extends React.Component {
       case "Switch":
         return (
           <div className="node-table-body">
-            {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
+            {this.idField()}
             {this.createStaticExpressionField(
               "expression",
               "Expression",
@@ -353,7 +357,7 @@ export class NodeDetailsContent extends React.Component {
       case "Split":
         return (
           <div className="node-table-body">
-            {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "id")])}
+            {this.idField()}
             {this.descriptionField()}
           </div>
         )
@@ -490,7 +494,7 @@ export class NodeDetailsContent extends React.Component {
   sourceSinkCommon(toAppend, fieldErrors) {
     return (
       <div className="node-table-body">
-        {this.createField("input", "Name", "id", true, [mandatoryValueValidator, errorValidator(fieldErrors, "Id")])}
+        {this.idField()}
         {this.state.editedNode.ref.parameters.map((param, index) => {
           return (
             <div className="node-block" key={this.props.node.id + param.name + index}>
@@ -531,7 +535,8 @@ export class NodeDetailsContent extends React.Component {
 
   //this is for "dynamic" parameters in sources, sinks, services etc.
   createParameterExpressionField = (parameter, expressionProperty, listFieldPath, fieldErrors) => {
-    return this.doCreateExpressionField(parameter.name, parameter.name, `${listFieldPath}.${expressionProperty}`, fieldErrors, parameter)
+    const paramDefinition = this.parameterDefinitions.find(p => p.name === parameter.name)
+    return this.doCreateExpressionField(parameter.name, parameter.name, `${listFieldPath}.${expressionProperty}`, fieldErrors, paramDefinition)
   }
 
   doCreateExpressionField = (fieldName, fieldLabel, exprPath, fieldErrors, parameter) => {
@@ -735,15 +740,19 @@ function mapState(state, props) {
   //TODO: in particular we need it for branches, how to handle it for subprocesses?
   const mainProcess = state.graphReducer.processToDisplay
   const findAvailableVariables = ProcessUtils.findAvailableVariables(processDefinitionData, getProcessCategory(state), mainProcess)
+
+  const branchVars = ProcessUtils.findVariablesForBranches(props.node, mainProcess?.validationResult?.nodeResults)
   return {
     additionalPropertiesConfig: processDefinitionData.additionalPropertiesConfig || {},
     processDefinitionData: processDefinitionData,
     processId: mainProcess.id,
     processProperties: mainProcess.properties,
-    variableTypes: mainProcess?.validationResult?.variableTypes[props.node.id] || {},
+    variableTypes: mainProcess?.validationResult?.nodeResults?.[props.node.id]?.variableTypes || {},
+    branchVariableTypes: branchVars,
     findAvailableVariables: findAvailableVariables,
     currentErrors: state.nodeDetails.validationPerformed ? state.nodeDetails.validationErrors : props.nodeErrors,
-    dynamicParameterDefinitions: state.nodeDetails.validationPerformed ? state.nodeDetails.parameters : null,
+    dynamicParameterDefinitions: state.nodeDetails.validationPerformed ? state.nodeDetails.parameters :
+        state.graphReducer.processToDisplay?.validationResult?.nodeResults?.[props.node.id]?.parameters,
   }
 }
 

@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets
 import com.typesafe.config.ConfigFactory
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.Schema
-import org.apache.avro.generic.{GenericData, GenericRecord}
+import org.apache.avro.generic.GenericRecord
 import org.scalatest.Assertion
 import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
@@ -15,20 +15,21 @@ import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator, TestDa
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.avro.KafkaAvroFactory.{SchemaVersionParamName, TopicParamName}
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, TopicParamName}
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client._
-import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaSubjectNotFound, SchemaVersionNotFound}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.ConfluentAvroSerializationSchemaFactory
+import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaVersionOption}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.avro.{KafkaAvroFactory, KafkaAvroSpecMixin}
+import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, KafkaAvroSpecMixin, SchemaDeterminerError}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.compile.nodevalidation.{GenericNodeTransformationValidator, TransformationResult}
-import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
+import pl.touk.nussknacker.engine.compile.nodecompilation.{GenericNodeTransformationValidator, TransformationResult}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.engine.testing.{EmptyProcessConfigCreator, LocalModelData}
+import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 import scala.reflect.ClassTag
 
@@ -41,56 +42,43 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
 
   test("should read generated record in v1") {
-    val sourceFactory = createAvroSourceFactory[GenericData.Record]
     val givenObj = FullNameV1.createRecord("Jan", "Kowalski")
 
-    roundTripSingleObject(sourceFactory, RecordTopic, 1, givenObj, FullNameV1.schema)
+    roundTripSingleObject(avroSourceFactory, RecordTopic, ExistingSchemaVersion(1), givenObj, FullNameV1.schema)
   }
 
   test("should read generated record in v2") {
-    val sourceFactory = createAvroSourceFactory[GenericData.Record]
     val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
 
-    roundTripSingleObject(sourceFactory, RecordTopic, 2, givenObj, FullNameV2.schema)
+    roundTripSingleObject(avroSourceFactory, RecordTopic, ExistingSchemaVersion(2), givenObj, FullNameV2.schema)
   }
 
   test("should read generated record in last version") {
-    val sourceFactory = createAvroSourceFactory[GenericData.Record]
     val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
 
-    roundTripSingleObject(sourceFactory, RecordTopic, null, givenObj, FullNameV2.schema)
+    roundTripSingleObject(avroSourceFactory, RecordTopic, LatestSchemaVersion, givenObj, FullNameV2.schema)
   }
 
   test("should throw exception when schema doesn't exist") {
-    val sourceFactory = createAvroSourceFactory[GenericData.Record]
     val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
 
-    assertThrowsWithParent[SchemaSubjectNotFound] {
-      readLastMessageAndVerify(sourceFactory, "fake-topic", 1, givenObj, FullNameV2.schema)
+    assertThrowsWithParent[SchemaDeterminerError] {
+      readLastMessageAndVerify(avroSourceFactory, "fake-topic", ExistingSchemaVersion(1), givenObj, FullNameV2.schema)
     }
   }
 
   test("should throw exception when schema version doesn't exist") {
-    val sourceFactory = createAvroSourceFactory[GenericData.Record]
     val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
 
-    assertThrowsWithParent[SchemaVersionNotFound] {
-      readLastMessageAndVerify(sourceFactory, RecordTopic, 3, givenObj, FullNameV2.schema)
+    assertThrowsWithParent[SchemaDeterminerError] {
+      readLastMessageAndVerify(avroSourceFactory, RecordTopic, ExistingSchemaVersion(3), givenObj, FullNameV2.schema)
     }
   }
 
   test("should read last generated simple object") {
-    val sourceFactory = createAvroSourceFactory[GenericData.Record]
     val givenObj = 123123
 
-    roundTripSingleObject(sourceFactory, IntTopic, 1, givenObj, IntSchema)
-  }
-
-  test("should read last generated record as a specific class") {
-    val sourceFactory = createAvroSourceFactory[FullNameV2]
-    val givenObj = FullNameV2("Jan", "Maria", "Nowak")
-
-    roundTripSingleObject(sourceFactory, RecordTopic, 2, givenObj, FullNameV2.schema)
+    roundTripSingleObject(avroSourceFactory, IntTopic, ExistingSchemaVersion(1), givenObj, IntSchema)
   }
 
   test("should read last generated key-value object") {
@@ -101,42 +89,43 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     val serializedValue = valueSerializer.serialize(IntTopic, givenObj._2)
     kafkaClient.sendRawMessage(IntTopic, serializedKey, serializedValue, Some(0))
 
-    readLastMessageAndVerify(sourceFactory, IntTopic, 1, givenObj, IntSchema)
+    readLastMessageAndVerify(sourceFactory, IntTopic, ExistingSchemaVersion(1), givenObj, IntSchema)
   }
 
   test("Should validate specific version") {
     val result = validate(TopicParamName -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic}'",
-      SchemaVersionParamName -> "1")
+      SchemaVersionParamName -> "'1'")
 
     result.errors shouldBe Nil
   }
 
   test("Should validate latest version") {
     val result = validate(TopicParamName -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic}'",
-      SchemaVersionParamName -> "")
+      SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
 
     result.errors shouldBe Nil
   }
 
   test("Should return sane error on invalid topic") {
-    val result = validate(TopicParamName -> "'terefere'", SchemaVersionParamName -> "")
+    val result = validate(TopicParamName -> "'terefere'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
 
-    result.errors shouldBe CustomNodeError("id", "Schema subject doesn't exist.", Some(TopicParamName)) ::
-      CustomNodeError("id", "Schema subject doesn't exist.", Some(SchemaVersionParamName)) :: Nil
+    result.errors shouldBe
+      CustomNodeError("id", "Schema subject doesn't exist.", Some(TopicParamName)) ::
+      CustomNodeError("id", "Fetching schema error for topic: terefere, version: LatestSchemaVersion", Some(SchemaVersionParamName)) :: Nil
     result.outputContext shouldBe ValidationContext(Map(Interpreter.InputParamName -> Unknown))
   }
 
   test("Should return sane error on invalid version") {
     val result = validate(TopicParamName -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic}'",
-      SchemaVersionParamName -> "12345")
+      SchemaVersionParamName -> "'12345'")
 
-    result.errors shouldBe CustomNodeError("id", "Schema version doesn't exist.", Some(SchemaVersionParamName)) :: Nil
+    result.errors shouldBe CustomNodeError("id", "Fetching schema error for topic: testAvroRecordTopic1, version: ExistingSchemaVersion(12345)", Some(SchemaVersionParamName)) :: Nil
     result.outputContext shouldBe ValidationContext(Map(Interpreter.InputParamName -> Unknown))
   }
 
   test("Should properly detect input type") {
     val result = validate(TopicParamName -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic}'",
-      SchemaVersionParamName -> "")
+      SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
 
     result.errors shouldBe Nil
     result.outputContext shouldBe ValidationContext(Map(Interpreter.InputParamName -> TypedObjectTypingResult(
@@ -153,33 +142,32 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     val modelData = LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator)
 
     val validator = new GenericNodeTransformationValidator(ExpressionCompiler.withoutOptimization(modelData),
-      ExpressionEvaluator.unOptimizedEvaluator(modelData))
+      modelData.processWithObjectsDefinition.expressionConfig)
 
     implicit val meta: MetaData = MetaData("processId", StreamMetaData())
     implicit val nodeId: NodeId = NodeId("id")
     val paramsList = params.toList.map(p => Parameter(p._1, p._2))
-    validator.validateNode(createAvroSourceFactory[GenericData.Record], paramsList, ValidationContext(), Some(Interpreter.InputParamName)).toOption.get
+    validator.validateNode(avroSourceFactory, paramsList, Nil, Some(Interpreter.InputParamName))(ValidationContext()).toOption.get
   }
 
-  private def createKeyValueAvroSourceFactory[K: ClassTag, V: ClassTag]: KafkaAvroSourceFactory[(K, V)] = {
+  private def createKeyValueAvroSourceFactory[K: ClassTag, V: ClassTag]: KafkaAvroSourceFactory = {
     val deserializerFactory = new TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory[K, V](factory)
-    val provider = ConfluentSchemaRegistryProvider(
+    val provider = new ConfluentSchemaRegistryProvider(
       factory,
-      None,
-      Some(deserializerFactory),
+      new ConfluentAvroSerializationSchemaFactory(factory),
+      deserializerFactory,
       kafkaConfig,
-      formatKey = true
-    )
+      formatKey = true)
     new KafkaAvroSourceFactory(provider, testProcessObjectDependencies, None)
   }
 
-  private def roundTripSingleObject(sourceFactory: KafkaAvroSourceFactory[_], topic: String, version: Integer, givenObj: Any, expectedSchema: Schema) = {
+  private def roundTripSingleObject(sourceFactory: KafkaAvroSourceFactory, topic: String, versionOption: SchemaVersionOption, givenObj: Any, expectedSchema: Schema) = {
     pushMessage(givenObj, topic)
-    readLastMessageAndVerify(sourceFactory, topic, version, givenObj, expectedSchema)
+    readLastMessageAndVerify(sourceFactory, topic, versionOption, givenObj, expectedSchema)
   }
 
-  private def readLastMessageAndVerify(sourceFactory: KafkaAvroSourceFactory[_], topic: String, version: Integer, givenObj: Any, expectedSchema: Schema): Assertion = {
-    val source = createAndVerifySource(sourceFactory, topic, version, expectedSchema)
+  private def readLastMessageAndVerify(sourceFactory: KafkaAvroSourceFactory, topic: String, versionOption: SchemaVersionOption, givenObj: Any, expectedSchema: Schema): Assertion = {
+    val source = createAndVerifySource(sourceFactory, topic, versionOption, expectedSchema)
 
     val bytes = source.generateTestData(1)
     info("test object: " + new String(bytes, StandardCharsets.UTF_8))
@@ -188,9 +176,13 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     deserializedObj shouldEqual List(givenObj)
   }
 
-  private def createAndVerifySource(sourceFactory: KafkaAvroSourceFactory[_], topic: String, version: Integer, expectedSchema: Schema): Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef] with ReturningType = {
+  private def createAndVerifySource(sourceFactory: KafkaAvroSourceFactory, topic: String, versionOption: SchemaVersionOption, expectedSchema: Schema): Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef] with ReturningType = {
+    val version = versionOption match {
+      case LatestSchemaVersion => SchemaVersionOption.LatestOptionName
+      case ExistingSchemaVersion(version) => version.toString
+    }
     val source = sourceFactory
-      .implementation(Map(KafkaAvroFactory.TopicParamName -> topic, KafkaAvroFactory.SchemaVersionParamName -> version),
+      .implementation(Map(KafkaAvroBaseTransformer.TopicParamName -> topic, KafkaAvroBaseTransformer.SchemaVersionParamName -> version),
         List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)))
       .asInstanceOf[Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef] with ReturningType]
 

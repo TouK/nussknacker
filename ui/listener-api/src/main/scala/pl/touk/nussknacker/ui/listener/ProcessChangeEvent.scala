@@ -18,5 +18,6 @@ object ProcessChangeEvent {
   final case class OnDeployActionFailed(processId: ProcessId, reason: Throwable) extends ProcessChangeEvent
   final case class OnRenamed(processId: ProcessId, oldName: ProcessName, newName: ProcessName) extends ProcessChangeEvent
   final case class OnSaved(processId: ProcessId, version: Long) extends ProcessChangeEvent
+  final case class OnFinished(processId: ProcessId, version: Long) extends ProcessChangeEvent
   final case class OnUnarchived(processId: ProcessId) extends ProcessChangeEvent
 }

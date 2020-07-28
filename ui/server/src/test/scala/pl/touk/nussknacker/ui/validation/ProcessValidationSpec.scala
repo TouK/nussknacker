@@ -151,7 +151,6 @@ class ProcessValidationSpec extends FunSuite with Matchers {
       case ValidationResult(
       ValidationErrors(_, Nil, errors),
       ValidationWarnings.success,
-      _,
       _
       ) if errors == List(PrettyValidationErrors.noValidatorKnown(TestProcessingTypes.RequestResponse)) =>
     }
@@ -252,7 +251,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     val (processValidation, process) = mockProcessValidationAndProcess(subprocess = invalidSubprocess)
 
     processValidation.validate(process) should matchPattern {
-      case ValidationResult(ValidationErrors(invalidNodes, Nil, Nil), ValidationWarnings.success, _, _
+      case ValidationResult(ValidationErrors(invalidNodes, Nil, Nil), ValidationWarnings.success, _
       ) if invalidNodes("subIn").size == 1 && invalidNodes("subIn-subVar").size == 1 =>
     }
   }
@@ -294,7 +293,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     val (processValidation, process) = mockProcessValidationAndProcess(subprocess)
     val validationResult = processValidation.validate(process)
     validationResult.errors.invalidNodes shouldBe 'empty
-    validationResult.variableTypes("out")("output") shouldBe TypedObjectTypingResult(Map(
+    validationResult.nodeResults("out").variableTypes("output") shouldBe TypedObjectTypingResult(Map(
       "foo" -> Typed(classOf[java.lang.Long])
     ))
   }

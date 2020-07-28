@@ -5,7 +5,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.ui.definition
-import pl.touk.nussknacker.ui.definition.UIProcessObjects
+import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.{ProcessObjectsFinder, ProcessTypesForCategories}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
@@ -33,7 +33,7 @@ class DefinitionResources(modelData: ProcessingTypeDataProvider[ModelData],
     } ~ path("processDefinitionData" / "services") {
       get {
         complete {
-          modelData.mapValues(_.processDefinition.services.mapValues(definition.UIObjectDefinition(_))).all
+          modelData.mapValues(_.processDefinition.services.mapValues(UIProcessObjectsFactory.createUIObjectDefinition)).all
         }
       }
     // TODO: Now we can't have processingType = componentIds or services - we should redesign our API (probably fetch componentIds and services only for given processingType)
@@ -46,7 +46,7 @@ class DefinitionResources(modelData: ProcessingTypeDataProvider[ModelData],
               parameter('isSubprocess.as[Boolean]) { (isSubprocess) =>
                 val subprocesses = subprocessRepository.loadSubprocesses(subprocessVersions)
                 complete(
-                  UIProcessObjects.prepareUIProcessObjects(modelDataForType, user, subprocesses, isSubprocess, typesForCategories))
+                  UIProcessObjectsFactory.prepareUIProcessObjects(modelDataForType, user, subprocesses, isSubprocess, typesForCategories))
               }
             }
           }

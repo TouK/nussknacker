@@ -2,15 +2,14 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.Decoder
+import io.circe.{Decoder, Json}
 import org.scalatest._
 import pl.touk.nussknacker.engine.additionalInfo.{MarkdownNodeAdditionalInfo, NodeAdditionalInfo}
-import pl.touk.nussknacker.engine.api.StreamMetaData
+import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParseError
-import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo
-import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.{Enricher, NodeData}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
@@ -22,13 +21,19 @@ import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties
 import io.circe.generic.semiauto.deriveDecoder
-import pl.touk.nussknacker.ui.definition.UIParameter
+import pl.touk.nussknacker.restmodel.definition.UIParameter
 import pl.touk.nussknacker.ui.validation.PrettyValidationErrors
+import pl.touk.nussknacker.engine.spel.Implicits._
 
 class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   private val nodeRoute = new NodesResources(processRepository, typeToConfig.mapValues(_.modelData))
+
+  private implicit val typingResultDecoder: Decoder[TypingResult]
+    = NodesResources.prepareTypingResultDecoder(typeToConfig.all.head._2.modelData)
+  private implicit val uiParameterDecoder: Decoder[UIParameter] = deriveDecoder[UIParameter]
+  private implicit val responseDecoder: Decoder[NodeValidationResult] = deriveDecoder[NodeValidationResult]
 
   //see SampleNodeAdditionalInfoProvider
   test("it should return additional info for process") {
@@ -51,20 +56,45 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
   test("validates filter nodes") {
 
     val testProcess = ProcessTestData.sampleDisplayableProcess
-    implicit val typingResultDecoder: Decoder[TypingResult] = new TypingResultDecoder(getClass.getClassLoader.loadClass).decodeTypingResults
-    implicit val uiParameterDecoder: Decoder[UIParameter] = deriveDecoder[UIParameter]
-    implicit val responseDecoder: Decoder[NodeValidationResult] = deriveDecoder[NodeValidationResult]
+
 
     saveProcess(testProcess) {
       val data: node.Filter = node.Filter("id", Expression("spel", "#existButString"))
       val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData(),
-        ExceptionHandlerRef(Nil)), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]))
+        ExceptionHandlerRef(Nil)), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None)
 
       Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
         responseAs[NodeValidationResult] shouldBe NodeValidationResult(None, List(
           PrettyValidationErrors.formatErrorMessage(ExpressionParseError("Bad expression type, expected: boolean, found: java.lang.String",
             data.id, Some(NodeTypingInfo.DefaultExpressionId), data.expression.expression))
         ), validationPerformed = true)
+      }
+    }
+  }
+
+  test("handles global variables in NodeValidationRequest") {
+
+    val testProcess = ProcessTestData.sampleDisplayableProcess
+
+    saveProcess(testProcess) {
+      val data = node.Join("id", Some("output"), "enrichWithAdditionalData", List(
+        Parameter("additional data value", "#longValue")
+      ), List(
+        BranchParameters("b1", List(Parameter("role", "'Events'"))),
+        BranchParameters("b2", List(Parameter("role", "'Additional data'")))
+      ), None)
+      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData(),
+        ExceptionHandlerRef(Nil)), Map(), Some(
+        Map(
+          //It's a bit tricky, because FE does not distinguish between global and local vars...
+          "b1" -> Map("existButString" -> Typed[String], "meta" -> Typed[MetaData]),
+          "b2" -> Map("longValue" -> Typed[Long], "meta" -> Typed[MetaData])
+        )
+      ))
+
+      Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
+        val res = responseAs[NodeValidationResult]
+        res.validationErrors shouldBe Nil
       }
     }
   }

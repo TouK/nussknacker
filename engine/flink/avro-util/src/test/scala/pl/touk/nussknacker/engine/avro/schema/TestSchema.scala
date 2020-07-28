@@ -4,16 +4,15 @@ import org.apache.avro.Schema
 import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.avro.specific.SpecificRecordBase
 import pl.touk.nussknacker.engine.avro.AvroUtils
-import pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder
+import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
 
 trait TestSchema {
   lazy val schema: Schema = AvroUtils.parseSchema(stringSchema)
   def stringSchema: String
-  def exampleData: Any
 }
 
 trait TestSchemaWithRecord extends TestSchema {
-  final protected val avroEncoder = BestEffortAvroEncoder()
+  final protected val avroEncoder = BestEffortAvroEncoder(ValidationMode.strict)
   def encode(data: Map[String, Any]): GenericData.Record = avroEncoder.encodeRecordOrError(data, schema)
   lazy val record: GenericRecord = encode(exampleData)
   def exampleData: Map[String, Any]
