@@ -4,10 +4,11 @@ import {useDispatch} from "react-redux"
 import {Td, Tr} from "reactable"
 import {showProcess} from "../actions/nk"
 import Date from "../components/common/Date"
+import HealthCheck from "../components/HealthCheck"
 import {ProcessType} from "../components/Process/types"
 import TableRowIcon from "../components/table/TableRowIcon"
 import "../stylesheets/processes.styl"
-import {PageWithHealthCheck} from "./Page"
+import {Page} from "./Page"
 import {ProcessesTabData} from "./Processes"
 import {ProcessesList, RowsRenderer} from "./ProcessesList"
 import tabStyles from "./processTabs.styl"
@@ -45,7 +46,7 @@ const columns = [
 
 function SubProcesses() {
   return (
-    <PageWithHealthCheck className={tabStyles.tabContentPage}>
+    <Page className={tabStyles.tabContentPage}>
       <ProcessesList
         defaultQuery={{isSubprocess: true, isArchived: false}}
         searchItems={[SearchItem.categories]}
@@ -57,8 +58,10 @@ function SubProcesses() {
         allowAdd
 
         RowsRenderer={ElementsRenderer}
-      />
-    </PageWithHealthCheck>
+      >
+        <HealthCheck/>
+      </ProcessesList>
+    </Page>
   )
 }
 

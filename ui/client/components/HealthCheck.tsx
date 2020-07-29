@@ -35,7 +35,7 @@ class HealthCheck extends PeriodicallyReloadingComponent<Props, State> {
 
     return this.state?.healthCheck && this.state.healthCheck.state !== HealthCheck.stateOk ? (
       <div className={styles.healthCheck}>
-        <div className={styles.healthCheck} title="Warning" dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsWarning}}/>
+        <div className={styles.icon} title="Warning" dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsWarning}}/>
         <span className={styles.errorText}>{this.state?.healthCheck.error || t("healthCheck.unknownState", "State unknown")}</span>
       </div>
     ): null
