@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.aggregates.AggregateHelper
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.SlidingAggregateTransformer
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
@@ -139,7 +139,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
     val globalProcessVariables = Map(
-      "AGG" -> categories(AggregateHelper),
+      "AGG" -> categories(new AggregateHelper),
       "DATE" -> all(DateProcessHelper),
       "DICT" -> categories(TestDictionary.instance),
       "RGB" -> all(RGBDictionary.instance),

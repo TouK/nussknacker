@@ -76,7 +76,7 @@ object NumberTypesPromotionStrategy {
 
     override protected def handleDecimalType(firstDecimal: Class[_]): TypedClass = {
       if (firstDecimal == classOf[lang.Byte] || firstDecimal == classOf[lang.Short]) {
-        Typed.typedClass(classOf[Integer])
+        Typed.typedClass(classOf[lang.Integer])
       } else {
         Typed.typedClass(firstDecimal)
       }
@@ -84,31 +84,49 @@ object NumberTypesPromotionStrategy {
 
   }
 
-  object ForMinMax extends BaseToCommonWidestTypePromotionStrategy {
+  object ForLargeNumbersOperation extends BaseToCommonWidestTypePromotionStrategy {
+
+    override protected def handleFloatingType(firstFloating: Class[_]): TypedClass = {
+      if (firstFloating == classOf[lang.Float]) {
+        Typed.typedClass(classOf[lang.Double])
+      } else {
+        Typed.typedClass(firstFloating)
+      }
+    }
 
     override protected def handleDecimalType(firstDecimal: Class[_]): TypedClass = {
-      Typed.typedClass(firstDecimal)
+      if (firstDecimal == classOf[lang.Byte] || firstDecimal == classOf[lang.Short] || firstDecimal == classOf[lang.Integer]) {
+        Typed.typedClass(classOf[lang.Long])
+      } else {
+        Typed.typedClass(firstDecimal)
+      }
     }
 
   }
+
+  object ForMinMax extends BaseToCommonWidestTypePromotionStrategy
 
   abstract class BaseToCommonWidestTypePromotionStrategy extends ReturningSingleClassPromotionStrategy {
 
     override def promoteClassesInternal(left: Class[_], right: Class[_]): TypedClass = {
       val both = List(left, right)
       if (both.forall(FloatingNumbers.contains)) {
-        Typed.typedClass(both.map(n => FloatingNumbers.indexOf(n) -> n).sortBy(_._1).map(_._2).head)
+        val firstFloating = both.map(n => FloatingNumbers.indexOf(n) -> n).sortBy(_._1).map(_._2).head
+        handleFloatingType(firstFloating)
       } else if (both.forall(DecimalNumbers.contains)) {
         val firstDecimal = both.map(n => DecimalNumbers.indexOf(n) -> n).sortBy(_._1).map(_._2).head
         handleDecimalType(firstDecimal)
       } else if (both.exists(DecimalNumbers.contains) && both.exists(FloatingNumbers.contains)) {
-        Typed.typedClass(both.find(FloatingNumbers.contains).get)
+        val floating = both.find(FloatingNumbers.contains).get
+        handleFloatingType(floating)
       } else { // unknown Number
         Typed.typedClass[java.lang.Double]
       }
     }
 
-    protected def handleDecimalType(firstDecimal: Class[_]): TypedClass
+    protected def handleFloatingType(firstFloating: Class[_]): TypedClass = Typed.typedClass(firstFloating)
+
+    protected def handleDecimalType(firstDecimal: Class[_]): TypedClass = Typed.typedClass(firstDecimal)
 
   }
 

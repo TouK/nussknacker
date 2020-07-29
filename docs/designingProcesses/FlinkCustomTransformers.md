@@ -34,7 +34,7 @@ This element defines generic aggregation of values in sliding time window of giv
 - keyBy - expression defining key for which we compute aggregate, e.g. `#input.userId`
 - aggregator - type of aggregation (see below)
 - aggregateBy - value which will be aggregated (e.g. `#input.callDuration`, `#input.productId`)
-- windowLength - length of time window
+- windowLength - length of time window, window will cover range: (exclusive) now-windowLength, (inclusive) now
 
 For each event additional variable will be added. For example: for aggregate-sliding node with length of 10 minutes, aggregation max and input events:
 - `{userId: 1, callDuration: 1, hour: 10:10}`
@@ -47,7 +47,7 @@ Following events will be emitted:
 - `{userId: 1, callDuration: 1, hour: 10:10, aggregate: 1}` - first event
 - `{userId: 1, callDuration: 5, hour: 10:10, aggregate: 5}` - higher duration
 - `{userId: 2, callDuration: 4, hour: 10:15, aggregate: 4}` - user with different id
-- `{userId: 1, callDuration: 4, hour: 10:15, aggregate: 4}` - lower duration
+- `{userId: 1, callDuration: 4, hour: 10:15, aggregate: 5}` - lower duration
 - `{userId: 1, callDuration: 3, hour: 10:23, aggregate: 4}` - we ignore event from 10:10, as length = 10min
 
 ### Aggregator types

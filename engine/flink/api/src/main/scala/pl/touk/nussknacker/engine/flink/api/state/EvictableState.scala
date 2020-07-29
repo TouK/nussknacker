@@ -56,8 +56,10 @@ abstract class EvictableState[In, Out] extends AbstractStreamOperator[Out]
 
 abstract class EvictableStateFunction[In, Out, StateType] extends KeyedProcessFunction[String, In, Out] {
 
+  @transient
   protected var lastEventTimeForKey : ValueState[java.lang.Long] = _
 
+  @transient
   protected var state: ValueState[StateType] = _
 
   protected def stateDescriptor: ValueStateDescriptor[StateType]
@@ -100,8 +102,10 @@ abstract class TimestampedEvictableStateFunction[In, Out, StateType] extends Evi
 
 abstract class LatelyEvictableStateFunction[In, Out, StateType] extends KeyedProcessFunction[String, In, Out] {
 
+  @transient
   protected var latestEvictionTimeForKey : ValueState[java.lang.Long] = _
 
+  @transient
   protected var state: ValueState[StateType] = _
 
   protected def stateDescriptor: ValueStateDescriptor[StateType]
@@ -116,11 +120,15 @@ abstract class LatelyEvictableStateFunction[In, Out, StateType] extends KeyedPro
     val latestEvictionTimeValue = latestEvictionTimeForKey.value()
     val noLaterEventsArrived = latestEvictionTimeValue == timestamp
     if (noLaterEventsArrived) {
-      state.clear()
-      latestEvictionTimeForKey.update(null)
+      evictStates()
     } else if (latestEvictionTimeValue != null) {
       ctx.timerService().registerEventTimeTimer(latestEvictionTimeValue)
     }
+  }
+
+  protected def evictStates(): Unit = {
+    state.clear()
+    latestEvictionTimeForKey.update(null)
   }
 
   protected def moveEvictionTime(offset: Long, ctx: KeyedProcessFunction[String, In, Out]#Context) : Unit= {
