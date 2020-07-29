@@ -2,6 +2,14 @@
 
 To see biggest differences please consult the [changelog](Changelog.md).
 
+## In version 0.3.0 (not released yet)
+
+* [#1083](https://github.com/TouK/nussknacker/pull/1083)
+  - Now `SimpleSlidingAggregateTransformerV2` and `SlidingAggregateTransformer` is deprecated in favour of `SlidingAggregateTransformerV2`
+  - Now `SimpleTumblingAggregateTransformer` is deprecated in favour of `TumblingAggregateTransformer`
+  - Now `SumAggregator`, `MaxAggregator` and `MinAggregator` doesn't change type of aggregated value (previously was changed to Double)
+  - Now `SumAggregator`, `MaxAggregator` and `MinAggregator` return null instead of `0D`/`Double.MaxValue`/`Double.MinValue` for case when there was no element added before `getResult`
+
 ## In version 0.2.0 (not released yet)
 
 * [#1077](https://github.com/TouK/nussknacker/pull/1077)

@@ -38,7 +38,8 @@ object StatefulSampleProcess {
       "keyBy" -> "'test'",
       "aggregator" -> s"#AGG.map({x: $aggegatorExpression})",
       "aggregateBy" -> "{ x: 1 }",
-      "windowLengthInSeconds" -> "3600"
+      "windowLength" -> "T(java.time.Duration).parse('PT1H')",
+      "emitWhenEventLeft" -> "false"
     )
     .sink("end", "'test'", "kafka-string", "topic" -> s"'output-$id'")
 

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaR
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SimpleSlidingAggregateTransformerV2, SimpleTumblingAggregateTransformer}
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SlidingAggregateTransformerV2, TumblingAggregateTransformer}
 import pl.touk.nussknacker.engine.flink.util.transformer.outer.OuterJoinTransformer
 import pl.touk.nussknacker.engine.flink.util.transformer.{PreviousValueTransformer, UnionTransformer}
 import pl.touk.nussknacker.engine.kafka.generic.sinks.GenericKafkaJsonSink
@@ -21,8 +21,8 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
     "previousValue" -> defaultCategory(PreviousValueTransformer),
-    "aggregate-sliding" -> defaultCategory(SimpleSlidingAggregateTransformerV2),
-    "aggregate-tumbling" -> defaultCategory(SimpleTumblingAggregateTransformer),
+    "aggregate-sliding" -> defaultCategory(SlidingAggregateTransformerV2),
+    "aggregate-tumbling" -> defaultCategory(TumblingAggregateTransformer),
     "outer-join" -> defaultCategory(OuterJoinTransformer),
     "union" -> defaultCategory(UnionTransformer)
   )

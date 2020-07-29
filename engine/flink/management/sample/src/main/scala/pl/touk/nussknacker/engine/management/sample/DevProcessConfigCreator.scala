@@ -15,19 +15,19 @@ import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.SlidingAggregateTransformer
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.SlidingAggregateTransformerV2
 import pl.touk.nussknacker.engine.flink.util.transformer.outer.OuterJoinTransformer
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer}
+import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.management.sample.dict.{BusinessConfigDictionary, RGBDictionary, TestDictionary}
 import pl.touk.nussknacker.engine.management.sample.dto.ConstantState
 import pl.touk.nussknacker.engine.management.sample.helper.DateProcessHelper
 import pl.touk.nussknacker.engine.management.sample.service._
 import pl.touk.nussknacker.engine.management.sample.signal.{RemoveLockProcessSignalFactory, SampleSignalHandlingTransformer}
-import pl.touk.nussknacker.engine.management.sample.source.{BoundedSource, CsvSource, DynamicParametersSource, NoEndingSource, OneSource}
+import pl.touk.nussknacker.engine.management.sample.source._
 import pl.touk.nussknacker.engine.management.sample.transformer._
 import pl.touk.nussknacker.engine.util.LoggingListener
 
@@ -119,7 +119,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "constantStateTransformerLongValue" -> categories(ConstantStateTransformer[Long](12333)),
     "additionalVariable" -> categories(AdditionalVariableTransformer),
     "lockStreamTransformer" -> categories(new SampleSignalHandlingTransformer.LockStreamTransformer()),
-    "aggregate" -> categories(SlidingAggregateTransformer),
+    "aggregate" -> categories(SlidingAggregateTransformerV2),
     "union" -> categories(UnionTransformer),
     "outer-join" -> categories(OuterJoinTransformer),
     "state" -> all(TransformStateTransformer),
