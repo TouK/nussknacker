@@ -69,7 +69,7 @@ object ProcessTestData {
     .withService(existingServiceId)
     .withService(otherExistingServiceId)
     .withService(processorId, classOf[Void])
-    .withService(otherExistingServiceId2, Parameter("expression"))
+    .withService(otherExistingServiceId2, Parameter[Any]("expression"))
     .withService(otherExistingServiceId3, Parameter[String]("expression"))
     .withService(notBlankExistingServiceId, NotBlankParameter("expression", Typed.typedClass(classOf[String])))
     .withService(otherExistingServiceId4, Parameter[JavaSampleEnum]("expression").copy(

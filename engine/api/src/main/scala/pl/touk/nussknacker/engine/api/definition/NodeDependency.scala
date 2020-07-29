@@ -1,20 +1,48 @@
 package pl.touk.nussknacker.engine.api.definition
 
 import pl.touk.nussknacker.engine.api.LazyParameter
+import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, OutputVariableNameValue, TypedNodeDependencyValue}
+import pl.touk.nussknacker.engine.api.typed.MissingOutputVariableException
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.api.util.NotNothing
 
-import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
 sealed trait NodeDependency
 
-case class TypedNodeDependency(clazz: Class[_]) extends NodeDependency
+/**
+ * This trait reduce boilerplate defining `GenericNodeTransformation` and reduce risk that definition of node dependencies
+ * will desynchronize with implementation code using values
+ */
+trait ValueExtractor { self: NodeDependency =>
+  type RuntimeValue
 
-case object OutputVariableNameDependency extends NodeDependency
+  def extract(values: List[NodeDependencyValue]): RuntimeValue
+}
+
+case class TypedNodeDependency[T](clazz: Class[T]) extends NodeDependency with ValueExtractor {
+  override type RuntimeValue = T
+
+  override def extract(values: List[NodeDependencyValue]): T = {
+    values.collectFirst {
+      case out: TypedNodeDependencyValue if clazz.isInstance(out.value) => out.value.asInstanceOf[T]
+    }.getOrElse(throw new IllegalStateException(s"Missing node dependency of class: $clazz"))
+  }
+}
+
+case object OutputVariableNameDependency extends NodeDependency with ValueExtractor {
+  override type RuntimeValue = String
+
+  override def extract(values: List[NodeDependencyValue]): String = {
+    values.collectFirst {
+      case out: OutputVariableNameValue => out.name
+    }.getOrElse(throw MissingOutputVariableException)
+  }
+}
 
 object Parameter {
 
-  def apply[T: ClassTag](name: String): Parameter = Parameter(name, Typed[T])
+  def apply[T: TypeTag: NotNothing](name: String): Parameter = Parameter(name, Typed.fromDetailedType[T])
 
   // we want to have mandatory parameters by default because it can protect us from NPE in some cases)
   def apply(name: String, typ: TypingResult): Parameter =
@@ -37,8 +65,8 @@ object Parameter {
       scalaOptionParameter = false, javaOptionalParameter = false)
   }
 
-  def optional[T:ClassTag](name: String): Parameter =
-    Parameter.optional(name, Typed[T])
+  def optional[T: TypeTag: NotNothing](name: String): Parameter =
+    Parameter.optional(name, Typed.fromDetailedType[T])
 
   // Represents optional parameter annotated with @Nullable, if you want to emulate scala Option or java Optional,
   // you should redefine scalaOptionParameter and javaOptionalParameter

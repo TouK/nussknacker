@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.expression.Expression
 import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.NodeContext
+import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessListener, ValueWithContext}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ServiceInvoker
@@ -16,6 +17,7 @@ import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 /* We have 3 different places where expressions can be evaluated:
   - Interpreter - evaluation of service parameters and variable definitions
@@ -106,14 +108,18 @@ class ExpressionEvaluator(globalVariablesPreparer: GlobalVariablesPreparer,
 
   def evaluateParameter(param: pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter, ctx: Context)
                           (implicit nodeId: NodeId, metaData: MetaData): ValueWithContext[AnyRef] = {
-    val valueWithModifiedContext = evaluate[AnyRef](param.expression, param.name, nodeId.id, ctx)
-    valueWithModifiedContext.map { evaluatedValue =>
-      if (param.shouldBeWrappedWithScalaOption)
-        Option(evaluatedValue)
-      else if (param.shouldBeWrappedWithJavaOptional)
-        Optional.ofNullable(evaluatedValue)
-      else
-        evaluatedValue
+    try {
+      val valueWithModifiedContext = evaluate[AnyRef](param.expression, param.name, nodeId.id, ctx)
+      valueWithModifiedContext.map { evaluatedValue =>
+        if (param.shouldBeWrappedWithScalaOption)
+          Option(evaluatedValue)
+        else if (param.shouldBeWrappedWithJavaOptional)
+          Optional.ofNullable(evaluatedValue)
+        else
+          evaluatedValue
+      }
+    } catch {
+      case NonFatal(ex) => throw CustomNodeValidationException(ex.getMessage, Some(param.name), ex)
     }
   }
 
