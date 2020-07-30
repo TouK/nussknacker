@@ -8,7 +8,7 @@ import org.apache.flink.streaming.api.watermark.Watermark
  * It is a copy-paste of BoundedOutOfOrdernessTimestampExtractor but taking timestamp from previousElementTimestamp
  * See https://ci.apache.org/projects/flink/flink-docs-stable/dev/connectors/kafka.html#using-kafka-timestamps-and-flink-event-time-in-kafka-010
  */
-class BounedOutOfOrderPreviousElementAssigner[T](maxOutOfOrdernessMillis: Long)
+class BoundedOutOfOrderPreviousElementAssigner[T](maxOutOfOrdernessMillis: Long)
   extends AssignerWithPeriodicWatermarks[T] with Serializable {
 
   private var currentMaxTimestamp = Long.MinValue + maxOutOfOrdernessMillis
