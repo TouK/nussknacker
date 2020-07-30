@@ -32,6 +32,8 @@ trait AggregatorFunctionMixin { self: StateHolder[TreeMap[Long, AnyRef]] =>
   //TODO make it configurable
   protected val minimalResolutionMs = 60000L
 
+  protected def allowedOutOfOrderMs: Long = timeWindowLengthMillis
+
   protected val aggregator: Aggregator
 
   protected def timeWindowLengthMillis: Long
@@ -41,7 +43,7 @@ trait AggregatorFunctionMixin { self: StateHolder[TreeMap[Long, AnyRef]] =>
                                       timestamp: Long, timeService: TimerService,
                                       out: Collector[ValueWithContext[AnyRef]]): Unit = {
     val newState = addElementToState(value, timestamp, timeService, out)
-    val finalVal = computeFinalValue(newState)
+    val finalVal = computeFinalValue(newState, timestamp)
     out.collect(ValueWithContext(finalVal, value.context))
   }
 
@@ -62,17 +64,18 @@ trait AggregatorFunctionMixin { self: StateHolder[TreeMap[Long, AnyRef]] =>
                                           timeService: TimerService, out: Collector[ValueWithContext[AnyRef]]): Unit = {
   }
 
-  protected def computeFinalValue(newState: TreeMap[Long, aggregator.Aggregate]): AnyRef = {
-    if (newState.isEmpty) {
+  protected def computeFinalValue(newState: TreeMap[Long, aggregator.Aggregate], timestamp: Long): AnyRef = {
+    val newStateTruncatedToTimestamp = stateForTimestampToRead(newState, timestamp).to(timestamp)
+    if (newStateTruncatedToTimestamp.isEmpty) {
       aggregator.getResult(aggregator.createAccumulator())
     } else {
-      val foldedState = newState.values.reduce(aggregator.merge)
+      val foldedState = newStateTruncatedToTimestamp.values.reduce(aggregator.merge)
       aggregator.getResult(foldedState)
     }
   }
 
   private def computeNewState(newElementInStateTimestamp: Long, newValue: aggregator.Element): TreeMap[Long, aggregator.Aggregate] = {
-    val current: TreeMap[Long, aggregator.Aggregate] = stateForTimestamp(readStateOrInitial(), newElementInStateTimestamp)
+    val current: TreeMap[Long, aggregator.Aggregate] = stateForTimestampToSave(readStateOrInitial(), newElementInStateTimestamp)
 
     val currentAggregate = current.getOrElse(newElementInStateTimestamp, aggregator.createAccumulator())
     val newAggregate = aggregator.add(newValue, currentAggregate).asInstanceOf[aggregator.Aggregate]
@@ -84,7 +87,11 @@ trait AggregatorFunctionMixin { self: StateHolder[TreeMap[Long, AnyRef]] =>
     (timestamp / minimalResolutionMs) * minimalResolutionMs
   }
 
-  protected def stateForTimestamp[T](stateValue: TreeMap[Long, T], timestamp: Long): TreeMap[Long, T] = {
+  protected def stateForTimestampToSave[T](stateValue: TreeMap[Long, T], timestamp: Long): TreeMap[Long, T] = {
+    stateValue.from(timestamp - timeWindowLengthMillis + 1 - allowedOutOfOrderMs) // we must have exclusive range like Flink's sliding/tumbling have
+  }
+
+  protected def stateForTimestampToRead[T](stateValue: TreeMap[Long, T], timestamp: Long): TreeMap[Long, T] = {
     stateValue.from(timestamp - timeWindowLengthMillis + 1) // we must have exclusive range like Flink's sliding/tumbling have
   }
 
