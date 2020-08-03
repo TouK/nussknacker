@@ -92,7 +92,11 @@ trait AggregatorFunctionMixin { self: StateHolder[TreeMap[Long, AnyRef]] =>
   }
 
   protected def stateForTimestampToRead[T](stateValue: TreeMap[Long, T], timestamp: Long): TreeMap[Long, T] = {
-    stateValue.from(timestamp - timeWindowLengthMillis + 1).to(timestamp) // we must have exclusive range like Flink's sliding/tumbling have
+    stateForTimestampToReadUntilEnd(stateValue, timestamp).to(timestamp) // we must have exclusive range like Flink's sliding/tumbling have
+  }
+
+  protected def stateForTimestampToReadUntilEnd[T](stateValue: TreeMap[Long, T], timestamp: Long): TreeMap[Long, T] = {
+    stateValue.from(timestamp - timeWindowLengthMillis + 1)
   }
 
   protected def readStateOrInitial(): TreeMap[Long, aggregator.Aggregate] =
