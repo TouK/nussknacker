@@ -70,6 +70,7 @@ class NodeDetailsModal extends React.Component {
     this.setState({pendingRequest: true})
 
     const actionResult = this.isGroup() ?
+      //TODO: try to get rid of this.state.editedNode, passing state of NodeDetailsContent via onChange is not nice...
       this.props.actions.editGroup(this.props.processToDisplay, this.props.nodeToDisplay.id, this.state.editedNode) :
       this.props.actions.editNode(this.props.processToDisplay, this.props.nodeToDisplay, this.state.editedNode)
 
@@ -181,6 +182,7 @@ class NodeDetailsModal extends React.Component {
                           showValidation={true}
                           showSwitch={true}
                           node={this.state.editedNode}
+                          originalNodeId={this.state.currentNodeId}
                           nodeErrors={nodeErrors}
                           onChange={this.updateNodeState}
                           toogleCloseOnEsc={this.toogleCloseModalOnEsc}
