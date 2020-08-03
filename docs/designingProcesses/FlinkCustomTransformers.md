@@ -11,8 +11,8 @@ you can use most of them with `genericAssembly.jar`
 ![union_window](../img/union_window.png)
 
 Joins multiple branches in one stream. For each incoming branch we have to define two expressions:
-- key - it's value should be of type `String`, can be used to detect what is source branch of given element
-- value - this is the output value, it should have same  
+- key - it's value should be of type `String`, define how elements from branches will be matched together
+- value - this is the output value which will be put the field with name the same as branch id
 
 Union node defines new stream which is union of all branches. In this new stream there is only one variable, it's name
 is defined by 'Output' parameter, it's value is: 
@@ -80,3 +80,14 @@ So, for example, given stream of events which contain users with their current l
 then the value of output variable is the previous location for current user. If this is the first appearance of this user,
 **current** location will be returned
 
+## Outer join
+
+Joins multiple branches in one stream. For each incoming branch we have to define two parameters:
+- branchType - defined if branch is MAIN branch or JOINED branch (should be exact one branch of type MAIN and exact one of type JOINED)
+- key - it's value should be of type `String`, define how elements from branches will be matched together
+And common parameters not dependent from branch:
+- aggregator - type of aggregation (see below)
+- aggregateBy - value which will be aggregated (e.g. `#input.callDuration`, `#input.productId`)
+- windowLength - length of time window, window will cover range: (exclusive) now-windowLength, (inclusive) now
+
+Events from MAIN branch will be enriched with output variable having aggregated value from JOINED branch. For aggregation will be used AggregateSliding
