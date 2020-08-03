@@ -17,9 +17,11 @@ object SttpJson {
   //we want to handle 404 as None
   def asOptionalJson[Type: Decoder]: ResponseAs[Either[ResponseError[Error], Option[Type]], Nothing] =
     asString.mapWithMetadata[Either[ResponseError[io.circe.Error], Option[Type]]] {
-      case (Right(data), _) => ResponseAs.deserializeWithError(deserializeJson[Option[Type]])(data)
+      case (Right(data), _) =>
+        val deserialize = ResponseAs.deserializeWithError(deserializeJson[Option[Type]])
+        deserialize(data)
       case (Left(_), meta) if meta.code == StatusCode.NotFound => Right(None)
-      case (Left(s), _) => Left(HttpError(s))
+      case (Left(s), meta) => Left(HttpError(s, meta.code))
     }
 
 }
