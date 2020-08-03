@@ -4,6 +4,9 @@ import org.apache.flink.api.common.functions.AggregateFunction
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
 
+/**
+ * This class unwraps value from input's KeyedValue. It also accumulate first Nussknacker's context that will be passed in output at the end.
+ */
 class UnwrappingAggregateFunction(underlying: AggregateFunction[AnyRef, AnyRef, AnyRef]) extends AggregateFunction[ValueWithContext[StringKeyedValue[AnyRef]], AccumulatorWithContext, ValueWithContext[AnyRef]] {
 
   override def createAccumulator(): AccumulatorWithContext = AccumulatorWithContext(underlying.createAccumulator(), None)

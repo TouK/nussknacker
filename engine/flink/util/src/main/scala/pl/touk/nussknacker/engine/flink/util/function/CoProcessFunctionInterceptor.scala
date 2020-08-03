@@ -5,6 +5,10 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction
 import org.apache.flink.util.Collector
 
+/**
+ * This class wraps underlying CoProcessFunction and add possibility to add additional behaviour before and after `processElement1`/`processElement2`.
+ * It can be used in tests for some kind of synchronization or in production kind for some additional logging, reports and so on.
+ */
 abstract class CoProcessFunctionInterceptor[IN1, IN2, OUT](underlying: CoProcessFunction[IN1, IN2, OUT]) extends CoProcessFunction[IN1, IN2, OUT] {
 
   @volatile protected var isRunning = true

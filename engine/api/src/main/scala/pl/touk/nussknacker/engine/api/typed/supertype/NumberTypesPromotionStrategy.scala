@@ -84,6 +84,8 @@ object NumberTypesPromotionStrategy {
 
   }
 
+  // In some cases will be better to alswys promote types to wider types like Float -> Double or Integer -> Long.
+  // Especially when you can't estimate number of operations that will be performed
   object ForLargeNumbersOperation extends BaseToCommonWidestTypePromotionStrategy {
 
     override protected def handleFloatingType(firstFloating: Class[_]): TypedClass = {

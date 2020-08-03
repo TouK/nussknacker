@@ -65,7 +65,7 @@ trait AggregatorFunctionMixin { self: StateHolder[TreeMap[Long, AnyRef]] =>
   }
 
   protected def computeFinalValue(newState: TreeMap[Long, aggregator.Aggregate], timestamp: Long): AnyRef = {
-    val newStateTruncatedToTimestamp = stateForTimestampToRead(newState, timestamp).to(timestamp)
+    val newStateTruncatedToTimestamp = stateForTimestampToRead(newState, timestamp)
     if (newStateTruncatedToTimestamp.isEmpty) {
       aggregator.getResult(aggregator.createAccumulator())
     } else {
@@ -92,7 +92,7 @@ trait AggregatorFunctionMixin { self: StateHolder[TreeMap[Long, AnyRef]] =>
   }
 
   protected def stateForTimestampToRead[T](stateValue: TreeMap[Long, T], timestamp: Long): TreeMap[Long, T] = {
-    stateValue.from(timestamp - timeWindowLengthMillis + 1) // we must have exclusive range like Flink's sliding/tumbling have
+    stateValue.from(timestamp - timeWindowLengthMillis + 1).to(timestamp) // we must have exclusive range like Flink's sliding/tumbling have
   }
 
   protected def readStateOrInitial(): TreeMap[Long, aggregator.Aggregate] =
