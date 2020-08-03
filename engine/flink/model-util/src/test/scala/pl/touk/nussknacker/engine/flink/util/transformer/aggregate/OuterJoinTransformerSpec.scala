@@ -7,7 +7,6 @@ import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.scala._
-import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
@@ -20,7 +19,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFa
 import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory.NoParamSourceFactory
-import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
+import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.function.CoProcessFunctionInterceptor
 import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
@@ -38,10 +37,10 @@ import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 import scala.concurrent.duration.FiniteDuration
 
-class OuterJoinTransformerSpec extends FunSuite with Matchers {
+class OuterJoinTransformerSpec extends FunSuite with FlinkSpec with Matchers {
 
-  import pl.touk.nussknacker.engine.spel.Implicits._
   import OuterJoinTransformerSpec._
+  import pl.touk.nussknacker.engine.spel.Implicits._
 
   private val MainBranchId = "main"
 
@@ -103,16 +102,11 @@ class OuterJoinTransformerSpec extends FunSuite with Matchers {
   private def runProcess(testProcess: EspProcess, input1: List[OneRecord], input2: List[OneRecord]): TestResults[Any] = {
     val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
     val model = modelData(input1, input2, collectingListener)
-    val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
-    try {
-      val registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(model), model.processConfig, ExecutionConfigPreparer.unOptimizedChain(model, None))
-      registrar.register(new StreamExecutionEnvironment(stoppableEnv), testProcess, ProcessVersion.empty, Some(collectingListener.runId))
-      val id = stoppableEnv.execute(testProcess.id)
-      stoppableEnv.waitForJobState(id.getJobID, testProcess.id, ExecutionState.FINISHED)()
-      collectingListener.results[Any]
-    } finally {
-      stoppableEnv.stop()
-    }
+    val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
+    val registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(model), model.processConfig, ExecutionConfigPreparer.unOptimizedChain(model, None))
+    registrar.register(new StreamExecutionEnvironment(stoppableEnv), testProcess, ProcessVersion.empty, Some(collectingListener.runId))
+    stoppableEnv.executeAndWaitForFinished(testProcess.id)()
+    collectingListener.results[Any]
   }
 
   private def modelData(input1: List[OneRecord], input2: List[OneRecord], collectingListener: ResultsCollectingListener) =

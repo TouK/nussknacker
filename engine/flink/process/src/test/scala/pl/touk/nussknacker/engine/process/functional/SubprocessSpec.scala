@@ -14,10 +14,10 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parame
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers.processInvoker
+import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 
-class SubprocessSpec extends FunSuite with Matchers {
+class SubprocessSpec extends FunSuite with Matchers with ProcessTestHelpers {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 

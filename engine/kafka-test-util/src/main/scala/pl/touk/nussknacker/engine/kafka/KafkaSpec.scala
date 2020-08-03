@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{BeforeAndAfterAll, Suite}
 
-trait KafkaSpec extends { self: Suite with BeforeAndAfterAll =>
+trait KafkaSpec extends BeforeAndAfterAll { self: Suite =>
 
   var kafkaZookeeperServer: KafkaZookeeperServer = _
   var kafkaClient: KafkaClient = _
@@ -14,6 +14,7 @@ trait KafkaSpec extends { self: Suite with BeforeAndAfterAll =>
     .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
 
   override protected def beforeAll(): Unit = {
+    super.beforeAll()
     AvailablePortFinder.withAvailablePortsBlocked(2) {
       case List(kafkaPort, zkPort) =>
         kafkaZookeeperServer = KafkaZookeeperServer.run(
@@ -26,8 +27,12 @@ trait KafkaSpec extends { self: Suite with BeforeAndAfterAll =>
   }
 
   override protected def afterAll(): Unit = {
-    kafkaClient.shutdown()
-    kafkaZookeeperServer.shutdown()
+    try {
+      kafkaClient.shutdown()
+      kafkaZookeeperServer.shutdown()
+    } finally {
+      super.afterAll()
+    }
   }
 
 }

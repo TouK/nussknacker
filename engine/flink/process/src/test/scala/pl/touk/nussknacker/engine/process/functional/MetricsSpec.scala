@@ -2,15 +2,15 @@ package pl.touk.nussknacker.engine.process.functional
 
 import java.util.Date
 
+import org.apache.flink.configuration.Configuration
 import org.scalatest.{BeforeAndAfterEach, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
-import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers.processInvoker
+import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{MockService, SimpleRecord, SinkForStrings}
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
-class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures with BeforeAndAfterEach {
+class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures with ProcessTestHelpers with BeforeAndAfterEach {
 
   override protected def beforeEach(): Unit = {
     TestReporter.reset()
@@ -29,7 +29,7 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
       SimpleRecord("1", 12, "a", new Date(0))
     )
 
-    invoke(process, data)
+    processInvoker.invokeWithSampleData(process, data)
 
     MockService.data shouldNot be('empty)
     val histogram = TestReporter.taskManagerReporter.testHistogram("service.OK.serviceName.mockService.histogram")
@@ -49,7 +49,7 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
     val data = List(
       SimpleRecord("1", 0, "a", new Date(0))
     )
-    invoke(process, data)
+    processInvoker.invokeWithSampleData(process, data)
 
     eventually {
       val totalGauges = TestReporter.taskManagerReporter.testGauges("error.instantRate.instantRate")
@@ -85,7 +85,7 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
       SimpleRecord("1", 10, "a", new Date(0))
     )
 
-    invoke(process, data)
+    processInvoker.invokeWithSampleData(process, data)
 
     def counter(name: String) =
       TestReporter.taskManagerReporter.testCounters(name).map(_.getCount).find(_ > 0).getOrElse(0)
@@ -113,13 +113,15 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
       SimpleRecord("1", 12, "a", new Date(0))
     )
 
-    invoke(process, data)
+    processInvoker.invokeWithSampleData(process, data)
     eventually {
       SinkForStrings.data shouldBe List("initialized!")
     }
   }
 
-  private def invoke(process: EspProcess, data: List[SimpleRecord]): Unit = {
-    processInvoker.invokeWithSampleData(process, data, TestReporterUtil.configWithTestMetrics())
+
+  override protected def prepareFlinkConfiguration(): Configuration = {
+    TestReporterUtil.configWithTestMetrics()
   }
+
 }

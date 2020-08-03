@@ -14,7 +14,6 @@ import pl.touk.nussknacker.engine.standalone.StandaloneProcessConfigCreator
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
 import pl.touk.nussknacker.engine.standalone.utils.metrics.NoOpMetricsProvider
-import pl.touk.nussknacker.engine.standalone.utils.metrics.dropwizard.DropwizardMetricsProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 class DeploymentServiceSpec extends FlatSpec with Matchers {

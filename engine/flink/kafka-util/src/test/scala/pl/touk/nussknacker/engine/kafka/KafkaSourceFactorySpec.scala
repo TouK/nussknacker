@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets
 
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.java.typeutils.GenericTypeInfo
-import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
+import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 
-class KafkaSourceFactorySpec extends FlatSpec with BeforeAndAfterAll with KafkaSpec with Matchers {
+class KafkaSourceFactorySpec extends FlatSpec with KafkaSpec with Matchers {
 
   private implicit val stringTypeInfo: GenericTypeInfo[String] = new GenericTypeInfo(classOf[String])
 
