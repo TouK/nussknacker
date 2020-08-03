@@ -4,11 +4,11 @@ import java.util.Date
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
-import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers.processInvoker
+import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.spel
 
-class CustomNodeProcessSpec extends FunSuite with Matchers {
+class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
 
   import spel.Implicits._
 

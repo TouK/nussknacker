@@ -2,21 +2,20 @@ package pl.touk.nussknacker.engine.process
 
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
+import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
+import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.management.sample.UnitTestsProcessConfigCreator
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-class SampleNotificationProcess extends FlatSpec with Matchers with BeforeAndAfterAll {
+class SampleNotificationProcess extends FlatSpec with Matchers with FlinkSpec {
 
   import spel.Implicits._
 
   val creator = new UnitTestsProcessConfigCreator
-  val env = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
 
   it should "serialize and run" in {
     val process =
@@ -30,16 +29,11 @@ class SampleNotificationProcess extends FlatSpec with Matchers with BeforeAndAft
     val config = ConfigFactory.load()
 
     val modelData = LocalModelData(config, creator)
+    val env = flinkMiniCluster.createExecutionEnvironment()
     FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
       .register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty)
 
-
-    val result = env.execute(process.id)
-    env.runningJobs().exists(_ == result.getJobID) shouldBe true
-
+    env.withJobRunning(process.id) {}
   }
 
-  override protected def afterAll(): Unit = {
-    env.stop()
-  }
 }

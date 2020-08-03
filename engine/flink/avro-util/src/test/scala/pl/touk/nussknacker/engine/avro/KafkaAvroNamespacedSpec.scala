@@ -41,14 +41,8 @@ class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin {
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    stoppableEnv.start()
     val modelData = LocalModelData(config, creator, objectNaming = objectNaming)
     registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
-  }
-
-  override protected def afterAll(): Unit = {
-    stoppableEnv.stop()
-    super.afterAll()
   }
 
   test("should create source with proper filtered and converted topics") {
