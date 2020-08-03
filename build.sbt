@@ -744,7 +744,7 @@ lazy val httpUtils = (project in engine("httpUtils")).
   settings(
     name := "nussknacker-http-utils",
     libraryDependencies ++= {
-      val sttpV = "2.0.7"
+      val sttpV = "2.2.3"
       Seq(
         //we force circe version here, because sttp has 0.12.1 for scala 2.12, we don't want it ATM
         "io.circe" %% "circe-core" % circeV force(),
