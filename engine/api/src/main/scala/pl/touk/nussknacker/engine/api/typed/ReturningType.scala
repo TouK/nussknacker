@@ -37,7 +37,9 @@ trait ServiceReturningType {
 
 }
 
-case class CustomNodeValidationException(message: String, paramName: Option[String], parent: Exception)
+case object MissingOutputVariableException extends Exception("Missing output variable name")
+
+case class CustomNodeValidationException(message: String, paramName: Option[String], parent: Throwable)
   extends RuntimeException(message, parent)
 
 object CustomNodeValidationException {

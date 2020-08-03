@@ -78,10 +78,27 @@ object keyed {
     private lazy val interpreter = prepareInterpreter(key.map(transformKey), value)
 
     protected def transformKey(keyValue: CharSequence): String = {
-      Option(keyValue).map(_.toString).orNull
+      Option(keyValue).map(_.toString).getOrElse("")
     }
 
     override protected def interpret(ctx: Context): KeyedValue[String, AnyRef] = interpreter(ctx)
+
+  }
+
+  class StringKeyOnlyMapper(protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper, key: LazyParameter[CharSequence])
+    extends RichMapFunction[Context, ValueWithContext[String]] with LazyParameterInterpreterFunction {
+
+    protected implicit def lazyParameterInterpreterImpl: LazyParameterInterpreter = lazyParameterInterpreter
+
+    private lazy val interpreter = lazyParameterInterpreter.syncInterpretationFunction(key.map(transformKey))
+
+    protected def interpret(ctx: Context): String = interpreter(ctx)
+
+    protected def transformKey(keyValue: CharSequence): String = {
+      Option(keyValue).map(_.toString).getOrElse("")
+    }
+
+    override def map(ctx: Context): ValueWithContext[String] = ValueWithContext(interpret(ctx), ctx)
 
   }
 

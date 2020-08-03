@@ -44,7 +44,7 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
     AvailablePortFinder.withAvailablePortsBlocked(1) {
       case head :: Nil =>
         queryStateProxyPortLow = head
-        stoppableEnv = StoppableExecutionEnvironment.withQueryableStateEnabled(configuration, queryStateProxyPortLow, taskManagersCount)
+        stoppableEnv = StoppableExecutionEnvironment(StoppableExecutionEnvironment.addQueryableStateConfiguration(configuration, queryStateProxyPortLow, taskManagersCount))
         stoppableEnv.start()
       case other => throw new AssertionError(s"Failed to generate port, received: $other")
 

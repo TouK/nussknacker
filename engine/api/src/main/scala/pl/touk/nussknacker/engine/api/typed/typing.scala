@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.api.typed
 
 import io.circe.Encoder
 import pl.touk.nussknacker.engine.api.dict.DictInstance
+import pl.touk.nussknacker.engine.api.util.NotNothing
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
@@ -123,16 +124,19 @@ object typing {
       - in runtime/production we usually don't have TypeTag, as we rely on reflection anyway
       - one should be *very* careful with TypeTag as it degrades performance significantly when on critical path (e.g. SpelExpression.evaluate)
      */
-    def fromDetailedType[T: TypeTag]: TypingResult = {
+    def fromDetailedType[T: TypeTag: NotNothing]: TypingResult = {
       val tag = typeTag[T]
       // is it correct mirror?
       implicit val mirror: Mirror = tag.mirror
       fromType(tag.tpe)
     }
 
-    private def fromType(typ: Type)(implicit mirror: Mirror): TypedClass = {
+    private def fromType(typ: Type)(implicit mirror: Mirror): TypingResult = {
       val runtimeClass = mirror.runtimeClass(typ.erasure)
-      TypedClass(runtimeClass, typ.typeArgs.map(fromType))
+      if (runtimeClass == classOf[Any])
+        Unknown
+      else
+        TypedClass(runtimeClass, typ.typeArgs.map(fromType))
     }
 
     private def toRuntime[T:ClassTag]: Class[_] = implicitly[ClassTag[T]].runtimeClass

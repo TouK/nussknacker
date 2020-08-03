@@ -7,22 +7,6 @@ import pl.touk.nussknacker.engine.api.typed.supertype.{NumberTypesPromotionStrat
 
 trait MathUtils {
 
-  def max(n1: Number, n2: Number): Number = {
-    implicit val promotionStrategy: ReturningSingleClassPromotionStrategy = NumberTypesPromotionStrategy.ForMinMax
-    withNotNullValues(n1, n2) {
-      withValuesWithTheSameType(n1, n2)(new SameNumericTypeHandler {
-        override def onBytes(n1: Byte, n2: Byte): Byte = Math.max(n1, n2).byteValue()
-        override def onShorts(n1: Short, n2: Short): Short = Math.max(n1, n2).shortValue()
-        override def onInts(n1: Int, n2: Int): Int = Math.max(n1, n2)
-        override def onLongs(n1: Long, n2: Long): Long = Math.max(n1, n2)
-        override def onBigIntegers(n1: BigInteger, n2: BigInteger): BigInteger = n1.max(n2)
-        override def onFloats(n1: Float, n2: Float): Float = Math.max(n1, n2)
-        override def onDoubles(n1: Double, n2: Double): Double = Math.max(n1, n2)
-        override def onBigDecimals(n1: java.math.BigDecimal, n2: java.math.BigDecimal): java.math.BigDecimal = n1.max(n2)
-      })
-    }
-  }
-
   def min(n1: Number, n2: Number): Number = {
     implicit val promotionStrategy: ReturningSingleClassPromotionStrategy = NumberTypesPromotionStrategy.ForMinMax
     withNotNullValues(n1, n2) {
@@ -39,8 +23,33 @@ trait MathUtils {
     }
   }
 
+  def max(n1: Number, n2: Number): Number = {
+    implicit val promotionStrategy: ReturningSingleClassPromotionStrategy = NumberTypesPromotionStrategy.ForMinMax
+    withNotNullValues(n1, n2) {
+      withValuesWithTheSameType(n1, n2)(new SameNumericTypeHandler {
+        override def onBytes(n1: Byte, n2: Byte): Byte = Math.max(n1, n2).byteValue()
+        override def onShorts(n1: Short, n2: Short): Short = Math.max(n1, n2).shortValue()
+        override def onInts(n1: Int, n2: Int): Int = Math.max(n1, n2)
+        override def onLongs(n1: Long, n2: Long): Long = Math.max(n1, n2)
+        override def onBigIntegers(n1: BigInteger, n2: BigInteger): BigInteger = n1.max(n2)
+        override def onFloats(n1: Float, n2: Float): Float = Math.max(n1, n2)
+        override def onDoubles(n1: Double, n2: Double): Double = Math.max(n1, n2)
+        override def onBigDecimals(n1: java.math.BigDecimal, n2: java.math.BigDecimal): java.math.BigDecimal = n1.max(n2)
+      })
+    }
+  }
+
   def sum(n1: Number, n2: Number): Number = {
     implicit val promotionStrategy: ReturningSingleClassPromotionStrategy = NumberTypesPromotionStrategy.ForMathOperation
+    promoteThenSum(n1, n2)
+  }
+
+  def largeSum(n1: Number, n2: Number): Number = {
+    implicit val promotionStrategy: ReturningSingleClassPromotionStrategy = NumberTypesPromotionStrategy.ForLargeNumbersOperation
+    promoteThenSum(n1, n2)
+  }
+
+  private def promoteThenSum(n1: Number, n2: Number)(implicit promotionStrategy: ReturningSingleClassPromotionStrategy) = {
     withNotNullValues(n1, n2) {
       withValuesWithTheSameType(n1, n2)(new SameNumericTypeHandler {
         override def onBytes(n1: Byte, n2: Byte): Byte = throw new IllegalStateException("Bytes should be promoted to Ints before addition")
@@ -54,7 +63,7 @@ trait MathUtils {
       })
     }
   }
-  
+
   protected def withNotNullValues(n1: Number, n2: Number)(f: => Number)
                                  (implicit promotionStrategy: ReturningSingleClassPromotionStrategy): Number = {
     if (n1 == null) {

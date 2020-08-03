@@ -1,14 +1,13 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
-import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{Invalid, Valid}
+import cats.data.{NonEmptyList, Validated}
+import cats.instances.list._
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
-import cats.instances.list._
-import pl.touk.nussknacker.engine.api.{HideToString, ParamName}
-
-import scala.collection.JavaConverters._
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
+
+import scala.collection.JavaConverters._
 
 /*
   This class lists some simple aggregates
@@ -51,6 +50,7 @@ object aggregates {
     override def addElement(n1: Number, n2: Number): Number = Math.min(n1.doubleValue(), n2.doubleValue())
 
     override def zeroType: TypingResult = Typed[Number]
+
   }
 
   object ListAggregator extends Aggregator {
@@ -130,7 +130,7 @@ object aggregates {
       = Valid(input)
 
   }
-  
+
   /*
     This is more complex aggregator, as it is composed from smaller ones.
     The idea is that we define aggregator:
@@ -147,9 +147,9 @@ object aggregates {
 
     private val scalaFields = fields.asScala.toMap
 
-    override type Element = java.util.Map[String, Any]
+    override type Element = java.util.Map[String, AnyRef]
 
-    override type Aggregate = Map[String, Any]
+    override type Aggregate = Map[String, AnyRef]
 
     override val zero: Aggregate = scalaFields.mapValuesNow(_.zero)
 
@@ -182,7 +182,7 @@ object aggregates {
     }
   }
 
-  trait ReducingAggregator extends Aggregator {
+  abstract class ReducingAggregator extends Aggregator {
 
     override type Aggregate = Element
 
@@ -202,25 +202,4 @@ object aggregates {
 
   }
 
-  trait AggregateHelper extends HideToString {
-
-    val max: Aggregator = MaxAggregator
-
-    val min: Aggregator = MinAggregator
-
-    val first: Aggregator = FirstAggregator
-
-    val last: Aggregator = LastAggregator
-
-    val sum: Aggregator = SumAggregator
-
-    val set: Aggregator = SetAggregator
-
-    val approxCardinality: Aggregator = HyperLogLogPlusAggregator()
-
-    def map(@ParamName("parts") parts: java.util.Map[String, Aggregator]): Aggregator = new MapAggregator(parts)
-
-  }
-
-  object AggregateHelper extends AggregateHelper
 }

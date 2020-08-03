@@ -136,7 +136,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
       case TransformationStep(("isLeft", DefinedEagerBranchParameter(byBranch: Map[String, Boolean]@unchecked, _)) :: ("rightValue", rightValue: DefinedSingleParameter) ::Nil, _)
         =>
         val out = rightValue.returnType
-        val outName = dependencies.collectFirst { case OutputVariableNameValue(name) => name}.get
+        val outName = OutputVariableNameDependency.extract(dependencies)
         val leftCtx = contexts(left(byBranch))
         val context = leftCtx.withVariable(outName, out)
         FinalResults(context.getOrElse(leftCtx), context.fold(_.toList, _ => Nil))

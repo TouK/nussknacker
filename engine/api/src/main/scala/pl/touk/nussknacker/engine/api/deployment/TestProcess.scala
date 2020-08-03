@@ -49,14 +49,22 @@ object TestProcess {
   /*
     We have to be careful not to put too much into results, as they are serialized to JSON.
    */
-  case class NodeResult[+T](context: ResultContext[T])
+  case class NodeResult[T](context: ResultContext[T]) {
 
-  case class ExpressionInvocationResult[+T](contextId: String, name: String, value: T)
+    def variableTyped[U <: T](name: String): Option[U] = context.variableTyped(name)
 
-  case class MockedResult[+T](contextId: String, name: String, value: T)
+  }
 
-  case class ExceptionResult[+T](context: ResultContext[T], nodeId: Option[String], throwable: Throwable)
+  case class ExpressionInvocationResult[T](contextId: String, name: String, value: T)
 
-  case class ResultContext[+T](id: String,  variables: Map[String, T])
+  case class MockedResult[T](contextId: String, name: String, value: T)
+
+  case class ExceptionResult[T](context: ResultContext[T], nodeId: Option[String], throwable: Throwable)
+
+  case class ResultContext[T](id: String,  variables: Map[String, T]) {
+
+    def variableTyped[U <: T](name: String): Option[U] = variables.get(name).map(_.asInstanceOf[U])
+
+  }
 
 }

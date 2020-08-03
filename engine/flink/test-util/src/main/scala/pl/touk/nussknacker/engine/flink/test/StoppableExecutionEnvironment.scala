@@ -15,8 +15,10 @@ import org.apache.flink.test.util.{MiniClusterResource, MiniClusterResourceConfi
 import org.apache.flink.util.OptionalFailure
 import org.scalactic.source.Position
 import org.scalatest.Matchers
+import org.scalatest.concurrent.Eventually
+import org.scalatest.concurrent.Eventually._
 import org.scalatest.time.{Millis, Seconds, Span}
-import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.engine.flink.test.StoppableExecutionEnvironment.AdditionalEnvironmentConfig
 
 import scala.annotation.nowarn
 import scala.collection.JavaConverters._
@@ -24,7 +26,8 @@ import scala.collection.JavaConverters._
 
 object StoppableExecutionEnvironment {
 
-  def apply(userFlinkClusterConfig: Configuration) = new StoppableExecutionEnvironment(userFlinkClusterConfig) with MiniClusterResourceFlink_1_7
+  def apply(userFlinkClusterConfig: Configuration,
+            envConfig: AdditionalEnvironmentConfig = AdditionalEnvironmentConfig()) = new StoppableExecutionEnvironment(userFlinkClusterConfig, envConfig) with MiniClusterResourceFlink_1_7
 
   def addQueryableStateConfiguration(configuration: Configuration, proxyPortLow: Int, taskManagersCount: Int): Configuration = {
     val proxyPortHigh = proxyPortLow + taskManagersCount - 1
@@ -33,17 +36,16 @@ object StoppableExecutionEnvironment {
     configuration
   }
 
-  def withQueryableStateEnabled(configuration: Configuration, proxyPortLow: Int, taskManagersCount: Int) : StoppableExecutionEnvironment= {
-    StoppableExecutionEnvironment(addQueryableStateConfiguration(configuration, proxyPortLow, taskManagersCount))
-  }
+  case class AdditionalEnvironmentConfig(detachedClient: Boolean = true,
+                                         defaultWaitForStatePatience: PatienceConfig = PatienceConfig(timeout = scaled(Span(20, Seconds)), interval = scaled(Span(100, Millis))))
 
 }
 
 // Remove @silent after upgrade to silencer 1.7
 @silent("deprecated")
 @nowarn("deprecated")
-abstract class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration) extends StreamExecutionEnvironment
-  with LazyLogging with PatientScalaFutures with Matchers {
+abstract class StoppableExecutionEnvironment(userFlinkClusterConfig: Configuration, envConfig: AdditionalEnvironmentConfig) extends StreamExecutionEnvironment
+  with LazyLogging with Matchers {
 
   // For backward compatibility with Flink 1.6 we have here MiniClusterResource intstead of MiniClusterWithClientResource
   // TODO after breaking compatibility with 1.6, replace MiniClusterResource with MiniClusterWithClientResource
@@ -52,7 +54,7 @@ abstract class StoppableExecutionEnvironment(userFlinkClusterConfig: Configurati
   private lazy val flinkMiniCluster: MiniClusterResource = {
     val resource = prepareMiniClusterResource(userFlinkClusterConfig)
     resource.before()
-    resource.getClusterClient.setDetached(true)
+    resource.getClusterClient.setDetached(envConfig.detachedClient)
     resource
   }
 
@@ -86,20 +88,18 @@ abstract class StoppableExecutionEnvironment(userFlinkClusterConfig: Configurati
     cleanupGraph()
   }
 
-  val defaultWaitForStatePatience: PatienceConfig = PatienceConfig(timeout = scaled(Span(20, Seconds)), interval = scaled(Span(100, Millis)))
-
   def executeAndWaitForStart[T](jobName: String): JobExecutionResult = {
     val res = execute(jobName)
     waitForStart(res.getJobID, jobName)()
     res
   }
 
-  def waitForStart(jobID: JobID, name: String)(patience: PatienceConfig = defaultWaitForStatePatience): Unit = {
+  def waitForStart(jobID: JobID, name: String)(patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience): Unit = {
     waitForJobState(jobID, name, ExecutionState.RUNNING, ExecutionState.FINISHED)(patience)
   }
 
-  def waitForJobState(jobID: JobID, name: String, expectedState: ExecutionState*)(patience: PatienceConfig = defaultWaitForStatePatience): Unit = {
-    eventually {
+  def waitForJobState(jobID: JobID, name: String, expectedState: ExecutionState*)(patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience): Unit = {
+    Eventually.eventually {
       // We access miniCluster because ClusterClient doesn't expose getExecutionGraph and getJobStatus doesn't satisfy us
       // It returns RUNNING even when some vertices are not started yet
       val executionGraph = getMiniCluster(flinkMiniCluster).getExecutionGraph(jobID).get()

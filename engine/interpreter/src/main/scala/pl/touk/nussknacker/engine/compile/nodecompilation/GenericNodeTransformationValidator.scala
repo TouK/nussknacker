@@ -3,12 +3,12 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.instances.list._
+import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingParameters, NodeId, WrongParameters}
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExceptionHandler}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -31,9 +31,10 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
                    outputVariable: Option[String]
                   )(inputContext: transformer.InputContext)
                   (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, TransformationResult] = {
-
-    val validation = new NodeInstanceValidation(transformer, parametersFromNode, branchParametersFromNode, outputVariable)(inputContext)
-    validation.evaluatePart(Nil, None, Nil)
+    NodeValidationExceptionHandler.handleExceptionsInValidation {
+      val validation = new NodeInstanceValidation(transformer, parametersFromNode, branchParametersFromNode, outputVariable)(inputContext)
+      validation.evaluatePart(Nil, None, Nil)
+    }
   }
 
   class NodeInstanceValidation(transformer: GenericNodeTransformation[_],
@@ -66,8 +67,12 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
               val allErrors = (errorsCombined ++ errors).distinct
               Valid(TransformationResult(allErrors, evaluatedSoFar.map(_._1), finalContext))
             case transformer.NextParameters(newParameters, newParameterErrors, state) =>
-              val (parameterEvaluationErrors, newEvaluatedParameters) = newParameters
-                .map(prepareParameter).map(prepared => prepared.fold(ne => (ne.toList, FailedToDefineParameter), par => (Nil, par))).unzip
+              val (parameterEvaluationErrors, newEvaluatedParameters) = newParameters.map { newParam =>
+                val prepared = prepareParameter(newParam)
+                prepared
+                  .map(par => (List.empty[ProcessCompilationError], par))
+                  .valueOr(ne => (ne.toList, FailedToDefineParameter))
+              }.unzip
               val parametersCombined = evaluatedSoFar ++ newParameters.zip(newEvaluatedParameters)
               evaluatePart(parametersCombined, state, errorsCombined ++ parameterEvaluationErrors.flatten ++ newParameterErrors)
           }
@@ -76,7 +81,10 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
 
     private def prepareParameter(parameter: Parameter): Validated[NonEmptyList[ProcessCompilationError], BaseDefinedParameter] = {
       val compiledParameter = compileParameter(parameter)
-      compiledParameter.map(parameterEvaluator.prepareParameter(_, parameter)._2)
+      compiledParameter.map { typed =>
+        val (_, definedParam) = parameterEvaluator.prepareParameter(typed, parameter)
+        definedParam
+      }
     }
 
     //TODO: this method is a bit duplicating ExpressionCompiler.compileObjectParameters
