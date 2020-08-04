@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate;
 
+import java.util.Arrays;
+import java.util.Map;
 import pl.touk.nussknacker.engine.api.ParamName;
 import pl.touk.nussknacker.engine.api.definition.DualParameterEditor;
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue;
@@ -7,10 +9,6 @@ import pl.touk.nussknacker.engine.api.definition.FixedValuesParameterEditor;
 import pl.touk.nussknacker.engine.api.definition.SimpleParameterEditor;
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode;
 import scala.collection.JavaConverters;
-import scala.collection.JavaConverters$;
-
-import java.util.Arrays;
-import java.util.Map;
 
 // This class is in Java, because constants are used in expressions in editors - see
 // `pl.touk.nussknacker.engine.flink.util.transformer.aggregate.SlidingAggregateTransformerV2`. and scala objects are
@@ -30,14 +28,14 @@ public class AggregateHelper {
 
     public static final DualParameterEditor DUAL_EDITOR = new DualParameterEditor(SIMPLE_EDITOR, DualEditorMode.SIMPLE);
 
-    public static final aggregates.SumAggregator$ SUM = aggregates.SumAggregator$.MODULE$;
-    public static final aggregates.MaxAggregator$ MAX = aggregates.MaxAggregator$.MODULE$;
-    public static final aggregates.MinAggregator$ MIN = aggregates.MinAggregator$.MODULE$;
-    public static final aggregates.ListAggregator$ LIST = aggregates.ListAggregator$.MODULE$;
-    public static final aggregates.SetAggregator$ SET = aggregates.SetAggregator$.MODULE$;
-    public static final aggregates.FirstAggregator$ FIRST = aggregates.FirstAggregator$.MODULE$;
-    public static final aggregates.LastAggregator$ LAST = aggregates.LastAggregator$.MODULE$;
-    public static final HyperLogLogPlusAggregator APPROX_CARDINALITY = HyperLogLogPlusAggregator$.MODULE$.apply(5, 10);
+    public static final Aggregator SUM = aggregates.SumAggregator$.MODULE$;
+    public static final Aggregator MAX = aggregates.MaxAggregator$.MODULE$;
+    public static final Aggregator MIN = aggregates.MinAggregator$.MODULE$;
+    public static final Aggregator LIST = aggregates.ListAggregator$.MODULE$;
+    public static final Aggregator SET = aggregates.SetAggregator$.MODULE$;
+    public static final Aggregator FIRST = aggregates.FirstAggregator$.MODULE$;
+    public static final Aggregator LAST = aggregates.LastAggregator$.MODULE$;
+    public static final Aggregator APPROX_CARDINALITY = HyperLogLogPlusAggregator$.MODULE$.apply(5, 10);
 
     // Instance methods below are for purpose of using in SpEL so your IDE can report that they are not used.
     // Please keep this list consistent with list above to make sure that all aggregators are available in both ways.
