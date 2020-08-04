@@ -171,6 +171,7 @@ val forkSettings = Seq(
   javaOptions := Seq(
     "-Xmx512M",
     "-XX:ReservedCodeCacheSize=128M",
+    "-XX:MaxMetaspaceSize=1G",
     "-Xss4M"
   )
 )
