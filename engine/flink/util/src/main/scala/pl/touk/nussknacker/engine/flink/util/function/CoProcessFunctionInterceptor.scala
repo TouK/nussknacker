@@ -11,8 +11,6 @@ import org.apache.flink.util.Collector
  */
 abstract class CoProcessFunctionInterceptor[IN1, IN2, OUT](underlying: CoProcessFunction[IN1, IN2, OUT]) extends CoProcessFunction[IN1, IN2, OUT] {
 
-  @volatile protected var isRunning = true
-
   override def open(parameters: Configuration): Unit = {
     underlying.open(parameters)
   }
@@ -47,7 +45,6 @@ abstract class CoProcessFunctionInterceptor[IN1, IN2, OUT](underlying: CoProcess
 
   override def close(): Unit = {
     underlying.close()
-    isRunning = false
   }
 
 }
