@@ -10,7 +10,6 @@ import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import org.scalatest.concurrent.Eventually
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
@@ -92,8 +91,8 @@ class OuterJoinTransformerSpec extends FunSuite with FlinkSpec with Matchers wit
 
     input1.add(OneRecord(key, 0, -1))
     // We can't be sure that main records will be consumed after matching joined records so we need to wait for them.
-    Eventually.eventually {
-      OuterJoinTransformerSpec.elementsAddedToState.size() == input2.size
+    eventually {
+      OuterJoinTransformerSpec.elementsAddedToState should have size input2.size
     }
     input1.add(OneRecord(key, 2, -1))
     input1.finish()
