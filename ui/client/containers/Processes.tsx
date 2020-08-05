@@ -2,7 +2,6 @@
 import React from "react"
 import {Td, Tr} from "reactable"
 import Date from "../components/common/Date"
-import HealthCheck from "../components/HealthCheck"
 import ProcessStateIcon from "../components/Process/ProcessStateIcon"
 import {nkPath} from "../config"
 import "../stylesheets/processes.styl"
@@ -11,7 +10,7 @@ import {MetricsItem} from "./metricsItem"
 import {Page} from "./Page"
 import {getProcessState, ProcessesList, RowsRenderer} from "./ProcessesList"
 import {ProcessNameInput} from "./ProcessNameInput"
-import tabStyles from "./processTabs.styl"
+import tabStyles from "../components/tabs/processTabs.styl"
 import {SearchItem} from "./TableFilters"
 
 const ElementsRenderer: RowsRenderer = ({processes, getProcesses, statuses}) => {
