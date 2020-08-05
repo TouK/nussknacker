@@ -1,4 +1,4 @@
-import useDimensions from "react-cool-dimensions";
+import useDimensions from "react-cool-dimensions"
 
 (async () => {
   if (!("ResizeObserver" in window)) {
