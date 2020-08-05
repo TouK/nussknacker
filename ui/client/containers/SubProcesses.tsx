@@ -59,7 +59,6 @@ function SubProcesses() {
 
         RowsRenderer={ElementsRenderer}
       >
-        <HealthCheck/>
       </ProcessesList>
     </Page>
   )
