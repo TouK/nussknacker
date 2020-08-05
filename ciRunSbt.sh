@@ -8,7 +8,7 @@ then
 else
    ARGS="$*"
 fi
-# tuning of sbt test to prevent travis OOM from killing java
-JAVA_OPTS_VAL="-Xmx2G -XX:ReservedCodeCacheSize=256M -Xss6M -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled"
-echo "Executing: JAVA_OPTS=\"$JAVA_OPTS_VAL\" sbt $ARGS"
-JAVA_OPTS="$JAVA_OPTS_VAL" sbt $ARGS
+# Tuning of sbt test to prevent travis OOM from killing java. Be aware that using JAVA_OPTS won't work on travis because
+# it has own alias for sbt: https://www.scala-sbt.org/1.x/docs/Travis-CI-with-sbt.html#Custom+JVM+options
+echo "Executing: sbt -J-Xss6M -J-Xms1500M -J-Xmx1500M -J-XX:ReservedCodeCacheSize=256M -J-XX:MaxMetaspaceSize=2500M $ARGS"
+sbt -J-Xss6M -J-Xms1500M -J-Xmx1500M -J-XX:ReservedCodeCacheSize=256M -J-XX:MaxMetaspaceSize=2500M $ARGS
