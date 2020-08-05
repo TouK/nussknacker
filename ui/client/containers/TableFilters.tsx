@@ -4,7 +4,7 @@ import {CategoriesFilter} from "../components/table/CategoriesFilter"
 import {StatusFilter} from "../components/table/StatusFilter"
 import SearchFilter from "../components/table/SearchFilter"
 import {SubprocessFilter} from "../components/table/SubprocessFilter"
-import {ensureArray} from "./EnsureArray"
+import {ensureArray} from "../common/arrayUtils"
 import {usePrevious} from "./hooks/usePrevious"
 import {useStateInSync} from "./hooks/useStateInSync"
 
