@@ -9,7 +9,7 @@ const options: OptionType<boolean>[] = [
   {label: "Show only not deployed processes", value: false},
 ]
 
-export function DeployedFilter(props: ValueFieldProps<boolean>) {
+export function StatusFilter(props: ValueFieldProps<boolean>) {
   const {onChange} = props
   const value = useParseValue(options, props.value)
   return (
