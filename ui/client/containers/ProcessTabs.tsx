@@ -13,10 +13,11 @@ import {NkThemeProvider, useNkTheme} from "./theme"
 
 type TabData = {path: string, header: string, Component: ComponentType}
 
+//TODO: move all colors to theme
 function Tabs({tabs, children}: PropsWithChildren<{tabs: TabData[]}>) {
   const {theme} = useNkTheme()
   return (
-    <div className={cx(css({backgroundColor: theme.colors.canvasBackground}))}>
+    <div className={cx(theme.themeClass, css({backgroundColor: theme.colors.canvasBackground}))}>
       <div className={cx(styles.tabsWrap)}>
         {children}
         <div
@@ -24,7 +25,7 @@ function Tabs({tabs, children}: PropsWithChildren<{tabs: TabData[]}>) {
             styles.tabs,
             styles.withBottomLine,
             styles.withDrop,
-            styles.rounded,
+            theme.borderRadius && styles.rounded,
           ])}
         >
           {tabs.map(r => <TabLink key={r.path} {...r}/>)}

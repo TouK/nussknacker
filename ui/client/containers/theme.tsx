@@ -21,6 +21,7 @@ export function tintPrimary(base) {
 }
 
 const defaultAppTheme = {
+  themeClass: "",
   borderRadius: parseFloat(borderRadius),
   colors: {
     ...tintPrimary(primary),

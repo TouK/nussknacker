@@ -13,6 +13,9 @@ tabRadius = borderRadius
 tabsLineIndex = 1
 activeTabIndex = tabsLineIndex + 1
 
+defaultBackground = #eee
+defaultBorder = #ccc
+
 :local
 	.tabs-wrap
 		box-sizing border-box
@@ -22,12 +25,11 @@ activeTabIndex = tabsLineIndex + 1
 		justify-content stretch
 		overflow hidden
 
-		padding marginSize (marginSize * 10)
-
 	.tabs
 		box-sizing border-box
 		display flex
-		overflow hidden
+		overflow visible
+		position relative
 
 	a.link
 		display flex
@@ -37,17 +39,14 @@ activeTabIndex = tabsLineIndex + 1
 
 		& > .tab
 			padding 1em 3em
-			background tabsBackground
-			color tabsText
-			border 1px solid tabsBorder
-
-		&.active > .tab
-			background tabsActiveBackground
-			color tabsActiveText
+			border-width 1px
+			border-style solid
+			color black
+			background defaultBackground
+			border-color defaultBorder
 
 	.with-bottom-line
 		//bottom line
-		position relative
 		overflow visible
 
 		&:before
@@ -57,28 +56,26 @@ activeTabIndex = tabsLineIndex + 1
 			right 0
 			bottom 0
 			position absolute
-			border 1px solid tabsBorder
-			border-bottom 0
-			background tabsActiveBackground
+			border-style solid
+			border-width 1px 1px 0 1px
 			z-index tabsLineIndex
+			border-color ccc
+			background defaultBackground
 
-		&.rounded:before
-			bottom -(tabRadius - 1)
-			height tabRadius
-			border-radius 0 borderRadius 0 0
 
 		a.link
 			&.active > .tab
 				z-index activeTabIndex
-				border-bottom-color tabsActiveBackground
+				border-bottom-color transparent
 
 	.rounded
 		//tab rounded
 
 		.link
 
-			& > .tab
-				border-radius tabRadius tabRadius 0 0
+			&.active > .tab
+				z-index activeTabIndex
+				border-bottom-color transparent
 
 			&.active
 				//bottom active tab corners rounded
@@ -87,15 +84,10 @@ activeTabIndex = tabsLineIndex + 1
 				&:before
 				&:after
 					content ""
-					background url("./tabCorner.svg")
 					background-repeat no-repeat
-					-svg-mixer-fill tabsActiveBackground
-					-svg-mixer-stroke tabsBorder
 					position absolute
 					display block
 					bottom 0
-					width tabRadius * 1.5
-					height @width
 					z-index 4
 
 				&:before
@@ -115,14 +107,13 @@ activeTabIndex = tabsLineIndex + 1
 		.link
 			overflow hidden
 
-			& > .tab
-				transform translateY(tabRadius)
-
 			&.active
 				overflow visible
 
 				& > .tab
 					transform translateY(0)
+					border-bottom-color transparent
+
 
 			&:not(:first-child):not(.active) > .tab
 				border-top-left-radius 0
@@ -138,6 +129,69 @@ activeTabIndex = tabsLineIndex + 1
 
 	.content
 		box-sizing border-box
+
+:local
+	.tabs-wrap
+		padding marginSize (marginSize * 10)
+
+:local
+		//BORDER-RADIUS
+
+		.with-bottom-line
+			&:before
+				height tabRadius
+				bottom - @height
+				margin-bottom 1px
+
+		.rounded
+			&.with-bottom-line:before
+				border-radius 0 borderRadius 0 0
+
+			.link
+				& > .tab
+					border-radius tabRadius tabRadius 0 0
+
+				&.active
+					&:before
+					&:after
+						background url("./tabCorner.svg")
+						-svg-mixer-fill defaultBackground
+						-svg-mixer-stroke defaultBorder
+						width tabRadius * 1.5
+						height @width
+
+		.with-drop
+			.link
+				& > .tab
+					transform translateY(tabRadius)
+
+.dark-theme
+	:local
+		//COLORS ONLY
+
+		a.link
+			& > .tab
+				background tabsBackground
+				color tabsText
+				border-color tabsBorder
+
+			&.active > .tab
+				background tabsActiveBackground
+				color tabsActiveText
+
+		.with-bottom-line
+			&:before
+				border-color tabsBorder
+				background tabsActiveBackground
+
+		.rounded
+			.link
+				&.active
+					&:before
+					&:after
+						background url("./tabCorner.svg")
+						-svg-mixer-fill tabsActiveBackground
+						-svg-mixer-stroke tabsBorder
 
 
 .tab-content-page

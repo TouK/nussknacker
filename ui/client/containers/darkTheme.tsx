@@ -42,6 +42,7 @@ const selectColors = {
 }
 
 export const darkTheme: DeepPartial<NkTheme> = {
+  themeClass: vars.darkTheme,
   borderRadius: parseFloat(borderRadius),
   spacing: {
     controlHeight: 36,
