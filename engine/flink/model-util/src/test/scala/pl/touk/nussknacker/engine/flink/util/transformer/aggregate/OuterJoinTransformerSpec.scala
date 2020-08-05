@@ -33,11 +33,11 @@ import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreamingProcessRegistrar}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
-import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import scala.concurrent.duration.FiniteDuration
 
-class OuterJoinTransformerSpec extends FunSuite with FlinkSpec with Matchers with PatientScalaFutures {
+class OuterJoinTransformerSpec extends FunSuite with FlinkSpec with Matchers with VeryPatientScalaFutures {
 
   import OuterJoinTransformerSpec._
   import pl.touk.nussknacker.engine.spel.Implicits._
