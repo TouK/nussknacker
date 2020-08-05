@@ -27,7 +27,8 @@ export function TextAreaWithFocus({className, ...props}: DetailedHTMLProps<Texta
   )
 }
 
-export function ButtonWithFocus({className, ...props}: DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement>) {
+export type ButtonProps = DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement>
+export function ButtonWithFocus({className, ...props}: ButtonProps) {
   const {withFocus} = useNkTheme()
   return (
     <button {...props} className={cx(withFocus, className)}/>

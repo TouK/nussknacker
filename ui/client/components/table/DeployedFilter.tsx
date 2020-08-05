@@ -1,15 +1,15 @@
-import TableSelect from "./TableSelect"
 import React from "react"
-import {Option, FilterProps} from "./FilterTypes"
+import {ValueFieldProps} from "../valueField"
+import TableSelect, {OptionType} from "./TableSelect"
 import {useParseValue} from "./useParseValue"
 
-const options: Option<boolean>[] = [
+const options: OptionType<boolean>[] = [
   {label: "Show all processes"},
   {label: "Show only deployed processes", value: true},
   {label: "Show only not deployed processes", value: false},
 ]
 
-export function DeployedFilter(props: FilterProps<boolean>) {
+export function DeployedFilter(props: ValueFieldProps<boolean>) {
   const {onChange} = props
   const value = useParseValue(options, props.value)
   return (

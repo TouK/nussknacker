@@ -1,23 +1,26 @@
-import cn from "classnames"
+import {css, cx} from "emotion"
+import {defaultsDeep} from "lodash"
 import React, {ComponentType, PropsWithChildren} from "react"
 import HealthCheck from "../components/HealthCheck"
-import darkStyles from "../stylesheets/darkColors.styl"
 import {ArchiveTabData} from "./Archive"
+import {darkTheme} from "./darkTheme"
 import {ProcessesTabData} from "./Processes"
 import styles from "./processTabs.styl"
 import {SubProcessesTabData} from "./SubProcesses"
 import {TabLink} from "./TabLink"
 import {TabRoute} from "./TabRoute"
+import {NkThemeProvider, useNkTheme} from "./theme"
 
 type TabData = {path: string, header: string, Component: ComponentType}
 
 function Tabs({tabs, children}: PropsWithChildren<{tabs: TabData[]}>) {
+  const {theme} = useNkTheme()
   return (
-    <div className={cn(darkStyles.canvas)}>
-      <div className={styles.tabsWrap}>
+    <div className={cx(css({backgroundColor: theme.colors.canvasBackground}))}>
+      <div className={cx(styles.tabsWrap)}>
         {children}
         <div
-          className={cn([
+          className={cx([
             styles.tabs,
             styles.withBottomLine,
             styles.withDrop,
@@ -36,8 +39,10 @@ function Tabs({tabs, children}: PropsWithChildren<{tabs: TabData[]}>) {
 
 export function ProcessTabs() {
   return (
-    <Tabs tabs={[ProcessesTabData, SubProcessesTabData, ArchiveTabData]}>
-      <HealthCheck/>
-    </Tabs>
+    <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
+      <Tabs tabs={[ProcessesTabData, SubProcessesTabData, ArchiveTabData]}>
+        <HealthCheck/>
+      </Tabs>
+    </NkThemeProvider>
   )
 }

@@ -1,14 +1,14 @@
-import TableSelect from "./TableSelect"
 import React from "react"
 import {useSelector} from "react-redux"
 import {getFilterCategories} from "../../reducers/selectors/settings"
-import {MultiSelectFilterProps} from "./FilterTypes"
+import {ValueFieldProps} from "../valueField"
+import TableSelect, {OptionType} from "./TableSelect"
 import {useParseValues} from "./useParseValue"
 
-export function CategoriesFilter(props: MultiSelectFilterProps<string>) {
+export function CategoriesFilter(props: ValueFieldProps<string[]>) {
   const {onChange} = props
-  const options = useSelector(getFilterCategories)
-  const value = useParseValues(options, props.value)
+  const options: OptionType<string>[] = useSelector(getFilterCategories)
+  const value = useParseValues<string>(options, props.value)
   return (
     <TableSelect
       defaultValue={value}
