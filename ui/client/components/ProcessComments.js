@@ -6,7 +6,7 @@ import * as DialogMessages from "../common/DialogMessages"
 import CommentContent from "./CommentContent"
 import CommentInput from "./CommentInput"
 import Date from "./common/Date"
-import {EspButton} from "./EspButton"
+import {NkButton} from "./NkButton"
 
 class ProcessComments extends React.Component {
 
@@ -68,12 +68,12 @@ class ProcessComments extends React.Component {
         </ul>
         <div className="add-comment">
           <CommentInput onChange={this.onInputChange.bind(this)} value={this.state.comment}/>
-          <EspButton
+          <NkButton
             type="button"
             className="add-comment"
             onClick={this.addComment}
             disabled={this.state.pendingRequest || this.state.comment == ""}
-          >Add</EspButton>
+          >Add</NkButton>
         </div>
       </div>
     )

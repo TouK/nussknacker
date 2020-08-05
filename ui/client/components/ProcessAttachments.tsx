@@ -6,7 +6,7 @@ import {WithTranslation} from "react-i18next/src"
 import {connect} from "react-redux"
 import {mapDispatchWithEspActions} from "../actions/ActionsUtils"
 import InlinedSvgs from "../assets/icons/InlinedSvgs"
-import {EspButton} from "./EspButton"
+import {NkButton} from "./NkButton"
 import HttpService from "../http/HttpService"
 import {RootState} from "../reducers/index"
 import Date from "./common/Date"
@@ -40,7 +40,7 @@ export class ProcessAttachments extends React.Component<Props, State> {
           {attachments.map((attachment, idx) => (
             <div key={idx} className={"attachment-section"}>
               <div className="download-attachment">
-                <EspButton
+                <NkButton
                   className="download-button"
                   dangerouslySetInnerHTML={{__html: InlinedSvgs.buttonDownload}}
                   onClick={() => HttpService.downloadAttachment(attachment.processId, attachment.processVersionId, attachment.id)}
