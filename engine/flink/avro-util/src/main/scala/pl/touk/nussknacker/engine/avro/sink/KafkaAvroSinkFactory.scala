@@ -18,12 +18,11 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, v
   extends BaseKafkaAvroSinkFactory with KafkaAvroBaseTransformer[FlinkSink] {
 
   private val paramsDeterminedAfterSchema = List(
+    Parameter[String](KafkaAvroBaseTransformer.SinkValidationModeParameterName)
+      .copy(editor = Some(FixedValuesParameterEditor(ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label))))),
     Parameter.optional[CharSequence](KafkaAvroBaseTransformer.SinkKeyParamName).copy(isLazyParameter = true),
     Parameter[AnyRef](KafkaAvroBaseTransformer.SinkValueParamName).copy(isLazyParameter = true)
   )
-
-  private val validationModeParam = Parameter[String](KafkaAvroBaseTransformer.SinkValidationModeParameterName)
-    .copy(editor = Some(FixedValuesParameterEditor(ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label)))))
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
                                     (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
@@ -33,9 +32,9 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, v
     case TransformationStep((KafkaAvroBaseTransformer.TopicParamName, DefinedEagerParameter(topic: String, _)) :: Nil, _) =>
       val preparedTopic = prepareTopic(topic)
       val versionOption = versionOptionParam(preparedTopic)
-      NextParameters(List(versionOption.value, validationModeParam) ++ paramsDeterminedAfterSchema, versionOption.written, None)
+      NextParameters(List(versionOption.value) ++ paramsDeterminedAfterSchema, versionOption.written, None)
     case TransformationStep((KafkaAvroBaseTransformer.TopicParamName, _) :: Nil, _) =>
-      NextParameters(List(fallbackVersionOptionParam, validationModeParam) ++ paramsDeterminedAfterSchema)
+      NextParameters(List(fallbackVersionOptionParam) ++ paramsDeterminedAfterSchema)
     case TransformationStep(
       (KafkaAvroBaseTransformer.TopicParamName, DefinedEagerParameter(topic: String, _)) ::
       (KafkaAvroBaseTransformer.SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::
