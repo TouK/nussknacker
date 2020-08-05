@@ -36,24 +36,20 @@ class EmitWhenEventLeftAggregatorFunction(protected val aggregator: Aggregator, 
   }
 
   override def onTimer(timestamp: Long, ctx: FlinkOnTimerCtx, out: Collector[ValueWithContext[AnyRef]]): Unit = {
-    try {
-      val currentStateValue = readStateOrInitial()
-      handleElementLeftSlide(currentStateValue, timestamp, ctx.timerService(), out)
-    } finally {
-      super.onTimer(timestamp, ctx, out)
-    }
+    val currentStateValue = readStateOrInitial()
+    handleElementLeftSlide(currentStateValue, timestamp, ctx.timerService(), out)
+    super.onTimer(timestamp, ctx, out)
   }
 
   protected def handleElementLeftSlide(currentStateValue: TreeMap[Long, aggregator.Aggregate], timestamp: Long,
                                        timerService: TimerService, out: Collector[ValueWithContext[AnyRef]]): Unit = {
-    val currentAddedElementContextVal = readAddedElementContextOrInitial()
     val stateForRecentlySentEvent = currentStateValue.lastOption.map {
       case (lastTimestamp, _) => stateForTimestampToReadUntilEnd(currentStateValue, lastTimestamp)  // shouldn't we save somewhere recently sent timestamp?
     }.getOrElse(currentStateValue)
     for {
       lastEntryToRemove <- stateForRecentlySentEvent.to(timestamp - timeWindowLengthMillis).lastOption
       (lastTimestampToRemove, _) = lastEntryToRemove
-      matchingContext <- currentAddedElementContextVal.get(lastTimestampToRemove)
+      matchingContext <- readAddedElementContextOrInitial().get(lastTimestampToRemove)
     } {
       val finalVal = computeFinalValue(currentStateValue, timestamp)
       out.collect(ValueWithContext(finalVal, matchingContext))

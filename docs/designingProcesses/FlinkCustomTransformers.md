@@ -53,8 +53,8 @@ Following events will be emitted:
 
 ### Aggregator types
 Currently we support following aggregations:
-- First - computes maximal value
-- Last - computes maximal value
+- First - computes first value
+- Last - computes last value
 - Min - computes minimal value
 - Max - computes maximal value
 - Sum - computes sum of values
