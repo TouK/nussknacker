@@ -37,7 +37,7 @@ users: [
   },
   {
     identity: "user2"
-    encrypedPassword: "$2a$12$oA3U7DXkT5eFkyB8GbtKzuVqxUCU0zDmcueBYV218zO/JFQ9/bzY6"
+    encryptedPassword: "$2a$12$oA3U7DXkT5eFkyB8GbtKzuVqxUCU0zDmcueBYV218zO/JFQ9/bzY6"
     permissions: ["Deployer"]
   }
 ]
@@ -61,6 +61,26 @@ rules: [
   }
 ]
 ```
+
+#### Encrypted hashes
+
+Encryption of passwords uses BCrypt algorithm. You can generate sample hash using command:
+```
+python -c 'import bcrypt; print(bcrypt.hashpw("password".encode("utf8"), bcrypt.gensalt(rounds=12, prefix="2a")))'
+```
+
+Be aware that usage of BCrypt hashes will cause significant CPU overhead for processing of each http request, because we don't have sessions and all requests are authenticated.
+To avoid this overhead you can configure cashing of hashes using configuration:
+```
+authentication: {
+  method: "BasicAuth"
+  usersFile: "conf/users.conf"
+  cachingHashes {
+    enabled: true
+  }
+}
+```
+This workaround causes that passwords are kept in the memory and it will introduce risk that someone with access to content of heap will see cached passwords.
 
 ## OAuth2 security module
 

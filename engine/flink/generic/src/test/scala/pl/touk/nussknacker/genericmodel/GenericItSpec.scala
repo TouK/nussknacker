@@ -28,7 +28,7 @@ import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreamingProcessRegistrar}
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.util.cache.DefaultCache
+import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache}
 
 class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec with EitherValues with LazyLogging {
 
@@ -427,7 +427,7 @@ object MockSchemaRegistry extends Serializable {
     * And when we use TestSchemaRegistryClientFactory then flink has problem with serialization this..
     */
   val factory: CachedConfluentSchemaRegistryClientFactory =
-    new CachedConfluentSchemaRegistryClientFactory(DefaultCache.defaultMaximumSize, None, None, None) {
+    new CachedConfluentSchemaRegistryClientFactory(CacheConfig.defaultMaximumSize, None, None, None) {
       override protected def confluentClient(kafkaConfig: KafkaConfig): SchemaRegistryClient =
         schemaRegistryMockClient
     }
