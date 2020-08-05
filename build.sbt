@@ -171,7 +171,9 @@ val forkSettings = Seq(
   javaOptions := Seq(
     "-Xmx512M",
     "-XX:ReservedCodeCacheSize=128M",
-    "-Xss4M"
+    "-Xss4M",
+    // to prevent travis OOM from killing java
+    "-XX:MaxMetaspaceSize=515G"
   )
 )
 
@@ -457,7 +459,7 @@ lazy val generic = (project in engine("flink/generic")).
 
 lazy val process = (project in engine("flink/process")).
   settings(commonSettings).
-  settings(forkSettings).
+  settings(forkSettings). // without this there are some classloading issues
   settings(
     name := "nussknacker-process",
     libraryDependencies ++= {
