@@ -5,11 +5,11 @@ import java.util.Date
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers.processInvoker
+import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{MockService, SimpleRecord, SinkForStrings}
 import pl.touk.nussknacker.engine.spel
 
-class GenericTransformationSpec extends FunSuite with Matchers {
+class GenericTransformationSpec extends FunSuite with Matchers with ProcessTestHelpers {
 
   import spel.Implicits._
 

@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import java.time.Duration
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.ConcurrentLinkedQueue
 
 import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
-import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.scala._
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
@@ -14,18 +13,17 @@ import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestResults
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory.NoParamSourceFactory
-import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
+import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.function.CoProcessFunctionInterceptor
 import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
-import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
+import pl.touk.nussknacker.engine.flink.util.source.{BlockingQueueSource, EmitWatermarkAfterEachElementCollectionSource}
 import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunctuatedExtractor
 import pl.touk.nussknacker.engine.flink.util.transformer.outer.{BranchType, OuterJoinTransformer}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -35,13 +33,14 @@ import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreamingProcessRegistrar}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
+import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import scala.concurrent.duration.FiniteDuration
 
-class OuterJoinTransformerSpec extends FunSuite with Matchers {
+class OuterJoinTransformerSpec extends FunSuite with FlinkSpec with Matchers with VeryPatientScalaFutures {
 
-  import pl.touk.nussknacker.engine.spel.Implicits._
   import OuterJoinTransformerSpec._
+  import pl.touk.nussknacker.engine.spel.Implicits._
 
   private val MainBranchId = "main"
 
@@ -55,8 +54,7 @@ class OuterJoinTransformerSpec extends FunSuite with Matchers {
 
   private val OutVariableName = "outVar"
 
-  // Synchronization below not working - should be used other source type or rewritten into TwoInputStreamOperatorTestHarness
-  ignore("join aggregate into main stream") {
+  test("join aggregate into main stream") {
     val process =  EspProcess(MetaData("sample-join-last", StreamMetaData()), ExceptionHandlerRef(List.empty), NonEmptyList.of[SourceNode](
       GraphBuilder.source("source", "start-main")
         .buildSimpleVariable("build-key", KeyVariableName, "#input.key")
@@ -83,79 +81,59 @@ class OuterJoinTransformerSpec extends FunSuite with Matchers {
     ))
 
     val key = "fooKey"
-    val input1 = List(
-      OneRecord(key, 0, -1),
-      OneRecord(key, 2, -1)
-    )
+    val input1 = new BlockingQueueSource[OneRecord](OneRecord.timestampExtractor)
     val input2 = List(
       OneRecord(key, 1, 123)
     )
 
-    val results = runProcess(process, input1, input2)
+    val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
+    val (id, stoppableEnv) = runProcess(process, input1, input2, collectingListener)
 
-    val outValues = results.nodeResults(EndNodeId)
+    input1.add(OneRecord(key, 0, -1))
+    // We can't be sure that main records will be consumed after matching joined records so we need to wait for them.
+    eventually {
+      OuterJoinTransformerSpec.elementsAddedToState should have size input2.size
+    }
+    input1.add(OneRecord(key, 2, -1))
+    input1.finish()
+
+    stoppableEnv.waitForJobState(id.getJobID, process.id, ExecutionState.FINISHED)()
+
+    val outValues = collectingListener.results[Any].nodeResults(EndNodeId)
       .filter(_.variableTyped(KeyVariableName).contains(key))
       .map(_.variableTyped[java.lang.Integer](OutVariableName).get)
 
     outValues shouldEqual List(null, 123)
   }
 
-  private def runProcess(testProcess: EspProcess, input1: List[OneRecord], input2: List[OneRecord]): TestResults[Any] = {
-    val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
+  private def runProcess(testProcess: EspProcess, input1: BlockingQueueSource[OneRecord], input2: List[OneRecord], collectingListener: ResultsCollectingListener) = {
     val model = modelData(input1, input2, collectingListener)
-    val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
-    try {
-      val registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(model), model.processConfig, ExecutionConfigPreparer.unOptimizedChain(model, None))
-      registrar.register(new StreamExecutionEnvironment(stoppableEnv), testProcess, ProcessVersion.empty, Some(collectingListener.runId))
-      val id = stoppableEnv.execute(testProcess.id)
-      stoppableEnv.waitForJobState(id.getJobID, testProcess.id, ExecutionState.FINISHED)()
-      collectingListener.results[Any]
-    } finally {
-      stoppableEnv.stop()
-    }
+    val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
+    val registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(model), model.processConfig, ExecutionConfigPreparer.unOptimizedChain(model, None))
+    registrar.register(new StreamExecutionEnvironment(stoppableEnv), testProcess, ProcessVersion.empty, Some(collectingListener.runId))
+    val id = stoppableEnv.executeAndWaitForStart(testProcess.id)
+    (id, stoppableEnv)
   }
 
-  private def modelData(input1: List[OneRecord], input2: List[OneRecord], collectingListener: ResultsCollectingListener) =
+  private def modelData(input1: BlockingQueueSource[OneRecord], input2: List[OneRecord], collectingListener: ResultsCollectingListener) =
     LocalModelData(ConfigFactory.empty(), new OuterJoinTransformerSpec.Creator(input1, input2, collectingListener))
 
 }
 
 object OuterJoinTransformerSpec {
 
-  class Creator(mainRecords: List[OneRecord], joinedRecords: List[OneRecord], collectingListener: ResultsCollectingListener) extends EmptyProcessConfigCreator {
+  val elementsAddedToState = new ConcurrentLinkedQueue[StringKeyedValue[AnyRef]]()
+
+  class Creator(mainRecordsSource: BlockingQueueSource[OneRecord], joinedRecords: List[OneRecord], collectingListener: ResultsCollectingListener) extends EmptyProcessConfigCreator {
 
     override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
       Map(
         "outer-join" -> WithCategories(new OuterJoinTransformer(None) {
-          // We can't be sure that each main records will be consumed after matching joined records - main stream is consumed instantly.
-          // But thanks to fact, that sliding aggregates handles out of order events, we just need to ensure that all joined records are consumed before main records.
           override protected def prepareAggregatorFunction(aggregator: Aggregator, stateTimeout: FiniteDuration)(implicit nodeId: ProcessCompilationError.NodeId):
           CoProcessFunction[ValueWithContext[String], ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]] = {
-            val joinedSize = joinedRecords.size
-            new CoProcessFunctionInterceptor(super.prepareAggregatorFunction(aggregator, stateTimeout)) with LazyLogging {
-
-              @transient
-              private lazy val addedToStateCount = new AtomicInteger(0)
-
-              @transient
-              private lazy val stateLock = new Object
-
-              override protected def beforeProcessElement1(value: ValueWithContext[String]): Unit = {
-                logger.info(s"OuterJoin: processing element1 with key: ${value.value} - waiting on all elements added to state...")
-                while (isRunning && addedToStateCount.get() < joinedSize) {
-                  stateLock.synchronized {
-                    stateLock.wait(100)
-                  }
-                }
-                logger.info(s"OuterJoin: processing element1 with key: ${value.value} - after wait")
-              }
-
+            new CoProcessFunctionInterceptor(super.prepareAggregatorFunction(aggregator, stateTimeout)) {
               override protected def afterProcessElement2(value: ValueWithContext[StringKeyedValue[AnyRef]]): Unit = {
-                addedToStateCount.incrementAndGet()
-                logger.info(s"OuterJoin: element2 processed: ${value.value} - notifying")
-                stateLock.synchronized {
-                  stateLock.notifyAll()
-                }
+                elementsAddedToState.add(value.value)
               }
 
             }
@@ -167,8 +145,7 @@ object OuterJoinTransformerSpec {
 
     override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] =
       Map(
-        "start-main" -> WithCategories(NoParamSourceFactory(
-          new EmitWatermarkAfterEachElementCollectionSource[OneRecord](mainRecords, OneRecord.timestampExtractor))),
+        "start-main" -> WithCategories(NoParamSourceFactory(mainRecordsSource)),
         "start-joined" -> WithCategories(NoParamSourceFactory(
           new EmitWatermarkAfterEachElementCollectionSource[OneRecord](joinedRecords, OneRecord.timestampExtractor))))
 

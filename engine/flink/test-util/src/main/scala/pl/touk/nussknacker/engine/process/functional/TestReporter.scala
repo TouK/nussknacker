@@ -21,15 +21,30 @@ object TestReporterUtil {
 
 object TestReporter {
 
-  def reset() = instances.clear()
+  private val instances: ArrayBuffer[TestReporter] = new ArrayBuffer[TestReporter]()
 
-  val instances: ArrayBuffer[TestReporter] = new ArrayBuffer[TestReporter]()
+  def reset() = synchronized {
+    instances.foreach(_.reset())
+  }
 
-  def taskManagerReporter = TestReporter.instances.find(_.testHistograms.exists(_._2.contains("taskmanager"))).get
+  def append(reporter: TestReporter): Unit = synchronized {
+    instances.append(reporter)
+  }
+
+  def taskManagerReporter = synchronized {
+    TestReporter.instances.find(_.testHistograms.exists(_._2.contains("taskmanager"))).get
+  }
 }
 
 
 class TestReporter extends AbstractReporter {
+
+  def reset(): Unit = {
+    histograms.clear()
+    gauges.clear()
+    counters.clear()
+    meters.clear()
+  }
 
   def testHistograms = histograms.asScala.toMap
 
@@ -46,7 +61,7 @@ class TestReporter extends AbstractReporter {
   override def close() = {}
 
   override def open(config: MetricConfig) = {
-    TestReporter.instances.append(this)
+    TestReporter.append(this)
   }
 
   override def filterCharacters(input: String) = input

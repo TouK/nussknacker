@@ -5,22 +5,23 @@ import java.nio.charset.StandardCharsets
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.Schema
 import org.apache.flink.runtime.execution.ExecutionState
+import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, SinkValueParamName, TopicParamName}
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer._
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.schema._
-import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaRegistryProvider, SchemaVersionOption}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder, MockSchemaRegistryClient}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaRegistryProvider, SchemaVersionOption}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreamingProcessRegistrar}
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.util.cache.DefaultCache
+import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache}
 
 class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
@@ -42,14 +43,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    stoppableEnv.start()
     val modelData = LocalModelData(config, creator)
     registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
-  }
-
-  override protected def afterAll(): Unit = {
-    stoppableEnv.stop()
-    super.afterAll()
   }
 
   test("should read event in the same version as source requires and save it in the same version") {
@@ -198,10 +193,10 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
      * After that flink will stopped working.. And we can't find job. It can take some time.
      */
     pushMessage(PaymentV2.recordWithData, topicConfig.input)
-    registrar.register(env, process, ProcessVersion.empty)
-    val executionResult = stoppableEnv.executeAndWaitForStart(process.id)
-    stoppableEnv.waitForJobState(executionResult.getJobID, process.id, ExecutionState.FAILED, ExecutionState.CANCELED)()
-    stoppableEnv.cleanupGraph()
+    val env = flinkMiniCluster.createExecutionEnvironment()
+    registrar.register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty)
+    val executionResult = env.executeAndWaitForStart(process.id)
+    env.waitForJobState(executionResult.getJobID, process.id, ExecutionState.FAILED, ExecutionState.CANCELED)()
   }
 
   test("should pass timestamp from flink to kafka") {
@@ -321,7 +316,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
     run(process) {
       val consumer = kafkaClient.createConsumer()
-      val consumed = consumer.consume(topicConfig.output, 20).take(1).head
+      val consumed = consumer.consume(topicConfig.output).take(1).head
       val consumedKey = new String(consumed.key(), StandardCharsets.UTF_8)
       consumedKey shouldEqual FullNameV1.BaseFirst
     }
@@ -339,7 +334,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
     run(process) {
       val consumer = kafkaClient.createConsumer()
-      val consumed = consumer.consume(topicConfig.output, 20).take(1).head
+      val consumed = consumer.consume(topicConfig.output).take(1).head
       consumed.key() shouldBe null
     }
   }
@@ -357,7 +352,7 @@ object KafkaAvroIntegrationMockSchemaRegistry {
    * And when we use TestSchemaRegistryClientFactory then flink has problem with serialization this..
    */
   val factory: CachedConfluentSchemaRegistryClientFactory =
-    new CachedConfluentSchemaRegistryClientFactory(DefaultCache.defaultMaximumSize, None, None, None) {
+    new CachedConfluentSchemaRegistryClientFactory(CacheConfig.defaultMaximumSize, None, None, None) {
       override protected def confluentClient(kafkaConfig: KafkaConfig): SchemaRegistryClient =
         schemaRegistryMockClient
     }

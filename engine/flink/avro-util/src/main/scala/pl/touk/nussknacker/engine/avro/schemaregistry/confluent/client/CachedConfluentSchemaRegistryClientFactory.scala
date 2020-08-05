@@ -4,12 +4,12 @@ import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import pl.touk.nussknacker.engine.util.cache.{DefaultCache, SingleValueCache}
+import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache, SingleValueCache}
 
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.FiniteDuration
 
-class CachedConfluentSchemaRegistryClientFactory(maximumSize: Long, latestSchemaExpirationTime: Option[Duration],
-                                                 schemaExpirationTime: Option[Duration], versionsCacheExpirationTime: Option[Duration])
+class CachedConfluentSchemaRegistryClientFactory(maximumSize: Long, latestSchemaExpirationTime: Option[FiniteDuration],
+                                                 schemaExpirationTime: Option[FiniteDuration], versionsCacheExpirationTime: Option[FiniteDuration])
   extends ConfluentSchemaRegistryClientFactory with Serializable with LazyLogging {
 
   //Cache engines are shared by many of CachedConfluentSchemaRegistryClient
@@ -31,17 +31,17 @@ object CachedConfluentSchemaRegistryClientFactory {
   private val latestSchemaExpirationTime: Option[FiniteDuration] = Some(5.minute)
   private val versionsCacheExpirationTime: Option[FiniteDuration] = Some(1.minute)
   private val schemaExpirationTime: Option[FiniteDuration] = Some(120.minutes)
-  private val defaultMaximumSize: Long = DefaultCache.defaultMaximumSize
+  private val defaultMaximumSize: Long = CacheConfig.defaultMaximumSize
 
   def apply(): CachedConfluentSchemaRegistryClientFactory =
     new CachedConfluentSchemaRegistryClientFactory(defaultMaximumSize, latestSchemaExpirationTime,
       schemaExpirationTime, versionsCacheExpirationTime)
 }
 
-class SchemaRegistryCaches(maximumSize: Long, latestSchemaExpirationTime: Option[Duration],
-                           schemaExpirationTime: Option[Duration], versionsCacheExpirationTime: Option[Duration]) {
-   val schemaCache = new DefaultCache[Schema](maximumSize, schemaExpirationTime, Option.empty)
-   val latestSchemaCache = new DefaultCache[Schema](maximumSize, Option.empty, latestSchemaExpirationTime)
-   val versionsCache = new DefaultCache[List[Integer]](maximumSize, Option.empty, versionsCacheExpirationTime)
+class SchemaRegistryCaches(maximumSize: Long, latestSchemaExpirationTime: Option[FiniteDuration],
+                           schemaExpirationTime: Option[FiniteDuration], versionsCacheExpirationTime: Option[FiniteDuration]) {
+   val schemaCache = new DefaultCache[String, Schema](CacheConfig(maximumSize, schemaExpirationTime, Option.empty))
+   val latestSchemaCache = new DefaultCache[String, Schema](CacheConfig(maximumSize, Option.empty, latestSchemaExpirationTime))
+   val versionsCache = new DefaultCache[String, List[Integer]](CacheConfig(maximumSize, Option.empty, versionsCacheExpirationTime))
    val topicsCache = new SingleValueCache[List[String]](Option.empty, versionsCacheExpirationTime)
 }

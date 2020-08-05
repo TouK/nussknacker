@@ -12,6 +12,10 @@ To see biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 0.2.0 (not released yet)
 
+* [#1104](https://github.com/TouK/nussknacker/pull/1104) Creation of `FlinkMiniCluster` is now extracted from `StoppableExecutionEnvironment`. You should create it using
+  e.g. `FlinkMiniClusterHolder.apply()` and then create environment using `flinkMiniClusterHolder.createExecutionEnvironment()`. `FlinkMiniClusterHolder` should
+  be created once for test class - it is thread safe and resource expensive. `MiniClusterExecutionEnvironment` in the other hand should be created for each process.
+  It is not thread safe because underlying `StreamExecutionEnvironment` is not. You can use `FlinkSpec` to achieve that.
 * [#1077](https://github.com/TouK/nussknacker/pull/1077)
   - `pl.touk.nussknacker.engine.queryablestate.QueryableClient` was moved from `queryableState` module to `pl.touk.nussknacker.engine.api.queryablestate` package in `api` module
   - `pl.touk.nussknacker.engine.queryablestate.QueryableState` was moved to `pl.touk.nussknacker.engine.api.queryablestate`

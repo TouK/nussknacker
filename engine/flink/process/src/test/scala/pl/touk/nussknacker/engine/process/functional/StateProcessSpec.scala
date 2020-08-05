@@ -4,11 +4,11 @@ import java.util.Date
 
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers.processInvoker
+import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.spel
 
-class StateProcessSpec extends FlatSpec with Matchers {
+class StateProcessSpec extends FlatSpec with Matchers with ProcessTestHelpers {
 
   //FIXME: ignored for now
   ignore should "fire alert when aggregate threshold exceeded" in {

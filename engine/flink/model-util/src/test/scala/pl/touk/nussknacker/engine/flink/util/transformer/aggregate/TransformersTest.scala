@@ -5,7 +5,6 @@ import java.util
 import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.scala._
-import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FunSuite, Matchers}
@@ -18,7 +17,7 @@ import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener,
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.compile.{CompilationResult, ProcessValidator}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory.NoParamSourceFactory
-import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
+import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
@@ -34,7 +33,7 @@ import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 import scala.collection.JavaConverters._
 
-class TransformersTest extends FunSuite with Matchers {
+class TransformersTest extends FunSuite with FlinkSpec with Matchers {
 
   def modelData(list: List[TestRecord] = List()) = LocalModelData(ConfigFactory.empty(), new Creator(list))
 
@@ -225,18 +224,13 @@ class TransformersTest extends FunSuite with Matchers {
   }
 
   private def runProcess(model: LocalModelData, testProcess: EspProcess, collectingListener: ResultsCollectingListener): Unit = {
-    val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
-    try {
-      val registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(model) {
-        override protected def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
-          List(collectingListener) ++ super.listeners(processObjectDependencies)
-      }, model.processConfig, ExecutionConfigPreparer.unOptimizedChain(model, None))
-      registrar.register(new StreamExecutionEnvironment(stoppableEnv), testProcess, ProcessVersion.empty, Some(collectingListener.runId))
-      val id = stoppableEnv.execute(testProcess.id)
-      stoppableEnv.waitForJobState(id.getJobID, testProcess.id, ExecutionState.FINISHED)()
-    } finally {
-      stoppableEnv.stop()
-    }
+    val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
+    val registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(model) {
+      override protected def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
+        List(collectingListener) ++ super.listeners(processObjectDependencies)
+    }, model.processConfig, ExecutionConfigPreparer.unOptimizedChain(model, None))
+    registrar.register(new StreamExecutionEnvironment(stoppableEnv), testProcess, ProcessVersion.empty, Some(collectingListener.runId))
+    stoppableEnv.executeAndWaitForFinished(testProcess.id)()
   }
 
   private def endAggregateVariable[T](collectingListener: ResultsCollectingListener, key: String) = {

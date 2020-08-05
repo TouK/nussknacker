@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreamingProcessRegistrar}
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.util.cache.DefaultCache
+import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache}
 
 class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin {
 
@@ -41,14 +41,8 @@ class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin {
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    stoppableEnv.start()
     val modelData = LocalModelData(config, creator, objectNaming = objectNaming)
     registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
-  }
-
-  override protected def afterAll(): Unit = {
-    stoppableEnv.stop()
-    super.afterAll()
   }
 
   test("should create source with proper filtered and converted topics") {
@@ -129,7 +123,7 @@ object KafkaAvroNamespacedMockSchemaRegistry {
     * And when we use TestSchemaRegistryClientFactory then flink has problem with serialization this..
     */
   val factory: CachedConfluentSchemaRegistryClientFactory =
-    new CachedConfluentSchemaRegistryClientFactory(DefaultCache.defaultMaximumSize, None, None, None) {
+    new CachedConfluentSchemaRegistryClientFactory(CacheConfig.defaultMaximumSize, None, None, None) {
       override protected def confluentClient(kafkaConfig: KafkaConfig): SchemaRegistryClient =
         schemaRegistryMockClient
     }

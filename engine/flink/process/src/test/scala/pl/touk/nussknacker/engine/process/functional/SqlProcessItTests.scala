@@ -6,13 +6,13 @@ import org.scalatest._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers.processInvoker
+import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.spel
 
 import scala.util.Try
 
-class SqlProcessItTests extends FunSuite with BeforeAndAfterAll with Matchers {
+class SqlProcessItTests extends FunSuite with ProcessTestHelpers with Matchers {
 
   import spel.Implicits._
 

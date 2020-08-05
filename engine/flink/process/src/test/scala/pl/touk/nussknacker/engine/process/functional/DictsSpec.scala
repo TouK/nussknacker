@@ -4,12 +4,12 @@ import java.util.Date
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers.processInvoker
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
+import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{MockService, SimpleRecord}
 import pl.touk.nussknacker.engine.spel
 
-class DictsSpec extends FunSuite with Matchers {
+class DictsSpec extends FunSuite with Matchers with ProcessTestHelpers {
 
   import spel.Implicits._
 

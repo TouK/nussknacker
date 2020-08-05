@@ -3,28 +3,19 @@ package pl.touk.nussknacker.engine.process.functional
 import java.util.Date
 
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
+import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
-import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreamingProcessRegistrar}
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
-import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers.processInvoker
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{MockService, SimpleRecord}
+import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreamingProcessRegistrar}
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
-class KafkaSignalsSpec extends FunSuite with Matchers with BeforeAndAfterAll with KafkaSpec with VeryPatientScalaFutures {
-
-  private val env: StoppableExecutionEnvironment = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
-
-  override protected def afterAll(): Unit = {
-    env.stop()
-    super.afterAll()
-  }
+class KafkaSignalsSpec extends FunSuite with Matchers with ProcessTestHelpers with KafkaSpec with VeryPatientScalaFutures {
 
   test("signals don't cause watermarks to stop") {
     kafkaClient.createTopic(ProcessTestHelpers.signalTopic)
@@ -41,12 +32,14 @@ class KafkaSignalsSpec extends FunSuite with Matchers with BeforeAndAfterAll wit
 
     def record(time: Long) = SimpleRecord(time.toString, 0, "", new Date(time))
 
-    val creator = processInvoker.prepareCreator(List(
+    val creator = ProcessTestHelpers.prepareCreator(List(
       record(1000),
       record(1200),
       record(2000)
     ), config)
 
+
+    val env = flinkMiniCluster.createExecutionEnvironment()
     val modelData = LocalModelData(config, creator)
     FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), modelData.processConfig, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
       .register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty)
@@ -57,4 +50,5 @@ class KafkaSignalsSpec extends FunSuite with Matchers with BeforeAndAfterAll wit
       }
     }
   }
+
 }

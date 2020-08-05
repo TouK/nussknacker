@@ -4,12 +4,14 @@ import java.util.UUID
 
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
-import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
+import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder
+import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
+import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.MockService
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
@@ -19,7 +21,7 @@ import scala.language.implicitConversions
 
 class FlinkStreamingProcessRegistrarKafkaSpec
   extends FlatSpec
-    with BeforeAndAfterAll
+    with ProcessTestHelpers
     with KafkaSpec
     with Matchers
     with VeryPatientScalaFutures
@@ -43,7 +45,7 @@ class FlinkStreamingProcessRegistrarKafkaSpec
       NonEmptyList.of(GraphBuilder.source("source", "kafka-keyvalue", "topic" -> s"""'$inTopic'""")
         .processorEnd("service", "logService", "all" -> "#input"))
     )
-    helpers.ProcessTestHelpers.processInvoker.invokeWithKafka(
+    processInvoker.invokeWithKafka(
       process, config
     ) {
       val keys = 10
