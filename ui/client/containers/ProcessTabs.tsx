@@ -28,10 +28,10 @@ function Tabs({tabs, children}: PropsWithChildren<{tabs: TabData[]}>) {
             theme.borderRadius && styles.rounded,
           ])}
         >
-          {tabs.map(r => <TabLink key={r.path} {...r}/>)}
+          {tabs.map(data => <TabLink key={data.path} {...data}/>)}
         </div>
         <div className={styles.contentWrap}>
-          {tabs.map(r => <TabRoute key={r.path} {...r}/>)}
+          {tabs.map(data => <TabRoute key={data.path} {...data}/>)}
         </div>
       </div>
     </div>
