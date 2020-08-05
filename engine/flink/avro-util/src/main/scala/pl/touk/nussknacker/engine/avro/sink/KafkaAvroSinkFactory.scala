@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
 class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, val processObjectDependencies: ProcessObjectDependencies)
   extends BaseKafkaAvroSinkFactory with KafkaAvroBaseTransformer[FlinkSink] {
 
-  private val avroMessageParams = List(
+  private val paramsDeterminedAfterSchema = List(
     Parameter.optional[CharSequence](KafkaAvroBaseTransformer.SinkKeyParamName).copy(isLazyParameter = true),
     Parameter[AnyRef](KafkaAvroBaseTransformer.SinkValueParamName).copy(isLazyParameter = true)
   )
@@ -33,9 +33,9 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, v
     case TransformationStep((KafkaAvroBaseTransformer.TopicParamName, DefinedEagerParameter(topic: String, _)) :: Nil, _) =>
       val preparedTopic = prepareTopic(topic)
       val versionOption = versionOptionParam(preparedTopic)
-      NextParameters(List(versionOption.value, validationModeParam) ++ avroMessageParams, versionOption.written, None)
+      NextParameters(List(versionOption.value, validationModeParam) ++ paramsDeterminedAfterSchema, versionOption.written, None)
     case TransformationStep((KafkaAvroBaseTransformer.TopicParamName, _) :: Nil, _) =>
-      NextParameters(List(fallbackVersionOptionParam, validationModeParam) ++ avroMessageParams)
+      NextParameters(List(fallbackVersionOptionParam, validationModeParam) ++ paramsDeterminedAfterSchema)
     case TransformationStep(
       (KafkaAvroBaseTransformer.TopicParamName, DefinedEagerParameter(topic: String, _)) ::
       (KafkaAvroBaseTransformer.SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::
