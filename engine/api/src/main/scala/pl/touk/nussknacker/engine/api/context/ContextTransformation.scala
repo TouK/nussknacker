@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.api.context
 
-import cats.data.ValidatedNel
+import cats.data.Validated.{Invalid, Valid}
+import cats.data.{NonEmptyList, ValidatedNel}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 
 /**
   * Wrapper for tuple of definition and implementation of variable context transformation
@@ -43,6 +45,23 @@ sealed trait AbstractContextTransformation {
   * `
   */
 object ContextTransformation {
+
+  // Helper in case when you want to use branch name (node id) as a variable/field
+  def sanitizeBranchName(branchId: String): String =
+    branchId.toCharArray.zipWithIndex.collect {
+      case (a, 0) if Character.isJavaIdentifierStart(a) => a
+      case (a, 0) if !Character.isJavaIdentifierStart(a) => "_"
+      case (a, _) if Character.isJavaIdentifierPart(a) => a
+      case (a, _) if !Character.isJavaIdentifierPart(a) => "_"
+    }.mkString
+
+  def findUniqueParentContext(contextMap: Map[String, ValidationContext])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Option[ValidationContext]] = {
+    contextMap.values.map(_.parent).toList.distinct match {
+      case Nil => Valid(None)
+      case a::Nil => Valid(a)
+      case more => Invalid(NonEmptyList.of(CustomNodeError(nodeId.id, s"Not consistent parent contexts: $more", None)))
+    }
+  }
 
   def join: JoinBuilder = new JoinBuilder
 
