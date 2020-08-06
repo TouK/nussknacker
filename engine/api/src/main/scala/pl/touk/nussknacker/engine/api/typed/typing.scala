@@ -4,6 +4,7 @@ import io.circe.Encoder
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.util.NotNothing
+import pl.touk.nussknacker.engine.api.util.ReflectUtils
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
@@ -91,7 +92,7 @@ object typing {
 
     //TODO: should we use simple name here?
     override def display: String = {
-      val className = ClassUtils.primitiveToWrapper(klass).getSimpleName
+      val className = ReflectUtils.fixedClassSimpleNameWithoutParentModule(ClassUtils.primitiveToWrapper(klass))
       if (params.nonEmpty)
         s"$className[${params.map(_.display).mkString(",")}]"
       else

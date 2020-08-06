@@ -7,13 +7,14 @@ import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
+import pl.touk.nussknacker.engine.api.util.ThreadUtils
 import pl.touk.nussknacker.engine.api.{Context, InterpretationResult}
 import pl.touk.nussknacker.engine.flink.util.ContextInitializingFunction
 import pl.touk.nussknacker.engine.flink.util.metrics.{InstantRateMeterWithCount, MetricUtils}
 import pl.touk.nussknacker.engine.process.compiler.CompiledProcessWithDeps
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.util.metrics.RateMeter
-import pl.touk.nussknacker.engine.util.{SynchronousExecutionContext, ThreadUtils}
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 
 import scala.concurrent.{Await, ExecutionContext}
 import scala.util.control.NonFatal

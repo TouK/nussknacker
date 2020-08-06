@@ -6,8 +6,8 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.java.typeutils.AvroUtils
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
+import pl.touk.nussknacker.engine.api.util.ThreadUtils
 import pl.touk.nussknacker.engine.types.EspTypeUtils
-import pl.touk.nussknacker.engine.util.ThreadUtils
 
 import scala.util.{Failure, Try}
 

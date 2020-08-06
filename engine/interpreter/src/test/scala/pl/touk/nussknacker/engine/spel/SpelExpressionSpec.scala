@@ -177,7 +177,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     parsed.isValid shouldBe true
 
     val invalid = parse[Any]("#processHelper.addT(1, 1)", ctxWithGlobal)
-    invalid shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Unknown method 'addT' in SampleGlobalObject$")))
+    invalid shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Unknown method 'addT' in SampleGlobalObject")))
   }
 
   test("validate MethodReference parameter types") {
@@ -221,7 +221,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   test("return invalid type if PropertyOrFieldReference does not exists") {
     val parsed = parse[Any]("#processHelper.add", ctxWithGlobal)
-    val expectedValidation =  Invalid("There is no property 'add' in type: SampleGlobalObject$")
+    val expectedValidation =  Invalid("There is no property 'add' in type: SampleGlobalObject")
     parsed.isInvalid shouldBe true
     parsed.leftMap(_.head).leftMap(_.message) shouldEqual expectedValidation
   }

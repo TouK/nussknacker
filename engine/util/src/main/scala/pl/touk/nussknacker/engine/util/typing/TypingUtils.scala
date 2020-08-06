@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.util.typing
 import java.util
 
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
-import pl.touk.nussknacker.engine.util.ThreadUtils
+import pl.touk.nussknacker.engine.api.util.ThreadUtils
 
 import scala.collection.JavaConverters._
 

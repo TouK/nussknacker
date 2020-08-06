@@ -1,7 +1,6 @@
-package pl.touk.nussknacker.engine.util
+package pl.touk.nussknacker.engine.api.util
 
 import java.lang.reflect.InvocationTargetException
-import java.net.{URL, URLClassLoader}
 
 object ReflectUtils {
 
@@ -14,6 +13,7 @@ object ReflectUtils {
   }
 
   abstract class StaticMethodRunner(classLoader: ClassLoader, className: String, methodName: String) {
+
     import scala.reflect.runtime.{universe => ru}
 
     private val invoker: ru.MethodMirror = {

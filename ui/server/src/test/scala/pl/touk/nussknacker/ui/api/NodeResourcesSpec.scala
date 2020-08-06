@@ -65,7 +65,7 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
 
       Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
         responseAs[NodeValidationResult] shouldBe NodeValidationResult(None, List(
-          PrettyValidationErrors.formatErrorMessage(ExpressionParseError("Bad expression type, expected: boolean, found: java.lang.String",
+          PrettyValidationErrors.formatErrorMessage(ExpressionParseError("Bad expression type, expected: Boolean, found: String",
             data.id, Some(NodeTypingInfo.DefaultExpressionId), data.expression.expression))
         ), validationPerformed = true)
       }
