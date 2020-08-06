@@ -45,6 +45,9 @@ export class NodeDetailsContent extends React.Component {
       codeCompletionEnabled: true,
       testResultsToHide: new Set(),
     }
+    //In most cases this is not needed, as parameter definitions should be present in validation response
+    //However, in dynamic cases (as adding new topic/schema version) this can lead to stale parameters
+    this.updateNodeDataIfNeeded(node)
     this.generateUUID("fields", "parameters")
   }
 
@@ -78,6 +81,9 @@ export class NodeDetailsContent extends React.Component {
 
     if (!_.isEqual(this.props.node, nextPropsNode)) {
       this.setState({editedNode: nextPropsNode, unusedParameters: []})
+      //In most cases this is not needed, as parameter definitions should be present in validation response
+      //However, in dynamic cases (as adding new topic/schema version) this can lead to stale parameters
+      this.updateNodeDataIfNeeded(nextPropsNode)
     }
     if (!_.isEqual(this.props.dynamicParameterDefinitions, nextProps.dynamicParameterDefinitions)) {
       this.adjustStateWithParameters(this.state.editedNode)
@@ -91,7 +97,6 @@ export class NodeDetailsContent extends React.Component {
 
   updateNodeDataIfNeeded(currentNode) {
     if (this.props.isEditMode) {
-      console.log("Checking for ", this.props.originalNodeId)
       this.props.actions.updateNodeData(this.props.processId,
         this.props.findAvailableVariables(this.props.originalNodeId),
         this.props.findAvailableBranchVariables(this.props.originalNodeId),
