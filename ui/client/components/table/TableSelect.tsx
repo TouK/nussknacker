@@ -1,62 +1,35 @@
 import cn from "classnames"
 import React, {useCallback} from "react"
-import Select, {Props as SelectProps} from "react-select"
-import {StylesConfig} from "react-select/src/styles"
 import styles from "../../containers/processesTable.styl"
-import {defaultAppTheme} from "../../containers/theme"
 import "../../stylesheets/processes.styl"
+import {ThemedSelect} from "../themed/ThemedSelect"
 
-type OptionType = $TodoType
-type Props = {
-  defaultValue: $TodoType,
-  onChange: $TodoType,
-  options: OptionType[],
-  isMulti: boolean,
+export type OptionType<T> = {
+  label: string,
+  value?: T,
+}
+
+type Common<T> = {
   isSearchable: boolean,
   placeholder: string,
+  options: OptionType<T>[],
 }
 
-const {borderRadius, fontSize, inputHeight, colors} = defaultAppTheme
-
-const customSelectStyles: StylesConfig = {
-  control: styles => ({
-    ...styles,
-    fontSize,
-    minHeight: inputHeight,
-  }),
-  option: (styles, {theme, isDisabled, isSelected, isFocused}) => ({
-    ...styles,
-    fontSize,
-    color: isDisabled ?
-      theme.colors.neutral20 :
-      isSelected || isFocused ?
-        theme.colors.neutral0 :
-        theme.colors.neutral90,
-  }),
+type Single<T> = {
+  isMulti: false,
+  defaultValue: OptionType<T>,
+  onChange: (value: OptionType<T>) => void,
 }
 
-const className = "form-select"
-
-function StyledSelect<T>(props: SelectProps<T>) {
-  return (
-    <Select
-      className={cn(className)}
-      classNamePrefix={className}
-      styles={customSelectStyles}
-      theme={theme => ({
-        ...theme,
-        borderRadius,
-        colors: {
-          ...theme.colors,
-          ...colors,
-        },
-      })}
-      {...props}
-    />
-  )
+type Multi<T> = {
+  isMulti: true,
+  defaultValue: OptionType<T>[],
+  onChange: (value: OptionType<T>[]) => void,
 }
 
-export default function TableSelect(props: Props) {
+type Props<T> = Common<T> & (Single<T> | Multi<T>)
+
+export default function TableSelect<T>(props: Props<T>) {
   const {onChange, isMulti} = props
 
   const getOnChange = useCallback(value => {
@@ -65,7 +38,7 @@ export default function TableSelect(props: Props) {
 
   return (
     <div className={cn("table-filter", "input-group", styles.filterInput)}>
-      <StyledSelect
+      <ThemedSelect
         {...props}
         closeMenuOnSelect={false}
         onChange={getOnChange}

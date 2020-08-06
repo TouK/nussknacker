@@ -1,11 +1,10 @@
 import cn from "classnames"
 import React, {useState} from "react"
 import {useSelector} from "react-redux"
-import appStyles from "../../app.styl"
 import {useClashedNames} from "../../containers/hooks/useClashedNames"
 import {getLoggedUser} from "../../reducers/selectors/settings"
 import AddProcessDialog from "../AddProcessDialog"
-import {ButtonWithFocus} from "../withFocus"
+import {ThemedButton} from "../themed/ThemedButton"
 
 type Props = {
   onClick: () => void,
@@ -18,14 +17,13 @@ function AddButton(props: Props) {
   const title = "CREATE NEW PROCESS"
 
   return loggedUser.isWriter() ? (
-    <ButtonWithFocus
-      type={"button"}
-      className={cn(appStyles.btn, appStyles.btnPrimary, className)}
+    <ThemedButton
+      className={className}
       onClick={onClick}
       title={title}
     >
       <span>{title}</span>
-    </ButtonWithFocus>
+    </ThemedButton>
   ) : null
 
 }

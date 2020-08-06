@@ -1,4 +1,4 @@
-import cn from "classnames"
+import {cx} from "emotion"
 import React, {
   AnchorHTMLAttributes,
   ButtonHTMLAttributes,
@@ -9,45 +9,49 @@ import React, {
   SelectHTMLAttributes,
   TextareaHTMLAttributes,
 } from "react"
-import styles from "./withFocus.styl"
+import {useNkTheme} from "../containers/theme"
 
-function inputWithFocus(props: DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>, ref) {
-  const {className, ...other} = props
+const inputWithFocus = ({className, ...props}: DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>, ref) => {
+  const {withFocus} = useNkTheme()
   return (
-    <input ref={ref} {...other} className={cn(styles.withFocus, className)}/>
+    <input ref={ref} {...props} className={cx(withFocus, className)}/>
   )
 }
 
-export const InputWithFocus = forwardRef<HTMLInputElement, DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>>(
-  inputWithFocus,
-)
+export const InputWithFocus = forwardRef(inputWithFocus)
 
 export function TextAreaWithFocus({className, ...props}: DetailedHTMLProps<TextareaHTMLAttributes<HTMLTextAreaElement>, HTMLTextAreaElement>) {
+  const {withFocus} = useNkTheme()
   return (
-    <textarea {...props} className={cn(styles.withFocus, className)}/>
+    <textarea {...props} className={cx(withFocus, className)}/>
   )
 }
 
-export function ButtonWithFocus({className, ...props}: DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement>) {
+export type ButtonProps = DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement>
+export function ButtonWithFocus({className, ...props}: ButtonProps) {
+  const {withFocus} = useNkTheme()
   return (
-    <button {...props} className={cn(styles.withFocus, className)}/>
+    <button {...props} className={cx(withFocus, className)}/>
   )
 }
 
 export function SelectWithFocus({className, ...props}: DetailedHTMLProps<SelectHTMLAttributes<HTMLSelectElement>, HTMLSelectElement>) {
+  const {withFocus} = useNkTheme()
   return (
-    <select {...props} className={cn(styles.withFocus, className)}/>
+    <select {...props} className={cx(withFocus, className)}/>
   )
 }
 
 export function AWithFocus({className, ...props}: DetailedHTMLProps<AnchorHTMLAttributes<HTMLAnchorElement>, HTMLAnchorElement>) {
+  const {withFocus} = useNkTheme()
   return (
-    <a {...props} className={cn(styles.withFocus, className)}/>
+    <a {...props} className={cx(withFocus, className)}/>
   )
 }
 
 export function FocusOutline({className, ...props}: DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>) {
+  const {withFocus} = useNkTheme()
   return (
-    <div {...props} className={cn(styles.withFocus, className)}/>
+    <div {...props} className={cx(withFocus, className)}/>
   )
 }

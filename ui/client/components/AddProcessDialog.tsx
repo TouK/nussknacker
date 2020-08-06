@@ -5,7 +5,7 @@ import Modal from "react-modal"
 import {connect} from "react-redux"
 import {showProcess} from "../actions/nk/showProcess"
 import * as DialogMessages from "../common/DialogMessages"
-import EspModalStyles from "../common/EspModalStyles"
+import NkModalStyles from "../common/NkModalStyles"
 import HttpService from "../http/HttpService"
 import "../stylesheets/visualization.styl"
 import {allValid, HandledErrorType, mandatoryValueValidator, Validator, ValidatorType} from "./graph/node-modal/editors/Validators"
@@ -62,7 +62,7 @@ class AddProcessDialog extends React.Component<Props, State> {
     const {message, clashedNames, categories, isOpen} = this.props
     const {processId} = this.state
 
-    const titleStyles = EspModalStyles.headerStyles("#2D8E54", "white")
+    const titleStyles = NkModalStyles.headerStyles("#2D8E54", "white")
     const nameValidators = prepareNameValidators(clashedNames)
 
     return (

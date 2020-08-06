@@ -9,8 +9,8 @@ import HttpService, {StatusesType} from "../http/HttpService"
 import {getBaseIntervalTime} from "../reducers/selectors/settings"
 import {useFetch} from "./hooks/useFetch"
 import {useInterval} from "./Interval"
-import {ProcessesTable} from "./processesTable/ProcessesTable"
 import styles from "./processesTable.styl"
+import {ProcessesTable} from "./processesTable/ProcessesTable"
 import {ProcessTableTools} from "./ProcessTableTools"
 import {SearchQueryComponent} from "./SearchQuery"
 import {FiltersState, SearchItem} from "./TableFilters"
@@ -81,7 +81,7 @@ function useFiltersState(defaultQuery: Queries) {
 }
 
 export function ProcessesList(props: BaseProcessesOwnProps) {
-  const {allowAdd, columns, RowsRenderer, filterable, defaultQuery, searchItems, sortable, withStatuses} = props
+  const {allowAdd, columns, RowsRenderer, filterable, defaultQuery, searchItems, sortable, withStatuses, children} = props
 
   const {search, filters, setFilters} = useFiltersState(defaultQuery)
   const {processes, getProcesses, isLoading} = useFilteredProcesses(filters)
@@ -107,6 +107,8 @@ export function ProcessesList(props: BaseProcessesOwnProps) {
       <ProcessTableTools allowAdd={allowAdd} isSubprocess={defaultQuery.isSubprocess}>
         <SearchQueryComponent filters={searchItems} onChange={setFilters}/>
       </ProcessTableTools>
+
+      {children}
 
       <ProcessesTable
         className={styles.table}

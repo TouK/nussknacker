@@ -2,6 +2,7 @@
 import cn from "classnames"
 import React, {PropsWithChildren} from "react"
 import {AddProcessButton} from "../components/table/AddProcessButton"
+import processesStyles from "../stylesheets/processes.styl"
 import styles from "./processesTable.styl"
 
 type Props = {
@@ -18,7 +19,7 @@ export function ProcessTableTools(props: PropsWithChildren<Props>) {
         {props.children}
       </Group>
       <Group>
-        {allowAdd && <AddProcessButton className={styles.filterButton} isSubprocess={isSubprocess}/>}
+        {allowAdd && <AddProcessButton className={cn(processesStyles.tableFilter, styles.filterButton)} isSubprocess={isSubprocess}/>}
       </Group>
     </div>
   )

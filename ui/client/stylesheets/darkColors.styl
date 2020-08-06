@@ -12,29 +12,17 @@ light2 = #CCCCCC
 light1 = #E6E6E6
 light = #FFFFFF
 
+accent = #668547
+
 form-control-focus = dark
 marginSize = (formControllHeight / 4)
 borderRadius = marginSize / 2
 
-:local
-	.canvas
-		background light3
+:export
+	borderRadius: borderRadius
+	marginSize: marginSize
 
-		.tab
-			background dark2
-			color light2
+.dark-theme
+	//placeholder
+	color light
 
-			&.active
-				background dark3
-				color light
-
-		.table
-			.head
-				background dark2
-
-			.row
-				&.odd
-					background dark3
-
-				&.even
-					background dark4
