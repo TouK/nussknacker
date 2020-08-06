@@ -10,7 +10,7 @@ import "../stylesheets/processes.styl"
 import {Page} from "./Page"
 import {ProcessesTabData} from "./Processes"
 import {ProcessesList, RowsRenderer} from "./ProcessesList"
-import tabStyles from "./processTabs.styl"
+import tabStyles from "../components/tabs/processTabs.styl"
 import {SearchItem} from "./TableFilters"
 
 function ShowProcessIcon({process}: {process: ProcessType}) {

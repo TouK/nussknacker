@@ -1,6 +1,7 @@
 import {css, cx} from "emotion"
 import {isEmpty} from "lodash"
 import React, {PropsWithChildren} from "react"
+import {useTranslation} from "react-i18next"
 import processesTableStyles from "../../containers/processesTable.styl"
 import {useNkTheme} from "../../containers/theme"
 import processesStyles from "../../stylesheets/processes.styl"
@@ -32,9 +33,10 @@ function TableFilter(props: PropsWithChildren<{className?: string}>) {
 }
 
 function SearchFilter(props: ValueFieldProps<string>) {
+  const {t} = useTranslation()
   return (
     <TableFilter className={processesTableStyles.filterInput}>
-      <InputWithIcon {...props} placeholder="Filter by text...">
+      <InputWithIcon {...props} placeholder={t("filterInput.placeholder", "Filter by text...")}>
         <SearchIcon isEmpty={isEmpty(props.value)}/>
       </InputWithIcon>
     </TableFilter>

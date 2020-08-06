@@ -1,10 +1,10 @@
 import {isEqual} from "lodash"
 import React, {useEffect} from "react"
 import {CategoriesFilter} from "../components/table/CategoriesFilter"
-import {DeployedFilter} from "../components/table/DeployedFilter"
+import {StatusFilter} from "../components/table/StatusFilter"
 import SearchFilter from "../components/table/SearchFilter"
 import {SubprocessFilter} from "../components/table/SubprocessFilter"
-import {ensureArray} from "./EnsureArray"
+import {ensureArray} from "../common/arrayUtils"
 import {usePrevious} from "./hooks/usePrevious"
 import {useStateInSync} from "./hooks/useStateInSync"
 
@@ -64,7 +64,7 @@ export function TableFilters(props: Props) {
       )}
 
       {filters.includes(SearchItem.isDeployed) && (
-        <DeployedFilter
+        <StatusFilter
           onChange={isDeployed => setState(s => ({...s, isDeployed}))}
           value={state.isDeployed}
         />

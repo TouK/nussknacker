@@ -1,5 +1,6 @@
 import {isArray, isString} from "lodash"
 import React, {useCallback, useMemo} from "react"
+import {useTranslation} from "react-i18next"
 import {SortType, TableComponentProperties} from "reactable"
 import LoaderSpinner from "../../components/Spinner"
 import {useSearchQuery} from "../hooks/useSearchQuery"
@@ -17,6 +18,8 @@ type QueryType = {page: number} & SortType
 
 export function ProcessesTable(props: Props) {
   const {isLoading, sortable, columns, ...passProps} = props
+
+  const {t} = useTranslation()
 
   const [query, setQuery] = useSearchQuery<QueryType>({parseNumbers: true})
 
@@ -38,7 +41,7 @@ export function ProcessesTable(props: Props) {
       <LoaderSpinner show={isLoading}/>
       <TableWithDynamicRows
         {...passProps}
-        noDataText={isLoading ? "Loading data..." : "No matching records found."}
+        noDataText={isLoading ? t("table.loading", "Loading data...") : t("table.noData", "No matching records found.")}
         onPageChange={onPageChange}
         currentPage={page}
         sortable={sortable}
