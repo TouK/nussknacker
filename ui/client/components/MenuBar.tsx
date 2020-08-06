@@ -9,12 +9,13 @@ import {ProcessesTabData} from "../containers/Processes"
 import {Search} from "../containers/Search"
 import {Signals} from "../containers/Signals"
 import {Flex} from "./common/Flex"
+import {ButtonWithFocus} from "./withFocus"
 
 function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Dispatch<React.SetStateAction<T>>] {
   const [defaultValue] = useState<T>(startValue)
   const [value, setValue] = useState<T>(defaultValue)
   useEffect(() => {
-    let t: NodeJS.Timeout
+    let t
     if (value) {
       t = setTimeout(() => {
         setValue(defaultValue)
@@ -55,9 +56,9 @@ export function MenuBar({rightElement = null, leftElement = null, ...props}: Pro
           </NavLink>
           {rightElement}
           <Spacer/>
-          <button className="expand-button" onClick={() => setExpanded(!expanded)}>
+          <ButtonWithFocus className="expand-button" onClick={() => setExpanded(!expanded)}>
             <span className={`glyphicon glyphicon-menu-${expanded ? "up" : "down"}`}/>
-          </button>
+          </ButtonWithFocus>
           <ul id="menu-items" onClick={() => setExpanded(false)}>
             <MenuItem path={ProcessesTabData.path} title={t("menu.processes", "Processes")}/>
             {showMetrics && <MenuItem path={Metrics.basePath} title={t("menu.metrics", "Metrics")}/>}

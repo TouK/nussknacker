@@ -18,11 +18,13 @@
 			right 0
 
 	&-enter
-		opacity 0
+		& > *
+			opacity 0
 
 		&\&-active
-			opacity 1
-			transition opacity 300ms ease-in
+			& > *
+				opacity 1
+				transition opacity 300ms ease-in
 
 	&-exit
 		opacity 1

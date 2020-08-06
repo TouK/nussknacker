@@ -3,13 +3,14 @@ import React from "react"
 import Draggable from "react-draggable"
 import Modal from "react-modal"
 import {connect} from "react-redux"
-import EspModalStyles from "../common/EspModalStyles"
-import {allValid, mandatoryValueValidator, Validator, ValidatorType, HandledErrorType} from "./graph/node-modal/editors/Validators"
+import {showProcess} from "../actions/nk/showProcess"
+import * as DialogMessages from "../common/DialogMessages"
+import NkModalStyles from "../common/NkModalStyles"
 import HttpService from "../http/HttpService"
 import "../stylesheets/visualization.styl"
+import {allValid, HandledErrorType, mandatoryValueValidator, Validator, ValidatorType} from "./graph/node-modal/editors/Validators"
 import ValidationLabels from "./modals/ValidationLabels"
-import * as DialogMessages from "../common/DialogMessages"
-import {showProcess} from "../actions/nk/showProcess"
+import {ButtonWithFocus, InputWithFocus, SelectWithFocus} from "./withFocus"
 
 type State = {
   processId: string,
@@ -61,7 +62,7 @@ class AddProcessDialog extends React.Component<Props, State> {
     const {message, clashedNames, categories, isOpen} = this.props
     const {processId} = this.state
 
-    const titleStyles = EspModalStyles.headerStyles("#2D8E54", "white")
+    const titleStyles = NkModalStyles.headerStyles("#2D8E54", "white")
     const nameValidators = prepareNameValidators(clashedNames)
 
     return (
@@ -85,7 +86,7 @@ class AddProcessDialog extends React.Component<Props, State> {
                     <div className="node-row">
                       <div className="node-label">Name</div>
                       <div className="node-value">
-                        <input
+                        <InputWithFocus
                           autoFocus={true}
                           type="text"
                           id="newProcessId"
@@ -99,14 +100,14 @@ class AddProcessDialog extends React.Component<Props, State> {
                     <div className="node-row">
                       <div className="node-label">Category</div>
                       <div className="node-value">
-                        <select
+                        <SelectWithFocus
                           id="processCategory"
                           className="node-input"
                           onChange={(e) => this.setState({processCategory: e.target.value})}
                         >
                           {categories.map((cat, index) => (
                             <option key={index} value={cat}>{cat}</option>))}
-                        </select>
+                        </SelectWithFocus>
                       </div>
                     </div>
                   </div>
@@ -115,16 +116,16 @@ class AddProcessDialog extends React.Component<Props, State> {
 
               <div className="modalFooter">
                 <div className="footerButtons">
-                  <button type="button" title="Cancel" className="modalButton" onClick={this.closeDialog}>Cancel
-                  </button>
-                  <button
+                  <ButtonWithFocus type="button" title="Cancel" className="modalButton" onClick={this.closeDialog}>Cancel
+                  </ButtonWithFocus>
+                  <ButtonWithFocus
                     type="button"
                     title="Create"
                     className="modalButton"
                     disabled={!allValid(nameValidators, [processId])}
                     onClick={this.confirm}
                   >Create
-                  </button>
+                  </ButtonWithFocus>
                 </div>
               </div>
             </div>

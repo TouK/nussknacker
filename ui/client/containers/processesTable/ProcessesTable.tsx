@@ -1,8 +1,10 @@
 import {isArray, isString} from "lodash"
 import React, {useCallback, useMemo} from "react"
-import {SortType, Table, TableComponentProperties} from "reactable"
+import {useTranslation} from "react-i18next"
+import {SortType, TableComponentProperties} from "reactable"
 import LoaderSpinner from "../../components/Spinner"
 import {useSearchQuery} from "../hooks/useSearchQuery"
+import {TableWithDynamicRows} from "./TableWithDynamicRows"
 
 type OwnProps = {
   isLoading?: boolean,
@@ -15,7 +17,9 @@ type Props = TableProps & OwnProps
 type QueryType = {page: number} & SortType
 
 export function ProcessesTable(props: Props) {
-  const {isLoading, sortable, columns, className, ...passProps} = props
+  const {isLoading, sortable, columns, ...passProps} = props
+
+  const {t} = useTranslation()
 
   const [query, setQuery] = useSearchQuery<QueryType>({parseNumbers: true})
 
@@ -35,22 +39,13 @@ export function ProcessesTable(props: Props) {
   return (
     <>
       <LoaderSpinner show={isLoading}/>
-      <Table
+      <TableWithDynamicRows
         {...passProps}
-        className={"esp-table"}
-        noDataText={isLoading ? "Loading data..." : "No matching records found."}
-        previousPageLabel={"<"}
-        nextPageLabel={">"}
-        pageButtonLimit={5}
-        hideFilterInput={true}
-
-        itemsPerPage={5}
-
+        noDataText={isLoading ? t("table.loading", "Loading data...") : t("table.noData", "No matching records found.")}
+        onPageChange={onPageChange}
+        currentPage={page}
         sortable={sortable}
         columns={columns}
-
-        currentPage={page}
-        onPageChange={onPageChange}
         sortBy={{column, direction}}
         onSort={onSort}
       />

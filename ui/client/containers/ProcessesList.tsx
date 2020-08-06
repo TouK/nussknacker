@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string */
 import {isEqual} from "lodash"
 import React, {PropsWithChildren, useCallback, useEffect, useMemo, useState} from "react"
 import {useSelector} from "react-redux"
@@ -10,6 +9,7 @@ import HttpService, {StatusesType} from "../http/HttpService"
 import {getBaseIntervalTime} from "../reducers/selectors/settings"
 import {useFetch} from "./hooks/useFetch"
 import {useInterval} from "./Interval"
+import styles from "./processesTable.styl"
 import {ProcessesTable} from "./processesTable/ProcessesTable"
 import {ProcessTableTools} from "./ProcessTableTools"
 import {SearchQueryComponent} from "./SearchQuery"
@@ -81,7 +81,7 @@ function useFiltersState(defaultQuery: Queries) {
 }
 
 export function ProcessesList(props: BaseProcessesOwnProps) {
-  const {allowAdd, columns, RowsRenderer, filterable, defaultQuery, searchItems, sortable, withStatuses} = props
+  const {allowAdd, columns, RowsRenderer, filterable, defaultQuery, searchItems, sortable, withStatuses, children} = props
 
   const {search, filters, setFilters} = useFiltersState(defaultQuery)
   const {processes, getProcesses, isLoading} = useFilteredProcesses(filters)
@@ -108,7 +108,10 @@ export function ProcessesList(props: BaseProcessesOwnProps) {
         <SearchQueryComponent filters={searchItems} onChange={setFilters}/>
       </ProcessTableTools>
 
+      {children}
+
       <ProcessesTable
+        className={styles.table}
         isLoading={isLoading}
         filterBy={search?.toString()}
 

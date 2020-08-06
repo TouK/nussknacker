@@ -1,5 +1,6 @@
 import React, {ChangeEventHandler, ReactNode} from "react"
 import {useTranslation} from "react-i18next"
+import {TextAreaWithFocus} from "./withFocus"
 
 type Props = {
   onChange: ChangeEventHandler<HTMLTextAreaElement>,
@@ -9,7 +10,7 @@ type Props = {
 const CommentInput = (props: Props): ReactNode => {
   const {t} = useTranslation()
   return (
-    <textarea
+    <TextAreaWithFocus
       value={props.value || ""}
       placeholder={t("commentInput.placeholder", "Write a comment...")}
       onChange={props.onChange}

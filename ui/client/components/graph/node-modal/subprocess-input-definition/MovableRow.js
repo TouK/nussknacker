@@ -5,6 +5,7 @@ import Select from "react-select"
 import {allValid} from "../editors/Validators"
 import ValidationLabels from "../../../modals/ValidationLabels"
 import SvgDiv from "../../../SvgDiv"
+import {ButtonWithFocus, InputWithFocus} from "../../../withFocus"
 
 class RowSelect extends React.Component {
   render() {
@@ -25,7 +26,7 @@ class RowSelect extends React.Component {
           draggable={true}
           onDragStart={this.preventDrag}
         >
-          <input
+          <InputWithFocus
             className={!showValidation || allValid(validators, [field.name]) ? "node-input" : "node-input node-input-with-error"}
             type="text"
             value={field.name}
@@ -59,14 +60,14 @@ class RowSelect extends React.Component {
               draggable={true}
               onDragStart={this.preventDrag}
             >
-              <button
+              <ButtonWithFocus
                 className="addRemoveButton"
                 title="Remove field"
                 onClick={() => {
                   remove()
                 }}
               >-
-              </button>
+              </ButtonWithFocus>
             </div>
           )}
         <SvgDiv svgFile={"handlebars.svg"} className={"handle-bars"}/>

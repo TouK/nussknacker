@@ -7,9 +7,10 @@ import Date from "../components/common/Date"
 import {ProcessType} from "../components/Process/types"
 import TableRowIcon from "../components/table/TableRowIcon"
 import "../stylesheets/processes.styl"
-import {PageWithHealthCheck} from "./Page"
+import {Page} from "./Page"
 import {ProcessesTabData} from "./Processes"
 import {ProcessesList, RowsRenderer} from "./ProcessesList"
+import tabStyles from "../components/tabs/processTabs.styl"
 import {SearchItem} from "./TableFilters"
 
 function ShowProcessIcon({process}: {process: ProcessType}) {
@@ -44,7 +45,7 @@ const columns = [
 
 function SubProcesses() {
   return (
-    <PageWithHealthCheck>
+    <Page className={tabStyles.tabContentPage}>
       <ProcessesList
         defaultQuery={{isSubprocess: true, isArchived: false}}
         searchItems={[SearchItem.categories]}
@@ -56,8 +57,9 @@ function SubProcesses() {
         allowAdd
 
         RowsRenderer={ElementsRenderer}
-      />
-    </PageWithHealthCheck>
+      >
+      </ProcessesList>
+    </Page>
   )
 }
 

@@ -1,7 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
 
 //fixme remove
-class EspModalStyles {
+class NkModalStyles {
 
   modalStyles = (userStyles = {}) => {
     var defaultStyles = {
@@ -41,4 +41,4 @@ class EspModalStyles {
 
 }
 //TODO this pattern is not necessary, just export every public function as in actions.js
-export default new EspModalStyles()
+export default new NkModalStyles()

@@ -1,5 +1,6 @@
 import React from "react"
 import TestResultUtils from "../../../../common/TestResultUtils"
+import {SelectWithFocus} from "../../../withFocus"
 
 export default function TestResultsSelect(props) {
 
@@ -9,7 +10,7 @@ export default function TestResultsSelect(props) {
     <div className="node-row">
       <div className="node-label">Test case:</div>
       <div className="node-value">
-        <select
+        <SelectWithFocus
           className="node-input selectResults"
           onChange={(e) => selectResults(e.target.value, results)}
           value={resultsIdToShow}
@@ -18,7 +19,7 @@ export default function TestResultsSelect(props) {
             TestResultUtils.availableContexts(results).map((ctx, idx) => (
               <option key={idx} value={ctx.id}>{ctx.id} ({ctx.display})</option>))
           }
-        </select>
+        </SelectWithFocus>
       </div>
     </div>
   ) : null

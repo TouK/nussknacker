@@ -11,14 +11,15 @@ import ActionsUtils from "../../../actions/ActionsUtils"
 import ProcessUtils from "../../../common/ProcessUtils"
 import TestResultUtils from "../../../common/TestResultUtils"
 import HttpService from "../../../http/HttpService"
+import {getProcessCounts, isBusinessView} from "../../../reducers/selectors/graph"
+import {getExpandedGroups} from "../../../reducers/selectors/groups"
 import cssVariables from "../../../stylesheets/_variables.styl"
-import {SubProcessGraph as BareGraph} from "../SubProcessGraph"
+import {ButtonWithFocus} from "../../withFocus"
 import NodeUtils from "../NodeUtils"
+import {SubProcessGraph as BareGraph} from "../SubProcessGraph"
 import NodeDetailsContent from "./NodeDetailsContent"
 import NodeDetailsModalHeader from "./NodeDetailsModalHeader"
 import NodeGroupDetailsContent from "./NodeGroupDetailsContent"
-import {getExpandedGroups} from "../../../reducers/selectors/groups"
-import {isBusinessView, getProcessCounts} from "../../../reducers/selectors/graph"
 
 class NodeDetailsModal extends React.Component {
 
@@ -56,7 +57,7 @@ class NodeDetailsModal extends React.Component {
     }
   }
 
-  componentDidUpdate(prevProps, prevState){
+  componentDidUpdate(prevProps, prevState) {
     if (!_.isEqual(prevProps.nodeToDisplay, this.props.nodeToDisplay)) {
       this.setState({editedNode: this.props.nodeToDisplay})
     }
@@ -73,7 +74,7 @@ class NodeDetailsModal extends React.Component {
       this.props.actions.editGroup(this.props.processToDisplay, this.props.nodeToDisplay.id, this.state.editedNode) :
       this.props.actions.editNode(this.props.processToDisplay, this.props.nodeToDisplay, this.state.editedNode)
 
-    actionResult.then (() => {
+    actionResult.then(() => {
       this.setState({pendingRequest: false})
       this.closeModal()
     }, () => this.setState({pendingRequest: false}))
@@ -91,9 +92,9 @@ class NodeDetailsModal extends React.Component {
   renderModalButtons() {
     return [
       this.isGroup() ? this.renderGroupUngroup() : null,
-      <button key="2" type="button" title="Cancel node details" className="modalButton" onClick={this.closeModal}>
+      <ButtonWithFocus key="2" type="button" title="Cancel node details" className="modalButton" onClick={this.closeModal}>
         Cancel
-      </button>,
+      </ButtonWithFocus>,
       !this.props.readOnly ? (
         <LaddaButton
           key="1"
@@ -105,19 +106,33 @@ class NodeDetailsModal extends React.Component {
         >
           Apply
         </LaddaButton>
-      )        :
+      ) :
         null,
     ]
   }
 
   renderGroupUngroup() {
-    const expand = () => { this.props.actions.expandGroup(id); this.closeModal() }
-    const collapse = () => { this.props.actions.collapseGroup(id); this.closeModal() }
+    const expand = () => {
+      this.props.actions.expandGroup(id)
+      this.closeModal()
+    }
+    const collapse = () => {
+      this.props.actions.collapseGroup(id)
+      this.closeModal()
+    }
 
     const id = this.state.editedNode.id
     const expanded = _.includes(this.props.expandedGroups, id)
-    return  expanded ? (<button type="button" key="0" title="Collapse group" className="modalButton" onClick={collapse}>Collapse</button>) :
-      (<button type="button" title="Expand group" key="0" className="modalButton" onClick={expand}>Expand</button>)
+    return expanded ? (
+      <ButtonWithFocus
+        type="button"
+        key="0"
+        title="Collapse group"
+        className="modalButton"
+        onClick={collapse}
+      >Collapse</ButtonWithFocus>
+    ) :
+      (<ButtonWithFocus type="button" title="Expand group" key="0" className="modalButton" onClick={expand}>Expand</ButtonWithFocus>)
   }
 
   isGroup() {
@@ -132,7 +147,7 @@ class NodeDetailsModal extends React.Component {
       <BareGraph
         processCounts={subprocessCounts}
         processToDisplay={this.state.subprocessContent}
-        height={`${parseInt(cssVariables.modalContentMaxHeight)/3}px`}
+        height={`${parseInt(cssVariables.modalContentMaxHeight) / 3}px`}
       />
     )
   }
@@ -209,7 +224,11 @@ class NodeDetailsModal extends React.Component {
 
 function mapState(state) {
   const nodeId = state.graphReducer.nodeToDisplay.id
-  const errors = nodeId ? _.get(state.graphReducer.processToDisplay, `validationResult.errors.invalidNodes[${state.graphReducer.nodeToDisplay.id}]`, []) :
+  const errors = nodeId ? _.get(
+    state.graphReducer.processToDisplay,
+    `validationResult.errors.invalidNodes[${state.graphReducer.nodeToDisplay.id}]`,
+    [],
+  ) :
     _.get(state.graphReducer.processToDisplay, "validationResult.errors.processPropertiesErrors", [])
   const nodeToDisplay = state.graphReducer.nodeToDisplay
   const processCategory = state.graphReducer.fetchedProcessDetails.processCategory

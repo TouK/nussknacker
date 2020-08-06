@@ -20,7 +20,6 @@ import Dialogs from "../components/modals/Dialogs"
 import Visualization from "./Visualization"
 
 import "../stylesheets/mainMenu.styl"
-import "../stylesheets/main.styl"
 import "../app.styl"
 import ErrorHandler from "./ErrorHandler"
 import {ProcessTabs} from "./ProcessTabs"

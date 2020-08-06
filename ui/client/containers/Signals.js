@@ -3,6 +3,7 @@ import React from "react"
 import {connect} from "react-redux"
 import ActionsUtils from "../actions/ActionsUtils"
 import QueriedStateTable from "../components/QueriedStateTable"
+import {InputWithFocus, SelectWithFocus} from "../components/withFocus"
 import {nkPath} from "../config"
 import HttpService from "../http/HttpService"
 
@@ -47,7 +48,7 @@ export class Signals extends React.Component {
               <div className="node-row">
                 <div className="node-label">Signal type</div>
                 <div className="node-value">
-                  <select
+                  <SelectWithFocus
                     className="node-input"
                     onChange={(e) => {
                       const nextSignalType = e.target.value
@@ -60,16 +61,16 @@ export class Signals extends React.Component {
                   >
                     {_.map(_.keys(this.state.signals), (sig, index) => (
                       <option key={index} value={sig}>{sig}</option>))}
-                  </select>
+                  </SelectWithFocus>
                 </div>
               </div>
               <div className="node-row">
                 <div className="node-label">Process id</div>
                 <div className="node-value">
-                  <select className="node-input" onChange={(e) => this.setState({processId: e.target.value})}>
+                  <SelectWithFocus className="node-input" onChange={(e) => this.setState({processId: e.target.value})}>
                     {(currentSignal.availableProcesses || [])
                       .map((process, index) => (<option key={index} value={process}>{process}</option>))}
-                  </select>
+                  </SelectWithFocus>
                 </div>
               </div>
               {_.get(currentSignal, "parameters", []).map((param, idx) => {
@@ -77,7 +78,7 @@ export class Signals extends React.Component {
                   <div className="node-row" key={idx}>
                     <div className="node-label">{param}</div>
                     <div className="node-value">
-                      <input
+                      <InputWithFocus
                         className="node-input"
                         type="text"
                         value={this.state.signalParams[param] || ""}

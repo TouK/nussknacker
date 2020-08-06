@@ -1,13 +1,6 @@
-import HealthCheck from "../components/HealthCheck"
+import cn from "classnames"
 import React, {PropsWithChildren} from "react"
 
-export function Page({children}: PropsWithChildren<{}>) { return <div className="Page">{children}</div> }
-
-export function PageWithHealthCheck({children}: PropsWithChildren<{}>) {
-  return (
-    <Page>
-      <HealthCheck/>
-      {children}
-    </Page>
-  )
+export function Page({children, className}: PropsWithChildren<{className?: string}>) {
+  return <div className={cn("Page", className)}>{children}</div>
 }
