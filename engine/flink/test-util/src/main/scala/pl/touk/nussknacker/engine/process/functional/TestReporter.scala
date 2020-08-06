@@ -21,6 +21,8 @@ object TestReporterUtil {
 
 object TestReporter {
 
+  val taskManagerHistogramName = "taskmanager"
+
   private val instances: ArrayBuffer[TestReporter] = new ArrayBuffer[TestReporter]()
 
   def reset() = synchronized {
@@ -31,11 +33,19 @@ object TestReporter {
     instances.append(reporter)
   }
 
-  def taskManagerReporter = synchronized {
-    TestReporter.instances.find(_.testHistograms.exists(_._2.contains("taskmanager"))).get
+  def headReporter: TestReporter = synchronized {
+    instances.head
   }
-}
 
+  def findReporter(p: TestReporter => Boolean): TestReporter = synchronized {
+    TestReporter
+      .instances
+      .find(p)
+      .getOrElse(throw new IllegalArgumentException("Reporter doesn't exists."))
+  }
+
+  def taskManagerReporter: TestReporter = findReporter(_.testHistograms.exists(_._2.contains(taskManagerHistogramName)))
+}
 
 class TestReporter extends AbstractReporter {
 
