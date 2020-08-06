@@ -48,9 +48,9 @@ class KafkaAvroSink(preparedTopic: PreparedKafkaTopic, versionOption: SchemaVers
   }
 
   /**
-    * Right now we don't support it, because we don't use default sink behavior with expression..
-    */
-  override def testDataOutput: Option[Any => String] = None
+   * Right now we support it incorrectly, because we don't use default sink behavior with expression..
+   */
+  override def testDataOutput: Option[Any => String] = Some(value => Option(value).map(_.toString).getOrElse(""))
 
   private def toFlinkFunction: SinkFunction[KeyedValue[AnyRef, AnyRef]] = {
     val versionOpt = Option(versionOption).collect {
