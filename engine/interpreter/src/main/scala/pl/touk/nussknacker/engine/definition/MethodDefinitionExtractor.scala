@@ -5,9 +5,9 @@ import java.lang.reflect.Method
 import java.util.Optional
 
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.transformation.GenericNodeTransformation
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
+import pl.touk.nussknacker.engine.api.typed.MissingOutputVariableException
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
 import pl.touk.nussknacker.engine.definition.validator.{ValidatorExtractorParameters, ValidatorsExtractor}
@@ -27,7 +27,7 @@ private[definition] object WithExplicitMethodToInvokeMethodDefinitionExtractor e
 
     Right(MethodDefinition(methodToInvoke.getName,
       (oo, args) => methodToInvoke.invoke(oo, args.toList),
-        new OrderedDependencies(obj.parameterDefinition ++ obj.additionalDependencies.map(TypedNodeDependency)),
+        new OrderedDependencies(obj.parameterDefinition ++ obj.additionalDependencies.map(TypedNodeDependency(_))),
       obj.returnType, obj.runtimeClass, List()))
   }
 }
@@ -174,7 +174,7 @@ object MethodDefinitionExtractor {
           foundParam
         case OutputVariableNameDependency =>
           outputVariableNameOpt.getOrElse(
-            throw new MissingOutputVariableException)
+            throw MissingOutputVariableException)
         case TypedNodeDependency(clazz) =>
           val foundParam = additionalDependencies.find(clazz.isInstance).getOrElse(
                       throw new IllegalArgumentException(s"Missing additional parameter of class: ${clazz.getName}"))
@@ -233,7 +233,5 @@ object MethodDefinitionExtractor {
     }
 
   }
-
-  class MissingOutputVariableException extends Exception("Missing output variable name")
 
 }

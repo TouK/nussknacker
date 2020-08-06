@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroDeserializationSch
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
-import pl.touk.nussknacker.engine.flink.util.timestamp.BounedOutOfOrderPreviousElementAssigner
+import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrderPreviousElementAssigner
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.source.KafkaSource
 
@@ -46,7 +46,7 @@ abstract class BaseKafkaAvroSourceFactory[T: ClassTag](timestampAssigner: Option
 
   protected def assignerToUse(kafkaConfig: KafkaConfig): Option[TimestampAssigner[T]] = {
     Some(timestampAssigner.getOrElse(
-      new BounedOutOfOrderPreviousElementAssigner[T](kafkaConfig.defaultMaxOutOfOrdernessMillis
+      new BoundedOutOfOrderPreviousElementAssigner[T](kafkaConfig.defaultMaxOutOfOrdernessMillis
         .getOrElse(defaultMaxOutOfOrdernessMillis))
     ))
   }

@@ -5,9 +5,16 @@ import org.apache.avro.Schema
 import org.apache.avro.data.TimeConversions
 import org.apache.avro.generic.GenericData
 import org.apache.avro.reflect.ReflectData
-import org.apache.avro.specific.SpecificData
+import org.apache.avro.specific.{SpecificData, SpecificRecord}
+
+import scala.reflect.{ClassTag, classTag}
 
 object AvroUtils {
+
+  def isSpecificRecord[T: ClassTag] = {
+    val clazz = classTag[T].runtimeClass.asInstanceOf[Class[T]]
+    classOf[SpecificRecord].isAssignableFrom(clazz)
+  }
 
   def genericData: GenericData = addLogicalTypeConversions(new GenericData(_))
 

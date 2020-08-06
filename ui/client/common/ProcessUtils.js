@@ -48,10 +48,10 @@ class ProcessUtils {
   }
 
   //see BranchEndDefinition.artificialNodeId
-  findVariablesForBranches = (node, nodeResults) => {
+  findVariablesForBranches = (nodeResults) => (nodeId) => {
     //we find all nodes matching pattern encoding branch and edge and extract branch id
     return _.transform(nodeResults || {}, function(result, value, key) {
-      const branch = key.match(new RegExp(`^\\$edge-(.*)-${node.id}$`))
+      const branch = key.match(new RegExp(`^\\$edge-(.*)-${nodeId}$`))
       if (branch && branch.length > 1) {
         result[branch[1]] = value.variableTypes
       }

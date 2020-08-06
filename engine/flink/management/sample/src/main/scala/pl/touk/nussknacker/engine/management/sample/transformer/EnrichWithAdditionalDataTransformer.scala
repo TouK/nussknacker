@@ -42,7 +42,7 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
         )
       case TransformationStep((`roleParameter`, DefinedEagerBranchParameter(byBranch: Map[String, String]@unchecked, _)) :: (`keyParameter`, _) :: (`additionalDataValueParameter`, rightValue: DefinedSingleParameter) ::Nil, _)
         =>
-        val outName = dependencies.collectFirst { case OutputVariableNameValue(name) => name}.get
+        val outName = OutputVariableNameDependency.extract(dependencies)
         val leftCtx = left(byBranch).map(contexts).getOrElse(ValidationContext())
         val context = leftCtx.withVariable(outName, rightValue.returnType)
         FinalResults(context.getOrElse(leftCtx), context.fold(_.toList, _ => Nil))

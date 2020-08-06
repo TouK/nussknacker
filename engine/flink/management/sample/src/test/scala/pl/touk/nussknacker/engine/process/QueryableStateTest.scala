@@ -8,24 +8,24 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
+import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.queryablestate.FlinkQueryableClient
-import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
+import pl.touk.nussknacker.engine.flink.test.{FlinkMiniClusterHolder, FlinkSpec, FlinkTestConfiguration}
 import pl.touk.nussknacker.engine.kafka.{AvailablePortFinder, KafkaSpec, KafkaZookeeperServer}
 import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.test.VeryPatientScalaFutures
+import pl.touk.nussknacker.test.ExtremelyPatientScalaFutures
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers with KafkaSpec with LazyLogging with VeryPatientScalaFutures {
+class QueryableStateTest extends FlatSpec with FlinkSpec with Matchers with KafkaSpec with LazyLogging with ExtremelyPatientScalaFutures {
 
   private var queryStateProxyPortLow: Int = _
 
@@ -35,30 +35,24 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
 
   private val taskManagersCount = 2
   private val configuration: Configuration = FlinkTestConfiguration.configuration(taskManagersCount = taskManagersCount)
-  private var stoppableEnv: StoppableExecutionEnvironment = _
-  private var env: StreamExecutionEnvironment = _
   private var registrar: FlinkStreamingProcessRegistrar = _
 
+
+
   override protected def beforeAll(): Unit = {
-    super.beforeAll()
+    super[KafkaSpec].beforeAll()
     AvailablePortFinder.withAvailablePortsBlocked(1) {
       case head :: Nil =>
         queryStateProxyPortLow = head
-        stoppableEnv = StoppableExecutionEnvironment.withQueryableStateEnabled(configuration, queryStateProxyPortLow, taskManagersCount)
-        stoppableEnv.start()
+        flinkMiniCluster = FlinkMiniClusterHolder(FlinkMiniClusterHolder.addQueryableStateConfiguration(configuration, queryStateProxyPortLow, taskManagersCount), prepareEnvConfig())
+        flinkMiniCluster.start()
       case other => throw new AssertionError(s"Failed to generate port, received: $other")
-
     }
-    env = new StreamExecutionEnvironment(stoppableEnv)
     val testConfig = TestConfig(kafkaZookeeperServer)
     val modelData = LocalModelData(testConfig, creator)
     registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), testConfig, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
   }
 
-  override protected def afterAll(): Unit = {
-    stoppableEnv.stop()
-    super.afterAll()
-  }
 
   it should "fetch queryable state for all keys" in {
     kafkaClient.createTopic("esp.signals")
@@ -71,31 +65,33 @@ class QueryableStateTest extends FlatSpec with BeforeAndAfterAll with Matchers w
       .customNode("lock", "lockOutput", "lockStreamTransformer", "input" -> "#input")
       .emptySink("sink", "sendSms")
 
-    registrar.register(env, lockProcess, ProcessVersion.empty)
-    val jobId = stoppableEnv.execute(lockProcess.id).getJobID
-    stoppableEnv.waitForStart(jobId, lockProcess.id)()
+    val env = flinkMiniCluster.createExecutionEnvironment()
+    registrar.register(new StreamExecutionEnvironment(env), lockProcess, ProcessVersion.empty)
+    val jobId = env.executeAndWaitForStart(lockProcess.id).getJobID
+    try {
+      //this port should not exist...
+      val strangePort = 12345
+      val client = FlinkQueryableClient(s"localhost:$strangePort, localhost:$queryStateProxyPortLow, localhost:${queryStateProxyPortLow + 1}")
 
-    //this port should not exist...
-    val strangePort = 12345
-    val client = FlinkQueryableClient(s"localhost:$strangePort, localhost:$queryStateProxyPortLow, localhost:${queryStateProxyPortLow+1}")
+      def queryState(jobId: String): Future[Boolean] = client.fetchState[java.lang.Boolean](
+        jobId = jobId,
+        queryName = "single-lock-state",
+        key = DevProcessConfigCreator.oneElementValue).map(Boolean.box(_))
 
-    def queryState(jobId: String): Future[Boolean] = client.fetchState[java.lang.Boolean](
-      jobId = jobId,
-      queryName = "single-lock-state",
-      key = DevProcessConfigCreator.oneElementValue).map(Boolean.box(_))
+      //we have to be sure the job is *really* working
+      eventually {
+        env.runningJobs().toList should contain (jobId)
+        queryState(jobId.toString).futureValue shouldBe true
+      }
+      creator.signals(ProcessObjectDependencies(TestConfig(kafkaZookeeperServer), DefaultObjectNaming)).values
+        .head.value.sendSignal(DevProcessConfigCreator.oneElementValue)(lockProcess.id)
 
-    //we have to be sure the job is *really* working
-    eventually {
-      stoppableEnv.runningJobs().toList should contain (jobId)
-      queryState(jobId.toString).futureValue shouldBe true
+      eventually {
+        queryState(jobId.toString).futureValue shouldBe false
+      }
+    } finally {
+      env.stopJob(lockProcess.id, jobId)
     }
-    creator.signals(ProcessObjectDependencies(TestConfig(kafkaZookeeperServer), DefaultObjectNaming)).values
-      .head.value.sendSignal(DevProcessConfigCreator.oneElementValue)(lockProcess.id)
-
-    eventually {
-      queryState(jobId.toString).futureValue shouldBe false
-    }
-
   }
 }
 

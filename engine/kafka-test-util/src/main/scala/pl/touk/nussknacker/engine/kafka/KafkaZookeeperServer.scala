@@ -118,11 +118,11 @@ object KafkaZookeeperUtils {
   implicit class RichConsumerConnector(consumer: KafkaConsumer[Array[Byte], Array[Byte]]) {
     import scala.collection.JavaConverters._
 
-    def consume(topic: String, secondsToWait: Int = 10): Stream[KeyMessage[Array[Byte], Array[Byte]]] =
+    def consume(topic: String, secondsToWait: Int = 20): Stream[KeyMessage[Array[Byte], Array[Byte]]] =
       consumeWithConsumerRecord(topic, secondsToWait)
         .map(record => KeyMessage(record.key(), record.value()))
 
-    def consumeWithConsumerRecord(topic: String, secondsToWait: Int = 10): Stream[ConsumerRecord[Array[Byte], Array[Byte]]] = {
+    def consumeWithConsumerRecord(topic: String, secondsToWait: Int = 20): Stream[ConsumerRecord[Array[Byte], Array[Byte]]] = {
       implicit val patienceConfig: PatienceConfig = PatienceConfig(Span(secondsToWait, Seconds), Span(100, Millis))
 
       val partitionsInfo = eventually {

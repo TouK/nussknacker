@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.definition
 
+import java.util.ServiceLoader
 import java.util.regex.Pattern
 
 import cats.data.Validated
@@ -15,6 +16,13 @@ import io.circe.parser._
 import scala.util.Try
 import pl.touk.nussknacker.engine.api.CirceUtil._
 
+import scala.collection.concurrent.TrieMap
+
+
+trait Validator {
+  def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit]
+}
+
 /**
   * Extend this trait to configure new parameter validator which should be handled on FE.
   * Please remember that you have to also add your own `pl.touk.nussknacker.engine.definition.validator.ValidatorExtractor`
@@ -23,11 +31,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
   *
   * TODO: It shouldn't be a sealed trait. We should allow everyone to create own ParameterValidator
   */
-@ConfiguredJsonCodec sealed trait ParameterValidator {
-
-  def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit]
-
-}
+@ConfiguredJsonCodec sealed trait ParameterValidator extends Validator
 
 //TODO: These validators should be moved to separated module
 
@@ -171,4 +175,30 @@ case object LiteralParameterValidator {
       case _ => None
     }
 
+}
+
+trait CustomParameterValidator extends Validator {
+  def name: String
+}
+
+case class CustomParameterValidatorDelegate(name: String) extends ParameterValidator {
+  import CustomParameterValidatorDelegate._
+
+  override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId)
+  : Validated[PartSubGraphCompilationError, Unit] = getOrLoad(name).isValid(paramName, value, label)
+}
+
+object CustomParameterValidatorDelegate {
+  import scala.collection.JavaConverters._
+
+  private val cache: TrieMap[String, CustomParameterValidator] = TrieMap[String, CustomParameterValidator]()
+
+  private def getOrLoad(name: String): CustomParameterValidator = cache.getOrElseUpdate(name, load(name))
+
+  private def load(name: String) = ServiceLoader.load(classOf[CustomParameterValidator])
+    .iterator().asScala.filter(_.name == name).toList match {
+    case v :: Nil => v
+    case Nil => throw new RuntimeException(s"Cannot load custom validator: $name")
+    case _ => throw new RuntimeException(s"Multiple custom validators with name: $name")
+  }
 }

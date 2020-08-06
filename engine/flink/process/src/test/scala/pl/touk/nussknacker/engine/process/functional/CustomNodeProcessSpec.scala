@@ -4,11 +4,11 @@ import java.util.Date
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
-import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers.processInvoker
+import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.spel
 
-class CustomNodeProcessSpec extends FunSuite with Matchers {
+class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
 
   import spel.Implicits._
 
@@ -270,7 +270,7 @@ class CustomNodeProcessSpec extends FunSuite with Matchers {
 
     val thrown = the [IllegalArgumentException] thrownBy processInvoker.invokeWithSampleData(process, List.empty)
 
-    thrown.getMessage shouldBe s"Compilation errors: ExpressionParseError(There is no property 'value999' in type: ${classOf[SimpleRecord].getName},delta,Some($$expression),#outRec.record.value999 > #outRec.previous + 5)"
+    thrown.getMessage shouldBe s"Compilation errors: ExpressionParseError(There is no property 'value999' in type: SimpleRecord,delta,Some($$expression),#outRec.record.value999 > #outRec.previous + 5)"
   }
 
 

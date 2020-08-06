@@ -466,9 +466,8 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     shouldHaveBadType( parse[Int]("'abcd'", ctx), "Bad expression type, expected: Integer, found: String" )
     shouldHaveBadType( parse[String]("111", ctx), "Bad expression type, expected: String, found: Integer" )
     shouldHaveBadType( parse[String]("{1, 2, 3}", ctx), "Bad expression type, expected: String, found: List[Integer]" )
-    shouldHaveBadType( parse[java.util.Map[_, _]]("'alaMa'", ctx), "Bad expression type, expected: Map[Object,Object], found: String" )
+    shouldHaveBadType( parse[java.util.Map[_, _]]("'alaMa'", ctx), "Bad expression type, expected: Map[Unknown,Unknown], found: String" )
     shouldHaveBadType( parse[Int]("#strVal", ctx), "Bad expression type, expected: Integer, found: String" )
-
   }
 
   test("resolve imported package") {

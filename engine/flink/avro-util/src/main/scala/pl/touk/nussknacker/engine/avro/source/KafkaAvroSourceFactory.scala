@@ -27,7 +27,7 @@ class KafkaAvroSourceFactory(val schemaRegistryProvider: SchemaRegistryProvider,
       NextParameters(List(initial.value), initial.written)
     case TransformationStep((TopicParamName, DefinedEagerParameter(topic:String, _)) :: Nil, _) =>
       val preparedTopic = prepareTopic(topic)
-      val versionOption = versionOptionParam(preparedTopic)
+      val versionOption = versionParam(preparedTopic)
      NextParameters(List(versionOption.value), versionOption.written, None)
     case TransformationStep((TopicParamName, _) :: Nil, _) =>
       NextParameters(List(fallbackVersionOptionParam), Nil, None)
@@ -58,7 +58,7 @@ class KafkaAvroSourceFactory(val schemaRegistryProvider: SchemaRegistryProvider,
   }
 
   override def initialParameters: List[Parameter] = {
-    List(topicParam(NodeId("")).value)
+    List(topicParam(NodeId("")).value, versionParam(Nil))
   }
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): FlinkSource[Any] = {

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.security.basicauth
 import akka.http.scaladsl.server.directives.Credentials.Provided
 import akka.http.scaladsl.server.directives.{Credentials, SecurityDirectives}
 import org.mindrot.jbcrypt.BCrypt
+import pl.touk.nussknacker.engine.util.cache.DefaultCache
 import pl.touk.nussknacker.ui.security.api.{DefaultAuthenticationConfiguration, LoggedUser, RulesSet}
 import pl.touk.nussknacker.ui.security.basicauth.BasicHttpAuthenticator.{EncryptedPassword, PlainPassword, UserWithPassword}
 
@@ -12,6 +13,9 @@ import scala.concurrent.Future
 class BasicHttpAuthenticator(configuration: DefaultAuthenticationConfiguration, allCategories: List[String]) extends SecurityDirectives.AsyncAuthenticator[LoggedUser] {
   //If we want use always reloaded config then we need just prepareUsers()
   private val users = prepareUsers()
+
+  private val hashesCache =
+    configuration.cachingHashesOrDefault.toCacheConfig.map(DefaultCache[(String, String), String])
 
   def apply(credentials: Credentials): Future[Option[LoggedUser]] = Future {
     credentials match {
@@ -36,9 +40,16 @@ class BasicHttpAuthenticator(configuration: DefaultAuthenticationConfiguration, 
     u.password match {
       case PlainPassword(_) => receivedSecret
       case EncryptedPassword(encryptedPassword) =>
-        // it uses salting strategy which is saved on the beginning of encryptedPassword
-        BCrypt.hashpw(receivedSecret, encryptedPassword)
+        def doComputeHash(): String = computeBCryptHash(receivedSecret, encryptedPassword)
+        hashesCache
+          .map(_.getOrCreate((receivedSecret, encryptedPassword))(doComputeHash()))
+          .getOrElse(doComputeHash())
     }
+  }
+
+  protected def computeBCryptHash(receivedSecret: String, encryptedPassword: String): String = {
+    // it uses salting strategy which is saved on the beginning of encryptedPassword
+    BCrypt.hashpw(receivedSecret, encryptedPassword)
   }
 
   private def prepareUsers(): Map[String, UserWithPassword] = {

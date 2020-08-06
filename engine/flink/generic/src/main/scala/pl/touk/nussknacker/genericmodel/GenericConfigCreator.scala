@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SimpleSlidingAggregateTransformerV2, SimpleTumblingAggregateTransformer}
+import pl.touk.nussknacker.engine.flink.util.transformer.outer.OuterJoinTransformer
 import pl.touk.nussknacker.engine.flink.util.transformer.{PreviousValueTransformer, UnionTransformer}
 import pl.touk.nussknacker.engine.kafka.generic.sinks.GenericKafkaJsonSink
 import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
@@ -22,6 +23,7 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
     "previousValue" -> defaultCategory(PreviousValueTransformer),
     "aggregate-sliding" -> defaultCategory(SimpleSlidingAggregateTransformerV2),
     "aggregate-tumbling" -> defaultCategory(SimpleTumblingAggregateTransformer),
+    "outer-join" -> defaultCategory(OuterJoinTransformer),
     "union" -> defaultCategory(UnionTransformer)
   )
 

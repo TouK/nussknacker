@@ -6,12 +6,12 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.java.typeutils.GenericTypeInfo
 import org.apache.flink.streaming.api.scala._
-import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
+import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.namespaces.{KafkaUsageKey, NamingContext, ObjectNaming, ObjectNamingParameters}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
+import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-class NamespacedKafkaSourceSinkTest extends FunSuite with BeforeAndAfterAll with KafkaSpec with Matchers {
+class NamespacedKafkaSourceSinkTest extends FunSuite with FlinkSpec with KafkaSpec with Matchers {
   private implicit val stringTypeInfo: GenericTypeInfo[String] = new GenericTypeInfo(classOf[String])
 
   import KafkaZookeeperUtils._
@@ -59,25 +59,18 @@ class NamespacedKafkaSourceSinkTest extends FunSuite with BeforeAndAfterAll with
 
   private lazy val configCreator: DevProcessConfigCreator = new TestProcessConfig
 
-  private val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
-  private val env = new StreamExecutionEnvironment(stoppableEnv)
   private var registrar: FlinkStreamingProcessRegistrar = _
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    stoppableEnv.start()
     val modelData = LocalModelData(config, configCreator, objectNaming = new TestObjectNaming)
     registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
   }
 
-  override protected def afterAll(): Unit = {
-    stoppableEnv.stop()
-    super.afterAll()
-  }
-
-  private def run(process: EspProcess)(action: => Unit):Unit= {
-    registrar.register(env, process, ProcessVersion.empty)
-    stoppableEnv.withJobRunning(process.id)(action)
+  private def run(process: EspProcess)(action: => Unit): Unit = {
+    val env = flinkMiniCluster.createExecutionEnvironment()
+    registrar.register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty)
+    env.withJobRunning(process.id)(action)
   }
 }
 

@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.expression.{ExpressionTypingInfo, TypedExp
 import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeTypingInfo, ProcessObjectFactory}
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeTypingInfo, NodeValidationExceptionHandler, ProcessObjectFactory}
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
@@ -196,8 +196,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
                                      branchParameters: List[BranchParameters],
                                      outputVariableNameOpt: Option[String],
                                      ctxOrBranches: GenericValidationContext,
-                                     parameterDefinitionsToUse: Option[List[Parameter]] = None
-                                    )
+                                     parameterDefinitionsToUse: Option[List[Parameter]] = None)
                                     (implicit nodeId: NodeId,
                                      metaData: MetaData): (Map[String, ExpressionTypingInfo], ValidatedNel[ProcessCompilationError, T]) = {
     val ctx = ctxOrBranches.left.getOrElse(contextWithOnlyGlobalVariables)
@@ -228,22 +227,24 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
                                   validationContexts: GenericValidationContext,
                                   legacy: T => ValidatedNel[ProcessCompilationError, ValidationContext])
                                  (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, ValidationContext] = {
-    val contextTransformationDefOpt = cNode.cast[AbstractContextTransformation].map(_.definition)
-    (contextTransformationDefOpt, validationContexts) match {
-      case (Some(transformation: ContextTransformationDef), Left(validationContext)) =>
-        // copying global variables because custom transformation may override them -> todo in ValidationContext
-        transformation.transform(validationContext).map(_.copy(globalVariables = validationContext.globalVariables))
-      case (Some(transformation: JoinContextTransformationDef), Right(branchEndContexts)) =>
-        // TODO JOIN: better error
-        val joinNode = node.cast[Join].getOrElse(throw new IllegalArgumentException(s"Should be used join element in node ${nodeId.id}"))
-        val contexts = joinNode.branchParameters
-          .groupBy(_.branchId).keys.map(k => k -> branchEndContexts(k)).toMap
-        // copying global variables because custom transformation may override them -> todo in ValidationContext
-        transformation.transform(contexts).map(_.copy(globalVariables = contextWithOnlyGlobalVariables.globalVariables))
-      case (Some(transformation), ctx) =>
-        Invalid(FatalUnknownError(s"Invalid ContextTransformation class $transformation for contexts: $ctx")).toValidatedNel
-      case (None, _) =>
-        legacy(cNode)
+    NodeValidationExceptionHandler.handleExceptionsInValidation {
+      val contextTransformationDefOpt = cNode.cast[AbstractContextTransformation].map(_.definition)
+      (contextTransformationDefOpt, validationContexts) match {
+        case (Some(transformation: ContextTransformationDef), Left(validationContext)) =>
+          // copying global variables because custom transformation may override them -> todo in ValidationContext
+          transformation.transform(validationContext).map(_.copy(globalVariables = validationContext.globalVariables))
+        case (Some(transformation: JoinContextTransformationDef), Right(branchEndContexts)) =>
+          // TODO JOIN: better error
+          val joinNode = node.cast[Join].getOrElse(throw new IllegalArgumentException(s"Should be used join element in node ${nodeId.id}"))
+          val contexts = joinNode.branchParameters
+            .groupBy(_.branchId).keys.map(k => k -> branchEndContexts(k)).toMap
+          // copying global variables because custom transformation may override them -> todo in ValidationContext
+          transformation.transform(contexts).map(_.copy(globalVariables = contextWithOnlyGlobalVariables.globalVariables))
+        case (Some(transformation), ctx) =>
+          Invalid(FatalUnknownError(s"Invalid ContextTransformation class $transformation for contexts: $ctx")).toValidatedNel
+        case (None, _) =>
+          legacy(cNode)
+      }
     }
   }
 

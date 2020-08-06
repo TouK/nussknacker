@@ -34,13 +34,15 @@ object NodeDataValidator {
                validationContext: ValidationContext,
                branchContexts: Map[String, ValidationContext]
               )(implicit metaData: MetaData): ValidationResponse = {
-    nodeData match {
-      case a: Filter => new FilterValidator(modelData).validate(a, validationContext)
-      case a: Join => new JoinValidator(modelData).validate(a, branchContexts)
-      case a: CustomNode => new CustomNodeValidator(modelData).validate(a, validationContext)
-      case a: Source => new SourceNodeValidator(modelData).validate(a, validationContext)
-      case a: Sink => new SinkNodeValidator(modelData).validate(a, validationContext)
-      case a => EmptyValidator.validate(a, validationContext)
+    modelData.withThisAsContextClassLoader {
+      nodeData match {
+        case a: Filter => new FilterValidator(modelData).validate(a, validationContext)
+        case a: Join => new JoinValidator(modelData).validate(a, branchContexts)
+        case a: CustomNode => new CustomNodeValidator(modelData).validate(a, validationContext)
+        case a: Source => new SourceNodeValidator(modelData).validate(a, validationContext)
+        case a: Sink => new SinkNodeValidator(modelData).validate(a, validationContext)
+        case a => EmptyValidator.validate(a, validationContext)
+      }
     }
   }
 
