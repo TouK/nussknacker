@@ -92,7 +92,7 @@ export function MenuBar({rightElement = null, leftElement = null, ...props}: Pro
           <Spacer/>
           <ButtonWithFocus className="expand-button" onClick={() => setExpanded(!expanded)}>
             <span className={`glyphicon glyphicon-menu-${expanded ? "up" : "down"}`}/>
-          </button>
+          </ButtonWithFocus>
           {buildMenu()}
         </Flex>
       </nav>
