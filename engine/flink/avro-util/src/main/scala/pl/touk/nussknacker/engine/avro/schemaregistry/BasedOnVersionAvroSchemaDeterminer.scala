@@ -4,11 +4,9 @@ import cats.data.Validated
 import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, SchemaDeterminerError}
 
-class BasedOnVersionAvroSchemaDeterminer(createSchemaRegistryClient: () => SchemaRegistryClient,
+class BasedOnVersionAvroSchemaDeterminer(schemaRegistryClient: SchemaRegistryClient,
                                          topic: String,
                                          versionOption: SchemaVersionOption) extends AvroSchemaDeterminer {
-
-  @transient private lazy val schemaRegistryClient: SchemaRegistryClient = createSchemaRegistryClient()
 
   override def determineSchemaUsedInTyping: Validated[SchemaDeterminerError, Schema] = {
     val version = versionOption match {

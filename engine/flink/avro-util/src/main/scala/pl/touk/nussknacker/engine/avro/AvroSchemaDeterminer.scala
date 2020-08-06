@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.avro
 import cats.data.Validated
 import org.apache.avro.Schema
 
-trait AvroSchemaDeterminer extends Serializable {
+trait AvroSchemaDeterminer {
 
   def determineSchemaUsedInTyping: Validated[SchemaDeterminerError, Schema]
 

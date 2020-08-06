@@ -1,9 +1,7 @@
 package pl.touk.nussknacker.engine.avro
 
-import cats.Id
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.{Writer, WriterT}
-import org.apache.avro.Schema
+import cats.data.Writer
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation, TypedNodeDependencyValue}
@@ -86,14 +84,7 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
     SchemaVersionOption.byName(versionOptionName)
 
   protected def prepareSchemaDeterminer(preparedTopic: PreparedKafkaTopic, version: SchemaVersionOption): AvroSchemaDeterminer = {
-    new BasedOnVersionAvroSchemaDeterminer(schemaRegistryProvider.createSchemaRegistryClient _, preparedTopic.prepared, version)
-  }
-
-  protected def fetchSchema(preparedTopic: PreparedKafkaTopic, version: Option[Int])(implicit nodeId: NodeId): WriterT[Id, List[ProcessCompilationError], Option[Schema]] = {
-    schemaRegistryProvider.createSchemaRegistryClient.getSchema(preparedTopic.prepared, version, isKey = false) match {
-      case Valid(schema) => Writer[List[ProcessCompilationError], Option[Schema]](Nil, Some(schema))
-      case Invalid(e) => Writer[List[ProcessCompilationError], Option[Schema]](List(CustomNodeError(e.getMessage, Some(KafkaAvroBaseTransformer.SchemaVersionParamName))), None)
-    }
+    new BasedOnVersionAvroSchemaDeterminer(schemaRegistryClient, preparedTopic.prepared, version)
   }
 
   //edge case - for some reason Topic is not defined
