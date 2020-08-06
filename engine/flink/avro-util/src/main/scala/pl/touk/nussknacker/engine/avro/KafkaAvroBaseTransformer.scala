@@ -45,17 +45,17 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
     }
   }
 
-  protected def versionOptionParam(preparedTopic: PreparedKafkaTopic)(implicit nodeId: NodeId): WithError[Parameter] = {
+  protected def versionParam(preparedTopic: PreparedKafkaTopic)(implicit nodeId: NodeId): WithError[Parameter] = {
     val versions = schemaRegistryClient.getAllVersions(preparedTopic.prepared, isKey = false)
     (versions match {
       case Valid(versions) => Writer[List[ProcessCompilationError], List[Integer]](Nil, versions)
       case Invalid(e) => Writer[List[ProcessCompilationError], List[Integer]](List(CustomNodeError(e.getMessage, Some(KafkaAvroBaseTransformer.TopicParamName))), Nil)
-    }).map(versionOptionParam)
+    }).map(versionParam)
   }
 
-  protected def versionOptionParam(versions: List[Integer]): Parameter = {
+  protected def versionParam(versions: List[Integer]): Parameter = {
     val versionValues = FixedExpressionValue(s"'${SchemaVersionOption.LatestOptionName}'", "Latest version") :: versions.sorted.map(v => FixedExpressionValue(s"'$v'", v.toString))
-    Parameter[String](KafkaAvroBaseTransformer.SchemaVersionParamName).copy(editor = Some(FixedValuesParameterEditor(versionValues)), validators = Nil)
+    Parameter[String](KafkaAvroBaseTransformer.SchemaVersionParamName).copy(editor = Some(FixedValuesParameterEditor(versionValues)))
   }
 
   protected def typedDependency[C:ClassTag](list: List[NodeDependencyValue]): C = list.collectFirst {
@@ -89,7 +89,7 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
   }
 
   //edge case - for some reason Topic is not defined
-  protected val fallbackVersionOptionParam: Parameter = versionOptionParam(Nil)
+  protected val fallbackVersionOptionParam: Parameter = versionParam(Nil)
 
 }
 

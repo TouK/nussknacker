@@ -35,7 +35,7 @@ object PrettyValidationErrors {
       case MissingParameters(params, NodeTypingInfo.ExceptionHandlerNodeId) =>
         node(s"Global process parameters not filled", s"Please fill process properties ${params.mkString(", ")} by clicking 'Properties button'")
       case MissingParameters(params, _) =>
-        node(s"Node parameters not filled", s"Please fill missing node parameters: : ${params.mkString(", ")}")
+        node(s"Node parameters not filled: ${params.mkString(", ")}", s"Please fill missing node parameters: : ${params.mkString(", ")}")
 
       case pve: ParameterValidationError => handleParameterValidationError(pve)
 
