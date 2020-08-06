@@ -1,15 +1,15 @@
-import {Option, FilterProps} from "./FilterTypes"
-import TableSelect from "./TableSelect"
 import React from "react"
+import {ValueFieldProps} from "../valueField"
+import TableSelect, {OptionType} from "./TableSelect"
 import {useParseValue} from "./useParseValue"
 
-const options: Option<boolean>[] = [
+const options: OptionType<boolean>[] = [
   {label: "Show all types processes"},
   {label: "Show only processes", value: false},
   {label: "Show only subprocesses", value: true},
 ]
 
-export function SubprocessFilter(props: FilterProps<boolean>) {
+export function SubprocessFilter(props: ValueFieldProps<boolean>) {
   const {onChange} = props
   const value = useParseValue(options, props.value)
   return (

@@ -1,23 +1,46 @@
+import {css, cx} from "emotion"
 import {isEmpty} from "lodash"
-import React from "react"
+import React, {PropsWithChildren} from "react"
+import {useTranslation} from "react-i18next"
+import processesTableStyles from "../../containers/processesTable.styl"
+import {useNkTheme} from "../../containers/theme"
+import processesStyles from "../../stylesheets/processes.styl"
 import SvgDiv from "../SvgDiv"
-import {FilterProps} from "./FilterTypes"
+import {InputWithIcon} from "../themed/InputWithIcon"
+import {ValueFieldProps} from "../valueField"
+import searchIconStyles from "./searchIcon.styl"
 
-export default function SearchFilter(props: FilterProps) {
-  const {value, onChange} = props
-  const fillIconClass = isEmpty(value) ? "search-icon-fill" : "search-icon-fill-filter"
+function AddonIcon(props: {className?: string, svg: string}) {
+  return <SvgDiv className={cx(searchIconStyles.icon, props.className)} svgFile={props.svg}/>
+}
+
+function SearchIcon(props: {isEmpty: boolean}) {
+  const {theme} = useNkTheme()
+  const styles = css({
+    ".icon-fill": {
+      fill: props.isEmpty ? theme.colors.secondaryColor : theme.colors.accent,
+    },
+  })
+  return <AddonIcon svg="search.svg" className={styles}/>
+}
+
+function TableFilter(props: PropsWithChildren<{className?: string}>) {
   return (
-    <div id="table-filter" className="input-group">
-      <div className="search-container">
-        <input
-          type="text"
-          placeholder="Filter by text..."
-          className="form-control"
-          value={value || ""}
-          onChange={e => onChange(`${e.target.value}`)}
-        />
-        <SvgDiv className={`search-icon ${fillIconClass}`} svgFile="search.svg"/>
-      </div>
+    <div className={cx(processesStyles.tableFilter, props.className)}>
+      {props.children}
     </div>
   )
 }
+
+function SearchFilter(props: ValueFieldProps<string>) {
+  const {t} = useTranslation()
+  return (
+    <TableFilter className={processesTableStyles.filterInput}>
+      <InputWithIcon {...props} placeholder={t("filterInput.placeholder", "Filter by text...")}>
+        <SearchIcon isEmpty={isEmpty(props.value)}/>
+      </InputWithIcon>
+    </TableFilter>
+  )
+}
+
+export default SearchFilter

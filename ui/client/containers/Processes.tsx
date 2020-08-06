@@ -7,10 +7,10 @@ import {nkPath} from "../config"
 import "../stylesheets/processes.styl"
 import {EditItem} from "./editItem"
 import {MetricsItem} from "./metricsItem"
-import {PageWithHealthCheck} from "./Page"
+import {Page} from "./Page"
 import {getProcessState, ProcessesList, RowsRenderer} from "./ProcessesList"
 import {ProcessNameInput} from "./ProcessNameInput"
-import tabStyles from "./processTabs.styl"
+import tabStyles from "../components/tabs/processTabs.styl"
 import {SearchItem} from "./TableFilters"
 
 const ElementsRenderer: RowsRenderer = ({processes, getProcesses, statuses}) => {
@@ -62,7 +62,7 @@ const columns = [
 
 function Processes() {
   return (
-    <PageWithHealthCheck className={tabStyles.tabContentPage}>
+    <Page className={tabStyles.tabContentPage}>
       <ProcessesList
         defaultQuery={{isSubprocess: false, isArchived: false}}
         searchItems={[SearchItem.categories, SearchItem.isDeployed]}
@@ -75,8 +75,9 @@ function Processes() {
         allowAdd
 
         RowsRenderer={ElementsRenderer}
-      />
-    </PageWithHealthCheck>
+      >
+      </ProcessesList>
+    </Page>
   )
 }
 

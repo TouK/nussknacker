@@ -4,6 +4,7 @@ import {connect} from "react-redux"
 import ActionsUtils from "../../actions/ActionsUtils"
 import HttpService from "../../http/HttpService"
 import "../../stylesheets/visualization.styl"
+import {InputWithFocus} from "../withFocus"
 import Dialogs from "./Dialogs"
 import GenericModalDialog from "./GenericModalDialog"
 import {allValid, literalIntegerValueValidator, mandatoryValueValidator} from "../graph/node-modal/editors/Validators"
@@ -38,7 +39,7 @@ class GenerateTestDataDialog extends React.Component {
         type={Dialogs.types.generateTestData}
       >
         <p>Generate test data</p>
-        <input
+        <InputWithFocus
           autoFocus={true}
           className="add-comment-on-save"
           value={this.state.testSampleSize}

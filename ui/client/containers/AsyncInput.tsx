@@ -1,4 +1,5 @@
 import React, {useCallback, useRef, useState} from "react"
+import {InputWithFocus} from "../components/withFocus"
 import {useStateInSync} from "./hooks/useStateInSync"
 
 type Keys = "onEnter" | string
@@ -35,7 +36,7 @@ export function AsyncInput({value, onChangeAsync, ...props}: {
   const revertValue = useCallback(() => isBusy || setInputValue(value), [isBusy, value])
 
   return (
-    <input
+    <InputWithFocus
       {...props}
       value={inputValue}
       ref={ref}

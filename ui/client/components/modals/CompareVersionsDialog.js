@@ -9,6 +9,7 @@ import HttpService from "../../http/HttpService"
 import "../../stylesheets/visualization.styl"
 import EdgeDetailsContent from "../graph/node-modal/EdgeDetailsContent"
 import NodeDetailsContent from "../graph/node-modal/NodeDetailsContent"
+import {SelectWithFocus} from "../withFocus"
 import Dialogs from "./Dialogs"
 import GenericModalDialog from "./GenericModalDialog"
 import {isBusinessView} from "../../reducers/selectors/graph"
@@ -79,7 +80,7 @@ class CompareVersionsDialog extends React.Component {
 
         <div className="esp-form-row">
           <p>Version to compare</p>
-          <select
+          <SelectWithFocus
             autoFocus={true}
             id="otherVersion"
             className="node-input"
@@ -89,7 +90,7 @@ class CompareVersionsDialog extends React.Component {
             <option key="" value=""/>
             {this.props.versions.filter(version => this.props.version !== version.processVersionId).map((version, index) => this.createVersionElement(version))}
             {this.state.remoteVersions.map((version, index) => this.createVersionElement(version, this.remotePrefix))}
-          </select>
+          </SelectWithFocus>
         </div>
         {
           this.state.otherVersion ?
@@ -97,7 +98,7 @@ class CompareVersionsDialog extends React.Component {
               <div>
                 <div className="esp-form-row">
                   <p>Difference to pick</p>
-                  <select
+                  <SelectWithFocus
                     id="otherVersion"
                     className="node-input"
                     value={this.state.currentDiffId || ""}
@@ -106,7 +107,7 @@ class CompareVersionsDialog extends React.Component {
                     <option key="" value=""/>
                     {_.keys(this.state.difference).map((diffId) => (
                       <option key={diffId} value={diffId}>{diffId}</option>))}
-                  </select>
+                  </SelectWithFocus>
                 </div>
                 {this.state.currentDiffId ?
                   (

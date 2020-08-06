@@ -2,7 +2,7 @@ import _ from "lodash"
 import PropTypes from "prop-types"
 import React from "react"
 import nodeAttributes from "../../../assets/json/nodeAttributes"
-import EspModalStyles from "../../../common/EspModalStyles"
+import NkModalStyles from "../../../common/NkModalStyles"
 import SvgDiv from "../../SvgDiv"
 import NodeUtils from "../NodeUtils"
 import {getIconHref} from "../EspNode"
@@ -80,7 +80,7 @@ const NodeDetailsModalHeader = (props) => {
   const docsUrl = nodeSettings.docsUrl
 
   const attributes = getNodeAttributes(node)
-  const titleStyles = EspModalStyles.headerStyles(attributes.styles.fill, attributes.styles.color)
+  const titleStyles = NkModalStyles.headerStyles(attributes.styles.fill, attributes.styles.color)
   const variableLanguage = node?.value?.language
   const header = (_.isEmpty(variableLanguage) ? "" : `${variableLanguage} `) + attributes.name
 

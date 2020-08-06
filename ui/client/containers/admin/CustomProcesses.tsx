@@ -2,9 +2,10 @@
 import React from "react"
 import {Td, Tr} from "reactable"
 import Date from "../../components/common/Date"
+import HealthCheck from "../../components/HealthCheck"
 import ProcessStateIcon from "../../components/Process/ProcessStateIcon"
 import "../../stylesheets/processes.styl"
-import {PageWithHealthCheck} from "../Page"
+import {Page} from "../Page"
 import {getProcessState, ProcessesList, RowsRenderer} from "../ProcessesList"
 import {CancelIcon} from "./CancelIcon"
 import {DeployIcon} from "./DeployIcon"
@@ -47,7 +48,8 @@ const columns = [
 export function CustomProcesses() {
 
   return (
-    <PageWithHealthCheck>
+    <Page>
+      <HealthCheck/>
       <ProcessesList
         defaultQuery={{isCustom: true}}
 
@@ -59,7 +61,7 @@ export function CustomProcesses() {
 
         RowsRenderer={ElementsRenderer}
       />
-    </PageWithHealthCheck>
+    </Page>
   )
 }
 

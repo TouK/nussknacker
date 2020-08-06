@@ -2,6 +2,7 @@ import PropTypes from "prop-types"
 import React from "react"
 import Modal from "react-modal"
 import * as DialogMessages from "../../common/DialogMessages"
+import {ButtonWithFocus} from "../withFocus"
 
 class PreventExitDialog extends React.Component {
 
@@ -31,8 +32,8 @@ class PreventExitDialog extends React.Component {
           <div className="espModal confirmationModal modalContentDark">
             <p>{DialogMessages.unsavedProcessChanges()}</p>
             <div className="confirmationButtons">
-              <button type="button" title="NO" className="modalButton" onClick={this.closeDialog}>NO</button>
-              <button type="button" title="DISCARD" className="modalButton" onClick={this.confirm}>DISCARD</button>
+              <ButtonWithFocus type="button" title="NO" className="modalButton" onClick={this.closeDialog}>NO</ButtonWithFocus>
+              <ButtonWithFocus type="button" title="DISCARD" className="modalButton" onClick={this.confirm}>DISCARD</ButtonWithFocus>
             </div>
           </div>
         </div>

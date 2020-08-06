@@ -3,6 +3,7 @@ import {allValid} from "../Validators"
 import ValidationLabels from "../../../../modals/ValidationLabels"
 import PropTypes from "prop-types"
 import React from "react"
+import {TextAreaWithFocus} from "../../../../withFocus"
 
 export const Textarea = (props) => {
   const {
@@ -14,7 +15,7 @@ export const Textarea = (props) => {
     <div className={className}>
       <div className={isMarked ? " marked" : ""}>
         {
-          <textarea
+          <TextAreaWithFocus
             autoFocus={autoFocus}
             readOnly={readOnly}
             placeholder={placeholder}

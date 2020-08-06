@@ -1,67 +1,48 @@
-import React from "react"
-import Select from "react-select"
+import cn from "classnames"
+import React, {useCallback} from "react"
+import styles from "../../containers/processesTable.styl"
 import "../../stylesheets/processes.styl"
+import {ThemedSelect} from "../themed/ThemedSelect"
 
-type Props = {
-  defaultValue: $TodoType,
-  onChange: $TodoType,
-  options: $TodoType[],
-  isMulti: boolean,
-  isSearchable: boolean,
-  placeholder: string,
+export type OptionType<T> = {
+  label: string,
+  value?: T,
 }
 
-export default class TableSelect extends React.Component<Props> {
+type Common<T> = {
+  isSearchable: boolean,
+  placeholder: string,
+  options: OptionType<T>[],
+}
 
-  customSelectStyles = {
-    control: styles => ({
-      ...styles,
-      minHeight: 45,
-      fontSize: 14,
-      color: "#555555",
-      borderRadius: 0,
-    }),
-    option: (styles, state) => ({
-      ...styles,
-      fontSize: 14,
-      backgroundColor: state.isSelected ? "#E6ECFF" : null,
-      color: "#555555",
-    }),
-  }
+type Single<T> = {
+  isMulti: false,
+  defaultValue: OptionType<T>,
+  onChange: (value: OptionType<T>) => void,
+}
 
-  customSelectTheme(theme) {
-    return {
-      ...theme,
-      colors: {
-        ...theme.colors,
-        primary: "#0058A9",
-      },
-    }
-  }
+type Multi<T> = {
+  isMulti: true,
+  defaultValue: OptionType<T>[],
+  onChange: (value: OptionType<T>[]) => void,
+}
 
-  render() {
-    const {defaultValue, options, isMulti, isSearchable, placeholder} = this.props
+type Props<T> = Common<T> & (Single<T> | Multi<T>)
 
-    return (
-      <div id="table-filter" className="input-group">
-        <Select
-          isMulti={isMulti}
-          isSearchable={isSearchable}
-          defaultValue={defaultValue}
-          closeMenuOnSelect={false}
-          className="form-select"
-          options={options}
-          placeholder={placeholder}
-          onChange={this.getOnChange}
-          styles={this.customSelectStyles}
-          theme={this.customSelectTheme}
-        />
-      </div>
-    )
-  }
+export default function TableSelect<T>(props: Props<T>) {
+  const {onChange, isMulti} = props
 
-  getOnChange = value => {
-    const {onChange, isMulti} = this.props
+  const getOnChange = useCallback(value => {
     onChange(isMulti ? value || [] : value)
-  }
+  }, [onChange, isMulti])
+
+  return (
+    <div className={cn("table-filter", "input-group", styles.filterInput)}>
+      <ThemedSelect
+        {...props}
+        closeMenuOnSelect={false}
+        onChange={getOnChange}
+      />
+    </div>
+  )
 }

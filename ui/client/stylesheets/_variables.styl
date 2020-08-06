@@ -1,14 +1,24 @@
 $icon-font-path = "~bootstrap/fonts/"
 $font-family-sans-serif = 'Open Sans', "Helvetica Neue", Helvetica, Arial, sans-serif
 
+primary = #0058a9
+
+$border-radius-base = 0px
+$border-radius-large = $border-radius-base
+$border-radius-small = $border-radius-base
+
+$input-border-focus = primary
+
 @require "~bootstrap/bootstrap/variables.styl"
+
+formControllHeight = $input-height-large
 
 containerPadding = 25px
 
 menuBkgColor = #3a3a3a
 menuTxtColor = #FFFFFF
 
-focusColor = #0058a9
+focusColor = $input-border-focus
 
 menuActiveItem = rgba(0, 0, 0, 0.3)
 
@@ -22,7 +32,7 @@ buttonPadding = 22px
 buttonSize = 72px
 buttonSmallSize = 48px
 
-sidebarWidth=290px
+sidebarWidth = 290px
 panelBackground = #4D4D4D
 panelHeaderBackground = #333333
 panelText = #b3b3b3
@@ -93,5 +103,11 @@ hrColor = #777
 
 
 :export {
-  modalContentMaxHeight: modalContentMaxHeight
+	modalContentMaxHeight: modalContentMaxHeight
+	focusColor: focusColor
+	borderRadius: $border-radius-base
+	formControllHeight: formControllHeight
+	fontSize: $font-size-base
+
+	primary: primary
 }
