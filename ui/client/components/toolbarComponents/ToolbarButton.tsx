@@ -1,8 +1,9 @@
-import Dropzone, {DropEvent} from "react-dropzone"
-import React, {ReactEventHandler, useContext} from "react"
 import cn from "classnames"
-import ToolbarButtonIcon from "./ToolbarButtonIcon"
+import React, {ReactEventHandler, useContext} from "react"
+import Dropzone, {DropEvent} from "react-dropzone"
+import {ButtonWithFocus, InputWithFocus} from "../withFocus"
 import styles from "./ToolbarButton.styl"
+import ToolbarButtonIcon from "./ToolbarButtonIcon"
 import {ToolbarButtonsContext} from "./ToolbarButtons"
 
 interface Props {
@@ -56,7 +57,7 @@ function ToolbarButton({onDrop, title, className, iconClassName, labelClassName,
                 ]),
               })}
             />
-            <input {...getInputProps()}/>
+            <InputWithFocus {...getInputProps()}/>
           </>
         )}
       </Dropzone>
@@ -64,7 +65,7 @@ function ToolbarButton({onDrop, title, className, iconClassName, labelClassName,
   }
 
   return (
-    <button
+    <ButtonWithFocus
       type="button"
       {...buttonProps}
       className={classNames}

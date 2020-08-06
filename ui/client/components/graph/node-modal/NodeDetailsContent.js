@@ -9,6 +9,7 @@ import * as JsonUtils from "../../../common/JsonUtils"
 import ProcessUtils from "../../../common/ProcessUtils"
 import TestResultUtils from "../../../common/TestResultUtils"
 import {allValid, errorValidator, mandatoryValueValidator} from "./editors/Validators"
+import {InputWithFocus} from "../../withFocus"
 import NodeUtils from "../NodeUtils"
 import MapVariable from "./../node-modal/MapVariable"
 import Variable from "./../node-modal/Variable"
@@ -250,7 +251,7 @@ export class NodeDetailsContent extends React.Component {
               createReadOnlyField={params => (
                 <div className="node-row">{this.renderFieldLabel(params.name)}
                   <div className="node-value">
-                    <input
+                    <InputWithFocus
                       type="text"
                       className="node-input"
                       value={params.expression.expression}
@@ -499,7 +500,7 @@ export class NodeDetailsContent extends React.Component {
         {this.state.editedNode.ref.parameters.map((param, index) => {
           return (
             <div className="node-block" key={this.props.node.id + param.name + index}>
-              {this. createParameterExpressionField(
+              {this.createParameterExpressionField(
                 param,
                 "expression",
                 `ref.parameters[${index}]`,

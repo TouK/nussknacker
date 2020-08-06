@@ -1,0 +1,23 @@
+@require "../stylesheets/_variables.styl"
+
+:local
+	.health-check
+		margin 0 10px 10px 10px
+		padding 5px
+		border 2px solid warningColor
+		display flex
+		background white
+		align-items center
+
+		.icon
+			min-width: 30px
+			min-height: 30px
+			margin: 10px
+
+			:global(.warning)
+				fill warningColor
+
+		.errorText
+			color: panelTitleTextColor
+			font-size: 25px
+			font-weight: bold

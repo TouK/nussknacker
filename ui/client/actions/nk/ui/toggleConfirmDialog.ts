@@ -17,7 +17,7 @@ export function toggleConfirmDialog(
   action: () => void,
   confirmText = "Yes",
   denyText = "No",
-  event: EventInfo,
+  event?: EventInfo,
 ): ThunkAction {
   return (dispatch) => {
     !isEmpty(event) && dispatch(reportEvent(event))

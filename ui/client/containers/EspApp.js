@@ -1,13 +1,14 @@
 import React from "react"
-import {Redirect} from "react-router"
-import {matchPath, Route, Switch, withRouter} from "react-router-dom"
+import {Route, Redirect} from "react-router"
+import {matchPath, withRouter} from "react-router-dom"
 import _ from "lodash"
 import {MenuBar} from "../components/MenuBar"
-import Processes from "./Processes"
-import SubProcesses from "./SubProcesses"
+import {ProcessesTabData} from "./Processes"
+import {SubProcessesTabData} from "./SubProcesses"
+import {ArchiveTabData} from "./Archive"
 import NotFound from "./errors/NotFound"
 import {nkPath} from "../config"
-import {CSSTransition, TransitionGroup} from "react-transition-group"
+import {TransitionRouteSwitch} from "./TransitionRouteSwitch"
 import Metrics from "./Metrics"
 import Signals from "./Signals"
 import AdminPage from "./AdminPage"
@@ -15,14 +16,14 @@ import DragArea from "../components/DragArea"
 import {connect} from "react-redux"
 import ActionsUtils from "../actions/ActionsUtils"
 import Dialogs from "../components/modals/Dialogs"
-import * as VisualizationUrl from "../common/VisualizationUrl"
-import Archive from "./Archive"
 import Visualization from "./Visualization"
 
 import "../stylesheets/mainMenu.styl"
-import "../stylesheets/main.styl"
 import "../app.styl"
 import ErrorHandler from "./ErrorHandler"
+import {ProcessTabs} from "./ProcessTabs"
+import {goToProcess} from "../actions/nk/showProcess"
+import {getFeatureSettings} from "../reducers/selectors/settings"
 import CustomTabs from "./CustomTabs"
 
 export class EspApp extends React.Component {
@@ -52,7 +53,7 @@ export class EspApp extends React.Component {
 
   goToProcess = () => {
     const match = this.getMetricsMatch()
-    this.props.history.push(VisualizationUrl.visualizationUrl(match.params.processId))
+    goToProcess(match.params.processId)
   }
 
   renderTopLeftButton() {
@@ -90,27 +91,20 @@ export class EspApp extends React.Component {
             <AllDialogs/>
             <div id="working-area" className={this.props.leftPanelIsOpened ? "is-opened" : null}>
               <ErrorHandler>
-                <Route
-                  path={EspApp.path}
-                  render={({location}) => (
-                    <TransitionGroup>
-                      <CSSTransition key={location.pathname} classNames="fade" timeout={{enter: 300, exit: 300}}>
-                        <Switch location={location}>
-                          <Route path={SubProcesses.path} component={SubProcesses} exact/>
-                          <Route path={Archive.path} component={Archive} exact/>
-                          <Route path={Processes.path} component={Processes} exact/>
-                          <Route path={Visualization.path} component={Visualization} exact/>
-                          <Route path={Metrics.path} component={Metrics} exact/>
-                          <Route path={Signals.path} component={Signals} exact/>
-                          <Route path={AdminPage.path} component={AdminPage} exact/>
-                          <Route path={`${CustomTabs.path}/:id`} component={CustomTabs} exact/>
-                          <Redirect from={EspApp.path} to={Processes.path} exact/>
-                          <Route component={NotFound}/>
-                        </Switch>
-                      </CSSTransition>
-                    </TransitionGroup>
-                  )}
-                />
+                <TransitionRouteSwitch>
+                  <Route
+                    path={[ProcessesTabData.path, SubProcessesTabData.path, ArchiveTabData.path]}
+                    component={ProcessTabs}
+                    exact
+                  />
+                  <Route path={Visualization.path} component={Visualization} exact/>
+                  <Route path={Metrics.path} component={Metrics} exact/>
+                  <Route path={Signals.path} component={Signals} exact/>
+                  <Route path={AdminPage.path} component={AdminPage} exact/>
+                  <Route path={`${CustomTabs.path}/:id`} component={CustomTabs} exact/>
+                  <Redirect from={EspApp.path} to={ProcessesTabData.path} exact/>
+                  <Route component={NotFound}/>
+                </TransitionRouteSwitch>
               </ErrorHandler>
             </div>
           </DragArea>
@@ -124,7 +118,7 @@ function mapState(state) {
   const loggedUser = state.settings.loggedUser
   return {
     leftPanelIsOpened: state.ui.leftPanelIsOpened,
-    featuresSettings: state.settings.featuresSettings,
+    featuresSettings: getFeatureSettings(state),
     loggedUser: loggedUser,
     resolved: !_.isEmpty(loggedUser),
   }

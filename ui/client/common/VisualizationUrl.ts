@@ -2,10 +2,12 @@
 import {omitBy} from "lodash"
 import Moment from "moment"
 import * as  queryString from "query-string"
+import {ParseOptions} from "query-string"
 import {nkPath} from "../config"
+import {NodeId} from "../types"
 
 export const visualizationBasePath = `${nkPath}/visualization`
-export const visualizationPath = `${visualizationBasePath  }/:processId`
+export const visualizationPath = `${visualizationBasePath}/:processId`
 
 function nodeIdPart(nodeId): string {
   return `?nodeId=${encodeURIComponent(nodeId)}`
@@ -25,7 +27,7 @@ function fromTimestampOrDate(tsOrDate) {
   return Moment(tsOrDate)
 }
 
-export function visualizationUrl(processName, nodeId, edgeId) {
+export function visualizationUrl(processName: string, nodeId?: NodeId, edgeId?: NodeId) {
   const baseUrl = `${visualizationBasePath}/${encodeURIComponent(processName)}`
   const nodeIdUrlPart = nodeId && edgeId == null ? nodeIdPart(nodeId) : ""
   const edgeIdUrlPart = edgeId && nodeId == null ? edgeIdPart(edgeId) : ""
@@ -54,11 +56,17 @@ export function extractCountParams(queryParams) {
   return null
 }
 
-export function setAndPreserveLocationParams(params): string {
-  const queryParams = queryString.parse(window.location.search, {arrayFormat: "comma"})
+export const defaultArrayFormat: ParseOptions["arrayFormat"] = "comma"
+
+export function normalizeParams<T>(object: T) {
+  return queryString.parse(queryString.stringify(object, {arrayFormat: defaultArrayFormat})) as Record<keyof T, string>
+}
+
+export function setAndPreserveLocationParams(params, arrayFormat = defaultArrayFormat): string {
+  const queryParams = queryString.parse(window.location.search, {arrayFormat})
   const resultParams = omitBy(Object.assign({}, queryParams, params), (e) => {
     return e == null || e === "" || e === 0
   })
 
-  return queryString.stringify(resultParams, {arrayFormat: "comma"})
+  return queryString.stringify(resultParams, {arrayFormat})
 }

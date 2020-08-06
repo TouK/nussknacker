@@ -4,6 +4,7 @@ import {connect} from "react-redux"
 import ActionsUtils from "../../actions/ActionsUtils"
 import ProcessUtils from "../../common/ProcessUtils"
 import "../../stylesheets/visualization.styl"
+import {ButtonWithFocus} from "../withFocus"
 import ProcessDialogWarnings from "./ProcessDialogWarnings"
 
 //TODO: consider extending GenericModalDialog
@@ -40,18 +41,18 @@ class ConfirmDialog extends React.Component {
             <p>{confirmDialog.text}</p>
             <ProcessDialogWarnings processHasWarnings={this.props.processHasWarnings}/>
             <div className="confirmationButtons">
-              <button
+              <ButtonWithFocus
                 type="button"
                 title={confirmDialog.denyText}
                 className="modalButton"
                 onClick={this.closeDialog}
-              >{confirmDialog.denyText}</button>
-              <button
+              >{confirmDialog.denyText}</ButtonWithFocus>
+              <ButtonWithFocus
                 type="button"
                 title={confirmDialog.confirmText}
                 className="modalButton"
                 onClick={this.confirm}
-              >{confirmDialog.confirmText}</button>
+              >{confirmDialog.confirmText}</ButtonWithFocus>
             </div>
           </div>
         </div>
