@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SimpleSlidingAggregateTransformerV2, SimpleTumblingAggregateTransformer}
 import pl.touk.nussknacker.engine.flink.util.transformer.outer.OuterJoinTransformer
-import pl.touk.nussknacker.engine.flink.util.transformer.{PreviousValueTransformer, UnionTransformer}
+import pl.touk.nussknacker.engine.flink.util.transformer.{DelayTransformer, PeriodicSourceFactory, PreviousValueTransformer, UnionTransformer}
 import pl.touk.nussknacker.engine.kafka.generic.sinks.GenericKafkaJsonSink
 import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
@@ -24,7 +24,8 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
     "aggregate-sliding" -> defaultCategory(SimpleSlidingAggregateTransformerV2),
     "aggregate-tumbling" -> defaultCategory(SimpleTumblingAggregateTransformer),
     "outer-join" -> defaultCategory(OuterJoinTransformer),
-    "union" -> defaultCategory(UnionTransformer)
+    "union" -> defaultCategory(UnionTransformer),
+    "delay" -> defaultCategory(DelayTransformer)
   )
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
@@ -34,7 +35,8 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
     Map(
       "kafka-json" -> defaultCategory(new GenericJsonSourceFactory(processObjectDependencies)),
       "kafka-typed-json" -> defaultCategory(new GenericTypedJsonSourceFactory(processObjectDependencies)),
-      "kafka-avro" -> defaultCategory(avroSourceFactory)
+      "kafka-avro" -> defaultCategory(avroSourceFactory),
+      "periodic" -> defaultCategory(PeriodicSourceFactory)
     )
   }
 
