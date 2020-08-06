@@ -17,6 +17,10 @@ import scala.reflect.ClassTag
 
 trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T] {
 
+  // Initially we don't want to select concrete topic by user so we add null topic on the beginning of select box.
+  // TODO: add addNullOption feature flag to FixedValuesParameterEditor
+  val nullTopicOption: FixedExpressionValue = FixedExpressionValue("", "")
+
   type WithError[V] = Writer[List[ProcessCompilationError], V]
 
   def schemaRegistryProvider: SchemaRegistryProvider
@@ -36,13 +40,17 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
       case Valid(topics) => Writer[List[ProcessCompilationError], List[String]](Nil, topics)
       case Invalid(e) => Writer[List[ProcessCompilationError], List[String]](List(CustomNodeError(e.getMessage, Some(KafkaAvroBaseTransformer.TopicParamName))), Nil)
     }).map { topics =>
-      Parameter[String](KafkaAvroBaseTransformer.TopicParamName).copy(editor = Some(FixedValuesParameterEditor(
-        topics
-          .flatMap(topic => processObjectDependencies.objectNaming.decodeName(topic, processObjectDependencies.config, KafkaUtils.KafkaTopicUsageKey))
-          .sorted
-          .map(v => FixedExpressionValue(s"'$v'", v))
-      )))
+      topicParam(topics)
     }
+  }
+
+  private def topicParam(topics: List[String]): Parameter = {
+    Parameter[String](KafkaAvroBaseTransformer.TopicParamName).copy(editor = Some(FixedValuesParameterEditor(
+      nullTopicOption +: topics
+        .flatMap(topic => processObjectDependencies.objectNaming.decodeName(topic, processObjectDependencies.config, KafkaUtils.KafkaTopicUsageKey))
+        .sorted
+        .map(v => FixedExpressionValue(s"'$v'", v))
+    )))
   }
 
   protected def versionParam(preparedTopic: PreparedKafkaTopic)(implicit nodeId: NodeId): WithError[Parameter] = {
