@@ -48,9 +48,9 @@ class TransformersTest extends FunSuite with Matchers {
       "{f1: #input.eId, f2: #input.str}",
       TypedObjectTypingResult(Map("f1" -> Typed[Number], "f2" -> Typed.fromDetailedType[java.util.Set[String]])))
 
-    validateError("#AGG.sum","#input.str", "Invalid aggregate type: java.lang.String, should be: java.lang.Number")
+    validateError("#AGG.sum","#input.str", "Invalid aggregate type: String, should be: Number")
     validateError("#AGG.map({f1: #AGG.set, f2: #AGG.set})","{f1: #input.str}", "Fields do not match, aggregateBy: f1, aggregator: f1, f2")
-    validateError("#AGG.map({f1: #AGG.max})","{f1: #input.str}", "Invalid fields: f1 - Invalid aggregate type: java.lang.String, should be: java.lang.Number")
+    validateError("#AGG.map({f1: #AGG.max})","{f1: #input.str}", "Invalid fields: f1 - Invalid aggregate type: String, should be: Number")
     validateError("#AGG.map({f1: #AGG.max})","#input.str", "aggregateBy should be declared as fixed map")
   }
 
