@@ -274,7 +274,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
         )
         .emptySink("end", "dummySink")
     )
-    result.result shouldBe Invalid(NonEmptyList.of(ExpressionParseError("Bad expression type, expected: java.lang.String, found: java.lang.Integer",
+    result.result shouldBe Invalid(NonEmptyList.of(ExpressionParseError("Bad expression type, expected: String, found: Integer",
       "generic",Some("par1"),"12")))
     val info1 = result.typing("end")
 
@@ -321,7 +321,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
         )
         .emptySink("end", "dummySink")
     )
-    result.result shouldBe Invalid(NonEmptyList.of(ExpressionParseError("Bad expression type, expected: java.lang.String, found: java.lang.Integer",
+    result.result shouldBe Invalid(NonEmptyList.of(ExpressionParseError("Bad expression type, expected: String, found: Integer",
       "generic",Some("par1"),"12")))
     val info1 = result.typing("end")
 

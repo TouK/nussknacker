@@ -453,7 +453,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .filter("sampleFilter2", "#input.value1.value3 > 10")
       .emptySink("id2", "sink")
     validate(process, definitionWithTypedSource).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type: pl.touk.nussknacker.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord", "sampleFilter2", Some(DefaultExpressionId), _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type: AnotherSimpleRecord", "sampleFilter2", Some(DefaultExpressionId), _), _)) =>
     }
   }
 
@@ -469,7 +469,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
 
     validate(process, definitionWithCustomNode).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type: pl.touk.nussknacker.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord", "sampleFilter2", Some(DefaultExpressionId), _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type: AnotherSimpleRecord", "sampleFilter2", Some(DefaultExpressionId), _), _)) =>
     }
   }
 
@@ -487,7 +487,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     val compilationResult = validate(process, definitionWithCustomNode)
     compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type: pl.touk.nussknacker.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord", "sampleFilter2", Some(DefaultExpressionId), _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type: AnotherSimpleRecord", "sampleFilter2", Some(DefaultExpressionId), _), _)) =>
     }
     compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(process.metaData), "processHelper" -> Typed(ProcessHelper.getClass))
     compilationResult.variablesInNodes("id3") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(process.metaData), "processHelper" -> Typed(ProcessHelper.getClass))
@@ -506,7 +506,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
 
     validate(process, definitionWithCustomNode).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'terefere' in type: pl.touk.nussknacker.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord",
+      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'terefere' in type: AnotherSimpleRecord",
       "sampleFilter2", Some(DefaultExpressionId), "#out1.terefere"), _)) =>
     }
   }
@@ -577,7 +577,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .filter("sampleFilter1", "#input.plainValueOpt.terefere > 10")
       .emptySink("id2", "sink")
     validate(process, definitionWithTypedSource).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'terefere' in type: scala.math.BigDecimal", "sampleFilter1", Some(DefaultExpressionId), _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'terefere' in type: BigDecimal", "sampleFilter1", Some(DefaultExpressionId), _), _)) =>
     }
   }
 
@@ -1057,7 +1057,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val compilationResult = validate(process, baseDefinition)
 
     compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Mismatch parameter types. Found: identity(scala.concurrent.Future[java.lang.String]). Required: identity(java.lang.String)", _, _, _), Nil)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("Mismatch parameter types. Found: identity(Future[String]). Required: identity(String)", _, _, _), Nil)) =>
     }
   }
 

@@ -270,7 +270,7 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
 
     val thrown = the [IllegalArgumentException] thrownBy processInvoker.invokeWithSampleData(process, List.empty)
 
-    thrown.getMessage shouldBe s"Compilation errors: ExpressionParseError(There is no property 'value999' in type: ${classOf[SimpleRecord].getName},delta,Some($$expression),#outRec.record.value999 > #outRec.previous + 5)"
+    thrown.getMessage shouldBe s"Compilation errors: ExpressionParseError(There is no property 'value999' in type: SimpleRecord,delta,Some($$expression),#outRec.record.value999 > #outRec.previous + 5)"
   }
 
 

@@ -1,8 +1,10 @@
 package pl.touk.nussknacker.engine.api.typed
 
 import io.circe.Encoder
+import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.util.NotNothing
+import pl.touk.nussknacker.engine.api.util.ReflectUtils
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
@@ -17,7 +19,7 @@ object typing {
   sealed trait TypingResult {
 
     final def canBeSubclassOf(typingResult: TypingResult): Boolean =
-      CanBeSubclassDeterminer.canBeSubclassOf(this, typingResult)
+      CanBeSubclassDeterminer.canBeSubclassOf(this, typingResult).isValid
 
     def display: String
 
@@ -44,7 +46,7 @@ object typing {
 
   case class TypedObjectTypingResult(fields: Map[String, TypingResult], objType: TypedClass) extends SingleTypingResult {
 
-    override def display: String = fields.map { case (name, typ) => s"$name of type ${typ.display}"}.mkString("object with fields: ", ", ", "")
+    override def display: String = fields.map { case (name, typ) => s"$name: ${typ.display}"}.mkString("{", ", ", "}")
 
   }
 
@@ -54,7 +56,7 @@ object typing {
 
     override def objType: TypedClass = valueType.objType
 
-    override def display: String = s"dict with id: '$dictId'"
+    override def display: String = s"Dict(id=$dictId)"
 
   }
 
@@ -62,14 +64,14 @@ object typing {
 
     override def objType: TypedClass = underlying.objType
 
-    override def display: String = s"tagged: ${underlying.display} by tag: '$tag'"
+    override def display: String = s"${underlying.display} @ $tag"
 
   }
 
   // Unknown is representation of TypedUnion of all possible types
   case object Unknown extends TypingResult {
 
-    override val display = "unknown"
+    override val display = "Unknown"
 
   }
 
@@ -79,7 +81,7 @@ object typing {
     assert(possibleTypes.size != 1, "TypedUnion should has zero or more than one possibleType - in other case should be used TypedObjectTypingResult or TypedClass")
 
     override val display : String = possibleTypes.toList match {
-      case Nil => "empty"
+      case Nil => "EmptyUnion"
       case many => many.map(_.display).mkString(" | ")
     }
 
@@ -90,10 +92,11 @@ object typing {
 
     //TODO: should we use simple name here?
     override def display: String = {
+      val className = ReflectUtils.fixedClassSimpleNameWithoutParentModule(ClassUtils.primitiveToWrapper(klass))
       if (params.nonEmpty)
-        s"${klass.getName}[${params.map(_.display).mkString(",")}]"
+        s"$className[${params.map(_.display).mkString(",")}]"
       else
-        s"${klass.getName}"
+        s"$className"
     }
 
     override def objType: TypedClass = this

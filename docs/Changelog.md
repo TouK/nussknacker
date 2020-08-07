@@ -8,7 +8,7 @@ For detailed instructions how to migrate to the newest version please see [migra
 Nussknacker versions
 ====================
 
-0.2.0 (not released yet)
+0.2.0
 ------------------------
 * [#1099](https://github.com/TouK/nussknacker/pull/1099) New outer-join node
 * [#1024](https://github.com/TouK/nussknacker/pull/1024) Added default async interpretation value configured by `asyncExecutionConfig.defaultUseAsyncInterpretation` (false if missing).
@@ -41,6 +41,7 @@ Nussknacker versions
     [#1011](https://github.com/TouK/nussknacker/pull/1011)
 * [#988](https://github.com/TouK/nussknacker/pull/988) Json editor
 * [#1066](https://github.com/TouK/nussknacker/pull/1066) Duration and period editors fixes
+* [#1126](https://github.com/TouK/nussknacker/pull/1126) New nodes: periodic source, delay and dead-end
 
 0.1.2
 ------------------------

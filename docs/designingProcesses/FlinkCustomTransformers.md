@@ -96,3 +96,7 @@ And common parameters not dependent from branch:
 - windowLength - length of time window, window will cover range: (exclusive) now-windowLength, (inclusive) now
 
 Events from MAIN branch will be enriched with output variable having aggregated value from JOINED branch. For aggregation will be used AggregateSliding
+
+## Delay
+
+Delay event processing for a given delay duration

@@ -1,9 +1,7 @@
 package pl.touk.nussknacker.engine.avro
 
-import cats.Id
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.{Writer, WriterT}
-import org.apache.avro.Schema
+import cats.data.Writer
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation, TypedNodeDependencyValue}
@@ -16,6 +14,10 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, PreparedKafkaT
 import scala.reflect.ClassTag
 
 trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T] {
+
+  // Initially we don't want to select concrete topic by user so we add null topic on the beginning of select box.
+  // TODO: add addNullOption feature flag to FixedValuesParameterEditor
+  val nullTopicOption: FixedExpressionValue = FixedExpressionValue("", "")
 
   type WithError[V] = Writer[List[ProcessCompilationError], V]
 
@@ -36,26 +38,30 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
       case Valid(topics) => Writer[List[ProcessCompilationError], List[String]](Nil, topics)
       case Invalid(e) => Writer[List[ProcessCompilationError], List[String]](List(CustomNodeError(e.getMessage, Some(KafkaAvroBaseTransformer.TopicParamName))), Nil)
     }).map { topics =>
-      Parameter[String](KafkaAvroBaseTransformer.TopicParamName).copy(editor = Some(FixedValuesParameterEditor(
-        topics
-          .flatMap(topic => processObjectDependencies.objectNaming.decodeName(topic, processObjectDependencies.config, KafkaUtils.KafkaTopicUsageKey))
-          .sorted
-          .map(v => FixedExpressionValue(s"'$v'", v))
-      )))
+      topicParam(topics)
     }
   }
 
-  protected def versionOptionParam(preparedTopic: PreparedKafkaTopic)(implicit nodeId: NodeId): WithError[Parameter] = {
+  private def topicParam(topics: List[String]): Parameter = {
+    Parameter[String](KafkaAvroBaseTransformer.TopicParamName).copy(editor = Some(FixedValuesParameterEditor(
+      nullTopicOption +: topics
+        .flatMap(topic => processObjectDependencies.objectNaming.decodeName(topic, processObjectDependencies.config, KafkaUtils.KafkaTopicUsageKey))
+        .sorted
+        .map(v => FixedExpressionValue(s"'$v'", v))
+    )))
+  }
+
+  protected def versionParam(preparedTopic: PreparedKafkaTopic)(implicit nodeId: NodeId): WithError[Parameter] = {
     val versions = schemaRegistryClient.getAllVersions(preparedTopic.prepared, isKey = false)
     (versions match {
       case Valid(versions) => Writer[List[ProcessCompilationError], List[Integer]](Nil, versions)
       case Invalid(e) => Writer[List[ProcessCompilationError], List[Integer]](List(CustomNodeError(e.getMessage, Some(KafkaAvroBaseTransformer.TopicParamName))), Nil)
-    }).map(versionOptionParam)
+    }).map(versionParam)
   }
 
-  protected def versionOptionParam(versions: List[Integer]): Parameter = {
+  protected def versionParam(versions: List[Integer]): Parameter = {
     val versionValues = FixedExpressionValue(s"'${SchemaVersionOption.LatestOptionName}'", "Latest version") :: versions.sorted.map(v => FixedExpressionValue(s"'$v'", v.toString))
-    Parameter[String](KafkaAvroBaseTransformer.SchemaVersionParamName).copy(editor = Some(FixedValuesParameterEditor(versionValues)), validators = Nil)
+    Parameter[String](KafkaAvroBaseTransformer.SchemaVersionParamName).copy(editor = Some(FixedValuesParameterEditor(versionValues)))
   }
 
   protected def typedDependency[C:ClassTag](list: List[NodeDependencyValue]): C = list.collectFirst {
@@ -78,18 +84,11 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
     SchemaVersionOption.byName(versionOptionName)
 
   protected def prepareSchemaDeterminer(preparedTopic: PreparedKafkaTopic, version: SchemaVersionOption): AvroSchemaDeterminer = {
-    new BasedOnVersionAvroSchemaDeterminer(schemaRegistryProvider.createSchemaRegistryClient _, preparedTopic.prepared, version)
-  }
-
-  protected def fetchSchema(preparedTopic: PreparedKafkaTopic, version: Option[Int])(implicit nodeId: NodeId): WriterT[Id, List[ProcessCompilationError], Option[Schema]] = {
-    schemaRegistryProvider.createSchemaRegistryClient.getSchema(preparedTopic.prepared, version, isKey = false) match {
-      case Valid(schema) => Writer[List[ProcessCompilationError], Option[Schema]](Nil, Some(schema))
-      case Invalid(e) => Writer[List[ProcessCompilationError], Option[Schema]](List(CustomNodeError(e.getMessage, Some(KafkaAvroBaseTransformer.SchemaVersionParamName))), None)
-    }
+    new BasedOnVersionAvroSchemaDeterminer(schemaRegistryClient, preparedTopic.prepared, version)
   }
 
   //edge case - for some reason Topic is not defined
-  protected val fallbackVersionOptionParam: Parameter = versionOptionParam(Nil)
+  protected val fallbackVersionOptionParam: Parameter = versionParam(Nil)
 
 }
 

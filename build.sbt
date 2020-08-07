@@ -627,6 +627,7 @@ lazy val flinkModelUtil = (project in engine("flink/model-util")).
     name := "nussknacker-model-flink-util",
     libraryDependencies ++= {
       Seq(
+        "javax.validation" % "validation-api" % javaxValidationApiV,
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
       )
     }

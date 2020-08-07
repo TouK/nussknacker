@@ -4,8 +4,8 @@ import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{ParameterValidationError, ProcessCompilationError}
+import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo
-import pl.touk.nussknacker.engine.util.ReflectUtils
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 
@@ -35,7 +35,7 @@ object PrettyValidationErrors {
       case MissingParameters(params, NodeTypingInfo.ExceptionHandlerNodeId) =>
         node(s"Global process parameters not filled", s"Please fill process properties ${params.mkString(", ")} by clicking 'Properties button'")
       case MissingParameters(params, _) =>
-        node(s"Node parameters not filled", s"Please fill missing node parameters: : ${params.mkString(", ")}")
+        node(s"Node parameters not filled: ${params.mkString(", ")}", s"Please fill missing node parameters: : ${params.mkString(", ")}")
 
       case pve: ParameterValidationError => handleParameterValidationError(pve)
 
