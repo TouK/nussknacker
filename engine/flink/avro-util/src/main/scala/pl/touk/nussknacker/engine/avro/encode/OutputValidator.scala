@@ -20,7 +20,7 @@ object OutputValidator {
     val returnType = new AvroSchemaTypeDefinitionExtractor(skipOptionalFields = validationMode.acceptUnfilledOptional).typeDefinition(schema, possibleTypes)
     new ValidationModeAwareSubclassDeterminer(validationMode).canBeSubclassOf(value, returnType) leftMap {
       errors =>
-        CustomNodeError("Provided value does not match to selected avro schema - errors:\n" +
+        CustomNodeError("Provided value does not match selected Avro schema - errors:\n" +
           errors.toList.mkString, Some(SinkValueParamName))
     }
   }
