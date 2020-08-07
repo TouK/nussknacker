@@ -2,7 +2,7 @@
 
 To see biggest differences please consult the [changelog](Changelog.md).
 
-## In version 0.2.0 (not released yet)
+## In version 0.2.0
 
 * [#1104](https://github.com/TouK/nussknacker/pull/1104) Creation of `FlinkMiniCluster` is now extracted from `StoppableExecutionEnvironment`. You should create it using
   e.g. `FlinkMiniClusterHolder.apply()` and then create environment using `flinkMiniClusterHolder.createExecutionEnvironment()`. `FlinkMiniClusterHolder` should
