@@ -1,5 +1,6 @@
 import PropTypes from "prop-types"
 import React from "react"
+import {ButtonWithFocus} from "../../../../withFocus"
 import MapRow from "./MapRow"
 
 const Map = (props) => {
@@ -34,12 +35,12 @@ const Map = (props) => {
           {
             readOnly ? null : (
               <div>
-                <button
+                <ButtonWithFocus
                   onClick={addField}
                   className="addRemoveButton"
                   title="Add field"
                 >+
-                </button>
+                </ButtonWithFocus>
               </div>
             )}
         </div>

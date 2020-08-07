@@ -2,6 +2,7 @@ import update from "immutability-helper"
 import _ from "lodash"
 import PropTypes from "prop-types"
 import React from "react"
+import {ButtonWithFocus} from "../../../withFocus"
 import {mandatoryValueValidator} from "../editors/Validators"
 import MovableRow from "./MovableRow"
 
@@ -48,7 +49,7 @@ const FieldsSelect = (props) => {
           {
             readOnly ? null : (
               <div>
-                <button className="addRemoveButton" title="Add field" onClick={() => addField()}>+</button>
+                <ButtonWithFocus className="addRemoveButton" title="Add field" onClick={() => addField()}>+</ButtonWithFocus>
               </div>
             )}
         </div>

@@ -1,12 +1,14 @@
 import React from "react"
+import {withTranslation} from "react-i18next"
+import {WithTranslation} from "react-i18next/src"
 import {connect} from "react-redux"
+import {compose} from "redux"
 import {EspActionsProps, mapDispatchWithEspActions} from "../actions/ActionsUtils"
 import InlinedSvgs from "../assets/icons/InlinedSvgs"
 import HttpService from "../http/HttpService"
+import {getFeatureSettings} from "../reducers/selectors/settings"
+import styles from "./healthCheck.styl"
 import PeriodicallyReloadingComponent from "./PeriodicallyReloadingComponent"
-import {withTranslation} from "react-i18next"
-import {WithTranslation} from "react-i18next/src"
-import {compose} from "redux"
 
 type HealthCheckResponse = {
   state: string,
@@ -32,19 +34,19 @@ class HealthCheck extends PeriodicallyReloadingComponent<Props, State> {
     const {t} = this.props
 
     return this.state?.healthCheck && this.state.healthCheck.state !== HealthCheck.stateOk ? (
-      <div className="healthCheck">
-        <div className="icon" title="Warning" dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsWarning}}/>
-        <span className="errorText">{this.state?.healthCheck.error || t("healthCheck.unknownState", "State unknown")}</span>
+      <div className={styles.healthCheck}>
+        <div className={styles.icon} title="Warning" dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsWarning}}/>
+        <span className={styles.errorText}>{this.state?.healthCheck.error || t("healthCheck.unknownState", "State unknown")}</span>
       </div>
     ): null
   }
 }
 
 const mapState = state => ({
-  healthCheckInterval: state.settings.featuresSettings?.intervalSettings?.healthCheck,
+  healthCheckInterval: getFeatureSettings(state)?.intervalSettings?.healthCheck,
 })
 
-type Props = ReturnType<typeof mapState> & EspActionsProps &  WithTranslation
+type Props = ReturnType<typeof mapState> & EspActionsProps & WithTranslation
 
 const enhance = compose(
   connect(mapState, mapDispatchWithEspActions),

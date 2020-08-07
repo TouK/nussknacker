@@ -1,6 +1,7 @@
 import PropTypes from "prop-types"
 import React from "react"
 import ValidationLabels from "../../../../modals/ValidationLabels"
+import {TextAreaWithFocus} from "../../../../withFocus"
 
 export const LabeledTextarea = (props) => {
   const {autoFocus, value, onChange, className, isMarked, readOnly, rows, cols, renderFieldLabel, showValidation, validators} = props
@@ -11,7 +12,7 @@ export const LabeledTextarea = (props) => {
     <div className="node-row">
       {renderFieldLabel()}
       <div className={`node-value${  isMarked ? " marked" : ""}`}>
-        <textarea
+        <TextAreaWithFocus
           rows={!_.isEmpty(value) ? value.split(lineEndPattern).length : rows}
           cols={cols}
           className={className}

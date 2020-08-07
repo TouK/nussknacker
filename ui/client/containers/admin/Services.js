@@ -5,6 +5,7 @@ import {withRouter} from "react-router-dom"
 import ActionsUtils from "../../actions/ActionsUtils"
 import * as JsonUtils from "../../common/JsonUtils"
 import ProcessUtils from "../../common/ProcessUtils"
+import {InputWithFocus, SelectWithFocus} from "../../components/withFocus"
 import HttpService from "../../http/HttpService"
 import "../../stylesheets/processes.styl"
 import BaseAdminTab from "./BaseAdminTab"
@@ -71,9 +72,9 @@ class Services extends BaseAdminTab {
 
   serviceList() {
     return (
-      <select className="node-input" onChange={e => this.setService(e.target.value)}>
+      <SelectWithFocus className="node-input" onChange={e => this.setService(e.target.value)}>
         {this.state.services.map((service, idx) => <option key={idx} value={idx}>{service.name}</option>)}
-      </select>
+      </SelectWithFocus>
     )
   }
 
@@ -92,7 +93,7 @@ class Services extends BaseAdminTab {
           <span>{param.name}
             <div className="labelFooter">{ProcessUtils.humanReadableType(param.refClazzName)}</div></span>,
           <span>
-            <input
+            <InputWithFocus
               className="node-input"
               value={this.findParamExpression(param.name)}
               onChange={e => setParam(param.name)(e.target.value)}
@@ -147,7 +148,7 @@ class Services extends BaseAdminTab {
   }
 
   render() {
-    const readonly = value => <input readOnly={true} type="text" className="node-input" value={value}/>
+    const readonly = value => <InputWithFocus readOnly={true} type="text" className="node-input" value={value}/>
     return (
       <div>
         <div className="modalContentDye">

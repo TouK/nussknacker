@@ -1,5 +1,6 @@
 import PropTypes from "prop-types"
 import React from "react"
+import {ButtonWithFocus} from "../../../../withFocus"
 import {mandatoryValueValidator} from "../Validators"
 import MapKey from "./MapKey"
 import MapValue from "./MapValue"
@@ -36,12 +37,12 @@ export default function MapRow(props) {
       {
         readOnly ? null : (
           <div className={`node-value fieldRemove${  isMarked(paths) ? " marked" : ""}`}>
-            <button
+            <ButtonWithFocus
               className="addRemoveButton"
               title="Remove field"
               onClick={onRemoveField}
             >-
-            </button>
+            </ButtonWithFocus>
           </div>
         )}
     </div>

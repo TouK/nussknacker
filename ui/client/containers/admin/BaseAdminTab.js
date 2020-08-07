@@ -2,6 +2,7 @@
 import * as  queryString from "query-string"
 import React from "react"
 import * as VisualizationUrl from "../../common/VisualizationUrl"
+import {defaultArrayFormat} from "../../common/VisualizationUrl"
 
 class BaseAdminTab extends React.Component {
 
@@ -9,8 +10,8 @@ class BaseAdminTab extends React.Component {
     this.afterElementChange({page: page})
   }
 
-  onSearchChange = (event) => {
-    this.afterElementChange({search: event.target.value})
+  onSearchChange = (value) => {
+    this.afterElementChange({search: value})
   }
 
   onSortChange = (sort) => {
@@ -19,7 +20,7 @@ class BaseAdminTab extends React.Component {
 
   prepareState() {
     const query = queryString.parse(this.props.history.location.search, {
-      arrayFormat: "comma",
+      arrayFormat: defaultArrayFormat,
       parseNumbers: true,
       parseBooleans: true,
     })

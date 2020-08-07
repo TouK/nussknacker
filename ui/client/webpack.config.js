@@ -1,4 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
+const bootstrap = require("bootstrap")
 const path = require("path")
 const webpack = require("webpack")
 const childProcess = require("child_process")
@@ -31,6 +32,7 @@ const cssPreLoaders = [
     options: {
       plugins: [
         require("autoprefixer"),
+        require("postcss-move-props-to-bg-image-query"),
       ],
     },
   },
@@ -168,6 +170,7 @@ module.exports = {
             options: {
               modules: {
                 mode: "global",
+                exportGlobals: true,
                 localIdentName: "[name]--[local]--[hash:base64:5]",
               },
               localsConvention: "camelCase",
@@ -183,7 +186,15 @@ module.exports = {
       {
         test: /\.styl$/,
         enforce: "pre",
-        use: [...cssPreLoaders, "stylus-loader"],
+        use: [
+          ...cssPreLoaders,
+          {
+            loader: "stylus-loader",
+            options: {
+              use: [bootstrap()],
+            },
+          },
+        ],
       },
       {
         test: /\.less$/,

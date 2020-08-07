@@ -3,20 +3,19 @@ import React, {ReactNode, useEffect, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {NavLink} from "react-router-dom"
 import {AdminPage} from "../containers/AdminPage"
-import {Archive} from "../containers/Archive"
 import {EspApp} from "../containers/EspApp"
 import {Metrics} from "../containers/Metrics"
-import {Processes} from "../containers/Processes"
+import {ProcessesTabData} from "../containers/Processes"
 import {Signals} from "../containers/Signals"
-import {SubProcesses} from "../containers/SubProcesses"
 import {Flex} from "./common/Flex"
 import {CustomTabs} from "../containers/CustomTabs"
+import {ButtonWithFocus} from "./withFocus"
 
 function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Dispatch<React.SetStateAction<T>>] {
   const [defaultValue] = useState<T>(startValue)
   const [value, setValue] = useState<T>(defaultValue)
   useEffect(() => {
-    let t: NodeJS.Timeout
+    let t
     if (value) {
       t = setTimeout(() => {
         setValue(defaultValue)
@@ -61,11 +60,9 @@ export function MenuBar({rightElement = null, leftElement = null, ...props}: Pro
 
   function buildMenu() {
     const defaultMenuItems = [
-      {show: true, path: Processes.path, title: t("menu.processes", "Processes")},
-      {show: true, path: SubProcesses.path, title: t("menu.subProcesses", "Subprocesses")},
+      {show: true, path: ProcessesTabData.path, title: t("menu.processes", "Processes")},
       {show: showMetrics, path: Metrics.basePath, title: t("menu.metrics", "Metrics")},
       {show: showSignals, path: Signals.path, title: t("menu.signals", "Signals")},
-      {show: true, path: Archive.path, title: t("menu.archive", "Archive")},
       {show: showAdmin, path: AdminPage.path, title: t("menu.adminPage", "Admin")},
     ]
 
@@ -93,9 +90,9 @@ export function MenuBar({rightElement = null, leftElement = null, ...props}: Pro
           </NavLink>
           {rightElement}
           <Spacer/>
-          <button className="expand-button" onClick={() => setExpanded(!expanded)}>
+          <ButtonWithFocus className="expand-button" onClick={() => setExpanded(!expanded)}>
             <span className={`glyphicon glyphicon-menu-${expanded ? "up" : "down"}`}/>
-          </button>
+          </ButtonWithFocus>
           {buildMenu()}
         </Flex>
       </nav>

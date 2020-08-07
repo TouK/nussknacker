@@ -5,9 +5,10 @@ import LaddaButton from "react-ladda"
 import Modal from "react-modal"
 import {connect} from "react-redux"
 import ActionsUtils from "../../actions/ActionsUtils"
-import "../../stylesheets/visualization.styl"
-import {getOpenDialog} from "../../reducers/selectors/ui"
 import {RootState} from "../../reducers"
+import {getOpenDialog} from "../../reducers/selectors/ui"
+import "../../stylesheets/visualization.styl"
+import {ButtonWithFocus} from "../withFocus"
 import {DialogType} from "./Dialogs"
 
 type OwnProps = {
@@ -79,7 +80,12 @@ class GenericModalDialog extends React.Component<Props, State> {
               <div className="modalContentDark">
                 {this.props.children}
                 <div className="confirmationButtons">
-                  <button type="button" title="CANCEL" className="modalButton" onClick={this.closeDialog}>CANCEL</button>
+                  <ButtonWithFocus
+                    type="button"
+                    title="CANCEL"
+                    className="modalButton"
+                    onClick={this.closeDialog}
+                  >CANCEL</ButtonWithFocus>
                   {this.props.confirm ? this.renderOkBtn() : null}
                 </div>
               </div>
