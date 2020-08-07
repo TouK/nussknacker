@@ -8,9 +8,9 @@ import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientException}
+import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
 import pl.touk.nussknacker.engine.flink.util.exception.DefaultEspExceptionHandler.{DefaultNonTransientExceptionExtractor, DefaultTransientExceptionExtractor}
-import pl.touk.nussknacker.engine.util.ReflectUtils
 import pl.touk.nussknacker.engine.util.exception.{DeeplyCheckingExceptionExtractor, ExceptionExtractor}
 import pl.touk.nussknacker.engine.util.logging.LazyLoggingWithTraces
 

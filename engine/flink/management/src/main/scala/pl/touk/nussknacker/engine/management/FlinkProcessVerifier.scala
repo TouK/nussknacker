@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.util.ReflectUtils.StaticMethodRunner
+import pl.touk.nussknacker.engine.util.StaticMethodRunner
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
