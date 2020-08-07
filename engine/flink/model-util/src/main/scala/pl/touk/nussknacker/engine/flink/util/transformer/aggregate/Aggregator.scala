@@ -26,6 +26,10 @@ abstract class Aggregator extends AggregateFunction[AnyRef, AnyRef, AnyRef] {
 
   def result(finalAggregate: Aggregate): AnyRef
 
+  def alignToExpectedType(value: AnyRef, outputType: TypingResult): AnyRef = {
+    value
+  }
+
   def computeOutputType(input: TypingResult): Validated[String, TypingResult]
 
   override final def createAccumulator(): AnyRef = zero

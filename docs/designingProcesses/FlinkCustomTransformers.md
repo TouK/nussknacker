@@ -35,8 +35,9 @@ This element defines generic aggregation of values in sliding time window of giv
 - aggregator - type of aggregation (see below)
 - aggregateBy - value which will be aggregated (e.g. `#input.callDuration`, `#input.productId`)
 - windowLength - length of time window, window will cover range: (exclusive) now-windowLength, (inclusive) now
+- emitWhenEventLeft - determine, if should be emitted aggregated value also when some event left the slide
 
-For each event additional variable will be added. For example: for aggregate-sliding node with length of 10 minutes, aggregation max and input events:
+For each event additional variable will be added. For example: for aggregate-sliding node with length of 10 minutes, aggregation max, emitWhenEventLeft = false and input events:
 - `{userId: 1, callDuration: 1, hour: 10:10}`
 - `{userId: 1, callDuration: 5, hour: 10:10}`
 - `{userId: 2, callDuration: 4, hour: 10:15}`
@@ -52,16 +53,20 @@ Following events will be emitted:
 
 ### Aggregator types
 Currently we support following aggregations:
-- Max - computes maximal value
+- First - computes first value
+- Last - computes last value
 - Min - computes minimal value
+- Max - computes maximal value
 - Sum - computes sum of values
+- List - the result is list of incoming elements
 - Set - the result is set of incoming elements (can be v. ineffective for large sets, try to use ApproximateSetCardinality in this case )
 - ApproximateSetCardinality - computes approximate cardinality of set using [HyperLogLog](https://en.wikipedia.org/wiki/HyperLogLog) algorithm.
 
 ## AggregateTumbling
 
-This aggregation in contrary to Aggregate uses tumbling window. All parameters are the same.
-For example, for aggregate-tumbling node with length of 10 minutes, aggregation max and input events from previous example, will be emitted output events:
+This aggregation in contrary to Aggregate uses tumbling window. All parameters are the same except that emitWhenEventLeft is replaced with:
+- emitExtraWindowWhenNoData - determine, if should be emitted extra "zero", aggregated value when there was no data in subsequent window for some key
+Example, for aggregate-tumbling node with length of 10 minutes, aggregation max, emitExtraWindowWhenNoData = false, and input events from previous example:
 - `{userId: 1, callDuration: 5, hour: 10:20, aggregate: 5}` - highest duration during first ten minutes for userId: 1
 - `{userId: 2, callDuration: 4, hour: 10:20, aggregate: 4}` - highest duration during first ten minutes for userId: 2
 - `{userId: 1, callDuration: 3, hour: 10:30, aggregate: 4}` - highest duration during second ten minutes for userId: 1
