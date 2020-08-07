@@ -10,6 +10,7 @@ Nussknacker versions
 
 0.3.0 (not released yet)
 ------------------------
+* [#1128](https://github.com/TouK/nussknacker/pull/1128) Union-memo transformer
 * [#1054](https://github.com/TouK/nussknacker/pull/1054) Tabbed dark process list
 * [#1151](https://github.com/TouK/nussknacker/pull/1151) Upgrade Typesafe Config to latest version
 * [#873](https://github.com/TouK/nussknacker/pull/873) Flink upgrade
