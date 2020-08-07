@@ -11,7 +11,7 @@ import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer}
 import pl.touk.nussknacker.engine.api.namespaces.{KafkaUsageKey, NamingContext}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.api.util.ThreadUtils
+import pl.touk.nussknacker.engine.util.ThreadUtils
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer

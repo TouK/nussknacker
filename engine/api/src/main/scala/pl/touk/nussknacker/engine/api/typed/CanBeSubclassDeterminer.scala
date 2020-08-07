@@ -87,11 +87,11 @@ trait CanBeSubclassDeterminer {
         case _ => ().validNel
       }
     }
-    klassCanBeSubclassOf(givenType.objType, superclassCandidate.objType) andThen
+    classCanBeSubclassOf(givenType.objType, superclassCandidate.objType) andThen
       (typedObjectRestrictions combine dictRestriction combine taggedValueRestriction)
   }
 
-  protected def klassCanBeSubclassOf(givenClass: TypedClass, superclassCandidate: TypedClass): ValidatedNel[String, Unit] = {
+  protected def classCanBeSubclassOf(givenClass: TypedClass, superclassCandidate: TypedClass): ValidatedNel[String, Unit] = {
 
     def canBeSubOrSuperclass(t1: TypingResult, t2: TypingResult) =
       condNel(canBeSubclassOf(t1, t2).isValid || canBeSubclassOf(t2, t1).isValid, (),

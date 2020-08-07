@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.api.util
 
-import java.lang.reflect.InvocationTargetException
-
 object ReflectUtils {
 
   def fixedClassSimpleNameWithoutParentModule(clazz: Class[_]): String = {
@@ -11,5 +9,4 @@ object ReflectUtils {
       .replaceFirst("^.*\\$([^$])", "$1") // parent object
       .replaceFirst("\\$$", "") // module indicator
   }
-
 }

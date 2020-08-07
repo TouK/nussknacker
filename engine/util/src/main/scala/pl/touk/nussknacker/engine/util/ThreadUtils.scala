@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.api.util
+package pl.touk.nussknacker.engine.util
 
 object ThreadUtils {
 
