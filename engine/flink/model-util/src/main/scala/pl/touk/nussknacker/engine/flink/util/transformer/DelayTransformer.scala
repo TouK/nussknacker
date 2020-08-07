@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
-
 import java.time.Duration
 
-import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
+import javax.annotation.Nullable
+import org.apache.flink.api.common.state.{MapState, MapStateDescriptor}
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.streaming.api.scala._
-import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api._
@@ -15,69 +15,72 @@ import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
 import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyOnlyMapper
 
-object DelayTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
+object DelayTransformer extends DelayTransformer
+
+class DelayTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
   @MethodToInvoke(returnType = classOf[Void])
-  def invoke(@ParamName("key") key: LazyParameter[CharSequence],
+  def invoke(@ParamName("key") @Nullable key: LazyParameter[CharSequence],
              @ParamName("delay") delay: Duration): FlinkCustomStreamTransformation =
     FlinkCustomStreamTransformation { (stream: DataStream[Context], nodeCtx: FlinkCustomNodeContext) =>
-      setUidToNodeIdIfNeed(nodeCtx, stream
-        .map(new StringKeyOnlyMapper(nodeCtx.lazyParameterHelper, key))
-        .keyBy(_.value)
+      val keyedStream =
+        Option(key).map { _ =>
+          stream
+            .map(new StringKeyOnlyMapper(nodeCtx.lazyParameterHelper, key))
+            .keyBy(_.value)
+        }.getOrElse {
+          stream
+            .map(ctx => ValueWithContext(defaultKey(ctx), ctx))
+            .keyBy(_.value)
+        }
+      setUidToNodeIdIfNeed(nodeCtx, keyedStream
         .process(prepareDelayFunction(nodeCtx.nodeId, delay)))
     }
 
+  protected def defaultKey(ctx: Context): String = ""
+
   protected def prepareDelayFunction(nodeId: String, delay: Duration): DelayFunction = {
-    new DelayFunction(nodeId, delay)
+    new DelayFunction(delay)
   }
 
 }
 
-class DelayFunction(nodeId: String, delay: Duration)
+class DelayFunction(delay: Duration)
   extends KeyedProcessFunction[String, ValueWithContext[String], ValueWithContext[AnyRef]] {
 
-  type StateType = List[TimestampedValue[api.Context]]
   type FlinkCtx = KeyedProcessFunction[String, ValueWithContext[String], ValueWithContext[AnyRef]]#Context
   type FlinkTimerCtx = KeyedProcessFunction[String, ValueWithContext[String], ValueWithContext[AnyRef]]#OnTimerContext
 
-  private val descriptor = new ValueStateDescriptor[StateType]("state", classOf[StateType])
+  private val descriptor = new MapStateDescriptor[Long, List[api.Context]]("state", implicitly[TypeInformation[Long]], implicitly[TypeInformation[List[api.Context]]])
 
-  @transient private var state : ValueState[StateType] = _
+  @transient private var state : MapState[Long, List[api.Context]] = _
 
   override def open(config: Configuration): Unit = {
-    state = getRuntimeContext.getState(descriptor)
+    state = getRuntimeContext.getMapState(descriptor)
   }
 
   override def processElement(value: ValueWithContext[String], ctx: FlinkCtx, out: Collector[ValueWithContext[AnyRef]]): Unit = {
     val fireTime = ctx.timestamp() + delay.toMillis
 
-    val currentState = readStateValueOrInitial()
-    val newEntry = new TimestampedValue(value.context, fireTime)
-    val stateWithNewEntry = newEntry :: currentState
-    state.update(stateWithNewEntry)
+    val currentState = readStateValueOrInitial(fireTime)
+    val stateWithNewEntry = value.context :: currentState
+    state.put(fireTime, stateWithNewEntry)
     
     ctx.timerService().registerEventTimeTimer(fireTime)
   }
 
   override def onTimer(timestamp: Long, funCtx: FlinkTimerCtx, out: Collector[ValueWithContext[AnyRef]]): Unit = {
-    val currentState = readStateValueOrInitial()
-    val valuesLeft = emitValuesEarlierThanTimestamp(timestamp, currentState, out)
-    state.update(if (valuesLeft.isEmpty) null else valuesLeft)
+    val currentState = readStateValueOrInitial(timestamp)
+    currentState.reverse.foreach(emitValue(out, _))
+    state.remove(timestamp)
   }
 
-  private def emitValuesEarlierThanTimestamp(timestamp: Long, currentState: StateType, output: Collector[ValueWithContext[AnyRef]]): StateType = {
-    val (valuesToEmit, valuesLeft) = currentState.partition(_.getTimestamp <= timestamp)
-    valuesToEmit.foreach(emitValue(output, _))
-    valuesLeft
+  protected def emitValue(output: Collector[ValueWithContext[AnyRef]], ctx: api.Context): Unit = {
+    output.collect(ValueWithContext(null, ctx))
   }
 
-  protected def emitValue(output: Collector[ValueWithContext[AnyRef]],
-                          timestampedCtx: TimestampedValue[api.Context]): Unit = {
-    output.collect(ValueWithContext(null, timestampedCtx.getValue))
-  }
-
-  private def readStateValueOrInitial() : StateType = {
-    Option(state.value()).getOrElse(List.empty)
+  private def readStateValueOrInitial(timestamp: Long) : List[api.Context] = {
+    Option(state.get(timestamp)).getOrElse(List.empty)
   }
 
 }

@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaR
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
+import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SimpleSlidingAggregateTransformerV2, SimpleTumblingAggregateTransformer}
 import pl.touk.nussknacker.engine.flink.util.transformer.outer.OuterJoinTransformer
 import pl.touk.nussknacker.engine.flink.util.transformer.{DelayTransformer, PeriodicSourceFactory, PreviousValueTransformer, UnionTransformer}
@@ -46,7 +47,8 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
 
     Map(
       "kafka-json" -> defaultCategory(new GenericKafkaJsonSink(processObjectDependencies)),
-      "kafka-avro" -> defaultCategory(kafkaAvroSinkFactory)
+      "kafka-avro" -> defaultCategory(kafkaAvroSinkFactory),
+      "dead-end" -> defaultCategory(SinkFactory.noParam(EmptySink))
     )
   }
 

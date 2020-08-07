@@ -41,7 +41,7 @@ Nussknacker versions
     [#1011](https://github.com/TouK/nussknacker/pull/1011)
 * [#988](https://github.com/TouK/nussknacker/pull/988) Json editor
 * [#1066](https://github.com/TouK/nussknacker/pull/1066) Duration and period editors fixes
-* [#1126](https://github.com/TouK/nussknacker/pull/1126) New nodes: periodic source and delay
+* [#1126](https://github.com/TouK/nussknacker/pull/1126) New nodes: periodic source, delay and dead-end
 
 0.1.2
 ------------------------

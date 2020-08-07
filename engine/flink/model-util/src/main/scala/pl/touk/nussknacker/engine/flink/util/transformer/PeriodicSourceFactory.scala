@@ -4,11 +4,10 @@ import java.time.Duration
 import java.{util => jul}
 
 import javax.annotation.Nullable
+import javax.validation.constraints.Min
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
-import org.apache.flink.runtime.state.{FunctionInitializationContext, FunctionSnapshotContext}
 import org.apache.flink.streaming.api.TimeCharacteristic
-import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
 import org.apache.flink.streaming.api.functions.{AssignerWithPeriodicWatermarks, AssignerWithPunctuatedWatermarks, TimestampAssigner}
@@ -23,18 +22,18 @@ import scala.collection.JavaConverters._
 // TODO: add testing capabilities
 object PeriodicSourceFactory extends PeriodicSourceFactory(new MapAscendingTimestampExtractor(MapAscendingTimestampExtractor.DefaultTimestampField))
 
-class PeriodicSourceFactory(timestampAssigner: TimestampAssigner[jul.Map[String, AnyRef]]) extends FlinkSourceFactory[jul.Map[String, AnyRef]]  {
+class PeriodicSourceFactory(timestampAssigner: TimestampAssigner[AnyRef]) extends FlinkSourceFactory[AnyRef]  {
 
   @MethodToInvoke
   def create(@ParamName("period") period: Duration,
              // TODO: @DefaultValue(1) instead of nullable
-             @ParamName("count") @Nullable nullableCount: Integer,
-             @ParamName("value") value: LazyParameter[jul.Map[String, AnyRef]]): Source[_] = {
-    new FlinkSource[jul.Map[String, AnyRef]] with ReturningType {
+             @ParamName("count") @Nullable @Min(1) nullableCount: Integer,
+             @ParamName("value") value: LazyParameter[AnyRef]): Source[_] = {
+    new FlinkSource[AnyRef] with ReturningType {
 
-      override def typeInformation: TypeInformation[jul.Map[String, AnyRef]] = implicitly[TypeInformation[jul.Map[String, AnyRef]]]
+      override def typeInformation: TypeInformation[AnyRef] = implicitly[TypeInformation[AnyRef]]
 
-      override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[jul.Map[String, AnyRef]] = {
+      override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[AnyRef] = {
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
 
         val count = Option(nullableCount).map(_.toInt).getOrElse(1)
@@ -48,14 +47,14 @@ class PeriodicSourceFactory(timestampAssigner: TimestampAssigner[jul.Map[String,
           }
 
         timestampAssigner match {
-          case periodic: AssignerWithPeriodicWatermarks[jul.Map[String, AnyRef]@unchecked] =>
+          case periodic: AssignerWithPeriodicWatermarks[AnyRef@unchecked] =>
             stream.assignTimestampsAndWatermarks(periodic)
-          case punctuated: AssignerWithPunctuatedWatermarks[jul.Map[String, AnyRef]@unchecked] =>
+          case punctuated: AssignerWithPunctuatedWatermarks[AnyRef@unchecked] =>
             stream.assignTimestampsAndWatermarks(punctuated)
         }
       }
 
-      override def timestampAssignerForTest: Option[TimestampAssigner[jul.Map[String, AnyRef]]] = Some(timestampAssigner)
+      override def timestampAssignerForTest: Option[TimestampAssigner[AnyRef]] = Some(timestampAssigner)
 
       override val returnType: typing.TypingResult = value.returnType
 
@@ -64,8 +63,7 @@ class PeriodicSourceFactory(timestampAssigner: TimestampAssigner[jul.Map[String,
 
 }
 
-// CheckpointedFunction to handle checkpoints of underlying stream - not sure if it is need
-class PeriodicFunction(duration: Duration) extends SourceFunction[Unit] with CheckpointedFunction {
+class PeriodicFunction(duration: Duration) extends SourceFunction[Unit] {
 
   @volatile private var isRunning = true
 
@@ -80,17 +78,18 @@ class PeriodicFunction(duration: Duration) extends SourceFunction[Unit] with Che
     isRunning = false
   }
 
-  override def snapshotState(context: FunctionSnapshotContext): Unit = {}
-
-  override def initializeState(context: FunctionInitializationContext): Unit = {}
-
 }
 
-class MapAscendingTimestampExtractor(timestampField: String) extends AscendingTimestampExtractor[jul.Map[String, AnyRef]] {
-  override def extractAscendingTimestamp(element: jul.Map[String, AnyRef]): Long = {
-    element.asScala
-      .get(timestampField).map(_.asInstanceOf[Long])
-      .getOrElse(System.currentTimeMillis())
+class MapAscendingTimestampExtractor(timestampField: String) extends AscendingTimestampExtractor[AnyRef] {
+  override def extractAscendingTimestamp(element: AnyRef): Long = {
+    element match {
+      case m: jul.Map[String@unchecked, AnyRef@unchecked] =>
+        m.asScala
+          .get(timestampField).map(_.asInstanceOf[Long])
+          .getOrElse(System.currentTimeMillis())
+      case _ =>
+        System.currentTimeMillis()
+    }
   }
 }
 
