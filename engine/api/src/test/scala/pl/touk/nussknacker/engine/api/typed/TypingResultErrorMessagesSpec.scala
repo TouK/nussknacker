@@ -18,12 +18,12 @@ class TypingResultErrorMessagesSpec extends FunSuite with Matchers with OptionVa
     canBeSubclassOf(
       typeMap("field1" -> Typed[String], "field2" -> Typed[Int], "field3" -> list(typeMap("field2a" -> Typed[String], "field3" -> Typed[Int])), "field5" -> list(typeMap("field2" -> Typed[String]))),
       typeMap("field2" -> Typed[String], "field3" -> Typed[String], "field4" -> Typed[String], "field5" -> list(typeMap("field2" -> Typed[String])))
-    ) shouldBe NonEmptyList.of("Field 'field2' is of the wrong type. Excepted: Integer, actual: String", "Field 'field3' is of the wrong type. Excepted: List[{field2a: String, field3: Integer}], actual: String", "Field 'field4' is lacking").invalid
+    ) shouldBe NonEmptyList.of("Field 'field2' is of the wrong type. Expected: Integer, actual: String", "Field 'field3' is of the wrong type. Expected: List[{field2a: String, field3: Integer}], actual: String", "Field 'field4' is lacking").invalid
 
     canBeSubclassOf(
       typeMap("field1" -> list(typeMap("field2a" -> Typed[String], "field3" -> Typed[Int]))),
       typeMap("field1" -> list(typeMap("field2" -> Typed[String])))
-    ) shouldBe NonEmptyList.of("Field 'field1' is of the wrong type. Excepted: List[{field2a: String, field3: Integer}], actual: List[{field2: String}]").invalid
+    ) shouldBe NonEmptyList.of("Field 'field1' is of the wrong type. Expected: List[{field2a: String, field3: Integer}], actual: List[{field2: String}]").invalid
   }
 
 
