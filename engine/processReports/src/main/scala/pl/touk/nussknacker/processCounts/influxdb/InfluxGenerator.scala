@@ -77,15 +77,15 @@ object InfluxGenerator {
     //it's VERY unclear how large it should be. If it's too large, we may overlap with end and still generate
     //bad results...
     def query(date: LocalDateTime): Future[Map[String, Long]] = {
-      def query(timeCondition: String) =
-        s"""select ${config.nodeIdTag} as nodeId, last(${config.countField}) as count
+      def query(timeCondition: String, aggregateFunction: String) =
+        s"""select ${config.nodeIdTag} as nodeId, $aggregateFunction(${config.countField}) as count
            | from "${config.nodeCountMetric}" where ${config.processTag} = '$processName'
            | and ${timeCondition} and ${config.envTag} = '$env' group by ${config.slotTag}, ${config.nodeIdTag} fill(0)""".stripMargin
 
       val around = toEpochSeconds(date)
       for {
-        valuesBefore <- retrieveOnlyResultFromActionValueQuery(query(s"time <= ${around}s and time > ${around}s - 1h"))
-        valuesAfter <- retrieveOnlyResultFromActionValueQuery(query(s"time >= ${around}s and time < ${around}s + 1h"))
+        valuesBefore <- retrieveOnlyResultFromActionValueQuery(query(timeCondition = s"time <= ${around}s and time > ${around}s - 1h", aggregateFunction = "last"))
+        valuesAfter <- retrieveOnlyResultFromActionValueQuery(query(timeCondition = s"time >= ${around}s and time < ${around}s + 1h", aggregateFunction = "first"))
       } yield valuesBefore ++ valuesAfter
     }
 
