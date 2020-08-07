@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.definition
 
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{Interpreter, ModelData}
 import pl.touk.nussknacker.engine.api.process.{TestDataGenerator, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.{MetaData, process}
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, ProcessObjectFactory}
@@ -23,7 +24,7 @@ trait TestInfoProvider {
 
 @JsonCodec case class TestingCapabilities(canBeTested: Boolean, canGenerateTestData: Boolean)
 
-class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider {
+class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider with LazyLogging {
 
   private lazy val globalVariablesPreparer =
     GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig)
@@ -53,7 +54,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider {
     for {
       definition <- extractSourceFactory(source)
       sourceParams <- prepareSourceParams(definition, source)
-      sourceObj <- factory.createObject[process.Source[Any]](definition, None, sourceParams).toOption
+      sourceObj <- factory.createObject[process.Source[Any]](definition, Some(Interpreter.InputParamName), sourceParams).toOption
     } yield sourceObj
   }
 
