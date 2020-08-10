@@ -8,6 +8,10 @@ For detailed instructions how to migrate to the newest version please see [migra
 Nussknacker versions
 ====================
 
+0.2.1 (not released yet)
+-----------------------
+* [#1127](https://github.com/TouK/nussknacker/pull/1127) Fix too small count values
+
 0.2.0
 ------------------------
 * [#1099](https://github.com/TouK/nussknacker/pull/1099) New outer-join node
