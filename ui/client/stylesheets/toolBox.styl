@@ -13,20 +13,29 @@ grabMixin()
     cursor: grabbing;
 
 #toolbox
-  font-size 16px
-  font-weight lighter
+  font-size 14px
+  font-weight 600
   padding 0
+  .tree-view
+    background-color #3e3e3e
   .tree-view_item
-    border 1px solid listBorderColor
+    background-color buttonBkgColor
+    border 1px solid alpha(listBorderColor, 50%)
     cursor: pointer
     display flex
     padding 0 5px
+    height 28px
+    line-height @height
     &.disabled
       opacity 0.4
       cursor: not-allowed !important
     &:hover
       background-color toolHoverBkgColor
       color toolHoverColor
+  .tree-view_children
+    background-color #464646
+    font-weight 400
+
   .tree-view_arrow
     cursor inherit
   .toolWrapper
@@ -34,19 +43,22 @@ grabMixin()
     overflow: hidden
     text-overflow: ellipsis
     img
-      filter: brightness(0.6)
+      filter: brightness(0.7)
       margin-right 5px
       margin-bottom 2px
   .tool
     grabMixin()
     margin-bottom -1px
-    height 27px
+    color: #b3b3b3
+    height 28px
     padding 0 5px
     line-height @height
     border 1px solid listBorderColor
     &:hover
-      background-color toolHoverBkgColor
+      background-color darken(toolHoverBkgColor, 7%)
       color toolHoverColor
+      img
+        filter: brightness(0.8)
   .toolIcon
     height 16px
     display inline-block

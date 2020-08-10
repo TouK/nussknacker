@@ -54,7 +54,7 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
         KafkaAvroBaseTransformer.SinkKeyParamName -> null,
         KafkaAvroBaseTransformer.SinkValidationModeParameterName -> validationMode.name,
         KafkaAvroBaseTransformer.SinkValueParamName -> value),
-            List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)))
+      List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)))
   }
 
   test("should throw exception when schema doesn't exist") {
@@ -125,18 +125,18 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
       SchemaVersionParamName -> "'1'")
 
     result.errors shouldBe CustomNodeError("id", "Schema subject doesn't exist.", Some(TopicParamName)) ::
-      CustomNodeError("id", "Fetching schema error for topic: tereferer, version: ExistingSchemaVersion(1)", Some(TopicParamName))::Nil
+      CustomNodeError("id", "Fetching schema error for topic: tereferer, version: ExistingSchemaVersion(1)", Some(TopicParamName)) :: Nil
   }
 
   test("should return sane error on invalid version") {
     val result = validate(
       SinkKeyParamName -> "",
       SinkValueParamName -> "",
-      SinkValidationModeParameterName ->validationModeParam(ValidationMode.strict),
+      SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> "'343543'")
 
-    result.errors shouldBe CustomNodeError("id", "Fetching schema error for topic: fullname, version: ExistingSchemaVersion(343543)", Some(SchemaVersionParamName))::Nil
+    result.errors shouldBe CustomNodeError("id", "Fetching schema error for topic: fullname, version: ExistingSchemaVersion(343543)", Some(SchemaVersionParamName)) :: Nil
   }
 
   test("should validate value") {
@@ -147,7 +147,9 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
 
-    result.errors shouldBe CustomNodeError("id", "Provided value doesn't match to selected avro schema.", Some(SinkValueParamName))::Nil
+    result.errors shouldBe CustomNodeError("id",
+      "Provided value does not match selected Avro schema - errors:\nNone of the following types:\n - String\ncan be a subclass of any of:\n - {vat: Integer, products: List[{id: CharSequence, name: CharSequence, price: Double} | {id: CharSequence, name: CharSequence, price: Double}], amount: Double, company: {name: CharSequence, address: {street: CharSequence, city: CharSequence} | {street: CharSequence, city: CharSequence}} | {name: CharSequence, address: {street: CharSequence, city: CharSequence} | {street: CharSequence, city: CharSequence}}, id: CharSequence, currency: EnumSymbol | CharSequence}",
+      Some(SinkValueParamName)) :: Nil
   }
 
 }

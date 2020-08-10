@@ -1,6 +1,7 @@
 import React from "react"
 import "./timeRange.styl"
 import classNames from "classnames"
+import {InputWithFocus} from "../../../../../withFocus"
 import {Duration} from "./DurationEditor"
 import {Period} from "./PeriodEditor"
 
@@ -57,7 +58,7 @@ export default function TimeRangeComponent(props: Props) {
 
   return (
     <div className={"time-range-component"}>
-      <input
+      <InputWithFocus
         readOnly={readOnly}
         value={value[component.fieldName] || ""}
         onChange={(event) => onChange(component.fieldName, parseInt(event.target.value))}

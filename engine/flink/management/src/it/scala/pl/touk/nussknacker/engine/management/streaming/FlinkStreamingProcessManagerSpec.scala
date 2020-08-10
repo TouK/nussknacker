@@ -259,7 +259,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
 
   private def messagesFromTopic(outTopic: String, count: Int): List[String] = {
     kafkaClient.createConsumer()
-      .consume(outTopic, 20)
+      .consume(outTopic)
       .map(_.message()).map(new String(_, StandardCharsets.UTF_8))
       .take(count).toList
   }

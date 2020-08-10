@@ -8,8 +8,17 @@ For detailed instructions how to migrate to the newest version please see [migra
 Nussknacker versions
 ====================
 
-0.2.0 (not released yet)
+0.3.0 (not released yet)
 ------------------------
+* [#1054](https://github.com/TouK/nussknacker/pull/1054) Tabbed dark process list
+
+0.2.1 (not released yet)
+-----------------------
+* [#1127](https://github.com/TouK/nussknacker/pull/1127) Fix too small count values
+
+0.2.0
+------------------------
+* [#1099](https://github.com/TouK/nussknacker/pull/1099) New outer-join node
 * [#1024](https://github.com/TouK/nussknacker/pull/1024) Added default async interpretation value configured by `asyncExecutionConfig.defaultUseAsyncInterpretation` (false if missing).
 * [#879](https://github.com/TouK/nussknacker/pull/879) Metrics can now use Flink variables for better reporting, it's recommended to use InfluxDB native protocol instead of legacy Graphite protocol to send metrics to InfluxDB.
 * [#940](https://github.com/TouK/nussknacker/pull/940) More detailed node errors 
@@ -40,6 +49,7 @@ Nussknacker versions
     [#1011](https://github.com/TouK/nussknacker/pull/1011)
 * [#988](https://github.com/TouK/nussknacker/pull/988) Json editor
 * [#1066](https://github.com/TouK/nussknacker/pull/1066) Duration and period editors fixes
+* [#1126](https://github.com/TouK/nussknacker/pull/1126) New nodes: periodic source, delay and dead-end
 
 0.1.2
 ------------------------

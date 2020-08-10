@@ -1,4 +1,5 @@
 import React from "react"
+import {InputWithFocus} from "../../withFocus"
 import NodeDetailsContent from "./NodeDetailsContent"
 
 export default function NodeGroupDetailsContent(props) {
@@ -12,7 +13,7 @@ export default function NodeGroupDetailsContent(props) {
           <div className="node-row">
             <div className="node-label">Group id</div>
             <div className="node-value">
-              <input type="text" readOnly={readOnly} className="node-input" value={node.id} onChange={onChange}/>
+              <InputWithFocus type="text" readOnly={readOnly} className="node-input" value={node.id} onChange={onChange}/>
             </div>
           </div>
           {node.nodes.map((node, idx) => (

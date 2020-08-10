@@ -3,19 +3,26 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter
 import java.io._
 import java.nio.charset.StandardCharsets
 
-import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.Schema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClient
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.ConfluentAvroToJsonFormatter._
-import pl.touk.nussknacker.engine.kafka.RecordFormatter
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter}
 
-private[confluent] class ConfluentAvroToJsonFormatter(schemaRegistryClient: SchemaRegistryClient,
-                                                      formatter: ConfluentAvroMessageFormatter,
-                                                      reader: ConfluentAvroMessageReader,
+private[confluent] class ConfluentAvroToJsonFormatter(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
+                                                      kafkaConfig: KafkaConfig,
+                                                      createFormatter: ConfluentSchemaRegistryClient => ConfluentAvroMessageFormatter,
+                                                      createReader: ConfluentSchemaRegistryClient => ConfluentAvroMessageReader,
                                                       formatKey: Boolean) extends RecordFormatter {
+
+  // it should be created lazy because RecordFormatter is created eager during every process validation
+  private lazy val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
+
+  private lazy val formatter = createFormatter(schemaRegistryClient)
+
+  private lazy val reader = createReader(schemaRegistryClient)
 
   override def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): Array[Byte] = {
     val bos = new ByteArrayOutputStream()
@@ -57,7 +64,7 @@ private[confluent] class ConfluentAvroToJsonFormatter(schemaRegistryClient: Sche
       throw new IllegalStateException(s"Cannot find schema id separtor: $Separator in text: $str")
     val id = Integer.parseInt(str.substring(0, separatorIndx))
     val remaining = if (separatorIndx + 1 > str.length) "" else str.substring(separatorIndx + 1)
-    val parsedSchema = schemaRegistryClient.getSchemaById(id)
+    val parsedSchema = schemaRegistryClient.client.getSchemaById(id)
     val schema = ConfluentUtils.extractSchema(parsedSchema)
     (schema, remaining)
   }
@@ -67,11 +74,12 @@ object ConfluentAvroToJsonFormatter {
 
   private val Separator = "|"
 
-  def apply(schemaRegistryClient: ConfluentSchemaRegistryClient, topic: String, formatKey: Boolean): ConfluentAvroToJsonFormatter = {
+  def apply(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, kafkaConfig: KafkaConfig, topic: String, formatKey: Boolean): ConfluentAvroToJsonFormatter = {
     new ConfluentAvroToJsonFormatter(
-      schemaRegistryClient.client,
-      new ConfluentAvroMessageFormatter(schemaRegistryClient.client),
-      new ConfluentAvroMessageReader(schemaRegistryClient.client, topic, formatKey, Separator),
+      schemaRegistryClientFactory,
+      kafkaConfig,
+      schemaRegistryClient => new ConfluentAvroMessageFormatter(schemaRegistryClient.client),
+      schemaRegistryClient => new ConfluentAvroMessageReader(schemaRegistryClient.client, topic, formatKey, Separator),
       formatKey
     )
   }

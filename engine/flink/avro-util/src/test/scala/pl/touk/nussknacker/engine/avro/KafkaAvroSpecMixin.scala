@@ -9,7 +9,7 @@ import org.apache.avro.Schema
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.flink.streaming.connectors.kafka.{KafkaDeserializationSchema, KafkaSerializationSchema}
 import org.apache.kafka.clients.producer.RecordMetadata
-import org.scalatest.{Assertion, BeforeAndAfterAll, FunSuite, Matchers}
+import org.scalatest.{Assertion, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process._
@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, La
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, MiniClusterResourceFlink_1_7, StoppableExecutionEnvironment}
+import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyedValue, StringKeyedValue}
 import pl.touk.nussknacker.engine.graph.{EspProcess, expression}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec, KafkaZookeeperUtils}
@@ -32,7 +32,7 @@ import pl.touk.nussknacker.engine.process.FlinkStreamingProcessRegistrar
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.test.{NussknackerAssertions, PatientScalaFutures}
 
-trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec with Matchers with LazyLogging with NussknackerAssertions with PatientScalaFutures {
+trait KafkaAvroSpecMixin extends FunSuite with FlinkSpec with KafkaSpec with Matchers with LazyLogging with NussknackerAssertions with PatientScalaFutures {
 
   import KafkaZookeeperUtils._
   import spel.Implicits._
@@ -49,10 +49,6 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
   override lazy val config: Config = ConfigFactory.load()
     .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
     .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
-
-  protected val stoppableEnv: StoppableExecutionEnvironment with MiniClusterResourceFlink_1_7 = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
-
-  protected val env = new StreamExecutionEnvironment(stoppableEnv)
 
   protected var registrar: FlinkStreamingProcessRegistrar = _
 
@@ -96,7 +92,7 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
 
   protected def consumeMessages(kafkaDeserializer: KafkaDeserializationSchema[_], topic: String, count: Int): List[Any] = {
     val consumer = kafkaClient.createConsumer()
-    consumer.consumeWithConsumerRecord(topic, 20).map { record =>
+    consumer.consumeWithConsumerRecord(topic).map { record =>
       kafkaDeserializer.deserialize(record)
     }.take(count).toList
   }
@@ -112,7 +108,7 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
   private def consumeMessages(topic: String, count: Int, useSpecificAvroReader: Boolean): List[Any] = {
     val consumer = kafkaClient.createConsumer()
     val valueDeserializer = prepareValueDeserializer(useSpecificAvroReader)
-    consumer.consume(topic, 20).map { record =>
+    consumer.consume(topic).map { record =>
       valueDeserializer.deserialize(topic, record.message())
     }.take(count).toList
   }
@@ -202,8 +198,9 @@ trait KafkaAvroSpecMixin extends FunSuite with BeforeAndAfterAll with KafkaSpec 
   }
 
   protected def run(process: EspProcess)(action: => Unit): Unit = {
-    registrar.register(env, process, ProcessVersion.empty)
-    stoppableEnv.withJobRunning(process.id)(action)
+    val env = flinkMiniCluster.createExecutionEnvironment()
+    registrar.register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty)
+    env.withJobRunning(process.id)(action)
   }
 
   case class TopicConfig(input: String, output: String, schemas: List[Schema], isKey: Boolean)

@@ -1,37 +1,51 @@
+$icon-font-path = "~bootstrap/fonts/"
+$font-family-sans-serif = 'Open Sans', "Helvetica Neue", Helvetica, Arial, sans-serif
+
+primary = #0058a9
+
+$border-radius-base = 0px
+$border-radius-large = $border-radius-base
+$border-radius-small = $border-radius-base
+
+$input-border-focus = primary
+
+@require "~bootstrap/bootstrap/variables.styl"
+
+formControllHeight = $input-height-large
+
 containerPadding = 25px
 
-_fontFamily = 'Open Sans', "Helvetica Neue", Helvetica, Arial, sans-serif
-menuBkgColor = #3a3a3a
+menuBkgColor = #333333
 menuTxtColor = #FFFFFF
 
-focusColor = #0058a9
+focusColor = $input-border-focus
 
-menuActiveItem =  rgba(0, 0, 0, 0.3)
+menuActiveItem = rgba(0, 0, 0, 0.3)
 
-menuBarHeight = 69px
+menuBarHeight = 45px
 
-buttonBkgColor = #4a4a4a
-buttonBkgHover = #666666
-buttonTextColor = #999999
+buttonBkgColor = #4d4d4d
+buttonBkgHover = #444444
+buttonTextColor = #cccccc
 buttonBorderColor = #666666
 buttonPadding = 22px
 buttonSize = 72px
 buttonSmallSize = 48px
 
-sidebarWidth=290px
+sidebarWidth = 290px
 panelBackground = #4D4D4D
-panelHeaderBackground = #333333
-panelText = #b3b3b3
-panelHeaderText = #999999
+panelHeaderBackground = #3e3e3e
+panelText = #cccccc
+panelHeaderText = #b3b3b3
 panelHeaderTextSize = 10px
 panelBorder = panelHeaderBackground
-toolbarsGap = 5px
+toolbarsGap = 3px
 scrollThumbSize = 8px
 panelWidth = sidebarWidth + scrollThumbSize
 
 graphBkgColor = #b3b3b3
 panelBkgColor = #444444
-defaultTextColor = #b3b3b3
+defaultTextColor = #ccc
 defaultFontSize = 11px
 panelTitleTextColor = #808080
 panelHeaderHeight = 26px
@@ -57,11 +71,12 @@ sucessColor = #64d864
 
 scrollbarColor = #666666
 
-toolHoverBkgColor = #666666
-toolHoverColor = #bbb
+toolHoverBkgColor = #444444
+toolHoverColor = #ccc
 labelBkgColor = #333333
 commentBkgColor = #333333
 commentBorderColor = #808080
+commentHeaderColor = #afafaf
 
 
 modalHeaderHeight = 30px
@@ -83,11 +98,17 @@ docsIconColorHover = modalLabelTextColor
 testResultsColor = okColor
 markColor = okColor
 
-listBorderColor = #4f4f4f
+listBorderColor = #434343
 
 hrColor = #777
 
 
 :export {
-  modalContentMaxHeight: modalContentMaxHeight
+	modalContentMaxHeight: modalContentMaxHeight
+	focusColor: focusColor
+	borderRadius: $border-radius-base
+	formControllHeight: formControllHeight
+	fontSize: $font-size-base
+
+	primary: primary
 }

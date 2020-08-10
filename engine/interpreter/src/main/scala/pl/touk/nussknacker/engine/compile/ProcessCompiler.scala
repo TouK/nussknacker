@@ -27,6 +27,7 @@ import pl.touk.nussknacker.engine.splittedgraph.part._
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.EndingNode
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
+
 import scala.util.control.NonFatal
 
 class ProcessCompiler(protected val classLoader: ClassLoader,

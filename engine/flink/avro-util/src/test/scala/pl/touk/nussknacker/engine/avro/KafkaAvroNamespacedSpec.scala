@@ -4,6 +4,7 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.Schema
+import org.scalatest.OptionValues
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor}
 import pl.touk.nussknacker.engine.api.namespaces.{KafkaUsageKey, NamingContext, ObjectNaming, ObjectNamingParameters}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
@@ -15,9 +16,9 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreamingProcessRegistrar}
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.util.cache.DefaultCache
+import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache}
 
-class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin {
+class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin with OptionValues {
 
   import KafkaAvroNamespacedMockSchemaRegistry._
 
@@ -41,32 +42,30 @@ class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin {
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    stoppableEnv.start()
     val modelData = LocalModelData(config, creator, objectNaming = objectNaming)
     registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
   }
 
-  override protected def afterAll(): Unit = {
-    stoppableEnv.stop()
-    super.afterAll()
-  }
-
   test("should create source with proper filtered and converted topics") {
-    val editor = Some(FixedValuesParameterEditor(List(
+    val topicOptions = List(
       FixedExpressionValue(s"'input_payment'", "input_payment"),
       FixedExpressionValue(s"'output_payment'", "output_payment")
-    )))
+    )
 
-    avroSourceFactory.initialParameters.find(_.name == KafkaAvroBaseTransformer.TopicParamName).head.editor shouldBe editor
+    avroSourceFactory.initialParameters.find(_.name == KafkaAvroBaseTransformer.TopicParamName).head.editor.value should matchPattern {
+      case FixedValuesParameterEditor(possibleValues) if possibleValues.drop(1) == topicOptions => // drop null editor
+    }
   }
 
   test("should create sink with proper filtered and converted topics") {
-    val editor = Some(FixedValuesParameterEditor(List(
+    val topicOptions = List(
       FixedExpressionValue(s"'input_payment'", "input_payment"),
       FixedExpressionValue(s"'output_payment'", "output_payment")
-    )))
+    )
 
-    avroSinkFactory.initialParameters.find(_.name == KafkaAvroBaseTransformer.TopicParamName).head.editor shouldBe editor
+    avroSinkFactory.initialParameters.find(_.name == KafkaAvroBaseTransformer.TopicParamName).head.editor.value should matchPattern {
+      case FixedValuesParameterEditor(possibleValues) if possibleValues.drop(1) == topicOptions => // drop null editor
+    }
   }
 
   test("should read event in the same version as source requires and save it in the same version") {
@@ -129,7 +128,7 @@ object KafkaAvroNamespacedMockSchemaRegistry {
     * And when we use TestSchemaRegistryClientFactory then flink has problem with serialization this..
     */
   val factory: CachedConfluentSchemaRegistryClientFactory =
-    new CachedConfluentSchemaRegistryClientFactory(DefaultCache.defaultMaximumSize, None, None, None) {
+    new CachedConfluentSchemaRegistryClientFactory(CacheConfig.defaultMaximumSize, None, None, None) {
       override protected def confluentClient(kafkaConfig: KafkaConfig): SchemaRegistryClient =
         schemaRegistryMockClient
     }

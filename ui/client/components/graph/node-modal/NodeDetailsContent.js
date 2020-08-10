@@ -9,6 +9,7 @@ import * as JsonUtils from "../../../common/JsonUtils"
 import ProcessUtils from "../../../common/ProcessUtils"
 import TestResultUtils from "../../../common/TestResultUtils"
 import {allValid, errorValidator, mandatoryValueValidator} from "./editors/Validators"
+import {InputWithFocus} from "../../withFocus"
 import NodeUtils from "../NodeUtils"
 import MapVariable from "./../node-modal/MapVariable"
 import Variable from "./../node-modal/Variable"
@@ -45,6 +46,9 @@ export class NodeDetailsContent extends React.Component {
       codeCompletionEnabled: true,
       testResultsToHide: new Set(),
     }
+    //In most cases this is not needed, as parameter definitions should be present in validation response
+    //However, in dynamic cases (as adding new topic/schema version) this can lead to stale parameters
+    this.updateNodeDataIfNeeded(node)
     this.generateUUID("fields", "parameters")
   }
 
@@ -78,6 +82,9 @@ export class NodeDetailsContent extends React.Component {
 
     if (!_.isEqual(this.props.node, nextPropsNode)) {
       this.setState({editedNode: nextPropsNode, unusedParameters: []})
+      //In most cases this is not needed, as parameter definitions should be present in validation response
+      //However, in dynamic cases (as adding new topic/schema version) this can lead to stale parameters
+      this.updateNodeDataIfNeeded(nextPropsNode)
     }
     if (!_.isEqual(this.props.dynamicParameterDefinitions, nextProps.dynamicParameterDefinitions)) {
       this.adjustStateWithParameters(this.state.editedNode)
@@ -92,8 +99,8 @@ export class NodeDetailsContent extends React.Component {
   updateNodeDataIfNeeded(currentNode) {
     if (this.props.isEditMode) {
       this.props.actions.updateNodeData(this.props.processId,
-        this.props.variableTypes,
-        this.props.branchVariableTypes,
+        this.props.findAvailableVariables(this.props.originalNodeId),
+        this.props.findAvailableBranchVariables(this.props.originalNodeId),
         currentNode,
         this.props.processProperties)
     } else {
@@ -137,8 +144,8 @@ export class NodeDetailsContent extends React.Component {
   idField = () => this.createField("input", "Name", "id", true, [mandatoryValueValidator])
 
   customNode = (fieldErrors) => {
-    const {showValidation, showSwitch, isEditMode, findAvailableVariables, node} = this.props
-    const variableTypes = findAvailableVariables(node.id)
+    const {showValidation, showSwitch, isEditMode, findAvailableVariables} = this.props
+    const variableTypes = findAvailableVariables(this.props.originalNodeId)
 
     switch (NodeUtils.nodeType(this.props.node)) {
       case "Source":
@@ -249,7 +256,7 @@ export class NodeDetailsContent extends React.Component {
               createReadOnlyField={params => (
                 <div className="node-row">{this.renderFieldLabel(params.name)}
                   <div className="node-value">
-                    <input
+                    <InputWithFocus
                       type="text"
                       className="node-input"
                       value={params.expression.expression}
@@ -498,7 +505,7 @@ export class NodeDetailsContent extends React.Component {
         {this.state.editedNode.ref.parameters.map((param, index) => {
           return (
             <div className="node-block" key={this.props.node.id + param.name + index}>
-              {this. createParameterExpressionField(
+              {this.createParameterExpressionField(
                 param,
                 "expression",
                 `ref.parameters[${index}]`,
@@ -542,7 +549,7 @@ export class NodeDetailsContent extends React.Component {
   doCreateExpressionField = (fieldName, fieldLabel, exprPath, fieldErrors, parameter) => {
     const {showValidation, showSwitch, isEditMode, node, findAvailableVariables} = this.props
 
-    const variableTypes = findAvailableVariables(node.id, parameter)
+    const variableTypes = findAvailableVariables(this.props.originalNodeId, parameter)
     return (
       <ExpressionField
         fieldName={fieldName}
@@ -741,18 +748,21 @@ function mapState(state, props) {
   const mainProcess = state.graphReducer.processToDisplay
   const findAvailableVariables = ProcessUtils.findAvailableVariables(processDefinitionData, getProcessCategory(state), mainProcess)
 
-  const branchVars = ProcessUtils.findVariablesForBranches(props.node, mainProcess?.validationResult?.nodeResults)
+  const findAvailableBranchVariables = ProcessUtils.findVariablesForBranches(mainProcess?.validationResult?.nodeResults)
+  //see NodeDetailsModal - we pass own state in props.node, so we cannot just rely on props.node.id
+  const originalNodeId = props.originalNodeId || props.node?.id
   return {
     additionalPropertiesConfig: processDefinitionData.additionalPropertiesConfig || {},
     processDefinitionData: processDefinitionData,
     processId: mainProcess.id,
     processProperties: mainProcess.properties,
-    variableTypes: mainProcess?.validationResult?.nodeResults?.[props.node.id]?.variableTypes || {},
-    branchVariableTypes: branchVars,
+    variableTypes: mainProcess?.validationResult?.nodeResults?.[originalNodeId]?.variableTypes || {},
+    findAvailableBranchVariables: findAvailableBranchVariables,
     findAvailableVariables: findAvailableVariables,
+    originalNodeId: originalNodeId,
     currentErrors: state.nodeDetails.validationPerformed ? state.nodeDetails.validationErrors : props.nodeErrors,
     dynamicParameterDefinitions: state.nodeDetails.validationPerformed ? state.nodeDetails.parameters :
-        state.graphReducer.processToDisplay?.validationResult?.nodeResults?.[props.node.id]?.parameters,
+        state.graphReducer.processToDisplay?.validationResult?.nodeResults?.[originalNodeId]?.parameters,
   }
 }
 

@@ -1,12 +1,11 @@
 @require "../../stylesheets/_variables.styl"
 
 :local(.wrapper)
-    backdrop-filter blur(8px)
     pointer-events auto
 
 :local(.panel)
     background rgba(panelBackground, 1)
-    border 1px solid panelBorder
+    border 0px solid panelBorder
 
     &-heading
         background panelHeaderBackground
@@ -47,7 +46,6 @@
         transition all .3s ease-in-out
 
     &:local(.collapsed)
-        min-width 80px
         max-width @min-width
         opacity .86
 
@@ -59,7 +57,7 @@
         flex 1
 
     .collapse-icon
-        padding (panelHeaderTextSize / 2)
+        padding (panelHeaderTextSize / 2) 8px
         height panelHeaderTextSize * 2
         flex-shrink 0
         transition all .3s

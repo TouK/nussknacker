@@ -2,18 +2,16 @@ package pl.touk.nussknacker.engine.demo
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import org.scalatest.{BeforeAndAfterAll, Matchers, Suite}
+import org.scalatest.{Matchers, Suite}
 import pl.touk.nussknacker.engine.api.conversion.ProcessConfigCreatorMapping
-import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
+import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.javademo
 import pl.touk.nussknacker.engine.kafka.{KafkaSpec, KafkaZookeeperServer}
-import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreamingProcessRegistrar}
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreamingProcessRegistrar}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-trait BaseITest extends KafkaSpec {
-  self: Suite with BeforeAndAfterAll with Matchers =>
+trait BaseITest extends FlinkSpec with KafkaSpec { self: Suite with Matchers =>
 
   val creatorLang: CreatorLang.Value
 
@@ -26,8 +24,6 @@ trait BaseITest extends KafkaSpec {
     }
   }
 
-  val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
-  val env = new StreamExecutionEnvironment(stoppableEnv)
   var registrar: FlinkStreamingProcessRegistrar = _
 
   override protected def beforeAll(): Unit = {
@@ -37,10 +33,6 @@ trait BaseITest extends KafkaSpec {
     registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
   }
 
-  override protected def afterAll(): Unit = {
-    stoppableEnv.stop()
-    super.afterAll()
-  }
 }
 
 object TestConfig {
@@ -56,10 +48,10 @@ object CreatorLang extends Enumeration {
   val Java, Scala = Value
 }
 
-trait BaseJavaITest extends BaseITest { self: Suite with BeforeAndAfterAll with Matchers =>
+trait BaseJavaITest { self: BaseITest =>
   override val creatorLang = CreatorLang.Java
 }
 
-trait BaseScalaITest extends BaseITest { self: Suite with BeforeAndAfterAll with Matchers =>
+trait BaseScalaITest { self: BaseITest =>
   override val creatorLang = CreatorLang.Scala
 }

@@ -133,11 +133,17 @@ lazy val commonSettings =
         "-language:postfixOps",
         "-language:existentials",
         "-Ypartial-unification",
+        //Flink image is available only for jdk8
         "-target:jvm-1.8"
       ),
       javacOptions := Seq(
         "-Xlint:deprecation",
         "-Xlint:unchecked",
+        //Flink image is available only for jdk8
+        "-source",
+        "1.8",
+        "-target",
+        "1.8",
         //we use it e.g. to provide consistent behaviour wrt extracting parameter names from scala and java
         "-parameters"
       ),
@@ -165,7 +171,9 @@ val forkSettings = Seq(
   javaOptions := Seq(
     "-Xmx512M",
     "-XX:ReservedCodeCacheSize=128M",
-    "-Xss4M"
+    "-Xss4M",
+    // to prevent travis OOM from killing java
+    "-XX:MaxMetaspaceSize=515G"
   )
 )
 
@@ -451,7 +459,7 @@ lazy val generic = (project in engine("flink/generic")).
 
 lazy val process = (project in engine("flink/process")).
   settings(commonSettings).
-  settings(forkSettings).
+  settings(forkSettings). // without this there are some classloading issues
   settings(
     name := "nussknacker-process",
     libraryDependencies ++= {
@@ -567,6 +575,7 @@ lazy val util = (project in engine("util")).
     name := "nussknacker-util",
     libraryDependencies ++= {
       Seq(
+        "org.springframework" % "spring-core" % springV,
         "com.github.ben-manes.caffeine" % "caffeine" % caffeineCacheV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "com.iheart" %% "ficus" % ficusV,
@@ -618,6 +627,7 @@ lazy val flinkModelUtil = (project in engine("flink/model-util")).
     name := "nussknacker-model-flink-util",
     libraryDependencies ++= {
       Seq(
+        "javax.validation" % "validation-api" % javaxValidationApiV,
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
       )
     }
@@ -737,7 +747,7 @@ lazy val httpUtils = (project in engine("httpUtils")).
   settings(
     name := "nussknacker-http-utils",
     libraryDependencies ++= {
-      val sttpV = "2.0.7"
+      val sttpV = "2.2.3"
       Seq(
         //we force circe version here, because sttp has 0.12.1 for scala 2.12, we don't want it ATM
         "io.circe" %% "circe-core" % circeV force(),

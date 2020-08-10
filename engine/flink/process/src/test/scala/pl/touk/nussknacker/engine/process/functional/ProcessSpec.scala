@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.process.functional
 import java.util.Date
 
 import cats.data.NonEmptyList
-import org.scalatest.{FlatSpec, FunSuite, Matchers}
+import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -11,11 +11,11 @@ import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.{EndingNode, Sink, Source, SourceNode}
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers.processInvoker
+import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.spel
 
-class ProcessSpec extends FunSuite with Matchers {
+class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
 
   import spel.Implicits._
 

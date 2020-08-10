@@ -8,9 +8,11 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo}
-import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException, ServiceReturningType}
+import pl.touk.nussknacker.engine.api.typed.ServiceReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Context, MetaData}
+import pl.touk.nussknacker.engine.compile.NodeTypingInfo.DefaultExpressionId
+import pl.touk.nussknacker.engine.compile.PartSubGraphCompiler._
 import pl.touk.nussknacker.engine.compiledgraph.node
 import pl.touk.nussknacker.engine.compiledgraph.node.{Node, SubprocessEnd}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
@@ -21,13 +23,10 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.{Next, SplittedNode}
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.engine.{api, compiledgraph, _}
 
 import scala.util.{Failure, Success, Try}
-import scala.util.control.NonFatal
-import PartSubGraphCompiler._
-import NodeTypingInfo.DefaultExpressionId
-import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 class PartSubGraphCompiler(protected val classLoader: ClassLoader,
                            protected val expressionCompiler: ExpressionCompiler,
@@ -249,13 +248,9 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
 
     val validatedServiceWithTypingResult = service.andThen { objWithMethod =>
       expressionCompiler.compileEagerObjectParameters(objWithMethod.parameters, n.parameters, ctx).andThen { params =>
-        (Try(computeReturnType(objWithMethod, params)) match {
-          case Success(returnType) => valid((params, returnType))
-          case Failure(CustomNodeValidationException(message, paramName, _)) =>
-            invalid(CustomNodeError(message, paramName))
-          case Failure(NonFatal(exception)) =>
-            invalid(FatalUnknownError(exception.getMessage))
-        }).toValidatedNel
+        NodeValidationExceptionHandler.handleExceptions {
+          (params, computeReturnType(objWithMethod, params))
+        }
       }.map { case (params, returnType) =>
         val invoker = createServiceInvoker(objWithMethod)
         val typingResult = ServiceTypingResult(returnType, params.map(p => p.name -> p.typingInfo).toMap)
@@ -316,7 +311,6 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
       we try to evaluate parameter, but if it fails (e.g. it contains variable), or future does not complete immediately - we just return None
    */
   private def tryToEvaluateParam(param: compiledgraph.evaluatedparam.Parameter)(implicit nodeId: NodeId): Option[Any] = {
-    import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._
     implicit val meta: MetaData = MetaData("", null)
     Try {
       expressionEvaluator.evaluateParameter(param, Context("")).value

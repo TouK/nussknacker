@@ -4,10 +4,13 @@ import java.io.File
 import java.net.URI
 
 import com.typesafe.config.{Config, ConfigFactory}
+import pl.touk.nussknacker.engine.util.cache.CacheConfig
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.{ConfigRule, ConfigUser}
 import pl.touk.nussknacker.ui.security.api.AuthenticationMethod.AuthenticationMethod
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
+
+import scala.concurrent.duration._
 
 trait AuthenticationConfiguration {
   def authorizeUrl: Option[URI] = Option.empty
@@ -57,7 +60,12 @@ object AuthenticationConfiguration {
                         globalPermissions: List[GlobalPermission] = List.empty)
 }
 
-case class DefaultAuthenticationConfiguration(method: AuthenticationMethod = AuthenticationMethod.Other, usersFile: String) extends AuthenticationConfiguration
+case class DefaultAuthenticationConfiguration(method: AuthenticationMethod = AuthenticationMethod.Other, usersFile: String,
+                                              cachingHashes: Option[CachingHashesConfig]) extends AuthenticationConfiguration {
+
+  def cachingHashesOrDefault: CachingHashesConfig = cachingHashes.getOrElse(CachingHashesConfig.defaultConfig)
+
+}
 
 object DefaultAuthenticationConfiguration {
   import net.ceedubs.ficus.Ficus._
@@ -67,4 +75,33 @@ object DefaultAuthenticationConfiguration {
 
   def create(config: Config): DefaultAuthenticationConfiguration =
     config.as[DefaultAuthenticationConfiguration](authenticationConfigPath)
+}
+
+case class CachingHashesConfig(enabled: Option[Boolean],
+                               maximumSize: Option[Long],
+                               expireAfterAccess: Option[FiniteDuration],
+                               expireAfterWrite: Option[FiniteDuration]) {
+
+  def isEnabled: Boolean = enabled.getOrElse(CachingHashesConfig.defaultEnabledValue)
+
+  def toCacheConfig: Option[CacheConfig] =
+    if (isEnabled) {
+      Some(CacheConfig(
+        maximumSize.getOrElse(CacheConfig.defaultMaximumSize),
+        expireAfterAccess.orElse(CachingHashesConfig.defaultExpireAfterAccess),
+        expireAfterWrite.orElse(CachingHashesConfig.defaultExpireAfterWrite)
+      ))
+    } else {
+      None
+    }
+
+}
+
+object CachingHashesConfig {
+
+  val defaultEnabledValue: Boolean = false
+  val defaultExpireAfterAccess: Option[FiniteDuration] = Some(1.hour)
+  val defaultExpireAfterWrite: Option[FiniteDuration] = None
+  val defaultConfig: CachingHashesConfig = CachingHashesConfig(Some(defaultEnabledValue), None, None, None)
+
 }

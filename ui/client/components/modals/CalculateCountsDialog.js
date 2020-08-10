@@ -1,14 +1,15 @@
+import classNames from "classnames"
 import _ from "lodash"
 import Moment from "moment"
 import React from "react"
+import DateTimePicker from "react-datetime"
 import {connect} from "react-redux"
 import ActionsUtils from "../../actions/ActionsUtils"
 import {dateFormat} from "../../config"
 import "../../stylesheets/visualization.styl"
+import {ButtonWithFocus} from "../withFocus"
 import Dialogs from "./Dialogs"
 import GenericModalDialog from "./GenericModalDialog"
-import classNames from "classnames"
-import DateTimePicker from "react-datetime"
 
 class CalculateCountsDialog extends React.Component {
   dateFormat="YYYY-MM-DD" // eslint-disable-line i18next/no-literal-string
@@ -73,6 +74,7 @@ class CalculateCountsDialog extends React.Component {
   setDateFrom(date) {
     this.setState((state, props) => ({processCountsDateFrom: date}))
   }
+
   setDateTo(date) {
     this.setState((state, props) => ({processCountsDateTo: date}))
   }
@@ -99,7 +101,7 @@ class CalculateCountsDialog extends React.Component {
             value={this.state.processCountsDateFrom}
             inputProps={this.datePickerStyle}
           />
-          
+
         </div>
         <p>Process counts to</p>
         <div className="datePickerContainer">
@@ -114,7 +116,15 @@ class CalculateCountsDialog extends React.Component {
         </div>
         <p>Quick ranges</p>
         {
-          this.predefinedRanges.map(range => (<button type="button" key={range.name} title={range.name} className="predefinedRangeButton" onClick={() => this.setTime(range)}>{range.name}</button>))
+          this.predefinedRanges.map(range => (
+            <ButtonWithFocus
+              type="button"
+              key={range.name}
+              title={range.name}
+              className="predefinedRangeButton"
+              onClick={() => this.setTime(range)}
+            >{range.name}</ButtonWithFocus>
+          ))
         }
       </GenericModalDialog>
     )

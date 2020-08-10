@@ -128,7 +128,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   }
 
   test("subtraction of non numeric types") {
-    parse[Any]("'' - 1") shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Operator '-' used with mismatch types: java.lang.String and java.lang.Integer")))
+    parse[Any]("'' - 1") shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Operator '-' used with mismatch types: String and Integer")))
   }
 
   test("null properly") {
@@ -177,8 +177,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     parsed.isValid shouldBe true
 
     val invalid = parse[Any]("#processHelper.addT(1, 1)", ctxWithGlobal)
-    invalid shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Unknown method 'addT' in pl.touk.nussknacker.engine.spel.SampleGlobalObject$")))
-
+    invalid shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Unknown method 'addT' in SampleGlobalObject")))
   }
 
   test("validate MethodReference parameter types") {
@@ -189,7 +188,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     parse[Any]("#processHelper.add(#processHelper.toAny('1'), 1)", ctxWithGlobal) shouldBe 'valid
 
     val invalid = parse[Any]("#processHelper.add('1', 1)", ctxWithGlobal)
-    invalid shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Mismatch parameter types. Found: add(java.lang.String, java.lang.Integer). Required: add(int, int)")))
+    invalid shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Mismatch parameter types. Found: add(String, Integer). Required: add(Integer, Integer)")))
   }
 
   // TODO handle scala varargs
@@ -208,21 +207,21 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   test("return invalid type for MethodReference with invalid arity ") {
     val parsed = parse[Any]("#processHelper.add(1)", ctxWithGlobal)
-    val expectedValidation = Invalid("Mismatch parameter types. Found: add(java.lang.Integer). Required: add(int, int)")
+    val expectedValidation = Invalid("Mismatch parameter types. Found: add(Integer). Required: add(Integer, Integer)")
     parsed.isInvalid shouldBe true
     parsed.leftMap(_.head).leftMap(_.message) shouldEqual expectedValidation
   }
 
   test("return invalid type for MethodReference with missing arguments") {
     val parsed = parse[Any]("#processHelper.add()", ctxWithGlobal)
-    val expectedValidation = Invalid("Mismatch parameter types. Found: add(). Required: add(int, int)")
+    val expectedValidation = Invalid("Mismatch parameter types. Found: add(). Required: add(Integer, Integer)")
     parsed.isInvalid shouldBe true
     parsed.leftMap(_.head).leftMap(_.message) shouldEqual expectedValidation
   }
 
   test("return invalid type if PropertyOrFieldReference does not exists") {
     val parsed = parse[Any]("#processHelper.add", ctxWithGlobal)
-    val expectedValidation =  Invalid("There is no property 'add' in type: pl.touk.nussknacker.engine.spel.SampleGlobalObject$")
+    val expectedValidation =  Invalid("There is no property 'add' in type: SampleGlobalObject")
     parsed.isInvalid shouldBe true
     parsed.leftMap(_.head).leftMap(_.message) shouldEqual expectedValidation
   }
@@ -464,12 +463,11 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
       case Invalid(NonEmptyList(ExpressionParseError(msg), _)) if msg == message =>
     }
 
-    shouldHaveBadType( parse[Int]("'abcd'", ctx), "Bad expression type, expected: int, found: java.lang.String" )
-    shouldHaveBadType( parse[String]("111", ctx), "Bad expression type, expected: java.lang.String, found: java.lang.Integer" )
-    shouldHaveBadType( parse[String]("{1, 2, 3}", ctx), "Bad expression type, expected: java.lang.String, found: java.util.List[java.lang.Integer]" )
-    shouldHaveBadType( parse[java.util.Map[_, _]]("'alaMa'", ctx), "Bad expression type, expected: java.util.Map[java.lang.Object,java.lang.Object], found: java.lang.String" )
-    shouldHaveBadType( parse[Int]("#strVal", ctx), "Bad expression type, expected: int, found: java.lang.String" )
-
+    shouldHaveBadType( parse[Int]("'abcd'", ctx), "Bad expression type, expected: Integer, found: String" )
+    shouldHaveBadType( parse[String]("111", ctx), "Bad expression type, expected: String, found: Integer" )
+    shouldHaveBadType( parse[String]("{1, 2, 3}", ctx), "Bad expression type, expected: String, found: List[Integer]" )
+    shouldHaveBadType( parse[java.util.Map[_, _]]("'alaMa'", ctx), "Bad expression type, expected: Map[Unknown,Unknown], found: String" )
+    shouldHaveBadType( parse[Int]("#strVal", ctx), "Bad expression type, expected: Integer, found: String" )
   }
 
   test("resolve imported package") {

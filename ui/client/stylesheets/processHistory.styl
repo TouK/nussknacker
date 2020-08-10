@@ -13,7 +13,7 @@
 #process-history
   process-history-color=defaultTextColor
   font-size 12px
-  padding 10px 20px
+  padding 5px 0
   list-style none
   margin 0
 
@@ -27,14 +27,14 @@
     cursor pointer
     overflow hidden
     position relative
-    padding 5px 0 5px 35px
+    padding 5px 0 5px 42px
     .date
       pointer-events none
 
   li::before
        content ''
        position absolute
-       left 7px
+       left 20px
        top 0
        width 20px
        height 999px
@@ -51,7 +51,7 @@
   li::after
        content ''
        position absolute
-       left 0
+       left 13px
        top 14px
        width 16px
        height 16px
@@ -64,7 +64,7 @@
     color defaultTextColor
     &:hover::after
     &::after
-      background-color #fff
+      background-color defaultTextColor
 
   li:hover
     background-color toolHoverBkgColor
@@ -72,3 +72,6 @@
 
   li:hover::after
     background-color #8d8d8d
+
+  span.glyphicon
+    margin 0 3px

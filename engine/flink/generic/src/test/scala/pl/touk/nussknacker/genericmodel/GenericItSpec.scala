@@ -10,17 +10,17 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
-import org.scalatest.{BeforeAndAfterAll, EitherValues, FunSuite, Matchers}
+import org.scalatest.{EitherValues, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
-import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, _}
 import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
-import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaRegistryProvider, SchemaVersionOption}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClient, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentSchemaRegistryProvider, ConfluentUtils}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaRegistryProvider, SchemaVersionOption}
+import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, _}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
-import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, StoppableExecutionEnvironment}
+import pl.touk.nussknacker.engine.flink.test.{FlinkSpec, FlinkTestConfiguration}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec, KafkaZookeeperUtils}
@@ -28,9 +28,9 @@ import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreamingProcessRegistrar}
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.util.cache.DefaultCache
+import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache}
 
-class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with KafkaSpec with EitherValues with LazyLogging {
+class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec with EitherValues with LazyLogging {
 
   import KafkaZookeeperUtils._
   import MockSchemaRegistry._
@@ -321,8 +321,6 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
       ConfluentSchemaRegistryProvider(factory, processObjectDependencies)
   }
 
-  private val stoppableEnv = StoppableExecutionEnvironment(FlinkTestConfiguration.configuration())
-  private val env = new StreamExecutionEnvironment(stoppableEnv)
   private var registrar: FlinkStreamingProcessRegistrar = _
   private lazy val valueSerializer = new KafkaAvroSerializer(schemaRegistryMockClient)
   private lazy val valueDeserializer = new KafkaAvroDeserializer(schemaRegistryMockClient)
@@ -333,14 +331,10 @@ class GenericItSpec extends FunSuite with BeforeAndAfterAll with Matchers with K
     registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
   }
 
-  override protected def afterAll(): Unit = {
-    stoppableEnv.stop()
-    super.afterAll()
-  }
-
   private def run(process: EspProcess)(action: => Unit): Unit = {
-    registrar.register(env, process, ProcessVersion.empty)
-    stoppableEnv.withJobRunning(process.id)(action)
+    val env = flinkMiniCluster.createExecutionEnvironment()
+    registrar.register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty)
+    env.withJobRunning(process.id)(action)
   }
 
   private def send(obj: Any, topic: String) = {
@@ -433,7 +427,7 @@ object MockSchemaRegistry extends Serializable {
     * And when we use TestSchemaRegistryClientFactory then flink has problem with serialization this..
     */
   val factory: CachedConfluentSchemaRegistryClientFactory =
-    new CachedConfluentSchemaRegistryClientFactory(DefaultCache.defaultMaximumSize, None, None, None) {
+    new CachedConfluentSchemaRegistryClientFactory(CacheConfig.defaultMaximumSize, None, None, None) {
       override protected def confluentClient(kafkaConfig: KafkaConfig): SchemaRegistryClient =
         schemaRegistryMockClient
     }

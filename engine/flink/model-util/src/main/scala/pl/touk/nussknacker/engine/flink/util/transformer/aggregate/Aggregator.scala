@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
   - computeOutputType provides information for validation, completion etc.
   - we provide own versions of AggregateFunction methods to use type members instead of type parameters, as it makes it easier to use
  */
-trait Aggregator extends AggregateFunction[Any, Any, Any] {
+abstract class Aggregator extends AggregateFunction[AnyRef, AnyRef, AnyRef] {
 
   type Aggregate <: AnyRef
 
@@ -26,17 +26,21 @@ trait Aggregator extends AggregateFunction[Any, Any, Any] {
 
   def result(finalAggregate: Aggregate): AnyRef
 
+  def alignToExpectedType(value: AnyRef, outputType: TypingResult): AnyRef = {
+    value
+  }
+
   def computeOutputType(input: TypingResult): Validated[String, TypingResult]
 
-  override def createAccumulator(): Any = zero
+  override final def createAccumulator(): AnyRef = zero
 
-  override def add(value: Any, accumulator: Any): Any = addElement(value.asInstanceOf[Element], accumulator.asInstanceOf[Aggregate])
+  override final def add(value: AnyRef, accumulator: AnyRef): AnyRef = addElement(value.asInstanceOf[Element], accumulator.asInstanceOf[Aggregate])
 
-  override def getResult(accumulator: Any): AnyRef = result(accumulator.asInstanceOf[Aggregate])
+  override final def getResult(accumulator: AnyRef): AnyRef = result(accumulator.asInstanceOf[Aggregate])
 
-  override def merge(a: Any, b: Any): Any = mergeAggregates(a.asInstanceOf[Aggregate], b.asInstanceOf[Aggregate])
+  override final def merge(a: AnyRef, b: AnyRef): AnyRef = mergeAggregates(a.asInstanceOf[Aggregate], b.asInstanceOf[Aggregate])
 
-  def toContextTransformation(variableName: String, aggregateBy: LazyParameter[_])(implicit nodeId: NodeId):
+  final def toContextTransformation(variableName: String, aggregateBy: LazyParameter[_])(implicit nodeId: NodeId):
     ValidationContext => ValidatedNel[ProcessCompilationError, ValidationContext] = validationCtx => computeOutputType(aggregateBy.returnType)
     //TODO: better error?
       .leftMap(message => NonEmptyList.of(CannotCreateObjectError(message, nodeId.id)))

@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.ui.definition.defaults.{DefaultValueDeterminerChain, ParamDefaultValueConfig, UINodeDefinition}
 
-import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
 class EvaluatedParameterPreparerSpec extends FlatSpec with Matchers {
 
@@ -23,10 +23,10 @@ class EvaluatedParameterPreparerSpec extends FlatSpec with Matchers {
     )
   )
 
-  private def testTypeRelatedDefaultValue[T: ClassTag](value: Any,
-                                                       paramName: String = DEFAULT_PARAMETER_NAME,
-                                                       nodeName: String = DEFAULT_NODE_NAME): Unit = {
-    it should s"set ${implicitly[ClassTag[T]].runtimeClass} for parameter $paramName as $value in node $nodeName" in {
+  private def testTypeRelatedDefaultValue[T: TypeTag](value: Any,
+                                                      paramName: String = DEFAULT_PARAMETER_NAME,
+                                                      nodeName: String = DEFAULT_NODE_NAME): Unit = {
+    it should s"set ${implicitly[TypeTag[T]]} for parameter $paramName as $value in node $nodeName" in {
       val paramIn = dummyParam[T](paramName = paramName,
         nodeName = nodeName)
       val paramOut = dummyExpectedParam(paramName = paramName,
@@ -35,7 +35,7 @@ class EvaluatedParameterPreparerSpec extends FlatSpec with Matchers {
     }
   }
 
-  private def dummyParam[T: ClassTag](nodeName: String, paramName: String) =
+  private def dummyParam[T: TypeTag](nodeName: String, paramName: String) =
     UINodeDefinition(nodeName, List(UIProcessObjectsFactory.createUIParameter(Parameter[T](paramName), ParameterConfig.empty)))
 
   private def dummyExpectedParam(paramName: String, value: Any) = {

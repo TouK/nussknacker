@@ -7,7 +7,8 @@ import _ from "lodash"
 import LaddaButton from "react-ladda"
 import Draggable from "react-draggable"
 import ActionsUtils from "../../../actions/ActionsUtils"
-import EspModalStyles from "../../../common/EspModalStyles"
+import NkModalStyles from "../../../common/NkModalStyles"
+import {ButtonWithFocus} from "../../withFocus"
 import NodeUtils from "../NodeUtils"
 import EdgeDetailsContent from "./EdgeDetailsContent"
 import ProcessUtils from "../../../common/ProcessUtils"
@@ -53,9 +54,9 @@ class EdgeDetailsModal extends React.Component {
 
   renderModalButtons() {
     return [
-      <button key="2" type="button" title="Cancel node details" className="modalButton" onClick={this.closeModal}>
+      <ButtonWithFocus key="2" type="button" title="Cancel node details" className="modalButton" onClick={this.closeModal}>
         Cancel
-      </button>,
+      </ButtonWithFocus>,
       !this.props.readOnly ? (
         <LaddaButton
           key="1"
@@ -95,7 +96,7 @@ class EdgeDetailsModal extends React.Component {
 
   render() {
     const isOpen = !_.isEmpty(this.props.edgeToDisplay) && this.props.showEdgeDetailsModal && this.edgeIsEditable()
-    const titleStyles = EspModalStyles.headerStyles("#2d8e54", "white")
+    const titleStyles = NkModalStyles.headerStyles("#2d8e54", "white")
     const {readOnly} = this.props
     return (
       <div className="objectModal">

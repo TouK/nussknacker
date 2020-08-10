@@ -8,8 +8,9 @@ import cats.instances.string._
 import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.definition.{JsonValidator, LiteralParameterValidator, NotBlankParameter, Parameter}
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.lazyy.ContextWithLazyValuesProvider
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed._
@@ -75,6 +76,9 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       )), emptyQueryNamesData()),
       "withJsonParam" -> (ObjectDefinition.withParams(List(
         Parameter[String]("jsonParam").copy(validators = List(JsonValidator))
+      )), emptyQueryNamesData()),
+      "withCustomValidatorParam" -> (ObjectDefinition.withParams(List(
+        Parameter[String]("param").copy(validators = List(CustomParameterValidatorDelegate("test_custom_validator")))
       )), emptyQueryNamesData())
     ),
     Map.empty,
@@ -449,7 +453,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .filter("sampleFilter2", "#input.value1.value3 > 10")
       .emptySink("id2", "sink")
     validate(process, definitionWithTypedSource).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type: pl.touk.nussknacker.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord", "sampleFilter2", Some(DefaultExpressionId), _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type: AnotherSimpleRecord", "sampleFilter2", Some(DefaultExpressionId), _), _)) =>
     }
   }
 
@@ -465,7 +469,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
 
     validate(process, definitionWithCustomNode).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type: pl.touk.nussknacker.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord", "sampleFilter2", Some(DefaultExpressionId), _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type: AnotherSimpleRecord", "sampleFilter2", Some(DefaultExpressionId), _), _)) =>
     }
   }
 
@@ -483,7 +487,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     val compilationResult = validate(process, definitionWithCustomNode)
     compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type: pl.touk.nussknacker.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord", "sampleFilter2", Some(DefaultExpressionId), _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type: AnotherSimpleRecord", "sampleFilter2", Some(DefaultExpressionId), _), _)) =>
     }
     compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(process.metaData), "processHelper" -> Typed(ProcessHelper.getClass))
     compilationResult.variablesInNodes("id3") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(process.metaData), "processHelper" -> Typed(ProcessHelper.getClass))
@@ -502,7 +506,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
 
     validate(process, definitionWithCustomNode).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'terefere' in type: pl.touk.nussknacker.engine.compile.ProcessValidatorSpec$AnotherSimpleRecord",
+      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'terefere' in type: AnotherSimpleRecord",
       "sampleFilter2", Some(DefaultExpressionId), "#out1.terefere"), _)) =>
     }
   }
@@ -573,7 +577,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .filter("sampleFilter1", "#input.plainValueOpt.terefere > 10")
       .emptySink("id2", "sink")
     validate(process, definitionWithTypedSource).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'terefere' in type: scala.math.BigDecimal", "sampleFilter1", Some(DefaultExpressionId), _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'terefere' in type: BigDecimal", "sampleFilter1", Some(DefaultExpressionId), _), _)) =>
     }
   }
 
@@ -1053,10 +1057,41 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val compilationResult = validate(process, baseDefinition)
 
     compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Mismatch parameter types. Found: identity(scala.concurrent.Future[java.lang.String]). Required: identity(java.lang.String)", _, _, _), Nil)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("Mismatch parameter types. Found: identity(Future[String]). Required: identity(String)", _, _, _), Nil)) =>
     }
   }
 
+  test ("validate with custom validator") {
+    val processWithValidExpression =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .customNode("customNodeId", "event", "withCustomValidatorParam", "param" -> "'Aaaaa'")
+        .emptySink("emptySink", "sink")
+
+    validate(processWithValidExpression, baseDefinition).result should matchPattern {
+      case Valid(_) =>
+    }
+  }
+
+  test ("validate negatively with custom validator") {
+    val processWithInvalidExpression =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .customNode("customNodeId", "event", "withCustomValidatorParam", "param" -> "'Aaaaa'")
+        .customNode("customNodeId2", "event1", "withCustomValidatorParam", "param" -> "'Baaaa'")
+        .emptySink("emptySink", "sink")
+
+    validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
+      case Invalid(NonEmptyList(
+      CustomParameterValidationError(_, _, "param", "customNodeId2"),
+      Nil
+      )) =>
+    }
+  }
   private def validate(process: EspProcess, definitions: ProcessDefinition[ObjectDefinition]): CompilationResult[Unit] = {
     validateWithDef(process, ProcessDefinitionBuilder.withEmptyObjects(definitions))
   }
@@ -1134,4 +1169,15 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       }
     }
   }
+}
+
+class StartingWithACustomValidator extends CustomParameterValidator {
+  override def name: String = "test_custom_validator"
+  import cats.data.Validated.{invalid, valid}
+
+  override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
+    if (value.stripPrefix("'").startsWith("A")) valid(Unit)
+    else invalid(
+      CustomParameterValidationError(s"Value $value does not starts with 'A'",
+        "Value does not starts with 'A'", paramName, nodeId.id))
 }

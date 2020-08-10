@@ -8,6 +8,7 @@
 ## Running
 
 * Clone Nussknacker [project](https://github.com/touk/nussknacker) from GitHub
+* Checkout master branch which contains always latest stable version: `git checkout master`
 * Enter demo/docker folder
 * Run `docker-compose -f docker-compose.yml -f docker-compose-env.yml up -d` and wait a until all components start
     

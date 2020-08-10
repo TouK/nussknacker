@@ -1,0 +1,200 @@
+@require "../../stylesheets/darkColors.styl"
+
+tabsBorder = dark1
+
+tabsBackground = dark2
+tabsText = light2
+
+tabsActiveBackground = dark3
+tabsActiveText = light
+
+tabRadius = borderRadius
+
+tabsLineIndex = 1
+activeTabIndex = tabsLineIndex + 1
+
+defaultBackground = #eee
+defaultBorder = #ccc
+
+:local
+	.tabs-wrap
+		box-sizing border-box
+		height 100%
+		display flex
+		flex-direction column
+		justify-content stretch
+		overflow hidden
+
+	.tabs
+		box-sizing border-box
+		display flex
+		overflow visible
+		position relative
+
+	a.link
+		display flex
+
+		&, &:hover, &:active, &:focus
+			text-decoration none
+
+		& > .tab
+			padding 1em 3em
+			border-width 1px
+			border-style solid
+			color black
+			background defaultBackground
+			border-color defaultBorder
+
+	.with-bottom-line
+		//bottom line
+		overflow visible
+
+		&:before
+			content ""
+			display block
+			left 0
+			right 0
+			bottom 0
+			position absolute
+			border-style solid
+			border-width 1px 1px 0 1px
+			z-index tabsLineIndex
+			border-color ccc
+			background defaultBackground
+
+
+		a.link
+			&.active > .tab
+				z-index activeTabIndex
+				border-bottom-color transparent
+
+	.rounded
+		//tab rounded
+
+		.link
+
+			&.active > .tab
+				z-index activeTabIndex
+				border-bottom-color transparent
+
+			&.active
+				//bottom active tab corners rounded
+				position relative
+
+				&:before
+				&:after
+					content ""
+					background-repeat no-repeat
+					position absolute
+					display block
+					bottom 0
+					z-index 4
+
+				&:before
+					left 0
+					transform scaleX(-1) translateX(-1px) translateX(100%)
+
+				&:first-child:before
+					content none
+
+				&:after
+					right 0
+					transform translateX(-1px) translateX(100%)
+
+	.with-drop
+		//drop inactive
+
+		.link
+			overflow hidden
+
+			&.active
+				overflow visible
+
+				& > .tab
+					transform translateY(0)
+					border-bottom-color transparent
+
+
+			&:not(:first-child):not(.active) > .tab
+				border-top-left-radius 0
+
+			&:not(:last-child):not(.active) > .tab
+				border-top-right-radius 0
+
+
+	.content-wrap
+		box-sizing border-box
+		flex-grow 1
+		overflow hidden
+
+	.content
+		box-sizing border-box
+
+:local
+	.tabs-wrap
+		padding marginSize (marginSize * 10)
+
+:local
+		//BORDER-RADIUS
+
+		.with-bottom-line
+			&:before
+				height tabRadius
+				bottom - @height
+				margin-bottom 1px
+
+		.rounded
+			&.with-bottom-line:before
+				border-radius 0 borderRadius 0 0
+
+			.link
+				& > .tab
+					border-radius tabRadius tabRadius 0 0
+
+				&.active
+					&:before
+					&:after
+						background url("./tabCorner.svg")
+						-svg-mixer-fill defaultBackground
+						-svg-mixer-stroke defaultBorder
+						width tabRadius * 1.5
+						height @width
+
+		.with-drop
+			.link
+				& > .tab
+					transform translateY(tabRadius)
+
+.dark-theme
+	:local
+		//COLORS ONLY
+
+		a.link
+			& > .tab
+				background tabsBackground
+				color tabsText
+				border-color tabsBorder
+
+			&.active > .tab
+				background tabsActiveBackground
+				color tabsActiveText
+
+		.with-bottom-line
+			&:before
+				border-color tabsBorder
+				background tabsActiveBackground
+
+		.rounded
+			.link
+				&.active
+					&:before
+					&:after
+						background url("./tabCorner.svg")
+						-svg-mixer-fill tabsActiveBackground
+						-svg-mixer-stroke tabsBorder
+
+
+.tab-content-page
+	display flex
+	flex-direction column
+	justify-content stretch

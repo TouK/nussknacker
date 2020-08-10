@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.process
 import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.graph.{StreamGraph, StreamNode}
 import org.apache.flink.streaming.api.operators.async.{AsyncWaitOperator, AsyncWaitOperatorFactory}
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
@@ -11,17 +10,16 @@ import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.build.GraphBuilder
-import pl.touk.nussknacker.engine.flink.test.StoppableExecutionEnvironment
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
-import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers.processInvoker
+import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import scala.collection.JavaConverters._
 
-class FlinkStreamingProcessRegistrarOperatorUidSpec extends FunSuite with Matchers with OptionValues with PatientScalaFutures {
+class FlinkStreamingProcessRegistrarOperatorUidSpec extends FunSuite with ProcessTestHelpers with Matchers with OptionValues with PatientScalaFutures {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
@@ -73,17 +71,13 @@ class FlinkStreamingProcessRegistrarOperatorUidSpec extends FunSuite with Matche
     val config = ConfigFactory.load()
       .withValue("kafka.kafkaAddress", fromAnyRef("http://notexist.pl"))
       .withValue("globalParameters.explicitUidInStatefulOperators", fromAnyRef(true))
-    val creator: ProcessConfigCreator = processInvoker.prepareCreator(List.empty, config)
+    val creator: ProcessConfigCreator = ProcessTestHelpers.prepareCreator(List.empty, config)
 
-    val env = StoppableExecutionEnvironment(new Configuration())
-    try {
-      val modelData = LocalModelData(config, creator)
-      FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
-        .register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty)
-      env.getStreamGraph
-    } finally {
-      env.stop()
-    }
+    val env = flinkMiniCluster.createExecutionEnvironment()
+    val modelData = LocalModelData(config, creator)
+    FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
+      .register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty)
+    env.getStreamGraph
   }
 
   implicit class EnahncedStreamGraph(graph: StreamGraph) {

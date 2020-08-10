@@ -1,10 +1,11 @@
 import React from "react"
-import {CSSTransition, SwitchTransition} from "react-transition-group"
+import {SwitchTransition} from "react-transition-group"
 import {withTranslation} from "react-i18next"
 import {WithTranslation} from "react-i18next/src"
 import {compose} from "redux"
 import {ProcessStateType, ProcessType} from "./types"
 import {absoluteBePath} from "../../common/UrlUtils"
+import {CssFade} from "../CssFade"
 import {unknownTooltip} from "./messages"
 
 import {Popover} from "react-bootstrap"
@@ -22,10 +23,10 @@ type OwnProps = {
   processState?: ProcessStateType,
   isStateLoaded: boolean,
   process: ProcessType,
-  animation: boolean,
-  height: number,
-  width: number,
-  popover: boolean,
+  animation?: boolean,
+  height?: number,
+  width?: number,
+  popover?: boolean,
 }
 
 type Props = OwnProps & WithTranslation
@@ -43,15 +44,7 @@ class ProcessStateIcon extends React.Component<Props, State> {
   // eslint-disable-next-line i18next/no-literal-string
   static popoverConfigs = {placement: "bottom", triggers: ["click"]}
 
-  static unknownIcon =  "/assets/states/status-unknown.svg"
-
-  private animationTimeout = {
-    enter: 500,
-    appear: 500,
-    exit: 500,
-  }
-
-  animationListener = (node, done) => node.addEventListener("transitionend", done, false)
+  static unknownIcon = "/assets/states/status-unknown.svg"
 
   getTooltip = (process: ProcessType, processState: ProcessStateType, isStateLoaded: boolean): string => {
     if (isStateLoaded === false) {
@@ -122,9 +115,9 @@ class ProcessStateIcon extends React.Component<Props, State> {
 
     return animation === true ? (
       <SwitchTransition>
-        <CSSTransition key={transitionKey} classNames="fade" timeout={this.animationTimeout} addEndListener={this.animationListener}>
+        <CssFade key={transitionKey}>
           { popover === true ? this.imageWithPopover(image, process.name, tooltip, errors) : image }
-        </CSSTransition>
+        </CssFade>
       </SwitchTransition>
     ): image
   }

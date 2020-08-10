@@ -172,22 +172,22 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case e: OpDec => checkSingleOperandArithmeticOperation(validationContext, e, current)
       case e: OpInc => checkSingleOperandArithmeticOperation(validationContext, e, current)
 
-      case e: OpDivide => checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ToCommonWidestType)
+      case e: OpDivide => checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ForMathOperation)
       case e: OpMinus => withTypedChildren {
-        case left :: right :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) => Valid(commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ToCommonWidestType))
+        case left :: right :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) => Valid(commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ForMathOperation))
         case left :: right :: Nil => invalid(s"Operator '${e.getOperatorName}' used with mismatch types: ${left.display} and ${right.display}")
         case left :: Nil if left.canBeSubclassOf(Typed[Number]) => Valid(left)
         case left :: Nil => invalid(s"Operator '${e.getOperatorName}' used with non numeric type: ${left.display}")
         case Nil => invalid("Empty minus")
       }
-      case e: OpModulus => checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ToCommonWidestType)
-      case e: OpMultiply => checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ToCommonWidestType)
+      case e: OpModulus => checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ForMathOperation)
+      case e: OpMultiply => checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ForMathOperation)
       case e: OperatorPower => checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ForPowerOperation)
 
       case e: OpPlus => withTypedChildren {
         case left :: right :: Nil if left == Unknown || right == Unknown => Valid(Unknown)
         case left :: right :: Nil if left.canBeSubclassOf(Typed[String]) || right.canBeSubclassOf(Typed[String]) => Valid(Typed[String])
-        case left :: right :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) => Valid(commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ToCommonWidestType))
+        case left :: right :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) => Valid(commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ForMathOperation))
         case left :: right :: Nil => invalid(s"Operator '${e.getOperatorName}' used with mismatch types: ${left.display} and ${right.display}")
         case left :: Nil if left.canBeSubclassOf(Typed[Number]) => Valid(left)
         case left :: Nil => invalid(s"Operator '${e.getOperatorName}' used with non numeric type: ${left.display}")

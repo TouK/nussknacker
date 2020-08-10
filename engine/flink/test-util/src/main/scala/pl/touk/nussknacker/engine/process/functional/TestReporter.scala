@@ -21,15 +21,40 @@ object TestReporterUtil {
 
 object TestReporter {
 
-  def reset() = instances.clear()
+  val taskManagerHistogramName = "taskmanager"
 
-  val instances: ArrayBuffer[TestReporter] = new ArrayBuffer[TestReporter]()
+  private val instances: ArrayBuffer[TestReporter] = new ArrayBuffer[TestReporter]()
 
-  def taskManagerReporter = TestReporter.instances.find(_.testHistograms.exists(_._2.contains("taskmanager"))).get
+  def reset() = synchronized {
+    instances.foreach(_.reset())
+  }
+
+  def append(reporter: TestReporter): Unit = synchronized {
+    instances.append(reporter)
+  }
+
+  def headReporter: TestReporter = synchronized {
+    instances.head
+  }
+
+  def findReporter(p: TestReporter => Boolean): TestReporter = synchronized {
+    TestReporter
+      .instances
+      .find(p)
+      .getOrElse(throw new IllegalArgumentException("Reporter doesn't exists."))
+  }
+
+  def taskManagerReporter: TestReporter = findReporter(_.testHistograms.exists(_._2.contains(taskManagerHistogramName)))
 }
 
-
 class TestReporter extends AbstractReporter {
+
+  def reset(): Unit = {
+    histograms.clear()
+    gauges.clear()
+    counters.clear()
+    meters.clear()
+  }
 
   def testHistograms = histograms.asScala.toMap
 
@@ -46,7 +71,7 @@ class TestReporter extends AbstractReporter {
   override def close() = {}
 
   override def open(config: MetricConfig) = {
-    TestReporter.instances.append(this)
+    TestReporter.append(this)
   }
 
   override def filterCharacters(input: String) = input

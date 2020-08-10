@@ -1,7 +1,8 @@
 import React, {memo} from "react"
+import {CssFade} from "../../CssFade"
 import {ProcessStateType, ProcessType} from "../../Process/types"
 import {descriptionProcessArchived, descriptionSubprocess, descriptionSubprocessArchived, unknownDescription} from "../../Process/messages"
-import {CSSTransition, SwitchTransition} from "react-transition-group"
+import {SwitchTransition} from "react-transition-group"
 import ProcessStateIcon, {unknownIcon} from "../../Process/ProcessStateIcon"
 import {absoluteBePath} from "../../../common/UrlUtils"
 import {RootState} from "../../../reducers/index"
@@ -16,6 +17,7 @@ import SaveButton from "../process/buttons/SaveButton"
 import {ToolbarButtons} from "../../toolbarComponents/ToolbarButtons"
 import {CollapsibleToolbar} from "../../toolbarComponents/CollapsibleToolbar"
 import i18next from "i18next"
+import {isFunction} from "lodash"
 
 type State = {}
 
@@ -34,14 +36,6 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
 
   static subprocessIcon = "/assets/process/subprocess.svg"
   static archivedIcon = "/assets/process/archived.svg"
-
-  private animationTimeout = {
-    enter: 500,
-    appear: 500,
-    exit: 500,
-  }
-
-  private animationListener = (node, done) => node.addEventListener("transitionend", done, false)
 
   private getDescription = (
     process: ProcessType,
@@ -104,7 +98,7 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
       <CollapsibleToolbar title={i18next.t("panels.status.title", "Status")} id="PROCESS-INFO">
         <DragHandle>
           <SwitchTransition>
-            <CSSTransition key={transitionKey} classNames="fade" timeout={this.animationTimeout} addEndListener={this.animationListener}>
+            <CssFade key={transitionKey}>
               <div className={"panel-process-info"}>
                 <div className={"process-info-icon"}>
                   {icon}
@@ -114,7 +108,7 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
                   <div className={"process-info-description"}>{description}</div>
                 </div>
               </div>
-            </CSSTransition>
+            </CssFade>
           </SwitchTransition>
           <ToolbarButtons>
             {capabilities.write ? <SaveButton/> : null}

@@ -3,58 +3,46 @@ package pl.touk.nussknacker.engine.util.cache
 import com.github.benmanes.caffeine.cache
 import com.github.benmanes.caffeine.cache.Caffeine
 
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.FiniteDuration
 
-/**
-  * @param maximumSize the maximum elements number can contain cache
-  * @param expireAfterAccess the expiration time from last action (read / write)
-  * @param expireAfterWrite the expiration time after cache was created
-  * @tparam T
-  */
-class DefaultCache[T](maximumSize: Long, expireAfterAccess: Option[Duration], expireAfterWrite: Option[Duration]) extends Cache[T] {
+class DefaultCache[K, V](cacheConfig: CacheConfig) extends Cache[K, V] {
 
   import scala.compat.java8.FunctionConverters._
 
-  private lazy val underlying: cache.Cache[String, T] = {
+  private lazy val underlying: cache.Cache[K, V] = {
     val builder = Caffeine
       .newBuilder()
-      .asInstanceOf[Caffeine[String, T]]
+      .asInstanceOf[Caffeine[K, V]]
 
     builder
-      .maximumSize(maximumSize)
+      .maximumSize(cacheConfig.maximumSize)
       .weakValues()
 
-    expireAfterAccess
+    cacheConfig.expireAfterAccess
       .foreach(expire => builder.expireAfterAccess(java.time.Duration.ofMillis(expire.toMillis)))
 
-    expireAfterWrite
+    cacheConfig.expireAfterWrite
       .foreach(expire => builder.expireAfterWrite(java.time.Duration.ofMillis(expire.toMillis)))
 
     builder
-      .build[String, T]
+      .build[K, V]
   }
 
-  override def getOrCreate(key: String)(value: => T): T =
+  override def getOrCreate(key: K)(value: => V): V =
     underlying.get(key, asJavaFunction(k => value))
 }
 
 object DefaultCache {
 
-  val defaultMaximumSize: Long = 10000L
+  def apply[K, V](cacheConfig: CacheConfig = CacheConfig()): Cache[K, V] =
+    new DefaultCache[K, V](cacheConfig)
 
-  def apply[T](): DefaultCache[T] =
-    new DefaultCache(defaultMaximumSize, Option.empty, Option.empty)
-
-  def apply[T](expireAfterAccess: Option[Duration], expireAfterWrite: Option[Duration]): DefaultCache[T] =
-    new DefaultCache(defaultMaximumSize, expireAfterAccess, expireAfterWrite)
 }
 
-class SingleValueCache[T](expireAfterAccess: Option[Duration], expireAfterWrite: Option[Duration]) {
+class SingleValueCache[T](expireAfterAccess: Option[FiniteDuration], expireAfterWrite: Option[FiniteDuration]) {
 
-  private val cache = new DefaultCache[T](1, expireAfterAccess, expireAfterWrite)
+  private val cache = new DefaultCache[Unit.type, T](CacheConfig(1, expireAfterAccess, expireAfterWrite))
 
-  private val fixedKey = "fixedKey"
-
-  def getOrCreate(value: => T): T = cache.getOrCreate(fixedKey)(value)
+  def getOrCreate(value: => T): T = cache.getOrCreate(Unit)(value)
 
 }

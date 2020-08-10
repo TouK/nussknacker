@@ -1,14 +1,15 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
-import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{Invalid, Valid}
-import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
+import cats.data.{NonEmptyList, Validated}
 import cats.instances.list._
-import pl.touk.nussknacker.engine.api.{HideToString, ParamName}
+import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.{NumberTypeUtils, typing}
+import pl.touk.nussknacker.engine.util.Implicits._
+import pl.touk.nussknacker.engine.util.MathUtils
+import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
 
 import scala.collection.JavaConverters._
-import pl.touk.nussknacker.engine.util.Implicits._
-import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
 
 /*
   This class lists some simple aggregates
@@ -18,39 +19,48 @@ object aggregates {
   private val syntax = ValidatedSyntax[String]
   import syntax._
 
-  object SumAggregator extends ReducingAggregator {
+  object SumAggregator extends ReducingAggregator with MathAggregator {
 
     override type Element = Number
 
-    override def zero: Number = 0
+    override def zero: Number = null
 
-    override def addElement(n1: Number, n2: Number): Number = n1.doubleValue() + n2.doubleValue()
+    override def addElement(n1: Number, n2: Number): Number = MathUtils.largeSum(n1, n2)
 
-    override def zeroType: TypingResult = Typed[Number]
+    override protected val promotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ForLargeNumbersOperation
+
+    override def alignToExpectedType(value: AnyRef, outputType: TypingResult): AnyRef = {
+      if (value == null) {
+        NumberTypeUtils.zeroForType(outputType)
+      } else {
+        value
+      }
+    }
 
   }
 
-  object MaxAggregator extends ReducingAggregator {
+  object MaxAggregator extends ReducingAggregator with MathAggregator {
 
     override type Element = Number
 
-    override def zero: Number = Double.MinValue
+    override def zero: Number = null
 
-    override def addElement(n1: Number, n2: Number): Number = Math.max(n1.doubleValue(), n2.doubleValue())
+    override def addElement(n1: Number, n2: Number): Number = MathUtils.max(n1, n2)
 
-    override def zeroType: TypingResult = Typed[Number]
+    override protected val promotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ForMinMax
 
   }
 
-  object MinAggregator extends ReducingAggregator {
+  object MinAggregator extends ReducingAggregator with MathAggregator {
 
     override type Element = Number
 
-    override def zero: Number = Double.MaxValue
+    override def zero: Number = null
 
-    override def addElement(n1: Number, n2: Number): Number = Math.min(n1.doubleValue(), n2.doubleValue())
+    override def addElement(n1: Number, n2: Number): Number = MathUtils.min(n1, n2)
 
-    override def zeroType: TypingResult = Typed[Number]
+    override protected val promotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ForMinMax
+
   }
 
   object ListAggregator extends Aggregator {
@@ -130,7 +140,7 @@ object aggregates {
       = Valid(input)
 
   }
-  
+
   /*
     This is more complex aggregator, as it is composed from smaller ones.
     The idea is that we define aggregator:
@@ -147,9 +157,9 @@ object aggregates {
 
     private val scalaFields = fields.asScala.toMap
 
-    override type Element = java.util.Map[String, Any]
+    override type Element = java.util.Map[String, AnyRef]
 
-    override type Aggregate = Map[String, Any]
+    override type Aggregate = Map[String, AnyRef]
 
     override val zero: Aggregate = scalaFields.mapValuesNow(_.zero)
 
@@ -164,6 +174,18 @@ object aggregates {
     override def result(finalAggregate: Aggregate): AnyRef = finalAggregate.map {
       case (field, value) => field -> scalaFields(field).getResult(value)
     }.asJava
+
+
+    override def alignToExpectedType(value: AnyRef, outputType: TypingResult): AnyRef = {
+      outputType match {
+        case typedObj: TypedObjectTypingResult =>
+          value.asInstanceOf[java.util.Map[String, AnyRef]].asScala.map {
+            case (field, value) =>
+              field -> scalaFields(field).alignToExpectedType(value, typedObj.fields(field))
+          }.asJava
+        case _ => value
+      }
+    }
 
     override def computeOutputType(input: TypingResult): Validated[String, TypingResult] = {
       input match {
@@ -182,7 +204,7 @@ object aggregates {
     }
   }
 
-  trait ReducingAggregator extends Aggregator {
+  abstract class ReducingAggregator extends Aggregator {
 
     override type Aggregate = Element
 
@@ -190,37 +212,21 @@ object aggregates {
 
     override def result(finalAggregate: Aggregate): Aggregate = finalAggregate
 
-    def zeroType: TypingResult
+  }
+
+  trait MathAggregator { self: Aggregator =>
 
     override def computeOutputType(input: typing.TypingResult): Validated[String, typing.TypingResult] = {
-      if (input.canBeSubclassOf(zeroType)) {
-        Valid(zeroType)
+      if (input.canBeSubclassOf(Typed[Number])) {
+        // In some cases type can be promoted to other class e.g. Byte is promoted to Int for sum
+        Valid(promotionStrategy.promoteSingle(input))
       } else {
-        Invalid(s"Invalid aggregate type: ${input.display}, should be: ${zeroType.display}")
+        Invalid(s"Invalid aggregate type: ${input.display}, should be: ${Typed[Number].display}")
       }
     }
 
-  }
-
-  trait AggregateHelper extends HideToString {
-
-    val max: Aggregator = MaxAggregator
-
-    val min: Aggregator = MinAggregator
-
-    val first: Aggregator = FirstAggregator
-
-    val last: Aggregator = LastAggregator
-
-    val sum: Aggregator = SumAggregator
-
-    val set: Aggregator = SetAggregator
-
-    val approxCardinality: Aggregator = HyperLogLogPlusAggregator()
-
-    def map(@ParamName("parts") parts: java.util.Map[String, Aggregator]): Aggregator = new MapAggregator(parts)
+    protected def promotionStrategy: NumberTypesPromotionStrategy
 
   }
 
-  object AggregateHelper extends AggregateHelper
 }

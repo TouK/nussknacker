@@ -7,6 +7,12 @@ export enum ActionType {
 
 export enum StatusType {
   Running = "RunningStateStatus",
+  NotDeployed= "AllowDeployStateStatus"
+}
+
+export enum StatusName {
+  Running = "RUNNING",
+  NotDeployed = "NOT_DEPLOYED",
 }
 
 export type ProcessActionType = {
@@ -49,7 +55,7 @@ export interface ProcessType {
 
 export type ProcessStateType = {
   status: {
-    name: string,
+    name: StatusName,
     type: StatusType,
   },
   deploymentId?: string,

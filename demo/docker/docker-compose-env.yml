@@ -1,4 +1,4 @@
-version: '3.0'
+version: '3.7'
 
 services:
   influxdb:
@@ -46,31 +46,34 @@ services:
     depends_on:
       - zookeeper
 
-# If you want use kafka-manager uncomment this and section /kafka-manager at ./nginx/nginx.conf
-#  kafka-manager:
-#    container_name: nussknacker_kafkamanager
-#    image: hlebalbau/kafka-manager:${KAFKA_MANAGER_VERSION-stable}
-#    command: ["-Dplay.http.context=/kafka-manager/"]
-#    environment:
-#      ZK_HOSTS: "zookeeper:2181"
-#      KAFKA_MANAGER_AUTH_ENABLED: "true"
-#      KAFKA_MANAGER_USERNAME: "nussknacker"
-#      KAFKA_MANAGER_PASSWORD: "nussknacker"
-#    depends_on:
-#      - zookeeper
-#      - kafka
+  akhq:
+    container_name: nussknacker_akhq
+    image: tchiotludo/akhq:${AKHQ_VERSION-0.15.0}
+    environment:
+      AKHQ_CONFIGURATION: |
+        akhq:
+          connections:
+            nussknacker:
+              properties:
+                bootstrap.servers: "kafka:9092"
+              schema-registry:
+                url: "http://schemaregistry:8081"
+    ports:
+      - 8085:8080
+    links:
+      - kafka
+      - schemaregistry
 
   schemaregistry:
     container_name: nussknacker_schemaregistry
     image: confluent/schema-registry
     ports:
-      - "3082:8081"
+      - 3082:8081
     depends_on:
       - zookeeper
       - kafka
     #schema registry needs running kafka, depends_on is not enough, so let's restart when schema registry fails...
     restart: on-failure
-
 
   jobmanager:
     container_name: nussknacker_jobmanager

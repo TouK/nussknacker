@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ParameterConfig
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory.createUIParameter
 
-import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
 class ConfigParameterDefaultValueDeterminerTest extends FlatSpec with Matchers {
   private val config = new ParamDefaultValueConfig(Map("definedNode" -> Map("definedParam" -> ParameterConfig(Some("Idea"), None, None, None))))
@@ -13,7 +13,7 @@ class ConfigParameterDefaultValueDeterminerTest extends FlatSpec with Matchers {
   private val node = UINodeDefinition("definedNode", Nil)
   behavior of "ConfigParameterDefaultValueDeterminer"
 
-  private def verifyDeterminer[T:ClassTag](paramName: String, determinedDefaultValue: Option[String]) = {
+  private def verifyDeterminer[T: TypeTag](paramName: String, determinedDefaultValue: Option[String]) = {
     val param = Parameter[T](paramName)
     it should s"determine default value of $param to $determinedDefaultValue" in {
       determiner.determineParameterDefaultValue(node, createUIParameter(param, ParameterConfig.empty)) shouldBe determinedDefaultValue
