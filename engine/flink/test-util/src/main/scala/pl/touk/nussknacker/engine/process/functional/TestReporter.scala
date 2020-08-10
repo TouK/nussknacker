@@ -1,19 +1,20 @@
 package pl.touk.nussknacker.engine.process.functional
 
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
+
 import org.apache.flink.configuration.{ConfigConstants, Configuration, MetricOptions}
 import org.apache.flink.metrics.reporter.AbstractReporter
-import org.apache.flink.metrics.{Metric, MetricConfig, MetricGroup}
-import org.apache.flink.streaming.api.environment.{StreamExecutionEnvironment => JavaEnv}
-import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
+import org.apache.flink.metrics._
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
 
 object TestReporterUtil {
 
-  def configWithTestMetrics(c: Configuration = new Configuration()): Configuration = {
+  def configWithTestMetrics(c: Configuration = new Configuration(), name: String = UUID.randomUUID().toString): Configuration = {
     c.setString(MetricOptions.REPORTERS_LIST, "test")
     c.setString(ConfigConstants.METRICS_REPORTER_PREFIX + "test.class", classOf[TestReporter].getName)
+    c.setString(ConfigConstants.METRICS_REPORTER_PREFIX + "test.name", name)
     c
   }
 
@@ -21,30 +22,31 @@ object TestReporterUtil {
 
 object TestReporter {
 
-  val taskManagerHistogramName = "taskmanager"
+  private val instances: ConcurrentHashMap[String, TestReporter] = new ConcurrentHashMap[String, TestReporter]()
 
-  private val instances: ArrayBuffer[TestReporter] = new ArrayBuffer[TestReporter]()
+  def resetAll(): Unit =
+    instances.values().asScala.foreach(_.reset())
 
-  def reset() = synchronized {
-    instances.foreach(_.reset())
-  }
+  def reset(name: String): Unit =
+    get(name).reset()
 
-  def append(reporter: TestReporter): Unit = synchronized {
-    instances.append(reporter)
-  }
+  def removeAll: Unit =
+    instances.clear()
 
-  def headReporter: TestReporter = synchronized {
-    instances.head
-  }
+  def remove(name: String): Unit =
+    instances.remove(name)
 
-  def findReporter(p: TestReporter => Boolean): TestReporter = synchronized {
-    TestReporter
+  def append(name: String, reporter: TestReporter): Unit =
+    instances.put(name, reporter)
+
+  def get(name: String): TestReporter =
+    Option(
+      TestReporter
       .instances
-      .find(p)
-      .getOrElse(throw new IllegalArgumentException("Reporter doesn't exists."))
-  }
-
-  def taskManagerReporter: TestReporter = findReporter(_.testHistograms.exists(_._2.contains(taskManagerHistogramName)))
+      .get(name)
+    ).getOrElse(
+      throw new IllegalArgumentException("Reporter doesn't exists.")
+    )
 }
 
 class TestReporter extends AbstractReporter {
@@ -56,24 +58,28 @@ class TestReporter extends AbstractReporter {
     meters.clear()
   }
 
-  def testHistograms = histograms.asScala.toMap
+  def testHistograms: Map[Histogram, String] = histograms.asScala.toMap
 
-  def testHistogram(containing: String) = testHistograms.filter(_._2.contains(containing)).keys.head
+  def testHistogram(containing: String): Histogram = testHistograms.filter(_._2.contains(containing)).keys.head
 
-  def testGauges(containing: String) = gauges.asScala.filter(_._2.contains(containing)).keys
+  def testGauges(containing: String): Iterable[Gauge[_]] = gauges.asScala.filter(_._2.contains(containing)).keys
 
-  def testCounters(containing: String) = counters.asScala.filter(_._2.contains(containing)).keys
+  def testCounters(containing: String): Iterable[Counter] = counters.asScala.filter(_._2.contains(containing)).keys
 
-  def names = counters.values().asScala
+  def names: Iterable[String] = counters.values().asScala
 
-  override def notifyOfRemovedMetric(metric: Metric, metricName: String, group: MetricGroup) = {}
+  override def notifyOfRemovedMetric(metric: Metric, metricName: String, group: MetricGroup): Unit = {}
 
-  override def close() = {}
+  override def close(): Unit = {}
 
-  override def open(config: MetricConfig) = {
-    TestReporter.append(this)
+  override def open(config: MetricConfig): Unit = {
+    if (!config.containsKey("name")) {
+      throw new IllegalArgumentException("Missing param `name` in configuration.")
+    }
+
+    TestReporter.append(config.getString("name", ""), this)
   }
 
-  override def filterCharacters(input: String) = input
+  override def filterCharacters(input: String): String = input
 }
 

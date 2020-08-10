@@ -13,7 +13,12 @@ import pl.touk.nussknacker.test.VeryPatientScalaFutures
 class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures with ProcessTestHelpers with BeforeAndAfterEach {
 
   override protected def beforeEach(): Unit = {
-    TestReporter.reset()
+    TestReporter.reset(this.getClass.getName)
+  }
+
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    TestReporter.remove(this.getClass.getName)
   }
 
   test("measure time for service") {
@@ -32,7 +37,7 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
     processInvoker.invokeWithSampleData(process, data)
 
     MockService.data shouldNot be('empty)
-    val histogram = TestReporter.taskManagerReporter.testHistogram("service.OK.serviceName.mockService.histogram")
+    val histogram = TestReporter.get(this.getClass.getName).testHistogram("service.OK.serviceName.mockService.histogram")
     histogram.getCount shouldBe 1
 
   }
@@ -52,13 +57,15 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
     processInvoker.invokeWithSampleData(process, data)
 
     eventually {
-      val totalGauges = TestReporter.taskManagerReporter.testGauges("error.instantRate.instantRate")
+      val reporter = TestReporter.get(this.getClass.getName)
+
+      val totalGauges = reporter.testGauges("error.instantRate.instantRate")
       totalGauges.exists(_.getValue.asInstanceOf[Double] > 0) shouldBe true
 
-      val nodeGauges = TestReporter.taskManagerReporter.testGauges("error.instantRateByNode.nodeId.proc2.instantRate")
+      val nodeGauges = reporter.testGauges("error.instantRateByNode.nodeId.proc2.instantRate")
       nodeGauges.exists(_.getValue.asInstanceOf[Double] > 0) shouldBe true
 
-      val nodeCounts = TestReporter.taskManagerReporter.testCounters("error.instantRateByNode.nodeId.proc2")
+      val nodeCounts = reporter.testCounters("error.instantRateByNode.nodeId.proc2")
       nodeCounts.exists(_.getCount > 0) shouldBe true
     }
 
@@ -88,7 +95,7 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
     processInvoker.invokeWithSampleData(process, data)
 
     def counter(name: String) =
-      TestReporter.taskManagerReporter.testCounters(name).map(_.getCount).find(_ > 0).getOrElse(0)
+      TestReporter.get(this.getClass.getName).testCounters(name).map(_.getCount).find(_ > 0).getOrElse(0)
 
     eventually {
       counter("nodeId.source1.nodeCount") shouldBe 2L
@@ -119,9 +126,8 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
     }
   }
 
-
   override protected def prepareFlinkConfiguration(): Configuration = {
-    TestReporterUtil.configWithTestMetrics()
+    TestReporterUtil.configWithTestMetrics(new Configuration(), this.getClass.getName)
   }
 
 }
