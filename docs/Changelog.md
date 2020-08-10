@@ -12,6 +12,10 @@ Nussknacker versions
 ------------------------
 * [#1054](https://github.com/TouK/nussknacker/pull/1054) Tabbed dark process list
 
+0.2.1 (not released yet)
+-----------------------
+* [#1127](https://github.com/TouK/nussknacker/pull/1127) Fix too small count values
+
 0.2.0
 ------------------------
 * [#1099](https://github.com/TouK/nussknacker/pull/1099) New outer-join node
