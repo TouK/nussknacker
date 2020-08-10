@@ -49,9 +49,11 @@ export function AWithFocus({className, ...props}: DetailedHTMLProps<AnchorHTMLAt
   )
 }
 
-export function FocusOutline({className, ...props}: DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>) {
+function focusOutline({className, ...props}: DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, ref) {
   const {withFocus} = useNkTheme()
   return (
-    <div {...props} className={cx(withFocus, className)}/>
+    <div ref={ref} {...props} className={cx(withFocus, className)}/>
   )
 }
+
+export const FocusOutline = forwardRef(focusOutline)
