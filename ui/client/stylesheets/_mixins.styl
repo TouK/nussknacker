@@ -1,3 +1,5 @@
+@require "./_variables.styl"
+
 tagsBlockMixin()
   display: inline-block
   margin: 0 5px 0
@@ -21,3 +23,12 @@ espButtonBase()
   &:not(:disabled):hover,&:not(.disabled):hover
     background-color: buttonBkgHover
 
+common-node-input(padding)
+  width: 100%
+  padding: 0 padding
+  border: none
+  background-color: modalInputBkgColor
+  color: modalInputTextColor
+  font-weight: 400
+  font-size: 14px
+  outline 1px solid rgba(255,255,255,0.075)

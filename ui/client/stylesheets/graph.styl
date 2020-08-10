@@ -230,16 +230,6 @@ espCheckbox(checkboxWidth)
   padding-left 6px
   padding-right 6px
 
-common-node-input(padding)
-  width: 100%
-  padding: 0 padding
-  border: none
-  background-color: modalInputBkgColor
-  color: modalInputTextColor
-  font-weight: 400
-  font-size: 14px
-  outline 1px solid rgba(255,255,255,0.075)
-
 modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modalInputTextColor,processesHoverColor,hrColor,modalInputBkgColor)
   overflow auto
   background-color: modalBkgColor
@@ -311,62 +301,8 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
         textarea
           height 100px !important
       &.node-value-select
-        .node-value-select__control
-          background-color modalInputBkgColor
-          max-height 35px
-          min-height 35px
-          border: 0
-          border-radius: 0
-          color modalInputTextColor
-          box-shadow: 0
-        .node-value-select__control--is-focused
-          outline 2px solid focusColor!important;
-          outline-offset -1px!important;
-        .node-value-select__control--is-disabled
-          background-color #444
-          .node-value-select__value-container--has-value
-            background-color #444
-        .node-value-select__single-value
-          common-node-input(10px)
-          outline none
-        .node-value-select__single-value--is-disabled
-          background-color #444
         .switchable
           width: 100% - 40px
-        .node-value-select__input
-          //TODO: input hides partially due to padding...
-          common-node-input(10px)
-          outline none
-        .node-value-select__value-container--has-value
-          background-color modalInputBkgColor
-          color modalInputTextColor
-        .node-value-select__menu
-          z-index: 2
-          border-radius: 0
-        .node-value-select__menu-list
-          padding-top: 0
-          padding-bottom: 0
-        .node-value-select__menu-list::-webkit-scrollbar
-          width: 5px
-          height: 0px
-        .node-value-select__menu-list::-webkit-scrollbar-track
-          background: buttonBorderColor
-        .node-value-select__menu-list::-webkit-scrollbar-thumb
-          background: #888
-        .node-value-select__menu-list::-webkit-scrollbar-thumb:hover
-          background: #555
-        .node-value-select__option
-          common-node-input(10px)
-          height: 25px
-          line-height @height
-          border: 1
-          border-radius: 0
-          &:hover
-           background-color darken(focusColor, 50%)
-        .node-value-select__option--is-selected
-          background-color: focusColor
-        .node-value-select__option--is-focused
-          background-color: darken(focusColor, 50%)
       &.node-value-type-select
         width: 100%
         max-height: 35
