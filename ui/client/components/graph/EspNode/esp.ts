@@ -1,8 +1,8 @@
 /* eslint-disable i18next/no-literal-string */
-import * as joint from "jointjs"
-import {dia, util, shapes} from "jointjs"
+import {dia, shapes, util} from "jointjs"
 import expandIcon from "../../../assets/img/expand.svg"
 import "../graphTheme.styl"
+import {getRoundedRectPath} from "./getRoundedRectPath"
 
 const CONTENT_COLOR = "#1E1E1E"
 const PORT_COLOR = "#FFFFFF"
@@ -10,6 +10,7 @@ const BORDER_COLOR = "#B5B5B5"
 
 const rectWidth = 300
 const rectHeight = 60
+const BORDER_RADIUS = 5
 
 const background: dia.MarkupNodeJSON = {
   selector: "background",
@@ -18,6 +19,7 @@ const background: dia.MarkupNodeJSON = {
   attributes: {
     width: rectWidth,
     height: rectHeight,
+    rx: BORDER_RADIUS,
   },
   children: [
     {
@@ -30,10 +32,9 @@ const background: dia.MarkupNodeJSON = {
 const iconBackgroundSize = rectHeight
 const iconBackground: dia.MarkupNodeJSON = {
   selector: "iconBackground",
-  tagName: "rect",
+  tagName: "path", //TODO: check if it's fast enough
   attributes: {
-    width: iconBackgroundSize,
-    height: iconBackgroundSize,
+    d: getRoundedRectPath(iconBackgroundSize, [BORDER_RADIUS, 0, 0, BORDER_RADIUS]),
   },
 }
 
@@ -46,6 +47,7 @@ const border: dia.MarkupNodeJSON = {
     height: rectHeight,
     "stroke-width": 1,
     fill: "none",
+    rx: BORDER_RADIUS,
   },
 }
 
