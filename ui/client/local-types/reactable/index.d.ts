@@ -7,8 +7,8 @@
 import * as React from "react"
 
 export interface KeyLabelObject {
-    key: string,
-    label: string,
+  key: string,
+  label: string,
 }
 
 export type ColumnsType = string | KeyLabelObject
@@ -19,44 +19,47 @@ export type FilterMethodType = (text: string) => void
 
 export type SortType = {column: string, direction: SortDirection}
 
+export type SortFunction = (a: string, b: string) => number
+export type ColumnSort = {column: string, sortFunction: SortFunction}
+
 export interface TableComponentProperties<T = any> extends React.PropsWithChildren<{}> {
-    data?: T[],
-    className?: string,
-    columns?: ColumnsType[],
-    defaultSort?: SortType,
-    id?: string,
-    sortable?: string[] | boolean,
-    sortBy?: SortType,
-    filterable?: string[],
-    filterBy?: string,
-    onFilter?: FilterMethodType,
-    itemsPerPage?: number,
-    noDataText?: string,
-    pageButtonLimit?: number,
-    currentPage?: number,
-    hideFilterInput?: boolean,
-    previousPageLabel?: string,
-    nextPageLabel?: string,
-    onSort?: (sort: SortType) => void,
-    onPageChange?: (page: number) => void,
-    hidden?: boolean,
+  data?: T[],
+  className?: string,
+  columns?: ColumnsType[],
+  defaultSort?: SortType,
+  id?: string,
+  sortable?: ColumnSort[] | string[] | boolean,
+  sortBy?: SortType,
+  filterable?: string[],
+  filterBy?: string,
+  onFilter?: FilterMethodType,
+  itemsPerPage?: number,
+  noDataText?: string,
+  pageButtonLimit?: number,
+  currentPage?: number,
+  hideFilterInput?: boolean,
+  previousPageLabel?: string,
+  nextPageLabel?: string,
+  onSort?: (sort: SortType) => void,
+  onPageChange?: (page: number) => void,
+  hidden?: boolean,
 }
 
 export interface ThProperties {
-    column: string,
-    className?: string,
+  column: string,
+  className?: string,
 }
 
 export interface TrProperties<T> {
-    data?: T,
-    className?: string,
+  data?: T,
+  className?: string,
 }
 
 export interface TdProperties {
-    column: string,
-    value?: any,
-    data?: any,
-    className?: string,
+  column: string,
+  value?: any,
+  data?: any,
+  className?: string,
 }
 
 export class Table<T> extends React.Component<TableComponentProperties<T>> {
