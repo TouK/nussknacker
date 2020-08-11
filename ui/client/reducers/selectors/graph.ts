@@ -37,8 +37,8 @@ export const isSaveDisabled = createSelector(
   (pristine, latest, businessView) => pristine && latest || businessView,
 )
 export const isDeployPossible = createSelector(
-  [isSaveDisabled, hasError, getFetchedProcessState],
-  (disabled, error, state) => disabled && !error && ProcessStateUtils.canDeploy(state),
+  [isSaveDisabled, hasError, getFetchedProcessState, isSubprocess],
+  (disabled, error, state, subprocess) => !subprocess && disabled && !error && ProcessStateUtils.canDeploy(state),
 )
 export const isCancelPossible = createSelector(getFetchedProcessState, state => ProcessStateUtils.canCancel(state))
 export const getTestCapabilities = createSelector(getGraph, g => g.testCapabilities || {})
