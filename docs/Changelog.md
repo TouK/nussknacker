@@ -1,3 +1,4 @@
+
 Project status
 ==============
 Nussknacker is production ready - it's been used in major Polish telcom since beginning of 2017. However, it's still
@@ -11,6 +12,8 @@ Nussknacker versions
 0.2.1 (not released yet)
 -----------------------
 * [#1127](https://github.com/TouK/nussknacker/pull/1127) Fix too small count values
+* [#1133](https://github.com/TouK/nussknacker/pull/1133) Improvements: More flexible TestReporter instancies implementation 
+* [#1131](https://github.com/TouK/nussknacker/pull/1131) Fix: Disable "deploy" & "metrics" buttons for subprocess  
 
 0.2.0
 ------------------------
