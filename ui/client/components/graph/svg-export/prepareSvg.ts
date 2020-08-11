@@ -110,6 +110,7 @@ export async function prepareSvg(options: Pick<joint.dia.Paper, "options" | "def
   removeHiddenNodes(svg)
   await embedImages(svg)
 
+  _debugInWindow(svg)
   placeholder.remove()
   return toXml(svg)
 }
