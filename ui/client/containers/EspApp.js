@@ -4,6 +4,7 @@ import {matchPath, withRouter} from "react-router-dom"
 import _ from "lodash"
 import {MenuBar} from "../components/MenuBar"
 import {ProcessesTabData} from "./Processes"
+import {ProcessLink} from "./processLink"
 import {SubProcessesTabData} from "./SubProcesses"
 import {ArchiveTabData} from "./Archive"
 import NotFound from "./errors/NotFound"
@@ -22,7 +23,6 @@ import "../stylesheets/mainMenu.styl"
 import "../app.styl"
 import ErrorHandler from "./ErrorHandler"
 import {ProcessTabs} from "./ProcessTabs"
-import {goToProcess} from "../actions/nk/showProcess"
 import {getFeatureSettings} from "../reducers/selectors/settings"
 import CustomTabs from "./CustomTabs"
 
@@ -51,16 +51,14 @@ export class EspApp extends React.Component {
     return _.get(match, "params.processId") != null
   }
 
-  goToProcess = () => {
-    const match = this.getMetricsMatch()
-    goToProcess(match.params.processId)
-  }
-
   renderTopLeftButton() {
+    const match = this.getMetricsMatch()
     if (this.canGoToProcess()) {
       return (
-        <div className="top-left-button" onClick={this.goToProcess}>
-          <span className="glyphicon glyphicon-menu-left"/>
+        <div className="top-left-button">
+          <ProcessLink processId={match.params.processId}>
+            <span className="glyphicon glyphicon-menu-left"/>
+          </ProcessLink>
         </div>
       )
     } else {

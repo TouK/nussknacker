@@ -1,8 +1,5 @@
-/* eslint-disable i18next/no-literal-string */
-import React, {useCallback} from "react"
-import {useDispatch} from "react-redux"
+import React from "react"
 import {Td, Tr} from "reactable"
-import {showProcess} from "../actions/nk"
 import Date from "../components/common/Date"
 import {ProcessType} from "../components/Process/types"
 import TableRowIcon from "../components/table/TableRowIcon"
@@ -10,14 +7,15 @@ import "../stylesheets/processes.styl"
 import {Page} from "./Page"
 import {ProcessesTabData} from "./Processes"
 import {ProcessesList, RowsRenderer} from "./ProcessesList"
+import {ProcessLink} from "./processLink"
 import tabStyles from "../components/tabs/processTabs.styl"
 import {SearchItem} from "./TableFilters"
 
 function ShowProcessIcon({process}: {process: ProcessType}) {
-  const dispatch = useDispatch()
-  const onClick = useCallback(() => dispatch(showProcess(process.name)), [process.name])
   return (
-    <TableRowIcon glyph="edit" title="Edit subprocess" onClick={onClick}/>
+    <ProcessLink processId={process.name}>
+      <TableRowIcon glyph="edit" title="Edit subprocess"/>
+    </ProcessLink>
   )
 }
 

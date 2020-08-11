@@ -1,27 +1,20 @@
-import React, {useCallback} from "react"
-import {useDispatch} from "react-redux"
-import {showProcess} from "../actions/nk"
+import React from "react"
 import {ProcessType} from "../components/Process/types"
 import TableRowIcon from "../components/table/TableRowIcon"
+import {ProcessLink} from "./processLink"
 
 export function EditItem({process}: {process: ProcessType}) {
-  const dispatch = useDispatch()
-  const clickHandler = useCallback(
-    () => dispatch(showProcess(process.name)),
-    [process],
-  )
   return (
-    <TableRowIcon glyph="edit" title="Edit process" onClick={clickHandler}/>
+    <ProcessLink processId={process.name}>
+      <TableRowIcon glyph="edit" title="Edit process"/>
+    </ProcessLink>
   )
 }
 
 export function ShowItem({process}: {process: ProcessType}) {
-  const dispatch = useDispatch()
-  const clickHandler = useCallback(
-    () => dispatch(showProcess(process.name)),
-    [process],
-  )
   return (
-    <TableRowIcon glyph="eye-open" title={`Show ${process.isSubprocess ? "subprocess" : "process"}`} onClick={clickHandler}/>
+    <ProcessLink processId={process.name}>
+      <TableRowIcon glyph="eye-open" title={`Show ${process.isSubprocess ? "subprocess" : "process"}`}/>
+    </ProcessLink>
   )
 }
