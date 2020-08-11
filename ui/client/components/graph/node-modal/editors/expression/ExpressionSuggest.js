@@ -23,7 +23,7 @@ var inputExprIdCounter = 0
 const identifierRegexpsWithoutDot = [/[#a-z0-9-_]/]
 const identifierRegexpsIncludingDot = [/[#a-z0-9-_.]/]
 
-const findCommandDisable = {
+const commandFindConfiguration = {
   name: "find",
   bindKey: {win: "Ctrl-F", mac: "Command-F"},
   exec: () => false,
@@ -169,7 +169,7 @@ class ExpressionSuggest extends React.Component {
                 fontFamily: FONT_FAMILY,
                 readOnly: inputProps.readOnly,
               }}
-              commands={[findCommandDisable]}
+              commands={[commandFindConfiguration]}
               onFocus={this.setEditorFocus(true)}
               onBlur={this.setEditorFocus(false)}
             />
