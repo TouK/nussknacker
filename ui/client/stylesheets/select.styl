@@ -1,0 +1,86 @@
+@import "./_variables.styl"
+@import "./_mixins.styl"
+
+height = 35px
+
+c1 = #444444
+c2 = #888888
+c3 = #555555
+
+c4 = darken(focusColor, 50%)
+
+//placeholder for IDE
+:local .node-value-select {}
+
+body :local(.node-value-select)
+	&__control
+		background-color modalInputBkgColor
+		max-height height
+		min-height height
+		border 0
+		border-radius 0
+		color modalInputTextColor
+		box-shadow 0
+
+	&__control--is-focused
+		outline 2px solid focusColor !important;
+		outline-offset -1px !important;
+
+	&__control--is-disabled
+		background-color c1
+
+		&__value-container--has-value
+			background-color c1
+
+	&__single-value
+		common-node-input(10px)
+		outline none
+
+	&__single-value--is-disabled
+		background-color c1
+
+	&__input
+		//TODO input hides partially due to padding...
+		common-node-input(10px)
+		outline none
+
+	&__value-container--has-value
+		background-color modalInputBkgColor
+		color modalInputTextColor
+
+	&__menu
+		z-index 2
+		border-radius 0
+
+	&__menu-list
+		padding-top 0
+		padding-bottom 0
+
+	&__menu-list::-webkit-scrollbar
+		width 5px
+		height 0px
+
+	&__menu-list::-webkit-scrollbar-track
+		background buttonBorderColor
+
+	&__menu-list::-webkit-scrollbar-thumb
+		background c2
+
+	&__menu-list::-webkit-scrollbar-thumb:hover
+		background c3
+
+	&__option
+		common-node-input(10px)
+		height 25px
+		line-height @height
+		border 1
+		border-radius 0
+
+		&:hover
+			background-color c4
+
+	&__option--is-selected
+		background-color focusColor
+
+	&__option--is-focused
+		background-color c4

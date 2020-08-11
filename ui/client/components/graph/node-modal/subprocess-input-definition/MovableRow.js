@@ -2,10 +2,11 @@ import React from "react"
 import {DragSource, DropTarget} from "react-dnd"
 import ReactDOM from "react-dom"
 import Select from "react-select"
-import {allValid} from "../editors/Validators"
+import styles from "../../../../stylesheets/select.styl"
 import ValidationLabels from "../../../modals/ValidationLabels"
 import SvgDiv from "../../../SvgDiv"
 import {ButtonWithFocus, InputWithFocus} from "../../../withFocus"
+import {allValid} from "../editors/Validators"
 
 class RowSelect extends React.Component {
   render() {
@@ -43,7 +44,7 @@ class RowSelect extends React.Component {
         >
           <Select
             className="node-value node-value-select node-value-type-select"
-            classNamePrefix="node-value-select"
+            classNamePrefix={styles.nodeValueSelect}
             isDisabled={readOnly}
             maxMenuHeight={190}
             onChange={(option) => changeValue(option.value)}

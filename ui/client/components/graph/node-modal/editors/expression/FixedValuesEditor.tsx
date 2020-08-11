@@ -1,8 +1,9 @@
 import React from "react"
 import Creatable from "react-select/creatable"
-import {ExpressionObj} from "./types"
+import styles from "../../../../../stylesheets/select.styl"
 import ValidationLabels from "../../../../modals/ValidationLabels"
 import {Validator} from "../Validators"
+import {ExpressionObj} from "./types"
 
 type Props = {
   editorConfig: $TodoType,
@@ -30,8 +31,8 @@ export default class FixedValuesEditor extends React.Component<Props> {
 
   currentOption = (expressionObj, options) => {
     return expressionObj && options.find((option) => option.value === expressionObj.expression) ||  // current value with label taken from options
-        expressionObj && {value: expressionObj.expression, label: expressionObj.expression} ||          // current value is no longer valid option? Show it anyway, let user know. Validation should take care
-        null                                                                                            // just leave undefined and let the user explicitly select one
+      expressionObj && {value: expressionObj.expression, label: expressionObj.expression} ||          // current value is no longer valid option? Show it anyway, let user know. Validation should take care
+      null                                                                                            // just leave undefined and let the user explicitly select one
   }
 
   render() {
@@ -44,12 +45,16 @@ export default class FixedValuesEditor extends React.Component<Props> {
     return (
       <div className={`node-value-select ${className}`}>
         <Creatable
-          classNamePrefix="node-value-select"
+          classNamePrefix={styles.nodeValueSelect}
           value={currentOption}
           onChange={(newValue) => onValueChange(newValue.value)}
           options={options}
           isDisabled={readOnly}
           formatCreateLabel={(x) => x}
+          menuPortalTarget={document.body}
+          styles={{
+            menuPortal: base => ({...base, zIndex: 1000}),
+          }}
         />
         {showValidation && <ValidationLabels validators={validators} values={[currentOption.value]}/>}
       </div>
