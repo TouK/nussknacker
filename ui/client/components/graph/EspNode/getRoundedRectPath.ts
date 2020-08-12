@@ -1,16 +1,11 @@
-import {isArray} from "lodash"
+import {ensureArray} from "../../../common/arrayUtils"
 
-function toArray(r: number | number[]) {
-  if (isArray(r)) {
-    return r
-  } else {
-    return Array(10).fill(r)
-  }
-}
-
-export function getRoundedRectPath(size: number | [number, number], r: number | [number, number, number, number]) {
-  const [width, height] = toArray(size)
-  const [rTopLeft, rTopRight = 0, rBottomRight = rTopLeft, rBottomLeft = rTopRight] = toArray(r)
+export function getRoundedRectPath(
+  size: number | [number, number],
+  radius: number | [number, number, number, number] //css-like value
+) {
+  const [width, height] = ensureArray(size, 2)
+  const [rTopLeft, rTopRight = 0, rBottomRight = rTopLeft, rBottomLeft = rTopRight] = ensureArray(radius, 4)
 
   return `
       M${width - rTopRight},0 
