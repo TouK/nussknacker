@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.NonEmptyList
+import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers, OptionValues}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, FatalUnknownError, InvalidTailOfBranch, MissingParameters, NodeId}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, ExpressionParseError, FatalUnknownError, InvalidTailOfBranch, MissingParameters, NodeId}
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process._
@@ -41,7 +41,8 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
       "nonEndingCustomNodeReturningTransformation" -> WithCategories(NonEndingCustomNodeReturningTransformation),
       "nonEndingCustomNodeReturningUnit" -> WithCategories(NonEndingCustomNodeReturningUnit),
       "addingVariableOptionalEndingCustomNode" -> WithCategories(AddingVariableOptionalEndingStreamTransformer),
-      "optionalEndingTransformer" -> WithCategories(OptionalEndingStreamTransformer)
+      "optionalEndingTransformer" -> WithCategories(OptionalEndingStreamTransformer),
+      "noBranchParameters" -> WithCategories(DynamicNoBranchParameterJoinTransformer)
     )
 
     override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
@@ -211,6 +212,20 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     }
 
     override def canBeEnding: Boolean = true
+  }
+
+  object DynamicNoBranchParameterJoinTransformer extends CustomStreamTransformer {
+
+    @MethodToInvoke
+    def invoke(implicit nodeId: NodeId): JoinContextTransformation = {
+      ContextTransformation.join.definedBy(contexts => {
+        contexts.values.toList.distinct match {
+          case Nil => Invalid(CustomNodeError("At least one validation context needed", Option.empty)).toValidatedNel
+          case one::Nil => Valid(one)
+          case _ => Invalid(CustomNodeError("Validation contexts do not match", Option.empty)).toValidatedNel
+        }
+      }).implementedBy(null)
+    }
   }
 
   private val processBase = EspProcessBuilder.id("proc1").exceptionHandler().source("sourceId", "mySource")
@@ -576,7 +591,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
         .customNode("custom2", "unusedVariable2", "addingVariableStreamTransformer")
         .customNode("custom3", "unusedVariable3", "addingVariableStreamTransformer")
         .buildSimpleVariable("variable2", "variable2", "42")
-        .branchEnd("branch2", "join2"),
+        .branchEnd("branch2", "join1"),
       GraphBuilder
         .branch("join1", "unionTransformer", Some("unionVariable"),
           List(
@@ -590,6 +605,25 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     val validationResult = validator.validate(process)
 
     validationResult.result.isValid shouldBe true
+  }
+
+  test("should validate branch contexts without branch parameters") {
+    val process =  EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+        GraphBuilder
+          .source("sourceId1", "mySource")
+          .buildSimpleVariable("var1", "intVal", "123")
+          .branchEnd("branch1", "join1"),
+        GraphBuilder
+          .source("sourceId2", "mySource")
+          .buildSimpleVariable("var2", "strVal", "'abc'")
+          .branchEnd("branch2", "join1"),
+        GraphBuilder
+          .branch("join1", "noBranchParameters", None, List())
+          .emptySink("end", "dummySink")
+      ))
+    val validationResult = validator.validate(process)
+
+    validationResult.result shouldBe Validated.invalid(CustomNodeError("join1", "Validation contexts do not match", Option.empty)).toValidatedNel
   }
 
 }
