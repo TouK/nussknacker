@@ -8,8 +8,8 @@ const CONTENT_COLOR = "#1E1E1E"
 const PORT_COLOR = "#FFFFFF"
 const BORDER_COLOR = "#B5B5B5"
 
-const rectWidth = 300
-const rectHeight = 60
+const RECT_WIDTH = 300
+const RECT_HEIGHT = 60
 const BORDER_RADIUS = 5
 
 const background: dia.MarkupNodeJSON = {
@@ -17,8 +17,8 @@ const background: dia.MarkupNodeJSON = {
   tagName: "rect",
   className: "background",
   attributes: {
-    width: rectWidth,
-    height: rectHeight,
+    width: RECT_WIDTH,
+    height: RECT_HEIGHT,
     rx: BORDER_RADIUS,
   },
   children: [
@@ -29,7 +29,7 @@ const background: dia.MarkupNodeJSON = {
   ],
 }
 
-const iconBackgroundSize = rectHeight
+const iconBackgroundSize = RECT_HEIGHT
 const iconBackground: dia.MarkupNodeJSON = {
   selector: "iconBackground",
   tagName: "path", //TODO: check if it's fast enough
@@ -43,8 +43,8 @@ const border: dia.MarkupNodeJSON = {
   tagName: "rect",
   className: "body",
   attributes: {
-    width: rectWidth,
-    height: rectHeight,
+    width: RECT_WIDTH,
+    height: RECT_HEIGHT,
     "stroke-width": 1,
     fill: "none",
     rx: BORDER_RADIUS,
@@ -68,7 +68,7 @@ const content: dia.MarkupNodeJSON = {
   tagName: "text",
   attributes: {
     x: iconBackgroundSize + 10,
-    y: rectHeight / 2,
+    y: RECT_HEIGHT / 2,
     fill: CONTENT_COLOR,
     "font-size": 15,
     "pointer-events": "none",
@@ -88,7 +88,7 @@ const groupElements: dia.MarkupNodeJSON = {
       attributes: {
         width: expandIconSize,
         height: expandIconSize,
-        x: rectWidth - expandIconSize / 2,
+        x: RECT_WIDTH - expandIconSize / 2,
         y: -expandIconSize / 2,
         "xlink:href": expandIcon,
       },
@@ -122,7 +122,7 @@ const testResults: dia.MarkupNodeJSON = {
       className: "testResultsPlaceholder",
       attributes: {
         height: testResultsHeight,
-        y: rectHeight,
+        y: RECT_HEIGHT,
       },
     },
     {
@@ -131,7 +131,7 @@ const testResults: dia.MarkupNodeJSON = {
       className: "testResultsSummary",
       attributes: {
         height: testResultsHeight,
-        y: rectHeight + testResultsHeight / 2 + 1,
+        y: RECT_HEIGHT + testResultsHeight / 2 + 1,
       },
     },
   ],
@@ -144,8 +144,8 @@ const testResults: dia.MarkupNodeJSON = {
 const defaults = util.defaultsDeep(
   {
     size: {
-      width: rectWidth,
-      height: rectHeight,
+      width: RECT_WIDTH,
+      height: RECT_HEIGHT,
     },
     attrs: {
       content: {
@@ -155,12 +155,12 @@ const defaults = util.defaultsDeep(
         stroke: BORDER_COLOR,
       },
       testResults: {
-        refX: rectWidth,
+        refX: RECT_WIDTH,
       },
       testResultsSummary: {
         textAnchor: "middle",
         textVerticalAnchor: "middle",
-        refX: rectWidth,
+        refX: RECT_WIDTH,
       },
     },
     inPorts: [],
