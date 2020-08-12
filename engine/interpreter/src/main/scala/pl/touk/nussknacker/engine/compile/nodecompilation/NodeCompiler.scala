@@ -200,9 +200,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
                                     (implicit nodeId: NodeId,
                                      metaData: MetaData): (Map[String, ExpressionTypingInfo], ValidatedNel[ProcessCompilationError, T]) = {
     val ctx = ctxOrBranches.left.getOrElse(contextWithOnlyGlobalVariables)
-    val branchContexts = ctxOrBranches.right.map { ctxs =>
-      branchParameters.map(_.branchId).map(branchId => branchId -> ctxs(branchId)).toMap
-    }.right.getOrElse(Map.empty)
+    val branchContexts = ctxOrBranches.right.getOrElse(Map.empty)
 
     val compiledObjectWithTypingInfo = objectParametersExpressionCompiler.compileObjectParameters(parameterDefinitionsToUse.getOrElse(nodeDefinition.parameters),
       parameters, branchParameters, ctx, branchContexts, eager = false).andThen { compiledParameters =>

@@ -109,7 +109,7 @@ protected trait ProcessCompilerBase {
     In the future we'll probably move to direct representation of process as graph and this will no longer be needed
    */
   private def compileSources(sources: NonEmptyList[SourcePart])(implicit meta: MetaData): CompilationResult[NonEmptyList[PotentiallyStartPart]] = {
-    val zeroAcc = (CompilationResult(Valid(List[PotentiallyStartPart]())), BranchEndContexts(Map()))
+    val zeroAcc = (CompilationResult(Valid(List[PotentiallyStartPart]())), new BranchEndContexts(Nil))
     //we use fold here (and not map/sequence), because we can compile part which starts from Join only when we
     //know compilation results (stored in BranchEndContexts) of all branches that end in this join
     val (result, _) = PartSort.sort(sources.toList).foldLeft(zeroAcc) { case ((resultSoFar, branchContexts), nextSourcePart) =>
@@ -211,7 +211,7 @@ protected trait ProcessCompilerBase {
   def compileCustomNodePart(part: ProcessPart, node: splittednode.OneOutputNode[CustomNodeData], data: CustomNodeData,
                             ctx: Either[ValidationContext, BranchEndContexts])
                            (implicit metaData: MetaData, nodeId: NodeId): CompilationResult[compiledgraph.part.CustomNodePart] = {
-    val (typingInfo, parameters, validatedNextCtx, compiledNode) = nodeCompiler.compileCustomNodeObject(data, ctx.right.map(_.contexts), ending = false)
+    val (typingInfo, parameters, validatedNextCtx, compiledNode) = nodeCompiler.compileCustomNodeObject(data, ctx.right.map(_.contextsForJoin(data.id)), ending = false)
 
     val nextPartsValidation = sub.validate(node, validatedNextCtx.valueOr(_ => ctx.left.getOrElse(contextWithOnlyGlobalVariables)))
     val typesForParts = nextPartsValidation.typing.mapValues(_.inputValidationContext)
@@ -227,14 +227,20 @@ protected trait ProcessCompilerBase {
     }.distinctErrors
   }
 
-  private case class BranchEndContexts(contexts: Map[String, ValidationContext]) {
+  private class BranchEndContexts(joinIdBranchIdContexts: List[(String, (String, ValidationContext))]) {
 
     def addPart(part: ProcessPart, result: CompilationResult[_]): BranchEndContexts = {
-      val branchEnds = NodesCollector.collectNodesInAllParts(part).collect {
-        case splittednode.EndingNode(BranchEndData(definition)) => definition.id -> result.typing.apply(definition.artificialNodeId)
-      }.toMap
-      copy(contexts = contexts ++ branchEnds.mapValues(_.inputValidationContext))
+      val newData = NodesCollector.collectNodesInAllParts(part).collect {
+        case splittednode.EndingNode(BranchEndData(definition)) =>
+          definition.joinId -> (definition.id -> result.typing.apply(definition.artificialNodeId).inputValidationContext)
+      }
+      new BranchEndContexts(joinIdBranchIdContexts ++ newData)
     }
+
+    def contextsForJoin(joinId: String): Map[String, ValidationContext] = joinIdBranchIdContexts.collect {
+      case (`joinId`, data) => data
+    }.toMap
+
   }
 
 }

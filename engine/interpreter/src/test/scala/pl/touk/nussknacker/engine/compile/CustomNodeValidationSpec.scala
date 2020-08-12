@@ -591,7 +591,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
         .customNode("custom2", "unusedVariable2", "addingVariableStreamTransformer")
         .customNode("custom3", "unusedVariable3", "addingVariableStreamTransformer")
         .buildSimpleVariable("variable2", "variable2", "42")
-        .branchEnd("branch2", "join2"),
+        .branchEnd("branch2", "join1"),
       GraphBuilder
         .branch("join1", "unionTransformer", Some("unionVariable"),
           List(
