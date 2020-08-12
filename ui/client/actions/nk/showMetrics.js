@@ -1,4 +1,4 @@
-import Metrics from "../../containers/Metrics"
+import {Metrics} from "../../containers/Metrics"
 import history from "../../history"
 import {reportEvent} from "./reportEvent"
 

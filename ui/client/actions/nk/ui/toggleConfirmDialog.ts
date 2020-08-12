@@ -20,7 +20,9 @@ export function toggleConfirmDialog(
   event?: EventInfo,
 ): ThunkAction {
   return (dispatch) => {
-    !isEmpty(event) && dispatch(reportEvent(event))
+    if (!isEmpty(event)) {
+      dispatch(reportEvent(event))
+    }
 
     return dispatch({
       type: "TOGGLE_CONFIRM_DIALOG",

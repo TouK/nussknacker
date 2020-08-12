@@ -37,11 +37,13 @@ export function displayModalNodeDetails(node: NodeType, readonly: boolean, event
       }),
     })
 
-    !_.isEmpty(eventInfo) && dispatch(reportEvent({
-      category: eventInfo.category,
-      action: events.actions.buttonClick,
-      name: eventInfo.name,
-    }))
+    if (!_.isEmpty(eventInfo)) {
+      dispatch(reportEvent({
+        category: eventInfo.category,
+        action: events.actions.buttonClick,
+        name: eventInfo.name,
+      }))
+    }
 
     return dispatch({
       type: "DISPLAY_MODAL_NODE_DETAILS",
@@ -68,11 +70,13 @@ export function displayModalEdgeDetails(edge: Edge): DisplayModalEdgeDetailsActi
 
 export function toggleModalDialog(openDialog: DialogType): ThunkAction {
   return (dispatch) => {
-    openDialog != null && dispatch(reportEvent({
-      category: "right_panel",
-      action: "button_click",
-      name: openDialog.toLowerCase(),
-    }))
+    if (openDialog != null) {
+      dispatch(reportEvent({
+        category: "right_panel",
+        action: "button_click",
+        name: openDialog.toLowerCase(),
+      }))
+    }
 
     return dispatch({
       type: "TOGGLE_MODAL_DIALOG",

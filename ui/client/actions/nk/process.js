@@ -70,7 +70,7 @@ export function importProcess(processId, file) {
 
     return HttpService.importProcess(processId, file)
       .then((process) => dispatch(updateImportedProcess(process.data)))
-      .catch((error) => dispatch({type: "LOADING_FAILED"}))
+      .catch(() => dispatch({type: "LOADING_FAILED"}))
   }
 }
 
