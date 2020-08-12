@@ -26,7 +26,8 @@ export function ProcessesTable(props: Props) {
   const defaultSortColummn = useMemo(
     () => {
       const [firstColumn] = sortable && isArray(sortable) ? sortable : columns
-      return isString(firstColumn) ? firstColumn : firstColumn.key
+      // eslint-disable-next-line i18next/no-literal-string
+      return isString(firstColumn) ? firstColumn : firstColumn["column"] || firstColumn["key"]
     },
     [sortable, columns],
   )

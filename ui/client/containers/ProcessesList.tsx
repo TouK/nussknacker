@@ -80,6 +80,8 @@ function useFiltersState(defaultQuery: Queries) {
   return {search, filters, setFilters}
 }
 
+const sortFunction = Intl.Collator().compare
+
 export function ProcessesList(props: BaseProcessesOwnProps) {
   const {allowAdd, columns, RowsRenderer, filterable, defaultQuery, searchItems, sortable, withStatuses, children} = props
 
@@ -115,7 +117,7 @@ export function ProcessesList(props: BaseProcessesOwnProps) {
         isLoading={isLoading}
         filterBy={search?.toString()}
 
-        sortable={sortable}
+        sortable={sortable.map(column => ({column, sortFunction}))}
         filterable={filterable}
         columns={columns}
       >
