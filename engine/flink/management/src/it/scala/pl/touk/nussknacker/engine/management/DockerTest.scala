@@ -27,7 +27,8 @@ trait DockerTest extends DockerTestKit with ExtremelyPatientScalaFutures with La
   override val StartContainersTimeout: FiniteDuration = 5.minutes
   override val StopContainersTimeout: FiniteDuration = 2.minutes
 
-  private val flinkEsp = s"flinkesp:1.9.1-scala_${ScalaMajorVersionConfig.scalaMajorVersion}"
+
+  private val flinkEsp = s"flinkesp:1.10.0-scala_${ScalaMajorVersionConfig.scalaMajorVersion}"
 
   private val client: DockerClient = DefaultDockerClient.fromEnv().build()
 
@@ -65,7 +66,7 @@ trait DockerTest extends DockerTestKit with ExtremelyPatientScalaFutures with La
     baseFlink("jobmanager")
       .withCommand("jobmanager")
       .withEnv("JOB_MANAGER_RPC_ADDRESS_COMMAND=grep $HOSTNAME /etc/hosts | awk '{print $1}'", s"SAVEPOINT_DIR_NAME=${savepointDir.getFileName}")
-      .withReadyChecker(DockerReadyChecker.LogLineContains("Recovering all persisted jobs").looped(5, 1 second))
+      .withReadyChecker(DockerReadyChecker.LogLineContains("Recover all persisted job graphs").looped(5, 1 second))
       .withLinks(ContainerLink(zookeeperContainer, "zookeeper"))
       .withVolumes(List(VolumeMapping(savepointDir.toString, savepointDir.toString, rw = true)))
       .withLogLineReceiver(LogLineReceiver(withErr = true, s => {

@@ -4,7 +4,7 @@ import java.util.concurrent.CompletableFuture
 
 import org.apache.flink.api.common.JobID
 import org.apache.flink.client.program.ClusterClient
-import org.apache.flink.configuration.{ConfigConstants, Configuration, CoreOptions, QueryableStateOptions, TaskManagerOptions}
+import org.apache.flink.configuration.{ConfigConstants, ConfigOptions, Configuration, CoreOptions, QueryableStateOptions, TaskManagerOptions}
 import org.apache.flink.queryablestate.client.QueryableStateClient
 import org.apache.flink.runtime.executiongraph.AccessExecutionGraph
 import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration
@@ -47,7 +47,6 @@ class FlinkMiniClusterHolderImpl(flinkMiniCluster: MiniClusterWithClientResource
 
   override def start(): Unit = {
     flinkMiniCluster.before()
-    getClusterClient.setDetached(envConfig.detachedClient)
   }
 
   override def stop(): Unit = {
@@ -64,7 +63,6 @@ class FlinkMiniClusterHolderImpl(flinkMiniCluster: MiniClusterWithClientResource
 object FlinkMiniClusterHolder {
 
   def apply(userFlinkClusterConfig: Configuration, envConfig: AdditionalEnvironmentConfig = AdditionalEnvironmentConfig()): FlinkMiniClusterHolder = {
-    userFlinkClusterConfig.setBoolean(ConfigConstants.LOCAL_START_WEBSERVER, false)
     userFlinkClusterConfig.setBoolean(CoreOptions.FILESYTEM_DEFAULT_OVERRIDE, true)
     val resource = prepareMiniClusterResource(userFlinkClusterConfig)
     new FlinkMiniClusterHolderImpl(resource, userFlinkClusterConfig, envConfig)
@@ -78,8 +76,9 @@ object FlinkMiniClusterHolder {
   }
 
   def prepareMiniClusterResource(userFlinkClusterConfig: Configuration): MiniClusterWithClientResource = {
+    val taskManagerNumber = ConfigOptions.key(ConfigConstants.LOCAL_NUMBER_TASK_MANAGER).intType().defaultValue(ConfigConstants.DEFAULT_LOCAL_NUMBER_JOB_MANAGER)
     val clusterConfig: MiniClusterResourceConfiguration = new MiniClusterResourceConfiguration.Builder()
-      .setNumberTaskManagers(userFlinkClusterConfig.getInteger(ConfigConstants.LOCAL_NUMBER_TASK_MANAGER, ConfigConstants.DEFAULT_LOCAL_NUMBER_TASK_MANAGER))
+      .setNumberTaskManagers(userFlinkClusterConfig.get(taskManagerNumber))
       .setNumberSlotsPerTaskManager(userFlinkClusterConfig.getInteger(TaskManagerOptions.NUM_TASK_SLOTS, TaskManagerOptions.NUM_TASK_SLOTS.defaultValue()))
       .setConfiguration(userFlinkClusterConfig)
       .build

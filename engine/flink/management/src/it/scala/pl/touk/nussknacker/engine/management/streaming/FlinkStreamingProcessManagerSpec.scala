@@ -161,6 +161,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
   test("should stop process and deploy it using savepoint") {
     val processId = "stop"
     val outTopic = s"output-$processId"
+    kafkaClient.createTopic(outTopic)
     val processEmittingOneElementAfterStart = StatefulSampleProcess.prepareProcess(processId)
 
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
