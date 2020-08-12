@@ -1,4 +1,5 @@
 import React from "react"
+import {useTranslation} from "react-i18next"
 import {Td, Tr} from "reactable"
 import Date from "../components/common/Date"
 import {ProcessType} from "../components/Process/types"
@@ -12,9 +13,10 @@ import tabStyles from "../components/tabs/processTabs.styl"
 import {SearchItem} from "./TableFilters"
 
 function ShowProcessIcon({process}: {process: ProcessType}) {
+  const {t} = useTranslation()
   return (
     <ProcessLink processId={process.name}>
-      <TableRowIcon glyph="edit" title="Edit subprocess"/>
+      <TableRowIcon glyph="edit" title={t("tableRowIcon-edit-subprocess", "Edit subprocess")}/>
     </ProcessLink>
   )
 }
