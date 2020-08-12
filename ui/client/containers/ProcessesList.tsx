@@ -80,7 +80,7 @@ function useFiltersState(defaultQuery: Queries) {
   return {search, filters, setFilters}
 }
 
-const sortFunction = (a: string, b: string) => a.toLowerCase().localeCompare(b.toLowerCase())
+const sortFunction = Intl.Collator().compare
 
 export function ProcessesList(props: BaseProcessesOwnProps) {
   const {allowAdd, columns, RowsRenderer, filterable, defaultQuery, searchItems, sortable, withStatuses, children} = props
