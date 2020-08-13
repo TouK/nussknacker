@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.api.common.functions._
+import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.runtime.execution.librarycache.FlinkUserCodeClassLoaders
 import org.apache.flink.streaming.api.environment.RemoteStreamEnvironment
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment, _}
@@ -31,6 +31,12 @@ import shapeless.syntax.typeable._
 import scala.concurrent.duration._
 import scala.language.implicitConversions
 
+/*
+  This is main class where we translate Nussknacker model to Flink job.
+
+  NOTE: We should try to use *ONLY* core Flink API here, to avoid version compatibility problems.
+  Various NK-dependent Flink hacks should be, if possible, placed in StreamExecutionEnvPreparer.
+ */
 class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => ClassLoader => CompiledProcessWithDeps,
                             streamExecutionEnvPreparer: StreamExecutionEnvPreparer,
                             eventTimeMetricDuration: FiniteDuration) extends LazyLogging {

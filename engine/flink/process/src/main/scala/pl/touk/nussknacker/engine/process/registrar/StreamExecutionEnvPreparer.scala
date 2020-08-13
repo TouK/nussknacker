@@ -17,6 +17,11 @@ import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBa
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.FiniteDuration
 
+/*
+  This trait is meant to be the place to configure StreamExecutionEnvironment. Here (e.g. in DefaultStreamExecutionEnvPreparer)
+  we can put stuff that uses non-core Flink API, so that if someone needs to use e.g. older Flink version, they can
+  use implementation that is suitable for them
+ */
 trait StreamExecutionEnvPreparer {
 
   def preRegistration(env: StreamExecutionEnvironment, compiledProcessWithDeps: CompiledProcessWithDeps): Unit
@@ -26,7 +31,6 @@ trait StreamExecutionEnvPreparer {
 }
 
 object DefaultStreamExecutionEnvPreparer {
-
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
