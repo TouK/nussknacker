@@ -52,7 +52,7 @@ class QueryableStateTest extends FlatSpec with FlinkSpec with Matchers with Kafk
     }
     val testConfig = TestConfig(kafkaZookeeperServer)
     val modelData = LocalModelData(testConfig, creator)
-    registrar = process.registrar.FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), testConfig, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
+    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), testConfig, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
   }
 
 

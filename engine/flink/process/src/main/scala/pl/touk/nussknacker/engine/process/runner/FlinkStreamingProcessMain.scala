@@ -22,15 +22,10 @@ object FlinkStreamingProcessMain extends FlinkProcessMain[StreamExecutionEnviron
                                     processVersion: ProcessVersion,
                                     prepareExecutionConfig: ExecutionConfigPreparer): Unit = {
     val compiler = new FlinkProcessCompiler(modelData)
-    val registrar: FlinkProcessRegistrar = prepareRegistrar(modelData, prepareExecutionConfig, compiler)
+    val registrar: FlinkProcessRegistrar = FlinkProcessRegistrar(compiler, modelData.processConfig, prepareExecutionConfig)
     registrar.register(env, process, processVersion)
     val preparedName = modelData.objectNaming.prepareName(process.id, modelData.processConfig, new NamingContext(FlinkUsageKey))
     env.execute(preparedName)
   }
 
-  protected def prepareRegistrar(modelData: ModelData,
-                                 prepareExecutionConfig: ExecutionConfigPreparer,
-                                 compiler: FlinkProcessCompiler): FlinkProcessRegistrar = {
-    FlinkProcessRegistrar(compiler, modelData.processConfig, prepareExecutionConfig)
-  }
 }
