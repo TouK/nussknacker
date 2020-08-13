@@ -50,13 +50,17 @@ class ProcessUtils {
   //see BranchEndDefinition.artificialNodeId
   findVariablesForBranches = (nodeResults) => (nodeId) => {
     //we find all nodes matching pattern encoding branch and edge and extract branch id
+    const escapedNodeId = this.escapeNodeIdForRegexp(nodeId)
     return _.transform(nodeResults || {}, function(result, value, key) {
-      const branch = key.match(new RegExp(`^\\$edge-(.*)-${nodeId}$`))
+      const branch = key.match(new RegExp(`^\\$edge-(.*)-${escapedNodeId}$`))
       if (branch && branch.length > 1) {
         result[branch[1]] = value.variableTypes
       }
     }, {})
   }
+
+  //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
+  escapeNodeIdForRegexp = (id) => id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
 
   findAvailableVariables = (processDefinition, processCategory, process) => (nodeId, parameterDefinition) => {
     const globalVariablesWithoutProcessCategory = this._findGlobalVariablesWithoutProcessCategory(processDefinition.globalVariables, processCategory)
