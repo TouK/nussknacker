@@ -15,6 +15,7 @@ Nussknacker versions
 0.2.1 (not released yet)
 -----------------------
 * [#1127](https://github.com/TouK/nussknacker/pull/1127) Fix too small count values
+* [#1148](https://github.com/TouK/nussknacker/pull/1148) Fix FE regexp for match node id
 
 0.2.0
 ------------------------
