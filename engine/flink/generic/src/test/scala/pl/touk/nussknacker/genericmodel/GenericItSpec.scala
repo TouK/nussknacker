@@ -25,8 +25,9 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec, KafkaZookeeperUtils}
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
-import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreamingProcessRegistrar}
-import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
+import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
+import pl.touk.nussknacker.engine.{process, spel}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache}
 
@@ -321,14 +322,14 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
       ConfluentSchemaRegistryProvider(factory, processObjectDependencies)
   }
 
-  private var registrar: FlinkStreamingProcessRegistrar = _
+  private var registrar: FlinkProcessRegistrar = _
   private lazy val valueSerializer = new KafkaAvroSerializer(schemaRegistryMockClient)
   private lazy val valueDeserializer = new KafkaAvroDeserializer(schemaRegistryMockClient)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val modelData = LocalModelData(config, creator)
-    registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
+    registrar = process.registrar.FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
   }
 
   private def run(process: EspProcess)(action: => Unit): Unit = {

@@ -17,7 +17,8 @@ import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
 import pl.touk.nussknacker.engine.management.sample.signal.RemoveLockProcessSignalFactory
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
-import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
+import pl.touk.nussknacker.engine.{process, spel}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 class NamespacedKafkaSourceSinkTest extends FunSuite with FlinkSpec with KafkaSpec with Matchers {
@@ -59,12 +60,12 @@ class NamespacedKafkaSourceSinkTest extends FunSuite with FlinkSpec with KafkaSp
 
   private lazy val configCreator: DevProcessConfigCreator = new TestProcessConfig
 
-  private var registrar: FlinkStreamingProcessRegistrar = _
+  private var registrar: FlinkProcessRegistrar = _
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val modelData = LocalModelData(config, configCreator, objectNaming = new TestObjectNaming)
-    registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
+    registrar = process.registrar.FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
   }
 
   private def run(process: EspProcess)(action: => Unit): Unit = {
