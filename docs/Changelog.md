@@ -11,6 +11,7 @@ Nussknacker versions
 0.3.0 (not released yet)
 ------------------------
 * [#1054](https://github.com/TouK/nussknacker/pull/1054) Tabbed dark process list
+* [#1151](https://github.com/TouK/nussknacker/pull/1151) Upgrade Typesafe Config to latest version
 
 0.2.1 (not released yet)
 -----------------------
