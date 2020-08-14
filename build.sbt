@@ -161,7 +161,7 @@ lazy val commonSettings =
       ),
       //here we add dependencies that we want to have fixed across all modules
       dependencyOverrides ++= Seq(
-        //currently Flink (1.9) uses 1.8.2 Avro version
+        //currently Flink (1.11 -> https://github.com/apache/flink/blob/master/pom.xml#L128) uses 1.8.2 Avro version
         "org.apache.avro" % "avro" % avroV,
         "com.typesafe" % "config" % configV
       )
