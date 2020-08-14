@@ -196,7 +196,7 @@ val slf4jV = "1.7.21"
 val scalaLoggingV = "3.9.0"
 val scalaCompatV = "0.9.0"
 val ficusV = "1.4.1"
-val configV = "1.3.4"
+val configV = "1.4.0"
 val commonsLangV = "3.3.2"
 val commonsTextV = "1.8"
 //we want to use 5.x for standalone metrics to have tags, however dropwizard development kind of freezed. Maybe we should consider micrometer?
