@@ -10,7 +10,8 @@ import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{MockService, SimpleRecord}
-import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreamingProcessRegistrar}
+import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
+import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
@@ -41,7 +42,7 @@ class KafkaSignalsSpec extends FunSuite with Matchers with ProcessTestHelpers wi
 
     val env = flinkMiniCluster.createExecutionEnvironment()
     val modelData = LocalModelData(config, creator)
-    FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), modelData.processConfig, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
+    FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), modelData.processConfig, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
       .register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty)
 
     env.withJobRunning(process.id) {

@@ -5,10 +5,11 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.{Matchers, Suite}
 import pl.touk.nussknacker.engine.api.conversion.ProcessConfigCreatorMapping
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.javademo
+import pl.touk.nussknacker.engine.{javademo, process}
 import pl.touk.nussknacker.engine.kafka.{KafkaSpec, KafkaZookeeperServer}
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
-import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreamingProcessRegistrar}
+import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
+import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 trait BaseITest extends FlinkSpec with KafkaSpec { self: Suite with Matchers =>
@@ -24,13 +25,13 @@ trait BaseITest extends FlinkSpec with KafkaSpec { self: Suite with Matchers =>
     }
   }
 
-  var registrar: FlinkStreamingProcessRegistrar = _
+  var registrar: FlinkProcessRegistrar = _
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val config = TestConfig(kafkaZookeeperServer)
     val modelData = LocalModelData(config, creator)
-    registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
+    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
   }
 
 }

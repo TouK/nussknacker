@@ -26,7 +26,8 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransfo
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
-import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreamingProcessRegistrar}
+import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
+import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
@@ -225,7 +226,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers {
 
   private def runProcess(model: LocalModelData, testProcess: EspProcess, collectingListener: ResultsCollectingListener): Unit = {
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
-    val registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(model) {
+    val registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(model) {
       override protected def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
         List(collectingListener) ++ super.listeners(processObjectDependencies)
     }, model.processConfig, ExecutionConfigPreparer.unOptimizedChain(model, None))
