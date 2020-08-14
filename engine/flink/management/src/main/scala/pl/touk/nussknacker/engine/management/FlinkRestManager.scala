@@ -137,12 +137,12 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
 
   private def findRunningOrFirst(jobOverviews: List[JobOverview]) = jobOverviews.find(isNotFinished).getOrElse(jobOverviews.head)
 
-  //NOTE: protected to make it easier to work with Flink 1.9
+  //NOTE: Flink <1.10 compatibility - protected to make it easier to work with Flink 1.9, JobStatus changed package, so we use String in case class
   protected def isNotFinished(overview: JobOverview): Boolean = {
     !org.apache.flink.api.common.JobStatus.valueOf(overview.state).isGloballyTerminalState
   }
 
-  //NOTE: protected to make it easier to work with Flink 1.9
+  //NOTE: Flink <1.10 compatibility - protected to make it easier to work with Flink 1.9, JobStatus changed package, so we use String in case class
   protected def mapJobStatus(overview: JobOverview): StateStatus = {
     import org.apache.flink.api.common.JobStatus
     JobStatus.valueOf(overview.state) match {
@@ -306,6 +306,7 @@ object flinkRestModel {
 
   @JsonCodec(decodeOnly = true) case class JobsResponse(jobs: List[JobOverview])
 
+  //NOTE: Flink <1.10 compatibility - JobStatus changed package, so we use String here
   @JsonCodec(decodeOnly = true) case class JobOverview(jid: String, name: String, `last-modification`: Long, `start-time`: Long, state: String)
 
   @JsonCodec(decodeOnly = true) case class JobConfig(jid: String, `execution-config`: ExecutionConfig)
