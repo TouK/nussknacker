@@ -46,6 +46,7 @@ services:
     depends_on:
       - zookeeper
 
+  #In future use nginx to proxy /akhq/ url. Now there is problem with base-path: https://github.com/tchiotludo/akhq/issues/357
   akhq:
     container_name: nussknacker_akhq
     image: tchiotludo/akhq:${AKHQ_VERSION-0.15.0}
