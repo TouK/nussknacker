@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
-import cats.data.Validated.{Invalid, Valid, invalid}
+import cats.data.Validated.{Invalid, Valid, invalid, valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context._
@@ -28,8 +28,10 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.engine.{Interpreter, api, compiledgraph}
 import shapeless.Typeable
 import shapeless.syntax.typeable._
+import cats.instances.list._
+import cats.implicits.toTraverseOps
 
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
                    objectParametersExpressionCompiler: ExpressionCompiler,
@@ -101,6 +103,26 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     }
   }
 
+  def compileSubprocessInput(subprocessInput: SubprocessInput, ctx: ValidationContext)
+                   (implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.evaluatedparam.Parameter]] = {
+
+    val ref = subprocessInput.ref
+    val validParamDefs = ref.parameters.map(p => getSubprocessParamDefinition(subprocessInput, p.name)).sequence
+    val paramNamesWithType: List[(String, TypingResult)] = validParamDefs.map { ps =>
+      ps.map(p => (p.name, p.typ))
+    }.getOrElse(ref.parameters.map(p => (p.name, Unknown)))
+
+    val childCtx = ctx.pushNewContext()
+    val newCtx = paramNamesWithType.foldLeft[ValidatedNel[ProcessCompilationError, ValidationContext]](Valid(childCtx)) {
+      case (acc, (paramName, typ)) => acc.andThen(_.withVariable(paramName, typ))
+    }
+    val validParams = validParamDefs.andThen { paramDefs =>
+      objectParametersExpressionCompiler.compileEagerObjectParameters(paramDefs, ref.parameters, ctx)
+    }
+    val expressionTypingInfo = validParams.map(_.map(p => p.name -> p.typingInfo).toMap).valueOr(_ => Map.empty[String, ExpressionTypingInfo])
+    NodeCompilationResult(expressionTypingInfo, None, newCtx, validParams)
+  }
+
   def compileProcessor(n: Processor, ctx: ValidationContext)
                      (implicit nodeId: NodeId): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
     compileService(n.service, ctx, None)
@@ -110,7 +132,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     compileService(n.service, ctx, Some(n.output))
   }
 
-  def compileService(n: ServiceRef, validationContext: ValidationContext, outputVar: Option[String])(implicit nodeId: NodeId): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+  private def compileService(n: ServiceRef, validationContext: ValidationContext, outputVar: Option[String])(implicit nodeId: NodeId): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
     definitions.services.get(n.id) match {
       case Some(objectWithMethodDef) =>
         ServiceCompiler.compile(n, outputVar, objectWithMethodDef, validationContext)
@@ -164,6 +186,18 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     }
   }
 
+
+  private def getSubprocessParamDefinition(subprocessInput: SubprocessInput, paramName: String): ValidatedNel[PartSubGraphCompilationError, Parameter] = {
+    val subParam = subprocessInput.subprocessParams.get.find(_.name == paramName).get
+    subParam.typ.toRuntimeClass(classLoader) match {
+      case Success(runtimeClass) =>
+        valid(Parameter.optional(paramName, Typed(runtimeClass)))
+      case Failure(_) =>
+        invalid(
+          SubprocessParamClassLoadError(paramName, subParam.typ.refClazzName, subprocessInput.id)
+        ).toValidatedNel
+    }
+  }
 
   //TODO: better classloader error handling
   private def loadFromParameter(subprocessParameter: SubprocessParameter)(implicit nodeId: NodeId) =

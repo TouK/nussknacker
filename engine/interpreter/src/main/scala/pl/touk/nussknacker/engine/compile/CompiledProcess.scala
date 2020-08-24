@@ -32,11 +32,9 @@ object CompiledProcess {
     val dictRegistry = dictRegistryFactory.createEngineDictRegistry(definitions.expressionConfig.dictionaries)
 
     val expressionCompiler = ExpressionCompiler.withOptimization(userCodeClassLoader, dictRegistry, definitions.expressionConfig, definitions.settings)
-    // TODO: rethink if optimization for object's parameters is still a problem here because maybe we can use just ProcessCompiler.apply
-    val objectParametersExpressionCompiler = ExpressionCompiler.withoutOptimization(userCodeClassLoader, dictRegistry, definitions.expressionConfig, definitions.settings)
     //for testing environment it's important to take classloader from user jar
     val nodeCompiler = new NodeCompiler(definitions, expressionCompiler, userCodeClassLoader)
-    val subCompiler = new PartSubGraphCompiler(userCodeClassLoader, expressionCompiler, nodeCompiler)
+    val subCompiler = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
     val processCompiler = new ProcessCompiler(userCodeClassLoader, subCompiler, GlobalVariablesPreparer(definitions.expressionConfig), nodeCompiler)
 
     processCompiler.compile(process).result.map { compiledProcess =>

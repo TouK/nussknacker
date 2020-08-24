@@ -5,8 +5,7 @@ import cats.data.{NonEmptyList, ValidatedNel}
 import cats.instances.list._
 import cats.instances.option._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo.DefaultExpressionId
@@ -21,10 +20,7 @@ import pl.touk.nussknacker.engine.splittedgraph.splittednode.{Next, SplittedNode
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
 import pl.touk.nussknacker.engine.{api, compiledgraph, _}
 
-import scala.util.{Failure, Success}
-
-class PartSubGraphCompiler(classLoader: ClassLoader,
-                           expressionCompiler: ExpressionCompiler,
+class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
                            nodeCompiler: NodeCompiler) {
 
   type ParametersProviderT = ObjectWithMethodDef
@@ -177,33 +173,10 @@ class PartSubGraphCompiler(classLoader: ClassLoader,
           fa = compile(next, ctx))(
           f = compiledNext => compiledgraph.node.CustomNode(id, compiledNext))
 
-      case subprocessInput@SubprocessInput(id, ref, _, _, _) =>
-        import cats.implicits.toTraverseOps
-
-        val validParamDefs =
-          ref.parameters.map(p => getSubprocessParamDefinition(subprocessInput, p.name)).sequence
-
-        val paramNamesWithType: List[(String, TypingResult)] = validParamDefs.map { ps =>
-          ps.map(p => (p.name, p.typ))
-        }.getOrElse(ref.parameters.map(p => (p.name, Unknown)))
-
-        val childCtx = ctx.pushNewContext()
-
-        val (newCtx, combinedValidation) = paramNamesWithType.foldLeft[(ValidationContext, ValidatedNel[ProcessCompilationError, _])]((childCtx, Valid(Unit))) {
-          case ((accCtx, validation), (paramName, typ)) =>
-            withVariableCombined(accCtx, paramName, typ, validation)
-        }
-
-        val validParams = validParamDefs.andThen { paramDefs =>
-          expressionCompiler.compileEagerObjectParameters(paramDefs, ref.parameters, ctx)
-        }
-
-        val expressionTypingInfo = validParams.map(_.map(p => p.name -> p.typingInfo).toMap).valueOr(_ => Map.empty[String, ExpressionTypingInfo])
-
-        val combinedValidParams = ProcessCompilationError.ValidatedNelApplicative.map2(combinedValidation, validParams)((_, p) => p)
-
-        CompilationResult.map2(toCompilationResult(combinedValidParams, expressionTypingInfo), compile(next, newCtx))((params, next) =>
-          compiledgraph.node.SubprocessStart(id, params, next))
+      case subprocessInput:SubprocessInput =>
+        val NodeCompilationResult(typingInfo, _, newCtx, combinedValidParams) = nodeCompiler.compileSubprocessInput(subprocessInput, ctx)
+        CompilationResult.map2(toCompilationResult(combinedValidParams, typingInfo), compile(next, newCtx.getOrElse(ctx)))((params, next) =>
+          compiledgraph.node.SubprocessStart(subprocessInput.id, params, next))
 
       case SubprocessOutput(id, outPutName, List(), _) =>
         //this popContext *really* has to work to be able to extract variable types :|
@@ -259,20 +232,8 @@ class PartSubGraphCompiler(classLoader: ClassLoader,
       .valueOr(err => (ExpressionTypingResult(Unknown, None), Invalid(err)))
   }
 
-  private def getSubprocessParamDefinition(subprocessInput: SubprocessInput, paramName: String): ValidatedNel[PartSubGraphCompilationError, Parameter] = {
-    val subParam = subprocessInput.subprocessParams.get.find(_.name == paramName).get
-    subParam.typ.toRuntimeClass(classLoader) match {
-      case Success(runtimeClass) =>
-        valid(Parameter.optional(paramName, Typed(runtimeClass)))
-      case Failure(_) =>
-        invalid(
-          SubprocessParamClassLoadError(paramName, subParam.typ.refClazzName, subprocessInput.id)
-        ).toValidatedNel
-    }
-  }
-
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): PartSubGraphCompiler =
-    new PartSubGraphCompiler(classLoader, expressionCompiler.withExpressionParsers(modify), nodeCompiler.withExpressionParsers(modify))
+    new PartSubGraphCompiler(expressionCompiler.withExpressionParsers(modify), nodeCompiler.withExpressionParsers(modify))
 
 }
 

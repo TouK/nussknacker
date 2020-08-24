@@ -247,7 +247,7 @@ object ProcessCompiler {
             expressionCompilerCreate: (ClassLoader, DictRegistry, ExpressionDefinition[ObjectWithMethodDef], ClassExtractionSettings) => ExpressionCompiler): ProcessCompiler = {
     val expressionCompiler = expressionCompilerCreate(classLoader, dictRegistry, definitions.expressionConfig, definitions.settings)
     val nodeCompiler = new NodeCompiler(definitions, expressionCompiler, classLoader)
-    val sub = new PartSubGraphCompiler(classLoader, expressionCompiler, nodeCompiler)
+    val sub = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
     new ProcessCompiler(classLoader, sub, GlobalVariablesPreparer(definitions.expressionConfig), nodeCompiler)
   }
 
