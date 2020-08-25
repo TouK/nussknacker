@@ -54,7 +54,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     for {
       definition <- extractSourceFactory(source)
       sourceParams <- prepareSourceParams(definition, source)
-      sourceObj <- factory.createObject[process.Source[Any]](definition, Some(Interpreter.InputParamName), sourceParams).toOption
+      sourceObj <- factory.createObject[process.Source[Any]](definition, sourceParams, Some(Interpreter.InputParamName), Seq.empty).toOption
     } yield sourceObj
   }
 

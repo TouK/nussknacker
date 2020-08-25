@@ -57,7 +57,7 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
       Parameter[String](keyParameter).copy(branchParam = true, isLazyParameter = true)
     )
 
-    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): AnyRef = {
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): AnyRef = {
       val role = params(roleParameter).asInstanceOf[Map[String, String]]
       val leftName = left(role)
       val rightName = right(role)

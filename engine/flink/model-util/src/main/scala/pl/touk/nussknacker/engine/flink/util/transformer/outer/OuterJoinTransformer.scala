@@ -56,7 +56,7 @@ class OuterJoinTransformer(timestampAssigner: Option[TimestampAssigner[Timestamp
       FinalResults(withVariable.getOrElse(mainCtx), withVariable.swap.map(_.toList).getOrElse(Nil))
   }
 
-  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): FlinkCustomJoinTransformation = {
+  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkCustomJoinTransformation = {
     val branchTypeByBranchId: Map[String, BranchType] = BranchTypeParam.extractValue(params)
     val keyByBranchId: Map[String, LazyParameter[CharSequence]] = KeyParam.extractValue(params)
     val aggregator: Aggregator = AggregatorParam.extractValue(params)

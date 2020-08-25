@@ -465,7 +465,7 @@ object SampleNodes {
       Parameter[String]("par1"), Parameter[java.lang.Boolean]("lazyPar1").copy(isLazyParameter = true)
     )
 
-    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): AnyRef = {
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): AnyRef = {
       val map = params.filterNot(k => List("par1", "lazyPar1").contains(k._1))
       val bool = params("lazyPar1").asInstanceOf[LazyParameter[java.lang.Boolean]]
       FlinkCustomStreamTransformation((stream, fctx) => {
@@ -513,7 +513,7 @@ object SampleNodes {
     override def initialParameters: List[Parameter] = Parameter[String]("type")
       .copy(editor = Some(FixedValuesParameterEditor(List(FixedExpressionValue("'type1'", "type1"), FixedExpressionValue("'type2'", "type2"))))) :: Nil
 
-    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): Source[AnyRef] = {
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source[AnyRef] = {
       val out = params("type") + "-" + params("version")
       CollectionSource(StreamExecutionEnvironment.getExecutionEnvironment.getConfig, out::Nil, None, Typed[String])
     }
@@ -542,7 +542,7 @@ object SampleNodes {
     override def initialParameters: List[Parameter] = Parameter[String]("value").copy(isLazyParameter = true) :: Parameter[String]("type")
       .copy(editor = Some(FixedValuesParameterEditor(List(FixedExpressionValue("'type1'", "type1"), FixedExpressionValue("'type2'", "type2"))))) :: Nil
 
-    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): FlinkSink = {
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkSink = {
       new FlinkSink with Serializable {
         private val typ = params("type")
         private val version = params("version")

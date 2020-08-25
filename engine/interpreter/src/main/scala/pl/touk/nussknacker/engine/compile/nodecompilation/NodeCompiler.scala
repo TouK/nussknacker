@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeTypingInfo, NodeValidationExceptionHandler, ProcessObjectFactory}
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{FinalStateValue, ObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -108,7 +108,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
         override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {}
       }))
     } else {
-      createProcessObject[EspExceptionHandler](definitions.exceptionHandlerFactory, ref.parameters, List.empty, outputVariableNameOpt = None, Left(contextWithOnlyGlobalVariables))
+      createProcessObject[EspExceptionHandler](definitions.exceptionHandlerFactory, ref.parameters, List.empty, outputVariableNameOpt = None, Left(contextWithOnlyGlobalVariables), None, Seq.empty)
     }
   }
 
@@ -161,18 +161,18 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     val generic = validateGenericTransformer(ctx, parameters, branchParameters, outputVar)
     if (generic.isDefinedAt(nodeDefinition)) {
       val afterValidation = generic(nodeDefinition).map {
-        case TransformationResult(Nil, computedParameters, outputContext) =>
+        case TransformationResult(Nil, computedParameters, outputContext, finalState) =>
           val (typingInfo, validProcessObject) = createProcessObject[T](nodeDefinition, parameters,
-            branchParameters, outputVar, ctx, Some(computedParameters))
+            branchParameters, outputVar, ctx, Some(computedParameters), Seq(FinalStateValue(finalState)))
           (typingInfo, Some(computedParameters), outputContext, validProcessObject)
-        case TransformationResult(h :: t, computedParameters, outputContext) =>
+        case TransformationResult(h :: t, computedParameters, outputContext, _) =>
           //TODO: typing info here??
           (Map.empty[String, ExpressionTypingInfo], Some(computedParameters), outputContext, Invalid(NonEmptyList(h, t)))
       }
       (afterValidation.map(_._1).valueOr(_ => Map.empty), afterValidation.map(_._2).valueOr(_ => None), afterValidation.map(_._3), afterValidation.andThen(_._4))
     } else {
       val (typingInfo, validProcessObject) = createProcessObject[T](nodeDefinition, parameters,
-        branchParameters, outputVar, ctx)
+        branchParameters, outputVar, ctx, None, Seq.empty)
       val nextCtx = validProcessObject.fold(_ => defaultCtxForCreatedObject(None), cNode =>
         contextAfterNode(data, cNode, ctx, (c: T) => defaultCtxForCreatedObject(Some(c)))
       )
@@ -196,7 +196,8 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
                                      branchParameters: List[BranchParameters],
                                      outputVariableNameOpt: Option[String],
                                      ctxOrBranches: GenericValidationContext,
-                                     parameterDefinitionsToUse: Option[List[Parameter]] = None)
+                                     parameterDefinitionsToUse: Option[List[Parameter]],
+                                     additionalDependencies: Seq[AnyRef])
                                     (implicit nodeId: NodeId,
                                      metaData: MetaData): (Map[String, ExpressionTypingInfo], ValidatedNel[ProcessCompilationError, T]) = {
     val ctx = ctxOrBranches.left.getOrElse(contextWithOnlyGlobalVariables)
@@ -204,7 +205,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
 
     val compiledObjectWithTypingInfo = objectParametersExpressionCompiler.compileObjectParameters(parameterDefinitionsToUse.getOrElse(nodeDefinition.parameters),
       parameters, branchParameters, ctx, branchContexts, eager = false).andThen { compiledParameters =>
-      factory.createObject[T](nodeDefinition, outputVariableNameOpt, compiledParameters).map { obj =>
+      factory.createObject[T](nodeDefinition, compiledParameters, outputVariableNameOpt, additionalDependencies).map { obj =>
         val typingInfo = compiledParameters.flatMap {
           case (TypedParameter(name, TypedExpression(_, _, typingInfo)), _) =>
             List(name -> typingInfo)
