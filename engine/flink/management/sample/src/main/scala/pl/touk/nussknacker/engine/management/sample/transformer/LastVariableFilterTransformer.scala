@@ -47,7 +47,7 @@ object LastVariableFilterTransformer extends CustomStreamTransformer with Single
 
   override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)
 
-  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): FlinkCustomStreamTransformation= {
+  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkCustomStreamTransformation= {
     val value = valueParameter.extractValue(params)
     val condition = params(conditionParameterName).asInstanceOf[LazyParameter[java.lang.Boolean]]
     val keyBy = keyByParameter.extractValue(params)

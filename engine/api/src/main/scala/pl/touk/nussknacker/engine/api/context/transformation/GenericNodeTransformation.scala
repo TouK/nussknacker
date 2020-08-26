@@ -36,7 +36,7 @@ trait GenericNodeTransformation[T] {
   //may be not enough. However, we have to rethink NodeToAdd mechanism to fix this
   def initialParameters: List[Parameter]
 
-  def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): T
+  def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): T
 
   //Here we assume that this list is fixed - cannot be changed depending on parameter values
   def nodeDependencies: List[NodeDependency]
@@ -48,7 +48,8 @@ trait GenericNodeTransformation[T] {
   case class NextParameters(parameters: List[Parameter],
                             errors: List[ProcessCompilationError] = Nil, state: Option[State] = None) extends TransformationStepResult
 
-  case class FinalResults(finalContext: ValidationContext, errors: List[ProcessCompilationError] = Nil) extends TransformationStepResult
+  case class FinalResults(finalContext: ValidationContext,
+                          errors: List[ProcessCompilationError] = Nil, state: Option[State] = None) extends TransformationStepResult
 
   case class TransformationStep(parameters: List[(String, DefinedParameter)], state: Option[State])
 

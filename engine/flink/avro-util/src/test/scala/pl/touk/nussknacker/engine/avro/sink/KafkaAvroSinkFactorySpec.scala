@@ -54,7 +54,7 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
         KafkaAvroBaseTransformer.SinkKeyParamName -> null,
         KafkaAvroBaseTransformer.SinkValidationModeParameterName -> validationMode.name,
         KafkaAvroBaseTransformer.SinkValueParamName -> value),
-      List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)))
+      List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)), None)
   }
 
   test("should throw exception when schema doesn't exist") {

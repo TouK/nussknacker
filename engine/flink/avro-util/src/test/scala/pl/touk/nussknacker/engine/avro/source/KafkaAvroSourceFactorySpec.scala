@@ -183,7 +183,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     }
     val source = sourceFactory
       .implementation(Map(KafkaAvroBaseTransformer.TopicParamName -> topic, KafkaAvroBaseTransformer.SchemaVersionParamName -> version),
-        List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)))
+        List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)), None)
       .asInstanceOf[Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef] with ReturningType]
 
     source.returnType shouldEqual AvroSchemaTypeDefinitionExtractor.typeDefinition(expectedSchema)
