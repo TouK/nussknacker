@@ -14,6 +14,7 @@ import scala.concurrent.duration._
 
 trait AuthenticationConfiguration {
   def authorizeUrl: Option[URI] = Option.empty
+  def implicitGrantEnabled: Boolean = false
   def method: AuthenticationMethod
   def usersFile: String
 
@@ -64,7 +65,6 @@ case class DefaultAuthenticationConfiguration(method: AuthenticationMethod = Aut
                                               cachingHashes: Option[CachingHashesConfig]) extends AuthenticationConfiguration {
 
   def cachingHashesOrDefault: CachingHashesConfig = cachingHashes.getOrElse(CachingHashesConfig.defaultConfig)
-
 }
 
 object DefaultAuthenticationConfiguration {
