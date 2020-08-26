@@ -480,6 +480,35 @@ object SampleNodes {
 
   }
 
+  object NodePassingStateToImplementation extends CustomStreamTransformer with SingleInputGenericNodeTransformation[AnyRef] {
+
+    val VariableThatShouldBeDefinedBeforeNodeName = "foo"
+
+    override type State = Boolean
+
+    override def contextTransformation(context: ValidationContext,
+                                       dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): this.NodeTransformationDefinition = {
+      case TransformationStep(Nil, _) =>
+        context.withVariable(OutputVariableNameDependency.extract(dependencies), Typed[Boolean])
+          .map(FinalResults(_, state = Some(context.contains(VariableThatShouldBeDefinedBeforeNodeName))))
+          .valueOr( errors => FinalResults(context, errors.toList))
+    }
+
+    override def initialParameters: List[Parameter] = List.empty
+
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): AnyRef = {
+      FlinkCustomStreamTransformation((stream, fctx) => {
+        stream
+          .map(ctx => ValueWithContext[AnyRef](finalState.get: java.lang.Boolean, ctx))
+      })
+    }
+
+    override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)
+
+  }
+
+
+
   object GenericParametersSource extends FlinkSourceFactory[AnyRef] with SingleInputGenericNodeTransformation[Source[AnyRef]] {
 
     override type State = Nothing
