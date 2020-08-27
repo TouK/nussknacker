@@ -14,6 +14,7 @@ import SystemUtils from "../common/SystemUtils"
 import LoaderSpinner from "../components/Spinner"
 import HttpService from "../http/HttpService"
 import InitializeError from "./errors/InitializeError"
+import {AuthenticationSettings} from "../reducers/settings"
 
 type Error = {
   message: string,
@@ -38,7 +39,7 @@ class NussknackerInitializer extends React.Component<Props, State> {
   public static HTTP_APPLICATION_CODE = 500
   public static ACCESS_TOKEN_CODE = 1024
 
-  redirectToAuthorizeUrl(settings) {
+  redirectToAuthorizeUrl(settings: AuthenticationSettings) {
     window.location.replace(`${settings.authorizeUrl}`)
   }
 
