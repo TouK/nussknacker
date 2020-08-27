@@ -5,10 +5,16 @@ import {ProcessDefinitionData} from "../types"
 export type SettingsState = {
   loggedUser: Partial<User>,
   featuresSettings: $TodoType,
-  authenticationSettings: $TodoType,
+  authenticationSettings: AuthenticationSettings,
   analyticsSettings: $TodoType,
   processDefinitionData: ProcessDefinitionData,
   availableQueryableStates: $TodoType,
+}
+
+export type AuthenticationSettings = {
+  backend: string,
+  authorizeUrl?: URL,
+  implicitGrantEnabled?: boolean,
 }
 
 const initialState: SettingsState = {
