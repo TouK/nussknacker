@@ -65,7 +65,7 @@ class KafkaAvroSourceFactory(val schemaRegistryProvider: SchemaRegistryProvider,
     val preparedTopic = extractPreparedTopic(params)
     val version = extractVersionOption(params)
     createSource(preparedTopic, kafkaConfig, schemaRegistryProvider.deserializationSchemaFactory, schemaRegistryProvider.recordFormatter,
-      prepareSchemaDeterminer(preparedTopic, version))(
+      prepareSchemaDeterminer(preparedTopic, version), returnGenericAvroType = true)(
       typedDependency[MetaData](dependencies), typedDependency[NodeId](dependencies))
   }
 
