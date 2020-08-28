@@ -161,6 +161,10 @@ object typing {
             case (k, v) => k -> fromInstance(v)
           }.toMap
           TypedObjectTypingResult(fieldTypes)
+        case elem :: _ =>
+          TypedClass(obj.getClass, List(fromInstance(elem)))
+        case nonEmptyJavaList: java.util.List[_] if !nonEmptyJavaList.isEmpty =>
+          TypedClass(obj.getClass, List(fromInstance(nonEmptyJavaList.get(0))))
         case dict: DictInstance =>
           TypedDict(dict.dictId, dict.valueType)
         case other =>
