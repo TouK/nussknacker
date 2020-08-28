@@ -23,6 +23,7 @@ Nussknacker versions
 * [#1133](https://github.com/TouK/nussknacker/pull/1133) Improvements: More flexible TestReporter instancies implementation 
 * [#1131](https://github.com/TouK/nussknacker/pull/1131) Fix: Disable "deploy" & "metrics" buttons for subprocess  
 * [#1148](https://github.com/TouK/nussknacker/pull/1148) Fix FE regexp for match node id
+* [#1165](https://github.com/TouK/nussknacker/pull/1165) Dynamic and typed global variables
 
 0.2.0
 ------------------------
