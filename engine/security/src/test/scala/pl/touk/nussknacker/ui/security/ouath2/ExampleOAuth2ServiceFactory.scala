@@ -91,7 +91,8 @@ object ExampleOAuth2ServiceFactory {
       "clientId",
       URI.create("https://api.github.com/user"),
       URI.create("https://github.com/login/oauth/access_token"),
-      URI.create("http://demo.nussknacker.pl")
+      URI.create("http://demo.nussknacker.pl"),
+      false
     )
 
   object TestPermissionResponse extends Enumeration {

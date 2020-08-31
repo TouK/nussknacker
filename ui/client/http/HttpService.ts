@@ -133,7 +133,7 @@ class HttpService {
     return api.get<ProcessType[]>("/customProcesses")
   }
 
-  fetchProcessDetails(processId, versionId, businessView) {
+  fetchProcessDetails(processId, versionId?, businessView?) {
     const url = versionId ? `/processes/${processId}/${versionId}` : `/processes/${processId}`
     return api.get(url, {params: {businessView}})
   }

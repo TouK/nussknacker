@@ -17,7 +17,8 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
-import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreamingProcessRegistrar, SimpleJavaEnum}
+import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
+import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, SimpleJavaEnum, registrar}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
@@ -34,7 +35,7 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
 
       val env = flinkMiniCluster.createExecutionEnvironment()
       val modelData = LocalModelData(config, creator)
-      FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
+      FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
         .register(new StreamExecutionEnvironment(env), process, processVersion)
 
       MockService.clear()
@@ -50,7 +51,7 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
                parallelism: Int, actionToInvokeWithJobRunning: => Unit): Unit = {
       val env = flinkMiniCluster.createExecutionEnvironment()
       val modelData = LocalModelData(config, creator)
-      FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
+      registrar.FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
         .register(new StreamExecutionEnvironment(env), process, processVersion)
 
       MockService.clear()
@@ -107,7 +108,8 @@ object ProcessTestHelpers {
       "transformWithTime" -> WithCategories(TransformerWithTime),
       "transformWithNullable" -> WithCategories(TransformerWithNullableParam),
       "optionalEndingCustom" -> WithCategories(OptionalEndingCustom),
-      "genericParametersNode" -> WithCategories(GenericParametersNode)
+      "genericParametersNode" -> WithCategories(GenericParametersNode),
+      "nodePassingStateToImplementation" -> WithCategories(NodePassingStateToImplementation)
     )
 
     override def listeners(processObjectDependencies: ProcessObjectDependencies) = List()

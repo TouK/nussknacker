@@ -61,11 +61,11 @@ class KafkaAvroSourceFactory(val schemaRegistryProvider: SchemaRegistryProvider,
     List(topicParam(NodeId("")).value, versionParam(Nil))
   }
 
-  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): FlinkSource[Any] = {
+  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkSource[Any] = {
     val preparedTopic = extractPreparedTopic(params)
     val version = extractVersionOption(params)
     createSource(preparedTopic, kafkaConfig, schemaRegistryProvider.deserializationSchemaFactory, schemaRegistryProvider.recordFormatter,
-      prepareSchemaDeterminer(preparedTopic, version))(
+      prepareSchemaDeterminer(preparedTopic, version), returnGenericAvroType = true)(
       typedDependency[MetaData](dependencies), typedDependency[NodeId](dependencies))
   }
 

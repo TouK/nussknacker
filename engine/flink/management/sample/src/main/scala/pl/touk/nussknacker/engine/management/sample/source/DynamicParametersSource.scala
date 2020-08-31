@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.management.sample.transformer.DynamicParameter
 
 object DynamicParametersSource extends FlinkSourceFactory[AnyRef] with DynamicParametersMixin {
 
-  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): AnyRef = {
+  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): AnyRef = {
     new CollectionSource[Any](StreamExecutionEnvironment.getExecutionEnvironment.getConfig,
       List(TypedMap(params.filterNot(_._1 == choiceParamName))), None, Unknown)
   }

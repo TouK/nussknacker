@@ -6,12 +6,11 @@ import org.apache.flink.streaming.api.functions.TimestampAssigner
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.editor.{SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.TopicParamName
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryProvider, SpecificRecordEmbeddedSchemaDeterminer}
 import pl.touk.nussknacker.engine.kafka.source.KafkaSource
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.TopicParamName
 
 import scala.reflect._
 
@@ -24,11 +23,11 @@ class SpecificRecordKafkaAvroSourceFactory[T <: SpecificRecord: ClassTag](schema
   // TODO: it should return suggestions for topics like it is in generic version (KafkaAvroSourceFactory)
   @MethodToInvoke
   def createSource(@ParamName(`TopicParamName`) @NotBlank @SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR) topic: String)
-                  (implicit processMetaData: MetaData, nodeId: NodeId): KafkaSource[T] with ReturningType = {
+                  (implicit processMetaData: MetaData, nodeId: NodeId): KafkaSource[T] = {
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
     val preparedTopic = KafkaUtils.prepareKafkaTopic(topic, processObjectDependencies)
     val schemaDeterminer = new SpecificRecordEmbeddedSchemaDeterminer(classTag[T].runtimeClass.asInstanceOf[Class[_ <: SpecificRecord]])
-    createSource(preparedTopic, kafkaConfig, schemaRegistryProvider.deserializationSchemaFactory, schemaRegistryProvider.recordFormatter, schemaDeterminer)
+    createSource(preparedTopic, kafkaConfig, schemaRegistryProvider.deserializationSchemaFactory, schemaRegistryProvider.recordFormatter, schemaDeterminer, returnGenericAvroType = false)
   }
 
 }

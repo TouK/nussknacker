@@ -11,7 +11,7 @@ object DynamicParametersSink extends SinkFactory with DynamicParametersMixin {
 
   override def requiresOutput: Boolean = false
 
-  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): AnyRef = {
+  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): AnyRef = {
     new FlinkSink with Serializable {
       private val allParams = params
 

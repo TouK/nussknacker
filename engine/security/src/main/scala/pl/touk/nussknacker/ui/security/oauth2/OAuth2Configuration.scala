@@ -6,6 +6,7 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
 import pl.touk.nussknacker.ui.security.api.AuthenticationMethod.AuthenticationMethod
 
+
 case class OAuth2Configuration(method: AuthenticationMethod,
                                usersFile: String,
                                authorizeUri: URI,
@@ -14,6 +15,7 @@ case class OAuth2Configuration(method: AuthenticationMethod,
                                profileUri: URI,
                                accessTokenUri: URI,
                                redirectUri: URI,
+                               implicitGrantEnabled: Boolean,
                                accessTokenParams: Map[String, String] = Map.empty,
                                authorizeParams: Map[String, String] = Map.empty,
                                headers: Map[String, String] = Map.empty,

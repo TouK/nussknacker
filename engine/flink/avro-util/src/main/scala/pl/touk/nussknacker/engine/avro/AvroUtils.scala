@@ -11,8 +11,12 @@ import scala.reflect.{ClassTag, classTag}
 
 object AvroUtils {
 
-  def isSpecificRecord[T: ClassTag] = {
+  def isSpecificRecord[T: ClassTag]: Boolean = {
     val clazz = classTag[T].runtimeClass.asInstanceOf[Class[T]]
+    isSpecificRecord(clazz)
+  }
+
+  def isSpecificRecord(clazz: Class[_]): Boolean = {
     classOf[SpecificRecord].isAssignableFrom(clazz)
   }
 

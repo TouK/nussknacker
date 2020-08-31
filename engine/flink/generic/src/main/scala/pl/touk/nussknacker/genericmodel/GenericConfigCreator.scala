@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHa
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SlidingAggregateTransformerV2, TumblingAggregateTransformer}
 import pl.touk.nussknacker.engine.flink.util.transformer.outer.OuterJoinTransformer
-import pl.touk.nussknacker.engine.flink.util.transformer.{DelayTransformer, PeriodicSourceFactory, PreviousValueTransformer, UnionTransformer}
+import pl.touk.nussknacker.engine.flink.util.transformer.{DelayTransformer, PeriodicSourceFactory, PreviousValueTransformer, UnionTransformer, UnionWithMemoTransformer}
 import pl.touk.nussknacker.engine.kafka.generic.sinks.GenericKafkaJsonSink
 import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
@@ -26,6 +26,7 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
     "aggregate-tumbling" -> defaultCategory(TumblingAggregateTransformer),
     "outer-join" -> defaultCategory(OuterJoinTransformer),
     "union" -> defaultCategory(UnionTransformer),
+    "union-memo" -> defaultCategory(UnionWithMemoTransformer),
     "delay" -> defaultCategory(DelayTransformer)
   )
 

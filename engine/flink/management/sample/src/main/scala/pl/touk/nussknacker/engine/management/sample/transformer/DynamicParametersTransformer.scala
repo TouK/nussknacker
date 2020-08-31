@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformat
 
 object DynamicParametersTransformer extends CustomStreamTransformer with DynamicParametersMixin {
 
-  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): AnyRef = {
+  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): AnyRef = {
     //no-op 
     FlinkCustomStreamTransformation(_.map(ctx => ValueWithContext[AnyRef](null, ctx)))
   }

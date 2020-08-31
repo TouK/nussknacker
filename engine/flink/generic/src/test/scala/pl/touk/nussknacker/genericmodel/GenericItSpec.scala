@@ -20,15 +20,16 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentSchema
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaRegistryProvider, SchemaVersionOption}
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, _}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
-import pl.touk.nussknacker.engine.flink.test.{FlinkSpec, FlinkTestConfiguration}
+import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec, KafkaZookeeperUtils}
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
-import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkStreamingProcessRegistrar}
+import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
+import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache}
+import pl.touk.nussknacker.engine.util.cache.CacheConfig
 
 class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec with EitherValues with LazyLogging {
 
@@ -52,7 +53,7 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
   val JsonInTopic: String = "name.json.input"
   val JsonOutTopic: String = "name.json.output"
 
-  protected val avroEncoder = BestEffortAvroEncoder(ValidationMode.strict)
+  protected val avroEncoder: BestEffortAvroEncoder = BestEffortAvroEncoder(ValidationMode.strict)
 
   private val givenNotMatchingJsonObj =
     """{
@@ -321,14 +322,14 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
       ConfluentSchemaRegistryProvider(factory, processObjectDependencies)
   }
 
-  private var registrar: FlinkStreamingProcessRegistrar = _
+  private var registrar: FlinkProcessRegistrar = _
   private lazy val valueSerializer = new KafkaAvroSerializer(schemaRegistryMockClient)
   private lazy val valueDeserializer = new KafkaAvroDeserializer(schemaRegistryMockClient)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val modelData = LocalModelData(config, creator)
-    registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
+    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
   }
 
   private def run(process: EspProcess)(action: => Unit): Unit = {

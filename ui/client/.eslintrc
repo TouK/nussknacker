@@ -212,7 +212,8 @@
           "cn",
           "api.get",
           "api.post",
-          "describe"
+          "describe",
+          "css"
         ],
         "ignoreAttribute": [
           "onHandleColor",
