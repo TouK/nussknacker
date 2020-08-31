@@ -18,7 +18,7 @@ object GlobalVariableDefinitionExtractor {
 
   private def extractDefinition(varName: String, varWithCategories: WithCategories[AnyRef]): StandardObjectWithMethodDef = {
     val returnType = varWithCategories.value match {
-      case dynamicGlobalVariable: TypedGlobalVariable => Typed(dynamicGlobalVariable.runtimeClass)
+      case typedGlobalVariable: TypedGlobalVariable => typedGlobalVariable.initialReturnType
       case obj => Typed.fromInstance(obj)
     }
     val methodDef = MethodDefinition(
@@ -27,7 +27,7 @@ object GlobalVariableDefinitionExtractor {
         case typedGlobalVariable: TypedGlobalVariable => typedGlobalVariable.value(deps.head.asInstanceOf[MetaData])
         case _ => obj
       },
-      orderedDependencies = new OrderedDependencies(List(classOf[MetaData]).map(TypedNodeDependency(_))),
+      orderedDependencies = new OrderedDependencies(List(TypedNodeDependency(classOf[MetaData]))),
       returnType = returnType,
       // Used only for services.
       runtimeClass = classOf[Any],

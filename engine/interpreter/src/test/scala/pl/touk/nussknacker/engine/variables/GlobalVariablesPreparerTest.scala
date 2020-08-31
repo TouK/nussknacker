@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.variables
 
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{TypedGlobalVariable, typing}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, StandardObjectWithMethodDef}
@@ -26,6 +26,6 @@ class GlobalVariablesPreparerTest extends FunSuite with Matchers {
 
     override def returnType(metadata: MetaData): typing.TypingResult = Typed(classOf[Int])
 
-    override def runtimeClass: Class[_] = classOf[java.util.List[_]]
+    override def initialReturnType: TypingResult = Typed(classOf[java.util.List[_]])
   }
 }

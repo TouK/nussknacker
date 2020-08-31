@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.management.sample.global
 
 import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.api.typed.{TypedGlobalVariable, TypedMap}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.{TypedGlobalVariable, TypedMap}
 
 /**
   * Returns sample configuration - list of typed maps, based on environment property from process properties.
@@ -26,7 +26,7 @@ object ConfigTypedGlobalVariable extends TypedGlobalVariable {
     Typed.fromInstance(configurations(readProperty(metadata)))
   }
 
-  override def runtimeClass: Class[_] = classOf[java.util.List[_]]
+  override def initialReturnType: TypingResult = Typed(classOf[java.util.List[_]])
 
   private def readProperty(metaData: MetaData): String = {
     metaData.additionalFields.flatMap(_.properties.get("environment")).getOrElse("other")

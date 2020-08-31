@@ -174,6 +174,6 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
 
     override def returnType(metadata: MetaData): TypingResult = ???
 
-    override def runtimeClass: Class[_] = classOf[Int]
+    override def initialReturnType: TypingResult = Typed(classOf[Int])
   }
 }

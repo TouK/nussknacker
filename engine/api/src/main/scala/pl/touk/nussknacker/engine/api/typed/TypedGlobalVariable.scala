@@ -9,5 +9,5 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 trait TypedGlobalVariable {
   def value(metadata: MetaData): Any
   def returnType(metadata: MetaData): TypingResult
-  def runtimeClass: Class[_]
+  def initialReturnType: TypingResult
 }
