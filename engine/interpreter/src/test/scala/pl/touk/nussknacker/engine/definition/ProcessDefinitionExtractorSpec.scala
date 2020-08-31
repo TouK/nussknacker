@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionH
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.{ProcessSignalSender, SignalTransformer}
-import pl.touk.nussknacker.engine.api.typed.DynamicGlobalVariable
+import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{process, _}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.StandardObjectWithMethodDef
@@ -83,7 +83,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     val definition = processDefinition.expressionConfig.globalVariables
 
     val dynamicDef = definition("dynamic")
-    dynamicDef.obj shouldBe SampleDynamicVariable
+    dynamicDef.obj shouldBe SampleTypedVariable
     dynamicDef.returnType shouldBe Typed(classOf[Int])
   }
 
@@ -110,7 +110,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = ExpressionConfig(
       globalProcessVariables = Map(
         "helper" -> WithCategories(SampleHelper, "category"),
-        "dynamic" -> WithCategories(SampleDynamicVariable, "category")
+        "dynamic" -> WithCategories(SampleTypedVariable, "category")
       ),
       globalImports = Nil
     )
@@ -169,7 +169,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     def identity(value: Any): Any = value
   }
 
-  object SampleDynamicVariable extends DynamicGlobalVariable {
+  object SampleTypedVariable extends TypedGlobalVariable {
     override def value(metadata: MetaData): Any = ???
 
     override def returnType(metadata: MetaData): TypingResult = ???

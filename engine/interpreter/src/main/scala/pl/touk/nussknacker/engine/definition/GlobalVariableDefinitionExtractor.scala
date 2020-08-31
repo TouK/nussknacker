@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.definition
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.definition.TypedNodeDependency
 import pl.touk.nussknacker.engine.api.process.WithCategories
-import pl.touk.nussknacker.engine.api.typed.DynamicGlobalVariable
+import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef, StandardObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
@@ -18,13 +18,13 @@ object GlobalVariableDefinitionExtractor {
 
   private def extractDefinition(varName: String, varWithCategories: WithCategories[AnyRef]): StandardObjectWithMethodDef = {
     val returnType = varWithCategories.value match {
-      case dynamicGlobalVariable: DynamicGlobalVariable => Typed(dynamicGlobalVariable.runtimeClass)
+      case dynamicGlobalVariable: TypedGlobalVariable => Typed(dynamicGlobalVariable.runtimeClass)
       case obj => Typed.fromInstance(obj)
     }
     val methodDef = MethodDefinition(
       name = varName,
       invocation = (obj, deps) => obj match {
-        case dynamicGlobalVariable: DynamicGlobalVariable => dynamicGlobalVariable.value(deps.head.asInstanceOf[MetaData])
+        case typedGlobalVariable: TypedGlobalVariable => typedGlobalVariable.value(deps.head.asInstanceOf[MetaData])
         case _ => obj
       },
       orderedDependencies = new OrderedDependencies(List(classOf[MetaData]).map(TypedNodeDependency(_))),

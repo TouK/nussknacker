@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.variables
 import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.typed.DynamicGlobalVariable
+import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectWithMethodDef, ObjectWithType}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.util.Implicits._
@@ -26,7 +26,7 @@ class GlobalVariablesPreparer(globalVariablesWithMethodDef: Map[String, ObjectWi
 
   private def toGlobalVariable(objectWithMethodDef: ObjectWithMethodDef, metaData: MetaData): ObjectWithType = {
     objectWithMethodDef.obj match {
-      case dynamicGlobalVariable: DynamicGlobalVariable => ObjectWithType(dynamicGlobalVariable.value(metaData), dynamicGlobalVariable.returnType(metaData))
+      case typedGlobalVariable: TypedGlobalVariable => ObjectWithType(typedGlobalVariable.value(metaData), typedGlobalVariable.returnType(metaData))
       case _ => ObjectWithType(objectWithMethodDef.obj, objectWithMethodDef.returnType)
     }
   }

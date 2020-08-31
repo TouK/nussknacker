@@ -3,17 +3,13 @@ package pl.touk.nussknacker.engine.definition
 import java.lang.reflect.Method
 
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.definition.TypedNodeDependency
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
+import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.typed.{DynamicGlobalVariable, typing}
-import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
 
-import scala.concurrent.ExecutionContext
 import scala.reflect.ClassTag
 
 class ProcessObjectDefinitionExtractor[F, T: ClassTag] extends AbstractMethodDefinitionExtractor[F] {
