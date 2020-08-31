@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.api.typed
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.{FunSuite, LoneElement, Matchers}
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.typed.typing._
 
-class TypedFromInstanceTest extends FunSuite with Matchers {
+class TypedFromInstanceTest extends FunSuite with Matchers with LoneElement {
 
   import scala.collection.JavaConverters._
 
@@ -30,15 +30,30 @@ class TypedFromInstanceTest extends FunSuite with Matchers {
     Typed.fromInstance(Nil.asJava).canBeSubclassOf(Typed(classOf[java.util.List[_]])) shouldBe true
   }
 
-  test("should type lists based on first element") {
-    val listOfSimpleObjects = List(1, 2)
-    Typed.fromInstance(listOfSimpleObjects).canBeSubclassOf(TypedClass(classOf[List[_]], List(Typed(classOf[java.lang.Integer])))) shouldBe true
-    Typed.fromInstance(listOfSimpleObjects.asJava).canBeSubclassOf(TypedClass(classOf[java.util.List[_]], List(Typed(classOf[java.lang.Integer])))) shouldBe true
+  test("should type lists and return union of types coming from all elements") {
+    def checkTypingResult(obj: Any, klass: Class[_], paramTypingResult: TypingResult): Unit = {
+      val typingResult = Typed.fromInstance(obj)
 
-    val listOfTypedMaps = List(TypedMap(Map("a" -> 1, "b" -> "B")))
-    val typedMapTypingResult = TypedObjectTypingResult(Map("a" -> Typed(classOf[java.lang.Integer]), "b" -> Typed(classOf[java.lang.String])))
-    Typed.fromInstance(listOfTypedMaps).canBeSubclassOf(TypedClass(classOf[List[_]], List(typedMapTypingResult))) shouldBe true
-    Typed.fromInstance(listOfTypedMaps.asJava).canBeSubclassOf(TypedClass(classOf[java.util.List[_]], List(typedMapTypingResult))) shouldBe true
+      typingResult.canBeSubclassOf(Typed(klass)) shouldBe true
+      typingResult.asInstanceOf[TypedClass].params.loneElement.canBeSubclassOf(paramTypingResult) shouldBe true
+    }
+
+    def checkNotASubclassOfOtherParamTypingResult(obj: Any, otherParamTypingResult: TypingResult): Unit = {
+      val typingResult = Typed.fromInstance(obj)
+      typingResult.asInstanceOf[TypedClass].params.loneElement.canBeSubclassOf(otherParamTypingResult) shouldBe false
+    }
+
+    val listOfSimpleObjects = List[Any](1.1, 2)
+    checkTypingResult(listOfSimpleObjects, classOf[List[_]], Typed(classOf[Integer]))
+    checkTypingResult(listOfSimpleObjects.asJava, classOf[java.util.List[_]], Typed(classOf[Integer]))
+
+    val listOfTypedMaps = List(TypedMap(Map("a" -> 1, "b" -> "B")), TypedMap(Map("a" -> 1)))
+    val typedMapTypingResult = TypedObjectTypingResult(Map("a" -> Typed(classOf[Integer])))
+    checkTypingResult(listOfTypedMaps, classOf[List[_]], typedMapTypingResult)
+    checkTypingResult(listOfTypedMaps.asJava, classOf[java.util.List[_]], typedMapTypingResult)
+    checkNotASubclassOfOtherParamTypingResult(listOfTypedMaps, TypedObjectTypingResult(Map("c" -> Typed(classOf[Integer]))))
+    checkNotASubclassOfOtherParamTypingResult(listOfTypedMaps, TypedObjectTypingResult(Map("b" -> Typed(classOf[Integer]))))
+    checkNotASubclassOfOtherParamTypingResult(listOfTypedMaps, TypedObjectTypingResult(Map("a" -> Typed(classOf[String]))))
   }
 
   test("should fallback to object's class") {
