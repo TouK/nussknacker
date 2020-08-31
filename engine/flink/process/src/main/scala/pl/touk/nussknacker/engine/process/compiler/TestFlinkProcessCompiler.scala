@@ -29,7 +29,6 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator, config: ModelConfi
     List(collectingListener) ++ super.listeners(processObjectDependencies)
 
   override protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef): ObjectWithMethodDef = {
-    val originalSourceFactory = sourceFactory.obj.asInstanceOf[FlinkSourceFactory[Object]]
     overrideObjectWithMethod(sourceFactory, (paramFun, outputVariableNameOpt, additional, returnType) => {
       val originalSource = sourceFactory.invokeMethod(paramFun, outputVariableNameOpt, additional).asInstanceOf[FlinkSource[Object]]
       originalSource match {
