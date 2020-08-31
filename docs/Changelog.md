@@ -8,7 +8,7 @@ For detailed instructions how to migrate to the newest version please see [migra
 Nussknacker versions
 ====================
 
-0.2.1 (not released yet)
+0.2.1
 -----------------------
 * [#1127](https://github.com/TouK/nussknacker/pull/1127) Fix too small count values
 * [#1133](https://github.com/TouK/nussknacker/pull/1133) Improvements: More flexible TestReporter instancies implementation 
