@@ -48,6 +48,7 @@ object NodeDataValidator {
 
         case a: Filter => new FilterValidator(modelData).validate(a, validationContext)
         //TODO: handle variable, switch, subprocess
+        //subprocess is tricky as we have to handle resolution :/
         case a => EmptyValidator.validate(a, validationContext)
       }
     }
