@@ -3,12 +3,13 @@ package pl.touk.nussknacker.engine.definition
 import java.lang.reflect.Method
 
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
+
 import scala.reflect.ClassTag
 
 class ProcessObjectDefinitionExtractor[F, T: ClassTag] extends AbstractMethodDefinitionExtractor[F] {
@@ -39,6 +40,5 @@ object ProcessObjectDefinitionExtractor {
   val customNodeExecutor: CustomStreamTransformerExtractor.type = CustomStreamTransformerExtractor
   val service: MethodDefinitionExtractor[Service] = ServiceInvoker.Extractor
   val signals: SignalsDefinitionExtractor.type = SignalsDefinitionExtractor
-
 
 }

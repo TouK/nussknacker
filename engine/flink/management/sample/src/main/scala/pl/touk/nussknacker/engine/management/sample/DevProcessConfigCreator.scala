@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.management.sample.dict.{BusinessConfigDictionary, RGBDictionary, TestDictionary}
 import pl.touk.nussknacker.engine.management.sample.dto.ConstantState
+import pl.touk.nussknacker.engine.management.sample.global.ConfigTypedGlobalVariable
 import pl.touk.nussknacker.engine.management.sample.helper.DateProcessHelper
 import pl.touk.nussknacker.engine.management.sample.service._
 import pl.touk.nussknacker.engine.management.sample.signal.{RemoveLockProcessSignalFactory, SampleSignalHandlingTransformer}
@@ -146,7 +147,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "DATE" -> all(DateProcessHelper),
       "DICT" -> categories(TestDictionary.instance),
       "RGB" -> all(RGBDictionary.instance),
-      "BusinessConfig" -> features(BusinessConfigDictionary.instance)
+      "BusinessConfig" -> features(BusinessConfigDictionary.instance),
+      "TypedConfig" -> all(ConfigTypedGlobalVariable)
     )
 
     ExpressionConfig(
