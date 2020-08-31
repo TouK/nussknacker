@@ -70,8 +70,14 @@ countsSettings {
   password: "admin"
 }
 
-```
-In the next sections we'll look at 
+```             
+###Default configurations
+Default configuration for UI is in [defaultConfig.conf](https://github.com/TouK/nussknacker/blob/staging/ui/server/src/main/resources/defaultConfig.conf).
+We don't use ```reference.conf``` at the moment, as classloaders of model and ui are not separated, and we don't want UI config to be passed to model. 
+
+Default configuration of models is taken from ```model.conf``` files in model jar (see e.g. [model.conf](https://github.com/TouK/nussknacker/blob/staging/engine/flink/generic/src/main/resources/model.conf)).
+You can also use ```reference.conf``` in model jars, however we found some problems with substitutions (see docs in [ModelConfigToLoad](https://github.com/TouK/nussknacker/blob/staging/engine/flink/generic/src/main/resources/model.conf)).
+ 
 
 ##UI configuration
 
