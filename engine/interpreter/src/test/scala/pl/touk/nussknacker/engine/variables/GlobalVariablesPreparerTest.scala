@@ -9,14 +9,14 @@ import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDe
 
 class GlobalVariablesPreparerTest extends FunSuite with Matchers {
 
-  test("should resolve real value and return type for dynamic variable") {
+  test("should resolve real value and return type for typed variable") {
     val metaData = MetaData("test", StreamMetaData())
     val unusedMethodDef = MethodDefinition(name = "test", invocation = (_, _) => ???, orderedDependencies = new OrderedDependencies(Nil), returnType = Unknown, runtimeClass = classOf[Any], annotations = Nil)
-    val varsWithMethodDef = Map("dynamicVar" -> StandardObjectWithMethodDef(TestTypedGlobalVariable, methodDef = unusedMethodDef, objectDefinition = ObjectDefinition.noParam))
+    val varsWithMethodDef = Map("typedVar" -> StandardObjectWithMethodDef(TestTypedGlobalVariable, methodDef = unusedMethodDef, objectDefinition = ObjectDefinition.noParam))
 
     val varsWithType = new GlobalVariablesPreparer(varsWithMethodDef, hideMetaVariable = true).prepareGlobalVariables(metaData)
 
-    val varWithType = varsWithType("dynamicVar")
+    val varWithType = varsWithType("typedVar")
     varWithType.obj shouldBe 1
     varWithType.typ shouldBe Typed(classOf[Int])
   }

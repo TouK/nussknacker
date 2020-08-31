@@ -148,7 +148,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "DICT" -> categories(TestDictionary.instance),
       "RGB" -> all(RGBDictionary.instance),
       "BusinessConfig" -> features(BusinessConfigDictionary.instance),
-      "DynamicConfig" -> all(ConfigTypedGlobalVariable)
+      "TypedConfig" -> all(ConfigTypedGlobalVariable)
     )
 
     ExpressionConfig(

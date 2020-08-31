@@ -79,12 +79,12 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     helperDef.returnType shouldBe Typed(SampleHelper.getClass)
   }
 
-  test("extract dynamic global variable") {
+  test("extract typed global variable") {
     val definition = processDefinition.expressionConfig.globalVariables
 
-    val dynamicDef = definition("dynamic")
-    dynamicDef.obj shouldBe SampleTypedVariable
-    dynamicDef.returnType shouldBe Typed(classOf[Int])
+    val typedGlobalDef = definition("typedGlobal")
+    typedGlobalDef.obj shouldBe SampleTypedVariable
+    typedGlobalDef.returnType shouldBe Typed(classOf[Int])
   }
 
   object TestCreator extends ProcessConfigCreator {
@@ -110,7 +110,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = ExpressionConfig(
       globalProcessVariables = Map(
         "helper" -> WithCategories(SampleHelper, "category"),
-        "dynamic" -> WithCategories(SampleTypedVariable, "category")
+        "typedGlobal" -> WithCategories(SampleTypedVariable, "category")
       ),
       globalImports = Nil
     )
