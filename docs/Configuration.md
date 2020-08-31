@@ -78,6 +78,8 @@ We don't use ```reference.conf``` at the moment, as classloaders of model and ui
 Default configuration of models is taken from ```model.conf``` files in model jar (see e.g. [model.conf](https://github.com/TouK/nussknacker/blob/staging/engine/flink/generic/src/main/resources/model.conf)).
 You can also use ```reference.conf``` in model jars, however we found some problems with substitutions (see docs in [ModelConfigToLoad](https://github.com/TouK/nussknacker/blob/staging/engine/flink/generic/src/main/resources/model.conf)).
  
+All configurations can be overridden with environmental variables. Please consult [TypesafeConfig documentation](https://github.com/lightbend/config#optional-system-or-env-variable-overrides).
+In particular, Nussknacker docker image is executed with ```-Dconfig.override_with_env_vars=true```   
 
 ##UI configuration
 
