@@ -26,9 +26,9 @@ class ParameterEvaluator(expressionEvaluator: ExpressionEvaluator) {
   private def prepareLazyParameter[T](param: TypedParameter, definition: ParameterDef)(implicit nodeId: NodeId): (AnyRef, BaseDefinedParameter) = {
     param.typedValue match {
       case e:TypedExpression if !definition.branchParam =>
-        (prepareLazyParameterExpression(definition, e), DefinedLazyParameter(e.returnType))
+        (prepareLazyParameterExpression(definition, e), DefinedLazyParameter(e))
       case TypedExpressionMap(valueByKey) if definition.branchParam =>
-        (valueByKey.mapValuesNow(prepareLazyParameterExpression(definition, _)), DefinedLazyBranchParameter(valueByKey.mapValuesNow(_.returnType)))
+        (valueByKey.mapValuesNow(prepareLazyParameterExpression(definition, _)), DefinedLazyBranchParameter(valueByKey))
     }
   }
 
@@ -38,10 +38,10 @@ class ParameterEvaluator(expressionEvaluator: ExpressionEvaluator) {
     param.typedValue match {
       case e:TypedExpression if !definition.branchParam =>
         val evaluated = evaluateSync(Parameter(e, definition))
-        (evaluated, DefinedEagerParameter(evaluated, e.returnType))
+        (evaluated, DefinedEagerParameter(evaluated, e))
       case TypedExpressionMap(valueByKey) if definition.branchParam =>
         val evaluated = valueByKey.mapValuesNow(exp => evaluateSync(Parameter(exp, definition)))
-        (evaluated, DefinedEagerBranchParameter(evaluated, valueByKey.mapValuesNow(_.returnType)))
+        (evaluated, DefinedEagerBranchParameter(evaluated, valueByKey))
     }
   }
 

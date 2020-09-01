@@ -4,6 +4,10 @@ To see biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 0.3.0 (not released yet)
 
+* [#1159](https://github.com/TouK/nussknacker/pull/1159) [#1170](https://github.com/TouK/nussknacker/pull/1170) Changes in `GenericNodeTransformation` API:
+  - Now `implementation` takes additional parameter with final state value determined during `contextTransformation`
+  - `DefinedLazyParameter` and `DefinedEagerParameter` holds `expression: TypedExpression` instead of `returnType: TypingResult`
+  - `DefinedLazyBranchParameter` and `DefinedEagerBranchParameter` holds `expressionByBranchId: Map[String, TypedExpression]` instead of `returnTypeByBranchId: Map[String, TypingResult]`
 * [#1083](https://github.com/TouK/nussknacker/pull/1083)
   - Now `SimpleSlidingAggregateTransformerV2` and `SlidingAggregateTransformer` is deprecated in favour of `SlidingAggregateTransformerV2`
   - Now `SimpleTumblingAggregateTransformer` is deprecated in favour of `TumblingAggregateTransformer`
