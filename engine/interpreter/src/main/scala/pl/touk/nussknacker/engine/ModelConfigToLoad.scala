@@ -36,7 +36,7 @@ case class ModelConfigToLoad(config: Config) {
   }
 
   //This method can be used to serialize config to send it to executor (see FlinkProcessManager)
-  def render(): String = config.root().render(ConfigRenderOptions.concise().setFormatted(true))
+  def render(): String = config.root().render(ConfigRenderOptions.concise())
 
   //only for testing
   private[engine] def modelConfigResource: String = ModelConfigToLoad.modelConfigResource
