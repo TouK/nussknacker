@@ -14,7 +14,7 @@ Nussknacker versions
 * [#1054](https://github.com/TouK/nussknacker/pull/1054) Tabbed dark process list
 * Configuration improvements (library upgrade, conventions): 
   [#1151](https://github.com/TouK/nussknacker/pull/1151), 
-  [#1151](https://github.com/TouK/nussknacker/pull/1166) 
+  [#1166](https://github.com/TouK/nussknacker/pull/1166) 
 * [#873](https://github.com/TouK/nussknacker/pull/873) Flink upgrade
 * More graceful handling of Flink compatibility issues: 
   [#1150](https://github.com/TouK/nussknacker/pull/1150) 
