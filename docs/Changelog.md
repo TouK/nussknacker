@@ -10,6 +10,7 @@ Nussknacker versions
 
 0.3.0 (not released yet)
 ------------------------
+* [#1173](https://github.com/TouK/nussknacker/pull/1173) Fix for: Avro source wasn't be able to read record with schema with invalid defaults
 * [#1128](https://github.com/TouK/nussknacker/pull/1128) Union-memo transformer
 * [#1054](https://github.com/TouK/nussknacker/pull/1054) Tabbed dark process list
 * Configuration improvements (library upgrade, conventions): 
