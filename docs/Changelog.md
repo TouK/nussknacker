@@ -12,8 +12,10 @@ Nussknacker versions
 ------------------------
 * [#1128](https://github.com/TouK/nussknacker/pull/1128) Union-memo transformer
 * [#1054](https://github.com/TouK/nussknacker/pull/1054) Tabbed dark process list
-* [#1151](https://github.com/TouK/nussknacker/pull/1151) Upgrade Typesafe Config to latest version
-* [#873](https://github.com/TouK/nussknacker/pull/873) Flink upgrade
+* Configuration improvements (library upgrade, conventions): 
+  [#1151](https://github.com/TouK/nussknacker/pull/1151), 
+  [#1166](https://github.com/TouK/nussknacker/pull/1166) 
+* [#873](https://github.com/TouK/nussknacker/pull/873) Flink upgrade 
 * More graceful handling of Flink compatibility issues:
   [#1150](https://github.com/TouK/nussknacker/pull/1150)
 
