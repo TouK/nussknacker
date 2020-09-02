@@ -64,7 +64,7 @@ final case class ParsedSpelExpression(original: String, parser: () => Validated[
 }
 
 class SpelExpressionEvaluationException(val expression: String, val ctxId: String, cause: Throwable)
-  extends RuntimeException(s"Expression evaluation failed. Original $expression, ctxId: $ctxId, message: ${cause.getMessage}", cause)
+  extends RuntimeException(s"Expression [$expression] evaluation failed, message: ${cause.getMessage}", cause)
 
 class SpelExpression(parsed: ParsedSpelExpression,
                      expectedReturnType: TypingResult,
