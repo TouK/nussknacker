@@ -4,7 +4,7 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 
 object ModelConfigToLoad {
 
-  val modelConfigResource = "model.conf"
+  val defaultModelConfigResource = "defaultModelConfig.conf"
 
 }
 
@@ -39,6 +39,6 @@ case class ModelConfigToLoad(config: Config) {
   def render(): String = config.root().render(ConfigRenderOptions.concise())
 
   //only for testing
-  private[engine] def modelConfigResource: String = ModelConfigToLoad.modelConfigResource
+  private[engine] def modelConfigResource: String = ModelConfigToLoad.defaultModelConfigResource
 
 }

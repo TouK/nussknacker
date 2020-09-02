@@ -72,11 +72,11 @@ countsSettings {
 
 ```             
 ###Default configurations and overriding them
-Default configuration for UI is in [defaultConfig.conf](https://github.com/TouK/nussknacker/blob/staging/ui/server/src/main/resources/defaultConfig.conf).
+Default configuration for UI is in [defaultUiConfig.conf](https://github.com/TouK/nussknacker/blob/staging/ui/server/src/main/resources/defaultUiConfig.conf).
 We don't use ```reference.conf``` at the moment, as classloaders of model and ui are not separated, and we don't want UI config to be passed to model. 
 
-Default configuration of models is taken from ```model.conf``` files in model jar (see e.g. [model.conf](https://github.com/TouK/nussknacker/blob/staging/engine/flink/generic/src/main/resources/model.conf)).
-You can also use ```reference.conf``` in model jars, however we found some problems with substitutions (see docs in [ModelConfigToLoad](https://github.com/TouK/nussknacker/blob/staging/engine/flink/generic/src/main/resources/model.conf)).
+Default configuration of models is taken from ```defaultModelConfig.conf``` files in model jar (see e.g. [defaultModelConfig.conf](https://github.com/TouK/nussknacker/blob/staging/engine/flink/generic/src/main/resources/defaultModelConfig.conf)).
+You can also use ```reference.conf``` in model jars, however we found some problems with substitutions (see docs in [ModelConfigToLoad](https://github.com/TouK/nussknacker/blob/staging/engine/interpreter/src/main/scala/pl/touk/nussknacker/engine/ModelConfigToLoad.scala)).
  
 How can you override default configuration? 
 Detailed rules are described in [documentation](https://github.com/lightbend/config#merging-config-trees). For example, if in the ```model.conf``` we have following entries: 
@@ -102,7 +102,7 @@ processTypes {
   }
 }
 ```  
-Please note that you have to define overridden properties in appropriate ```modelConfig```.
+Please note that you have to define overridden properties in appropriate ```modelConfig``` section.
 Overriding UI configuration is straightforward: 
 ```hocon
   environmentAlert {

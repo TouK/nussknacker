@@ -4,7 +4,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 
 object ConfigWithDefaults {
 
-  private val defaultConfigResource = "defaultConfig.conf"
+  private val defaultConfigResource = "defaultUiConfig.conf"
 
   def apply(base: Config): Config = base.withFallback(ConfigFactory.load(defaultConfigResource))
 
