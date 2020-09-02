@@ -40,7 +40,14 @@ object AvroUtils {
 
   private def parser = new Schema.Parser()
 
+  private def parserNotValidatingDefaults = new Schema.Parser().setValidateDefaults(false)
+
   def parseSchema(avroSchema: String): Schema =
     parser.parse(avroSchema)
+
+  // It is need because regards to that https://github.com/confluentinc/schema-registry/issues/1293 someone
+  // could register schema with invalid default in lower avro version and despite this in newer version we want to read it
+  def nonRestrictiveParseSchema(avroSchema: String): Schema =
+    parserNotValidatingDefaults.parse(avroSchema)
 
 }
