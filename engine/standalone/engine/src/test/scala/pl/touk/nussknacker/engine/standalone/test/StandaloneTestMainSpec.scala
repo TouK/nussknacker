@@ -85,7 +85,7 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
     results.exceptions should have size 1
     results.exceptions.head.context shouldBe ResultContext("proc1-0", Map("input" -> Request1("a","b")))
     results.exceptions.head.nodeId shouldBe Some("occasionallyThrowFilter")
-    results.exceptions.head.throwable.getMessage shouldBe "/ by zero"
+    results.exceptions.head.throwable.getMessage shouldBe """Expression [#input.field1() == 'a' ? 1/0 == 0 : true] evaluation failed, message: / by zero"""
   }
 
 

@@ -228,7 +228,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
       status shouldBe StatusCodes.OK
       Post(s"/${procId.value}", toEntity(Request("", "d"))) ~> processesRoute ~> check {
         status shouldBe StatusCodes.InternalServerError
-        responseAs[String] shouldBe "[{\"nodeId\":\"filter1\",\"message\":\"/ by zero\"}]"
+        responseAs[String] shouldBe """[{"nodeId":"filter1","message":"Expression [1/#input.field1.length() > 0] evaluation failed, message: / by zero"}]"""
         cancelProcess(procId)
       }
     }
