@@ -38,7 +38,9 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
       caches.schemaCache.getOrCreate(s"$subject-$version") {
         logger.debug(s"Cache schema for subject: $subject and version: $version.")
         val schemaMetadata = client.getSchemaMetadata(subject, version)
-        AvroUtils.parseSchema(schemaMetadata.getSchema)
+        // Restrictive approach should be used before schema registration. Here we need to be non-restrictive
+        // because schema is already registered and we must be able to use id. See `AvroUtils.nonRestrictiveParseSchema`
+        AvroUtils.nonRestrictiveParseSchema(schemaMetadata.getSchema)
       }
     }
 
@@ -61,7 +63,9 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
 
     caches.schemaCache.getOrCreate(s"$subject-${schemaMetadata.getVersion}") {
       logger.debug(s"Cache parsed latest schema for subject: $subject, version: ${schemaMetadata.getVersion}.")
-      AvroUtils.parseSchema(schemaMetadata.getSchema)
+      // Restrictive approach should be used before schema registration. Here we need to be non-restrictive
+      // because schema is already registered and we must be able to use id. See `AvroUtils.nonRestrictiveParseSchema`
+      AvroUtils.nonRestrictiveParseSchema(schemaMetadata.getSchema)
     }
   }
 }
