@@ -15,17 +15,17 @@ Nussknacker versions
 * Configuration improvements (library upgrade, conventions): 
   [#1151](https://github.com/TouK/nussknacker/pull/1151), 
   [#1166](https://github.com/TouK/nussknacker/pull/1166) 
-* [#873](https://github.com/TouK/nussknacker/pull/873) Flink upgrade
-* More graceful handling of Flink compatibility issues: 
-  [#1150](https://github.com/TouK/nussknacker/pull/1150) 
-  
+* [#873](https://github.com/TouK/nussknacker/pull/873) Flink upgrade 
+* More graceful handling of Flink compatibility issues:
+  [#1150](https://github.com/TouK/nussknacker/pull/1150)
 
-0.2.1 (not released yet)
+0.2.1
 -----------------------
 * [#1127](https://github.com/TouK/nussknacker/pull/1127) Fix too small count values
 * [#1133](https://github.com/TouK/nussknacker/pull/1133) Improvements: More flexible TestReporter instancies implementation 
 * [#1131](https://github.com/TouK/nussknacker/pull/1131) Fix: Disable "deploy" & "metrics" buttons for subprocess  
 * [#1148](https://github.com/TouK/nussknacker/pull/1148) Fix FE regexp for match node id
+* [#1165](https://github.com/TouK/nussknacker/pull/1165) Typed global variables
 
 0.2.0
 ------------------------

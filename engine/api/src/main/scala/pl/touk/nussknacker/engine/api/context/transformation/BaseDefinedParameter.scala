@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.context.transformation
 
+import pl.touk.nussknacker.engine.api.expression.TypedExpression
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 
 sealed trait BaseDefinedParameter {
@@ -8,19 +9,27 @@ sealed trait BaseDefinedParameter {
 
 sealed trait DefinedSingleParameter extends BaseDefinedParameter
 
-sealed trait DefinedBranchParameter extends BaseDefinedParameter {
+trait ValidDefinedSingleParameter { self: DefinedSingleParameter =>
 
-  override def returnType: TypingResult = Typed(returnTypeByBranchId.values.toSet)
+  def expression: TypedExpression
 
-  def returnTypeByBranchId: Map[String, TypingResult]
+  final override def returnType: TypingResult = expression.returnType
 
 }
 
-case class DefinedLazyParameter(returnType: TypingResult) extends DefinedSingleParameter
-case class DefinedEagerParameter(value: Any, returnType: TypingResult) extends DefinedSingleParameter
+sealed trait DefinedBranchParameter extends BaseDefinedParameter {
 
-case class DefinedLazyBranchParameter(returnTypeByBranchId: Map[String, TypingResult]  ) extends DefinedBranchParameter
-case class DefinedEagerBranchParameter(value: Map[String, Any], returnTypeByBranchId: Map[String, TypingResult]  ) extends DefinedBranchParameter
+  def expressionByBranchId: Map[String, TypedExpression]
+
+  final override def returnType: TypingResult = Typed(expressionByBranchId.values.map(_.returnType).toSet)
+
+}
+
+case class DefinedLazyParameter(expression: TypedExpression) extends DefinedSingleParameter with ValidDefinedSingleParameter
+case class DefinedEagerParameter(value: Any, expression: TypedExpression) extends DefinedSingleParameter with ValidDefinedSingleParameter
+
+case class DefinedLazyBranchParameter(expressionByBranchId: Map[String, TypedExpression]) extends DefinedBranchParameter
+case class DefinedEagerBranchParameter(value: Map[String, Any], expressionByBranchId: Map[String, TypedExpression]) extends DefinedBranchParameter
 
 //TODO: and for branch parameters??
 case object FailedToDefineParameter extends DefinedSingleParameter {
