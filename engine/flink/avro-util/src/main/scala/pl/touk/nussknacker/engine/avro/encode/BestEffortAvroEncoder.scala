@@ -11,9 +11,10 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits._
 import org.apache.avro.generic.GenericData.EnumSymbol
-import org.apache.avro.generic.{GenericContainer, GenericData, GenericRecordBuilder}
+import org.apache.avro.generic.{GenericContainer, GenericData}
 import org.apache.avro.util.Utf8
 import org.apache.avro.{AvroRuntimeException, LogicalTypes, Schema}
+import org.apache.flink.formats.avro.typeutils.LogicalTypesGenericRecordBuilder
 import pl.touk.nussknacker.engine.avro.schema.{AvroSchemaEvolution, DefaultAvroSchemaEvolution}
 
 import scala.math.BigDecimal.RoundingMode
@@ -140,7 +141,7 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
       case ((fieldName, _), null) if !validationMode.acceptRedundant =>
         error(s"Not expected field with name: $fieldName for schema: $schema and policy $validationMode does not allow redundant")
     }.toList.sequence.map { values =>
-      val builder = new GenericRecordBuilder(schema)
+      val builder = new LogicalTypesGenericRecordBuilder(schema)
       values.foreach {
         case (k, v) => builder.set(k, v)
       }

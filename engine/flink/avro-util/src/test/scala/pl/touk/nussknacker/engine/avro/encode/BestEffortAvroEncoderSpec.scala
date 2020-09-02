@@ -231,6 +231,20 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers with EitherValues 
     checkLogicalType("string", "uuid", uuid, uuid)
   }
 
+  it("should return logical type default value") {
+    val schema = wrapWithRecordSchema(
+      s"""[
+         |  { "name": "foo", "type": {
+         |    "type": "long",
+         |    "logicalType": "timestamp-millis"
+         |  }, "default": 0 }
+         |]""".stripMargin)
+
+    val encoded = avroEncoder.encodeRecord(Map.empty[String, Any], schema)
+    val encodedRecord = encoded.toEither.right.value
+    encodedRecord.get("foo") shouldEqual Instant.ofEpochMilli(0)
+  }
+
   private def checkLogicalType(underlyingType: String, logicalType: String, givenValue: Any, expectedValue: Any) = {
     val schema = wrapWithRecordSchema(
       s"""[
