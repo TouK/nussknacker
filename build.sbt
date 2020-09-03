@@ -357,16 +357,18 @@ lazy val standaloneApp = (project in engine("standalone/app")).
   dependsOn(engineStandalone, testUtil % "test")
 
 
-lazy val management = (project in engine("flink/management")).
+lazy val flinkProcessManager = (project in engine("flink/manager")).
   configs(IntegrationTest).
   settings(commonSettings).
   settings(Defaults.itSettings).
+  settings(assemblySettings("nussknacker-flink-manager.jar", includeScala = false): _*).
   settings(
-    name := "nussknacker-management",
+    name := "nussknacker-flink-manager",
     Keys.test in IntegrationTest := (Keys.test in IntegrationTest).dependsOn(
       (assembly in Compile) in managementSample,
       (assembly in Compile) in managementJavaSample
     ).value,
+
     //flink cannot run tests and deployment concurrently
     parallelExecution in IntegrationTest := false,
     libraryDependencies ++= {
@@ -383,7 +385,7 @@ lazy val management = (project in engine("flink/management")).
     }
   //FIXME: provided dependency is workaround for Idea, which is not able to handle test scope on module dependency
   //kafka module is (wrongly) added to classpath when running UI from Idea
-  ).dependsOn(interpreter, queryableState, httpUtils, kafka % "provided", kafkaTestUtil % "it,test")
+  ).dependsOn(interpreter % "provided", queryableState, httpUtils, kafka % "provided", kafkaTestUtil % "it,test")
 
 lazy val standaloneSample = (project in engine("standalone/engine/sample")).
   settings(commonSettings).
@@ -871,13 +873,18 @@ lazy val ui = (project in file("ui/server"))
       )
     }
   )
-  .dependsOn(management, interpreter, engineStandalone, processReports, security, listenerApi, testUtil % "test")
+  .dependsOn(interpreter, processReports, security, listenerApi,
+    testUtil % "test",
+    //TODO: this is unfortunatelly needed to run without too much hassle in Intellij...
+    flinkProcessManager % "provided" ,
+    engineStandalone % "provided"
+  )
 
 
 lazy val root = (project in file("."))
   .aggregate(
     // TODO: get rid of this duplication
-    engineStandalone, standaloneApp, management, standaloneSample, managementSample, managementJavaSample, demo, generic,
+    engineStandalone, standaloneApp, flinkProcessManager, standaloneSample, managementSample, managementJavaSample, demo, generic,
     process, interpreter, benchmarks, kafka, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
     flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils, queryableState,
     restmodel, listenerApi, ui,
