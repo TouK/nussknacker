@@ -11,7 +11,7 @@ import {nkPath} from "../config"
 import {TransitionRouteSwitch} from "./TransitionRouteSwitch"
 import Metrics from "./Metrics"
 import Signals from "./Signals"
-import AdminPage from "./AdminPage"
+import {NkAdminApp, AdminPage} from "./AdminPage"
 import DragArea from "../components/DragArea"
 import {connect} from "react-redux"
 import ActionsUtils, {EspActionsProps} from "../actions/ActionsUtils"
@@ -39,8 +39,8 @@ type MetricParam = {
   },
 }
 
-class NussknackerApp extends React.Component<Props, State> {
-
+export class NussknackerApp extends React.Component<Props, State> {
+  /* eslint-disable i18next/no-literal-string */
   static readonly header = "Nussknacker"
   static readonly path = `${nkPath}/`
 
@@ -110,7 +110,7 @@ class NussknackerApp extends React.Component<Props, State> {
                   <Route path={Visualization.path} component={Visualization} exact/>
                   <Route path={Metrics.path} component={Metrics} exact/>
                   <Route path={Signals.path} component={Signals} exact/>
-                  <Route path={AdminPage.path} component={AdminPage} exact/>
+                  <Route path={AdminPage.path} component={NkAdminApp} exact/>
                   <Route path={`${CustomTabs.path}/:id`} component={CustomTabs} exact/>
                   <Redirect from={NussknackerApp.path} to={ProcessesTabData.path} exact/>
                   <Route component={NotFound}/>
