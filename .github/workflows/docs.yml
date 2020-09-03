@@ -1,6 +1,8 @@
 name: Gitbook publish
 
 on:
+  push:
+    branches: [ master ]
   pull_request:
     branches:
       - master
@@ -17,6 +19,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '12'
       - name: Install gitbook and build docs
         run: |
           npm install gitbook-cli

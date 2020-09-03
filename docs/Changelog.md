@@ -10,6 +10,7 @@ Nussknacker versions
 
 0.3.0 (not released yet)
 ------------------------
+* [#1165](https://github.com/TouK/nussknacker/pull/1165) Typed global variables
 * [#1128](https://github.com/TouK/nussknacker/pull/1128) Union-memo transformer
 * [#1054](https://github.com/TouK/nussknacker/pull/1054) Tabbed dark process list
 * Configuration improvements (library upgrade, conventions): 
@@ -19,13 +20,17 @@ Nussknacker versions
 * More graceful handling of Flink compatibility issues:
   [#1150](https://github.com/TouK/nussknacker/pull/1150)
 
+0.2.2
+-----------------------
+* [#1175](https://github.com/TouK/nussknacker/pull/1175) Fix for: BestEffortAvroEncoder haven't produced record with logical types for missing field with default values
+* [#1173](https://github.com/TouK/nussknacker/pull/1173) Fix for: Avro source wasn't be able to read record with schema with invalid defaults
+
 0.2.1
 -----------------------
 * [#1127](https://github.com/TouK/nussknacker/pull/1127) Fix too small count values
 * [#1133](https://github.com/TouK/nussknacker/pull/1133) Improvements: More flexible TestReporter instancies implementation 
 * [#1131](https://github.com/TouK/nussknacker/pull/1131) Fix: Disable "deploy" & "metrics" buttons for subprocess  
 * [#1148](https://github.com/TouK/nussknacker/pull/1148) Fix FE regexp for match node id
-* [#1165](https://github.com/TouK/nussknacker/pull/1165) Typed global variables
 
 0.2.0
 ------------------------
