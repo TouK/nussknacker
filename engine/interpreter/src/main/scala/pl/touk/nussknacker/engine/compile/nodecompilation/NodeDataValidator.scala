@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeTypingInfo}
 import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 
 /*
   Currently we only validate filter nodes. In the future we should implement validation/compilation for all node types
@@ -34,8 +35,11 @@ object NodeDataValidator {
               )(implicit metaData: MetaData): ValidationResponse = {
     modelData.withThisAsContextClassLoader {
 
+      val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
+        case spel: SpelExpressionParser => spel.typingDictLabels
+      }
       val compiler = new NodeCompiler(modelData.processWithObjectsDefinition,
-        ExpressionCompiler.withoutOptimization(modelData), modelData.modelClassLoader.classLoader)
+        expressionCompiler, modelData.modelClassLoader.classLoader)
       implicit val nodeId: NodeId = NodeId(nodeData.id)
 
       nodeData match {
