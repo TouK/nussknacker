@@ -20,9 +20,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
-        with:
-          node-version: '12'
+#      - uses: actions/setup-node@v1
+#        with:
+#          node-version: '12'
       - name: Install gitbook and build docs
         run: |
           npm install gitbook-cli
