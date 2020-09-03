@@ -3,7 +3,7 @@ import React, {ReactNode, useEffect, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {NavLink} from "react-router-dom"
 import {AdminPage} from "../containers/AdminPage"
-import {EspApp} from "../containers/EspApp"
+import NussknackerApp from "../containers/NussknackerApp"
 import {Metrics} from "../containers/Metrics"
 import {ProcessesTabData} from "../containers/Processes"
 import {Signals} from "../containers/Signals"
@@ -39,7 +39,7 @@ function MenuItem({title, path}: { title: string, path: string }) {
 }
 
 type Props = {
-  app: typeof EspApp,
+  app: typeof NussknackerApp,
   rightElement?: ReactNode,
   leftElement?: ReactNode,
   loggedUser: $TodoType,
