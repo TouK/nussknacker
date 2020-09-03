@@ -50,7 +50,7 @@ object NodeDataValidator {
         case a: Enricher => toValidationResponse(compiler.compileEnricher(a, validationContext))
         case a: Processor => toValidationResponse(compiler.compileProcessor(a, validationContext))
 
-        case a: Filter => new FilterValidator(modelData).validate(a, validationContext)
+        case a: Filter => new FilterValidator(modelData, expressionCompiler).validate(a, validationContext)
         //TODO: handle variable, switch, subprocess
         //subprocess is tricky as we have to handle resolution :/
         case a => EmptyValidator.validate(a, validationContext)
@@ -64,9 +64,7 @@ object NodeDataValidator {
 }
 
 //TODO: this should be converted somehow towards NodeCompiler, so that validation logic is the same during node validation and whole process compilation
-class FilterValidator(modelData: ModelData) extends NodeDataValidator[Filter] {
-
-  private val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData)
+class FilterValidator(modelData: ModelData, expressionCompiler: ExpressionCompiler) extends NodeDataValidator[Filter] {
 
   override def validate(nodeData: Filter, validationContext: ValidationContext)(implicit metaData: MetaData): ValidationResponse = {
     val validation: ValidatedNel[ProcessCompilationError, _] =
