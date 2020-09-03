@@ -27,3 +27,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs/_book
           commit_message: "Updating docs on push to master"
+          cname: nussknacker.io
