@@ -8,6 +8,11 @@ For detailed instructions how to migrate to the newest version please see [migra
 Nussknacker versions
 ====================
 
+0.2.2
+-----------------------
+* [#1175](https://github.com/TouK/nussknacker/pull/1175) Fix for: BestEffortAvroEncoder haven't produced record with logical types for missing field with default values
+* [#1173](https://github.com/TouK/nussknacker/pull/1173) Fix for: Avro source wasn't be able to read record with schema with invalid defaults
+
 0.2.1
 -----------------------
 * [#1127](https://github.com/TouK/nussknacker/pull/1127) Fix too small count values
