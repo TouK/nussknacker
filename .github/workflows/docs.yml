@@ -3,12 +3,6 @@ name: Gitbook publish
 on:
   push:
     branches: [ master ]
-  pull_request:
-    branches:
-      - master
-      - staging
-#  push:
-#    branches: [ master ]
 
 defaults:
   run:
@@ -27,9 +21,9 @@ jobs:
         run: |
           npm install gitbook-cli
           node_modules/gitbook-cli/bin/gitbook.js build
-#      - name: Deploy to GithubPages
-#        uses: peaceiris/actions-gh-pages@v3
-#        with:
-#          github_token: ${{ secrets.GITHUB_TOKEN }}
-#          publish_dir: ./docs/_book
-#          commit_message: "Updating docs on push to master"
+      - name: Deploy to GithubPages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/_book
+          commit_message: "Updating docs on push to master"
