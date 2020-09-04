@@ -66,9 +66,9 @@ export class NussknackerApp extends React.Component<Props, State> {
   }
 
   /**
-   * In some cases (docker example) we serve grafana, kibana by nginx from root app url and when service response with error
-   * then react app catchs this and shows error page => so we render in iframe again react app with menu.. For these cases
-   * we always add iframe query params with inform as about that don't render menu.
+   * In some cases (eg. docker demo) we serve Grafana and Kibana from nginx proxy, from root app url, and when service responds with error
+   * then React app catches this and shows error page. To make it render only error, without app menu, we have mark iframe
+   * requests with special query parameter so that we can recognize them and skip menu rendering.
    */
   renderMenu = () => {
     const isLoadAsIframe = queryString.parse(this.props.history.location.search, {parseBooleans: true})?.iframe
