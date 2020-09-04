@@ -21,12 +21,15 @@ object TypeEncoders {
   private val encodeUnknown = JsonObject("refClazzName" -> fromString(classOf[Object].getName),
     "params" -> fromValues(Nil))
 
-  private def encodeTypingResult(result: TypingResult): Json = fromJsonObject((result match {
-    case single: SingleTypingResult => encodeSingleTypingResult(single)
-    case typing.Unknown => encodeUnknown
-    case TypedUnion(classes) =>
-      JsonObject("union" -> fromValues(classes.map(encodeTypingResult).toList))
-  }).+:(typeField -> fromString(TypingType.forType(result).toString)))
+  private def encodeTypingResult(result: TypingResult): Json = fromJsonObject(
+    (result match {
+      case single: SingleTypingResult => encodeSingleTypingResult(single)
+      case typing.Unknown => encodeUnknown
+      case TypedUnion(classes) =>
+        JsonObject("union" -> fromValues(classes.map(encodeTypingResult).toList))
+    })
+      .+:(typeField -> fromString(TypingType.forType(result).toString))
+      .+:("display" -> fromString(result.display)))
 
   private def encodeSingleTypingResult(result: SingleTypingResult): JsonObject = result match {
     case TypedObjectTypingResult(fields, objType) =>
