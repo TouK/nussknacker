@@ -6,19 +6,17 @@ import styles from "./ProcessBackButton.styl"
 
 type Props = {
   processId: string,
-  processName?: string,
 }
 
 export default function ProcessBackButton(props: Props) {
-  const {processId, processName} = props
-  const process = processName || processId
   const {t} = useTranslation()
+  const {processId} = props
 
   return (
     <ProcessLink processId={processId} className={styles.button} >
       <ProcessBackIcon className={styles.icon}/>
       <span className={styles.text}>
-        {t("processBackButton.text", "Back to process {{process}}", {process})}
+        {t("processBackButton.text", "Back to process {{processId}}", {processId})}
       </span>
     </ProcessLink>
   )

@@ -71,4 +71,4 @@ const enhance = compose(
   withRouter,
 )
 
-export const NkAdminApp = enhance(AdminPage)
+export const NkAdminPage = enhance(AdminPage)

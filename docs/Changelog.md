@@ -19,6 +19,7 @@ Nussknacker versions
 * [#873](https://github.com/TouK/nussknacker/pull/873) Flink upgrade 
 * More graceful handling of Flink compatibility issues:
   [#1150](https://github.com/TouK/nussknacker/pull/1150)
+* [#1183](https://github.com/TouK/nussknacker/pull/1183) New back to process button on metrics 
 
 0.2.2
 -----------------------

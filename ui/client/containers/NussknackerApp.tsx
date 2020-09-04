@@ -11,7 +11,7 @@ import {nkPath} from "../config"
 import {TransitionRouteSwitch} from "./TransitionRouteSwitch"
 import Metrics from "./Metrics"
 import Signals from "./Signals"
-import {NkAdminApp, AdminPage} from "./AdminPage"
+import {NkAdminPage, AdminPage} from "./AdminPage"
 import DragArea from "../components/DragArea"
 import {connect} from "react-redux"
 import ActionsUtils, {EspActionsProps} from "../actions/ActionsUtils"
@@ -44,11 +44,9 @@ export class NussknackerApp extends React.Component<Props, State> {
   static readonly header = "Nussknacker"
   static readonly path = `${nkPath}/`
 
-  private readonly mountedHistory: UnregisterCallback
+  private mountedHistory: UnregisterCallback
 
-  constructor(props) {
-    super(props)
-
+  componentDidMount() {
     this.mountedHistory = this.props.history.listen((location, action) => {
       if (action === "PUSH") {
         this.props.actions.urlChange(location)
@@ -110,7 +108,7 @@ export class NussknackerApp extends React.Component<Props, State> {
                   <Route path={Visualization.path} component={Visualization} exact/>
                   <Route path={Metrics.path} component={Metrics} exact/>
                   <Route path={Signals.path} component={Signals} exact/>
-                  <Route path={AdminPage.path} component={NkAdminApp} exact/>
+                  <Route path={AdminPage.path} component={NkAdminPage} exact/>
                   <Route path={`${CustomTabs.path}/:id`} component={CustomTabs} exact/>
                   <Redirect from={NussknackerApp.path} to={ProcessesTabData.path} exact/>
                   <Route component={NotFound}/>
