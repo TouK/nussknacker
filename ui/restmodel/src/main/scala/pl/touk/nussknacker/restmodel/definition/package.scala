@@ -47,6 +47,8 @@ package object definition {
 
   }
 
+  @JsonCodec(encodeOnly = true) case class UITypedExpression(name: String, typ: TypingResult)
+
   @JsonCodec(encodeOnly = true) case class UIObjectDefinition(parameters: List[UIParameter],
                                                               returnType: Option[TypingResult],
                                                               categories: List[String],
