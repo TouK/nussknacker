@@ -5,6 +5,7 @@ import {nkPath} from "../config"
 import HttpService from "../http/HttpService"
 import {getMetricsSettings} from "../reducers/selectors/settings"
 import {Page} from "./Page"
+import * as queryString from "query-string"
 
 export const Metrics = () => {
   const settings = useSelector(getMetricsSettings)
@@ -31,7 +32,13 @@ export const Metrics = () => {
   const dashboard = processingTypeToDashboard && processingTypeToDashboard[processingType] || settings.defaultDashboard
 
   const processName = processId || "All"
-  const finalIframeUrl = settings.url.replace("$dashboard", dashboard).replace("$process", processName)
+
+  const finalIframeUrl = queryString.stringifyUrl({
+    url: settings.url.replace("$dashboard", dashboard).replace("$process", processName),
+    query: {
+      iframe: "true",
+    },
+  })
 
   return (
     <Page>
