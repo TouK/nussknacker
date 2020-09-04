@@ -7,15 +7,26 @@ export type UIObjectDefinition = {
     nodeConfig: SingleNodeConfig,
 }
 
-export type TypingResult = $TodoType
+export type TypingResult = {
+    name: string,
+    display: string,
+    refClazzName: string,
+    params: TypingResult[],
+    type: string,
+}
 
 export type UIParameter = {
-    name: string,
+     name: string,
      typ: TypingResult,
      editor: $TodoType,
      validators: $TodoType,
      additionalVariables: Record<string, TypingResult>,
      branchParam: boolean,
+}
+
+export type UITypedExpression = {
+    name: string,
+    typ: TypingResult,
 }
 
 export type SingleNodeConfig = {

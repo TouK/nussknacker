@@ -22,7 +22,7 @@ import TextareaEditor from "./TextareaEditor"
 import JsonEditor from "./JsonEditor"
 import DualParameterEditor from "./DualParameterEditor"
 
-type ParamType = $TodoType
+export type ParamType = $TodoType
 type ValuesType = Array<string>
 type EditorProps = $TodoType
 
