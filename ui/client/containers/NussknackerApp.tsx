@@ -29,6 +29,7 @@ import {WithTranslation} from "react-i18next/src"
 import {compose} from "redux"
 import {UnregisterCallback} from "history"
 import ProcessBackButton from "../components/Process/ProcessBackButton"
+import * as queryString from "query-string"
 
 type OwnProps = {}
 type State = {}
@@ -64,6 +65,23 @@ export class NussknackerApp extends React.Component<Props, State> {
     return match?.params?.processId != null
   }
 
+  renderMenu = () => {
+    const isLoadAsIframe = queryString.parse(this.props.history.location.search, {parseBooleans: true})?.iframe
+
+    if (!isLoadAsIframe) {
+      return (
+        <MenuBar
+          {...this.props}
+          appPath={this.path}
+          leftElement={this.renderTopLeftButton()}
+          rightElement={this.environmentAlert(this.props.featuresSettings.environmentAlert)}
+        />
+      )
+    }
+
+    return null
+  }
+
   renderTopLeftButton() {
     const match = this.getMetricsMatch()
     if (this.canGoToProcess()) {
@@ -85,12 +103,7 @@ export class NussknackerApp extends React.Component<Props, State> {
     return this.props.resolved ? (
       <div id="app-container">
         <div className="hide">{JSON.stringify(__GIT__)}</div>
-        <MenuBar
-          {...this.props}
-          appPath={this.path}
-          leftElement={this.renderTopLeftButton()}
-          rightElement={this.environmentAlert(this.props.featuresSettings.environmentAlert)}
-        />
+        { this.renderMenu() }
         <main>
           <DragArea>
             <AllDialogs/>

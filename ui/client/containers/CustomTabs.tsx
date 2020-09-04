@@ -2,6 +2,7 @@ import PropTypes, {Validator} from "prop-types"
 import React from "react"
 import {connect} from "react-redux"
 import NotFound from "./errors/NotFound"
+import * as queryString from "query-string"
 
 export class CustomTabs extends React.Component<{ settings: $TodoType[], match: $TodoType }> {
 
@@ -22,12 +23,19 @@ export class CustomTabs extends React.Component<{ settings: $TodoType[], match: 
     const tab = this.props.settings
       .find(o => o.id == id)
 
+    const tabUrl = queryString.stringifyUrl({
+      url: tab.url,
+      query: {
+        iframe: "true",
+      },
+    })
+
     if (tab) {
       return (
         <div className="Page">
           <iframe
             ref={ref}
-            src={tab.url}
+            src={tabUrl}
             width="100%"
             height={window.innerHeight}
             frameBorder="0"
