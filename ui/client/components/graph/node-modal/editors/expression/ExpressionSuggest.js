@@ -38,6 +38,7 @@ class ExpressionSuggest extends React.Component {
     processingType: PropTypes.string,
     isMarked: PropTypes.bool,
     variableTypes: PropTypes.object,
+    validationLabelInfo: PropTypes.string,
   }
 
   customAceEditorCompleter = {
@@ -174,7 +175,7 @@ class ExpressionSuggest extends React.Component {
               onBlur={this.setEditorFocus(false)}
             />
           </div>
-          {showValidation && <ValidationLabels validators={validators} values={[value]}/>}
+          {showValidation && <ValidationLabels validators={validators} values={[value]} validationLabelInfo={this.props.validationLabelInfo}/>}
         </React.Fragment>
       )
     } else {
