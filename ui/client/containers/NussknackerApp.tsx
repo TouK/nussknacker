@@ -40,10 +40,7 @@ type MetricParam = {
 }
 
 export class NussknackerApp extends React.Component<Props, State> {
-  /* eslint-disable i18next/no-literal-string */
-  static readonly header = "Nussknacker"
-  static readonly path = `${nkPath}/`
-
+  private readonly path: string = `${nkPath}/`
   private mountedHistory: UnregisterCallback
 
   componentDidMount() {
@@ -90,7 +87,7 @@ export class NussknackerApp extends React.Component<Props, State> {
         <div className="hide">{JSON.stringify(__GIT__)}</div>
         <MenuBar
           {...this.props}
-          app={NussknackerApp}
+          appPath={this.path}
           leftElement={this.renderTopLeftButton()}
           rightElement={this.environmentAlert(this.props.featuresSettings.environmentAlert)}
         />
@@ -110,7 +107,7 @@ export class NussknackerApp extends React.Component<Props, State> {
                   <Route path={Signals.path} component={Signals} exact/>
                   <Route path={AdminPage.path} component={NkAdminPage} exact/>
                   <Route path={`${CustomTabs.path}/:id`} component={CustomTabs} exact/>
-                  <Redirect from={NussknackerApp.path} to={ProcessesTabData.path} exact/>
+                  <Redirect from={this.path} to={ProcessesTabData.path} exact/>
                   <Route component={NotFound}/>
                 </TransitionRouteSwitch>
               </ErrorHandler>
