@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.process.registrar
 
 import java.util.concurrent.TimeUnit
+import java.util.function.Consumer
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
@@ -59,7 +60,10 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => Clas
 
   protected def usingRightClassloader(env: StreamExecutionEnvironment)(action: => Unit): Unit = {
     if (!isRemoteEnv(env)) {
-      val flinkLoaderSimulation = FlinkUserCodeClassLoaders.childFirst(Array.empty, Thread.currentThread().getContextClassLoader, Array.empty)
+      val flinkLoaderSimulation = FlinkUserCodeClassLoaders.childFirst(Array.empty,
+        Thread.currentThread().getContextClassLoader, Array.empty, new Consumer[Throwable] {
+          override def accept(t: Throwable): Unit = throw t
+        })
       ThreadUtils.withThisAsContextClassLoader[Unit](flinkLoaderSimulation)(action)
     } else {
       action
