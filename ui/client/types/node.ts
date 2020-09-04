@@ -21,6 +21,8 @@ export type NodeType = {
   branchParametersTemplate?: $TodoType,
   subprocessVersions?: $TodoType,
   ref?: $TodoType,
+  varName?: string,
+  value?: Expression,
 }
 
 export type Parameter = {
@@ -29,7 +31,7 @@ export type Parameter = {
 }
 
 export type Expression = {
-    languge: string,
+    language: string,
     expression: string,
 }
 
