@@ -1,5 +1,5 @@
 import React from "react"
-import {editors, EditorType, simpleEditorValidators} from "./expression/Editor"
+import {editors, EditorType, ParamType, simpleEditorValidators} from "./expression/Editor"
 import {isEmpty} from "lodash"
 import {ExpressionObj} from "./expression/types"
 import {spelFormatters} from "./expression/Formatter"
@@ -14,7 +14,7 @@ type Props = {
   readOnly: boolean,
   rowClassName?: string,
   valueClassName?: string,
-  param?: $TodoType,
+  param?: ParamType,
   values?: Array<$TodoType>,
   fieldName?: string,
   isMarked?: boolean,
@@ -22,6 +22,7 @@ type Props = {
   onValueChange: Function,
   errors?: Array<Error>,
   variableTypes: VariableTypes,
+  validationLabelInfo?: string,
 }
 
 type State = {
@@ -33,10 +34,10 @@ class EditableEditor extends React.Component<Props, State> {
   render() {
     const {
       expressionObj, rowClassName, valueClassName, param, renderFieldLabel, fieldLabel,
-      errors, fieldName,
+      errors, fieldName, validationLabelInfo,
     } = this.props
 
-    const editorType = !isEmpty(param) ? param.editor.type : EditorType.RAW_PARAMETER_EDITOR
+    const editorType = isEmpty(param) ? EditorType.RAW_PARAMETER_EDITOR : param.editor.type
 
     const Editor = editors[editorType]
 
@@ -49,8 +50,9 @@ class EditableEditor extends React.Component<Props, State> {
           editorConfig={param?.editor}
           className={`${valueClassName ? valueClassName : "node-value"}`}
           validators={validators}
-          formatter={expressionObj.language === "spel" && spelFormatters[param?.typ.refClazzName] != null ?
+          formatter={expressionObj.language === "spel" && spelFormatters[param?.typ?.refClazzName] != null ?
             spelFormatters[param.typ.refClazzName] : null}
+          expressionInfo={validationLabelInfo}
         />
       </div>
     )

@@ -345,6 +345,7 @@ export class NodeDetailsContent extends React.Component {
             showValidation={showValidation}
             variableTypes={variableTypes}
             errors={fieldErrors}
+            inferredVariableType={_.head(this.props?.typedExpressions)?.typ.display}
           />
         )
       case "Switch":
@@ -763,6 +764,7 @@ function mapState(state, props) {
     currentErrors: state.nodeDetails.validationPerformed ? state.nodeDetails.validationErrors : props.nodeErrors,
     dynamicParameterDefinitions: state.nodeDetails.validationPerformed ? state.nodeDetails.parameters :
         state.graphReducer.processToDisplay?.validationResult?.nodeResults?.[originalNodeId]?.parameters,
+    typedExpressions: state.nodeDetails.typedExpressions,
   }
 }
 
