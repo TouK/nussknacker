@@ -65,6 +65,11 @@ export class NussknackerApp extends React.Component<Props, State> {
     return match?.params?.processId != null
   }
 
+  /**
+   * In some cases (docker example) we serve grafana, kibana by nginx from root app url and when service response with error
+   * then react app catchs this and shows error page => so we render in iframe again react app with menu.. For these cases
+   * we always add iframe query params with inform as about that don't render menu.
+   */
   renderMenu = () => {
     const isLoadAsIframe = queryString.parse(this.props.history.location.search, {parseBooleans: true})?.iframe
 
