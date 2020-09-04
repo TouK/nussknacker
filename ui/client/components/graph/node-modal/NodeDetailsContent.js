@@ -12,7 +12,7 @@ import {allValid, errorValidator, mandatoryValueValidator} from "./editors/Valid
 import {InputWithFocus} from "../../withFocus"
 import NodeUtils from "../NodeUtils"
 import MapVariable from "./../node-modal/MapVariable"
-import Variable from "./../node-modal/Variable"
+import Variable from "./Variable"
 import BranchParameters, {branchErrorFieldName} from "./BranchParameters"
 import ExpressionField from "./editors/expression/ExpressionField"
 import Field from "./editors/field/Field"
