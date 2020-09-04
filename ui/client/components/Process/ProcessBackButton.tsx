@@ -13,10 +13,10 @@ export default function ProcessBackButton(props: Props) {
   const {processId} = props
 
   return (
-    <ProcessLink processId={processId} className={styles.button} >
+    <ProcessLink processId={processId} className={styles.button} title={t("processBackButton.title", "Go back to {{processId}} graph page", {processId})}>
       <ProcessBackIcon className={styles.icon}/>
       <span className={styles.text}>
-        {t("processBackButton.text", "Back to process {{processId}}", {processId})}
+        {t("processBackButton.text", "back to {{processId}}", {processId})}
       </span>
     </ProcessLink>
   )

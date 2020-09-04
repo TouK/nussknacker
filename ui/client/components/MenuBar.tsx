@@ -3,7 +3,7 @@ import React, {ReactNode, useEffect, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {NavLink} from "react-router-dom"
 import {AdminPage} from "../containers/AdminPage"
-import {NussknackerApp} from "../containers/NussknackerApp"
+import {ReactComponent as NussknackerLogo} from "../assets/img/nussknacker-logo.svg"
 import {Metrics} from "../containers/Metrics"
 import {ProcessesTabData} from "../containers/Processes"
 import {Signals} from "../containers/Signals"
@@ -39,7 +39,7 @@ function MenuItem({title, path}: { title: string, path: string }) {
 }
 
 type Props = {
-  app: typeof NussknackerApp,
+  appPath: string,
   rightElement?: ReactNode,
   leftElement?: ReactNode,
   loggedUser: $TodoType,
@@ -48,8 +48,8 @@ type Props = {
 
 const Spacer = () => <Flex flex={1}/>
 
-export function MenuBar({rightElement = null, leftElement = null, ...props}: Props) {
-  const {app: {path, header}, loggedUser, featuresSettings} = props
+export function MenuBar({appPath, rightElement = null, leftElement = null, ...props}: Props) {
+  const {loggedUser, featuresSettings} = props
   const showMetrics = !_.isEmpty(featuresSettings.metrics)
   const showSignals = featuresSettings.signals
   const showAdmin = loggedUser.globalPermissions.adminTab
@@ -85,8 +85,8 @@ export function MenuBar({rightElement = null, leftElement = null, ...props}: Pro
       <nav id="main-menu" className={`navbar navbar-default ${expanded ? "expanded" : "collapsed"}`}>
         <Flex>
           {leftElement}
-          <NavLink id="brand-name" className="navbar-brand" to={path}>
-            <span id="app-logo" className="vert-middle">{header}</span>
+          <NavLink className="navbar-brand" to={appPath} title={t("menu.goToMainPage", "Go to main page")}>
+            <NussknackerLogo className={"navbar-brand-logo"}/>
           </NavLink>
           {rightElement}
           <Spacer/>
