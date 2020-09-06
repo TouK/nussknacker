@@ -1,14 +1,11 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.expression.{TypedExpression, TypedExpressionMap}
-import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeTypingInfo}
 import pl.touk.nussknacker.engine.graph.node._
@@ -28,9 +25,11 @@ sealed trait ValidationResponse
 
 case class ValidationPerformed(errors: List[ProcessCompilationError],
                                parameters: Option[List[Parameter]],
-                               typedExpressionMap: Option[TypedExpressionMap]) extends ValidationResponse
+                               expressionsTyping: Option[List[ExpressionTyping]]) extends ValidationResponse
 
 case object ValidationNotPerformed extends ValidationResponse
+
+
 
 object NodeDataValidator {
 
@@ -56,7 +55,7 @@ object NodeDataValidator {
         case a: Processor => toValidationResponse(compiler.compileProcessor(a, validationContext))
 
         case a: Filter => new FilterValidator(expressionCompiler).validate(a, validationContext)
-        case a: Variable => new VariableValidator(expressionCompiler).validate(a, validationContext)
+        case a: Variable => toValidationResponse(compiler.compileExpression(a.value, a.varName, validationContext))
         //TODO: handle variable builder, switch, subprocess
         //subprocess is tricky as we have to handle resolution :/
         case a => EmptyValidator.validate(a, validationContext)
@@ -65,7 +64,7 @@ object NodeDataValidator {
   }
 
   private def toValidationResponse(nodeCompilationResult: NodeCompilationResult[_]): ValidationResponse =
-    ValidationPerformed(nodeCompilationResult.errors, nodeCompilationResult.parameters, typedExpressionMap = None)
+    ValidationPerformed(nodeCompilationResult.errors, nodeCompilationResult.parameters, expressionsTyping = nodeCompilationResult.expressionsTyping)
 
 }
 
@@ -75,25 +74,7 @@ class FilterValidator(expressionCompiler: ExpressionCompiler) extends NodeDataVa
   override def validate(nodeData: Filter, validationContext: ValidationContext)(implicit metaData: MetaData): ValidationResponse = {
     val validation: ValidatedNel[ProcessCompilationError, _] =
       expressionCompiler.compile(nodeData.expression, Some(NodeTypingInfo.DefaultExpressionId), validationContext, Typed[Boolean])(NodeId(nodeData.id))
-    ValidationPerformed(validation.fold(_.toList, _ => Nil), parameters = None, typedExpressionMap = None)
-  }
-}
-
-class VariableValidator(expressionCompiler: ExpressionCompiler) extends NodeDataValidator[Variable] {
-
-  override def validate(nodeData: Variable, validationContext: ValidationContext)(implicit metaData: MetaData): ValidationResponse = {
-    val validation: ValidatedNel[ProcessCompilationError, TypedExpression] = {
-      expressionCompiler.compile(nodeData.value, Some(NodeTypingInfo.DefaultExpressionId), validationContext, typing.Unknown)(NodeId(nodeData.id))
-    }
-    validation match {
-      case Valid(typedExpression) =>
-        ValidationPerformed(
-          errors = Nil,
-          parameters = None,
-          typedExpressionMap = Some(TypedExpressionMap(Map(NodeTypingInfo.DefaultExpressionId -> typedExpression))))
-      case Invalid(errors) =>
-        ValidationPerformed(errors.toList, parameters = None, typedExpressionMap = None)
-    }
+    ValidationPerformed(validation.fold(_.toList, _ => Nil), parameters = None, expressionsTyping = None)
   }
 }
 

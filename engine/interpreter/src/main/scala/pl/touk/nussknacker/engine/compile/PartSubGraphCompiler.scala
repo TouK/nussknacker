@@ -94,7 +94,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
 
     data match {
       case processor@graph.node.Processor(id, _, disabled, _) =>
-        val NodeCompilationResult(typingInfo, _, _, validatedServiceRef) = nodeCompiler.compileProcessor(processor, ctx)
+        val NodeCompilationResult(typingInfo, _, _, validatedServiceRef, _) = nodeCompiler.compileProcessor(processor, ctx)
         toCompilationResult(validatedServiceRef.map(ref => compiledgraph.node.EndingProcessor(id, ref, disabled.contains(true))), typingInfo)
 
       case graph.node.Sink(id, ref, optionalExpression, disabled, _) =>
@@ -137,11 +137,12 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
 
     data match {
       case graph.node.Variable(id, varName, expression, _) =>
-        val (expressionTypingResult, validatedExpression) = compile(expression, Some(DefaultExpressionId), ctx, Unknown)
-        val (newCtx, combinedValidatedExpression) = withVariableCombined(ctx, varName, expressionTypingResult.typingResult, validatedExpression)
+        val NodeCompilationResult(typingInfo, _, newValidatedCtx, validatedExpression, _) = nodeCompiler.compileExpression(expression, varName, ctx)
 
-        CompilationResult.map2(toCompilationResult(combinedValidatedExpression, expressionTypingResult.toDefaultExpressionTypingInfoEntry.toMap), compile(next, newCtx)) { (compiled, compiledNext) =>
-          compiledgraph.node.VariableBuilder(id, varName, Left(compiled), compiledNext)
+        CompilationResult.map2(
+          fa = toCompilationResult(validatedExpression, typingInfo),
+          fb = compile(next, newValidatedCtx.getOrElse(ctx))) {
+          (compiled, compiledNext) => compiledgraph.node.VariableBuilder(id, varName, Left(compiled), compiledNext)
         }
       case graph.node.VariableBuilder(id, varName, fields, _) =>
         val (fieldsTyping, compiledFields) = fields.map(f => compile(f, ctx)).unzip
@@ -155,12 +156,12 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
         }
 
       case processor@graph.node.Processor(id, _, isDisabled, _) =>
-        val NodeCompilationResult(typingInfo, _, _, validatedServiceRef) = nodeCompiler.compileProcessor(processor, ctx)
+        val NodeCompilationResult(typingInfo, _, _, validatedServiceRef, _) = nodeCompiler.compileProcessor(processor, ctx)
         CompilationResult.map2(toCompilationResult(validatedServiceRef, typingInfo), compile(next, ctx))((ref, next) =>
           compiledgraph.node.Processor(id, ref, next, isDisabled.contains(true)))
 
       case enricher@graph.node.Enricher(id, _, outName, _) =>
-        val NodeCompilationResult(typingInfo, _, newCtx, validatedServiceRef) = nodeCompiler.compileEnricher(enricher, ctx)
+        val NodeCompilationResult(typingInfo, _, newCtx, validatedServiceRef, _) = nodeCompiler.compileEnricher(enricher, ctx)
 
         CompilationResult.map3(
           toCompilationResult(validatedServiceRef, typingInfo),
@@ -174,7 +175,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
           f = compiledNext => compiledgraph.node.CustomNode(id, compiledNext))
 
       case subprocessInput:SubprocessInput =>
-        val NodeCompilationResult(typingInfo, _, newCtx, combinedValidParams) = nodeCompiler.compileSubprocessInput(subprocessInput, ctx)
+        val NodeCompilationResult(typingInfo, _, newCtx, combinedValidParams, _) = nodeCompiler.compileSubprocessInput(subprocessInput, ctx)
         CompilationResult.map2(toCompilationResult(combinedValidParams, typingInfo), compile(next, newCtx.getOrElse(ctx)))((params, next) =>
           compiledgraph.node.SubprocessStart(subprocessInput.id, params, next))
 
@@ -239,7 +240,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
 
 object PartSubGraphCompiler {
 
-  private case class ExpressionTypingResult(typingResult: TypingResult, typingInfo: Option[ExpressionTypingInfo]) {
+  case class ExpressionTypingResult(typingResult: TypingResult, typingInfo: Option[ExpressionTypingInfo]) {
 
     def toDefaultExpressionTypingInfoEntry: Option[(String, ExpressionTypingInfo)] =
       typingInfo.map(NodeTypingInfo.DefaultExpressionId -> _)

@@ -8,6 +8,7 @@ dist/
 .vscode
 .metals
 metals.sbt
+.ammonite/
 **/db.log
 **/db.properties
 **/db.script

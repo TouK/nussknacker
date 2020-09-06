@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MetaData, Service, StreamMetaData, definition}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed, ValidationResponse}
+import pl.touk.nussknacker.engine.compile.nodecompilation.{ExpressionTyping, NodeDataValidator, ValidationPerformed, ValidationResponse}
 import pl.touk.nussknacker.engine.compile.validationHelpers.{DynamicParameterJoinTransformer, Enricher, GenericParametersSink, GenericParametersSource, GenericParametersTransformer, SimpleStringService}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -129,6 +129,16 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
     ) {
       case ValidationPerformed((error:ExpressionParseError) :: Nil, None, _) =>
         error.message shouldBe "Non reference 'doNotExist' occurred. Maybe you missed '#' in front of it?"
+    }
+  }
+
+  test("should return expression type info for variable definition") {
+    inside(
+      validate(Variable("var1", "var1", "42L", None), ValidationContext(Map.empty))
+    ) {
+      case ValidationPerformed(Nil, _, Some(ExpressionTyping(fieldName, typ) :: Nil)) =>
+        fieldName shouldBe NodeTypingInfo.DefaultExpressionId
+        typ.display shouldBe "Long"
     }
   }
 
