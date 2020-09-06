@@ -66,11 +66,9 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
 
               NodeDataValidator.validate(nodeData.nodeData, modelData, validationContext, branchCtxs) match {
                 case ValidationNotPerformed => NodeValidationResult(parameters = None, typedExpressions = None, validationErrors = Nil, validationPerformed = false)
-                case ValidationPerformed(errors, parameters, typedExpressionMap) =>
+                case ValidationPerformed(errors, parameters, expressionsTyping) =>
                   val uiParams = parameters.map(_.map(UIProcessObjectsFactory.createUIParameter(_, ParameterConfig.empty)))
-                  val uiTypedExpressions = typedExpressionMap.map(_.valueByKey.map { case (name, typedExpression) =>
-                    UITypedExpression(name, typedExpression.returnType)
-                  }.toList)
+                  val uiTypedExpressions = expressionsTyping.map(_.map(expr => UITypedExpression(expr.fieldName, expr.typ) ))
                   //We don't return MissingParameter error when we are returning those missing parameters to be added - since
                   //it's not really exception ATM
                   def shouldIgnoreError(pce: ProcessCompilationError): Boolean = pce match {

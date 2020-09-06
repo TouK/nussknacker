@@ -7,6 +7,8 @@ dist/
 .bloop
 .vscode
 .metals
+.ammonite/
+metals.sbt
 **/db.log
 **/db.properties
 **/db.script
