@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.definition
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.{MetaData, Service}
+import pl.touk.nussknacker.engine.api.{ContextId, MetaData, Service}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -32,18 +32,19 @@ trait WithExplicitMethodToInvoke {
 
 trait ServiceWithExplicitMethod extends Service with WithExplicitMethodToInvoke {
 
-  override final def additionalDependencies: List[Class[_]] = List(classOf[ExecutionContext], classOf[ServiceInvocationCollector], classOf[MetaData])
+  override final def additionalDependencies: List[Class[_]] = List(classOf[ExecutionContext], classOf[ServiceInvocationCollector], classOf[MetaData], classOf[ContextId])
 
   override final def runtimeClass: Class[_] = classOf[Future[_]]
 
   override def invoke(params: List[AnyRef]): AnyRef = {
-    val normalParams = params.dropRight(3)
-    val implicitParams = params.takeRight(3)
+    val normalParams = params.dropRight(4)
+    val implicitParams = params.takeRight(4)
     invokeService(normalParams)(implicitParams(0).asInstanceOf[ExecutionContext],
                                 implicitParams(1).asInstanceOf[ServiceInvocationCollector],
-                                implicitParams(2).asInstanceOf[MetaData])
+                                implicitParams(2).asInstanceOf[MetaData],
+                                implicitParams(3).asInstanceOf[ContextId])
   }
 
-  def invokeService(params: List[AnyRef])(implicit ec: ExecutionContext, collector: InvocationCollectors.ServiceInvocationCollector, metaData: MetaData): Future[AnyRef]
+  def invokeService(params: List[AnyRef])(implicit ec: ExecutionContext, collector: InvocationCollectors.ServiceInvocationCollector, metaData: MetaData, contextId: ContextId): Future[AnyRef]
 
 }

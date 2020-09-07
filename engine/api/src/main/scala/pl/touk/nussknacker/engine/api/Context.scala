@@ -8,6 +8,8 @@ object Context {
 
 }
 
+class ContextId(val id: String) extends AnyRef
+
 case class Context(id: String, variables: Map[String, Any],
                    lazyContext: LazyContext, parentContext: Option[Context]) {
 
