@@ -2,6 +2,9 @@ package pl.touk.nussknacker.ui.definition
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SingleNodeConfig, WithCategories}
@@ -38,6 +41,24 @@ class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
                @ParamName("paramRawEditor")
                @RawEditor
                param3: String): Future[String] = ???
+  }
+
+
+  object SampleGenericNodeTransformation extends CustomStreamTransformer with SingleInputGenericNodeTransformation[AnyRef] {
+
+    override def contextTransformation(context: ValidationContext,
+                                       dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): this.NodeTransformationDefinition = {
+      case TransformationStep(Nil, _) =>
+        FinalResults(context, Nil)
+    }
+
+    override def initialParameters: List[Parameter] = List.empty
+
+    override def nodeDependencies: List[NodeDependency] = List.empty
+
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): AnyRef =
+      ???
+
   }
 
   test("should read editor from annotations") {
@@ -81,5 +102,23 @@ class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
 
     processObjects.nodesToAdd.filter(_.name == "hiddenCategory") shouldBe empty
   }
+
+  test("should be able to assign generic node to some category") {
+    val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig)
+    val model : ModelData = LocalModelData(typeConfig.modelConfig, new EmptyProcessConfigCreator() {
+      override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
+        Map(
+          "someGenericNode" -> WithCategories(SampleGenericNodeTransformation).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("someCategory")))
+        )
+    })
+
+    val processObjects =
+      UIProcessObjectsFactory.prepareUIProcessObjects(model, TestFactory.user("userId"), Set(), false,
+        new ProcessTypesForCategories(ConfigWithScalaVersion.config))
+
+    val nodeGroups = processObjects.nodesToAdd.filter(_.name == "someCategory")
+    nodeGroups should not be empty
+  }
+
 
 }
