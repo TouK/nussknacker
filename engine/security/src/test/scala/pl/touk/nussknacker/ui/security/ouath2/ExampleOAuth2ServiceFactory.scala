@@ -7,7 +7,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
 import pl.touk.nussknacker.ui.security.api.{AuthenticationMethod, GlobalPermission, LoggedUser, Permission}
-import pl.touk.nussknacker.ui.security.oauth2.{OAuth2AuthenticateData, OAuth2ClientApi, OAuth2Configuration, OAuth2Service, OAuth2ServiceFactory}
+import pl.touk.nussknacker.ui.security.oauth2.{OAuth2AuthenticateData, OAuth2ClientApi, OAuth2Configuration, OAuth2Service, OAuth2ServiceFactory, ProfileFormat}
 import pl.touk.nussknacker.ui.security.ouath2.ExampleOAuth2ServiceFactory.{TestAccessTokenResponse, TestProfileResponse}
 import sttp.client.{NothingT, SttpBackend}
 
@@ -90,6 +90,7 @@ object ExampleOAuth2ServiceFactory {
       "clientSecret",
       "clientId",
       URI.create("https://api.github.com/user"),
+      ProfileFormat.GITHUB,
       URI.create("https://github.com/login/oauth/access_token"),
       URI.create("http://demo.nussknacker.pl"),
       false
