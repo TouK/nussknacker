@@ -9,14 +9,12 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo, TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.api.process.Source
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType, typing}
 import pl.touk.nussknacker.engine.api.{Context, MetaData, expression}
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeTypingInfo, NodeValidationExceptionHandler, ProcessObjectFactory}
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{FinalStateValue, ObjectWithMethodDef}
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition}
 import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, ServiceInvoker}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -36,7 +34,7 @@ import cats.implicits.toTraverseOps
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo.DefaultExpressionId
 
 import scala.util.{Failure, Success, Try}
-import pl.touk.nussknacker.engine.compile.PartSubGraphCompiler.ExpressionTypingResult
+import pl.touk.nussknacker.engine.compile.PartSubGraphCompiler.{ExpressionTypingResult, FieldExpressionTypingResult}
 
 class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
                    objectParametersExpressionCompiler: ExpressionCompiler,
@@ -126,6 +124,29 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     }
     val expressionTypingInfo = validParams.map(_.map(p => p.name -> p.typingInfo).toMap).valueOr(_ => Map.empty[String, ExpressionTypingInfo])
     NodeCompilationResult(expressionTypingInfo, None, newCtx, validParams)
+  }
+
+  def compileFields(fields: List[graph.variable.Field],
+                   outputVarName: String,
+                   ctx: ValidationContext)
+                   (implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.variable.Field]] = {
+    val (fieldsTyping, compiledFields) = fields.map(field => validateField(field, ctx)).unzip
+    val typingResult = TypedObjectTypingResult(fieldsTyping.map(fieldTyping => fieldTyping.fieldName -> fieldTyping.typingResult).toMap)
+    val (newCtxValidated, combinedCompiledFields) = withVariableCombined(ctx, outputVarName, typingResult, compiledFields.sequence)
+    NodeCompilationResult(
+      expressionTypingInfo = fieldsTyping.flatMap(_.toExpressionTypingInfoEntry).toMap,
+      parameters = None,
+      validationContext = combinedCompiledFields.map(_ => newCtxValidated),
+      compiledObject = combinedCompiledFields,
+      expressionsTyping = Some(fieldsTyping.map(fieldTyping => ExpressionTyping(fieldTyping.fieldName, fieldTyping.typingResult)))
+    )
+
+  }
+
+  private def validateField(field: graph.variable.Field, ctx: ValidationContext)
+                     (implicit nodeId: NodeId): (FieldExpressionTypingResult, ValidatedNel[ProcessCompilationError, compiledgraph.variable.Field]) = {
+    val (expressionTyping, validatedExpression) = validateExpression(field.expression, field.name, ctx, typing.Unknown)
+    (FieldExpressionTypingResult(field.name, expressionTyping), validatedExpression.map(compiledgraph.variable.Field(field.name, _)))
   }
 
   def compileExpression(expr: graph.expression.Expression,

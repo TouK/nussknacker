@@ -137,7 +137,8 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
 
     data match {
       case graph.node.Variable(id, varName, expression, _) =>
-        val NodeCompilationResult(typingInfo, _, newValidatedCtx, validatedExpression, _) = nodeCompiler.compileExpression(expression, varName, ctx)
+        val NodeCompilationResult(typingInfo, _, newValidatedCtx, validatedExpression, _) =
+          nodeCompiler.compileExpression(expression, varName, ctx)
 
         CompilationResult.map2(
           fa = toCompilationResult(validatedExpression, typingInfo),
@@ -145,14 +146,14 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
           (compiled, compiledNext) => compiledgraph.node.VariableBuilder(id, varName, Left(compiled), compiledNext)
         }
       case graph.node.VariableBuilder(id, varName, fields, _) =>
-        val (fieldsTyping, compiledFields) = fields.map(f => compile(f, ctx)).unzip
-        val typingResult = TypedObjectTypingResult(fieldsTyping.map(f => f.fieldName -> f.typingResult).toMap)
-        val (newCtx, combinedCompiledFields) = withVariableCombined(ctx, varName, typingResult, compiledFields.sequence)
+        val NodeCompilationResult(typingInfo, _, newValidatedCtx, validatedFields, _) =
+          nodeCompiler.compileFields(fields, varName, ctx)
 
-        val expressionsTypingInfo = fieldsTyping.flatMap(_.toExpressionTypingInfoEntry).toMap
-
-        CompilationResult.map2(toCompilationResult(combinedCompiledFields, expressionsTypingInfo), compile(next, newCtx)) { (compiledFields, compiledNext) =>
-          compiledgraph.node.VariableBuilder(id, varName, Right(compiledFields), compiledNext)
+        CompilationResult.map2(
+          fa = toCompilationResult(validatedFields, typingInfo),
+          fb = compile(next, newValidatedCtx.getOrElse(ctx))
+        ) {
+          (compiled, compiledNext) => compiledgraph.node.VariableBuilder(id, varName, Right(compiled), compiledNext)
         }
 
       case processor@graph.node.Processor(id, _, isDisabled, _) =>
@@ -247,7 +248,7 @@ object PartSubGraphCompiler {
 
   }
 
-  private case class FieldExpressionTypingResult(fieldName: String, private val exprTypingResult: ExpressionTypingResult) {
+  case class FieldExpressionTypingResult(fieldName: String, private val exprTypingResult: ExpressionTypingResult) {
 
     def typingResult: TypingResult = exprTypingResult.typingResult
 

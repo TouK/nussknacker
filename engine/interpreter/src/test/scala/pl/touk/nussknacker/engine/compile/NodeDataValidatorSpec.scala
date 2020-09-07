@@ -12,10 +12,11 @@ import pl.touk.nussknacker.engine.compile.validationHelpers.{DynamicParameterJoi
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.{CustomNode, Filter, NodeData, Processor, Sink, Source, Variable}
+import pl.touk.nussknacker.engine.graph.node.{CustomNode, Filter, NodeData, Processor, Sink, Source, Variable, VariableBuilder}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
+import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -142,7 +143,16 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
     }
   }
 
-  ignore("should validate variable builder definition") {
+  test("should validate variable builder definition") {
+    inside(
+      validate(VariableBuilder("var1", "var1", List(Field("field1", "doNotExist")), None), ValidationContext(Map.empty))
+    ) {
+      case ValidationPerformed((error:ExpressionParseError) :: Nil, None, _) =>
+        error.message shouldBe "Non reference 'doNotExist' occurred. Maybe you missed '#' in front of it?"
+    }
+  }
+
+  ignore("should return inferred type for variable builder output") {
     //TODO
   }
 
