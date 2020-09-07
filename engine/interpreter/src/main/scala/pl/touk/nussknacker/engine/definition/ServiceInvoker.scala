@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{NodeContext, ServiceInvocationCollector, TestServiceInvocationCollector}
 import pl.touk.nussknacker.engine.api.typed.typing.SingleTypingResult
-import pl.touk.nussknacker.engine.api.{MetaData, Service}
+import pl.touk.nussknacker.engine.api.{MetaData, Service, ContextId}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.UnionDefinitionExtractor
 
@@ -27,7 +27,7 @@ private[definition] class ServiceInvokerImpl(objectWithMethodDef: ObjectWithMeth
                      (implicit ec: ExecutionContext, metaData: MetaData): Future[Any] = {
     objectWithMethodDef.invokeMethod(params,
       outputVariableNameOpt = nodeContext.outputVariableNameOpt,
-      additional = Seq(ec, collector.getOrElse(TestServiceInvocationCollector(nodeContext)), metaData, NodeId(nodeContext.nodeId))
+      additional = Seq(ec, collector.getOrElse(TestServiceInvocationCollector(nodeContext)), metaData, NodeId(nodeContext.nodeId), ContextId(nodeContext.contextId))
     ).asInstanceOf[Future[Any]]
   }
 
@@ -41,7 +41,7 @@ private[definition] class JavaServiceInvokerImpl(objectWithMethodDef: ObjectWith
     val result = objectWithMethodDef.invokeMethod(
       params,
       outputVariableNameOpt = None,
-      additional = Seq(prepareExecutor(ec), collector.getOrElse(TestServiceInvocationCollector(nodeContext)), metaData, NodeId(nodeContext.nodeId)))
+      additional = Seq(prepareExecutor(ec), collector.getOrElse(TestServiceInvocationCollector(nodeContext)), metaData, NodeId(nodeContext.nodeId), ContextId(nodeContext.contextId)))
     FutureConverters.toScala(result.asInstanceOf[CompletionStage[_]])
   }
 
@@ -78,7 +78,7 @@ object ServiceInvoker {
 
     override protected val expectedReturnType: Option[Class[_]] = Some(classOf[Future[_]])
     override protected val additionalDependencies = Set[Class[_]](classOf[ExecutionContext],
-      classOf[ServiceInvocationCollector], classOf[MetaData], classOf[NodeId])
+      classOf[ServiceInvocationCollector], classOf[MetaData], classOf[NodeId], classOf[ContextId])
 
   }
 
@@ -86,7 +86,7 @@ object ServiceInvoker {
 
     override protected val expectedReturnType: Option[Class[_]] = Some(classOf[java.util.concurrent.CompletionStage[_]])
     override protected val additionalDependencies = Set[Class[_]](classOf[Executor],
-      classOf[ServiceInvocationCollector], classOf[MetaData], classOf[NodeId])
+      classOf[ServiceInvocationCollector], classOf[MetaData], classOf[NodeId], classOf[ContextId])
 
   }
 

@@ -34,9 +34,10 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
       .sink("endNodeIID", "#var1", "response-sink")
 
     val creator = new StandaloneProcessConfigCreator
-    val result = runProcess(process, Request1("a", "b"), creator)
+    val contextId = "context-id"
+    val result = runProcess(process, Request1("a", "b"), creator, contextId = Some(contextId))
 
-    result shouldBe Right(List(Response("alamakota")))
+    result shouldBe Right(List(Response(s"alamakota-$contextId")))
     creator.processorService.invocationsCount.get() shouldBe 1
   }
 
@@ -71,9 +72,10 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
 
     val interpreter = prepareInterpreter(process, creator, metricRegistry)
     interpreter.open(JobData(process.metaData, ProcessVersion.empty))
-    val result = interpreter.invoke(Request1("a", "b")).futureValue
+    val contextId = "context-id"
+    val result = interpreter.invoke(Request1("a", "b"), Some(contextId)).futureValue
 
-    result shouldBe Right(List(Response("alamakota")))
+    result shouldBe Right(List(Response(s"alamakota-$contextId")))
     creator.processorService.invocationsCount.get() shouldBe 1
 
     eventually {
@@ -194,14 +196,15 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
   def runProcess(process: EspProcess,
                  input: Any,
                  creator: StandaloneProcessConfigCreator = new StandaloneProcessConfigCreator,
-                 metricRegistry: MetricRegistry = new MetricRegistry): GenericListResultType[Any] = {
+                 metricRegistry: MetricRegistry = new MetricRegistry,
+                 contextId: Option[String] = None): GenericListResultType[Any] = {
     val interpreter = prepareInterpreter(
       process = process,
       creator = creator,
       metricRegistry = metricRegistry
     )
     interpreter.open(JobData(process.metaData,ProcessVersion.empty))
-    val result = interpreter.invoke(input).futureValue
+    val result = interpreter.invoke(input, contextId).futureValue
     interpreter.close()
     result
   }

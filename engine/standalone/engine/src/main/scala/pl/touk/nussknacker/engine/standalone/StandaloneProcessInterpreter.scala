@@ -177,12 +177,12 @@ case class StandaloneProcessInterpreter(source: StandaloneSource[Any],
 
   private val counter = new AtomicLong(0)
 
-  def invoke(input: Any)(implicit ec: ExecutionContext): Future[GenericListResultType[Any]] = {
-    invokeToResult(input).map(_.right.map(_.map(_.output)))
+  def invoke(input: Any, contextIdOpt: Option[String] = None)(implicit ec: ExecutionContext): Future[GenericListResultType[Any]] = {
+    invokeToResult(input, contextIdOpt).map(_.right.map(_.map(_.output)))
   }
 
-  def invokeToResult(input: Any)(implicit ec: ExecutionContext): InterpreterOutputType = modelData.withThisAsContextClassLoader {
-    val contextId = s"${context.processId}-${counter.getAndIncrement()}"
+  def invokeToResult(input: Any, contextIdOpt: Option[String] = None)(implicit ec: ExecutionContext): InterpreterOutputType = modelData.withThisAsContextClassLoader {
+    val contextId = contextIdOpt.getOrElse(s"${context.processId}-${counter.getAndIncrement()}")
     measureTime {
       val ctx = Context(contextId).withVariable(Interpreter.InputParamName, input)
       invoker(ctx, ec)
