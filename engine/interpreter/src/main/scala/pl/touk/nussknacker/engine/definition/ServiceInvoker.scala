@@ -27,7 +27,7 @@ private[definition] class ServiceInvokerImpl(objectWithMethodDef: ObjectWithMeth
                      (implicit ec: ExecutionContext, metaData: MetaData): Future[Any] = {
     objectWithMethodDef.invokeMethod(params,
       outputVariableNameOpt = nodeContext.outputVariableNameOpt,
-      additional = Seq(ec, collector.getOrElse(TestServiceInvocationCollector(nodeContext)), metaData, NodeId(nodeContext.nodeId), new ContextId(nodeContext.contextId))
+      additional = Seq(ec, collector.getOrElse(TestServiceInvocationCollector(nodeContext)), metaData, NodeId(nodeContext.nodeId), ContextId(nodeContext.contextId))
     ).asInstanceOf[Future[Any]]
   }
 
@@ -41,7 +41,7 @@ private[definition] class JavaServiceInvokerImpl(objectWithMethodDef: ObjectWith
     val result = objectWithMethodDef.invokeMethod(
       params,
       outputVariableNameOpt = None,
-      additional = Seq(prepareExecutor(ec), collector.getOrElse(TestServiceInvocationCollector(nodeContext)), metaData, NodeId(nodeContext.nodeId), new ContextId(nodeContext.contextId)))
+      additional = Seq(prepareExecutor(ec), collector.getOrElse(TestServiceInvocationCollector(nodeContext)), metaData, NodeId(nodeContext.nodeId), ContextId(nodeContext.contextId)))
     FutureConverters.toScala(result.asInstanceOf[CompletionStage[_]])
   }
 
