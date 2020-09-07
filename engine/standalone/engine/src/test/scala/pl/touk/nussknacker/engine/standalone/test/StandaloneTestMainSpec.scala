@@ -34,6 +34,7 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
 
     val input = """{ "field1": "a", "field2": "b" }
       |{ "field1": "c", "field2": "d" }""".stripMargin
+    val defaultContextId = "proc1-0"
     val config = ConfigFactory.load()
 
     val results = StandaloneTestMain.run(
@@ -53,8 +54,8 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
 
     results.mockedResults("processor").toSet shouldBe Set(MockedResult("proc1-0", "processorService", "processor service invoked"))
     results.mockedResults("endNodeIID").toSet shouldBe Set(MockedResult("proc1-0",
-      "endNodeIID", """{
-                      |  "field1" : "alamakota"
+      "endNodeIID", s"""{
+                      |  "field1" : "alamakota-$defaultContextId"
                       |}""".stripMargin))
 
     StandaloneProcessConfigCreator.processorService.get().invocationsCount.get shouldBe 0

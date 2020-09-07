@@ -79,8 +79,8 @@ case class Request3(field13: String, field23: String)
 
 class EnricherService extends Service {
   @MethodToInvoke
-  def invoke()(implicit ex: ExecutionContext, collector: ServiceInvocationCollector): Future[Response] = {
-    Future.successful(Response("alamakota"))
+  def invoke()(implicit ex: ExecutionContext, collector: ServiceInvocationCollector, contextId: ContextId): Future[Response] = {
+    Future.successful(Response("alamakota-" + contextId.id))
   }
 }
 
