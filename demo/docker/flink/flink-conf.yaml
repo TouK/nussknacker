@@ -29,9 +29,8 @@ taskmanager.hostname: taskmanager
 
 taskmanager.data.port: 6126
 
-# The heap size for the TaskManager JVM
-
-taskmanager.heap.size: 512
+taskmanager.memory.task.heap.size: 256m
+taskmanager.memory.managed.size: 204m
 
 # The number of task slots that each TaskManager offers. Each slot runs one parallel pipeline.
 
