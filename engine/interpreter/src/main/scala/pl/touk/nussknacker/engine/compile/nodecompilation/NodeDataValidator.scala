@@ -56,7 +56,8 @@ object NodeDataValidator {
 
         case a: Filter => new FilterValidator(expressionCompiler).validate(a, validationContext)
         case a: Variable => toValidationResponse(compiler.compileExpression(a.value, a.varName, validationContext))
-        //TODO: handle variable builder, switch, subprocess
+        case a: VariableBuilder => toValidationResponse(compiler.compileFields(a.fields, a.varName, validationContext))
+        //TODO: handle switch, subprocess
         //subprocess is tricky as we have to handle resolution :/
         case a => EmptyValidator.validate(a, validationContext)
       }
