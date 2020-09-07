@@ -9,6 +9,10 @@ import SearchComponents from "./admin/SearchComponents"
 import Services from "./admin/Services"
 import UnusedComponents from "./admin/UnusedComponents"
 import {Page} from "./Page"
+import {compose} from "redux"
+import {connect} from "react-redux"
+import ActionsUtils from "../actions/ActionsUtils"
+import {withTranslation} from "react-i18next"
 
 export class AdminPage extends React.Component {
   tabs = [
@@ -63,4 +67,8 @@ export class AdminPage extends React.Component {
 AdminPage.path = `${nkPath}/admin`
 AdminPage.header = "Admin"
 
-export default withRouter(AdminPage)
+const enhance = compose(
+  withRouter,
+)
+
+export const NkAdminPage = enhance(AdminPage)

@@ -3,10 +3,8 @@ import {visualizationUrl} from "../common/VisualizationUrl"
 import {ProcessId} from "../types"
 import {PlainStyleLink} from "./plainStyleLink"
 
-export function ProcessLink({processId, children}: PropsWithChildren<{processId: ProcessId}>) {
+export function ProcessLink({processId,...props}: PropsWithChildren<{processId: ProcessId, className?: string, title?: string}>) {
   return (
-    <PlainStyleLink to={visualizationUrl(processId)}>
-      {children}
-    </PlainStyleLink>
+    <PlainStyleLink to={visualizationUrl(processId)} {...props}/>
   )
 }

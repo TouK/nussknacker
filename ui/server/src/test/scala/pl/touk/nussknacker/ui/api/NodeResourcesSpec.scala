@@ -56,8 +56,6 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
   test("validates filter nodes") {
 
     val testProcess = ProcessTestData.sampleDisplayableProcess
-
-
     saveProcess(testProcess) {
       val data: node.Filter = node.Filter("id", Expression("spel", "#existButString"))
       val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData(),
@@ -68,6 +66,18 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
           PrettyValidationErrors.formatErrorMessage(ExpressionParseError("Bad expression type, expected: Boolean, found: String",
             data.id, Some(NodeTypingInfo.DefaultExpressionId), data.expression.expression))
         ), validationPerformed = true)
+      }
+    }
+  }
+
+  test("validates nodes using dictionaries") {
+    val testProcess = ProcessTestData.sampleDisplayableProcess
+    saveProcess(testProcess) {
+      val data: node.Filter = node.Filter("id", Expression("spel", "#DICT.Bar != #DICT.Foo"))
+      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData(), ExceptionHandlerRef(Nil)), Map(), None)
+
+      Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
+        responseAs[NodeValidationResult] shouldBe NodeValidationResult(None, List(), validationPerformed = true)
       }
     }
   }

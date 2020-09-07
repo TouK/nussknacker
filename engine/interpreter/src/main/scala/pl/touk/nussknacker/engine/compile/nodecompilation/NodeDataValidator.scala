@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeTypingInfo}
 import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 
 /*
   Currently we only validate filter nodes. In the future we should implement validation/compilation for all node types
@@ -34,8 +35,11 @@ object NodeDataValidator {
               )(implicit metaData: MetaData): ValidationResponse = {
     modelData.withThisAsContextClassLoader {
 
+      val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
+        case spel: SpelExpressionParser => spel.typingDictLabels
+      }
       val compiler = new NodeCompiler(modelData.processWithObjectsDefinition,
-        ExpressionCompiler.withoutOptimization(modelData), modelData.modelClassLoader.classLoader)
+        expressionCompiler, modelData.modelClassLoader.classLoader)
       implicit val nodeId: NodeId = NodeId(nodeData.id)
 
       nodeData match {
@@ -46,7 +50,7 @@ object NodeDataValidator {
         case a: Enricher => toValidationResponse(compiler.compileEnricher(a, validationContext))
         case a: Processor => toValidationResponse(compiler.compileProcessor(a, validationContext))
 
-        case a: Filter => new FilterValidator(modelData).validate(a, validationContext)
+        case a: Filter => new FilterValidator(modelData, expressionCompiler).validate(a, validationContext)
         //TODO: handle variable, switch, subprocess
         //subprocess is tricky as we have to handle resolution :/
         case a => EmptyValidator.validate(a, validationContext)
@@ -60,9 +64,7 @@ object NodeDataValidator {
 }
 
 //TODO: this should be converted somehow towards NodeCompiler, so that validation logic is the same during node validation and whole process compilation
-class FilterValidator(modelData: ModelData) extends NodeDataValidator[Filter] {
-
-  private val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData)
+class FilterValidator(modelData: ModelData, expressionCompiler: ExpressionCompiler) extends NodeDataValidator[Filter] {
 
   override def validate(nodeData: Filter, validationContext: ValidationContext)(implicit metaData: MetaData): ValidationResponse = {
     val validation: ValidatedNel[ProcessCompilationError, _] =

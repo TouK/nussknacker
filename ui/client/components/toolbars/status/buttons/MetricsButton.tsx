@@ -2,7 +2,7 @@ import React from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
 import {showMetrics} from "../../../../actions/nk/showMetrics"
-import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/migrate.svg"
+import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/metrics.svg"
 import {getProcessId, isSubprocess} from "../../../../reducers/selectors/graph"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 

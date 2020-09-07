@@ -9,7 +9,7 @@ import {Router} from "react-router-dom"
 import {PersistGate} from "redux-persist/integration/react"
 //https://webpack.js.org/guides/public-path/#on-the-fly
 import "./config"
-import EspApp from "./containers/EspApp"
+import {NkApp} from "./containers/NussknackerApp"
 
 import Notifications from "./containers/Notifications"
 import NussknackerInitializer from "./containers/NussknackerInitializer"
@@ -37,7 +37,7 @@ ReactDOM.render(
                   <NkThemeProvider>
                     <NussknackerInitializer>
                       <Notifications/>
-                      <EspApp/>
+                      <NkApp/>
                     </NussknackerInitializer>
                   </NkThemeProvider>
                 </Router>
