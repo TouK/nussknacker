@@ -179,7 +179,7 @@ val forkSettings = Seq(
 )
 
 val akkaV = "2.5.21" //same version as in Flink
-val flinkV = "1.10.1"
+val flinkV = "1.10.2"
 val avroV = "1.9.2" // for java time logical types conversions purpose
 val kafkaV = "2.2.0"
 val springV = "5.1.4.RELEASE"
