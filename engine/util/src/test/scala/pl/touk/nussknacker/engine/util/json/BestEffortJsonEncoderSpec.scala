@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.util.json
 
-import java.time.{LocalDateTime, ZoneId, ZonedDateTime}
+import java.time.{LocalDateTime, OffsetDateTime, ZoneId, ZoneOffset, ZonedDateTime}
 import java.util
 
 import io.circe.Json._
@@ -23,8 +23,13 @@ class BestEffortJsonEncoderSpec extends FunSpec with Matchers {
     encoder.encode(true) shouldEqual fromBoolean(true)
     encoder.encode(LocalDateTime.of(2020, 9, 12,
       11, 55, 33, 0)) shouldEqual fromString("2020-09-12T11:55:33")
-    encoder.encode(ZonedDateTime.of(2020, 9, 12,
-      11, 55, 33, 0, ZoneId.of("Europe/Warsaw"))) shouldEqual fromString("2020-09-12T11:55:33+02:00")
+
+    val zonedTime = ZonedDateTime.of(2020, 9, 12,
+          11, 55, 33, 0, ZoneId.of("Europe/Warsaw"))
+    encoder.encode(zonedTime) shouldEqual fromString("2020-09-12T11:55:33+02:00")
+    encoder.encode(zonedTime.toOffsetDateTime) shouldEqual fromString("2020-09-12T11:55:33+02:00")
+    //Default Instant encoding is in Z
+    encoder.encode(zonedTime.toInstant) shouldEqual fromString("2020-09-12T09:55:33Z")
   }
 
   it("should handle optional elements as a json") {

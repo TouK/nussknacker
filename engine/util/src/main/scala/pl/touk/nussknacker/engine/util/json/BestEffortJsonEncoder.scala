@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.util.json
 
-import java.time.{LocalDateTime, ZonedDateTime}
+import java.time.{Instant, LocalDateTime, OffsetDateTime, ZonedDateTime}
 import java.time.format.DateTimeFormatter
 
 import io.circe.{Encoder, Json}
@@ -9,8 +9,8 @@ import io.circe.java8.time
 import io.circe.java8.time._
 import pl.touk.nussknacker.engine.api.{ArgonautCirce, DisplayJson}
 import pl.touk.nussknacker.engine.util.Implicits._
-import scala.collection.JavaConverters._
 
+import scala.collection.JavaConverters._
 import scala.util.Try
 
 case class BestEffortJsonEncoder(failOnUnkown: Boolean, highPriority: PartialFunction[Any, Json] = Map()) {
@@ -41,6 +41,8 @@ case class BestEffortJsonEncoder(failOnUnkown: Boolean, highPriority: PartialFun
       case a: LocalDateTime => Encoder[LocalDateTime].apply(a)
       //Default implementation serializes to ISO_ZONED_DATE_TIME which is not handled well by some parsers...
       case a: ZonedDateTime => time.encodeZonedDateTimeWithFormatter(DateTimeFormatter.ISO_OFFSET_DATE_TIME).apply(a)
+      case a: Instant => Encoder[Instant].apply(a)
+      case a: OffsetDateTime => Encoder[OffsetDateTime].apply(a)
       case a: DisplayJson => a.asJson
       case a: scala.collection.Map[String@unchecked, _] => encodeMap(a.toMap)
       case a: java.util.Map[String@unchecked, _] => encodeMap(a.asScala.toMap)
