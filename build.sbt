@@ -580,7 +580,8 @@ lazy val util = (project in engine("util")).
         "com.github.ben-manes.caffeine" % "caffeine" % caffeineCacheV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "com.iheart" %% "ficus" % ficusV,
-        "io.circe" %% "circe-java8" % circeV
+        "io.circe" %% "circe-java8" % circeV,
+        "org.apache.avro" % "avro" % avroV % Optional
       )
     }
   ).
@@ -725,7 +726,6 @@ lazy val flinkApi = (project in engine("flink/api")).
       Seq(
         "org.apache.flink" %% "flink-streaming-java" % flinkV % "provided",
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
-
       )
     }
   ).dependsOn(api)
