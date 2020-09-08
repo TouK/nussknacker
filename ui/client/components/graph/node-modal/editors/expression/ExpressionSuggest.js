@@ -102,7 +102,9 @@ class ExpressionSuggest extends React.Component {
     return !_.isEqual(this.state.value, nextState.value) ||
         !_.isEqual(this.state.editorFocused, nextState.editorFocused) ||
         !_.isEqual(this.props.validators, nextProps.validators) ||
-        !_.isEqual(this.props.variableTypes, nextProps.variableTypes)
+        !_.isEqual(this.props.variableTypes, nextProps.variableTypes) || 
+        !_.isEqual(this.props.validationLabelInfo, nextProps.validationLabelInfo)
+        
   }
 
   componentDidUpdate(prevProps, prevState) {
