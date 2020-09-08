@@ -8,6 +8,8 @@ object Context {
 
 }
 
+case class ContextId(value: String)
+
 case class Context(id: String, variables: Map[String, Any],
                    lazyContext: LazyContext, parentContext: Option[Context]) {
 

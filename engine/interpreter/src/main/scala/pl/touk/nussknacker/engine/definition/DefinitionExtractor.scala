@@ -30,7 +30,7 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
     (obj match {
       case e:GenericNodeTransformation[_] =>
         val returnType = if (e.nodeDependencies.contains(OutputVariableNameDependency)) Unknown else Typed[Void]
-        val definition = ObjectDefinition(e.initialParameters, returnType, objWithCategories.categories)
+        val definition = ObjectDefinition(e.initialParameters, returnType, objWithCategories.categories, objWithCategories.nodeConfig)
         Right(GenericNodeTransformationMethodDef(e, definition))
       case e:WithExplicitMethodToInvoke =>
         WithExplicitMethodToInvokeMethodDefinitionExtractor.extractMethodDefinition(e,

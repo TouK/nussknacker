@@ -174,7 +174,7 @@ Processing type configuration consists of two main parts:
 
 We describe them below
 
-###Enging configuration
+###Engine configuration
 Configuration of communication with processing engine. Below we present Flink engine configuration as an example:
 
 ```
