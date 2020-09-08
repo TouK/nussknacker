@@ -1,5 +1,5 @@
 import cn from "classnames"
-import _ from "lodash"
+import {isEmpty, isEqual, map} from "lodash"
 import PropTypes from "prop-types"
 import React from "react"
 import ReactDOMServer from "react-dom/server"
@@ -50,7 +50,7 @@ class ExpressionSuggest extends React.Component {
         // otherwise our results lists will be filtered out (because entries not matches '#full.property.path' but only 'path')
         this.customAceEditorCompleter.identifierRegexps = identifierRegexpsWithoutDot
         try {
-          callback(null, _.map(suggestions, (s) => {
+          callback(null, map(suggestions, (s) => {
             const methodName = s.methodName
             const returnType = ProcessUtils.humanReadableType(s.refClazz)
             return {
@@ -71,7 +71,7 @@ class ExpressionSuggest extends React.Component {
     // We adds hash to identifier pattern to start suggestions just after hash is typed
     identifierRegexps: identifierRegexpsIncludingDot,
     getDocTooltip: (item) => {
-      if (item.description || !_.isEmpty(item.parameters)) {
+      if (item.description || !isEmpty(item.parameters)) {
         const paramsSignature = item.parameters.map(p => `${ProcessUtils.humanReadableType(p.refClazz)} ${p.name}`).join(", ")
         const javaStyleSignature = `${item.returnType} ${item.name}(${paramsSignature})`
         item.docHTML = ReactDOMServer.renderToStaticMarkup((
@@ -99,17 +99,17 @@ class ExpressionSuggest extends React.Component {
   //this shouldComponentUpdate is for cases when there are multiple instances of suggestion component in one view and to make them not interfere with each other
   //fixme maybe use this.state.id here?
   shouldComponentUpdate(nextProps, nextState) {
-    return !_.isEqual(this.state.value, nextState.value) ||
-        !_.isEqual(this.state.editorFocused, nextState.editorFocused) ||
-        !_.isEqual(this.props.validators, nextProps.validators) ||
-        !_.isEqual(this.props.variableTypes, nextProps.variableTypes) || 
-        !_.isEqual(this.props.validationLabelInfo, nextProps.validationLabelInfo)
+    return !isEqual(this.state.value, nextState.value) ||
+        !isEqual(this.state.editorFocused, nextState.editorFocused) ||
+        !isEqual(this.props.validators, nextProps.validators) ||
+        !isEqual(this.props.variableTypes, nextProps.variableTypes) || 
+        !isEqual(this.props.validationLabelInfo, nextProps.validationLabelInfo)
         
   }
 
   componentDidUpdate(prevProps, prevState) {
     this.expressionSuggester = this.createExpressionSuggester(this.props)
-    if (!_.isEqual(this.state.value, prevState.value)) {
+    if (!isEqual(this.state.value, prevState.value)) {
       this.props.inputProps.onValueChange(this.state.value)
     }
   }
@@ -190,8 +190,8 @@ class ExpressionSuggest extends React.Component {
 }
 
 function mapState(state) {
-  const processDefinitionData = !_.isEmpty(state.settings.processDefinitionData) ? state.settings.processDefinitionData : {processDefinition: {typesInformation: []}}
-  const dataResolved = !_.isEmpty(state.settings.processDefinitionData)
+  const processDefinitionData = !isEmpty(state.settings.processDefinitionData) ? state.settings.processDefinitionData : {processDefinition: {typesInformation: []}}
+  const dataResolved = !isEmpty(state.settings.processDefinitionData)
   const typesInformation = processDefinitionData.processDefinition.typesInformation
   return {
     typesInformation: typesInformation,
