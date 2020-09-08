@@ -88,7 +88,7 @@ object AvroSchemaTypeDefinitionExtractor {
 
   val ExtendedPossibleTypes: Set[TypedClass] = DefaultPossibleTypes ++ Set(Typed.typedClass[java.util.Map[String, Any]])
 
-  val dictIdProperty = "nussknackerDictionaryId"
+  val dictIdProperty = "nkDictId"
 
   private lazy val withoutOptionallyFieldsExtractor = new AvroSchemaTypeDefinitionExtractor(skipOptionalFields = true)
 
