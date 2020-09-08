@@ -4,6 +4,7 @@ import styles from "../../../../../stylesheets/select.styl"
 import ValidationLabels from "../../../../modals/ValidationLabels"
 import {Validator} from "../Validators"
 import {ExpressionObj} from "./types"
+import {isEmpty} from "lodash"
 
 type Props = {
   editorConfig: $TodoType,
@@ -25,7 +26,7 @@ const getOptions = (values) => {
 
 export default class FixedValuesEditor extends React.Component<Props> {
 
-  public static switchableTo = (expressionObj: ExpressionObj, editorConfig) => editorConfig.possibleValues.map(v => v.expression).includes(expressionObj.expression)
+  public static switchableTo = (expressionObj: ExpressionObj, editorConfig) => editorConfig.possibleValues.map(v => v.expression).includes(expressionObj.expression) || isEmpty(expressionObj.expression)
   public static switchableToHint = () => "Switch to basic mode"
   public static notSwitchableToHint = () => "Expression must be one of the expression possible values to switch basic mode"
 
