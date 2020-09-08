@@ -20,8 +20,8 @@ import {reducer as nodeDetails} from "../../../../../reducers/nodeDetailsState"
 
 var inputExprIdCounter = 0
 
-const identifierRegexpsWithoutDot = [/[#a-z0-9-_]/]
-const identifierRegexpsIncludingDot = [/[#a-z0-9-_.]/]
+const identifierRegexpsWithoutDot = [/[#a-zA-Z0-9-_]/]
+const identifierRegexpsIncludingDot = [/[#a-zA-Z0-9-_.]/]
 
 const commandFindConfiguration = {
   name: "find",
