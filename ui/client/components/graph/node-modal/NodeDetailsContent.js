@@ -652,11 +652,7 @@ export class NodeDetailsContent extends React.Component {
 
   availableFields = () => {
     if (this.props.dynamicParameterDefinitions) {
-      const commonFields = ["id", "outputVar"]
-      const paramFields = this.props.dynamicParameterDefinitions.map(param => param.name)
-      const branchParamsFields = this.state?.editedNode?.branchParameters
-        .flatMap(branchParam => branchParam.parameters.map(param => branchErrorFieldName(param.name, branchParam.branchId)))
-      _.concat(commonFields, paramFields, branchParamsFields)
+      return this.joinFields(this.props.dynamicParameterDefinitions)
     }
     switch (NodeUtils.nodeType(this.state.editedNode)) {
       case "Source": {
@@ -689,11 +685,7 @@ export class NodeDetailsContent extends React.Component {
         return _.concat(commonFields, paramFields)
       }
       case "Join": {
-        const commonFields = ["id", "outputVar"]
-        const paramFields = this.state.editedNode.parameters.map(param => param.name)
-        const branchParamsFields = this.state.editedNode.branchParameters
-          .flatMap(branchParam => branchParam.parameters.map(param => branchErrorFieldName(param.name, branchParam.branchId)))
-        return _.concat(commonFields, paramFields, branchParamsFields)
+        return this.joinFields(this.state.editedNode.parameters)
       }
       case "CustomNode": {
         const commonFields = ["id", "outputVar"]
@@ -719,6 +711,14 @@ export class NodeDetailsContent extends React.Component {
       default:
         return []
     }
+  }
+
+  joinFields = (parametersFromDefinition) => {
+    const commonFields = ["id", "outputVar"]
+    const paramFields = parametersFromDefinition.map(param => param.name)
+    const branchParamsFields = this.state?.editedNode?.branchParameters
+      .flatMap(branchParam => branchParam.parameters.map(param => branchErrorFieldName(param.name, branchParam.branchId)))
+    return _.concat(commonFields, paramFields, branchParamsFields)
   }
 
   render() {
