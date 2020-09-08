@@ -83,7 +83,7 @@ object validationHelpers {
   object UnionTransformer extends CustomStreamTransformer {
 
     @MethodToInvoke
-    def execute(@BranchParamName("key") keyByBranchId: Map[String, LazyParameter[_]], // key is only for runtime purpose
+    def execute(@BranchParamName("key") keyByBranchId: Map[String, LazyParameter[CharSequence]], // key is only for runtime purpose
                 @BranchParamName("value") valueByBranchId: Map[String, LazyParameter[_]],
                 @OutputVariableName variableName: String): JoinContextTransformation = {
       ContextTransformation
