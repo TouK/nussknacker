@@ -35,6 +35,8 @@ export default function ValidationLabels(props: Props) {
     )
   )
 
+  // TODO: We're assuming that we have disjoint union of type info & validation errors, which is not always the case.
+  // It's possible that expression is valid and it's type is known, but a different type is expected.
   return (
     <div className={`validation-labels ${additionalClassName}`}>
       { isValid ? (
