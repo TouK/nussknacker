@@ -1,5 +1,5 @@
 import React from "react"
-import _ from "lodash"
+import {isEmpty} from "lodash"
 import {Validator, withoutDuplications} from "../graph/node-modal/editors/Validators"
 
 type Props = {
@@ -25,7 +25,7 @@ export default function ValidationLabels(props: Props) {
       description: validator.description && validator.description(),
     }))
 
-  const isValid: boolean = _.isEmpty(validationErrors)
+  const isValid: boolean = isEmpty(validationErrors)
 
   const renderErrorLablels = () => validationErrors.map(
     (validationError, ix) => (
