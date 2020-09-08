@@ -652,7 +652,11 @@ export class NodeDetailsContent extends React.Component {
 
   availableFields = () => {
     if (this.props.dynamicParameterDefinitions) {
-      return this.props.dynamicParameterDefinitions.map(param => param.name)
+      const commonFields = ["id", "outputVar"]
+      const paramFields = this.props.dynamicParameterDefinitions.map(param => param.name)
+      const branchParamsFields = this.state?.editedNode?.branchParameters
+        .flatMap(branchParam => branchParam.parameters.map(param => branchErrorFieldName(param.name, branchParam.branchId)))
+      _.concat(commonFields, paramFields, branchParamsFields)
     }
     switch (NodeUtils.nodeType(this.state.editedNode)) {
       case "Source": {
