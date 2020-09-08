@@ -8,11 +8,10 @@ export type UIObjectDefinition = {
 }
 
 export type TypingResult = {
-    name: string,
-    display: string,
-    refClazzName: string,
-    params: TypingResult[],
     type: string,
+    display: string,
+    refClazzName?: string,
+    params?: TypingResult[],
 }
 
 export type UIParameter = {
