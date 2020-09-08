@@ -51,7 +51,8 @@ class AvroSchemaTypeDefinitionExtractor(skipOptionalFields: Boolean) {
       case Schema.Type.BYTES | Schema.Type.FIXED if schema.getLogicalType != null && schema.getLogicalType.isInstanceOf[LogicalTypes.Decimal] =>
         Typed[java.math.BigDecimal]
       case Schema.Type.STRING =>
-        Typed[CharSequence]
+        val baseType = Typed.typedClass[CharSequence]
+        Option(schema.getProp(AvroSchemaTypeDefinitionExtractor.dictIdProperty)).map(Typed.taggedDictValue(baseType, _)).getOrElse(baseType)
       case Schema.Type.BYTES =>
         Typed[ByteBuffer]
       case Schema.Type.FIXED =>
@@ -86,6 +87,8 @@ object AvroSchemaTypeDefinitionExtractor {
   val DefaultPossibleTypes: Set[TypedClass] = Set(Typed.typedClass[GenericRecord])
 
   val ExtendedPossibleTypes: Set[TypedClass] = DefaultPossibleTypes ++ Set(Typed.typedClass[java.util.Map[String, Any]])
+
+  val dictIdProperty = "nkDictId"
 
   private lazy val withoutOptionallyFieldsExtractor = new AvroSchemaTypeDefinitionExtractor(skipOptionalFields = true)
 

@@ -7,9 +7,11 @@ import org.apache.avro.generic.GenericRecord
 import org.scalatest.{FunSpec, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.dict.DictInstance
+import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, TypedExpression}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedDict}
 import pl.touk.nussknacker.engine.avro.schema.{PaymentV1, PaymentV2}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
@@ -20,7 +22,9 @@ import scala.reflect.runtime.universe._
 
 class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
 
-  implicit val nid: NodeId = NodeId("")
+  private implicit val nid: NodeId = NodeId("")
+
+  private val dictId = "dict1"
 
   it("should recognize record with simple fields") {
     val schema = wrapWithRecordSchema(
@@ -149,8 +153,25 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
     parse[Map[String, Any]]("#input.attributes", ctx) should be ('invalid)
   }
 
+  it("should add dictionaryId if annotated") {
+    val schema = wrapWithRecordSchema(
+      s"""[
+        |  {
+        |    "name": "withDict",
+        |    "type": "string",
+        |    "${AvroSchemaTypeDefinitionExtractor.dictIdProperty}": "$dictId"
+        |  }
+        |]""".stripMargin)
+    val ctx = ValidationContext.empty.withVariable("input",
+      AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)).andThen(_.withVariable("DICT1", TypedDict(dictId, Typed.typedClass[String]))).toOption.get
+
+    parse[CharSequence]("#input.withDict", ctx) should be ('valid)
+    parse[Boolean]("#input.withDict == #DICT1['key1']", ctx) should be ('valid)
+    parse[Boolean]("#input.withDict == #DICT1['noKey']", ctx) should be ('invalid)
+  }
+
   private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, TypedExpression] = {
-    SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(Map.empty), enableSpelForceCompile = true,
+    SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(Map(dictId -> EmbeddedDictDefinition(Map("key1" -> "value1")))), enableSpelForceCompile = true,
       strictTypeChecking = true, Nil, Standard, strictMethodsChecking = true)(ClassExtractionSettings.Default).parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 
