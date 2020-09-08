@@ -90,7 +90,7 @@ object ExampleOAuth2ServiceFactory {
       "clientSecret",
       "clientId",
       URI.create("https://api.github.com/user"),
-      ProfileFormat.GITHUB,
+      Some(ProfileFormat.GITHUB),
       URI.create("https://github.com/login/oauth/access_token"),
       URI.create("http://demo.nussknacker.pl"),
       false

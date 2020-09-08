@@ -79,6 +79,4 @@ object OAuth2ClientApi {
   }
 
   @JsonCodec case class DefaultAccessTokenResponse(access_token: String, token_type: String, refresh_token: Option[String])
-  @JsonCodec case class GitHubProfileResponse(id: Long, email: Option[String], login: Option[String])
-  @JsonCodec case class Auth0ProfileResponse(sub: String, email: Option[String], username: Option[String])
 }
