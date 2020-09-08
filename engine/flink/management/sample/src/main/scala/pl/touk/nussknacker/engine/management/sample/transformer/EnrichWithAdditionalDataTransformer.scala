@@ -40,6 +40,8 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
         NextParameters(
           List(Parameter[Any](additionalDataValueParameter).copy(additionalVariables = right(byBranch).map(contexts).getOrElse(ValidationContext()).localVariables, isLazyParameter = true)), error
         )
+      case TransformationStep((`roleParameter`, FailedToDefineParameter) :: (`keyParameter`, _) ::Nil, _) =>
+        FinalResults(ValidationContext())
       case TransformationStep((`roleParameter`, DefinedEagerBranchParameter(byBranch: Map[String, String]@unchecked, _)) :: (`keyParameter`, _) :: (`additionalDataValueParameter`, rightValue: DefinedSingleParameter) ::Nil, _)
         =>
         val outName = OutputVariableNameDependency.extract(dependencies)
@@ -53,7 +55,7 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
     private def right(byBranch: Map[String, String]): Option[String] = byBranch.find(_._2 == "Additional data").map(_._1)
 
     override def initialParameters: List[Parameter] = List(
-      Parameter[Boolean](roleParameter).copy(branchParam = true, editor = Some(FixedValuesParameterEditor(roleValues.map(role => FixedExpressionValue(s"'$role'", role))))),
+      Parameter[String](roleParameter).copy(branchParam = true, editor = Some(FixedValuesParameterEditor(roleValues.map(role => FixedExpressionValue(s"'$role'", role))))),
       Parameter[String](keyParameter).copy(branchParam = true, isLazyParameter = true)
     )
 
