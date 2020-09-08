@@ -1,10 +1,11 @@
 import React from "react"
-import {editors, EditorType, ParamType, simpleEditorValidators} from "./expression/Editor"
+import {editors, EditorType, simpleEditorValidators} from "./expression/Editor"
 import {isEmpty} from "lodash"
 import {ExpressionObj} from "./expression/types"
 import {spelFormatters} from "./expression/Formatter"
 import {VariableTypes} from "../../../../types"
 import {Error} from "./Validators"
+import {ParamType} from "./types"
 
 type Props = {
   expressionObj: ExpressionObj,
