@@ -91,7 +91,7 @@ class Services extends BaseAdminTab {
         {_.map(params, (param) => this.formRow(
           `param_${  param.name}`,
           <span>{param.name}
-            <div className="labelFooter">{ProcessUtils.humanReadableType(param.refClazzName)}</div></span>,
+            <div className="labelFooter">{ProcessUtils.humanReadableType(param.typ)}</div></span>,
           <span>
             <InputWithFocus
               className="node-input"

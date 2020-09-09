@@ -335,6 +335,7 @@ export class NodeDetailsContent extends React.Component {
           />
         )
       case "Variable":
+        const inferredType = _.head(this.props?.typedExpressions)?.typ
         return (
           <Variable
             renderFieldLabel={this.renderFieldLabel}
@@ -345,7 +346,7 @@ export class NodeDetailsContent extends React.Component {
             showValidation={showValidation}
             variableTypes={variableTypes}
             errors={fieldErrors}
-            inferredVariableType={_.head(this.props?.typedExpressions)?.typ.display}
+            inferredVariableType={inferredType && ProcessUtils.humanReadableType(inferredType)}
           />
         )
       case "Switch":
@@ -641,7 +642,7 @@ export class NodeDetailsContent extends React.Component {
     return (
       <div className="node-label" title={label}>{label}:
         {parameter ?
-          <div className="labelFooter">{ProcessUtils.humanReadableType(parameter.typ.refClazzName)}</div> : null}
+          <div className="labelFooter">{ProcessUtils.humanReadableType(parameter.typ)}</div> : null}
       </div>
     )
   }

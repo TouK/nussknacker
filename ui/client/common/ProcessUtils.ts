@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import _ from "lodash"
-import NodeUtils from "../components/graph/NodeUtils"
+import {NodeResults, TypingResult} from "../types"
 
 class ProcessUtils {
 
@@ -48,13 +48,13 @@ class ProcessUtils {
   }
 
   //see BranchEndDefinition.artificialNodeId
-  findVariablesForBranches = (nodeResults) => (nodeId) => {
+  findVariablesForBranches = (nodeResults: NodeResults) => (nodeId) => {
     //we find all nodes matching pattern encoding branch and edge and extract branch id
     const escapedNodeId = this.escapeNodeIdForRegexp(nodeId)
-    return _.transform(nodeResults || {}, function(result, value, key) {
+    return _.transform(nodeResults || {}, function(result, nodeResult, key: string) {
       const branch = key.match(new RegExp(`^\\$edge-(.*)-${escapedNodeId}$`))
       if (branch && branch.length > 1) {
-        result[branch[1]] = value.variableTypes
+        result[branch[1]] = nodeResult.variableTypes
       }
     }, {})
   }
@@ -92,7 +92,7 @@ class ProcessUtils {
   }
 
   _findVariablesDeclaredBeforeNode = (nodeId, process, processDefinition) => {
-    const previousNodes = this._findPreviousNodes(nodeId, process, processDefinition)
+    const previousNodes = this._findPreviousNodes(nodeId, process)
     const variablesDefinedBeforeNodeList = _.flatMap(previousNodes, (nodeId) => {
       return this._findVariablesDefinedInProcess(nodeId, process, processDefinition)
     })
@@ -206,16 +206,7 @@ class ProcessUtils {
     return this.findNodeDefinitionId(node) || this.getNodeBaseTypeCamelCase(node) || "$properties"
   }
 
-  humanReadableType = (refClazzOrName) => {
-    const refClazzName = (refClazzOrName || {}).refClazzName || refClazzOrName
-    if (_.isEmpty(refClazzName)) {
-      return ""
-    } else {
-      const typeSplitted = _.split(refClazzName, ".")
-      const lastClazzNamePart = _.last(typeSplitted).replace("$", "")
-      return _.upperFirst(lastClazzNamePart)
-    }
-  }
+  humanReadableType = (typingResult: TypingResult): string => typingResult.display
 
   _findPreviousNodes = (nodeId, process) => {
     const nodeEdge = _.find(process.edges, (edge) => _.isEqual(edge.to, nodeId))
