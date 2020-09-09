@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.definition
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitMethodToInvoke}
+import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, Parameter, RegExpParameterValidator, WithExplicitMethodToInvoke}
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process._
@@ -85,6 +85,12 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     val typedGlobalDef = definition("typedGlobal")
     typedGlobalDef.obj shouldBe SampleTypedVariable
     typedGlobalDef.returnType shouldBe Typed(classOf[Int])
+  }
+
+  test("extracts validators from config") {
+    val parameter = processDefinition.customStreamTransformers("transformer1")._1.parameters.find(_.name == "param1")
+    parameter.map(_.validators) shouldBe Some(List(MandatoryParameterValidator, RegExpParameterValidator(".*", "has to match...", "really has to match...")))
+
   }
 
   object TestCreator extends ProcessConfigCreator {
