@@ -74,6 +74,9 @@ const configureValidators = (paramConfig: $TodoType): Array<Validator> => {
 
 export const simpleEditorValidators = (paramConfig: $TodoType, errors: Array<Error>, fieldName: string, fieldLabel: string): Array<Validator> => {
   const configuredValidators = configureValidators(paramConfig)
+  // Identifier or field is in one of places: fieldName or fieldLabel. Because of this we need to collect errors from both of them.
+  // Especially for branch fields, "common" branch parameter identifier is in fieldLabel and identifier for specific branch is in fieldName.
+  // We want to handle both error types: common branch parameter errors and errors for specific branch.
   const validatorFromErrorsForFieldName = fieldName == null || isEmpty(errors) ? [] : [errorValidator(errors, fieldName)]
   const validatorFromErrorsForFieldLabel = fieldLabel == null || fieldLabel == fieldName || isEmpty(errors) ? [] : [errorValidator(errors, fieldLabel)]
   return concat(
