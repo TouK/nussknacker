@@ -40,7 +40,7 @@ class EditableEditor extends React.Component<Props, State> {
 
     const Editor = editors[editorType]
 
-    const validators = simpleEditorValidators(param, errors, fieldName || fieldLabel)
+    const validators = simpleEditorValidators(param, errors, fieldName, fieldLabel)
     return (
       <div className={`${rowClassName ? rowClassName : " node-row"}`}>
         {fieldLabel && renderFieldLabel(fieldLabel)}
