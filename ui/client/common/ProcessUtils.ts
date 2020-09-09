@@ -60,7 +60,7 @@ class ProcessUtils {
   }
 
   //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
-  escapeNodeIdForRegexp = (id) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
+  escapeNodeIdForRegexp = (id) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&")
 
   findAvailableVariables = (processDefinition, processCategory, process) => (nodeId, parameterDefinition) => {
     const globalVariablesWithoutProcessCategory = this._findGlobalVariablesWithoutProcessCategory(processDefinition.globalVariables, processCategory)
@@ -197,7 +197,7 @@ class ProcessUtils {
 
   findNodeDefinitionIdOrType = (node) => this.findNodeDefinitionId(node) || node.type || null
 
-  getNodeBaseTypeCamelCase = (node) => node.type && node.type.charAt(0).toLowerCase() + node.type.slice(1);
+  getNodeBaseTypeCamelCase = (node) => node.type && node.type.charAt(0).toLowerCase() + node.type.slice(1)
 
   findNodeConfigName = (node) => {
     // First we try to find id of node (config for specific custom node by id).

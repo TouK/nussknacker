@@ -2,7 +2,7 @@
 import _ from "lodash"
 import fp from "lodash/fp"
 import * as ProcessDefinitionUtils from "../../common/ProcessDefinitionUtils"
-import ProcessUtils from "../../common/ProcessUtils.js"
+import ProcessUtils from "../../common/ProcessUtils"
 import {
   Edge,
   GroupId,
