@@ -99,7 +99,7 @@ class ProcessValidation(validators: ProcessingTypeDataProvider[ProcessValidator]
 
   private def nodeInfoToResult(typingInfo: NodeTypingInfo)
   = NodeTypingData(typingInfo.inputValidationContext.variables,
-    typingInfo.parameters.map(_.map(UIProcessObjectsFactory.createUIParameter(_, ParameterConfig.empty))),
+    typingInfo.parameters.map(_.map(UIProcessObjectsFactory.createUIParameter)),
     typingInfo.expressionsTypingInfo)
 
   private def warningValidation(process: DisplayableProcess): ValidationResult = {

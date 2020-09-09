@@ -44,8 +44,7 @@ class EditorPossibleValuesBasedDefaultValueDeterminerTest extends FunSuite with 
     EditorPossibleValuesBasedDefaultValueDeterminer.determineParameterDefaultValue(
       definition,
       createUIParameter(
-        Parameter.optional[String]("id").copy(editor = editor),
-        ParameterConfig.empty
+        Parameter.optional[String]("id").copy(editor = editor)
       )
     )
   }

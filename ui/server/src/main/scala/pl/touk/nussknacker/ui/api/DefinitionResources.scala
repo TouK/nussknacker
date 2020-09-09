@@ -33,6 +33,7 @@ class DefinitionResources(modelData: ProcessingTypeDataProvider[ModelData],
     } ~ path("processDefinitionData" / "services") {
       get {
         complete {
+          val pd = modelData.mapValues(_.processDefinition).forType("streaming")
           modelData.mapValues(_.processDefinition.services.mapValues(UIProcessObjectsFactory.createUIObjectDefinition)).all
         }
       }

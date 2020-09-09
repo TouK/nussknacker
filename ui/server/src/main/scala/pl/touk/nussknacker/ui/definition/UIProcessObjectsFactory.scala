@@ -1,29 +1,34 @@
 package pl.touk.nussknacker.ui.definition
 
+import java.lang.annotation.Annotation
+
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.definition.{Parameter, RawParameterEditor}
 import pl.touk.nussknacker.engine.api.process.{AdditionalPropertyConfig, ParameterConfig, SingleNodeConfig}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.api.{MetaData, definition}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
+import pl.touk.nussknacker.engine.definition.parameter.ParameterData
+import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
+import pl.touk.nussknacker.engine.definition.parameter.validator.{ValidatorExtractorParameters, ValidatorsExtractor}
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
 import pl.touk.nussknacker.engine.util.config.FicusReaders._
 import pl.touk.nussknacker.restmodel.definition.{NodeGroup, NodeToAdd, UIClazzDefinition, UIObjectDefinition, UIParameter, UIProcessDefinition, UIProcessObjects, UiAdditionalPropertyConfig}
 import pl.touk.nussknacker.ui.definition.additionalproperty.{AdditionalPropertyValidatorDeterminerChain, UiAdditionalPropertyEditorDeterminer}
 import pl.touk.nussknacker.ui.definition.defaults.{DefaultValueDeterminerChain, ParamDefaultValueConfig}
-import pl.touk.nussknacker.ui.definition.editor.ParameterEditorDeterminerChain
-import pl.touk.nussknacker.ui.definition.validator.ParameterValidatorsDeterminerChain
 import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+
+import scala.reflect.ClassTag
 
 object UIProcessObjectsFactory {
 
@@ -46,9 +51,11 @@ object UIProcessObjectsFactory {
 
     val dynamicNodesConfig = uiProcessDefinition.allDefinitions.mapValues(_.nodeConfig)
 
-    val nodesConfig = NodesConfigCombiner.combine(fixedNodesConfig, dynamicNodesConfig)
+    //we append fixedNodesConfig, because configuration of default nodes (filters, switches) etc. will not be present in dynamicNodesConfig...
+    //maybe we can put them also in uiProcessDefinition.allDefinitions?
+    val finalNodesConfig = NodesConfigCombiner.combine(fixedNodesConfig, dynamicNodesConfig)
 
-    val defaultParametersValues = ParamDefaultValueConfig(nodesConfig.map { case (k, v) => (k, v.params.getOrElse(Map.empty)) })
+    val defaultParametersValues = ParamDefaultValueConfig(finalNodesConfig.map { case (k, v) => (k, v.params.getOrElse(Map.empty)) })
     val defaultParametersFactory = DefaultValueDeterminerChain(defaultParametersValues)
 
     val nodeCategoryMapping = processConfig.getOrElse[Map[String, Option[String]]]("nodeCategoryMapping", Map.empty)
@@ -65,14 +72,14 @@ object UIProcessObjectsFactory {
         processDefinition = uiProcessDefinition,
         isSubprocess = isSubprocess,
         defaultsStrategy = defaultParametersFactory,
-        nodesConfig = nodesConfig,
+        nodesConfig = finalNodesConfig,
         nodeCategoryMapping = nodeCategoryMapping,
         typesForCategories = typesForCategories,
         sinkAdditionalData = sinkAdditionalData,
         customTransformerAdditionalData = customTransformerAdditionalData
       ),
       processDefinition = uiProcessDefinition,
-      nodesConfig = nodesConfig,
+      nodesConfig = finalNodesConfig,
       additionalPropertiesConfig = additionalPropertiesConfig,
       edgesForNodes = DefinitionPreparer.prepareEdgeTypes(
         user = user,
@@ -93,23 +100,37 @@ object UIProcessObjectsFactory {
                                     fixedNodesConfig: Map[String, SingleNodeConfig]): Map[String, ObjectDefinition] = {
     val subprocessInputs = subprocessesDetails.collect {
       case SubprocessDetails(CanonicalProcess(MetaData(id, _, _, _, _), _, FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _, additionalBranches), category) =>
-        val typedParameters = parameters.map(extractSubprocessParam(classLoader))
+        val config = fixedNodesConfig.getOrElse(id, SingleNodeConfig.zero)
+        val typedParameters = parameters.map(extractSubprocessParam(classLoader, config))
         (id, new ObjectDefinition(typedParameters, Typed[java.util.Map[String, Any]], List(category), fixedNodesConfig.getOrElse(id, SingleNodeConfig.zero)))
     }.toMap
     subprocessInputs
   }
 
-  private def extractSubprocessParam(classLoader: ClassLoader)(p: SubprocessParameter) = {
+  private def extractSubprocessParam(classLoader: ClassLoader, nodeConfig: SingleNodeConfig)(p: SubprocessParameter): Parameter = {
     val runtimeClass = p.typ.toRuntimeClass(classLoader)
     //TODO: currently if we cannot parse parameter class we assume it's unknown
     val typ = runtimeClass.map(Typed(_)).getOrElse(Unknown)
-    //subprocess parameter name, editor and validators yet can not be configured via annotation or process creator
-    definition.Parameter.optional(p.name, typ)
+    val config = nodeConfig.params.flatMap(_.get(p.name)).getOrElse(ParameterConfig.empty)
+    val parameterData = new ParameterData {
+      override def typing: TypingResult = typ
+      override def getAnnotation[T <: Annotation : ClassTag]: Option[T] = None
+    }
+    Parameter(
+      name = p.name,
+      typ = typ,
+      editor = EditorExtractor.extract(parameterData, config),
+      validators = ValidatorsExtractor.extract(ValidatorExtractorParameters(parameterData, isOptional = true, config)),
+      additionalVariables = Map.empty,
+      branchParam = false,
+      isLazyParameter = false,
+      scalaOptionParameter = false,
+      javaOptionalParameter = false)
   }
 
   def createUIObjectDefinition(objectDefinition: ObjectDefinition): UIObjectDefinition = {
     UIObjectDefinition(
-      parameters = objectDefinition.parameters.map(param => createUIParameter(param, objectDefinition.nodeConfig.paramConfig(param.name))),
+      parameters = objectDefinition.parameters.map(param => createUIParameter(param)),
       returnType = if (objectDefinition.hasNoReturn) None else Some(objectDefinition.returnType),
       categories = objectDefinition.categories,
       nodeConfig = objectDefinition.nodeConfig
@@ -133,12 +154,12 @@ object UIProcessObjectsFactory {
     uiProcessDefinition
   }
 
-  def createUIParameter(parameter: Parameter, paramConfig: ParameterConfig): UIParameter = {
+  def createUIParameter(parameter: Parameter): UIParameter = {
     UIParameter(
       name = parameter.name,
       typ = parameter.typ,
-      editor = ParameterEditorDeterminerChain(parameter, paramConfig).determineEditor(),
-      validators = ParameterValidatorsDeterminerChain(paramConfig).determineValidators(parameter),
+      editor = parameter.editor.getOrElse(RawParameterEditor),
+      validators = parameter.validators,
       additionalVariables = parameter.additionalVariables,
       branchParam = parameter.branchParam
     )

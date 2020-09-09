@@ -1,9 +1,12 @@
-package pl.touk.nussknacker.engine.definition
+package pl.touk.nussknacker.engine.definition.parameter.editor
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
+import pl.touk.nussknacker.engine.api.process.ParameterConfig
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.definition.parameter.ParameterData
 
 class EditorExtractorTest extends FunSuite with Matchers {
 
@@ -42,13 +45,13 @@ class EditorExtractorTest extends FunSuite with Matchers {
   private val paramRawEditorAnnotatedLazy = getFirstParam("rawEditorAnnotatedLazy", classOf[LazyParameter[String]])
 
 
-  test("assign None when no annotation detected") {
-    EditorExtractor.extract(paramNotAnnotated) shouldBe None
+  test("assign RawEditor when no annotation detected") {
+    EditorExtractor.extract(paramNotAnnotated, ParameterConfig.empty) shouldBe Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))
   }
 
   test("detect @DualEditor annotation") {
 
-    EditorExtractor.extract(paramDualEditorAnnotated) shouldBe
+    EditorExtractor.extract(paramDualEditorAnnotated, ParameterConfig.empty) shouldBe
       Some(DualParameterEditor(
         simpleEditor = FixedValuesParameterEditor(
           possibleValues = List(FixedExpressionValue("'test'", "test2"))
@@ -56,7 +59,7 @@ class EditorExtractorTest extends FunSuite with Matchers {
         defaultMode = DualEditorMode.SIMPLE
       ))
 
-    EditorExtractor.extract(paramDualEditorLazyAnnotated) shouldBe
+    EditorExtractor.extract(paramDualEditorLazyAnnotated, ParameterConfig.empty) shouldBe
       Some(DualParameterEditor(
         simpleEditor = DateParameterEditor,
         defaultMode = DualEditorMode.SIMPLE
@@ -65,21 +68,22 @@ class EditorExtractorTest extends FunSuite with Matchers {
 
   test("detect @SimpleEditor annotation") {
 
-    EditorExtractor.extract(paramSimpleEditorAnnotated) shouldBe
+    EditorExtractor.extract(paramSimpleEditorAnnotated, ParameterConfig.empty) shouldBe
       Some(BoolParameterEditor)
 
-    EditorExtractor.extract(paramSimpleEditorLazyAnnotated) shouldBe
+    EditorExtractor.extract(paramSimpleEditorLazyAnnotated, ParameterConfig.empty) shouldBe
       Some(BoolParameterEditor)
   }
 
   test("detect @RawEditor annotation") {
 
-    EditorExtractor.extract(paramRawEditorAnnotated) shouldBe Some(RawParameterEditor)
+    EditorExtractor.extract(paramRawEditorAnnotated, ParameterConfig.empty) shouldBe Some(RawParameterEditor)
 
-    EditorExtractor.extract(paramRawEditorAnnotatedLazy) shouldBe Some(RawParameterEditor)
+    EditorExtractor.extract(paramRawEditorAnnotatedLazy, ParameterConfig.empty) shouldBe Some(RawParameterEditor)
   }
 
   private def getFirstParam(name: String, params: Class[_]*) = {
-    this.getClass.getDeclaredMethod(name, params: _*).getParameters.apply(0)
+    val method = this.getClass.getDeclaredMethod(name, params: _*).getParameters.apply(0)
+    ParameterData(method, Typed.typedClass(method.getType))
   }
 }
