@@ -72,12 +72,14 @@ const configureValidators = (paramConfig: $TodoType): Array<Validator> => {
     .map(v => v.fun(v.args))
 }
 
-export const simpleEditorValidators = (paramConfig: $TodoType, errors: Array<Error>, fieldLabel: string): Array<Validator> => {
+export const simpleEditorValidators = (paramConfig: $TodoType, errors: Array<Error>, fieldName: string, fieldLabel: string): Array<Validator> => {
   const configuredValidators = configureValidators(paramConfig)
-  const validatorFromErrors = isEmpty(errors) ? [] : [errorValidator(errors, fieldLabel)]
+  const validatorFromErrorsForFieldName = fieldName == null || isEmpty(errors) ? [] : [errorValidator(errors, fieldName)]
+  const validatorFromErrorsForFieldLabel = fieldLabel == null || fieldLabel == fieldName || isEmpty(errors) ? [] : [errorValidator(errors, fieldLabel)]
   return concat(
     configuredValidators,
-    validatorFromErrors,
+    validatorFromErrorsForFieldName,
+    validatorFromErrorsForFieldLabel,
   )
 }
 
