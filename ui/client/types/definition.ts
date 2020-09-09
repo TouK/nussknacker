@@ -7,12 +7,41 @@ export type UIObjectDefinition = {
     nodeConfig: SingleNodeConfig,
 }
 
-export type TypingResult = {
+interface TypingResultBase {
     type: string,
-    display: string,
-    refClazzName?: string,
-    params?: TypingResult[],
+    display: string, 
 }
+
+type TypedClass = {
+    refClazzName: string,
+    params: Array<TypingResult>, 
+}
+
+type TypedObjectTypingResult = TypingResultBase & TypedClass & {
+    fields: Array<TypingResult>,
+}
+
+type TypedDict = TypingResultBase & {
+    id: string,
+    valueType: SingleTypingResult,
+}
+
+type TypedTaggedValue = (TypedObjectTypingResult | TypedDict | TypedClass) & {
+    tag: string,
+}
+
+type SingleTypingResult = TypingResultBase & 
+    (TypedObjectTypingResult | TypedDict | TypedTaggedValue | TypedClass)
+
+type UnknownTyping = TypingResultBase & {
+    params: Array<TypingResult>,
+}
+
+type UnionTyping = TypingResultBase & {
+    union: Array<SingleTypingResult>,
+}
+
+export type TypingResult = UnknownTyping | SingleTypingResult | UnionTyping
 
 export type UIParameter = {
      name: string,
