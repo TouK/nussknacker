@@ -9,7 +9,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ClientApi.DefaultAccessTokenResponse
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.OAuth2ServerError
-import pl.touk.nussknacker.ui.security.oauth2.{DefaultOAuth2Service, DefaultOAuth2ServiceFactory, OAuth2AuthenticateData, OAuth2ErrorHandler}
+import pl.touk.nussknacker.ui.security.oauth2.{DefaultOAuth2Service, DefaultOAuth2ServiceFactory, OAuth2AuthenticateData, OAuth2ErrorHandler, OAuth2Service}
 import sttp.client.Response
 import sttp.client.testing.SttpBackendStub
 import sttp.model.{StatusCode, Uri}
@@ -32,7 +32,7 @@ class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
     DefaultOAuth2ServiceFactory.service(config, List.empty)
   }
 
-  def createDefaultServiceMock(body: Json, uri: URI): DefaultOAuth2Service = {
+  def createDefaultServiceMock(body: Json, uri: URI): OAuth2Service = {
     implicit val testingBackend = SttpBackendStub
       .asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(uri)))
