@@ -1,11 +1,13 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
+import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ClientApi.DefaultAccessTokenResponse
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2CollectiveException, OAuth2JwtError}
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -31,26 +33,18 @@ class DefaultOAuth2Service[ProfileResponse: Decoder](clientApi: OAuth2ClientApi[
 
   private def getProfile(token: String): Future[ProfileResponse] = {
     val profileFromJwtResult = Validated.fromOption(configuration.jwt.map(new JwtValidator[ProfileResponse](_)),
-      NonEmptyList.of("authentication.jwt configuration not provided")) andThen { jwtValidator =>
+      NonEmptyList.of(OAuth2JwtError("authentication.jwt configuration not provided"))) andThen { jwtValidator =>
       jwtValidator.getProfileFromJwt(token)
     }
 
     /* Firstly checks whether a profile can be obtained from the token (provided authentication.jwt configured),
      * secondly tries to obtain the profile from a sent request.
      */
-    Future {
-      val profileResult = profileFromJwtResult findValid {
-        val transformed = clientApi.profileRequest(token) map { profile =>
-          profile.validNel[String]
-        } recover { case ex: Exception =>
-          ex.getMessage.invalidNel[ProfileResponse]
-        }
-        Await.result(transformed, Duration.Inf)
+    profileFromJwtResult match {
+      case Valid(profile) => Future(profile)
+      case Invalid(jwtErrors) => clientApi.profileRequest(token) recover { case OAuth2CollectiveException(requestErrors) =>
+        throw OAuth2CollectiveException(jwtErrors concatNel requestErrors)
       }
-
-      profileResult.valueOr({ errors =>
-        throw new Exception(errors.toList.mkString("Errors in obtaining user profile:\n - ", "\n - ", ""))
-      })
     }
   }
 }

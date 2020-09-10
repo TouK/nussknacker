@@ -6,7 +6,7 @@ import io.circe.Json
 import org.scalatest.{FlatSpec, Matchers, Suite}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.OAuth2ServerError
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2CollectiveException, OAuth2ServerError}
 import pl.touk.nussknacker.ui.security.oauth2.{OAuth2AuthenticateData, OAuth2ErrorHandler}
 import pl.touk.nussknacker.ui.security.ouath2.ExampleOAuth2ServiceFactory.{TestAccessTokenResponse, TestPermissionResponse, TestProfileClearanceResponse, TestProfileResponse}
 import sttp.client.Response
@@ -52,15 +52,17 @@ class ExampleOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
 
   it should ("handling BadRequest response from authenticate request") in {
     val service = createErrorOAuth2Service(config.accessTokenUri, StatusCode.BadRequest)
-    service.authenticate("6V1reBXblpmfjRJP").recover{
+    service.authenticate("6V1reBXblpmfjRJP").recover {
       case OAuth2ErrorHandler(_) => succeed
     }.futureValue
   }
 
   it should ("should InternalServerError response from authenticate request") in {
     val service = createErrorOAuth2Service(config.accessTokenUri, StatusCode.InternalServerError)
-    service.authenticate("6V1reBXblpmfjRJP").recover{
-      case _: OAuth2ServerError => succeed
+    service.authenticate("6V1reBXblpmfjRJP").recover {
+      case ex@OAuth2CollectiveException(errors) => errors.toList.collectFirst {
+        case _: OAuth2ServerError => succeed
+      }.getOrElse(throw ex)
     }.futureValue
   }
 
@@ -146,7 +148,9 @@ class ExampleOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
   it should ("should InternalServerError response from profile request") in {
     val service = createErrorOAuth2Service(config.profileUri, StatusCode.InternalServerError)
     service.authorize("6V1reBXblpmfjRJP").recover{
-      case _: OAuth2ServerError => succeed
+      case ex@OAuth2CollectiveException(errors) => errors.toList.collectFirst {
+        case _: OAuth2ServerError => succeed
+      }.getOrElse(throw ex)
     }.futureValue
   }
 }
