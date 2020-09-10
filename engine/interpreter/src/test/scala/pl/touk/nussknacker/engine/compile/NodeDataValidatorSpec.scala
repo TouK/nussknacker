@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.compile.validationHelpers.{DynamicParameterJoi
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.{CustomNode, Filter, NodeData, Processor, Sink, Source}
+import pl.touk.nussknacker.engine.graph.node.{CustomNode, Filter, NodeData, Processor, Sink, Source, Variable}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
@@ -47,20 +47,20 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
       List(par("par1", "'a,b'"),
         par("lazyPar1", "#aVar + 3"),
         par("a", "'a'"),
-        par("b", "'dd'")))), ValidationContext(Map("aVar" -> Typed[Long]))) shouldBe ValidationPerformed(Nil, Some(genericParameters))
+        par("b", "'dd'")))), ValidationContext(Map("aVar" -> Typed[Long]))) shouldBe ValidationPerformed(Nil, Some(genericParameters), None)
 
     inside(validate(Sink("tst1", SinkRef("genericParametersSink",
           List(par("par1", "'a,b'"),
             par("lazyPar1", "#aVar + ''"),
             par("a", "'a'"),
             par("b", "''")))), ValidationContext(Map("aVar" -> Typed[String])))) {
-      case ValidationPerformed((error:ExpressionParseError) :: Nil, Some(params)) =>
+      case ValidationPerformed((error:ExpressionParseError) :: Nil, Some(params), _) =>
         params shouldBe genericParameters
         error.message shouldBe "Bad expression type, expected: Long, found: String"
     }
 
     validate(Sink("tst1", SinkRef("doNotExist", Nil)), ValidationContext()) should matchPattern {
-      case ValidationPerformed((_:MissingSinkFactory)::Nil, _) =>
+      case ValidationPerformed((_:MissingSinkFactory)::Nil, _, _) =>
     }
 
   }
@@ -70,26 +70,26 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
       List(par("par1", "'a,b'"),
         par("lazyPar1", "11"),
         par("a", "'a'"),
-        par("b", "'b'")))), ValidationContext()) shouldBe ValidationPerformed(Nil, Some(genericParameters))
+        par("b", "'b'")))), ValidationContext()) shouldBe ValidationPerformed(Nil, Some(genericParameters), None)
 
     inside(validate(Source("tst1", SourceRef("genericParametersSource",
           List(par("par1", "'a,b'"),
             par("lazyPar1", "''"),
             par("a", "'a'"),
             par("b", "''")))), ValidationContext())) {
-      case ValidationPerformed((error:ExpressionParseError) :: Nil, _) =>
+      case ValidationPerformed((error:ExpressionParseError) :: Nil, _, _) =>
         error.message shouldBe "Bad expression type, expected: Long, found: String"
     }
 
     validate(Source("tst1", SourceRef("doNotExist", Nil)), ValidationContext()) should matchPattern {
-      case ValidationPerformed((_:MissingSourceFactory)::Nil, _) =>
+      case ValidationPerformed((_:MissingSourceFactory)::Nil, _, _) =>
     }
 
   }
 
   test("should validate filter") {
     inside(validate(Filter("filter", "#a > 3"), ValidationContext(Map("a" -> Typed[String])))) {
-      case ValidationPerformed((error:ExpressionParseError) :: Nil, None) =>
+      case ValidationPerformed((error:ExpressionParseError) :: Nil, None, _) =>
         error.message shouldBe "Wrong part types"
     }
   }
@@ -97,12 +97,12 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
   test("should validate service") {
     inside(validate(node.Enricher("stringService", ServiceRef("stringService", List(par("stringParam", "#a.length + 33"))), "out"),
       ValidationContext(Map("a" -> Typed[String])))) {
-      case ValidationPerformed((error:ExpressionParseError) :: Nil, None) =>
+      case ValidationPerformed((error:ExpressionParseError) :: Nil, None, _) =>
         error.message shouldBe "Bad expression type, expected: String, found: Integer"
     }
 
     validate(Processor("tst1", ServiceRef("doNotExist", Nil)), ValidationContext()) should matchPattern {
-      case ValidationPerformed((_:MissingService)::Nil, _) =>
+      case ValidationPerformed((_:MissingService)::Nil, _, _) =>
     }
   }
 
@@ -112,22 +112,31 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
             par("lazyPar1", "#aVar + ''"),
             par("a", "'a'"),
             par("b", "''"))), ValidationContext(Map("aVar" -> Typed[String])))) {
-      case ValidationPerformed((error:ExpressionParseError) :: Nil, Some(params)) =>
+      case ValidationPerformed((error:ExpressionParseError) :: Nil, Some(params), _) =>
         params shouldBe genericParameters
         error.message shouldBe "Bad expression type, expected: Long, found: String"
     }
 
 
     validate(CustomNode("tst1", None, "doNotExist", Nil), ValidationContext()) should matchPattern {
-      case ValidationPerformed((_:MissingCustomNodeExecutor)::Nil, _) =>
+      case ValidationPerformed((_:MissingCustomNodeExecutor)::Nil, _, _) =>
     }
   }
 
-  ignore("should validate subprocess") {
+  test("should validate variable definition") {
+    inside(
+      validate(Variable("var1", "var1", "doNotExist", None), ValidationContext(Map.empty))
+    ) {
+      case ValidationPerformed((error:ExpressionParseError) :: Nil, None, _) =>
+        error.message shouldBe "Non reference 'doNotExist' occurred. Maybe you missed '#' in front of it?"
+    }
+  }
+
+  ignore("should validate variable builder definition") {
     //TODO
   }
 
-  ignore("should validate variable definition") {
+  ignore("should validate subprocess") {
     //TODO
   }
 

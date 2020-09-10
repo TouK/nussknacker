@@ -36,7 +36,7 @@ class EvaluatedParameterPreparerSpec extends FlatSpec with Matchers {
   }
 
   private def dummyParam[T: TypeTag](nodeName: String, paramName: String) =
-    UINodeDefinition(nodeName, List(UIProcessObjectsFactory.createUIParameter(Parameter[T](paramName), ParameterConfig.empty)))
+    UINodeDefinition(nodeName, List(UIProcessObjectsFactory.createUIParameter(Parameter[T](paramName))))
 
   private def dummyExpectedParam(paramName: String, value: Any) = {
     evaluatedparam.Parameter(paramName, Expression("spel", value.toString))

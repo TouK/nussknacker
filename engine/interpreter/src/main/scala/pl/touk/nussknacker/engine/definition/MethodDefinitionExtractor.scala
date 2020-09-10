@@ -6,11 +6,11 @@ import java.util.Optional
 
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
+import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.api.typed.MissingOutputVariableException
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
-import pl.touk.nussknacker.engine.definition.validator.{ValidatorExtractorParameters, ValidatorsExtractor}
+import pl.touk.nussknacker.engine.definition.parameter.ParameterExtractor
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 // We should think about things that happens here as a Dependency Injection where @ParamName and so on are kind of
@@ -24,7 +24,6 @@ private[definition] trait MethodDefinitionExtractor[T] {
 
 private[definition] object WithExplicitMethodToInvokeMethodDefinitionExtractor extends MethodDefinitionExtractor[WithExplicitMethodToInvoke] {
   override def extractMethodDefinition(obj: WithExplicitMethodToInvoke, methodToInvoke: Method, nodeConfig: SingleNodeConfig): Either[String, MethodDefinition] = {
-
     Right(MethodDefinition(methodToInvoke.getName,
       (oo, args) => methodToInvoke.invoke(oo, args.toList),
         new OrderedDependencies(obj.parameterDefinition ++ obj.additionalDependencies.map(TypedNodeDependency(_))),
@@ -62,67 +61,12 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
           OutputVariableNameDependency
         }
       } else {
-        val nodeParamNames = Option(p.getAnnotation(classOf[ParamName]))
-          .map(_.value())
-        val branchParamName = Option(p.getAnnotation(classOf[BranchParamName]))
-          .map(_.value())
-        val name = (nodeParamNames orElse branchParamName)
-          .getOrElse(throw new IllegalArgumentException(s"Parameter $p of $obj and method : ${method.getName} has missing @ParamName or @BranchParamName annotation"))
-        val rawParamType = EspTypeUtils.extractParameterType(p)
-        val paramWithUnwrappedBranch = if (branchParamName.isDefined) extractBranchParamType(rawParamType)(p, obj, method) else rawParamType
-        val (paramTypeWithUnwrappedLazy, isLazyParameter) = determineIfLazyParameter(paramWithUnwrappedBranch)
-        val (paramType, isScalaOptionParameter, isJavaOptionalParameter) = determineOptionalParameter(paramTypeWithUnwrappedLazy)
-        val extractedEditor = EditorExtractor.extract(p)
-        val validators = tryToDetermineValidators(p, paramType, isScalaOptionParameter, isJavaOptionalParameter, extractedEditor)
-        Parameter(name, paramType, extractedEditor, validators, additionalVariables(p), branchParamName.isDefined,
-          isLazyParameter = isLazyParameter, scalaOptionParameter = isScalaOptionParameter, javaOptionalParameter = isJavaOptionalParameter)
+        val parameterConfig = nodeConfig.params.flatMap(_.get(p.getName)).getOrElse(ParameterConfig.empty)
+        ParameterExtractor.extractParameter(p, parameterConfig)
       }
     }.toList
-
     new OrderedDependencies(dependencies)
   }
-
-  private def extractBranchParamType(typ: TypingResult)
-                                    (p: java.lang.reflect.Parameter, obj: T, method: Method) = typ match {
-    case TypedClass(cl, TypedClass(keyClass, _) :: valueType :: Nil) if classOf[Map[_, _]].isAssignableFrom(cl) && classOf[String].isAssignableFrom(keyClass) =>
-      valueType
-    case _ =>
-      throw new IllegalArgumentException(s"Branch parameter $p of $obj and method : ${method.getName} has invalid type: should be Map[String, T]")
-  }
-
-  private def determineIfLazyParameter(typ: TypingResult) = typ match {
-    case TypedClass(cl, genericParams) if classOf[LazyParameter[_]].isAssignableFrom(cl) =>
-      (genericParams.head, true)
-    case _ =>
-      (typ, false)
-  }
-
-  private def determineOptionalParameter(typ: TypingResult) = typ match {
-    case TypedClass(cl, genericParams) if classOf[Option[_]].isAssignableFrom(cl) =>
-      (genericParams.head, true, false)
-    case TypedClass(cl, genericParams) if classOf[Optional[_]].isAssignableFrom(cl) =>
-      (genericParams.head, false, true)
-    case _ =>
-      (typ, false, false)
-  }
-
-  private def tryToDetermineValidators(param: java.lang.reflect.Parameter,
-                                       paramType: TypingResult,
-                                       isScalaOptionParameter: Boolean,
-                                       isJavaOptionalParameter: Boolean,
-                                       extractedEditor: Option[ParameterEditor]) = {
-    val possibleEditor: Option[ParameterEditor] = extractedEditor match {
-      case Some(editor) => Some(editor)
-      case None => new ParameterTypeEditorDeterminer(paramType).determine()
-    }
-    ValidatorsExtractor.extract(ValidatorExtractorParameters(param, paramType, isScalaOptionParameter, isJavaOptionalParameter, possibleEditor))
-  }
-
-  private def additionalVariables(p: java.lang.reflect.Parameter): Map[String, TypingResult] =
-    Option(p.getAnnotation(classOf[AdditionalVariables]))
-      .map(_.value().map(additionalVariable =>
-        additionalVariable.name() -> Typed(additionalVariable.clazz())).toMap
-      ).getOrElse(Map.empty)
 
   protected def extractReturnTypeFromMethod(obj: T, method: Method): TypingResult = {
     val typeFromAnnotation =

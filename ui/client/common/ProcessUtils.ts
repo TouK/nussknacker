@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import _ from "lodash"
-import NodeUtils from "../components/graph/NodeUtils"
+import {NodeResults, TypingResult} from "../types"
 
 class ProcessUtils {
 
@@ -48,19 +48,19 @@ class ProcessUtils {
   }
 
   //see BranchEndDefinition.artificialNodeId
-  findVariablesForBranches = (nodeResults) => (nodeId) => {
+  findVariablesForBranches = (nodeResults: NodeResults) => (nodeId) => {
     //we find all nodes matching pattern encoding branch and edge and extract branch id
     const escapedNodeId = this.escapeNodeIdForRegexp(nodeId)
-    return _.transform(nodeResults || {}, function(result, value, key) {
+    return _.transform(nodeResults || {}, function(result, nodeResult, key: string) {
       const branch = key.match(new RegExp(`^\\$edge-(.*)-${escapedNodeId}$`))
       if (branch && branch.length > 1) {
-        result[branch[1]] = value.variableTypes
+        result[branch[1]] = nodeResult.variableTypes
       }
     }, {})
   }
 
   //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
-  escapeNodeIdForRegexp = (id) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
+  escapeNodeIdForRegexp = (id) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&")
 
   findAvailableVariables = (processDefinition, processCategory, process) => (nodeId, parameterDefinition) => {
     const globalVariablesWithoutProcessCategory = this._findGlobalVariablesWithoutProcessCategory(processDefinition.globalVariables, processCategory)
@@ -92,7 +92,7 @@ class ProcessUtils {
   }
 
   _findVariablesDeclaredBeforeNode = (nodeId, process, processDefinition) => {
-    const previousNodes = this._findPreviousNodes(nodeId, process, processDefinition)
+    const previousNodes = this._findPreviousNodes(nodeId, process)
     const variablesDefinedBeforeNodeList = _.flatMap(previousNodes, (nodeId) => {
       return this._findVariablesDefinedInProcess(nodeId, process, processDefinition)
     })
@@ -197,7 +197,7 @@ class ProcessUtils {
 
   findNodeDefinitionIdOrType = (node) => this.findNodeDefinitionId(node) || node.type || null
 
-  getNodeBaseTypeCamelCase = (node) => node.type && node.type.charAt(0).toLowerCase() + node.type.slice(1);
+  getNodeBaseTypeCamelCase = (node) => node.type && node.type.charAt(0).toLowerCase() + node.type.slice(1)
 
   findNodeConfigName = (node) => {
     // First we try to find id of node (config for specific custom node by id).
@@ -206,16 +206,7 @@ class ProcessUtils {
     return this.findNodeDefinitionId(node) || this.getNodeBaseTypeCamelCase(node) || "$properties"
   }
 
-  humanReadableType = (refClazzOrName) => {
-    const refClazzName = (refClazzOrName || {}).refClazzName || refClazzOrName
-    if (_.isEmpty(refClazzName)) {
-      return ""
-    } else {
-      const typeSplitted = _.split(refClazzName, ".")
-      const lastClazzNamePart = _.last(typeSplitted).replace("$", "")
-      return _.upperFirst(lastClazzNamePart)
-    }
-  }
+  humanReadableType = (typingResult: TypingResult): string => typingResult.display
 
   _findPreviousNodes = (nodeId, process) => {
     const nodeEdge = _.find(process.edges, (edge) => _.isEqual(edge.to, nodeId))

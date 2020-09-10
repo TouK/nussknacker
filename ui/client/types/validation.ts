@@ -3,9 +3,11 @@ import {TypingResult, UIParameter} from "./definition"
 export type ValidationResult = {
     validationErrors: ValidationErrors[],
     validationWarnings: ValidationWarnings[],
-    nodeResults: Record<string, NodeTypingData>,
+    nodeResults: NodeResults,
 
 }
+
+export type NodeResults = Record<string, NodeTypingData>
 
 export type NodeTypingData = {
     variableTypes: VariableTypes,
