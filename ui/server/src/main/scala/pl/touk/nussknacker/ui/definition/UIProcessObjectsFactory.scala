@@ -112,10 +112,7 @@ object UIProcessObjectsFactory {
     //TODO: currently if we cannot parse parameter class we assume it's unknown
     val typ = runtimeClass.map(Typed(_)).getOrElse(Unknown)
     val config = nodeConfig.params.flatMap(_.get(p.name)).getOrElse(ParameterConfig.empty)
-    val parameterData = new ParameterData {
-      override def typing: TypingResult = typ
-      override def getAnnotation[T <: Annotation : ClassTag]: Option[T] = None
-    }
+    val parameterData = ParameterData(typ, Nil)
     Parameter(
       name = p.name,
       typ = typ,

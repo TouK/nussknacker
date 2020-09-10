@@ -7,21 +7,15 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 import scala.reflect.ClassTag
 
-trait ParameterData {
+//we extract needed data from java.lang.reflect.Parameter to be able to use it e.g. for subprocess parameters
+case class ParameterData(typing: TypingResult, annotations: List[_ <: Annotation]) {
 
-  def typing: TypingResult
-
-  def getAnnotation[T<:Annotation:ClassTag]: Option[T]
-
+  def getAnnotation[T <: Annotation : ClassTag]: Option[T] = annotations.collectFirst {
+    case e: T => e
+  }
 }
 
 object ParameterData {
 
-  def apply(parameter: Parameter, givenT: TypingResult): ParameterData = new ParameterData {
-
-    override def typing: TypingResult = givenT
-
-    override def getAnnotation[T<:Annotation:ClassTag]: Option[T] =
-      Option(parameter.getAnnotation(implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]]))
-  }
+  def apply(parameter: Parameter, typing: TypingResult): ParameterData = ParameterData(typing, parameter.getAnnotations.toList)
 }
