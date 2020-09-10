@@ -2,11 +2,12 @@ package pl.touk.nussknacker.engine.definition
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitMethodToInvoke}
+import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, Parameter, RegExpParameterValidator, WithExplicitMethodToInvoke}
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.{ProcessSignalSender, SignalTransformer}
+import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{process, _}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.StandardObjectWithMethodDef
@@ -70,6 +71,28 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     eagerParam.typ shouldEqual Typed[Integer]
   }
 
+  test("extract basic global variable") {
+    val definition = processDefinition.expressionConfig.globalVariables
+
+    val helperDef = definition("helper")
+    helperDef.obj shouldBe SampleHelper
+    helperDef.returnType shouldBe Typed(SampleHelper.getClass)
+  }
+
+  test("extract typed global variable") {
+    val definition = processDefinition.expressionConfig.globalVariables
+
+    val typedGlobalDef = definition("typedGlobal")
+    typedGlobalDef.obj shouldBe SampleTypedVariable
+    typedGlobalDef.returnType shouldBe Typed(classOf[Int])
+  }
+
+  test("extracts validators from config") {
+    val parameter = processDefinition.customStreamTransformers("transformer1")._1.parameters.find(_.name == "param1")
+    parameter.map(_.validators) shouldBe Some(List(MandatoryParameterValidator, RegExpParameterValidator(".*", "has to match...", "really has to match...")))
+
+  }
+
   object TestCreator extends ProcessConfigCreator {
     override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
       Map(
@@ -90,7 +113,13 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
       ExceptionHandlerFactory.noParams(_ => EspExceptionHandler.empty)
 
-    override def expressionConfig(processObjectDependencies: ProcessObjectDependencies) = ExpressionConfig(Map.empty, List.empty)
+    override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = ExpressionConfig(
+      globalProcessVariables = Map(
+        "helper" -> WithCategories(SampleHelper, "category"),
+        "typedGlobal" -> WithCategories(SampleTypedVariable, "category")
+      ),
+      globalImports = Nil
+    )
 
     override def buildInfo(): Map[String, String] = Map()
 
@@ -140,5 +169,17 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     override def additionalDependencies: List[Class[_]] = List()
 
     override def invoke(params: List[AnyRef]): Future[AnyRef] = ???
+  }
+
+  object SampleHelper {
+    def identity(value: Any): Any = value
+  }
+
+  object SampleTypedVariable extends TypedGlobalVariable {
+    override def value(metadata: MetaData): Any = ???
+
+    override def returnType(metadata: MetaData): TypingResult = ???
+
+    override def initialReturnType: TypingResult = Typed(classOf[Int])
   }
 }

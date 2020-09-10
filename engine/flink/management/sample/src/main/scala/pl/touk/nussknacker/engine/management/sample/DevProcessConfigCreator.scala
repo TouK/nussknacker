@@ -17,13 +17,14 @@ import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.SlidingAggregateTransformerV2
 import pl.touk.nussknacker.engine.flink.util.transformer.outer.OuterJoinTransformer
-import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer}
+import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer, UnionWithMemoTransformer}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.management.sample.dict.{BusinessConfigDictionary, RGBDictionary, TestDictionary}
 import pl.touk.nussknacker.engine.management.sample.dto.ConstantState
+import pl.touk.nussknacker.engine.management.sample.global.ConfigTypedGlobalVariable
 import pl.touk.nussknacker.engine.management.sample.helper.DateProcessHelper
 import pl.touk.nussknacker.engine.management.sample.service._
 import pl.touk.nussknacker.engine.management.sample.signal.{RemoveLockProcessSignalFactory, SampleSignalHandlingTransformer}
@@ -121,6 +122,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "lockStreamTransformer" -> categories(new SampleSignalHandlingTransformer.LockStreamTransformer()),
     "aggregate" -> categories(SlidingAggregateTransformerV2),
     "union" -> categories(UnionTransformer),
+    "union-memo" -> categories(UnionWithMemoTransformer),
     "outer-join" -> categories(OuterJoinTransformer),
     "state" -> all(TransformStateTransformer),
     "unionWithEditors" -> all(JoinTransformerWithEditors),
@@ -145,7 +147,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "DATE" -> all(DateProcessHelper),
       "DICT" -> categories(TestDictionary.instance),
       "RGB" -> all(RGBDictionary.instance),
-      "BusinessConfig" -> features(BusinessConfigDictionary.instance)
+      "BusinessConfig" -> features(BusinessConfigDictionary.instance),
+      "TypedConfig" -> all(ConfigTypedGlobalVariable)
     )
 
     ExpressionConfig(

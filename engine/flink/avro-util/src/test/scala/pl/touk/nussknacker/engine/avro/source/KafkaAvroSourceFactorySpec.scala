@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets
 import com.typesafe.config.ConfigFactory
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.Schema
-import org.apache.avro.generic.GenericRecord
+import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.scalatest.Assertion
 import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
@@ -79,6 +79,13 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     val givenObj = 123123
 
     roundTripSingleObject(avroSourceFactory, IntTopic, ExistingSchemaVersion(1), givenObj, IntSchema)
+  }
+
+  test("should read object with invalid defaults") {
+    val givenObj = new GenericData.Record(InvalidDefaultsSchema)
+    givenObj.put("field1", "foo")
+
+    roundTripSingleObject(avroSourceFactory, InvalidDefaultsTopic, ExistingSchemaVersion(1), givenObj, InvalidDefaultsSchema)
   }
 
   test("should read last generated key-value object") {
@@ -183,7 +190,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     }
     val source = sourceFactory
       .implementation(Map(KafkaAvroBaseTransformer.TopicParamName -> topic, KafkaAvroBaseTransformer.SchemaVersionParamName -> version),
-        List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)))
+        List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)), None)
       .asInstanceOf[Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef] with ReturningType]
 
     source.returnType shouldEqual AvroSchemaTypeDefinitionExtractor.typeDefinition(expectedSchema)

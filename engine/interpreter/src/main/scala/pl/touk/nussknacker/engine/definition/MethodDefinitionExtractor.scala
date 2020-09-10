@@ -6,7 +6,7 @@ import java.util.Optional
 
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
+import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.api.typed.MissingOutputVariableException
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
@@ -68,12 +68,14 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
           .map(_.value())
         val name = (nodeParamNames orElse branchParamName)
           .getOrElse(throw new IllegalArgumentException(s"Parameter $p of $obj and method : ${method.getName} has missing @ParamName or @BranchParamName annotation"))
+        val parameterConfig = nodeConfig.params.flatMap(_.get(name)).getOrElse(ParameterConfig.empty)
+
         val rawParamType = EspTypeUtils.extractParameterType(p)
         val paramWithUnwrappedBranch = if (branchParamName.isDefined) extractBranchParamType(rawParamType)(p, obj, method) else rawParamType
         val (paramTypeWithUnwrappedLazy, isLazyParameter) = determineIfLazyParameter(paramWithUnwrappedBranch)
         val (paramType, isScalaOptionParameter, isJavaOptionalParameter) = determineOptionalParameter(paramTypeWithUnwrappedLazy)
-        val extractedEditor = EditorExtractor.extract(p)
-        val validators = tryToDetermineValidators(p, paramType, isScalaOptionParameter, isJavaOptionalParameter, extractedEditor)
+        val extractedEditor = parameterConfig.editor.orElse(EditorExtractor.extract(p))
+        val validators = tryToDetermineValidators(p, paramType, isScalaOptionParameter, isJavaOptionalParameter, extractedEditor, parameterConfig)
         Parameter(name, paramType, extractedEditor, validators, additionalVariables(p), branchParamName.isDefined,
           isLazyParameter = isLazyParameter, scalaOptionParameter = isScalaOptionParameter, javaOptionalParameter = isJavaOptionalParameter)
       }
@@ -110,12 +112,14 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
                                        paramType: TypingResult,
                                        isScalaOptionParameter: Boolean,
                                        isJavaOptionalParameter: Boolean,
-                                       extractedEditor: Option[ParameterEditor]) = {
+                                       extractedEditor: Option[ParameterEditor],
+                                       parameterConfig: ParameterConfig) = {
     val possibleEditor: Option[ParameterEditor] = extractedEditor match {
       case Some(editor) => Some(editor)
       case None => new ParameterTypeEditorDeterminer(paramType).determine()
     }
-    ValidatorsExtractor.extract(ValidatorExtractorParameters(param, paramType, isScalaOptionParameter, isJavaOptionalParameter, possibleEditor))
+    val extractorParameters = ValidatorExtractorParameters(param, paramType, isScalaOptionParameter, isJavaOptionalParameter, possibleEditor)
+    (ValidatorsExtractor.extract(extractorParameters) ++ parameterConfig.validators.toList.flatten).distinct
   }
 
   private def additionalVariables(p: java.lang.reflect.Parameter): Map[String, TypingResult] =

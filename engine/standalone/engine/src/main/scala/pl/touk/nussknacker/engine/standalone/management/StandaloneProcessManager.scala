@@ -134,7 +134,7 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
     try {
       val processVersion = ProcessVersion.empty.copy(processName = ProcessName("snapshot version")) // testing process may be unreleased, so it has no version
       standaloneInterpreter.open(JobData(process.metaData, processVersion))
-      val results = Await.result(Future.sequence(parsedTestData.map(standaloneInterpreter.invokeToResult)), timeout)
+      val results = Await.result(Future.sequence(parsedTestData.map(standaloneInterpreter.invokeToResult(_, None))), timeout)
       collectSinkResults(collectingListener.runId, results)
       collectExceptions(collectingListener, results)
       collectingListener.results

@@ -5,6 +5,7 @@ import {ExpressionObj} from "./expression/types"
 import {spelFormatters} from "./expression/Formatter"
 import {VariableTypes} from "../../../../types"
 import {Error} from "./Validators"
+import {ParamType} from "./types"
 
 type Props = {
   expressionObj: ExpressionObj,
@@ -14,7 +15,7 @@ type Props = {
   readOnly: boolean,
   rowClassName?: string,
   valueClassName?: string,
-  param?: $TodoType,
+  param?: ParamType,
   values?: Array<$TodoType>,
   fieldName?: string,
   isMarked?: boolean,
@@ -22,6 +23,7 @@ type Props = {
   onValueChange: Function,
   errors?: Array<Error>,
   variableTypes: VariableTypes,
+  validationLabelInfo?: string,
 }
 
 type State = {
@@ -33,14 +35,14 @@ class EditableEditor extends React.Component<Props, State> {
   render() {
     const {
       expressionObj, rowClassName, valueClassName, param, renderFieldLabel, fieldLabel,
-      errors, fieldName,
+      errors, fieldName, validationLabelInfo,
     } = this.props
 
-    const editorType = !isEmpty(param) ? param.editor.type : EditorType.RAW_PARAMETER_EDITOR
+    const editorType = isEmpty(param) ? EditorType.RAW_PARAMETER_EDITOR : param.editor.type
 
     const Editor = editors[editorType]
 
-    const validators = simpleEditorValidators(param, errors, fieldName || fieldLabel)
+    const validators = simpleEditorValidators(param, errors, fieldName, fieldLabel)
     return (
       <div className={`${rowClassName ? rowClassName : " node-row"}`}>
         {fieldLabel && renderFieldLabel(fieldLabel)}
@@ -49,8 +51,9 @@ class EditableEditor extends React.Component<Props, State> {
           editorConfig={param?.editor}
           className={`${valueClassName ? valueClassName : "node-value"}`}
           validators={validators}
-          formatter={expressionObj.language === "spel" && spelFormatters[param?.typ.refClazzName] != null ?
+          formatter={expressionObj.language === "spel" && spelFormatters[param?.typ?.refClazzName] != null ?
             spelFormatters[param.typ.refClazzName] : null}
+          expressionInfo={validationLabelInfo}
         />
       </div>
     )

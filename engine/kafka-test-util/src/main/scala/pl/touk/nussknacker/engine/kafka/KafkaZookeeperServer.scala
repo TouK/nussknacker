@@ -3,19 +3,16 @@ package pl.touk.nussknacker.engine.kafka
 import java.io.File
 import java.net.InetSocketAddress
 import java.nio.file.Files
-import java.time.Duration
 import java.util.Properties
-import java.util.concurrent.TimeoutException
 
 import kafka.server.KafkaServer
-import org.apache.kafka.clients.consumer.{ConsumerRecord, ConsumerRecords, KafkaConsumer}
+import org.apache.kafka.clients.consumer.Consumer
 import org.apache.kafka.clients.producer.KafkaProducer
-import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer, StringSerializer}
 import org.apache.kafka.common.utils.Time
 import org.apache.zookeeper.server.{NIOServerCnxnFactory, ZooKeeperServer}
-import org.scalatest.concurrent.Eventually._
-import org.scalatest.time.{Millis, Seconds, Span}
+
+import scala.language.implicitConversions
 
 object KafkaZookeeperServer {
   val localhost = "127.0.0.1"
@@ -110,53 +107,6 @@ object KafkaZookeeperUtils {
     props
   }
 
-  case class KeyMessage[K, V](k: K, msg: V) {
-    def message(): V = msg
-    def key(): K = k
-  }
-
-  implicit class RichConsumerConnector(consumer: KafkaConsumer[Array[Byte], Array[Byte]]) {
-    import scala.collection.JavaConverters._
-
-    def consume(topic: String, secondsToWait: Int = 20): Stream[KeyMessage[Array[Byte], Array[Byte]]] =
-      consumeWithConsumerRecord(topic, secondsToWait)
-        .map(record => KeyMessage(record.key(), record.value()))
-
-    def consumeWithConsumerRecord(topic: String, secondsToWait: Int = 20): Stream[ConsumerRecord[Array[Byte], Array[Byte]]] = {
-      implicit val patienceConfig: PatienceConfig = PatienceConfig(Span(secondsToWait, Seconds), Span(100, Millis))
-
-      val partitionsInfo = eventually {
-        consumer.listTopics.asScala.getOrElse(topic, throw new IllegalStateException(s"Topic: $topic not exists"))
-      }
-
-      val partitions = partitionsInfo.asScala.map(no => new TopicPartition(topic, no.partition()))
-      consumer.assign(partitions.asJava)
-
-      Stream.continually(()).flatMap(new Poller(secondsToWait))
-    }
-
-    //If we do just _ => consumer.poll(...).asScala.toStream, the stream will block indefinitely when no messages are sent
-    class Poller(secondsToWait: Int) extends Function1[Unit, Stream[ConsumerRecord[Array[Byte], Array[Byte]]]] {
-      private var timeoutCount = 0
-
-      override def apply(v1: Unit): Stream[ConsumerRecord[Array[Byte], Array[Byte]]] = {
-        val polled = consumer.poll(Duration.ofSeconds(1))
-        checkIfEmpty(polled)
-        polled.asScala.toStream
-      }
-
-      def checkIfEmpty(records: ConsumerRecords[_, _]): Unit = {
-        if (records.isEmpty) {
-          timeoutCount += 1
-          if (timeoutCount >= secondsToWait) {
-            throw new TimeoutException(s"Exceeded waiting time in poll ${timeoutCount}s")
-          }
-        } else {
-          timeoutCount = 0
-        }
-      }
-
-    }
-  }
+  implicit def richConsumer[K, M](consumer: Consumer[K, M]): RichKafkaConsumer[K, M] = new RichKafkaConsumer(consumer)
 
 }

@@ -4,8 +4,8 @@ import java.time.Duration
 
 import cats.data.Validated.Invalid
 import javax.annotation.Nullable
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{FatalUnknownError, NodeId}
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, CustomNodeError, FatalUnknownError, NodeId}
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.sample.JavaSampleEnum
 
@@ -26,7 +26,7 @@ object JoinTransformerWithEditors extends CustomStreamTransformer with Serializa
       }
 
       if (mainBranches.size != 1 || joinedBranches.size != 1) {
-        Invalid(FatalUnknownError("You must specify exact one main branch and one joined branch")).toValidatedNel
+        Invalid(ProcessCompilationError.CustomNodeError("You must specify exact one main branch and one joined branch", Some("branchType"))).toValidatedNel
       } else {
         val mainBranchContext = mainBranches.head._2
         val joinedBranchId = joinedBranches.head._1

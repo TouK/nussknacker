@@ -161,11 +161,19 @@ object typing {
             case (k, v) => k -> fromInstance(v)
           }.toMap
           TypedObjectTypingResult(fieldTypes)
+        case list: List[_] =>
+          TypedClass(obj.getClass, List(unionOfElementTypes(list)))
+        case javaList: java.util.List[_] =>
+          TypedClass(obj.getClass, List(unionOfElementTypes(javaList.asScala.toList)))
         case dict: DictInstance =>
           TypedDict(dict.dictId, dict.valueType)
         case other =>
           Typed(other.getClass)
       }
+    }
+
+    private def unionOfElementTypes(list: List[_]): TypingResult = {
+      apply(list.map(fromInstance).toSet)
     }
 
     def apply(possibleTypes: TypingResult*): TypingResult = {

@@ -5,10 +5,9 @@ import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
 import org.apache.flink.api.common.ExecutionConfig
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion}
 import pl.touk.nussknacker.engine.api.namespaces.{FlinkUsageKey, NamingContext, ObjectNaming}
 import pl.touk.nussknacker.engine.flink.api.{NamingParameters, NkGlobalParameters}
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.util.Serializers
 
 /**
@@ -17,7 +16,7 @@ import pl.touk.nussknacker.engine.process.util.Serializers
 trait ExecutionConfigPreparer {
 
   def prepareExecutionConfig(config: ExecutionConfig)
-                            (process: EspProcess, processVersion: ProcessVersion): Unit
+                            (metaData: MetaData, processVersion: ProcessVersion): Unit
 
 }
 
@@ -38,16 +37,16 @@ object ExecutionConfigPreparer extends LazyLogging {
 
   def chain(configPreparers: ExecutionConfigPreparer*): ExecutionConfigPreparer = {
     new ExecutionConfigPreparer {
-      override def prepareExecutionConfig(config: ExecutionConfig)(process: EspProcess, processVersion: ProcessVersion): Unit = {
-        configPreparers.foreach(_.prepareExecutionConfig(config)(process, processVersion))
+      override def prepareExecutionConfig(config: ExecutionConfig)(metaData: MetaData, processVersion: ProcessVersion): Unit = {
+        configPreparers.foreach(_.prepareExecutionConfig(config)(metaData, processVersion))
       }
     }
   }
 
   class ProcessSettingsPreparer(processConfig: Config, objectNaming: ObjectNaming, buildInfo: Option[String]) extends ExecutionConfigPreparer {
     override def prepareExecutionConfig(config: ExecutionConfig)
-                                       (process: EspProcess, processVersion: ProcessVersion): Unit = {
-      val namingParameters = objectNaming.objectNamingParameters(process.id, processConfig, new NamingContext(FlinkUsageKey))
+                                       (metaData: MetaData, processVersion: ProcessVersion): Unit = {
+      val namingParameters = objectNaming.objectNamingParameters(metaData.id, processConfig, new NamingContext(FlinkUsageKey))
         .map(p => NamingParameters(p.toTags))
       NkGlobalParameters.setInContext(config, NkGlobalParameters(buildInfo.getOrElse(""), processVersion, processConfig, namingParameters))
     }
@@ -61,7 +60,7 @@ object ExecutionConfigPreparer extends LazyLogging {
 
   class SerializationPreparer(enableObjectReuse: Boolean) extends ExecutionConfigPreparer  {
     override def prepareExecutionConfig(config: ExecutionConfig)
-                                       (process: EspProcess, processVersion: ProcessVersion): Unit = {
+                                       (metaData: MetaData, processVersion: ProcessVersion): Unit = {
       Serializers.registerSerializers(config)
       if (enableObjectReuse) {
         config.enableObjectReuse()

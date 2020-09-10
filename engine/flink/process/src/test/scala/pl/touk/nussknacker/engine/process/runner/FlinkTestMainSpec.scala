@@ -184,7 +184,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     val exceptionFromExpression = results.exceptions.head
     exceptionFromExpression.nodeId shouldBe Some("filter")
     exceptionFromExpression.context.variables("input").asInstanceOf[SimpleRecord].id shouldBe "1"
-    exceptionFromExpression.throwable.getMessage shouldBe "/ by zero"
+    exceptionFromExpression.throwable.getMessage shouldBe "Expression [1 / #input.value1 >= 0] evaluation failed, message: / by zero"
 
     val exceptionFromService = results.exceptions.last
     exceptionFromService.nodeId shouldBe Some("failing")

@@ -4,17 +4,35 @@ To see biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 0.3.0 (not released yet)
 
+* [#1159](https://github.com/TouK/nussknacker/pull/1159) [#1170](https://github.com/TouK/nussknacker/pull/1170) Changes in `GenericNodeTransformation` API:
+  - Now `implementation` takes additional parameter with final state value determined during `contextTransformation`
+  - `DefinedLazyParameter` and `DefinedEagerParameter` holds `expression: TypedExpression` instead of `returnType: TypingResult`
+  - `DefinedLazyBranchParameter` and `DefinedEagerBranchParameter` holds `expressionByBranchId: Map[String, TypedExpression]` instead of `returnTypeByBranchId: Map[String, TypingResult]`
 * [#1083](https://github.com/TouK/nussknacker/pull/1083)
   - Now `SimpleSlidingAggregateTransformerV2` and `SlidingAggregateTransformer` is deprecated in favour of `SlidingAggregateTransformerV2`
   - Now `SimpleTumblingAggregateTransformer` is deprecated in favour of `TumblingAggregateTransformer`
   - Now `SumAggregator`, `MaxAggregator` and `MinAggregator` doesn't change type of aggregated value (previously was changed to Double)
   - Now `SumAggregator`, `MaxAggregator` and `MinAggregator` return null instead of `0D`/`Double.MaxValue`/`Double.MinValue` for case when there was no element added before `getResult`
 
+* [#1149](https://github.com/TouK/nussknacker/pull/1149) FlinkProcessRegistrar refactor (can affect test code) 
+* [#1166](https://github.com/TouK/nussknacker/pull/1166) ```model.conf``` should be renamed to ```defaultModelConfig.conf```
+
 ## In version 0.2.0
 
-* [#1104](https://github.com/TouK/nussknacker/pull/1104) Creation of `FlinkMiniCluster` is now extracted from `StoppableExecutionEnvironment`. You should create it using
-  e.g. `FlinkMiniClusterHolder.apply()` and then create environment using `flinkMiniClusterHolder.createExecutionEnvironment()`. `FlinkMiniClusterHolder` should
-  be created once for test class - it is thread safe and resource expensive. `MiniClusterExecutionEnvironment` in the other hand should be created for each process.
+* [#1104](https://github.com/TouK/nussknacker/pull/1104) Creation of `FlinkMiniCluster` is now extracted from `StoppableExecutionEnvironment`. You should create it using e.g.:
+  ```
+  val flinkMiniClusterHolder = FlinkMiniClusterHolder(FlinkTestConfiguration.configuration(parallelism))
+  flinkMiniClusterHolder.start()
+  ```
+  and then create environment using:
+  ```
+  flinkMiniClusterHolder.createExecutionEnvironment()
+  ```
+  . At the end you should cleanup `flinkMiniClusterHolder` by:
+  ```
+  flinkMiniClusterHolder.stop()
+  ```
+  . `FlinkMiniClusterHolder` should be created once for test class - it is thread safe and resource expensive. `MiniClusterExecutionEnvironment` in the other hand should be created for each process.
   It is not thread safe because underlying `StreamExecutionEnvironment` is not. You can use `FlinkSpec` to achieve that.
 * [#1077](https://github.com/TouK/nussknacker/pull/1077)
   - `pl.touk.nussknacker.engine.queryablestate.QueryableClient` was moved from `queryableState` module to `pl.touk.nussknacker.engine.api.queryablestate` package in `api` module
@@ -79,7 +97,7 @@ val source = new KafkaAvroSourceFactory(
 
 `KafkaAvroSourceFactory` new way :
 ```
-val schemaRegistryProvider = ConfluentSchemaRegistryProvider[GenericData.Record](processObjectDependencies)
+val schemaRegistryProvider = ConfluentSchemaRegistryProvider(processObjectDependencies)
 val source = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
 ```
 
@@ -91,28 +109,28 @@ val kafkaAvroSinkFactory = new KafkaAvroSinkFactory(schemaRegistryProvider, proc
 
 Additional changes:
 - Bump up confluent package to 5.5.0
-- (Refactor Kafka API) Moved KafkaSourceFactory to pl.touk.nussknacker.engine.kafka.sink package 
-- (Refactor Kafka API) Changed BaseKafkaSourceFactory, now it requires `deserializationSchemaFactory: KafkaDeserializationSchemaFactory[T]`
-- (Refactor Kafka API) Moved KafkaSinkFactory to pl.touk.nussknacker.engine.kafka.source package
-- (Refactor Kafka API) Renamed SerializationSchemaFactory to KafkaSerializationSchemaFactory 
-- (Refactor Kafka API) Renamed DeserializationSchemaFactory to KafkaDeserializationSchemaFactory
-- (Refactor Kafka API) Renamed FixedDeserializationSchemaFactory to FixedKafkaDeserializationSchemaFactory
-- (Refactor Kafka API) Renamed FixedSerializationSchemaFactory to FixedKafkaSerializationSchemaFactory
-- (Refactor Kafka API) Renamed KafkaSerializationSchemaFactoryBase and KafkaVersionAwareValueSerializationSchemaFactory
-- (Refactor Kafka API) Renamed KafkaKeyValueSerializationSchemaFactoryBase to KafkaVersionAwareKeyValueSerializationSchemaFactory
-- (Refactor Kafka API) Renamed KafkaDeserializationSchemaFactoryBase to KafkaVersionAwareValueDeserializationSchemaFactory
-- (Refactor Kafka API) Renamed KafkaKeyValueDeserializationSchemaFactoryBase to KafkaVersionAwareKeyValueDeserializationSchemaFactory
-- (Refactor KafkaAvro API) Renamed AvroDeserializationSchemaFactory to ConfluentKafkaAvroDeserializationSchemaFactory and moved to avro.schemaregistry.confluent package
-- (Refactor KafkaAvro API) Renamed AvroKeyValueDeserializationSchemaFactory to ConfluentKafkaAvroDeserializationSchemaFactory and moved to avro.schemaregistry.confluent package
-- (Refactor KafkaAvro API) Renamed AvroSerializationSchemaFactory to ConfluentAvroSerializationSchemaFactory and moved to avro.schemaregistry.confluent package
-- (Refactor KafkaAvro API) Renamed AvroKeyValueSerializationSchemaFactory to ConfluentAvroKeyValueSerializationSchemaFactory and moved to avro.schemaregistry.confluent package
-- (Refactor KafkaAvro API) Deleted FixedKafkaAvroSourceFactory and FixedKafkaAvroSinkFactory (now we don't support fixed schema)
-- (Refactor Kafka API) Replaced replace topics: List[String] by List[PreparedKafkaTopic] and removed processObjectDependencies in KafkaSource
+- (Refactor Kafka API) Moved `KafkaSourceFactory` to `pl.touk.nussknacker.engine.kafka.sink` package
+- (Refactor Kafka API) Changed `BaseKafkaSourceFactory`, now it requires `deserializationSchemaFactory: KafkaDeserializationSchemaFactory[T]`
+- (Refactor Kafka API) Moved `KafkaSinkFactory` to `pl.touk.nussknacker.engine.kafka.source` package
+- (Refactor Kafka API) Renamed `SerializationSchemaFactory` to `KafkaSerializationSchemaFactory`
+- (Refactor Kafka API) Renamed `DeserializationSchemaFactory` to `KafkaDeserializationSchemaFactory`
+- (Refactor Kafka API) Renamed `FixedDeserializationSchemaFactory` to `FixedKafkaDeserializationSchemaFactory`
+- (Refactor Kafka API) Renamed `FixedSerializationSchemaFactory` to `FixedKafkaSerializationSchemaFactory`
+- (Refactor Kafka API) Removed `KafkaSerializationSchemaFactoryBase`
+- (Refactor Kafka API) Replaced `KafkaKeyValueSerializationSchemaFactoryBase` by `KafkaAvroKeyValueSerializationSchemaFactory` (it handles only avro case now)
+- (Refactor Kafka API) Removed `KafkaDeserializationSchemaFactoryBase`
+- (Refactor Kafka API) Replaced `KafkaKeyValueDeserializationSchemaFactoryBase` by `KafkaAvroKeyValueDeserializationSchemaFactory` (it handles only avro case now)
+- (Refactor KafkaAvro API) Renamed `AvroDeserializationSchemaFactory` to `ConfluentKafkaAvroDeserializationSchemaFactory` and moved to `avro.schemaregistry.confluent` package
+- (Refactor KafkaAvro API) Renamed `AvroKeyValueDeserializationSchemaFactory` to `ConfluentKafkaAvroDeserializationSchemaFactory` and moved to `avro.schemaregistry.confluent` package
+- (Refactor KafkaAvro API) Renamed `AvroSerializationSchemaFactory` to `ConfluentAvroSerializationSchemaFactory` and moved to `avro.schemaregistry.confluent` package
+- (Refactor KafkaAvro API) Renamed `AvroKeyValueSerializationSchemaFactory` to `ConfluentAvroKeyValueSerializationSchemaFactory` and moved to `avro.schemaregistry.confluent` package
+- (Refactor KafkaAvro API) Removed `FixedKafkaAvroSourceFactory` and `FixedKafkaAvroSinkFactory` (now we don't support fixed schema)
+- (Refactor Kafka API) Replaced `topics: List[String]` by `List[PreparedKafkaTopic]` and removed `processObjectDependencies` in `KafkaSource`
 
 Be aware that we are using avro 1.9.2 instead of default Flink's 1.8.2 (for java time logical types conversions purpose).
 
 * [#1013](https://github.com/TouK/nussknacker/pull/1013) Expression evaluation is synchronous now. It shouldn't cause any problems 
-(all languages were synchronous anyway), but some internal code may have o change.
+(all languages were synchronous anyway), but some internal code may have to change.
 
 ## In version 0.1.2
 

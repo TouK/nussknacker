@@ -62,10 +62,10 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
         case Some(nextPart) =>
           val errorsCombined = errors ++ nextPart.errors
           nextPart match {
-            case transformer.FinalResults(finalContext, errors) =>
+            case transformer.FinalResults(finalContext, errors, state) =>
               //we add distinct here, as multi-step, partial validation of parameters can cause duplicate errors if implementation is not v. careful
               val allErrors = (errorsCombined ++ errors).distinct
-              Valid(TransformationResult(allErrors, evaluatedSoFar.map(_._1), finalContext))
+              Valid(TransformationResult(allErrors, evaluatedSoFar.map(_._1), finalContext, state))
             case transformer.NextParameters(newParameters, newParameterErrors, state) =>
               val (parameterEvaluationErrors, newEvaluatedParameters) = newParameters.map { newParam =>
                 val prepared = prepareParameter(newParam)
@@ -118,4 +118,5 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
 
 case class TransformationResult(errors: List[ProcessCompilationError],
                                 parameters: List[Parameter],
-                                outputContext: ValidationContext)
+                                outputContext: ValidationContext,
+                                finalState: Option[Any])

@@ -3,9 +3,10 @@ import React from "react"
 import Draggable from "react-draggable"
 import Modal from "react-modal"
 import {connect} from "react-redux"
-import {showProcess} from "../actions/nk/showProcess"
 import * as DialogMessages from "../common/DialogMessages"
 import NkModalStyles from "../common/NkModalStyles"
+import {visualizationUrl} from "../common/VisualizationUrl"
+import history from "../history"
 import HttpService from "../http/HttpService"
 import "../stylesheets/visualization.styl"
 import {allValid, HandledErrorType, mandatoryValueValidator, Validator, ValidatorType} from "./graph/node-modal/editors/Validators"
@@ -53,9 +54,9 @@ class AddProcessDialog extends React.Component<Props, State> {
   }
 
   private async createProcess(processId: string, processCategory: string) {
-    const {isSubprocess, showProcess} = this.props
+    const {isSubprocess} = this.props
     await HttpService.createProcess(processId, processCategory, isSubprocess)
-    showProcess(processId)
+    history.push(visualizationUrl(processId))
   }
 
   render() {
@@ -143,7 +144,7 @@ function mapState(state) {
   }
 }
 
-const mapDispatch = {showProcess}
+const mapDispatch = {}
 
 type OwnProps = {
   onClose: () => void,

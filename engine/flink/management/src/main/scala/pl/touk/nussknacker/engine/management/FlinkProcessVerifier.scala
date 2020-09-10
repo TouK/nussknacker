@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.util.StaticMethodRunner
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
-
 class FlinkProcessVerifier(modelData: ModelData) extends StaticMethodRunner(modelData.modelClassLoader.classLoader,
   "pl.touk.nussknacker.engine.process.runner.FlinkVerificationMain", "run") with LazyLogging {
 

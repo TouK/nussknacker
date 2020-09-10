@@ -17,7 +17,9 @@ import pl.touk.nussknacker.engine.flink.queryablestate.FlinkQueryableClient
 import pl.touk.nussknacker.engine.flink.test.{FlinkMiniClusterHolder, FlinkSpec, FlinkTestConfiguration}
 import pl.touk.nussknacker.engine.kafka.{AvailablePortFinder, KafkaSpec, KafkaZookeeperServer}
 import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
+import pl.touk.nussknacker.engine.process
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.ExtremelyPatientScalaFutures
@@ -35,7 +37,7 @@ class QueryableStateTest extends FlatSpec with FlinkSpec with Matchers with Kafk
 
   private val taskManagersCount = 2
   private val configuration: Configuration = FlinkTestConfiguration.configuration(taskManagersCount = taskManagersCount)
-  private var registrar: FlinkStreamingProcessRegistrar = _
+  private var registrar: FlinkProcessRegistrar = _
 
 
 
@@ -50,7 +52,7 @@ class QueryableStateTest extends FlatSpec with FlinkSpec with Matchers with Kafk
     }
     val testConfig = TestConfig(kafkaZookeeperServer)
     val modelData = LocalModelData(testConfig, creator)
-    registrar = FlinkStreamingProcessRegistrar(new FlinkProcessCompiler(modelData), testConfig, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
+    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), testConfig, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
   }
 
 

@@ -10,11 +10,29 @@ Nussknacker versions
 
 0.3.0 (not released yet)
 ------------------------
+* [#1165](https://github.com/TouK/nussknacker/pull/1165) Typed global variables
+* [#1128](https://github.com/TouK/nussknacker/pull/1128) Union-memo transformer
 * [#1054](https://github.com/TouK/nussknacker/pull/1054) Tabbed dark process list
+* Configuration improvements (library upgrade, conventions): 
+  [#1151](https://github.com/TouK/nussknacker/pull/1151), 
+  [#1166](https://github.com/TouK/nussknacker/pull/1166) 
+* [#873](https://github.com/TouK/nussknacker/pull/873) Flink upgrade 
+* More graceful handling of Flink compatibility issues:
+  [#1150](https://github.com/TouK/nussknacker/pull/1150)
+* [#1183](https://github.com/TouK/nussknacker/pull/1183) New back to process button on metrics 
+* [#1188](https://github.com/TouK/nussknacker/pull/1188) Fix env label and provide nussknacker logo
 
-0.2.1 (not released yet)
+0.2.2
+-----------------------
+* [#1175](https://github.com/TouK/nussknacker/pull/1175) Fix for: BestEffortAvroEncoder haven't produced record with logical types for missing field with default values
+* [#1173](https://github.com/TouK/nussknacker/pull/1173) Fix for: Avro source wasn't be able to read record with schema with invalid defaults
+
+0.2.1
 -----------------------
 * [#1127](https://github.com/TouK/nussknacker/pull/1127) Fix too small count values
+* [#1133](https://github.com/TouK/nussknacker/pull/1133) Improvements: More flexible TestReporter instancies implementation 
+* [#1131](https://github.com/TouK/nussknacker/pull/1131) Fix: Disable "deploy" & "metrics" buttons for subprocess  
+* [#1148](https://github.com/TouK/nussknacker/pull/1148) Fix FE regexp for match node id
 
 0.2.0
 ------------------------

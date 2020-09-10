@@ -121,7 +121,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
       case (branchId, expression) =>
         enrichContext(branchContexts(branchId), definition).andThen { finalCtx =>
           // TODO JOIN: branch id on error field level
-          compile(expression, Some(s"${definition.name} for branch $branchId"), finalCtx, Unknown).map(branchId -> _)
+          compile(expression, Some(s"${definition.name} for branch $branchId"), finalCtx, definition.typ).map(branchId -> _)
         }
     }.sequence.map(exprByBranchId => compiledgraph.evaluatedparam.TypedParameter(definition.name, TypedExpressionMap(exprByBranchId.toMap)))
   }

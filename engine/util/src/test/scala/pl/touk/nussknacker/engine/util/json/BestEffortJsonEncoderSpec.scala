@@ -1,8 +1,11 @@
 package pl.touk.nussknacker.engine.util.json
 
+import java.time.{LocalDateTime, OffsetDateTime, ZoneId, ZoneOffset, ZonedDateTime}
 import java.util
 
 import io.circe.Json._
+import org.apache.avro.SchemaBuilder
+import org.apache.avro.generic.GenericRecordBuilder
 import org.scalatest.{FunSpec, Matchers}
 
 import scala.collection.immutable.{ListMap, ListSet}
@@ -17,6 +20,16 @@ class BestEffortJsonEncoderSpec extends FunSpec with Matchers {
     encoder.encode(java.math.BigDecimal.valueOf(2.0)) shouldEqual fromBigDecimal(BigDecimal.valueOf(2.0))
     encoder.encode(2.0) shouldEqual fromBigDecimal(BigDecimal.valueOf(2.0))
     encoder.encode("ala") shouldEqual fromString("ala")
+    encoder.encode(true) shouldEqual fromBoolean(true)
+    encoder.encode(LocalDateTime.of(2020, 9, 12,
+      11, 55, 33, 0)) shouldEqual fromString("2020-09-12T11:55:33")
+
+    val zonedTime = ZonedDateTime.of(2020, 9, 12,
+          11, 55, 33, 0, ZoneId.of("Europe/Warsaw"))
+    encoder.encode(zonedTime) shouldEqual fromString("2020-09-12T11:55:33+02:00")
+    encoder.encode(zonedTime.toOffsetDateTime) shouldEqual fromString("2020-09-12T11:55:33+02:00")
+    //Default Instant encoding is in Z
+    encoder.encode(zonedTime.toInstant) shouldEqual fromString("2020-09-12T09:55:33Z")
   }
 
   it("should handle optional elements as a json") {
@@ -43,6 +56,16 @@ class BestEffortJsonEncoderSpec extends FunSpec with Matchers {
     map.put("key1", 1)
     map.put("key2", "value")
     encoder.encode(map) shouldEqual obj("key1" -> fromLong(1), "key2" -> fromString("value"))
+  }
+
+  it("should encode generic record") {
+    val schema =
+      SchemaBuilder.builder().record("test").fields()
+        .requiredString("field1")
+        .requiredLong("field2").endRecord()
+
+    val genRec = new GenericRecordBuilder(schema).set("field1", "a").set("field2", 11).build()
+    encoder.encode(genRec) shouldEqual obj("field1" -> fromString("a"), "field2" -> fromLong(11))
   }
 
 }

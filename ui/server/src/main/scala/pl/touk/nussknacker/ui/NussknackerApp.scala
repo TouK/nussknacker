@@ -19,7 +19,7 @@ import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.ui.NusskanckerDefaultAppRouter.logger
 import pl.touk.nussknacker.ui.api._
-import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
+import pl.touk.nussknacker.ui.config.{AnalyticsConfig, ConfigWithDefaults, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DatabaseServer, DbConfig}
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerFactory
@@ -199,7 +199,7 @@ object NussknackerAppInitializer extends LazyLogging {
   protected implicit val system: ActorSystem = ActorSystem("nussknacker-ui")
   protected implicit val materializer: ActorMaterializer = ActorMaterializer()
 
-  protected val config: Config = system.settings.config.withFallback(ConfigFactory.load("defaultConfig.conf"))
+  protected val config: Config = ConfigWithDefaults(system.settings.config)
   protected val jdbcServerConfig: Option[DatabaseServer.Config] = config.getAs[DatabaseServer.Config]("jdbcServer")
   protected val hsqlServer: Option[Server] = jdbcServerConfig.map(DatabaseServer(_))
 

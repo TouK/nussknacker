@@ -35,7 +35,7 @@ const BranchParameters = (props) => {
                       <div className={"branch-param-label"}>{branchId}</div>
                       <div className={"branch-parameter-expr-container"}>
                         <ExpressionField
-                          fieldName={null}
+                          fieldName={branchErrorFieldName(paramName, branchId)}
                           fieldLabel={paramName}
                           exprPath={expressionPath}
                           isEditMode={isEditMode}

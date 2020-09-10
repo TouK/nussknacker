@@ -30,7 +30,7 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
     (obj match {
       case e:GenericNodeTransformation[_] =>
         val returnType = if (e.nodeDependencies.contains(OutputVariableNameDependency)) Unknown else Typed[Void]
-        val definition = ObjectDefinition(e.initialParameters, returnType, objWithCategories.categories)
+        val definition = ObjectDefinition(e.initialParameters, returnType, objWithCategories.categories, objWithCategories.nodeConfig)
         Right(GenericNodeTransformationMethodDef(e, definition))
       case e:WithExplicitMethodToInvoke =>
         WithExplicitMethodToInvokeMethodDefinitionExtractor.extractMethodDefinition(e,
@@ -119,14 +119,19 @@ object DefinitionExtractor {
         case OutputVariableNameDependency => outputVariableNameOpt.map(OutputVariableNameValue).getOrElse(throw new IllegalArgumentException("Output variable not defined"))
         case other => throw new IllegalArgumentException(s"Cannot handle dependency $other")
       }
+      val finalStateValue = additional.collectFirst {
+        case FinalStateValue(value) => value
+      }.getOrElse(throw new IllegalArgumentException("Final state not passed to invokeMethod"))
       //we assume parameters were already validated!
-      obj.implementation(params, additionalParams)
+      obj.implementation(params, additionalParams, finalStateValue.asInstanceOf[Option[obj.State]])
     }
 
     override def runtimeClass: Class[_] = classOf[Any]
 
     override def annotations: List[Annotation] = Nil
   }
+
+  case class FinalStateValue(value: Option[Any])
 
   case class StandardObjectWithMethodDef(obj: Any,
                                  methodDef: MethodDefinition,

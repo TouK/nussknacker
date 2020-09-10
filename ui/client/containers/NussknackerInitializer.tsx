@@ -14,6 +14,7 @@ import SystemUtils from "../common/SystemUtils"
 import LoaderSpinner from "../components/Spinner"
 import HttpService from "../http/HttpService"
 import InitializeError from "./errors/InitializeError"
+import {AuthenticationSettings} from "../reducers/settings"
 
 type Error = {
   message: string,
@@ -38,8 +39,8 @@ class NussknackerInitializer extends React.Component<Props, State> {
   public static HTTP_APPLICATION_CODE = 500
   public static ACCESS_TOKEN_CODE = 1024
 
-  redirectToAuthorizeUrl = () => {
-    window.location.replace(this.props.authenticationSettings.authorizeUrl)
+  redirectToAuthorizeUrl(settings: AuthenticationSettings) {
+    window.location.replace(`${settings.authorizeUrl}`)
   }
 
   state = {
@@ -74,7 +75,7 @@ class NussknackerInitializer extends React.Component<Props, State> {
         },
         1024: {
           message: t("nussknackerInitializer.errors.accessToken.message", "Authentication Error"),
-          buttonOnClick: this.redirectToAuthorizeUrl,
+          buttonOnClick: () => this.redirectToAuthorizeUrl(this.props.authenticationSettings),
           buttonLabel: t("nussknackerInitializer.errors.504.buttonLabel", "Go to authentication page"),
           description: t(
             "nussknackerInitializer.errors.504.description",
@@ -113,29 +114,37 @@ class NussknackerInitializer extends React.Component<Props, State> {
     // Automatically redirect user when he is not authenticated and backend is OAUTH2
     api.interceptors.response.use(response => response, (error) => {
       if (_.get(error, "response.status") === NussknackerInitializer.HTTP_UNAUTHORIZED_CODE && settings.backend === NussknackerInitializer.OAUTH2_BACKEND) {
-        window.location.replace(settings.authorizeUrl)
+        this.redirectToAuthorizeUrl(settings)
       }
 
       return Promise.reject(error)
     })
 
-    const queryParams = queryString.parse(this.props.history.location.search)
-    if (settings.backend === NussknackerInitializer.OAUTH2_BACKEND && queryParams.code) {
-      return HttpService.fetchOAuth2AccessToken(queryParams.code).then(response => {
-        SystemUtils.setAuthorizationToken(response.data.accessToken)
-        return Promise.resolve(response)
-      }).catch(error => {
-        this.setState({error: this.state.errors[NussknackerInitializer.ACCESS_TOKEN_CODE]})
-        return Promise.reject(error)
-      }).finally(() => {
-        this.props.history.replace({search: null})
-      })
-    }
+    if (settings.backend === NussknackerInitializer.OAUTH2_BACKEND) {
+      const queryParams = queryString.parse(this.props.history.location.search)
+      if (queryParams.code) {
+        return HttpService.fetchOAuth2AccessToken(queryParams.code).then(response => {
+          SystemUtils.setAuthorizationToken(response.data.accessToken)
+          return Promise.resolve(response)
+        }).catch(error => {
+          this.setState({error: this.state.errors[NussknackerInitializer.ACCESS_TOKEN_CODE]})
+          return Promise.reject(error)
+        }).finally(() => {
+          this.props.history.replace({search: null})
+        })
+      }
 
-    if (settings.backend === NussknackerInitializer.OAUTH2_BACKEND && !SystemUtils.hasAccessToken()) {
-      window.location.replace(settings.authorizeUrl)
-      return Promise.reject()
-    } else if (settings.backend !== NussknackerInitializer.OAUTH2_BACKEND && SystemUtils.hasAccessToken()) {
+      const queryHashParams = queryString.parse(this.props.history.location.hash)
+      if (settings.implicitGrantEnabled === true && queryHashParams.access_token) {
+        SystemUtils.setAuthorizationToken(queryHashParams.access_token)
+        this.props.history.replace({hash: null})
+      }
+
+      if (!SystemUtils.hasAccessToken()) {
+        this.redirectToAuthorizeUrl(settings)
+        return Promise.reject()
+      }
+    } else if (SystemUtils.hasAccessToken()) {
       SystemUtils.clearAuthorizationToken()
     }
 

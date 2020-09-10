@@ -26,6 +26,11 @@ is defined by 'Output' parameter, it's value is:
 ```  
 Currently branches are identified by id of last node in this branch before union.
 
+## UnionMemo
+
+Works exactly like Union, but also memoize values for each branches. Memoized state will be cleared when there was no
+subsequent events from any branch during `stateTimeout`. Produced object has values from all branches.
+
 ## AggregateSliding
 
 ![aggregate_window](../img/aggregate_window.png)

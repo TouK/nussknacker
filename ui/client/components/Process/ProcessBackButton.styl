@@ -1,0 +1,28 @@
+@import "./../../stylesheets/_variables.styl"
+
+:local
+  .button
+    @media (max-width: 1200px)
+      display none
+
+    margin-left 20px
+    background-color buttonBorderColor
+    border 1px solid menuButtonBorderColor
+    border-radius 3px
+    height 25px
+    display flex
+    align-items center
+    padding 0 8px
+    cursor pointer
+
+    &:hover, &:focus
+      background-color menuButtonActiveBKColor
+
+  .icon
+    height 12px
+
+  .text
+    font-size 14px
+    font-weight 600
+    color #f6f6f6
+    margin-left 8px

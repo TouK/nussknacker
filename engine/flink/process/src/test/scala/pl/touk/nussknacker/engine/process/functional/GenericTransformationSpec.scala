@@ -6,7 +6,7 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
-import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{MockService, SimpleRecord, SinkForStrings}
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{MockService, NodePassingStateToImplementation, SimpleRecord, SinkForStrings}
 import pl.touk.nussknacker.engine.spel
 
 class GenericTransformationSpec extends FunSuite with Matchers with ProcessTestHelpers {
@@ -31,6 +31,30 @@ class GenericTransformationSpec extends FunSuite with Matchers with ProcessTestH
     processInvoker.invokeWithSampleData(process, data)
 
     MockService.data shouldBe List(TypedMap(Map("val1" -> "aa", "val2" -> 11)))
+  }
+
+  test("be able to use final state in generic transformation's implementation") {
+    val processWithoutVariableDeclaration = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "input")
+      .customNode("generic-node", "result", "nodePassingStateToImplementation")
+      .processorEnd("proc2", "logService", "all" -> "#result")
+
+    val data = List(SimpleRecord("1", 3, "a", new Date(0)))
+
+    processInvoker.invokeWithSampleData(processWithoutVariableDeclaration, data)
+    MockService.data shouldBe List(false)
+
+    MockService.clear()
+    val processWithVariableDeclaration = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "input")
+      .buildSimpleVariable("build-var", NodePassingStateToImplementation.VariableThatShouldBeDefinedBeforeNodeName, "")
+      .customNode("generic-node", "result", "nodePassingStateToImplementation")
+      .processorEnd("proc2", "logService", "all" -> "#result")
+
+    processInvoker.invokeWithSampleData(processWithVariableDeclaration, data)
+    MockService.data shouldBe List(true)
   }
 
   test("be able to generic source and sink") {

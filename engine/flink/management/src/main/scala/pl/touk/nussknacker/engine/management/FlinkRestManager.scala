@@ -4,9 +4,8 @@ import java.io.File
 import java.util.concurrent.{TimeUnit, TimeoutException}
 
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.Decoder
 import io.circe.generic.JsonCodec
-import org.apache.flink.api.common.{ExecutionConfig, JobStatus}
+import org.apache.flink.api.common.ExecutionConfig
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
@@ -17,7 +16,6 @@ import pl.touk.nussknacker.engine.sttp.SttpJson
 import pl.touk.nussknacker.engine.util.exception.DeeplyCheckingExceptionExtractor
 import sttp.client._
 import sttp.client.circe._
-import sttp.model.Uri
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
@@ -110,21 +108,11 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
               version = Option.empty,
               attributes = Option.empty,
               startTime = Some(duplicates.head.`start-time`),
-              errors = List(s"Expected one job, instead: ${jobsForName.map(job => s"${job.jid} - ${job.state.name()}").mkString(", ")}"))
+              errors = List(s"Expected one job, instead: ${jobsForName.map(job => s"${job.jid} - ${job.state}").mkString(", ")}"))
             ))
           case jobs =>
             val job = findRunningOrFirst(jobs)
-            val stateStatus = job.state match {
-              case JobStatus.RUNNING => FlinkStateStatus.Running
-              case JobStatus.FINISHED => FlinkStateStatus.Finished
-              case JobStatus.RESTARTING => FlinkStateStatus.Restarting
-              case JobStatus.CANCELED => FlinkStateStatus.Canceled
-              case JobStatus.CANCELLING => FlinkStateStatus.DuringCancel
-              //The job is not technically running, but should be in a moment
-              case JobStatus.RECONCILING | JobStatus.CREATED | JobStatus.SUSPENDED => FlinkStateStatus.Running
-              case JobStatus.FAILING => FlinkStateStatus.Failing
-              case JobStatus.FAILED => FlinkStateStatus.Failed
-            }
+            val stateStatus = mapJobStatus(job)
             withVersion(job.jid, name).map { version =>
               //TODO: return error when there's no correct version in process
               //currently we're rather lax on this, so that this change is backward-compatible
@@ -149,7 +137,26 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
 
   private def findRunningOrFirst(jobOverviews: List[JobOverview]) = jobOverviews.find(isNotFinished).getOrElse(jobOverviews.head)
 
-  private def isNotFinished(overview: JobOverview): Boolean = !overview.state.isGloballyTerminalState
+  //NOTE: Flink <1.10 compatibility - protected to make it easier to work with Flink 1.9, JobStatus changed package, so we use String in case class
+  protected def isNotFinished(overview: JobOverview): Boolean = {
+    !org.apache.flink.api.common.JobStatus.valueOf(overview.state).isGloballyTerminalState
+  }
+
+  //NOTE: Flink <1.10 compatibility - protected to make it easier to work with Flink 1.9, JobStatus changed package, so we use String in case class
+  protected def mapJobStatus(overview: JobOverview): StateStatus = {
+    import org.apache.flink.api.common.JobStatus
+    JobStatus.valueOf(overview.state) match {
+      case JobStatus.RUNNING => FlinkStateStatus.Running
+      case JobStatus.FINISHED => FlinkStateStatus.Finished
+      case JobStatus.RESTARTING => FlinkStateStatus.Restarting
+      case JobStatus.CANCELED => FlinkStateStatus.Canceled
+      case JobStatus.CANCELLING => FlinkStateStatus.DuringCancel
+      //The job is not technically running, but should be in a moment
+      case JobStatus.RECONCILING | JobStatus.CREATED | JobStatus.SUSPENDED => FlinkStateStatus.Running
+      case JobStatus.FAILING => FlinkStateStatus.Failing
+      case JobStatus.FAILED => FlinkStateStatus.Failed
+    }
+  }
 
   //TODO: cache by jobId?
   private def withVersion(jobId: String, name: ProcessName): Future[Option[ProcessVersion]] = {
@@ -250,10 +257,9 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
           //sometimes deploying takes too long, which causes TimeoutException while waiting for deploy response
           //workaround for now, not the best solution though
           //TODO: we should change logic of ManagementActor to mark process deployed for *some* exceptions (like Timeout here)
-          case timeoutExtractor(e) => {
+          case timeoutExtractor(e) =>
             logger.warn("TimeoutException occurred while waiting for deploy result. Recovering with Future.successful...", e)
             Future.successful(Unit)
-          }
         })
     }
   }
@@ -268,8 +274,6 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
 }
 
 object flinkRestModel {
-
-  implicit val jobStatusDecoder: Decoder[JobStatus] = Decoder.decodeString.map(JobStatus.valueOf)
 
   /*
   When #programArgsList is not set in request Flink warns that
@@ -302,7 +306,8 @@ object flinkRestModel {
 
   @JsonCodec(decodeOnly = true) case class JobsResponse(jobs: List[JobOverview])
 
-  @JsonCodec(decodeOnly = true) case class JobOverview(jid: String, name: String, `last-modification`: Long, `start-time`: Long, state: JobStatus)
+  //NOTE: Flink <1.10 compatibility - JobStatus changed package, so we use String here
+  @JsonCodec(decodeOnly = true) case class JobOverview(jid: String, name: String, `last-modification`: Long, `start-time`: Long, state: String)
 
   @JsonCodec(decodeOnly = true) case class JobConfig(jid: String, `execution-config`: ExecutionConfig)
 

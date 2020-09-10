@@ -43,12 +43,15 @@ export AUTHENTICATION_USERS_FILE=${AUTHENTICATION_USERS_FILE:-$CONF_DIR/users.co
 mkdir -p $LOGS_DIR
 
 cd $WORKING_DIR
+
+set -x
 if [[ "${RUN_IN_BACKGROUND}" == "true" ]]; then
-  echo "Runnig: java -Dlogback.configurationFile=$LOGBACK_FILE -Dconfig.file=$CONFIG_FILE -cp \"$CLASSPATH\" pl.touk.nussknacker.ui.NussknackerApp >> $LOG_FILE 2>&1"
-  exec java -Dlogback.configurationFile=$LOGBACK_FILE -Dconfig.file=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.ui.NussknackerApp >> $LOG_FILE 2>&1 &
+  echo "Starting Nussknacker in background"
+  exec java $JDK_JAVA_OPTIONS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dconfig.file=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.ui.NussknackerApp >> $LOG_FILE 2>&1 &
   echo $! > $PID_FILE
   echo "Nussknacker up and running"
 else
-  echo "Runnig: java -Dlogback.configurationFile=$LOGBACK_FILE -Dconfig.file=$CONFIG_FILE -cp \"$CLASSPATH\" pl.touk.nussknacker.ui.NussknackerApp"
-  exec java $JDK_JAVA_OPTIONS -Dlogback.configurationFile=$LOGBACK_FILE -Dconfig.file=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.ui.NussknackerApp
+  echo "Starting Nussknacker"
+  exec java $JDK_JAVA_OPTIONS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dconfig.file=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.ui.NussknackerApp
 fi
+set +x

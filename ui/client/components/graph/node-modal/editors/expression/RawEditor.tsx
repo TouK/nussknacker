@@ -15,7 +15,7 @@ type Props = {
   cols?: number,
   className: string,
   variableTypes: VariableTypes,
-
+  validationLabelInfo?: string,
 }
 
 const RawEditor = (props: Props) => {
@@ -23,6 +23,7 @@ const RawEditor = (props: Props) => {
   const {
     expressionObj, validators, isMarked, showValidation, readOnly,
     onValueChange, rows = 1, cols = 50, className, variableTypes,
+    validationLabelInfo,
   } = props
 
   return (
@@ -41,6 +42,7 @@ const RawEditor = (props: Props) => {
         validators={validators}
         isMarked={isMarked}
         showValidation={showValidation}
+        validationLabelInfo={validationLabelInfo}
       />
     </div>
   )

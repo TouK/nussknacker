@@ -24,23 +24,34 @@ abstract class BaseKafkaAvroSourceFactory[T: ClassTag](timestampAssigner: Option
                    kafkaConfig: KafkaConfig,
                    deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory,
                    createRecordFormatter: String => Option[RecordFormatter],
-                   schemaDeterminer: AvroSchemaDeterminer)
+                   schemaDeterminer: AvroSchemaDeterminer,
+                   returnGenericAvroType: Boolean)
                   (implicit processMetaData: MetaData,
-                   nodeId: NodeId): KafkaSource[T] with ReturningType = {
+                   nodeId: NodeId): KafkaSource[T] = {
 
     val schema = schemaDeterminer.determineSchemaUsedInTyping.valueOr(SchemaDeterminerErrorHandler.handleSchemaRegistryErrorAndThrowException)
-    val returnTypeDefinition = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)
     val schemaUsedInRuntime = schemaDeterminer.toRuntimeSchema(schema)
 
-    new KafkaSource(
-      List(preparedTopic),
-      kafkaConfig,
-      deserializationSchemaFactory.create[T](schemaUsedInRuntime, kafkaConfig),
-      assignerToUse(kafkaConfig),
-      createRecordFormatter(preparedTopic.prepared),
-      TestParsingUtils.newLineSplit
-    ) with ReturningType {
-      override def returnType: typing.TypingResult = returnTypeDefinition
+    if (returnGenericAvroType) {
+      new KafkaSource(
+        List(preparedTopic),
+        kafkaConfig,
+        deserializationSchemaFactory.create[T](schemaUsedInRuntime, kafkaConfig),
+        assignerToUse(kafkaConfig),
+        createRecordFormatter(preparedTopic.prepared),
+        TestParsingUtils.newLineSplit
+      ) with ReturningType {
+        override def returnType: typing.TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)
+      }
+    } else {
+      new KafkaSource(
+        List(preparedTopic),
+        kafkaConfig,
+        deserializationSchemaFactory.create[T](schemaUsedInRuntime, kafkaConfig),
+        assignerToUse(kafkaConfig),
+        createRecordFormatter(preparedTopic.prepared),
+        TestParsingUtils.newLineSplit
+      )
     }
   }
 

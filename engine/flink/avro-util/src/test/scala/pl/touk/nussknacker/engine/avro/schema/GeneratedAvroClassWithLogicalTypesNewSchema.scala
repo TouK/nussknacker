@@ -72,8 +72,7 @@ object GeneratedAvroClassWithLogicalTypesNewSchema extends TestSchema {
       |    },
       |    {
       |      "name": "text2",
-      |      "type": "string",
-      |      "default": "234"
+      |      "type": "string"
       |    },
       |    {
       |      "name": "decimal",

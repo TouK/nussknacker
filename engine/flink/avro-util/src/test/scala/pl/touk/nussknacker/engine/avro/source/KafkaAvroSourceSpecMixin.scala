@@ -26,10 +26,27 @@ trait KafkaAvroSourceSpecMixin {
 
     val RecordTopic: String = "testAvroRecordTopic1"
     val IntTopic: String = "testAvroIntTopic1"
+    val InvalidDefaultsTopic: String = "testAvroInvalidDefaultsTopic1"
 
     val IntSchema: Schema = AvroUtils.parseSchema(
       """{
         |  "type": "int"
+        |}
+    """.stripMargin
+    )
+
+    val InvalidDefaultsSchema: Schema = AvroUtils.nonRestrictiveParseSchema(
+      """{
+        |  "type": "record",
+        |  "name": "invalid",
+        |  "namespace": "com.test",
+        |  "fields": [
+        |    {
+        |      "name": "field1",
+        |      "type": "string",
+        |      "default": null
+        |    }
+        |  ]
         |}
     """.stripMargin
     )
@@ -39,6 +56,7 @@ trait KafkaAvroSourceSpecMixin {
       .register(RecordTopic, FullNameV2.schema, 2, isKey = false)
       .register(IntTopic, IntSchema, 1, isKey = false)
       .register(IntTopic, IntSchema, 1, isKey = true)
+      .register(InvalidDefaultsTopic, InvalidDefaultsSchema, 1, isKey = false)
       .build
 
     val factory: CachedConfluentSchemaRegistryClientFactory = TestSchemaRegistryClientFactory(schemaRegistryMockClient)

@@ -70,8 +70,53 @@ countsSettings {
   password: "admin"
 }
 
+```             
+###Default configurations and overriding them
+Default configuration for UI is in [defaultUiConfig.conf](https://github.com/TouK/nussknacker/blob/staging/ui/server/src/main/resources/defaultUiConfig.conf).
+We don't use ```reference.conf``` at the moment, as classloaders of model and ui are not separated, and we don't want UI config to be passed to model. 
+
+Default configuration of models is taken from ```defaultModelConfig.conf``` files in model jar (see e.g. [defaultModelConfig.conf](https://github.com/TouK/nussknacker/blob/staging/engine/flink/generic/src/main/resources/defaultModelConfig.conf)).
+You can also use ```reference.conf``` in model jars, however we found some problems with substitutions (see docs in [ModelConfigToLoad](https://github.com/TouK/nussknacker/blob/staging/engine/interpreter/src/main/scala/pl/touk/nussknacker/engine/ModelConfigToLoad.scala)).
+ 
+How can you override default configuration? 
+Detailed rules are described in [documentation](https://github.com/lightbend/config#merging-config-trees). For example, if in the ```model.conf``` we have following entries: 
+```hocon 
+{
+   timeout: 10s
+   restartInterval: 10s
+   customProperties {
+    property1: 11
+   } 
+}
+```              
+you can override them in ```application.conf``` like this:
+```hocon 
+processTypes {
+  type1 {
+    modelConfig {
+      timeout: 20s
+      customProperties {
+        property1: 13
+      }
+    }
+  }
+}
+```  
+Please note that you have to define overridden properties in appropriate ```modelConfig``` section.
+Overriding UI configuration is straightforward: 
+```hocon
+  environmentAlert {
+    content: "DEVELOPMENT ENVIRONMENT" 
+  }
+```  
+ 
+All configurations can also be overridden with environmental variables. Please consult [TypesafeConfig documentation](https://github.com/lightbend/config#optional-system-or-env-variable-overrides).
+In particular, Nussknacker docker image is executed with ```-Dconfig.override_with_env_vars=true```   
+For example, to override samples above you would have to define:
+```shell script
+   CONFIG_FORCE_processTypes_type1_modelConfig_timeout=30s
+   CONFIG_FORCE_environmentAlert_content="MY environment"  
 ```
-In the next sections we'll look at 
 
 ##UI configuration
 
@@ -129,7 +174,7 @@ Processing type configuration consists of two main parts:
 
 We describe them below
 
-###Enging configuration
+###Engine configuration
 Configuration of communication with processing engine. Below we present Flink engine configuration as an example:
 
 ```

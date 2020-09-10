@@ -10,7 +10,7 @@ import javax.validation.constraints.NotBlank
 import org.scalatest.{FunSuite, Matchers}
 import org.springframework.expression.spel.standard.SpelExpression
 import pl.touk.nussknacker.engine.InterpreterSpec._
-import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
+import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.ServiceWithExplicitMethod
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
@@ -657,8 +657,7 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     intercept[IllegalArgumentException] {
       interpretSource(process, Transaction())
-    }.getMessage shouldBe "Compilation errors: EmptyMandatoryParameter(This field is mandatory and can not be empty,Please fill field for this parameter,expression,customNode), " +
-      "ExpressionParseError(Unresolved reference 'rawExpression',end,Some($expression),#rawExpression)"
+    }.getMessage shouldBe "Compilation errors: EmptyMandatoryParameter(This field is mandatory and can not be empty,Please fill field for this parameter,expression,customNode)"
   }
 
   test("not accept blank expression for not blank parameter") {
@@ -669,8 +668,7 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     intercept[IllegalArgumentException] {
       interpretSource(process, Transaction())
-    }.getMessage shouldBe "Compilation errors: BlankParameter(This field value is required and can not be blank,Please fill field value for this parameter,expression,customNode), " +
-      "ExpressionParseError(Unresolved reference 'rawExpression',end,Some($expression),#rawExpression)"
+    }.getMessage shouldBe "Compilation errors: BlankParameter(This field value is required and can not be blank,Please fill field value for this parameter,expression,customNode)"
   }
 }
 
@@ -790,7 +788,7 @@ object InterpreterSpec {
 
     override def returnType: typing.TypingResult = Typed[String]
 
-    override def invokeService(params: List[AnyRef])(implicit ec: ExecutionContext, collector: InvocationCollectors.ServiceInvocationCollector, metaData: MetaData): Future[AnyRef] = {
+    override def invokeService(params: List[AnyRef])(implicit ec: ExecutionContext, collector: InvocationCollectors.ServiceInvocationCollector, metaData: MetaData, contextId: ContextId): Future[AnyRef] = {
       Future.successful(params.head.asInstanceOf[Long].toString)
     }
 

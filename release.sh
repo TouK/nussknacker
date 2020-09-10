@@ -23,3 +23,11 @@ ARGS="release $@"
 JAVA_OPTS_VAL="-Xmx2G -XX:ReservedCodeCacheSize=256M -Xss6M -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled"
 echo "Executing: JAVA_OPTS=\"$JAVA_OPTS_VAL\" sbt \"$ARGS\""
 JAVA_OPTS="$JAVA_OPTS_VAL" ./sbtwrapper -DdockerUpLatest=${dockerUpdateLatest} "$ARGS"
+
+if [[ "$BACKPORT" == "true" ]]; then
+  echo "Backport release - Skipping updating docs (by push to master)"
+else
+  echo "Normal release - Updating docs (by push to master)"
+  git push origin HEAD:master -f 
+fi
+

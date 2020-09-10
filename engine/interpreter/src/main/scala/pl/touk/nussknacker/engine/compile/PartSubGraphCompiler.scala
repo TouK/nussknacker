@@ -5,33 +5,23 @@ import cats.data.{NonEmptyList, ValidatedNel}
 import cats.instances.list._
 import cats.instances.option._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo}
-import pl.touk.nussknacker.engine.api.typed.ServiceReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{Context, MetaData}
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo.DefaultExpressionId
 import pl.touk.nussknacker.engine.compile.PartSubGraphCompiler._
+import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeCompilationResult, NodeCompiler}
 import pl.touk.nussknacker.engine.compiledgraph.node
 import pl.touk.nussknacker.engine.compiledgraph.node.{Node, SubprocessEnd}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
-import pl.touk.nussknacker.engine.definition._
-import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.{Next, SplittedNode}
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
-import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.engine.{api, compiledgraph, _}
 
-import scala.util.{Failure, Success, Try}
-
-class PartSubGraphCompiler(protected val classLoader: ClassLoader,
-                           protected val expressionCompiler: ExpressionCompiler,
-                           protected val expressionConfig: ExpressionDefinition[ObjectWithMethodDef],
-                           protected val services: Map[String, ObjectWithMethodDef]) {
+class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
+                           nodeCompiler: NodeCompiler) {
 
   type ParametersProviderT = ObjectWithMethodDef
 
@@ -40,15 +30,9 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
   import CompilationResult._
   import syntax._
 
-  //FIXME: should it be here?
-  private val expressionEvaluator =
-    ExpressionEvaluator.unOptimizedEvaluator(GlobalVariablesPreparer(expressionConfig))
-
   def validate(n: splittednode.SplittedNode[_], ctx: ValidationContext): CompilationResult[Unit] = {
     compile(n, ctx).map(_ => ())
   }
-
-  protected def createServiceInvoker(obj: ObjectWithMethodDef) = ServiceInvoker(obj)
 
   /* TODO:
   1. Separate validation logic for expressions in nodes and expression not bounded to nodes (e.g. expressions in process properties).
@@ -109,9 +93,9 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
       CompilationResult(Map(nodeId.id -> NodeTypingInfo(ctx, expressionsTypingInfo, None)), validated)
 
     data match {
-      case graph.node.Processor(id, ref, disabled, _) =>
-        val (typingResult, validatedServiceRef) = compile(ref, ctx)
-        toCompilationResult(validatedServiceRef.map(ref => compiledgraph.node.EndingProcessor(id, ref, disabled.contains(true))), typingResult.expressionsTypingInfo)
+      case processor@graph.node.Processor(id, _, disabled, _) =>
+        val NodeCompilationResult(typingInfo, _, _, validatedServiceRef) = nodeCompiler.compileProcessor(processor, ctx)
+        toCompilationResult(validatedServiceRef.map(ref => compiledgraph.node.EndingProcessor(id, ref, disabled.contains(true))), typingInfo)
 
       case graph.node.Sink(id, ref, optionalExpression, disabled, _) =>
         val (expressionTypingInfoEntry, validatedOptionalExpression) = optionalExpression.map { oe =>
@@ -170,17 +154,18 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
           compiledgraph.node.VariableBuilder(id, varName, Right(compiledFields), compiledNext)
         }
 
-      case graph.node.Processor(id, ref, isDisabled, _) =>
-        val (typingResult, validatedServiceRef) = compile(ref, ctx)
-        CompilationResult.map2(toCompilationResult(validatedServiceRef, typingResult.expressionsTypingInfo), compile(next, ctx))((ref, next) =>
+      case processor@graph.node.Processor(id, _, isDisabled, _) =>
+        val NodeCompilationResult(typingInfo, _, _, validatedServiceRef) = nodeCompiler.compileProcessor(processor, ctx)
+        CompilationResult.map2(toCompilationResult(validatedServiceRef, typingInfo), compile(next, ctx))((ref, next) =>
           compiledgraph.node.Processor(id, ref, next, isDisabled.contains(true)))
 
-      case graph.node.Enricher(id, ref, outName, _) =>
-        val (typingResult, validatedServiceRef) = compile(ref, ctx)
+      case enricher@graph.node.Enricher(id, _, outName, _) =>
+        val NodeCompilationResult(typingInfo, _, newCtx, validatedServiceRef) = nodeCompiler.compileEnricher(enricher, ctx)
 
-        val (newCtx, combinedValidatedServiceRef) = withVariableCombined(ctx, outName, typingResult.returnType, validatedServiceRef)
-        CompilationResult.map2(toCompilationResult(combinedValidatedServiceRef, typingResult.expressionsTypingInfo), compile(next, newCtx))((ref, next) =>
-                           compiledgraph.node.Enricher(id, ref, outName, next))
+        CompilationResult.map3(
+          toCompilationResult(validatedServiceRef, typingInfo),
+          CompilationResult(newCtx),
+          compile(next, newCtx.getOrElse(ctx)))((ref, _, next) => compiledgraph.node.Enricher(id, ref, outName, next))
 
       //here we don't do anything, in subgraphcompiler it's just pass through, we can't add input context here because it contains output variable context (not input)
       case graph.node.CustomNode(id, _, _, _, _) =>
@@ -188,33 +173,10 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
           fa = compile(next, ctx))(
           f = compiledNext => compiledgraph.node.CustomNode(id, compiledNext))
 
-      case subprocessInput@SubprocessInput(id, ref, _, _, _) =>
-        import cats.implicits.toTraverseOps
-
-        val validParamDefs =
-          ref.parameters.map(p => getSubprocessParamDefinition(subprocessInput, p.name)).sequence
-
-        val paramNamesWithType: List[(String, TypingResult)] = validParamDefs.map { ps =>
-          ps.map(p => (p.name, p.typ))
-        }.getOrElse(ref.parameters.map(p => (p.name, Unknown)))
-
-        val childCtx = ctx.pushNewContext()
-
-        val (newCtx, combinedValidation) = paramNamesWithType.foldLeft[(ValidationContext, ValidatedNel[ProcessCompilationError, _])]((childCtx, Valid(Unit))) {
-          case ((accCtx, validation), (paramName, typ)) =>
-            withVariableCombined(accCtx, paramName, typ, validation)
-        }
-
-        val validParams = validParamDefs.andThen { paramDefs =>
-          expressionCompiler.compileEagerObjectParameters(paramDefs, ref.parameters, ctx)
-        }
-
-        val expressionTypingInfo = validParams.map(_.map(p => p.name -> p.typingInfo).toMap).valueOr(_ => Map.empty[String, ExpressionTypingInfo])
-
-        val combinedValidParams = ProcessCompilationError.ValidatedNelApplicative.map2(combinedValidation, validParams)((_, p) => p)
-
-        CompilationResult.map2(toCompilationResult(combinedValidParams, expressionTypingInfo), compile(next, newCtx))((params, next) =>
-          compiledgraph.node.SubprocessStart(id, params, next))
+      case subprocessInput:SubprocessInput =>
+        val NodeCompilationResult(typingInfo, _, newCtx, combinedValidParams) = nodeCompiler.compileSubprocessInput(subprocessInput, ctx)
+        CompilationResult.map2(toCompilationResult(combinedValidParams, typingInfo), compile(next, newCtx.getOrElse(ctx)))((params, next) =>
+          compiledgraph.node.SubprocessStart(subprocessInput.id, params, next))
 
       case SubprocessOutput(id, outPutName, List(), _) =>
         //this popContext *really* has to work to be able to extract variable types :|
@@ -239,29 +201,6 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
       case splittednode.NextNode(n) => compile(n, ctx).map(cn => compiledgraph.node.NextNode(cn))
       case splittednode.PartRef(ref) =>
         CompilationResult(Map(ref -> NodeTypingInfo(ctx, Map.empty, None)), Valid(compiledgraph.node.PartRef(ref)))
-    }
-  }
-
-  private def compile(n: graph.service.ServiceRef, ctx: ValidationContext)
-                     (implicit nodeId: NodeId): (ServiceTypingResult, ValidatedNel[ProcessCompilationError, compiledgraph.service.ServiceRef]) = {
-    val service = services.get(n.id).map(Valid(_)).getOrElse(invalid(MissingService(n.id))).toValidatedNel
-
-    val validatedServiceWithTypingResult = service.andThen { objWithMethod =>
-      expressionCompiler.compileEagerObjectParameters(objWithMethod.parameters, n.parameters, ctx).andThen { params =>
-        NodeValidationExceptionHandler.handleExceptions {
-          (params, computeReturnType(objWithMethod, params))
-        }
-      }.map { case (params, returnType) =>
-        val invoker = createServiceInvoker(objWithMethod)
-        val typingResult = ServiceTypingResult(returnType, params.map(p => p.name -> p.typingInfo).toMap)
-        (compiledgraph.service.ServiceRef(n.id, invoker, params), typingResult)
-      }
-    }
-    validatedServiceWithTypingResult match {
-      case Valid((serviceRef, typingResult)) =>
-        (typingResult, Valid(serviceRef))
-      case invalid@Invalid(_) =>
-        (ServiceTypingResult(Unknown, Map.empty), invalid)
     }
   }
 
@@ -293,45 +232,8 @@ class PartSubGraphCompiler(protected val classLoader: ClassLoader,
       .valueOr(err => (ExpressionTypingResult(Unknown, None), Invalid(err)))
   }
 
-  //this method tries to compute constant parameters if service is ServiceReturningType
-  //TODO: is it right way to do this? Maybe we just need to analyze Expression?
-  private def computeReturnType(objWithMethod: ObjectWithMethodDef,
-                                parameters: List[compiledgraph.evaluatedparam.Parameter])(implicit nodeId: NodeId): TypingResult = objWithMethod.obj match {
-    case srt: ServiceReturningType =>
-
-      val data = parameters.map { param =>
-        param.name -> (param.returnType, tryToEvaluateParam(param))
-      }.toMap
-      srt.returnType(data)
-    case _ =>
-      objWithMethod.returnType
-  }
-
-  /*
-      we try to evaluate parameter, but if it fails (e.g. it contains variable), or future does not complete immediately - we just return None
-   */
-  private def tryToEvaluateParam(param: compiledgraph.evaluatedparam.Parameter)(implicit nodeId: NodeId): Option[Any] = {
-    implicit val meta: MetaData = MetaData("", null)
-    Try {
-      expressionEvaluator.evaluateParameter(param, Context("")).value
-    }.toOption
-  }
-
-  private def getSubprocessParamDefinition(subprocessInput: SubprocessInput, paramName: String): ValidatedNel[PartSubGraphCompilationError, Parameter] = {
-    val subParam = subprocessInput.subprocessParams.get.find(_.name == paramName).get
-    subParam.typ.toRuntimeClass(classLoader) match {
-      case Success(runtimeClass) =>
-        valid(Parameter.optional(paramName, Typed(runtimeClass)))
-      case Failure(_) =>
-        invalid(
-          SubprocessParamClassLoadError(paramName, subParam.typ.refClazzName, subprocessInput.id)
-        ).toValidatedNel
-    }
-  }
-
-
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): PartSubGraphCompiler =
-    new PartSubGraphCompiler(classLoader, expressionCompiler.withExpressionParsers(modify), expressionConfig, services)
+    new PartSubGraphCompiler(expressionCompiler.withExpressionParsers(modify), nodeCompiler.withExpressionParsers(modify))
 
 }
 

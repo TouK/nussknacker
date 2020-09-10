@@ -1,5 +1,5 @@
 import React from "react"
-import {Route, Redirect} from "react-router"
+import {Redirect, Route, RouteComponentProps} from "react-router"
 import {matchPath, withRouter} from "react-router-dom"
 import _ from "lodash"
 import {MenuBar} from "../components/MenuBar"
@@ -11,10 +11,10 @@ import {nkPath} from "../config"
 import {TransitionRouteSwitch} from "./TransitionRouteSwitch"
 import Metrics from "./Metrics"
 import Signals from "./Signals"
-import AdminPage from "./AdminPage"
+import {NkAdminPage, AdminPage} from "./AdminPage"
 import DragArea from "../components/DragArea"
 import {connect} from "react-redux"
-import ActionsUtils from "../actions/ActionsUtils"
+import ActionsUtils, {EspActionsProps} from "../actions/ActionsUtils"
 import Dialogs from "../components/modals/Dialogs"
 import Visualization from "./Visualization"
 
@@ -22,11 +22,27 @@ import "../stylesheets/mainMenu.styl"
 import "../app.styl"
 import ErrorHandler from "./ErrorHandler"
 import {ProcessTabs} from "./ProcessTabs"
-import {goToProcess} from "../actions/nk/showProcess"
 import {getFeatureSettings} from "../reducers/selectors/settings"
 import CustomTabs from "./CustomTabs"
+import {withTranslation} from "react-i18next"
+import {WithTranslation} from "react-i18next/src"
+import {compose} from "redux"
+import {UnregisterCallback} from "history"
+import ProcessBackButton from "../components/Process/ProcessBackButton"
+import * as queryString from "query-string"
 
-export class EspApp extends React.Component {
+type OwnProps = {}
+type State = {}
+
+type MetricParam = {
+  params: {
+    processId: string,
+  },
+}
+
+export class NussknackerApp extends React.Component<Props, State> {
+  private readonly path: string = `${nkPath}/`
+  private mountedHistory: UnregisterCallback
 
   componentDidMount() {
     this.mountedHistory = this.props.history.listen((location, action) => {
@@ -42,27 +58,39 @@ export class EspApp extends React.Component {
     }
   }
 
-  getMetricsMatch() {
-    return matchPath(this.props.location.pathname, {path: Metrics.path, exact: true, strict: false})
-  }
+  getMetricsMatch = (): MetricParam => matchPath(this.props.location.pathname, {path: Metrics.path, exact: true, strict: false})
 
   canGoToProcess() {
     const match = this.getMetricsMatch()
-    return _.get(match, "params.processId") != null
+    return match?.params?.processId != null
   }
 
-  goToProcess = () => {
-    const match = this.getMetricsMatch()
-    goToProcess(match.params.processId)
+  /**
+   * In some cases (eg. docker demo) we serve Grafana and Kibana from nginx proxy, from root app url, and when service responds with error
+   * then React app catches this and shows error page. To make it render only error, without app menu, we have mark iframe
+   * requests with special query parameter so that we can recognize them and skip menu rendering.
+   */
+  renderMenu = () => {
+    const isLoadAsIframe = queryString.parse(this.props.history.location.search, {parseBooleans: true})?.iframe
+
+    if (!isLoadAsIframe) {
+      return (
+        <MenuBar
+          {...this.props}
+          appPath={this.path}
+          leftElement={this.renderTopLeftButton()}
+          rightElement={this.environmentAlert(this.props.featuresSettings.environmentAlert)}
+        />
+      )
+    }
+
+    return null
   }
 
   renderTopLeftButton() {
+    const match = this.getMetricsMatch()
     if (this.canGoToProcess()) {
-      return (
-        <div className="top-left-button" onClick={this.goToProcess}>
-          <span className="glyphicon glyphicon-menu-left"/>
-        </div>
-      )
+      return (<ProcessBackButton processId={match.params.processId}/>)
     } else {
       return null
     }
@@ -80,12 +108,7 @@ export class EspApp extends React.Component {
     return this.props.resolved ? (
       <div id="app-container">
         <div className="hide">{JSON.stringify(__GIT__)}</div>
-        <MenuBar
-          {...this.props}
-          app={EspApp}
-          leftElement={this.renderTopLeftButton()}
-          rightElement={this.environmentAlert(this.props.featuresSettings.environmentAlert)}
-        />
+        { this.renderMenu() }
         <main>
           <DragArea>
             <AllDialogs/>
@@ -100,9 +123,9 @@ export class EspApp extends React.Component {
                   <Route path={Visualization.path} component={Visualization} exact/>
                   <Route path={Metrics.path} component={Metrics} exact/>
                   <Route path={Signals.path} component={Signals} exact/>
-                  <Route path={AdminPage.path} component={AdminPage} exact/>
+                  <Route path={AdminPage.path} component={NkAdminPage} exact/>
                   <Route path={`${CustomTabs.path}/:id`} component={CustomTabs} exact/>
-                  <Redirect from={EspApp.path} to={ProcessesTabData.path} exact/>
+                  <Redirect from={this.path} to={ProcessesTabData.path} exact/>
                   <Route component={NotFound}/>
                 </TransitionRouteSwitch>
               </ErrorHandler>
@@ -124,8 +147,12 @@ function mapState(state) {
   }
 }
 
-EspApp.path = `${nkPath}/`
-EspApp.header = "ESP"
+type Props = OwnProps & ReturnType<typeof mapState> & EspActionsProps &  WithTranslation & RouteComponentProps
 
-export default withRouter(connect(mapState, ActionsUtils.mapDispatchWithEspActions)(EspApp))
+const enhance = compose(
+  withRouter,
+  connect(mapState, ActionsUtils.mapDispatchWithEspActions),
+  withTranslation(),
+)
 
+export const NkApp = enhance(NussknackerApp)

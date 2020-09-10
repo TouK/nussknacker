@@ -2,14 +2,28 @@ import _ from "lodash"
 import PropTypes from "prop-types"
 import React from "react"
 import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
-import {errorValidator, mandatoryValueValidator} from "./editors/Validators"
+import {errorValidator, mandatoryValueValidator, Validator, Error} from "./editors/Validators"
 import EditableEditor from "./editors/EditableEditor"
 import LabeledInput from "./editors/field/LabeledInput"
 import LabeledTextarea from "./editors/field/LabeledTextarea"
+import {NodeType, VariableTypes} from "../../../types"
 
-const Variable = (props) => {
+type Props = {
+  readOnly?: boolean,
+  isMarked: (fieldName: string) => boolean,
+  node: NodeType,
+  onChange: (fieldName: string, value: string) => void,
+  showValidation: boolean,
+  showSwitch?: boolean,
+  variableTypes: VariableTypes,
+  inferredVariableType?: string,
+  renderFieldLabel: (label: string) => React.ReactNode,
+  errors?: Error[],
+}
 
-  const {node, onChange, isMarked, readOnly, showValidation, errors, variableTypes, renderFieldLabel} = props
+const Variable = (props: Props) => {
+
+  const {node, onChange, isMarked, readOnly, showValidation, errors, variableTypes, renderFieldLabel, inferredVariableType} = props
 
   return (
     <div className="node-table-body node-variable-builder-body">
@@ -42,11 +56,11 @@ const Variable = (props) => {
         showSwitch={false}
         errors={errors}
         variableTypes={variableTypes}
+        validationLabelInfo={inferredVariableType}
       />
       <LabeledTextarea
         renderFieldLabel={() => renderFieldLabel("Description")}
         value={node?.additionalFields?.description || ""}
-        path="additionalFields.description"
         onChange={(event) => onChange("additionalFields.description", event.target.value)}
         isMarked={isMarked("additionalFields.description")}
         readOnly={readOnly}
@@ -54,16 +68,6 @@ const Variable = (props) => {
       />
     </div>
   )
-}
-
-Variable.propTypes = {
-  readOnly: PropTypes.bool,
-  isMarked: PropTypes.func.isRequired,
-  node: PropTypes.object.isRequired,
-  onChange: PropTypes.func.isRequired,
-  showValidation: PropTypes.bool.isRequired,
-  showSwitch: PropTypes.bool,
-  variableTypes: PropTypes.object.isRequired,
 }
 
 Variable.defaultProps = {

@@ -37,7 +37,7 @@ object LastVariableFilterTransformer extends CustomStreamTransformer with Single
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
     case TransformationStep(Nil, _) => NextParameters(keyByParameter.parameter :: valueParameter.parameter ::Nil)
-    case TransformationStep((`keyByParameterName`,_ ) :: (`valueParameterName`, DefinedLazyParameter(typ)) :: Nil, _) => NextParameters(conditionParameter(typ)::Nil)
+    case TransformationStep((`keyByParameterName`,_ ) :: (`valueParameterName`, DefinedLazyParameter(expr)) :: Nil, _) => NextParameters(conditionParameter(expr.returnType)::Nil)
     //if we cannot determine value, we'll assume it's type is Unknown
     case TransformationStep((`keyByParameterName`, _) :: (`valueParameterName`, FailedToDefineParameter) :: Nil, _) => NextParameters(conditionParameter(Unknown)::Nil)
     case TransformationStep((`keyByParameterName`, _) :: (`valueParameterName`, _) :: (`conditionParameterName`, _) :: Nil, _) => FinalResults(context)
@@ -47,7 +47,7 @@ object LastVariableFilterTransformer extends CustomStreamTransformer with Single
 
   override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)
 
-  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue]): FlinkCustomStreamTransformation= {
+  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkCustomStreamTransformation= {
     val value = valueParameter.extractValue(params)
     val condition = params(conditionParameterName).asInstanceOf[LazyParameter[java.lang.Boolean]]
     val keyBy = keyByParameter.extractValue(params)

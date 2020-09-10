@@ -27,7 +27,7 @@ class SubprocessInputDefinition extends React.Component {
     super(props)
     this.typeOptions = this.getTypeOptions(this.props.typesInformation, (type) => ({
       value: type.clazzName.refClazzName,
-      label: ProcessUtils.humanReadableType(type.clazzName.refClazzName),
+      label: ProcessUtils.humanReadableType(type.clazzName),
     }))
 
     this.defaultTypeOption = _.find(this.typeOptions, {label: "String"}) || _.head(this.typeOptions)

@@ -8,13 +8,14 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNod
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.TypedNodeDependencyValue
 import pl.touk.nussknacker.engine.api.process.Sink
-import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException, typing}
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, SinkValueParamName, TopicParamName}
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer._
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
-import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2, PaymentV1}
-import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaVersionOption}
+import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2, GeneratedAvroClassWithLogicalTypes, PaymentV1}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaVersionOption}
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, KafkaAvroSpecMixin}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.{GenericNodeTransformationValidator, TransformationResult}
@@ -54,7 +55,7 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
         KafkaAvroBaseTransformer.SinkKeyParamName -> null,
         KafkaAvroBaseTransformer.SinkValidationModeParameterName -> validationMode.name,
         KafkaAvroBaseTransformer.SinkValueParamName -> value),
-      List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)))
+      List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)), None)
   }
 
   test("should throw exception when schema doesn't exist") {
@@ -93,6 +94,18 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
     }
   }
 
+  test("should handle incompatible schemas for specific records") {
+    val ex = intercept[CustomNodeValidationException] {
+      val valueParam = new LazyParameter[GenericContainer] {
+        override def returnType: typing.TypingResult = Typed[GeneratedAvroClassWithLogicalTypes]
+      }
+      createSink(generatedAvroTopic, ExistingSchemaVersion(generatedNewSchemaVersion), valueParam, ValidationMode.strict)
+    }
+    ex.getMessage shouldEqual "Provided value does not match selected Avro schema - errors:\nNone of the following types:\n" +
+      " - {text: CharSequence, dateTime: Instant, decimal: BigDecimal, date: LocalDate, time: LocalTime}\n" +
+      "can be a subclass of any of:\n" +
+      " - {text2: CharSequence}"
+  }
 
   test("should validate specific version") {
     val result = validate(

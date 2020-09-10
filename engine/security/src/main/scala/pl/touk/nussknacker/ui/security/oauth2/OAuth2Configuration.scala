@@ -5,6 +5,8 @@ import java.net.URI
 import com.typesafe.config.Config
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
 import pl.touk.nussknacker.ui.security.api.AuthenticationMethod.AuthenticationMethod
+import ProfileFormat.ProfileFormat
+
 
 case class OAuth2Configuration(method: AuthenticationMethod,
                                usersFile: String,
@@ -12,8 +14,10 @@ case class OAuth2Configuration(method: AuthenticationMethod,
                                clientSecret: String,
                                clientId: String,
                                profileUri: URI,
+                               profileFormat: Option[ProfileFormat],
                                accessTokenUri: URI,
                                redirectUri: URI,
+                               implicitGrantEnabled: Boolean,
                                accessTokenParams: Map[String, String] = Map.empty,
                                authorizeParams: Map[String, String] = Map.empty,
                                headers: Map[String, String] = Map.empty,
@@ -40,4 +44,10 @@ object OAuth2Configuration {
   import net.ceedubs.ficus.readers.EnumerationReader._
 
   def create(config: Config): OAuth2Configuration = config.as[OAuth2Configuration](authenticationConfigPath)
+}
+
+object ProfileFormat extends Enumeration {
+  type ProfileFormat = Value
+  val GITHUB = Value("github")
+  val AUTH0 = Value("auth0")
 }

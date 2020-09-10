@@ -19,14 +19,13 @@ import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, Expressi
 import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, LabelsDictTyper}
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.functionUtils.CollectionUtils
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 
-import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 /**
@@ -63,6 +62,9 @@ final case class ParsedSpelExpression(original: String, parser: () => Validated[
     parsed = parser().getOrElse(throw new RuntimeException(s"Failed to reparse $original - this should not happen!"))
   }
 }
+
+class SpelExpressionEvaluationException(val expression: String, val ctxId: String, cause: Throwable)
+  extends RuntimeException(s"Expression [$expression] evaluation failed, message: ${cause.getMessage}", cause)
 
 class SpelExpression(parsed: ParsedSpelExpression,
                      expectedReturnType: TypingResult,
@@ -108,7 +110,7 @@ class SpelExpression(parsed: ParsedSpelExpression,
         //we log twice here because LazyLogging cannot print context and stacktrace at the same time
         logger.debug("Expression evaluation failed. Original: {}. Context: {}", original, ctx)
         logger.debug("Expression evaluation failed", e)
-        throw e
+        throw new SpelExpressionEvaluationException(original, ctx.id, e)
     }
   }
 }

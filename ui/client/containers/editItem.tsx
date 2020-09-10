@@ -1,27 +1,28 @@
-import React, {useCallback} from "react"
-import {useDispatch} from "react-redux"
-import {showProcess} from "../actions/nk"
+import React from "react"
+import {useTranslation} from "react-i18next"
 import {ProcessType} from "../components/Process/types"
 import TableRowIcon from "../components/table/TableRowIcon"
+import {ProcessLink} from "./processLink"
 
 export function EditItem({process}: {process: ProcessType}) {
-  const dispatch = useDispatch()
-  const clickHandler = useCallback(
-    () => dispatch(showProcess(process.name)),
-    [process],
-  )
+  const {t} = useTranslation()
   return (
-    <TableRowIcon glyph="edit" title="Edit process" onClick={clickHandler}/>
+    <ProcessLink processId={process.name}>
+      <TableRowIcon glyph="edit" title={t("tableRowIcon-edit", "Edit process")}/>
+    </ProcessLink>
   )
 }
 
 export function ShowItem({process}: {process: ProcessType}) {
-  const dispatch = useDispatch()
-  const clickHandler = useCallback(
-    () => dispatch(showProcess(process.name)),
-    [process],
-  )
+  const {t} = useTranslation()
+
+  const title = process.isSubprocess ?
+    t("tableRowIcon-show-subprocess", "Show subprocess") :
+    t("tableRowIcon-show", "Show process")
+
   return (
-    <TableRowIcon glyph="eye-open" title={`Show ${process.isSubprocess ? "subprocess" : "process"}`} onClick={clickHandler}/>
+    <ProcessLink processId={process.name}>
+      <TableRowIcon glyph="eye-open" title={title}/>
+    </ProcessLink>
   )
 }

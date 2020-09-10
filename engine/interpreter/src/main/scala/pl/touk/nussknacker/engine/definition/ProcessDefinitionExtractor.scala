@@ -55,13 +55,7 @@ object ProcessDefinitionExtractor {
 
     val exceptionHandlerFactoryDefs = ObjectWithMethodDef.withEmptyConfig(exceptionHandlerFactory, ProcessObjectDefinitionExtractor.exceptionHandler)
 
-    //TODO: this is not so nice...
-    val globalVariablesDefs = expressionConfig.globalProcessVariables.map { case (varName, globalVar) =>
-      val typed = Typed.fromInstance(globalVar.value)
-      val safeClass = Option(globalVar.value).map(_.getClass).getOrElse(classOf[Any])
-      (varName, StandardObjectWithMethodDef(globalVar.value, MethodDefinition(varName, (_, _) => globalVar, new OrderedDependencies(List()), typed,  safeClass, List()),
-        ObjectDefinition(List(), typed, globalVar.categories, SingleNodeConfig.zero)))
-    }
+    val globalVariablesDefs = GlobalVariableDefinitionExtractor.extractDefinitions(expressionConfig.globalProcessVariables)
 
     val globalImportsDefs = expressionConfig.globalImports.map(_.value)
 
