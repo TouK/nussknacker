@@ -182,8 +182,10 @@ const subprocess = {
 
 
 describe("process utils", () => {
+  const typingResult1 = { type: "java.lang.String", display: "String" }
+  const typingResult2 = { type: "java.lang.Object", display: "Unknown" }
   it("should convert to readable type", () => {
-    expect(ProcessUtils.humanReadableType("java.lang.String")).toEqual("String")
-    expect(ProcessUtils.humanReadableType("int")).toEqual("Int")
+    expect(ProcessUtils.humanReadableType(typingResult1)).toEqual("String")
+    expect(ProcessUtils.humanReadableType(typingResult2)).toEqual("Unknown")
   })
 })       

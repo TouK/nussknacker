@@ -144,7 +144,7 @@ object node {
   @JsonCodec case class BranchEndDefinition(id: String, joinId: String) {
 
     //in CanonicalProcess and EspProcess we have to add artifical node (BranchEnd), we use this generated, unique id
-    //TODO: we're using this also in ProcessUtils.js (findContextForBranch, findVariablesForBranches). This should be refactored, so
+    //TODO: we're using this also in ProcessUtils.ts (findContextForBranch, findVariablesForBranches). This should be refactored, so
     //that we're passing ValidationContext for nodes explicitly
     def artificialNodeId: String = s"$$edge-$id-$joinId"
 
