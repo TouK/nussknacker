@@ -67,7 +67,7 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
               NodeDataValidator.validate(nodeData.nodeData, modelData, validationContext, branchCtxs) match {
                 case ValidationNotPerformed => NodeValidationResult(parameters = None, typedExpressions = None, validationErrors = Nil, validationPerformed = false)
                 case ValidationPerformed(errors, parameters, typedExpressionMap) =>
-                  val uiParams = parameters.map(_.map(UIProcessObjectsFactory.createUIParameter(_, ParameterConfig.empty)))
+                  val uiParams = parameters.map(_.map(UIProcessObjectsFactory.createUIParameter))
                   val uiTypedExpressions = typedExpressionMap.map(_.valueByKey.map { case (name, typedExpression) =>
                     UITypedExpression(name, typedExpression.returnType)
                   }.toList)

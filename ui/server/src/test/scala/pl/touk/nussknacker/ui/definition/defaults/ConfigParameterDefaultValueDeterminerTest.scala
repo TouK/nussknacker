@@ -16,7 +16,7 @@ class ConfigParameterDefaultValueDeterminerTest extends FlatSpec with Matchers {
   private def verifyDeterminer[T: TypeTag](paramName: String, determinedDefaultValue: Option[String]) = {
     val param = Parameter[T](paramName)
     it should s"determine default value of $param to $determinedDefaultValue" in {
-      determiner.determineParameterDefaultValue(node, createUIParameter(param, ParameterConfig.empty)) shouldBe determinedDefaultValue
+      determiner.determineParameterDefaultValue(node, createUIParameter(param)) shouldBe determinedDefaultValue
     }
   }
 

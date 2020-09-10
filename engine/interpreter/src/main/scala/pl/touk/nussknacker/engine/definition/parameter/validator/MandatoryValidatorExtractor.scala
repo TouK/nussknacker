@@ -1,6 +1,4 @@
-package pl.touk.nussknacker.engine.definition.validator
-
-import java.util.Optional
+package pl.touk.nussknacker.engine.definition.parameter.validator
 
 import javax.annotation.Nullable
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterValidator}
@@ -8,9 +6,9 @@ import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, P
 object MandatoryValidatorExtractor extends ValidatorExtractor {
 
   override def extract(params: ValidatorExtractorParameters): Option[ParameterValidator] = {
-    if (params.isScalaOptionParameter || params.isJavaOptionalParameter) {
+    if (params.isOptional) {
       None
-    } else if (params.rawJavaParam.getAnnotation(classOf[Nullable]) != null) {
+    } else if (params.parameterData.getAnnotation[Nullable].isDefined) {
       None
     } else {
       Some(MandatoryParameterValidator)

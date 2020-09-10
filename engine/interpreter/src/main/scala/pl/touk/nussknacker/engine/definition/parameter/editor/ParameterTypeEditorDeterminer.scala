@@ -1,8 +1,8 @@
-package pl.touk.nussknacker.engine.definition
+package pl.touk.nussknacker.engine.definition.parameter.editor
 
 import java.time.temporal.ChronoUnit
 
-import pl.touk.nussknacker.engine.api.definition.{DateParameterEditor, DateTimeParameterEditor, DualParameterEditor, DurationParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, ParameterEditor, PeriodParameterEditor, StringParameterEditor, TimeParameterEditor}
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult}
 
@@ -48,6 +48,11 @@ class ParameterTypeEditorDeterminer(val typ: TypingResult) extends ParameterEdit
           simpleEditor = PeriodParameterEditor(List(ChronoUnit.YEARS, ChronoUnit.MONTHS, ChronoUnit.DAYS)),
           defaultMode = DualEditorMode.SIMPLE
         )
+      //we use class name to avoid introducing dependency on cronutils in interpreter
+      case klazz if klazz.getName == "com.cronutils.model.Cron" => DualParameterEditor(
+        simpleEditor = CronParameterEditor,
+        defaultMode = DualEditorMode.SIMPLE
+      )
     }
   }
 
@@ -55,4 +60,7 @@ class ParameterTypeEditorDeterminer(val typ: TypingResult) extends ParameterEdit
     val enumConstName = enumClass.getMethod("name").invoke(enumConst)
     FixedExpressionValue(s"T(${enumClass.getName}).$enumConstName", enumConst.toString)
   }
+
 }
+
+
