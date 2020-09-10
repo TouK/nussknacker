@@ -10,13 +10,11 @@ import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExcepti
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo, TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType}
+import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType, typing}
 import pl.touk.nussknacker.engine.api.{Context, MetaData}
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeTypingInfo, NodeValidationExceptionHandler, ProcessObjectFactory}
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{FinalStateValue, ObjectWithMethodDef}
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition}
 import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, ServiceInvoker}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -24,6 +22,7 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
 import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.{evaluatedparam, node}
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
@@ -32,6 +31,8 @@ import shapeless.Typeable
 import shapeless.syntax.typeable._
 import cats.instances.list._
 import cats.implicits.toTraverseOps
+import pl.touk.nussknacker.engine.compile.NodeTypingInfo.DefaultExpressionId
+import pl.touk.nussknacker.engine.compile.PartSubGraphCompiler.ExpressionTypingResult
 
 import scala.util.{Failure, Success, Try}
 
@@ -125,6 +126,34 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     NodeCompilationResult(expressionTypingInfo, None, newCtx, validParams)
   }
 
+  def compileExpression(expr: graph.expression.Expression,
+                        ctx: ValidationContext)
+                        (implicit nodeId: NodeId): NodeCompilationResult[api.expression.Expression] = {
+
+    val compilationResult: ValidatedNel[ProcessCompilationError, TypedExpression] =
+      objectParametersExpressionCompiler.compile(expr, Some(DefaultExpressionId), ctx, typing.Unknown)
+
+    compilationResult match {
+      case Valid(typedExpression) =>
+        NodeCompilationResult(
+          expressionTypingInfo = ExpressionTypingResult(typedExpression.returnType, Some(typedExpression.typingInfo))
+            .toDefaultExpressionTypingInfoEntry.toMap,
+          parameters = None,
+          validationContext = Valid(ctx),
+          compiledObject = Valid(typedExpression.expression),
+          typedExpression = Some(typedExpression)
+        )
+      case invalid@Invalid(_) =>
+        NodeCompilationResult(
+          expressionTypingInfo = ExpressionTypingResult(Unknown, None)
+            .toDefaultExpressionTypingInfoEntry.toMap,
+          parameters = None,
+          validationContext = Valid(ctx),
+          compiledObject = invalid,
+          typedExpression = None
+        )
+    }
+  }
   def compileProcessor(n: Processor, ctx: ValidationContext)
                      (implicit nodeId: NodeId): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
     compileService(n.service, ctx, None)
@@ -370,6 +399,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
 case class NodeCompilationResult[T](expressionTypingInfo: Map[String, ExpressionTypingInfo],
                                     parameters: Option[List[Parameter]],
                                     validationContext: ValidatedNel[ProcessCompilationError, ValidationContext],
-                                    compiledObject: ValidatedNel[ProcessCompilationError, T]) {
+                                    compiledObject: ValidatedNel[ProcessCompilationError, T],
+                                    typedExpression: Option[TypedExpression] = None) {
   def errors: List[ProcessCompilationError] = (validationContext.swap.toList ++ compiledObject.swap.toList).flatMap(_.toList)
 }

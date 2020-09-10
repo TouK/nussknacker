@@ -132,6 +132,15 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
     }
   }
 
+  test("should return expression type info for variable definition") {
+    inside(
+      validate(Variable("var1", "var1", "42L", None), ValidationContext(Map.empty))
+    ) {
+      case ValidationPerformed(Nil, _, Some(typedExpression)) =>
+        typedExpression.returnType.display shouldBe "Long"
+    }
+  }
+
   ignore("should validate variable builder definition") {
     //TODO
   }
