@@ -200,7 +200,6 @@ val ficusV = "1.4.1"
 val configV = "1.4.0"
 val commonsLangV = "3.3.2"
 val commonsTextV = "1.8"
-val commonsIOV = "2.4"
 //we want to use 5.x for standalone metrics to have tags, however dropwizard development kind of freezed. Maybe we should consider micrometer?
 //In Flink metrics we use bundled dropwizard metrics v. 3.x
 val dropWizardV = "5.0.0-rc3"
@@ -717,7 +716,6 @@ lazy val security = (project in engine("security")).
         "com.pauldijou" %% "jwt-circe" % jwtCirceV,
         "com.typesafe.akka" %% "akka-testkit" % akkaV % "test" force(),
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
-        "commons-io" % "commons-io" % commonsIOV
       )
     }
   )

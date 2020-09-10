@@ -1,21 +1,16 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
-import java.io.{File, FileInputStream}
 import java.net.URI
-import java.security.KeyFactory
-import java.security.interfaces.RSAPublicKey
-import java.security.spec.X509EncodedKeySpec
-import java.security.{KeyFactory, PublicKey}
-import java.util.Base64
+import java.nio.charset.{Charset, StandardCharsets}
+import java.security.PublicKey
 
-import org.apache.commons.io.IOUtils
 import com.typesafe.config.Config
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
 import pl.touk.nussknacker.ui.security.api.AuthenticationMethod.AuthenticationMethod
 import ProfileFormat.ProfileFormat
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
 
-
+import scala.io.Source
 
 case class OAuth2Configuration(method: AuthenticationMethod,
                                usersFile: String,
@@ -75,18 +70,16 @@ object JwtConfiguration {
 
   implicit val jwtConfigurationVR: ValueReader[JwtConfiguration] = ValueReader.relative(_.rootAs[JwtConfig])
 
-  val base64Decoder: Base64.Decoder = Base64.getDecoder
-
   private case class JwtConfig(publicKey: Option[String],
                                publicKeyFile: Option[String],
                                certificate: Option[String],
                                certificateFile: Option[String]) extends JwtConfiguration {
     def authServerPublicKey: PublicKey = {
-      val charset: String = "UTF-8"
+      val charset: Charset = StandardCharsets.UTF_8
 
       def getContent(content: Option[String], file: Option[String]): Option[String] =
         content.orElse(file map { path =>
-          IOUtils.toString(new FileInputStream(new File(path)), charset)
+          Source.fromFile(path, StandardCharsets.UTF_8.name).mkString
         })
 
       getContent(publicKey, publicKeyFile).map(CertificatesAndKeys.publicKeyFromString(_, charset)) orElse

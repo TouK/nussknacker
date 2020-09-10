@@ -7,7 +7,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ClientApi.DefaultAccessTokenResponse
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2CollectiveException, OAuth2JwtError}
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2CompoundException, OAuth2JwtError}
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -32,18 +32,22 @@ class DefaultOAuth2Service[ProfileResponse: Decoder](clientApi: OAuth2ClientApi[
   def authorize(token: String): Future[LoggedUser] = getProfile(token).map(oAuth2Profile.getLoggedUser(_, configuration, allCategories))
 
   private def getProfile(token: String): Future[ProfileResponse] = {
-    val profileFromJwtResult = Validated.fromOption(configuration.jwt.map(new JwtValidator[ProfileResponse](_)),
-      NonEmptyList.of(OAuth2JwtError("authentication.jwt configuration not provided"))) andThen { jwtValidator =>
-      jwtValidator.getProfileFromJwt(token)
-    }
+    val profileRequestFuture = clientApi.profileRequest(token)
 
-    /* Firstly checks whether a profile can be obtained from the token (provided authentication.jwt configured),
-     * secondly tries to obtain the profile from a sent request.
-     */
-    profileFromJwtResult match {
-      case Valid(profile) => Future(profile)
-      case Invalid(jwtErrors) => clientApi.profileRequest(token) recover { case OAuth2CollectiveException(requestErrors) =>
-        throw OAuth2CollectiveException(jwtErrors concatNel requestErrors)
+    configuration.jwt match {
+      case None => profileRequestFuture
+      case Some(jwtConfiguration) => {
+        val profileFromJwtResult = new JwtValidator[ProfileResponse](jwtConfiguration).getProfileFromJwt(token)
+
+        /* Firstly checks whether a profile can be obtained from the token (provided authentication.jwt configured),
+         * secondly tries to obtain the profile from a sent request.
+         */
+        profileFromJwtResult match {
+          case Valid(profile) => Future(profile)
+          case Invalid(jwtErrors) => profileRequestFuture recover { case OAuth2CompoundException(requestErrors) =>
+            throw OAuth2CompoundException(jwtErrors concatNel requestErrors)
+          }
+        }
       }
     }
   }

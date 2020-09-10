@@ -8,7 +8,7 @@ import org.scalatest.{FlatSpec, Matchers, Suite}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ClientApi.DefaultAccessTokenResponse
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2CollectiveException, OAuth2ServerError}
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2CompoundException, OAuth2ServerError}
 import pl.touk.nussknacker.ui.security.oauth2.{DefaultOAuth2Service, DefaultOAuth2ServiceFactory, OAuth2AuthenticateData, OAuth2ErrorHandler, OAuth2Service}
 import sttp.client.Response
 import sttp.client.testing.SttpBackendStub
@@ -62,7 +62,7 @@ class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
   it should ("should InternalServerError response from authenticate request") in {
     val service = createErrorOAuth2Service(config.accessTokenUri, StatusCode.InternalServerError)
     service.authenticate("6V1reBXblpmfjRJP").recover{
-      case ex@OAuth2CollectiveException(errors) => errors.toList.collectFirst {
+      case ex@OAuth2CompoundException(errors) => errors.toList.collectFirst {
         case _: OAuth2ServerError => succeed
       }.getOrElse(throw ex)
     }.futureValue
@@ -149,7 +149,7 @@ class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
   it should ("should InternalServerError response from profile request") in {
     val service = createErrorOAuth2Service(config.profileUri, StatusCode.InternalServerError)
     service.authorize("6V1reBXblpmfjRJP").recover{
-      case ex@OAuth2CollectiveException(errors) => errors.toList.collectFirst {
+      case ex@OAuth2CompoundException(errors) => errors.toList.collectFirst {
         case _: OAuth2ServerError => succeed
       }.getOrElse(throw ex)
     }.futureValue

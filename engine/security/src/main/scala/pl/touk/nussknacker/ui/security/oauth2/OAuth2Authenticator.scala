@@ -27,8 +27,8 @@ class OAuth2Authenticator(configuration: OAuth2Configuration, service: OAuth2Ser
 }
 
 object OAuth2Authenticator extends LazyLogging {
-  def apply(configuration: OAuth2Configuration, service: OAuth2Service): OAuth2Authenticator
-  = new OAuth2Authenticator(configuration, service)
+  def apply(configuration: OAuth2Configuration, service: OAuth2Service): OAuth2Authenticator =
+    new OAuth2Authenticator(configuration, service)
 }
 
 object OAuth2ErrorHandler {
@@ -36,7 +36,7 @@ object OAuth2ErrorHandler {
   def unapply(t: Throwable): Option[Throwable] = Some(t).filter(apply)
 
   def apply(t: Throwable): Boolean = t match {
-    case OAuth2CollectiveException(errors) => errors.toList.collectFirst { case e@OAuth2ServerError(_) => e }.isEmpty
+    case OAuth2CompoundException(errors) => errors.toList.collectFirst { case e@OAuth2ServerError(_) => e }.isEmpty
     case _ => false
   }
 
@@ -44,7 +44,7 @@ object OAuth2ErrorHandler {
     def msg: String
   }
 
-  case class OAuth2CollectiveException(errors: NonEmptyList[OAuth2Error]) extends Exception {
+  case class OAuth2CompoundException(errors: NonEmptyList[OAuth2Error]) extends Exception {
     override def getMessage: String = errors.toList.mkString("OAuth2 exception with the following errors:\n - ", "\n - ", "")
   }
 
