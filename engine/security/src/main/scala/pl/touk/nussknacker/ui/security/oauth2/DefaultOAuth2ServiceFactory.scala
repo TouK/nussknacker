@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
+import cats.data.{NonEmptyList, Validated}
+import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -7,7 +9,9 @@ import pl.touk.nussknacker.ui.security.oauth2.OAuth2ClientApi.DefaultAccessToken
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext, Future}
+
 
 class DefaultOAuth2Service[ProfileResponse: Decoder](clientApi: OAuth2ClientApi[ProfileResponse, DefaultAccessTokenResponse],
                                                      oAuth2Profile: OAuth2Profile[ProfileResponse],
@@ -23,7 +27,32 @@ class DefaultOAuth2Service[ProfileResponse: Decoder](clientApi: OAuth2ClientApi[
     }
   }
 
-  def authorize(token: String): Future[LoggedUser] = clientApi.profileRequest(token).map(oAuth2Profile.getLoggedUser(_, configuration, allCategories))
+  def authorize(token: String): Future[LoggedUser] = getProfile(token).map(oAuth2Profile.getLoggedUser(_, configuration, allCategories))
+
+  private def getProfile(token: String): Future[ProfileResponse] = {
+    val profileFromJwtResult = Validated.fromOption(configuration.jwt.map(new JwtValidator[ProfileResponse](_)),
+      NonEmptyList.of("authentication.jwt configuration not provided")) andThen { jwtValidator =>
+      jwtValidator.getProfileFromJwt(token)
+    }
+
+    /* Firstly checks whether a profile can be obtained from the token (provided authentication.jwt configured),
+     * secondly tries to obtain the profile from a sent request.
+     */
+    Future {
+      val profileResult = profileFromJwtResult findValid {
+        val transformed = clientApi.profileRequest(token) map { profile =>
+          profile.validNel[String]
+        } recover { case ex: Exception =>
+          ex.getMessage.invalidNel[ProfileResponse]
+        }
+        Await.result(transformed, Duration.Inf)
+      }
+
+      profileResult.valueOr({ errors =>
+        throw new Exception(errors.toList.mkString("Errors in obtaining user profile:\n - ", "\n - ", ""))
+      })
+    }
+  }
 }
 
 class DefaultOAuth2ServiceFactoryWithProfileFormat[ProfileResponse: Decoder](oAuth2Profile: OAuth2Profile[ProfileResponse]) {
