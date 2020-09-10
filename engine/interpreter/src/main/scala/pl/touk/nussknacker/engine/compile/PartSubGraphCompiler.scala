@@ -54,8 +54,12 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
         compiledNexts.andThen(nx => toCompilationResult(Valid(compiledgraph.node.SplitNode(bareNode.id, nx)), Map.empty))
 
       case splittednode.FilterNode(f@graph.node.Filter(id, expression, _, _), nextTrue, nextFalse) =>
-        val (expressionTyping, validatedExpression) = compile(expression, Some(DefaultExpressionId), ctx, Typed[Boolean])
-        CompilationResult.map3(toCompilationResult(validatedExpression, expressionTyping.toDefaultExpressionTypingInfoEntry.toMap), compile(nextTrue, ctx), nextFalse.map(next => compile(next, ctx)).sequence)(
+        val NodeCompilationResult(typingInfo, _, _, compiledExpression, _) =
+          nodeCompiler.compileExpression(expression, ctx, expectedType = Typed[Boolean])
+        CompilationResult.map3(
+          f0 = toCompilationResult(compiledExpression, typingInfo),
+          f1 = compile(nextTrue, ctx),
+          f2 = nextFalse.map(next => compile(next, ctx)).sequence)(
           (expr, next, nextFalse) =>
             compiledgraph.node.Filter(id = id,
             expression = expr,
@@ -138,7 +142,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
     data match {
       case graph.node.Variable(id, varName, expression, _) =>
         val NodeCompilationResult(typingInfo, _, _, compiledExpression, typedExpression) =
-          nodeCompiler.compileExpression(expression, ctx)
+          nodeCompiler.compileExpression(expression, ctx, Unknown)
         val typingResult = typedExpression.map(_.returnType).getOrElse(Unknown)
         val (newCtx, combinedValidatedExpression) = withVariableCombined(ctx, varName, typingResult, compiledExpression)
 

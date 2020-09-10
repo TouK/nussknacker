@@ -127,11 +127,12 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
   }
 
   def compileExpression(expr: graph.expression.Expression,
-                        ctx: ValidationContext)
-                        (implicit nodeId: NodeId): NodeCompilationResult[api.expression.Expression] = {
+                        ctx: ValidationContext,
+                        expectedType: TypingResult)
+                       (implicit nodeId: NodeId): NodeCompilationResult[api.expression.Expression] = {
 
     val compilationResult: ValidatedNel[ProcessCompilationError, TypedExpression] =
-      objectParametersExpressionCompiler.compile(expr, Some(DefaultExpressionId), ctx, typing.Unknown)
+      objectParametersExpressionCompiler.compile(expr, Some(DefaultExpressionId), ctx, expectedType)
 
     compilationResult match {
       case Valid(typedExpression) =>

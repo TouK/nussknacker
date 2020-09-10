@@ -79,7 +79,11 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
       val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData(), ExceptionHandlerRef(Nil)), Map(), None)
 
       Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
-        responseAs[NodeValidationResult] shouldBe NodeValidationResult(parameters = None, typedExpressions = None, List(), validationPerformed = true)
+        responseAs[NodeValidationResult] shouldBe NodeValidationResult(
+          parameters = None,
+          typedExpressions = Some(UITypedExpression(NodeTypingInfo.DefaultExpressionId, Typed[Boolean]) :: Nil),
+          validationErrors = Nil,
+          validationPerformed = true)
       }
     }
   }
