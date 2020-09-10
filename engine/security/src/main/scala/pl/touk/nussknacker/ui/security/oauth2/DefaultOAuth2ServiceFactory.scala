@@ -1,8 +1,6 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, Validated}
-import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -11,8 +9,7 @@ import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2Compound
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future}
 
 
 class DefaultOAuth2Service[ProfileResponse: Decoder](clientApi: OAuth2ClientApi[ProfileResponse, DefaultAccessTokenResponse],
@@ -32,7 +29,7 @@ class DefaultOAuth2Service[ProfileResponse: Decoder](clientApi: OAuth2ClientApi[
   def authorize(token: String): Future[LoggedUser] = getProfile(token).map(oAuth2Profile.getLoggedUser(_, configuration, allCategories))
 
   private def getProfile(token: String): Future[ProfileResponse] = {
-    val profileRequestFuture = clientApi.profileRequest(token)
+    def profileRequestFuture = clientApi.profileRequest(token)
 
     configuration.jwt match {
       case None => profileRequestFuture
