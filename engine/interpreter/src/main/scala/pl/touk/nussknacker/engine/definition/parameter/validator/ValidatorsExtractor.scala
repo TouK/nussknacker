@@ -7,12 +7,13 @@ object ValidatorsExtractor {
   def extract(params: ValidatorExtractorParameters): List[ParameterValidator] = {
     val fromValidatorExtractors = List(
       MandatoryValidatorExtractor,
-      AnnotationValidatorExtractor[NotBlank](NotBlankParameterValidator),
       EditorBasedValidatorExtractor,
       LiteralValidatorExtractor,
+      AnnotationValidatorExtractor[NotBlank](NotBlankParameterValidator),
       AnnotationValidatorExtractor[Min]((annotation: Min) => MinimalNumberValidator(annotation.value())),
       AnnotationValidatorExtractor[Max]((annotation: Max) => MaximalNumberValidator(annotation.value()))
     ).flatMap(_.extract(params))
+    //TODO: should validators from config override or append those from annotations, types etc.?
     (fromValidatorExtractors ++ params.parameterConfig.validators.toList.flatten).distinct
   }
 }

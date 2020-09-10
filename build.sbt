@@ -485,7 +485,8 @@ lazy val interpreter = (project in engine("interpreter")).
         "org.hsqldb" % "hsqldb" % hsqldbV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "org.apache.avro" % "avro" % avroV % "test",
-        "org.scalacheck" %% "scalacheck" % scalaCheckV % "test"
+        "org.scalacheck" %% "scalacheck" % scalaCheckV % "test",
+        "com.cronutils" % "cron-utils" % cronParserV % "test"
       )
     }
   ).
@@ -859,8 +860,6 @@ lazy val ui = (project in file("ui/server"))
         "org.postgresql" % "postgresql" % postgresV,
         "org.flywaydb" % "flyway-core" % flywayV,
         "org.apache.xmlgraphics" % "fop" % "2.3",
-        "com.cronutils" % "cron-utils" % cronParserV,
-
         "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
         "com.typesafe.akka" %% "akka-testkit" % akkaV % "test" force(),
 

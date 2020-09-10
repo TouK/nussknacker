@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.definition.defaults
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.process.ParameterConfig
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory.createUIParameter
 
 class EditorPossibleValuesBasedDefaultValueDeterminerTest extends FunSuite with Matchers {

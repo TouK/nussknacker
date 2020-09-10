@@ -99,13 +99,16 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
 
   test("determine fixed values validator when simple fixed value editor passed") {
     val possibleValues = List(FixedExpressionValue("a", "a"))
-    ValidatorsExtractor.extract(validatorParams(optionalParam, Some(FixedValuesParameterEditor(possibleValues))))
+    ValidatorsExtractor.extract(validatorParams(optionalParam,
+      ParameterConfig.empty.copy(editor = Some(FixedValuesParameterEditor(possibleValues)))))
       .shouldBe(List(FixedValuesValidator(possibleValues)))
   }
 
   test("not determine fixed values validator when dual editor was passed") {
     val possibleValues = List(FixedExpressionValue("a", "a"))
-    ValidatorsExtractor.extract(validatorParams(optionalParam, Some(DualParameterEditor(FixedValuesParameterEditor(possibleValues), DualEditorMode.SIMPLE))))
+    ValidatorsExtractor.extract(validatorParams(optionalParam,
+      ParameterConfig.empty
+        .copy(editor = Some(DualParameterEditor(FixedValuesParameterEditor(possibleValues), DualEditorMode.SIMPLE)))))
       .shouldBe(empty)
   }
 
@@ -166,11 +169,17 @@ class ValidatorsExtractorTest extends FunSuite with Matchers {
       List(MandatoryParameterValidator, MinimalNumberValidator(0), MaximalNumberValidator(1))
   }
 
+  test("determine validators based on config") {
+    val config = ParameterConfig(None, None, Some(List(NotBlankParameterValidator)), None)
+
+    ValidatorsExtractor.extract(validatorParams(notAnnotatedParam, parameterConfig = config)) shouldBe
+          List(MandatoryParameterValidator, NotBlankParameterValidator)
+  }
 
   private def validatorParams(rawJavaParam: java.lang.reflect.Parameter,
-                              editor: Option[ParameterEditor] = None) =
+                              parameterConfig: ParameterConfig = ParameterConfig.empty) =
     ValidatorExtractorParameters(ParameterData(rawJavaParam, EspTypeUtils.extractParameterType(rawJavaParam)),
       classOf[Option[_]].isAssignableFrom(rawJavaParam.getType) || classOf[Optional[_]].isAssignableFrom(rawJavaParam.getType),
-      ParameterConfig.empty.copy(editor = editor))
+      parameterConfig)
 
 }
