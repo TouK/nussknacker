@@ -715,7 +715,7 @@ lazy val security = (project in engine("security")).
         "io.circe" %% "circe-core" % circeV,
         "com.pauldijou" %% "jwt-circe" % jwtCirceV,
         "com.typesafe.akka" %% "akka-testkit" % akkaV % "test" force(),
-        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
+        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV
       )
     }
   )
