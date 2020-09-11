@@ -20,7 +20,7 @@ object ParameterExtractor {
       .map(_.value())
     val name = (nodeParamNames orElse branchParamName)
       .getOrElse(throwIllegalArgument(p, isBranch = false, "missing @ParamName or @BranchParamName annotation"))
-    val parameterConfig = nodeConfig.params.flatMap(_.get(name)).getOrElse(ParameterConfig.empty)
+    val parameterConfig = nodeConfig.paramConfig(name)
 
     val rawParamType = EspTypeUtils.extractParameterType(p)
     val paramWithUnwrappedBranch = if (branchParamName.isDefined) extractBranchParamType(rawParamType, p) else rawParamType
