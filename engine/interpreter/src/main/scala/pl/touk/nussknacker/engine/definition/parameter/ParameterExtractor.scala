@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.definition.parameter
 import java.util.Optional
 
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.process.ParameterConfig
+import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.api.{AdditionalVariables, BranchParamName, LazyParameter, ParamName}
 import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
@@ -13,13 +13,14 @@ import pl.touk.nussknacker.engine.types.EspTypeUtils
 object ParameterExtractor {
 
   //TODO: extract more logic to be handled by ParameterData etc. so that it can be reused in UIProcessObjectsFactory to determine subprocess data...
-  def extractParameter(p: java.lang.reflect.Parameter, parameterConfig: ParameterConfig): Parameter = {
+  def extractParameter(p: java.lang.reflect.Parameter, nodeConfig: SingleNodeConfig): Parameter = {
     val nodeParamNames = Option(p.getAnnotation(classOf[ParamName]))
       .map(_.value())
     val branchParamName = Option(p.getAnnotation(classOf[BranchParamName]))
       .map(_.value())
     val name = (nodeParamNames orElse branchParamName)
       .getOrElse(throwIllegalArgument(p, isBranch = false, "missing @ParamName or @BranchParamName annotation"))
+    val parameterConfig = nodeConfig.params.flatMap(_.get(name)).getOrElse(ParameterConfig.empty)
 
     val rawParamType = EspTypeUtils.extractParameterType(p)
     val paramWithUnwrappedBranch = if (branchParamName.isDefined) extractBranchParamType(rawParamType, p) else rawParamType
