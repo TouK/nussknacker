@@ -134,6 +134,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
     state.status match {
       case SimpleStateStatus.NotFound | SimpleStateStatus.NotDeployed if lastAction.isEmpty =>
         ProcessStatus.simple(SimpleStateStatus.NotDeployed)
+        //FIXME: remove "flink" state...
       case SimpleStateStatus.DuringCancel | SimpleStateStatus.Finished /*| FlinkStateStatus.Restarting */ if lastAction.isEmpty =>
         ProcessStatus.simpleWarningProcessWithoutAction(Some(state))
       case _ => ProcessStatus(state)
