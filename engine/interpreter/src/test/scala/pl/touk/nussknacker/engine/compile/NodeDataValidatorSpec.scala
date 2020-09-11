@@ -12,13 +12,15 @@ import pl.touk.nussknacker.engine.compile.validationHelpers.{DynamicParameterJoi
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.{CustomNode, Filter, NodeData, Processor, Sink, Source, Variable}
+import pl.touk.nussknacker.engine.graph.node.{CustomNode, Filter, NodeData, Processor, Sink, Source, Variable, VariableBuilder}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
+import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.api.typed.typing.TypedObjectTypingResult
 
 class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
 
@@ -132,8 +134,29 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
     }
   }
 
-  ignore("should validate variable builder definition") {
-    //TODO
+  test("should return expression type info for variable definition") {
+    inside(
+      validate(Variable("var1", "var1", "42L", None), ValidationContext(Map.empty))
+    ) {
+      case ValidationPerformed(Nil, _, Some(expressionType)) => expressionType.display shouldBe "Long"
+    }
+  }
+  test("should validate variable builder definition") {
+    inside(
+      validate(VariableBuilder("var1", "var1", List(Field("field1", "doNotExist")), None), ValidationContext(Map.empty))
+    ) {
+      case ValidationPerformed((error:ExpressionParseError) :: Nil, None, _) =>
+        error.message shouldBe "Non reference 'doNotExist' occurred. Maybe you missed '#' in front of it?"
+    }
+  }
+
+  test("should return inferred type for variable builder output") {
+     inside(
+      validate(VariableBuilder("var1", "var1", List(Field("field1", "42L"), Field("field2", "'some string'")), None), ValidationContext(Map.empty))
+    ) {
+      case ValidationPerformed(Nil, None, Some(TypedObjectTypingResult(fields, _))) =>
+        fields.mapValues(_.display) shouldBe Map("field1" -> "Long", "field2" -> "String")
+    }
   }
 
   ignore("should validate subprocess") {
