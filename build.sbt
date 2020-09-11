@@ -298,12 +298,12 @@ lazy val dist = {
     module
       .settings(
         Keys.compile in Compile := (Keys.compile in Compile).dependsOn(
-          (assembly in Compile) in managementSample,
+          (assembly in Compile) in flinkManagementSample,
           (assembly in Compile) in standaloneSample
         ).value,
         mappings in Universal += {
-          val genericModel = (crossTarget in managementSample).value / "managementSample.jar"
-          genericModel -> "model/managementSample.jar"
+          val genericModel = (crossTarget in flinkManagementSample).value / "flinkManagementSample.jar"
+          genericModel -> "model/flinkManagementSample.jar"
         },
         mappings in Universal += {
           val demoModel = (crossTarget in standaloneSample).value / s"standaloneSample.jar"
@@ -357,7 +357,7 @@ lazy val standaloneApp = (project in engine("standalone/app")).
   dependsOn(engineStandalone, testUtil % "test")
 
 
-lazy val flinkProcessManager = (project in engine("flink/manager")).
+lazy val flinkProcessManager = (project in engine("flink/management")).
   configs(IntegrationTest).
   settings(commonSettings).
   settings(Defaults.itSettings).
@@ -365,7 +365,7 @@ lazy val flinkProcessManager = (project in engine("flink/manager")).
   settings(
     name := "nussknacker-flink-manager",
     Keys.test in IntegrationTest := (Keys.test in IntegrationTest).dependsOn(
-      (assembly in Compile) in managementSample,
+      (assembly in Compile) in flinkManagementSample,
       (assembly in Compile) in managementJavaSample
     ).value,
 
@@ -400,7 +400,7 @@ lazy val standaloneSample = (project in engine("standalone/engine/sample")).
   ).dependsOn(util, standaloneApi, standaloneUtil)
 
 
-lazy val managementSample = (project in engine("flink/management/sample")).
+lazy val flinkManagementSample = (project in engine("flink/management/sample")).
   settings(commonSettings).
   settings(assemblySampleSettings("managementSample.jar"): _*).
   settings(
@@ -774,7 +774,7 @@ lazy val httpUtils = (project in engine("httpUtils")).
     }
   ).dependsOn(api, testUtil % "test")
 
-//osobny modul bo chcemy uzyc klienta do testowania w managementSample
+//osobny modul bo chcemy uzyc klienta do testowania w flinkManagementSample
 lazy val queryableState = (project in engine("queryableState")).
   settings(commonSettings).
   settings(
@@ -834,11 +834,11 @@ lazy val ui = (project in file("ui/server"))
     parallelExecution in ThisBuild := false,
     Keys.test in SlowTests := (Keys.test in SlowTests).dependsOn(
       //TODO: maybe here there should be engine/demo??
-      (assembly in Compile) in managementSample
+      (assembly in Compile) in flinkManagementSample
     ).value,
     Keys.test in Test := (Keys.test in Test).dependsOn(
       //TODO: maybe here there should be engine/demo??
-      (assembly in Compile) in managementSample
+      (assembly in Compile) in flinkManagementSample
     ).value,
     /*
       We depend on buildUi in packageBin and assembly to be make sure fe files will be included in jar and fajar
@@ -889,7 +889,7 @@ lazy val ui = (project in file("ui/server"))
 lazy val root = (project in file("."))
   .aggregate(
     // TODO: get rid of this duplication
-    engineStandalone, standaloneApp, flinkProcessManager, standaloneSample, managementSample, managementJavaSample, demo, generic,
+    engineStandalone, standaloneApp, flinkProcessManager, standaloneSample, flinkManagementSample, managementJavaSample, demo, generic,
     process, interpreter, benchmarks, kafka, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
     flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils, queryableState,
     restmodel, listenerApi, ui,
@@ -923,4 +923,4 @@ lazy val root = (project in file("."))
     )
   )
 
-addCommandAlias("assemblySamples", ";managementSample/assembly;standaloneSample/assembly;demo/assembly;generic/assembly")
+addCommandAlias("assemblySamples", ";flinkManagementSample/assembly;standaloneSample/assembly;demo/assembly;generic/assembly")
