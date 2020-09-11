@@ -271,16 +271,14 @@ lazy val dist = {
       packageName in Universal := ("nussknacker" + "-" + version.value),
       Keys.compile in Compile := (Keys.compile in Compile).dependsOn(
         (assembly in Compile) in generic,
-        (assembly in Compile) in demo
+        (assembly in Compile) in demo,
+        (assembly in Compile) in flinkProcessManager
       ).value,
-      mappings in Universal += {
-        val genericModel = (crossTarget in generic).value / "genericModel.jar"
-        genericModel -> "model/genericModel.jar"
-      },
-      mappings in Universal += {
-        val demoModel = (crossTarget in demo).value / s"demoModel.jar"
-        demoModel -> "model/demoModel.jar"
-      },
+      mappings in Universal ++= Seq(
+        (crossTarget in generic).value / "genericModel.jar" -> "model/genericModel.jar",
+        (crossTarget in demo).value / s"demoModel.jar" -> "model/demoModel.jar",
+        (crossTarget in flinkProcessManager).value / s"nussknacker-flink-manager.jar" -> "managers/nussknacker-flink-manager.jar"
+      ),
       /* //FIXME: figure out how to filter out only for .tgz, not for docker
       mappings in Universal := {
         val universalMappings = (mappings in Universal).value
