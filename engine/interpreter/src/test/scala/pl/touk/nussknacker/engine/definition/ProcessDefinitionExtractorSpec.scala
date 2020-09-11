@@ -137,7 +137,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     def invoke(
       @ParamName("param1")
       @AdditionalVariables(value = Array(new AdditionalVariable(name = "var1", clazz = classOf[OnlyUsedInAdditionalVariable])))
-      param1: String) : Unit = {}
+      someStupidNameWithoutMeaning: String) : Unit = {}
   }
 
   object TransformerWithGenericParam extends CustomStreamTransformer {
