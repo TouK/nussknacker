@@ -1,10 +1,10 @@
 import {Action} from "../actions/reduxTypes"
 import {ValidationData} from "../actions/nk"
-import {NodeValidationError, UIParameter, UITypedExpression} from "../types"
+import {NodeValidationError, UIParameter, TypingResult} from "../types"
 
 export type NodeDetailsState = {
     parameters? : UIParameter[],
-    typedExpressions?: UITypedExpression[],
+    expressionType?: TypingResult,
     validationErrors: NodeValidationError[],
     validationPerformed: boolean,
 }
@@ -22,7 +22,7 @@ export function reducer(state: NodeDetailsState = initialState, action: Action):
         ...state,
         validationErrors: validationData.validationErrors,
         parameters: validationData.parameters,
-        typedExpressions: validationData.typedExpressions,
+        expressionType: validationData.expressionType,
         validationPerformed: validationData.validationPerformed,
       }
     }

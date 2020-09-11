@@ -52,11 +52,6 @@ export type UIParameter = {
      branchParam: boolean,
 }
 
-export type UITypedExpression = {
-    name: string,
-    typ: TypingResult,
-}
-
 export type SingleNodeConfig = {
     params?: Record<string, ParameterConfig>,
     icon?: string,

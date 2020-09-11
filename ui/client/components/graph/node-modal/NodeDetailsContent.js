@@ -335,7 +335,6 @@ export class NodeDetailsContent extends React.Component {
           />
         )
       case "Variable":
-        const inferredType = _.head(this.props?.typedExpressions)?.typ
         return (
           <Variable
             renderFieldLabel={this.renderFieldLabel}
@@ -346,7 +345,7 @@ export class NodeDetailsContent extends React.Component {
             showValidation={showValidation}
             variableTypes={variableTypes}
             errors={fieldErrors}
-            inferredVariableType={inferredType && ProcessUtils.humanReadableType(inferredType)}
+            inferredVariableType={this.props.expressionType && ProcessUtils.humanReadableType(this.props.expressionType)}
           />
         )
       case "Switch":
@@ -769,7 +768,7 @@ function mapState(state, props) {
     currentErrors: state.nodeDetails.validationPerformed ? state.nodeDetails.validationErrors : props.nodeErrors,
     dynamicParameterDefinitions: state.nodeDetails.validationPerformed ? state.nodeDetails.parameters :
         state.graphReducer.processToDisplay?.validationResult?.nodeResults?.[originalNodeId]?.parameters,
-    typedExpressions: state.nodeDetails.typedExpressions,
+    expressionType: state.nodeDetails.expressionType,
   }
 }
 
