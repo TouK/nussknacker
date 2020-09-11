@@ -8,6 +8,8 @@ import {connect} from "react-redux"
 import {RouteComponentProps} from "react-router"
 import {withRouter} from "react-router-dom"
 import {compose} from "redux"
+import {nanoid} from "nanoid"
+import * as jwt from "jsonwebtoken"
 import ActionsUtils, {EspActionsProps} from "../actions/ActionsUtils"
 import api from "../api"
 import SystemUtils from "../common/SystemUtils"
@@ -40,7 +42,9 @@ class NussknackerInitializer extends React.Component<Props, State> {
   public static ACCESS_TOKEN_CODE = 1024
 
   redirectToAuthorizeUrl(settings: AuthenticationSettings) {
-    window.location.replace(`${settings.authorizeUrl}`)
+    window.localStorage.setItem("nonce", nanoid())
+    console.log(`${settings.authorizeUrl}&nonce=${window.localStorage.getItem("nonce")}`)
+    window.location.replace(`${settings.authorizeUrl}&nonce=${window.localStorage.getItem("nonce")}`)
   }
 
   state = {
@@ -135,7 +139,23 @@ class NussknackerInitializer extends React.Component<Props, State> {
       }
 
       const queryHashParams = queryString.parse(this.props.history.location.hash)
+      console.log("id_token: ", queryHashParams.id_token)
+      console.log("access_token: ", queryHashParams.access_token)
       if (settings.implicitGrantEnabled === true && queryHashParams.access_token) {
+        if (settings.jwtAuthServerPublicKey) {
+          console.log(`publicKey: ${settings.jwtAuthServerPublicKey}`)
+          let verificationPassed = jwt.verify(queryHashParams.access_token, settings.jwtAuthServerPublicKey)
+          console.log("access token verification: ", verificationPassed)
+          if (verificationPassed && settings.jwtIdTokenNonceVerificationRequired === true && queryHashParams.id_token) {
+            console.log(`nonce: ${window.localStorage.getItem("nonce")}`)
+            verificationPassed = jwt.verify(queryHashParams.id_token, settings.jwtAuthServerPublicKey, {nonce: window.localStorage.getItem("nonce")})
+            console.log("id token verification: ", verificationPassed)
+          }
+          if (!verificationPassed) {
+            this.setState({error: this.state.errors[NussknackerInitializer.ACCESS_TOKEN_CODE]})
+            return Promise.reject()
+          }
+        }
         SystemUtils.setAuthorizationToken(queryHashParams.access_token)
         this.props.history.replace({hash: null})
       }

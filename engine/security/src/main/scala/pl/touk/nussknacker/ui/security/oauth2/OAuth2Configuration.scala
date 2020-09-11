@@ -38,7 +38,9 @@ case class OAuth2Configuration(method: AuthenticationMethod,
       .url)
   })
 
-  override def authSeverPublicKey: Option[String] = jwt.map(_.authServerPublicKey.toString)
+  override def authSeverPublicKey: Option[PublicKey] = jwt.map(_.authServerPublicKey)
+
+  def idTokenNonceVerificationRequired: Boolean = jwt.map(_.idTokenNonceVerificationRequired).getOrElse(false)
 
   def redirectUrl: String = redirectUri.toString
 }
@@ -62,6 +64,7 @@ object ProfileFormat extends Enumeration {
 
 trait JwtConfiguration {
   def authServerPublicKey: PublicKey
+  def idTokenNonceVerificationRequired: Boolean
 }
 
 object JwtConfiguration {
@@ -75,7 +78,8 @@ object JwtConfiguration {
   private case class JwtConfig(publicKey: Option[String],
                                publicKeyFile: Option[String],
                                certificate: Option[String],
-                               certificateFile: Option[String]) extends JwtConfiguration {
+                               certificateFile: Option[String],
+                               idTokenNonceVerificationRequired: Boolean) extends JwtConfiguration {
     def authServerPublicKey: PublicKey = {
       val charset: Charset = StandardCharsets.UTF_8
 

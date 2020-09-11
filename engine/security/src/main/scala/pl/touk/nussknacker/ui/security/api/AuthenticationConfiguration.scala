@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.security.api
 
 import java.io.File
 import java.net.URI
+import java.security.PublicKey
 
 import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.util.cache.CacheConfig
@@ -14,7 +15,8 @@ import scala.concurrent.duration._
 
 trait AuthenticationConfiguration {
   def authorizeUrl: Option[URI] = Option.empty
-  def authSeverPublicKey: Option[String] = Option.empty
+  def authSeverPublicKey: Option[PublicKey] = Option.empty
+  def idTokenNonceVerificationRequired: Boolean
   def implicitGrantEnabled: Boolean
   def method: AuthenticationMethod
   def usersFile: String
@@ -68,6 +70,8 @@ case class DefaultAuthenticationConfiguration(method: AuthenticationMethod = Aut
   def cachingHashesOrDefault: CachingHashesConfig = cachingHashes.getOrElse(CachingHashesConfig.defaultConfig)
 
   def implicitGrantEnabled: Boolean = false
+
+  def idTokenNonceVerificationRequired: Boolean = false
 }
 
 object DefaultAuthenticationConfiguration {

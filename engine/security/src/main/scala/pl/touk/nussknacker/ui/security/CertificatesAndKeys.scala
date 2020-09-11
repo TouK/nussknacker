@@ -25,5 +25,10 @@ object CertificatesAndKeys {
     beginningPattern.replaceFirstIn(endingPattern.replaceFirstIn(pem.replaceAll(System.lineSeparator, ""), ""), "")
   }
 
-  def decodeBase64(decoded: String, charset: Charset): Array[Byte] = Base64.getDecoder.decode(decoded.getBytes(charset))
+  def decodeBase64(encoded: String, charset: Charset): Array[Byte] = Base64.getDecoder.decode(encoded.getBytes(charset))
+
+  def encodeBase64(bytes: Array[Byte]): String = Base64.getEncoder.encodeToString(bytes)
+
+  def textualRepresentationOfPublicKey(publicKey: PublicKey): String =
+    s"-----BEGIN PUBLIC KEY-----\n${encodeBase64(publicKey.getEncoded)}\n-----END PUBLIC KEY-----"
 }

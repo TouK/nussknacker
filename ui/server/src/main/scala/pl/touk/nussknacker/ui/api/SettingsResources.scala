@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.security.CertificatesAndKeys
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
 
 import scala.concurrent.ExecutionContext
@@ -37,8 +38,9 @@ class SettingsResources(config: FeatureTogglesConfig,
           val authenticationSettings = AuthenticationSettings(
             authenticationConfig.method.toString,
             authenticationConfig.authorizeUrl.map(_.toString),
-            authenticationConfig.implicitGrantEnabled,
-            authenticationConfig.jw
+            authenticationConfig.authSeverPublicKey.map(CertificatesAndKeys.textualRepresentationOfPublicKey(_)),
+            authenticationConfig.idTokenNonceVerificationRequired,
+            authenticationConfig.implicitGrantEnabled
           )
 
           val analyticsSettings = analyticsConfig.map(a => AnalyticsSettings(a.engine.toString, a.url.toString, a.siteId))
@@ -75,7 +77,11 @@ class SettingsResources(config: FeatureTogglesConfig,
 
 @JsonCodec case class AnalyticsSettings(engine: String, url: String, siteId: String)
 
-@JsonCodec case class AuthenticationSettings(backend: String, authorizeUrl: Option[String], implicitGrantEnabled: Boolean, authServerPublicKey: Option[String])
+@JsonCodec case class AuthenticationSettings(backend: String,
+                                             authorizeUrl: Option[String],
+                                             jwtAuthServerPublicKey: Option[String],
+                                             jwtIdTokenNonceVerificationRequired: Boolean,
+                                             implicitGrantEnabled: Boolean)
 
 @JsonCodec case class ProcessStateSettings(icons: Map[String, Map[String, String]], tooltips: Map[String, Map[String, String]])
 
