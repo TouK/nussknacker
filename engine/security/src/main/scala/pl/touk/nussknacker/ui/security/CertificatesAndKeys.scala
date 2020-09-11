@@ -21,7 +21,7 @@ object CertificatesAndKeys {
   def extractBase64EncodedPEM(pem: String): String = {
     // referring to https://tools.ietf.org/html/rfc7468#section-5.1
     val beginningPattern = "^-----BEGIN.*-----".r
-    val endingPattern = "-----END(.)*$".r
+    val endingPattern = "-----END.*$".r
     beginningPattern.replaceFirstIn(endingPattern.replaceFirstIn(pem.replaceAll(System.lineSeparator, ""), ""), "")
   }
 

@@ -14,6 +14,7 @@ import scala.concurrent.duration._
 
 trait AuthenticationConfiguration {
   def authorizeUrl: Option[URI] = Option.empty
+  def authSeverPublicKey: Option[String] = Option.empty
   def implicitGrantEnabled: Boolean
   def method: AuthenticationMethod
   def usersFile: String

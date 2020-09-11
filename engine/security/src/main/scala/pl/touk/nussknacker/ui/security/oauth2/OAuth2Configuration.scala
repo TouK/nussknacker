@@ -38,6 +38,8 @@ case class OAuth2Configuration(method: AuthenticationMethod,
       .url)
   })
 
+  override def authSeverPublicKey: Option[String] = jwt.map(_.authServerPublicKey.toString)
+
   def redirectUrl: String = redirectUri.toString
 }
 
