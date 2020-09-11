@@ -373,7 +373,7 @@ lazy val flinkProcessManager = (project in engine("flink/manager")).
     parallelExecution in IntegrationTest := false,
     libraryDependencies ++= {
       Seq(
-        "org.typelevel" %% "cats-core" % catsV,
+        "org.typelevel" %% "cats-core" % catsV % "provided",
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % flinkScope
           excludeAll(
           ExclusionRule("log4j", "log4j"),
@@ -385,7 +385,12 @@ lazy val flinkProcessManager = (project in engine("flink/manager")).
     }
   //FIXME: provided dependency is workaround for Idea, which is not able to handle test scope on module dependency
   //kafka module is (wrongly) added to classpath when running UI from Idea
-  ).dependsOn(interpreter % "provided", queryableState, httpUtils, kafka % "provided", kafkaTestUtil % "it,test")
+  ).dependsOn(interpreter % "provided",
+    api % "provided",
+    queryableState,
+    httpUtils % "provided",
+    kafka % "provided",
+    kafkaTestUtil % "it,test")
 
 lazy val standaloneSample = (project in engine("standalone/engine/sample")).
   settings(commonSettings).
