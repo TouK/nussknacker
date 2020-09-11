@@ -13,6 +13,8 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.definition.parameter.ParameterData
 import pl.touk.nussknacker.engine.types.JavaSampleEnum
 
+import scala.reflect.ClassTag
+
 class EditorExtractorTest extends FunSuite with Matchers {
 
   private def notAnnotated(param: String) {}
@@ -95,7 +97,7 @@ class EditorExtractorTest extends FunSuite with Matchers {
   }
 
   test("determine editor by type enum") {
-    val param = getSimpleParamByName("javaEnum")
+    val param = getSimpleParamByType[JavaSampleEnum]
 
     EditorExtractor.extract(param, ParameterConfig.empty)  shouldBe Some(DualParameterEditor(FixedValuesParameterEditor(List(
       FixedExpressionValue(s"T(${classOf[JavaSampleEnum].getName}).${JavaSampleEnum.FIRST_VALUE.name()}", "first_value"),
@@ -104,7 +106,7 @@ class EditorExtractorTest extends FunSuite with Matchers {
   }
 
   test("determine editor by type LocalDateTime") {
-    val param = getSimpleParamByName("localDateTime")
+    val param = getSimpleParamByType[LocalDateTime]
 
     EditorExtractor.extract(param, ParameterConfig.empty) shouldBe Some(DualParameterEditor(
       simpleEditor = DateTimeParameterEditor,
@@ -113,7 +115,7 @@ class EditorExtractorTest extends FunSuite with Matchers {
   }
 
   test("determine editor by type LocalDate") {
-    val param = getSimpleParamByName("localDate")
+    val param = getSimpleParamByType[LocalDate]
 
     EditorExtractor.extract(param, ParameterConfig.empty) shouldBe Some(DualParameterEditor(
       simpleEditor = DateParameterEditor,
@@ -122,7 +124,7 @@ class EditorExtractorTest extends FunSuite with Matchers {
   }
 
   test("determine editor by type LocalTime") {
-    val param = getSimpleParamByName("localTime")
+    val param = getSimpleParamByType[LocalTime]
 
     EditorExtractor.extract(param, ParameterConfig.empty) shouldBe Some(DualParameterEditor(
       simpleEditor = TimeParameterEditor,
@@ -131,7 +133,7 @@ class EditorExtractorTest extends FunSuite with Matchers {
   }
 
   test("determine editor by type Duration") {
-    val param = getSimpleParamByName("duration")
+    val param = getSimpleParamByType[Duration]
 
     EditorExtractor.extract(param, ParameterConfig.empty) shouldBe Some(DualParameterEditor(
       simpleEditor = DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES)),
@@ -140,14 +142,14 @@ class EditorExtractorTest extends FunSuite with Matchers {
   }
 
   test("determine editor by config for Duration") {
-    val param = getSimpleParamByName("duration")
+    val param = getSimpleParamByType[Duration]
     val editor = DurationParameterEditor(timeRangeComponents = List(ChronoUnit.MINUTES))
 
     EditorExtractor.extract(param, ParameterConfig.empty.copy(editor = Some(editor))) shouldBe Some(editor)
   }
 
   test("determine editor by type Period") {
-    val param = getSimpleParamByName("period")
+    val param = getSimpleParamByType[Period]
 
     EditorExtractor.extract(param, ParameterConfig.empty) shouldBe Some(DualParameterEditor(
       simpleEditor = PeriodParameterEditor(List(ChronoUnit.YEARS, ChronoUnit.MONTHS, ChronoUnit.DAYS)),
@@ -156,7 +158,7 @@ class EditorExtractorTest extends FunSuite with Matchers {
   }
 
   test("determine editor by type Cron") {
-    val param = getSimpleParamByName("cron")
+    val param = getSimpleParamByType[Cron]
 
     EditorExtractor.extract(param, ParameterConfig.empty) shouldBe Some(DualParameterEditor(
       simpleEditor = CronParameterEditor,
@@ -169,9 +171,9 @@ class EditorExtractorTest extends FunSuite with Matchers {
     ParameterData(parameter, Typed.typedClass(parameter.getType))
   }
 
-  private def getSimpleParamByName(param: String) = {
+  private def getSimpleParamByType[T:ClassTag] = {
     val parameter = this.getClass.getDeclaredMethods
-      .find(_.getName == "simpleParams").flatMap(_.getParameters.find(_.getName == param)).get
+      .find(_.getName == "simpleParams").flatMap(_.getParameters.find(_.getType == implicitly[ClassTag[T]].runtimeClass)).get
     ParameterData(parameter, Typed.typedClass(parameter.getType))
   }
 }

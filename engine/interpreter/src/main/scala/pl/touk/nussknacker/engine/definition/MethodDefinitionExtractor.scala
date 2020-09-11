@@ -61,8 +61,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
           OutputVariableNameDependency
         }
       } else {
-        val parameterConfig = nodeConfig.params.flatMap(_.get(p.getName)).getOrElse(ParameterConfig.empty)
-        ParameterExtractor.extractParameter(p, parameterConfig)
+        ParameterExtractor.extractParameter(p, nodeConfig)
       }
     }.toList
     new OrderedDependencies(dependencies)
