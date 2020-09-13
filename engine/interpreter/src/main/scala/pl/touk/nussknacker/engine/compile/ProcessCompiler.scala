@@ -13,7 +13,8 @@ import pl.touk.nussknacker.engine.api.expression.ExpressionParser
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeCompilationResult, NodeCompiler}
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compiledgraph.part.PotentiallyStartPart
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledProcessParts, part}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
