@@ -5,7 +5,7 @@ import io.circe.generic.JsonCodec
 import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
-import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.typed.{TypeEncoders, typing}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.restmodel.definition.UIParameter
 import pl.touk.nussknacker.engine.api.CirceUtil._
@@ -54,7 +54,9 @@ object ValidationResults {
   }
 
   object NodeTypingData {
-    implicit val typingInfoEncoder: Encoder[ExpressionTypingInfo] = Encoder.instance(_ => Json.Null)
+    implicit val typingInfoEncoder: Encoder[ExpressionTypingInfo] = Encoder.instance { expressionTypingInfo =>
+      TypeEncoders.typingResultEncoder.apply(expressionTypingInfo.typingResult)
+    }
     implicit val typingInfoDecoder: Decoder[ExpressionTypingInfo] = Decoder.failedWithMessage("typingInfo shouldn't be decoded")
   }
 

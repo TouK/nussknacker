@@ -813,6 +813,9 @@ object InterpreterSpec {
     = Valid(LiteralExpression(original))
   }
 
-  case object LiteralExpressionTypingInfo extends ExpressionTypingInfo
+  case object LiteralExpressionTypingInfo extends ExpressionTypingInfo {
+
+    override def typingResult: TypingResult = typing.Unknown
+  }
 
 }

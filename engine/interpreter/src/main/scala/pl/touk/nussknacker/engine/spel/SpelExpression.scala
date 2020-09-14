@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, Expressi
 import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
+import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, LabelsDictTyper}
 import pl.touk.nussknacker.engine.expression.NullExpression
@@ -139,7 +140,7 @@ class SpelExpressionParser(parser: org.springframework.expression.spel.standard.
   override def parse(original: String, ctx: ValidationContext, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError], TypedExpression] = {
     if (shouldUseNullExpression(original)) {
       Valid(TypedExpression(
-        NullExpression(original, flavour), expectedType, SpelExpressionTypingInfo(Map.empty)))
+        NullExpression(original, flavour), expectedType, SpelExpressionTypingInfo(Map.empty, typing.Unknown)))
     } else {
       baseParse(original).andThen { parsed =>
         validator.validate(parsed, ctx, expectedType).map((_, parsed))

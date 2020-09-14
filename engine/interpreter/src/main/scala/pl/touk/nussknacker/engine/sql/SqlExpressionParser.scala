@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression._
 import pl.touk.nussknacker.engine.api.lazyy.LazyValuesProvider
-import pl.touk.nussknacker.engine.api.typed.TypedMap
+import pl.touk.nussknacker.engine.api.typed.{TypedMap, typing}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.sql.columnmodel.CreateColumnModel
 import pl.touk.nussknacker.engine.sql.preparevalues.PrepareTables
@@ -116,7 +116,10 @@ class SqlExpression(private[sql] val columnModels: Map[String, ColumnModel],
 }
 
 // empty for now
-case object SqlExpressionTypingInfo extends ExpressionTypingInfo
+case object SqlExpressionTypingInfo extends ExpressionTypingInfo {
+
+  override def typingResult: TypingResult = typing.Unknown
+}
 
 case class Table(model: ColumnModel, rows: List[List[Any]])
 
