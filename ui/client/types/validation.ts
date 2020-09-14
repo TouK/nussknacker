@@ -12,6 +12,7 @@ export type NodeResults = Record<string, NodeTypingData>
 export type NodeTypingData = {
     variableTypes: VariableTypes,
     parameters?: UIParameter[],
+    typingInfo: Record<string, TypingResult>,
 }
 
 export type VariableTypes = Record<string, TypingResult>
