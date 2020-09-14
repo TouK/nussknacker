@@ -719,8 +719,8 @@ export class NodeDetailsContent extends React.Component {
     const commonFields = ["id", "outputVar"]
     const paramFields = parametersFromDefinition.map(param => param.name)
     const branchParamsFields = this.state?.editedNode?.branchParameters
-      .flatMap(branchParam => branchParam.parameters.map(param => branchErrorFieldName(param.name, branchParam.branchId)))
-    return _.concat(commonFields, paramFields, branchParamsFields)
+      ?.flatMap(branchParam => branchParam.parameters.map(param => branchErrorFieldName(param.name, branchParam.branchId)))
+    return _.concat(commonFields, paramFields, branchParamsFields == null ? [] : branchParamsFields)
   }
 
   render() {
