@@ -1,13 +1,16 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
+import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ClientApi.DefaultAccessTokenResponse
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.OAuth2CompoundException
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
+
 
 class DefaultOAuth2Service[ProfileResponse: Decoder](clientApi: OAuth2ClientApi[ProfileResponse, DefaultAccessTokenResponse],
                                                      oAuth2Profile: OAuth2Profile[ProfileResponse],
@@ -23,7 +26,28 @@ class DefaultOAuth2Service[ProfileResponse: Decoder](clientApi: OAuth2ClientApi[
     }
   }
 
-  def authorize(token: String): Future[LoggedUser] = clientApi.profileRequest(token).map(oAuth2Profile.getLoggedUser(_, configuration, allCategories))
+  def authorize(token: String): Future[LoggedUser] = getProfile(token).map(oAuth2Profile.getLoggedUser(_, configuration, allCategories))
+
+  private def getProfile(token: String): Future[ProfileResponse] = {
+    def profileRequestFuture = clientApi.profileRequest(token)
+
+    configuration.jwt match {
+      case None => profileRequestFuture
+      case Some(jwtConfiguration) => {
+        val profileFromJwtResult = new JwtValidator[ProfileResponse](jwtConfiguration).getProfileFromJwt(token)
+
+        /* Firstly checks whether a profile can be obtained from the token (provided authentication.jwt configured),
+         * secondly tries to obtain the profile from a sent request.
+         */
+        profileFromJwtResult match {
+          case Valid(profile) => Future(profile)
+          case Invalid(jwtErrors) => profileRequestFuture recover { case OAuth2CompoundException(requestErrors) =>
+            throw OAuth2CompoundException(jwtErrors concatNel requestErrors)
+          }
+        }
+      }
+    }
+  }
 }
 
 class DefaultOAuth2ServiceFactoryWithProfileFormat[ProfileResponse: Decoder](oAuth2Profile: OAuth2Profile[ProfileResponse]) {

@@ -1,31 +1,37 @@
-package pl.touk.nussknacker.engine.definition
+package pl.touk.nussknacker.engine.definition.parameter.editor
 
-import java.lang.reflect.Parameter
-
-import pl.touk.nussknacker.engine.api.definition.{BoolParameterEditor, CronParameterEditor, DateParameterEditor, DateTimeParameterEditor, DualParameterEditor, DurationParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, JsonParameterEditor, ParameterEditor, PeriodParameterEditor, RawParameterEditor, StringParameterEditor, TextareaParameterEditor, TimeParameterEditor}
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, RawEditor, SimpleEditor, SimpleEditorType}
+import pl.touk.nussknacker.engine.api.process.ParameterConfig
+import pl.touk.nussknacker.engine.definition.parameter.ParameterData
 
 
 object EditorExtractor {
 
-  def extract(param: Parameter): Option[ParameterEditor] = {
-    val dualEditorAnnotation: DualEditor = param.getAnnotation(classOf[DualEditor])
-    val simpleEditorAnnotation = param.getAnnotation(classOf[SimpleEditor])
-    val rawEditorAnnotation = param.getAnnotation(classOf[RawEditor])
+  def extract(param: ParameterData, parameterConfig: ParameterConfig): Option[ParameterEditor] = {
+    parameterConfig.editor
+      .orElse(extractFromAnnotations(param))
+      .orElse(new ParameterTypeEditorDeterminer(param.typing).determine())
+  }
+
+  private def extractFromAnnotations(param: ParameterData): Option[ParameterEditor] = {
+    val dualEditorAnnotation: Option[DualEditor] = param.getAnnotation[DualEditor]
+    val simpleEditorAnnotation: Option[SimpleEditor] = param.getAnnotation[SimpleEditor]
+    val rawEditorAnnotation: Option[RawEditor] = param.getAnnotation[RawEditor]
 
     (dualEditorAnnotation, simpleEditorAnnotation, rawEditorAnnotation) match {
-      case (dualEditorAnnotation: DualEditor, null, null) => {
+      case (Some(dualEditorAnnotation: DualEditor), None, None) => {
         val defaultMode = dualEditorAnnotation.defaultMode()
         val simpleEditor = dualEditorAnnotation.simpleEditor()
         Some(DualParameterEditor(simpleParameterEditor(simpleEditor), defaultMode))
       }
-      case (null, simpleEditorAnnotation: SimpleEditor, null) => Some(simpleParameterEditor(simpleEditorAnnotation))
-      case (null, null, rawEditorAnnotation: RawEditor) => Some(RawParameterEditor)
+      case (None, Some(simpleEditorAnnotation: SimpleEditor), None) => Some(simpleParameterEditor(simpleEditorAnnotation))
+      case (None, None, Some(_: RawEditor)) => Some(RawParameterEditor)
       case _ => None
     }
   }
 
-  private def simpleParameterEditor(simpleEditor: SimpleEditor) = {
+  private def simpleParameterEditor(simpleEditor: SimpleEditor): SimpleParameterEditor = {
     simpleEditor.`type`() match {
       case SimpleEditorType.BOOL_EDITOR => BoolParameterEditor
       case SimpleEditorType.STRING_EDITOR => StringParameterEditor

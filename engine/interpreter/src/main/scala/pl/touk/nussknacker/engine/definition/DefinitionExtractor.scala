@@ -28,6 +28,7 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
       nodeConfig
     ))
     (obj match {
+      //TODO: how validators/editors in NodeConfig should be handled for GenericNodeTransformation/WithExplicitMethodToInvoke?
       case e:GenericNodeTransformation[_] =>
         val returnType = if (e.nodeDependencies.contains(OutputVariableNameDependency)) Unknown else Typed[Void]
         val definition = ObjectDefinition(e.initialParameters, returnType, objWithCategories.categories, objWithCategories.nodeConfig)

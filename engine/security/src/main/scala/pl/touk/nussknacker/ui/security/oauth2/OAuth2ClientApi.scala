@@ -9,7 +9,8 @@ import sttp.client.circe._
 import sttp.client.{Response, _}
 import sttp.model.Uri
 import OAuth2ClientApi._
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2AccessTokenRejection, OAuth2ServerError}
+import cats.data.NonEmptyList
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2AccessTokenRejection, OAuth2CompoundException, OAuth2ServerError}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -54,12 +55,12 @@ class OAuth2ClientApi[ProfileResponse: Decoder, AccessTokenResponse: Decoder]
   protected[security] def handlingResponse[T](response: Response[Either[ResponseError[Error], T]], clientErrorMessage: String): Future[Response[Either[ResponseError[Error], T]]] = {
     if (response.code.isClientError) {
       logger.debug(s"Handling ClientError response: ${response}, error: ${clientErrorMessage}")
-      Future.failed(throw OAuth2AccessTokenRejection(clientErrorMessage))
+      Future.failed(throw OAuth2CompoundException(NonEmptyList.of(OAuth2AccessTokenRejection(clientErrorMessage))))
     } else if (response.isSuccess) {
       Future.successful(response)
     } else {
       logger.debug(s"Handling ServerError response: ${response}")
-      Future.failed(throw OAuth2ServerError(s"OAuth2 Server error: ${response}"))
+      Future.failed(throw OAuth2CompoundException(NonEmptyList.of(OAuth2ServerError(s"OAuth2 Server error: ${response}"))))
     }
   }
 }
