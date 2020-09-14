@@ -159,41 +159,29 @@ object TestFactory extends TestPermissions{
     }
 
     def withProcessFinished[T](action: => T): T = {
-      try {
-        managerProcessState.set(prepareProcessState(SimpleStateStatus.Finished))
-        action
-      } finally {
-        managerProcessState.set(prepareProcessState(SimpleStateStatus.Running))
-      }
+      withProcessStateStatus(SimpleStateStatus.Finished)(action)
     }
 
     def withProcessStateStatus[T](status: StateStatus)(action: => T): T = {
-      try {
-        managerProcessState.set(prepareProcessState(status))
-        action
-      } finally {
-        managerProcessState.set(prepareProcessState(SimpleStateStatus.Running))
-      }
+      withProcessState(prepareProcessState(status))(action)
     }
 
     def withProcessStateVersion[T](status: StateStatus, version: Option[ProcessVersion])(action: => T): T = {
-      try {
-        managerProcessState.set(prepareProcessState(status, version))
-        action
-      } finally {
-        managerProcessState.set(prepareProcessState(SimpleStateStatus.Running))
-      }
+      withProcessState(prepareProcessState(status, version))(action)
     }
 
     def withEmptyProcessState[T](action: => T): T = {
+      withProcessState(None)(action)
+    }
+
+    def withProcessState[T](status: Option[ProcessState])(action: => T): T = {
       try {
-        managerProcessState.set(Option.empty)
+        managerProcessState.set(status)
         action
       } finally {
         managerProcessState.set(prepareProcessState(SimpleStateStatus.Running))
       }
     }
-
 
     override protected def cancel(job: ProcessState): Future[Unit] = Future.successful(Unit)
 

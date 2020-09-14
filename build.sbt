@@ -271,16 +271,14 @@ lazy val dist = {
       packageName in Universal := ("nussknacker" + "-" + version.value),
       Keys.compile in Compile := (Keys.compile in Compile).dependsOn(
         (assembly in Compile) in generic,
-        (assembly in Compile) in demo
+        (assembly in Compile) in demo,
+        (assembly in Compile) in flinkProcessManager
       ).value,
-      mappings in Universal += {
-        val genericModel = (crossTarget in generic).value / "genericModel.jar"
-        genericModel -> "model/genericModel.jar"
-      },
-      mappings in Universal += {
-        val demoModel = (crossTarget in demo).value / s"demoModel.jar"
-        demoModel -> "model/demoModel.jar"
-      },
+      mappings in Universal ++= Seq(
+        (crossTarget in generic).value / "genericModel.jar" -> "model/genericModel.jar",
+        (crossTarget in demo).value / s"demoModel.jar" -> "model/demoModel.jar",
+        (crossTarget in flinkProcessManager).value / s"nussknacker-flink-manager.jar" -> "managers/nussknacker-flink-manager.jar"
+      ),
       /* //FIXME: figure out how to filter out only for .tgz, not for docker
       mappings in Universal := {
         val universalMappings = (mappings in Universal).value
@@ -298,12 +296,12 @@ lazy val dist = {
     module
       .settings(
         Keys.compile in Compile := (Keys.compile in Compile).dependsOn(
-          (assembly in Compile) in managementSample,
+          (assembly in Compile) in flinkManagementSample,
           (assembly in Compile) in standaloneSample
         ).value,
         mappings in Universal += {
-          val genericModel = (crossTarget in managementSample).value / "managementSample.jar"
-          genericModel -> "model/managementSample.jar"
+          val genericModel = (crossTarget in flinkManagementSample).value / "flinkManagementSample.jar"
+          genericModel -> "model/flinkManagementSample.jar"
         },
         mappings in Universal += {
           val demoModel = (crossTarget in standaloneSample).value / s"standaloneSample.jar"
@@ -357,21 +355,23 @@ lazy val standaloneApp = (project in engine("standalone/app")).
   dependsOn(engineStandalone, testUtil % "test")
 
 
-lazy val management = (project in engine("flink/management")).
+lazy val flinkProcessManager = (project in engine("flink/management")).
   configs(IntegrationTest).
   settings(commonSettings).
   settings(Defaults.itSettings).
+  settings(assemblySettings("nussknacker-flink-manager.jar", includeScala = false): _*).
   settings(
-    name := "nussknacker-management",
+    name := "nussknacker-flink-manager",
     Keys.test in IntegrationTest := (Keys.test in IntegrationTest).dependsOn(
-      (assembly in Compile) in managementSample,
+      (assembly in Compile) in flinkManagementSample,
       (assembly in Compile) in managementJavaSample
     ).value,
+
     //flink cannot run tests and deployment concurrently
     parallelExecution in IntegrationTest := false,
     libraryDependencies ++= {
       Seq(
-        "org.typelevel" %% "cats-core" % catsV,
+        "org.typelevel" %% "cats-core" % catsV % "provided",
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % flinkScope
           excludeAll(
           ExclusionRule("log4j", "log4j"),
@@ -381,9 +381,11 @@ lazy val management = (project in engine("flink/management")).
         "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.0" % "it,test"
       )
     }
-  //FIXME: provided dependency is workaround for Idea, which is not able to handle test scope on module dependency
-  //kafka module is (wrongly) added to classpath when running UI from Idea
-  ).dependsOn(interpreter, queryableState, httpUtils, kafka % "provided", kafkaTestUtil % "it,test")
+  ).dependsOn(interpreter % "provided",
+    api % "provided",
+    queryableState,
+    httpUtils % "provided",
+    kafkaTestUtil % "it,test")
 
 lazy val standaloneSample = (project in engine("standalone/engine/sample")).
   settings(commonSettings).
@@ -393,7 +395,7 @@ lazy val standaloneSample = (project in engine("standalone/engine/sample")).
   ).dependsOn(util, standaloneApi, standaloneUtil)
 
 
-lazy val managementSample = (project in engine("flink/management/sample")).
+lazy val flinkManagementSample = (project in engine("flink/management/sample")).
   settings(commonSettings).
   settings(assemblySampleSettings("managementSample.jar"): _*).
   settings(
@@ -568,9 +570,7 @@ lazy val kafkaTestUtil = (project in engine("kafka-test-util")).
       )
     }
   )
-  //FIXME: provided dependency is workaround for Idea, which is not able to handle test scope on module dependency
-  //we use kafkaTestUtil with this scope in management, and kafka module is (wrongly) added to classpath when running UI from Idea
-  .dependsOn(testUtil, kafka % "provided")
+  .dependsOn(testUtil, kafka)
 
 lazy val util = (project in engine("util")).
   settings(commonSettings).
@@ -767,7 +767,7 @@ lazy val httpUtils = (project in engine("httpUtils")).
     }
   ).dependsOn(api, testUtil % "test")
 
-//osobny modul bo chcemy uzyc klienta do testowania w managementSample
+//osobny modul bo chcemy uzyc klienta do testowania w flinkManagementSample
 lazy val queryableState = (project in engine("queryableState")).
   settings(commonSettings).
   settings(
@@ -827,11 +827,11 @@ lazy val ui = (project in file("ui/server"))
     parallelExecution in ThisBuild := false,
     Keys.test in SlowTests := (Keys.test in SlowTests).dependsOn(
       //TODO: maybe here there should be engine/demo??
-      (assembly in Compile) in managementSample
+      (assembly in Compile) in flinkManagementSample
     ).value,
     Keys.test in Test := (Keys.test in Test).dependsOn(
       //TODO: maybe here there should be engine/demo??
-      (assembly in Compile) in managementSample
+      (assembly in Compile) in flinkManagementSample
     ).value,
     /*
       We depend on buildUi in packageBin and assembly to be make sure fe files will be included in jar and fajar
@@ -871,13 +871,21 @@ lazy val ui = (project in file("ui/server"))
       )
     }
   )
-  .dependsOn(management, interpreter, engineStandalone, processReports, security, listenerApi, testUtil % "test")
+  .dependsOn(interpreter, processReports, security, listenerApi,
+    testUtil % "test",
+    //TODO: this is unfortunatelly needed to run without too much hassle in Intellij...
+    //provided dependency of kafka is workaround for Idea, which is not able to handle test scope on module dependency
+    //otherwise it is (wrongly) added to classpath when running UI from Idea
+    flinkProcessManager % "provided" ,
+    kafka % "provided",
+    engineStandalone % "provided"
+  )
 
 
 lazy val root = (project in file("."))
   .aggregate(
     // TODO: get rid of this duplication
-    engineStandalone, standaloneApp, management, standaloneSample, managementSample, managementJavaSample, demo, generic,
+    engineStandalone, standaloneApp, flinkProcessManager, standaloneSample, flinkManagementSample, managementJavaSample, demo, generic,
     process, interpreter, benchmarks, kafka, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
     flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils, queryableState,
     restmodel, listenerApi, ui,
@@ -911,4 +919,4 @@ lazy val root = (project in file("."))
     )
   )
 
-addCommandAlias("assemblySamples", ";managementSample/assembly;standaloneSample/assembly;demo/assembly;generic/assembly")
+addCommandAlias("assemblySamples", ";flinkManagementSample/assembly;standaloneSample/assembly;demo/assembly;generic/assembly")

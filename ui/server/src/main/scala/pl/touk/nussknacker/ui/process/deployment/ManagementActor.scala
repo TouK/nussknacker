@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess, OnFinished}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
@@ -135,7 +134,9 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
     state.status match {
       case SimpleStateStatus.NotFound | SimpleStateStatus.NotDeployed if lastAction.isEmpty =>
         ProcessStatus.simple(SimpleStateStatus.NotDeployed)
-      case SimpleStateStatus.DuringCancel | SimpleStateStatus.Finished | FlinkStateStatus.Restarting if lastAction.isEmpty =>
+      //TODO: Should FlinkStateStatus.Restarting also be here?. Currently it's not handled to
+      //avoid dependency on FlinkProcessManager
+      case SimpleStateStatus.DuringCancel | SimpleStateStatus.Finished if lastAction.isEmpty =>
         ProcessStatus.simpleWarningProcessWithoutAction(Some(state))
       case _ => ProcessStatus(state)
     }
