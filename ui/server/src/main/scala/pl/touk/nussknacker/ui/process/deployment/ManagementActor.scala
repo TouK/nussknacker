@@ -145,10 +145,11 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
   //TODO: In future we should move this functionality to ProcessManager.
   private def handleCanceledState(processState: Option[ProcessState]): ProcessStatus =
     processState match {
-      case Some(SimpleStateStatus.NotFound) | None =>
-        ProcessStatus.simple(SimpleStateStatus.Canceled)
-      case Some(state) =>
-        ProcessStatus(state)
+      case Some(state) => state.status match {
+        case SimpleStateStatus.NotFound => ProcessStatus.simple(SimpleStateStatus.Canceled)
+        case _ => ProcessStatus(state)
+      }
+      case None => ProcessStatus.simple(SimpleStateStatus.Canceled)
     }
 
   //This method handles some corner cases for following deploy state mismatch last action version
