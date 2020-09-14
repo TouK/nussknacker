@@ -3,10 +3,10 @@ package pl.touk.nussknacker.ui.process.deployment
 import akka.actor.ActorSystem
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ProcessActionType, ProcessState}
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.management.FlinkStateStatus
+import pl.touk.nussknacker.engine.management.{FlinkProcessStateDefinitionManager, FlinkStateStatus}
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.restmodel.process
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
@@ -171,16 +171,19 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     }
   }
 
-  //FIXME:
-  ignore("Should return state with error when state is restarting and process hasn't action") {
+  test("Should return state with error when state is restarting and process hasn't action") {
     val id = prepareProcess(processName).futureValue
 
-    processManager.withProcessStateStatus(FlinkStateStatus.Restarting) {
+    val state = ProcessState("12", FlinkStateStatus.Restarting, Some(ProcessVersion.empty), FlinkProcessStateDefinitionManager)
+
+    processManager.withProcessState(Some(state)) {
       val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.Warning)
-      state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
-      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.processWithoutActionMessage)
+      //See comment in ManagementActor.handleState...
+      state.map(_.status) shouldBe Some(FlinkStateStatus.Restarting)
+      state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Cancel))
+      state.flatMap(_.description) shouldBe Some("Process is restarting...")
+
     }
   }
 

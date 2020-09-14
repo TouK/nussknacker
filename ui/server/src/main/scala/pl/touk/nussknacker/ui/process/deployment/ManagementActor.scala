@@ -134,8 +134,9 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
     state.status match {
       case SimpleStateStatus.NotFound | SimpleStateStatus.NotDeployed if lastAction.isEmpty =>
         ProcessStatus.simple(SimpleStateStatus.NotDeployed)
-        //FIXME: remove "flink" state...
-      case SimpleStateStatus.DuringCancel | SimpleStateStatus.Finished /*| FlinkStateStatus.Restarting */ if lastAction.isEmpty =>
+      //TODO: Should FlinkStateStatus.Restarting also be here?. Currently it's not handled to
+      //avoid dependency on FlinkProcessManager
+      case SimpleStateStatus.DuringCancel | SimpleStateStatus.Finished if lastAction.isEmpty =>
         ProcessStatus.simpleWarningProcessWithoutAction(Some(state))
       case _ => ProcessStatus(state)
     }
@@ -144,11 +145,10 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
   //TODO: In future we should move this functionality to ProcessManager.
   private def handleCanceledState(processState: Option[ProcessState]): ProcessStatus =
     processState match {
-      case Some(state) => state.status match {
-        case SimpleStateStatus.NotFound => ProcessStatus.simple(SimpleStateStatus.Canceled)
-        case _ => ProcessStatus(state)
-      }
-      case None => ProcessStatus.simple(SimpleStateStatus.Canceled)
+      case Some(SimpleStateStatus.NotFound) | None =>
+        ProcessStatus.simple(SimpleStateStatus.Canceled)
+      case Some(state) =>
+        ProcessStatus(state)
     }
 
   //This method handles some corner cases for following deploy state mismatch last action version
