@@ -22,7 +22,13 @@ export type NodeType = {
   subprocessVersions?: $TodoType,
   ref?: $TodoType,
   varName?: string,
-  value?: Expression,
+  value?: $TodoType,
+  fields?: Array<Field>,
+}
+
+export type Field = {
+  name: string,
+  expression: Expression,
 }
 
 export type Parameter = {

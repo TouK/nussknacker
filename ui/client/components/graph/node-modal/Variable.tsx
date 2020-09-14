@@ -1,5 +1,3 @@
-import _ from "lodash"
-import PropTypes from "prop-types"
 import React from "react"
 import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
 import {errorValidator, mandatoryValueValidator, Validator, Error} from "./editors/Validators"

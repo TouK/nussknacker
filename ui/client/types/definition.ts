@@ -12,28 +12,28 @@ interface TypingResultBase {
     display: string, 
 }
 
-type TypedClass = {
+export type TypedClass = {
     refClazzName: string,
     params: Array<TypingResult>, 
 }
 
-type TypedObjectTypingResult = TypingResultBase & TypedClass & {
-    fields: Array<TypingResult>,
+export type TypedObjectTypingResult = TypingResultBase & TypedClass & {
+    fields: Record<string, TypingResult>,
 }
 
-type TypedDict = TypingResultBase & {
+export type TypedDict = TypingResultBase & {
     id: string,
     valueType: SingleTypingResult,
 }
 
-type TypedTaggedValue = (TypedObjectTypingResult | TypedDict | TypedClass) & {
+export type TypedTaggedValue = (TypedObjectTypingResult | TypedDict | TypedClass) & {
     tag: string,
 }
 
-type SingleTypingResult = TypingResultBase & 
+export type SingleTypingResult = TypingResultBase &
     (TypedObjectTypingResult | TypedDict | TypedTaggedValue | TypedClass)
 
-type UnknownTyping = TypingResultBase & {
+export type UnknownTyping = TypingResultBase & {
     params: Array<TypingResult>,
 }
 
