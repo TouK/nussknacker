@@ -44,6 +44,10 @@ object NodeCompiler {
                                       compiledObject: ValidatedNel[ProcessCompilationError, T],
                                       expressionType: Option[TypingResult] = None) {
     def errors: List[ProcessCompilationError] = (validationContext.swap.toList ++ compiledObject.swap.toList).flatMap(_.toList)
+
+    def withVariable(varName: String)(implicit nodeId: NodeId): NodeCompilationResult[T] = copy(
+      validationContext = validationContext.andThen(_.withVariable(varName, expressionType.getOrElse(Unknown)))
+    )
   }
 
   private object ExpressionTypingResult {
