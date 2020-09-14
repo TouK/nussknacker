@@ -332,6 +332,7 @@ export class NodeDetailsContent extends React.Component {
             showValidation={showValidation}
             variableTypes={variableTypes}
             errors={fieldErrors}
+            expressionType={this.props.expressionType}
           />
         )
       case "Variable":

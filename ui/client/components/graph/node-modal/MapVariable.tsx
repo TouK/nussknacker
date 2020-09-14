@@ -1,19 +1,39 @@
 import _ from "lodash"
-import PropTypes from "prop-types"
-import {v4 as uuid4} from "uuid"
-import {errorValidator, mandatoryValueValidator} from "./editors/Validators"
+import {errorValidator, mandatoryValueValidator, Error} from "./editors/Validators"
 import LabeledInput from "./editors/field/LabeledInput"
 import LabeledTextarea from "./editors/field/LabeledTextarea"
 import Map from "./editors/map/Map"
 import React from "react"
+import {VariableTypes, NodeType, TypedObjectTypingResult, Field} from "../../../types"
 
-const MapVariable = ({isMarked, node, removeElement, addElement, onChange, readOnly, showValidation, errors, renderFieldLabel, variableTypes}) => {
+type Props = {
+  isMarked: (paths: string) => boolean,
+  node: NodeType,
+  removeElement: (namespace: string, ix: number) => void,
+  addElement: (property: $TodoType, element: $TodoType) => void,
+  onChange: (propToMutate: $TodoType, newValue: $TodoType, defaultValue?: $TodoType) => void,
+  readOnly?: boolean,
+  showValidation: boolean,
+  errors: Array<Error>,
+  variableTypes: VariableTypes,
+  renderFieldLabel: (label: string) => React.ReactNode,
+  expressionType?: TypedObjectTypingResult,
+}
+
+const MapVariable = (props: Props) => {
+
+  const {
+    isMarked, node, removeElement, addElement, onChange, readOnly, showValidation,
+    errors, renderFieldLabel, variableTypes, expressionType,
+  } = props
+
+  const newField: Field = {name: "", expression: {expression: "", language: "spel"}}
 
   const addField = () => {
-    addElement("fields", {name: "", uuid: uuid4(), expression: {expression: "", language: "spel"}})
+    addElement("fields", newField)
   }
 
-  const onInputChange = (path, event) => onChange(path, event.target.value)
+  const onInputChange = (path: string, event: Event) => onChange(path, (event.target as HTMLInputElement).value)
 
   return (
     <div className="node-table-body node-variable-builder-body">
@@ -50,6 +70,7 @@ const MapVariable = ({isMarked, node, removeElement, addElement, onChange, readO
         variableTypes={variableTypes}
         showSwitch={false}
         errors={errors}
+        expressionType={expressionType}
       />
 
       <LabeledTextarea
@@ -64,24 +85,11 @@ const MapVariable = ({isMarked, node, removeElement, addElement, onChange, readO
   )
 }
 
-MapVariable.propTypes = {
-  isMarked: PropTypes.func.isRequired,
-  node: PropTypes.object.isRequired,
-  removeElement: PropTypes.func.isRequired,
-  addElement: PropTypes.func.isRequired,
-  onChange: PropTypes.func.isRequired,
-  readOnly: PropTypes.bool,
-  showValidation: PropTypes.bool.isRequired,
-  errors: PropTypes.array.isRequired,
-  variableTypes: PropTypes.object.isRequired,
-  renderFieldLabel: PropTypes.func.isRequired,
-}
-
 MapVariable.defaultProps = {
   readOnly: false,
 }
 
-MapVariable.availableFields = (node) => {
+MapVariable.availableFields = (_node: NodeType) => {
   return ["id", "varName"]
 }
 
