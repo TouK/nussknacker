@@ -1,1 +1,1 @@
-version in ThisBuild := "0.2.2-SNAPSHOT-compatibility"
+version in ThisBuild := "0.3.0-SNAPSHOT"
