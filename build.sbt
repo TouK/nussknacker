@@ -381,13 +381,10 @@ lazy val flinkProcessManager = (project in engine("flink/management")).
         "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.0" % "it,test"
       )
     }
-  //FIXME: provided dependency is workaround for Idea, which is not able to handle test scope on module dependency
-  //kafka module is (wrongly) added to classpath when running UI from Idea
   ).dependsOn(interpreter % "provided",
     api % "provided",
     queryableState,
     httpUtils % "provided",
-    kafka % "provided",
     kafkaTestUtil % "it,test")
 
 lazy val standaloneSample = (project in engine("standalone/engine/sample")).
@@ -573,9 +570,7 @@ lazy val kafkaTestUtil = (project in engine("kafka-test-util")).
       )
     }
   )
-  //FIXME: provided dependency is workaround for Idea, which is not able to handle test scope on module dependency
-  //we use kafkaTestUtil with this scope in management, and kafka module is (wrongly) added to classpath when running UI from Idea
-  .dependsOn(testUtil, kafka % "provided")
+  .dependsOn(testUtil, kafka)
 
 lazy val util = (project in engine("util")).
   settings(commonSettings).
@@ -879,7 +874,10 @@ lazy val ui = (project in file("ui/server"))
   .dependsOn(interpreter, processReports, security, listenerApi,
     testUtil % "test",
     //TODO: this is unfortunatelly needed to run without too much hassle in Intellij...
+    //provided dependency of kafka is workaround for Idea, which is not able to handle test scope on module dependency
+    //otherwise it is (wrongly) added to classpath when running UI from Idea
     flinkProcessManager % "provided" ,
+    kafka % "provided",
     engineStandalone % "provided"
   )
 
