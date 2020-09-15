@@ -79,7 +79,7 @@ jobs:
     - name: "Slow tests"
       script: ./ciRunSbt.sh clean ui/slow:test
     - name: "Integration tests"
-      script: ./ciRunSbt.sh clean management/it:test engineStandalone/it:test
+      script: ./ciRunSbt.sh clean flinkProcessManager/it:test engineStandalone/it:test
     - name: "Cross Scala compile"
       script: CROSS_BUILD=true ./ciRunSbt.sh clean compile:compile test:compile
       # We can't use env(CROSS_BUILD) here because of some bug in travis - there is raw, not evaluated script body in env(CROSS_BUILD)

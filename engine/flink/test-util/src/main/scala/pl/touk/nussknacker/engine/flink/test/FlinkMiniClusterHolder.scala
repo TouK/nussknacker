@@ -25,7 +25,7 @@ trait FlinkMiniClusterHolder {
 
   def stop(): Unit
 
-  final def createExecutionEnvironment(): MiniClusterExecutionEnvironment = {
+  def createExecutionEnvironment(): MiniClusterExecutionEnvironment = {
     new MiniClusterExecutionEnvironment(this, userFlinkClusterConfig, envConfig)
   }
 

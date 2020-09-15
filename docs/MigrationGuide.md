@@ -16,6 +16,8 @@ To see biggest differences please consult the [changelog](Changelog.md).
 
 * [#1149](https://github.com/TouK/nussknacker/pull/1149) FlinkProcessRegistrar refactor (can affect test code) 
 * [#1166](https://github.com/TouK/nussknacker/pull/1166) ```model.conf``` should be renamed to ```defaultModelConfig.conf```
+* [#1218](https://github.com/TouK/nussknacker/pull/1218) FlinkProcessManager is no longer bundled in ui uber-jar. In docker/tgz distribution
+FlinkProcessManager is in different location
 
 ## In version 0.2.0
 

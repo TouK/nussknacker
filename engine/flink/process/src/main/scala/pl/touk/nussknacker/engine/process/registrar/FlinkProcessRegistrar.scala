@@ -1,15 +1,14 @@
 package pl.touk.nussknacker.engine.process.registrar
 
 import java.util.concurrent.TimeUnit
-import java.util.function.Consumer
 
 import com.typesafe.config.Config
-import com.typesafe.scalalogging.LazyLogging
+import com.typesafe.scalalogging.{LazyLogging, Logger}
 import org.apache.flink.api.common.functions.RuntimeContext
-import org.apache.flink.runtime.execution.librarycache.FlinkUserCodeClassLoaders
 import org.apache.flink.streaming.api.environment.RemoteStreamEnvironment
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment, _}
 import org.apache.flink.streaming.api.windowing.time.Time
+import org.slf4j.LoggerFactory
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
@@ -21,12 +20,14 @@ import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, _}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
-import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.{CompiledProcessWithDeps, FlinkProcessCompiler}
+import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
 import pl.touk.nussknacker.engine.process.util.{MetaDataExtractor, UserClassLoader}
+import pl.touk.nussknacker.engine.process.{CheckpointConfig, ExecutionConfigPreparer, FlinkCompatibilityProvider}
 import pl.touk.nussknacker.engine.splittedgraph.end.BranchEnd
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.util.ThreadUtils
+import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import shapeless.syntax.typeable._
 
 import scala.concurrent.duration._
@@ -60,10 +61,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => Clas
 
   protected def usingRightClassloader(env: StreamExecutionEnvironment)(action: => Unit): Unit = {
     if (!isRemoteEnv(env)) {
-      val flinkLoaderSimulation = FlinkUserCodeClassLoaders.childFirst(Array.empty,
-        Thread.currentThread().getContextClassLoader, Array.empty, new Consumer[Throwable] {
-          override def accept(t: Throwable): Unit = throw t
-        })
+      val flinkLoaderSimulation = streamExecutionEnvPreparer.flinkClassLoaderSimulation
       ThreadUtils.withThisAsContextClassLoader[Unit](flinkLoaderSimulation)(action)
     } else {
       action
@@ -231,10 +229,28 @@ object FlinkProcessRegistrar {
   private[registrar] final val EndId = "$end"
 
   import net.ceedubs.ficus.Ficus._
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+
+  // We cannot use LazyLogging trait here because class already has LazyLogging and scala ends with cycle during resolution...
+  private lazy val logger: Logger = Logger(LoggerFactory.getLogger(classOf[FlinkProcessRegistrar].getName))
 
   def apply(compiler: FlinkProcessCompiler, config: Config, prepareExecutionConfig: ExecutionConfigPreparer): FlinkProcessRegistrar = {
     val eventTimeMetricDuration = config.getOrElse[FiniteDuration]("eventTimeMetricSlideDuration", 10.seconds)
-    val defaultStreamExecutionEnvPreparer = DefaultStreamExecutionEnvPreparer(config, prepareExecutionConfig, compiler.diskStateBackendSupport)
+
+    // TODO checkpointInterval is deprecated - remove it in future
+    val checkpointInterval = config.getAs[FiniteDuration](path = "checkpointInterval")
+    if (checkpointInterval.isDefined) {
+      logger.warn("checkpointInterval config property is deprecated, use checkpointConfig.checkpointInterval instead")
+    }
+
+    val checkpointConfig = config.getAs[CheckpointConfig](path = "checkpointConfig")
+      .orElse(checkpointInterval.map(CheckpointConfig(_)))
+    val rocksDBStateBackendConfig = config.getAs[RocksDBStateBackendConfig]("rocksDB").filter(_ => compiler.diskStateBackendSupport)
+
+    val defaultStreamExecutionEnvPreparer =
+      ScalaServiceLoader.load[FlinkCompatibilityProvider](getClass.getClassLoader)
+        .headOption.map(_.createExecutionEnvPreparer(config, prepareExecutionConfig, compiler.diskStateBackendSupport))
+        .getOrElse(new DefaultStreamExecutionEnvPreparer(checkpointConfig, rocksDBStateBackendConfig, prepareExecutionConfig))
     new FlinkProcessRegistrar(compiler.compileProcess, defaultStreamExecutionEnvPreparer, eventTimeMetricDuration)
   }
 

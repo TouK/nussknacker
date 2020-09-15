@@ -17,8 +17,10 @@ Nussknacker versions
   [#1151](https://github.com/TouK/nussknacker/pull/1151), 
   [#1166](https://github.com/TouK/nussknacker/pull/1166) 
 * [#873](https://github.com/TouK/nussknacker/pull/873) Flink upgrade 
-* More graceful handling of Flink compatibility issues:
-  [#1150](https://github.com/TouK/nussknacker/pull/1150)
+* More graceful handling of Flink compatibility issues (in particular, ```FlinkCompatibilityProvider`` trait introduced, also
+ProcessManager implementations are separated from UI to allow easier changes in deployments):
+  [#1150](https://github.com/TouK/nussknacker/pull/1150),
+  [#1218](https://github.com/TouK/nussknacker/pull/1218) 
 * [#1183](https://github.com/TouK/nussknacker/pull/1183) New back to process button on metrics 
 * [#1188](https://github.com/TouK/nussknacker/pull/1188) Fix env label and provide nussknacker logo
 

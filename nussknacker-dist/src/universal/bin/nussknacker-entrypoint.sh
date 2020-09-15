@@ -4,6 +4,7 @@ NUSSKNACKER_DIR=`dirname "$0" | xargs -I{} readlink -f {}/..`
 export STORAGE_DIR="$NUSSKNACKER_DIR/storage"
 CONF_DIR="$NUSSKNACKER_DIR/conf"
 LIB_DIR="$NUSSKNACKER_DIR/lib"
+MANAGERS_DIR="$NUSSKNACKER_DIR/managers"
 
 CONFIG_FILE=${NUSSKNACKER_CONFIG_FILE-${2-"$CONF_DIR/docker-application.conf"}}
 LOG_FILE=${NUSSKNACKER_LOG_FILE-${3-"$CONF_DIR/docker-logback.xml"}}
@@ -26,4 +27,4 @@ echo "Nussknacker up and running with" \
 
 exec java $JDK_JAVA_OPTIONS -Dlogback.configurationFile="$LOG_FILE" \
           -Dconfig.file="$CONFIG_FILE" \
-          -cp "$LIB_DIR/*" "$APPLICATION_APP"
+          -cp "$LIB_DIR/*:$MANAGERS_DIR/*" "$APPLICATION_APP"

@@ -57,7 +57,7 @@ jobs:
       - uses: olafurpg/setup-scala@v5
       - name: Integration tests
         shell: bash
-        run: ./ciRunSbt.sh clean management/it:test engineStandalone/it:test
+        run: ./ciRunSbt.sh clean flinkProcessManager/it:test engineStandalone/it:test
   slowTest:
     name: Slow tests
     runs-on: ubuntu-latest

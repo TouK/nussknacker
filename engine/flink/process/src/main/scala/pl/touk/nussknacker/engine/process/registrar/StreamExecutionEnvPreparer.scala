@@ -1,21 +1,22 @@
 package pl.touk.nussknacker.engine.process.registrar
 
+import java.util.function.Consumer
+
 import com.typesafe.config.Config
-import com.typesafe.scalalogging.{LazyLogging, Logger}
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.java.tuple
+import org.apache.flink.runtime.execution.librarycache.FlinkUserCodeClassLoaders
 import org.apache.flink.runtime.state.StateBackend
 import org.apache.flink.streaming.api.operators.StreamOperatorFactory
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.flink.streaming.runtime.operators.windowing.WindowOperator
-import org.slf4j.LoggerFactory
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.process.{CheckpointConfig, ExecutionConfigPreparer}
 import pl.touk.nussknacker.engine.process.compiler.CompiledProcessWithDeps
-import pl.touk.nussknacker.engine.process.util.{MetaDataExtractor, StateConfiguration}
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
+import pl.touk.nussknacker.engine.process.util.{MetaDataExtractor, StateConfiguration}
+import pl.touk.nussknacker.engine.process.{CheckpointConfig, ExecutionConfigPreparer}
 
 import scala.collection.JavaConverters._
-import scala.concurrent.duration.FiniteDuration
 
 /*
   This trait is meant to be the place to configure StreamExecutionEnvironment. Here (e.g. in DefaultStreamExecutionEnvPreparer)
@@ -28,36 +29,11 @@ trait StreamExecutionEnvPreparer {
 
   def postRegistration(env: StreamExecutionEnvironment, compiledProcessWithDeps: CompiledProcessWithDeps): Unit
 
-}
-
-object DefaultStreamExecutionEnvPreparer {
-
-  import net.ceedubs.ficus.Ficus._
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
-  // We cannot use LazyLogging trait here because class already has LazyLogging and scala ends with cycle during resolution...
-  private lazy val logger: Logger = Logger(LoggerFactory.getLogger(classOf[FlinkProcessRegistrar].getName))
-
-  def apply(config: Config, executionConfigPreparer: ExecutionConfigPreparer, useDiskState: Boolean): DefaultStreamExecutionEnvPreparer = {
-
-    // TODO checkpointInterval is deprecated - remove it in future
-    val checkpointInterval = config.getAs[FiniteDuration](path = "checkpointInterval")
-    if (checkpointInterval.isDefined) {
-      logger.warn("checkpointInterval config property is deprecated, use checkpointConfig.checkpointInterval instead")
-    }
-
-    val checkpointConfig = config.getAs[CheckpointConfig](path = "checkpointConfig")
-      .orElse(checkpointInterval.map(CheckpointConfig(_)))
-    val diskStateBackend = config.getAs[RocksDBStateBackendConfig]("rocksDB")
-      .map(StateConfiguration.prepareRocksDBStateBackend).filter(_ => useDiskState)
-
-    new DefaultStreamExecutionEnvPreparer(checkpointConfig, diskStateBackend, executionConfigPreparer)
-  }
-
+  def flinkClassLoaderSimulation: ClassLoader
 }
 
 class DefaultStreamExecutionEnvPreparer(checkpointConfig: Option[CheckpointConfig],
-                                       diskStateBackend: Option[StateBackend],
+                                        rocksDBStateBackendConfig: Option[RocksDBStateBackendConfig],
                                        executionConfigPreparer: ExecutionConfigPreparer) extends StreamExecutionEnvPreparer with LazyLogging {
 
   override def preRegistration(env: StreamExecutionEnvironment, processWithDeps: CompiledProcessWithDeps): Unit = {
@@ -70,12 +46,16 @@ class DefaultStreamExecutionEnvPreparer(checkpointConfig: Option[CheckpointConfi
 
     configureCheckpoints(env, streamMetaData)
 
-    diskStateBackend match {
-      case Some(backend) if streamMetaData.splitStateToDisk.getOrElse(false) =>
+    rocksDBStateBackendConfig match {
+      case Some(config) if streamMetaData.splitStateToDisk.getOrElse(false) =>
         logger.debug("Using disk state backend")
-        env.setStateBackend(backend)
+        configureRocksDBBackend(env, config)
       case _ => logger.debug("Using default state backend")
     }
+  }
+
+  protected def configureRocksDBBackend(env: StreamExecutionEnvironment, config: RocksDBStateBackendConfig): Unit = {
+    env.setStateBackend(StateConfiguration.prepareRocksDBStateBackend(config).asInstanceOf[StateBackend])
   }
 
   override def postRegistration(env: StreamExecutionEnvironment, compiledProcessWithDeps: CompiledProcessWithDeps): Unit = {
@@ -102,5 +82,13 @@ class DefaultStreamExecutionEnvPreparer(checkpointConfig: Option[CheckpointConfi
     env.getStreamGraph("", clearTransformations = false).getAllOperatorFactory.asScala.toSet[tuple.Tuple2[Integer, StreamOperatorFactory[_]]].map(_.f1).collect {
       case window: WindowOperator[_, _, _, _, _] => window.getStateDescriptor.initializeSerializerUnlessSet(config)
     }
+  }
+
+  override def flinkClassLoaderSimulation: ClassLoader = {
+    FlinkUserCodeClassLoaders.childFirst(Array.empty,
+      Thread.currentThread().getContextClassLoader, Array.empty, new Consumer[Throwable] {
+        override def accept(t: Throwable): Unit = throw t
+      }
+    )
   }
 }

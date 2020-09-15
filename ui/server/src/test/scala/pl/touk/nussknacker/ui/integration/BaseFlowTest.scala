@@ -291,7 +291,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
 
     //we generate random parameter
     val parameterUUID = UUID.randomUUID().toString
-    FileUtils.writeStringToFile(dynamicServiceFile, parameterUUID, Charset.forName("UTF-8"))
+    FileUtils.writeStringToFile(dynamicServiceFile, parameterUUID, "UTF-8")
 
     dynamicServiceParametersBeforeReload.exists(_.contains(parameterUUID)) shouldBe false
     dynamicServiceParameters shouldBe dynamicServiceParametersBeforeReload
