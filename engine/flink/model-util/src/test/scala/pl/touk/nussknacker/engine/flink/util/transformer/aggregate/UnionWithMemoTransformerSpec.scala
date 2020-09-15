@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.{util => jul}
 
 import cats.data.NonEmptyList
+import com.github.ghik.silencer.silent
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
@@ -34,6 +35,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 
 class UnionWithMemoTransformerSpec extends FunSuite with FlinkSpec with Matchers with VeryPatientScalaFutures {
@@ -144,6 +146,8 @@ object UnionWithMemoTransformerSpec {
   }
 
   object OneRecord {
+    @silent("deprecated")
+    @nowarn("deprecated")
     val timestampExtractor: AssignerWithPunctuatedWatermarks[OneRecord] = new BoundedOutOfOrdernessPunctuatedExtractor[OneRecord](1 * 3600 * 1000) {
       override def extractTimestamp(element: OneRecord, previousElementTimestamp: Long): Long = element.timeHours * 3600 * 1000
     }

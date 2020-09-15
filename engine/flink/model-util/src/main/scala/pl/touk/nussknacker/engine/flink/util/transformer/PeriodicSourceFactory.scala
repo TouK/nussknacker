@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 import java.time.Duration
 import java.{util => jul}
 
+import com.github.ghik.silencer.silent
 import javax.annotation.Nullable
 import javax.validation.constraints.Min
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -10,19 +11,21 @@ import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor
-import org.apache.flink.streaming.api.functions.{AssignerWithPeriodicWatermarks, AssignerWithPunctuatedWatermarks, TimestampAssigner}
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource, FlinkSourceFactory}
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, TimestampWatermarkHandler}
 
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 
 // TODO: add testing capabilities
-object PeriodicSourceFactory extends PeriodicSourceFactory(new MapAscendingTimestampExtractor(MapAscendingTimestampExtractor.DefaultTimestampField))
+object PeriodicSourceFactory extends PeriodicSourceFactory(
+  new LegacyTimestampWatermarkHandler(new MapAscendingTimestampExtractor(MapAscendingTimestampExtractor.DefaultTimestampField)))
 
-class PeriodicSourceFactory(timestampAssigner: TimestampAssigner[AnyRef]) extends FlinkSourceFactory[AnyRef]  {
+class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]) extends FlinkSourceFactory[AnyRef]  {
 
   @MethodToInvoke
   def create(@ParamName("period") period: Duration,
@@ -46,15 +49,10 @@ class PeriodicSourceFactory(timestampAssigner: TimestampAssigner[AnyRef]) extend
             1.to(count).map(_ => v.value)
           }
 
-        timestampAssigner match {
-          case periodic: AssignerWithPeriodicWatermarks[AnyRef@unchecked] =>
-            stream.assignTimestampsAndWatermarks(periodic)
-          case punctuated: AssignerWithPunctuatedWatermarks[AnyRef@unchecked] =>
-            stream.assignTimestampsAndWatermarks(punctuated)
-        }
+        timestampAssigner.assignTimestampAndWatermarks(stream)
       }
 
-      override def timestampAssignerForTest: Option[TimestampAssigner[AnyRef]] = Some(timestampAssigner)
+      override def timestampAssignerForTest: Option[TimestampWatermarkHandler[AnyRef]] = Some(timestampAssigner)
 
       override val returnType: typing.TypingResult = value.returnType
 
@@ -80,6 +78,8 @@ class PeriodicFunction(duration: Duration) extends SourceFunction[Unit] {
 
 }
 
+@silent("deprecated")
+@nowarn("deprecated")
 class MapAscendingTimestampExtractor(timestampField: String) extends AscendingTimestampExtractor[AnyRef] {
   override def extractAscendingTimestamp(element: AnyRef): Long = {
     element match {

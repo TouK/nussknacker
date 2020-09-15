@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 import java.util
 
 import cats.data.NonEmptyList
+import com.github.ghik.silencer.silent
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
@@ -32,6 +33,7 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 
 class TransformersTest extends FunSuite with FlinkSpec with Matchers {
@@ -301,6 +303,8 @@ class Creator(input: List[TestRecord]) extends EmptyProcessConfigCreator {
 }
 
 object TestRecord {
+  @silent("deprecated")
+  @nowarn("deprecated")
   val timestampExtractor: AssignerWithPunctuatedWatermarks[TestRecord] = new BoundedOutOfOrdernessPunctuatedExtractor[TestRecord](1 * 3600 * 1000) {
     override def extractTimestamp(element: TestRecord, previousElementTimestamp: Long): Long = element.timeHours * 3600 * 1000
   }

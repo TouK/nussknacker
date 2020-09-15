@@ -9,7 +9,7 @@ import ReleaseTransformations._
 import scala.util.Try
 
 val scala211 = "2.11.12"
-// Warning: Flink dosn't work correctly with 2.12.11
+// Warning: Flink doesn't work correctly with 2.12.11
 val scala212 = "2.12.10"
 lazy val supportedScalaVersions = List(scala212, scala211)
 
@@ -128,8 +128,7 @@ lazy val commonSettings =
         "-unchecked",
         "-deprecation",
         "-encoding", "utf8",
-        //FIXME: current TimestampAssigner mechanisms are deprecated...
-        //"-Xfatal-warnings",
+        "-Xfatal-warnings",
         "-feature",
         "-language:postfixOps",
         "-language:existentials",

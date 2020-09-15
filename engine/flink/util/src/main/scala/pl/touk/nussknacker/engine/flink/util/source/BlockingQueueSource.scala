@@ -3,19 +3,24 @@ package pl.touk.nussknacker.engine.flink.util.source
 import java.util.UUID
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue, TimeUnit}
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.functions.source.SourceFunction
-import org.apache.flink.streaming.api.functions.{AssignerWithPunctuatedWatermarks, TimestampAssigner}
+import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, TimestampWatermarkHandler}
 
+import scala.annotation.nowarn
 import scala.collection.concurrent.TrieMap
 import scala.collection.JavaConverters._
 
 /**
  * This source allow to add elements after creation or decide when input stream is finished. It also emit watermark after each added element.
  */
+@silent("deprecated")
+@nowarn("deprecated")
 class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPunctuatedWatermarks[T]) extends FlinkSource[T] with Serializable {
 
   private val id = UUID.randomUUID().toString
@@ -65,7 +70,8 @@ class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPun
   override def typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
 
   // we already extract timestamp and assign watermark in the source
-  override def timestampAssignerForTest: Option[TimestampAssigner[T]] = Some(timestampAssigner)
+  override def timestampAssignerForTest: Option[TimestampWatermarkHandler[T]]
+    = Some(new LegacyTimestampWatermarkHandler[T](timestampAssigner))
 
 }
 

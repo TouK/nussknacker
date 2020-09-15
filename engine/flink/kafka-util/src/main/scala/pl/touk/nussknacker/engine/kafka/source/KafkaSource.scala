@@ -3,15 +3,15 @@ package pl.touk.nussknacker.engine.kafka.source
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.functions.source.SourceFunction
-import org.apache.flink.streaming.api.functions.{AssignerWithPeriodicWatermarks, AssignerWithPunctuatedWatermarks, TimestampAssigner}
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, KafkaDeserializationSchema}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, TestDataGenerator, TestDataParserProvider}
+import pl.touk.nussknacker.engine.api.process.{TestDataGenerator, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.test.{TestDataParser, TestDataSplit}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.kafka._
 
 import scala.collection.JavaConverters._
@@ -19,7 +19,7 @@ import scala.collection.JavaConverters._
 class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
                      kafkaConfig: KafkaConfig,
                      deserializationSchema: KafkaDeserializationSchema[T],
-                     timestampAssigner: Option[TimestampAssigner[T]],
+                     timestampAssigner: Option[TimestampWatermarkHandler[T]],
                      recordFormatterOpt: Option[RecordFormatter],
                      testPrepareInfo: TestDataSplit,
                      overriddenConsumerGroup: Option[String] = None)
@@ -39,12 +39,7 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
         .addSource[T](flinkSourceFunction(consumerGroupId))(typeInformation)
         .name(s"${flinkNodeContext.metaData.id}-${flinkNodeContext.nodeId}-source"))
 
-    timestampAssigner.map {
-      case periodic: AssignerWithPeriodicWatermarks[T@unchecked] =>
-        newStart.assignTimestampsAndWatermarks(periodic)
-      case punctuated: AssignerWithPunctuatedWatermarks[T@unchecked] =>
-        newStart.assignTimestampsAndWatermarks(punctuated)
-    }.getOrElse(newStart)
+    timestampAssigner.map(_.assignTimestampAndWatermarks(newStart)).getOrElse(newStart)
   }
 
   override val typeInformation: TypeInformation[T] = deserializationSchema.getProducedType
@@ -78,5 +73,5 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
       }
   }
 
-  override def timestampAssignerForTest: Option[TimestampAssigner[T]] = timestampAssigner
+  override def timestampAssignerForTest: Option[TimestampWatermarkHandler[T]] = timestampAssigner
 }

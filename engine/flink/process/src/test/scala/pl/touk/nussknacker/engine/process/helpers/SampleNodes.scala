@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.process.helpers
 
 import java.nio.charset.StandardCharsets
+import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Date, Optional, UUID}
 
@@ -8,6 +9,7 @@ import cats.data.Validated.Valid
 import io.circe.generic.JsonCodec
 import javax.annotation.Nullable
 import org.apache.flink.api.common.ExecutionConfig
+import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, WatermarkStrategy}
 import org.apache.flink.api.common.functions.FilterFunction
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.co.RichCoMapFunction
@@ -29,8 +31,10 @@ import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, StandardTimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.signal.KafkaSignalStreamConnector
+import pl.touk.nussknacker.engine.flink.util.source.StaticSource.Watermark
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EspDeserializationSchema}
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
@@ -605,13 +609,12 @@ object SampleNodes {
 
   }
 
-  private val ascendingTimestampExtractor = new AscendingTimestampExtractor[SimpleRecord] {
-    override def extractAscendingTimestamp(element: SimpleRecord): Long = element.date.getTime
-  }
+  private val ascendingTimestampExtractor = new StandardTimestampWatermarkHandler[SimpleRecord](WatermarkStrategy
+    .forMonotonousTimestamps[SimpleRecord]().withTimestampAssigner(StandardTimestampWatermarkHandler.timestampAssigner[SimpleRecord](_.date.getTime)))
 
-  private def outOfOrdernessTimestampExtractor[T](extract: T => Long) = new BoundedOutOfOrdernessTimestampExtractor[T](Time.minutes(10)) {
-    override def extractTimestamp(element: T): Long = extract(element)
-  }
+  private def outOfOrdernessTimestampExtractor[T](extract: T => Long) = new StandardTimestampWatermarkHandler(
+    WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofMinutes(10)).withTimestampAssigner(StandardTimestampWatermarkHandler.timestampAssigner(extract))
+  )
 
   private val newLineSplittedTestDataParser = new NewLineSplittedTestDataParser[SimpleRecord] {
     override def parseElement(csv: String): SimpleRecord = {

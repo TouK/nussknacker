@@ -4,6 +4,7 @@ import java.time.Duration
 import java.util.concurrent.ConcurrentLinkedQueue
 
 import cats.data.NonEmptyList
+import com.github.ghik.silencer.silent
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.scala._
 import org.apache.flink.runtime.execution.ExecutionState
@@ -36,6 +37,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
+import scala.annotation.nowarn
 import scala.concurrent.duration.FiniteDuration
 
 class OuterJoinTransformerSpec extends FunSuite with FlinkSpec with Matchers with VeryPatientScalaFutures {
@@ -159,7 +161,9 @@ object OuterJoinTransformerSpec {
   }
 
   object OneRecord {
-    val timestampExtractor: AssignerWithPunctuatedWatermarks[OneRecord] = new BoundedOutOfOrdernessPunctuatedExtractor[OneRecord](1 * 3600 * 1000) {
+    @silent("deprecated")
+    @nowarn("deprecated")
+    val timestampExtractor: BoundedOutOfOrdernessPunctuatedExtractor[OneRecord] = new BoundedOutOfOrdernessPunctuatedExtractor[OneRecord](1 * 3600 * 1000) {
       override def extractTimestamp(element: OneRecord, previousElementTimestamp: Long): Long = element.timeHours * 3600 * 1000
     }
   }

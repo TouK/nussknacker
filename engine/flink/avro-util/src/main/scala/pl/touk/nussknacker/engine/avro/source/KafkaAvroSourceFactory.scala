@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.avro.source
 
-import org.apache.flink.streaming.api.functions.TimestampAssigner
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue, OutputVariableNameValue}
@@ -14,10 +13,11 @@ import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionPa
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSource
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 
 class KafkaAvroSourceFactory(val schemaRegistryProvider: SchemaRegistryProvider,
                              val processObjectDependencies: ProcessObjectDependencies,
-                             timestampAssigner: Option[TimestampAssigner[Any]])
+                             timestampAssigner: Option[TimestampWatermarkHandler[Any]])
   extends BaseKafkaAvroSourceFactory(timestampAssigner) with KafkaAvroBaseTransformer[FlinkSource[Any]]{
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
