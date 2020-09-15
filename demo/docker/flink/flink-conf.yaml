@@ -44,7 +44,7 @@ jobmanager.rpc.port: 6123
 
 # The heap size for the JobManager JVM
 
-jobmanager.heap.size: 256
+jobmanager.heap.size: 256m
 
 # The parallelism used for programs that did not specify and other parallelism.
 
