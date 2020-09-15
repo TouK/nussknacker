@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.source
 
+import java.time.Duration
+
 import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.TimeCharacteristic
@@ -8,6 +10,7 @@ import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, TimestampWatermarkHandler}
+import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunctuatedExtractor
 
 import scala.annotation.nowarn
 
@@ -59,5 +62,16 @@ class EmitWatermarkAfterEachElementCollectionSource[T: TypeInformation](list: Se
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[T]]
     = Some(new LegacyTimestampWatermarkHandler[T](timestampAssigner))
 
+
+}
+
+object EmitWatermarkAfterEachElementCollectionSource {
+
+  def create[T:TypeInformation](elements: Seq[T], extractTimestampFun: T => Long, maxOutOfOrderness: Duration): EmitWatermarkAfterEachElementCollectionSource[T] = {
+    val assigner = new BoundedOutOfOrdernessPunctuatedExtractor[T](maxOutOfOrderness.toMillis) {
+      override def extractTimestamp(element: T, recordTimestamp: Long): Long = extractTimestampFun(element)
+    }
+    new EmitWatermarkAfterEachElementCollectionSource[T](elements, assigner)
+  }
 
 }

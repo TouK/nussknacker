@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.source
 
+import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue, TimeUnit}
 
@@ -11,6 +12,7 @@ import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, TimestampWatermarkHandler}
+import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunctuatedExtractor
 
 import scala.annotation.nowarn
 import scala.collection.concurrent.TrieMap
@@ -75,11 +77,17 @@ class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPun
 
 }
 
-private object BlockingQueueSource {
+object BlockingQueueSource {
 
   private[this] val queueById = TrieMap.empty[String, BlockingQueue[Option[_]]]
 
-  def getForId[T](id: String): BlockingQueue[Option[T]] =
+  private def getForId[T](id: String): BlockingQueue[Option[T]] =
     queueById.getOrElseUpdate(id, new LinkedBlockingQueue).asInstanceOf[BlockingQueue[Option[T]]]
 
+  def create[T:TypeInformation](extractTimestampFun: T => Long, maxOutOfOrderness: Duration): BlockingQueueSource[T] = {
+    val assigner = new BoundedOutOfOrdernessPunctuatedExtractor[T](maxOutOfOrderness.toMillis) {
+      override def extractTimestamp(element: T, recordTimestamp: Long): Long = extractTimestampFun(element)
+    }
+    new BlockingQueueSource[T](assigner)
+  }
 }
