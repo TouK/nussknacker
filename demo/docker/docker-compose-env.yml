@@ -87,7 +87,7 @@ services:
       - kafka
       - influxdb
     volumes:
-      - ./flink/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
+      - ./flink/flink-conf.yaml:/tmp/flink-conf.yaml
       - ./flink/flink-entrypoint.sh:/flink-entrypoint.sh
       - nussknacker_storage_jobmanager:/opt/flink/data
 
@@ -104,7 +104,7 @@ services:
       - jobmanager
       - influxdb
     volumes:
-      - ./flink/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
+      - ./flink/flink-conf.yaml:/tmp/flink-conf.yaml
       - ./flink/flink-entrypoint.sh:/flink-entrypoint.sh
       - nussknacker_storage_taskmanager:/opt/flink/data
     ulimits:
