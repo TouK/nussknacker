@@ -149,35 +149,7 @@ class NussknackerInitializer extends React.Component<Props, State> {
 
       const queryHashParams = queryString.parse(this.props.history.location.hash)
       if (settings.implicitGrantEnabled === true && queryHashParams.access_token) {
-        const verifyTokens = () => {
-          if (settings.jwtAuthServerPublicKey) {
-            const verifyAccessToken = () => {
-              try {
-                return jwt.verify(queryHashParams.access_token, settings.jwtAuthServerPublicKey)
-              } catch(error) {
-                this.handleJwtError(error, settings)
-                return null
-              }
-            }
-            const accessTokenVerificationResult = verifyAccessToken()
-            if (accessTokenVerificationResult) {
-              if (queryHashParams.id_token) {
-                try {
-                  return jwt.verify(queryHashParams.id_token, settings.jwtAuthServerPublicKey, {nonce: SystemUtils.getNonce()})
-                } catch (error) {
-                  this.handleJwtError(error, settings)
-                  return null
-                }
-              } else if (settings.jwtIdTokenNonceVerificationRequired === true) {
-                console.warn("jwt.idTokenNonceVerificationRequired=true but id_token missing in the auth server response")
-                this.setState({error: this.state.errors[NussknackerInitializer.ACCESS_TOKEN_CODE]})
-                return null
-              }
-            }
-            return accessTokenVerificationResult
-          }
-        }
-        if (verifyTokens()) {
+        if (this.verifyTokens(settings, queryHashParams)) {
           SystemUtils.setAuthorizationToken(queryHashParams.access_token)
           this.props.history.replace({hash: null})
         } else
@@ -193,6 +165,36 @@ class NussknackerInitializer extends React.Component<Props, State> {
     }
 
     return Promise.resolve()
+  }
+
+  verifyTokens(settings: AuthenticationSettings, queryHashParams): boolean {
+    if (settings.jwtAuthServerPublicKey) {
+      const verifyAccessToken = () => {
+        try {
+          return jwt.verify(queryHashParams.access_token, settings.jwtAuthServerPublicKey) !== null
+        } catch(error) {
+          this.handleJwtError(error, settings)
+          return false
+        }
+      }
+      const accessTokenVerificationResult = verifyAccessToken()
+      if (accessTokenVerificationResult) {
+        if (queryHashParams.id_token) {
+          try {
+            return jwt.verify(queryHashParams.id_token, settings.jwtAuthServerPublicKey, {nonce: SystemUtils.getNonce()}) !== null
+          } catch (error) {
+            this.handleJwtError(error, settings)
+            return false
+          }
+        } else if (settings.jwtIdTokenNonceVerificationRequired === true) {
+          console.warn("jwt.idTokenNonceVerificationRequired=true but id_token missing in the auth server response")
+          this.setState({error: this.state.errors[NussknackerInitializer.ACCESS_TOKEN_CODE]})
+          return false
+        }
+      }
+      return accessTokenVerificationResult
+    } else
+      return true
   }
 
   render() {
