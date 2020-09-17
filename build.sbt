@@ -301,7 +301,7 @@ lazy val dist = {
         ).value,
         mappings in Universal += {
           val genericModel = (crossTarget in flinkManagementSample).value / "managementSample.jar"
-          genericModel -> "model/flinkManagementSample.jar"
+          genericModel -> "model/managementSample.jar"
         },
         mappings in Universal += {
           val demoModel = (crossTarget in standaloneSample).value / s"standaloneSample.jar"
