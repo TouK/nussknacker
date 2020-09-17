@@ -9,16 +9,21 @@ class SystemUtils {
   public static ACCESS_TOKEN_NAMESPACE = "accessToken"
   public static USER_ID_NAMESPACE = "userId"
   public static BEARER_CASE = "Bearer"
+  public static NONCE = "nonce"
 
   public authorizationToken = (): string => `${SystemUtils.BEARER_CASE} ${this.getAccessToken()}`
 
-  public saveAccessToken = (token): void => localStorage.setItem(SystemUtils.ACCESS_TOKEN_NAMESPACE, token)
+  public saveAccessToken = (token: string): void => localStorage.setItem(SystemUtils.ACCESS_TOKEN_NAMESPACE, token)
 
   public getAccessToken = (): string => localStorage.getItem(SystemUtils.ACCESS_TOKEN_NAMESPACE)
 
   public hasAccessToken = (): boolean => this.getAccessToken() !== null
 
   public removeAccessToken = () => localStorage.removeItem(SystemUtils.ACCESS_TOKEN_NAMESPACE)
+
+  public saveNonce = (nonce: string): void => localStorage.setItem(SystemUtils.NONCE, nonce)
+
+  public getNonce = (): string => localStorage.getItem(SystemUtils.NONCE)
 
   public clearAuthorizationToken = (): void => {
     api.interceptors.request.use((config: AxiosRequestConfig) => {

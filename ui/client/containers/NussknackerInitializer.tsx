@@ -42,13 +42,18 @@ class NussknackerInitializer extends React.Component<Props, State> {
   public static ACCESS_TOKEN_CODE = 1024
 
   redirectToAuthorizeUrl(settings: AuthenticationSettings) {
-    window.localStorage.setItem("nonce", nanoid())
-    window.location.replace(`${settings.authorizeUrl}&nonce=${window.localStorage.getItem("nonce")}`)
+    SystemUtils.saveNonce(nanoid())
+    window.location.replace(`${settings.authorizeUrl}&nonce=${SystemUtils.getNonce()}`)
   }
 
-  handleJwtError(error: jwt.JsonWebTokenError) {
+  handleJwtError(error: jwt.JsonWebTokenError, settings: AuthenticationSettings) {
     console.warn(error)
-    this.setState({error: this.state.errors[NussknackerInitializer.ACCESS_TOKEN_CODE]})
+    if (error.name === "TokenExpiredError")
+      this.redirectToAuthorizeUrl(settings)
+    else {
+      this.setState({error: this.state.errors[NussknackerInitializer.ACCESS_TOKEN_CODE]})
+      return Promise.reject()
+    }
   }
 
   state = {
@@ -145,15 +150,19 @@ class NussknackerInitializer extends React.Component<Props, State> {
       const queryHashParams = queryString.parse(this.props.history.location.hash)
       if (settings.implicitGrantEnabled === true && queryHashParams.access_token) {
         if (settings.jwtAuthServerPublicKey) {
-          jwt.verify(queryHashParams.access_token, settings.jwtAuthServerPublicKey, function(error, decoded) {
-            this.handleJwtError(error)
-          })
+          try {
+            jwt.verify(queryHashParams.access_token, settings.jwtAuthServerPublicKey)
+          } catch(error) {
+            this.handleJwtError(error, settings)
+          }
           if (queryHashParams.id_token)
-            jwt.verify(queryHashParams.id_token, settings.jwtAuthServerPublicKey, {nonce: window.localStorage.getItem("nonce")}, function(error, decoded) {
-              this.handleJwtError(error)
-            })
+            try {
+              jwt.verify(queryHashParams.id_token, settings.jwtAuthServerPublicKey, {nonce: window.localStorage.getItem("nonce")})
+            } catch(error) {
+              this.handleJwtError(error, settings)
+            }
           else if (settings.jwtIdTokenNonceVerificationRequired === true) {
-            console.warn("Warning: jwt.idTokenNonceVerificationRequired=true but id_token missing in the auth server response")
+            console.warn("jwt.idTokenNonceVerificationRequired=true but id_token missing in the auth server response")
             this.setState({error: this.state.errors[NussknackerInitializer.ACCESS_TOKEN_CODE]})
             return Promise.reject()
           }
