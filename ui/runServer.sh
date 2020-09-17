@@ -7,8 +7,9 @@ mkdir -p "$WORKING_DIR"
 cd $WORKING_DIR
 
 SCALA_VERSION=${SCALA_VERSION:-2.12}
-export CLASSPATH="../target/scala-${SCALA_VERSION}/nussknacker-ui-assembly.jar"
 PROJECT_BASE_DIR="../../.."
+#management jar is currently needed to access Flink ProcessManager
+export CLASSPATH="../target/scala-${SCALA_VERSION}/nussknacker-ui-assembly.jar:$PROJECT_BASE_DIR/engine/flink/management/target/scala-${SCALA_VERSION}/nussknacker-flink-manager.jar"
 DIST_BASE_DIR="$PROJECT_BASE_DIR/nussknacker-dist/src/universal"
 export CONFIG_FILE="$DIST_BASE_DIR/conf/dev-application.conf"
 
