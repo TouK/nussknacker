@@ -132,7 +132,10 @@ defaultBorder = #ccc
 
 :local
 	.tabs-wrap
-		padding marginSize (marginSize * 10)
+		padding marginSize
+		@media (min-width: 1200px)
+			padding marginSize (marginSize * 10)
+
 
 :local
 		//BORDER-RADIUS

@@ -21,7 +21,7 @@ export function CountRowsToFill(props: PropsWithChildren<{items: number, onChang
     <div
       ref={wrapperRef}
       style={{
-        overflow: "hidden",
+        overflowY: "hidden",
         display: "flex",
         flexDirection: "column",
         justifyContent: "stretch",

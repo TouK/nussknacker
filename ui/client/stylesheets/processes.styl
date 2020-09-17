@@ -55,14 +55,13 @@
     background-color: processesTableHeaderColor
     font-size: 16px
     font-weight: 600
+    width 0%
     &.reactable-th-category
-      width: 30%
+      max-width: 30%
     &.reactable-th-nodeid
-      width: 40%
+      max-width: 40%
     &.reactable-th-modifydate, &.reactable-th-createdat, &.reactable-th-isdeployed
-      width: 10%
-    &.reactable-th-status, &.reactable-th-edit, &.reactable-th-metrics, &.reactable-th-subprocess, &.reactable-th-cancel
-      width: 5%
+      max-width: 10%
     &:focus
       outline 2px solid focusColor
   tr:nth-child(even)
