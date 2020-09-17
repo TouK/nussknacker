@@ -32,7 +32,7 @@ import shapeless.syntax.typeable._
 import cats.instances.list._
 import cats.implicits.toTraverseOps
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo.DefaultExpressionId
-import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{ExpressionTypingResult, FieldExpressionTypingResult, NodeCompilationResult}
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{ExpressionCompilation, NodeCompilationResult}
 
 import scala.util.{Failure, Success, Try}
 
@@ -44,31 +44,17 @@ object NodeCompiler {
                                       compiledObject: ValidatedNel[ProcessCompilationError, T],
                                       expressionType: Option[TypingResult] = None) {
     def errors: List[ProcessCompilationError] = (validationContext.swap.toList ++ compiledObject.swap.toList).flatMap(_.toList)
-
-    def withVariable(varName: String)(implicit nodeId: NodeId): NodeCompilationResult[T] = copy(
-      validationContext = validationContext.andThen(_.withVariable(varName, expressionType.getOrElse(Unknown)))
-    )
   }
 
-  private object ExpressionTypingResult {
-    val unknown: Map[String, ExpressionTypingInfo] =
-      ExpressionTypingResult(Unknown, None).toDefaultExpressionTypingInfo
+  private case class ExpressionCompilation[R](fieldName: String, 
+                                              typedExpression: Option[TypedExpression],
+                                              validated: ValidatedNel[ProcessCompilationError, R]) {
 
-    def apply(typedExpression: TypedExpression): ExpressionTypingResult =
-      ExpressionTypingResult(typedExpression.returnType, Some(typedExpression.typingInfo))
-  }
-  private case class ExpressionTypingResult(typingResult: TypingResult, typingInfo: Option[ExpressionTypingInfo]) {
+    val typingResult: TypingResult =
+      typedExpression.map(_.returnType).getOrElse(Unknown)
 
-    def toDefaultExpressionTypingInfo: Map[String, ExpressionTypingInfo] =
-      typingInfo.map(NodeTypingInfo.DefaultExpressionId -> _).toMap
-  }
-
-  private case class FieldExpressionTypingResult(fieldName: String, private val exprTypingResult: ExpressionTypingResult) {
-
-    def typingResult: TypingResult = exprTypingResult.typingResult
-
-    def toExpressionTypingInfo: Map[String, ExpressionTypingInfo] =
-      exprTypingResult.typingInfo.map(fieldName -> _).toMap
+    val expressionTypingInfo: Map[String, ExpressionTypingInfo] =
+      typedExpression.map(te => (fieldName, te.typingInfo)).toMap
   }
 }
 
@@ -162,72 +148,71 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     NodeCompilationResult(expressionTypingInfo, None, newCtx, validParams)
   }
 
-  def compileFields(fields: List[graph.variable.Field], ctx: ValidationContext)
+  def compileFields(fields: List[graph.variable.Field], 
+                    ctx: ValidationContext,
+                    outputVarName: Option[String])
                    (implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.variable.Field]] = {
-    val compilations: ValidatedNel[ProcessCompilationError, List[(FieldExpressionTypingResult, TypedExpression)]] = fields.map { field =>
+    val compilationResult: ValidatedNel[ProcessCompilationError, List[ExpressionCompilation[compiledgraph.variable.Field]]] = fields.map { field =>
       objectParametersExpressionCompiler
         .compile(field.expression, Some(field.name), ctx, Unknown)
-        .map { typedExpression =>
-          val fieldExpressionTyping =
-            FieldExpressionTypingResult(field.name, ExpressionTypingResult(typedExpression.returnType, Some(typedExpression.typingInfo)))
-          (fieldExpressionTyping, typedExpression)
-      }
+        .map(typedExpression => ExpressionCompilation(field.name, Some(typedExpression), Valid(compiledgraph.variable.Field(field.name, typedExpression.expression))))
     }.sequence
 
-    compilations match {
-      case Valid(compilation) =>
-        val expressionTypings = compilation.map(_._1)
-        val typedObj = TypedObjectTypingResult(
-          expressionTypings.map(et => (et.fieldName, et.typingResult)).toMap
-        )
-        val typingInfo = expressionTypings.flatMap(_.toExpressionTypingInfo).toMap
-        val compiledObject = compilation.map { case(fieldExprTyping, typedExpr) =>
-          compiledgraph.variable.Field(fieldExprTyping.fieldName, typedExpr.expression)
-        }
-        NodeCompilationResult(
-          expressionTypingInfo = typingInfo,
-          parameters = None,
-          validationContext = Valid(ctx),
-          compiledObject = Valid(compiledObject),
-          expressionType = Some(typedObj)
-        )
-      case invalid@Invalid(_) =>
-        NodeCompilationResult(
-          expressionTypingInfo = ExpressionTypingResult.unknown,
-          parameters = None,
-          validationContext = Valid(ctx),
-          compiledObject = invalid,
-          expressionType = None
-        )
-    }
+    val typedObject = compilationResult.map { fieldsComp =>
+      TypedObjectTypingResult(fieldsComp.map(f => (f.fieldName, f.typingResult)).toMap)
+    }.valueOr(_ => Unknown)
+
+    val fieldsTypingInfo = compilationResult.map { compilations =>
+      compilations.flatMap(_.expressionTypingInfo).toMap
+    }.getOrElse(Map.empty)
+
+    val compiledFields = compilationResult.andThen(_.map(_.validated).sequence)
+
+    val (newCtx, compiledExpressionsWithNewCtx) = withVariableCombined(ctx, outputVarName, typedObject, compiledFields)
+
+    NodeCompilationResult(
+      expressionTypingInfo = fieldsTypingInfo,
+      parameters = None,
+      validationContext = Valid(newCtx),
+      compiledObject = compiledExpressionsWithNewCtx,
+      expressionType = Some(typedObject)
+    )
   }
 
   def compileExpression(expr: graph.expression.Expression,
                         ctx: ValidationContext,
                         expectedType: TypingResult,
-                        fieldName: String = DefaultExpressionId)
+                        fieldName: String = DefaultExpressionId,
+                        outputVarName: Option[String])
                        (implicit nodeId: NodeId): NodeCompilationResult[api.expression.Expression] = {
+    val expressionCompilation = objectParametersExpressionCompiler
+      .compile(expr, Some(fieldName), ctx, expectedType)
+      .map(typedExpr => ExpressionCompilation(fieldName, Some(typedExpr), Valid(typedExpr.expression)))
+      .valueOr ( err => ExpressionCompilation(fieldName, None, Invalid(err)))
 
-    val compilationResult: ValidatedNel[ProcessCompilationError, TypedExpression] =
-      objectParametersExpressionCompiler.compile(expr, Some(fieldName), ctx, expectedType)
+    val (newCtx, compiledWithNewCtx) =
+      withVariableCombined(ctx, outputVarName, expressionCompilation.typingResult, expressionCompilation.validated)
 
-    compilationResult match {
-      case Valid(typedExpression) =>
-        NodeCompilationResult(
-          expressionTypingInfo = ExpressionTypingResult(typedExpression).toDefaultExpressionTypingInfo,
-          parameters = None,
-          validationContext = Valid(ctx),
-          compiledObject = Valid(typedExpression.expression),
-          expressionType = Some(typedExpression.returnType)
-        )
-      case invalid@Invalid(_) =>
-        NodeCompilationResult(
-          expressionTypingInfo = ExpressionTypingResult.unknown,
-          parameters = None,
-          validationContext = Valid(ctx),
-          compiledObject = invalid,
-          expressionType = None
-        )
+    NodeCompilationResult(
+      expressionTypingInfo = expressionCompilation.expressionTypingInfo,
+      parameters = None,
+      validationContext = Valid(newCtx),
+      compiledObject = compiledWithNewCtx,
+      expressionType = Some(expressionCompilation.typingResult)
+    )
+  }
+
+  private def withVariableCombined[R](validationContext: ValidationContext,
+                                      outputVarName: Option[String],
+                                      typingResult: TypingResult,
+                                      validatedResult: ValidatedNel[ProcessCompilationError, R])(implicit nodeId: NodeId)
+  : (ValidationContext, ValidatedNel[ProcessCompilationError, R]) = {
+    outputVarName.map { variableName =>
+      val validatedCtx = validationContext.withVariable(variableName, typingResult)
+      val combinedValidationWithNewCtx = ProcessCompilationError.ValidatedNelApplicative.product(validatedCtx, validatedResult)
+      (combinedValidationWithNewCtx.map(_._1).valueOr(_ => validationContext), combinedValidationWithNewCtx.map(_._2))
+    }.getOrElse {
+      (validationContext, validatedResult)
     }
   }
 

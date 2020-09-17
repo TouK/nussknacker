@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties
 import io.circe.generic.semiauto.deriveDecoder
+import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.restmodel.definition.UIParameter
 import pl.touk.nussknacker.ui.validation.PrettyValidationErrors
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -64,7 +65,7 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
       Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
         responseAs[NodeValidationResult] shouldBe NodeValidationResult(
           parameters = None,
-          expressionType = None,
+          expressionType = Some(typing.Unknown),
           validationErrors = List(PrettyValidationErrors.formatErrorMessage(ExpressionParseError("Bad expression type, expected: Boolean, found: String", data.id, Some(NodeTypingInfo.DefaultExpressionId), data.expression.expression))),
           validationPerformed = true)
       }
