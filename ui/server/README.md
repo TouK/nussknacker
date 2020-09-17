@@ -1,10 +1,10 @@
 # Building required modules to run from shell/IDE
 
 Before running either from console or from IDE you have to manually build:
-- custom models (```assemblySamples`` in sbt)
-- Flink ProcessManager (```flinkProcessManager/assembly`` in sbt)
-- UI (not needed if you want to use FE development mode) (```ui/assembly`` in sbt)
-You can do with with ```buildServer.sh``` script
+- custom models (```assemblySamples``` in sbt)
+- Flink ProcessManager (```flinkProcessManager/assembly``` in sbt, not needed if running from IDE, see below)
+- UI (```ui/assembly``` in sbt, not needed if you want to use FE development mode)
+You can do all steps at once with ```buildServer.sh``` script
 
 # Running from IntelliJ:
 1. Find class 'pl.touk.nussknacker.ui.NussknackerApp'
