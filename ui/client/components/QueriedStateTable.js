@@ -66,7 +66,7 @@ class QueriedStateTable extends React.Component {
     }
     const tableRender = () => {
       return (
-        <Table className="esp-table" data={this.genericPrettyPrintedState(this.state.fetchedState)} sortable={true}/>
+        <Table className=",esp-table" data={this.genericPrettyPrintedState(this.state.fetchedState)} sortable={true}/>
       )
     }
     const toRender = () => (
