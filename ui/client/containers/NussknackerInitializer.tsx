@@ -8,6 +8,8 @@ import {connect} from "react-redux"
 import {RouteComponentProps} from "react-router"
 import {withRouter} from "react-router-dom"
 import {compose} from "redux"
+import {nanoid} from "nanoid"
+import * as jwt from "jsonwebtoken"
 import ActionsUtils, {EspActionsProps} from "../actions/ActionsUtils"
 import api from "../api"
 import SystemUtils from "../common/SystemUtils"
@@ -40,7 +42,18 @@ class NussknackerInitializer extends React.Component<Props, State> {
   public static ACCESS_TOKEN_CODE = 1024
 
   redirectToAuthorizeUrl(settings: AuthenticationSettings) {
-    window.location.replace(`${settings.authorizeUrl}`)
+    SystemUtils.saveNonce(nanoid())
+    window.location.replace(`${settings.authorizeUrl}&nonce=${SystemUtils.getNonce()}`)
+  }
+
+  handleJwtError(error: jwt.JsonWebTokenError, settings: AuthenticationSettings) {
+    console.warn(error)
+    if (error.name === "TokenExpiredError")
+      this.redirectToAuthorizeUrl(settings)
+    else {
+      this.setState({error: this.state.errors[NussknackerInitializer.ACCESS_TOKEN_CODE]})
+      return Promise.reject()
+    }
   }
 
   state = {
@@ -106,7 +119,7 @@ class NussknackerInitializer extends React.Component<Props, State> {
     const showError: boolean = code !== NussknackerInitializer.HTTP_UNAUTHORIZED_CODE || !redirect
 
     this.setState({
-      error: showError ? this.state.errors[NussknackerInitializer.HTTP_APPLICATION_CODE]: null,
+      error: showError ? this.state.errors[NussknackerInitializer.HTTP_APPLICATION_CODE] : null,
     })
   }
 
@@ -136,8 +149,11 @@ class NussknackerInitializer extends React.Component<Props, State> {
 
       const queryHashParams = queryString.parse(this.props.history.location.hash)
       if (settings.implicitGrantEnabled === true && queryHashParams.access_token) {
-        SystemUtils.setAuthorizationToken(queryHashParams.access_token)
-        this.props.history.replace({hash: null})
+        if (this.verifyTokens(settings, queryHashParams)) {
+          SystemUtils.setAuthorizationToken(queryHashParams.access_token)
+          this.props.history.replace({hash: null})
+        } else
+          return Promise.reject()
       }
 
       if (!SystemUtils.hasAccessToken()) {
@@ -149,6 +165,36 @@ class NussknackerInitializer extends React.Component<Props, State> {
     }
 
     return Promise.resolve()
+  }
+
+  verifyTokens(settings: AuthenticationSettings, queryHashParams): boolean {
+    if (settings.jwtAuthServerPublicKey) {
+      const verifyAccessToken = () => {
+        try {
+          return jwt.verify(queryHashParams.access_token, settings.jwtAuthServerPublicKey) !== null
+        } catch(error) {
+          this.handleJwtError(error, settings)
+          return false
+        }
+      }
+      const accessTokenVerificationResult = verifyAccessToken()
+      if (accessTokenVerificationResult) {
+        if (queryHashParams.id_token) {
+          try {
+            return jwt.verify(queryHashParams.id_token, settings.jwtAuthServerPublicKey, {nonce: SystemUtils.getNonce()}) !== null
+          } catch (error) {
+            this.handleJwtError(error, settings)
+            return false
+          }
+        } else if (settings.jwtIdTokenNonceVerificationRequired === true) {
+          console.warn("jwt.idTokenNonceVerificationRequired=true but id_token missing in the auth server response")
+          this.setState({error: this.state.errors[NussknackerInitializer.ACCESS_TOKEN_CODE]})
+          return false
+        }
+      }
+      return accessTokenVerificationResult
+    } else
+      return true
   }
 
   render() {

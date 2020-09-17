@@ -14,6 +14,8 @@ export type SettingsState = {
 export type AuthenticationSettings = {
   backend: string,
   authorizeUrl?: URL,
+  jwtAuthServerPublicKey?: string,
+  jwtIdTokenNonceVerificationRequired?: boolean,
   implicitGrantEnabled?: boolean,
 }
 
