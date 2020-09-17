@@ -19,6 +19,8 @@ defaultBorder = #ccc
 tabFontWeight = 600
 tabFontSize = 16px
 
+tabDropSize = marginSize/3
+
 :local
 	.tabs-wrap
 		box-sizing border-box
@@ -36,6 +38,9 @@ tabFontSize = 16px
 		font-weight tabFontWeight
 		font-size tabFontSize
 		line-height 1em
+
+	.text
+		display inline-block
 
 	a.link
 		display flex
@@ -117,6 +122,9 @@ tabFontSize = 16px
 			&.active
 				overflow visible
 
+				.text
+					transform translateY(tabDropSize/2)
+
 				& > .tab
 					transform translateY(0)
 					border-bottom-color transparent
@@ -173,7 +181,7 @@ tabFontSize = 16px
 		.with-drop
 			.link
 				& > .tab
-					transform translateY(marginSize/3)
+					transform translateY(tabDropSize)
 
 .dark-theme
 	:local
