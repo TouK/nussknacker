@@ -13,9 +13,9 @@ import pl.touk.nussknacker.engine.api.expression.ExpressionParser
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
-import pl.touk.nussknacker.engine.compiledgraph.part.PotentiallyStartPart
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
+import pl.touk.nussknacker.engine.compiledgraph.part.{PotentiallyStartPart, TypedEnd}
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledProcessParts, part}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ExpressionDefinition, ProcessDefinition}
@@ -177,7 +177,8 @@ protected trait ProcessCompilerBase {
       compileParts(part.nextParts, typesForParts),
       CompilationResult(initialCtx),
       CompilationResult(nodeTypingInfo, compiledSource)) { (_, nextParts, ctx, obj) =>
-      compiledgraph.part.SourcePart(obj, splittednode.SourceNode(sourceData, part.node.next), ctx, nextParts, part.ends)
+      compiledgraph.part.SourcePart(obj, splittednode.SourceNode(sourceData, part.node.next), ctx, nextParts,
+        part.ends.map(e => TypedEnd(e, typesForParts(e.nodeId))))
     }
   }
 
@@ -185,7 +186,7 @@ protected trait ProcessCompilerBase {
     val NodeCompilationResult(typingInfo, parameters, _, compiledSink, _) = nodeCompiler.compileSink(node.data, ctx)
     val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo, parameters))
     CompilationResult.map2(sub.validate(node, ctx), CompilationResult(nodeTypingInfo, compiledSink))((_, obj) =>
-      compiledgraph.part.SinkPart(obj, node, ctx)
+      compiledgraph.part.SinkPart(obj, node, ctx, ctx)
     )
   }
 
@@ -199,7 +200,7 @@ protected trait ProcessCompilerBase {
       CompilationResult(nodeTypingInfo, compiledNode),
       CompilationResult(validatedNextCtx)
     ) { (nodeInvoker, nextCtx) =>
-      compiledgraph.part.CustomNodePart(nodeInvoker, node, nextCtx, List.empty, List(NormalEnd(node.id)))
+      compiledgraph.part.CustomNodePart(nodeInvoker, node, ctx, nextCtx, List.empty, List(TypedEnd(NormalEnd(node.id), ctx)))
     }.distinctErrors
   }
 
@@ -218,7 +219,8 @@ protected trait ProcessCompilerBase {
       compileParts(part.nextParts, typesForParts),
       CompilationResult(validatedNextCtx)
     ) { (nodeInvoker, _, nextPartsCompiled, nextCtx) =>
-      compiledgraph.part.CustomNodePart(nodeInvoker, node, nextCtx, nextPartsCompiled, part.ends)
+      //FIXME: what for joins??
+      compiledgraph.part.CustomNodePart(nodeInvoker, node, ctx.left.getOrElse(ValidationContext.empty), nextCtx, nextPartsCompiled, part.ends.map(e => TypedEnd(e, typesForParts(e.nodeId))))
     }.distinctErrors
   }
 

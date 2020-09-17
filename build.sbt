@@ -163,7 +163,8 @@ lazy val commonSettings =
       dependencyOverrides ++= Seq(
         //currently Flink (1.11 -> https://github.com/apache/flink/blob/master/pom.xml#L128) uses 1.8.2 Avro version
         "org.apache.avro" % "avro" % avroV,
-        "com.typesafe" % "config" % configV
+        "com.typesafe" % "config" % configV,
+        "commons-io" % "commons-io" % "2.4"
       )
     )
 

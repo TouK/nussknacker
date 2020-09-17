@@ -90,11 +90,11 @@ object StandaloneProcessInterpreter {
     private def compiledPartInvoker(processPart: ProcessPart): CompilationResult[WithSinkTypes[InterpreterType]] = processPart match {
       case SourcePart(_, node, validationContext, nextParts, _) =>
         compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, nextParts))
-      case SinkPart(sink, endNode, validationContext) =>
+      case SinkPart(sink, endNode, _, validationContext) =>
         compileWithCompilationErrors(endNode, validationContext).andThen { compiled =>
           partInvoker(compiled, List()).map(prepareResponse(compiled, sink))
         }
-      case CustomNodePart(transformerObj, node, validationContext, parts, _) =>
+      case CustomNodePart(transformerObj, node, _, validationContext, parts, _) =>
         val validatedTransformer = transformerObj match {
           case t: StandaloneCustomTransformer => Valid(t)
           case ContextTransformation(_, t: StandaloneCustomTransformer) => Valid(t)

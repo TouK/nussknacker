@@ -4,11 +4,12 @@ import org.apache.flink.api.common.functions.{AbstractRichFunction, MapFunction}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import pl.touk.nussknacker.engine.api.{DeadEndReference, EndReference, InterpretationResult, PartReference}
+import pl.touk.nussknacker.engine.compiledgraph.part.TypedEnd
 import pl.touk.nussknacker.engine.flink.util.metrics.{InstantRateMeterWithCount, MetricUtils}
 import pl.touk.nussknacker.engine.splittedgraph.end.{BranchEnd, DeadEnd, End, NormalEnd}
 import pl.touk.nussknacker.engine.util.metrics.RateMeter
 
-private[registrar] class EndRateMeterFunction(ends: Seq[End]) extends AbstractRichFunction
+private[registrar] class EndRateMeterFunction(ends: Seq[TypedEnd]) extends AbstractRichFunction
   with MapFunction[InterpretationResult, InterpretationResult] with SinkFunction[InterpretationResult] {
 
   @transient private var meterByReference: Map[PartReference, RateMeter] = _
@@ -28,7 +29,7 @@ private[registrar] class EndRateMeterFunction(ends: Seq[End]) extends AbstractRi
       InstantRateMeterWithCount.register(Map("nodeId" -> end.nodeId), List(baseGroup), new MetricUtils(getRuntimeContext))
     }
 
-    meterByReference = ends.map { end =>
+    meterByReference = ends.map(_.end).map { end =>
       val reference = end match {
         case NormalEnd(nodeId) => EndReference(nodeId)
         case DeadEnd(nodeId) => DeadEndReference(nodeId)

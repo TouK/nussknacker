@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
-import org.apache.flink.api.scala._
 import pl.touk.nussknacker.engine.ModelConfigToLoad
 import pl.touk.nussknacker.engine.api.ProcessListener
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
