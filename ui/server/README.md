@@ -1,3 +1,11 @@
+# Building required modules to run from shell/IDE
+
+Before running either from console or from IDE you have to manually build:
+- custom models (```assemblySamples``` in sbt)
+- Flink ProcessManager (```flinkProcessManager/assembly``` in sbt, not needed if running from IDE, see below)
+- UI (```ui/assembly``` in sbt, not needed if you want to use FE development mode)
+You can do all steps at once with ```buildServer.sh``` script
+
 # Running from IntelliJ:
 1. Find class 'pl.touk.nussknacker.ui.NussknackerApp'
 2. Edit run [configuration](https://www.jetbrains.com/help/idea/run-debug-configurations.html)
@@ -10,6 +18,7 @@ AUTHENTICATION_USERS_FILE=../../../nussknacker-dist/src/universal/conf/users.con
 If you want to connect to infrastructure in docker you need to set on end of line also:
 ;FLINK_REST_URL=http://localhost:3031;FLINK_QUERYABLE_STATE_PROXY_URL=localhost:3063;SCHEMA_REGISTRY_URL=http://localhost:3082;KAFKA_ADDRESS=localhost:3032
     * Module classpath:   ui 
+    * "Included dependencies with "Provided" scope" should be checked, so that Flink ProcessManager is included in the classpath
 
 # Running backend for frontend development
 If you want run backend only for front-end development, please run `./runServer.sh`

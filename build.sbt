@@ -318,20 +318,15 @@ def engine(name: String) = file(s"engine/$name")
 lazy val engineStandalone = (project in engine("standalone/engine")).
   configs(IntegrationTest).
   settings(commonSettings).
+  settings(assemblySettings("nussknacker-standalone-manager.jar", includeScala = false): _*).
   settings(Defaults.itSettings).
   settings(
     name := "nussknacker-standalone-engine",
     Keys.test in IntegrationTest := (Keys.test in IntegrationTest).dependsOn(
       (assembly in Compile) in standaloneSample
     ).value,
-    libraryDependencies ++= {
-      Seq(
-        "org.typelevel" %% "cats-core" % catsV,
-        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV
-      )
-    }
   ).
-  dependsOn(interpreter, standaloneUtil, httpUtils, testUtil % "it,test")
+  dependsOn(interpreter % "provided", standaloneUtil, httpUtils % "provided", testUtil % "it,test")
 
 lazy val standaloneApp = (project in engine("standalone/app")).
   settings(commonSettings).
@@ -352,7 +347,7 @@ lazy val standaloneApp = (project in engine("standalone/app")).
       )
     }
   ).
-  dependsOn(engineStandalone, testUtil % "test")
+  dependsOn(engineStandalone, interpreter, httpUtils, testUtil % "test")
 
 
 lazy val flinkProcessManager = (project in engine("flink/management")).
@@ -920,3 +915,4 @@ lazy val root = (project in file("."))
   )
 
 addCommandAlias("assemblySamples", ";flinkManagementSample/assembly;standaloneSample/assembly;demo/assembly;generic/assembly")
+addCommandAlias("assemblyEngines", ";flinkProcessManager/assembly;engineStandalone/assembly")
