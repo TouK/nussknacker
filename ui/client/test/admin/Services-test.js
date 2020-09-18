@@ -33,7 +33,6 @@ describe("translating process structure to services", () => {
         "name": "service1",
         "categories": [],
         "parameters": [],
-        "returnClassName": "string",
         "processingType": "streaming"
       }
     ])
@@ -56,7 +55,6 @@ describe("translating process structure to services", () => {
         "name": "service1",
         "categories": ["category1"],
         "parameters": [],
-        "returnClassName": "string",
         "processingType": "streaming"
       }
     ])
@@ -88,10 +86,11 @@ describe("translating process structure to services", () => {
         "parameters": [
           {
             "name": "foo",
-            "refClazzName": "string"
+            "typ": {
+              "refClazzName": "string"
+            }
           }
         ],
-        "returnClassName": "string",
         "processingType": "streaming"
       }
     ])
@@ -249,7 +248,6 @@ describe("translating process structure to services", () => {
         "Category1"
       ],
       "parameters": [],
-      "returnClassName": null,
       "processingType": "streaming"
     },
     {
@@ -259,7 +257,6 @@ describe("translating process structure to services", () => {
         "Category2"
       ],
       "parameters": [],
-      "returnClassName": null,
       "processingType": "streaming"
     },
     {
@@ -271,10 +268,11 @@ describe("translating process structure to services", () => {
       "parameters": [
         {
           "name": "param",
-          "refClazzName": "java.lang.String"
+          "typ": {
+            "refClazzName": "java.lang.String"
+          }
         }
       ],
-      "returnClassName": "pl.touk.nussknacker.engine.management.sample.RichObject",
       "processingType": "streaming"
     },
     {
@@ -283,7 +281,6 @@ describe("translating process structure to services", () => {
         "StandaloneCategory1"
       ],
       "parameters": [],
-      "returnClassName": "java.lang.String",
       "processingType": "request-response"
     },
     {
@@ -295,22 +292,29 @@ describe("translating process structure to services", () => {
       "parameters": [
         {
           "name": "foo",
-          "refClazzName": "java.lang.String"
+          "typ": {
+            "refClazzName": "java.lang.String"
+          }
         },
         {
           "name": "bar",
-          "refClazzName": "java.lang.String"
+          "typ": {
+            "refClazzName": "java.lang.String"
+          }
         },
         {
           "name": "baz",
-          "refClazzName": "java.lang.String"
+          "typ": {
+            "refClazzName": "java.lang.String"
+          }
         },
         {
           "name": "quax",
-          "refClazzName": "java.lang.String"
+          "typ": {
+            "refClazzName": "java.lang.String"
+          }
         }
       ],
-      "returnClassName": null,
       "processingType": "streaming"
     },
     {
@@ -321,10 +325,20 @@ describe("translating process structure to services", () => {
       "parameters": [
         {
           "name": "param",
-          "refClazzName": "java.lang.String"
+          "typ": {
+            "refClazzName": "java.lang.String"
+          },
+          "restriction": {
+            "type": "StringValues",
+            "values": [
+              "a",
+              "b",
+              "c"
+            ]
+          }
+
         }
       ],
-      "returnClassName": "java.lang.String",
       "processingType": "streaming"
     },
     {
@@ -333,7 +347,6 @@ describe("translating process structure to services", () => {
         "StandaloneCategory1"
       ],
       "parameters": [],
-      "returnClassName": null,
       "processingType": "request-response"
     },
     {
@@ -343,7 +356,6 @@ describe("translating process structure to services", () => {
         "Category2"
       ],
       "parameters": [],
-      "returnClassName": null,
       "processingType": "streaming"
     },
     {
@@ -352,7 +364,6 @@ describe("translating process structure to services", () => {
         "StandaloneCategory1"
       ],
       "parameters": [],
-      "returnClassName": "java.lang.String",
       "processingType": "request-response"
     },
     {
@@ -361,7 +372,6 @@ describe("translating process structure to services", () => {
         "StandaloneCategory1"
       ],
       "parameters": [],
-      "returnClassName": "java.lang.String",
       "processingType": "request-response"
     },
     {
@@ -370,7 +380,6 @@ describe("translating process structure to services", () => {
         "Category1"
       ],
       "parameters": [],
-      "returnClassName": null,
       "processingType": "streaming"
     }
   ]
