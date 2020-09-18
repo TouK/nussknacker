@@ -118,9 +118,11 @@ module.exports = {
     }),
     isProd ? null : new webpack.NamedModulesPlugin(),
     isProd ? null : new webpack.HotModuleReplacementPlugin(),
-    new CopyPlugin([
-      {from: "translations", to: "assets/locales"},
-    ]),
+    new CopyPlugin({
+      patterns: [
+        {from: "translations", to: "assets/locales"},
+      ],
+    }),
     new webpack.DefinePlugin({
       __DEV__: !isProd,
       "process.env": {
