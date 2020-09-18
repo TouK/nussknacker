@@ -46,8 +46,8 @@ object NodeDataValidator {
         case a: Enricher => toValidationResponse(compiler.compileEnricher(a, validationContext))
         case a: Processor => toValidationResponse(compiler.compileProcessor(a, validationContext))
         case a: Filter => toValidationResponse(compiler.compileExpression(a.expression, validationContext, expectedType = Typed[Boolean], outputVarName = None))
-        case a: Variable => toValidationResponse(compiler.compileExpression(a.value, validationContext, expectedType = typing.Unknown, outputVarName = None))
-        case a: VariableBuilder => toValidationResponse(compiler.compileFields(a.fields, validationContext, outputVarName = None))
+        case a: Variable => toValidationResponse(compiler.compileExpression(a.value, validationContext, expectedType = typing.Unknown, outputVarName = Some(a.varName)))
+        case a: VariableBuilder => toValidationResponse(compiler.compileFields(a.fields, validationContext, outputVarName = Some(a.varName)))
         //TODO: handle switch, subprocess
         //subprocess is tricky as we have to handle resolution :/
         case _ => ValidationNotPerformed
