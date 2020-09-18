@@ -16,6 +16,11 @@ activeTabIndex = tabsLineIndex + 1
 defaultBackground = #eee
 defaultBorder = #ccc
 
+tabFontWeight = 600
+tabFontSize = 16px
+
+tabDropSize = marginSize/3
+
 :local
 	.tabs-wrap
 		box-sizing border-box
@@ -30,6 +35,12 @@ defaultBorder = #ccc
 		display flex
 		overflow visible
 		position relative
+		font-weight tabFontWeight
+		font-size tabFontSize
+		line-height 1em
+
+	.text
+		display inline-block
 
 	a.link
 		display flex
@@ -38,7 +49,7 @@ defaultBorder = #ccc
 			text-decoration none
 
 		& > .tab
-			padding 1em 3em
+			padding 0.7em 2.1em
 			border-width 1px
 			border-style solid
 			color black
@@ -89,6 +100,7 @@ defaultBorder = #ccc
 					display block
 					bottom 0
 					z-index 4
+					transform-origin center
 
 				&:before
 					left 0
@@ -109,6 +121,9 @@ defaultBorder = #ccc
 
 			&.active
 				overflow visible
+
+				.text
+					transform translateY(tabDropSize/2)
 
 				& > .tab
 					transform translateY(0)
@@ -166,7 +181,7 @@ defaultBorder = #ccc
 		.with-drop
 			.link
 				& > .tab
-					transform translateY(tabRadius)
+					transform translateY(tabDropSize)
 
 .dark-theme
 	:local

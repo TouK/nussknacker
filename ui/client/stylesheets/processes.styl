@@ -22,7 +22,7 @@
 
 .esp-table
   margin-bottom 20px
-  iconColumnWidth=50px
+  iconColumnWidth = 50px
 
   clickableIconColumn()
     text-align: center
@@ -30,6 +30,7 @@
     span
       font-size: 20px
       cursor: pointer
+
       &:focus
         outline 2px solid focusColor
 
@@ -38,16 +39,19 @@
   font-size: 14px
   font-weight: 400
   color: #000000
+
   & *
     border: none
 
   th, td
     padding: 10px 10px
     vertical-align: middle
+
     &:nth-child(1)
       padding-left: containerPadding
       padding-top 20px
       padding-bottom 20px
+
     &:last-child
       padding-right: containerPadding
 
@@ -56,40 +60,38 @@
     font-size: 16px
     font-weight: 600
     width 0%
+
     &.reactable-th-category
       max-width: 30%
+
     &.reactable-th-nodeid
       max-width: 40%
+
     &.reactable-th-modifydate, &.reactable-th-createdat, &.reactable-th-isdeployed
       max-width: 10%
+
     &:focus
       outline 2px solid focusColor
+
   tr:nth-child(even)
     background-color: processesTableEvenColor
+
   tr:nth-child(odd)
     background-color: processesTableOddColor
-  tr.row-hover:hover:nth-child(even)
-    td
-      background-color: lighten(processesTableEvenColor, 5%)
-      cursor: default
-  tr.row-hover:hover:nth-child(odd)
-    td
-      background-color: lighten(processesTableOddColor, 5%)
-      cursor: default
 
-  th.reactable-header-sort-asc:after {
-    content: '\25BC'
-    font-size: 10px
-    padding-left: 10px
-    padding-bottom: 5px
-  }
+  th
+    &.reactable-header-sort-asc
+    &.reactable-header-sort-desc
+      &:after
+        padding-left 10px
+        display inline-block
+        transform scale(.75)
 
-  th.reactable-header-sort-desc:after {
-    content: '\25B2'
-    font-size: 10px
-    padding-left: 10px
-    padding-bottom: 5px
-  }
+    &.reactable-header-sort-asc:after
+      content: '\25BC'
+
+    &.reactable-header-sort-desc:after
+      content: '\25B2'
 
   .centered-column, .reactable-th-modifydate, .reactable-th-createdat, .reactable-th-subprocess, .reactable-th-createdby, .reactable-th-cancel
     text-align: center
@@ -97,9 +99,11 @@
   .edit-column, .reactable-th-metrics, .reactable-th-view
     text-align: center
     width: iconColumnWidth
+
     img
       height: 20px
       cursor: pointer
+
     .edit-disabled
       opacity: 0.4 !important
       padding: 0
@@ -136,13 +140,17 @@
       text-align: center
       font-weight: 600
       font-size: 16px
+
     .reactable-next-page, .reactable-previous-page, .reactable-page-button
       color: #000000
+
       &:focus
         text-decoration: none
+
     a.reactable-page-button
       padding: 4px 10px
       margin: 0 8px
+
       &.reactable-current-page
         background-color: #686868
         color: white
@@ -165,8 +173,9 @@
 .validation-labels
   display inline-grid
 
-.processes-table-row-icon
-  padding 10px
-
 .state-pending
   opacity: 50%
+
+:local
+  .table-icon
+    padding 0

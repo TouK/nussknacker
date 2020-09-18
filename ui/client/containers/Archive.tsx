@@ -1,8 +1,10 @@
+import classNames from "classnames"
 import React from "react"
 import {Glyphicon} from "react-bootstrap"
 import {Td, Tr} from "reactable"
 import Date from "../components/common/Date"
 import "../stylesheets/processes.styl"
+import styles from "../containers/processesTable.styl"
 import {ShowItem} from "./editItem"
 import {Page} from "./Page"
 import {ProcessesTabData} from "./Processes"
@@ -24,7 +26,7 @@ const ElementsRenderer: RowsRenderer = ({processes}) => processes.map(process =>
     >
       <Date date={process.modificationDate}/>
     </Td>
-    <Td column="view" className="edit-column">
+    <Td column="view" className={classNames("edit-column", styles.iconOnly)}>
       <ShowItem process={process}/>
     </Td>
   </Tr>
