@@ -272,12 +272,14 @@ lazy val dist = {
       Keys.compile in Compile := (Keys.compile in Compile).dependsOn(
         (assembly in Compile) in generic,
         (assembly in Compile) in demo,
-        (assembly in Compile) in flinkProcessManager
+        (assembly in Compile) in flinkProcessManager,
+        (assembly in Compile) in engineStandalone
       ).value,
       mappings in Universal ++= Seq(
         (crossTarget in generic).value / "genericModel.jar" -> "model/genericModel.jar",
         (crossTarget in demo).value / s"demoModel.jar" -> "model/demoModel.jar",
-        (crossTarget in flinkProcessManager).value / s"nussknacker-flink-manager.jar" -> "managers/nussknacker-flink-manager.jar"
+        (crossTarget in flinkProcessManager).value / s"nussknacker-flink-manager.jar" -> "managers/nussknacker-flink-manager.jar",
+        (crossTarget in engineStandalone).value / s"nussknacker-standalone-manager.jar" -> "managers/nussknacker-standalone-manager.jar"
       ),
       /* //FIXME: figure out how to filter out only for .tgz, not for docker
       mappings in Universal := {
