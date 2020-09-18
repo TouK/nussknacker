@@ -346,7 +346,7 @@ export class NodeDetailsContent extends React.Component {
             showValidation={showValidation}
             variableTypes={variableTypes}
             errors={fieldErrors}
-            inferredVariableType={this.props.expressionType && ProcessUtils.humanReadableType(this.props.expressionType)}
+            inferredVariableType={ProcessUtils.humanReadableType(this.props.expressionType)}
           />
         )
       case "Switch":
