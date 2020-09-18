@@ -30,10 +30,12 @@ const cssPreLoaders = [
   {
     loader: "postcss-loader",
     options: {
-      plugins: [
-        require("autoprefixer"),
-        require("postcss-move-props-to-bg-image-query"),
-      ],
+      postcssOptions: {
+        plugins: [
+          require("autoprefixer"),
+          require("postcss-move-props-to-bg-image-query"),
+        ],
+      },
     },
   },
 ]
