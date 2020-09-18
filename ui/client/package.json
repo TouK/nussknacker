@@ -142,7 +142,7 @@
     "babel-plugin-i18next-extract": "^0.7.2",
     "color": "^3.1.2",
     "copy-webpack-plugin": "^6.1.0",
-    "css-loader": "^3.6.0",
+    "css-loader": "^4.3.0",
     "emotion": "^10.0.27",
     "emotion-theming": "^10.0.27",
     "enzyme": "^3.9.0",
