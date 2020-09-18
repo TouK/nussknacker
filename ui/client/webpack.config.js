@@ -150,7 +150,9 @@ module.exports = {
         use: [
           {
             loader: "expose-loader",
-            options: "joint",
+            options: {
+              exposes: ["joint"],
+            },
           },
         ],
       },
