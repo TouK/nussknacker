@@ -3,7 +3,7 @@ import React from "react"
 import EditableEditor from "../EditableEditor"
 
 export default function MapValue(props) {
-  const {rowKey, value, isMarked, paths, showValidation, readOnly, onChange, showSwitch, errors, variableTypes} = props
+  const {rowKey, value, isMarked, paths, showValidation, readOnly, onChange, showSwitch, errors, variableTypes, validationLabelInfo} = props
 
   return (
     <div className={"node-value field"}>
@@ -19,6 +19,7 @@ export default function MapValue(props) {
         rowClassName={" "}
         valueClassName={" "}
         variableTypes={variableTypes}
+        validationLabelInfo={validationLabelInfo}
       />
     </div>
   )
@@ -34,5 +35,6 @@ MapValue.propTypes = {
   paths: PropTypes.string,
   showSwitch: PropTypes.bool,
   variableTypes: PropTypes.object.isRequired,
+  validationLabelInfo: PropTypes.string,
 }
 

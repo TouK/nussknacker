@@ -1,14 +1,36 @@
-import PropTypes from "prop-types"
 import React from "react"
 import {ButtonWithFocus} from "../../../../withFocus"
 import MapRow from "./MapRow"
+import {Field, TypedObjectTypingResult, VariableTypes} from "../../../../../types"
+import {Error} from "../Validators"
 
-const Map = (props) => {
+type Props = {
+  fields: Array<Field>,
+  label: string,
+  namespace: string,
+  isMarked: (paths: string) => boolean,
+  onChange: (propToMutate: $TodoType, newValue: $TodoType, defaultValue?: $TodoType) => void,
+  addField: $TodoType,
+  removeField: (namespace: string, ix: number) => void,
+  readOnly?: boolean,
+  showValidation: boolean,
+  showSwitch?: boolean,
+  variableTypes: VariableTypes,
+  errors: Array<Error>,
+  expressionType?: TypedObjectTypingResult,
+}
+
+const Map = (props: Props) => {
 
   const {
     label, fields, onChange, addField, removeField, namespace, isMarked, readOnly, showValidation,
-    showSwitch, errors, variableTypes,
+    showSwitch, errors, variableTypes, expressionType,
   } = props
+
+  const fieldsWithTypeInfo: Array<Field & {typeInfo: string}> = fields.map(expressionObj => ({
+    ...expressionObj,
+    typeInfo: expressionType?.fields[expressionObj.name]?.display,
+  }))
 
   return (
     <div className="node-row">
@@ -16,9 +38,9 @@ const Map = (props) => {
       <div className="node-value">
         <div className="fieldsControl">
           {
-            fields.map((field, index) => (
+            fieldsWithTypeInfo.map((field, index) => (
               <MapRow
-                key={field.uuid}
+                key={index}
                 field={field}
                 showValidation={showValidation}
                 showSwitch={showSwitch}
@@ -29,6 +51,7 @@ const Map = (props) => {
                 onRemoveField={() => removeField(namespace, index)}
                 errors={errors}
                 variableTypes={variableTypes}
+                validationLabelInfo={field.typeInfo}
               />
             ))
           }
@@ -47,20 +70,6 @@ const Map = (props) => {
       </div>
     </div>
   )
-}
-
-Map.propTypes = {
-  fields: PropTypes.array.isRequired,
-  label: PropTypes.string.isRequired,
-  namespace: PropTypes.string.isRequired,
-  isMarked: PropTypes.func.isRequired,
-  onChange: PropTypes.func.isRequired,
-  addField: PropTypes.func.isRequired,
-  removeField: PropTypes.func.isRequired,
-  readOnly: PropTypes.bool,
-  showValidation: PropTypes.bool.isRequired,
-  showSwitch: PropTypes.bool,
-  variableTypes: PropTypes.object.isRequired,
 }
 
 Map.defaultProps = {
