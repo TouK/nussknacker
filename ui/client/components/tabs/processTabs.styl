@@ -153,35 +153,37 @@ tabDropSize = marginSize/3
 
 
 :local
-		//BORDER-RADIUS
+	//BORDER-RADIUS
 
-		.with-bottom-line
-			&:before
-				height tabRadius
-				bottom - @height
-				margin-bottom 1px
+	.with-bottom-line
+		&:before
+			height tabRadius
+			bottom - @height
+			margin-bottom 1px
 
-		.rounded
-			&.with-bottom-line:before
-				border-radius 0 borderRadius 0 0
+	.rounded
+		&.with-bottom-line:before
+			border-radius 0 borderRadius 0 0
 
-			.link
-				& > .tab
-					border-radius tabRadius tabRadius 0 0
+		.link
+			& > .tab
+				border-radius tabRadius tabRadius 0 0
 
-				&.active
-					&:before
-					&:after
-						background url("./tabCorner.svg")
-						-svg-mixer-fill defaultBackground
-						-svg-mixer-stroke defaultBorder
-						width tabRadius * 1.5
-						height @width
+			&.active
+				&:before
+				&:after
+					border-bottom-left-radius tabRadius
+					background transparent
+					-svg-mixer-fill defaultBackground
+					-svg-mixer-stroke defaultBorder
+					width tabRadius
+					height @width * 2
+					clip-path: circle(@width at bottom left);
 
-		.with-drop
-			.link
-				& > .tab
-					transform translateY(tabDropSize)
+	.with-drop
+		.link
+			& > .tab
+				transform translateY(tabDropSize)
 
 .dark-theme
 	:local
@@ -207,9 +209,7 @@ tabDropSize = marginSize/3
 				&.active
 					&:before
 					&:after
-						background url("./tabCorner.svg")
-						-svg-mixer-fill tabsActiveBackground
-						-svg-mixer-stroke tabsBorder
+						box-shadow 0 (tabRadius) 0 0 tabsActiveBackground, 1px -1px 0px 0px tabsBorder inset
 
 
 .tab-content-page
