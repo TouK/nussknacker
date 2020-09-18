@@ -2,10 +2,11 @@ package pl.touk.nussknacker.engine.compile
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Inside, Matchers}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, MissingCustomNodeExecutor, MissingService, MissingSinkFactory, MissingSourceFactory}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, MissingCustomNodeExecutor, MissingService, MissingSinkFactory, MissingSourceFactory, OverwrittenVariable}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MetaData, Service, StreamMetaData, definition}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed, ValidationResponse}
 import pl.touk.nussknacker.engine.compile.validationHelpers.{DynamicParameterJoinTransformer, Enricher, GenericParametersSink, GenericParametersSource, GenericParametersTransformer, SimpleStringService}
@@ -134,6 +135,14 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
     }
   }
 
+  test("should not allow to override output variable in variable definition") {
+    inside(
+      validate(Variable("var1", "var1", "42L", None), ValidationContext(localVariables = Map("var1" -> typing.Unknown)))
+    ) {
+      case ValidationPerformed(OverwrittenVariable("var1", "var1") :: Nil, None, _) =>
+    }
+  }
+
   test("should return expression type info for variable definition") {
     inside(
       validate(Variable("var1", "var1", "42L", None), ValidationContext(Map.empty))
@@ -141,12 +150,21 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
       case ValidationPerformed(Nil, _, Some(expressionType)) => expressionType.display shouldBe "Long"
     }
   }
+
   test("should validate variable builder definition") {
     inside(
       validate(VariableBuilder("var1", "var1", List(Field("field1", "doNotExist")), None), ValidationContext(Map.empty))
     ) {
       case ValidationPerformed((error:ExpressionParseError) :: Nil, None, _) =>
         error.message shouldBe "Non reference 'doNotExist' occurred. Maybe you missed '#' in front of it?"
+    }
+  }
+
+  test("should not allow to override output variable in variable builder definition") {
+    inside(
+      validate(VariableBuilder("var1", "var1", Nil, None), ValidationContext(localVariables = Map("var1" -> typing.Unknown)))
+    ) {
+      case ValidationPerformed(OverwrittenVariable("var1", "var1") :: Nil, None, _) =>
     }
   }
 
