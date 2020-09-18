@@ -1,3 +1,4 @@
+import * as queryString from "query-string"
 import React, {useEffect, useState} from "react"
 import {useSelector} from "react-redux"
 import {useParams} from "react-router"
@@ -5,7 +6,6 @@ import {nkPath} from "../config"
 import HttpService from "../http/HttpService"
 import {getMetricsSettings} from "../reducers/selectors/settings"
 import {Page} from "./Page"
-import * as queryString from "query-string"
 
 export const Metrics = () => {
   const settings = useSelector(getMetricsSettings)
@@ -15,7 +15,7 @@ export const Metrics = () => {
   }
 
   const [processingType, setProcessingType] = useState<string>(null)
-  const {processId} = useParams()
+  const {processId} = useParams<Record<"processId", string>>()
 
   useEffect(() => {
     if (processId) {
