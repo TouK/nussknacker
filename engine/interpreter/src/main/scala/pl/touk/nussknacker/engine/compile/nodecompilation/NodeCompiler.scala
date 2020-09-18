@@ -168,13 +168,11 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
 
     val compiledFields = compilationResult.andThen(_.map(_.validated).sequence)
 
-    val (newCtx, compiledExpressionsWithNewCtx) = withVariableCombined(ctx, outputVarName, typedObject, compiledFields)
-
     NodeCompilationResult(
       expressionTypingInfo = fieldsTypingInfo,
       parameters = None,
-      validationContext = Valid(newCtx),
-      compiledObject = compiledExpressionsWithNewCtx,
+      validationContext = outputVarName.map(ctx.withVariable(_, typedObject)).getOrElse(Valid(ctx)),
+      compiledObject = compiledFields,
       expressionType = Some(typedObject)
     )
   }
@@ -190,30 +188,13 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
       .map(typedExpr => ExpressionCompilation(fieldName, Some(typedExpr), Valid(typedExpr.expression)))
       .valueOr ( err => ExpressionCompilation(fieldName, None, Invalid(err)))
 
-    val (newCtx, compiledWithNewCtx) =
-      withVariableCombined(ctx, outputVarName, expressionCompilation.typingResult, expressionCompilation.validated)
-
     NodeCompilationResult(
       expressionTypingInfo = expressionCompilation.expressionTypingInfo,
       parameters = None,
-      validationContext = Valid(newCtx),
-      compiledObject = compiledWithNewCtx,
+      validationContext = outputVarName.map(ctx.withVariable(_, expressionCompilation.typingResult)).getOrElse(Valid(ctx)),
+      compiledObject = expressionCompilation.validated,
       expressionType = Some(expressionCompilation.typingResult)
     )
-  }
-
-  private def withVariableCombined[R](validationContext: ValidationContext,
-                                      outputVarName: Option[String],
-                                      typingResult: TypingResult,
-                                      validatedResult: ValidatedNel[ProcessCompilationError, R])(implicit nodeId: NodeId)
-  : (ValidationContext, ValidatedNel[ProcessCompilationError, R]) = {
-    outputVarName.map { variableName =>
-      val validatedCtx = validationContext.withVariable(variableName, typingResult)
-      val combinedValidationWithNewCtx = ProcessCompilationError.ValidatedNelApplicative.product(validatedCtx, validatedResult)
-      (combinedValidationWithNewCtx.map(_._1).valueOr(_ => validationContext), combinedValidationWithNewCtx.map(_._2))
-    }.getOrElse {
-      (validationContext, validatedResult)
-    }
   }
 
   def compileProcessor(n: Processor, ctx: ValidationContext)

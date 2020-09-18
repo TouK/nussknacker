@@ -66,11 +66,12 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
         val NodeCompilationResult(expressionTyping, _, newCtxValidated, compiledExpression, _) =
           nodeCompiler.compileExpression(expression, ctx, expectedType = Unknown, outputVarName = Some(varName))
         val newCtx = newCtxValidated.getOrElse(ctx)
-        CompilationResult.map3(
-          f0 = toCompilationResult(compiledExpression, expressionTyping),
-          f1 = nexts.map(caseNode => compile(caseNode, newCtx)).sequence,
-          f2 = defaultNext.map(dn => compile(dn, newCtx)).sequence)(
-          (realCompiledExpression, cases, next) => {
+        CompilationResult.map4(
+          f0 = CompilationResult(newCtxValidated),
+          f1 = toCompilationResult(compiledExpression, expressionTyping),
+          f2 = nexts.map(caseNode => compile(caseNode, newCtx)).sequence,
+          f3 = defaultNext.map(dn => compile(dn, newCtx)).sequence)(
+          (_, realCompiledExpression, cases, next) => {
             compiledgraph.node.Switch(id, realCompiledExpression, varName, cases, next)
           })
       case splittednode.EndingNode(data) => compileEndingNode(ctx, data)
@@ -120,9 +121,12 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
         //TODO: does it make sense to validate SubprocessOutput?
         toCompilationResult(Valid(compiledgraph.node.Sink(id, outputName, None, isDisabled = false)), Map.empty)
       case SubprocessOutputDefinition(id, outputName, fields, _) =>
-        val NodeCompilationResult(typingInfo, _, _, compiledFields, _) =
+        val NodeCompilationResult(typingInfo, _, ctxV, compiledFields, _) =
           nodeCompiler.compileFields(fields, ctx, outputVarName = Some(outputName))
-        toCompilationResult(compiledFields, typingInfo).map { _ =>
+        CompilationResult.map2(
+          fa = CompilationResult(ctxV),
+          fb = toCompilationResult(compiledFields, typingInfo)
+        ) { (_, _) =>
           compiledgraph.node.Sink(id, outputName, None, isDisabled = false)
         }
 
@@ -140,19 +144,21 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
       case graph.node.Variable(id, varName, expression, _) =>
         val NodeCompilationResult(typingInfo, _, newCtx, compiledExpression, t) =
           nodeCompiler.compileExpression(expression, ctx, expectedType = Unknown, outputVarName = Some(varName))
-        CompilationResult.map2(
-          fa = toCompilationResult(compiledExpression, typingInfo),
-          fb = compile(next, newCtx.getOrElse(ctx))) {
-          (compiled, compiledNext) =>
+        CompilationResult.map3(
+          f0 = CompilationResult(newCtx),
+          f1 = toCompilationResult(compiledExpression, typingInfo),
+          f2 = compile(next, newCtx.getOrElse(ctx))) {
+          (_, compiled, compiledNext) =>
             compiledgraph.node.VariableBuilder(id, varName, Left(compiled), compiledNext)
         }
       case graph.node.VariableBuilder(id, varName, fields, _) =>
-        val NodeCompilationResult(typingInfo, _, newCtx, compiledFields, _) =
+        val NodeCompilationResult(typingInfo, _, newCtxV, compiledFields, _) =
           nodeCompiler.compileFields(fields, ctx, outputVarName = Some(varName))
-        CompilationResult.map2(
-          fa = toCompilationResult(compiledFields, typingInfo),
-          fb = compile(next, newCtx.getOrElse(ctx))) {
-          (compiledFields, compiledNext) =>
+        CompilationResult.map3(
+          f0 = CompilationResult(newCtxV),
+          f1 = toCompilationResult(compiledFields, typingInfo),
+          f2 = compile(next, newCtxV.getOrElse(ctx))) {
+          (_, compiledFields, compiledNext) =>
             compiledgraph.node.VariableBuilder(id, varName, Right(compiledFields), compiledNext)
         }
 
@@ -187,12 +193,13 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
           .valueOr(error => CompilationResult(Invalid(error)))
       case SubprocessOutput(id, outputName, fields, _) =>
         ctx.popContext.map { parentCtx =>
-          val NodeCompilationResult(typingInfo, _, parentCtxWithSubOut, compiledFields, expressionType) =
+          val NodeCompilationResult(typingInfo, _, parentCtxWithSubOut, compiledFields, _) =
             nodeCompiler.compileFields(fields, ctx, outputVarName = Some(outputName))
-          CompilationResult.map2(
-            fa = toCompilationResult(compiledFields, typingInfo),
-            fb = compile(next, parentCtxWithSubOut.getOrElse(ctx))) {
-            (compiledFields, compiledNext) =>
+          CompilationResult.map3(
+            f0 = CompilationResult(parentCtxWithSubOut),
+            f1 = toCompilationResult(compiledFields, typingInfo),
+            f2 = compile(next, parentCtxWithSubOut.getOrElse(ctx))) {
+            (_, compiledFields, compiledNext) =>
               compiledgraph.node.SubprocessEnd(id, outputName, compiledFields, compiledNext)
           }
         }.valueOr(error => CompilationResult(Invalid(error)))
