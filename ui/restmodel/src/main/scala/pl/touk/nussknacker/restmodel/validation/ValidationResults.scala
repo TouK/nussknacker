@@ -43,8 +43,6 @@ object ValidationResults {
       allErrors.filter(_.errorType == NodeValidationErrorType.SaveNotAllowed)
     }
 
-    def withClearedTypingInfo: ValidationResult = copy(nodeResults = nodeResults.mapValues(_.copy(typingInfo = Map.empty)))
-
     def typingInfo: Map[String, Map[String, ExpressionTypingInfo]] = nodeResults.mapValues(_.typingInfo)
 
     private def allErrors: List[NodeValidationError] = {
@@ -54,9 +52,7 @@ object ValidationResults {
   }
 
   object NodeTypingData {
-    implicit val typingInfoEncoder: Encoder[ExpressionTypingInfo] = Encoder.instance { expressionTypingInfo =>
-      TypeEncoders.typingResultEncoder.apply(expressionTypingInfo.typingResult)
-    }
+    implicit val typingInfoEncoder: Encoder[ExpressionTypingInfo] = TypeEncoders.typingResultEncoder.contramap(_.typingResult)
     implicit val typingInfoDecoder: Decoder[ExpressionTypingInfo] = Decoder.failedWithMessage("typingInfo shouldn't be decoded")
   }
 

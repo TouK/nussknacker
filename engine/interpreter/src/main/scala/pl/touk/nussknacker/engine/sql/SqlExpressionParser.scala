@@ -47,7 +47,7 @@ object SqlExpressionParser extends ExpressionParser {
 
     val expression = new SqlExpression(original = original, columnModels = colModel)
     val listResult = Typed.genericTypeClass[List[_]](List(typingResult))
-    TypedExpression(expression, listResult, SqlExpressionTypingInfo)
+    TypedExpression(expression, listResult, SqlExpressionTypingInfo(typingResult))
   }
 
   private def getQueryReturnType(original: String, colModel: Map[String, ColumnModel]): Validated[NonEmptyList[ExpressionParseError], TypingResult] = {
@@ -115,11 +115,7 @@ class SqlExpression(private[sql] val columnModels: Map[String, ColumnModel],
 
 }
 
-// empty for now
-case object SqlExpressionTypingInfo extends ExpressionTypingInfo {
-
-  override def typingResult: TypingResult = typing.Unknown
-}
+case class SqlExpressionTypingInfo(typingResult: TypingResult) extends ExpressionTypingInfo
 
 case class Table(model: ColumnModel, rows: List[List[Any]])
 

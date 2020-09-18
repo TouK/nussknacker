@@ -22,7 +22,7 @@ class UIProcessResolving(validation: ProcessValidation, substitutorByProcessingT
     val v = validation.withExpressionParsers {
       case spel: SpelExpressionParser => spel.typingDictLabels
     }
-    v.validateWithTypingInfo(displayable)
+    v.validate(displayable)
   }
 
   def resolveExpressions(displayable: DisplayableProcess, typingInfo: Map[String, Map[String, ExpressionTypingInfo]]): CanonicalProcess = {
@@ -43,7 +43,7 @@ class UIProcessResolving(validation: ProcessValidation, substitutorByProcessingT
       .getOrElse(canonical)
     val displayable = ProcessConverter.toDisplayable(substituted, processingType, businessView)
     val uiValidations = validation.uiValidation(displayable)
-    new ValidatedDisplayableProcess(displayable, uiValidations.add(validationResult).withClearedTypingInfo
+    new ValidatedDisplayableProcess(displayable, uiValidations.add(validationResult)
     )
   }
 

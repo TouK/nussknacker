@@ -806,16 +806,13 @@ object InterpreterSpec {
     override def languageId: String = "literal"
 
     override def parse(original: String, ctx: ValidationContext, expectedType: typing.TypingResult): Validated[NonEmptyList[ExpressionParseError], TypedExpression] =
-      parseWithoutContextValidation(original, expectedType).map(TypedExpression(_, Typed[String], LiteralExpressionTypingInfo))
+      parseWithoutContextValidation(original, expectedType).map(TypedExpression(_, Typed[String], LiteralExpressionTypingInfo(typing.Unknown)))
 
     override def parseWithoutContextValidation(original: String, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError],
       pl.touk.nussknacker.engine.api.expression.Expression]
     = Valid(LiteralExpression(original))
   }
 
-  case object LiteralExpressionTypingInfo extends ExpressionTypingInfo {
-
-    override def typingResult: TypingResult = typing.Unknown
-  }
+  case class LiteralExpressionTypingInfo(typingResult: TypingResult) extends ExpressionTypingInfo
 
 }

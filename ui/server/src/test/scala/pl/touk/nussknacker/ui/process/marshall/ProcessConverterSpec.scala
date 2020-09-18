@@ -123,7 +123,14 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
       )
     )
 
-    displayableCanonical(process.toDisplayable) shouldBe process
+    val displayableProcess = displayableCanonical(process.toDisplayable)
+    // because I'm lazy
+    val displayableWithClearedTypingInfo = displayableProcess.copy(
+      validationResult = displayableProcess.validationResult.copy(
+        nodeResults = displayableProcess.validationResult.nodeResults.mapValues(_.copy(typingInfo = Map.empty))
+      )
+    )
+    displayableWithClearedTypingInfo shouldBe process
   }
 
   test("convert process with branches") {
