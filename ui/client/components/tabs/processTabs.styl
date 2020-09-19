@@ -153,37 +153,37 @@ tabDropSize = marginSize/3
 
 
 :local
-	//BORDER-RADIUS
+		//BORDER-RADIUS
 
-	.with-bottom-line
-		&:before
-			height tabRadius
-			bottom - @height
-			margin-bottom 1px
+		.with-bottom-line
+			&:before
+				height tabRadius
+				bottom - @height
+				margin-bottom 1px
 
-	.rounded
-		&.with-bottom-line:before
-			border-radius 0 borderRadius 0 0
+		.rounded
+			&.with-bottom-line:before
+				border-radius 0 borderRadius 0 0
 
-		.link
-			& > .tab
-				border-radius tabRadius tabRadius 0 0
+			.link
+				& > .tab
+					border-radius tabRadius tabRadius 0 0
 
-			&.active
-				&:before
-				&:after
-					border-bottom-left-radius tabRadius
-					background transparent
-					-svg-mixer-fill defaultBackground
-					-svg-mixer-stroke defaultBorder
-					width tabRadius
-					height @width * 2
-					clip-path: circle(@width at bottom left);
+				&.active
+					&:before
+					&:after
+						border-bottom-left-radius tabRadius
+						background transparent
+						-svg-mixer-fill defaultBackground
+						-svg-mixer-stroke defaultBorder
+						width tabRadius
+						height @width * 2
+						clip-path: circle(@width at bottom left);
 
-	.with-drop
-		.link
-			& > .tab
-				transform translateY(tabDropSize)
+		.with-drop
+			.link
+				& > .tab
+					transform translateY(tabDropSize)
 
 .dark-theme
 	:local
