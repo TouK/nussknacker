@@ -3,8 +3,8 @@ import {Scrollbars} from "react-custom-scrollbars"
 import {connect} from "react-redux"
 import {mapDispatchWithEspActions} from "../actions/ActionsUtils"
 import {unsavedProcessChanges} from "../common/DialogMessages"
-import ProcessUtils from "../common/ProcessUtils"
 import styles from "../stylesheets/processHistory.styl"
+import {UnknownRecord} from "../types/common"
 import Date from "./common/Date"
 import {compose} from "redux"
 import {WithTranslation} from "react-i18next/src"
@@ -12,7 +12,7 @@ import {withTranslation} from "react-i18next"
 import {ProcessVersionType} from "./Process/types"
 import {isBusinessView, isSaveDisabled} from "../reducers/selectors/graph"
 
-type OwnProps = {}
+type OwnProps = UnknownRecord
 
 type State = {
   currentVersion: ProcessVersionType,

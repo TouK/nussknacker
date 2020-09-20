@@ -1,3 +1,4 @@
+import {UnknownFunction} from "../../../../../../types/common"
 import TimeRangeComponent, {TimeRange} from "./TimeRangeComponent"
 import ValidationLabels from "../../../../../modals/ValidationLabels"
 import React from "react"
@@ -8,7 +9,7 @@ import "./timeRange.styl"
 
 type Props = {
   components: Array<TimeRange>,
-  onComponentValueChange: Function,
+  onComponentValueChange: UnknownFunction,
   readOnly: boolean,
   showValidation: boolean,
   validators: Array<Validator>,

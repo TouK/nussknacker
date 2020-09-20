@@ -6,7 +6,7 @@ export type ReducersMapObject<S> = {
   [K in keyof S]: Reducer<S[K]> | ReducersObj<S[K]>
 }
 
-type ReducersObj<S extends {}> = ReducersMapObject<Partial<S>>
+type ReducersObj<S> = ReducersMapObject<Partial<S>>
 type ReducerOrObj<S> = ReducersObj<S> | Reducer<S>
 
 function isReducer<S>(reducerLike): reducerLike is Reducer<S> {
@@ -17,7 +17,7 @@ const getReducer = <S>(parse: (reducerLike) => Reducer<S>) => {
   return reducerLike => isReducer<S>(reducerLike) ? reducerLike : parse(reducerLike)
 }
 
-function combineReducers<S extends {}>(reducers: ReducersObj<S>, initialState = {} as S): Reducer<S> {
+function combineReducers<S>(reducers: ReducersObj<S>, initialState = {} as S): Reducer<S> {
   const getter = getReducer(combineReducers)
   return (state = initialState, action) => Object
     .keys(reducers)

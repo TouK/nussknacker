@@ -1,4 +1,5 @@
 import {get} from "lodash"
+import {UnknownFunction} from "../../../types/common"
 import EditableEditor from "./editors/EditableEditor"
 import React from "react"
 import {PossibleValue} from "./editors/Validators"
@@ -16,8 +17,8 @@ type Props = {
   propertyConfig: AdditionalPropertyConfig,
   propertyErrors: Array<any>,
   editedNode: any,
-  onChange: Function,
-  renderFieldLabel: Function,
+  onChange: UnknownFunction,
+  renderFieldLabel: UnknownFunction,
   readOnly: boolean,
 }
 
@@ -44,7 +45,7 @@ export default function AdditionalProperty(props: Props) {
       key={propertyName}
       showSwitch={showSwitch}
       showValidation={showValidation}
-      //AdditionalProperties do not use any variables 
+      //AdditionalProperties do not use any variables
       variableTypes={{}}
       errors={propertyErrors}
     />

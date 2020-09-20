@@ -1,4 +1,5 @@
 import React from "react"
+import {UnknownFunction} from "../../../../../types/common"
 import Input from "../field/Input"
 import {Editor, SimpleEditor} from "./Editor"
 import {Formatter, FormatterType, typeFormatters} from "./Formatter"
@@ -6,7 +7,7 @@ import i18next from "i18next"
 
 type Props = {
   expressionObj: $TodoType,
-  onValueChange: Function,
+  onValueChange: UnknownFunction,
   className: string,
   formatter: Formatter,
 }

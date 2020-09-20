@@ -3,6 +3,7 @@ import {Redirect, Route, RouteComponentProps} from "react-router"
 import {matchPath, withRouter} from "react-router-dom"
 import _ from "lodash"
 import {MenuBar} from "../components/MenuBar"
+import {UnknownRecord} from "../types/common"
 import {ProcessesTabData} from "./Processes"
 import {SubProcessesTabData} from "./SubProcesses"
 import {ArchiveTabData} from "./Archive"
@@ -31,8 +32,8 @@ import {UnregisterCallback} from "history"
 import ProcessBackButton from "../components/Process/ProcessBackButton"
 import * as queryString from "query-string"
 
-type OwnProps = {}
-type State = {}
+type OwnProps = UnknownRecord
+type State = UnknownRecord
 
 type MetricParam = {
   params: {

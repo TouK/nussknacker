@@ -55,7 +55,7 @@ export default function TestResults(props) {
   }
 
   function stringifyMockedValue(mockedValue) {
-    const content = mockedValue.value.pretty;
-    return  _.isObject(content) ? JSON.stringify(content) : content;
+    const content = mockedValue.value.pretty
+    return  _.isObject(content) ? JSON.stringify(content) : content
   }
 }

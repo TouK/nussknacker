@@ -1,4 +1,5 @@
 import React, {memo} from "react"
+import {UnknownRecord} from "../../../types/common"
 import {CssFade} from "../../CssFade"
 import {ProcessStateType, ProcessType} from "../../Process/types"
 import {descriptionProcessArchived, descriptionSubprocess, descriptionSubprocessArchived, unknownDescription} from "../../Process/messages"
@@ -17,9 +18,8 @@ import SaveButton from "../process/buttons/SaveButton"
 import {ToolbarButtons} from "../../toolbarComponents/ToolbarButtons"
 import {CollapsibleToolbar} from "../../toolbarComponents/CollapsibleToolbar"
 import i18next from "i18next"
-import {isFunction} from "lodash"
 
-type State = {}
+type State = UnknownRecord
 
 type OwnProps = {
   iconHeight: number,

@@ -1,10 +1,11 @@
 import _ from "lodash"
 import React from "react"
+import {NodeType, UIParameter, VariableTypes} from "../../../../../types"
+import {UnknownFunction} from "../../../../../types/common"
 import ExpressionTestResults from "../../tests/ExpressionTestResults"
 import EditableEditor from "../EditableEditor"
-import {EditorType} from "./Editor"
-import {NodeType, UIParameter, VariableTypes} from "../../../../../types"
 import {Error} from "../Validators"
+import {EditorType} from "./Editor"
 
 type Props = {
   fieldName: string,
@@ -12,15 +13,15 @@ type Props = {
   exprPath: string,
   isEditMode: boolean,
   editedNode: NodeType,
-  isMarked: Function,
+  isMarked: (...args: unknown[]) => boolean,
   showValidation: boolean,
   showSwitch: boolean,
   parameterDefinition: UIParameter,
-  setNodeDataAt: Function,
+  setNodeDataAt: UnknownFunction,
   testResultsToShow: $TodoType,
   testResultsToHide: $TodoType,
-  toggleTestResult: Function,
-  renderFieldLabel: Function,
+  toggleTestResult: UnknownFunction,
+  renderFieldLabel: UnknownFunction,
   errors: Array<Error>,
   variableTypes: VariableTypes,
 }

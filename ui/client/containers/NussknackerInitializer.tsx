@@ -15,6 +15,7 @@ import api from "../api"
 import SystemUtils from "../common/SystemUtils"
 import LoaderSpinner from "../components/Spinner"
 import HttpService from "../http/HttpService"
+import {UnknownRecord} from "../types/common"
 import InitializeError from "./errors/InitializeError"
 import {AuthenticationSettings} from "../reducers/settings"
 
@@ -26,7 +27,7 @@ type Error = {
   buttonOnClick?: (event) => void,
 }
 
-type OwnProps = {}
+type OwnProps = UnknownRecord
 
 type State = {
   errors: Record<number, Error>,
@@ -112,9 +113,9 @@ class NussknackerInitializer extends React.Component<Props, State> {
     }).catch(this.httpErrorHandlerWithoutRedirect)
   }
 
-  httpErrorHandlerWithoutRedirect = (error: object): void => this.httpErrorHandler(error, false)
+  httpErrorHandlerWithoutRedirect = (error: UnknownRecord): void => this.httpErrorHandler(error, false)
 
-  httpErrorHandler = (error: object, redirect: boolean) => {
+  httpErrorHandler = (error: $TodoType, redirect: boolean) => {
     const code: number = _.get(error, "response.status")
     const showError: boolean = code !== NussknackerInitializer.HTTP_UNAUTHORIZED_CODE || !redirect
 

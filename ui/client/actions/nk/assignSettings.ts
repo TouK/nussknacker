@@ -1,7 +1,9 @@
+import {UnknownRecord} from "../../types/common"
+
 type MetricsType = {
   url: string,
   defaultDashboard: string,
-  processingTypeToDashboard: {},
+  processingTypeToDashboard: UnknownRecord,
 }
 
 type FeaturesSettings = {
