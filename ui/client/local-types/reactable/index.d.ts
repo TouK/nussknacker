@@ -5,6 +5,7 @@
 // TypeScript Version: 2.8
 
 import * as React from "react"
+import {UnknownRecord} from "../../types/common"
 
 export interface KeyLabelObject {
   key: string,
@@ -22,7 +23,7 @@ export type SortType = {column: string, direction: SortDirection}
 export type SortFunction = (a: string, b: string) => number
 export type ColumnSort = {column: string, sortFunction: SortFunction}
 
-export interface TableComponentProperties<T = any> extends React.PropsWithChildren<{}> {
+export interface TableComponentProperties<T = any> extends React.PropsWithChildren<UnknownRecord> {
   data?: T[],
   className?: string,
   columns?: ColumnsType[],

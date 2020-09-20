@@ -1,12 +1,15 @@
 import React, {useEffect, useState} from "react"
+import {UnknownFunction} from "../../../../../../types/common"
+import {Period} from "./PeriodEditor"
 import TimeRangeSection from "./TimeRangeSection"
 import {Validator} from "../../Validators"
 import {TimeRange} from "./TimeRangeComponent"
+import {Duration} from "./DurationEditor"
 
 type Props = {
-  encode: Function,
-  decode: Function,
-  onValueChange: Function,
+  encode: UnknownFunction,
+  decode: ((exp: string) => Duration)|((exp: string) => Period),
+  onValueChange: UnknownFunction,
   editorConfig: $TodoType,
   readOnly: boolean,
   showValidation: boolean,

@@ -1,4 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
+import {UnknownRecord} from "../../types/common"
+
 export enum ActionType {
   Deploy = "DEPLOY",
   Cancel = "CANCEL",
@@ -21,7 +23,7 @@ export type ProcessActionType = {
   action: ActionType,
   commentId?: number,
   comment?: string,
-  buildInfo?: {},
+  buildInfo?: UnknownRecord,
 }
 
 type ProcessHistoryEntry = $TodoType
@@ -64,6 +66,6 @@ export type ProcessStateType = {
   tooltip?: string,
   description?: string,
   startTime?: Date,
-  attributes?: {},
+  attributes?: UnknownRecord,
   errors?: Array<string>,
 }

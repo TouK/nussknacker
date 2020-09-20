@@ -10,9 +10,6 @@ import Services from "./admin/Services"
 import UnusedComponents from "./admin/UnusedComponents"
 import {Page} from "./Page"
 import {compose} from "redux"
-import {connect} from "react-redux"
-import ActionsUtils from "../actions/ActionsUtils"
-import {withTranslation} from "react-i18next"
 
 export class AdminPage extends React.Component {
   tabs = [

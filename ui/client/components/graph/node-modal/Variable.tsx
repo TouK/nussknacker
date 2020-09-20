@@ -50,7 +50,7 @@ const Variable = (props: Props) => {
         fieldLabel={"Expression"}
         renderFieldLabel={renderFieldLabel}
         expressionObj={node.value}
-        onValueChange={((value) => onChange("value.expression", value))}
+        onValueChange={((value: string) => onChange("value.expression", value))}
         readOnly={readOnly}
         showValidation={showValidation}
         showSwitch={false}

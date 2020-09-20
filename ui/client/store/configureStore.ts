@@ -27,6 +27,7 @@ export default function configureStore() {
 
   if (module.hot) {
     module.hot.accept("../reducers", () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const nextReducer = require("../reducers").reducer
       store.replaceReducer(persistReducer(persistConfig, nextReducer))
     })

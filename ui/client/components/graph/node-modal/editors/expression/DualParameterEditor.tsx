@@ -1,3 +1,4 @@
+import {UnknownFunction} from "../../../../../types/common"
 import {DualEditorMode, editors, SimpleEditor} from "./Editor"
 import SwitchIcon from "./SwitchIcon"
 import React, {useState} from "react"
@@ -14,10 +15,10 @@ type Props = {
     validators: Array<$TodoType>,
     isMarked: boolean,
     showValidation: boolean,
-    onValueChange: Function,
+    onValueChange: UnknownFunction,
     className: string,
     variableTypes: VariableTypes,
-    showSwitch: boolean
+    showSwitch: boolean,
 }
 
 export default function DualParameterEditor(props: Props) {
@@ -43,13 +44,15 @@ export default function DualParameterEditor(props: Props) {
         (<SimpleEditor {...editorProps} editorConfig={editorConfig.simpleEditor}/>)
       }
       {showSwitch ?
-        (<SwitchIcon
+        (
+          <SwitchIcon
             switchable={switchable}
             hint={hint}
             onClick={(_) => setDisplayRawEditor(!displayRawEditor)}
             displayRawEditor={displayRawEditor}
             readOnly={readOnly}
-          />) : null }
+          />
+        ) : null }
     </>
   )
 }
