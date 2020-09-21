@@ -213,7 +213,9 @@
           "api.get",
           "api.post",
           "describe",
-          "css"
+          "css",
+          "querySelector",
+          "querySelectorAll"
         ],
         "ignoreAttribute": [
           "onHandleColor",

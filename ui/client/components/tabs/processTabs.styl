@@ -172,11 +172,13 @@ tabDropSize = marginSize/3
 				&.active
 					&:before
 					&:after
-						background url("./tabCorner.svg")
+						border-bottom-left-radius tabRadius
+						background transparent
 						-svg-mixer-fill defaultBackground
 						-svg-mixer-stroke defaultBorder
-						width tabRadius * 1.5
-						height @width
+						width tabRadius
+						height @width * 2
+						clip-path: circle(@width at bottom left);
 
 		.with-drop
 			.link
@@ -207,9 +209,7 @@ tabDropSize = marginSize/3
 				&.active
 					&:before
 					&:after
-						background url("./tabCorner.svg")
-						-svg-mixer-fill tabsActiveBackground
-						-svg-mixer-stroke tabsBorder
+						box-shadow 0 (tabRadius) 0 0 tabsActiveBackground, 1px -1px 0px 0px tabsBorder inset
 
 
 .tab-content-page
