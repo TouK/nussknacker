@@ -2,10 +2,16 @@
 import Color from "color"
 import {css} from "emotion"
 import {ThemeProvider, ThemeProviderProps, useTheme} from "emotion-theming"
-import React, {useMemo, useState} from "react"
+import React, {useMemo} from "react"
 import vars from "../stylesheets/_variables.styl"
 
-const {borderRadius, formControllHeight, fontSize, primary} = vars
+const {
+  borderRadius, formControllHeight, fontSize, primary,
+  warningColor: warning,
+  errorColor: error,
+  okColor: ok,
+  sucessColor: sucess,
+} = vars
 
 function tint(base: string, amount = 0) {
   return Color(base).mix(Color("white"), amount).hsl().string()
@@ -52,6 +58,7 @@ const defaultAppTheme = {
 
     selectedValue: primary,
     accent: primary,
+    warning, error, ok, sucess,
   },
   spacing: {
     controlHeight: parseFloat(formControllHeight),
