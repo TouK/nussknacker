@@ -1,44 +1,49 @@
 import React from "react"
+import {hot} from "react-hot-loader"
 import {withTranslation} from "react-i18next"
 import {WithTranslation} from "react-i18next/src"
 import {connect} from "react-redux"
 import {compose} from "redux"
 import {EspActionsProps, mapDispatchWithEspActions} from "../actions/ActionsUtils"
 import InlinedSvgs from "../assets/icons/InlinedSvgs"
-import HttpService from "../http/HttpService"
+import HttpService, {HealthCheckResponse} from "../http/HttpService"
 import {getFeatureSettings} from "../reducers/selectors/settings"
 import styles from "./healthCheck.styl"
-import PeriodicallyReloadingComponent from "./PeriodicallyReloadingComponent"
-
-type HealthCheckResponse = {
-  state: string,
-  error: string,
-}
 
 type State = {
   healthCheck?: HealthCheckResponse,
 }
 
-class HealthCheck extends PeriodicallyReloadingComponent<Props, State> {
+const stateOk = "ok"
 
-  // eslint-disable-next-line i18next/no-literal-string
-  public static stateOk = "ok"
+class HealthCheck extends React.Component<Props, State> {
+  private intervalId
+  state = {healthCheck: null}
 
-  getIntervalTime = () => this.props.healthCheckInterval
+  componentDidMount() {
+    const {healthCheckInterval = 2000} = this.props
+    this.intervalId = setInterval(async () => {
+      const check = await HttpService.fetchHealthCheckProcessDeployment()
+      this.setState({healthCheck: check})
+    }, healthCheckInterval)
+  }
 
-  reload = () => {
-    HttpService.fetchHealthCheckProcessDeployment().then((check: HealthCheckResponse) => this.setState({healthCheck: check}))
+  componentWillUnmount() {
+    clearInterval(this.intervalId)
   }
 
   render() {
     const {t} = this.props
+    const {healthCheck} = this.state
 
-    return this.state?.healthCheck && this.state.healthCheck.state !== HealthCheck.stateOk ? (
-      <div className={styles.healthCheck}>
-        <div className={styles.icon} title="Warning" dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsWarning}}/>
-        <span className={styles.errorText}>{this.state?.healthCheck.error || t("healthCheck.unknownState", "State unknown")}</span>
-      </div>
-    ): null
+    return !healthCheck || healthCheck.state === stateOk ?
+      null :
+      (
+        <div className={styles.healthCheck}>
+          <div className={styles.icon} title="Warning" dangerouslySetInnerHTML={{__html: InlinedSvgs.tipsWarning}}/>
+          <span className={styles.errorText}>{healthCheck.error || t("healthCheck.unknownState", "State unknown")}</span>
+        </div>
+      )
   }
 }
 
@@ -53,4 +58,4 @@ const enhance = compose(
   withTranslation(),
 )
 
-export default enhance(HealthCheck)
+export default hot(module)(enhance(HealthCheck))

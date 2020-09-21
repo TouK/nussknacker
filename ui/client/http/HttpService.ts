@@ -11,6 +11,11 @@ type HealthCheckProcessDeploymentType = {
   processes: null | Array<string>,
 }
 
+export type HealthCheckResponse = {
+  state: string,
+  error?: string,
+}
+
 export type FetchProcessQueryParams = Partial<{
   search: string,
   categories: string,
@@ -70,7 +75,7 @@ class HttpService {
       .catch(error => this.addError("Cannot fetch state", error))
   }
 
-  fetchHealthCheckProcessDeployment() {
+  fetchHealthCheckProcessDeployment(): Promise<HealthCheckResponse> {
     return api.get("/app/healthCheck/process/deployment")
       .then(() => ({state: "ok"}))
       .catch((error) => {
