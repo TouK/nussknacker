@@ -13,7 +13,7 @@ export function TableItemsCount(props: {page: number, items: number, rows: numbe
     () => {
       const first = page * rows + 1
       const last = (page + 1) * rows
-      return t('table.itemsCount', `{{first}} to {{last}} of total {{total}}`, {
+      return t("table.itemsCount", "{{first}} to {{last}} of total {{total}}", {
         first,
         last: Math.min(last, items),
         total: items,
