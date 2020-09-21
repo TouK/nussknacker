@@ -21,15 +21,17 @@ class HealthCheck extends React.Component<Props, State> {
   state = {healthCheck: null}
 
   componentDidMount() {
-    const {healthCheckInterval = 2000} = this.props
-    this.intervalId = setInterval(async () => {
-      const check = await HttpService.fetchHealthCheckProcessDeployment()
-      this.setState({healthCheck: check})
-    }, healthCheckInterval)
+    const {healthCheckInterval = 4000} = this.props
+    this.intervalId = setInterval(this.updateState, healthCheckInterval)
   }
 
   componentWillUnmount() {
     clearInterval(this.intervalId)
+  }
+
+  private async updateState() {
+    const check = await HttpService.fetchHealthCheckProcessDeployment()
+    this.setState({healthCheck: check})
   }
 
   render() {
@@ -51,10 +53,10 @@ const mapState = state => ({
   healthCheckInterval: getFeatureSettings(state)?.intervalSettings?.healthCheck,
 })
 
-type Props = ReturnType<typeof mapState> & EspActionsProps & WithTranslation
+type Props = ReturnType<typeof mapState> & WithTranslation
 
 const enhance = compose(
-  connect(mapState, mapDispatchWithEspActions),
+  connect(mapState),
   withTranslation(),
 )
 
