@@ -33,7 +33,7 @@ import cats.instances.list._
 import cats.implicits.toTraverseOps
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo.DefaultExpressionId
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{ExpressionCompilation, NodeCompilationResult}
-import pl.touk.nussknacker.engine.definition.parameter.GenericParameterEnrichment
+import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
 
 import scala.util.{Failure, Success, Try}
 
@@ -299,7 +299,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
           (Map.empty[String, ExpressionTypingInfo], Some(computedParameters), outputContext, Invalid(NonEmptyList(h, t)))
       }
       val finalParameterList = afterValidation.map(_._2).valueOr(_ => None)
-        .map(GenericParameterEnrichment.enrichParameterDefinitions(_, nodeDefinition.objectDefinition.nodeConfig))
+        .map(StandardParameterEnrichment.enrichParameterDefinitions(_, nodeDefinition.objectDefinition.nodeConfig))
       NodeCompilationResult(afterValidation.map(_._1).valueOr(_ => Map.empty), finalParameterList, afterValidation.map(_._3), afterValidation.andThen(_._4))
     } else {
       val (typingInfo, validProcessObject) = createProcessObject[T](nodeDefinition, parameters,

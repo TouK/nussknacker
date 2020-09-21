@@ -4,6 +4,8 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, MissingCustomNodeExecutor, MissingService, MissingSinkFactory, MissingSourceFactory, OverwrittenVariable}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MetaData, Service, StreamMetaData, definition}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -186,7 +188,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
   }
 
   private def genericParameters = List(
-    definition.Parameter[String]("par1"),
+    definition.Parameter[String]("par1").copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))),
     definition.Parameter[Long]("lazyPar1").copy(isLazyParameter = true),
     definition.Parameter[Any]("a"),
     definition.Parameter[Any]("b")

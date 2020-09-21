@@ -6,11 +6,11 @@ import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
 import pl.touk.nussknacker.engine.definition.parameter.validator.{EditorBasedValidatorExtractor, ValidatorExtractorParameters}
 
 /*
-  For parameters defined explicitly in code (e.g. by GenericNodeTransformation) we want to define sensible fallback/defaults:
+  For parameters defined explicitly in code (e.g. by GenericNodeTransformation or using WithExplicitMethod) we want to define sensible fallback/defaults:
   - if no editor is defined in code, we take the one based by config or parameter type
   - if editor is defined, we add validator based on type
  */
-object GenericParameterEnrichment {
+object StandardParameterEnrichment {
 
   def enrichParameterDefinitions(original: List[Parameter], nodeConfig: SingleNodeConfig): List[Parameter] = {
     original.map(p => enrichParameter(p, nodeConfig.paramConfig(p.name)))

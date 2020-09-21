@@ -5,7 +5,8 @@ import cats.data.Validated.Invalid
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, MissingParameters}
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
@@ -74,7 +75,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
 
     val parameters = result.parametersInNodes("generic")
     parameters shouldBe List(
-      Parameter[String]("par1"),
+      Parameter[String]("par1").copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))),
       Parameter[Long]("lazyPar1").copy(isLazyParameter = true),
       Parameter("val1", Unknown),
       Parameter("val2", Unknown),
@@ -105,7 +106,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
 
     val parameters = result.parametersInNodes("sourceId")
     parameters shouldBe List(
-      Parameter[String]("par1"),
+      Parameter[String]("par1").copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))),
       Parameter[Long]("lazyPar1").copy(isLazyParameter = true),
       Parameter("val1", Unknown),
       Parameter("val2", Unknown),
@@ -127,7 +128,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
 
     val parameters = result.parametersInNodes("end")
     parameters shouldBe List(
-      Parameter[String]("par1"),
+      Parameter[String]("par1").copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))),
       Parameter[Long]("lazyPar1").copy(isLazyParameter = true),
       Parameter("val1", Unknown),
       Parameter("val2", Unknown),
@@ -147,7 +148,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
 
     val parameters = result.parametersInNodes("end")
     parameters shouldBe List(
-      Parameter[String]("par1"),
+      Parameter[String]("par1").copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))),
       Parameter[Long]("lazyPar1").copy(isLazyParameter = true),
       Parameter("val1", Unknown),
       Parameter("val2", Unknown)
@@ -193,7 +194,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
 
     val parameters = result.parametersInNodes("generic")
     parameters shouldBe List(
-      Parameter[String]("par1"),
+      Parameter[String]("par1").copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))),
       Parameter[Long]("lazyPar1").copy(isLazyParameter = true),
       Parameter("val1", Unknown),
       Parameter("val2", Unknown)

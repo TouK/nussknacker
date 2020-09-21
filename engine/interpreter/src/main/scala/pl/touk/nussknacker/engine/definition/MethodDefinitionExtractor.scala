@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig
 import pl.touk.nussknacker.engine.api.typed.MissingOutputVariableException
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
-import pl.touk.nussknacker.engine.definition.parameter.{GenericParameterEnrichment, ParameterExtractor}
+import pl.touk.nussknacker.engine.definition.parameter.{StandardParameterEnrichment, ParameterExtractor}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 // We should think about things that happens here as a Dependency Injection where @ParamName and so on are kind of
@@ -24,7 +24,7 @@ private[definition] trait MethodDefinitionExtractor[T] {
 
 private[definition] object WithExplicitMethodToInvokeMethodDefinitionExtractor extends MethodDefinitionExtractor[WithExplicitMethodToInvoke] {
   override def extractMethodDefinition(obj: WithExplicitMethodToInvoke, methodToInvoke: Method, nodeConfig: SingleNodeConfig): Either[String, MethodDefinition] = {
-    val parametersList = GenericParameterEnrichment.enrichParameterDefinitions(obj.parameterDefinition, nodeConfig)
+    val parametersList = StandardParameterEnrichment.enrichParameterDefinitions(obj.parameterDefinition, nodeConfig)
     Right(MethodDefinition(methodToInvoke.getName,
       (oo, args) => methodToInvoke.invoke(oo, args.toList),
         new OrderedDependencies(parametersList ++ obj.additionalDependencies.map(TypedNodeDependency(_))),
