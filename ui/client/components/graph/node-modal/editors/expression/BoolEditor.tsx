@@ -1,13 +1,14 @@
 import i18next from "i18next"
 import {isEmpty} from "lodash"
 import React from "react"
+import {UnknownFunction} from "../../../../../types/common"
 import FixedValuesEditor from "./FixedValuesEditor"
 import {ExpressionObj} from "./types"
 import {SimpleEditor} from "./Editor"
 
 type Props = {
   expressionObj: ExpressionObj,
-  onValueChange: Function,
+  onValueChange: UnknownFunction,
   readOnly: boolean,
   className: string,
   values?: $TodoType,

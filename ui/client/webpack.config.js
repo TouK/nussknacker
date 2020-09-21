@@ -30,10 +30,12 @@ const cssPreLoaders = [
   {
     loader: "postcss-loader",
     options: {
-      plugins: [
-        require("autoprefixer"),
-        require("postcss-move-props-to-bg-image-query"),
-      ],
+      postcssOptions: {
+        plugins: [
+          require("autoprefixer"),
+          require("postcss-move-props-to-bg-image-query"),
+        ],
+      },
     },
   },
 ]
@@ -118,9 +120,11 @@ module.exports = {
     }),
     isProd ? null : new webpack.NamedModulesPlugin(),
     isProd ? null : new webpack.HotModuleReplacementPlugin(),
-    new CopyPlugin([
-      {from: "translations", to: "assets/locales"},
-    ]),
+    new CopyPlugin({
+      patterns: [
+        {from: "translations", to: "assets/locales"},
+      ],
+    }),
     new webpack.DefinePlugin({
       __DEV__: !isProd,
       "process.env": {
@@ -148,7 +152,9 @@ module.exports = {
         use: [
           {
             loader: "expose-loader",
-            options: "joint",
+            options: {
+              exposes: ["joint"],
+            },
           },
         ],
       },
@@ -172,8 +178,8 @@ module.exports = {
                 mode: "global",
                 exportGlobals: true,
                 localIdentName: "[name]--[local]--[hash:base64:5]",
+                exportLocalsConvention: "camelCase",
               },
-              localsConvention: "camelCase",
             },
           },
         ],

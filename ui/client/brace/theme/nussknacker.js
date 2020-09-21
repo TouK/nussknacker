@@ -1,6 +1,6 @@
 //based on https://github.com/thlorenz/brace/blob/master/theme/monokai.js
 
-const nussknackerCssTheme = require('!raw-loader!./nussknacker.css');
+const nussknackerCssTheme = require('!raw-loader!./nussknacker.css').default;
 
 ace.define("ace/theme/nussknacker",["require","exports","module","ace/lib/dom"], function(acequire, exports, module) {
 

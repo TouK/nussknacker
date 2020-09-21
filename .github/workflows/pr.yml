@@ -90,7 +90,7 @@ jobs:
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
-          node-version: 13.2
+          node-version: 14.11.0
       - run: ./ciFrontendTest.sh
 
 

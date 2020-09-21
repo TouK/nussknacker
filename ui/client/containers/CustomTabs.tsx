@@ -1,17 +1,18 @@
-import PropTypes, {Validator} from "prop-types"
 import React from "react"
 import {connect} from "react-redux"
+import {UnknownRecord} from "../types/common"
 import NotFound from "./errors/NotFound"
 import * as queryString from "query-string"
 
-export class CustomTabs extends React.Component<{ settings: $TodoType[], match: $TodoType }> {
+type Props = {
+    settings: $TodoType[],
+    match: $TodoType,
+  }
+
+export class CustomTabs extends React.Component<Props> {
 
   static path: string
   static header: string
-  static propTypes: {
-    settings: Validator<NonNullable<any[]>>,
-    match: Validator<NonNullable<object>>,
-  }
 
   constructor(props) {
     super(props)
@@ -46,11 +47,6 @@ export class CustomTabs extends React.Component<{ settings: $TodoType[], match: 
       return (<NotFound/>)
     }
   }
-}
-
-CustomTabs.propTypes = {
-  settings: PropTypes.array.isRequired,
-  match: PropTypes.object.isRequired,
 }
 
 CustomTabs.path = "/customtabs"

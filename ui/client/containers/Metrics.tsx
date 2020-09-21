@@ -15,7 +15,7 @@ export const Metrics = () => {
   }
 
   const [processingType, setProcessingType] = useState<string>(null)
-  const {processId} = useParams()
+  const {processId} = useParams<Record<"processId", string>>()
 
   useEffect(() => {
     if (processId) {

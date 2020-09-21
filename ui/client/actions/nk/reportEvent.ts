@@ -22,11 +22,8 @@ export function reportEvent(eventInfo: EventInfo): ThunkAction {
     type: "USER_TRACKING",
     tracking: {
       event: {
-        // eslint-disable-next-line @typescript-eslint/camelcase
         e_c: eventInfo.category,
-        // eslint-disable-next-line @typescript-eslint/camelcase
         e_a: eventInfo.action,
-        // eslint-disable-next-line @typescript-eslint/camelcase
         e_n: eventInfo.name,
       },
     },

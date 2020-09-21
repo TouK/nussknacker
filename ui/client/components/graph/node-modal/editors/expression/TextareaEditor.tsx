@@ -1,3 +1,4 @@
+import {UnknownFunction} from "../../../../../types/common"
 import {Formatter, FormatterType, typeFormatters} from "./Formatter"
 import {Editor, SimpleEditor} from "./Editor"
 import i18next from "i18next"
@@ -6,7 +7,7 @@ import Textarea from "../field/Textarea"
 
 type Props = {
     expressionObj: $TodoType,
-    onValueChange: Function,
+    onValueChange: UnknownFunction,
     className: string,
     formatter: Formatter,
 }

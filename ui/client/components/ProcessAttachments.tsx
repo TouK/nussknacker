@@ -6,6 +6,7 @@ import {WithTranslation} from "react-i18next/src"
 import {connect} from "react-redux"
 import {mapDispatchWithEspActions} from "../actions/ActionsUtils"
 import InlinedSvgs from "../assets/icons/InlinedSvgs"
+import {UnknownRecord} from "../types/common"
 import {NkButton} from "./NkButton"
 import HttpService from "../http/HttpService"
 import {RootState} from "../reducers/index"
@@ -14,7 +15,7 @@ import {FocusOutline, InputWithFocus} from "./withFocus"
 
 type State = { pendingRequest: boolean }
 
-type OwnProps = {} & WithTranslation
+type OwnProps = UnknownRecord & WithTranslation
 
 export class ProcessAttachments extends React.Component<Props, State> {
   private initState: State

@@ -1,11 +1,11 @@
 import React from "react"
+import {UnknownFunction} from "../../../../../../types/common"
 import {ExpressionObj} from "../types"
 import {Validator} from "../../Validators"
 import "./timeRange.styl"
 import TimeRangeEditor from "./TimeRangeEditor"
 import _ from "lodash"
 import i18next from "i18next"
-import {TimeRange, TimeRangeComponentType} from "./TimeRangeComponent"
 import {Formatter, FormatterType, typeFormatters} from "../Formatter"
 import moment from "moment"
 
@@ -17,7 +17,7 @@ export type Duration = {
 
 type Props = {
   expressionObj: ExpressionObj,
-  onValueChange: Function,
+  onValueChange: UnknownFunction,
   validators: Array<Validator>,
   showValidation?: boolean,
   readOnly: boolean,

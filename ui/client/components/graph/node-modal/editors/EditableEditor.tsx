@@ -1,4 +1,5 @@
 import React from "react"
+import {UnknownFunction} from "../../../../types/common"
 import {editors, EditorType, simpleEditorValidators} from "./expression/Editor"
 import {isEmpty} from "lodash"
 import {ExpressionObj} from "./expression/types"
@@ -10,7 +11,7 @@ import {ParamType} from "./types"
 type Props = {
   expressionObj: ExpressionObj,
   showSwitch: boolean,
-  renderFieldLabel?: Function,
+  renderFieldLabel?: UnknownFunction,
   fieldLabel?: string,
   readOnly: boolean,
   rowClassName?: string,
@@ -20,7 +21,7 @@ type Props = {
   fieldName?: string,
   isMarked?: boolean,
   showValidation?: boolean,
-  onValueChange: Function,
+  onValueChange: UnknownFunction,
   errors?: Array<Error>,
   variableTypes: VariableTypes,
   validationLabelInfo?: string,

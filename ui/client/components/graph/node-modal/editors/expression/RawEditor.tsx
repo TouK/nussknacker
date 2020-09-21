@@ -1,5 +1,6 @@
 import cn from "classnames"
 import React from "react"
+import {UnknownFunction} from "../../../../../types/common"
 import ExpressionSuggest from "./ExpressionSuggest"
 import {Editor} from "./Editor"
 import {VariableTypes} from "../../../../../types"
@@ -10,7 +11,7 @@ type Props = {
   isMarked: boolean,
   showValidation: boolean,
   readOnly: boolean,
-  onValueChange: Function,
+  onValueChange: UnknownFunction,
   rows?: number,
   cols?: number,
   className: string,

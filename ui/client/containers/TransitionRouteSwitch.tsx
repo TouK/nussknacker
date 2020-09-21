@@ -4,7 +4,7 @@ import {CSSTransition} from "react-transition-group"
 import TransitionGroup from "react-transition-group/TransitionGroup"
 import animations from "../stylesheets/animations.styl"
 
-export function TransitionRouteSwitch(props: PropsWithChildren<{}>) {
+export function TransitionRouteSwitch(props: PropsWithChildren<unknown>) {
   const location = useLocation()
   return (
     <TransitionGroup className={animations.group}>
