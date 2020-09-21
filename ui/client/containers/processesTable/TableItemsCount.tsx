@@ -1,5 +1,6 @@
 import {css} from "emotion"
 import React, {useMemo} from "react"
+import {useTranslation} from "react-i18next"
 
 export function TableItemsCount(props: {page: number, items: number, rows: number}): JSX.Element {
   const {items, rows, page} = props
@@ -7,11 +8,16 @@ export function TableItemsCount(props: {page: number, items: number, rows: numbe
     return null
   }
 
+  const {t} = useTranslation()
   const text = useMemo(
     () => {
       const first = page * rows + 1
       const last = (page + 1) * rows
-      return `${first} to ${Math.min(last, items)} of total ${items}`
+      return t('table.itemsCount', `{{first}} to {{last}} of total {{total}}`, {
+        first,
+        last: Math.min(last, items),
+        total: items,
+      })
     },
     [page, rows, items],
   )
