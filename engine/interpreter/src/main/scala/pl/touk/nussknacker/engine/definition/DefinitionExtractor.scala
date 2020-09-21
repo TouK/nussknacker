@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SingleNo
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectMetadata, _}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MethodDefinition
+import pl.touk.nussknacker.engine.definition.parameter.GenericParameterEnrichment
 import pl.touk.nussknacker.engine.types.TypesInformationExtractor
 
 import scala.runtime.BoxedUnit
@@ -31,7 +32,8 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
       //TODO: how validators/editors in NodeConfig should be handled for GenericNodeTransformation/WithExplicitMethodToInvoke?
       case e:GenericNodeTransformation[_] =>
         val returnType = if (e.nodeDependencies.contains(OutputVariableNameDependency)) Unknown else Typed[Void]
-        val definition = ObjectDefinition(e.initialParameters, returnType, objWithCategories.categories, objWithCategories.nodeConfig)
+        val parametersList = GenericParameterEnrichment.enrichParameterDefinitions(e.initialParameters, objWithCategories.nodeConfig)
+        val definition = ObjectDefinition(parametersList, returnType, objWithCategories.categories, objWithCategories.nodeConfig)
         Right(GenericNodeTransformationMethodDef(e, definition))
       case e:WithExplicitMethodToInvoke =>
         WithExplicitMethodToInvokeMethodDefinitionExtractor.extractMethodDefinition(e,
