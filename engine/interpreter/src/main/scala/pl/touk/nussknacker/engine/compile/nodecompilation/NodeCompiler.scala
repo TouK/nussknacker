@@ -33,6 +33,7 @@ import cats.instances.list._
 import cats.implicits.toTraverseOps
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo.DefaultExpressionId
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{ExpressionCompilation, NodeCompilationResult}
+import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
 
 import scala.util.{Failure, Success, Try}
 
@@ -297,7 +298,9 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
           //TODO: typing info here??
           (Map.empty[String, ExpressionTypingInfo], Some(computedParameters), outputContext, Invalid(NonEmptyList(h, t)))
       }
-      NodeCompilationResult(afterValidation.map(_._1).valueOr(_ => Map.empty), afterValidation.map(_._2).valueOr(_ => None), afterValidation.map(_._3), afterValidation.andThen(_._4))
+      val finalParameterList = afterValidation.map(_._2).valueOr(_ => None)
+        .map(StandardParameterEnrichment.enrichParameterDefinitions(_, nodeDefinition.objectDefinition.nodeConfig))
+      NodeCompilationResult(afterValidation.map(_._1).valueOr(_ => Map.empty), finalParameterList, afterValidation.map(_._3), afterValidation.andThen(_._4))
     } else {
       val (typingInfo, validProcessObject) = createProcessObject[T](nodeDefinition, parameters,
         branchParameters, outputVar, ctx, None, Seq.empty)
@@ -377,7 +380,6 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
                                             branchParameters: List[BranchParameters], outputVar: Option[String])
                                            (implicit metaData: MetaData, nodeId: NodeId):
   PartialFunction[ObjectWithMethodDef, Validated[NonEmptyList[ProcessCompilationError], TransformationResult]] = {
-
     case nodeDefinition if nodeDefinition.obj.isInstanceOf[SingleInputGenericNodeTransformation[_]] && ctx.isLeft =>
       val transformer = nodeDefinition.obj.asInstanceOf[SingleInputGenericNodeTransformation[_]]
       nodeValidator.validateNode(transformer, parameters, branchParameters, outputVar)(ctx.left.get)
