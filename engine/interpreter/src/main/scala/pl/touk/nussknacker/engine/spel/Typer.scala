@@ -402,7 +402,7 @@ private[spel] object TypedNode {
 }
 
 private[spel] case class CollectedTypingResult(intermediateResults: Map[SpelNodeId, TypingResult], finalResult: TypingResult) {
-  def typingInfo: SpelExpressionTypingInfo = SpelExpressionTypingInfo(intermediateResults)
+  def typingInfo: SpelExpressionTypingInfo = SpelExpressionTypingInfo(intermediateResults, finalResult)
 }
 
 private[spel] object CollectedTypingResult {
@@ -416,4 +416,5 @@ private[spel] object CollectedTypingResult {
 
 }
 
-case class SpelExpressionTypingInfo(intermediateResults: Map[SpelNodeId, TypingResult]) extends ExpressionTypingInfo
+case class SpelExpressionTypingInfo(intermediateResults: Map[SpelNodeId, TypingResult],
+                                    typingResult: TypingResult) extends ExpressionTypingInfo

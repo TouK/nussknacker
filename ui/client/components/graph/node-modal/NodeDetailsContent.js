@@ -332,10 +332,11 @@ export class NodeDetailsContent extends React.Component {
             showValidation={showValidation}
             variableTypes={variableTypes}
             errors={fieldErrors}
-            expressionType={this.props.expressionType}
+            expressionType={ this.props.expressionType || this.props.nodeTypingInfo && {fields: this.props.nodeTypingInfo}}
           />
         )
       case "Variable":
+        const varExprType = this.props.expressionType || this.props.nodeTypingInfo[DEFAULT_EXPRESSION_ID]
         return (
           <Variable
             renderFieldLabel={this.renderFieldLabel}
@@ -346,7 +347,7 @@ export class NodeDetailsContent extends React.Component {
             showValidation={showValidation}
             variableTypes={variableTypes}
             errors={fieldErrors}
-            inferredVariableType={ProcessUtils.humanReadableType(this.props.expressionType)}
+            inferredVariableType={ProcessUtils.humanReadableType(varExprType)}
           />
         )
       case "Switch":
@@ -757,12 +758,13 @@ function mapState(state, props) {
   const findAvailableBranchVariables = ProcessUtils.findVariablesForBranches(mainProcess?.validationResult?.nodeResults)
   //see NodeDetailsModal - we pass own state in props.node, so we cannot just rely on props.node.id
   const originalNodeId = props.originalNodeId || props.node?.id
+  const nodeResult = mainProcess?.validationResult?.nodeResults?.[originalNodeId]
   return {
     additionalPropertiesConfig: processDefinitionData.additionalPropertiesConfig || {},
     processDefinitionData: processDefinitionData,
     processId: mainProcess.id,
     processProperties: mainProcess.properties,
-    variableTypes: mainProcess?.validationResult?.nodeResults?.[originalNodeId]?.variableTypes || {},
+    variableTypes: nodeResult?.variableTypes || {},
     findAvailableBranchVariables: findAvailableBranchVariables,
     findAvailableVariables: findAvailableVariables,
     originalNodeId: originalNodeId,
@@ -770,6 +772,7 @@ function mapState(state, props) {
     dynamicParameterDefinitions: state.nodeDetails.validationPerformed ? state.nodeDetails.parameters :
         state.graphReducer.processToDisplay?.validationResult?.nodeResults?.[originalNodeId]?.parameters,
     expressionType: state.nodeDetails.expressionType,
+    nodeTypingInfo: nodeResult?.typingInfo,
   }
 }
 
