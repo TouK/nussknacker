@@ -14,6 +14,7 @@ type HealthCheckProcessDeploymentType = {
 export type HealthCheckResponse = {
   state: string,
   error?: string,
+  processes?: string[],
 }
 
 export type FetchProcessQueryParams = Partial<{
@@ -79,9 +80,8 @@ class HttpService {
     return api.get("/app/healthCheck/process/deployment")
       .then(() => ({state: "ok"}))
       .catch((error) => {
-        const errorObj: HealthCheckProcessDeploymentType = error.response?.data
-        const errorMessage: string = errorObj?.processes ? `${errorObj.message}: ${errorObj.processes.join(",")}` : errorObj?.message
-        return {state: "error", error: errorMessage}
+        const {message, processes}: HealthCheckProcessDeploymentType = error.response?.data
+        return {state: "error", error: message, processes: processes}
       })
   }
 
