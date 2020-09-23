@@ -5,7 +5,7 @@ import java.util.Optional
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
-import pl.touk.nussknacker.engine.api.{AdditionalVariables, BranchParamName, LazyParameter, ParamName}
+import pl.touk.nussknacker.engine.api.{AdditionalVariables, BranchParamName, LazyParameter, ParamName, VariablesToHide}
 import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
 import pl.touk.nussknacker.engine.definition.parameter.validator.{ValidatorExtractorParameters, ValidatorsExtractor}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
@@ -31,7 +31,7 @@ object ParameterExtractor {
     val extractedEditor = EditorExtractor.extract(parameterData, parameterConfig)
     val validators = ValidatorsExtractor.extract(ValidatorExtractorParameters(parameterData,
       isScalaOptionParameter || isJavaOptionalParameter, parameterConfig))
-    Parameter(name, paramType, extractedEditor, validators, additionalVariables(p), branchParamName.isDefined,
+    Parameter(name, paramType, extractedEditor, validators, additionalVariables(p), variablesToHide(p), branchParamName.isDefined,
       isLazyParameter = isLazyParameter, scalaOptionParameter = isScalaOptionParameter, javaOptionalParameter = isJavaOptionalParameter)
   }
 
@@ -72,5 +72,11 @@ object ParameterExtractor {
       .map(_.value().map(additionalVariable =>
         additionalVariable.name() -> Typed(additionalVariable.clazz())).toMap
       ).getOrElse(Map.empty)
+
+
+  private def variablesToHide(p: java.lang.reflect.Parameter): Set[String] =
+    Option(p.getAnnotation(classOf[VariablesToHide]))
+      .map(_.value().toSet)
+      .getOrElse(Set.empty)
 
 }

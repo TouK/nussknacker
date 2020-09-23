@@ -164,7 +164,9 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
   private def enrichContext(ctx: ValidationContext,
                             definition: Parameter)
                            (implicit nodeId: NodeId) = {
-    definition.additionalVariables.foldLeft[ValidatedNel[PartSubGraphCompilationError, ValidationContext]](Valid(ctx)) {
+    val withoutVariablesToHide = ctx.copy(localVariables = ctx.localVariables
+      .filterKeys(variableName => !definition.variablesToHide.contains(variableName)))
+    definition.additionalVariables.foldLeft[ValidatedNel[PartSubGraphCompilationError, ValidationContext]](Valid(withoutVariablesToHide)) {
       case (acc, (name, typingResult)) => acc.andThen(_.withVariable(name, typingResult))
     }
   }

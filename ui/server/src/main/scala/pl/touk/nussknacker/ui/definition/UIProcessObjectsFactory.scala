@@ -119,6 +119,7 @@ object UIProcessObjectsFactory {
       editor = EditorExtractor.extract(parameterData, config),
       validators = ValidatorsExtractor.extract(ValidatorExtractorParameters(parameterData, isOptional = true, config)),
       additionalVariables = Map.empty,
+      variablesToHide = Set.empty,
       branchParam = false,
       isLazyParameter = false,
       scalaOptionParameter = false,
@@ -158,6 +159,7 @@ object UIProcessObjectsFactory {
       editor = parameter.editor.getOrElse(RawParameterEditor),
       validators = parameter.validators,
       additionalVariables = parameter.additionalVariables,
+      variablesToHide = parameter.variablesToHide,
       branchParam = parameter.branchParam
     )
   }

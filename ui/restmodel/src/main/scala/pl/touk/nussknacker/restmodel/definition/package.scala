@@ -41,6 +41,7 @@ package object definition {
                                                        editor: ParameterEditor,
                                                        validators: List[ParameterValidator],
                                                        additionalVariables: Map[String, TypingResult],
+                                                       variablesToHide: Set[String],
                                                        branchParam: Boolean) {
 
     def isOptional: Boolean = !validators.contains(MandatoryParameterValidator)

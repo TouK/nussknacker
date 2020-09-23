@@ -79,6 +79,12 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       )), emptyQueryNamesData()),
       "withCustomValidatorParam" -> (ObjectDefinition.withParams(List(
         Parameter[String]("param").copy(validators = List(CustomParameterValidatorDelegate("test_custom_validator")))
+      )), emptyQueryNamesData()),
+      "withAdditionalVariable" -> (ObjectDefinition.withParams(List(
+        Parameter[String]("param").copy(additionalVariables = Map("additional" -> Typed[Int]), isLazyParameter = true)
+      )), emptyQueryNamesData()),
+      "withVariablesToHide" -> (ObjectDefinition.withParams(List(
+        Parameter[String]("param").copy(variablesToHide = Set("input"), isLazyParameter = true)
       )), emptyQueryNamesData())
     ),
     Map.empty,
@@ -1092,6 +1098,37 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       )) =>
     }
   }
+
+  test ("use additional variables in expressions") {
+    val processWithValidExpression =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .customNode("customNodeId", "event", "withAdditionalVariable", "param" -> "#additional.toString")
+        .emptySink("emptySink", "sink")
+
+    validate(processWithValidExpression, baseDefinition).result should matchPattern {
+      case Valid(_) =>
+    }
+  }
+
+  test ("hide variables in expression") {
+    val processWithValidExpression =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .customNode("customNodeId", "event", "withVariablesToHide", "param" -> "#input.toString")
+        .emptySink("emptySink", "sink")
+
+    validate(processWithValidExpression, baseDefinition).result should matchPattern {
+      case Invalid(NonEmptyList(
+      ExpressionParseError("Unresolved reference 'input'", "customNodeId", Some("param"), _),
+      Nil)) =>
+    }
+  }
+
   private def validate(process: EspProcess, definitions: ProcessDefinition[ObjectDefinition]): CompilationResult[Unit] = {
     validateWithDef(process, ProcessDefinitionBuilder.withEmptyObjects(definitions))
   }

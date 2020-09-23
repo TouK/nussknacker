@@ -49,7 +49,7 @@ object Parameter {
     Parameter(name, typ, validators = List(MandatoryParameterValidator))
 
   def apply(name: String, typ: TypingResult, validators: List[ParameterValidator]): Parameter =
-    Parameter(name, typ, editor = None, validators = validators, additionalVariables = Map.empty,
+    Parameter(name, typ, editor = None, validators = validators, additionalVariables = Map.empty, variablesToHide = Set.empty,
       branchParam = false, isLazyParameter = false, scalaOptionParameter = false, javaOptionalParameter = false)
 
   @deprecated("Passing runtimeClass to Parameter.apply is deprecated in favor of passing isLazyParameter", "0.1.0")
@@ -59,9 +59,10 @@ object Parameter {
             editor: Option[ParameterEditor],
             validators: List[ParameterValidator],
             additionalVariables: Map[String, TypingResult],
+            variablesToHide: Set[String],
             branchParam: Boolean): Parameter = {
     val isLazyParameter = classOf[LazyParameter[_]].isAssignableFrom(runtimeClass)
-    Parameter(name, typ, editor, validators, additionalVariables, branchParam, isLazyParameter,
+    Parameter(name, typ, editor, validators, additionalVariables, variablesToHide, branchParam, isLazyParameter,
       scalaOptionParameter = false, javaOptionalParameter = false)
   }
 
@@ -71,7 +72,7 @@ object Parameter {
   // Represents optional parameter annotated with @Nullable, if you want to emulate scala Option or java Optional,
   // you should redefine scalaOptionParameter and javaOptionalParameter
   def optional(name: String, typ: TypingResult): Parameter =
-    Parameter(name, typ, editor = None, validators = List.empty, additionalVariables = Map.empty,
+    Parameter(name, typ, editor = None, validators = List.empty, additionalVariables = Map.empty, variablesToHide = Set.empty,
       branchParam = false, isLazyParameter = false, scalaOptionParameter = false, javaOptionalParameter = false)
 
 }
@@ -88,6 +89,7 @@ case class Parameter(name: String,
                      editor: Option[ParameterEditor],
                      validators: List[ParameterValidator],
                      additionalVariables: Map[String, TypingResult],
+                     variablesToHide: Set[String],
                      branchParam: Boolean,
                      isLazyParameter: Boolean,
                      scalaOptionParameter: Boolean,
