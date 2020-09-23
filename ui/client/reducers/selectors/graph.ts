@@ -38,7 +38,11 @@ export const isSaveDisabled = createSelector(
 )
 export const isDeployPossible = createSelector(
   [isSaveDisabled, hasError, getFetchedProcessState, isSubprocess],
-  (disabled, error, state, subprocess) => !subprocess && disabled && !error && ProcessStateUtils.canDeploy(state),
+  (saveDisabled, error, state, subprocess) => !subprocess && saveDisabled && !error && ProcessStateUtils.canDeploy(state),
+)
+export const isMigrationPossible = createSelector(
+  [isSaveDisabled, hasError, getFetchedProcessState],
+  (saveDisabled, error, state) => saveDisabled && !error && ProcessStateUtils.canDeploy(state),
 )
 export const isCancelPossible = createSelector(getFetchedProcessState, state => ProcessStateUtils.canCancel(state))
 export const getTestCapabilities = createSelector(getGraph, g => g.testCapabilities || {})
