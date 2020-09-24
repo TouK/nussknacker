@@ -59,6 +59,8 @@ object Parameter {
             editor: Option[ParameterEditor],
             validators: List[ParameterValidator],
             additionalVariables: Map[String, TypingResult],
+            // TODO: It is rather temporary solution. At the end it would be nice, to have context before parameter returned in
+            //       REST validation api instead of context before node.
             variablesToHide: Set[String],
             branchParam: Boolean): Parameter = {
     val isLazyParameter = classOf[LazyParameter[_]].isAssignableFrom(runtimeClass)
