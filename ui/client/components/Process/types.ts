@@ -17,6 +17,8 @@ export enum StatusName {
   NotDeployed = "NOT_DEPLOYED",
 }
 
+export type ProcessVersionId = number
+
 export type ProcessActionType = {
   performedAt: Date,
   user: string,
@@ -24,16 +26,15 @@ export type ProcessActionType = {
   commentId?: number,
   comment?: string,
   buildInfo?: UnknownRecord,
+  processVersionId: ProcessVersionId,
 }
-
-type ProcessHistoryEntry = $TodoType
 
 export type ProcessVersionType = {
   createDate: Date,
   user: string,
   actions: Array<ProcessActionType>,
   modelVersion: number,
-  processVersionId: number,
+  processVersionId: ProcessVersionId,
 }
 
 export interface ProcessType {
@@ -52,7 +53,7 @@ export interface ProcessType {
   lastAction?: ProcessActionType,
   lastDeployedAction?: ProcessActionType,
   state: ProcessStateType,
-  history?: ProcessHistoryEntry[],
+  history?: ProcessVersionType[],
 }
 
 export type ProcessStateType = {
