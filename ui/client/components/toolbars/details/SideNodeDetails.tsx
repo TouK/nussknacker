@@ -44,7 +44,6 @@ function flattenObject(obj): Obj[] {
 
 function SideNodeDetails(props) {
   const flatten = flattenObject(props.nodeToDisplay)
-  console.log(props.nodeToDisplay, flatten)
   return (
     <div className={styles.sideNodeDetails}>
       {flatten.map(({isSeparator, key, value}, index) => isSeparator ?
