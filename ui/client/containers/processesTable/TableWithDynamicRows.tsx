@@ -1,26 +1,26 @@
 import React, {Children, useMemo} from "react"
 import {TableComponentProperties} from "reactable"
-import {CountRowsToFill} from "./CountRowsToFill"
+import {FillCheck} from "./FillCheck"
 import {TableItemsCount} from "./TableItemsCount"
 import {TableElementsSelectors, TableWithDefaults} from "./TableWithDefaults"
-import {useRowsPerPageState} from "./useRowsPerPage"
+import {useRowsOnCurrentPage, useRowsPerPageState} from "./useRowsPerPage"
 
 export function TableWithDynamicRows(props: TableComponentProperties): JSX.Element {
   const {children, currentPage = 0} = props
-  const allRowsCount = useMemo(() => Children.count(children), [children])
-  const [rowsPerPage, rowsOnCurrentPage, setRowsPerPage] = useRowsPerPageState(allRowsCount, currentPage)
-  const itemsPerPage = rowsOnCurrentPage === allRowsCount ? 0 : rowsPerPage
+  const totalRows = useMemo(() => Children.count(children), [children])
+  const [rowsPerPage, calcRowsPerPage] = useRowsPerPageState(currentPage, totalRows)
+  const [rowsOnCurrentPage] = useRowsOnCurrentPage(totalRows, rowsPerPage, currentPage)
+  const itemsPerPage = useMemo(() => rowsOnCurrentPage >= totalRows ? 0 : rowsPerPage, [rowsOnCurrentPage, rowsPerPage, totalRows])
 
   return (
-    <CountRowsToFill items={rowsOnCurrentPage} onChange={setRowsPerPage}>
+    <FillCheck onChange={calcRowsPerPage}>
       <TableWithDefaults
         {...props}
         itemsPerPage={itemsPerPage}
         extensions={{
-          [TableElementsSelectors.pagination]: <TableItemsCount rows={itemsPerPage} page={currentPage} items={allRowsCount}/>,
+          [TableElementsSelectors.pagination]: <TableItemsCount rows={rowsPerPage} page={currentPage} total={totalRows}/>,
         }}
       />
-    </CountRowsToFill>
+    </FillCheck>
   )
 }
-

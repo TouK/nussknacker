@@ -1,15 +1,19 @@
 import {PropsWithChildren, useEffect} from "react"
 
-export function useInterval(action: () => void, ms: number) {
-  useEffect(() => { action() }, [action])
+export function useInterval(action: () => void, {refreshTime, ignoreFirst}: {refreshTime: number, ignoreFirst?: boolean}): void {
   useEffect(() => {
-    const interval = setInterval(() => action(), ms)
+    if (!ignoreFirst) {
+      action()
+    }
+  }, [ignoreFirst, action])
+  useEffect(() => {
+    const interval = setInterval(() => action(), refreshTime)
     return () => clearInterval(interval)
-  }, [ms, action])
+  }, [refreshTime, action])
 }
 
-export function Interval(props: PropsWithChildren<{time: number, action: () => void}>) {
-  useInterval(props.action, props.time)
+export function Interval(props: PropsWithChildren<{time: number, action: () => void}>): typeof props.children {
+  useInterval(props.action, {refreshTime: props.time})
   return props.children
 }
 

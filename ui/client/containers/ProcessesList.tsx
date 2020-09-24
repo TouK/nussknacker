@@ -46,7 +46,7 @@ export type RowsRenderer = (props: RowRendererProps) => JSX.Element[]
 
 function useIntervalRefresh(getProcesses: () => Promise<void>) {
   const refreshTime = useSelector(getBaseIntervalTime)
-  useInterval(getProcesses, refreshTime)
+  useInterval(getProcesses, {refreshTime})
 }
 
 function useFilteredProcesses(filters: FiltersState & Queries) {

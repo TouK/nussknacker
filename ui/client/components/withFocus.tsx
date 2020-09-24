@@ -11,16 +11,20 @@ import React, {
 } from "react"
 import {useNkTheme} from "../containers/theme"
 
-const inputWithFocus = ({className, ...props}: DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>, ref) => {
+export const InputWithFocus = forwardRef(function InputWithFocus(
+  {className, ...props}: DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>,
+  ref: React.Ref<HTMLInputElement>,
+): JSX.Element {
   const {withFocus} = useNkTheme()
   return (
     <input ref={ref} {...props} className={cx(withFocus, className)}/>
   )
-}
+})
 
-export const InputWithFocus = forwardRef(inputWithFocus)
-
-export function TextAreaWithFocus({className, ...props}: DetailedHTMLProps<TextareaHTMLAttributes<HTMLTextAreaElement>, HTMLTextAreaElement>) {
+export function TextAreaWithFocus({
+  className,
+  ...props
+}: DetailedHTMLProps<TextareaHTMLAttributes<HTMLTextAreaElement>, HTMLTextAreaElement>): JSX.Element {
   const {withFocus} = useNkTheme()
   return (
     <textarea {...props} className={cx(withFocus, className)}/>
@@ -28,32 +32,34 @@ export function TextAreaWithFocus({className, ...props}: DetailedHTMLProps<Texta
 }
 
 export type ButtonProps = DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement>
-export function ButtonWithFocus({className, ...props}: ButtonProps) {
+
+export function ButtonWithFocus({className, ...props}: ButtonProps): JSX.Element {
   const {withFocus} = useNkTheme()
   return (
     <button {...props} className={cx(withFocus, className)}/>
   )
 }
 
-export function SelectWithFocus({className, ...props}: DetailedHTMLProps<SelectHTMLAttributes<HTMLSelectElement>, HTMLSelectElement>) {
+export function SelectWithFocus({className, ...props}: DetailedHTMLProps<SelectHTMLAttributes<HTMLSelectElement>, HTMLSelectElement>): JSX.Element {
   const {withFocus} = useNkTheme()
   return (
     <select {...props} className={cx(withFocus, className)}/>
   )
 }
 
-export function AWithFocus({className, ...props}: DetailedHTMLProps<AnchorHTMLAttributes<HTMLAnchorElement>, HTMLAnchorElement>) {
+export function AWithFocus({className, ...props}: DetailedHTMLProps<AnchorHTMLAttributes<HTMLAnchorElement>, HTMLAnchorElement>): JSX.Element {
   const {withFocus} = useNkTheme()
   return (
     <a {...props} className={cx(withFocus, className)}/>
   )
 }
 
-function focusOutline({className, ...props}: DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, ref) {
+export const FocusOutline = forwardRef(function FocusOutline({
+  className,
+  ...props
+}: DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, ref: React.Ref<HTMLDivElement>): JSX.Element {
   const {withFocus} = useNkTheme()
   return (
     <div ref={ref} {...props} className={cx(withFocus, className)}/>
   )
-}
-
-export const FocusOutline = forwardRef(focusOutline)
+})
