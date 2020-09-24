@@ -100,9 +100,17 @@ describe("process available variables finder", () => {
       "someVariableName": {refClazzName:"java.lang.Object"}
     })
   })
+
+  it("hide variables in parameter if defined", () => {
+    const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, "Category1", processWithVariableTypes)("aggregateId", paramWithVariablesToHide)
+
+    expect(availableVariables).toEqual({})
+  })
 })
 
 const paramWithAdditionalVariables = {name: "withAdditional", additionalVariables: {"additional1": { "refClazzName": "java.lang.String"}}}
+
+const paramWithVariablesToHide = {name: "withVariablesToHide", variablesToHide: ["input", "date", "parsedTransaction", "processVariables", "someVariableName"]}
 
 const processDefinition = {
   "services" : { "transactionParser": { "parameters": [], "returnType": { "refClazzName": "org.nussknacker.model.Transaction"}, "categories": ["Category1"]},},
@@ -111,7 +119,8 @@ const processDefinition = {
   "customStreamTransformers" : {
     "transactionAggregator" : {
       "parameters": [
-        paramWithAdditionalVariables
+        paramWithAdditionalVariables,
+        paramWithVariablesToHide
       ],
       "returnType": {"refClazzName": "java.lang.String"}, "categories": [ "Category12"]}},
   "exceptionHandlerFactory" : { "parameters" : [ { "name": "errorsTopic", "typ": { "refClazzName": "java.lang.String"}}], "returnType" : { "refClazzName": "org.nussknacker.process.espExceptionHandlerFactory"}, "categories" : []},
