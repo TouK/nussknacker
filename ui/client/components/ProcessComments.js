@@ -7,6 +7,7 @@ import CommentContent from "./CommentContent"
 import CommentInput from "./CommentInput"
 import Date from "./common/Date"
 import {NkButton} from "./NkButton"
+import {ListSeparator} from "./toolbars/details/ListSeparator"
 
 class ProcessComments extends React.Component {
 
@@ -59,8 +60,8 @@ class ProcessComments extends React.Component {
                   )}
                 </div>
                 <CommentContent content={comment.content} commentSettings={this.props.commentSettings}/>
-                {this.lastComment(idx) ? null : (
-                  <hr className="comment-under-line list-separator"/>
+                {!this.lastComment(idx) && (
+                  <ListSeparator/>
                 )}
               </div>
             )
