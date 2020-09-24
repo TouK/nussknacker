@@ -1,7 +1,9 @@
-import React from "react"
+import {css, cx} from "emotion"
+import React, {useMemo} from "react"
 import {useTranslation} from "react-i18next"
 import styles from "../stylesheets/processHistory.styl"
 import Date from "./common/Date"
+import {ReactComponent as Badge} from "./deployed.svg"
 import {ActionType, ProcessVersionType} from "./Process/types"
 
 type HistoryItemProps = {
@@ -29,6 +31,11 @@ const mapVersionToClassName = (v: VersionType): string => {
   }
 }
 
+const HDate = ({date}: {date: Date}) => <small><i><Date date={date}/></i></small>
+
+const flex = css({display: "flex", justifyContent: "space-between", alignItems: "flex-start"})
+const badgeStyles = css({height: "1.2em", margin: "0 1.2em"})
+
 export function HistoryItem({
   onClick,
   version,
@@ -37,27 +44,27 @@ export function HistoryItem({
   isDeployed,
 }: HistoryItemProps): JSX.Element {
   const {t} = useTranslation()
-  const className = mapVersionToClassName(type)
+  const {user, createDate, processVersionId, actions} = version
+  const className = useMemo(() => mapVersionToClassName(type), [type])
+
   return (
-    <li className={className} onClick={() => onClick(version)}>
-      {`v${version.processVersionId}`} | {version.user}
-      {isLatest && !isDeployed && (
-        <small><span
-          title={t("processHistory.lastVersionIsNotDeployed", "Last version is not deployed")}
-          className="glyphicon glyphicon-warning-sign"
-        /></small>
-      )}
-      <br/>
-      <small><i><Date date={version.createDate}/></i></small>
-      <br/>
-      {isDeployed && (
-        <small>
-          <i><Date date={version.actions.find(a => a.action === ActionType.Deploy)?.performedAt}/></i>
-          <span className="label label-info">
-            {t("processHistory.lastDeployed", "Last deployed")}
-          </span>
-        </small>
-      )}
+    <li className={cx(className, flex)} onClick={() => onClick(version)}>
+      <div>
+        {`v${processVersionId}`} | {user}
+        {isLatest && !isDeployed && (
+          <small>
+            <span
+              title={t("processHistory.lastVersionIsNotDeployed", "Last version is not deployed")}
+              className="glyphicon glyphicon-warning-sign"
+            />
+          </small>
+        )}
+        <br/>
+        <HDate date={createDate}/>
+        <br/>
+        {isDeployed && <HDate date={actions.find(a => a.action === ActionType.Deploy)?.performedAt}/>}
+      </div>
+      {isDeployed && <Badge className={badgeStyles}/>}
     </li>
   )
 }
