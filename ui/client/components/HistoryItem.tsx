@@ -33,9 +33,6 @@ const mapVersionToClassName = (v: VersionType): string => {
 
 const HDate = ({date}: {date: Date}) => <small><i><Date date={date}/></i></small>
 
-const flex = css({display: "flex", justifyContent: "space-between", alignItems: "flex-start"})
-const badgeStyles = css({height: "1.2em", margin: "0 1.2em"})
-
 export function HistoryItem({
   onClick,
   version,
@@ -47,6 +44,8 @@ export function HistoryItem({
   const {user, createDate, processVersionId, actions} = version
   const className = useMemo(() => mapVersionToClassName(type), [type])
 
+  const flex = css({display: "flex", justifyContent: "space-between", alignItems: "flex-start"})
+  const badgeStyles = css({height: "1.2em", margin: "0 1.2em"})
   return (
     <li className={cx(className, flex)} onClick={() => onClick(version)}>
       <div>
