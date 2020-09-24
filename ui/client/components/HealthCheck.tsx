@@ -1,9 +1,11 @@
 import {css} from "emotion"
-import React, {useCallback, useState} from "react"
+import React, {PropsWithChildren, useCallback, useEffect, useState} from "react"
 import {hot} from "react-hot-loader"
 import {useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"
-import {ReactComponent as Icon} from "../assets/icons/tipsWarning.svg"
+import {Transition} from "react-transition-group"
+import {ReactComponent as TipsWarningIcon} from "../assets/icons/tipsWarning.svg"
+import {useSize} from "../containers/hooks/useSize"
 import {useInterval} from "../containers/Interval"
 import {ProcessLink} from "../containers/processLink"
 import {NkTheme, useNkTheme} from "../containers/theme"
@@ -14,117 +16,6 @@ const STATE_OK = "ok"
 
 const getIconSize = (theme: NkTheme) => theme.spacing.controlHeight / 2
 const getBackground = (theme: NkTheme) => theme.colors.primaryBackground
-
-const getTextStyles = (theme: NkTheme) => (expanded: boolean) => {
-  const iconSize = getIconSize(theme)
-  return css({
-    display: "flex",
-    flexWrap: "wrap",
-    alignItems: "center",
-    flex: 1,
-    paddingTop: iconSize / 2,
-    paddingBottom: iconSize / 2,
-    minHeight: iconSize,
-    overflow: "hidden",
-    maxHeight: expanded ? "50vh" : iconSize * 2 + 2,
-    whiteSpace: !expanded ? "nowrap" : "normal",
-  })
-}
-
-const getButtonStyles = (theme: NkTheme) => {
-  const iconSize = getIconSize(theme)
-  return css({
-    flexShrink: 0,
-    height: iconSize * 2,
-    background: "none",
-    border: 0,
-    fontWeight: "bold",
-    textTransform: "uppercase",
-  })
-}
-
-const getIconStyles = (theme: NkTheme) => {
-  const iconSize = getIconSize(theme)
-  const color = getBackground(theme)
-  return css({
-    margin: iconSize / 2,
-    flexShrink: 0,
-    path: {
-      fill: color,
-    },
-    width: iconSize,
-    height: iconSize,
-  })
-}
-
-const getContainerStyles = (theme: NkTheme) => {
-  const iconSize = getIconSize(theme)
-  const color = getBackground(theme)
-  const backgroundColor = theme.colors.warning
-  return css({
-    display: "flex",
-    alignItems: "flex-start",
-    borderStyle: "solid",
-    borderWidth: 1,
-    color,
-    backgroundColor,
-    borderRadius: theme.borderRadius,
-    marginTop: iconSize,
-    marginBottom: iconSize * 2,
-    padding: theme.spacing.baseUnit / 2,
-    fontSize: theme.fontSize,
-  })
-}
-
-const Container = ({children}) => {
-  const {t} = useTranslation()
-  const title = t("healthCheck.warning", "Warning")
-  const {theme} = useNkTheme()
-  const containerStyles = getContainerStyles(theme)
-  return (
-    <div className={containerStyles} title={title}>{children}</div>
-  )
-}
-
-const Ico = () => {
-  const {theme} = useNkTheme()
-  const iconStyles = getIconStyles(theme)
-  return (
-    <Icon className={iconStyles}/>
-  )
-}
-
-const Button = ({expanded, setExpanded}) => {
-  const {theme} = useNkTheme()
-  const buttonStyles = getButtonStyles(theme)
-  return (
-    <button className={buttonStyles} onClick={() => setExpanded(!expanded)}>toggle</button>
-  )
-}
-
-const Content = ({expanded, data}: {expanded: boolean, data: Omit<HealthCheckResponse, "state">}) => {
-  const {theme} = useNkTheme()
-  const textStyles = getTextStyles(theme)
-  const {t} = useTranslation()
-
-  return (
-    <div className={textStyles(expanded)}>
-      <span className={css({overflow: "hidden", textOverflow: "ellipsis"})}>
-        {data.error || t("healthCheck.unknownState", "State unknown")}
-        {": "}
-        {[
-          ...data.processes, ...data.processes, ...data.processes, ...data.processes, ...data.processes, ...data.processes,
-          ...data.processes, ...data.processes,
-        ]?.map((name, index) => (
-          <React.Fragment key={name}>
-            {index !== 0 && ", "}
-            <ProcessItem name={name}/>
-          </React.Fragment>
-        ))}
-      </span>
-    </div>
-  )
-}
 
 const ProcessItem = ({name}: {name: string}) => {
   const {theme} = useNkTheme()
@@ -139,8 +30,88 @@ const ProcessItem = ({name}: {name: string}) => {
   )
 }
 
-function HealthCheck(): JSX.Element {
+function Content({data}: {data: Omit<HealthCheckResponse, "state">}) {
+  const {t} = useTranslation()
+  return (
+    <span>
+      {data.error || t("healthCheck.unknownState", "State unknown")}
+      {": "}
+      {data.processes?.map((name, index) => (
+        <React.Fragment key={name + index}>
+          {index !== 0 && ", "}
+          <ProcessItem name={name}/>
+        </React.Fragment>
+      ))}
+    </span>
+  )
+}
+
+function Collipsable({iconSize, children}: PropsWithChildren<{iconSize: number}>) {
   const [expanded, setExpanded] = useState<boolean>(false)
+  useEffect(
+    () => {
+      if (expanded) {
+        const timeout = setTimeout(() => setExpanded(e => !e), 5000)
+        return () => clearTimeout(timeout)
+      }
+    },
+    [expanded],
+  )
+  const {ref} = useSize<HTMLDivElement>()
+  const isOverflow = expanded || ref.current?.offsetWidth < ref.current?.scrollWidth
+  const {t} = useTranslation()
+  return (
+    <Transition in={expanded} timeout={500}>
+      {state => (
+        <>
+          <div
+            className={css({
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              flex: 1,
+              overflow: "hidden",
+              minHeight: iconSize * 2,
+              maxHeight: state === "entering" || state === "entered" ? "60vh" : iconSize * 2,
+              whiteSpace: state === "exited" ? "nowrap" : "normal",
+              transition: "all .25s ease-in-out",
+            })}
+          >
+            <div
+              ref={ref}
+              className={css({
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                paddingTop: iconSize / 2,
+                paddingBottom: iconSize / 2,
+                paddingRight: iconSize,
+              })}
+            >
+              {children}
+            </div>
+          </div>
+          {(isOverflow || state !== "exited") && (
+            <button
+              className={css({
+                flexShrink: 0,
+                background: "none",
+                border: 0,
+                fontWeight: "bold",
+                textTransform: "uppercase",
+                height: iconSize * 2,
+              })}
+              onClick={() => setExpanded(expanded => !expanded)}
+            >
+              {expanded ? t("healthCheck.hide", "hide") : t("healthCheck.show", "show all")}
+            </button>
+          )}
+        </>
+      )}
+    </Transition>
+  )
+}
+
+function HealthCheck(): JSX.Element {
   const [{state, ...data}, setState] = useState<HealthCheckResponse>({state: STATE_OK})
   const updateState = useCallback(async () => {
     setState(await HttpService.fetchHealthCheckProcessDeployment())
@@ -148,13 +119,42 @@ function HealthCheck(): JSX.Element {
   const refreshTime = useSelector(getHealthcheckIntervalTime)
   useInterval(updateState, {refreshTime, ignoreFirst: false})
 
+  const {t} = useTranslation()
+  const {theme} = useNkTheme()
+  const iconSize = getIconSize(theme)
+  const background = getBackground(theme)
   if (state === STATE_OK) return null
   return (
-    <Container>
-      <Ico/>
-      <Content expanded={expanded} data={data}/>
-      <Button expanded={expanded} setExpanded={setExpanded}/>
-    </Container>
+    <div
+      className={css({
+        display: "flex",
+        alignItems: "flex-start",
+        borderStyle: "solid",
+        borderWidth: 1,
+        color: background,
+        backgroundColor: theme.colors.warning,
+        borderRadius: theme.borderRadius,
+        marginTop: iconSize,
+        marginBottom: iconSize * 2,
+        fontSize: theme.fontSize,
+      })}
+      title={t("healthCheck.warning", "Warning")}
+    >
+      <TipsWarningIcon
+        className={css({
+          margin: iconSize / 2,
+          flexShrink: 0,
+          path: {
+            fill: background,
+          },
+          width: iconSize,
+          height: iconSize,
+        })}
+      />
+      <Collipsable iconSize={iconSize}>
+        <Content data={data}/>
+      </Collipsable>
+    </div>
   )
 }
 
