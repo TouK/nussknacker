@@ -9,10 +9,8 @@ import {useSize} from "../containers/hooks/useSize"
 import {useInterval} from "../containers/Interval"
 import {ProcessLink} from "../containers/processLink"
 import {NkTheme, useNkTheme} from "../containers/theme"
-import HttpService, {HealthCheckResponse} from "../http/HttpService"
+import HttpService, {HealthCheckResponse, HealthState} from "../http/HttpService"
 import {getHealthcheckIntervalTime} from "../reducers/selectors/settings"
-
-const STATE_OK = "ok"
 
 const getIconSize = (theme: NkTheme) => theme.spacing.controlHeight / 2
 const getBackground = (theme: NkTheme) => theme.colors.primaryBackground
@@ -112,7 +110,7 @@ function Collipsable({iconSize, children}: PropsWithChildren<{iconSize: number}>
 }
 
 function HealthCheck(): JSX.Element {
-  const [{state, ...data}, setState] = useState<HealthCheckResponse>({state: STATE_OK})
+  const [{state, ...data}, setState] = useState<HealthCheckResponse>({state: HealthState.ok})
   const updateState = useCallback(async () => {
     setState(await HttpService.fetchHealthCheckProcessDeployment())
   }, [])
@@ -123,7 +121,7 @@ function HealthCheck(): JSX.Element {
   const {theme} = useNkTheme()
   const iconSize = getIconSize(theme)
   const background = getBackground(theme)
-  if (state === STATE_OK) return null
+  if (state === HealthState.ok) return null
   return (
     <div
       className={css({
