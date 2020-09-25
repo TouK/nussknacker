@@ -130,7 +130,7 @@ function HealthCheck(): JSX.Element {
         borderStyle: "solid",
         borderWidth: 1,
         color: background,
-        backgroundColor: theme.colors.warning,
+        backgroundColor: theme.colors.error,
         borderRadius: theme.borderRadius,
         marginTop: iconSize,
         marginBottom: iconSize * 2,
