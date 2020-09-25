@@ -4,6 +4,7 @@ import {useDispatch, useSelector} from "react-redux"
 import {fetchProcessToDisplay, toggleConfirmDialog} from "../actions/nk"
 import {unsavedProcessChanges} from "../common/DialogMessages"
 import {getFetchedProcessDetails, isBusinessView, isSaveDisabled} from "../reducers/selectors/graph"
+import {getCapabilities} from "../reducers/selectors/other"
 import styles from "../stylesheets/processHistory.styl"
 import {HistoryItem, VersionType} from "./HistoryItem"
 import {ProcessVersionType} from "./Process/types"
@@ -12,6 +13,7 @@ export function ProcessHistoryComponent(): JSX.Element {
   const process = useSelector(getFetchedProcessDetails)
   const nothingToSave = useSelector(isSaveDisabled)
   const businessView = useSelector(isBusinessView)
+  const capabilities = useSelector(getCapabilities)
   const [selectedVersion, selectVersion] = useState<ProcessVersionType>()
   const {history = [], lastDeployedAction} = process
   const dispatch = useDispatch()
@@ -22,7 +24,7 @@ export function ProcessHistoryComponent(): JSX.Element {
   }, [process, businessView])
 
   const changeVersion = useCallback(
-    (version: ProcessVersionType) => !nothingToSave ?
+    (version: ProcessVersionType) => capabilities.write && !nothingToSave ?
       dispatch(toggleConfirmDialog(true, unsavedProcessChanges(), () => doChangeVersion(version), "DISCARD", "NO", null)) :
       doChangeVersion(version),
     [doChangeVersion, nothingToSave],

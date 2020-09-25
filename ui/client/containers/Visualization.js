@@ -293,7 +293,7 @@ class Visualization extends React.Component {
     return (
       <div className={"Page graphPage"}>
         <RouteLeavingGuard
-          when={!this.props.nothingToSave}
+          when={this.props.capabilities.write && !this.props.nothingToSave}
           navigate={path => this.props.history.push(path)}
         />
 
