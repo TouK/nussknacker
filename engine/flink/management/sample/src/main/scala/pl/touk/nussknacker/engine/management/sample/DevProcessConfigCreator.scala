@@ -130,7 +130,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "simpleTypesCustomNode" -> categories(new SimpleTypesCustomStreamTransformer).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types"))),
     "lastVariableWithFilter" -> all(LastVariableFilterTransformer),
     "enrichWithAdditionalData" -> all(EnrichWithAdditionalDataTransformer),
-    "sendCommunication" -> all(DynamicParametersTransformer)
+    "sendCommunication" -> all(DynamicParametersTransformer),
+    "hideVariables" -> all(HidingVariablesTransformer)
   )
 
   override def signals(processObjectDependencies: ProcessObjectDependencies) = Map(

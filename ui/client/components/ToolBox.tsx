@@ -1,18 +1,18 @@
+import cn from "classnames"
 import React, {useMemo} from "react"
-import {useSelector, useDispatch} from "react-redux"
+import {useDispatch, useSelector} from "react-redux"
 
 import TreeView from "react-treeview"
-import * as ProcessDefitionUtils from "../common/ProcessDefinitionUtils"
 
 import "react-treeview/react-treeview.css"
+import {toggleToolboxGroup} from "../actions/nk/toolbars"
+import * as ProcessDefitionUtils from "../common/ProcessDefinitionUtils"
+import {getProcessCategory} from "../reducers/selectors/graph"
+import {getProcessDefinitionData} from "../reducers/selectors/settings"
+import {getOpenedNodeGroups} from "../reducers/selectors/toolbars"
 import "../stylesheets/toolBox.styl"
 
-import Tool, {useToolIcon} from "./Tool"
-import {getProcessDefinitionData} from "../reducers/selectors/settings"
-import {getProcessCategory} from "../reducers/selectors/graph"
-import {toggleToolboxGroup} from "../actions/nk/toolbars"
-import {getOpenedNodeGroups} from "../reducers/selectors/toolbars"
-import cn from "classnames"
+import Tool from "./Tool"
 
 export default function ToolBox() {
   const dispatch = useDispatch()
@@ -48,17 +48,13 @@ export default function ToolBox() {
               collapsed={!openedNodeGroups[nodeGroup.name]}
               onClick={() => toggleGroup(nodeGroup)}
             >
-              {nodeGroup.possibleNodes.map(node => {
-                const icon = useToolIcon(node)
-                return (
-                  <Tool
-                    nodeModel={node.node}
-                    label={node.label}
-                    key={node.type + node.label}
-                    icon={icon}
-                  />
-                )
-              })}
+              {nodeGroup.possibleNodes.map(node => (
+                <Tool
+                  nodeModel={node.node}
+                  label={node.label}
+                  key={node.type + node.label}
+                />
+              ))}
             </TreeView>
           )
         })}

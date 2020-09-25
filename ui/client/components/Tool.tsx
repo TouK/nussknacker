@@ -15,11 +15,11 @@ export const DndTypes = {
 type OwnProps = {
   nodeModel: NodeType,
   label: string,
-  icon: string,
 }
 
-export default function Tool(props: OwnProps) {
-  const {label, nodeModel, icon} = props
+export default function Tool(props: OwnProps): JSX.Element {
+  const {label, nodeModel} = props
+  const icon = useToolIcon(nodeModel)
   const [collectedProps, drag] = useDrag({
     item: {...cloneDeep(nodeModel), id: label, type: DndTypes.ELEMENT},
     begin: () => ({...cloneDeep(nodeModel), id: label}),
@@ -37,13 +37,13 @@ export default function Tool(props: OwnProps) {
 
 const preloadImage = memoize((href: string) => new Image().src = href)
 
-export function useToolIcon(node: PossibleNode) {
+export function useToolIcon(node: NodeType) {
   const processDefinitionData = useSelector(getProcessDefinitionData)
   const iconSrc = useMemo(
     () => {
       const nodesSettings = processDefinitionData.nodesConfig || {}
-      const iconFromConfig = (nodesSettings[ProcessUtils.findNodeConfigName(node.node)] || {}).icon
-      const defaultIconName = `${node.node.type}.svg`
+      const iconFromConfig = (nodesSettings[ProcessUtils.findNodeConfigName(node)] || {}).icon
+      const defaultIconName = `${node.type}.svg`
       return absoluteBePath(`/assets/nodes/${iconFromConfig ? iconFromConfig : defaultIconName}`)
     },
     [node, processDefinitionData],
