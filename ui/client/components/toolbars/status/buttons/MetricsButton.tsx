@@ -8,7 +8,7 @@ import {PlainStyleLink} from "../../../../containers/plainStyleLink"
 import {getProcessId, isSubprocess} from "../../../../reducers/selectors/graph"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 
-export default function MetricsButton() {
+export default function MetricsButton(): JSX.Element {
   const dispatch = useDispatch()
   const processId = useSelector(getProcessId)
   const subprocess = useSelector(isSubprocess)
@@ -16,7 +16,7 @@ export default function MetricsButton() {
   const {t} = useTranslation()
 
   return (
-    <PlainStyleLink to={pathForProcess(processId)}>
+    <PlainStyleLink disabled={subprocess} to={pathForProcess(processId)}>
       <ToolbarButton
         name={t("panels.actions.deploy-metrics.button", "metrics")}
         onClick={() => dispatch(showMetrics(processId))}

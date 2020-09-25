@@ -10,6 +10,6 @@ export function PlainStyleLink({disabled, to, ...props}: LinkProps & {disabled?:
     },
   })
   return disabled ?
-    <Link className={className} to={to} {...props}/> :
-    <span className={className} {...props}/>
+    <span className={className} {...props}/> :
+    <Link className={className} to={to} {...props}/>
 }
