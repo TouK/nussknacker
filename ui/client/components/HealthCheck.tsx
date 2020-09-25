@@ -1,10 +1,10 @@
 import {css} from "emotion"
 import React, {PropsWithChildren, useCallback, useEffect, useState} from "react"
-import {hot} from "react-hot-loader"
 import {useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"
 import {Transition} from "react-transition-group"
 import {ReactComponent as TipsWarningIcon} from "../assets/icons/tipsWarning.svg"
+import {ReactComponent as CollapseIcon} from "../assets/img/arrows/panel-hide-arrow.svg"
 import {useSize} from "../containers/hooks/useSize"
 import {useInterval} from "../containers/Interval"
 import {ProcessLink} from "../containers/processLink"
@@ -58,6 +58,8 @@ function Collipsable({iconSize, children}: PropsWithChildren<{iconSize: number}>
   const {ref} = useSize<HTMLDivElement>()
   const isOverflow = expanded || ref.current?.offsetWidth < ref.current?.scrollWidth
   const {t} = useTranslation()
+  const {theme} = useNkTheme()
+
   return (
     <Transition in={expanded} timeout={500}>
       {state => (
@@ -91,6 +93,8 @@ function Collipsable({iconSize, children}: PropsWithChildren<{iconSize: number}>
           {(isOverflow || state !== "exited") && (
             <button
               className={css({
+                display: "flex",
+                alignItems: "center",
                 flexShrink: 0,
                 background: "none",
                 border: 0,
@@ -101,6 +105,15 @@ function Collipsable({iconSize, children}: PropsWithChildren<{iconSize: number}>
               onClick={() => setExpanded(expanded => !expanded)}
             >
               {expanded ? t("healthCheck.hide", "hide") : t("healthCheck.show", "show all")}
+              <CollapseIcon className={css({
+                height: ".7em",
+                marginLeft: ".5em",
+                path: {fill: theme.colors.neutral0},
+                transition: "transform .2s",
+                transform: expanded ? "rotate(90deg)" : null,
+                transformOrigin: "50% 50%",
+              })}
+              />
             </button>
           )}
         </>
@@ -130,7 +143,7 @@ function HealthCheck(): JSX.Element {
         borderStyle: "solid",
         borderWidth: 1,
         color: background,
-        backgroundColor: theme.colors.warning,
+        backgroundColor: theme.colors.error,
         borderRadius: theme.borderRadius,
         marginTop: iconSize,
         marginBottom: iconSize * 2,
@@ -156,4 +169,4 @@ function HealthCheck(): JSX.Element {
   )
 }
 
-export default hot(module)(HealthCheck)
+export default HealthCheck
