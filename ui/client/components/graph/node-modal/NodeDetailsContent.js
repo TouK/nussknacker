@@ -81,7 +81,7 @@ export class NodeDetailsContent extends React.Component {
     const nextPropsNode = nextProps.node
 
     if (!_.isEqual(this.props.node, nextPropsNode)) {
-      this.setState({editedNode: nextPropsNode, unusedParameters: []})
+      this.updateNodeState(nextPropsNode, [])
       //In most cases this is not needed, as parameter definitions should be present in validation response
       //However, in dynamic cases (as adding new topic/schema version) this can lead to stale parameters
       this.updateNodeDataIfNeeded(nextPropsNode)
@@ -93,7 +93,7 @@ export class NodeDetailsContent extends React.Component {
 
   adjustStateWithParameters(nodeToAdjust) {
     const {node, unusedParameters} = adjustParameters(nodeToAdjust, this.parameterDefinitions, this.nodeDefinitionByName(nodeToAdjust))
-    this.setState({editedNode: node, unusedParameters: unusedParameters})
+    this.updateNodeState(node, unusedParameters)
   }
 
   updateNodeDataIfNeeded(currentNode) {
@@ -104,7 +104,7 @@ export class NodeDetailsContent extends React.Component {
         currentNode,
         this.props.processProperties)
     } else {
-      this.setState({editedNode: currentNode, unusedParameters: []})
+      this.updateNodeState(currentNode, [])
     }
   }
 
@@ -125,9 +125,7 @@ export class NodeDetailsContent extends React.Component {
     if (_.has(this.state.editedNode, property)) {
       _.get(this.state.editedNode, property).splice(index, 1)
 
-      this.setState((state, props) => ({editedNode: state.editedNode}), () => {
-        this.props.onChange(this.state.editedNode)
-      })
+      this.updateNodeState(this.state.editedNode, this.state.unusedParameters)
     }
   }
 
@@ -135,9 +133,7 @@ export class NodeDetailsContent extends React.Component {
     if (_.has(this.state.editedNode, property)) {
       _.get(this.state.editedNode, property).push(element)
 
-      this.setState((state, props) => ({editedNode: state.editedNode}), () => {
-        this.props.onChange(this.state.editedNode)
-      })
+      this.updateNodeState(this.state.editedNode, this.state.unusedParameters)
     }
   }
 
@@ -622,9 +618,13 @@ export class NodeDetailsContent extends React.Component {
     const node = _.cloneDeep(this.state.editedNode)
 
     _.set(node, propToMutate, value)
+    this.updateNodeState(node, this.state.unusedParameters)
+  }
 
-    this.setState({editedNode: node})
-    this.props.onChange(node)
+  updateNodeState = (node, unusedParameters) => {
+    this.setState({editedNode: node, unusedParameters: unusedParameters}, () => {
+      this.props.onChange(node)
+    })
   }
 
   descriptionField = () => {
