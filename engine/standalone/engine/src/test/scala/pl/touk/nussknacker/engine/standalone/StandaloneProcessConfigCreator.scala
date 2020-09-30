@@ -51,7 +51,8 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
     "response-sink" -> WithCategories(new StandaloneSinkFactory),
-    "parameterResponse-sink" -> WithCategories(ParameterResponseSinkFactory)
+    "parameterResponse-sink" -> WithCategories(ParameterResponseSinkFactory),
+    "failing-sink" -> WithCategories(new FailingSinkFactory())
   )
 
   override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] = List(LoggingListener)
@@ -60,7 +61,7 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
     override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = logger.error("Error", exceptionInfo)
   })
 
-  override def expressionConfig(processObjectDependencies: ProcessObjectDependencies) = ExpressionConfig(Map.empty, List.empty)
+  override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = ExpressionConfig(Map.empty, List.empty)
 
   override def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[ProcessSignalSender]] = Map.empty
 
@@ -163,4 +164,26 @@ object ParameterResponseSinkFactory extends SinkFactory {
     override def testDataOutput: Option[Any => String] = Some(_.toString)
   }
 
+}
+
+
+private class FailingSinkFactory extends SinkFactory {
+  @MethodToInvoke
+  def invoke(@ParamName("fail") fail: LazyParameter[java.lang.Boolean]): Sink = new FailingSink(fail)
+}
+
+case class SinkException(message: String) extends Exception(message)
+
+private class FailingSink(val fail: LazyParameter[java.lang.Boolean]) extends StandaloneSinkWithParameters {
+  override def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[AnyRef] = {
+    fail.map { doFail =>
+      if (doFail) {
+        throw SinkException("FailingSink failed")
+      } else {
+        "result"
+      }
+    }
+  }
+
+  override def testDataOutput: Option[Any => String] = throw new RuntimeException("Shouldn't be called")
 }

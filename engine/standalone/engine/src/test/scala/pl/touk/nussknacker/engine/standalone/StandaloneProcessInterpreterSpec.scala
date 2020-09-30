@@ -1,10 +1,13 @@
 package pl.touk.nussknacker.engine.standalone
 
+import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
 import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
+import pl.touk.nussknacker.engine.api.lazyy.LazyContext
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
-import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{Context, JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.spel
@@ -191,6 +194,24 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
     val interpreter2 = prepareInterpreter(process = process2)
     interpreter2.sinkTypes shouldBe Map("endNodeIID" -> TypedObjectTypingResult(Map("str" -> Typed[String], "int" -> Typed[java.lang.Integer])))
 
+  }
+
+  test("handles exceptions in sink") {
+    val process = EspProcessBuilder
+      .id("exception-in-sink")
+      .exceptionHandler()
+      .source("start", "request1-post-source")
+      .sink("sink", "#input.field1", "failing-sink", "fail" -> "true")
+
+    val creator = new StandaloneProcessConfigCreator
+    val contextId = "context-id"
+    val result = runProcess(process, Request1("a", "b"), creator, contextId = Some(contextId))
+
+    result shouldBe Left(NonEmptyList.of(
+      EspExceptionInfo(Some("sink"),
+        SinkException("FailingSink failed"),
+        Context( "context-id", Map("input" -> Request1("a","b")), LazyContext("context-id",Map()),None))
+    ))
   }
 
   def runProcess(process: EspProcess,
