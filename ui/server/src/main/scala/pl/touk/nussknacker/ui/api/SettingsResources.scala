@@ -56,7 +56,7 @@ class SettingsResources(config: FeatureTogglesConfig,
   }
 }
 
-@JsonCodec case class MetricsSettings(url: String, defaultDashboard: String, processingTypeToDashboard: Option[Map[String,String]])
+@JsonCodec case class MetricsSettings(url: String, defaultDashboard: String, processingTypeToDashboard: Option[Map[String,String]], showOnMenu: Option[Boolean])
 @JsonCodec case class RemoteEnvironmentConfig(targetEnvironmentId: String)
 @JsonCodec case class EnvironmentAlert(content: String, cssClass: String)
 @JsonCodec case class CommentSettings(matchExpression: String, link: String)

@@ -50,7 +50,7 @@ const Spacer = () => <Flex flex={1}/>
 
 export function MenuBar({appPath, rightElement = null, leftElement = null, ...props}: Props) {
   const {loggedUser, featuresSettings} = props
-  const showMetrics = !_.isEmpty(featuresSettings.metrics)
+  const showMetrics = featuresSettings?.metrics?.showOnMenu
   const showSignals = featuresSettings.signals
   const showAdmin = loggedUser.globalPermissions.adminTab
   const customTabs = featuresSettings.customTabs ? [...featuresSettings.customTabs] : []
