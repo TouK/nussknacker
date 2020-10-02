@@ -617,7 +617,10 @@ lazy val flinkUtil = (project in engine("flink/util")).
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV,
-        "com.clearspring.analytics" % "stream" % "2.9.8"
+        "com.clearspring.analytics" % "stream" % "2.9.8" excludeAll (
+          //It is used only in QDigest which we don't use, while it's >20MB in size...
+            ExclusionRule("it.unimi.dsi", "fastutil"),
+         )
       )
     }
   ).dependsOn(util, flinkApi)
