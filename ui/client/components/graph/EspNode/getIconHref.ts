@@ -3,7 +3,7 @@ import {absoluteBePath} from "../../../common/UrlUtils"
 import "../graphTheme.styl"
 
 export function getIconHref(node, nodesSettings) {
-  const iconFromConfig = nodesSettings?.[ProcessUtils.findNodeConfigName(node)]?.icon
+  const iconFromConfig = nodesSettings?.icon
   const defaultIconName = `${node.type}.svg`
   return absoluteBePath(`/assets/nodes/${iconFromConfig || defaultIconName}`)
 }

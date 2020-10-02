@@ -1,6 +1,7 @@
 import React from "react"
 import "./timeRange.styl"
 import classNames from "classnames"
+import {UnknownFunction} from "../../../../../../types/common"
 import {InputWithFocus} from "../../../../../withFocus"
 import {Duration} from "./DurationEditor"
 import {Period} from "./PeriodEditor"
@@ -43,7 +44,7 @@ const components: Record<string, TimeRangeComponentType> = {
 
 type Props = {
   timeRangeComponentName: TimeRange,
-  onChange: Function,
+  onChange: UnknownFunction,
   value: Duration | Period,
   readOnly: boolean,
   showValidation: boolean,

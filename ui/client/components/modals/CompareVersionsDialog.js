@@ -3,7 +3,7 @@ import React from "react"
 import Scrollbars from "react-custom-scrollbars"
 import {connect} from "react-redux"
 import ActionsUtils from "../../actions/ActionsUtils"
-import DateUtils from "../../common/DateUtils"
+import {formatAbsolutely} from "../../common/DateUtils"
 import * as JsonUtils from "../../common/JsonUtils"
 import HttpService from "../../http/HttpService"
 import "../../stylesheets/visualization.styl"
@@ -65,7 +65,7 @@ class CompareVersionsDialog extends React.Component {
     const versionId = (versionPrefix || "") + version.processVersionId
     return (
       <option key={versionId} value={versionId}>
-        {this.versionDisplayString(versionId)} - created by {version.user} &nbsp; {DateUtils.formatAbsolutely(version.createDate)}</option>
+        {this.versionDisplayString(versionId)} - created by {version.user} &nbsp; {formatAbsolutely(version.createDate)}</option>
     )
   }
 

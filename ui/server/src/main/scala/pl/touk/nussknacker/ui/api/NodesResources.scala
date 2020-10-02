@@ -27,8 +27,9 @@ import io.circe.generic.semiauto.deriveDecoder
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
+import pl.touk.nussknacker.engine.compile.NodeTypingInfo
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import pl.touk.nussknacker.restmodel.definition.{UIParameter, UITypedExpression}
+import pl.touk.nussknacker.restmodel.definition.UIParameter
 import pl.touk.nussknacker.ui.api.NodesResources.prepareValidationContext
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 
@@ -65,12 +66,9 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
               val branchCtxs = nodeData.branchVariableTypes.getOrElse(Map.empty).mapValues(prepareValidationContext(modelData))
 
               NodeDataValidator.validate(nodeData.nodeData, modelData, validationContext, branchCtxs) match {
-                case ValidationNotPerformed => NodeValidationResult(parameters = None, typedExpressions = None, validationErrors = Nil, validationPerformed = false)
-                case ValidationPerformed(errors, parameters, typedExpressionMap) =>
+                case ValidationNotPerformed => NodeValidationResult(parameters = None, expressionType = None, validationErrors = Nil, validationPerformed = false)
+                case ValidationPerformed(errors, parameters, expressionType) =>
                   val uiParams = parameters.map(_.map(UIProcessObjectsFactory.createUIParameter))
-                  val uiTypedExpressions = typedExpressionMap.map(_.valueByKey.map { case (name, typedExpression) =>
-                    UITypedExpression(name, typedExpression.returnType)
-                  }.toList)
                   //We don't return MissingParameter error when we are returning those missing parameters to be added - since
                   //it's not really exception ATM
                   def shouldIgnoreError(pce: ProcessCompilationError): Boolean = pce match {
@@ -80,7 +78,7 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
                   val uiErrors = errors.filterNot(shouldIgnoreError).map(PrettyValidationErrors.formatErrorMessage)
                   NodeValidationResult(
                     parameters = uiParams,
-                    typedExpressions = uiTypedExpressions,
+                    expressionType = expressionType,
                     validationErrors = uiErrors,
                     validationPerformed = true)
               }
@@ -128,7 +126,7 @@ class AdditionalInfoProvider(typeToConfig: ProcessingTypeDataProvider[ModelData]
 }
 
 @JsonCodec(encodeOnly = true) case class NodeValidationResult(parameters: Option[List[UIParameter]],
-                                                              typedExpressions: Option[List[UITypedExpression]],
+                                                              expressionType: Option[TypingResult],
                                                               validationErrors: List[NodeValidationError],
                                                               validationPerformed: Boolean)
 

@@ -1,7 +1,8 @@
 import React from "react"
 import "../stylesheets/spinner.styl"
+import {UnknownRecord} from "../types/common"
 
-type State = {}
+type State = UnknownRecord
 
 type Props = {
   show: boolean,

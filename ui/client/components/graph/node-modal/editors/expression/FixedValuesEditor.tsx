@@ -1,6 +1,7 @@
 import React from "react"
 import Creatable from "react-select/creatable"
 import styles from "../../../../../stylesheets/select.styl"
+import {UnknownFunction} from "../../../../../types/common"
 import ValidationLabels from "../../../../modals/ValidationLabels"
 import {Validator} from "../Validators"
 import {ExpressionObj} from "./types"
@@ -9,7 +10,7 @@ import {isEmpty} from "lodash"
 type Props = {
   editorConfig: $TodoType,
   expressionObj: $TodoType,
-  onValueChange: Function,
+  onValueChange: UnknownFunction,
   readOnly: boolean,
   className: string,
   param?: $TodoType,

@@ -15,10 +15,11 @@ import {
   ProcessDefinitionData,
   EdgeType, UINodeType,
 } from "../../types"
+import {UnknownRecord} from "../../types/common"
 
 class NodeUtils {
 
-  isNode = (obj: {}): obj is NodeType => {
+  isNode = (obj: UnknownRecord): obj is NodeType => {
     return !_.isEmpty(obj) && _.has(obj, "id") && _.has(obj, "type")
   }
 
@@ -197,6 +198,7 @@ class NodeUtils {
   }
 
   //TODO: this function should already exists in lodash?
+  // eslint-disable-next-line @typescript-eslint/ban-types
   _update = <T extends {}, U>(path: string, fun: (u: U) => U, object: T): T => {
     return fp.set(path, fun(_.get(object, path)), object)
   }

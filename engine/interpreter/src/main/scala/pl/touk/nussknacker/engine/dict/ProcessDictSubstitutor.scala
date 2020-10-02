@@ -50,7 +50,7 @@ object ProcessDictSubstitutor extends LazyLogging {
 
   // TODO: add ExpressionSubstitutionsCollector "type class" for ExpressionTypingInfo so it will be possible to add new ExpressionParser without changing this class...
   private def prepareSubstitutionsCollector(typingInfo: ExpressionTypingInfo, replacingStrategy: ReplacingStrategy) = typingInfo match {
-    case SpelExpressionTypingInfo(intermediateResults) =>
+    case SpelExpressionTypingInfo(intermediateResults, _) =>
       Some(new SpelSubstitutionsCollector(n => intermediateResults.get(SpelNodeId(n)), replacingStrategy))
     case _ =>
       None

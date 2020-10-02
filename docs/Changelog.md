@@ -23,6 +23,7 @@ ProcessManager implementations are separated from UI to allow easier changes in 
   [#1218](https://github.com/TouK/nussknacker/pull/1218) 
 * [#1183](https://github.com/TouK/nussknacker/pull/1183) New back to process button on metrics 
 * [#1188](https://github.com/TouK/nussknacker/pull/1188) Fix env label and provide nussknacker logo
+* [#249](https://github.com/TouK/nussknacker/pull/1201) Inferred expression type in node modal
 
 0.2.2
 -----------------------

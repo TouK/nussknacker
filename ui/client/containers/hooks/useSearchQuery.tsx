@@ -4,8 +4,9 @@ import {ParseOptions} from "query-string"
 import {useCallback, useMemo} from "react"
 import {useHistory} from "react-router"
 import {defaultArrayFormat, setAndPreserveLocationParams} from "../../common/VisualizationUrl"
+import {UnknownRecord} from "../../types/common"
 
-export function useSearchQuery<T extends {}, S = {}>(options?: ParseOptions): [T, (v: T) => void] {
+export function useSearchQuery<T extends UnknownRecord>(options?: ParseOptions): [T, (v: T) => void] {
   const history = useHistory()
 
   const query = useMemo(() => {

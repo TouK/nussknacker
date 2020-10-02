@@ -974,7 +974,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     compilationResult.expressionsInNodes shouldEqual Map(
       ExceptionHandlerNodeId -> Map.empty,
       "source" -> Map.empty,
-      "filter" -> Map(DefaultExpressionId -> SpelExpressionTypingInfo(Map(PositionRange(0, 4) -> Typed[Boolean]))),
+      "filter" -> Map(DefaultExpressionId -> SpelExpressionTypingInfo(Map(PositionRange(0, 4) -> Typed[Boolean]), Typed[Boolean])),
       "sink" -> Map.empty
     )
   }
@@ -995,7 +995,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     compilationResult.expressionsInNodes shouldEqual Map(
       ExceptionHandlerNodeId -> Map.empty,
-      "source" -> Map("param" -> SpelExpressionTypingInfo(Map(PositionRange(0, 3) -> Typed[java.lang.Integer]))),
+      "source" -> Map("param" -> SpelExpressionTypingInfo(Map(PositionRange(0, 3) -> Typed[java.lang.Integer]), Typed[java.lang.Integer])),
       "sink" -> Map.empty
     )
   }
@@ -1018,8 +1018,8 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       ExceptionHandlerNodeId -> Map.empty,
       "source" -> Map.empty,
       "sink" -> Map(
-        DefaultExpressionId -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed[String])),
-        "lazyString" -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed[String])))
+        DefaultExpressionId -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed[String]), Typed[String]),
+        "lazyString" -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed[String]), Typed[String]))
     )
   }
 
@@ -1041,7 +1041,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     compilationResult.expressionsInNodes shouldEqual Map(
       ExceptionHandlerNodeId -> Map.empty,
       "source" -> Map.empty,
-      "customNode" -> Map("par1" -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed[String]))),
+      "customNode" -> Map("par1" -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed[String]), Typed[String])),
       "sink" -> Map.empty
     )
   }

@@ -345,7 +345,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
         GraphProcess(json)
       }
       updateResult <- EitherT(writeRepository.updateProcess(UpdateProcessAction(processId, deploymentData, processToSave.comment)))
-    } yield SaveProcessResult(updateResult, validation.withClearedTypingInfo)).value
+    } yield SaveProcessResult(updateResult, validation)).value
   }
   private def rejectSavingArchivedProcess: Future[ToResponseMarshallable]=
     Future.successful(HttpResponse(status = StatusCodes.Forbidden, entity = "Cannot save archived process"))

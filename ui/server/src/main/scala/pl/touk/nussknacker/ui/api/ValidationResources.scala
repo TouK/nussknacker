@@ -18,7 +18,7 @@ class ValidationResources(processResolving: UIProcessResolving)
       post {
         entity(as[DisplayableProcess]) { displayable =>
           complete {
-            EspErrorToHttp.toResponseEither(FatalValidationError.renderNotAllowedAsError(processResolving.validateBeforeUiResolving(displayable).withClearedTypingInfo))
+            EspErrorToHttp.toResponseEither(FatalValidationError.renderNotAllowedAsError(processResolving.validateBeforeUiResolving(displayable)))
           }
         }
       }

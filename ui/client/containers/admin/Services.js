@@ -211,11 +211,7 @@ export function mapProcessDefinitionToServices(services) {
     _.flatMap(services, (typeServices, processingType) => _.map(typeServices, (service, name) => ({
       name: name,
       categories: service.categories,
-      parameters: _.map(service.parameters, p => ({
-        name: p.name,
-        refClazzName: p.typ.refClazzName,
-      })),
-      returnClassName: service.returnType == null ? null : service.returnType.refClazzName,
+      parameters: service.parameters,
       processingType: processingType,
     }))), s => s.name,
   )

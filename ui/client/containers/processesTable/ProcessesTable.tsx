@@ -1,8 +1,9 @@
 import {isArray, isString} from "lodash"
-import React, {useCallback, useMemo} from "react"
+import React, {PropsWithChildren, useCallback, useMemo} from "react"
 import {useTranslation} from "react-i18next"
 import {SortType, TableComponentProperties} from "reactable"
 import LoaderSpinner from "../../components/Spinner"
+import {UnknownRecord} from "../../types/common"
 import {useSearchQuery} from "../hooks/useSearchQuery"
 import {TableWithDynamicRows} from "./TableWithDynamicRows"
 
@@ -15,6 +16,14 @@ type TableProps = Pick<TableComponentProperties, "columns" | "filterable" | "sor
 type Props = TableProps & OwnProps
 
 type QueryType = {page: number} & SortType
+
+function HorizontalScroll({children}: PropsWithChildren<UnknownRecord>) {
+  return (
+    <div style={{overflow: "auto", display: "flex", flex: 1}}>
+      {children}
+    </div>
+  )
+}
 
 export function ProcessesTable(props: Props) {
   const {isLoading, sortable, columns, ...passProps} = props
@@ -40,16 +49,18 @@ export function ProcessesTable(props: Props) {
   return (
     <>
       <LoaderSpinner show={isLoading}/>
-      <TableWithDynamicRows
-        {...passProps}
-        noDataText={isLoading ? t("table.loading", "Loading data...") : t("table.noData", "No matching records found.")}
-        onPageChange={onPageChange}
-        currentPage={page}
-        sortable={sortable}
-        columns={columns}
-        sortBy={{column, direction}}
-        onSort={onSort}
-      />
+      <HorizontalScroll>
+        <TableWithDynamicRows
+          {...passProps}
+          noDataText={isLoading ? t("table.loading", "Loading data...") : t("table.noData", "No matching records found.")}
+          onPageChange={onPageChange}
+          currentPage={page}
+          sortable={sortable}
+          columns={columns}
+          sortBy={{column, direction}}
+          onSort={onSort}
+        />
+      </HorizontalScroll>
     </>
   )
 }

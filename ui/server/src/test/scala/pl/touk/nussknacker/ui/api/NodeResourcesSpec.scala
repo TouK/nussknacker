@@ -21,7 +21,8 @@ import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties
 import io.circe.generic.semiauto.deriveDecoder
-import pl.touk.nussknacker.restmodel.definition.{UIParameter, UITypedExpression}
+import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.restmodel.definition.UIParameter
 import pl.touk.nussknacker.ui.validation.PrettyValidationErrors
 import pl.touk.nussknacker.engine.spel.Implicits._
 
@@ -33,7 +34,6 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
   private implicit val typingResultDecoder: Decoder[TypingResult]
     = NodesResources.prepareTypingResultDecoder(typeToConfig.all.head._2.modelData)
   private implicit val uiParameterDecoder: Decoder[UIParameter] = deriveDecoder[UIParameter]
-  private implicit val uiTypedExpressionDecoder: Decoder[UITypedExpression] = deriveDecoder
   private implicit val responseDecoder: Decoder[NodeValidationResult] = deriveDecoder[NodeValidationResult]
 
   //see SampleNodeAdditionalInfoProvider
@@ -65,7 +65,7 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
       Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
         responseAs[NodeValidationResult] shouldBe NodeValidationResult(
           parameters = None,
-          typedExpressions = None,
+          expressionType = Some(typing.Unknown),
           validationErrors = List(PrettyValidationErrors.formatErrorMessage(ExpressionParseError("Bad expression type, expected: Boolean, found: String", data.id, Some(NodeTypingInfo.DefaultExpressionId), data.expression.expression))),
           validationPerformed = true)
       }
@@ -79,7 +79,11 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
       val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData(), ExceptionHandlerRef(Nil)), Map(), None)
 
       Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
-        responseAs[NodeValidationResult] shouldBe NodeValidationResult(parameters = None, typedExpressions = None, List(), validationPerformed = true)
+        responseAs[NodeValidationResult] shouldBe NodeValidationResult(
+          parameters = None,
+          expressionType = Some(Typed[Boolean]),
+          validationErrors = Nil,
+          validationPerformed = true)
       }
     }
   }

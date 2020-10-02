@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression._
 import pl.touk.nussknacker.engine.api.lazyy.LazyValuesProvider
-import pl.touk.nussknacker.engine.api.typed.TypedMap
+import pl.touk.nussknacker.engine.api.typed.{TypedMap, typing}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.sql.columnmodel.CreateColumnModel
 import pl.touk.nussknacker.engine.sql.preparevalues.PrepareTables
@@ -47,7 +47,7 @@ object SqlExpressionParser extends ExpressionParser {
 
     val expression = new SqlExpression(original = original, columnModels = colModel)
     val listResult = Typed.genericTypeClass[List[_]](List(typingResult))
-    TypedExpression(expression, listResult, SqlExpressionTypingInfo)
+    TypedExpression(expression, listResult, SqlExpressionTypingInfo(typingResult))
   }
 
   private def getQueryReturnType(original: String, colModel: Map[String, ColumnModel]): Validated[NonEmptyList[ExpressionParseError], TypingResult] = {
@@ -115,8 +115,7 @@ class SqlExpression(private[sql] val columnModels: Map[String, ColumnModel],
 
 }
 
-// empty for now
-case object SqlExpressionTypingInfo extends ExpressionTypingInfo
+case class SqlExpressionTypingInfo(typingResult: TypingResult) extends ExpressionTypingInfo
 
 case class Table(model: ColumnModel, rows: List[List[Any]])
 

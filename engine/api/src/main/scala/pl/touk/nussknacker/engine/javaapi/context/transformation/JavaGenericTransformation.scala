@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.javaapi.context.transformation
 
+import java.util.Optional
+
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
@@ -12,7 +14,9 @@ trait JavaGenericTransformation[T, VC, PAR, ST] {
 
   def contextTransformation(context: VC,
                             dependencies: java.util.List[NodeDependencyValue],
-                            nodeId: ProcessCompilationError.NodeId, parameters: java.util.Map[String, PAR]): JavaTransformationStepResult[ST]
+                            nodeId: ProcessCompilationError.NodeId,
+                            parameters: java.util.Map[String, PAR],
+                            state: Optional[ST]): JavaTransformationStepResult[ST]
 
   def initialParameters: java.util.List[Parameter]
 
@@ -22,9 +26,17 @@ trait JavaGenericTransformation[T, VC, PAR, ST] {
 
 }
 
-trait JavaGenericSingleTransformation[T, ST] extends JavaGenericTransformation[T, ValidationContext, DefinedSingleParameter, ST]
+trait JavaGenericSingleTransformation[T, ST] extends JavaGenericTransformation[T, ValidationContext, DefinedSingleParameter, ST] {
 
-trait JavaGenericJoinTransformation[T, ST] extends JavaGenericTransformation[T, java.util.Map[String, ValidationContext], BaseDefinedParameter, ST]
+  def canBeEnding: Boolean = false
+
+}
+
+trait JavaGenericJoinTransformation[T, ST] extends JavaGenericTransformation[T, java.util.Map[String, ValidationContext], BaseDefinedParameter, ST] {
+
+  def canBeEnding: Boolean = false
+
+}
 
 trait JavaSourceFactoryGenericTransformation[ST] extends JavaGenericSingleTransformation[Source[_ <: AnyRef], ST] {
 
@@ -47,12 +59,27 @@ trait GenericContextTransformationWrapper[T, VC, PAR, ST] extends GenericNodeTra
 
 }
 
+class SingleGenericContextTransformationWrapper[T, ST](val javaDef: JavaGenericSingleTransformation[T, ST])
+  extends CustomStreamTransformer with SingleInputGenericNodeTransformation[T]
+    with GenericContextTransformationWrapper[T, ValidationContext, DefinedSingleParameter, ST] {
+
+  override def canBeEnding: Boolean = javaDef.canBeEnding
+
+  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
+    case step => javaDef.contextTransformation(context, dependencies.asJava, nodeId, step.parameters.toMap.asJava, java.util.Optional.ofNullable(step.state.getOrElse(null.asInstanceOf[State]))) match {
+      case JavaNextParameters(parameters, errors, state) => NextParameters(parameters.asScala.toList, errors.asScala.toList, Option(state.orElse(null.asInstanceOf[ST])))
+      case JavaFinalResults(finalContext, errors, state) => FinalResults(finalContext, errors.asScala.toList, Option(state.orElse(null.asInstanceOf[ST])))
+    }
+  }
+
+}
+
 class SourceFactoryGenericContextTransformationWrapper[ST](val javaDef: JavaSourceFactoryGenericTransformation[ST])
   extends SourceFactory[Object] with SingleInputGenericNodeTransformation[Source[Object]]
     with GenericContextTransformationWrapper[Source[Object], ValidationContext, DefinedSingleParameter, ST] {
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
-    case params => javaDef.contextTransformation(context, dependencies.asJava, nodeId, params.parameters.toMap.asJava) match {
+    case step => javaDef.contextTransformation(context, dependencies.asJava, nodeId, step.parameters.toMap.asJava, java.util.Optional.ofNullable(step.state.getOrElse(null.asInstanceOf[State]))) match {
       case JavaNextParameters(parameters, errors, state) => NextParameters(parameters.asScala.toList, errors.asScala.toList, Option(state.orElse(null.asInstanceOf[ST])))
       case JavaFinalResults(finalContext, errors, state) => FinalResults(finalContext, errors.asScala.toList, Option(state.orElse(null.asInstanceOf[ST])))
     }
@@ -69,8 +96,10 @@ class JoinGenericContextTransformationWrapper[ST](javaDef: JavaGenericJoinTransf
 
   override def canHaveManyInputs: Boolean = true
 
+  override def canBeEnding: Boolean = javaDef.canBeEnding
+
   override def contextTransformation(context: Map[String, ValidationContext], dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
-    case params => javaDef.contextTransformation(context.asJava, dependencies.asJava, nodeId, params.parameters.toMap.asJava) match {
+    case step => javaDef.contextTransformation(context.asJava, dependencies.asJava, nodeId, step.parameters.toMap.asJava, java.util.Optional.ofNullable(step.state.getOrElse(null.asInstanceOf[State]))) match {
       case JavaNextParameters(parameters, errors, state) => NextParameters(parameters.asScala.toList, errors.asScala.toList, Option(state.orElse(null.asInstanceOf[ST])))
       case JavaFinalResults(finalContext, errors, state) => FinalResults(finalContext, errors.asScala.toList, Option(state.orElse(null.asInstanceOf[ST])))
     }

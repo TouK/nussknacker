@@ -46,10 +46,6 @@ class ProcessValidation(validators: ProcessingTypeDataProvider[ProcessValidator]
     validators.mapValues(_.withExpressionParsers(modify)), additionalPropertiesConfig, subprocessResolver, customProcessNodesValidators)
 
   def validate(displayable: DisplayableProcess): ValidationResult = {
-    validateWithTypingInfo(displayable).withClearedTypingInfo
-  }
-
-  def validateWithTypingInfo(displayable: DisplayableProcess): ValidationResult = {
     val uiValidationResult = uiValidation(displayable)
 
     //there is no point in further validations if ui process structure is invalid

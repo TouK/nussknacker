@@ -332,10 +332,11 @@ export class NodeDetailsContent extends React.Component {
             showValidation={showValidation}
             variableTypes={variableTypes}
             errors={fieldErrors}
+            expressionType={ this.props.expressionType || this.props.nodeTypingInfo && {fields: this.props.nodeTypingInfo}}
           />
         )
       case "Variable":
-        const inferredType = _.head(this.props?.typedExpressions)?.typ
+        const varExprType = this.props.expressionType || this.props.nodeTypingInfo[DEFAULT_EXPRESSION_ID]
         return (
           <Variable
             renderFieldLabel={this.renderFieldLabel}
@@ -346,7 +347,7 @@ export class NodeDetailsContent extends React.Component {
             showValidation={showValidation}
             variableTypes={variableTypes}
             errors={fieldErrors}
-            inferredVariableType={inferredType && ProcessUtils.humanReadableType(inferredType)}
+            inferredVariableType={ProcessUtils.humanReadableType(varExprType)}
           />
         )
       case "Switch":
@@ -757,19 +758,21 @@ function mapState(state, props) {
   const findAvailableBranchVariables = ProcessUtils.findVariablesForBranches(mainProcess?.validationResult?.nodeResults)
   //see NodeDetailsModal - we pass own state in props.node, so we cannot just rely on props.node.id
   const originalNodeId = props.originalNodeId || props.node?.id
+  const nodeResult = mainProcess?.validationResult?.nodeResults?.[originalNodeId]
   return {
     additionalPropertiesConfig: processDefinitionData.additionalPropertiesConfig || {},
     processDefinitionData: processDefinitionData,
     processId: mainProcess.id,
     processProperties: mainProcess.properties,
-    variableTypes: mainProcess?.validationResult?.nodeResults?.[originalNodeId]?.variableTypes || {},
+    variableTypes: nodeResult?.variableTypes || {},
     findAvailableBranchVariables: findAvailableBranchVariables,
     findAvailableVariables: findAvailableVariables,
     originalNodeId: originalNodeId,
     currentErrors: state.nodeDetails.validationPerformed ? state.nodeDetails.validationErrors : props.nodeErrors,
     dynamicParameterDefinitions: state.nodeDetails.validationPerformed ? state.nodeDetails.parameters :
         state.graphReducer.processToDisplay?.validationResult?.nodeResults?.[originalNodeId]?.parameters,
-    typedExpressions: state.nodeDetails.typedExpressions,
+    expressionType: state.nodeDetails.expressionType,
+    nodeTypingInfo: nodeResult?.typingInfo,
   }
 }
 

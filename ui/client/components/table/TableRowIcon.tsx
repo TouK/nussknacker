@@ -20,7 +20,7 @@ export default function TableRowIcon(props: Pick<GlyphiconProps, "glyph" | "titl
       glyph={glyph}
       title={title}
       onClick={onClick}
-      className={styles.processesTableRowIcon}
+      className={styles.tableIcon}
       tabIndex={0}
       onKeyPress={handleKeyPress}
     />

@@ -1,3 +1,4 @@
+import classNames from "classnames"
 import React from "react"
 import {useTranslation} from "react-i18next"
 import {Td, Tr} from "reactable"
@@ -5,6 +6,7 @@ import Date from "../components/common/Date"
 import {ProcessType} from "../components/Process/types"
 import TableRowIcon from "../components/table/TableRowIcon"
 import "../stylesheets/processes.styl"
+import styles from "../containers/processesTable.styl"
 import {Page} from "./Page"
 import {ProcessesTabData} from "./Processes"
 import {ProcessesList, RowsRenderer} from "./ProcessesList"
@@ -28,7 +30,7 @@ const ElementsRenderer: RowsRenderer = ({processes}) => processes.map(process =>
     <Td column="createdBy" className="centered-column" value={process.createdBy}>{process.createdBy}</Td>,
     <Td column="createdAt" className="centered-column" value={process.createdAt}><Date date={process.createdAt}/></Td>,
     <Td column="modifyDate" className="centered-column" value={process.modificationDate}><Date date={process.modificationDate}/></Td>,
-    <Td column="edit" className="edit-column"><ShowProcessIcon process={process}/></Td>,
+    <Td column="edit" className={classNames("edit-column", styles.iconOnly)}><ShowProcessIcon process={process}/></Td>,
   </Tr>
 ))
 

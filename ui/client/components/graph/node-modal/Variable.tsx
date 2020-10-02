@@ -1,5 +1,3 @@
-import _ from "lodash"
-import PropTypes from "prop-types"
 import React from "react"
 import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
 import {errorValidator, mandatoryValueValidator, Validator, Error} from "./editors/Validators"
@@ -50,7 +48,7 @@ const Variable = (props: Props) => {
         fieldLabel={"Expression"}
         renderFieldLabel={renderFieldLabel}
         expressionObj={node.value}
-        onValueChange={((value) => onChange("value.expression", value))}
+        onValueChange={((value: string) => onChange("value.expression", value))}
         readOnly={readOnly}
         showValidation={showValidation}
         showSwitch={false}

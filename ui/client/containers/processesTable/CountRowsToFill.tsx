@@ -1,3 +1,4 @@
+import {css} from "emotion"
 import React, {PropsWithChildren, useLayoutEffect, useRef} from "react"
 import {useSize} from "../hooks/useSize"
 
@@ -17,17 +18,16 @@ export function CountRowsToFill(props: PropsWithChildren<{items: number, onChang
     }
   }, [availableHeight, currentHeight])
 
+  const wrapperStyles = css({
+    overflowY: "hidden",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "stretch",
+    flex: 1,
+  })
+
   return (
-    <div
-      ref={wrapperRef}
-      style={{
-        overflow: "hidden",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "stretch",
-        flex: 1,
-      }}
-    >
+    <div ref={wrapperRef} className={wrapperStyles}>
       <div ref={childrenRef}>{props.children}</div>
     </div>
   )

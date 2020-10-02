@@ -1,10 +1,12 @@
 package pl.touk.nussknacker.engine.definition
 
-import cats.data.Validated.Invalid
-import cats.data.ValidatedNel
+import java.time.Duration
+import java.time.temporal.ChronoUnit
+
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, Parameter, RegExpParameterValidator, WithExplicitMethodToInvoke}
+import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, DurationParameterEditor, MandatoryParameterValidator, Parameter, RegExpParameterValidator, WithExplicitMethodToInvoke}
+import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process._
@@ -47,7 +49,9 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
     definition.returnType shouldBe Typed[String]
     definition.asInstanceOf[StandardObjectWithMethodDef].methodDef.runtimeClass shouldBe classOf[Future[_]]
 
-    definition.parameters shouldBe List(Parameter[Int]("param1"))
+    definition.parameters shouldBe List(Parameter[Int]("param1"),
+      Parameter[Duration]("durationParam").copy(editor = Some(DualParameterEditor(
+        DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES)), DualEditorMode.SIMPLE))))
   }
 
   test("extract definition with generic params") {
@@ -103,7 +107,9 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
         "transformerWithBranchParam" -> WithCategories(TransformerWithBranchParam, "cat"))
 
     override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
-      "configurable1" -> WithCategories(EmptyExplicitMethodToInvoke(List(Parameter[Int]("param1")), Typed[String]), "cat")
+      "configurable1" -> WithCategories(EmptyExplicitMethodToInvoke(
+        List(Parameter[Int]("param1"), Parameter[Duration]("durationParam")
+      ), Typed[String]), "cat")
     )
 
     override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map()

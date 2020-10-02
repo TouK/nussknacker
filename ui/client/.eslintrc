@@ -213,7 +213,9 @@
           "api.get",
           "api.post",
           "describe",
-          "css"
+          "css",
+          "querySelector",
+          "querySelectorAll"
         ],
         "ignoreAttribute": [
           "onHandleColor",
@@ -247,6 +249,7 @@
         "plugin:react/recommended"
       ],
       "rules": {
+        "react/prop-types": "off",
         "@typescript-eslint/explicit-function-return-type": "off",
         "@typescript-eslint/semi": [
           "warn",
