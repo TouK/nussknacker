@@ -31,7 +31,7 @@ const ProcessItem = ({name}: {name: string}) => {
 function Content({data}: {data: Omit<HealthCheckResponse, "state">}) {
   const {t} = useTranslation()
   return (
-    <span>
+    <span className={css({fontWeight: 600})}>
       {data.error || t("healthCheck.unknownState", "State unknown")}
       {": "}
       {data.processes?.map((name, index) => (
