@@ -50,7 +50,6 @@ const Spacer = () => <Flex flex={1}/>
 
 export function MenuBar({appPath, rightElement = null, leftElement = null, ...props}: Props) {
   const {loggedUser, featuresSettings} = props
-  const showMetrics = featuresSettings?.metrics?.showOnMenu
   const showSignals = featuresSettings.signals
   const showAdmin = loggedUser.globalPermissions.adminTab
   const customTabs = featuresSettings.customTabs ? [...featuresSettings.customTabs] : []
@@ -61,7 +60,6 @@ export function MenuBar({appPath, rightElement = null, leftElement = null, ...pr
   function buildMenu() {
     const defaultMenuItems = [
       {show: true, path: ProcessesTabData.path, title: t("menu.processes", "Processes")},
-      {show: showMetrics, path: Metrics.basePath, title: t("menu.metrics", "Metrics")},
       {show: showSignals, path: Signals.path, title: t("menu.signals", "Signals")},
       {show: showAdmin, path: AdminPage.path, title: t("menu.adminPage", "Admin")},
     ]
