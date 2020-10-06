@@ -5,8 +5,9 @@ import org.apache.flink.streaming.api.functions._
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 import org.apache.flink.util.Collector
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 
-class TimestampAssignmentHelper[T: TypeInformation](timestampAssigner: TimestampAssigner[TimestampedValue[T]]) {
+class TimestampAssignmentHelper[T: TypeInformation](timestampAssigner: TimestampWatermarkHandler[TimestampedValue[T]]) {
 
   def assignWatermarks(stream: DataStream[T]): DataStream[T] = {
     val timestampedStream = stream
@@ -17,13 +18,7 @@ class TimestampAssignmentHelper[T: TypeInformation](timestampAssigner: Timestamp
           out.collect(new TimestampedValue(value, ctx.timestamp()))
       })
 
-    val withTimestampAssigner = timestampAssigner match {
-      case periodic: AssignerWithPeriodicWatermarks[TimestampedValue[T]@unchecked] =>
-        timestampedStream.assignTimestampsAndWatermarks(periodic)
-      case punctuated: AssignerWithPunctuatedWatermarks[TimestampedValue[T]@unchecked] =>
-        timestampedStream.assignTimestampsAndWatermarks(punctuated)
-    }
-
+    val withTimestampAssigner = timestampAssigner.assignTimestampAndWatermarks(timestampedStream)
     withTimestampAssigner.map((tv: TimestampedValue[T]) => tv.getValue)
   }
 

@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.engine.demo
 
+import java.time.Duration
+
 import com.typesafe.config.Config
 import io.circe.Json
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
-import org.apache.flink.streaming.api.functions.TimestampAssigner
-import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
-import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
 import pl.touk.nussknacker.engine.api._
@@ -16,7 +15,8 @@ import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
 import pl.touk.nussknacker.engine.demo.custom.{EventsCounter, TransactionAmountAggregator}
 import pl.touk.nussknacker.engine.demo.service.{AlertService, ClientService}
-import pl.touk.nussknacker.engine.flink.util.exception.{BrieflyLoggingExceptionHandler, BrieflyLoggingRestartingExceptionHandler}
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
+import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
@@ -58,9 +58,7 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
   }
 
   private def createTransactionSource(processObjectDependencies: ProcessObjectDependencies) = {
-    val transactionTimestampExtractor = new BoundedOutOfOrdernessTimestampExtractor[Transaction](Time.minutes(10)) {
-      override def extractTimestamp(element: Transaction): Long = element.eventDate
-    }
+    val transactionTimestampExtractor = StandardTimestampWatermarkHandler.boundedOutOfOrderness[Transaction](_.eventDate, Duration.ofMinutes(10))
     kafkaSource[Transaction](decodeJsonUnsafe[Transaction](_), Some(transactionTimestampExtractor),
       TestParsingUtils.newLineSplit, processObjectDependencies)
   }
@@ -70,7 +68,7 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
   }
 
   private def kafkaSource[T: TypeInformation](decode: Array[Byte] => T,
-                                              timestampAssigner: Option[TimestampAssigner[T]],
+                                              timestampAssigner: Option[TimestampWatermarkHandler[T]],
                                               testPrepareInfo: TestDataSplit,
                                               processObjectDependencies: ProcessObjectDependencies): SourceFactory[T] = {
     val schema = new EspDeserializationSchema[T](bytes => decode(bytes))

@@ -1,13 +1,18 @@
 package pl.touk.nussknacker.engine.flink.util.timestamp
 
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks
 import org.apache.flink.streaming.api.watermark.Watermark
+
+import scala.annotation.nowarn
 
 /**
  * It is a copy-paste of BoundedOutOfOrdernessTimestampExtractor but taking timestamp from previousElementTimestamp
  * See https://ci.apache.org/projects/flink/flink-docs-stable/dev/connectors/kafka.html#using-kafka-timestamps-and-flink-event-time-in-kafka-010
  */
+@silent("deprecated")
+@nowarn("deprecated")
 class BoundedOutOfOrderPreviousElementAssigner[T](maxOutOfOrdernessMillis: Long)
   extends AssignerWithPeriodicWatermarks[T] with Serializable {
 

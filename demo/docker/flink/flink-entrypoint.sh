@@ -5,7 +5,6 @@ GROUP=${DAEMON_GROUP-"flink"}
 USER=${DAEMON_USER-"flink"}
 
 #we use wildcards, to avoid passing flink/scala versions...
-cp ${FLINK_HOME}/opt/flink-metrics-influxdb*.jar ${FLINK_HOME}/lib
 cp ${FLINK_HOME}/opt/flink-queryable-state-runtime*.jar ${FLINK_HOME}/lib
 #/tmp/flink-conf.yaml is mounted to outside file, we cannot mount it directly to flink conf dir as flink entrypoint moves config files
 cp /tmp/flink-conf.yaml ${FLINK_HOME}/conf/flink-conf.yaml

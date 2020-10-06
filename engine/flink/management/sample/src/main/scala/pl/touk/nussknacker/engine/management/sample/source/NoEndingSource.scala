@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
+import java.time.Duration
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -11,14 +12,14 @@ import pl.touk.nussknacker.engine.api.process.TestDataParserProvider
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.flink.api.process.BasicFlinkSource
 import org.apache.flink.streaming.api.scala._
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 
 //this not ending source is more reliable in tests than CollectionSource, which terminates quickly
 class NoEndingSource extends BasicFlinkSource[String] with TestDataParserProvider[String] {
   override val typeInformation: TypeInformation[String] = implicitly[TypeInformation[String]]
 
-  override def timestampAssigner = Option(new BoundedOutOfOrdernessTimestampExtractor[String](Time.minutes(10)) {
-    override def extractTimestamp(element: String): Long = System.currentTimeMillis()
-  })
+  override def timestampAssigner: Option[TimestampWatermarkHandler[String]] = Option(StandardTimestampWatermarkHandler
+    .boundedOutOfOrderness[String](_ => System.currentTimeMillis(), Duration.ofMinutes(10)))
 
   override def testDataParser: TestDataParser[String] = new NewLineSplittedTestDataParser[String] {
     override def parseElement(testElement: String): String = testElement

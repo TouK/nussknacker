@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
+import java.time.Duration
 import java.util
 
 import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
-import org.apache.flink.api.scala._
-import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
-import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
+import org.apache.flink.streaming.api.scala._
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
@@ -21,7 +20,6 @@ import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
-import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunctuatedExtractor
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SlidingAggregateTransformerV2, TumblingAggregateTransformer}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -36,7 +34,7 @@ import scala.collection.JavaConverters._
 
 class TransformersTest extends FunSuite with FlinkSpec with Matchers {
 
-  def modelData(list: List[TestRecord] = List()) = LocalModelData(ConfigFactory.empty(), new Creator(list))
+  def modelData(list: List[TestRecord] = List()): LocalModelData = LocalModelData(ConfigFactory.empty(), new Creator(list))
 
   val validator: ProcessValidator = modelData().validator
 
@@ -288,7 +286,8 @@ class Creator(input: List[TestRecord]) extends EmptyProcessConfigCreator {
       "aggregate-tumbling" -> WithCategories(TumblingAggregateTransformer))
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] =
-    Map("start" -> WithCategories(NoParamSourceFactory(new EmitWatermarkAfterEachElementCollectionSource[TestRecord](input, TestRecord.timestampExtractor))))
+    Map("start" -> WithCategories(NoParamSourceFactory(EmitWatermarkAfterEachElementCollectionSource
+      .create[TestRecord](input, _.timestamp, Duration.ofHours(1)))))
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] =
     Map("end" -> WithCategories(SinkFactory.noParam(EmptySink)))
@@ -300,10 +299,6 @@ class Creator(input: List[TestRecord]) extends EmptyProcessConfigCreator {
     = ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
 }
 
-object TestRecord {
-  val timestampExtractor: AssignerWithPunctuatedWatermarks[TestRecord] = new BoundedOutOfOrdernessPunctuatedExtractor[TestRecord](1 * 3600 * 1000) {
-    override def extractTimestamp(element: TestRecord, previousElementTimestamp: Long): Long = element.timeHours * 3600 * 1000
-  }
+case class TestRecord(id: String, timeHours: Int, eId: Long, str: String) {
+  def timestamp: Long = timeHours * 3600L * 1000
 }
-
-case class TestRecord(id: String, timeHours: Int, eId: Long, str: String)

@@ -4,6 +4,8 @@ To see biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 0.3.0 (not released yet)
 
+* [#1044](https://github.com/TouK/nussknacker/pull/1044) Upgrade to Flink 1.11. Current watermark/timestamp mechanisms are deprectated in Flink 1.11, 
+ new API ```TimestampWatermarkHandler``` is introduced, with ```LegacyTimestampWatermarkHandler``` as wrapper for previous mechanisms.
 * [#1244](https://github.com/TouK/nussknacker/pull/1244) `Parameter` has new parameter 'variablesToHide' with `Set` of variable names
 that will be hidden before parameter's evaluation
 * [#1159](https://github.com/TouK/nussknacker/pull/1159) [#1170](https://github.com/TouK/nussknacker/pull/1170) Changes in `GenericNodeTransformation` API:

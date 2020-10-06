@@ -4,7 +4,7 @@ import java.time.Duration
 
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.functions.{KeyedProcessFunction, TimestampAssigner}
+import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 import org.apache.flink.util.Collector
@@ -14,13 +14,14 @@ import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContex
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, FlinkCustomNodeContext}
 import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.keyed
 import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyedValue, StringKeyedValueMapper}
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 
 object UnionWithMemoTransformer extends UnionWithMemoTransformer(None)
 
-class UnionWithMemoTransformer(timestampAssigner: Option[TimestampAssigner[TimestampedValue[ValueWithContext[StringKeyedValue[(String, AnyRef)]]]]])
+class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandler[TimestampedValue[ValueWithContext[StringKeyedValue[(String, AnyRef)]]]]])
   extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
   import UnionTransformer._

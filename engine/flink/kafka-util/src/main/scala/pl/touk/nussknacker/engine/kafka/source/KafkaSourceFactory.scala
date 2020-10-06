@@ -2,13 +2,13 @@ package pl.touk.nussknacker.engine.kafka.source
 
 import javax.validation.constraints.NotBlank
 import org.apache.flink.api.common.serialization.DeserializationSchema
-import org.apache.flink.streaming.api.functions.TimestampAssigner
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.TestDataSplit
 import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.kafka.KafkaFactory._
 import pl.touk.nussknacker.engine.kafka.serialization.{FixedKafkaDeserializationSchemaFactory, KafkaDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
@@ -30,13 +30,13 @@ import scala.reflect.ClassTag
   * </pre>
   * */
 class KafkaSourceFactory[T: ClassTag](deserializationSchemaFactory: KafkaDeserializationSchemaFactory[T],
-                                      timestampAssigner: Option[TimestampAssigner[T]],
+                                      timestampAssigner: Option[TimestampWatermarkHandler[T]],
                                       testPrepareInfo: TestDataSplit,
                                       processObjectDependencies: ProcessObjectDependencies)
   extends BaseKafkaSourceFactory(deserializationSchemaFactory, timestampAssigner, testPrepareInfo, processObjectDependencies) {
 
   def this(deserializationSchema: DeserializationSchema[T],
-           timestampAssigner: Option[TimestampAssigner[T]],
+           timestampAssigner: Option[TimestampWatermarkHandler[T]],
            testPrepareInfo: TestDataSplit,
            processObjectDependencies: ProcessObjectDependencies) =
     this(
@@ -61,14 +61,14 @@ class KafkaSourceFactory[T: ClassTag](deserializationSchemaFactory: KafkaDeseria
 
 class SingleTopicKafkaSourceFactory[T: ClassTag](topic: String,
                                                  deserializationSchemaFactory: KafkaDeserializationSchemaFactory[T],
-                                                 timestampAssigner: Option[TimestampAssigner[T]],
+                                                 timestampAssigner: Option[TimestampWatermarkHandler[T]],
                                                  testPrepareInfo: TestDataSplit,
                                                  processObjectDependencies: ProcessObjectDependencies)
   extends BaseKafkaSourceFactory(deserializationSchemaFactory, timestampAssigner, testPrepareInfo, processObjectDependencies) {
 
   def this(topic: String,
            deserializationSchema: DeserializationSchema[T],
-           timestampAssigner: Option[TimestampAssigner[T]],
+           timestampAssigner: Option[TimestampWatermarkHandler[T]],
            testPrepareInfo: TestDataSplit,
            processObjectDependencies: ProcessObjectDependencies) =
     this(
@@ -87,7 +87,7 @@ class SingleTopicKafkaSourceFactory[T: ClassTag](topic: String,
 }
 
 abstract class BaseKafkaSourceFactory[T: ClassTag](deserializationSchemaFactory: KafkaDeserializationSchemaFactory[T],
-                                                   timestampAssigner: Option[TimestampAssigner[T]],
+                                                   timestampAssigner: Option[TimestampWatermarkHandler[T]],
                                                    testPrepareInfo: TestDataSplit,
                                                    processObjectDependencies: ProcessObjectDependencies)
   extends FlinkSourceFactory[T] with Serializable {

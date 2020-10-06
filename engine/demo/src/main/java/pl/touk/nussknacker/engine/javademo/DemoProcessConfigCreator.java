@@ -1,18 +1,31 @@
 package pl.touk.nussknacker.engine.javademo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner;
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
-import org.apache.flink.streaming.api.windowing.time.Time;
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer;
 import pl.touk.nussknacker.engine.api.ProcessListener;
 import pl.touk.nussknacker.engine.api.Service;
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory;
-import pl.touk.nussknacker.engine.api.process.*;
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies;
+import pl.touk.nussknacker.engine.api.process.SingleNodeConfig$;
+import pl.touk.nussknacker.engine.api.process.SinkFactory;
+import pl.touk.nussknacker.engine.api.process.SourceFactory;
+import pl.touk.nussknacker.engine.api.process.WithCategories;
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender;
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils;
 import pl.touk.nussknacker.engine.demo.LoggingExceptionHandlerFactory;
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler;
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler;
 import pl.touk.nussknacker.engine.javaapi.process.ExpressionConfig;
 import pl.touk.nussknacker.engine.javaapi.process.ProcessConfigCreator;
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchemaFactory;
@@ -21,11 +34,7 @@ import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory;
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory;
 import scala.Option;
 import scala.collection.JavaConverters;
-import scala.reflect.ClassTag;
 import scala.reflect.ClassTag$;
-
-import java.io.IOException;
-import java.util.*;
 
 public class DemoProcessConfigCreator implements ProcessConfigCreator {
 
@@ -55,12 +64,10 @@ public class DemoProcessConfigCreator implements ProcessConfigCreator {
     }
 
     private KafkaSourceFactory<Transaction> getTransactionKafkaSourceFactory(ProcessObjectDependencies processObjectDependencies) {
-        BoundedOutOfOrdernessTimestampExtractor<Transaction> extractor = new BoundedOutOfOrdernessTimestampExtractor<Transaction>(Time.minutes(10)) {
-            @Override
-            public long extractTimestamp(Transaction element) {
-                return element.eventDate;
-            }
-        };
+        TimestampWatermarkHandler<Transaction> extractor = new StandardTimestampWatermarkHandler<>(WatermarkStrategy
+            .<Transaction>forBoundedOutOfOrderness(Duration.ofMinutes(10))
+            .withTimestampAssigner((SerializableTimestampAssigner<Transaction>) (element, recordTimestamp) -> element.eventDate));
+
         DeserializationSchema<Transaction> schema = new DeserializationSchema<Transaction>() {
             @Override
             public Transaction deserialize(byte[] message) throws IOException {

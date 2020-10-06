@@ -3,11 +3,11 @@ package pl.touk.nussknacker.engine.flink.api.process
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.functions.source.SourceFunction
-import org.apache.flink.streaming.api.functions.{AssignerWithPeriodicWatermarks, AssignerWithPunctuatedWatermarks, TimestampAssigner}
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 
 import scala.reflect._
 
@@ -23,7 +23,7 @@ trait FlinkSource[T] extends Source[T] {
   //TODO: design better way of handling test data in generic FlinkSource
   //Probably we *still* want to use CollectionSource (and have some custom logic in parser if needed), but timestamps
   //have to be handled here for now
-  def timestampAssignerForTest : Option[TimestampAssigner[T]]
+  def timestampAssignerForTest : Option[TimestampWatermarkHandler[T]]
 
   // We abstracting to stream so theoretically it shouldn't be defined on this level but for test mechanism purpose
   // we need to know what type will be generated.
@@ -39,9 +39,9 @@ trait BasicFlinkSource[T] extends FlinkSource[T] with ExplicitUidInOperatorsSupp
 
   def flinkSourceFunction: SourceFunction[T]
 
-  def timestampAssigner : Option[TimestampAssigner[T]]
+  def timestampAssigner : Option[TimestampWatermarkHandler[T]]
 
-  def timestampAssignerForTest : Option[TimestampAssigner[T]] = timestampAssigner
+  def timestampAssignerForTest : Option[TimestampWatermarkHandler[T]] = timestampAssigner
 
   override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[T] = {
 
@@ -52,13 +52,7 @@ trait BasicFlinkSource[T] extends FlinkSource[T] with ExplicitUidInOperatorsSupp
         .addSource[T](flinkSourceFunction)(typeInformation)
         .name(s"${flinkNodeContext.metaData.id}-${flinkNodeContext.nodeId}-source"))
 
-    timestampAssigner.map {
-      case periodic: AssignerWithPeriodicWatermarks[T@unchecked] =>
-        newStart.assignTimestampsAndWatermarks(periodic)
-      case punctuated: AssignerWithPunctuatedWatermarks[T@unchecked] =>
-        newStart.assignTimestampsAndWatermarks(punctuated)
-    }.getOrElse(newStart)
-
+    timestampAssigner.map(_.assignTimestampAndWatermarks(newStart)).getOrElse(newStart)
   }
 }
 

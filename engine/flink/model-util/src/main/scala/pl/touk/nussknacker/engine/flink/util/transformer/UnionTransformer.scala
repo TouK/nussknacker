@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.flink.api.process.{AbstractLazyParameterInterpreterFunction, FlinkCustomJoinTransformation, FlinkCustomNodeContext, FlinkLazyParameterFunctionHelper}
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 
 case object UnionTransformer extends UnionTransformer(None) {
@@ -47,7 +48,7 @@ case object UnionTransformer extends UnionTransformer(None) {
  *                          for connected streams. In some cases, when you have some time-based aggregation after union,
  *                          you would like to redefine this logic.
  */
-class UnionTransformer(timestampAssigner: Option[TimestampAssigner[TimestampedValue[ValueWithContext[AnyRef]]]])
+class UnionTransformer(timestampAssigner: Option[TimestampWatermarkHandler[TimestampedValue[ValueWithContext[AnyRef]]]])
   extends CustomStreamTransformer with LazyLogging {
 
   import UnionTransformer._

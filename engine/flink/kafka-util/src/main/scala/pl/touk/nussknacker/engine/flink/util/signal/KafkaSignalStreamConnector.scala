@@ -1,11 +1,14 @@
 package pl.touk.nussknacker.engine.flink.util.signal
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.serialization.DeserializationSchema
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.IngestionTimeExtractor
 import org.apache.flink.streaming.api.scala.{ConnectedStreams, DataStream}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
+
+import scala.annotation.nowarn
 
 trait KafkaSignalStreamConnector {
   val kafkaConfig: KafkaConfig
@@ -24,6 +27,8 @@ trait KafkaSignalStreamConnector {
   //This is not always optimal solution, as e.g. in tests periodic watermarks are not the best option, so it can be overridden in implementations
   //Please note that *in general* it's not OK to assign standard event-based watermark, as signal streams usually
   //can be idle for long time. This prevent advancement of watermark on connected stream, which can lean to unexpected behaviour e.g. in aggregates
+  @silent("deprecated")
+  @nowarn("deprecated")
   protected def assignTimestampsAndWatermarks[B](dataStream: DataStream[B]): DataStream[B] = {
     dataStream.assignTimestampsAndWatermarks(new IngestionTimeExtractor[B])
   }

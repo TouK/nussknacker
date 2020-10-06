@@ -7,7 +7,6 @@ import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.scala._
 import org.apache.flink.runtime.execution.ExecutionState
-import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FunSuite, Matchers}
@@ -24,7 +23,6 @@ import pl.touk.nussknacker.engine.flink.util.function.CoProcessFunctionIntercept
 import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.{BlockingQueueSource, EmitWatermarkAfterEachElementCollectionSource}
-import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunctuatedExtractor
 import pl.touk.nussknacker.engine.flink.util.transformer.outer.{BranchType, OuterJoinTransformer}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
@@ -36,6 +34,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
+import scala.annotation.nowarn
 import scala.concurrent.duration.FiniteDuration
 
 class OuterJoinTransformerSpec extends FunSuite with FlinkSpec with Matchers with VeryPatientScalaFutures {
@@ -82,7 +81,7 @@ class OuterJoinTransformerSpec extends FunSuite with FlinkSpec with Matchers wit
     ))
 
     val key = "fooKey"
-    val input1 = new BlockingQueueSource[OneRecord](OneRecord.timestampExtractor)
+    val input1 = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
     val input2 = List(
       OneRecord(key, 1, 123)
     )
@@ -148,7 +147,7 @@ object OuterJoinTransformerSpec {
       Map(
         "start-main" -> WithCategories(NoParamSourceFactory(mainRecordsSource)),
         "start-joined" -> WithCategories(NoParamSourceFactory(
-          new EmitWatermarkAfterEachElementCollectionSource[OneRecord](joinedRecords, OneRecord.timestampExtractor))))
+          EmitWatermarkAfterEachElementCollectionSource.create[OneRecord](joinedRecords, _.timestamp, Duration.ofHours(1)))))
 
     override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] =
       Map("end" -> WithCategories(SinkFactory.noParam(EmptySink)))
@@ -158,12 +157,8 @@ object OuterJoinTransformerSpec {
 
   }
 
-  object OneRecord {
-    val timestampExtractor: AssignerWithPunctuatedWatermarks[OneRecord] = new BoundedOutOfOrdernessPunctuatedExtractor[OneRecord](1 * 3600 * 1000) {
-      override def extractTimestamp(element: OneRecord, previousElementTimestamp: Long): Long = element.timeHours * 3600 * 1000
-    }
+  case class OneRecord(key: String, timeHours: Int, value: Int) {
+    def timestamp: Long = timeHours * 3600L * 1000
   }
-
-  case class OneRecord(key: String, timeHours: Int, value: Int)
 
 }

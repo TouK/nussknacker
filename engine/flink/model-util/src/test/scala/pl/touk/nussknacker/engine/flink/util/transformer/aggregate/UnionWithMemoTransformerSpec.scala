@@ -7,9 +7,7 @@ import java.{util => jul}
 
 import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
-import org.apache.flink.api.scala._
-import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
-import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
+import org.apache.flink.streaming.api.scala._
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
@@ -22,7 +20,6 @@ import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHa
 import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValue
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.BlockingQueueSource
-import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunctuatedExtractor
 import pl.touk.nussknacker.engine.flink.util.transformer.UnionWithMemoTransformer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
@@ -75,8 +72,8 @@ class UnionWithMemoTransformerSpec extends FunSuite with FlinkSpec with Matchers
     ))
 
     val key = "fooKey"
-    val sourceFoo = new BlockingQueueSource[OneRecord](OneRecord.timestampExtractor)
-    val sourceBar = new BlockingQueueSource[OneRecord](OneRecord.timestampExtractor)
+    val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
+    val sourceBar = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
 
     val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
     withProcess(process, sourceFoo, sourceBar, collectingListener) {
@@ -121,7 +118,7 @@ object UnionWithMemoTransformerSpec {
     override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
       Map(
         "union-memo" -> WithCategories(new UnionWithMemoTransformer(None) {
-          override protected val mapElement = (v: ValueWithContext[KeyedValue[String, (String, AnyRef)]]) => {
+          override protected val mapElement: ValueWithContext[KeyedValue[String, (String, AnyRef)]] => ValueWithContext[KeyedValue[String, (String, AnyRef)]] = (v: ValueWithContext[KeyedValue[String, (String, AnyRef)]]) => {
             elementsProcessed.add(v.value.value)
             v
           }
@@ -143,12 +140,8 @@ object UnionWithMemoTransformerSpec {
 
   }
 
-  object OneRecord {
-    val timestampExtractor: AssignerWithPunctuatedWatermarks[OneRecord] = new BoundedOutOfOrdernessPunctuatedExtractor[OneRecord](1 * 3600 * 1000) {
-      override def extractTimestamp(element: OneRecord, previousElementTimestamp: Long): Long = element.timeHours * 3600 * 1000
-    }
+  case class OneRecord(key: String, timeHours: Int, value: Int) {
+    def timestamp: Long = timeHours * 3600L * 1000
   }
-
-  case class OneRecord(key: String, timeHours: Int, value: Int)
 
 }
