@@ -1,4 +1,4 @@
-FROM flink:1.11.1-scala_${scala.major.version}
+FROM flink:1.11.2-scala_${scala.major.version}
 
 COPY entrypointWithIP.sh /
 COPY docker-entrypoint.sh /
