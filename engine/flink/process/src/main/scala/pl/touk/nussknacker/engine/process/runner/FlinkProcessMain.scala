@@ -29,8 +29,9 @@ trait FlinkProcessMain[Env] extends FlinkRunner with LazyLogging {
       runProcess(env, modelData, process, processVersion, ExecutionConfigPreparer.defaultChain(modelData, buildInfo))
     } catch {
       // marker exception for graph optimalization
-      //case ex: ProgramAbortException =>
-      //  throw ex
+      // should be necessary only in Flink <=1.9
+      case ex if ex.getClass.getSimpleName == "ProgramAbortException" =>
+        throw ex
       case NonFatal(ex) =>
         logger.error("Unhandled error", ex)
         throw ex
