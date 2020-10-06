@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.definition.parameter
 import java.util.Optional
 
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
+import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.api.{AdditionalVariables, BranchParamName, LazyParameter, ParamName}
 import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
@@ -31,7 +31,7 @@ object ParameterExtractor {
     val extractedEditor = EditorExtractor.extract(parameterData, parameterConfig)
     val validators = ValidatorsExtractor.extract(ValidatorExtractorParameters(parameterData,
       isScalaOptionParameter || isJavaOptionalParameter, parameterConfig))
-    Parameter(name, paramType, extractedEditor, validators, additionalVariables(p), branchParamName.isDefined,
+    Parameter(name, paramType, extractedEditor, validators, additionalVariables(p), Set.empty, branchParamName.isDefined,
       isLazyParameter = isLazyParameter, scalaOptionParameter = isScalaOptionParameter, javaOptionalParameter = isJavaOptionalParameter)
   }
 

@@ -1,25 +1,22 @@
 import {css} from "emotion"
 import React, {useMemo} from "react"
 import {useTranslation} from "react-i18next"
+import {useRowsOnCurrentPage} from "./useRowsPerPage"
 
-export function TableItemsCount(props: {page: number, items: number, rows: number}): JSX.Element {
-  const {items, rows, page} = props
-  if (rows <= 0) {
-    return null
-  }
+type Props = {
+  page: number,
+  total: number,
+  rows: number,
+}
+
+export function TableItemsCount(props: Props): JSX.Element {
+  const {total, rows, page} = props
 
   const {t} = useTranslation()
+  const [, first, last] = useRowsOnCurrentPage(total, rows, page)
   const text = useMemo(
-    () => {
-      const first = page * rows + 1
-      const last = (page + 1) * rows
-      return t("table.itemsCount", "{{first}} to {{last}} of total {{total}}", {
-        first,
-        last: Math.min(last, items),
-        total: items,
-      })
-    },
-    [page, rows, items],
+    () => t("table.itemsCount", "{{first}} to {{last}} of total {{total}}", {first, last, total}),
+    [t, first, last, total],
   )
 
   const styles = useMemo(() => css({
@@ -32,7 +29,7 @@ export function TableItemsCount(props: {page: number, items: number, rows: numbe
     margin: "0 0.5em",
   }), [])
 
-  return (
+  return rows <= 0 ? null : (
     <div className={styles}>
       <span>{text}</span>
     </div>

@@ -30,7 +30,7 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
   }
 
   // It is quite similar logic to GenericDatumReader.readWithConversion but instead of reading from decoder, it read directly from value
-  def encode(value: Any, schema: Schema): WithError[AnyRef] = {
+  def encode(value: Any, schema: Schema, fieldName: Option[String] = None): WithError[AnyRef] = {
     (schema.getType, value) match {
       case (_, Some(nested)) =>
         encode(nested, schema)
@@ -42,7 +42,7 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
         encodeRecord(map, schema)
       case (Schema.Type.ENUM, str: String) =>
         if (!schema.hasEnumSymbol(str)) {
-          error(s"Not expected symbol: $value for schema: $schema")
+          error(s"Not expected symbol: $value for field: $fieldName with schema: $schema")
         } else {
           Valid(new EnumSymbol(schema, str))
         }
@@ -58,7 +58,7 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
         schema.getTypes.asScala.toStream.flatMap { subTypeSchema =>
           encode(value, subTypeSchema).toOption
         }.headOption.map(Valid(_)).getOrElse {
-          error(s"Cant't find matching union subtype for value: $value for schema: $schema")
+          error(s"Cant't find matching union subtype for value: $value for field: $fieldName with schema: $schema")
         }
       case (Schema.Type.FIXED, str: CharSequence) =>
         val bytes = str.toString.getBytes(StandardCharsets.UTF_8)
@@ -110,9 +110,9 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
       case (Schema.Type.NULL, None) =>
         Valid(null)
       case (_, null) =>
-        error(s"Not expected null for schema: $schema")
+        error(s"Not expected null for field: $fieldName with schema: $schema")
       case (_, _) =>
-        error(s"Not expected type: ${value.getClass.getName} for schema: $schema")
+        error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")
     }
   }
 
@@ -137,7 +137,7 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
     fields.asScala.map(kv => (kv, schema.getField(kv._1))).collect {
       case ((fieldName, value), field) if field != null =>
         val fieldSchema = field.schema()
-        encode(value, fieldSchema).map(fieldName -> _)
+        encode(value, fieldSchema, Some(fieldName)).map(fieldName -> _)
       case ((fieldName, _), null) if !validationMode.acceptRedundant =>
         error(s"Not expected field with name: $fieldName for schema: $schema and policy $validationMode does not allow redundant")
     }.toList.sequence.map { values =>
@@ -161,9 +161,9 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
   private def encodeMap(map: collection.Map[_, _], schema: Schema): WithError[util.Map[CharSequence, AnyRef]] = {
     map.map {
       case (k: String, v) =>
-        encode(v, schema.getValueType).map(encodeString(k) -> _)
+        encode(v, schema.getValueType, Some(k)).map(encodeString(k) -> _)
       case (k: CharSequence, v) =>
-        encode(v, schema.getValueType).map(k -> _)
+        encode(v, schema.getValueType, Some(k.toString)).map(k -> _)
       case (k, v) =>
         error(s"Not expected type: ${k.getClass.getName} as a key of map for schema: $schema")
     }.toList.sequence.map(m => new util.HashMap(m.toMap.asJava))

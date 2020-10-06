@@ -1,41 +1,33 @@
-import React from "react"
-import {RootState} from "../../../../reducers/index"
-import {connect} from "react-redux"
-import Dialogs from "../../../modals/Dialogs"
-import {toggleModalDialog} from "../../../../actions/nk/modal"
-import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
-import {isSaveDisabled} from "../../../../reducers/selectors/graph"
-import {useTranslation} from "react-i18next"
 import cn from "classnames"
-import classes from "./SaveButton.styl"
+import React from "react"
+import {useTranslation} from "react-i18next"
+import {useDispatch, useSelector} from "react-redux"
+import {toggleModalDialog} from "../../../../actions/nk"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/save.svg"
+import {isSaveDisabled} from "../../../../reducers/selectors/graph"
+import {getCapabilities} from "../../../../reducers/selectors/other"
+import Dialogs from "../../../modals/Dialogs"
+import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
+import classes from "./SaveButton.styl"
 
-type Props = StateProps
-
-function SaveButton(props: Props) {
-  const {saveDisabled, toggleModalDialog} = props
+function SaveButton(): JSX.Element {
   const {t} = useTranslation()
+  const capabilities = useSelector(getCapabilities)
+  const saveDisabled = useSelector(isSaveDisabled)
+  const dispatch = useDispatch()
 
   return (
     <ToolbarButton
       name={t("panels.actions.process-save.button", "save")}
       icon={<Icon/>}
       labelClassName={cn("button-label", !saveDisabled && classes.unsaved)}
-      disabled={saveDisabled}
+      disabled={saveDisabled || !capabilities.write}
       onClick={() =>
         //TODO: Checking permission to archive should be done by check action from state - we should add new action type
-        toggleModalDialog(Dialogs.types.saveProcess)}
+        dispatch(toggleModalDialog(Dialogs.types.saveProcess))
+      }
     />
   )
 }
 
-const mapState = (state: RootState) => ({
-  saveDisabled: isSaveDisabled(state),
-})
-
-const mapDispatch = {
-  toggleModalDialog,
-}
-type StateProps = typeof mapDispatch & ReturnType<typeof mapState>
-
-export default connect(mapState, mapDispatch)(SaveButton)
+export default SaveButton

@@ -66,8 +66,10 @@ class ProcessUtils {
     const globalVariablesWithoutProcessCategory = this._findGlobalVariablesWithoutProcessCategory(processDefinition.globalVariables, processCategory)
     const variablesFromValidation = process?.validationResult?.nodeResults?.[nodeId]?.variableTypes
     const variablesForNode = variablesFromValidation || this._findVariablesBasedOnGraph(nodeId, process, processDefinition)
+    const variablesToHideForParam = parameterDefinition?.variablesToHide || []
+    const withoutVariablesToHide =  _.pickBy(variablesForNode, (va, key) => !variablesToHideForParam.includes(key))
     const additionalVariablesForParam = parameterDefinition?.additionalVariables || {}
-    const variables = {...variablesForNode, ...additionalVariablesForParam}
+    const variables = {...withoutVariablesToHide, ...additionalVariablesForParam}
 
     //Filtering by category - we show variables only with the same category as process, removing these which are in blackList
     return _.pickBy(variables, (va, key) => _.indexOf(globalVariablesWithoutProcessCategory, key) === -1)

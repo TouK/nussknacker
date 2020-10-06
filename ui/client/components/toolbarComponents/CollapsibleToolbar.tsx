@@ -15,11 +15,7 @@ type Props = PropsWithChildren<{
   isHidden?: boolean,
 }>
 
-export function CollapsibleToolbar({title, children, isHidden, id}: Props) {
-  if (isHidden || !Children.count(children)) {
-    return null
-  }
-
+export function CollapsibleToolbar({title, children, isHidden, id}: Props): JSX.Element | null {
   const dispatch = useDispatch()
   const isCollapsed = useSelector(getIsCollapsed(id))
   const [isShort, setIsShort] = useState(isCollapsed)
@@ -29,6 +25,10 @@ export function CollapsibleToolbar({title, children, isHidden, id}: Props) {
   const isCollapsible = !!id
 
   const {tabIndex, ...handlerProps} = useDragHandler()
+
+  if (isHidden || !Children.count(children)) {
+    return null
+  }
 
   return (
     <div className={styles.wrapper}>

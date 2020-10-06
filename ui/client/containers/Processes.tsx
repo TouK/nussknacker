@@ -77,8 +77,7 @@ function Processes() {
         allowAdd
 
         RowsRenderer={ElementsRenderer}
-      >
-      </ProcessesList>
+      />
     </Page>
   )
 }

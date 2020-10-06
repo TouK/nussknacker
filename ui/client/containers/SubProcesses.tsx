@@ -59,8 +59,7 @@ function SubProcesses() {
         allowAdd
 
         RowsRenderer={ElementsRenderer}
-      >
-      </ProcessesList>
+      />
     </Page>
   )
 }
