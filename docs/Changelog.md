@@ -16,7 +16,7 @@ Nussknacker versions
 * Configuration improvements (library upgrade, conventions): 
   [#1151](https://github.com/TouK/nussknacker/pull/1151), 
   [#1166](https://github.com/TouK/nussknacker/pull/1166) 
-* [#873](https://github.com/TouK/nussknacker/pull/873) Flink upgrade 
+* [#873](https://github.com/TouK/nussknacker/pull/873), [#1044](https://github.com/TouK/nussknacker/pull/1044) Flink upgrade (to 1.11) 
 * More graceful handling of Flink compatibility issues (in particular, ```FlinkCompatibilityProvider`` trait introduced, also
 ProcessManager implementations are separated from UI to allow easier changes in deployments):
   [#1150](https://github.com/TouK/nussknacker/pull/1150),

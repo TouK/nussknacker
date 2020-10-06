@@ -4,6 +4,8 @@ To see biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 0.3.0 (not released yet)
 
+* [#1044](https://github.com/TouK/nussknacker/pull/1044) Upgrade to Flink 1.11. Current watermark/timestamp mechanisms are deprectated in Flink 1.11, 
+ new API ```TimestampWatermarkHandler``` is introduced, with ```LegacyTimestampWatermarkHandler``` as wrapper for previous mechanisms.
 * [#1159](https://github.com/TouK/nussknacker/pull/1159) [#1170](https://github.com/TouK/nussknacker/pull/1170) Changes in `GenericNodeTransformation` API:
   - Now `implementation` takes additional parameter with final state value determined during `contextTransformation`
   - `DefinedLazyParameter` and `DefinedEagerParameter` holds `expression: TypedExpression` instead of `returnType: TypingResult`
