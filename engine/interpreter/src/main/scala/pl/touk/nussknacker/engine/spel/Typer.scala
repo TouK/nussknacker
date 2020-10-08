@@ -39,8 +39,11 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         typeExpression(e, ctx)
       case e:CompositeStringExpression =>
         val validatedParts = e.getExpressions.toList.map(typeExpression(_, ctx)).sequence
-
-        validatedParts.map(partResults => CollectedTypingResult(Monoid.combineAll(partResults.map(_.intermediateResults)), Typed[String]))
+        // We drop intermediate results here:
+        // * It's tricky to combine it as each of the subexpressions has it's own abstract tree with positions relative to the subexpression's starting position
+        // * CompositeStringExpression is dedicated to template SpEL expressions. It cannot be nested (as templates cannot be nested)
+        // * Currently we don't use intermediate typing results outside of Typer
+        validatedParts.map(_ => CollectedTypingResult.withEmptyIntermediateResults(Typed[String]))
       case e:LiteralExpression =>
         Valid(CollectedTypingResult.withEmptyIntermediateResults(Typed[String]))
       case e:NullExpression =>
