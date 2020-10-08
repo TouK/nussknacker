@@ -11,7 +11,7 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.effect.IO
 import org.apache.avro.generic.GenericData
 import org.scalatest.{EitherValues, FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.{Context, ParamName}
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
@@ -26,8 +26,6 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.types.{GeneratedAvroClass, JavaClassWithVarargs}
 
 import scala.collection.JavaConverters._
-import scala.concurrent.Await
-import scala.concurrent.duration._
 import scala.language.implicitConversions
 import scala.reflect.runtime.universe._
 
@@ -279,7 +277,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     parseOrFail[Integer]("#map.key2", withMapVar).evaluateSyncToValue[Integer](withMapVar) should equal(20)
   }
 
-  test("null-safe operator on map's elements") {
+  test("missing keys in Maps") {
     val validationCtx = ValidationContext.empty
       .withVariable("map", TypedObjectTypingResult(Map(
         "foo" -> Typed[Int],
@@ -287,9 +285,15 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
       )))
       .toOption.get
     val ctxWithMap = ctx.withVariable("map", Collections.emptyMap())
-    parseOrFail[Integer]("#map?.foo", validationCtx).evaluateSyncToValue[Integer](ctxWithMap) shouldBe null
-    parseOrFail[Integer]("#map?.nested?.bar", validationCtx).evaluateSyncToValue[Integer](ctxWithMap) shouldBe null
-    parseOrFail[Boolean]("#map?.foo == null && #map?.nested?.bar == null", validationCtx).evaluateSyncToValue[Boolean](ctxWithMap) shouldBe true
+    parseOrFail[Integer]("#map.foo", validationCtx).evaluateSyncToValue[Integer](ctxWithMap) shouldBe null
+    parseOrFail[Integer]("#map.nested?.bar", validationCtx).evaluateSyncToValue[Integer](ctxWithMap) shouldBe null
+    parseOrFail[Boolean]("#map.foo == null && #map?.nested?.bar == null", validationCtx).evaluateSyncToValue[Boolean](ctxWithMap) shouldBe true
+
+    val ctxWithTypedMap = ctx.withVariable("map", TypedMap(Map.empty))
+    val parseResult = parseOrFail[Integer]("#map.foo", validationCtx)
+    a[SpelExpressionEvaluationException] should be thrownBy {
+      parseResult.evaluateSyncToValue[Integer](ctxWithTypedMap)
+    }
   }
 
   test("check return type for map property accessed in dot notation") {

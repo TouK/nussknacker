@@ -12,6 +12,7 @@ import org.springframework.expression.{EvaluationContext, PropertyAccessor, Type
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyContext, LazyValuesProvider}
+import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{LazyContextVariableName, LazyValuesProviderVariableName}
 
 import scala.collection.concurrent.TrieMap
@@ -166,9 +167,10 @@ object propertyAccessors {
 
   object MapPropertyAccessor extends PropertyAccessor with ReadOnly {
 
-    // we are returing always true, because we want to correctly handle null-safe operator on maps
+    // For normal Maps, we always return true to have the same behaviour for missing key nad null value
+    // For TypedMaps, we want to distinguish both cases and in first one, throw an exception
     override def canRead(context: EvaluationContext, target: scala.Any, name: String): Boolean =
-      true
+      !target.isInstanceOf[TypedMap] || target.asInstanceOf[TypedMap].containsKey(name)
 
     override def read(context: EvaluationContext, target: scala.Any, name: String) =
       new TypedValue(target.asInstanceOf[java.util.Map[_, _]].get(name))
