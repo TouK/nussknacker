@@ -572,11 +572,8 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     parse[String]("alamakota #{444}", ctx, SpelExpressionParser.Template) shouldBe 'valid
     parse[String]("alamakota #{444 + #obj.value}", ctx, SpelExpressionParser.Template) shouldBe 'valid
     parse[String]("alamakota #{444 + #nothing}", ctx, SpelExpressionParser.Template) shouldBe 'invalid
-    // WARN - Merging same types: TypedClass(class java.lang.String,List()) for the same nodes. This shouldn't happen
     parse[String]("#{'raz'},#{'dwa'}", ctx, SpelExpressionParser.Template) shouldBe 'valid
-    the [AssertionError] thrownBy {
-      parse[String]("#{'raz'},#{12345}", ctx, SpelExpressionParser.Template)
-    } should have message("assertion failed: Types not matching during combination of types for spel nodes: TypedClass(class java.lang.String,List()) != TypedClass(class java.lang.Integer,List())")
+    parse[String]("#{'raz'},#{12345}", ctx, SpelExpressionParser.Template) shouldBe 'valid
   }
 
   test("evaluates expression with template context") {
