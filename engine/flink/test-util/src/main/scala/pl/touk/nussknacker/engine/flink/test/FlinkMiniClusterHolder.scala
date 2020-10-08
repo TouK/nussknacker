@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.flink.test
 
 import java.util.concurrent.CompletableFuture
 
-import org.apache.flink.api.common.JobID
+import org.apache.flink.api.common.{JobID, JobStatus}
 import org.apache.flink.client.program.ClusterClient
 import org.apache.flink.configuration._
 import org.apache.flink.queryablestate.client.QueryableStateClient
@@ -32,7 +32,9 @@ trait FlinkMiniClusterHolder {
 
   def submitJob(jobGraph: JobGraph): JobID
 
-  def listJobs(): List[JobStatusMessage]
+  def runningJobs(): Iterable[JobID]
+
+  def listJobs(): Iterable[JobStatusMessage]
 
   def createExecutionEnvironment(): MiniClusterExecutionEnvironment = {
     new MiniClusterExecutionEnvironment(this, userFlinkClusterConfig, envConfig)
@@ -68,6 +70,9 @@ class FlinkMiniClusterHolderImpl(flinkMiniCluster: MiniClusterWithClientResource
 
   override def listJobs(): List[JobStatusMessage] =
     flinkMiniCluster.getClusterClient.listJobs().get().asScala.toList
+
+  override def runningJobs(): List[JobID] =
+    listJobs().filter(_.getJobState == JobStatus.RUNNING).map(_.getJobId)
 
   def getClusterClient: ClusterClient[_] = flinkMiniCluster.getClusterClient
 

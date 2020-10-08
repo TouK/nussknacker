@@ -25,6 +25,8 @@ ProcessManager implementations are separated from UI to allow easier changes in 
 * [#1183](https://github.com/TouK/nussknacker/pull/1183) New back to process button on metrics 
 * [#1188](https://github.com/TouK/nussknacker/pull/1188) Fix env label and provide nussknacker logo
 * [#249](https://github.com/TouK/nussknacker/pull/1201) Inferred expression type in node modal
+* [#1255](https://github.com/TouK/nussknacker/pull/1255) Moved displaying `Metrics tab` to `customTabs`
+* [#1257](https://github.com/TouK/nussknacker/pull/1257) Improvements: Flink test util package
 
 0.2.2
 -----------------------
