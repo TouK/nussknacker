@@ -2,19 +2,25 @@ package pl.touk.nussknacker.engine.flink.test
 
 import java.util.concurrent.CompletableFuture
 
-import org.apache.flink.api.common.JobID
+import org.apache.flink.api.common.{JobID, JobStatus}
 import org.apache.flink.client.program.ClusterClient
-import org.apache.flink.configuration.{ConfigConstants, ConfigOptions, Configuration, CoreOptions, QueryableStateOptions, TaskManagerOptions}
+import org.apache.flink.configuration._
 import org.apache.flink.queryablestate.client.QueryableStateClient
+import org.apache.flink.runtime.client.JobStatusMessage
 import org.apache.flink.runtime.executiongraph.AccessExecutionGraph
+import org.apache.flink.runtime.jobgraph.JobGraph
 import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration
 import org.apache.flink.test.util.MiniClusterWithClientResource
-import org.scalatest.concurrent.Eventually.scaled
+import org.scalatest.concurrent.Eventually.{scaled, _}
 import org.scalatest.time.{Millis, Seconds, Span}
-import FlinkMiniClusterHolder._
-import org.scalatest.concurrent.Eventually._
+import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolder._
 
-// This class is splitted into trait and Impl because of Flink's API changes between 1.6 and 1.7 version
+import scala.collection.JavaConverters._
+
+/**
+  * This interface provides compatibility for another Flink's version.
+  * Instance of mini cluster holder should be created only once for many jobs.
+  */
 trait FlinkMiniClusterHolder {
 
   protected def userFlinkClusterConfig: Configuration
@@ -25,11 +31,17 @@ trait FlinkMiniClusterHolder {
 
   def stop(): Unit
 
+  private[test] def cancelJob(jobID: JobID): Unit
+
+  private[test] def submitJob(jobGraph: JobGraph): JobID
+
+  def runningJobs(): Iterable[JobID]
+
+  def listJobs(): Iterable[JobStatusMessage]
+
   def createExecutionEnvironment(): MiniClusterExecutionEnvironment = {
     new MiniClusterExecutionEnvironment(this, userFlinkClusterConfig, envConfig)
   }
-
-  def getClusterClient: ClusterClient[_]
 
   // We access miniCluster because ClusterClient doesn't expose getExecutionGraph and getJobStatus doesn't satisfy us
   // It returns RUNNING even when some vertices are not started yet
@@ -53,7 +65,19 @@ class FlinkMiniClusterHolderImpl(flinkMiniCluster: MiniClusterWithClientResource
     flinkMiniCluster.after()
   }
 
-  override def getClusterClient: ClusterClient[_] = flinkMiniCluster.getClusterClient
+  override private[test] def cancelJob(jobID: JobID): Unit =
+    flinkMiniCluster.getClusterClient.cancel(jobID)
+
+  override private[test] def submitJob(jobGraph: JobGraph): JobID =
+    flinkMiniCluster.getClusterClient.submitJob(jobGraph).get()
+
+  override def listJobs(): List[JobStatusMessage] =
+    flinkMiniCluster.getClusterClient.listJobs().get().asScala.toList
+
+  override def runningJobs(): List[JobID] =
+    listJobs().filter(_.getJobState == JobStatus.RUNNING).map(_.getJobId)
+
+  def getClusterClient: ClusterClient[_] = flinkMiniCluster.getClusterClient
 
   override def getExecutionGraph(jobId: JobID): CompletableFuture[_ <: AccessExecutionGraph] =
     flinkMiniCluster.getMiniCluster.getExecutionGraph(jobId)

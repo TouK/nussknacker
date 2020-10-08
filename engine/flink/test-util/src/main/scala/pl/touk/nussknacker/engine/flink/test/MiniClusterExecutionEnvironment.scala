@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.test
 
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.api.common.{JobExecutionResult, JobID, JobStatus}
+import org.apache.flink.api.common.{JobExecutionResult, JobID}
 import org.apache.flink.configuration._
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.runtime.jobgraph.JobGraph
@@ -18,9 +18,13 @@ import scala.collection.JavaConverters._
 class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHolder, userFlinkClusterConfig: Configuration, envConfig: AdditionalEnvironmentConfig) extends StreamExecutionEnvironment
   with LazyLogging with Matchers {
 
-  def runningJobs(): Iterable[JobID] = {
-    flinkMiniClusterHolder.getClusterClient.listJobs().get().asScala.filter(_.getJobState == JobStatus.RUNNING).map(_.getJobId)
-  }
+  /**
+    * @deprecated
+    * Use flinkMiniClusterHolder.runningJobs() instead of this. MiniClusterExecutionEnvironment should be used only for manage one job.
+    */
+  @Deprecated
+  def runningJobs(): Iterable[JobID] =
+    flinkMiniClusterHolder.runningJobs()
 
   // Warning: this method assume that will be one job for all checks inside action. We highly recommend to execute
   // job once per test class and then do many concurrent scenarios basing on own unique keys in input.
@@ -39,7 +43,7 @@ class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHo
   }
 
   def stopJob[T](jobName: String, jobID: JobID): Unit = {
-    cancel(jobID)
+    flinkMiniClusterHolder.cancelJob(jobID)
     waitForJobState(jobID, jobName, ExecutionState.CANCELED, ExecutionState.FINISHED, ExecutionState.FAILED)()
     cleanupGraph()
   }
@@ -76,14 +80,13 @@ class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHo
     jobGraph.getJobConfiguration.addAll(userFlinkClusterConfig)
 
     // Is passed classloader is ok?
-    val submissionResult = flinkMiniClusterHolder.getClusterClient.submitJob(jobGraph)
+    val jobId = flinkMiniClusterHolder.submitJob(jobGraph)
 
-    new JobExecutionResult(submissionResult.get(), 0, new java.util.HashMap[String, OptionalFailure[AnyRef]]())
+    new JobExecutionResult(jobId, 0, new java.util.HashMap[String, OptionalFailure[AnyRef]]())
   }
 
-  def cancel(jobId: JobID): Unit = {
-    flinkMiniClusterHolder.getClusterClient.cancel(jobId)
-  }
+  def cancel(jobId: JobID): Unit =
+    flinkMiniClusterHolder.cancelJob(jobId)
 
   //this *has* to be done between tests, otherwise next .execute() will execute also current operators
   def cleanupGraph(): Unit = {

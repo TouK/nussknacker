@@ -17,7 +17,6 @@ import pl.touk.nussknacker.engine.flink.queryablestate.FlinkQueryableClient
 import pl.touk.nussknacker.engine.flink.test.{FlinkMiniClusterHolder, FlinkSpec, FlinkTestConfiguration}
 import pl.touk.nussknacker.engine.kafka.{AvailablePortFinder, KafkaSpec, KafkaZookeeperServer}
 import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
-import pl.touk.nussknacker.engine.process
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -82,7 +81,7 @@ class QueryableStateTest extends FlatSpec with FlinkSpec with Matchers with Kafk
 
       //we have to be sure the job is *really* working
       eventually {
-        env.runningJobs().toList should contain (jobId)
+        flinkMiniCluster.runningJobs() should contain (jobId)
         queryState(jobId.toString).futureValue shouldBe true
       }
       creator.signals(ProcessObjectDependencies(TestConfig(kafkaZookeeperServer), DefaultObjectNaming)).values
