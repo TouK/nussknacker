@@ -195,11 +195,11 @@ object NussknackerAppInitializer extends LazyLogging {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  protected val config: Config = ConfigWithDefaults(ConfigFactory.load())
 
-  protected implicit val system: ActorSystem = ActorSystem("nussknacker-ui")
+  protected implicit val system: ActorSystem = ActorSystem("nussknacker-ui", config)
   protected implicit val materializer: ActorMaterializer = ActorMaterializer()
 
-  protected val config: Config = ConfigWithDefaults(system.settings.config)
   protected val jdbcServerConfig: Option[DatabaseServer.Config] = config.getAs[DatabaseServer.Config]("jdbcServer")
   protected val hsqlServer: Option[Server] = jdbcServerConfig.map(DatabaseServer(_))
 
