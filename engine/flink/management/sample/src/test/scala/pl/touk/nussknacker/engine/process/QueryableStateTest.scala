@@ -5,6 +5,7 @@ import java.lang
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.api.common.JobStatus
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
@@ -82,7 +83,7 @@ class QueryableStateTest extends FlatSpec with FlinkSpec with Matchers with Kafk
 
       //we have to be sure the job is *really* working
       eventually {
-        env.runningJobs().toList should contain (jobId)
+        flinkMiniCluster.listJobs().filter(_.getJobState == JobStatus.RUNNING).map(_.getJobId) should contain (jobId)
         queryState(jobId.toString).futureValue shouldBe true
       }
       creator.signals(ProcessObjectDependencies(TestConfig(kafkaZookeeperServer), DefaultObjectNaming)).values

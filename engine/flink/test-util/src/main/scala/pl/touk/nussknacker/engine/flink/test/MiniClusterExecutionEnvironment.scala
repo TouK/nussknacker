@@ -18,10 +18,6 @@ import scala.collection.JavaConverters._
 class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHolder, userFlinkClusterConfig: Configuration, envConfig: AdditionalEnvironmentConfig) extends StreamExecutionEnvironment
   with LazyLogging with Matchers {
 
-  def runningJobs(): Iterable[JobID] = {
-    flinkMiniClusterHolder.getClusterClient.listJobs().get().asScala.filter(_.getJobState == JobStatus.RUNNING).map(_.getJobId)
-  }
-
   // Warning: this method assume that will be one job for all checks inside action. We highly recommend to execute
   // job once per test class and then do many concurrent scenarios basing on own unique keys in input.
   // Running multiple parallel instances of job in one test class can cause stealing of data from sources between those instances.
@@ -39,7 +35,7 @@ class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHo
   }
 
   def stopJob[T](jobName: String, jobID: JobID): Unit = {
-    cancel(jobID)
+    flinkMiniClusterHolder.cancelJob(jobID)
     waitForJobState(jobID, jobName, ExecutionState.CANCELED, ExecutionState.FINISHED, ExecutionState.FAILED)()
     cleanupGraph()
   }
@@ -76,13 +72,9 @@ class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHo
     jobGraph.getJobConfiguration.addAll(userFlinkClusterConfig)
 
     // Is passed classloader is ok?
-    val submissionResult = flinkMiniClusterHolder.getClusterClient.submitJob(jobGraph)
+    val jobId = flinkMiniClusterHolder.submitJob(jobGraph)
 
-    new JobExecutionResult(submissionResult.get(), 0, new java.util.HashMap[String, OptionalFailure[AnyRef]]())
-  }
-
-  def cancel(jobId: JobID): Unit = {
-    flinkMiniClusterHolder.getClusterClient.cancel(jobId)
+    new JobExecutionResult(jobId, 0, new java.util.HashMap[String, OptionalFailure[AnyRef]]())
   }
 
   //this *has* to be done between tests, otherwise next .execute() will execute also current operators

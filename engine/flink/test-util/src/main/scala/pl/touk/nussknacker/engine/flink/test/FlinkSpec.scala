@@ -10,16 +10,26 @@ trait FlinkSpec extends BeforeAndAfterAll { self: Suite =>
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    flinkMiniCluster = FlinkMiniClusterHolder(prepareFlinkConfiguration(), prepareEnvConfig())
+    flinkMiniCluster = createFlinkMiniClusterHolder()
     flinkMiniCluster.start()
   }
 
+  /**
+    * Override this when you use own Configuration implementation (e.g. Flink 1.9)
+    */
   protected def prepareFlinkConfiguration(): Configuration = {
     FlinkTestConfiguration.configuration()
   }
 
   protected def prepareEnvConfig(): AdditionalEnvironmentConfig = {
     AdditionalEnvironmentConfig()
+  }
+
+  /**
+    * Override this when you use own FlikMiniClusterHolder implementation (e.g. Flink 1.9)
+    */
+  protected def createFlinkMiniClusterHolder(): FlinkMiniClusterHolder = {
+    FlinkMiniClusterHolder(prepareFlinkConfiguration(), prepareEnvConfig())
   }
 
   override protected def afterAll(): Unit = {
