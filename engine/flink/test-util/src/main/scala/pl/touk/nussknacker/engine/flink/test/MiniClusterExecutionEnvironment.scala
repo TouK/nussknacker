@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.test
 
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.api.common.{JobExecutionResult, JobID, JobStatus}
+import org.apache.flink.api.common.{JobExecutionResult, JobID}
 import org.apache.flink.configuration._
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.runtime.jobgraph.JobGraph
@@ -17,6 +17,14 @@ import scala.collection.JavaConverters._
 
 class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHolder, userFlinkClusterConfig: Configuration, envConfig: AdditionalEnvironmentConfig) extends StreamExecutionEnvironment
   with LazyLogging with Matchers {
+
+  /**
+    * @deprecated
+    * Use flinkMiniClusterHolder.runningJobs() instead of this. MiniClusterExecutionEnvironment should be used only for manage one job.
+    */
+  @Deprecated
+  def runningJobs(): Iterable[JobID] =
+    flinkMiniClusterHolder.runningJobs()
 
   // Warning: this method assume that will be one job for all checks inside action. We highly recommend to execute
   // job once per test class and then do many concurrent scenarios basing on own unique keys in input.
@@ -76,6 +84,9 @@ class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHo
 
     new JobExecutionResult(jobId, 0, new java.util.HashMap[String, OptionalFailure[AnyRef]]())
   }
+
+  def cancel(jobId: JobID): Unit =
+    flinkMiniClusterHolder.cancelJob(jobId)
 
   //this *has* to be done between tests, otherwise next .execute() will execute also current operators
   def cleanupGraph(): Unit = {

@@ -17,7 +17,10 @@ import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolder._
 
 import scala.collection.JavaConverters._
 
-// This class is splitted into trait and Impl because of Flink's API changes between 1.6 and 1.7 version
+/**
+  * This interface provides compatibility for another Flink's version.
+  * Instance of mini cluster holder should be created only once for many jobs.
+  */
 trait FlinkMiniClusterHolder {
 
   protected def userFlinkClusterConfig: Configuration
@@ -28,9 +31,9 @@ trait FlinkMiniClusterHolder {
 
   def stop(): Unit
 
-  def cancelJob(jobID: JobID): Unit
+  private[test] def cancelJob(jobID: JobID): Unit
 
-  def submitJob(jobGraph: JobGraph): JobID
+  private[test] def submitJob(jobGraph: JobGraph): JobID
 
   def runningJobs(): Iterable[JobID]
 
@@ -62,10 +65,10 @@ class FlinkMiniClusterHolderImpl(flinkMiniCluster: MiniClusterWithClientResource
     flinkMiniCluster.after()
   }
 
-  override def cancelJob(jobID: JobID): Unit =
+  override private[test] def cancelJob(jobID: JobID): Unit =
     flinkMiniCluster.getClusterClient.cancel(jobID)
 
-  override def submitJob(jobGraph: JobGraph): JobID =
+  override private[test] def submitJob(jobGraph: JobGraph): JobID =
     flinkMiniCluster.getClusterClient.submitJob(jobGraph).get()
 
   override def listJobs(): List[JobStatusMessage] =

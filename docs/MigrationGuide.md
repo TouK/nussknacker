@@ -23,10 +23,10 @@ that will be hidden before parameter's evaluation
 * [#1218](https://github.com/TouK/nussknacker/pull/1218) FlinkProcessManager is no longer bundled in ui uber-jar. In docker/tgz distribution
 * [#1255](https://github.com/TouK/nussknacker/pull/1255) Moved displaying `Metrics tab` to `customTabs`
 * [#1257](https://github.com/TouK/nussknacker/pull/1257) Improvements: Flink test util package
-    - Moved methods: `runningJobs`, `cancel` (cancelJob) from `MiniClusterExecutionEnvironment` to `FlinkMiniClusterHolder`
-    - Removed `getClusterClient` from `FlinkMiniClusterHolder` interface, because of flink compatibility at Flink 1.9
-    - Added methods: `submitJob`, `listJobs` to `FlinkMiniClusterHolder` 
-    - Renamed `FlinkStreamingProcessRegistrar` to `FlinkProcessManager` 
+    - Added methods: `cancelJob`, `submitJob`, `listJobs`, `runningJobs` to `FlinkMiniClusterHolder`
+    - Deprecated: `runningJobs`, from `MiniClusterExecutionEnvironment`
+    - Removed: `getClusterClient` from `FlinkMiniClusterHolder` interface, because of flink compatibility at Flink 1.9 
+    - Renamed: `FlinkStreamingProcessRegistrar` to `FlinkProcessManager` 
 
 ## In version 0.2.0
 
