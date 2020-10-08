@@ -166,8 +166,9 @@ object propertyAccessors {
 
   object MapPropertyAccessor extends PropertyAccessor with ReadOnly {
 
+    // we are returing always true, because we want to correctly handle null-safe operator on maps
     override def canRead(context: EvaluationContext, target: scala.Any, name: String): Boolean =
-      target.asInstanceOf[java.util.Map[_, _]].containsKey(name)
+      true
 
     override def read(context: EvaluationContext, target: scala.Any, name: String) =
       new TypedValue(target.asInstanceOf[java.util.Map[_, _]].get(name))

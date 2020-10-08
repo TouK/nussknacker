@@ -254,7 +254,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   }
 
-  test("evaluate map ") {
+  test("evaluate map") {
     val ctxWithVar = ctx.withVariable("processVariables", Collections.singletonMap("processingStartTime", 11L))
     parseOrFail[Any]("#processVariables['processingStartTime']", ctxWithVar).evaluateSyncToValue[Long](ctxWithVar) should equal(11L)
   }
@@ -262,10 +262,9 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   test("stop validation when property of Any/Object type found") {
     val ctxWithVar = ctx.withVariable("obj", SampleValue(11))
     parse[Any]("#obj.anyObject.anyPropertyShouldValidate", ctxWithVar) shouldBe 'valid
-
   }
 
-  test("allow empty expression ") {
+  test("allow empty expression") {
     parse[Any]("", ctx) shouldBe 'valid
   }
 
@@ -278,6 +277,19 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
     parseOrFail[String]("#map.key1", withMapVar).evaluateSyncToValue[String](withMapVar) should equal("value1")
     parseOrFail[Integer]("#map.key2", withMapVar).evaluateSyncToValue[Integer](withMapVar) should equal(20)
+  }
+
+  test("null-safe operator on map's elements") {
+    val validationCtx = ValidationContext.empty
+      .withVariable("map", TypedObjectTypingResult(Map(
+        "foo" -> Typed[Int],
+        "nested" -> TypedObjectTypingResult(Map("bar" -> Typed[Int]))
+      )))
+      .toOption.get
+    val ctxWithMap = ctx.withVariable("map", Collections.emptyMap())
+    parseOrFail[Integer]("#map?.foo", validationCtx).evaluateSyncToValue[Integer](ctxWithMap) shouldBe null
+    parseOrFail[Integer]("#map?.nested?.bar", validationCtx).evaluateSyncToValue[Integer](ctxWithMap) shouldBe null
+    parseOrFail[Boolean]("#map?.foo == null && #map?.nested?.bar == null", validationCtx).evaluateSyncToValue[Boolean](ctxWithMap) shouldBe true
   }
 
   test("check return type for map property accessed in dot notation") {
