@@ -757,7 +757,6 @@ lazy val httpUtils = (project in engine("httpUtils")).
         "io.circe" %% "circe-core" % circeV force(),
         "io.circe" %% "circe-parser" % circeV force(),
         "org.dispatchhttp" %% "dispatch-core" % dispatchV,
-        "org.asynchttpclient" % "async-http-client" % "2.10.4",
         "org.scala-lang.modules" %% "scala-parser-combinators" % scalaParsersV, // scalaxb deps
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "com.softwaremill.sttp.client" %% "core" % sttpV,
