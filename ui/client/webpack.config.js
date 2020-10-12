@@ -123,6 +123,7 @@ module.exports = {
     new CopyPlugin({
       patterns: [
         {from: "translations", to: "assets/locales"},
+        {from: "assets/img/favicon.png", to: "assets/img/favicon.png"},
       ],
     }),
     new webpack.DefinePlugin({
