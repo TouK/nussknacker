@@ -9,13 +9,13 @@ import org.apache.flink.streaming.api.scala.DataStream
 
 import scala.annotation.nowarn
 
-trait TimestampWatermarkHandler[T] {
+trait TimestampWatermarkHandler[T] extends Serializable {
 
   def assignTimestampAndWatermarks(dataStream: DataStream[T]): DataStream[T]
 
 }
 
-class StandardTimestampWatermarkHandler[T](strategy: WatermarkStrategy[T]) extends TimestampWatermarkHandler[T] with Serializable {
+class StandardTimestampWatermarkHandler[T](strategy: WatermarkStrategy[T]) extends TimestampWatermarkHandler[T] {
 
   override def assignTimestampAndWatermarks(dataStream: DataStream[T]): DataStream[T] = {
     dataStream.assignTimestampsAndWatermarks(strategy)
