@@ -171,7 +171,7 @@
     "less": "^3.12.2",
     "less-loader": "^7.0.2",
     "lint-staged": "^10.4.0",
-    "node-libs-browser": "^0.7.0",
+    "node-libs-browser": "^2.2.1",
     "postcss": "^8.1.1",
     "postcss-loader": "^4.0.4",
     "postcss-move-props-to-bg-image-query": "^4.0.0",
