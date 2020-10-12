@@ -1,35 +1,36 @@
-import _ from "lodash"
-import * as queryString from "query-string"
 import React from "react"
-import {withTranslation} from "react-i18next"
-import {WithTranslation} from "react-i18next/src"
-import {connect} from "react-redux"
 import {Redirect, Route, RouteComponentProps} from "react-router"
 import {matchPath, withRouter} from "react-router-dom"
-import {compose} from "redux"
-import ActionsUtils, {EspActionsProps} from "../actions/ActionsUtils"
-import "../app.styl"
-import DragArea from "../components/DragArea"
+import _ from "lodash"
 import {MenuBar} from "../components/MenuBar"
-import Dialogs from "../components/modals/Dialogs"
-import ProcessBackButton from "../components/Process/ProcessBackButton"
+import {UnknownRecord} from "../types/common"
+import {ProcessesTabData} from "./Processes"
+import {SubProcessesTabData} from "./SubProcesses"
+import {ArchiveTabData} from "./Archive"
+import NotFound from "./errors/NotFound"
 import {nkPath} from "../config"
-import {getFeatureSettings} from "../reducers/selectors/settings"
+import {TransitionRouteSwitch} from "./TransitionRouteSwitch"
+import Metrics from "./Metrics"
+import Signals from "./Signals"
+import {NkAdminPage, AdminPage} from "./AdminPage"
+import DragArea from "../components/DragArea"
+import {connect} from "react-redux"
+import ActionsUtils, {EspActionsProps} from "../actions/ActionsUtils"
+import Dialogs from "../components/modals/Dialogs"
+import Visualization from "./Visualization"
 
 import "../stylesheets/mainMenu.styl"
-import {UnknownRecord} from "../types/common"
-import {AdminPage, NkAdminPage} from "./AdminPage"
-import {ArchiveTabData} from "./Archive"
-import CustomTabs from "./CustomTabs"
+import "../app.styl"
 import ErrorHandler from "./ErrorHandler"
-import NotFound from "./errors/NotFound"
-import Metrics from "./Metrics"
-import {ProcessesTabData} from "./Processes"
 import {ProcessTabs} from "./ProcessTabs"
-import Signals from "./Signals"
-import {SubProcessesTabData} from "./SubProcesses"
-import {TransitionRouteSwitch} from "./TransitionRouteSwitch"
-import Visualization from "./Visualization"
+import {getFeatureSettings} from "../reducers/selectors/settings"
+import CustomTabs from "./CustomTabs"
+import {withTranslation} from "react-i18next"
+import {WithTranslation} from "react-i18next/src"
+import {compose} from "redux"
+import {UnregisterCallback} from "history"
+import ProcessBackButton from "../components/Process/ProcessBackButton"
+import * as queryString from "query-string"
 
 type OwnProps = UnknownRecord
 type State = UnknownRecord
@@ -42,10 +43,10 @@ type MetricParam = {
 
 export class NussknackerApp extends React.Component<Props, State> {
   private readonly path: string = `${nkPath}/`
-  private mountedHistory: () => void
+  private mountedHistory: UnregisterCallback
 
   componentDidMount() {
-    this.mountedHistory = this.props.history.listen(({action, location}) => {
+    this.mountedHistory = this.props.history.listen((location, action) => {
       if (action === "PUSH") {
         this.props.actions.urlChange(location)
       }
