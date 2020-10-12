@@ -197,7 +197,9 @@ module.exports = {
           {
             loader: "stylus-loader",
             options: {
-              use: [bootstrap()],
+              stylusOptions: {
+                use: [bootstrap()],
+              },
             },
           },
         ],
