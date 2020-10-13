@@ -11,8 +11,8 @@
     "lint": "eslint --ext .ts,.tsx,.js,.jsx",
     "svgo": "svgo --config .svgo.yml",
     "check": "npm run check-types && npm run lint -- . --rule 'i18next/no-literal-string: warn'",
-    "start": "BACKEND_DOMAIN=http://localhost:8080 webpack-dev-server",
-    "start-backend-demo": "BACKEND_DOMAIN=https://staging.nussknacker.io webpack-dev-server",
+    "start": "BACKEND_DOMAIN=http://localhost:8080 webpack serve",
+    "start-backend-demo": "BACKEND_DOMAIN=https://staging.nussknacker.io webpack serve",
     "pretest": "npm run check",
     "test": "./node_modules/karma/bin/karma start --single-run"
   },
@@ -189,7 +189,7 @@
     "typescript": "^4.0.3",
     "typescript-plugin-css-modules": "^2.7.0",
     "webpack": "^4.44.2",
-    "webpack-cli": "^3.3.12",
+    "webpack-cli": "^4.0.0",
     "webpack-dev-server": "^3.11.0"
   },
   "husky": {

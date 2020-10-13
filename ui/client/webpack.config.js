@@ -88,7 +88,7 @@ module.exports = {
   },
   devtool: isProd ? "hidden-source-map" : "eval-source-map",
   devServer: {
-    contentBase: __dirname,
+    publicPath: isProd ? "__publicPath__/static/" : "/static/",
     historyApiFallback: {
       index: "/static/main.html",
     },
