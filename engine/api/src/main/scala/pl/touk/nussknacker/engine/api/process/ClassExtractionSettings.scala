@@ -168,7 +168,7 @@ object ClassExtractionSettings {
       ClassMemberPatternPredicate(
         SuperClassPatternPredicate(Pattern.compile("java\\.lang\\.CharSequence")),
         Pattern.compile(s"charAt|compareTo.*|concat|contains|endsWith|equalsIgnoreCase|isEmpty|lastIndexOf|length|matches|" +
-          s"replaceAll|replaceFirst|split|startsWith|substring|toLowerCase|toUpperCase|trim")),
+          s"replaceAll|replaceFirst|split|startsWith|substring|toLowerCase|toUpperCase|trim|$ToStringMethod")),
       ClassMemberPatternPredicate(
         SuperClassPatternPredicate(Pattern.compile("java\\.util\\.Collection")),
         Pattern.compile(s"contains|containsAll|get|getOrDefault|indexOf|isEmpty|size")),
