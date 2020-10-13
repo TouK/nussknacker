@@ -17,8 +17,6 @@ const entry = {
   main: path.resolve(__dirname, "./index.js"),
 }
 
-let previouslyPrintedPercentage = 0
-
 if (!isProd) {
   entry["developer-tools"] = [
     "webpack-dev-server/client?http://localhost:3000",
@@ -238,9 +236,7 @@ module.exports = {
         oneOf: [
           {
             exclude: /node_modules/,
-            issuer: {
-              test: /\.[tj]sx?$/,
-            },
+            issuer: /\.[tj]sx?$/,
             use: [
               "babel-loader",
               {

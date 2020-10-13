@@ -175,7 +175,7 @@
     "postcss": "^8.1.1",
     "postcss-loader": "^4.0.4",
     "postcss-move-props-to-bg-image-query": "^4.0.0",
-    "puppeteer": "^2.0.0",
+    "puppeteer": "^5.3.1",
     "raw-loader": "^4.0.2",
     "react-scrollbars-custom": "^4.0.25",
     "redux-mock-store": "^1.5.4",
