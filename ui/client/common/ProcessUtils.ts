@@ -63,7 +63,7 @@ class ProcessUtils {
   escapeNodeIdForRegexp = (id) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&")
 
   findAvailableVariables = (processDefinition, processCategory, process) => (nodeId, parameterDefinition) => {
-    const globalVariablesWithoutProcessCategory = this._findGlobalVariablesWithoutProcessCategory(processDefinition.globalVariables, processCategory)
+    const globalVariablesWithMismatchCategory = this._findGlobalVariablesWithMismatchCategory(processDefinition.globalVariables, processCategory)
     const variablesFromValidation = process?.validationResult?.nodeResults?.[nodeId]?.variableTypes
     const variablesForNode = variablesFromValidation || this._findVariablesBasedOnGraph(nodeId, process, processDefinition)
     const variablesToHideForParam = parameterDefinition?.variablesToHide || []
@@ -72,11 +72,11 @@ class ProcessUtils {
     const variables = {...withoutVariablesToHide, ...additionalVariablesForParam}
 
     //Filtering by category - we show variables only with the same category as process, removing these which are in blackList
-    return _.pickBy(variables, (va, key) => _.indexOf(globalVariablesWithoutProcessCategory, key) === -1)
+    return _.pickBy(variables, (va, key) => _.indexOf(globalVariablesWithMismatchCategory, key) === -1)
   }
 
   //It's not pretty but works.. This should be done at backend with properly category hierarchy
-  _findGlobalVariablesWithoutProcessCategory = (globalVariables, processCategory) => {
+  _findGlobalVariablesWithMismatchCategory = (globalVariables, processCategory) => {
     return _.keys(_.pickBy(globalVariables, variable => _.indexOf(variable.categories, processCategory) === -1))
   }
 
