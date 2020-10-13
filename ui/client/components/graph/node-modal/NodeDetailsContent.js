@@ -753,7 +753,7 @@ function mapState(state, props) {
   //process is *different* than subprocess itself
   //TODO: in particular we need it for branches, how to handle it for subprocesses?
   const mainProcess = state.graphReducer.processToDisplay
-  const findAvailableVariables = ProcessUtils.findAvailableVariables(processDefinitionData, getProcessCategory(state), mainProcess)
+  const findAvailableVariables = ProcessUtils.findAvailableVariables(processDefinitionData.processDefinition, getProcessCategory(state), mainProcess)
 
   const findAvailableBranchVariables = ProcessUtils.findVariablesForBranches(mainProcess?.validationResult?.nodeResults)
   //see NodeDetailsModal - we pass own state in props.node, so we cannot just rely on props.node.id
