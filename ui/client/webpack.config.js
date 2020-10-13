@@ -77,6 +77,13 @@ module.exports = {
     alias: {
       "react-dom": "@hot-loader/react-dom",
     },
+    fallback: {
+      path: require.resolve("path-browserify"), //reason: react-markdown
+      crypto: require.resolve("crypto-browserify"), //reason: jsonwebtoken
+      stream: require.resolve("stream-browserify"), //reason: jsonwebtoken
+      http: require.resolve("stream-http"), //reason: matomo-tracker
+      https: require.resolve("https-browserify"), //reason: matomo-tracker
+    },
   },
   entry: entry,
   output: {
@@ -116,7 +123,6 @@ module.exports = {
       filename: "main.html",
       template: "index_template_no_doctype.ejs",
     }),
-    isProd ? null : new webpack.NamedModulesPlugin(),
     isProd ? null : new webpack.HotModuleReplacementPlugin(),
     new CopyPlugin({
       patterns: [
@@ -126,6 +132,8 @@ module.exports = {
     }),
     new webpack.DefinePlugin({
       __DEV__: !isProd,
+      "process.version": JSON.stringify(process.version), //reason: jsonwebtoken
+      "process.browser": true, //reason: jsonwebtoken
       "process.env": {
         NODE_ENV: JSON.stringify(NODE_ENV),
       },
@@ -147,6 +155,15 @@ module.exports = {
   module: {
     rules: [
       {
+        // TODO: remove after update to babel 7.12
+        // https://github.com/babel/babel/pull/10853
+        // https://github.com/webpack/webpack/issues/11467#issuecomment-691873586
+        test: /\.m?js/,
+        resolve: {
+          fullySpecified: false,
+        },
+      },
+      {
         test: require.resolve("jointjs"),
         use: [
           {
@@ -159,12 +176,16 @@ module.exports = {
       },
       {
         test: /\.html$/,
-        loader: "html-loader?minimize=false",
+        use: {
+          loader: "html-loader",
+          options: {
+            minimize: false,
+          },
+        },
       },
       {
         test: /\.[tj]sx?$/,
         use: ["babel-loader"],
-        exclude: /node_modules/,
       },
       {
         test: /\.(css|styl|less)?$/,
@@ -235,7 +256,6 @@ module.exports = {
         test: /\.svg$/,
         oneOf: [
           {
-            exclude: /node_modules/,
             issuer: /\.[tj]sx?$/,
             use: [
               "babel-loader",
