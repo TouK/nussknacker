@@ -2,7 +2,6 @@
 import React, {Suspense} from "react"
 import ReactDOM from "react-dom"
 import ErrorBoundary from "react-error-boundary"
-import {AppContainer} from "react-hot-loader"
 import Modal from "react-modal"
 import {Provider} from "react-redux"
 import {Router} from "react-router-dom"
@@ -28,24 +27,22 @@ Modal.setAppElement(rootContainer)
 ReactDOM.render(
   (
     <div className="test">
-      <AppContainer>
-        <Suspense fallback={<div>Loading...</div>}>
-          <ErrorBoundary>
-            <Provider store={store}>
-              <PersistGate loading={null} persistor={persistor}>
-                <Router history={history}>
-                  <NkThemeProvider>
-                    <NussknackerInitializer>
-                      <Notifications/>
-                      <NkApp/>
-                    </NussknackerInitializer>
-                  </NkThemeProvider>
-                </Router>
-              </PersistGate>
-            </Provider>
-          </ErrorBoundary>
-        </Suspense>
-      </AppContainer>
+      <Suspense fallback={<div>Loading...</div>}>
+        <ErrorBoundary>
+          <Provider store={store}>
+            <PersistGate loading={null} persistor={persistor}>
+              <Router history={history}>
+                <NkThemeProvider>
+                  <NussknackerInitializer>
+                    <Notifications/>
+                    <NkApp/>
+                  </NussknackerInitializer>
+                </NkThemeProvider>
+              </Router>
+            </PersistGate>
+          </Provider>
+        </ErrorBoundary>
+      </Suspense>
     </div>
   ),
   rootContainer,

@@ -17,13 +17,6 @@ const entry = {
   main: path.resolve(__dirname, "./index.js"),
 }
 
-if (!isProd) {
-  entry["developer-tools"] = [
-    "webpack-dev-server/client?http://localhost:3000",
-    "react-hot-loader/patch",
-  ]
-}
-
 const cssPreLoaders = [
   {
     loader: "postcss-loader",
@@ -73,9 +66,6 @@ module.exports = {
   },
   resolve: {
     extensions: [".ts", ".tsx", ".js", ".jsx", ".json"],
-    alias: {
-      "react-dom": "@hot-loader/react-dom",
-    },
     fallback: {
       path: require.resolve("path-browserify"), //reason: react-markdown
       crypto: require.resolve("crypto-browserify"), //reason: jsonwebtoken
@@ -99,7 +89,6 @@ module.exports = {
       index: "/static/main.html",
     },
     hot: true,
-    hotOnly: true,
     port: 3000,
     proxy: {
       "/api": {
@@ -122,7 +111,6 @@ module.exports = {
       filename: "main.html",
       template: "index_template_no_doctype.ejs",
     }),
-    isProd ? null : new webpack.HotModuleReplacementPlugin(),
     new CopyPlugin({
       patterns: [
         {from: "translations", to: "assets/locales"},

@@ -1,7 +1,6 @@
 import _ from "lodash"
 import * as queryString from "query-string"
 import React from "react"
-import {hot} from "react-hot-loader"
 import {withTranslation} from "react-i18next"
 import {WithTranslation} from "react-i18next/src"
 import {connect} from "react-redux"
@@ -188,6 +187,7 @@ class NussknackerInitializer extends React.Component<Props, State> {
             return false
           }
         } else if (settings.jwtIdTokenNonceVerificationRequired === true) {
+          // eslint-disable-next-line i18next/no-literal-string
           console.warn("jwt.idTokenNonceVerificationRequired=true but id_token missing in the auth server response")
           this.setState({error: this.state.errors[NussknackerInitializer.ACCESS_TOKEN_CODE]})
           return false
@@ -229,7 +229,6 @@ function mapState(state) {
 type Props = OwnProps & ReturnType<typeof mapState> & EspActionsProps &  WithTranslation & RouteComponentProps
 
 const enhance = compose(
-  hot(module),
   withRouter,
   connect(mapState, ActionsUtils.mapDispatchWithEspActions),
   withTranslation(),

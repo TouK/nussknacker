@@ -44,4 +44,3 @@ It contains:
 - react in version 15.0.1
 - redux in version 3.1.1
 - application embraces [react-devtools-extension](https://github.com/zalmoxisus/redux-devtools-extension)
-- react-hot-loader in version 3.0.0-beta.1
