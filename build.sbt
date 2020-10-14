@@ -855,6 +855,10 @@ lazy val ui = (project in file("ui/server"))
         "org.slf4j" % "log4j-over-slf4j" % slf4jV,
         "com.carrotsearch" % "java-sizeof" % "0.0.5",
 
+        //It's needed by flinkProcessManager which has disabled includingScala
+        "org.scala-lang" % "scala-compiler" % scalaVersion.value,
+        "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+
         "com.typesafe.slick" %% "slick" % slickV,
         "com.typesafe.slick" %% "slick-hikaricp" % slickV,
         "org.hsqldb" % "hsqldb" % hsqldbV,
