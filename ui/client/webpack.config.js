@@ -13,8 +13,10 @@ const GIT_HASH = childProcess.execSync("git log -1 --format=%H").toString()
 const GIT_DATE = childProcess.execSync("git log -1 --format=%cd").toString()
 const isProd = NODE_ENV === "production"
 
+const {ModuleFederationPlugin} = webpack.container
+const {dependencies, name} = require("./package.json")
 const entry = {
-  main: path.resolve(__dirname, "./index.js"),
+  main: path.resolve(__dirname, "./init.js"),
 }
 
 const cssPreLoaders = [
@@ -105,6 +107,10 @@ module.exports = {
     },
   },
   plugins: [
+    new ModuleFederationPlugin({
+      name: name,
+      shared: dependencies,
+    }),
     new HtmlWebpackPlugin({
       title: "Nussknacker",
       hash: true,
