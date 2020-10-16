@@ -169,7 +169,7 @@ lazy val commonSettings =
         "commons-io" % "commons-io" % commonsIOV,
         //we stick to version in Flink to avoid nasty bugs in process runtime...
         //NOTE: commons-text (in api) uses 3.9...
-        "commons-lang" % "commons-lang" % commonsLangV,
+        "org.apache.commons" % "commons-lang3" % commonsLangV
       )
     )
 
