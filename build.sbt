@@ -163,7 +163,13 @@ lazy val commonSettings =
       dependencyOverrides ++= Seq(
         //currently Flink (1.11 -> https://github.com/apache/flink/blob/master/pom.xml#L128) uses 1.8.2 Avro version
         "org.apache.avro" % "avro" % avroV,
-        "com.typesafe" % "config" % configV
+        "com.typesafe" % "config" % configV,
+        //we stick to version in Flink to avoid nasty bugs in process runtime...
+        //NOTE: xmlgraphics used in UI comes with v. old version...
+        "commons-io" % "commons-io" % commonsIOV,
+        //we stick to version in Flink to avoid nasty bugs in process runtime...
+        //NOTE: commons-text (in api) uses 3.9...
+        "commons-lang" % "commons-lang" % commonsLangV,
       )
     )
 
@@ -200,6 +206,7 @@ val ficusV = "1.4.1"
 val configV = "1.4.0"
 val commonsLangV = "3.3.2"
 val commonsTextV = "1.8"
+val commonsIOV = "2.4"
 //we want to use 5.x for standalone metrics to have tags, however dropwizard development kind of freezed. Maybe we should consider micrometer?
 //In Flink metrics we use bundled dropwizard metrics v. 3.x
 val dropWizardV = "5.0.0-rc3"
