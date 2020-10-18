@@ -9,6 +9,7 @@ import {InputWithFocus, SelectWithFocus} from "../../components/withFocus"
 import HttpService from "../../http/HttpService"
 import "../../stylesheets/processes.styl"
 import BaseAdminTab from "./BaseAdminTab"
+import _ from "lodash"
 
 class Services extends BaseAdminTab {
 

@@ -1,5 +1,6 @@
 import PropTypes from "prop-types"
 import React from "react"
+import {isEmpty} from "lodash"
 
 export default class CommentContent extends React.Component {
   static propTypes = {
@@ -8,7 +9,7 @@ export default class CommentContent extends React.Component {
   }
 
   newContent = () => {
-    if (_.isEmpty(this.props.commentSettings)) {
+    if (isEmpty(this.props.commentSettings)) {
       return this.props.content
     } else {
       // eslint-disable-next-line i18next/no-literal-string

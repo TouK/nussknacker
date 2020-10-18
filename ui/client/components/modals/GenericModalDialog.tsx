@@ -9,7 +9,7 @@ import {RootState} from "../../reducers"
 import {getOpenDialog} from "../../reducers/selectors/ui"
 import "../../stylesheets/visualization.styl"
 import {ButtonWithFocus} from "../withFocus"
-import {DialogType} from "./Dialogs"
+import {DialogType} from "./DialogsTypes"
 
 type OwnProps = {
   okBtnConfig?: $TodoType,

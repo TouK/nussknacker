@@ -1,4 +1,5 @@
 import * as ProcessDefinitionUtils from "../common/ProcessDefinitionUtils";
+import {flatMap, without} from "lodash";
 
 describe("getNodesToAddInCategory", () => {
 
@@ -47,7 +48,7 @@ describe("getFlatNodesToAddInCategory", () => {
   let allFlatNodes
 
   beforeAll(() => {
-    allFlatNodes = _.flatMap(processDefinition.nodesToAdd, group => group.possibleNodes)
+    allFlatNodes = flatMap(processDefinition.nodesToAdd, group => group.possibleNodes)
   })
 
   it("should return all flat nodes available in category", () => {
@@ -59,7 +60,7 @@ describe("getFlatNodesToAddInCategory", () => {
   it("should filter out unavailable nodes in category", () => {
     const flatNodes = ProcessDefinitionUtils.getFlatNodesToAddInCategory(processDefinition, "Category2")
 
-    expect(flatNodes).toEqual(_.without(allFlatNodes, allFlatNodes[2]))
+    expect(flatNodes).toEqual(without(allFlatNodes, allFlatNodes[2]))
   })
 })
 
