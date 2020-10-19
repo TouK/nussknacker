@@ -13,7 +13,7 @@
     "check": "npm run check-types && npm run lint -- . --rule 'i18next/no-literal-string: warn'",
     "start": "BACKEND_DOMAIN=http://localhost:8080 webpack serve",
     "start-backend-demo": "BACKEND_DOMAIN=https://staging.nussknacker.io webpack serve",
-    "#pretest": "npm run check",
+    "pretest": "npm run check",
     "test": "jest"
   },
   "dependencies": {
