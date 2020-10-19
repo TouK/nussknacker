@@ -193,12 +193,15 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
           .valueOr(error => CompilationResult(Invalid(error)))
       case SubprocessOutput(id, outputName, fields, _) =>
         ctx.popContext.map { parentCtx =>
-          val NodeCompilationResult(typingInfo, _, parentCtxWithSubOut, compiledFields, _) =
+          val NodeCompilationResult(typingInfo, _, ctxWithSubOutV, compiledFields, typingResult) =
             nodeCompiler.compileFields(fields, ctx, outputVarName = Some(outputName))
+          val parentCtxWithSubOut = parentCtx
+            .withVariable(outputName, typingResult.getOrElse(Unknown))
+            .getOrElse(parentCtx)
           CompilationResult.map3(
-            f0 = CompilationResult(parentCtxWithSubOut),
+            f0 = CompilationResult(ctxWithSubOutV),
             f1 = toCompilationResult(compiledFields, typingInfo),
-            f2 = compile(next, parentCtxWithSubOut.getOrElse(ctx))) {
+            f2 = compile(next, parentCtxWithSubOut)) {
             (_, compiledFields, compiledNext) =>
               compiledgraph.node.SubprocessEnd(id, outputName, compiledFields, compiledNext)
           }
