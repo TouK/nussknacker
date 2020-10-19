@@ -5,16 +5,18 @@ import {useClashedNames} from "../../containers/hooks/useClashedNames"
 import {getLoggedUser} from "../../reducers/selectors/settings"
 import AddProcessDialog from "../AddProcessDialog"
 import {ThemedButton} from "../themed/ThemedButton"
+import {useTranslation} from "react-i18next"
+import {css} from "emotion"
 
 type Props = {
   onClick: () => void,
   className?: string,
+  title: string,
 }
 
 function AddButton(props: Props) {
-  const {onClick, className} = props
+  const {onClick, className, title} = props
   const loggedUser = useSelector(getLoggedUser)
-  const title = "CREATE NEW PROCESS"
 
   return loggedUser.isWriter() ? (
     <ThemedButton
@@ -22,7 +24,9 @@ function AddButton(props: Props) {
       onClick={onClick}
       title={title}
     >
-      <span>{title}</span>
+      <span className={css({textTransform: "uppercase"})}>
+        {title}
+      </span>
     </ThemedButton>
   ) : null
 
@@ -32,15 +36,19 @@ export function AddProcessButton(props: {isSubprocess: boolean, className?: stri
   const {isSubprocess} = props
   const [addOpened, setAddOpened] = useState(false)
   const clashedNames = useClashedNames(addOpened)
+  const {t} = useTranslation()
+
+  const message = isSubprocess ? t("addProcessButton.subprocess", "Create new subprocess") :
+    t("addProcessButton.process", "Create new process")
 
   return (
     <>
-      <AddButton className={cn(props.className)} onClick={() => setAddOpened(true)}/>
+      <AddButton className={cn(props.className)} onClick={() => setAddOpened(true)} title={message}/>
       <AddProcessDialog
         onClose={() => setAddOpened(false)}
         isOpen={addOpened}
         isSubprocess={isSubprocess}
-        message={isSubprocess ? "Create new subprocess" : "Create new process"}
+        message={message}
         clashedNames={clashedNames}
       />
     </>
