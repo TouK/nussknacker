@@ -27,10 +27,11 @@ const Map = (props: Props) => {
     showSwitch, errors, variableTypes, expressionType,
   } = props
 
-  const fieldsWithTypeInfo: Array<Field & {typeInfo: string}> = fields.map(expressionObj => ({
-    ...expressionObj,
-    typeInfo: expressionType?.fields[expressionObj.name]?.display,
-  }))
+  const fieldsWithTypeInfo: Array<Field & {typeInfo: string}> = fields.map(expressionObj => {
+    const fields = expressionType?.fields
+    const typeInfo = fields ? fields[expressionObj.name]?.display : expressionType?.display
+    return {...expressionObj, typeInfo: typeInfo}
+  })
 
   return (
     <div className="node-row">
