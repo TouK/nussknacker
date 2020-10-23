@@ -103,7 +103,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => Clas
 
     val globalParameters = NkGlobalParameters.readFromContext(env.getConfig)
     def nodeContext(nodeId: String): FlinkCustomNodeContext = {
-      FlinkCustomNodeContext(metaData, nodeId, processWithDeps.processTimeout,
+      FlinkCustomNodeContext(processWithDeps.jobData, nodeId, processWithDeps.processTimeout,
         new FlinkLazyParameterFunctionHelper(createInterpreter(compiledProcessWithDeps)),
         processWithDeps.signalSenders, globalParameters)
     }
