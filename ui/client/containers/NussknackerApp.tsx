@@ -24,7 +24,7 @@ import "../app.styl"
 import ErrorHandler from "./ErrorHandler"
 import {ProcessTabs} from "./ProcessTabs"
 import {getFeatureSettings} from "../reducers/selectors/settings"
-import CustomTabs from "./CustomTabs"
+import {CustomTab, CustomTabPath} from "./CustomTab"
 import {withTranslation} from "react-i18next"
 import {WithTranslation} from "react-i18next/src"
 import {compose} from "redux"
@@ -125,7 +125,7 @@ export class NussknackerApp extends React.Component<Props, State> {
                   <Route path={Metrics.path} component={Metrics} exact/>
                   <Route path={Signals.path} component={Signals} exact/>
                   <Route path={AdminPage.path} component={NkAdminPage} exact/>
-                  <Route path={`${CustomTabs.path}/:id`} component={CustomTabs} exact/>
+                  <Route path={`${CustomTabPath}/:id`} component={CustomTab} exact/>
                   <Redirect from={this.path} to={ProcessesTabData.path} exact/>
                   <Route component={NotFound}/>
                 </TransitionRouteSwitch>
