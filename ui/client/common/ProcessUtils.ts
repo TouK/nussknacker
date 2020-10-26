@@ -113,7 +113,7 @@ class ProcessUtils {
     const clazzName = _.get(nodeObjectTypeDefinition, "returnType")
     switch (node.type) {
       case "Source": {
-        return [{input: clazzName}]
+        return _.isEmpty(clazzName) ? [] : [{input: clazzName}]
       }
       case "SubprocessInputDefinition": {
         return node.parameters.map(param => ({[param.name]: param.typ}))
