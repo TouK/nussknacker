@@ -5,6 +5,7 @@ import Date from "../../components/common/Date"
 import HealthCheck from "../../components/HealthCheck"
 import ProcessStateIcon from "../../components/Process/ProcessStateIcon"
 import "../../stylesheets/processes.styl"
+import tabStyles from "../../components/tabs/processTabs.styl"
 import {Page} from "../Page"
 import {getProcessState, ProcessesList, RowsRenderer} from "../ProcessesList"
 import {CancelIcon} from "./CancelIcon"
@@ -45,10 +46,10 @@ const columns = [
   {key: "cancel", label: "Cancel"},
 ]
 
-export function CustomProcesses() {
+export function CustomProcesses(): JSX.Element {
 
   return (
-    <Page>
+    <Page className={tabStyles.tabContentPage}>
       <HealthCheck/>
       <ProcessesList
         defaultQuery={{isCustom: true}}
