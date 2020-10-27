@@ -5,7 +5,6 @@ import com.esotericsoftware.kryo.{Kryo, Serializer}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.java.typeutils.AvroUtils
-import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
@@ -56,33 +55,53 @@ object Serializers extends LazyLogging {
     override def clazz: Class[_] = classOf[Product]
 
     override def write(kryo: Kryo, output: Output, obj: Product) = {
-      output.writeInt(obj.productArity)
-      output.flush()
-      obj.productIterator.foreach { f =>
-        kryo.writeClassAndObject(output, f)
+      val arity = obj.productArity
+      val constructorParamsCount = obj.getClass.getConstructors.headOption.map(_.getParameterCount)
+
+      if (arity == constructorParamsCount.getOrElse(0)) {
+        output.writeInt(arity)
         output.flush()
+        obj.productIterator.foreach { f =>
+          kryo.writeClassAndObject(output, f)
+          output.flush()
+        }
+      } else {
+        output.writeInt(constructorParamsCount.get)
+        output.flush()
+
+        // in inner classes definition, '$outer' field is at the end, but in constructor it is the first parameter
+        val fields = obj.getClass
+          .getDeclaredFields
+          .find(_.getName == "$outer")
+          .toList ++ obj.getClass.getDeclaredFields
+
+        fields.take(constructorParamsCount.get).foreach(field => {
+          field.setAccessible(true)
+          kryo.writeClassAndObject(output, field.get(obj))
+          field.setAccessible(false)
+          output.flush()
+        })
       }
       output.flush()
     }
 
     override def read(kryo: Kryo, input: Input, obj: Class[Product]) = {
-      val arity = input.readInt()
+      val constructorParamsCount = input.readInt()
       val constructors = obj.getConstructors
 
-      //TODO: what about case class without parameters??
-      if (arity == 0 && constructors.isEmpty) {
+      if (constructorParamsCount == 0 && constructors.isEmpty) {
         Try(EspTypeUtils.companionObject(obj)).recover {
           case e => logger.error(s"Failed to load companion for ${obj.getClass}"); Failure(e)
         }.get
       } else {
         val cons = constructors(0)
-        val params = (1 to arity).map(_ => kryo.readClassAndObject(input)).toArray[AnyRef]
-        cons.newInstance(params: _*).asInstanceOf[Product]
+        val params = (1 to constructorParamsCount).map(_ => kryo.readClassAndObject(input)).toArray[AnyRef]
+        Try(cons.newInstance(params: _*).asInstanceOf[Product]).recover {
+          case e => logger.error(s"Failed to load obj of class ${obj.getClass.getName}", e); Failure(e)
+        }.get
       }
     }
 
     override def copy(kryo: Kryo, original: Product) = original
   }
-
-
 }
