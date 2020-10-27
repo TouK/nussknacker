@@ -10,7 +10,7 @@ import styles from "../containers/processesTable.styl"
 import {EditItem} from "./editItem"
 import {MetricsItem} from "./metricsItem"
 import {Page} from "./Page"
-import {getProcessState, ProcessesList, RowsRenderer} from "./ProcessesList"
+import {Filterable, getProcessState, ProcessesList, RowsRenderer} from "./ProcessesList"
 import {ProcessNameInput} from "./ProcessNameInput"
 import tabStyles from "../components/tabs/processTabs.styl"
 import {SearchItem} from "./TableFilters"
@@ -50,7 +50,7 @@ const ElementsRenderer: RowsRenderer = ({processes, getProcesses, statuses}) => 
 }
 
 const sortable = ["name", "category", "modifyDate", "createdAt", "createdBy"]
-const filterable = ["name", "category", "createdBy"]
+const filterable: Filterable = ["name", "processCategory", "createdBy"]
 const columns = [
   {key: "name", label: "Name"},
   {key: "category", label: "Category"},
