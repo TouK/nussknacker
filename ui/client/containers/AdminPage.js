@@ -1,3 +1,4 @@
+import classNames from "classnames"
 import * as  queryString from "query-string"
 import React from "react"
 import {withRouter} from "react-router-dom"
@@ -10,6 +11,7 @@ import Services from "./admin/Services"
 import UnusedComponents from "./admin/UnusedComponents"
 import {Page} from "./Page"
 import {compose} from "redux"
+import style from "./adminPage.styl"
 
 export class AdminPage extends React.Component {
   tabs = [
@@ -38,7 +40,7 @@ export class AdminPage extends React.Component {
   render() {
     return (
       <Page>
-        <Tabs defaultIndex={this.state.selectedTab} onSelect={this.onTabChange}>
+        <Tabs defaultIndex={this.state.selectedTab} onSelect={this.onTabChange} className={classNames("react-tabs", style.tabs)}>
           <TabList>
             {
               this.tabs.map(tab => {
@@ -51,7 +53,7 @@ export class AdminPage extends React.Component {
           {
             this.tabs.map(tab => {
               return (
-                <TabPanel key={tab.key}>{tab.component}</TabPanel>
+                <TabPanel key={tab.key} className={classNames("react-tabs__tab-panel", style.tab)}>{tab.component}</TabPanel>
               )
             })
           }
