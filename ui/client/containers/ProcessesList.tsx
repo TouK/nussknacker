@@ -104,7 +104,7 @@ export function ProcessesList(props: BaseProcessesOwnProps) {
     () => {
       const searchText = search?.toString().toLowerCase()
       return searchText ?
-        processes.filter(p => filterable?.some(f => p[f]?.toString().includes(searchText))) :
+        processes.filter(p => filterable?.some(f => p[f]?.toString().toLowerCase().includes(searchText))) :
         processes
     },
     [filterable, search, processes],
