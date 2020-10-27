@@ -23,12 +23,13 @@ type Queries = Partial<{
   isDeployed: boolean,
   isCustom: boolean,
 }>
+export type Filterable = (keyof ProcessType)[]
 export type BaseProcessesOwnProps = PropsWithChildren<{
   defaultQuery: Queries,
   searchItems?: SearchItem[],
 
   sortable: string[],
-  filterable: string[],
+  filterable: Filterable,
   columns: ColumnsType[],
 
   withStatuses?: boolean,
@@ -99,9 +100,19 @@ export function ProcessesList(props: BaseProcessesOwnProps) {
     [withStatuses, processes],
   )
 
+  const filtered = useMemo(
+    () => {
+      const searchText = search?.toString().toLowerCase()
+      return searchText ?
+        processes.filter(p => filterable?.some(f => p[f]?.toString().includes(searchText))) :
+        processes
+    },
+    [filterable, search, processes],
+  )
+
   const elements = useMemo(
-    () => RowsRenderer({processes, getProcesses, statuses}),
-    [RowsRenderer, processes, getProcesses, statuses],
+    () => RowsRenderer({processes: filtered, getProcesses, statuses}),
+    [RowsRenderer, filtered, getProcesses, statuses],
   )
 
   return (
@@ -115,10 +126,7 @@ export function ProcessesList(props: BaseProcessesOwnProps) {
       <ProcessesTable
         className={styles.table}
         isLoading={isLoading}
-        filterBy={search?.toString()}
-
         sortable={sortable.map(column => ({column, sortFunction}))}
-        filterable={filterable}
         columns={columns}
       >
         {elements}
