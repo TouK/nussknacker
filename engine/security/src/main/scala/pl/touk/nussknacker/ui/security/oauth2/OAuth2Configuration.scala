@@ -28,8 +28,7 @@ case class OAuth2Configuration(method: AuthenticationMethod,
                                authorizeParams: Map[String, String] = Map.empty,
                                headers: Map[String, String] = Map.empty,
                                authorizationHeader: String = "Authorization",
-                               accessTokenRequestContentType: String = MediaType.ApplicationJson.toString(),
-                               profileResponseContentType: String = MediaType.ApplicationJson.toString(),
+                               accessTokenRequestContentType: String = MediaType.ApplicationJson.toString()
                               ) extends AuthenticationConfiguration {
 
   override def authorizeUrl: Option[URI] = Option({

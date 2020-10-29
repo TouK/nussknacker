@@ -51,7 +51,7 @@ class OAuth2ClientApi[ProfileResponse: Decoder, AccessTokenResponse: Decoder]
     val headers = configuration.headers ++ Map(configuration.authorizationHeader -> s"Bearer $accessToken")
 
     basicRequest
-      .contentType(configuration.profileResponseContentType)
+      .contentType(MediaType.ApplicationJson)
       .response(asJson[ProfileResponse])
       .get(Uri(configuration.profileUri))
       .headers(headers)
