@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.security.ouath2
+package pl.touk.nussknacker.ui.security.oauth2
 
 import java.net.URI
 
@@ -6,9 +6,8 @@ import io.circe.Json
 import org.scalatest.{FlatSpec, Matchers, Suite}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
+import pl.touk.nussknacker.ui.security.oauth2.ExampleOAuth2ServiceFactory.{TestAccessTokenResponse, TestPermissionResponse, TestProfileClearanceResponse, TestProfileResponse}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2CompoundException, OAuth2ServerError}
-import pl.touk.nussknacker.ui.security.oauth2.{OAuth2AuthenticateData, OAuth2ErrorHandler}
-import pl.touk.nussknacker.ui.security.ouath2.ExampleOAuth2ServiceFactory.{TestAccessTokenResponse, TestPermissionResponse, TestProfileClearanceResponse, TestProfileResponse}
 import sttp.client.Response
 import sttp.client.testing.SttpBackendStub
 import sttp.model.{StatusCode, Uri}

@@ -9,6 +9,7 @@ import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
 import pl.touk.nussknacker.ui.security.api.AuthenticationMethod.AuthenticationMethod
 import ProfileFormat.ProfileFormat
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
+import sttp.model.MediaType
 
 import scala.io.Source
 
@@ -26,7 +27,9 @@ case class OAuth2Configuration(method: AuthenticationMethod,
                                accessTokenParams: Map[String, String] = Map.empty,
                                authorizeParams: Map[String, String] = Map.empty,
                                headers: Map[String, String] = Map.empty,
-                               authorizationHeader: String = "Authorization"
+                               authorizationHeader: String = "Authorization",
+                               accessTokenRequestContentType: String = MediaType.ApplicationJson.toString(),
+                               profileResponseContentType: String = MediaType.ApplicationJson.toString(),
                               ) extends AuthenticationConfiguration {
 
   override def authorizeUrl: Option[URI] = Option({

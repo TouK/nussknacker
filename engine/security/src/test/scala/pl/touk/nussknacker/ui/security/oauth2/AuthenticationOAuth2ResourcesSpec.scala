@@ -1,10 +1,10 @@
-package pl.touk.nussknacker.ui.security.ouath2
+package pl.touk.nussknacker.ui.security.oauth2
 
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest._
-import pl.touk.nussknacker.ui.security.oauth2.{AuthenticationOAuth2Resources, DefaultOAuth2ServiceFactory, Oauth2AuthenticationResponse}
+import pl.touk.nussknacker.ui.security.http.RecordingSttpBackend
 import sttp.client.Response
 import sttp.client.testing.SttpBackendStub
 import sttp.model.{StatusCode, Uri}
@@ -19,10 +19,12 @@ class AuthenticationOAuth2ResourcesSpec extends FunSpec with Matchers with Scala
   def routes(route: AuthenticationOAuth2Resources) = route.route()
 
   protected lazy val errorAuthenticationResources = {
-    implicit val testingBackend = SttpBackendStub
+    implicit val testingBackend = new RecordingSttpBackend(
+      SttpBackendStub
       .asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespondWrapped(Future(Response(Option.empty, StatusCode.InternalServerError, "Bad Request")))
+    )
 
     new AuthenticationOAuth2Resources(DefaultOAuth2ServiceFactory.service(config, List.empty))
   }
