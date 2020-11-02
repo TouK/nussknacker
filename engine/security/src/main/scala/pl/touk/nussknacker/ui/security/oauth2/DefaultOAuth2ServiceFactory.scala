@@ -33,19 +33,22 @@ class DefaultOAuth2Service[ProfileResponse: Decoder](clientApi: OAuth2ClientApi[
 
     configuration.jwt match {
       case None => profileRequestFuture
-      case Some(jwtConfiguration) => {
-        val profileFromJwtResult = new JwtValidator[ProfileResponse](jwtConfiguration).getProfileFromJwt(token)
+      case Some(jwtConfiguration) =>
+        if (!jwtConfiguration.enabled) {
+          profileRequestFuture
+        } else {
+          val profileFromJwtResult = new JwtValidator[ProfileResponse](jwtConfiguration).getProfileFromJwt(token)
 
-        /* Firstly checks whether a profile can be obtained from the token (provided authentication.jwt configured),
+          /* Firstly checks whether a profile can be obtained from the token (provided authentication.jwt configured),
          * secondly tries to obtain the profile from a sent request.
          */
-        profileFromJwtResult match {
-          case Valid(profile) => Future(profile)
-          case Invalid(jwtErrors) => profileRequestFuture recover { case OAuth2CompoundException(requestErrors) =>
-            throw OAuth2CompoundException(jwtErrors concatNel requestErrors)
+          profileFromJwtResult match {
+            case Valid(profile) => Future(profile)
+            case Invalid(jwtErrors) => profileRequestFuture recover { case OAuth2CompoundException(requestErrors) =>
+              throw OAuth2CompoundException(jwtErrors concatNel requestErrors)
+            }
           }
         }
-      }
     }
   }
 }

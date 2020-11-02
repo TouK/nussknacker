@@ -10,6 +10,7 @@ services:
       NUSSKNACKER_CONFIG_FILE: ${NUSSKNACKER_CONFIG_FILE:-/opt/nussknacker/conf/docker-application.conf}
       JDK_JAVA_OPTIONS: -Xmx256M
     volumes:
+      - ./nk/conf/application.conf:/opt/nussknacker/conf/application.conf
       - nussknacker_storage_app:/opt/nussknacker/storage
 
 volumes:

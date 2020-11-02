@@ -28,4 +28,4 @@ However, it should be possible to run Nussknacker with older Flink version.
 
 While we don't provide out-of-the-box
 support as it would complicate the build process, there is separate [repo](https://github.com/TouK/nussknacker-flink-compatibility)
-with detailed intructions how to run Nussknacker with some of the older versions.  
+with detailed instructions how to run Nussknacker with some of the older versions.  

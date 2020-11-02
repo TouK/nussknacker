@@ -7,8 +7,10 @@ import sttp.client.ws.WebSocketResponse
 import sttp.client.{Request, Response, SttpBackend}
 
 import scala.concurrent.Future
+import scala.compat.java8.FunctionConverters._
 import scala.util.{Failure, Success, Try}
 
+// This is taken from sttp3, can be removed after migration (with adding sth like clear() method)
 class RecordingSttpBackend(delegate: SttpBackend[Future, Nothing, Nothing]) extends SttpBackend[Future, Nothing, Nothing] {
 
   type RequestAndResponse = (Request[_, _], Try[Response[_]])
@@ -16,7 +18,7 @@ class RecordingSttpBackend(delegate: SttpBackend[Future, Nothing, Nothing]) exte
   private val _allInteractions = new AtomicReference[Vector[RequestAndResponse]](Vector())
 
   private def addInteraction(request: Request[_, _], response: Try[Response[_]]): Unit = {
-    _allInteractions.updateAndGet((t: Vector[RequestAndResponse]) => t.:+((request, response)))
+    _allInteractions.updateAndGet(asJavaUnaryOperator((t: Vector[RequestAndResponse]) => t.:+((request, response))))
   }
 
   override def send[T](request: Request[T, Nothing]): Future[Response[T]] = {

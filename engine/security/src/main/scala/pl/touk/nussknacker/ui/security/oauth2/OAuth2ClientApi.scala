@@ -38,7 +38,8 @@ class OAuth2ClientApi[ProfileResponse: Decoder, AccessTokenResponse: Decoder]
     val contentType = MediaType.parse(configuration.accessTokenRequestContentType)
     request = contentType match {
       case Right(MediaType.ApplicationJson) => request.body(payload.asJson)
-      case _ => request.body(payload)
+      case Right(MediaType.ApplicationXWwwFormUrlencoded) => request.body(payload)
+      case _ => throw OAuth2CompoundException(NonEmptyList.of(OAuth2ServerError(s"Unsupported content-type ${configuration.accessTokenRequestContentType}")))
     }
 
     request
@@ -51,7 +52,6 @@ class OAuth2ClientApi[ProfileResponse: Decoder, AccessTokenResponse: Decoder]
     val headers = configuration.headers ++ Map(configuration.authorizationHeader -> s"Bearer $accessToken")
 
     basicRequest
-      .contentType(MediaType.ApplicationJson)
       .response(asJson[ProfileResponse])
       .get(Uri(configuration.profileUri))
       .headers(headers)
