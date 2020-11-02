@@ -42,9 +42,7 @@ case class OAuth2Configuration(method: AuthenticationMethod,
 
   def jwtEnabled: Boolean = jwt.exists(_.enabled)
 
-  override def authSeverPublicKey: Option[PublicKey] = jwt.flatMap { jwt =>
-    if (!jwt.enabled) { None } else { Some(jwt.authServerPublicKey) }
-  }
+  override def authSeverPublicKey: Option[PublicKey] = jwt.filter(_.enabled).map(_.authServerPublicKey)
 
   def idTokenNonceVerificationRequired: Boolean = jwt.exists(_.idTokenNonceVerificationRequired)
 
