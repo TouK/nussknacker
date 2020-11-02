@@ -11,7 +11,6 @@ import org.apache.flink.streaming.connectors.kafka.{KafkaDeserializationSchema, 
 import org.apache.kafka.clients.producer.RecordMetadata
 import org.scalatest.{Assertion, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer._
@@ -30,6 +29,7 @@ import pl.touk.nussknacker.engine.graph.{EspProcess, expression}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec, KafkaZookeeperUtils}
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.test.{NussknackerAssertions, PatientScalaFutures}
 
 trait KafkaAvroSpecMixin extends FunSuite with FlinkSpec with KafkaSpec with Matchers with LazyLogging with NussknackerAssertions with PatientScalaFutures {
@@ -52,7 +52,7 @@ trait KafkaAvroSpecMixin extends FunSuite with FlinkSpec with KafkaSpec with Mat
 
   protected var registrar: FlinkProcessRegistrar = _
 
-  protected lazy val testProcessObjectDependencies: ProcessObjectDependencies = ProcessObjectDependencies(config, DefaultObjectNaming)
+  protected lazy val testProcessObjectDependencies: ProcessObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
 
   protected lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config, "kafka")
 

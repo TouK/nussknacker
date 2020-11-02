@@ -10,7 +10,6 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.queryablestate.FlinkQueryableClient
@@ -21,6 +20,7 @@ import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.test.ExtremelyPatientScalaFutures
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -84,7 +84,7 @@ class QueryableStateTest extends FlatSpec with FlinkSpec with Matchers with Kafk
         flinkMiniCluster.runningJobs() should contain (jobId)
         queryState(jobId.toString).futureValue shouldBe true
       }
-      creator.signals(ProcessObjectDependencies(TestConfig(kafkaZookeeperServer), DefaultObjectNaming)).values
+      creator.signals(ProcessObjectDependencies(TestConfig(kafkaZookeeperServer), ObjectNamingProvider(getClass.getClassLoader))).values
         .head.value.sendSignal(DevProcessConfigCreator.oneElementValue)(lockProcess.id)
 
       eventually {

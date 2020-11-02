@@ -6,11 +6,11 @@ import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.java.typeutils.GenericTypeInfo
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
+import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 
 class KafkaSourceFactorySpec extends FlatSpec with KafkaSpec with Matchers {
 
@@ -30,7 +30,7 @@ class KafkaSourceFactorySpec extends FlatSpec with KafkaSpec with Matchers {
 
 
     val sourceFactory = new KafkaSourceFactory[String](new SimpleStringSchema, None,
-      TestParsingUtils.newLineSplit, ProcessObjectDependencies(config, DefaultObjectNaming))
+      TestParsingUtils.newLineSplit, ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader)))
 
     val dataFor3 = sourceFactory.create(MetaData("", StreamMetaData()), topic)(NodeId("")).generateTestData(3)
     val dataFor5 = sourceFactory.create(MetaData("", StreamMetaData()), topic)(NodeId("")).generateTestData(5)
