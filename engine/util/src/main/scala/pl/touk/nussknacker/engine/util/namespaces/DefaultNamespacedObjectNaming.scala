@@ -12,7 +12,7 @@ import scala.util.matching.Regex
  */
 object DefaultNamespacedObjectNaming extends ObjectNaming with LazyLogging {
 
-  private final val NamespacePath = "namespace"
+  final val NamespacePath = "namespace"
 
   /**
    * We don't want create Regex each time as it's expensive. Instead we store simple mapping.
@@ -21,35 +21,37 @@ object DefaultNamespacedObjectNaming extends ObjectNaming with LazyLogging {
   protected val regexMap = Map.empty[String, Regex]
 
   override def prepareName(originalName: String, config: Config, namingContext: NamingContext): String =
-    namingContext.usageKey match {
-      case KafkaUsageKey | FlinkUsageKey if config.hasPath(NamespacePath) =>
-        val namespace = config.getString(NamespacePath)
-        logger.debug(s"Prepending $namespace to $originalName for ${namingContext.usageKey}")
-        s"${namespace}_$originalName"
-      case _ =>
-        logger.debug(s"Namespace has not been configured, $originalName left")
-        originalName
+    forNamespace(config) { namespace =>
+      logger.debug(s"Prepending $namespace to $originalName for ${namingContext.usageKey}")
+      s"${namespace}_$originalName"
+    }.getOrElse {
+      logger.debug(s"Namespace has not been configured, $originalName left")
+      originalName
     }
 
   override def objectNamingParameters(originalName: String, config: Config, namingContext: NamingContext): Option[ObjectNamingParameters] = {
-    namingContext.usageKey match {
-      case KafkaUsageKey | FlinkUsageKey if config.hasPath(NamespacePath) =>
-        val namespace = config.getString(NamespacePath)
-        Some(DefaultNamespacedObjectNamingParameters(originalName, namespace))
-      case _ => None
+    forNamespace(config) { namespace =>
+      DefaultNamespacedObjectNamingParameters(originalName, namespace)
     }
   }
 
-  override def decodeName(preparedName: String, config: Config, namingContext: NamingContext): Option[String] =
-    namingContext.usageKey match {
-      case KafkaUsageKey | FlinkUsageKey if config.hasPath(NamespacePath) =>
-        val patternMatcher = namespacePattern(config.getString(NamespacePath))
-        preparedName match {
-          case patternMatcher(value) => Some(value)
-          case _ => Option.empty
-        }
-      case _ => Option.empty
+  override def decodeName(preparedName: String, config: Config, namingContext: NamingContext): Option[String] = {
+    forNamespace(config) { namespace =>
+      val patternMatcher = namespacePattern(namespace)
+      preparedName match {
+        case patternMatcher(value) => Some(value)
+        case _ => Option.empty
+      }
+    }.flatten
+  }
+
+  private def forNamespace[T](config: Config)(action: String => T): Option[T] = {
+    if (config.hasPath(NamespacePath)) {
+      Some(action(config.getString(NamespacePath)))
+    } else {
+      None
     }
+  }
 
   private def namespacePattern(namespace: String): Regex =
     regexMap.getOrElse(namespace, s"${namespace}_(.*)".r)
