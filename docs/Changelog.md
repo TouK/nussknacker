@@ -28,6 +28,7 @@ ProcessManager implementations are separated from UI to allow easier changes in 
 * [#249](https://github.com/TouK/nussknacker/pull/1201) Inferred expression type in node modal
 * [#1255](https://github.com/TouK/nussknacker/pull/1255) Moved displaying `Metrics tab` to `customTabs`
 * [#1257](https://github.com/TouK/nussknacker/pull/1257) Improvements: Flink test util package
+* [#1287](https://github.com/TouK/nussknacker/pull/1287) OAuth2: add accessTokenRequestContentType parameter
 
 0.2.2
 -----------------------

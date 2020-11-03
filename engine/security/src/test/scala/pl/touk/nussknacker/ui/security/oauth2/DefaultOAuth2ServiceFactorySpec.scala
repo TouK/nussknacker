@@ -1,15 +1,13 @@
-package pl.touk.nussknacker.ui.security.ouath2
+package pl.touk.nussknacker.ui.security.oauth2
 
 import java.net.URI
 
 import io.circe.Json
-import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{FlatSpec, Matchers, Suite}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ClientApi.DefaultAccessTokenResponse
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2CompoundException, OAuth2ServerError}
-import pl.touk.nussknacker.ui.security.oauth2.{DefaultOAuth2Service, DefaultOAuth2ServiceFactory, OAuth2AuthenticateData, OAuth2ErrorHandler, OAuth2Service}
 import sttp.client.Response
 import sttp.client.testing.SttpBackendStub
 import sttp.model.{StatusCode, Uri}
@@ -103,13 +101,14 @@ class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
   }
 
   it should ("properly parse data from profile for profile type Admin") in {
+
     val response: Map[String, String] = Map("id" -> "1", "email" -> "example@email.com")
     val service = createDefaultServiceMock(response.asJson, config.profileUri)
     val user = service.authorize("6V1reBXblpmfjRJP").futureValue
 
     user shouldBe a[LoggedUser]
     user.isAdmin shouldBe true
-    user.id.toString shouldBe response.get("id").get
+    user.id shouldBe response.get("id").get
 
 
     user.can("Category1", Permission.Read) shouldBe true
@@ -130,8 +129,7 @@ class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
 
     user shouldBe a[LoggedUser]
     user.isAdmin shouldBe false
-    user.id.toString shouldBe response.get("id").get
-
+    user.id shouldBe response.get("id").get
 
     user.can("Category1", Permission.Read) shouldBe true
     user.can("Category1", Permission.Write) shouldBe true

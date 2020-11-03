@@ -5,10 +5,11 @@ import java.nio.charset.{Charset, StandardCharsets}
 import java.security.PublicKey
 
 import com.typesafe.config.Config
+import pl.touk.nussknacker.ui.security.CertificatesAndKeys
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
 import pl.touk.nussknacker.ui.security.api.AuthenticationMethod.AuthenticationMethod
-import ProfileFormat.ProfileFormat
-import pl.touk.nussknacker.ui.security.CertificatesAndKeys
+import pl.touk.nussknacker.ui.security.oauth2.ProfileFormat.ProfileFormat
+import sttp.model.{Header, HeaderNames, MediaType}
 
 import scala.io.Source
 
@@ -26,7 +27,8 @@ case class OAuth2Configuration(method: AuthenticationMethod,
                                accessTokenParams: Map[String, String] = Map.empty,
                                authorizeParams: Map[String, String] = Map.empty,
                                headers: Map[String, String] = Map.empty,
-                               authorizationHeader: String = "Authorization"
+                               authorizationHeader: String = HeaderNames.Authorization,
+                               accessTokenRequestContentType: String = MediaType.ApplicationJson.toString()
                               ) extends AuthenticationConfiguration {
 
   override def authorizeUrl: Option[URI] = Option({
@@ -38,9 +40,11 @@ case class OAuth2Configuration(method: AuthenticationMethod,
       .url)
   })
 
-  override def authSeverPublicKey: Option[PublicKey] = jwt.map(_.authServerPublicKey)
+  def jwtEnabled: Boolean = jwt.exists(_.enabled)
 
-  def idTokenNonceVerificationRequired: Boolean = jwt.map(_.idTokenNonceVerificationRequired).getOrElse(false)
+  override def authSeverPublicKey: Option[PublicKey] = jwt.filter(_.enabled).map(_.authServerPublicKey)
+
+  def idTokenNonceVerificationRequired: Boolean = jwt.exists(_.idTokenNonceVerificationRequired)
 
   def redirectUrl: String = redirectUri.toString
 }
@@ -63,6 +67,7 @@ object ProfileFormat extends Enumeration {
 }
 
 trait JwtConfiguration {
+  def enabled: Boolean
   def authServerPublicKey: PublicKey
   def idTokenNonceVerificationRequired: Boolean
 }
@@ -75,11 +80,12 @@ object JwtConfiguration {
 
   implicit val jwtConfigurationVR: ValueReader[JwtConfiguration] = ValueReader.relative(_.rootAs[JwtConfig])
 
-  private case class JwtConfig(publicKey: Option[String],
+  private case class JwtConfig(enabled: Boolean = false,
+                               publicKey: Option[String],
                                publicKeyFile: Option[String],
                                certificate: Option[String],
                                certificateFile: Option[String],
-                               idTokenNonceVerificationRequired: Boolean) extends JwtConfiguration {
+                               idTokenNonceVerificationRequired: Boolean = false) extends JwtConfiguration {
     def authServerPublicKey: PublicKey = {
       val charset: Charset = StandardCharsets.UTF_8
 
