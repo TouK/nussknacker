@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.util.namespaces
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.namespaces._
+import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNamingParameters.{namespaceTag, originalNameTag}
 
 import scala.util.matching.Regex
 
@@ -58,12 +59,19 @@ object DefaultNamespacedObjectNaming extends ObjectNaming with LazyLogging {
 
 }
 
+object DefaultNamespacedObjectNamingParameters {
+
+  final val originalNameTag = "originalProcessName"
+  final val namespaceTag = "namespace"
+
+}
+
 case class DefaultNamespacedObjectNamingParameters(originalName: String,
                                                    namespace: String) extends ObjectNamingParameters {
   override def toTags: Map[String, String] = {
     Map(
-      "originalProcessName" -> originalName,
-      "namespace" -> namespace
+      originalNameTag -> originalName,
+      namespaceTag -> namespace
     )
   }
 }
