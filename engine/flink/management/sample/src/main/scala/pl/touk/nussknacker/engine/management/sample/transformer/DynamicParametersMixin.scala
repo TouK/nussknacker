@@ -2,8 +2,7 @@ package pl.touk.nussknacker.engine.management.sample.transformer
 
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, BaseDefinedParameter, FailedToDefineParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, NodeDependency, Parameter, TypedNodeDependency}
-import org.apache.flink.api.scala._
-import pl.touk.nussknacker.engine.api.{MetaData, ValueWithContext}
+import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 
