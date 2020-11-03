@@ -70,10 +70,13 @@ object Serializers extends LazyLogging {
         output.flush()
 
         // in inner classes definition, '$outer' field is at the end, but in constructor it is the first parameter
+        // we look for '$outer` in getFields not getDeclaredFields, cause it can be also parent's field
         val fields = obj.getClass
-          .getDeclaredFields
+          .getFields
           .find(_.getName == "$outer")
           .toList ++ obj.getClass.getDeclaredFields
+
+        assume(fields.size >= constructorParamsCount.get, "To little fields to serialize -> It will be impossible to deserialize this thing anyway")
 
         fields.take(constructorParamsCount.get).foreach(field => {
           field.setAccessible(true)
@@ -94,9 +97,11 @@ object Serializers extends LazyLogging {
           case e => logger.error(s"Failed to load companion for ${obj.getClass}"); Failure(e)
         }.get
       } else {
-        val cons = constructors(0)
-        val params = (1 to constructorParamsCount).map(_ => kryo.readClassAndObject(input)).toArray[AnyRef]
-        Try(cons.newInstance(params: _*).asInstanceOf[Product]).recover {
+        Try({
+          val cons = constructors(0)
+          val params = (1 to constructorParamsCount).map(_ => kryo.readClassAndObject(input)).toArray[AnyRef]
+          cons.newInstance(params: _*).asInstanceOf[Product]
+        }).recover {
           case e => logger.error(s"Failed to load obj of class ${obj.getClass.getName}", e); Failure(e)
         }.get
       }
