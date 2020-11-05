@@ -54,6 +54,17 @@ class SerializersSpec extends FlatSpec with Matchers {
     deserialized shouldBe obj
   }
 
+  it should "serialize inner case class 3" in {
+    import scala.collection.JavaConverters._
+
+    // runtime type is scala.collection.convert.Wrappers$MutableMapWrapper
+    val obj = scala.collection.mutable.Map().asJava
+
+    val deserialized = serializeAndDeserialize(obj.asInstanceOf[Product])
+
+    deserialized shouldBe obj
+  }
+
   def serializeAndDeserialize(caseClass: Product): Product = {
     val kryo = new Kryo()
     val out = new Output(1024)
