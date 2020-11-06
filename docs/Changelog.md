@@ -30,6 +30,7 @@ ProcessManager implementations are separated from UI to allow easier changes in 
 * [#1255](https://github.com/TouK/nussknacker/pull/1255) Moved displaying `Metrics tab` to `customTabs`
 * [#1257](https://github.com/TouK/nussknacker/pull/1257) Improvements: Flink test util package
 * [#1287](https://github.com/TouK/nussknacker/pull/1287) OAuth2: add accessTokenRequestContentType parameter
+* [#1290](https://github.com/TouK/nussknacker/pull/1290) Own kryo serializers can be provided through SPI
 
 0.2.2
 -----------------------
