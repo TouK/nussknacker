@@ -78,7 +78,8 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
 
   //There is deserializationSchema.deserialize method which doesn't need Collector, however
   //for some reason KafkaDeserializationSchemaWrapper throws Exception when used in such way...
-  private def deserialize(topic: String, record: ProducerRecord[Array[Byte], Array[Byte]]): T = {
+  //protected to make it easier for backward compatibility
+  protected def deserialize(topic: String, record: ProducerRecord[Array[Byte], Array[Byte]]): T = {
     val collector = new SimpleCollector
     deserializationSchema.deserialize(new ConsumerRecord[Array[Byte], Array[Byte]](topic, -1, -1, record.key(), record.value()), collector)
     collector.output
