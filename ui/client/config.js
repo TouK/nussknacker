@@ -10,10 +10,10 @@ const nkPath = __DEV__ ? "" : window.nkPath
 //https://webpack.js.org/guides/public-path/#on-the-fly
 __webpack_public_path__ = `${nkPath}/static/`
 
-const API_URL = `${nkPath}/api`
+const API_URL = window.nkApiUrl ?? `${nkPath}/api`
 const DATE_FORMAT = "YYYY-MM-DD HH:mm:ss"
 const DISPLAY_DATE_FORMAT = "YYYY-MM-DD|HH:mm"
-const BACKEND_STATIC_URL = __DEV__ ? `${nkPath}/be-static/` : `${nkPath}/static/`
+const BACKEND_STATIC_URL = window.nkBackendStaticUrl ?? (__DEV__ ? `${nkPath}/be-static/` : `${nkPath}/static/`)
 
 export {
   API_URL,
