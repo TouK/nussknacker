@@ -520,11 +520,15 @@ export class NodeDetailsContent extends React.Component {
   }
 
   createField = (fieldType, fieldLabel, fieldProperty, autofocus = false, validators = [], fieldName, readonly, defaultValue, key) => {
+    //we want to use defaultValue for undefined and null, but not for e.g. false,
+    //so we cannot use defaultValue from lodash (as it handles only undefined), nor || (as it will treat false just as null...)
+    const fieldValue = _.get(this.state.editedNode, fieldProperty, null)
+    const valueToUse = fieldValue == null ? defaultValue : fieldValue
     return this.doCreateField(
       fieldType,
       fieldLabel,
       fieldName,
-      _.get(this.state.editedNode, fieldProperty, null) || defaultValue,
+      valueToUse,
       (newValue) => this.setNodeDataAt(fieldProperty, newValue, defaultValue),
       readonly,
       this.isMarked(fieldProperty),
