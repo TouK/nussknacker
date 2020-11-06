@@ -53,7 +53,7 @@ class KafkaSourceFactory[T: ClassTag](deserializationSchemaFactory: KafkaDeseria
                defaultMode = DualEditorMode.RAW
              )
              @ParamName(`TopicParamName`) @NotBlank topic: String)
-            (implicit nodeId: NodeId): Source[T] with TestDataGenerator = {
+            (implicit nodeId: NodeId): KafkaSource[T] = {
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
     createSource(List(topic), kafkaConfig, processMetaData, nodeId)
   }
