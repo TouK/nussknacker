@@ -48,7 +48,9 @@ export class NodeDetailsContent extends React.Component {
     }
     //In most cases this is not needed, as parameter definitions should be present in validation response
     //However, in dynamic cases (as adding new topic/schema version) this can lead to stale parameters
-    this.updateNodeDataIfNeeded(node)
+    if (this.props.isEditMode) {
+      this.updateNodeDataIfNeeded(node)
+    }
     this.generateUUID("fields", "parameters")
   }
 
@@ -520,15 +522,11 @@ export class NodeDetailsContent extends React.Component {
   }
 
   createField = (fieldType, fieldLabel, fieldProperty, autofocus = false, validators = [], fieldName, readonly, defaultValue, key) => {
-    //we want to use defaultValue for undefined and null, but not for e.g. false,
-    //so we cannot use defaultValue from lodash (as it handles only undefined), nor || (as it will treat false just as null...)
-    const fieldValue = _.get(this.state.editedNode, fieldProperty, null)
-    const valueToUse = fieldValue == null ? defaultValue : fieldValue
     return this.doCreateField(
       fieldType,
       fieldLabel,
       fieldName,
-      valueToUse,
+      _.get(this.state.editedNode, fieldProperty, null) ?? defaultValue,
       (newValue) => this.setNodeDataAt(fieldProperty, newValue, defaultValue),
       readonly,
       this.isMarked(fieldProperty),
@@ -774,7 +772,8 @@ function mapState(state, props) {
     originalNodeId: originalNodeId,
     currentErrors: state.nodeDetails.validationPerformed ? state.nodeDetails.validationErrors : props.nodeErrors,
     dynamicParameterDefinitions: state.nodeDetails.validationPerformed ? state.nodeDetails.parameters :
-        state.graphReducer.processToDisplay?.validationResult?.nodeResults?.[originalNodeId]?.parameters,
+      //for some cases e.g. properties parameters is undefined, we replace it with null no to care about undefined in comparisons
+      state.graphReducer.processToDisplay?.validationResult?.nodeResults?.[originalNodeId]?.parameters || null,
     expressionType: state.nodeDetails.expressionType,
     nodeTypingInfo: nodeResult?.typingInfo,
   }
