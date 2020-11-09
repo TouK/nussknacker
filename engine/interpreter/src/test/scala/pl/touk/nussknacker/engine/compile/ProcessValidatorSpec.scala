@@ -813,7 +813,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val failingDefinition = base
       .copy(sourceFactories = base.sourceFactories
         .mapValues { case v:StandardObjectWithMethodDef => v.copy(methodDef = v.methodDef.copy(invocation = (_, _)
-        => throw new IllegalArgumentException("You passed incorrect parameter, cannot proceed"))) })
+        => throw new RuntimeException("You passed incorrect parameter, cannot proceed"))) })
 
     val processWithInvalidExpresssion =
       EspProcessBuilder
