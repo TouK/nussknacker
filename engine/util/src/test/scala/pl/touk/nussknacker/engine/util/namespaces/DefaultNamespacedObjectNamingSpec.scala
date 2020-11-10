@@ -21,7 +21,7 @@ class DefaultNamespacedObjectNamingSpec extends FunSuite with Matchers {
 
       provider.prepareName("original", emptyConfig, ctx) shouldBe "original"
       provider.objectNamingParameters("original", emptyConfig, ctx) shouldBe None
-      provider.decodeName("original", emptyConfig, ctx) shouldBe None
+      provider.decodeName("original", emptyConfig, ctx) shouldBe Some("original")
     }
 
 
