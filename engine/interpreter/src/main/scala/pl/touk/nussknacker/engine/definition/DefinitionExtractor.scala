@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransfo
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitMethodToInvoke}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectMetadata, _}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MethodDefinition
 import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
@@ -147,9 +148,11 @@ object DefinitionExtractor {
         methodDef.invocation(obj, values)
       } catch {
         case ex: IllegalArgumentException =>
-          //this indicates that parameters do not match or argument list is incorrect
+          //this usually indicates that parameters do not match or argument list is incorrect
           logger.debug(s"Failed to invoke method: ${methodDef.name}, with params: $values", ex)
-          throw ex
+          def className(obj: Any) = Option(obj).map(o => ReflectUtils.fixedClassSimpleNameWithoutParentModule(o.getClass)).getOrElse("null")
+          throw new IllegalArgumentException(
+            s"""Failed to invoke "${methodDef.name}" on ${className(obj)} with parameter types: ${values.map(className)}: ${ex.getMessage}""", ex)
         //this is somehow an edge case - normally service returns failed future for exceptions
         case ex: InvocationTargetException =>
           throw ex.getTargetException

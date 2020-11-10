@@ -33,7 +33,8 @@ class ServiceInvokerTest extends FlatSpec with PatientScalaFutures with OptionVa
     val invoker = ServiceInvoker(definition)
 
     intercept[IllegalArgumentException](
-      invoker.invoke(Map("foo" -> "aa", "bar" -> "terefere"), NodeContext("", "", "", None))).getMessage shouldBe "Parameter bar has invalid type: java.lang.String, should be: Integer"
+      invoker.invoke(Map("foo" -> "aa", "bar" -> "terefere"), NodeContext("", "", "", None)))
+        .getMessage shouldBe """Failed to invoke "invoke" on MockService with parameter types: List(String, String, ExecutionContextImpl): argument type mismatch"""
   }
 
   it should "invoke service method with CompletionStage return type" in {
