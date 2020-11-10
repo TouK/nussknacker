@@ -189,14 +189,14 @@ object aggregates {
 
     override def computeOutputType(input: TypingResult): Validated[String, TypingResult] = {
       input match {
-        case TypedObjectTypingResult(inputFields, klass) if inputFields.keySet == scalaFields.keySet && klass.canBeSubclassOf(Typed[java.util.Map[String, _]])=>
+        case TypedObjectTypingResult (inputFields, klass, _) if inputFields.keySet == scalaFields.keySet && klass.canBeSubclassOf(Typed[java.util.Map[String, _]])=>
           val validationRes = scalaFields.map { case (key, aggregator) =>
             aggregator.computeOutputType(inputFields(key))
               .map(key -> _)
               .leftMap(m => NonEmptyList.of(s"$key - $m"))
           }.toList.sequence.leftMap(list => s"Invalid fields: ${list.toList.mkString(", ")}")
           validationRes.map(fields => TypedObjectTypingResult(fields.toMap))
-        case TypedObjectTypingResult(inputFields, _) =>
+        case TypedObjectTypingResult(inputFields, _, _) =>
           Invalid(s"Fields do not match, aggregateBy: ${inputFields.keys.mkString(", ")}, aggregator: ${scalaFields.keys.mkString(", ")}")
         case _ =>
           Invalid("aggregateBy should be declared as fixed map")

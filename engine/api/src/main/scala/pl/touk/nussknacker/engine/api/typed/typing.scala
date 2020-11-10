@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 import scala.collection.JavaConverters._
+import scala.language.implicitConversions
 
 object typing {
 
@@ -44,7 +45,8 @@ object typing {
 
   }
 
-  case class TypedObjectTypingResult(fields: Map[String, TypingResult], objType: TypedClass) extends SingleTypingResult {
+  case class TypedObjectTypingResult(fields: Map[String, TypingResult],
+                                     objType: TypedClass, additionalInfo: Option[Map[String, AdditionalDataValue]] = None) extends SingleTypingResult {
 
     override def display: String = fields.map { case (name, typ) => s"$name: ${typ.display}"}.mkString("{", ", ", "}")
 
@@ -203,5 +205,24 @@ object typing {
     }
 
   }
+
+  object AdditionalDataValue {
+
+    implicit def string(value: String): AdditionalDataValue = StringValue(value)
+
+    implicit def long(value: Long): AdditionalDataValue = LongValue(value)
+
+    implicit def boolean(value: Boolean): AdditionalDataValue = BooleanValue(value)
+
+  }
+
+  sealed trait AdditionalDataValue
+
+  case class StringValue(value: String) extends AdditionalDataValue
+
+  case class LongValue(value: Long) extends AdditionalDataValue
+
+  case class BooleanValue(value: Boolean) extends AdditionalDataValue
+
 
 }

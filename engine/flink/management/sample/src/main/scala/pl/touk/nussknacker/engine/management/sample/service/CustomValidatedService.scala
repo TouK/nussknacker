@@ -19,11 +19,11 @@ class CustomValidatedService extends Service with ServiceReturningType {
       throw CustomNodeValidationException("Too young", Some("age"))
     }
     params("fields")._1 match {
-      case TypedObjectTypingResult(fields, _) if fields.contains("invalid") =>
+      case TypedObjectTypingResult(fields, _, _) if fields.contains("invalid") =>
         throw CustomNodeValidationException("Service is invalid", None)
-      case TypedObjectTypingResult(fields, _) if fields.values.exists(_ != Typed.typedClass[String]) =>
+      case TypedObjectTypingResult(fields, _, _) if fields.values.exists(_ != Typed.typedClass[String]) =>
         throw CustomNodeValidationException("All of fields values should be strings", Some("fields"))
-      case TypedObjectTypingResult(fields, _) if !fields.keys.exists(_ == "name") =>
+      case TypedObjectTypingResult(fields, _, _) if !fields.keys.exists(_ == "name") =>
         throw CustomNodeValidationException("Missing name", Some("fields"))
       case _ => Typed.typedClass[String]
     }
