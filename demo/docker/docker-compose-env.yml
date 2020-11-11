@@ -48,9 +48,12 @@ services:
 
   akhq:
     container_name: nussknacker_akhq
-    image: tchiotludo/akhq:${AKHQ_VERSION-0.15.0}
+    image: tchiotludo/akhq:${AKHQ_VERSION-0.16.0}
     environment:
       AKHQ_CONFIGURATION: |
+        micronaut:
+          server:
+            context-path: /akhq
         akhq:
           connections:
             nussknacker:
@@ -115,49 +118,6 @@ services:
         soft: 70000
         hard: 70000
 
-  elasticsearch:
-    container_name: nussknacker_elasticsearch
-    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTICSEARCH_VERSION-7.6.1}
-    environment:
-      cluster.name: "elk-nussknacker"
-      network.host: "0.0.0.0"
-      discovery.type: "single-node"
-      xpack.security.enabled: "false"
-      xpack.monitoring.enabled: "false"
-      xpack.ml.enabled: "false"
-      xpack.graph.enabled: "false"
-      xpack.watcher.enabled: "false"
-      ES_JAVA_OPTS: -Xms128m -Xmx256m
-    volumes:
-      - nussknacker_storage_elasticsearch_data:/usr/share/elasticsearch/data
-    ulimits:
-      nproc: 70000
-      nofile:
-        soft: 70000
-        hard: 70000
-
-  logstash:
-    container_name: nussknacker_logstash
-    image: docker.elastic.co/logstash/logstash:${LOGSTASH_VERSION-7.6.1}
-    depends_on:
-      - elasticsearch
-      - kafka
-    environment:
-      XPACK_MONITORING_ENABLED: "false"
-      LS_JAVA_OPTS: "-Xms128m -Xmx256m"
-    volumes:
-      - ./logstash/pipeline:/usr/share/logstash/pipeline
-      - ./logstash/templates:/usr/share/logstash/templates
-      - nussknacker_storage_logstash_data:/usr/share/logstash/data
-
-  kibana:
-    container_name: nussknacker_kibana
-    image: docker.elastic.co/kibana/kibana:${KIBANA_VERSION-7.6.1}
-    depends_on:
-      - elasticsearch
-    volumes:
-      - ./kibana/config/:/usr/share/kibana/config
-
   grafana:
     container_name: nussknacker_grafana
     image: grafana/grafana:${GRAFANA_VERSION-6.6.2}
@@ -185,17 +145,12 @@ services:
       - kafka
       - jobmanager
       - taskmanager
-      - elasticsearch
-      - logstash
-      - kibana
       - grafana
 
 
 volumes:
   nussknacker_storage_zookeeper_datalog:
   nussknacker_storage_zookeeper_data:
-  nussknacker_storage_elasticsearch_data:
-  nussknacker_storage_logstash_data:
   nussknacker_storage_kafka_data:
   nussknacker_storage_taskmanager:
   nussknacker_storage_jobmanager:

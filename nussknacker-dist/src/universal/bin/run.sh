@@ -25,7 +25,6 @@ if [[ "${USE_DOCKER_ENV}" == "true" ]]; then
   export DEVELOPMENT_MODE="true"
   # See demo/docker/docker-compose-env.yml - mapped port from docker
   export GRAFANA_URL="http://localhost:8081/grafana"
-  export KIBANA_URL="http://localhost:8081/kibana/"
   export FLINK_REST_URL="http://localhost:3031"
   export FLINK_QUERYABLE_STATE_PROXY_URL="localhost:3063"
 elif [[ "${PROXY_URL}" != "" ]]; then
