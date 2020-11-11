@@ -4,9 +4,7 @@ import com.esotericsoftware.kryo.io.{Input, Output}
 import com.esotericsoftware.kryo.{Kryo, Serializer}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
-import org.apache.flink.api.java.typeutils.AvroUtils
 import pl.touk.nussknacker.engine.types.EspTypeUtils
-import pl.touk.nussknacker.engine.util.ThreadUtils
 
 import scala.util.{Failure, Try}
 
@@ -19,21 +17,9 @@ object Serializers extends LazyLogging {
 
   def registerSerializers(config: ExecutionConfig): Unit = {
     val registers = registerSerializer(config) _
-    (CaseClassSerializer :: SpelHack :: SpelMapHack :: SerializersProvider.load()).map(registers)
-
+    (CaseClassSerializer :: SpelHack :: SpelMapHack :: Nil).map(registers)
+    SerializersRegistrar.load().foreach(_.register(config))
     TimeSerializers.addDefaultSerializers(config)
-
-    addAvroSerializersIfRequired(config)
-  }
-
-  private def addAvroSerializersIfRequired(config: ExecutionConfig): Unit = {
-    // We need it because we use avro records inside our Context class
-    Try(ThreadUtils.loadUsingContextLoader("org.apache.avro.generic.GenericData$Record")).map { genericRecordClass =>
-      logger.debug("Registering avro serializers")
-      AvroUtils.getAvroUtils.addAvroSerializersIfRequired(config, genericRecordClass)
-    }.getOrElse {
-      logger.debug("Can't find avro in class path - skipping registration of serializers")
-    }
   }
 
   private def registerSerializer(config: ExecutionConfig)(serializer: SerializerWithSpecifiedClass[_]) = {
