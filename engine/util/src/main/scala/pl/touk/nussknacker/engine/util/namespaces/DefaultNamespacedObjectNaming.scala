@@ -43,7 +43,7 @@ object DefaultNamespacedObjectNaming extends ObjectNaming with LazyLogging {
         case patternMatcher(value) => Some(value)
         case _ => Option.empty
       }
-    }.flatten
+    }.getOrElse(Some(preparedName))
   }
 
   private def forNamespace[T](config: Config)(action: String => T): Option[T] = {
