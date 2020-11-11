@@ -32,6 +32,8 @@ taskmanager.data.port: 6126
 taskmanager.memory.task.heap.size: 256m
 taskmanager.memory.managed.size: 204m
 
+env.java.opts.taskmanager: "-Dcom.sun.management.jmxremote -Djava.rmi.server.hostname=localhost -Dcom.sun.management.jmxremote.port=9009 -Dcom.sun.management.jmxremote.rmi.port=9008 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false"
+
 # The number of task slots that each TaskManager offers. Each slot runs one parallel pipeline.
 
 taskmanager.numberOfTaskSlots: 40
