@@ -504,7 +504,13 @@ lazy val benchmarks = (project in engine("benchmarks")).
   enablePlugins(JmhPlugin).
   settings(
     name := "nussknacker-benchmarks",
-  ).dependsOn(interpreter)
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV,
+        "org.apache.flink" %% "flink-runtime" % flinkV
+      )
+    }
+  ).dependsOn(interpreter, avroFlinkUtil, testUtil % "test")
 
 
 lazy val kafka = (project in engine("kafka")).
