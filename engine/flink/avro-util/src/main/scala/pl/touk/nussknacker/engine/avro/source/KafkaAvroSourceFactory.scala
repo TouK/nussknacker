@@ -37,7 +37,7 @@ class KafkaAvroSourceFactory(val schemaRegistryProvider: SchemaRegistryProvider,
       val preparedTopic = prepareTopic(topic)
       val versionOption = parseVersionOption(version)
       val schemaDeterminer = prepareSchemaDeterminer(preparedTopic, versionOption)
-      val validType = schemaDeterminer.determineSchemaUsedInTyping.map(AvroSchemaTypeDefinitionExtractor.typeDefinition)
+      val validType = schemaDeterminer.determineSchemaUsedInTyping.map(withId => AvroSchemaTypeDefinitionExtractor.typeDefinition(withId.schema))
       val finalCtxValue = finalCtx(context, dependencies, validType.getOrElse(Unknown))
       val finalErrors = validType.swap.map(error => CustomNodeError(error.getMessage, Some(SchemaVersionParamName))).toList
       FinalResults(finalCtxValue, finalErrors)

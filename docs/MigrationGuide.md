@@ -4,6 +4,7 @@ To see biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 0.3.0 (not released yet)
 
+* [#1305](https://github.com/TouK/nussknacker/pull/1305) Kafka Avro API passes `SchemaWithId` instead of `Schema` in various places
 * [#1304](https://github.com/TouK/nussknacker/pull/1304) `SerializerWithSpecifiedClass` was moved to `flink-api` module.
 * [#1044](https://github.com/TouK/nussknacker/pull/1044) Upgrade to Flink 1.11. Current watermark/timestamp mechanisms are deprectated in Flink 1.11, 
  new API ```TimestampWatermarkHandler``` is introduced, with ```LegacyTimestampWatermarkHandler``` as wrapper for previous mechanisms.

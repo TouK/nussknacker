@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.avro.serialization
 
-import org.apache.avro.Schema
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.Deserializer
+import pl.touk.nussknacker.engine.avro.SchemaWithId
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 import scala.reflect._
@@ -23,7 +23,7 @@ trait KafkaAvroDeserializationSchemaFactory extends Serializable {
    *           use other deserialization strategy base on it or provide different TypeInformation
    * @return KafkaDeserializationSchema
    */
-  def create[T: ClassTag](schemaOpt: Option[Schema], kafkaConfig: KafkaConfig): KafkaDeserializationSchema[T]
+  def create[T: ClassTag](schemaOpt: Option[SchemaWithId], kafkaConfig: KafkaConfig): KafkaDeserializationSchema[T]
 
 }
 
@@ -34,11 +34,11 @@ trait KafkaAvroDeserializationSchemaFactory extends Serializable {
 abstract class KafkaAvroValueDeserializationSchemaFactory
   extends KafkaAvroDeserializationSchemaFactory {
 
-  protected def createValueDeserializer[T: ClassTag](schemaOpt: Option[Schema], kafkaConfig: KafkaConfig): Deserializer[T]
+  protected def createValueDeserializer[T: ClassTag](schemaOpt: Option[SchemaWithId], kafkaConfig: KafkaConfig): Deserializer[T]
 
-  protected def createValueTypeInfo[T: ClassTag](schemaOpt: Option[Schema]): TypeInformation[T]
+  protected def createValueTypeInfo[T: ClassTag](schemaOpt: Option[SchemaWithId]): TypeInformation[T]
 
-  override def create[T: ClassTag](schemaOpt: Option[Schema], kafkaConfig: KafkaConfig): KafkaDeserializationSchema[T] = {
+  override def create[T: ClassTag](schemaOpt: Option[SchemaWithId], kafkaConfig: KafkaConfig): KafkaDeserializationSchema[T] = {
     new KafkaDeserializationSchema[T] {
       @transient
       private lazy val deserializer = createValueDeserializer[T](schemaOpt, kafkaConfig)
@@ -82,15 +82,15 @@ abstract class KafkaAvroKeyValueDeserializationSchemaFactory
 
   protected def createKeyTypeInfo(): TypeInformation[K]
 
-  protected def createValueDeserializer(schemaOpt: Option[Schema], kafkaConfig: KafkaConfig): Deserializer[V]
+  protected def createValueDeserializer(schemaOpt: Option[SchemaWithId], kafkaConfig: KafkaConfig): Deserializer[V]
 
-  protected def createValueTypeInfo(schemaOpt: Option[Schema]): TypeInformation[V]
+  protected def createValueTypeInfo(schemaOpt: Option[SchemaWithId]): TypeInformation[V]
 
   protected def createObject(key: K, value: V, topic: String): O
 
   protected def createObjectTypeInformation(keyTypeInformation: TypeInformation[K], valueTypeInformation: TypeInformation[V]): TypeInformation[O]
 
-  override def create[T: ClassTag](schemaOpt: Option[Schema], kafkaConfig: KafkaConfig): KafkaDeserializationSchema[T] = {
+  override def create[T: ClassTag](schemaOpt: Option[SchemaWithId], kafkaConfig: KafkaConfig): KafkaDeserializationSchema[T] = {
     if (!classTag[T].runtimeClass.isAssignableFrom(objectClassTag.runtimeClass)) {
       throw new IllegalArgumentException("Illegal input class: " + classTag[T].runtimeClass)
     }
