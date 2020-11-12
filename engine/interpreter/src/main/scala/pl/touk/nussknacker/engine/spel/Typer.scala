@@ -300,7 +300,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         propertyTypeBasedOnMethod(e)(typedClass).orElse(MapLikePropertyTyper.mapLikeValueType(typedClass))
           .map(Valid(_))
           .getOrElse(invalid(s"There is no property '${e.getName}' in type: ${t.display}"))
-      case TypedObjectTypingResult(fields, objType) =>
+      case TypedObjectTypingResult(fields, objType, _) =>
         val typeBasedOnFields = fields.get(e.getName)
         typeBasedOnFields.orElse(propertyTypeBasedOnMethod(e)(objType))
           .map(Valid(_))

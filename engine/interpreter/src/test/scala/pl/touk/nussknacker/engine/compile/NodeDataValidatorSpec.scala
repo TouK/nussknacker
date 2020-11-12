@@ -174,7 +174,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
      inside(
       validate(VariableBuilder("var1", "var1", List(Field("field1", "42L"), Field("field2", "'some string'")), None), ValidationContext(Map.empty))
     ) {
-      case ValidationPerformed(Nil, None, Some(TypedObjectTypingResult(fields, _))) =>
+      case ValidationPerformed(Nil, None, Some(TypedObjectTypingResult(fields, _, _))) =>
         fields.mapValues(_.display) shouldBe Map("field1" -> "Long", "field2" -> "String")
     }
   }

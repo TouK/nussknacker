@@ -1198,9 +1198,9 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         throw CustomNodeValidationException("Too young", Some("age"))
       }
       params("fields")._1 match {
-        case TypedObjectTypingResult(fields, _) if fields.contains("invalid") =>
+        case TypedObjectTypingResult(fields, _, _) if fields.contains("invalid") =>
           throw CustomNodeValidationException("Service is invalid", None)
-        case TypedObjectTypingResult(fields, _) if fields.values.exists(_ != Typed.typedClass[String]) =>
+        case TypedObjectTypingResult(fields, _, _) if fields.values.exists(_ != Typed.typedClass[String]) =>
           throw CustomNodeValidationException("All values should be strings", Some("fields"))
         case _ => Typed.typedClass[String]
       }

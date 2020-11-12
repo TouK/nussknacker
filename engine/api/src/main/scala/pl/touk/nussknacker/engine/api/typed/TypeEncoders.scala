@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.typed
 import io.circe.Json._
 import io.circe._
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders.typeField
-import pl.touk.nussknacker.engine.api.typed.TypingType.TypingType
+import pl.touk.nussknacker.engine.api.typed.TypingType.{TypingType, decoder}
 import pl.touk.nussknacker.engine.api.typed.typing._
 
 import scala.util.{Failure, Success, Try}
@@ -32,10 +32,15 @@ object TypeEncoders {
       .+:("display" -> fromString(result.display)))
 
   private def encodeSingleTypingResult(result: SingleTypingResult): JsonObject = result match {
-    case TypedObjectTypingResult(fields, objType) =>
+    case TypedObjectTypingResult(fields, objType, additionalInfo) =>
       val objTypeEncoded = encodeTypedClass(objType)
       val fieldsEncoded = "fields" -> fromFields(fields.mapValues(encodeTypingResult).toList)
-      objTypeEncoded.+:(fieldsEncoded)
+      val standardFields = objTypeEncoded.+:(fieldsEncoded)
+      if (additionalInfo.isEmpty) {
+        standardFields
+      } else {
+        standardFields.+:("additionalInfo" -> implicitly[Encoder[Map[String, AdditionalDataValue]]].apply(additionalInfo))
+      }
     case dict: TypedDict =>
       JsonObject("dict" -> obj(
         "id" -> fromString(dict.dictId),
@@ -48,6 +53,14 @@ object TypeEncoders {
   }
 
   implicit val typingResultEncoder: Encoder[TypingResult] = Encoder.instance(encodeTypingResult)
+
+  implicit val simpleValEncoder: Encoder[AdditionalDataValue] = new Encoder[AdditionalDataValue] {
+    override def apply(a: AdditionalDataValue): Json = a match {
+      case StringValue(value) => fromString(value)
+      case LongValue(value) => fromLong(value)
+      case BooleanValue(value) => fromBoolean(value)
+    }
+  }
 
 }
 
@@ -69,6 +82,13 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
     }
   }
 
+  private implicit val additionalDataValueDecoder: Decoder[AdditionalDataValue] = {
+    Decoder.decodeLong.map[AdditionalDataValue](LongValue)
+      .or(Decoder.decodeString.map[AdditionalDataValue](StringValue))
+      .or(Decoder.decodeBoolean.map[AdditionalDataValue](BooleanValue))
+      .or(Decoder.failedWithMessage("Cannot convert to AdditionalDataValue"))
+  }
+
   private implicit val singleTypingResult: Decoder[SingleTypingResult] = decodeTypingResults.emap {
     case e:SingleTypingResult => Right(e)
     case e => Left(s"$e is not SingleTypingResult")
@@ -82,7 +102,8 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
   private def typedObjectTypingResult(obj: HCursor): Decoder.Result[TypingResult] = for {
     valueClass <- typedClass(obj).right
     fields <- obj.downField("fields").as[Map[String, TypingResult]].right
-  } yield TypedObjectTypingResult(fields, valueClass)
+    additional <- obj.downField("additionalInfo").as[Option[Map[String, AdditionalDataValue]]].right.map(_.getOrElse(Map.empty)).right
+  } yield TypedObjectTypingResult(fields, valueClass, additional)
 
   private def typedDict(obj: HCursor): Decoder.Result[TypingResult] = {
     val dict = obj.downField("dict")
