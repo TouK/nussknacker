@@ -1,8 +1,6 @@
-package pl.touk.nussknacker.engine.process.util
+package pl.touk.nussknacker.engine.flink.api.serialization
 
 import org.apache.flink.api.common.ExecutionConfig
-import pl.touk.nussknacker.engine.process.util.Serializers.{SerializerWithSpecifiedClass, registerSerializer, registerSerializers}
-import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
 trait SerializersRegistrar {
 
@@ -23,12 +21,5 @@ trait BaseSerializersRegistrar extends SerializersRegistrar {
     val registers = registerSerializer(config) _
     serializers.foreach(registers)
   }
-
-}
-
-object SerializersRegistrar {
-
-  def load(): List[SerializersRegistrar] = ScalaServiceLoader
-    .load[SerializersRegistrar](getClass.getClassLoader)
 
 }
