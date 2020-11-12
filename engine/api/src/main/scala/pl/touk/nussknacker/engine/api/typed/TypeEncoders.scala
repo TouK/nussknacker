@@ -35,9 +35,12 @@ object TypeEncoders {
     case TypedObjectTypingResult(fields, objType, additionalInfo) =>
       val objTypeEncoded = encodeTypedClass(objType)
       val fieldsEncoded = "fields" -> fromFields(fields.mapValues(encodeTypingResult).toList)
-      val additionalDataValue = additionalInfo.map(implicitly[Encoder[Map[String, AdditionalDataValue]]].apply).map("additionalInfo" -> _)
       val standardFields = objTypeEncoded.+:(fieldsEncoded)
-      additionalDataValue.fold(standardFields)(standardFields.+:)
+      if (additionalInfo.isEmpty) {
+        standardFields
+      } else {
+        standardFields.+:("additionalInfo" -> implicitly[Encoder[Map[String, AdditionalDataValue]]].apply(additionalInfo))
+      }
     case dict: TypedDict =>
       JsonObject("dict" -> obj(
         "id" -> fromString(dict.dictId),
@@ -99,7 +102,7 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
   private def typedObjectTypingResult(obj: HCursor): Decoder.Result[TypingResult] = for {
     valueClass <- typedClass(obj).right
     fields <- obj.downField("fields").as[Map[String, TypingResult]].right
-    additional <- obj.downField("additionalInfo").as[Option[Map[String, AdditionalDataValue]]].right
+    additional <- obj.downField("additionalInfo").as[Option[Map[String, AdditionalDataValue]]].right.map(_.getOrElse(Map.empty)).right
   } yield TypedObjectTypingResult(fields, valueClass, additional)
 
   private def typedDict(obj: HCursor): Decoder.Result[TypingResult] = {

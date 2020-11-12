@@ -27,7 +27,7 @@ that will be hidden before parameter's evaluation
     - Deprecated: `runningJobs`, from `MiniClusterExecutionEnvironment`
     - Removed: `getClusterClient` from `FlinkMiniClusterHolder` interface, because of flink compatibility at Flink 1.9 
     - Renamed: `FlinkStreamingProcessRegistrar` to `FlinkProcessManager` 
-
+* [#1303](https://github.com/TouK/nussknacker/pull/1303) TypedObjectTypingResult has a new field: additionalInfo
 ## In version 0.2.0
 
 * [#1104](https://github.com/TouK/nussknacker/pull/1104) Creation of `FlinkMiniCluster` is now extracted from `StoppableExecutionEnvironment`. You should create it using e.g.:

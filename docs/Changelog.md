@@ -31,6 +31,7 @@ ProcessManager implementations are separated from UI to allow easier changes in 
 * [#1257](https://github.com/TouK/nussknacker/pull/1257) Improvements: Flink test util package
 * [#1287](https://github.com/TouK/nussknacker/pull/1287) OAuth2: add accessTokenRequestContentType parameter
 * [#1290](https://github.com/TouK/nussknacker/pull/1290) Own kryo serializers can be provided through SPI
+* [#1303](https://github.com/TouK/nussknacker/pull/1303) TypedObjectTypingResult can have additional info (e.g. Schema for GenericRecord)
 
 0.2.2
 -----------------------
