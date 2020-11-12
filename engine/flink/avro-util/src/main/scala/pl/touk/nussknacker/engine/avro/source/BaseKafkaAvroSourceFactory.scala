@@ -29,8 +29,8 @@ abstract class BaseKafkaAvroSourceFactory[T: ClassTag](timestampAssigner: Option
                   (implicit processMetaData: MetaData,
                    nodeId: NodeId): KafkaSource[T] = {
 
-    val schemaWithId = schemaDeterminer.determineSchemaUsedInTyping.valueOr(SchemaDeterminerErrorHandler.handleSchemaRegistryErrorAndThrowException)
-    val schemaUsedInRuntime = schemaDeterminer.toRuntimeSchema(schemaWithId)
+    val schemaData = schemaDeterminer.determineSchemaUsedInTyping.valueOr(SchemaDeterminerErrorHandler.handleSchemaRegistryErrorAndThrowException)
+    val schemaUsedInRuntime = schemaDeterminer.toRuntimeSchema(schemaData)
 
     if (returnGenericAvroType) {
       new KafkaSource(
@@ -41,7 +41,7 @@ abstract class BaseKafkaAvroSourceFactory[T: ClassTag](timestampAssigner: Option
         createRecordFormatter(preparedTopic.prepared),
         TestParsingUtils.newLineSplit
       ) with ReturningType {
-        override def returnType: typing.TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schemaWithId.schema)
+        override def returnType: typing.TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schemaData.schema)
       }
     } else {
       new KafkaSource(

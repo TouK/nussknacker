@@ -7,7 +7,7 @@ import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.serialization.{KafkaAvroKeyValueDeserializationSchemaFactory, KafkaAvroValueDeserializationSchemaFactory}
-import pl.touk.nussknacker.engine.avro.{AvroUtils, SchemaWithId}
+import pl.touk.nussknacker.engine.avro.{AvroUtils, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 import scala.reflect._
@@ -16,13 +16,13 @@ trait ConfluentKafkaAvroDeserializerFactory {
 
   protected def createDeserializer[T: ClassTag](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
                                                 kafkaConfig: KafkaConfig,
-                                                schemaOpt: Option[SchemaWithId],
+                                                schemaOpt: Option[RuntimeSchemaData],
                                                 isKey: Boolean): Deserializer[T] = {
     val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
     new ConfluentKafkaAvroDeserializer[T](kafkaConfig, schemaOpt.orNull, schemaRegistryClient, isKey = isKey, AvroUtils.isSpecificRecord[T])
   }
 
-  protected def createTypeInfo[T: ClassTag](schemaOpt: Option[SchemaWithId]): TypeInformation[T] = {
+  protected def createTypeInfo[T: ClassTag](schemaOpt: Option[RuntimeSchemaData]): TypeInformation[T] = {
     val clazz = classTag[T].runtimeClass.asInstanceOf[Class[T]]
     val isSpecificRecord = AvroUtils.isSpecificRecord[T]
 
@@ -49,10 +49,10 @@ trait ConfluentKafkaAvroDeserializerFactory {
 class ConfluentKafkaAvroDeserializationSchemaFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
   extends KafkaAvroValueDeserializationSchemaFactory with ConfluentKafkaAvroDeserializerFactory {
 
-  override protected def createValueDeserializer[T: ClassTag](schemaOpt: Option[SchemaWithId], kafkaConfig: KafkaConfig): Deserializer[T]  =
+  override protected def createValueDeserializer[T: ClassTag](schemaOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[T]  =
     createDeserializer[T](schemaRegistryClientFactory, kafkaConfig, schemaOpt, isKey = false)
 
-  override protected def createValueTypeInfo[T: ClassTag](schemaOpt: Option[SchemaWithId]): TypeInformation[T] =
+  override protected def createValueTypeInfo[T: ClassTag](schemaOpt: Option[RuntimeSchemaData]): TypeInformation[T] =
     createTypeInfo[T](schemaOpt)
 
 }
@@ -66,10 +66,10 @@ abstract class ConfluentKeyValueKafkaAvroDeserializationFactory(schemaRegistryCl
   override protected def createKeyTypeInfo(): TypeInformation[K] =
     createTypeInfo[K](None)(keyClassTag)
 
-  override protected def createValueDeserializer(schemaOpt: Option[SchemaWithId], kafkaConfig: KafkaConfig): Deserializer[V] =
+  override protected def createValueDeserializer(schemaOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[V] =
     createDeserializer[V](schemaRegistryClientFactory, kafkaConfig, schemaOpt, isKey = false)(valueClassTag)
 
-  override protected def createValueTypeInfo(schemaOpt: Option[SchemaWithId]): TypeInformation[V] =
+  override protected def createValueTypeInfo(schemaOpt: Option[RuntimeSchemaData]): TypeInformation[V] =
     createTypeInfo[V](schemaOpt)(valueClassTag)
 
 }

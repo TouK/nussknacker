@@ -6,7 +6,7 @@ import org.apache.flink.formats.avro.typeutils.NkSerializableAvroSchema
 
 trait AvroSchemaDeterminer {
 
-  def determineSchemaUsedInTyping: Validated[SchemaDeterminerError, SchemaWithId]
+  def determineSchemaUsedInTyping: Validated[SchemaDeterminerError, RuntimeSchemaData]
 
   /**
    * This method should provide schema that will be used in runtime. In some cases it can be other than schema used
@@ -15,17 +15,22 @@ trait AvroSchemaDeterminer {
    * - I want to to typed filtering on #input.field1
    * - I want to pass #input to sink, with all (possibly unknown at deployment time) fields
    */
-  def toRuntimeSchema(schemaUsedInTyping: SchemaWithId): Option[SchemaWithId] = Some(schemaUsedInTyping)
+  def toRuntimeSchema(schemaUsedInTyping: RuntimeSchemaData): Option[RuntimeSchemaData] = Some(schemaUsedInTyping)
 
 }
 
-case class SchemaWithId(serializableSchema: NkSerializableAvroSchema, idOpt: Option[Int]) {
+/**
+ * This class holds data that will be passed to Flink's tasks for records processing in runtime.
+ * @param serializableSchema Serializable Avro schema
+ * @param schemaIdOpt optional schema id fetched from schema registry - for further optimizations of record processing in runtime
+ */
+case class RuntimeSchemaData(serializableSchema: NkSerializableAvroSchema, schemaIdOpt: Option[Int]) {
   def schema: Schema = serializableSchema.getAvroSchema
 }
 
-object SchemaWithId {
-  def apply(schema: Schema, idOpt: Option[Int]): SchemaWithId =
-    SchemaWithId(new NkSerializableAvroSchema(schema), idOpt)
+object RuntimeSchemaData {
+  def apply(schema: Schema, idOpt: Option[Int]): RuntimeSchemaData =
+    RuntimeSchemaData(new NkSerializableAvroSchema(schema), idOpt)
 }
 
 class SchemaDeterminerError(message: String, cause: Throwable) extends RuntimeException(message, cause)

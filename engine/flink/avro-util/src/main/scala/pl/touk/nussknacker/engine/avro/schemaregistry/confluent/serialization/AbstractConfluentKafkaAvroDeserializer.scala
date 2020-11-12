@@ -8,7 +8,7 @@ import io.confluent.kafka.serializers.{AbstractKafkaAvroDeserializer, AbstractKa
 import org.apache.avro.Schema.Type
 import org.apache.avro.io.DecoderFactory
 import org.apache.kafka.common.errors.SerializationException
-import pl.touk.nussknacker.engine.avro.SchemaWithId
+import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
 import pl.touk.nussknacker.engine.avro.schema.DatumReaderWriterMixin
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 
@@ -19,23 +19,23 @@ abstract class AbstractConfluentKafkaAvroDeserializer extends AbstractKafkaAvroD
 
   protected lazy val decoderFactory: DecoderFactory = DecoderFactory.get()
 
-  protected def deserialize(topic: String, isKey: java.lang.Boolean, payload: Array[Byte], readerSchema: SchemaWithId): AnyRef = {
+  protected def deserialize(topic: String, isKey: java.lang.Boolean, payload: Array[Byte], readerSchema: RuntimeSchemaData): AnyRef = {
     val buffer = ConfluentUtils.parsePayloadToByteBuffer(payload).valueOr(ex => throw ex)
     read(buffer, readerSchema)
   }
 
-  protected def read(buffer: ByteBuffer, expectedSchema: SchemaWithId): AnyRef = {
+  protected def read(buffer: ByteBuffer, expectedSchema: RuntimeSchemaData): AnyRef = {
     var schemaId = -1
 
     try {
       schemaId = buffer.getInt
       val parsedSchema = schemaRegistry.getSchemaById(schemaId)
-      val writerSchemaWithId = SchemaWithId(ConfluentUtils.extractSchema(parsedSchema), Some(schemaId))
-      val readerSchema = if (expectedSchema == null) writerSchemaWithId else expectedSchema
+      val writerSchemaData = RuntimeSchemaData(ConfluentUtils.extractSchema(parsedSchema), Some(schemaId))
+      val readerSchema = if (expectedSchema == null) writerSchemaData else expectedSchema
       // HERE we create our DatumReader
-      val reader = createDatumReader(writerSchemaWithId.schema, readerSchema.schema, useSchemaReflection, useSpecificAvroReader)
+      val reader = createDatumReader(writerSchemaData.schema, readerSchema.schema, useSchemaReflection, useSpecificAvroReader)
       val length = buffer.limit() - 1 - AbstractKafkaSchemaSerDe.idSize
-      if (writerSchemaWithId.schema.getType == Type.BYTES) {
+      if (writerSchemaData.schema.getType == Type.BYTES) {
         val bytes = new Array[Byte](length)
         buffer.get(bytes, 0, length)
         bytes
@@ -43,7 +43,7 @@ abstract class AbstractConfluentKafkaAvroDeserializer extends AbstractKafkaAvroD
         val start = buffer.position() + buffer.arrayOffset
         val binaryDecoder = decoderFactory.binaryDecoder(buffer.array, start, length, null)
         val result = reader.read(null, binaryDecoder)
-        if (writerSchemaWithId.schema.getType == Type.STRING) result.toString else result
+        if (writerSchemaData.schema.getType == Type.STRING) result.toString else result
       }
     } catch {
       case exc: RestClientException =>
