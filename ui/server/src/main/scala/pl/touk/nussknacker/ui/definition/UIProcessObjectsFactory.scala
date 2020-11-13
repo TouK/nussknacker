@@ -1,14 +1,11 @@
 package pl.touk.nussknacker.ui.definition
 
-import java.lang.annotation.Annotation
-
-import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
 import pl.touk.nussknacker.engine.api.definition.{Parameter, RawParameterEditor}
 import pl.touk.nussknacker.engine.api.process.{AdditionalPropertyConfig, ParameterConfig, SingleNodeConfig}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.MetaData
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
@@ -20,17 +17,17 @@ import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
 import pl.touk.nussknacker.engine.definition.parameter.validator.{ValidatorExtractorParameters, ValidatorsExtractor}
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
-import pl.touk.nussknacker.engine.util.config.FicusReaders._
-import pl.touk.nussknacker.restmodel.definition.{NodeGroup, NodeToAdd, UIClazzDefinition, UIObjectDefinition, UIParameter, UIProcessDefinition, UIProcessObjects, UiAdditionalPropertyConfig}
+import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.ui.definition.additionalproperty.{AdditionalPropertyValidatorDeterminerChain, UiAdditionalPropertyEditorDeterminer}
 import pl.touk.nussknacker.ui.definition.defaults.{DefaultValueDeterminerChain, ParamDefaultValueConfig}
 import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-import scala.reflect.ClassTag
-
 object UIProcessObjectsFactory {
+
+  import net.ceedubs.ficus.Ficus._
+  import pl.touk.nussknacker.engine.util.config.FicusReaders._
 
   def prepareUIProcessObjects(modelDataForType: ModelData,
                               user: LoggedUser,
