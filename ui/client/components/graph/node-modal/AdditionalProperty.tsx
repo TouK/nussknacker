@@ -36,6 +36,7 @@ export default function AdditionalProperty(props: Props) {
   return (
     <EditableEditor
       param={propertyConfig}
+      fieldName={propertyName}
       fieldLabel={propertyConfig.label || propertyName}
       onValueChange={(newValue) => onChange(`additionalFields.properties.${propertyName}`, newValue)}
       expressionObj={expressionObj}
