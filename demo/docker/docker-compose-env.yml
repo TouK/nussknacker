@@ -19,8 +19,9 @@ services:
 
   zookeeper:
     container_name: nussknacker_zookeeper
-    image: zookeeper:${ZOOKEEPER_VERSION-3.5}
+    image: zookeeper:${ZOOKEEPER_VERSION-3.5.5}
     environment:
+      ZOO_MY_ID: 1
       JVMFLAGS: "-Xms64m -Xmx128m"
     volumes:
       - nussknacker_storage_zookeeper_datalog:/datalog
@@ -69,7 +70,7 @@ services:
 
   schemaregistry:
     container_name: nussknacker_schemaregistry
-    image: confluent/schema-registry
+    image: confluentinc/cp-schema-registry:${SCHEMA_REGISTRY_VERSION-5.5.0}
     ports:
       - 3082:8081
     depends_on:
