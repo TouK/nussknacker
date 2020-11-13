@@ -14,7 +14,7 @@ import scala.collection.JavaConverters._
 /**
   * This is Kafka Avro Deserialization class. All events will be deserialized to provided schema.
   */
-class ConfluentKafkaAvroDeserializer[T](kafkaConfig: KafkaConfig, schema: RuntimeSchemaData, confluentSchemaRegistryClient: ConfluentSchemaRegistryClient,
+class ConfluentKafkaAvroDeserializer[T](kafkaConfig: KafkaConfig, schemaData: RuntimeSchemaData, confluentSchemaRegistryClient: ConfluentSchemaRegistryClient,
                                         var isKey: Boolean, _useSpecificAvroReader: Boolean)
   extends AbstractConfluentKafkaAvroDeserializer with Deserializer[T] {
 
@@ -30,7 +30,7 @@ class ConfluentKafkaAvroDeserializer[T](kafkaConfig: KafkaConfig, schema: Runtim
   }
 
   override def deserialize(topic: String, data: Array[Byte]): T = {
-    val record = deserialize(topic, isKey, data, schema)
+    val record = deserialize(topic, isKey, data, schemaData)
     record.asInstanceOf[T]
   }
 

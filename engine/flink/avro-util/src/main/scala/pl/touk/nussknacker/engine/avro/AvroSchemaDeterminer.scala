@@ -29,8 +29,8 @@ case class RuntimeSchemaData(serializableSchema: NkSerializableAvroSchema, schem
 }
 
 object RuntimeSchemaData {
-  def apply(schema: Schema, idOpt: Option[Int]): RuntimeSchemaData =
-    RuntimeSchemaData(new NkSerializableAvroSchema(schema), idOpt)
+  def apply(schema: Schema, schemaIdOpt: Option[Int]): RuntimeSchemaData =
+    RuntimeSchemaData(new NkSerializableAvroSchema(schema), schemaIdOpt)
 }
 
 class SchemaDeterminerError(message: String, cause: Throwable) extends RuntimeException(message, cause)

@@ -24,16 +24,16 @@ abstract class AbstractConfluentKafkaAvroDeserializer extends AbstractKafkaAvroD
     read(buffer, readerSchema)
   }
 
-  protected def read(buffer: ByteBuffer, expectedSchema: RuntimeSchemaData): AnyRef = {
+  protected def read(buffer: ByteBuffer, expectedSchemaData: RuntimeSchemaData): AnyRef = {
     var schemaId = -1
 
     try {
       schemaId = buffer.getInt
       val parsedSchema = schemaRegistry.getSchemaById(schemaId)
       val writerSchemaData = RuntimeSchemaData(ConfluentUtils.extractSchema(parsedSchema), Some(schemaId))
-      val readerSchema = if (expectedSchema == null) writerSchemaData else expectedSchema
+      val readerSchemaData = if (expectedSchemaData == null) writerSchemaData else expectedSchemaData
       // HERE we create our DatumReader
-      val reader = createDatumReader(writerSchemaData.schema, readerSchema.schema, useSchemaReflection, useSpecificAvroReader)
+      val reader = createDatumReader(writerSchemaData.schema, readerSchemaData.schema, useSchemaReflection, useSpecificAvroReader)
       val length = buffer.limit() - 1 - AbstractKafkaSchemaSerDe.idSize
       if (writerSchemaData.schema.getType == Type.BYTES) {
         val bytes = new Array[Byte](length)
