@@ -89,7 +89,7 @@ export class NodeDetailsContent extends React.Component {
       this.updateNodeDataIfNeeded(nextPropsNode)
     }
     if (!_.isEqual(this.props.dynamicParameterDefinitions, nextProps.dynamicParameterDefinitions)) {
-      this.adjustStateWithParameters(this.state.editedNode)
+      this.adjustStateWithParameters(nextPropsNode)
     }
   }
 
