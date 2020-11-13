@@ -38,8 +38,7 @@ case class ProcessingTypeData(processManager: ProcessManager,
 
 object ProcessingTypeConfig {
 
-  import net.ceedubs.ficus.Ficus._
-  import pl.touk.nussknacker.engine.util.config.FicusReaders._
+  import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 
   implicit val reader: ValueReader[ProcessingTypeConfig] = ValueReader.relative(read)
 
