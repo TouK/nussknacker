@@ -6,7 +6,7 @@ import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.kafka.common.errors.SerializationException
 import org.scalatest.Assertion
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor4}
-import pl.touk.nussknacker.engine.avro.KafkaAvroSpecMixin
+import pl.touk.nussknacker.engine.avro.{KafkaAvroSpecMixin, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, PaymentV1, PaymentV2}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.ConfluentKafkaAvroDeserializationSchemaFactory
@@ -82,7 +82,7 @@ class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpecMixin with Tabl
     pushMessage(FullNameV1.record, fullNameTopic, Some(fromSubjectVersionTopic.input))
 
     val fromRecordDeserializer = confluentDeserializationSchemaFactory.create(None, kafkaConfig)
-    val fromSubjectVersionDeserializer = confluentDeserializationSchemaFactory.create(Some(PaymentV1.schema), kafkaConfig)
+    val fromSubjectVersionDeserializer = confluentDeserializationSchemaFactory.create(Some(RuntimeSchemaData(PaymentV1.schema, None)), kafkaConfig)
 
     consumeAndVerifyMessages(fromRecordDeserializer, fromRecordTopic.input, List(FullNameV1.record))
 
@@ -94,7 +94,7 @@ class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpecMixin with Tabl
   private def runDeserializationTest(table: TableFor4[Boolean, GenericRecord, GenericRecord, String], version: Option[Int], schemas: List[Schema]): Assertion =
     forAll(table) { (schemaEvolution: Boolean, givenObj: GenericRecord, expectedObj: GenericRecord, topic: String) =>
       val topicConfig = createAndRegisterTopicConfig(topic, schemas)
-      val deserializer = confluentDeserializationSchemaFactory.create(if (schemaEvolution) Option(expectedObj.getSchema) else None, kafkaConfig)
+      val deserializer = confluentDeserializationSchemaFactory.create(if (schemaEvolution) Option(RuntimeSchemaData(expectedObj.getSchema, None)) else None, kafkaConfig)
 
       pushMessage(givenObj, topicConfig.input)
 
