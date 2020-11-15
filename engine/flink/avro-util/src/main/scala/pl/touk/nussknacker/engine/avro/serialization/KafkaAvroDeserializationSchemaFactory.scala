@@ -36,7 +36,7 @@ abstract class KafkaAvroValueDeserializationSchemaFactory
 
   protected def createValueDeserializer[T: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[T]
 
-  protected def createValueTypeInfo[T: ClassTag](schemaDataOpt: Option[RuntimeSchemaData]): TypeInformation[T]
+  protected def createValueTypeInfo[T: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): TypeInformation[T]
 
   override def create[T: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): KafkaDeserializationSchema[T] = {
     new KafkaDeserializationSchema[T] {
@@ -50,7 +50,7 @@ abstract class KafkaAvroValueDeserializationSchemaFactory
 
       override def isEndOfStream(nextElement: T): Boolean = false
 
-      override def getProducedType: TypeInformation[T] = createValueTypeInfo(schemaDataOpt)
+      override def getProducedType: TypeInformation[T] = createValueTypeInfo(schemaDataOpt, kafkaConfig)
     }
   }
 
@@ -80,11 +80,11 @@ abstract class KafkaAvroKeyValueDeserializationSchemaFactory
   // TODO We currently not support schema evolution for keys
   protected def createKeyDeserializer(kafkaConfig: KafkaConfig): Deserializer[K]
 
-  protected def createKeyTypeInfo(): TypeInformation[K]
+  protected def createKeyTypeInfo(kafkaConfig: KafkaConfig): TypeInformation[K]
 
   protected def createValueDeserializer(schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[V]
 
-  protected def createValueTypeInfo(schemaDataOpt: Option[RuntimeSchemaData]): TypeInformation[V]
+  protected def createValueTypeInfo(schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): TypeInformation[V]
 
   protected def createObject(key: K, value: V, topic: String): O
 
@@ -109,7 +109,7 @@ abstract class KafkaAvroKeyValueDeserializationSchemaFactory
 
       override def isEndOfStream(nextElement: T): Boolean = false
 
-      override def getProducedType: TypeInformation[T] = createObjectTypeInformation(createKeyTypeInfo(), createValueTypeInfo(schemaDataOpt)).asInstanceOf[TypeInformation[T]]
+      override def getProducedType: TypeInformation[T] = createObjectTypeInformation(createKeyTypeInfo(kafkaConfig), createValueTypeInfo(schemaDataOpt, kafkaConfig)).asInstanceOf[TypeInformation[T]]
     }
   }
 
