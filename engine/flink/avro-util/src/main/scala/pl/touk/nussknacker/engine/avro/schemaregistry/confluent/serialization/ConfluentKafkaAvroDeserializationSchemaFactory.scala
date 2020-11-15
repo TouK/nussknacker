@@ -22,7 +22,7 @@ trait ConfluentKafkaAvroDeserializerFactory {
     new ConfluentKafkaAvroDeserializer[T](kafkaConfig, schemaDataOpt.orNull, schemaRegistryClient, isKey = isKey, AvroUtils.isSpecificRecord[T])
   }
 
-  protected def createTypeInfo[T: ClassTag](schemaDataOpt: Option[RuntimeSchemaData]): TypeInformation[T] = {
+  protected def createTypeInfo[T: ClassTag](kafkaConfig: KafkaConfig, schemaDataOpt: Option[RuntimeSchemaData]): TypeInformation[T] = {
     val clazz = classTag[T].runtimeClass.asInstanceOf[Class[T]]
     val isSpecificRecord = AvroUtils.isSpecificRecord[T]
 
@@ -52,8 +52,8 @@ class ConfluentKafkaAvroDeserializationSchemaFactory(schemaRegistryClientFactory
   override protected def createValueDeserializer[T: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[T]  =
     createDeserializer[T](schemaRegistryClientFactory, kafkaConfig, schemaDataOpt, isKey = false)
 
-  override protected def createValueTypeInfo[T: ClassTag](schemaDataOpt: Option[RuntimeSchemaData]): TypeInformation[T] =
-    createTypeInfo[T](schemaDataOpt)
+  override protected def createValueTypeInfo[T: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): TypeInformation[T] =
+    createTypeInfo[T](kafkaConfig, schemaDataOpt)
 
 }
 
@@ -63,13 +63,13 @@ abstract class ConfluentKeyValueKafkaAvroDeserializationFactory(schemaRegistryCl
   override protected def createKeyDeserializer(kafkaConfig: KafkaConfig): Deserializer[K] =
     createDeserializer[K](schemaRegistryClientFactory, kafkaConfig, None, isKey = true)(keyClassTag)
 
-  override protected def createKeyTypeInfo(): TypeInformation[K] =
-    createTypeInfo[K](None)(keyClassTag)
+  override protected def createKeyTypeInfo(kafkaConfig: KafkaConfig): TypeInformation[K] =
+    createTypeInfo[K](kafkaConfig, None)(keyClassTag)
 
   override protected def createValueDeserializer(schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[V] =
     createDeserializer[V](schemaRegistryClientFactory, kafkaConfig, schemaDataOpt, isKey = false)(valueClassTag)
 
-  override protected def createValueTypeInfo(schemaDataOpt: Option[RuntimeSchemaData]): TypeInformation[V] =
-    createTypeInfo[V](schemaDataOpt)(valueClassTag)
+  override protected def createValueTypeInfo(schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): TypeInformation[V] =
+    createTypeInfo[V](kafkaConfig, schemaDataOpt)(valueClassTag)
 
 }
