@@ -70,7 +70,6 @@ class ProcessUtils {
     const withoutVariablesToHide =  _.pickBy(variablesForNode, (va, key) => !variablesToHideForParam.includes(key))
     const additionalVariablesForParam = parameterDefinition?.additionalVariables || {}
     const variables = {...withoutVariablesToHide, ...additionalVariablesForParam}
-
     //Filtering by category - we show variables only with the same category as process, removing these which are in blackList
     return _.pickBy(variables, (va, key) => _.indexOf(globalVariablesWithMismatchCategory, key) === -1)
   }
@@ -111,6 +110,7 @@ class ProcessUtils {
     const node = _.find(process.nodes, (node) => node.id === nodeId)
     const nodeObjectTypeDefinition = this.findNodeObjectTypeDefinition(node, processDefinition)
     const clazzName = _.get(nodeObjectTypeDefinition, "returnType")
+    const unknown = {type: "Unknown", refClazzName: "java.lang.Object"}
     switch (node.type) {
       case "Source": {
         return _.isEmpty(clazzName) ? [] : [{input: clazzName}]
@@ -128,13 +128,13 @@ class ProcessUtils {
         return _.isEmpty(outputClazz) ? [] : [{[outputVariableName]: outputClazz}]
       }
       case "VariableBuilder": {
-        return [{[node.varName]: {refClazzName: "java.lang.Object"}}]
+        return [{[node.varName]: unknown}]
       }
       case "Variable": {
-        return [{[node.varName]: {refClazzName: "java.lang.Object"}}]
+        return [{[node.varName]: unknown}]
       }
       case "Switch": {
-        return [{[node.exprVal]: {refClazzName: "java.lang.Object"}}]
+        return [{[node.exprVal]: unknown}]
       }
       default: {
         return []

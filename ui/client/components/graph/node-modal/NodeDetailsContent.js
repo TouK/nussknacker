@@ -334,7 +334,7 @@ export class NodeDetailsContent extends React.Component {
           />
         )
       case "Variable":
-        const varExprType = this.props.expressionType || this.props.nodeTypingInfo[DEFAULT_EXPRESSION_ID]
+        const varExprType = this.props.expressionType || (this.props?.nodeTypingInfo || {})[DEFAULT_EXPRESSION_ID]
         return (
           <Variable
             renderFieldLabel={this.renderFieldLabel}

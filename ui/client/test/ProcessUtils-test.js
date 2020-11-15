@@ -1,6 +1,8 @@
 import ProcessUtils from '../common/ProcessUtils'
 import _ from 'lodash'
 
+const unknown = {"type": "Unknown", refClazzName: "java.lang.Object"}
+
 //nodeId, process, processDefinition, fieldName, processCategory  ==> (processDefinition, processCategory, process) => (nodeId, parameterDefinition)
 describe("process available variables finder", () => {
   it("should find available variables with its types in process at the beginning of the process", () => {
@@ -20,8 +22,8 @@ describe("process available variables finder", () => {
       "date": {refClazzName:"java.time.LocalDate"},
       "parsedTransaction": {refClazzName:"org.nussknacker.model.Transaction"},
       "aggregateResult": {refClazzName:"java.lang.String"},
-      "processVariables": {refClazzName:"java.lang.Object"}, //fixme how to handle variableBuilder here?
-      "someVariableName": {refClazzName:"java.lang.Object"}
+      "processVariables": unknown, //fixme how to handle variableBuilder here?
+      "someVariableName": unknown
     })
   })
 
@@ -60,8 +62,8 @@ describe("process available variables finder", () => {
 
     expect(availableVariables).toEqual({
       "date": {refClazzName:"java.time.LocalDate"},
-      someVariableName: {refClazzName:"java.lang.Object"},
-      processVariables: {refClazzName:"java.lang.Object"},
+      someVariableName: unknown,
+      processVariables: unknown,
       input: {refClazzName: 'org.nussknacker.model.Transaction'}
     })
   })
@@ -71,8 +73,8 @@ describe("process available variables finder", () => {
 
     expect(availableVariables).toEqual({
       "date2": {refClazzName:"java.time.Date"},
-      someVariableName: {refClazzName:"java.lang.Object"},
-      processVariables: {refClazzName:"java.lang.Object"},
+      someVariableName: unknown,
+      processVariables: unknown,
       input: {refClazzName: 'org.nussknacker.model.Transaction'}
     })
   })
@@ -81,8 +83,8 @@ describe("process available variables finder", () => {
     const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, null, processWithVariableTypes)("anonymousUserFilter")
 
     expect(availableVariables).toEqual({
-      someVariableName: {refClazzName:"java.lang.Object"},
-      processVariables: {refClazzName:"java.lang.Object"},
+      someVariableName: unknown,
+      processVariables: unknown,
       input: {refClazzName: 'org.nussknacker.model.Transaction'}
     })
   })
@@ -96,8 +98,8 @@ describe("process available variables finder", () => {
       "input": {refClazzName:"org.nussknacker.model.Transaction"},
       "date": {refClazzName:"java.time.LocalDate"},
       "parsedTransaction": {refClazzName:"org.nussknacker.model.Transaction"},
-      "processVariables": {refClazzName:"java.lang.Object"}, 
-      "someVariableName": {refClazzName:"java.lang.Object"}
+      "processVariables": unknown,
+      "someVariableName": unknown
     })
   })
 
