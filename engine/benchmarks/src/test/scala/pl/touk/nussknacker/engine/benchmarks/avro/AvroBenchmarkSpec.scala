@@ -8,6 +8,8 @@ class AvroBenchmarkSpec extends FunSuite with Matchers {
     val benchmark = new AvroBenchmark
     benchmark.defaultFlinkKryoSetup.roundTripSerialization() shouldEqual AvroSamples.sampleRecord
     benchmark.defaultFlinkAvroSetup.roundTripSerialization() shouldEqual AvroSamples.sampleRecord
+    benchmark.schemaIdBasedKryoSetup.roundTripSerialization() shouldEqual AvroSamples.sampleRecordWithSchemaId
+    benchmark.flinkAvroWithSchemaIdSetup.roundTripSerialization() shouldEqual AvroSamples.sampleRecordWithSchemaId
   }
 
 }

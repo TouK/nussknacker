@@ -3,8 +3,10 @@ package pl.touk.nussknacker.engine.avro.schema
 import java.nio.ByteBuffer
 
 import org.apache.avro.Schema.Type
+import org.apache.avro.generic.GenericData
 import org.apache.avro.io.{DatumReader, DecoderFactory}
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
+import pl.touk.nussknacker.engine.avro.schemaregistry.GenericRecordWithSchemaId
 
 trait RecordDeserializer {
 
@@ -22,9 +24,14 @@ trait RecordDeserializer {
       val result = reader.read(null, binaryDecoder)
       result match {
         case _ if readerSchemaData.schema.getType == Type.STRING => result.toString
+        case genericRecord: GenericData.Record if schemaIdSerializationEnabled =>
+          val readerSchemaId = readerSchemaData.schemaIdOpt.getOrElse(throw new IllegalStateException("SchemaId serialization enabled but schemaId missed from reader schema data"))
+          new GenericRecordWithSchemaId(genericRecord, readerSchemaId, false)
         case _ => result
       }
     }
   }
+
+  protected def schemaIdSerializationEnabled: Boolean
 
 }

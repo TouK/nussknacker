@@ -4,6 +4,7 @@ import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
 import org.apache.flink.formats.avro.typeutils.LogicalTypesGenericRecordBuilder
 import pl.touk.nussknacker.engine.avro.AvroUtils
+import pl.touk.nussknacker.engine.avro.schemaregistry.GenericRecordWithSchemaId
 
 object AvroSamples {
 
@@ -27,6 +28,9 @@ object AvroSamples {
     1.to(fieldsCount).foreach(i => builder.set(fieldName(i), sampleFieldValue))
     builder.build()
   }
+
+  val sampleRecordWithSchemaId: GenericRecordWithSchemaId =
+    new GenericRecordWithSchemaId(sampleRecord, sampleSchemaId, true)
 
   private def fieldSchema(i: Int) = s"""    { "name": "${fieldName(i)}", "type": "string" }"""
 

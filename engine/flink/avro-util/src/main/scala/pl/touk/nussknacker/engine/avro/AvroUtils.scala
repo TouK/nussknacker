@@ -6,6 +6,7 @@ import org.apache.avro.data.TimeConversions
 import org.apache.avro.generic.GenericData
 import org.apache.avro.reflect.ReflectData
 import org.apache.avro.specific.{SpecificData, SpecificRecord}
+import pl.touk.nussknacker.engine.avro.schemaregistry.GenericRecordWithSchemaId
 
 import scala.reflect.{ClassTag, classTag}
 
@@ -20,7 +21,16 @@ object AvroUtils {
     classOf[SpecificRecord].isAssignableFrom(clazz)
   }
 
-  def genericData: GenericData = addLogicalTypeConversions(new GenericData(_))
+  def genericData: GenericData = addLogicalTypeConversions(new GenericData(_) {
+    override def deepCopy[T](schema: Schema, value: T): T = {
+      val copiedRecord = super.deepCopy(schema, value)
+      value match {
+        case withSchemaId: GenericRecordWithSchemaId =>
+          new GenericRecordWithSchemaId(copiedRecord.asInstanceOf[GenericData.Record], withSchemaId.getSchemaId, false).asInstanceOf[T]
+        case _ => copiedRecord
+      }
+    }
+  })
 
   def specificData: SpecificData = addLogicalTypeConversions(new SpecificData(_))
 
@@ -49,5 +59,12 @@ object AvroUtils {
   // could register schema with invalid default in lower avro version and despite this in newer version we want to read it
   def nonRestrictiveParseSchema(avroSchema: String): Schema =
     parserNotValidatingDefaults.parse(avroSchema)
+
+  def wrapWithGenericRecordWithSchemaIdIfDefined[T](record: T, nullableSchemaId: Integer): T = {
+    (record, Option(nullableSchemaId)) match {
+      case (genericRecord: GenericData.Record, Some(schemaId))  => new GenericRecordWithSchemaId(genericRecord, schemaId, false).asInstanceOf[T]
+      case _ => record
+    }
+  }
 
 }

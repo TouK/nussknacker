@@ -61,6 +61,10 @@ class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWri
     }
   }
 
+  // Currently schema evolution doesn't support schema id serialization. We assume that it is used only on the end of process,
+  // when there won't be any subsequent serializations done
+  override protected def schemaIdSerializationEnabled: Boolean = false
+
   /**
     * Record serialization method, kind of copy paste from AbstractKafkaAvroSerializer#DeserializationContext.read.
     * We use confluent serialization mechanism without some specifics features like:

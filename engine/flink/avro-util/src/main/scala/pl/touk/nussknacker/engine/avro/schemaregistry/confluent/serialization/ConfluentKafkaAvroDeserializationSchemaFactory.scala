@@ -1,10 +1,12 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization
 
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.avro.specific.SpecificRecordBase
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.formats.avro.typeutils.{LogicalTypesAvroTypeInfo, LogicalTypesGenericRecordAvroTypeInfo}
+import org.apache.flink.formats.avro.typeutils.{LogicalTypesAvroTypeInfo, LogicalTypesGenericRecordAvroTypeInfo, LogicalTypesGenericRecordWithSchemaIdAvroTypeInfo}
 import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.serialization.Deserializer
+import pl.touk.nussknacker.engine.avro.kryo.KryoGenericRecordSchemaIdSerializationSupport
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.serialization.{KafkaAvroKeyValueDeserializationSchemaFactory, KafkaAvroValueDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.avro.{AvroUtils, RuntimeSchemaData}
@@ -12,7 +14,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 import scala.reflect._
 
-trait ConfluentKafkaAvroDeserializerFactory {
+trait ConfluentKafkaAvroDeserializerFactory extends LazyLogging {
 
   protected def createDeserializer[T: ClassTag](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
                                                 kafkaConfig: KafkaConfig,
@@ -27,7 +29,12 @@ trait ConfluentKafkaAvroDeserializerFactory {
     val isSpecificRecord = AvroUtils.isSpecificRecord[T]
 
     schemaDataOpt match {
+      case Some(schema) if !isSpecificRecord && KryoGenericRecordSchemaIdSerializationSupport.schemaIdSerializationEnabled(kafkaConfig) =>
+        logger.debug("Using LogicalTypesGenericRecordWithSchemaIdAvroTypeInfo for GenericRecord serialization")
+        val schemaId = schema.schemaIdOpt.getOrElse(throw new IllegalStateException("SchemaId serialization enabled but schemaId missed from reader schema data"))
+        new LogicalTypesGenericRecordWithSchemaIdAvroTypeInfo(schema.schema, schemaId).asInstanceOf[TypeInformation[T]]
       case Some(schema) if !isSpecificRecord =>
+        logger.debug("Using LogicalTypesGenericRecordAvroTypeInfo for GenericRecord serialization")
         new LogicalTypesGenericRecordAvroTypeInfo(schema.schema).asInstanceOf[TypeInformation[T]]
       case _ if isSpecificRecord => // For specific records we ignoring version because we have exact schema inside class
         new LogicalTypesAvroTypeInfo(clazz.asInstanceOf[Class[_ <: SpecificRecordBase]]).asInstanceOf[TypeInformation[T]]
