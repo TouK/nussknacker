@@ -18,15 +18,9 @@ import scala.util.{Failure, Try}
 object Serializers extends LazyLogging {
 
   def registerSerializers(config: ExecutionConfig): Unit = {
-    val registers = registerSerializer(config) _
-    (CaseClassSerializer :: SpelHack :: SpelMapHack :: Nil).map(registers)
+    (CaseClassSerializer :: SpelHack :: SpelMapHack :: Nil).map(_.registerIn(config))
     ScalaServiceLoader.load[SerializersRegistrar](getClass.getClassLoader).foreach(_.register(config))
     TimeSerializers.addDefaultSerializers(config)
-  }
-
-  private def registerSerializer(config: ExecutionConfig)(serializer: SerializerWithSpecifiedClass[_]) = {
-    config.getRegisteredTypesWithKryoSerializers.put(serializer.clazz, new ExecutionConfig.SerializableSerializer(serializer))
-    config.getDefaultKryoSerializers.put(serializer.clazz, new ExecutionConfig.SerializableSerializer(serializer))
   }
 
   @SerialVersionUID(4481573264636646884L)
