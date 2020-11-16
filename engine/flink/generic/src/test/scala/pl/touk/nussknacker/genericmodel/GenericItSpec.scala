@@ -44,7 +44,7 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
 
   lazy val mockProcessObjectDependencies: ProcessObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
 
-  lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config, "kafka")
+  lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config)
 
   val JsonInTopic: String = "name.json.input"
   val JsonOutTopic: String = "name.json.output"

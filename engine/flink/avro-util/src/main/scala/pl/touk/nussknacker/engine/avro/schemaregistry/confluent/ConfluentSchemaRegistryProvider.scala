@@ -37,7 +37,7 @@ object ConfluentSchemaRegistryProvider extends Serializable {
   def apply(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
             processObjectDependencies: ProcessObjectDependencies,
             formatKey: Boolean): ConfluentSchemaRegistryProvider = {
-    val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config, "kafka")
+    val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config)
     new ConfluentSchemaRegistryProvider(
       schemaRegistryClientFactory,
       new ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory),

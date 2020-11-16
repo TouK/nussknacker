@@ -17,7 +17,7 @@ class KafkaConfigSpec extends FunSuite with Matchers {
       "localhost:9092",
       Some(Map("auto.offset.reset" -> "latest")),
       None, None)
-    KafkaConfig.parseConfig(typesafeConfig, "kafka") shouldEqual expectedConfig
+    KafkaConfig.parseConfig(typesafeConfig) shouldEqual expectedConfig
   }
 
 }
