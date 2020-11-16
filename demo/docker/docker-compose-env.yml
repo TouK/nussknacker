@@ -71,6 +71,9 @@ services:
   schemaregistry:
     container_name: nussknacker_schemaregistry
     image: confluentinc/cp-schema-registry:${SCHEMA_REGISTRY_VERSION-5.5.0}
+    environment:
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:9092
+      SCHEMA_REGISTRY_HOST_NAME: schemaregistry
     ports:
       - 3082:8081
     depends_on:
