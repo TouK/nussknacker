@@ -5,9 +5,7 @@ export const useStateInSync = <T extends any>(value: T): [T, React.Dispatch<Reac
   const [inputValue, setInputValue] = useState(value)
   useEffect(
     () => {
-      if (!isEqual(value, inputValue)) {
-        setInputValue(value)
-      }
+      setInputValue(input => !isEqual(value, input) ? value : input)
     },
     [value],
   )

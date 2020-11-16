@@ -29,7 +29,7 @@ type Props = {
   onChange: (value: FiltersState, prevValue: FiltersState) => void,
 }
 
-export function TableFilters(props: Props) {
+export function TableFilters(props: Props): JSX.Element {
   const {filters = []} = props
   const {value, onChange} = props
 

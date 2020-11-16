@@ -17,19 +17,19 @@ type Common<T> = {
 
 type Single<T> = {
   isMulti: false,
-  defaultValue: OptionType<T>,
+  value: OptionType<T>,
   onChange: (value: OptionType<T>) => void,
 }
 
 type Multi<T> = {
   isMulti: true,
-  defaultValue: OptionType<T>[],
+  value: OptionType<T>[],
   onChange: (value: OptionType<T>[]) => void,
 }
 
 type Props<T> = Common<T> & (Single<T> | Multi<T>)
 
-export default function TableSelect<T>(props: Props<T>) {
+export default function TableSelect<T>(props: Props<T>): JSX.Element {
   const {onChange, isMulti} = props
 
   const getOnChange = useCallback(value => {
