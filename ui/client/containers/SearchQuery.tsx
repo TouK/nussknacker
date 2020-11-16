@@ -4,21 +4,18 @@ import {FiltersState, SearchItem, TableFilters} from "./TableFilters"
 
 type Props = {
   filters?: SearchItem[],
-  onChange: (value: FiltersState, prevValue: FiltersState) => void,
+  onChange: (value: FiltersState) => void,
 }
 
-function SearchQuery(props: PropsWithChildren<Props>) {
+function SearchQuery(props: PropsWithChildren<Props>): JSX.Element {
   const {onChange} = props
   const [query, setQuery] = useSearchQuery<FiltersState>()
-  useEffect(() => {onChange(query, null)}, [])
+  useEffect(() => {onChange(query)}, [query, onChange])
   return (
     <TableFilters
       filters={props.filters}
       value={query}
-      onChange={(value, prevValue) => {
-        setQuery(value)
-        onChange(value, prevValue)
-      }}
+      onChange={setQuery}
     />
   )
 }

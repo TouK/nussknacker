@@ -9,12 +9,12 @@ const options: OptionType<boolean>[] = [
   {label: "Show only subprocesses", value: true},
 ]
 
-export function SubprocessFilter(props: ValueFieldProps<boolean>) {
+export function SubprocessFilter(props: ValueFieldProps<boolean>): JSX.Element {
   const {onChange} = props
   const value = useParseValue(options, props.value)
   return (
     <TableSelect
-      defaultValue={value}
+      value={value}
       options={options}
       placeholder="Select process type.."
       onChange={({value}) => onChange(value)}
