@@ -4,6 +4,7 @@ import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.{Input, Output}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.flink.api.serialization.{SerializerWithSpecifiedClass, SerializersRegistrar}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
@@ -17,9 +18,9 @@ import scala.util.{Failure, Try}
 //org.apache.flink.api.common.typeutils.TypeSerializerSerializationUtil.readSerializersAndConfigsWithResilience
 object Serializers extends LazyLogging {
 
-  def registerSerializers(config: ExecutionConfig): Unit = {
+  def registerSerializers(modelData: ModelData, config: ExecutionConfig): Unit = {
     (CaseClassSerializer :: SpelHack :: SpelMapHack :: Nil).map(_.registerIn(config))
-    ScalaServiceLoader.load[SerializersRegistrar](getClass.getClassLoader).foreach(_.register(config))
+    ScalaServiceLoader.load[SerializersRegistrar](getClass.getClassLoader).foreach(_.register(modelData.processConfig, config))
     TimeSerializers.addDefaultSerializers(config)
   }
 
