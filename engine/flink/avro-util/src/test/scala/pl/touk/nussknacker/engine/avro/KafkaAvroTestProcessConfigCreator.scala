@@ -6,14 +6,19 @@ import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.avro.KafkaAvroTestProcessConfigCreator.recordingExceptionHandler
 import pl.touk.nussknacker.engine.avro.schema.GeneratedAvroClassWithLogicalTypes
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
 import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
-import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
+import pl.touk.nussknacker.engine.process.helpers.CommonTestHelpers
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
+
+object KafkaAvroTestProcessConfigCreator {
+  val recordingExceptionHandler = new CommonTestHelpers.RecordingExceptionHandler
+}
 
 class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
 
@@ -42,7 +47,7 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
   }
 
   override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
-    ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
+    ExceptionHandlerFactory.noParams(_ => recordingExceptionHandler)
 
   protected def defaultCategory[T](obj: T): WithCategories[T] = WithCategories(obj, "TestAvro")
 

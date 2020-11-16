@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api
 
+import pl.touk.nussknacker.engine.api.exception.EspExceptionHandler
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -86,6 +87,8 @@ trait LazyParameterInterpreter {
   def syncInterpretationFunction[T <: AnyRef](parameter: LazyParameter[T]) : Context => T
 
   def close(): Unit
+
+  def exceptionHandler: EspExceptionHandler
 
 }
 
