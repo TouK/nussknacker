@@ -27,8 +27,10 @@ import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyedValue, StringKeyedValue}
 import pl.touk.nussknacker.engine.graph.{EspProcess, expression}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec, KafkaZookeeperUtils}
+import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.test.{NussknackerAssertions, PatientScalaFutures}
 
@@ -45,14 +47,20 @@ trait KafkaAvroSpecMixin extends FunSuite with FlinkSpec with KafkaSpec with Mat
 
   protected def kafkaTopicNamespace: String = getClass.getSimpleName
 
-  // schema.registry.url have to be defined even for MockSchemaRegistryClient
-  override lazy val config: Config = ConfigFactory.load()
-    .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
-    .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
+  override lazy val config: Config = prepareConfig
+
+  protected def prepareConfig: Config =
+    ConfigFactory.load()
+      .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
+      // schema.registry.url have to be defined even for MockSchemaRegistryClient
+      .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
 
   protected var registrar: FlinkProcessRegistrar = _
 
   protected lazy val testProcessObjectDependencies: ProcessObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
+
+  protected def executionConfigPreparerChain(modelData: LocalModelData): ExecutionConfigPreparer =
+    ExecutionConfigPreparer.unOptimizedChain(modelData, None)
 
   protected lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config, "kafka")
 
