@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.benchmarks.avro
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.util.concurrent.TimeUnit
 
+import com.typesafe.config.ConfigFactory
 import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -40,7 +41,7 @@ class AvroBenchmark {
   private val avroFlinkTypeInfo = new LogicalTypesGenericRecordAvroTypeInfo(AvroSamples.sampleSchema)
 
   private[avro] val defaultFlinkKryoSetup = new AvroBenchmarkSetup(
-    config => new AvroSerializersRegistrar().register(config), avroKryoTypeInfo, AvroSamples.sampleRecord)
+    config => new AvroSerializersRegistrar().register(ConfigFactory.empty(), config), avroKryoTypeInfo, AvroSamples.sampleRecord)
 
   private[avro] val defaultFlinkAvroSetup = new AvroBenchmarkSetup(_ => {}, avroFlinkTypeInfo, AvroSamples.sampleRecord)
 
