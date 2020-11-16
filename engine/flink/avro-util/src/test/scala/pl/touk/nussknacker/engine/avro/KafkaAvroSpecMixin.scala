@@ -62,7 +62,7 @@ trait KafkaAvroSpecMixin extends FunSuite with FlinkSpec with KafkaSpec with Mat
   protected def executionConfigPreparerChain(modelData: LocalModelData): ExecutionConfigPreparer =
     ExecutionConfigPreparer.unOptimizedChain(modelData, None)
 
-  protected lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config, "kafka")
+  protected lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config)
 
   protected lazy val metaData: MetaData = MetaData("mock-id", StreamMetaData())
 

@@ -129,7 +129,7 @@ object ProcessTestHelpers {
     }
 
     override def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[TestProcessSignalFactory]] = {
-      val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config, "kafka")
+      val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config)
       Map("sig1" ->
         WithCategories(new TestProcessSignalFactory(kafkaConfig, signalTopic)))
     }
