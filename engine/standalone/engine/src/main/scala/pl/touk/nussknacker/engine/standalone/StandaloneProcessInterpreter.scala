@@ -7,7 +7,7 @@ import cats.data.{NonEmptyList, ValidatedNel, Writer}
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnsupportedPart
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
+import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{process, _}
@@ -87,8 +87,6 @@ object StandaloneProcessInterpreter {
       override def metaData: MetaData = compiledProcess.parts.metaData
 
       override def close(): Unit = {}
-
-      override def exceptionHandler: EspExceptionHandler = compiledProcess.parts.exceptionHandler
     }
 
     private def compiledPartInvoker(processPart: ProcessPart): CompilationResult[WithSinkTypes[InterpreterType]] = processPart match {

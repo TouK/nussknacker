@@ -1,13 +1,10 @@
 package pl.touk.nussknacker.engine.avro
 
-import java.util.concurrent.CopyOnWriteArrayList
-
-import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator}
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, ExceptionHandlerFactory}
+import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.avro.KafkaAvroTestProcessConfigCreator.recordingExceptionHandler
 import pl.touk.nussknacker.engine.avro.schema.GeneratedAvroClassWithLogicalTypes
@@ -15,38 +12,11 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
 import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory}
-import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
-import pl.touk.nussknacker.engine.flink.util.exception.ConsumingNonTransientExceptions
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 object KafkaAvroTestProcessConfigCreator {
-
-  val recordingExceptionHandler: FlinkEspExceptionHandler with WithDataList[EspExceptionInfo[_ <: Throwable]] =
-    new FlinkEspExceptionHandler
-      with ConsumingNonTransientExceptions
-      with WithDataList[EspExceptionInfo[_ <: Throwable]] {
-
-      override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
-
-      override protected val consumer: FlinkEspExceptionConsumer = exceptionInfo => add(exceptionInfo)
-    }
-
-  trait WithDataList[T] extends Serializable {
-
-    private val dataList = new CopyOnWriteArrayList[T]
-
-    def add(element: T): Unit = dataList.add(element)
-
-    def data: List[T] = {
-      dataList.toArray.toList.map(_.asInstanceOf[T])
-    }
-
-    def clear(): Unit = {
-      dataList.clear()
-    }
-  }
-
+  val recordingExceptionHandler = new RecodingExceptionHandler
 }
 
 class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {

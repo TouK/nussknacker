@@ -2,12 +2,13 @@ package pl.touk.nussknacker.engine.avro
 
 import java.nio.charset.StandardCharsets
 
-import org.apache.avro.Schema
+import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.BeforeAndAfter
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer._
 import pl.touk.nussknacker.engine.avro.KafkaAvroTestProcessConfigCreator.recordingExceptionHandler
@@ -180,7 +181,14 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, events, Address.record)
+
     recordingExceptionHandler.data should have size 1
+    val espExceptionInfo = recordingExceptionHandler.data.head
+    espExceptionInfo.nodeId shouldBe Some("end")
+    espExceptionInfo.throwable shouldBe a[NonTransientException]
+    val cause = espExceptionInfo.throwable.asInstanceOf[NonTransientException].cause
+    cause shouldBe a[AvroRuntimeException]
+    cause.getMessage should include ("Not expected null for field: Some(street)")
   }
 
   test("should throw exception when try to filter by missing field") {

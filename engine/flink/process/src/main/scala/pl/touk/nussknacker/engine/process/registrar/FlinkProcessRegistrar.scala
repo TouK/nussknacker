@@ -113,8 +113,10 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => Clas
     val globalParameters = NkGlobalParameters.readFromContext(env.getConfig)
     def nodeContext(nodeId: String): FlinkCustomNodeContext = {
       FlinkCustomNodeContext(processWithDeps.jobData, nodeId, processWithDeps.processTimeout,
-        new FlinkLazyParameterFunctionHelper(createInterpreter(compiledProcessWithDeps)),
-        processWithDeps.signalSenders, globalParameters)
+        lazyParameterHelper = new FlinkLazyParameterFunctionHelper(createInterpreter(compiledProcessWithDeps)),
+        signalSenderProvider = processWithDeps.signalSenders,
+        exceptionHandlerPreparer = runtimeContext => compiledProcessWithDeps(runtimeContext.getUserCodeClassLoader).prepareExceptionHandler(runtimeContext),
+        globalParameters = globalParameters)
     }
 
     val wrapAsync: (DataStream[Context], ProcessPart, String) => DataStream[Unit]

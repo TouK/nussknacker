@@ -2,20 +2,19 @@ package pl.touk.nussknacker.engine.avro.sink
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.avro.generic.GenericContainer
-import org.apache.flink.api.common.functions.{MapFunction, RichMapFunction}
+import org.apache.flink.api.common.functions.RichMapFunction
+import org.apache.flink.configuration.Configuration
 import org.apache.flink.formats.avro.typeutils.NkSerializableAvroSchema
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
-import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, NonTransientException}
 import pl.touk.nussknacker.engine.api.{InterpretationResult, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaVersionOption}
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroSerializationSchemaFactory
-import pl.touk.nussknacker.engine.flink.api.process.{AbstractLazyParameterInterpreterFunction, AbstractOneParamLazyParameterFunction, FlinkCustomNodeContext, FlinkSink, LazyParameterInterpreterFunction}
+import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyedValue, KeyedValueMapper}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaProducer, PreparedKafkaTopic}
-
-import scala.util.control.NonFatal
 
 class KafkaAvroSink(preparedTopic: PreparedKafkaTopic, versionOption: SchemaVersionOption, key: LazyParameter[AnyRef], value: LazyParameter[AnyRef],
                     kafkaConfig: KafkaConfig, serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
@@ -51,17 +50,26 @@ class KafkaAvroSink(preparedTopic: PreparedKafkaTopic, versionOption: SchemaVers
   }
 
   class EncodeAvroRecordFunction(flinkNodeContext: FlinkCustomNodeContext)
-    extends AbstractLazyParameterInterpreterFunction(flinkNodeContext.lazyParameterHelper)
-      with MapFunction[ValueWithContext[KeyedValue[AnyRef, AnyRef]], KeyedValue[AnyRef, AnyRef]] {
+    extends RichMapFunction[ValueWithContext[KeyedValue[AnyRef, AnyRef]], KeyedValue[AnyRef, AnyRef]] {
 
-    @transient final val nodeId = flinkNodeContext.nodeId
+    private val nodeId = flinkNodeContext.nodeId
+    private val exceptionHandlerPreparer = flinkNodeContext.exceptionHandlerPreparer
+    private var exceptionHandler: FlinkEspExceptionHandler = _
+
+    override def open(parameters: Configuration): Unit = {
+      exceptionHandler = exceptionHandlerPreparer(getRuntimeContext)
+    }
+
+    override def close(): Unit = {
+      exceptionHandler.close()
+    }
 
     override def map(ctx: ValueWithContext[KeyedValue[AnyRef, AnyRef]]): KeyedValue[AnyRef, AnyRef] = {
       ctx.value.mapValue {
         case container: GenericContainer => container
         // We try to encode not only Map[String, AnyRef], but also other types because avro accept also primitive types
         case data =>
-          lazyParameterInterpreter.exceptionHandler.handling(Some(nodeId), ctx.context) {
+          exceptionHandler.handling(Some(nodeId), ctx.context) {
             avroEncoder.encodeOrError(data, schema.getAvroSchema)
           }.orNull
       }
