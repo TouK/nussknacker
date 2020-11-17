@@ -8,7 +8,7 @@ For detailed instructions how to migrate to the newest version please see [migra
 Nussknacker versions
 ====================
 
-0.3.0 (not released yet)
+0.3.0 
 ------------------------
 * [#1298](https://github.com/TouK/nussknacker/pull/1298) Feature flag `avroKryoGenericRecordSchemaIdSerialization` for avro kryo serialization optimization (default = false)
 * [#1315](https://github.com/TouK/nussknacker/pull/1315) Spring bumped 5.1.4 -> 5.1.19
