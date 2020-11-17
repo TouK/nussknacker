@@ -66,8 +66,6 @@ waitForOK "flink/" "Checking Flink response.." "Flink not started" "jobmanager"
 
 waitForOK "metrics" "Checking Grafana response.." "Grafana not started" "grafana"
 
-waitForOK "search" "Checking Kibana response.." "Kibana not started" "kibana"
-
 #TODO:
 #check import process
 #check test with test data

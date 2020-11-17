@@ -1,16 +1,16 @@
 package pl.touk.nussknacker.engine.kafka
 
-import java.nio.charset.StandardCharsets
+import java.nio.charset.{Charset, StandardCharsets}
 
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.java.typeutils.GenericTypeInfo
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
+import pl.touk.nussknacker.engine.kafka.source.{KafkaSource, KafkaSourceFactory}
+import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 
 class KafkaSourceFactorySpec extends FlatSpec with KafkaSpec with Matchers {
 
@@ -29,15 +29,28 @@ class KafkaSourceFactorySpec extends FlatSpec with KafkaSpec with Matchers {
     kafkaClient.sendMessage(topic, "", part1(1), Some(1))
 
 
-    val sourceFactory = new KafkaSourceFactory[String](new SimpleStringSchema, None,
-      TestParsingUtils.newLineSplit, ProcessObjectDependencies(config, DefaultObjectNaming))
-
-    val dataFor3 = sourceFactory.create(MetaData("", StreamMetaData()), topic)(NodeId("")).generateTestData(3)
-    val dataFor5 = sourceFactory.create(MetaData("", StreamMetaData()), topic)(NodeId("")).generateTestData(5)
+    val source: Source[String] with TestDataGenerator = createSource(topic)
+    val dataFor3 = source.generateTestData(3)
+    val dataFor5 = source.generateTestData(5)
 
     checkOutput(dataFor3, 3)
     checkOutput(dataFor5, 4)
 
+  }
+
+  it should "parse test data correctly" in {
+    val topic = "testTopic1"
+    val testData = "first\nsecond".getBytes(StandardCharsets.UTF_8)
+
+    val source: KafkaSource[String] = createSource(topic)
+    source.testDataParser.parseTestData(testData) shouldBe List("first", "second")
+  }
+
+
+  private def createSource(topic: String): KafkaSource[String] = {
+    val sourceFactory = new KafkaSourceFactory[String](new SimpleStringSchema, None,
+      TestParsingUtils.newLineSplit, ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader)))
+    sourceFactory.create(MetaData("", StreamMetaData()), topic)(NodeId(""))
   }
 
   //we want to check partitions are read sequentially, but we cannot/don't want to control which partition comes first...

@@ -1,6 +1,0 @@
-{
-	"index_patterns": [ "processedevents-*" ],
-	"settings": {
-		"number_of_replicas": 0
-	}
-}

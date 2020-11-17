@@ -5,8 +5,9 @@ import Date from "../../components/common/Date"
 import HealthCheck from "../../components/HealthCheck"
 import ProcessStateIcon from "../../components/Process/ProcessStateIcon"
 import "../../stylesheets/processes.styl"
+import tabStyles from "../../components/tabs/processTabs.styl"
 import {Page} from "../Page"
-import {getProcessState, ProcessesList, RowsRenderer} from "../ProcessesList"
+import {Filterable, getProcessState, ProcessesList, RowsRenderer} from "../ProcessesList"
 import {CancelIcon} from "./CancelIcon"
 import {DeployIcon} from "./DeployIcon"
 
@@ -34,7 +35,7 @@ const ElementsRenderer: RowsRenderer = ({processes, getProcesses, statuses}) => 
 }
 
 const sortable = ["name", "category", "modifyDate", "createdAt"]
-const filterable = ["name", "category"]
+const filterable: Filterable = ["name", "processCategory"]
 const columns = [
   {key: "name", label: "Process name"},
   {key: "category", label: "Category"},
@@ -45,10 +46,10 @@ const columns = [
   {key: "cancel", label: "Cancel"},
 ]
 
-export function CustomProcesses() {
+export function CustomProcesses(): JSX.Element {
 
   return (
-    <Page>
+    <Page className={tabStyles.tabContentPage}>
       <HealthCheck/>
       <ProcessesList
         defaultQuery={{isCustom: true}}

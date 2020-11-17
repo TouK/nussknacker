@@ -2,14 +2,15 @@ package pl.touk.nussknacker.engine.avro.serialization
 
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.Schema
-import org.apache.avro.generic.{GenericData, GenericRecord}
+import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.common.errors.SerializationException
 import org.scalatest.Assertion
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor4}
-import pl.touk.nussknacker.engine.avro.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, PaymentV1, PaymentV2}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.ConfluentKafkaAvroDeserializationSchemaFactory
+import pl.touk.nussknacker.engine.avro.{KafkaAvroSpecMixin, RuntimeSchemaData}
 
 class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpecMixin with TableDrivenPropertyChecks with ConfluentKafkaAvroSeDeSpecMixin {
 
@@ -82,9 +83,15 @@ class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpecMixin with Tabl
     pushMessage(FullNameV1.record, fullNameTopic, Some(fromSubjectVersionTopic.input))
 
     val fromRecordDeserializer = confluentDeserializationSchemaFactory.create(None, kafkaConfig)
-    val fromSubjectVersionDeserializer = confluentDeserializationSchemaFactory.create(Some(PaymentV1.schema), kafkaConfig)
 
     consumeAndVerifyMessages(fromRecordDeserializer, fromRecordTopic.input, List(FullNameV1.record))
+
+    val fromSubjectVersionDeserializer = {
+      val subject = ConfluentUtils.topicSubject(fromSubjectVersionTopic.input, fromSubjectVersionTopic.isKey)
+      val schemaId = schemaRegistryClient.getId(subject, ConfluentUtils.convertToAvroSchema(PaymentV1.schema))
+      val schemaData = RuntimeSchemaData(PaymentV1.schema, Some(schemaId))
+      confluentDeserializationSchemaFactory.create(Some(schemaData), kafkaConfig)
+    }
 
     assertThrows[SerializationException] {
       consumeMessages(fromSubjectVersionDeserializer, fromSubjectVersionTopic.input, count = 1)
@@ -94,7 +101,15 @@ class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpecMixin with Tabl
   private def runDeserializationTest(table: TableFor4[Boolean, GenericRecord, GenericRecord, String], version: Option[Int], schemas: List[Schema]): Assertion =
     forAll(table) { (schemaEvolution: Boolean, givenObj: GenericRecord, expectedObj: GenericRecord, topic: String) =>
       val topicConfig = createAndRegisterTopicConfig(topic, schemas)
-      val deserializer = confluentDeserializationSchemaFactory.create(if (schemaEvolution) Option(expectedObj.getSchema) else None, kafkaConfig)
+
+      val schemaDataOpt = if (schemaEvolution) {
+        val inputSubject = ConfluentUtils.topicSubject(topicConfig.input, topicConfig.isKey)
+        val inputSchemaId = schemaRegistryClient.getId(inputSubject, ConfluentUtils.convertToAvroSchema(expectedObj.getSchema))
+        Option(RuntimeSchemaData(expectedObj.getSchema, Some(inputSchemaId)))
+      } else {
+        None
+      }
+      val deserializer = confluentDeserializationSchemaFactory.create(schemaDataOpt, kafkaConfig)
 
       pushMessage(givenObj, topicConfig.input)
 

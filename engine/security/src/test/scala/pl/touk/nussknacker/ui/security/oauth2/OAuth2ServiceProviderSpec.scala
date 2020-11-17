@@ -1,7 +1,6 @@
-package pl.touk.nussknacker.ui.security.ouath2
+package pl.touk.nussknacker.ui.security.oauth2
 
 import org.scalatest.{FlatSpec, Matchers}
-import pl.touk.nussknacker.ui.security.oauth2.{OAuth2Service, OAuth2ServiceProvider}
 
 class OAuth2ServiceProviderSpec extends FlatSpec with Matchers {
   it should "return default OAuth2 service" in {

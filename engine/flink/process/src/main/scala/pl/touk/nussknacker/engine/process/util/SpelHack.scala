@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.process.util
 
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.{Input, Output}
-import pl.touk.nussknacker.engine.process.util.Serializers.SerializerWithSpecifiedClass
+import pl.touk.nussknacker.engine.flink.api.serialization.SerializerWithSpecifiedClass
 
 import scala.collection.JavaConverters._
 

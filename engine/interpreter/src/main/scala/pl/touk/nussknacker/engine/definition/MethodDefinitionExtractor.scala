@@ -2,11 +2,10 @@ package pl.touk.nussknacker.engine.definition
 
 import java.lang.annotation.Annotation
 import java.lang.reflect.Method
-import java.util.Optional
 
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
+import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.api.typed.MissingOutputVariableException
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
@@ -113,46 +112,12 @@ object MethodDefinitionExtractor {
                       additionalDependencies: Seq[AnyRef]): List[Any] = {
       dependencies.map {
         case param: Parameter =>
-          val foundParam = values.getOrElse(param.name, throw new IllegalArgumentException(s"Missing parameter: ${param.name}"))
-          validateParamType(param.name, foundParam, param)
-          foundParam
+          values.getOrElse(param.name, throw new IllegalArgumentException(s"Missing parameter: ${param.name}"))
         case OutputVariableNameDependency =>
-          outputVariableNameOpt.getOrElse(
-            throw MissingOutputVariableException)
+          outputVariableNameOpt.getOrElse(throw MissingOutputVariableException)
         case TypedNodeDependency(clazz) =>
-          val foundParam = additionalDependencies.find(clazz.isInstance).getOrElse(
-                      throw new IllegalArgumentException(s"Missing additional parameter of class: ${clazz.getName}"))
-          validateType(clazz.getName, foundParam, Typed(clazz))
-          foundParam
-      }
-    }
-
-    //TODO: what is *really* needed here?? is it performant enough?? (copied from previous version: EspTypeUtils.signatureElementMatches
-    private def validateParamType(name: String, value: Any, param: Parameter): Unit = {
-      // The order of wrapping should be reversed to order of unwrapping - see extractParameters
-      val typeWrappedWithOption = if (param.scalaOptionParameter) {
-        Typed.genericTypeClass(classOf[Option[_]], List(param.typ))
-      } else if (param.javaOptionalParameter) {
-        Typed.genericTypeClass(classOf[Optional[_]], List(param.typ))
-      } else {
-        param.typ
-      }
-      val typeWrappedWithLazy = if (param.isLazyParameter) {
-        Typed.genericTypeClass(classOf[LazyParameter[_]], typeWrappedWithOption :: Nil)
-      } else {
-        typeWrappedWithOption
-      }
-      val typeWrappedWithBranch = if (param.branchParam) {
-        Typed.genericTypeClass(classOf[Map[_, _]], Typed[String] :: typeWrappedWithLazy :: Nil)
-      } else {
-        typeWrappedWithLazy
-      }
-      validateType(name, value, typeWrappedWithBranch)
-    }
-
-    private def validateType(name: String, value: Any, expectedType: TypingResult) : Unit = {
-      if (value != null && !Typed(value.getClass).canBeSubclassOf(expectedType)) {
-        throw new IllegalArgumentException(s"Parameter $name has invalid type: ${value.getClass.getName}, should be: ${expectedType.display}")
+          additionalDependencies.find(clazz.isInstance).getOrElse(
+            throw new IllegalArgumentException(s"Missing additional parameter of class: ${clazz.getName}"))
       }
     }
   }

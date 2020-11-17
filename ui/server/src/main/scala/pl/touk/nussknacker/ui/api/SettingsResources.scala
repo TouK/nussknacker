@@ -38,7 +38,7 @@ class SettingsResources(config: FeatureTogglesConfig,
           val authenticationSettings = AuthenticationSettings(
             authenticationConfig.method.toString,
             authenticationConfig.authorizeUrl.map(_.toString),
-            authenticationConfig.authSeverPublicKey.map(CertificatesAndKeys.textualRepresentationOfPublicKey(_)),
+            authenticationConfig.authSeverPublicKey.map(CertificatesAndKeys.textualRepresentationOfPublicKey),
             authenticationConfig.idTokenNonceVerificationRequired,
             authenticationConfig.implicitGrantEnabled
           )

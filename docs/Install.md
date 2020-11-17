@@ -11,7 +11,6 @@ To install Nussknacker manually you will need following working components. Plea
 * InfluxDB & Grafana - for complete monitoring solution 
   * [InfluxDB docs](https://docs.influxdata.com/influxdb/)
   * [Grafana docs](https://grafana.com/)
-* [ELK stack](https://www.elastic.co/) for real-time document analysis, dashboards and more    
 * Install Nussknacker
   * Download assembly jar
   * Prepare [configuration](Configuration.md)

@@ -30,7 +30,8 @@ export function ProcessesTable(props: Props) {
 
   const {t} = useTranslation()
 
-  const [query, setQuery] = useSearchQuery<QueryType>({parseNumbers: true})
+  const options = useMemo(() => ({parseNumbers: true}), [])
+  const [query, setQuery] = useSearchQuery<QueryType>(options)
 
   const defaultSortColummn = useMemo(
     () => {

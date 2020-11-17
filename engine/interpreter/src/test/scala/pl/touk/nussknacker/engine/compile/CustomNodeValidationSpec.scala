@@ -5,7 +5,6 @@ import cats.data.{NonEmptyList, Validated}
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, ExpressionParseError, InvalidTailOfBranch, MissingParameters}
-import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{process, _}
@@ -19,6 +18,7 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
+import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.variables.MetaVariables
 
@@ -60,7 +60,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
 
   private val processBase = EspProcessBuilder.id("proc1").exceptionHandler().source("sourceId", "mySource")
   private val objectWithMethodDef = ProcessDefinitionExtractor.extractObjectWithMethods(new MyProcessConfigCreator,
-    process.ProcessObjectDependencies(ConfigFactory.empty, DefaultObjectNaming))
+    process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader)))
   private val validator = ProcessValidator.default(objectWithMethodDef, new SimpleDictRegistry(Map.empty))
 
   test("valid process") {

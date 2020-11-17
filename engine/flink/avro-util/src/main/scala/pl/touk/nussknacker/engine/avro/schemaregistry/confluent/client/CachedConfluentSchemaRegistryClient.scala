@@ -4,11 +4,11 @@ import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.{CachedSchemaRegistryClient => CCachedSchemaRegistryClient, SchemaRegistryClient => CSchemaRegistryClient}
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
-import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.avro.AvroUtils
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryError
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
+import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryError, SchemaWithMetadata}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
+
 import scala.collection.JavaConverters._
 
 /**
@@ -17,13 +17,13 @@ import scala.collection.JavaConverters._
 class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, caches: SchemaRegistryCaches)
   extends ConfluentSchemaRegistryClient with LazyLogging {
 
-  override def getLatestFreshSchema(topic: String, isKey: Boolean): Validated[SchemaRegistryError, Schema] =
+  override def getLatestFreshSchema(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       latestSchemaRequest(subject)
     }
 
-  override def getLatestSchema(topic: String, isKey: Boolean): Validated[SchemaRegistryError, Schema] =
+  override def getLatestSchema(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       caches.latestSchemaCache.getOrCreate(subject) {
@@ -32,7 +32,7 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
       }
     }
 
-  override def getBySubjectAndVersion(topic: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, Schema] =
+  override def getBySubjectAndVersion(topic: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       caches.schemaCache.getOrCreate(s"$subject-$version") {
@@ -40,7 +40,7 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
         val schemaMetadata = client.getSchemaMetadata(subject, version)
         // Restrictive approach should be used before schema registration. Here we need to be non-restrictive
         // because schema is already registered and we must be able to use id. See `AvroUtils.nonRestrictiveParseSchema`
-        AvroUtils.nonRestrictiveParseSchema(schemaMetadata.getSchema)
+        SchemaWithMetadata(AvroUtils.nonRestrictiveParseSchema(schemaMetadata.getSchema), schemaMetadata.getId)
       }
     }
 
@@ -58,14 +58,14 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
     }
   }
 
-  private def latestSchemaRequest(subject: String): Schema = {
+  private def latestSchemaRequest(subject: String): SchemaWithMetadata = {
     val schemaMetadata = client.getLatestSchemaMetadata(subject)
 
     caches.schemaCache.getOrCreate(s"$subject-${schemaMetadata.getVersion}") {
       logger.debug(s"Cache parsed latest schema for subject: $subject, version: ${schemaMetadata.getVersion}.")
       // Restrictive approach should be used before schema registration. Here we need to be non-restrictive
       // because schema is already registered and we must be able to use id. See `AvroUtils.nonRestrictiveParseSchema`
-      AvroUtils.nonRestrictiveParseSchema(schemaMetadata.getSchema)
+      SchemaWithMetadata(AvroUtils.nonRestrictiveParseSchema(schemaMetadata.getSchema), schemaMetadata.getId)
     }
   }
 }

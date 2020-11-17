@@ -6,16 +6,17 @@ import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import io.confluent.kafka.serializers.KafkaAvroSerializer
 import org.apache.avro.Schema
+import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.flink.streaming.connectors.kafka.{KafkaDeserializationSchema, KafkaSerializationSchema}
 import org.apache.kafka.clients.producer.RecordMetadata
 import org.scalatest.{Assertion, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.namespaces.DefaultObjectNaming
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer._
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
+import pl.touk.nussknacker.engine.avro.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.avro.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{AbstractConfluentKafkaAvroDeserializer, AbstractConfluentKafkaAvroSerializer}
@@ -28,8 +29,12 @@ import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyedValue, StringKeyedValue}
 import pl.touk.nussknacker.engine.graph.{EspProcess, expression}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec, KafkaZookeeperUtils}
+import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
+import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer.{ProcessSettingsPreparer, UnoptimizedSerializationPreparer}
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.test.{NussknackerAssertions, PatientScalaFutures}
 
 trait KafkaAvroSpecMixin extends FunSuite with FlinkSpec with KafkaSpec with Matchers with LazyLogging with NussknackerAssertions with PatientScalaFutures {
@@ -45,16 +50,34 @@ trait KafkaAvroSpecMixin extends FunSuite with FlinkSpec with KafkaSpec with Mat
 
   protected def kafkaTopicNamespace: String = getClass.getSimpleName
 
-  // schema.registry.url have to be defined even for MockSchemaRegistryClient
-  override lazy val config: Config = ConfigFactory.load()
-    .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
-    .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
+  override lazy val config: Config = prepareConfig
+
+  protected def prepareConfig: Config = {
+    ConfigFactory.load()
+      .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
+      // schema.registry.url have to be defined even for MockSchemaRegistryClient
+      .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
+      .withValue("kafka.avroKryoGenericRecordSchemaIdSerialization", fromAnyRef(true))
+      // we turn off auto registration to do it on our own passing mocked schema registry client
+      .withValue(s"kafka.kafkaEspProperties.${AvroSerializersRegistrar.autoRegisterRecordSchemaIdSerializationProperty}", fromAnyRef(false))
+  }
 
   protected var registrar: FlinkProcessRegistrar = _
 
-  protected lazy val testProcessObjectDependencies: ProcessObjectDependencies = ProcessObjectDependencies(config, DefaultObjectNaming)
+  protected lazy val testProcessObjectDependencies: ProcessObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
 
-  protected lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config, "kafka")
+  protected def executionConfigPreparerChain(modelData: LocalModelData): ExecutionConfigPreparer =
+    ExecutionConfigPreparer.chain(
+      ProcessSettingsPreparer(modelData, None),
+      new UnoptimizedSerializationPreparer(modelData),
+      new ExecutionConfigPreparer {
+        override def prepareExecutionConfig(config: ExecutionConfig)(metaData: MetaData, processVersion: ProcessVersion): Unit = {
+          AvroSerializersRegistrar.registerGenericRecordSchemaIdSerializationIfNeed(config, confluentClientFactory, kafkaConfig)
+        }
+      }
+    )
+
+  protected lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config)
 
   protected lazy val metaData: MetaData = MetaData("mock-id", StreamMetaData())
 
@@ -259,6 +282,8 @@ class SimpleKafkaAvroDeserializer(schemaRegistryClient: CSchemaRegistryClient, _
   def deserialize(topic: String, record: Array[Byte]): Any = {
     deserialize(topic, isKey = false, record, null)
   }
+
+  override protected val schemaIdSerializationEnabled: Boolean = true
 
 }
 

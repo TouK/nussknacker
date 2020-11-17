@@ -98,6 +98,7 @@ authentication: {
   profileFormat: ${?OAUTH2_PROFILE_FORMAT}
   implicitGrantEnabled: ${?OAUTH2_IMPLICIT_GRANT_ENABLED}
   jwt {
+    enabled: ${?OAUTH2_JWT_ENABLED} (default: false)
     publicKey: ${?OAUTH2_JWT_AUTH_SERVER_PUBLIC_KEY}
     publicKeyFile: ${?OAUTH2_JWT_AUTH_SERVER_PUBLIC_KEY_FILE}
     certificate: ${?OAUTH2_JWT_AUTH_SERVER_CERTIFICATE}
@@ -107,6 +108,7 @@ authentication: {
   accessTokenParams {
     grant_type: ${?OAUTH2_GRANT_TYPE}
   }
+  accessTokenRequestContentType: "application/json" (default)
   authorizeParams {
     response_type: ${?OAUTH2_RESPONSE_TYPE}
     scope: ${?OAUTH2_SCOPE}
@@ -121,9 +123,11 @@ authentication: {
 
 When `method` is set to `OAuth2`, the following fields are mandatory: `clientSecret`, `clientId`, `authorizeUri`, `redirectUri`, `accessTokenUri`, `profileUri`, `profileFormat`, `implicitGrantEnabled`, `usersFile`.
 
-Subconfigs `accessTokenParams`, `authorizeParams`, `headers` are optional and every field from any of the subconfigs is optional and could be provided separately.
+Subconfigs `accessTokenParams`, `accessTokenRequestContentType`, `authorizeParams`, `headers` are optional and every field from any of the subconfigs is optional and could be provided separately.
 
-Subconfig `jwt` is also optional. However, if it is present, `idTokenNonceVerificationRequired` and one of the `publicKey`, `publicKeyFile`, `certificate`, `certificateFile` fields have to be provided.
+By default access token request is sent using `application/json` content type, to use change it (eg. to `application/x-www-form-urlencoded`) use `accessTokenRequestContentType` config.
+
+Subconfig `jwt` is also optional. However, if it is present and `enabled` is set to true, `idTokenNonceVerificationRequired` and one of the `publicKey`, `publicKeyFile`, `certificate`, `certificateFile` fields have to be provided.
 
 #### Remarks:
  - Setting `jwt.idTokenNonceVerificationRequired` to `true` has an effect only if `implicitGrantEnabled` is also set to `true`.
@@ -228,12 +232,10 @@ After that you have to register your implementation using Java's ServiceLoader m
 resource for `pl.touk.nussknacker.ui.security.oauth2.OAuth2ServiceFactory`. You can find an example at tests in 
 `ExampleOAuth2ServiceFactory` file.
 
-```
-You can store passwords as plaintext or (preferably) encrypted using bcrypt. To compute encrypted passiowrd you can use following python script:
+You can store passwords as plaintext or (preferably) encrypted using bcrypt. To compute encrypted password you can use following python script:
 ```python
 import bcrypt
 print(bcrypt.hashpw("password_to_encode".encode("utf8"), bcrypt.gensalt(rounds = 12, prefix = "2a")))
-
 ```
 
 ## Implementing own security provider

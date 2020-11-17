@@ -63,20 +63,19 @@ class ProcessUtils {
   escapeNodeIdForRegexp = (id) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&")
 
   findAvailableVariables = (processDefinition, processCategory, process) => (nodeId, parameterDefinition) => {
-    const globalVariablesWithoutProcessCategory = this._findGlobalVariablesWithoutProcessCategory(processDefinition.globalVariables, processCategory)
+    const globalVariablesWithMismatchCategory = this._findGlobalVariablesWithMismatchCategory(processDefinition.globalVariables, processCategory)
     const variablesFromValidation = process?.validationResult?.nodeResults?.[nodeId]?.variableTypes
     const variablesForNode = variablesFromValidation || this._findVariablesBasedOnGraph(nodeId, process, processDefinition)
     const variablesToHideForParam = parameterDefinition?.variablesToHide || []
     const withoutVariablesToHide =  _.pickBy(variablesForNode, (va, key) => !variablesToHideForParam.includes(key))
     const additionalVariablesForParam = parameterDefinition?.additionalVariables || {}
     const variables = {...withoutVariablesToHide, ...additionalVariablesForParam}
-
     //Filtering by category - we show variables only with the same category as process, removing these which are in blackList
-    return _.pickBy(variables, (va, key) => _.indexOf(globalVariablesWithoutProcessCategory, key) === -1)
+    return _.pickBy(variables, (va, key) => _.indexOf(globalVariablesWithMismatchCategory, key) === -1)
   }
 
   //It's not pretty but works.. This should be done at backend with properly category hierarchy
-  _findGlobalVariablesWithoutProcessCategory = (globalVariables, processCategory) => {
+  _findGlobalVariablesWithMismatchCategory = (globalVariables, processCategory) => {
     return _.keys(_.pickBy(globalVariables, variable => _.indexOf(variable.categories, processCategory) === -1))
   }
 
@@ -111,9 +110,10 @@ class ProcessUtils {
     const node = _.find(process.nodes, (node) => node.id === nodeId)
     const nodeObjectTypeDefinition = this.findNodeObjectTypeDefinition(node, processDefinition)
     const clazzName = _.get(nodeObjectTypeDefinition, "returnType")
+    const unknown = {type: "Unknown", refClazzName: "java.lang.Object"}
     switch (node.type) {
       case "Source": {
-        return [{input: clazzName}]
+        return _.isEmpty(clazzName) ? [] : [{input: clazzName}]
       }
       case "SubprocessInputDefinition": {
         return node.parameters.map(param => ({[param.name]: param.typ}))
@@ -128,13 +128,13 @@ class ProcessUtils {
         return _.isEmpty(outputClazz) ? [] : [{[outputVariableName]: outputClazz}]
       }
       case "VariableBuilder": {
-        return [{[node.varName]: {refClazzName: "java.lang.Object"}}]
+        return [{[node.varName]: unknown}]
       }
       case "Variable": {
-        return [{[node.varName]: {refClazzName: "java.lang.Object"}}]
+        return [{[node.varName]: unknown}]
       }
       case "Switch": {
-        return [{[node.exprVal]: {refClazzName: "java.lang.Object"}}]
+        return [{[node.exprVal]: unknown}]
       }
       default: {
         return []

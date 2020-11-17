@@ -62,7 +62,7 @@ object OutputValidator {
   private class ValidationModeAwareSubclassDeterminer(validationMode: ValidationMode)(implicit nodeId: NodeId) extends CanBeSubclassDeterminer {
     override protected def singleCanBeSubclassOf(givenType: typing.SingleTypingResult, superclassCandidate: typing.SingleTypingResult): ValidatedNel[String, Unit] = {
       super.singleCanBeSubclassOf(givenType, superclassCandidate) combine ((givenType, superclassCandidate) match {
-        case (TypedObjectTypingResult(objFields, _), TypedObjectTypingResult(superFields, _)) if !validationMode.acceptRedundant => {
+        case (TypedObjectTypingResult(objFields, _, _), TypedObjectTypingResult(superFields, _, _)) if !validationMode.acceptRedundant => {
           val redundantFields = objFields.keys.filterNot(superFields.keys.toSet.contains)
           condNel(redundantFields.isEmpty, (), s"The object has redundant fields: $redundantFields")
         }

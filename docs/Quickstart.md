@@ -19,7 +19,7 @@ Now you are ready to check your newly created environment
 * [Nussknacker](http://localhost:8081/) - user/password: admin/admin
 * [Apache Flink UI](http://localhost:8081/flink/)
 * [Grafana](http://localhost:8081/grafana/)
-* [Kibana](http://localhost:8081/kibana/)
+* [AKHQ](http://localhost:8081/akhq/)
 
 ## Defining a new process
 
@@ -53,25 +53,9 @@ Now you are ready to check your newly created environment
   <source src="img/quickstart/deployAndMetrics.mp4" type="video/mp4">
 </video>
 
-## See results in Kibana
+## See results in AKHQ
 
-* Go to Search tab on Nussknacker main panel 
-* Define processedevents* as default index pattern
-* Now you should see filtered events
-
-> If you are getting 403 creating index, please try following script in the Kibana "Dev Tools"
-`PUT .kibana/_settings
- {
-   "index": {
-     "blocks": {
-     "read_only_allow_delete": "false"
-     }
-   }
- }`
-
-<video width="100%" controls>
-  <source src="img/quickstart/searchInKibana.mp4" type="video/mp4">
-</video>
+* Go to http://localhost:8081/akhq/ui/nussknacker/topic/processedEvents/data - you should see processed events
 
 ## Test your process in a sandbox
 * Clink 'generate' button in right panel of application
@@ -88,7 +72,7 @@ Now you are ready to check your newly created environment
 ## Edit process
 * Drag & drop `clientService` from `Creator panel` -> `enrichers` -> `clientService`
 * Double click on new node, fill some node `Id`, set `clientId` to `#input.clientId` and set `Output` variable name as `clientData`. Now you can access enriched data from `clientData` variable in further processing.
-* Let's use enriched data in `save to elastic` node, set `Expression` to `#UTIL.mapAsJson({'clientId': #input.clientId, cardNumber: #clientData.cardNumber})`
+* Let's use enriched data in `save to kafka` node, set `Expression` to `#UTIL.mapAsJson({'clientId': #input.clientId, cardNumber: #clientData.cardNumber})`
 * Now run test on generated data to see if it works!
 
 <video width="100%" controls>
@@ -106,10 +90,7 @@ The quickstart starts several Docker containers. Let's look at them in detail:
 * Monitoring
   * InfluxDB
   * Grafana
-* Data analysis  
-  * Logstash
-  * Elasticsearch
-  * Kibana
+  * AKHQ
 * Nginx
   * To be able to view all applications on a single port
 

@@ -163,7 +163,13 @@ lazy val commonSettings =
       dependencyOverrides ++= Seq(
         //currently Flink (1.11 -> https://github.com/apache/flink/blob/master/pom.xml#L128) uses 1.8.2 Avro version
         "org.apache.avro" % "avro" % avroV,
-        "com.typesafe" % "config" % configV
+        "com.typesafe" % "config" % configV,
+        //we stick to version in Flink to avoid nasty bugs in process runtime...
+        //NOTE: xmlgraphics used in UI comes with v. old version...
+        "commons-io" % "commons-io" % commonsIOV,
+        //we stick to version in Flink to avoid nasty bugs in process runtime...
+        //NOTE: commons-text (in api) uses 3.9...
+        "org.apache.commons" % "commons-lang3" % commonsLangV
       )
     )
 
@@ -182,7 +188,7 @@ val akkaV = "2.5.21" //same version as in Flink
 val flinkV = "1.11.2"
 val avroV = "1.9.2" // for java time logical types conversions purpose
 val kafkaV = "2.4.1"
-val springV = "5.1.4.RELEASE"
+val springV = "5.1.19.RELEASE"
 val scalaTestV = "3.0.8"
 val scalaCheckV = "1.14.0"
 val logbackV = "1.1.3"
@@ -196,10 +202,11 @@ val dispatchV = "1.0.1"
 val slf4jV = "1.7.21"
 val scalaLoggingV = "3.9.0"
 val scalaCompatV = "0.9.0"
-val ficusV = "1.4.1"
+val ficusV = "1.4.7"
 val configV = "1.4.0"
 val commonsLangV = "3.3.2"
 val commonsTextV = "1.8"
+val commonsIOV = "2.4"
 //we want to use 5.x for standalone metrics to have tags, however dropwizard development kind of freezed. Maybe we should consider micrometer?
 //In Flink metrics we use bundled dropwizard metrics v. 3.x
 val dropWizardV = "5.0.0-rc3"
@@ -497,7 +504,13 @@ lazy val benchmarks = (project in engine("benchmarks")).
   enablePlugins(JmhPlugin).
   settings(
     name := "nussknacker-benchmarks",
-  ).dependsOn(interpreter)
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV,
+        "org.apache.flink" %% "flink-runtime" % flinkV
+      )
+    }
+  ).dependsOn(interpreter, avroFlinkUtil, testUtil % "test")
 
 
 lazy val kafka = (project in engine("kafka")).
@@ -854,6 +867,10 @@ lazy val ui = (project in file("ui/server"))
         "ch.qos.logback" % "logback-classic" % logbackV,
         "org.slf4j" % "log4j-over-slf4j" % slf4jV,
         "com.carrotsearch" % "java-sizeof" % "0.0.5",
+
+        //It's needed by flinkProcessManager which has disabled includingScala
+        "org.scala-lang" % "scala-compiler" % scalaVersion.value,
+        "org.scala-lang" % "scala-reflect" % scalaVersion.value,
 
         "com.typesafe.slick" %% "slick" % slickV,
         "com.typesafe.slick" %% "slick-hikaricp" % slickV,

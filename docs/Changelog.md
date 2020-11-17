@@ -8,8 +8,12 @@ For detailed instructions how to migrate to the newest version please see [migra
 Nussknacker versions
 ====================
 
-0.3.0 (not released yet)
+0.3.0 
 ------------------------
+* [#1298](https://github.com/TouK/nussknacker/pull/1298) Feature flag `avroKryoGenericRecordSchemaIdSerialization` for avro kryo serialization optimization (default = false)
+* [#1315](https://github.com/TouK/nussknacker/pull/1315) Spring bumped 5.1.4 -> 5.1.19
+* [#1312](https://github.com/TouK/nussknacker/pull/1312) Ficus bumped 1.4.1 -> 1.4.7
+* [#1288](https://github.com/TouK/nussknacker/pull/1288) Namespaces can be configured for ObjectNaming
 * [#1261](https://github.com/TouK/nussknacker/pull/1261) Fix: Access to `map.missingKey` caused `Property or field cannot be found on object`
 * [#1244](https://github.com/TouK/nussknacker/pull/1244) Ability to define `variablesToHide` in `Parameter`
 * [#1165](https://github.com/TouK/nussknacker/pull/1165) Typed global variables
@@ -28,6 +32,9 @@ ProcessManager implementations are separated from UI to allow easier changes in 
 * [#249](https://github.com/TouK/nussknacker/pull/1201) Inferred expression type in node modal
 * [#1255](https://github.com/TouK/nussknacker/pull/1255) Moved displaying `Metrics tab` to `customTabs`
 * [#1257](https://github.com/TouK/nussknacker/pull/1257) Improvements: Flink test util package
+* [#1287](https://github.com/TouK/nussknacker/pull/1287) OAuth2: add accessTokenRequestContentType parameter
+* [#1290](https://github.com/TouK/nussknacker/pull/1290) Own kryo serializers can be provided through SPI
+* [#1303](https://github.com/TouK/nussknacker/pull/1303) TypedObjectTypingResult can have additional info (e.g. Schema for GenericRecord)
 
 0.2.2
 -----------------------

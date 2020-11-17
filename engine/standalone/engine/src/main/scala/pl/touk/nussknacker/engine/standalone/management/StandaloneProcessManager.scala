@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.standalone.management
 
-import java.lang.annotation.Annotation
 import java.util.concurrent.TimeUnit
 
 import cats.data.Validated.{Invalid, Valid}
@@ -12,9 +11,10 @@ import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResu
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessObjectDependencies, TestDataParserProvider}
+import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{ServiceInvocationCollector, SinkInvocationCollector}
 import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestRunId}
-import pl.touk.nussknacker.engine.api.{EndingReference, JobData, ProcessVersion, StandaloneMetaData, TypeSpecificData}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectWithMethodDef, OverriddenObjectWithMethodDef}
@@ -23,7 +23,6 @@ import pl.touk.nussknacker.engine.definition._
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import pl.touk.nussknacker.engine.standalone.api.types._
@@ -239,9 +238,8 @@ class StandaloneProcessManagerProvider extends ProcessManagerProvider {
 
 object StandaloneProcessManagerProvider {
 
-  import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-  import pl.touk.nussknacker.engine.util.config.FicusReaders._
+  import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 
   def defaultTypeConfig(config: Config): ProcessingTypeConfig = {
     ProcessingTypeConfig("requestResponseStandalone",

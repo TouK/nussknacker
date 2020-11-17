@@ -2,8 +2,11 @@
 
 To see biggest differences please consult the [changelog](Changelog.md).
 
-## In version 0.3.0 (not released yet)
+## In version 0.3.0
 
+* [#1313](https://github.com/TouK/nussknacker/pull/1313) Kafka Avro API passes `KafkaConfig` during `TypeInformation` determining
+* [#1305](https://github.com/TouK/nussknacker/pull/1305) Kafka Avro API passes `RuntimeSchemaData` instead of `Schema` in various places
+* [#1304](https://github.com/TouK/nussknacker/pull/1304) `SerializerWithSpecifiedClass` was moved to `flink-api` module.
 * [#1044](https://github.com/TouK/nussknacker/pull/1044) Upgrade to Flink 1.11. Current watermark/timestamp mechanisms are deprectated in Flink 1.11, 
  new API ```TimestampWatermarkHandler``` is introduced, with ```LegacyTimestampWatermarkHandler``` as wrapper for previous mechanisms.
 * [#1244](https://github.com/TouK/nussknacker/pull/1244) `Parameter` has new parameter 'variablesToHide' with `Set` of variable names
@@ -27,6 +30,7 @@ that will be hidden before parameter's evaluation
     - Deprecated: `runningJobs`, from `MiniClusterExecutionEnvironment`
     - Removed: `getClusterClient` from `FlinkMiniClusterHolder` interface, because of flink compatibility at Flink 1.9 
     - Renamed: `FlinkStreamingProcessRegistrar` to `FlinkProcessManager` 
+* [#1303](https://github.com/TouK/nussknacker/pull/1303) TypedObjectTypingResult has a new field: additionalInfo
 
 ## In version 0.2.0
 

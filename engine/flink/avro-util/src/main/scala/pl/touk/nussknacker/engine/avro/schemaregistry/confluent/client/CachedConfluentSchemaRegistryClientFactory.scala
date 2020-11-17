@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client
 
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
-import org.apache.avro.Schema
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaWithMetadata
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache, SingleValueCache}
 
@@ -40,8 +40,8 @@ object CachedConfluentSchemaRegistryClientFactory {
 
 class SchemaRegistryCaches(maximumSize: Long, latestSchemaExpirationTime: Option[FiniteDuration],
                            schemaExpirationTime: Option[FiniteDuration], versionsCacheExpirationTime: Option[FiniteDuration]) {
-   val schemaCache = new DefaultCache[String, Schema](CacheConfig(maximumSize, schemaExpirationTime, Option.empty))
-   val latestSchemaCache = new DefaultCache[String, Schema](CacheConfig(maximumSize, Option.empty, latestSchemaExpirationTime))
+   val schemaCache = new DefaultCache[String, SchemaWithMetadata](CacheConfig(maximumSize, schemaExpirationTime, Option.empty))
+   val latestSchemaCache = new DefaultCache[String, SchemaWithMetadata](CacheConfig(maximumSize, Option.empty, latestSchemaExpirationTime))
    val versionsCache = new DefaultCache[String, List[Integer]](CacheConfig(maximumSize, Option.empty, versionsCacheExpirationTime))
    val topicsCache = new SingleValueCache[List[String]](Option.empty, versionsCacheExpirationTime)
 }

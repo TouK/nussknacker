@@ -5,6 +5,7 @@ import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, KafkaDeserializationSchema}
+import org.apache.flink.util.Collector
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api.process.{TestDataGenerator, TestDataParserProvider}
@@ -69,9 +70,27 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
         val record = recordFormatterOpt
           .map(formatter => formatter.parseRecord(formatted))
           .getOrElse(new ProducerRecord(topic, formatted))
-        deserializationSchema.deserialize(new ConsumerRecord[Array[Byte], Array[Byte]](topic, -1, -1, record.key(), record.value()))
+        deserialize(topic, record)
       }
   }
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[T]] = timestampAssigner
+
+  //There is deserializationSchema.deserialize method which doesn't need Collector, however
+  //for some reason KafkaDeserializationSchemaWrapper throws Exception when used in such way...
+  //protected to make it easier for backward compatibility
+  protected def deserialize(topic: String, record: ProducerRecord[Array[Byte], Array[Byte]]): T = {
+    val collector = new SimpleCollector
+    deserializationSchema.deserialize(new ConsumerRecord[Array[Byte], Array[Byte]](topic, -1, -1, record.key(), record.value()), collector)
+    collector.output
+  }
+
+  private class SimpleCollector extends Collector[T] {
+    var output: T = _
+    override def collect(record: T): Unit = {
+      output = record
+    }
+    override def close(): Unit = {}
+  }
+
 }

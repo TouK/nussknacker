@@ -48,7 +48,9 @@ export class NodeDetailsContent extends React.Component {
     }
     //In most cases this is not needed, as parameter definitions should be present in validation response
     //However, in dynamic cases (as adding new topic/schema version) this can lead to stale parameters
-    this.updateNodeDataIfNeeded(node)
+    if (this.props.isEditMode) {
+      this.updateNodeDataIfNeeded(node)
+    }
     this.generateUUID("fields", "parameters")
   }
 
@@ -87,7 +89,7 @@ export class NodeDetailsContent extends React.Component {
       this.updateNodeDataIfNeeded(nextPropsNode)
     }
     if (!_.isEqual(this.props.dynamicParameterDefinitions, nextProps.dynamicParameterDefinitions)) {
-      this.adjustStateWithParameters(this.state.editedNode)
+      this.adjustStateWithParameters(nextPropsNode)
     }
   }
 
@@ -332,7 +334,7 @@ export class NodeDetailsContent extends React.Component {
           />
         )
       case "Variable":
-        const varExprType = this.props.expressionType || this.props.nodeTypingInfo[DEFAULT_EXPRESSION_ID]
+        const varExprType = this.props.expressionType || (this.props?.nodeTypingInfo || {})[DEFAULT_EXPRESSION_ID]
         return (
           <Variable
             renderFieldLabel={this.renderFieldLabel}
@@ -524,7 +526,7 @@ export class NodeDetailsContent extends React.Component {
       fieldType,
       fieldLabel,
       fieldName,
-      _.get(this.state.editedNode, fieldProperty, null) || defaultValue,
+      _.get(this.state.editedNode, fieldProperty, null) ?? defaultValue,
       (newValue) => this.setNodeDataAt(fieldProperty, newValue, defaultValue),
       readonly,
       this.isMarked(fieldProperty),
@@ -753,7 +755,7 @@ function mapState(state, props) {
   //process is *different* than subprocess itself
   //TODO: in particular we need it for branches, how to handle it for subprocesses?
   const mainProcess = state.graphReducer.processToDisplay
-  const findAvailableVariables = ProcessUtils.findAvailableVariables(processDefinitionData, getProcessCategory(state), mainProcess)
+  const findAvailableVariables = ProcessUtils.findAvailableVariables(processDefinitionData.processDefinition, getProcessCategory(state), mainProcess)
 
   const findAvailableBranchVariables = ProcessUtils.findVariablesForBranches(mainProcess?.validationResult?.nodeResults)
   //see NodeDetailsModal - we pass own state in props.node, so we cannot just rely on props.node.id
@@ -770,7 +772,8 @@ function mapState(state, props) {
     originalNodeId: originalNodeId,
     currentErrors: state.nodeDetails.validationPerformed ? state.nodeDetails.validationErrors : props.nodeErrors,
     dynamicParameterDefinitions: state.nodeDetails.validationPerformed ? state.nodeDetails.parameters :
-        state.graphReducer.processToDisplay?.validationResult?.nodeResults?.[originalNodeId]?.parameters,
+      //for some cases e.g. properties parameters is undefined, we replace it with null no to care about undefined in comparisons
+      state.graphReducer.processToDisplay?.validationResult?.nodeResults?.[originalNodeId]?.parameters || null,
     expressionType: state.nodeDetails.expressionType,
     nodeTypingInfo: nodeResult?.typingInfo,
   }
