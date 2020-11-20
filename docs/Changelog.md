@@ -10,7 +10,10 @@ Nussknacker versions
 
 0.3.1 (not released yet) 
 ------------------------
-* [#1330](https://github.com/TouK/nussknacker/pull/1330) Performance fix for: Multiple times parsing expressions in map/product LazyParameter
+* Performance fixes:
+    * [#1330](https://github.com/TouK/nussknacker/pull/1330) Multiple times parsing expressions in map/product LazyParameter
+    * [#1331](https://github.com/TouK/nussknacker/pull/1331) LoggingListener caches loggers
+
 
 0.3.0 
 ------------------------

@@ -21,9 +21,11 @@ object LoggingListener extends ProcessListener with Serializable {
   private val loggerMap = new ConcurrentHashMap[List[String], Logger]()
 
   private def debug(keys: List[String], message: => String): Unit = {
-    val logger = loggerMap.computeIfAbsent(keys, ks => {
-      val loggerKey = ks.mkString(".")
-      LoggerFactory.getLogger(s"$className.$loggerKey")
+    val logger = loggerMap.computeIfAbsent(keys, new java.util.function.Function[List[String], Logger] {
+      override def apply(ks: List[String]): Logger = {
+        val loggerKey = ks.mkString(".")
+        LoggerFactory.getLogger(s"$className.$loggerKey")
+      }
     })
     if (logger.isDebugEnabled()) {
       logger.debug(message)
