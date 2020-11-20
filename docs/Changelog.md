@@ -8,6 +8,10 @@ For detailed instructions how to migrate to the newest version please see [migra
 Nussknacker versions
 ====================
 
+0.3.1 (not released yet) 
+------------------------
+* [#1330](https://github.com/TouK/nussknacker/pull/1330) Performance fix for: Multiple times parsing expressions in map/product LazyParameter
+
 0.3.0 
 ------------------------
 * [#1298](https://github.com/TouK/nussknacker/pull/1298) Feature flag `avroKryoGenericRecordSchemaIdSerialization` for avro kryo serialization optimization (default = false)

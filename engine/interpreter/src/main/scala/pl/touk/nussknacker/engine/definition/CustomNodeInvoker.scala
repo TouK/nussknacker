@@ -40,11 +40,11 @@ private[definition] case class ProductLazyParameter[T <: AnyRef, Y <: AnyRef](ar
   override def returnType: TypingResult = Typed.genericTypeClass[(T, Y)](List(arg1.returnType, arg2.returnType))
 
   override def prepareEvaluator(lpi: CompilerLazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[(T, Y)] = {
-    val arg1Interpreter = lpi.createInterpreter(arg1)
-    val arg2Interpreter = lpi.createInterpreter(arg2)
+    val arg1Interpreter = lpi.createInterpreter(ec, arg1)
+    val arg2Interpreter = lpi.createInterpreter(ec, arg2)
     ctx: Context =>
-      val arg1Value = arg1Interpreter(ec, ctx)
-      val arg2Value = arg2Interpreter(ec, ctx)
+      val arg1Value = arg1Interpreter(ctx)
+      val arg2Value = arg2Interpreter(ctx)
       arg1Value.flatMap(left => arg2Value.map((left, _)))
   }
 }
@@ -52,8 +52,8 @@ private[definition] case class ProductLazyParameter[T <: AnyRef, Y <: AnyRef](ar
 private[definition] case class MappedLazyParameter[T <: AnyRef, Y <: AnyRef](arg: LazyParameter[T], fun: T => Y, returnType: TypingResult) extends CompilerLazyParameter[Y] {
 
   override def prepareEvaluator(lpi: CompilerLazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[Y] = {
-    val argInterpreter = lpi.createInterpreter(arg)
-    ctx: Context => argInterpreter(ec, ctx).map(fun)
+    val argInterpreter = lpi.createInterpreter(ec, arg)
+    ctx: Context => argInterpreter(ctx).map(fun)
   }
 }
 
