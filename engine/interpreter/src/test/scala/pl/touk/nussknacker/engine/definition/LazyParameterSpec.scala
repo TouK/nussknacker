@@ -24,30 +24,26 @@ class LazyParameterSpec extends FunSuite with Matchers {
   test("should parse expression for param once") {
     implicit val lazyParameterInterpreter: LazyParameterInterpreter = prepareInterpreter
 
-    var invoked = 0
-
-    val evalParameter = new CompilerLazyParameter[Integer] {
-      override def prepareEvaluator(deps: CompilerLazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[Integer] = {
-        invoked += 1
-        _ => {
-          Future.successful(123)
-        }
-      }
-      override def returnType: typing.TypingResult = Typed[Integer]
-    }
-
-    val fun = lazyParameterInterpreter.syncInterpretationFunction(evalParameter)
-    fun(Context(""))
-    fun(Context(""))
-
-    invoked shouldEqual 1
+    checkParameterInvokedOnceAfterTransform(identity)
   }
 
   test("should parse expression for mapped param once") {
     implicit val lazyParameterInterpreter: LazyParameterInterpreter = prepareInterpreter
 
-    var invoked = 0
+    checkParameterInvokedOnceAfterTransform(_.map[Integer]((i: Integer) => i + 1: Integer))
+  }
 
+  test("should parse expression for product once") {
+    implicit val lazyParameterInterpreter: LazyParameterInterpreter = prepareInterpreter
+
+    checkParameterInvokedOnceAfterTransform(_.product(lazyParameterInterpreter.pure("333", Typed[String])))
+  }
+
+
+  private def checkParameterInvokedOnceAfterTransform(transform: CompilerLazyParameter[Integer] => LazyParameter[_<:AnyRef])
+                                                     (implicit lazyParameterInterpreter: LazyParameterInterpreter) = {
+
+    var invoked = 0
     val evalParameter = new CompilerLazyParameter[Integer] {
       override def prepareEvaluator(deps: CompilerLazyParameterInterpreter)(implicit ec: ExecutionContext): Context => Future[Integer] = {
         invoked += 1
@@ -55,10 +51,11 @@ class LazyParameterSpec extends FunSuite with Matchers {
           Future.successful(123)
         }
       }
+
       override def returnType: typing.TypingResult = Typed[Integer]
     }
 
-    val mappedParam = evalParameter.map[Integer]((i: Integer) => i + 1: Integer)
+    val mappedParam = transform(evalParameter)
     val fun = lazyParameterInterpreter.syncInterpretationFunction(mappedParam)
     fun(Context(""))
     fun(Context(""))
