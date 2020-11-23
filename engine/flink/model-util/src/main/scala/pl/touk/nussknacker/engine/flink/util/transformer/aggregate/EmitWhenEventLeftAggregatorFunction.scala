@@ -4,6 +4,7 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.TimerService
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.util.Collector
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.{ValueWithContext, Context => NkContext}
 import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
 import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
@@ -13,7 +14,7 @@ import scala.collection.immutable.TreeMap
 /**
  * It behaves the same as AggregatorFunction with one difference that also publish events when some event will left the slide.
  */
-class EmitWhenEventLeftAggregatorFunction(protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long)
+class EmitWhenEventLeftAggregatorFunction(protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long, override val nodeId: NodeId)
   extends LatelyEvictableStateFunction[ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef], TreeMap[Long, AnyRef]]
     with AggregatorFunctionMixin with AddedElementContextStateHolder {
 
