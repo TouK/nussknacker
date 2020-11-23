@@ -25,6 +25,9 @@ object aggregates {
 
     override def zero: Number = null
 
+    override def isNeutralForAccumulator(element: Number): Boolean =
+      element.doubleValue() == 0.0
+
     override def addElement(n1: Number, n2: Number): Number = MathUtils.largeSum(n1, n2)
 
     override protected val promotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ForLargeNumbersOperation

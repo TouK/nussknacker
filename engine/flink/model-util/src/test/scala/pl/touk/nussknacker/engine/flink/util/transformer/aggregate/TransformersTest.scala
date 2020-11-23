@@ -70,6 +70,26 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers {
     aggregateVariables shouldBe List(1, 3, 7)
   }
 
+  test("sum aggregate with zeros") {
+    val id = "1"
+
+    val model = modelData(List(
+      TestRecord(id, 0, 0, "a"),
+      TestRecord(id, 1, 1, "b"),
+      TestRecord(id, 2, 0, "b")))
+    val testProcess = process("aggregate-sliding", s"T(${classOf[AggregateHelper].getName}).SUM",
+      "#input.eId", emitWhenEventLeft = Some(false), None)
+
+    val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
+
+    runProcess(model, testProcess, collectingListener)
+
+    val aggregateVariables = endAggregateVariable[Number](collectingListener, id)
+
+    aggregateVariables shouldBe List(0, 1, 1)
+  }
+
+
   test("sum aggregate for out of order elements") {
     val id = "1"
 

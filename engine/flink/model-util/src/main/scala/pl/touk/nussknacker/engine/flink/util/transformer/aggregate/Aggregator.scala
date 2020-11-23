@@ -20,6 +20,8 @@ abstract class Aggregator extends AggregateFunction[AnyRef, AnyRef, AnyRef] {
 
   def zero: Aggregate
 
+  def isNeutralForAccumulator(element: Element): Boolean = false
+
   def addElement(element: Element, aggregate: Aggregate): Aggregate
 
   def mergeAggregates(aggregate1: Aggregate, aggregate2: Aggregate): Aggregate

@@ -77,10 +77,15 @@ trait AggregatorFunctionMixin { self: StateHolder[TreeMap[Long, AnyRef]] =>
   private def computeNewState(newElementInStateTimestamp: Long, newValue: aggregator.Element): TreeMap[Long, aggregator.Aggregate] = {
     val current: TreeMap[Long, aggregator.Aggregate] = stateForTimestampToSave(readStateOrInitial(), newElementInStateTimestamp)
 
-    val currentAggregate = current.getOrElse(newElementInStateTimestamp, aggregator.createAccumulator())
-    val newAggregate = aggregator.add(newValue, currentAggregate).asInstanceOf[aggregator.Aggregate]
+    // We do not create aggregate and add to it neutral element to avoid unnecessary buckets in our state
+    if (aggregator.isNeutralForAccumulator(newValue)) {
+      current
+    } else {
+      val currentAggregate = current.getOrElse(newElementInStateTimestamp, aggregator.createAccumulator())
+      val newAggregate = aggregator.add(newValue, currentAggregate).asInstanceOf[aggregator.Aggregate]
 
-    current.updated(newElementInStateTimestamp, newAggregate)
+      current.updated(newElementInStateTimestamp, newAggregate)
+    }
   }
 
   private def computeTimestampToStore(timestamp: Long): Long = {
