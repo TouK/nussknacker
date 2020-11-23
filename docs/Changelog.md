@@ -13,6 +13,7 @@ Nussknacker versions
 * Performance fixes:
     * [#1330](https://github.com/TouK/nussknacker/pull/1330) Multiple times parsing expressions in map/product LazyParameter
     * [#1331](https://github.com/TouK/nussknacker/pull/1331) LoggingListener caches loggers
+    * [#1335](https://github.com/TouK/nussknacker/pull/1335) Omitting zeros for sum aggregate to avoid unnecessary buckets 
 
 
 0.3.0 
