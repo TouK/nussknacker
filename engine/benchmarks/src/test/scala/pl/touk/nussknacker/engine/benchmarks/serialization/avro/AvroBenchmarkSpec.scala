@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.benchmarks.avro
+package pl.touk.nussknacker.engine.benchmarks.serialization.avro
 
 import org.scalatest.{FunSuite, Matchers}
 

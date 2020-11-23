@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.benchmarks.avro
+package pl.touk.nussknacker.engine.benchmarks.serialization.avro
 
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
@@ -12,12 +12,15 @@ object AvroSamples {
 
   private val fieldsCount = 10
 
-  val sampleSchema: Schema = AvroUtils.parseSchema(s"""{
-                                                      |  "type": "record",
-                                                      |  "name": "FullName",
-                                                      |  "fields": [
-                                                      |    ${1.to(fieldsCount).map(fieldSchema).mkString(",\n    ")}
-                                                      |  ]
+  val sampleSchema: Schema = AvroUtils.parseSchema(
+    s"""{
+       |  "type": "record",
+       |  "name": "FullName",
+       |  "fields": [
+       |    ${1.to(fieldsCount).map(fieldSchema).mkString(",\n    ")}
+
+
+
                                                       |}
     """.stripMargin)
 
