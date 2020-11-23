@@ -50,13 +50,20 @@ trait AggregatorFunctionMixin { self: StateHolder[TreeMap[Long, AnyRef]] =>
   protected def addElementToState(value: ValueWithContext[StringKeyedValue[AnyRef]],
                                   timestamp: Long, timeService: TimerService,
                                   out: Collector[ValueWithContext[AnyRef]]): TreeMap[Long, aggregator.Aggregate] = {
-    val newElementInStateTimestamp = computeTimestampToStore(timestamp)
     val newElement = value.value.value.asInstanceOf[aggregator.Element]
-    val newState = computeNewState(newElementInStateTimestamp, newElement)
+    val newElementInStateTimestamp = computeTimestampToStore(timestamp)
 
-    updateState(newState, newElementInStateTimestamp + timeWindowLengthMillis, timeService)
-    handleElementAddedToState(newElementInStateTimestamp, newElement, value.context, timeService, out)
-    newState
+    // For neutral element, we do not create bucket, add to it element, and move timers to avoid unnecessary buckets
+    // in our state and unnecessary timers registration
+    if (aggregator.isNeutralForAccumulator(newElement)) {
+      stateForTimestampToSave(readStateOrInitial(), newElementInStateTimestamp)
+    } else {
+      val newState = computeNewState(newElementInStateTimestamp, newElement)
+
+      updateState(newState, newElementInStateTimestamp + timeWindowLengthMillis, timeService)
+      handleElementAddedToState(newElementInStateTimestamp, newElement, value.context, timeService, out)
+      newState
+    }
   }
 
   // for extending classes purpose
@@ -77,15 +84,10 @@ trait AggregatorFunctionMixin { self: StateHolder[TreeMap[Long, AnyRef]] =>
   private def computeNewState(newElementInStateTimestamp: Long, newValue: aggregator.Element): TreeMap[Long, aggregator.Aggregate] = {
     val current: TreeMap[Long, aggregator.Aggregate] = stateForTimestampToSave(readStateOrInitial(), newElementInStateTimestamp)
 
-    // We do not create aggregate and add to it neutral element to avoid unnecessary buckets in our state
-    if (aggregator.isNeutralForAccumulator(newValue)) {
-      current
-    } else {
-      val currentAggregate = current.getOrElse(newElementInStateTimestamp, aggregator.createAccumulator())
-      val newAggregate = aggregator.add(newValue, currentAggregate).asInstanceOf[aggregator.Aggregate]
+    val currentAggregate = current.getOrElse(newElementInStateTimestamp, aggregator.createAccumulator())
+    val newAggregate = aggregator.add(newValue, currentAggregate).asInstanceOf[aggregator.Aggregate]
 
-      current.updated(newElementInStateTimestamp, newAggregate)
-    }
+    current.updated(newElementInStateTimestamp, newAggregate)
   }
 
   private def computeTimestampToStore(timestamp: Long): Long = {
