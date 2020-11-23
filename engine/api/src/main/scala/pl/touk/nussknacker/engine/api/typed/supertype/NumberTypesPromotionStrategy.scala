@@ -3,9 +3,19 @@ package pl.touk.nussknacker.engine.api.typed.supertype
 import java.lang
 
 import org.apache.commons.lang3.ClassUtils
+import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.AllNumbers
 import pl.touk.nussknacker.engine.api.typed.typing._
 
+import scala.util.Try
+
 trait NumberTypesPromotionStrategy extends Serializable {
+
+  private val cachedPromotionResults: Map[(Class[_], Class[_]), ReturnedType] =
+    (for {
+      a <- AllNumbers
+      b <- AllNumbers
+      existingResult <- Try(promoteClassesInternal(a, b)).toOption
+    } yield (a, b) -> existingResult).toMap
 
   type ReturnedType <: TypingResult
 
@@ -36,7 +46,7 @@ trait NumberTypesPromotionStrategy extends Serializable {
     val boxedRight = ClassUtils.primitiveToWrapper(right)
     if (!classOf[Number].isAssignableFrom(boxedLeft) || !classOf[Number].isAssignableFrom(boxedRight))
       throw new IllegalArgumentException(s"One of promoted classes is not a number: $boxedLeft, $boxedRight")
-    promoteClassesInternal(boxedLeft, boxedRight)
+    cachedPromotionResults.getOrElse((boxedLeft, boxedRight), promoteClassesInternal(boxedLeft, boxedRight))
   }
 
   protected def promoteClassesInternal(left: Class[_], right: Class[_]): ReturnedType
@@ -68,6 +78,8 @@ object NumberTypesPromotionStrategy {
     classOf[java.lang.Short],
     classOf[java.lang.Byte]
   )
+
+  val AllNumbers: Seq[Class[_]] = FloatingNumbers ++ DecimalNumbers
 
   def isDecimalNumber(clazz: Class[_]): Boolean = DecimalNumbers.contains(clazz)
 
