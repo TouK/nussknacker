@@ -510,7 +510,7 @@ lazy val benchmarks = (project in engine("benchmarks")).
         "org.apache.flink" %% "flink-runtime" % flinkV
       )
     }
-  ).dependsOn(interpreter, avroFlinkUtil, testUtil % "test")
+  ).dependsOn(interpreter, avroFlinkUtil, flinkModelUtil, testUtil % "test")
 
 
 lazy val kafka = (project in engine("kafka")).
