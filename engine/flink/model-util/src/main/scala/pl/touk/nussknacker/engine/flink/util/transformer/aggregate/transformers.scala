@@ -40,9 +40,9 @@ object transformers {
           val expectedType = aggregator.computeOutputType(aggregateBy.returnType).valueOr(msg => throw new IllegalArgumentException(msg))
           val aggregatorFunction =
             if (emitWhenEventLeft)
-              new EmitWhenEventLeftAggregatorFunction(aggregator, windowLength.toMillis)
+              new EmitWhenEventLeftAggregatorFunction(aggregator, windowLength.toMillis, nodeId)
             else
-              new AggregatorFunction(aggregator, windowLength.toMillis)
+              new AggregatorFunction(aggregator, windowLength.toMillis, nodeId)
           val statefulStream = start
             .map(new StringKeyedValueMapper(ctx.lazyParameterHelper, keyBy, aggregateBy))
             .keyBy(_.value.key)
@@ -79,7 +79,7 @@ object transformers {
           val statefulStream =
             if (emitExtraWindowWhenNoData) {
               keyedStream
-                .process(new EmitExtraWindowWhenNoDataTumblingAggregatorFunction(aggregator, windowLength.toMillis))
+                .process(new EmitExtraWindowWhenNoDataTumblingAggregatorFunction(aggregator, windowLength.toMillis, nodeId))
             } else {
               keyedStream
                 .window(TumblingEventTimeWindows.of(Time.milliseconds(windowLength.toMillis)))

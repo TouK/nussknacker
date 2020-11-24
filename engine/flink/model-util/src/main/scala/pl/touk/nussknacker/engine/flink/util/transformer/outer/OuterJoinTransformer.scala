@@ -96,7 +96,7 @@ class OuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandler[T
   protected def prepareAggregatorFunction(aggregator: Aggregator, stateTimeout: FiniteDuration)
                                          (implicit nodeId: NodeId):
   CoProcessFunction[ValueWithContext[String], ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]] =
-    new OuterJoinAggregatorFunction(aggregator, stateTimeout.toMillis)
+    new OuterJoinAggregatorFunction(aggregator, stateTimeout.toMillis, nodeId)
 
 }
 
