@@ -1,12 +1,21 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
+import java.util.concurrent.TimeUnit
+
+import cats.data.NonEmptyList
+import com.codahale.metrics.{Histogram, SlidingTimeWindowReservoir}
+import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.state.ValueStateDescriptor
+import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
+import org.apache.flink.metrics
 import org.apache.flink.streaming.api.TimerService
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.util.Collector
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.{ValueWithContext, Context => NkContext}
 import pl.touk.nussknacker.engine.flink.api.state.{LatelyEvictableStateFunction, StateHolder}
 import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
+import pl.touk.nussknacker.engine.flink.util.metrics.MetricUtils
 
 import scala.collection.immutable.TreeMap
 
@@ -15,7 +24,7 @@ import scala.collection.immutable.TreeMap
 // when some element left the slide. If you want to handle this situation, you should use `EmitWhenEventLeftAggregatorFunction`
 // Flinks SlidingWindows are something that is often called HoppingWindow. They consume a lot of memory because each element
 // is stored in multiple windows with different offsets.
-class AggregatorFunction(protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long)
+class AggregatorFunction(protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long, override val nodeId: NodeId)
   extends LatelyEvictableStateFunction[ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef], TreeMap[Long, AnyRef]]
   with AggregatorFunctionMixin {
 
@@ -28,6 +37,27 @@ class AggregatorFunction(protected val aggregator: Aggregator, protected val tim
 }
 
 trait AggregatorFunctionMixin { self: StateHolder[TreeMap[Long, AnyRef]] =>
+
+  def getRuntimeContext: RuntimeContext
+
+  def nodeId: NodeId
+
+  protected def name: String = "aggregator"
+
+  protected def tags: Map[String, String] = Map("nodeId" -> nodeId.id)
+
+  protected def newHistogram()
+    = new DropwizardHistogramWrapper(new Histogram(new SlidingTimeWindowReservoir(10, TimeUnit.SECONDS)))
+
+  protected lazy val metricUtils = new MetricUtils(getRuntimeContext)
+
+  protected lazy val timeHistogram: metrics.Histogram
+    = metricUtils.histogram(NonEmptyList.of(name, "time"), tags, newHistogram())
+
+  //this metric does *not* calculate histogram of sizes of maps in the whole state,
+  //but of those that are processed, so "hot" keys would be counted much more often. 
+  protected lazy val retrievedBucketsHistogram: metrics.Histogram
+    = metricUtils.histogram(NonEmptyList.of(name, "retrievedBuckets"), tags, newHistogram())
 
   //TODO make it configurable
   protected val minimalResolutionMs = 60000L
@@ -42,8 +72,10 @@ trait AggregatorFunctionMixin { self: StateHolder[TreeMap[Long, AnyRef]] =>
   protected def handleNewElementAdded(value: ValueWithContext[StringKeyedValue[AnyRef]],
                                       timestamp: Long, timeService: TimerService,
                                       out: Collector[ValueWithContext[AnyRef]]): Unit = {
+    val start = System.nanoTime()
     val newState = addElementToState(value, timestamp, timeService, out)
     val finalVal = computeFinalValue(newState, timestamp)
+    timeHistogram.update(System.nanoTime() - start)
     out.collect(ValueWithContext(finalVal, value.context))
   }
 
@@ -56,6 +88,7 @@ trait AggregatorFunctionMixin { self: StateHolder[TreeMap[Long, AnyRef]] =>
 
     updateState(newState, newElementInStateTimestamp + timeWindowLengthMillis, timeService)
     handleElementAddedToState(newElementInStateTimestamp, newElement, value.context, timeService, out)
+    retrievedBucketsHistogram.update(newState.size)
     newState
   }
 
