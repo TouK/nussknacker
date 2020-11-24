@@ -54,8 +54,10 @@ trait AggregatorFunctionMixin { self: StateHolder[TreeMap[Long, AnyRef]] =>
   protected lazy val timeHistogram: metrics.Histogram
     = metricUtils.histogram(NonEmptyList.of(name, "time"), tags, newHistogram())
 
-  protected lazy val sizeHistogram: metrics.Histogram
-    = metricUtils.histogram(NonEmptyList.of(name, "size"), tags, newHistogram())
+  //this metric does *not* calculate histogram of sizes of maps in the whole state,
+  //but of those that are processed, so "hot" keys would be counted much more often. 
+  protected lazy val retrievedBucketsHistogram: metrics.Histogram
+    = metricUtils.histogram(NonEmptyList.of(name, "retrievedBuckets"), tags, newHistogram())
 
   //TODO make it configurable
   protected val minimalResolutionMs = 60000L
@@ -73,8 +75,8 @@ trait AggregatorFunctionMixin { self: StateHolder[TreeMap[Long, AnyRef]] =>
     val start = System.nanoTime()
     val newState = addElementToState(value, timestamp, timeService, out)
     val finalVal = computeFinalValue(newState, timestamp)
-    out.collect(ValueWithContext(finalVal, value.context))
     timeHistogram.update(System.nanoTime() - start)
+    out.collect(ValueWithContext(finalVal, value.context))
   }
 
   protected def addElementToState(value: ValueWithContext[StringKeyedValue[AnyRef]],
@@ -86,7 +88,7 @@ trait AggregatorFunctionMixin { self: StateHolder[TreeMap[Long, AnyRef]] =>
 
     updateState(newState, newElementInStateTimestamp + timeWindowLengthMillis, timeService)
     handleElementAddedToState(newElementInStateTimestamp, newElement, value.context, timeService, out)
-    sizeHistogram.update(newState.size)
+    retrievedBucketsHistogram.update(newState.size)
     newState
   }
 

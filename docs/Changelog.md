@@ -15,6 +15,7 @@ Nussknacker versions
     * [#1331](https://github.com/TouK/nussknacker/pull/1331) LoggingListener caches loggers
     * [#1334](https://github.com/TouK/nussknacker/pull/1334) Type promotion cache
     * [#1335](https://github.com/TouK/nussknacker/pull/1335) Omitting zeros for sum aggregate to avoid unnecessary buckets 
+    * [#1336](https://github.com/TouK/nussknacker/pull/1336) Aggregation metrics
 
 0.3.0 
 ------------------------
