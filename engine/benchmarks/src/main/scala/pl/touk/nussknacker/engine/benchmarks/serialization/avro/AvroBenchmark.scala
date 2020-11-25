@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.benchmarks.avro
+package pl.touk.nussknacker.engine.benchmarks.serialization.avro
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.util.concurrent.TimeUnit
@@ -15,29 +15,9 @@ import pl.touk.nussknacker.engine.avro.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.kryo.SchemaIdBasedAvroGenericRecordSerializer
+import pl.touk.nussknacker.engine.benchmarks.serialization.SerializationBenchmarkSetup
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.util.cache.CacheConfig
-
-class AvroBenchmarkSetup[T <: GenericRecord](prepareConfig: ExecutionConfig => Unit, typeInfo: TypeInformation[T], record: T) {
-
-  private val config = {
-    val c = new ExecutionConfig
-    prepareConfig(c)
-    c
-  }
-
-  private val data = new ByteArrayOutputStream(10* 1024)
-
-  private val serializer = typeInfo.createSerializer(config)
-
-  def roundTripSerialization(): T = {
-    data.reset()
-    serializer.serialize(record, new DataOutputViewStreamWrapper(data))
-    val input = data.toByteArray
-    serializer.deserialize(new DataInputViewStreamWrapper(new ByteArrayInputStream(input)))
-  }
-
-}
 
 @State(Scope.Thread)
 class AvroBenchmark {
@@ -48,14 +28,14 @@ class AvroBenchmark {
 
   private val avroFlinkWithSchemaIdTypeInfo = new LogicalTypesGenericRecordWithSchemaIdAvroTypeInfo(AvroSamples.sampleSchema, AvroSamples.sampleSchemaId)
 
-  private[avro] val defaultFlinkKryoSetup = new AvroBenchmarkSetup(
-    config => new AvroSerializersRegistrar().register(ConfigFactory.empty(), config), avroKryoTypeInfo, AvroSamples.sampleRecord)
+  private[avro] val defaultFlinkKryoSetup = new SerializationBenchmarkSetup(avroKryoTypeInfo, AvroSamples.sampleRecord,
+    config => new AvroSerializersRegistrar().register(ConfigFactory.empty(), config))
 
-  private[avro] val defaultFlinkAvroSetup = new AvroBenchmarkSetup(_ => {}, avroFlinkTypeInfo, AvroSamples.sampleRecord)
+  private[avro] val defaultFlinkAvroSetup = new SerializationBenchmarkSetup(avroFlinkTypeInfo, AvroSamples.sampleRecord)
 
-  private[avro] val flinkAvroWithSchemaIdSetup = new AvroBenchmarkSetup(_ => {}, avroFlinkWithSchemaIdTypeInfo, AvroSamples.sampleRecordWithSchemaId)
+  private[avro] val flinkAvroWithSchemaIdSetup = new SerializationBenchmarkSetup(avroFlinkWithSchemaIdTypeInfo, AvroSamples.sampleRecordWithSchemaId)
 
-  private[avro] val schemaIdBasedKryoSetup = new AvroBenchmarkSetup(
+  private[avro] val schemaIdBasedKryoSetup = new SerializationBenchmarkSetup(avroKryoTypeInfo, AvroSamples.sampleRecordWithSchemaId,
     config => {
       val schemaRegistryMockClient = new MockSchemaRegistryClient
       val parsedSchema = ConfluentUtils.convertToAvroSchema(AvroSamples.sampleSchema, Some(1))
@@ -68,7 +48,7 @@ class AvroBenchmark {
       val serializer = new SchemaIdBasedAvroGenericRecordSerializer(factory, KafkaConfig("fooKafkaAddress", None, None))
       config.getRegisteredTypesWithKryoSerializers.put(serializer.clazz, new ExecutionConfig.SerializableSerializer(serializer))
       config.getDefaultKryoSerializers.put(serializer.clazz, new ExecutionConfig.SerializableSerializer(serializer))
-    }, avroKryoTypeInfo, AvroSamples.sampleRecordWithSchemaId)
+    })
 
 
   @Benchmark
