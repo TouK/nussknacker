@@ -21,10 +21,10 @@ import scala.reflect.ClassTag
    - incompatible schema (suitable e.g. for Row)
    - compatible after migration (we ignore removed fields and new fields will have null value)
  */
-abstract class TypedObjectBasedTypeInformation[T:ClassTag](informations: List[(String, TypeInformation[_])]) extends TypeInformation[T] {
+abstract class TypedObjectBasedTypeInformation[T:ClassTag](informations: Array[(String, TypeInformation[_])]) extends TypeInformation[T] {
 
   def this(fields: Map[String, TypeInformation[_]]) = {
-    this(fields.toList.sortBy(_._1))
+    this(fields.toArray.sortBy(_._1))
   }
 
   override def isBasicType: Boolean = false
@@ -42,19 +42,20 @@ abstract class TypedObjectBasedTypeInformation[T:ClassTag](informations: List[(S
   override def createSerializer(config: ExecutionConfig): TypeSerializer[T] =
     createSerializer(informations.map {
       case (k, v) => (k, v.createSerializer(config))
-    })
+    }.asInstanceOf[Array[(String, TypeSerializer[_])]])
 
   override def canEqual(obj: Any): Boolean = obj.isInstanceOf[TypedObjectBasedTypeInformation[T]]
 
-  def createSerializer(serializers: List[(String, TypeSerializer[_])]): TypeSerializer[T]
+  def createSerializer(serializers: Array[(String, TypeSerializer[_])]): TypeSerializer[T]
 }
 
-abstract class TypedObjectBasedTypeSerializer[T](val serializers: List[(String, TypeSerializer[_])]) extends TypeSerializer[T] with LazyLogging {
+//We use Array instead of List here, as we need access by index, which is faster for array
+abstract class TypedObjectBasedTypeSerializer[T](val serializers: Array[(String, TypeSerializer[_])]) extends TypeSerializer[T] with LazyLogging {
 
-  protected val names: Array[String] = serializers.map(_._1).toArray
+  protected def name(idx: Int): String = serializers(idx)._1
 
-  protected val serializersInstances: Array[TypeSerializer[_]] = serializers.map(_._2).toArray
-
+  protected def serializer(idx: Int): TypeSerializer[_] = serializers(idx)._2
+  
   override def isImmutableType: Boolean = serializers.forall(_._2.isImmutableType)
 
   override def duplicate(): TypeSerializer[T] = duplicate(
@@ -72,6 +73,7 @@ abstract class TypedObjectBasedTypeSerializer[T](val serializers: List[(String, 
   override def serialize(record: T, target: DataOutputView): Unit = {
     serializers.foreach { case (key, serializer) =>
       val valueToSerialize = get(record, key)
+      //We need marker to allow null values - see e.g. MapSerializer in Flink
       if (valueToSerialize == null) {
         target.writeBoolean(true)
       } else {
@@ -83,10 +85,10 @@ abstract class TypedObjectBasedTypeSerializer[T](val serializers: List[(String, 
 
   override def deserialize(source: DataInputView): T = {
     //TODO: remove array allocation
-    val array: Array[AnyRef] = new Array[AnyRef](serializers.size)
+    val array: Array[AnyRef] = new Array[AnyRef](serializers.length)
     serializers.indices.foreach { idx =>
       array(idx) = if (!source.readBoolean()) {
-        serializersInstances(idx).asInstanceOf[TypeSerializer[AnyRef]].deserialize(source)
+        serializer(idx).asInstanceOf[TypeSerializer[AnyRef]].deserialize(source)
       } else {
         null
       }
@@ -102,35 +104,34 @@ abstract class TypedObjectBasedTypeSerializer[T](val serializers: List[(String, 
 
   override def copy(source: DataInputView, target: DataOutputView): Unit = serializers.map(_._2).foreach(_.copy(source, target))
 
-  def snapshotConfiguration(snapshots: List[(String, TypeSerializerSnapshot[_])]): TypeSerializerSnapshot[T]
+  def snapshotConfiguration(snapshots: Array[(String, TypeSerializerSnapshot[_])]): TypeSerializerSnapshot[T]
 
   def deserialize(values: Array[AnyRef]): T
 
   def get(value: T, name: String): AnyRef
 
-  def duplicate(serializers: List[(String, TypeSerializer[_])]): TypeSerializer[T]
+  def duplicate(serializers: Array[(String, TypeSerializer[_])]): TypeSerializer[T]
 }
 
 abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnapshot[T] with LazyLogging {
 
-  protected var serializersSnapshots: List[(String, TypeSerializerSnapshot[_])] = _
+  protected var serializersSnapshots: Array[(String, TypeSerializerSnapshot[_])] = _
 
-  protected def nonEqualKeysCompatible: Boolean
+  protected def compatibilityRequiresSameKeys: Boolean
 
-  def this(serializers: List[(String, TypeSerializerSnapshot[_])]) = {
+  def this(serializers: Array[(String, TypeSerializerSnapshot[_])]) = {
     this()
     this.serializersSnapshots = serializers
   }
 
-  override def getCurrentVersion: Int = 0
+  override def getCurrentVersion: Int = 1
 
   override def writeSnapshot(out: DataOutputView): Unit = {
-    out.writeInt(serializersSnapshots.size)
+    out.writeInt(serializersSnapshots.length)
     serializersSnapshots.foreach {
       case (k, v) =>
         out.writeUTF(k)
-        out.writeUTF(v.getClass.getCanonicalName)
-        v.writeSnapshot(out)
+        TypeSerializerSnapshot.writeVersionedSnapshot(out, v)
     }
   }
 
@@ -138,11 +139,9 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
     val size = in.readInt()
     serializersSnapshots = (0 until size).map { _ =>
       val key = in.readUTF()
-      val snapshot = InstantiationUtil.resolveClassByName(in, userCodeClassLoader)
-        .getConstructor().newInstance().asInstanceOf[TypeSerializerSnapshot[_]]
-      snapshot.readSnapshot(1, in, userCodeClassLoader)
+      val snapshot = TypeSerializerSnapshot.readVersionedSnapshot(in, userCodeClassLoader)
       (key, snapshot)
-    }.toList
+    }.toArray
   }
 
   /*
@@ -164,11 +163,11 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
       val commons = currentKeys.intersect(newKeys)
 
       val fieldsCompatibility = CompositeTypeSerializerUtil.constructIntermediateCompatibilityResult(
-        newSerializers.filter(k => commons.contains(k._1)).map(_._2).toArray,
-        serializersSnapshots.filter(k => commons.contains(k._1)).map(_._2).toArray
+        newSerializers.filter(k => commons.contains(k._1)).map(_._2),
+        serializersSnapshots.filter(k => commons.contains(k._1)).map(_._2)
       )
 
-      if (currentKeys == newKeys) {
+      if (currentKeys sameElements newKeys) {
         if (fieldsCompatibility.isCompatibleAsIs) {
           TypeSerializerSchemaCompatibility.compatibleAsIs()
           //TODO: handle serializer reconfiguration more gracefully...
@@ -176,7 +175,7 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
           TypeSerializerSchemaCompatibility.compatibleAfterMigration()
         } else TypeSerializerSchemaCompatibility.incompatible()
       } else {
-        if (!nonEqualKeysCompatible || fieldsCompatibility.isIncompatible) {
+        if (compatibilityRequiresSameKeys || fieldsCompatibility.isIncompatible) {
           TypeSerializerSchemaCompatibility.incompatible()
         } else {
           TypeSerializerSchemaCompatibility.compatibleAfterMigration()
@@ -189,5 +188,5 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
     case (k, snapshot) => (k, snapshot.restoreSerializer())
   })
 
-  protected def restoreSerializer(restored: List[(String, TypeSerializer[_])]): TypeSerializer[T]
+  protected def restoreSerializer(restored: Array[(String, TypeSerializer[_])]): TypeSerializer[T]
 }
