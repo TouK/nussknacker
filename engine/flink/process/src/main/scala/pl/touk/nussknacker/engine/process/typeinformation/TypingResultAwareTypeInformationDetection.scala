@@ -19,6 +19,7 @@ import scala.reflect.ClassTag
 /*
   This is *experimental* TypeInformationDetection, which generates TypeInformation based on ValidationContext and TypingResult.
   Please note that it is much more sensitive to differences between ValidationContext and real values (e.g. Int vs Long etc...)
+  (see TypingResultAwareTypeInformationDetectionSpec."number promotion behaviour" test)
 
   To use it for serialization between operators use TypeInformationDetection service loading.
   To use it for state serialization one can use it directly in operators/process functions (compatibility is *NOT* guaranteed ATM).

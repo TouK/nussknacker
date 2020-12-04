@@ -59,6 +59,16 @@ class TypingResultAwareTypeInformationDetectionSpec extends FunSuite with Matche
     serializeRoundTrip(ValueWithContext[String]("qwerty", ctx), valueTypeInfo)()
   }
 
+  //This is not exactly intended behaviour - the test is here to show problems with static type definitions
+  test("number promotion behaviour") {
+    val vCtx = ValidationContext(Map("longField" -> Typed[Long])) //we declare Long variable
+
+    val ctx = Context("11").copy(variables = Map("longField" -> 11)) //but we put Int in runtime (which e.g. in spel wouldn't be a problem...)!
+
+    val typeInfo = informationDetection.forContext(vCtx)
+    intercept[ClassCastException](serializeRoundTrip(ctx, typeInfo)())
+  }
+
   test("Test serialization compatibility") {
     val typingResult = TypedObjectTypingResult(Map("intF" -> Typed[Int], "strF" -> Typed[String]),
       Typed.typedClass[Map[String, Any]])

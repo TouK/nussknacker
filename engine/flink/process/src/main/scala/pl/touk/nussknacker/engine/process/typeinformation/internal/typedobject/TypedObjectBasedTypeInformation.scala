@@ -84,8 +84,9 @@ abstract class TypedObjectBasedTypeSerializer[T](val serializers: Array[(String,
   }
 
   override def deserialize(source: DataInputView): T = {
-    //TODO: remove array allocation
+    //TODO: remove array allocation.
     val array: Array[AnyRef] = new Array[AnyRef](serializers.length)
+    //We use foreach and not map because: 1. it's faster, 2. it's imperative - we use source.read***
     serializers.indices.foreach { idx =>
       array(idx) = if (!source.readBoolean()) {
         serializer(idx).asInstanceOf[TypeSerializer[AnyRef]].deserialize(source)
