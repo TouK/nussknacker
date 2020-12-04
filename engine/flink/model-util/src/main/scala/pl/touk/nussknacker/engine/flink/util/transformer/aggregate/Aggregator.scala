@@ -34,6 +34,9 @@ abstract class Aggregator extends AggregateFunction[AnyRef, AnyRef, AnyRef] {
 
   def computeOutputType(input: TypingResult): Validated[String, TypingResult]
 
+  //this can be used e.g. to compute Flink TypeInformation to store
+  def computeStoredType(input: TypingResult): Validated[String, TypingResult]
+
   override final def createAccumulator(): AnyRef = zero
 
   override final def add(value: AnyRef, accumulator: AnyRef): AnyRef = addElement(value.asInstanceOf[Element], accumulator.asInstanceOf[Aggregate])
