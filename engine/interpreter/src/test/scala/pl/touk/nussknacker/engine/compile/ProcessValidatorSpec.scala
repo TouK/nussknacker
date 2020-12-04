@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.lazyy.ContextWithLazyValuesProvider
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, SingleNodeConfig, WithCategories}
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
@@ -850,6 +851,26 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   }
 
+  test("should override parameter definition from WithExplicitMethodToInvoke by definition from ServiceReturningType") {
+    val base = ProcessDefinitionBuilder.withEmptyObjects(baseDefinition)
+    val withServiceRef = base.copy(services = base.services + ("returningTypeService" ->
+      new DefinitionExtractor(ProcessObjectDefinitionExtractor.service).extract(WithCategories(ServiceReturningTypeWithExplicitMethodSample), SingleNodeConfig.zero)))
+
+    val process =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .enricher("serviceDef", "defined", "returningTypeService", "definition" -> "{param1: 'String', param2: 'Integer'}", "inRealTime" -> "#input.toString()")
+        .sink("id2", "''", "sink")
+
+    val result = validateWithDef(process, withServiceRef)
+    result.result should matchPattern {
+      case Valid(_) =>
+    }
+    result.variablesInNodes("id2")("defined") shouldBe Typed.genericTypeClass[java.util.List[_]](
+      List(TypedObjectTypingResult(Map("param1" -> Typed[String], "param2" -> Typed[Integer]))))
+  }
 
   test("should be able to run custom validation using ServiceReturningType") {
     val base = ProcessDefinitionBuilder.withEmptyObjects(baseDefinition)
@@ -1184,6 +1205,43 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .getOrElse(Unknown)
     }
   }
+
+  object ServiceReturningTypeWithExplicitMethodSample extends Service with ServiceReturningType with ServiceWithExplicitMethod {
+
+    override def returnType(parameters: Map[String, (TypingResult, Option[Any])]): typing.TypingResult = {
+      parameters
+        .get("definition")
+        .flatMap(_._2)
+        .map(definition => TypingUtils.typeMapDefinition(definition.asInstanceOf[java.util.Map[String, _]]))
+        .map(param => Typed.genericTypeClass[java.util.List[_]](List(param)))
+        .getOrElse(Unknown)
+    }
+
+    override def invokeService(params: List[AnyRef])
+                              (implicit ec: ExecutionContext,
+                               collector: InvocationCollectors.ServiceInvocationCollector,
+                               metaData: MetaData,
+                               contextId: ContextId): Future[AnyRef] = Future.successful(null)
+
+
+    //@ParamName("definition") definition: java.util.Map[String, _], @ParamName("inRealTime") inRealTime: String
+    override def parameterDefinition: List[Parameter] = List(
+      Parameter(
+        name = "definition",
+        typ = TypedClass(classOf[java.util.Map[_, _]], List(Typed[String], Unknown)),
+        validators = Nil
+      ),
+      Parameter(
+        name = "inRealTime",
+        typ = Typed.typedClass(classOf[String]),
+        validators = Nil
+      )
+    )
+
+    // this definition (from ServiceWithExplicitMethod) should be overridden by definition from ServiceReturningType
+    override def returnType: TypingResult = Typed.typedClass(classOf[String])
+  }
+
 
   object ServiceWithCustomValidation extends Service with ServiceReturningType {
 
