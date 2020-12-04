@@ -46,7 +46,7 @@ processTypes {
           maxConcurrentCheckpoints: 1
           tolerableCheckpointFailureNumber: 6
       }
-      restartInterval: "10s"
+      delayBetweenAttempts: "10s"
       kafka = {
         kafkaAddress = "kafka:9092"
       }
@@ -83,7 +83,7 @@ Detailed rules are described in [documentation](https://github.com/lightbend/con
 ```hocon 
 {
    timeout: 10s
-   restartInterval: 10s
+   delayBetweenAttempts: 10s
    customProperties {
     property1: 11
    } 
