@@ -59,8 +59,7 @@ trait AggregatorFunctionMixin { self: StateHolder[TreeMap[Long, AnyRef]] =>
   protected lazy val retrievedBucketsHistogram: metrics.Histogram
     = metricUtils.histogram(NonEmptyList.of(name, "retrievedBuckets"), tags, newHistogram())
 
-  //TODO make it configurable
-  protected val minimalResolutionMs = 60000L
+  protected def minimalResolutionMs: Long = 60000L
 
   protected def allowedOutOfOrderMs: Long = timeWindowLengthMillis
 
@@ -98,13 +97,17 @@ trait AggregatorFunctionMixin { self: StateHolder[TreeMap[Long, AnyRef]] =>
   }
 
   protected def computeFinalValue(newState: TreeMap[Long, aggregator.Aggregate], timestamp: Long): AnyRef = {
-    val newStateTruncatedToTimestamp = stateForTimestampToRead(newState, timestamp)
-    if (newStateTruncatedToTimestamp.isEmpty) {
+    computeFoldedAggregatedValue(newState, timestamp)
+  }
+
+  protected def computeFoldedAggregatedValue(state: TreeMap[Long, aggregator.Aggregate], timestamp: Long): AnyRef = {
+    val newStateTruncatedToTimestamp = stateForTimestampToRead(state, timestamp)
+    val foldedState = if (newStateTruncatedToTimestamp.isEmpty) {
       aggregator.getResult(aggregator.createAccumulator())
     } else {
-      val foldedState = newStateTruncatedToTimestamp.values.reduce(aggregator.merge)
-      aggregator.getResult(foldedState)
+      newStateTruncatedToTimestamp.values.reduce(aggregator.merge)
     }
+    aggregator.getResult(foldedState)
   }
 
   private def computeNewState(newElementInStateTimestamp: Long, newValue: aggregator.Element): TreeMap[Long, aggregator.Aggregate] = {
