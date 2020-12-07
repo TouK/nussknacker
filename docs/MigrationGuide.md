@@ -2,6 +2,10 @@
 
 To see biggest differences please consult the [changelog](Changelog.md).
 
+## In version 0.4.0
+* [#1343](https://github.com/TouK/nussknacker/pull/1343) FirstAggregator changed serialized state, it is not compatible, 
+  ```Aggregator``` trait has new method ```computeStoredType``` 
+
 ## In version 0.3.0
 
 * [#1313](https://github.com/TouK/nussknacker/pull/1313) Kafka Avro API passes `KafkaConfig` during `TypeInformation` determining
