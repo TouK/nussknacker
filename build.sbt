@@ -664,7 +664,7 @@ lazy val flinkTestUtil = (project in engine("flink/test-util")).
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV
       )
     }
-  ).dependsOn(testUtil, queryableState)
+  ).dependsOn(testUtil, queryableState, flinkUtil)
 
 lazy val standaloneUtil = (project in engine("standalone/util")).
   settings(commonSettings).

@@ -13,10 +13,11 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaR
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
 import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
+import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 object KafkaAvroTestProcessConfigCreator {
-  val recordingExceptionHandler = new RecodingExceptionHandler
+  val recordingExceptionHandler = new RecordingExceptionHandler
 }
 
 class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
