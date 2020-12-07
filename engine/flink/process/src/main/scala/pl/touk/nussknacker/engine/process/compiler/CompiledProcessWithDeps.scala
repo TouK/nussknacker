@@ -21,6 +21,7 @@ import scala.concurrent.duration.FiniteDuration
 
 class CompiledProcessWithDeps(compiledProcess: CompiledProcess,
                               val jobData: JobData,
+                              // Exception handler is not opened and closed in this class. Use prepareExceptionHandler.
                               exceptionHandler: FlinkEspExceptionHandler,
                               val signalSenders: FlinkProcessSignalSenderProvider,
                               val asyncExecutionContextPreparer: AsyncExecutionContextPreparer,
