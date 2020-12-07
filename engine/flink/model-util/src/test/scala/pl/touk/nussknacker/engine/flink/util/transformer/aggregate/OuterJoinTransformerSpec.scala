@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 import java.time.Duration
 import java.util.concurrent.ConcurrentLinkedQueue
 
-import cats.data.NonEmptyList
+import cats.data.{NonEmptyList, Validated}
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.scala._
 import org.apache.flink.runtime.execution.ExecutionState
@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory.NoParamSourceFactory
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
@@ -129,13 +130,13 @@ object OuterJoinTransformerSpec {
     override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
       Map(
         "outer-join" -> WithCategories(new OuterJoinTransformer(None) {
-          override protected def prepareAggregatorFunction(aggregator: Aggregator, stateTimeout: FiniteDuration)(implicit nodeId: ProcessCompilationError.NodeId):
+          override protected def prepareAggregatorFunction(aggregator: Aggregator, stateTimeout: FiniteDuration, validatedStoredType: Validated[String, TypingResult])
+                                                          (implicit nodeId: ProcessCompilationError.NodeId):
           CoProcessFunction[ValueWithContext[String], ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]] = {
-            new CoProcessFunctionInterceptor(super.prepareAggregatorFunction(aggregator, stateTimeout)) {
+            new CoProcessFunctionInterceptor(super.prepareAggregatorFunction(aggregator, stateTimeout, validatedStoredType)) {
               override protected def afterProcessElement2(value: ValueWithContext[StringKeyedValue[AnyRef]]): Unit = {
                 elementsAddedToState.add(value.value)
               }
-
             }
           }
         }))

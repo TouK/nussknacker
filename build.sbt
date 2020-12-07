@@ -636,7 +636,7 @@ lazy val flinkUtil = (project in engine("flink/util")).
          )
       )
     }
-  ).dependsOn(util, flinkApi)
+  ).dependsOn(util, flinkApi, testUtil % "test")
 
 lazy val flinkModelUtil = (project in engine("flink/model-util")).
   settings(commonSettings).
