@@ -3,7 +3,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{NumberTypeUtils, typing}
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.MathUtils
@@ -114,23 +114,21 @@ object aggregates {
 
   object FirstAggregator extends Aggregator {
 
-    private object Marker extends Serializable
-
-    override type Aggregate = AnyRef
+    override type Aggregate = Option[AnyRef]
 
     override type Element = AnyRef
 
-    override def zero: Aggregate = Marker
+    override def zero: Aggregate = None
 
-    override def addElement(el: Element, agg: Aggregate): Aggregate = if (agg == zero) el else agg
+    override def addElement(el: Element, agg: Aggregate): Aggregate = if (agg.isEmpty) Some(el) else agg
 
     override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg1
 
-    override def result(finalAggregate: Aggregate): AnyRef = if (finalAggregate == zero) null else finalAggregate
+    override def result(finalAggregate: Aggregate): AnyRef = finalAggregate.orNull
 
     override def computeOutputType(input: TypingResult): Validated[String, TypingResult] = Valid(input)
 
-    override def computeStoredType(input: TypingResult): Validated[String, TypingResult] = Valid(input)
+    override def computeStoredType(input: TypingResult): Validated[String, TypingResult] = Valid(TypedClass(classOf[Option[_]], List(input)))
   }
 
   object LastAggregator extends Aggregator {
@@ -200,12 +198,13 @@ object aggregates {
     }
 
     override def computeOutputType(input: TypingResult): Validated[String, TypedObjectTypingResult]
-      = computeTypeByFields(input, _.computeOutputType(_))
+      = computeTypeByFields(input, TypedClass(classOf[java.util.Map[_, _]], List(Typed[String], Unknown)), _.computeOutputType(_))
 
     override def computeStoredType(input: TypingResult): Validated[String, TypingResult]
-      = computeTypeByFields(input, _.computeStoredType(_))
+      = computeTypeByFields(input, TypedClass(classOf[Map[_, _]], List(Typed[String], Unknown)), _.computeStoredType(_))
 
     private def computeTypeByFields(input: TypingResult,
+                                    objType: TypedClass,
                                     computeField: (Aggregator, TypingResult) => Validated[String, TypingResult]): Validated[String, TypedObjectTypingResult] = {
       input match {
         case TypedObjectTypingResult (inputFields, klass, _) if inputFields.keySet == scalaFields.keySet && klass.canBeSubclassOf(Typed[java.util.Map[String, _]])=>
@@ -214,7 +213,7 @@ object aggregates {
               .map(key -> _)
               .leftMap(m => NonEmptyList.of(s"$key - $m"))
           }.toList.sequence.leftMap(list => s"Invalid fields: ${list.toList.mkString(", ")}")
-          validationRes.map(fields => TypedObjectTypingResult(fields.toMap))
+          validationRes.map(fields => TypedObjectTypingResult(fields.toMap, objType = objType))
         case TypedObjectTypingResult(inputFields, _, _) =>
           Invalid(s"Fields do not match, aggregateBy: ${inputFields.keys.mkString(", ")}, aggregator: ${scalaFields.keys.mkString(", ")}")
         case _ =>
