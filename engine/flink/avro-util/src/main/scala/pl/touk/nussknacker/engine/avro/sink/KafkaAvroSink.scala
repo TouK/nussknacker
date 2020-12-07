@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.avro.sink
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.avro.generic.GenericContainer
-import org.apache.flink.api.common.functions.RichMapFunction
+import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.formats.avro.typeutils.NkSerializableAvroSchema
 import org.apache.flink.streaming.api.datastream.DataStreamSink
@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.{InterpretationResult, LazyParameter, Valu
 import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaVersionOption}
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroSerializationSchemaFactory
-import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
+import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionHandler, WithFlinkEspExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyedValue, KeyedValueMapper}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaProducer, PreparedKafkaTopic}
@@ -50,19 +50,12 @@ class KafkaAvroSink(preparedTopic: PreparedKafkaTopic, versionOption: SchemaVers
   }
 
   class EncodeAvroRecordFunction(flinkNodeContext: FlinkCustomNodeContext)
-    extends RichMapFunction[ValueWithContext[KeyedValue[AnyRef, AnyRef]], KeyedValue[AnyRef, AnyRef]] {
+    extends RichMapFunction[ValueWithContext[KeyedValue[AnyRef, AnyRef]], KeyedValue[AnyRef, AnyRef]]
+      with WithFlinkEspExceptionHandler {
 
     private val nodeId = flinkNodeContext.nodeId
-    private val exceptionHandlerPreparer = flinkNodeContext.exceptionHandlerPreparer
-    private var exceptionHandler: FlinkEspExceptionHandler = _
 
-    override def open(parameters: Configuration): Unit = {
-      exceptionHandler = exceptionHandlerPreparer(getRuntimeContext)
-    }
-
-    override def close(): Unit = {
-      exceptionHandler.close()
-    }
+    protected override val exceptionHandlerPreparer: RuntimeContext => FlinkEspExceptionHandler = flinkNodeContext.exceptionHandlerPreparer
 
     override def map(ctx: ValueWithContext[KeyedValue[AnyRef, AnyRef]]): KeyedValue[AnyRef, AnyRef] = {
       ctx.value.mapValue {
