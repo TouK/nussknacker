@@ -8,6 +8,13 @@ For detailed instructions how to migrate to the newest version please see [migra
 Nussknacker versions
 ====================
 
+0.4.0 (not released yet) 
+------------------------
+* More precise TypeInformation generation
+    * [#1338](https://github.com/TouK/nussknacker/pull/1338) Defining TypeInformation based on TypingResult
+    * [#1343](https://github.com/TouK/nussknacker/pull/1343) Aggregators compute stored types    
+
+
 0.3.1 (not released yet) 
 ------------------------
 * Performance fixes:

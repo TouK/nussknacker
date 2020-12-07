@@ -35,6 +35,8 @@ class CardinalityAggregator(zeroCardinality: () => ICardinality, wrapper: ICardi
 
   override def computeOutputType(input: TypingResult): Validated[String, TypingResult] = Valid(Typed[Long])
 
+  override def computeStoredType(input: TypingResult): Validated[String, TypingResult] = Valid(Typed[CardinalityWrapper])
+
 }
 
 private[aggregate] abstract class CardinalityWrapper extends KryoSerializable with Serializable {
