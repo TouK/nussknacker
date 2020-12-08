@@ -16,6 +16,7 @@ Nussknacker versions
     * [#1334](https://github.com/TouK/nussknacker/pull/1334) Type promotion cache
     * [#1335](https://github.com/TouK/nussknacker/pull/1335) Omitting zeros for sum aggregate to avoid unnecessary buckets 
     * [#1336](https://github.com/TouK/nussknacker/pull/1336) Aggregation metrics
+* [#1321](https://github.com/TouK/nussknacker/pull/1321) Exception handler accessible via custom node context, avro record encoding errors reported by exception handler
 
 0.3.0 
 ------------------------

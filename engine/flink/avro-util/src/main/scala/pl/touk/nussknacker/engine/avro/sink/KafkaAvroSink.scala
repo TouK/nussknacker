@@ -2,18 +2,19 @@ package pl.touk.nussknacker.engine.avro.sink
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.avro.generic.GenericContainer
+import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
+import org.apache.flink.configuration.Configuration
 import org.apache.flink.formats.avro.typeutils.NkSerializableAvroSchema
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
-import pl.touk.nussknacker.engine.api.{InterpretationResult, LazyParameter}
+import pl.touk.nussknacker.engine.api.{InterpretationResult, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaVersionOption}
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroSerializationSchemaFactory
+import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionHandler, WithFlinkEspExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyedValue, KeyedValueMapper}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaProducer, PreparedKafkaTopic}
-
-import scala.util.control.NonFatal
 
 class KafkaAvroSink(preparedTopic: PreparedKafkaTopic, versionOption: SchemaVersionOption, key: LazyParameter[AnyRef], value: LazyParameter[AnyRef],
                     kafkaConfig: KafkaConfig, serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
@@ -30,19 +31,7 @@ class KafkaAvroSink(preparedTopic: PreparedKafkaTopic, versionOption: SchemaVers
     dataStream
       .map(_.finalContext)
       .map(new KeyedValueMapper(flinkNodeContext.lazyParameterHelper, key, value))
-      .map(ctx => ctx.value.mapValue {
-          case container: GenericContainer => container
-          // We try to encode not only Map[String, AnyRef], but also other types because avro accept also primitive types
-          case data =>
-            try {
-              avroEncoder.encodeOrError(data, schema.getAvroSchema)
-            } catch {
-              case NonFatal(ex) =>
-                //TODO: We should better handle this situation by using EspExceptionHandler
-                logger.error(s"Invalid value for topic: ${preparedTopic.prepared} and version: $versionOption: $data", ex)
-                null
-            }
-      })
+      .map(new EncodeAvroRecordFunction(flinkNodeContext))
       .filter(_.value != null)
       .addSink(toFlinkFunction)
   }
@@ -58,5 +47,25 @@ class KafkaAvroSink(preparedTopic: PreparedKafkaTopic, versionOption: SchemaVers
     }
     PartitionByKeyFlinkKafkaProducer(kafkaConfig, preparedTopic.prepared,
       serializationSchemaFactory.create(preparedTopic.prepared, versionOpt, runtimeSchema, kafkaConfig), clientId)
+  }
+
+  class EncodeAvroRecordFunction(flinkNodeContext: FlinkCustomNodeContext)
+    extends RichMapFunction[ValueWithContext[KeyedValue[AnyRef, AnyRef]], KeyedValue[AnyRef, AnyRef]]
+      with WithFlinkEspExceptionHandler {
+
+    private val nodeId = flinkNodeContext.nodeId
+
+    protected override val exceptionHandlerPreparer: RuntimeContext => FlinkEspExceptionHandler = flinkNodeContext.exceptionHandlerPreparer
+
+    override def map(ctx: ValueWithContext[KeyedValue[AnyRef, AnyRef]]): KeyedValue[AnyRef, AnyRef] = {
+      ctx.value.mapValue {
+        case container: GenericContainer => container
+        // We try to encode not only Map[String, AnyRef], but also other types because avro accept also primitive types
+        case data =>
+          exceptionHandler.handling(Some(nodeId), ctx.context) {
+            avroEncoder.encodeOrError(data, schema.getAvroSchema)
+          }.orNull
+      }
+    }
   }
 }
