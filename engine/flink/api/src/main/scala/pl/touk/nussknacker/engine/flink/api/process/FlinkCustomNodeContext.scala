@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.flink.api.process
 
+import org.apache.flink.api.common.functions.RuntimeContext
 import pl.touk.nussknacker.engine.api.{JobData, MetaData}
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
+import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 
 import scala.concurrent.duration.FiniteDuration
@@ -13,6 +15,7 @@ case class FlinkCustomNodeContext(jobData: JobData,
                                   timeout: FiniteDuration,
                                   lazyParameterHelper: FlinkLazyParameterFunctionHelper,
                                   signalSenderProvider: FlinkProcessSignalSenderProvider,
+                                  exceptionHandlerPreparer: RuntimeContext => FlinkEspExceptionHandler,
                                   globalParameters: Option[NkGlobalParameters]) {
   def metaData: MetaData = jobData.metaData
 }

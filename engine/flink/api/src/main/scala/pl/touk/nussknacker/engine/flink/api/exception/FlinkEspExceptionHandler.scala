@@ -7,6 +7,9 @@ import pl.touk.nussknacker.engine.flink.api.RuntimeContextLifecycle
 
 trait FlinkEspExceptionHandler extends EspExceptionHandler with RuntimeContextLifecycle {
 
+  /**
+    * Be aware that it is invoked prior to opening exception handler.
+    */
   def restartStrategy: RestartStrategyConfiguration
 
 }

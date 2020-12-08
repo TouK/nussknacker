@@ -2,13 +2,16 @@ package pl.touk.nussknacker.engine.avro
 
 import java.nio.charset.StandardCharsets
 
-import org.apache.avro.Schema
+import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.kafka.common.record.TimestampType
+import org.scalatest.BeforeAndAfter
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer._
+import pl.touk.nussknacker.engine.avro.KafkaAvroTestProcessConfigCreator.recordingExceptionHandler
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.schema._
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
@@ -20,7 +23,7 @@ import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
+class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   import KafkaAvroIntegrationMockSchemaRegistry._
   import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils._
@@ -42,6 +45,10 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
     super.beforeAll()
     val modelData = LocalModelData(config, creator)
     registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), config, executionConfigPreparerChain(modelData))
+  }
+
+  after {
+    recordingExceptionHandler.clear()
   }
 
   test("should read event in the same version as source requires and save it in the same version") {
@@ -166,13 +173,31 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
     }
   }
 
+  test("should handle exception when saving runtime incompatible event") {
+    val topicConfig = createAndRegisterTopicConfig("runtime-incompatible", Address.schema)
+    val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
+    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "{city: #input.city, street: #input.city == 'Warsaw' ? #input.street : null}")
+    val events = List(Address.encode(Address.exampleData + ("city" -> "Ochota")), Address.record)
+    val process = createAvroProcess(sourceParam, sinkParam)
+
+    runAndVerifyResult(process, topicConfig, events, Address.record)
+
+    recordingExceptionHandler.data should have size 1
+    val espExceptionInfo = recordingExceptionHandler.data.head
+    espExceptionInfo.nodeId shouldBe Some("end")
+    espExceptionInfo.throwable shouldBe a[NonTransientException]
+    val cause = espExceptionInfo.throwable.asInstanceOf[NonTransientException].cause
+    cause shouldBe a[AvroRuntimeException]
+    cause.getMessage should include ("Not expected null for field: Some(street)")
+  }
+
   test("should throw exception when try to filter by missing field") {
     val topicConfig = createAndRegisterTopicConfig("try-filter-by-missing-field", paymentSchemas)
     val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
     val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "#input")
-    val filerParam = Some("#input.cnt == 1")
+    val filterParam = Some("#input.cnt == 1")
     val events = List(PaymentV1.record, PaymentV2.record)
-    val process = createAvroProcess(sourceParam, sinkParam, filerParam)
+    val process = createAvroProcess(sourceParam, sinkParam, filterParam)
 
     assertThrowsWithParent[Exception] {
       runAndVerifyResult(process, topicConfig, events, PaymentV2.recordWithData)

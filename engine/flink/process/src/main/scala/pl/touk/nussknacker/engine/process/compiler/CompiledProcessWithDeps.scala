@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.process.compiler
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import org.apache.flink.api.common.functions.RuntimeContext
+import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
@@ -20,7 +21,8 @@ import scala.concurrent.duration.FiniteDuration
 
 class CompiledProcessWithDeps(compiledProcess: CompiledProcess,
                               val jobData: JobData,
-                              val exceptionHandler: FlinkEspExceptionHandler,
+                              // Exception handler is not opened and closed in this class. Use prepareExceptionHandler.
+                              exceptionHandler: FlinkEspExceptionHandler,
                               val signalSenders: FlinkProcessSignalSenderProvider,
                               val asyncExecutionContextPreparer: AsyncExecutionContextPreparer,
                               val processTimeout: FiniteDuration
@@ -35,7 +37,7 @@ class CompiledProcessWithDeps(compiledProcess: CompiledProcess,
   }
 
   def close() : Unit = {
-    compiledProcess.close()
+    compiledProcess.lifecycle.foreach(_.close())
   }
 
   def compileSubPart(node: SplittedNode[_], validationContext: ValidationContext): Node = {
@@ -54,5 +56,13 @@ class CompiledProcessWithDeps(compiledProcess: CompiledProcess,
   val lazyInterpreterDeps: LazyInterpreterDependencies = compiledProcess.lazyInterpreterDeps
 
   val sources: NonEmptyList[PotentiallyStartPart] = compiledProcess.parts.sources
+
+  def restartStrategy: RestartStrategies.RestartStrategyConfiguration = exceptionHandler.restartStrategy
+
+  def prepareExceptionHandler(runtimeContext: RuntimeContext): FlinkEspExceptionHandler = {
+    exceptionHandler.open(jobData)
+    exceptionHandler.open(runtimeContext)
+    exceptionHandler
+  }
 }
 

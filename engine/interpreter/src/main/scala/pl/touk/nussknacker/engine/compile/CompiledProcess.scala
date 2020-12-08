@@ -49,7 +49,7 @@ object CompiledProcess {
         subCompiler,
         LazyInterpreterDependencies(expressionEvaluator, expressionCompiler, FiniteDuration(10, TimeUnit.SECONDS)),
         interpreter,
-        listeners ++ servicesDefs.values.map(_.obj.asInstanceOf[Lifecycle]) :+ compiledProcess.exceptionHandler
+        listeners ++ servicesDefs.values.map(_.obj.asInstanceOf[Lifecycle])
       )
 
     }
@@ -65,10 +65,5 @@ object CompiledProcess {
 case class CompiledProcess(parts: CompiledProcessParts,
                            subPartCompiler: PartSubGraphCompiler,
                            lazyInterpreterDeps: LazyInterpreterDependencies,
-                           interpreter: Interpreter, lifecycle: Seq[Lifecycle]) {
-
-  def close(): Unit = {
-    lifecycle.foreach(_.close())
-  }
-
-}
+                           interpreter: Interpreter,
+                           lifecycle: Seq[Lifecycle])
