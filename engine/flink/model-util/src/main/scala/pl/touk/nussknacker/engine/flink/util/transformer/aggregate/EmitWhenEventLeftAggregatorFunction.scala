@@ -5,18 +5,23 @@ import org.apache.flink.streaming.api.TimerService
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{ValueWithContext, Context => NkContext}
 import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
 import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
+import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap
+import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap._
 
-import scala.collection.immutable.TreeMap
+import scala.language.higherKinds
 
 /**
  * It behaves the same as AggregatorFunction with one difference that also publish events when some event will left the slide.
  */
-class EmitWhenEventLeftAggregatorFunction(protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long, override val nodeId: NodeId)
-  extends LatelyEvictableStateFunction[ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef], TreeMap[Long, AnyRef]]
-    with AggregatorFunctionMixin with AddedElementContextStateHolder {
+class EmitWhenEventLeftAggregatorFunction[MapT[K,V]](protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long,
+                                                     override val nodeId: NodeId, protected val storedAggregateType: TypingResult)
+                                                    (implicit override val rangeMap: FlinkRangeMap[MapT])
+  extends LatelyEvictableStateFunction[ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef], MapT[Long, AnyRef]]
+    with AggregatorFunctionMixin[MapT] with AddedElementContextStateHolder[MapT] {
 
   type FlinkCtx = KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]#Context
   type FlinkOnTimerCtx = KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]#OnTimerContext
@@ -42,22 +47,22 @@ class EmitWhenEventLeftAggregatorFunction(protected val aggregator: Aggregator, 
     super.onTimer(timestamp, ctx, out)
   }
 
-  protected def handleElementLeftSlide(currentStateValue: TreeMap[Long, aggregator.Aggregate], timestamp: Long,
+  protected def handleElementLeftSlide(currentStateValue: MapT[Long, aggregator.Aggregate], timestamp: Long,
                                        timerService: TimerService, out: Collector[ValueWithContext[AnyRef]]): Unit = {
-    val stateForRecentlySentEvent = currentStateValue.lastOption.map {
+    val stateForRecentlySentEvent = currentStateValue.toScalaMapRO.lastOption.map {
       case (lastTimestamp, _) => stateForTimestampToReadUntilEnd(currentStateValue, lastTimestamp)  // shouldn't we save somewhere recently sent timestamp?
     }.getOrElse(currentStateValue)
     for {
-      lastEntryToRemove <- stateForRecentlySentEvent.to(timestamp - timeWindowLengthMillis).lastOption
+      lastEntryToRemove <- stateForRecentlySentEvent.toRO(timestamp - timeWindowLengthMillis).toScalaMapRO.lastOption
       (lastTimestampToRemove, _) = lastEntryToRemove
-      matchingContext <- readAddedElementContextOrInitial().get(lastTimestampToRemove)
+      matchingContext <- readAddedElementContextOrInitial().toScalaMapRO.get(lastTimestampToRemove)
     } {
       val finalVal = computeFinalValue(currentStateValue, timestamp)
       out.collect(ValueWithContext(finalVal, matchingContext))
     }
   }
 
-  override protected def updateState(stateValue: TreeMap[Long, AnyRef], stateValidity: Long, timeService: TimerService): Unit = {
+  override protected def updateState(stateValue: MapT[Long, AnyRef], stateValidity: Long, timeService: TimerService): Unit = {
     super.updateState(stateValue, stateValidity, timeService)
     invalidateAddedElementContextState(stateValue)
   }

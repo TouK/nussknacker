@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory.NoParamSourceFactory
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
@@ -27,14 +28,13 @@ import pl.touk.nussknacker.engine.flink.util.transformer.outer.{BranchType, Oute
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.SourceNode
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
-import scala.annotation.nowarn
 import scala.concurrent.duration.FiniteDuration
 
 class OuterJoinTransformerSpec extends FunSuite with FlinkSpec with Matchers with VeryPatientScalaFutures {
@@ -129,13 +129,13 @@ object OuterJoinTransformerSpec {
     override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
       Map(
         "outer-join" -> WithCategories(new OuterJoinTransformer(None) {
-          override protected def prepareAggregatorFunction(aggregator: Aggregator, stateTimeout: FiniteDuration)(implicit nodeId: ProcessCompilationError.NodeId):
+          override protected def prepareAggregatorFunction(aggregator: Aggregator, stateTimeout: FiniteDuration, storedAggregateType: TypingResult)
+                                                          (implicit nodeId: ProcessCompilationError.NodeId):
           CoProcessFunction[ValueWithContext[String], ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]] = {
-            new CoProcessFunctionInterceptor(super.prepareAggregatorFunction(aggregator, stateTimeout)) {
+            new CoProcessFunctionInterceptor(super.prepareAggregatorFunction(aggregator, stateTimeout, storedAggregateType)) {
               override protected def afterProcessElement2(value: ValueWithContext[StringKeyedValue[AnyRef]]): Unit = {
                 elementsAddedToState.add(value.value)
               }
-
             }
           }
         }))

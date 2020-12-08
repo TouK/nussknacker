@@ -2,8 +2,12 @@
 
 To see biggest differences please consult the [changelog](Changelog.md).
 
-## In version 0.4.0
-* [#1343](https://github.com/TouK/nussknacker/pull/1343) FirstAggregator changed serialized state, it is not compatible, 
+## In version 0.4.0 (not released yet) 
+
+* [#1346](https://github.com/TouK/nussknacker/pull/1346) `AggregatorFunction` now takes type of stored state that can be 
+  `immutable.SortedMap` (previous behaviour) or `java.util.Map` (using Flink's serialization) and `validatedStoredType` parameter for 
+  providing better `TypeInformation` for aggregated values
+* [#1343](https://github.com/TouK/nussknacker/pull/1343) `FirstAggregator` changed serialized state, it is not compatible, 
   ```Aggregator``` trait has new method ```computeStoredType``` 
 
 ## In version 0.3.0

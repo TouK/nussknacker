@@ -40,8 +40,6 @@ object aggregates {
       }
     }
 
-    override def computeStoredType(input: TypingResult): Validated[String, TypingResult] = Valid(promotedType(input))
-
   }
 
   object MaxAggregator extends ReducingAggregator with MathAggregator {
