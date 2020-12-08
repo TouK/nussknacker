@@ -44,6 +44,11 @@ trait FlinkRangeMap[MapT[K,V]] extends Serializable {
 
 object FlinkRangeMap {
 
+  /**
+   * This implementation is based on scala's immutable SortedMap (TreeMap).
+   * It has good O(lgN) characteristics for range filtering which can be important for some usages.
+   * In the other hand it uses Kryo for serialization which is inefficient
+   */
   implicit object SortedMapFlinkRangeMap extends FlinkRangeMap[SortedMap] {
 
     override def typeInformation[K: TypeInformation, V: TypeInformation]: TypeInformation[SortedMap[K, V]] =
@@ -67,6 +72,11 @@ object FlinkRangeMap {
 
   }
 
+  /**
+   * This implementation is based on java's mutable HashMap.
+   * It has good O(1) characteristics for updates but worse than TreeMap for range filtering O(n).
+   * It uses Flink's serialization which is more efficient than Kryo
+   */
   implicit object JavaHashMapFlinkRangeMap extends FlinkRangeMap[jul.Map] {
 
     import scala.collection.JavaConverters._

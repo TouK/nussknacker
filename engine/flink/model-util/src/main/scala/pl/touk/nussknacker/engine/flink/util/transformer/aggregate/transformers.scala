@@ -38,13 +38,13 @@ object transformers {
     ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, aggregateBy))
       .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
-          val validatedStoredType = aggregator.computeStoredType(aggregateBy.returnType)
+          val storedAggregateType = aggregator.computeStoredType(aggregateBy.returnType).valueOr(msg => throw new IllegalArgumentException(msg))
           val expectedType = aggregator.computeOutputType(aggregateBy.returnType).valueOr(msg => throw new IllegalArgumentException(msg))
           val aggregatorFunction =
             if (emitWhenEventLeft)
-              new EmitWhenEventLeftAggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, validatedStoredType)
+              new EmitWhenEventLeftAggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, storedAggregateType)
             else
-              new AggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, validatedStoredType)
+              new AggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, storedAggregateType)
           val statefulStream = start
             .map(new StringKeyedValueMapper(ctx.lazyParameterHelper, keyBy, aggregateBy))
             .keyBy(_.value.key)
@@ -74,7 +74,7 @@ object transformers {
     ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, aggregateBy))
       .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
-          val validatedStoredType = aggregator.computeStoredType(aggregateBy.returnType)
+          val storedAggregateType = aggregator.computeStoredType(aggregateBy.returnType).valueOr(msg => throw new IllegalArgumentException(msg))
           val expectedType = aggregator.computeOutputType(aggregateBy.returnType).valueOr(msg => throw new IllegalArgumentException(msg))
           val keyedStream = start
             .map(new StringKeyedValueMapper(ctx.lazyParameterHelper, keyBy, aggregateBy))
@@ -82,7 +82,7 @@ object transformers {
           val statefulStream =
             if (emitExtraWindowWhenNoData) {
               keyedStream
-                .process(new EmitExtraWindowWhenNoDataTumblingAggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, validatedStoredType))
+                .process(new EmitExtraWindowWhenNoDataTumblingAggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, storedAggregateType))
             } else {
               keyedStream
                 .window(TumblingEventTimeWindows.of(Time.milliseconds(windowLength.toMillis)))

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import java.util.concurrent.TimeUnit
 
-import cats.data.{NonEmptyList, Validated}
+import cats.data.NonEmptyList
 import com.codahale.metrics.{Histogram, SlidingTimeWindowReservoir}
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.state.ValueStateDescriptor
@@ -30,7 +30,7 @@ import scala.language.higherKinds
 // Flinks SlidingWindows are something that is often called HoppingWindow. They consume a lot of memory because each element
 // is stored in multiple windows with different offsets.
 class AggregatorFunction[MapT[K,V]](protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long,
-                                    override val nodeId: NodeId, protected val validatedStoredType: Validated[String, TypingResult])
+                                    override val nodeId: NodeId, protected val storedAggregateType: TypingResult)
                                    (implicit override val rangeMap: FlinkRangeMap[MapT])
   extends LatelyEvictableStateFunction[ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef], MapT[Long, AnyRef]]
   with AggregatorFunctionMixin[MapT] {
@@ -74,7 +74,7 @@ trait AggregatorFunctionMixin[MapT[K,V]] { self: StateHolder[MapT[Long, AnyRef]]
 
   protected def timeWindowLengthMillis: Long
 
-  protected def validatedStoredType: Validated[String, TypingResult]
+  protected def storedAggregateType: TypingResult
 
   protected implicit def rangeMap: FlinkRangeMap[MapT]
 

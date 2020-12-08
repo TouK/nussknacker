@@ -5,13 +5,12 @@ import org.apache.flink.streaming.api.TimerService
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{ValueWithContext, Context => NkContext}
 import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
 import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap
-import FlinkRangeMap._
-import cats.data.Validated
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap._
 
 import scala.language.higherKinds
 
@@ -19,7 +18,7 @@ import scala.language.higherKinds
  * It behaves the same as AggregatorFunction with one difference that also publish events when some event will left the slide.
  */
 class EmitWhenEventLeftAggregatorFunction[MapT[K,V]](protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long,
-                                                     override val nodeId: NodeId, protected val validatedStoredType: Validated[String, TypingResult])
+                                                     override val nodeId: NodeId, protected val storedAggregateType: TypingResult)
                                                     (implicit override val rangeMap: FlinkRangeMap[MapT])
   extends LatelyEvictableStateFunction[ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef], MapT[Long, AnyRef]]
     with AggregatorFunctionMixin[MapT] with AddedElementContextStateHolder[MapT] {

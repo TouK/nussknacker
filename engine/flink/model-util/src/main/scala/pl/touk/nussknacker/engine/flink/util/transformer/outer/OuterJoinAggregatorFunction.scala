@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.outer
 
-import cats.data.Validated
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
@@ -14,7 +13,7 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.{Aggregator, 
 import scala.language.higherKinds
 
 class OuterJoinAggregatorFunction[MapT[K,V]](protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long,
-                                                          override val nodeId: NodeId, protected val validatedStoredType: Validated[String, TypingResult])
+                                                          override val nodeId: NodeId, protected val storedAggregateType: TypingResult)
                                                          (implicit override val rangeMap: FlinkRangeMap[MapT])
   extends LatelyEvictableStateCoFunction[ValueWithContext[String], ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef], MapT[Long, AnyRef]]
     with AggregatorFunctionMixin[MapT] {

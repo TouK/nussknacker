@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.flink.util.transformer.outer
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 
-import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction
 import org.apache.flink.streaming.api.scala._
@@ -67,7 +66,7 @@ class OuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandler[T
     val aggregator: Aggregator = AggregatorParam.extractValue(params)
     val window: Duration = WindowLengthParam.extractValue(params)
     val aggregateBy: LazyParameter[AnyRef] = params(AggregateByParamName).asInstanceOf[LazyParameter[AnyRef]]
-    val validatedStoredType = aggregator.computeStoredType(aggregateBy.returnType)
+    val storedAggregateType = aggregator.computeStoredType(aggregateBy.returnType).valueOr(msg => throw new IllegalArgumentException(msg))
 
     new FlinkCustomJoinTransformation with Serializable {
       override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]] = {
@@ -77,7 +76,7 @@ class OuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandler[T
         val keyedJoinedStream = inputs(joinedId(branchTypeByBranchId).get)
           .map(new StringKeyedValueMapper(context.lazyParameterHelper, keyByBranchId(joinedId(branchTypeByBranchId).get), aggregateBy))
 
-        val aggregatorFunction = prepareAggregatorFunction(aggregator, FiniteDuration(window.toMillis, TimeUnit.MILLISECONDS), validatedStoredType)(NodeId(context.nodeId))
+        val aggregatorFunction = prepareAggregatorFunction(aggregator, FiniteDuration(window.toMillis, TimeUnit.MILLISECONDS), storedAggregateType)(NodeId(context.nodeId))
         val statefulStream = keyedMainBranchStream
           .connect(keyedJoinedStream)
           .keyBy(v => v.value, v => v.value.key)
@@ -99,10 +98,10 @@ class OuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandler[T
     branchTypeByBranchId.find(_._2 == BranchType.JOINED).map(_._1)
   }
 
-  protected def prepareAggregatorFunction(aggregator: Aggregator, stateTimeout: FiniteDuration, validatedStoredType: Validated[String, TypingResult])
+  protected def prepareAggregatorFunction(aggregator: Aggregator, stateTimeout: FiniteDuration, storedAggregateType: TypingResult)
                                          (implicit nodeId: NodeId):
   CoProcessFunction[ValueWithContext[String], ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]] =
-    new OuterJoinAggregatorFunction[SortedMap](aggregator, stateTimeout.toMillis, nodeId, validatedStoredType)
+    new OuterJoinAggregatorFunction[SortedMap](aggregator, stateTimeout.toMillis, nodeId, storedAggregateType)
 
 }
 
