@@ -157,7 +157,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     validator.validateNode(avroSourceFactory, paramsList, Nil, Some(Interpreter.InputParamName))(ValidationContext()).toOption.get
   }
 
-  private def createKeyValueAvroSourceFactory[K: ClassTag, V: ClassTag]: KafkaAvroSourceFactory = {
+  private def createKeyValueAvroSourceFactory[K: ClassTag, V: ClassTag]: KafkaAvroSourceFactory[Any] = {
     val deserializerFactory = new TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory[K, V](factory)
     val provider = new ConfluentSchemaRegistryProvider(
       factory,
@@ -168,12 +168,12 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     new KafkaAvroSourceFactory(provider, testProcessObjectDependencies, None)
   }
 
-  private def roundTripSingleObject(sourceFactory: KafkaAvroSourceFactory, topic: String, versionOption: SchemaVersionOption, givenObj: Any, expectedSchema: Schema) = {
+  private def roundTripSingleObject(sourceFactory: KafkaAvroSourceFactory[Any], topic: String, versionOption: SchemaVersionOption, givenObj: Any, expectedSchema: Schema) = {
     pushMessage(givenObj, topic)
     readLastMessageAndVerify(sourceFactory, topic, versionOption, givenObj, expectedSchema)
   }
 
-  private def readLastMessageAndVerify(sourceFactory: KafkaAvroSourceFactory, topic: String, versionOption: SchemaVersionOption, givenObj: Any, expectedSchema: Schema): Assertion = {
+  private def readLastMessageAndVerify(sourceFactory: KafkaAvroSourceFactory[Any], topic: String, versionOption: SchemaVersionOption, givenObj: Any, expectedSchema: Schema): Assertion = {
     val source = createAndVerifySource(sourceFactory, topic, versionOption, expectedSchema)
 
     val bytes = source.generateTestData(1)
@@ -183,7 +183,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     deserializedObj shouldEqual List(givenObj)
   }
 
-  private def createAndVerifySource(sourceFactory: KafkaAvroSourceFactory, topic: String, versionOption: SchemaVersionOption, expectedSchema: Schema): Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef] with ReturningType = {
+  private def createAndVerifySource(sourceFactory: KafkaAvroSourceFactory[Any], topic: String, versionOption: SchemaVersionOption, expectedSchema: Schema): Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef] with ReturningType = {
     val version = versionOption match {
       case LatestSchemaVersion => SchemaVersionOption.LatestOptionName
       case ExistingSchemaVersion(version) => version.toString
