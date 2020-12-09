@@ -157,7 +157,7 @@ trait KafkaAvroSpecMixin extends FunSuite with FlinkSpec with KafkaSpec with Mat
   protected def createAndRegisterTopicConfig(name: String, schema: Schema): TopicConfig =
     createAndRegisterTopicConfig(name, List(schema))
 
-  protected lazy val avroSourceFactory: KafkaAvroSourceFactory = {
+  protected lazy val avroSourceFactory: KafkaAvroSourceFactory[Any] = {
     new KafkaAvroSourceFactory(schemaRegistryProvider, testProcessObjectDependencies, None)
   }
 

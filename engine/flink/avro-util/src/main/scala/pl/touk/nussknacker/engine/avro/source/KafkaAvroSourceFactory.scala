@@ -15,10 +15,12 @@ import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSource
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 
-class KafkaAvroSourceFactory(val schemaRegistryProvider: SchemaRegistryProvider,
-                             val processObjectDependencies: ProcessObjectDependencies,
-                             timestampAssigner: Option[TimestampWatermarkHandler[Any]])
-  extends BaseKafkaAvroSourceFactory(timestampAssigner) with KafkaAvroBaseTransformer[FlinkSource[Any]]{
+import scala.reflect.ClassTag
+
+class KafkaAvroSourceFactory[T:ClassTag](val schemaRegistryProvider: SchemaRegistryProvider,
+                                         val processObjectDependencies: ProcessObjectDependencies,
+                                         timestampAssigner: Option[TimestampWatermarkHandler[T]])
+  extends BaseKafkaAvroSourceFactory(timestampAssigner) with KafkaAvroBaseTransformer[FlinkSource[T]]{
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
                                     (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
@@ -61,7 +63,7 @@ class KafkaAvroSourceFactory(val schemaRegistryProvider: SchemaRegistryProvider,
     List(topicParam(NodeId("")).value, versionParam(Nil))
   }
 
-  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkSource[Any] = {
+  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkSource[T] = {
     val preparedTopic = extractPreparedTopic(params)
     val version = extractVersionOption(params)
     createSource(preparedTopic, kafkaConfig, schemaRegistryProvider.deserializationSchemaFactory, schemaRegistryProvider.recordFormatter,
