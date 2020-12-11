@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.source
 
 import java.time.Duration
-
 import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.TimeCharacteristic
@@ -10,6 +9,7 @@ import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, TimestampWatermarkHandler}
+import pl.touk.nussknacker.engine.flink.util.TimeCharacteristicCompatibility
 import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunctuatedExtractor
 
 import scala.annotation.nowarn
@@ -50,7 +50,7 @@ class EmitWatermarkAfterEachElementCollectionSource[T: TypeInformation](list: Se
   }
 
   override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[T] = {
-    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
+    TimeCharacteristicCompatibility.useEventTime(env)
     env
       .addSource(flinkSourceFunction)
       .name(s"${flinkNodeContext.metaData.id}-${flinkNodeContext.nodeId}-source")

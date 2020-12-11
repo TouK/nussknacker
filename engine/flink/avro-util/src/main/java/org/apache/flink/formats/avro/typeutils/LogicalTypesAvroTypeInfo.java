@@ -19,19 +19,8 @@
 package org.apache.flink.formats.avro.typeutils;
 
 import org.apache.avro.specific.SpecificRecordBase;
-import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.ExecutionConfig;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
-import org.apache.flink.api.java.typeutils.GenericTypeInfo;
-import org.apache.flink.api.java.typeutils.PojoField;
-import org.apache.flink.api.java.typeutils.PojoTypeInfo;
-import org.apache.flink.api.java.typeutils.TypeExtractor;
-
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Special type information to generate a special AvroTypeInfo for Avro POJOs (implementing SpecificRecordBase, the typed Avro POJOs)
@@ -44,7 +33,7 @@ import java.util.List;
  *
  * <p>This class is checked by the AvroPojoTest.
  */
-public class LogicalTypesAvroTypeInfo<T extends SpecificRecordBase> extends PojoTypeInfo<T> {
+public class LogicalTypesAvroTypeInfo<T extends SpecificRecordBase> extends AvroTypeInfo<T> {
 
 	private static final long serialVersionUID = -8635380660085215330L;
 
@@ -52,7 +41,7 @@ public class LogicalTypesAvroTypeInfo<T extends SpecificRecordBase> extends Pojo
 	 * Creates a new Avro type info for the given class.
 	 */
 	public LogicalTypesAvroTypeInfo(Class<T> typeClass) {
-		super(typeClass, generateFieldsFromAvroSchema(typeClass));
+		super(typeClass);
 	}
 
 	@Override
@@ -60,44 +49,4 @@ public class LogicalTypesAvroTypeInfo<T extends SpecificRecordBase> extends Pojo
 		return new LogicalTypesAvroSerializer<>(getTypeClass());
 	}
 
-	@Internal
-	private static <T extends SpecificRecordBase> List<PojoField> generateFieldsFromAvroSchema(Class<T> typeClass) {
-			PojoTypeExtractor pte = new PojoTypeExtractor();
-			ArrayList<Type> typeHierarchy = new ArrayList<>();
-			typeHierarchy.add(typeClass);
-			TypeInformation<T> ti = pte.analyzePojo(typeClass, typeHierarchy, null, null, null);
-
-			if (!(ti instanceof PojoTypeInfo)) {
-				throw new IllegalStateException("Expecting type to be a PojoTypeInfo");
-			}
-			PojoTypeInfo<T> pti =  (PojoTypeInfo<T>) ti;
-			List<PojoField> newFields = new ArrayList<>(pti.getTotalFields());
-
-			for (int i = 0; i < pti.getArity(); i++) {
-				PojoField f = pti.getPojoFieldAt(i);
-				TypeInformation<?> newType = f.getTypeInformation();
-				// check if type is a CharSequence
-				if (newType instanceof GenericTypeInfo) {
-					if ((newType).getTypeClass().equals(CharSequence.class)) {
-						// replace the type by a org.apache.avro.util.Utf8
-						newType = new GenericTypeInfo<>(org.apache.avro.util.Utf8.class);
-					}
-				}
-				PojoField newField = new PojoField(f.getField(), newType);
-				newFields.add(newField);
-			}
-			return newFields;
-	}
-
-	private static class PojoTypeExtractor extends TypeExtractor {
-		private PojoTypeExtractor() {
-			super();
-		}
-
-		@Override
-		public <OUT, IN1, IN2> TypeInformation<OUT> analyzePojo(Class<OUT> clazz, ArrayList<Type> typeHierarchy,
-				ParameterizedType parameterizedType, TypeInformation<IN1> in1Type, TypeInformation<IN2> in2Type) {
-			return super.analyzePojo(clazz, typeHierarchy, parameterizedType, in1Type, in2Type);
-		}
-	}
 }

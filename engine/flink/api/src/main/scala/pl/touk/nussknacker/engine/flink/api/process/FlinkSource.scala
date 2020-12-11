@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
+import pl.touk.nussknacker.engine.flink.util.TimeCharacteristicCompatibility
 
 import scala.reflect._
 
@@ -44,9 +45,7 @@ trait BasicFlinkSource[T] extends FlinkSource[T] with ExplicitUidInOperatorsSupp
   def timestampAssignerForTest : Option[TimestampWatermarkHandler[T]] = timestampAssigner
 
   override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[T] = {
-
-    env.setStreamTimeCharacteristic(if (timestampAssigner.isDefined) TimeCharacteristic.EventTime else TimeCharacteristic.IngestionTime)
-
+    TimeCharacteristicCompatibility.defineCharacteristicByAssigner(env, timestampAssigner)
     val newStart = setUidToNodeIdIfNeed(flinkNodeContext,
       env
         .addSource[T](flinkSourceFunction)(typeInformation)

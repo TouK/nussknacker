@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 
 import java.time.Duration
 import java.{util => jul}
-
 import com.github.ghik.silencer.silent
+
 import javax.annotation.Nullable
 import javax.validation.constraints.Min
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource, FlinkSourceFactory}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, TimestampWatermarkHandler}
+import pl.touk.nussknacker.engine.flink.util.TimeCharacteristicCompatibility
 
 import scala.annotation.nowarn
 import scala.collection.JavaConverters._
@@ -36,8 +37,9 @@ class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]
 
       override def typeInformation: TypeInformation[AnyRef] = implicitly[TypeInformation[AnyRef]]
 
+
       override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[AnyRef] = {
-        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
+        TimeCharacteristicCompatibility.useEventTime(env)
 
         val count = Option(nullableCount).map(_.toInt).getOrElse(1)
         val processId = flinkNodeContext.metaData.id

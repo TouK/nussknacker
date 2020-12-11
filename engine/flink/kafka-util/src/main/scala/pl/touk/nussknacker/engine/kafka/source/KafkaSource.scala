@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.source
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.functions.source.SourceFunction
@@ -13,8 +14,10 @@ import pl.touk.nussknacker.engine.api.test.{TestDataParser, TestDataSplit}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
+import pl.touk.nussknacker.engine.flink.util.TimeCharacteristicCompatibility
 import pl.touk.nussknacker.engine.kafka._
 
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 
 class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
@@ -33,7 +36,7 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
 
   override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[T] = {
     val consumerGroupId = overriddenConsumerGroup.getOrElse(ConsumerGroupDeterminer(kafkaConfig).consumerGroup(flinkNodeContext))
-    env.setStreamTimeCharacteristic(if (timestampAssigner.isDefined) TimeCharacteristic.EventTime else TimeCharacteristic.IngestionTime)
+    TimeCharacteristicCompatibility.defineCharacteristicByAssigner(env, timestampAssigner)
 
     val newStart = setUidToNodeIdIfNeed(flinkNodeContext,
       env
