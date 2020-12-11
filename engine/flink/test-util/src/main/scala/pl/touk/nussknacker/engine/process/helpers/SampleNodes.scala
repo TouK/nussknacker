@@ -11,6 +11,7 @@ import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.co.RichCoMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.scala.{DataStream, _}
+import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
@@ -378,9 +379,11 @@ object SampleNodes {
     def execute(@ParamName("seconds") seconds: Int) =
       FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
         start
-          .map(_ => 1)
-          .timeWindowAll(Time.seconds(seconds)).reduce(_ + _)
-          .map(i => ValueWithContext[AnyRef](i.underlying(), Context(UUID.randomUUID().toString)))
+          .map(_ => 1: java.lang.Integer)
+          .keyBy(_ => "")
+          .window(TumblingEventTimeWindows.of(Time.seconds(seconds)))
+          .reduce((k, v) => k + v: java.lang.Integer)
+          .map(i => ValueWithContext[AnyRef](i, Context(UUID.randomUUID().toString)))
       })
   }
 

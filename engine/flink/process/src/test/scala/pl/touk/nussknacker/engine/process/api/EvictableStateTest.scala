@@ -8,6 +8,7 @@ import org.apache.flink.util.Collector
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.flink.api.state.EvictableStateFunction
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
+import pl.touk.nussknacker.engine.flink.util.TimeCharacteristicCompatibility
 import pl.touk.nussknacker.engine.flink.util.source.StaticSource
 import pl.touk.nussknacker.engine.flink.util.source.StaticSource.{Data, Watermark}
 import pl.touk.nussknacker.engine.util.ThreadUtils
@@ -26,7 +27,6 @@ class EvictableStateTest extends FlatSpec with Matchers with BeforeAndAfter with
 
     val env = StreamExecutionEnvironment.createLocalEnvironment(1, FlinkTestConfiguration.configuration())
     env.enableCheckpointing(500)
-    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
 
     env.addSource(StaticSource)
       .keyBy(_ => "staticKey")

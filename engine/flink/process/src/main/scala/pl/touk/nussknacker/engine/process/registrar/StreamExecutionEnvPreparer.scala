@@ -92,7 +92,7 @@ class DefaultStreamExecutionEnvPreparer(checkpointConfig: Option[CheckpointConfi
     FlinkUserCodeClassLoaders.childFirst(Array.empty,
       Thread.currentThread().getContextClassLoader, Array.empty, new Consumer[Throwable] {
         override def accept(t: Throwable): Unit = throw t
-      }
+      }, true
     )
   }
 }
