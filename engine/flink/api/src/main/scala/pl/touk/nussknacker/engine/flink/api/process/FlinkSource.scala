@@ -45,7 +45,8 @@ trait BasicFlinkSource[T] extends FlinkSource[T] with ExplicitUidInOperatorsSupp
 
   override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[T] = {
 
-    env.setStreamTimeCharacteristic(if (timestampAssigner.isDefined) TimeCharacteristic.EventTime else TimeCharacteristic.IngestionTime)
+    //???
+    //env.setStreamTimeCharacteristic(if (timestampAssigner.isDefined) TimeCharacteristic.EventTime else TimeCharacteristic.IngestionTime)
 
     val newStart = setUidToNodeIdIfNeed(flinkNodeContext,
       env

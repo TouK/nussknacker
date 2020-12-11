@@ -45,7 +45,7 @@ private[registrar] class EndRateMeterFunction(ends: Seq[TypedEnd]) extends Abstr
     value
   }
 
-  override def invoke(value: InterpretationResult, context: SinkFunction.Context[_]): Unit = {
+  override def invoke(value: InterpretationResult, context: SinkFunction.Context): Unit = {
     map(value)
   }
 }

@@ -18,6 +18,9 @@
 
 package org.apache.flink.formats.avro.typeutils;
 
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.avro.specific.SpecificRecordBase;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.ExecutionConfig;
@@ -27,11 +30,6 @@ import org.apache.flink.api.java.typeutils.GenericTypeInfo;
 import org.apache.flink.api.java.typeutils.PojoField;
 import org.apache.flink.api.java.typeutils.PojoTypeInfo;
 import org.apache.flink.api.java.typeutils.TypeExtractor;
-
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Special type information to generate a special AvroTypeInfo for Avro POJOs (implementing SpecificRecordBase, the typed Avro POJOs)
@@ -65,7 +63,7 @@ public class LogicalTypesAvroTypeInfo<T extends SpecificRecordBase> extends Pojo
 			PojoTypeExtractor pte = new PojoTypeExtractor();
 			ArrayList<Type> typeHierarchy = new ArrayList<>();
 			typeHierarchy.add(typeClass);
-			TypeInformation<T> ti = pte.analyzePojo(typeClass, typeHierarchy, null, null, null);
+			TypeInformation<T> ti = pte.analyzePojo(typeClass, typeHierarchy, null, null);
 
 			if (!(ti instanceof PojoTypeInfo)) {
 				throw new IllegalStateException("Expecting type to be a PojoTypeInfo");
@@ -94,10 +92,10 @@ public class LogicalTypesAvroTypeInfo<T extends SpecificRecordBase> extends Pojo
 			super();
 		}
 
-		@Override
-		public <OUT, IN1, IN2> TypeInformation<OUT> analyzePojo(Class<OUT> clazz, ArrayList<Type> typeHierarchy,
-				ParameterizedType parameterizedType, TypeInformation<IN1> in1Type, TypeInformation<IN2> in2Type) {
-			return super.analyzePojo(clazz, typeHierarchy, parameterizedType, in1Type, in2Type);
-		}
+    @Override
+    public <OUT, IN1, IN2> TypeInformation<OUT> analyzePojo(Type type, List<Type> typeHierarchy, TypeInformation<IN1> in1Type, TypeInformation<IN2> in2Type) {
+        return super.analyzePojo(type, typeHierarchy, in1Type, in2Type);
+    }
+
 	}
 }

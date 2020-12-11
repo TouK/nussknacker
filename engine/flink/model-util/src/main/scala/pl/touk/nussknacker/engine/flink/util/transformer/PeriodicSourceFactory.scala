@@ -37,7 +37,7 @@ class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]
       override def typeInformation: TypeInformation[AnyRef] = implicitly[TypeInformation[AnyRef]]
 
       override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[AnyRef] = {
-        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
+        //env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
 
         val count = Option(nullableCount).map(_.toInt).getOrElse(1)
         val processId = flinkNodeContext.metaData.id

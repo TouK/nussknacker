@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.test
 
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.api.common.{JobExecutionResult, JobID}
+import org.apache.flink.api.common.{JobExecutionResult, JobID, JobStatus}
 import org.apache.flink.configuration._
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.runtime.jobgraph.JobGraph
@@ -66,7 +66,10 @@ class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHo
 
   def waitForJobState(jobID: JobID, name: String, expectedState: ExecutionState*)(patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience): Unit = {
     Eventually.eventually {
+
       val executionGraph = flinkMiniClusterHolder.getExecutionGraph(jobID).get()
+      assert(executionGraph.getState != JobStatus.INITIALIZING)
+
       val executionVertices = executionGraph.getAllExecutionVertices.asScala
       val notRunning = executionVertices.filterNot(v => expectedState.contains(v.getExecutionState))
       assert(notRunning.isEmpty, s"Some vertices of $name are still not running: ${notRunning.map(rs => s"${rs.getTaskNameWithSubtaskIndex} - ${rs.getExecutionState}")}")
