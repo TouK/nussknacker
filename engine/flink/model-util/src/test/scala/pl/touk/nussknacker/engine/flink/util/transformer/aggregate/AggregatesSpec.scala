@@ -69,6 +69,29 @@ class AggregatesSpec extends FunSuite with TableDrivenPropertyChecks with Matche
     checkAggregator(mapAggregator, input, el, stored, output)
   }
 
+  test("MapAggregator manages field add/removal") {
+
+    val aggregator = new MapAggregator(Map[String, Aggregator]("field1" -> SumAggregator, "field2" -> MaxAggregator).asJava)
+
+    val oldState = Map[String, AnyRef]("field1" -> (5: java.lang.Integer), "field0" -> "ddd")
+
+    def resultFor(maps: Map[String, Any]*): AnyRef = aggregator.getResult(
+      maps.map(_.mapValues(_.asInstanceOf[AnyRef]).asJava).foldRight(oldState)(aggregator.addElement)
+    )
+
+    resultFor() shouldBe Map("field1" -> 5, "field2" -> null).asJava
+
+    resultFor(
+      Map("field1" -> 4, "field2" -> 3)
+    ) shouldBe Map("field1" -> 9L, "field2" -> 3).asJava
+
+    resultFor(
+      Map("field1" -> 3, "field2" -> 7, "field7" -> 5),
+      Map("field1" -> 4, "field2" -> 3)
+    ) shouldBe Map("field1" -> 12L, "field2" -> 7).asJava
+
+  }
+
   class JustAnyClass
 
 

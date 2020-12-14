@@ -171,22 +171,23 @@ object aggregates {
 
     override val zero: Aggregate = scalaFields.mapValuesNow(_.zero)
 
-    override def addElement(el: Element, agg: Aggregate): Aggregate = agg.map {
-      case (field, value) => field -> scalaFields(field).add(el.get(field), value)
+    override def addElement(el: Element, agg: Aggregate): Aggregate = scalaFields.map {
+      case (field, aggregator) => field -> aggregator.add(el.get(field), agg.getOrElse(field, aggregator.zero))
     }
 
-    override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg1.map {
-      case (field, value) => field -> scalaFields(field).merge(value, agg2(field))
+    override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = scalaFields.map {
+      case (field, aggregator) => field -> aggregator.merge(agg1.getOrElse(field, aggregator.zero), agg2.getOrElse(field, aggregator.zero))
     }
 
-    override def result(finalAggregate: Aggregate): AnyRef = finalAggregate.map {
-      case (field, value) => field -> scalaFields(field).getResult(value)
+    override def result(finalAggregate: Aggregate): AnyRef = scalaFields.map {
+      case (field, aggregator) => field -> aggregator.getResult(finalAggregate.getOrElse(field, aggregator.zero))
     }.asJava
 
 
     override def alignToExpectedType(value: AnyRef, outputType: TypingResult): AnyRef = {
       outputType match {
         case typedObj: TypedObjectTypingResult =>
+          //here we assume the fields in value are equal to Aggregator fields
           value.asInstanceOf[java.util.Map[String, AnyRef]].asScala.map {
             case (field, value) =>
               field -> scalaFields(field).alignToExpectedType(value, typedObj.fields(field))
