@@ -26,13 +26,18 @@ class HyperLogLogPlusAggregatorSpec extends FunSuite with Matchers {
 
   }
 
-  private def generateRandomData(unique: Int, randomRepeat: Int) = {
-    Random.shuffle((1 to unique).flatMap(k => (0 to Random.nextInt(randomRepeat)).map(_ => k.toString)))
+  private def generateRandomData(unique: Int, randomRepeat: Int): Seq[String] = {
+    //shuffle and number of repeats should not make difference to result
+    //we use string as in many cases we count unique string keys, but this shouldn't matter much
+    Random.shuffle((1 to unique)
+      .flatMap(k => (0 to Random.nextInt(randomRepeat)).map(_ => k.toString)))
   }
 
   private def runForData(agg: HyperLogLogPlusAggregator, data: Iterable[AnyRef]): (Long, Int) = {
     val total = data.foldRight(agg.zero)(agg.addElement)
-    (agg.result(total), total.wrapped.getBytes.length)
+    val uniqueCounts = agg.result(total)
+    val usedMemory = total.wrapped.getBytes.length
+    (uniqueCounts, usedMemory)
   }
 
 
