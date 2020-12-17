@@ -51,7 +51,7 @@ class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWri
   protected def deserializePayloadToSchema(payload: Array[Byte], writerSchema: Schema, readerSchema: Schema): Any = {
     try {
       // We always want to create generic record at the end, because speecific can has other fields than expected
-      val reader = new GenericDatumReader(writerSchema, readerSchema, AvroUtils.genericData).asInstanceOf[DatumReader[AnyRef]]
+      val reader = StringForcingDatumReader.forGenericDatumReader[AnyRef](writerSchema, readerSchema, AvroUtils.genericData).asInstanceOf[DatumReader[AnyRef]]
       val buffer = ByteBuffer.wrap(payload)
       deserializeRecord(RuntimeSchemaData(readerSchema, None), reader, buffer, 0)
     } catch {

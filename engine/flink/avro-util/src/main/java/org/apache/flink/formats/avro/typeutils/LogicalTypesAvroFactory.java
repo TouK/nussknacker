@@ -39,6 +39,7 @@ import org.apache.flink.formats.avro.utils.DataOutputEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pl.touk.nussknacker.engine.avro.AvroUtils;
+import pl.touk.nussknacker.engine.avro.schema.StringForcingDatumReader;
 
 import java.util.Optional;
 
@@ -101,25 +102,25 @@ public final class LogicalTypesAvroFactory<T> {
 		SpecificData specificData = AvroUtils.specificData();
 		Schema newSchema = extractAvroSpecificSchema(type, specificData);
 
-		return new LogicalTypesAvroFactory<>(
-			specificData,
-			newSchema,
-			new SpecificDatumReader<>(previousSchema.orElse(newSchema), newSchema, specificData),
-			new SpecificDatumWriter<>(newSchema, specificData)
+		return new LogicalTypesAvroFactory<T>(
+				specificData,
+				newSchema,
+				StringForcingDatumReader.forSpecificDatumReader(previousSchema.orElse(newSchema), newSchema, specificData),
+				new SpecificDatumWriter<>(newSchema, specificData)
 		);
 	}
 
 	private static <T> LogicalTypesAvroFactory<T> fromGeneric(ClassLoader cl, Schema schema) {
 		checkNotNull(schema,
-			"Unable to create an AvroSerializer with a GenericRecord type without a schema");
+				"Unable to create an AvroSerializer with a GenericRecord type without a schema");
 		// HERE IS CHANGED CODE
 		GenericData genericData = AvroUtils.genericData();
 
-		return new LogicalTypesAvroFactory<>(
-			genericData,
-			schema,
-			new GenericDatumReader<>(schema, schema, genericData),
-			new GenericDatumWriter<>(schema, genericData)
+		return new LogicalTypesAvroFactory<T>(
+				genericData,
+				schema,
+				StringForcingDatumReader.forGenericDatumReader(schema, schema, genericData),
+				new GenericDatumWriter<>(schema, genericData)
 		);
 	}
 
@@ -129,11 +130,11 @@ public final class LogicalTypesAvroFactory<T> {
 		ReflectData reflectData = AvroUtils.reflectData();
 		Schema newSchema = reflectData.getSchema(type);
 
-		return new LogicalTypesAvroFactory<>(
-			reflectData,
-			newSchema,
-			new ReflectDatumReader<>(previousSchema.orElse(newSchema), newSchema, reflectData),
-			new ReflectDatumWriter<>(newSchema, reflectData)
+		return new LogicalTypesAvroFactory<T>(
+				reflectData,
+				newSchema,
+				StringForcingDatumReader.forReflectiveDatumReader(previousSchema.orElse(newSchema), newSchema, reflectData),
+				new ReflectDatumWriter<>(newSchema, reflectData)
 		);
 	}
 

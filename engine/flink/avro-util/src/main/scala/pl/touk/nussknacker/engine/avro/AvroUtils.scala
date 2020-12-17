@@ -4,8 +4,10 @@ import org.apache.avro.Conversions.{DecimalConversion, UUIDConversion}
 import org.apache.avro.Schema
 import org.apache.avro.data.TimeConversions
 import org.apache.avro.generic.GenericData
+import org.apache.avro.io.DatumReader
 import org.apache.avro.reflect.ReflectData
 import org.apache.avro.specific.{SpecificData, SpecificRecord}
+import pl.touk.nussknacker.engine.avro.schema.StringForcingDatumReader
 import pl.touk.nussknacker.engine.avro.schemaregistry.GenericRecordWithSchemaId
 
 import scala.reflect.{ClassTag, classTag}
@@ -30,11 +32,26 @@ object AvroUtils {
         case _ => copiedRecord
       }
     }
+    override def createDatumReader(writer: Schema, reader: Schema): DatumReader[_] = StringForcingDatumReader
+      .forGenericDatumReader(writer, reader, this.asInstanceOf[GenericData])
+
+    override def createDatumReader(schema: Schema): DatumReader[_] = createDatumReader(schema, schema)
   })
 
-  def specificData: SpecificData = addLogicalTypeConversions(new SpecificData(_))
+  def specificData: SpecificData = addLogicalTypeConversions(new SpecificData(_){
+    override def createDatumReader(writer: Schema, reader: Schema): DatumReader[_] = StringForcingDatumReader
+      .forSpecificDatumReader(writer, reader, this.asInstanceOf[SpecificData])
 
-  def reflectData: ReflectData = addLogicalTypeConversions(new ReflectData(_))
+    override def createDatumReader(schema: Schema): DatumReader[_] = createDatumReader(schema, schema)
+  })
+
+  def reflectData: ReflectData = addLogicalTypeConversions(new ReflectData(_){
+    override def createDatumReader(writer: Schema, reader: Schema): DatumReader[_] = StringForcingDatumReader
+      .forReflectiveDatumReader(writer, reader, this.asInstanceOf[ReflectData])
+
+    override def createDatumReader(schema: Schema): DatumReader[_] = createDatumReader(schema, schema)
+
+  })
 
   private def addLogicalTypeConversions[T <: GenericData](createData: ClassLoader => T): T = {
     val data = createData(Thread.currentThread.getContextClassLoader)
