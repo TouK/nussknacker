@@ -11,7 +11,7 @@ To see biggest differences please consult the [changelog](Changelog.md).
   ```Aggregator``` trait has new method ```computeStoredType``` 
 * [#1351](https://github.com/TouK/nussknacker/pull/1351) `KafkaAvroSinkFactory` and `KafkaAvroSourceFactory` have new param `AvroSettings`
   AvroSettings provides with control whether to use String class to represent Avro string and whether to skip 
-  optional fields (formally parameter in `AvroSchemaTypeDefinitionExtractor`, now also changed to AvroSettings)
+  optional fields (formally parameter in `AvroSchemaTypeDefinitionExtractor`, now also moved to AvroSettings)
 
 ## In version 0.3.0
 
