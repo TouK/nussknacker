@@ -39,7 +39,7 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
 
     parse[Integer]("#input.intField", ctx) should be ('valid)
     parse[CharSequence]("#input.intField", ctx) should be ('invalid)
-    parse[String]("#input.stringField", ctx) should be ('valid)
+    parse[CharSequence]("#input.stringField", ctx) should be ('valid)
     parse[Boolean]("#input.booleanField", ctx) should be ('valid)
     parse[Integer]("#input.nonExisting", ctx) should be ('invalid)
     parse[GenericRecord]("#input", ctx) should be ('valid)
