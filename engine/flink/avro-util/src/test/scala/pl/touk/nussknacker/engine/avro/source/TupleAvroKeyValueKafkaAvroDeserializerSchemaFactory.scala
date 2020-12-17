@@ -4,10 +4,13 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala.createTuple2TypeInformation
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.ConfluentKeyValueKafkaAvroDeserializationFactory
+import pl.touk.nussknacker.engine.avro.typed.AvroSettings
 
 import scala.reflect._
 
-class TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory[Key: ClassTag, Value: ClassTag](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
+class TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory[Key: ClassTag, Value: ClassTag](
+                                                                                           schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
+                                                                                           override val avroSettings: AvroSettings)
   extends ConfluentKeyValueKafkaAvroDeserializationFactory(schemaRegistryClientFactory) {
 
   override protected type K = Key

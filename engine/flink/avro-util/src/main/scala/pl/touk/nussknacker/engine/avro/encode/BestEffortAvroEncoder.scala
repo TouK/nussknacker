@@ -6,7 +6,6 @@ import java.time.chrono.ChronoZonedDateTime
 import java.time.{Instant, LocalDate, LocalTime, OffsetDateTime}
 import java.util
 import java.util.UUID
-
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits._
@@ -16,6 +15,7 @@ import org.apache.avro.util.Utf8
 import org.apache.avro.{AvroRuntimeException, LogicalTypes, Schema}
 import org.apache.flink.formats.avro.typeutils.LogicalTypesGenericRecordBuilder
 import pl.touk.nussknacker.engine.avro.schema.{AvroSchemaEvolution, DefaultAvroSchemaEvolution}
+import pl.touk.nussknacker.engine.avro.typed.AvroSettings
 
 import scala.math.BigDecimal.RoundingMode
 
@@ -193,7 +193,6 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
 
 object BestEffortAvroEncoder {
 
-  final private val DefaultSchemaEvolution = new DefaultAvroSchemaEvolution
-
-  def apply(validationMode: ValidationMode): BestEffortAvroEncoder = new BestEffortAvroEncoder(DefaultSchemaEvolution, validationMode)
+  def apply(validationMode: ValidationMode, avroSettings: AvroSettings = AvroSettings.default): BestEffortAvroEncoder =
+    new BestEffortAvroEncoder(new DefaultAvroSchemaEvolution(avroSettings = avroSettings), validationMode)
 }

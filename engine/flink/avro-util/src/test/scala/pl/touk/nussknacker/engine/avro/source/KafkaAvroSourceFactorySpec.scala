@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.avro.source
 
 import java.nio.charset.StandardCharsets
-
 import com.typesafe.config.ConfigFactory
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.Schema
@@ -21,7 +20,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaR
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client._
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.ConfluentAvroSerializationSchemaFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaVersionOption}
-import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
+import pl.touk.nussknacker.engine.avro.typed.{AvroSchemaTypeDefinitionExtractor, AvroSettings}
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, KafkaAvroSpecMixin, SchemaDeterminerError}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.{GenericNodeTransformationValidator, TransformationResult}
@@ -158,11 +157,10 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
   }
 
   private def createKeyValueAvroSourceFactory[K: ClassTag, V: ClassTag]: KafkaAvroSourceFactory[Any] = {
-    val deserializerFactory = new TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory[K, V](factory)
     val provider = new ConfluentSchemaRegistryProvider(
       factory,
-      new ConfluentAvroSerializationSchemaFactory(factory),
-      deserializerFactory,
+      avroSettings => new ConfluentAvroSerializationSchemaFactory(factory, avroSettings),
+      avroSettings => new TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory[K, V](factory, avroSettings),
       kafkaConfig,
       formatKey = true)
     new KafkaAvroSourceFactory(provider, testProcessObjectDependencies, None)
@@ -193,7 +191,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
         List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)), None)
       .asInstanceOf[Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef] with ReturningType]
 
-    source.returnType shouldEqual AvroSchemaTypeDefinitionExtractor.typeDefinition(expectedSchema)
+    source.returnType shouldEqual AvroSchemaTypeDefinitionExtractor().typeDefinition(expectedSchema)
 
     source
   }

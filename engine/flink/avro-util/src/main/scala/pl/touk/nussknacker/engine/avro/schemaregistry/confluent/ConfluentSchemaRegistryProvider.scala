@@ -6,11 +6,12 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedCo
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.ConfluentAvroToJsonFormatter
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentAvroSerializationSchemaFactory, ConfluentKafkaAvroDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.avro.serialization.{KafkaAvroDeserializationSchemaFactory, KafkaAvroSerializationSchemaFactory}
+import pl.touk.nussknacker.engine.avro.typed.AvroSettings
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter}
 
 class ConfluentSchemaRegistryProvider(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
-                                      val serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
-                                      val deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory,
+                                      val serializationSchemaFactoryProvider: AvroSettings => KafkaAvroSerializationSchemaFactory,
+                                      val deserializationSchemaFactoryProvider: AvroSettings => KafkaAvroDeserializationSchemaFactory,
                                       kafkaConfig: KafkaConfig,
                                       formatKey: Boolean) extends SchemaRegistryProvider {
 
@@ -20,9 +21,13 @@ class ConfluentSchemaRegistryProvider(schemaRegistryClientFactory: ConfluentSche
   override def createSchemaRegistryClient: ConfluentSchemaRegistryClient =
     schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
 
+  override def deserializationSchemaFactory(avroSettings: AvroSettings): KafkaAvroDeserializationSchemaFactory = deserializationSchemaFactoryProvider(avroSettings)
+
+  override def serializationSchemaFactory(avroSettings: AvroSettings): KafkaAvroSerializationSchemaFactory = serializationSchemaFactoryProvider(avroSettings)
 }
 
 object ConfluentSchemaRegistryProvider extends Serializable {
+
 
   def apply(processObjectDependencies: ProcessObjectDependencies): ConfluentSchemaRegistryProvider =
     ConfluentSchemaRegistryProvider(CachedConfluentSchemaRegistryClientFactory(), processObjectDependencies)
@@ -40,8 +45,8 @@ object ConfluentSchemaRegistryProvider extends Serializable {
     val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config)
     new ConfluentSchemaRegistryProvider(
       schemaRegistryClientFactory,
-      new ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory),
-      new ConfluentKafkaAvroDeserializationSchemaFactory(schemaRegistryClientFactory),
+      avroSettings => new ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory, avroSettings),
+      avroSettings => new ConfluentKafkaAvroDeserializationSchemaFactory(schemaRegistryClientFactory, avroSettings),
       kafkaConfig,
       formatKey)
   }

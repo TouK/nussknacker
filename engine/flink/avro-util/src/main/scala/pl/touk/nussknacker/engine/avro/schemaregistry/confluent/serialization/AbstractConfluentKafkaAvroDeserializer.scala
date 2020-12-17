@@ -10,11 +10,12 @@ import org.apache.kafka.common.errors.SerializationException
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
 import pl.touk.nussknacker.engine.avro.schema.{DatumReaderWriterMixin, RecordDeserializer}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
+import pl.touk.nussknacker.engine.avro.typed.AvroSettings
 
 /**
  * This class basically do the same as AbstractKafkaAvroDeserializer but use our createDatumReader implementation with time conversions
  */
-abstract class AbstractConfluentKafkaAvroDeserializer extends AbstractKafkaAvroDeserializer with DatumReaderWriterMixin with RecordDeserializer {
+abstract class AbstractConfluentKafkaAvroDeserializer(avroSettings: AvroSettings) extends AbstractKafkaAvroDeserializer with DatumReaderWriterMixin with RecordDeserializer {
 
   override protected lazy val decoderFactory: DecoderFactory = DecoderFactory.get()
 
@@ -32,7 +33,8 @@ abstract class AbstractConfluentKafkaAvroDeserializer extends AbstractKafkaAvroD
       val writerSchemaData = RuntimeSchemaData(ConfluentUtils.extractSchema(parsedSchema), Some(schemaId))
       val readerSchemaData = if (expectedSchemaData == null) writerSchemaData else expectedSchemaData
       // HERE we create our DatumReader
-      val reader = createDatumReader(writerSchemaData.schema, readerSchemaData.schema, useSchemaReflection, useSpecificAvroReader)
+      val reader = createDatumReader(writerSchemaData.schema, readerSchemaData.schema, useSchemaReflection,
+        useSpecificAvroReader, useStringForStringSchema = avroSettings.useStringForStringSchema)
       val bufferDataStart = 1 + AbstractKafkaSchemaSerDe.idSize
       deserializeRecord(readerSchemaData, reader, buffer, bufferDataStart)
     } catch {

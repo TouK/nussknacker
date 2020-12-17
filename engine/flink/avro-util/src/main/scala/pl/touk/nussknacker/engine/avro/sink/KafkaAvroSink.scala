@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.{InterpretationResult, LazyParameter, Valu
 import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaVersionOption}
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroSerializationSchemaFactory
+import pl.touk.nussknacker.engine.avro.typed.AvroSettings
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionHandler, WithFlinkEspExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyedValue, KeyedValueMapper}
@@ -19,13 +20,13 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaPr
 class KafkaAvroSink(preparedTopic: PreparedKafkaTopic, versionOption: SchemaVersionOption, key: LazyParameter[AnyRef], value: LazyParameter[AnyRef],
                     kafkaConfig: KafkaConfig, serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
                     schema: NkSerializableAvroSchema, runtimeSchema: Option[NkSerializableAvroSchema],
-                    clientId: String, validationMode: ValidationMode)
+                    clientId: String, validationMode: ValidationMode, avroSettings: AvroSettings)
   extends FlinkSink with Serializable with LazyLogging {
 
   import org.apache.flink.streaming.api.scala._
 
   // We don't want serialize it because of flink serialization..
-  @transient final protected lazy val avroEncoder = BestEffortAvroEncoder(validationMode)
+  @transient final protected lazy val avroEncoder = BestEffortAvroEncoder(validationMode, avroSettings)
 
   override def registerSink(dataStream: DataStream[InterpretationResult], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] = {
     dataStream

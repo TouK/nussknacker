@@ -10,13 +10,15 @@ import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
 import pl.touk.nussknacker.engine.avro.encode.{OutputValidator, ValidationMode}
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroSerializationSchemaFactory
+import pl.touk.nussknacker.engine.avro.typed.AvroSettings
 import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
 
-abstract class BaseKafkaAvroSinkFactory extends SinkFactory {
+abstract class BaseKafkaAvroSinkFactory(avroSettings: AvroSettings) extends SinkFactory {
 
   override def requiresOutput: Boolean = false
+  protected lazy val outputValidator = new OutputValidator(avroSettings)
 
   protected def createSink(preparedTopic: PreparedKafkaTopic,
                            version: SchemaVersionOption,
@@ -34,14 +36,14 @@ abstract class BaseKafkaAvroSinkFactory extends SinkFactory {
 
     val clientId = s"${processMetaData.id}-${preparedTopic.prepared}"
     new KafkaAvroSink(preparedTopic, version, key, value, kafkaConfig, serializationSchemaFactory,
-      schemaData.serializableSchema, schemaUsedInRuntime.map(_.serializableSchema), clientId, validationMode)
+      schemaData.serializableSchema, schemaUsedInRuntime.map(_.serializableSchema), clientId, validationMode, avroSettings)
   }
 
   /**
     * Currently we check only required fields, because our typing mechanism doesn't support optionally fields
     */
   protected def validateValueType(valueType: TypingResult, schema: Schema, validationMode: ValidationMode)(implicit nodeId: NodeId): Validated[CustomNodeError, Unit] = {
-    OutputValidator.validateOutput(valueType, schema, validationMode)
+    outputValidator.validateOutput(valueType, schema, validationMode)
   }
 
 }

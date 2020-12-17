@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization
 
 import java.io.{ByteArrayOutputStream, IOException}
 import java.nio.ByteBuffer
-
 import io.confluent.kafka.schemaregistry.avro.{AvroSchema, AvroSchemaUtils}
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
 import io.confluent.kafka.serializers.{AbstractKafkaAvroSerializer, AbstractKafkaSchemaSerDe}
@@ -10,6 +9,7 @@ import org.apache.avro.generic.GenericContainer
 import org.apache.avro.io.EncoderFactory
 import org.apache.kafka.common.errors.SerializationException
 import pl.touk.nussknacker.engine.avro.schema.{AvroSchemaEvolution, DatumReaderWriterMixin}
+import pl.touk.nussknacker.engine.avro.typed.AvroSettings
 
 /**
   * Abstract confluent serializer class. Serialize algorithm is copy past from AbstractKafkaAvroSerializer.serializeImpl.
@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.avro.schema.{AvroSchemaEvolution, DatumReaderW
   * because data could not support field from schema. When this situation has place wy try to convert data to provided schema by
   * using AvroSchemaEvolution.alignRecordToSchema implementation.
   */
-class AbstractConfluentKafkaAvroSerializer(avroSchemaEvolution: AvroSchemaEvolution) extends AbstractKafkaAvroSerializer with DatumReaderWriterMixin {
+class AbstractConfluentKafkaAvroSerializer(avroSchemaEvolution: AvroSchemaEvolution, avroSettings: AvroSettings) extends AbstractKafkaAvroSerializer with DatumReaderWriterMixin {
 
   protected val encoderFactory: EncoderFactory = EncoderFactory.get
 
@@ -51,7 +51,7 @@ class AbstractConfluentKafkaAvroSerializer(avroSchemaEvolution: AvroSchemaEvolut
               case _ => data
             }
 
-            val writer = createDatumWriter(record, avroSchema.rawSchema(), useSchemaReflection = useSchemaReflection)
+            val writer = createDatumWriter(record, avroSchema.rawSchema(), useSchemaReflection = useSchemaReflection, avroSettings.useStringForStringSchema)
 
             writer.write(record, encoder)
             encoder.flush()

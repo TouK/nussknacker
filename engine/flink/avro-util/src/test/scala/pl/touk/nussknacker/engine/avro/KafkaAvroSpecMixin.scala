@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentSchema
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaVersionOption}
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
+import pl.touk.nussknacker.engine.avro.typed.AvroSettings
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyedValue, StringKeyedValue}
@@ -169,7 +170,7 @@ trait KafkaAvroSpecMixin extends FunSuite with FlinkSpec with KafkaSpec with Mat
 
   protected def createAvroProcess(source: SourceAvroParam, sink: SinkAvroParam, filterExpression: Option[String] = None): EspProcess = {
     val sourceParams = List(TopicParamName -> asSpelExpression(s"'${source.topic}'")) ++ (source match {
-      case GenericSourceAvroParam(_, version) => List(SchemaVersionParamName -> asSpelExpression(formatVersionParam(version)))
+      case GenericSourceAvroParam(_, version, _) => List(SchemaVersionParamName -> asSpelExpression(formatVersionParam(version)))
       case SpecificSourceAvroParam(_) => List.empty
     })
 
@@ -247,8 +248,8 @@ trait KafkaAvroSpecMixin extends FunSuite with FlinkSpec with KafkaSpec with Mat
     def sourceType: String
   }
 
-  case class GenericSourceAvroParam(topic: String, versionOption: SchemaVersionOption) extends SourceAvroParam {
-    override def sourceType: String = "kafka-avro"
+  case class GenericSourceAvroParam(topic: String, versionOption: SchemaVersionOption, useStringForStringSchema: Boolean) extends SourceAvroParam {
+    override def sourceType: String = s"kafka-avro${if (useStringForStringSchema) "-stringtype" else ""}"
   }
 
   case class SpecificSourceAvroParam(topic: String) extends SourceAvroParam {
@@ -258,7 +259,10 @@ trait KafkaAvroSpecMixin extends FunSuite with FlinkSpec with KafkaSpec with Mat
   object SourceAvroParam {
 
     def forGeneric(topicConfig: TopicConfig, versionOption: SchemaVersionOption): SourceAvroParam =
-      GenericSourceAvroParam(topicConfig.input, versionOption)
+      GenericSourceAvroParam(topicConfig.input, versionOption, useStringForStringSchema = false)
+
+    def forGenericWithStringType(topicConfig: TopicConfig, versionOption: SchemaVersionOption): SourceAvroParam =
+      GenericSourceAvroParam(topicConfig.input, versionOption, useStringForStringSchema = true)
 
     def forSpecific(topicConfig: TopicConfig): SourceAvroParam =
       SpecificSourceAvroParam(topicConfig.input)
@@ -274,7 +278,7 @@ trait KafkaAvroSpecMixin extends FunSuite with FlinkSpec with KafkaSpec with Mat
   }
 }
 
-class SimpleKafkaAvroDeserializer(schemaRegistryClient: CSchemaRegistryClient, _useSpecificAvroReader: Boolean) extends AbstractConfluentKafkaAvroDeserializer {
+class SimpleKafkaAvroDeserializer(schemaRegistryClient: CSchemaRegistryClient, _useSpecificAvroReader: Boolean) extends AbstractConfluentKafkaAvroDeserializer(AvroSettings.default) {
 
   this.schemaRegistry = schemaRegistryClient
   this.useSpecificAvroReader = _useSpecificAvroReader
@@ -287,7 +291,7 @@ class SimpleKafkaAvroDeserializer(schemaRegistryClient: CSchemaRegistryClient, _
 
 }
 
-class SimpleKafkaAvroSerializer(schemaRegistryClient: CSchemaRegistryClient) extends AbstractConfluentKafkaAvroSerializer(new DefaultAvroSchemaEvolution) {
+class SimpleKafkaAvroSerializer(schemaRegistryClient: CSchemaRegistryClient) extends AbstractConfluentKafkaAvroSerializer(new DefaultAvroSchemaEvolution(AvroSettings.default), AvroSettings.default) {
 
   this.schemaRegistry = schemaRegistryClient
 

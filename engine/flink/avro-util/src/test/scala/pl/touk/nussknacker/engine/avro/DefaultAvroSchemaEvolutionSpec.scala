@@ -2,10 +2,11 @@ package pl.touk.nussknacker.engine.avro
 
 import org.scalatest.{FunSpec, Matchers}
 import pl.touk.nussknacker.engine.avro.schema._
+import pl.touk.nussknacker.engine.avro.typed.AvroSettings
 
 class DefaultAvroSchemaEvolutionSpec extends FunSpec with Matchers {
 
-  val schemaEvolutionHandler: DefaultAvroSchemaEvolution = new DefaultAvroSchemaEvolution
+  val schemaEvolutionHandler: DefaultAvroSchemaEvolution = new DefaultAvroSchemaEvolution(AvroSettings.default)
 
   it("should convert record to the same schema") {
     val record = schemaEvolutionHandler.alignRecordToSchema(PaymentV1.record, PaymentV1.schema)

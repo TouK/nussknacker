@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, PaymentV1, PaymentV2}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.ConfluentKafkaAvroDeserializationSchemaFactory
+import pl.touk.nussknacker.engine.avro.typed.AvroSettings
 import pl.touk.nussknacker.engine.avro.{KafkaAvroSpecMixin, RuntimeSchemaData}
 
 class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpecMixin with TableDrivenPropertyChecks with ConfluentKafkaAvroSeDeSpecMixin {
@@ -20,7 +21,7 @@ class ConfluentKafkaAvroDeserializationSpec extends KafkaAvroSpecMixin with Tabl
 
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
 
-  private val confluentDeserializationSchemaFactory = new ConfluentKafkaAvroDeserializationSchemaFactory(factory)
+  private val confluentDeserializationSchemaFactory = new ConfluentKafkaAvroDeserializationSchemaFactory(factory, AvroSettings.default)
 
   test("should properly deserialize record to avro object with same schema version") {
     val schemas = List(PaymentV1.schema)

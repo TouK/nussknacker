@@ -8,34 +8,27 @@ import org.apache.avro.{LogicalTypes, Schema}
 import org.apache.avro.generic.GenericData.EnumSymbol
 import org.apache.avro.generic.{GenericData, GenericRecord}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor.DefaultPossibleTypes
 
-/**
-  * Right now we're doing approximate type generation to avoid false positives in validation,
-  * so now we add option to skip nullable fields.
-  *
-  * @TODO In future should do it in another way
-  *
-  * @param skipOptionalFields
-  */
-class AvroSchemaTypeDefinitionExtractor(skipOptionalFields: Boolean) {
+class AvroSchemaTypeDefinitionExtractor(avroSettings: AvroSettings) {
 
   import collection.JavaConverters._
 
   // see BestEffortAvroEncoder for underlying avro types
-  def typeDefinition(schema: Schema, possibleTypes: Set[TypedClass]): TypingResult = {
+  def typeDefinition(schema: Schema, possibleTypes: Set[TypedClass] = DefaultPossibleTypes): TypingResult = {
     schema.getType match {
       case Schema.Type.RECORD => {
         val fields = schema
           .getFields
           .asScala
           //Field is marked as optional when field has default value
-          .filterNot(field => skipOptionalFields && field.hasDefaultValue)
+          .filterNot(field => avroSettings.skipOptionalFields && field.hasDefaultValue)
           .map(field => field.name() -> typeDefinition(field.schema(), possibleTypes))
           .toMap
 
         Typed(possibleTypes.map(pt => TypedObjectTypingResult(fields, pt)))
       }
-      case Schema.Type.ENUM =>  //It's should by Union, because output can store map with string for ENUM
+      case Schema.Type.ENUM => //It's should by Union, because output can store map with string for ENUM
         Typed(Set(Typed.typedClass[EnumSymbol], Typed.typedClass[CharSequence]))
       case Schema.Type.ARRAY =>
         Typed.genericTypeClass[java.util.List[_]](List(typeDefinition(schema.getElementType, possibleTypes)))
@@ -51,7 +44,10 @@ class AvroSchemaTypeDefinitionExtractor(skipOptionalFields: Boolean) {
       case Schema.Type.BYTES | Schema.Type.FIXED if schema.getLogicalType != null && schema.getLogicalType.isInstanceOf[LogicalTypes.Decimal] =>
         Typed[java.math.BigDecimal]
       case Schema.Type.STRING =>
-        val baseType = Typed.typedClass[CharSequence]
+        val baseType = {
+          if (avroSettings.useStringForStringSchema) Typed.typedClass[String]
+          else Typed.typedClass[CharSequence]
+        }
         Option(schema.getProp(AvroSchemaTypeDefinitionExtractor.dictIdProperty)).map(Typed.taggedDictValue(baseType, _)).getOrElse(baseType)
       case Schema.Type.BYTES =>
         Typed[ByteBuffer]
@@ -90,13 +86,6 @@ object AvroSchemaTypeDefinitionExtractor {
 
   val dictIdProperty = "nkDictId"
 
-  private lazy val withoutOptionallyFieldsExtractor = new AvroSchemaTypeDefinitionExtractor(skipOptionalFields = true)
+  def apply(avroSettings: AvroSettings = AvroSettings.default): AvroSchemaTypeDefinitionExtractor = new AvroSchemaTypeDefinitionExtractor(avroSettings)
 
-  private lazy val withOptionallyFieldsExtractor = new AvroSchemaTypeDefinitionExtractor(skipOptionalFields = false)
-
-  def typeDefinitionWithoutNullableFields(schema: Schema, possibleTypes: Set[TypedClass]): TypingResult =
-    withoutOptionallyFieldsExtractor.typeDefinition(schema, possibleTypes)
-
-  def typeDefinition(schema: Schema): TypingResult =
-    withOptionallyFieldsExtractor.typeDefinition(schema, DefaultPossibleTypes)
 }

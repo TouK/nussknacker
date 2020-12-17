@@ -36,7 +36,7 @@ class SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory: Conf
   }
 
   private def writeDataBytes(record: GenericRecordWithSchemaId, bos: ByteArrayOutputStream): Unit = {
-    val writer = createDatumWriter(record, record.getSchema, useSchemaReflection = false)
+    val writer = createDatumWriter(record, record.getSchema, useSchemaReflection = false, useStringForStringSchema = false)
     val encoder = this.encoderFactory.directBinaryEncoder(bos, null)
     writer.write(record, encoder)
   }
@@ -53,7 +53,7 @@ class SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory: Conf
   private def readRecord(lengthOfData: Int, schemaId: Int, dataBuffer: Array[Byte]) = {
     val parsedSchema = schemaRegistry.getSchemaById(schemaId)
     val writerSchema = ConfluentUtils.extractSchema(parsedSchema)
-    val reader = createDatumReader(writerSchema, writerSchema, useSchemaReflection = false, useSpecificAvroReader = false)
+    val reader = createDatumReader(writerSchema, writerSchema, useSchemaReflection = false, useSpecificAvroReader = false, useStringForStringSchema = false)
     val binaryDecoder = decoderFactory.binaryDecoder(dataBuffer, 0, lengthOfData, null)
     reader.read(null, binaryDecoder).asInstanceOf[GenericData.Record]
   }

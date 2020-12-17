@@ -18,7 +18,7 @@ trait KafkaAvroSinkSpecMixin {
   protected def createLazyParam(schema: Schema, data: Map[String, Any]): LazyParameter[GenericContainer] = {
     val record = avroEncoder.encodeRecordOrError(data, schema)
     new LazyParameter[GenericContainer] {
-      override def returnType: typing.TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(record.getSchema)
+      override def returnType: typing.TypingResult = AvroSchemaTypeDefinitionExtractor().typeDefinition(record.getSchema)
     }
   }
 

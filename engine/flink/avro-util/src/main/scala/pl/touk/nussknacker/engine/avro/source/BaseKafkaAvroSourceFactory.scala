@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroDeserializationSchemaFactory
-import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
+import pl.touk.nussknacker.engine.avro.typed.{AvroSchemaTypeDefinitionExtractor, AvroSettings}
 import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, TimestampWatermarkHandler}
@@ -15,8 +15,10 @@ import pl.touk.nussknacker.engine.kafka.source.KafkaSource
 
 import scala.reflect.ClassTag
 
-abstract class BaseKafkaAvroSourceFactory[T: ClassTag](timestampAssigner: Option[TimestampWatermarkHandler[T]])
+abstract class BaseKafkaAvroSourceFactory[T: ClassTag](timestampAssigner: Option[TimestampWatermarkHandler[T]], avroSettings: AvroSettings)
   extends FlinkSourceFactory[T] with Serializable {
+
+  protected lazy val definitionExtractor: AvroSchemaTypeDefinitionExtractor = AvroSchemaTypeDefinitionExtractor(avroSettings)
 
   private val defaultMaxOutOfOrdernessMillis = 60000
 
@@ -41,7 +43,7 @@ abstract class BaseKafkaAvroSourceFactory[T: ClassTag](timestampAssigner: Option
         createRecordFormatter(preparedTopic.prepared),
         TestParsingUtils.newLineSplit
       ) with ReturningType {
-        override def returnType: typing.TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schemaData.schema)
+        override def returnType: typing.TypingResult = definitionExtractor.typeDefinition(schemaData.schema)
       }
     } else {
       new KafkaSource(

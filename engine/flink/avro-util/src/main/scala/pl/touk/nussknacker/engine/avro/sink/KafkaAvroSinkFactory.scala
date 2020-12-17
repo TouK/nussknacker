@@ -9,12 +9,15 @@ import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.typed.AvroSettings
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
-class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, val processObjectDependencies: ProcessObjectDependencies)
-  extends BaseKafkaAvroSinkFactory with KafkaAvroBaseTransformer[FlinkSink] {
+class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider,
+                           val processObjectDependencies: ProcessObjectDependencies,
+                           avroSettings: AvroSettings = AvroSettings.default)
+  extends BaseKafkaAvroSinkFactory(avroSettings) with KafkaAvroBaseTransformer[FlinkSink] {
 
   private val paramsDeterminedAfterSchema = List(
     Parameter[String](KafkaAvroBaseTransformer.SinkValidationModeParameterName)
@@ -73,7 +76,7 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, v
     val validationMode = extractValidationMode(params(KafkaAvroBaseTransformer.SinkValidationModeParameterName).asInstanceOf[String])
 
     createSink(preparedTopic, versionOption, key, value,
-      kafkaConfig, schemaRegistryProvider.serializationSchemaFactory, prepareSchemaDeterminer(preparedTopic, versionOption), validationMode)(
+      kafkaConfig, schemaRegistryProvider.serializationSchemaFactory(avroSettings), prepareSchemaDeterminer(preparedTopic, versionOption), validationMode)(
       typedDependency[MetaData](dependencies), typedDependency[NodeId](dependencies))
   }
 

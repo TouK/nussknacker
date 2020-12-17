@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
 import pl.touk.nussknacker.engine.avro.kryo.KryoGenericRecordSchemaIdSerializationSupport
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClient
+import pl.touk.nussknacker.engine.avro.typed.AvroSettings
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 import scala.collection.JavaConverters._
@@ -16,8 +17,8 @@ import scala.collection.JavaConverters._
   * This is Kafka Avro Deserialization class. All events will be deserialized to provided schema.
   */
 class ConfluentKafkaAvroDeserializer[T](kafkaConfig: KafkaConfig, schemaData: RuntimeSchemaData, confluentSchemaRegistryClient: ConfluentSchemaRegistryClient,
-                                        var isKey: Boolean, _useSpecificAvroReader: Boolean)
-  extends AbstractConfluentKafkaAvroDeserializer with Deserializer[T] {
+                                        var isKey: Boolean, _useSpecificAvroReader: Boolean, avroSettings: AvroSettings)
+  extends AbstractConfluentKafkaAvroDeserializer(avroSettings) with Deserializer[T] {
 
   schemaRegistry = confluentSchemaRegistryClient.client
   useSpecificAvroReader = _useSpecificAvroReader

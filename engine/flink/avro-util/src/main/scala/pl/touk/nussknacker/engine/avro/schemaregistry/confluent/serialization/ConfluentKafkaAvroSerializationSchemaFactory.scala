@@ -5,9 +5,12 @@ import org.apache.kafka.common.serialization.Serializer
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.serialization.{KafkaAvroKeyValueSerializationSchemaFactory, KafkaAvroValueSerializationSchemaFactory}
+import pl.touk.nussknacker.engine.avro.typed.AvroSettings
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 trait ConfluentAvroSerializerFactory {
+
+  val avroSettings: AvroSettings
 
   protected def createSerializer[T](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
                                     kafkaConfig: KafkaConfig,
@@ -18,12 +21,12 @@ trait ConfluentAvroSerializerFactory {
 
     val avroSchemaOpt = schemaOpt.map(ConfluentUtils.convertToAvroSchema(_, version))
 
-    val serializer = ConfluentKafkaAvroSerializer(kafkaConfig, schemaRegistryClient, avroSchemaOpt, isKey = isKey)
+    val serializer = ConfluentKafkaAvroSerializer(kafkaConfig, schemaRegistryClient, avroSchemaOpt, isKey = isKey, avroSettings = avroSettings)
     serializer.asInstanceOf[Serializer[T]]
   }
 }
 
-class ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
+class ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, override val avroSettings: AvroSettings)
   extends KafkaAvroValueSerializationSchemaFactory with ConfluentAvroSerializerFactory {
 
   override protected def createValueSerializer(schemaOpt: Option[Schema], version: Option[Int], kafkaConfig: KafkaConfig): Serializer[AnyRef] =

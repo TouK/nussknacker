@@ -2,10 +2,10 @@ package pl.touk.nussknacker.engine.avro.schema
 
 import java.io.{ByteArrayOutputStream, IOException}
 import java.nio.ByteBuffer
-
 import org.apache.avro.Schema
 import org.apache.avro.generic._
 import org.apache.avro.io.{DatumReader, DecoderFactory, EncoderFactory}
+import pl.touk.nussknacker.engine.avro.typed.AvroSettings
 import pl.touk.nussknacker.engine.avro.{AvroUtils, RuntimeSchemaData}
 
 import scala.util.Try
@@ -20,7 +20,7 @@ import scala.util.Try
   *
   * For now it's easiest way to convert GenericContainer record to wanted schema.
   */
-class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWriterMixin with RecordDeserializer {
+class DefaultAvroSchemaEvolution(avroSettings: AvroSettings) extends AvroSchemaEvolution with DatumReaderWriterMixin with RecordDeserializer {
 
   /**
     * In future we can try to configure it
@@ -79,7 +79,7 @@ class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWri
     try {
       val out = new ByteArrayOutputStream
       val encoder = encoderFactory.directBinaryEncoder(out, null)
-      val writer = createDatumWriter(record, record.getSchema, useSchemaReflection = useSchemaReflection)
+      val writer = createDatumWriter(record, record.getSchema, useSchemaReflection = useSchemaReflection, useStringForStringSchema = avroSettings.useStringForStringSchema)
       writer.write(record, encoder)
       encoder.flush()
       val bytes = out.toByteArray

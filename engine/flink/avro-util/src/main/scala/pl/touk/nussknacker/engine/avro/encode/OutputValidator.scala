@@ -12,9 +12,9 @@ import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypedObjectTypin
 import pl.touk.nussknacker.engine.api.typed.{CanBeSubclassDeterminer, typing}
 import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.SinkValueParamName
-import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
+import pl.touk.nussknacker.engine.avro.typed.{AvroSchemaTypeDefinitionExtractor, AvroSettings}
 
-object OutputValidator {
+class OutputValidator(avroSettings: AvroSettings) {
 
   private val ValidationErrorMessageBase = "Provided value does not match selected Avro schema"
 
@@ -39,7 +39,7 @@ object OutputValidator {
   }
 
   private def incompatibleSchemaErrorWithPrettyMessage(readerSchema: Schema, writerSchema: Schema)(implicit nodeId: NodeId) = {
-    validateSchemasUsingCanBeSubclassOf(AvroSchemaTypeDefinitionExtractor.typeDefinition(writerSchema), readerSchema, ValidationMode.allowRedundantAndOptional).andThen { _ =>
+    validateSchemasUsingCanBeSubclassOf(AvroSchemaTypeDefinitionExtractor(avroSettings).typeDefinition(writerSchema), readerSchema, ValidationMode.allowRedundantAndOptional).andThen { _ =>
       // in case of validateSchemasUsingCanBeSubclassOf haven't found errors, we need to return at least generic message, because we are sure that validation haven't passed
       Invalid(prepareError(Nil))
     }
@@ -50,7 +50,7 @@ object OutputValidator {
     val possibleTypes = AvroSchemaTypeDefinitionExtractor.ExtendedPossibleTypes
     //TODO: this still does not handle optional fields validation properly for acceptUnfilledOptional == true.
     //The optional fields types will not be validated, meaning that if e.g. String is used instead of Long, the error will not be detected during typing
-    val returnType = new AvroSchemaTypeDefinitionExtractor(skipOptionalFields = validationMode.acceptUnfilledOptional).typeDefinition(schema, possibleTypes)
+    val returnType = new AvroSchemaTypeDefinitionExtractor(avroSettings.copy(skipOptionalFields = validationMode.acceptUnfilledOptional)).typeDefinition(schema, possibleTypes)
     new ValidationModeAwareSubclassDeterminer(validationMode).canBeSubclassOf(value, returnType).leftMap(errors => prepareError(errors.toList))
   }
 

@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, TypedExp
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedDict}
 import pl.touk.nussknacker.engine.avro.schema.{PaymentV1, PaymentV2}
-import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
+import pl.touk.nussknacker.engine.avro.typed.{AvroSchemaTypeDefinitionExtractor, AvroSettings}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Standard
@@ -26,6 +26,8 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
 
   private val dictId = "dict1"
 
+  private val extractor: AvroSchemaTypeDefinitionExtractor = AvroSchemaTypeDefinitionExtractor(AvroSettings.default)
+
   it("should recognize record with simple fields") {
     val schema = wrapWithRecordSchema(
       """[
@@ -33,11 +35,11 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
         |  { "name": "stringField", "type": "string" },
         |  { "name": "booleanField", "type": "boolean" }
         |]""".stripMargin)
-    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)).toOption.get
+    val ctx = ValidationContext.empty.withVariable("input", extractor.typeDefinition(schema)).toOption.get
 
     parse[Integer]("#input.intField", ctx) should be ('valid)
     parse[CharSequence]("#input.intField", ctx) should be ('invalid)
-    parse[CharSequence]("#input.stringField", ctx) should be ('valid)
+    parse[String]("#input.stringField", ctx) should be ('valid)
     parse[Boolean]("#input.booleanField", ctx) should be ('valid)
     parse[Integer]("#input.nonExisting", ctx) should be ('invalid)
     parse[GenericRecord]("#input", ctx) should be ('valid)
@@ -60,7 +62,7 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
         |    }
         |  }
         |]""".stripMargin)
-    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)).toOption.get
+    val ctx = ValidationContext.empty.withVariable("input", extractor.typeDefinition(schema)).toOption.get
 
     parse[CharSequence]("#input.array[0].foo", ctx) should be ('valid)
     parse[CharSequence]("#input.array[0].bar", ctx) should be ('invalid)
@@ -83,7 +85,7 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
         |    }
         |  }
         |]""".stripMargin)
-    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)).toOption.get
+    val ctx = ValidationContext.empty.withVariable("input", extractor.typeDefinition(schema)).toOption.get
 
     parse[CharSequence]("#input.map['ala'].foo", ctx) should be ('valid)
     parse[CharSequence]("#input.map['ala'].bar", ctx) should be ('invalid)
@@ -106,7 +108,7 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
         |    ]
         |  }
         |]""".stripMargin)
-    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)).toOption.get
+    val ctx = ValidationContext.empty.withVariable("input", extractor.typeDefinition(schema)).toOption.get
 
     parse[CharSequence]("#input.union.foo", ctx) should be ('valid)
     parse[CharSequence]("#input.union.bar", ctx) should be ('invalid)
@@ -124,7 +126,7 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
         |    ]
         |  }
         |]""".stripMargin)
-    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)).toOption.get
+    val ctx = ValidationContext.empty.withVariable("input", extractor.typeDefinition(schema)).toOption.get
 
     parse[Int]("#input.union", ctx) should be ('valid)
     parse[Long]("#input.union", ctx) should be ('valid)
@@ -132,21 +134,33 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
   }
 
   it("should recognize record with enum") {
-    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(PaymentV1.schema)).toOption.get
+    val ctx = ValidationContext.empty.withVariable("input", extractor.typeDefinition(PaymentV1.schema)).toOption.get
 
     parse[CharSequence]("#input.currency", ctx) should be ('valid)
     parse[EnumSymbol]("#input.currency", ctx) should be ('valid)
   }
 
+  it("should recognize avro type string as String") {
+    val schema = wrapWithRecordSchema(
+      """[
+        |  { "name": "stringField", "type": "string" }
+        |]""".stripMargin)
+
+    val extractor = AvroSchemaTypeDefinitionExtractor(AvroSettings.default.copy(useStringForStringSchema = true))
+    val ctx = ValidationContext.empty.withVariable("input", extractor.typeDefinition(schema)).toOption.get
+
+    parse[String]("#input.stringField", ctx) should be ('valid)
+  }
+
   it("should not skipp nullable field vat from schema PaymentV1 when skippNullableFields is set") {
-    val typeResult = AvroSchemaTypeDefinitionExtractor.typeDefinitionWithoutNullableFields(PaymentV1.schema, AvroSchemaTypeDefinitionExtractor.DefaultPossibleTypes)
+    val typeResult = AvroSchemaTypeDefinitionExtractor(AvroSettings(useStringForStringSchema = false, skipOptionalFields = true)).typeDefinition(PaymentV1.schema)
     val ctx = ValidationContext.empty.withVariable("input", typeResult).toOption.get
 
     parse[Int]("#input.vat", ctx) should be ('valid)
   }
 
   it("should skipp optional fields from schema PaymentV2 when skippNullableFields is set") {
-    val typeResult = AvroSchemaTypeDefinitionExtractor.typeDefinitionWithoutNullableFields(PaymentV2.schema, AvroSchemaTypeDefinitionExtractor.DefaultPossibleTypes)
+    val typeResult = AvroSchemaTypeDefinitionExtractor(AvroSettings(useStringForStringSchema = false, skipOptionalFields = true)).typeDefinition(PaymentV2.schema)
     val ctx = ValidationContext.empty.withVariable("input", typeResult).toOption.get
 
     parse[Int]("#input.cnt", ctx) should be ('invalid)
@@ -163,7 +177,7 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
         |  }
         |]""".stripMargin)
     val ctx = ValidationContext.empty.withVariable("input",
-      AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)).andThen(_.withVariable("DICT1", TypedDict(dictId, Typed.typedClass[String]))).toOption.get
+      extractor.typeDefinition(schema)).andThen(_.withVariable("DICT1", TypedDict(dictId, Typed.typedClass[String]))).toOption.get
 
     parse[CharSequence]("#input.withDict", ctx) should be ('valid)
     parse[Boolean]("#input.withDict == #DICT1['key1']", ctx) should be ('valid)

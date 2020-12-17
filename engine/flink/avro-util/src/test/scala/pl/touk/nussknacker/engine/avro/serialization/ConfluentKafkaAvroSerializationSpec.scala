@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.avro.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, PaymentV1, PaymentV2}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.ConfluentAvroSerializationSchemaFactory
+import pl.touk.nussknacker.engine.avro.typed.AvroSettings
 
 class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableDrivenPropertyChecks with ConfluentKafkaAvroSeDeSpecMixin {
 
@@ -20,7 +21,7 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableD
 
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
 
-  private val confluentSerializationSchemaFactory = new ConfluentAvroSerializationSchemaFactory(factory)
+  private val confluentSerializationSchemaFactory = new ConfluentAvroSerializationSchemaFactory(factory, AvroSettings.default)
 
   test("should properly serialize avro object to record with same schema version") {
     val schemas = List(PaymentV1.schema)
