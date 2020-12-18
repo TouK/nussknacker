@@ -9,7 +9,12 @@ To see biggest differences please consult the [changelog](Changelog.md).
   providing better `TypeInformation` for aggregated values
 * [#1343](https://github.com/TouK/nussknacker/pull/1343) `FirstAggregator` changed serialized state, it is not compatible, 
   ```Aggregator``` trait has new method ```computeStoredType``` 
-
+* [#1352](https://github.com/TouK/nussknacker/pull/1352) AvroStringSettings class has been introduced, which allows control
+  whether Avro type ```string``` is represented by ```java.lang.String``` (also in runtime) or ```java.lang.CharSequence```
+  (implemented in runtime by ```org.apache.avro.util.Utf8```). This setting is available through environment variable 
+  ```AVRO_USE_STRING_FOR_STRING_TYPE```. Please mind that this setting is global - it applies to all processes running on Flink
+  and also requires restarting TaskManager when changing the value.
+  
 ## In version 0.3.0
 
 * [#1313](https://github.com/TouK/nussknacker/pull/1313) Kafka Avro API passes `KafkaConfig` during `TypeInformation` determining

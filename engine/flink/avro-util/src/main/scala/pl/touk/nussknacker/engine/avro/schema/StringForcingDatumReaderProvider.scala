@@ -14,7 +14,7 @@ trait StringForcingDatumReader[T] extends GenericDatumReader[T]  {
   }
 }
 
-object StringForcingDatumReader {
+object StringForcingDatumReaderProvider {
   def genericDatumReader[T](writer: Schema, reader: Schema, data: GenericData): GenericDatumReader[T] =
     new GenericDatumReader[T](writer, reader, data) with StringForcingDatumReader[T]
 
@@ -23,4 +23,18 @@ object StringForcingDatumReader {
 
   def reflectiveDatumReader[T](writer: Schema, reader: Schema, data: ReflectData): ReflectDatumReader[T] =
     new ReflectDatumReader[T](writer, reader, data) with StringForcingDatumReader[T]
+}
+
+/**
+  * `object StringForcingDatumReader` doesnt cooperate with Java well
+  */
+class StringForcingDatumReaderProvider[T] {
+  def genericDatumReader(writer: Schema, reader: Schema, data: GenericData): GenericDatumReader[T] =
+    StringForcingDatumReaderProvider.genericDatumReader[T](writer, reader, data)
+
+  def specificDatumReader(writer: Schema, reader: Schema, data: SpecificData): SpecificDatumReader[T] =
+    StringForcingDatumReaderProvider.specificDatumReader[T](writer, reader, data)
+
+  def reflectiveDatumReader(writer: Schema, reader: Schema, data: ReflectData): ReflectDatumReader[T] =
+    StringForcingDatumReaderProvider.reflectiveDatumReader[T](writer, reader, data)
 }

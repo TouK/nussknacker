@@ -7,7 +7,7 @@ import org.apache.avro.generic.GenericData
 import org.apache.avro.io.DatumReader
 import org.apache.avro.reflect.ReflectData
 import org.apache.avro.specific.{SpecificData, SpecificRecord}
-import pl.touk.nussknacker.engine.avro.schema.StringForcingDatumReader
+import pl.touk.nussknacker.engine.avro.schema.StringForcingDatumReaderProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.GenericRecordWithSchemaId
 
 import scala.reflect.{ClassTag, classTag}
@@ -32,21 +32,21 @@ object AvroUtils {
         case _ => copiedRecord
       }
     }
-    override def createDatumReader(writer: Schema, reader: Schema): DatumReader[_] = StringForcingDatumReader
+    override def createDatumReader(writer: Schema, reader: Schema): DatumReader[_] = StringForcingDatumReaderProvider
       .genericDatumReader(writer, reader, this.asInstanceOf[GenericData])
 
     override def createDatumReader(schema: Schema): DatumReader[_] = createDatumReader(schema, schema)
   })
 
   def specificData: SpecificData = addLogicalTypeConversions(new SpecificData(_){
-    override def createDatumReader(writer: Schema, reader: Schema): DatumReader[_] = StringForcingDatumReader
+    override def createDatumReader(writer: Schema, reader: Schema): DatumReader[_] = StringForcingDatumReaderProvider
       .specificDatumReader(writer, reader, this.asInstanceOf[SpecificData])
 
     override def createDatumReader(schema: Schema): DatumReader[_] = createDatumReader(schema, schema)
   })
 
   def reflectData: ReflectData = addLogicalTypeConversions(new ReflectData(_){
-    override def createDatumReader(writer: Schema, reader: Schema): DatumReader[_] = StringForcingDatumReader
+    override def createDatumReader(writer: Schema, reader: Schema): DatumReader[_] = StringForcingDatumReaderProvider
       .reflectiveDatumReader(writer, reader, this.asInstanceOf[ReflectData])
 
     override def createDatumReader(schema: Schema): DatumReader[_] = createDatumReader(schema, schema)

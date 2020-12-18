@@ -20,17 +20,14 @@ package org.apache.flink.formats.avro.typeutils;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DatumWriter;
 import org.apache.avro.reflect.Nullable;
 import org.apache.avro.reflect.ReflectData;
-import org.apache.avro.reflect.ReflectDatumReader;
 import org.apache.avro.reflect.ReflectDatumWriter;
 import org.apache.avro.specific.SpecificData;
-import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.specific.SpecificDatumWriter;
 import org.apache.avro.specific.SpecificRecord;
 import org.apache.flink.annotation.Internal;
@@ -39,7 +36,7 @@ import org.apache.flink.formats.avro.utils.DataOutputEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pl.touk.nussknacker.engine.avro.AvroUtils;
-import pl.touk.nussknacker.engine.avro.schema.StringForcingDatumReader;
+import pl.touk.nussknacker.engine.avro.schema.StringForcingDatumReaderProvider;
 
 import java.util.Optional;
 
@@ -105,7 +102,7 @@ public final class LogicalTypesAvroFactory<T> {
 		return new LogicalTypesAvroFactory<T>(
 				specificData,
 				newSchema,
-				StringForcingDatumReader.forSpecificDatumReader(previousSchema.orElse(newSchema), newSchema, specificData),
+				new StringForcingDatumReaderProvider<T>().specificDatumReader(previousSchema.orElse(newSchema), newSchema, specificData),
 				new SpecificDatumWriter<>(newSchema, specificData)
 		);
 	}
@@ -119,7 +116,7 @@ public final class LogicalTypesAvroFactory<T> {
 		return new LogicalTypesAvroFactory<T>(
 				genericData,
 				schema,
-				StringForcingDatumReader.forGenericDatumReader(schema, schema, genericData),
+				new StringForcingDatumReaderProvider<T>().genericDatumReader(schema, schema, genericData),
 				new GenericDatumWriter<>(schema, genericData)
 		);
 	}
@@ -133,7 +130,7 @@ public final class LogicalTypesAvroFactory<T> {
 		return new LogicalTypesAvroFactory<T>(
 				reflectData,
 				newSchema,
-				StringForcingDatumReader.forReflectiveDatumReader(previousSchema.orElse(newSchema), newSchema, reflectData),
+				new StringForcingDatumReaderProvider<T>().reflectiveDatumReader(previousSchema.orElse(newSchema), newSchema, reflectData),
 				new ReflectDatumWriter<>(newSchema, reflectData)
 		);
 	}
