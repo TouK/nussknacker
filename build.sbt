@@ -220,7 +220,7 @@ val postgresV = "42.2.12"
 val flywayV = "6.3.3"
 val confluentV = "5.5.0"
 val jbcryptV = "0.4"
-val cronParserV = "3.1.1"
+val cronParserV = "7.0.1"
 val javaxValidationApiV = "2.0.1.Final"
 val caffeineCacheV = "2.8.2"
 
@@ -286,6 +286,7 @@ lazy val dist = {
         (crossTarget in generic).value / "genericModel.jar" -> "model/genericModel.jar",
         (crossTarget in demo).value / s"demoModel.jar" -> "model/demoModel.jar",
         (crossTarget in flinkProcessManager).value / s"nussknacker-flink-manager.jar" -> "managers/nussknacker-flink-manager.jar",
+        (crossTarget in flinkPeriodicProcessManager).value / s"nussknacker-flink-periodic-manager.jar" -> "managers/nussknacker-flink-periodic-manager.jar",
         (crossTarget in engineStandalone).value / s"nussknacker-standalone-manager.jar" -> "managers/nussknacker-standalone-manager.jar"
       ),
       /* //FIXME: figure out how to filter out only for .tgz, not for docker
@@ -390,6 +391,25 @@ lazy val flinkProcessManager = (project in engine("flink/management")).
     queryableState,
     httpUtils % "provided",
     kafkaTestUtil % "it,test")
+
+lazy val flinkPeriodicProcessManager = (project in engine("flink/management/periodic")).
+  settings(commonSettings).
+  settings(assemblySettings("nussknacker-flink-periodic-manager.jar", includeScala = false): _*).
+  settings(
+    name := "nussknacker-flink-periodic-manager",
+    libraryDependencies ++= {
+      Seq(
+        "org.typelevel" %% "cats-core" % catsV % "provided",
+        "com.typesafe.slick" %% "slick" % slickV % "provided",
+        "org.flywaydb" % "flyway-core" % flywayV % "provided",
+        "com.cronutils" % "cron-utils" % cronParserV
+      )
+    }
+  ).dependsOn(flinkProcessManager,
+    interpreter % "provided",
+    api % "provided",
+    httpUtils % "provided",
+    testUtil % "test")
 
 lazy val standaloneSample = (project in engine("standalone/engine/sample")).
   settings(commonSettings).
@@ -901,7 +921,7 @@ lazy val ui = (project in file("ui/server"))
 lazy val root = (project in file("."))
   .aggregate(
     // TODO: get rid of this duplication
-    engineStandalone, standaloneApp, flinkProcessManager, standaloneSample, flinkManagementSample, managementJavaSample, demo, generic,
+    engineStandalone, standaloneApp, flinkProcessManager, flinkPeriodicProcessManager, standaloneSample, flinkManagementSample, managementJavaSample, demo, generic,
     process, interpreter, benchmarks, kafka, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
     flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils, queryableState,
     restmodel, listenerApi, ui,
@@ -936,4 +956,4 @@ lazy val root = (project in file("."))
   )
 
 addCommandAlias("assemblySamples", ";flinkManagementSample/assembly;standaloneSample/assembly;demo/assembly;generic/assembly")
-addCommandAlias("assemblyEngines", ";flinkProcessManager/assembly;engineStandalone/assembly")
+addCommandAlias("assemblyEngines", ";flinkProcessManager/assembly;flinkPeriodicProcessManager/assembly;engineStandalone/assembly")
