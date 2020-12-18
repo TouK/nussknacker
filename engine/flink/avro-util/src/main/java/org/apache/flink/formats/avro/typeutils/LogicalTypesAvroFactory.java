@@ -130,7 +130,7 @@ public final class LogicalTypesAvroFactory<T> {
 		return new LogicalTypesAvroFactory<T>(
 				reflectData,
 				newSchema,
-				new StringForcingDatumReaderProvider<T>().reflectiveDatumReader(previousSchema.orElse(newSchema), newSchema, reflectData),
+				new StringForcingDatumReaderProvider<T>().reflectDatumReader(previousSchema.orElse(newSchema), newSchema, reflectData),
 				new ReflectDatumWriter<>(newSchema, reflectData)
 		);
 	}

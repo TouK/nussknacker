@@ -47,7 +47,7 @@ object AvroUtils {
 
   def reflectData: ReflectData = addLogicalTypeConversions(new ReflectData(_){
     override def createDatumReader(writer: Schema, reader: Schema): DatumReader[_] = StringForcingDatumReaderProvider
-      .reflectiveDatumReader(writer, reader, this.asInstanceOf[ReflectData])
+      .reflectDatumReader(writer, reader, this.asInstanceOf[ReflectData])
 
     override def createDatumReader(schema: Schema): DatumReader[_] = createDatumReader(schema, schema)
 

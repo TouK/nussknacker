@@ -21,7 +21,7 @@ object StringForcingDatumReaderProvider {
   def specificDatumReader[T](writer: Schema, reader: Schema, data: SpecificData): SpecificDatumReader[T] =
     new SpecificDatumReader[T](writer, reader, data) with StringForcingDatumReader[T]
 
-  def reflectiveDatumReader[T](writer: Schema, reader: Schema, data: ReflectData): ReflectDatumReader[T] =
+  def reflectDatumReader[T](writer: Schema, reader: Schema, data: ReflectData): ReflectDatumReader[T] =
     new ReflectDatumReader[T](writer, reader, data) with StringForcingDatumReader[T]
 }
 
@@ -35,6 +35,6 @@ class StringForcingDatumReaderProvider[T] {
   def specificDatumReader(writer: Schema, reader: Schema, data: SpecificData): SpecificDatumReader[T] =
     StringForcingDatumReaderProvider.specificDatumReader[T](writer, reader, data)
 
-  def reflectiveDatumReader(writer: Schema, reader: Schema, data: ReflectData): ReflectDatumReader[T] =
-    StringForcingDatumReaderProvider.reflectiveDatumReader[T](writer, reader, data)
+  def reflectDatumReader(writer: Schema, reader: Schema, data: ReflectData): ReflectDatumReader[T] =
+    StringForcingDatumReaderProvider.reflectDatumReader[T](writer, reader, data)
 }
