@@ -283,7 +283,7 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers with EitherValues 
     new GenericDatumWriter[GenericRecord](schema, AvroUtils.genericData).write(givenRecord, encoder)
     encoder.flush()
     val decoder = DecoderFactory.get().binaryDecoder(new ByteArrayInputStream(bos.toByteArray), null)
-    val readRecord = StringForcingDatumReader.forGenericDatumReader[GenericRecord](schema, schema, AvroUtils.genericData).read(null, decoder)
+    val readRecord = StringForcingDatumReader.genericDatumReader[GenericRecord](schema, schema, AvroUtils.genericData).read(null, decoder)
     readRecord
   }
 

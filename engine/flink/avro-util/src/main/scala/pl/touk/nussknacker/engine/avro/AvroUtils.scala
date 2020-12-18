@@ -33,21 +33,21 @@ object AvroUtils {
       }
     }
     override def createDatumReader(writer: Schema, reader: Schema): DatumReader[_] = StringForcingDatumReader
-      .forGenericDatumReader(writer, reader, this.asInstanceOf[GenericData])
+      .genericDatumReader(writer, reader, this.asInstanceOf[GenericData])
 
     override def createDatumReader(schema: Schema): DatumReader[_] = createDatumReader(schema, schema)
   })
 
   def specificData: SpecificData = addLogicalTypeConversions(new SpecificData(_){
     override def createDatumReader(writer: Schema, reader: Schema): DatumReader[_] = StringForcingDatumReader
-      .forSpecificDatumReader(writer, reader, this.asInstanceOf[SpecificData])
+      .specificDatumReader(writer, reader, this.asInstanceOf[SpecificData])
 
     override def createDatumReader(schema: Schema): DatumReader[_] = createDatumReader(schema, schema)
   })
 
   def reflectData: ReflectData = addLogicalTypeConversions(new ReflectData(_){
     override def createDatumReader(writer: Schema, reader: Schema): DatumReader[_] = StringForcingDatumReader
-      .forReflectiveDatumReader(writer, reader, this.asInstanceOf[ReflectData])
+      .reflectiveDatumReader(writer, reader, this.asInstanceOf[ReflectData])
 
     override def createDatumReader(schema: Schema): DatumReader[_] = createDatumReader(schema, schema)
 

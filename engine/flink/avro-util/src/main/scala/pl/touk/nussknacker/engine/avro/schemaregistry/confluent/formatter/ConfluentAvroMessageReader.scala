@@ -65,7 +65,7 @@ private[confluent] class ConfluentAvroMessageReader(schemaRegistryClient: Schema
 
   private def jsonToAvro(jsonString: String, schema: Schema) = {
     try {
-      val reader = StringForcingDatumReader.forGenericDatumReader[AnyRef](schema, schema, AvroUtils.genericData)
+      val reader = StringForcingDatumReader.genericDatumReader[AnyRef](schema, schema, AvroUtils.genericData)
       val obj = reader.read(null, decoderFactory.jsonDecoder(schema, jsonString))
       if (schema.getType == Type.STRING)
         obj.asInstanceOf[Utf8].toString
