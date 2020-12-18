@@ -26,7 +26,7 @@ object StringForcingDatumReaderProvider {
 }
 
 /**
-  * `object StringForcingDatumReader` doesnt cooperate with Java well
+  * `object StringForcingDatumReader` doesn't cooperate with Java well
   */
 class StringForcingDatumReaderProvider[T] {
   def genericDatumReader(writer: Schema, reader: Schema, data: GenericData): GenericDatumReader[T] =

@@ -7,6 +7,13 @@ object AvroStringSettingsInTests {
 
   def setDefault(): Unit = setValue(AvroStringSettings.default)
 
+  def whenEnabled[T](execute : => T): T ={
+    enable()
+    val result = execute
+    setDefault()
+    result
+  }
+
   private def setValue(value: Boolean): Unit = {
     AvroStringSettings.forceUsingStringForStringSchema // initialize lazy value
     val field = Class.forName("pl.touk.nussknacker.engine.avro.schema.AvroStringSettings$").getDeclaredField("forceUsingStringForStringSchema")
