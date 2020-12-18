@@ -10,9 +10,10 @@ SCALA_VERSION=${SCALA_VERSION:-2.12}
 PROJECT_BASE_DIR="../../.."
 #management jars are currently needed to access ProcessManagers
 FLINK_ENGINE_JAR=$PROJECT_BASE_DIR/engine/flink/management/target/scala-${SCALA_VERSION}/nussknacker-flink-manager.jar
+FLINK_PERIODIC_ENGINE_JAR=$PROJECT_BASE_DIR/engine/flink/management/target/scala-${SCALA_VERSION}/nussknacker-flink-periodic-manager.jar
 STANDALONE_ENGINE_JAR=$PROJECT_BASE_DIR/engine/standalone/engine/target/scala-${SCALA_VERSION}/nussknacker-standalone-manager.jar
 
-export CLASSPATH="../target/scala-${SCALA_VERSION}/nussknacker-ui-assembly.jar:$FLINK_ENGINE_JAR:$STANDALONE_ENGINE_JAR"
+export CLASSPATH="../target/scala-${SCALA_VERSION}/nussknacker-ui-assembly.jar:$FLINK_ENGINE_JAR:$FLINK_PERIODIC_ENGINE_JAR:$STANDALONE_ENGINE_JAR"
 DIST_BASE_DIR="$PROJECT_BASE_DIR/nussknacker-dist/src/universal"
 export CONFIG_FILE="$DIST_BASE_DIR/conf/dev-application.conf"
 
