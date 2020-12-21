@@ -220,7 +220,7 @@ val postgresV = "42.2.12"
 val flywayV = "6.3.3"
 val confluentV = "5.5.0"
 val jbcryptV = "0.4"
-val cronParserV = "7.0.1"
+val cronParserV = "9.1.3"
 val javaxValidationApiV = "2.0.1.Final"
 val caffeineCacheV = "2.8.2"
 
