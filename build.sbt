@@ -286,7 +286,6 @@ lazy val dist = {
         (crossTarget in generic).value / "genericModel.jar" -> "model/genericModel.jar",
         (crossTarget in demo).value / s"demoModel.jar" -> "model/demoModel.jar",
         (crossTarget in flinkProcessManager).value / s"nussknacker-flink-manager.jar" -> "managers/nussknacker-flink-manager.jar",
-        (crossTarget in flinkPeriodicProcessManager).value / s"nussknacker-flink-periodic-manager.jar" -> "managers/nussknacker-flink-periodic-manager.jar",
         (crossTarget in engineStandalone).value / s"nussknacker-standalone-manager.jar" -> "managers/nussknacker-standalone-manager.jar"
       ),
       /* //FIXME: figure out how to filter out only for .tgz, not for docker
@@ -956,4 +955,4 @@ lazy val root = (project in file("."))
   )
 
 addCommandAlias("assemblySamples", ";flinkManagementSample/assembly;standaloneSample/assembly;demo/assembly;generic/assembly")
-addCommandAlias("assemblyEngines", ";flinkProcessManager/assembly;flinkPeriodicProcessManager/assembly;engineStandalone/assembly")
+addCommandAlias("assemblyEngines", ";flinkProcessManager/assembly;engineStandalone/assembly")
