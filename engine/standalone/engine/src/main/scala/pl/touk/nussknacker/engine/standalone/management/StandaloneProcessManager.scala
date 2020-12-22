@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.standalone.management
 
 import java.util.concurrent.TimeUnit
+
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
@@ -9,7 +10,7 @@ import pl.touk.nussknacker.engine.ModelData.ClasspathConfig
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessObjectDependencies, SourceTestSupport}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessObjectDependencies, RunMode, SourceTestSupport}
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -116,7 +117,7 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
 
   def runTest[T](variableEncoder: Any => T): TestResults[T] = {
     val creator = modelData.configCreator
-    val processObjectDependencies = ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming)
+    val processObjectDependencies = ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming, RunMode.Test)
 
     val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(creator, processObjectDependencies)
 

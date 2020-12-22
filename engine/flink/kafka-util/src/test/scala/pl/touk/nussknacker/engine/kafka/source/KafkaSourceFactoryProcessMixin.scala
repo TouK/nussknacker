@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefini
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.EspProcess
 import KafkaSourceFactoryMixin.ObjToSerialize
+import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryProcessConfigCreator.{SinkForSampleValue, recordingExceptionHandler}
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
@@ -33,7 +34,7 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
 
   protected lazy val processDefinition: ProcessDefinitionExtractor.ProcessDefinition[DefinitionExtractor.ObjectWithMethodDef] =
     ProcessDefinitionExtractor.extractObjectWithMethods(creator,
-      process.ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader)))
+      process.ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader), RunMode.Engine))
 
   protected def extractTypes(definition: ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef]): Set[TypeInfos.ClazzDefinition] =
     ProcessDefinitionExtractor.extractTypes(definition)
@@ -41,7 +42,7 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
   protected override def beforeAll(): Unit = {
     super.beforeAll()
     val modelData = LocalModelData(config, creator)
-    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
+    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData, RunMode.Engine), ExecutionConfigPreparer.unOptimizedChain(modelData))
   }
 
   before {

@@ -5,6 +5,7 @@ import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
+import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -46,7 +47,7 @@ class SampleComponentProviderTest extends FunSuite with FlinkSpec with Matchers 
     super.beforeAll()
     val loadedConfig = new SampleModelConfigLoader().resolveInputConfigDuringExecution(config, getClass.getClassLoader)
     val modelData = LocalModelData(loadedConfig.config, configCreator, objectNaming = new TestObjectNaming)
-    registrar = process.registrar.FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
+    registrar = process.registrar.FlinkProcessRegistrar(new FlinkProcessCompiler(modelData, RunMode.Engine), ExecutionConfigPreparer.unOptimizedChain(modelData))
   }
 
   private def run(process: EspProcess)(action: => Unit): Unit = {

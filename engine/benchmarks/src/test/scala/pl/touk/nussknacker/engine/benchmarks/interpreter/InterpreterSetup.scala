@@ -57,7 +57,7 @@ class InterpreterSetup[T:ClassTag] {
     }
 
     val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(configCreator,
-      api.process.ProcessObjectDependencies(ConfigFactory.empty(), ObjectNamingProvider(getClass.getClassLoader)))
+      api.process.ProcessObjectDependencies(ConfigFactory.empty(), ObjectNamingProvider(getClass.getClassLoader), RunMode.Engine))
 
     ProcessCompilerData.prepare(process, definitions, listeners, getClass.getClassLoader, ProductionServiceInvocationCollector)(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
   }

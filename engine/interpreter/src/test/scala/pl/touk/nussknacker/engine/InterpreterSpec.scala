@@ -140,7 +140,7 @@ class InterpreterSpec extends FunSuite with Matchers {
         .copy(languages = LanguageConfiguration(List(LiteralExpressionParser)))
     }
 
-    val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, api.process.ProcessObjectDependencies(ConfigFactory.empty(), ObjectNamingProvider(getClass.getClassLoader)))
+    val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, api.process.ProcessObjectDependencies(ConfigFactory.empty(), ObjectNamingProvider(getClass.getClassLoader), RunMode.Engine))
 
     ProcessCompilerData.prepare(process, definitions, listeners, getClass.getClassLoader, ProductionServiceInvocationCollector)(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
   }

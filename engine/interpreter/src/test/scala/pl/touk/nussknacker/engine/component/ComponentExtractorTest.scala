@@ -5,7 +5,7 @@ import com.vdurmont.semver4j.Semver
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition, ComponentProvider, NussknackerVersion}
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, RunMode, WithCategories}
 import pl.touk.nussknacker.engine.modelconfig.DefaultModelConfigLoader
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.test.ClassLoaderWithServices
@@ -67,7 +67,7 @@ class ComponentExtractorTest extends FunSuite with Matchers {
     ClassLoaderWithServices.withCustomServices(List((classOf[ComponentProvider], classOf[DynamicProvider])), getClass.getClassLoader) { cl =>
       val extractor = makeExtractor(cl)
       val resolved = loader.resolveInputConfigDuringExecution(fromMap(map.toSeq: _*), cl)
-      extractor.extract(ProcessObjectDependencies(resolved.config, DefaultNamespacedObjectNaming)).mapValues(k => k.copy(value = k.value.asInstanceOf[T]))
+      extractor.extract(ProcessObjectDependencies(resolved.config, DefaultNamespacedObjectNaming, RunMode.Engine)).mapValues(k => k.copy(value = k.value.asInstanceOf[T]))
     }
   }
 

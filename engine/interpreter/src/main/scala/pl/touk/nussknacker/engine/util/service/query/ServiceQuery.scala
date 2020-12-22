@@ -5,6 +5,7 @@ import cats.implicits._
 import java.util.UUID
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
@@ -51,7 +52,7 @@ class ServiceQuery(modelData: ModelData) {
 
     //we create new definitions each time, to avoid lifecycle problems
     val definitions = modelData.withThisAsContextClassLoader {
-      ProcessDefinitionExtractor.extractObjectWithMethods(modelData.configCreator, ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming))
+      ProcessDefinitionExtractor.extractObjectWithMethods(modelData.configCreator, ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming, RunMode.ServiceQuery))
     }
 
     val collector = new QueryServiceInvocationCollector()
@@ -59,7 +60,7 @@ class ServiceQuery(modelData: ModelData) {
       modelData.modelClassLoader.classLoader, collector)
 
 
-    withOpenedService(serviceName, definitions) { 
+    withOpenedService(serviceName, definitions) {
 
       val variablesPreparer = GlobalVariablesPreparer(definitions.expressionConfig)
       val validationContext = variablesPreparer.validationContextWithLocalVariables(metaData, localVariables.mapValues(_._2))

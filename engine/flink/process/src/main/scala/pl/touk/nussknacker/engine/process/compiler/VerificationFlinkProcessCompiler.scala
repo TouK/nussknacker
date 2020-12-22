@@ -6,7 +6,7 @@ import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api.ProcessListener
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies, RunMode}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.source.EmptySource
@@ -17,7 +17,7 @@ class VerificationFlinkProcessCompiler(process: EspProcess,
                                        creator: ProcessConfigCreator,
                                        processConfig: Config,
                                        objectNaming: ObjectNaming)
-  extends StubbedFlinkProcessCompiler(process, creator, processConfig, objectNaming) {
+  extends StubbedFlinkProcessCompiler(process, creator, processConfig, objectNaming, RunMode.Verification) {
 
   override protected def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] = List()
 

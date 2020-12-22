@@ -52,7 +52,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
 
   private val processBase = EspProcessBuilder.id("proc1").exceptionHandler().source("sourceId", "mySource")
   private val objectWithMethodDef = ProcessDefinitionExtractor.extractObjectWithMethods(MyProcessConfigCreator,
-    process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader)))
+    process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader), RunMode.Engine))
   private val validator = ProcessValidator.default(objectWithMethodDef, new SimpleDictRegistry(Map.empty))
 
   private val expectedGenericParameters = List(
