@@ -120,7 +120,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
       implicit val loggedUser: LoggedUser = user
       val response = for {
         manager <- processManager(id.id)
-        res <- manager.customAction(deployment.CustomActionReq(actionName, id.id.value))
+        res <- manager.customAction(deployment.CustomAction(actionName, id.id.value))
       } yield res
       reply(response)
   }

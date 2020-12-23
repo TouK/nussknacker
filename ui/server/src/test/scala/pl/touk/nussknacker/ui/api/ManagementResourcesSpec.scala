@@ -12,12 +12,13 @@ import io.circe.Json
 import io.circe.syntax._
 import org.scalatest._
 import org.scalatest.matchers.BeMatcher
-import pl.touk.nussknacker.engine.api.deployment.{CustomActionErr, CustomActionRes, CustomProcess, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.restmodel.processdetails._
 import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.ui.api.deployment.CustomActionResponse
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, SampleProcess, TestFactory, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -229,7 +230,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     customAction(SampleProcess.process.id, "hello") ~> check {
       status shouldBe StatusCodes.OK
-      responseAs[CustomActionRes] shouldBe CustomActionRes("Hi")
+      responseAs[CustomActionResponse] shouldBe CustomActionResponse("Hi")
     }
   }
 
@@ -237,7 +238,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     customAction(SampleProcess.process.id, "invalid-action") ~> check {
       status shouldBe StatusCodes.InternalServerError
-      responseAs[CustomActionErr] shouldBe CustomActionErr("Invalid action")
+      responseAs[CustomActionResponse] shouldBe CustomActionResponse("Invalid action")
     }
   }
 
