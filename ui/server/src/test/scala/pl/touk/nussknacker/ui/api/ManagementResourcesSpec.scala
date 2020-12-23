@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.restmodel.processdetails._
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.deployment.CustomActionResponse
+import pl.touk.nussknacker.ui.api.deployment.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, SampleProcess, TestFactory, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -228,7 +228,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
 
   test("execute valid custom action") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    customAction(SampleProcess.process.id, "hello") ~> check {
+    customAction(SampleProcess.process.id, CustomActionRequest("hello")) ~> check {
       status shouldBe StatusCodes.OK
       responseAs[CustomActionResponse] shouldBe CustomActionResponse("Hi")
     }
@@ -236,7 +236,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
 
   test("execute invalid custom action") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    customAction(SampleProcess.process.id, "invalid-action") ~> check {
+    customAction(SampleProcess.process.id, CustomActionRequest("invalid-action")) ~> check {
       status shouldBe StatusCodes.InternalServerError
       responseAs[CustomActionResponse] shouldBe CustomActionResponse("Invalid action")
     }

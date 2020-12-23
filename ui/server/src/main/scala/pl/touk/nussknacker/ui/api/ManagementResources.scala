@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
-import pl.touk.nussknacker.ui.api.deployment.CustomActionResponse
+import pl.touk.nussknacker.ui.api.deployment.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.process.deployment.{Cancel, CustomAction, Deploy, Snapshot, Stop, Test}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
@@ -206,22 +206,20 @@ class ManagementResources(processCounter: ProcessCounter,
         }
       } ~
       path("processManagement" / "customAction" / Segment) { processName =>
-        (post & processId(processName)) { processId =>
-          parameter("action") { actionName =>
-            complete {
-              val resF = managementActor ? CustomAction(actionName, processId, user)
-              resF
-                .mapTo[Either[CustomActionError, CustomActionResult]]
-                .flatMap {
-                  case Right(res) =>
-                    Marshal(CustomActionResponse(res.msg)).to[MessageEntity].map { resEntity =>
-                      HttpResponse(status = StatusCodes.OK, entity = resEntity)
-                    }
-                  case Left(err) =>
-                    Marshal(CustomActionResponse(err.msg)).to[MessageEntity].map { resEntity =>
-                      HttpResponse(status = StatusCodes.InternalServerError, entity = resEntity)
-                    }
-              }
+        (post & processId(processName) & entity(as[CustomActionRequest])) { (processId, req) =>
+          complete {
+            val action = CustomAction(req.actionName, processId, user, req.params.getOrElse(Map.empty))
+            (managementActor ? action)
+              .mapTo[Either[CustomActionError, CustomActionResult]]
+              .flatMap {
+                case Right(res) =>
+                  Marshal(CustomActionResponse(res.msg)).to[MessageEntity].map { resEntity =>
+                    HttpResponse(status = StatusCodes.OK, entity = resEntity)
+                  }
+                case Left(err) =>
+                  Marshal(CustomActionResponse(err.msg)).to[MessageEntity].map { resEntity =>
+                    HttpResponse(status = StatusCodes.InternalServerError, entity = resEntity)
+                  }
             }
           }
         }

@@ -13,7 +13,7 @@ class ProcessPosting {
 
   private implicit val ptsEncoder: Encoder[ProcessToSave] = io.circe.generic.semiauto.deriveEncoder
 
-  private def toRequest[T:Encoder](value: T): RequestEntity = HttpEntity(ContentTypes.`application/json`, value.asJson.spaces2)
+  def toRequest[T:Encoder](value: T): RequestEntity = HttpEntity(ContentTypes.`application/json`, value.asJson.spaces2)
 
   def toEntity(process: EspProcess): RequestEntity = {
     toRequest(ProcessConverter.toDisplayable(ProcessCanonizer.canonize(process), TestProcessingTypes.Streaming))
