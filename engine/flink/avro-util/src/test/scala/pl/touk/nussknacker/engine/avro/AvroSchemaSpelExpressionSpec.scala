@@ -170,6 +170,19 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
     parse[Boolean]("#input.withDict == #DICT1['noKey']", ctx) should be ('invalid)
   }
 
+  it("should recognize avro type string as String") {
+    AvroStringSettingsInTests.whenEnabled {
+      val schema = wrapWithRecordSchema(
+        """[
+          |  { "name": "stringField", "type": "string" }
+          |]""".stripMargin)
+
+      val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)).toOption.get
+
+      parse[String]("#input.stringField", ctx) should be('valid)
+    }
+  }
+
   private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, TypedExpression] = {
     SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(Map(dictId -> EmbeddedDictDefinition(Map("key1" -> "value1")))), enableSpelForceCompile = true,
       strictTypeChecking = true, Nil, Standard, strictMethodsChecking = true)(ClassExtractionSettings.Default).parse(expr, validationCtx, Typed.fromDetailedType[T])

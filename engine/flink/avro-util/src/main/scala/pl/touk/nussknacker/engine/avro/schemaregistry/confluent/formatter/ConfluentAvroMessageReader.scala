@@ -1,16 +1,16 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter
 
 import java.io.IOException
-
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.serializers.AbstractKafkaAvroSerializer
 import org.apache.avro.Schema.Type
-import org.apache.avro.generic.GenericDatumReader
 import org.apache.avro.io.DecoderFactory
 import org.apache.avro.util.Utf8
 import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.errors.SerializationException
+import pl.touk.nussknacker.engine.avro.AvroUtils
+import pl.touk.nussknacker.engine.avro.schema.StringForcingDatumReaderProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 
 /**
@@ -65,7 +65,7 @@ private[confluent] class ConfluentAvroMessageReader(schemaRegistryClient: Schema
 
   private def jsonToAvro(jsonString: String, schema: Schema) = {
     try {
-      val reader = new GenericDatumReader[AnyRef](schema)
+      val reader = StringForcingDatumReaderProvider.genericDatumReader[AnyRef](schema, schema, AvroUtils.genericData)
       val obj = reader.read(null, decoderFactory.jsonDecoder(schema, jsonString))
       if (schema.getType == Type.STRING)
         obj.asInstanceOf[Utf8].toString

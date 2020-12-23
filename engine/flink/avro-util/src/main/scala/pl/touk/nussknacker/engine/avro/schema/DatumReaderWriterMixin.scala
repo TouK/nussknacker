@@ -32,11 +32,11 @@ trait DatumReaderWriterMixin {
     val writerSchemaIsPrimitive = primitives.values.exists(_.equals(readerSchema))
 
     if (useSchemaReflection && !writerSchemaIsPrimitive) {
-      new ReflectDatumReader(writerSchema, readerSchema, AvroUtils.reflectData)
+      StringForcingDatumReaderProvider.reflectDatumReader[AnyRef](writerSchema, readerSchema, AvroUtils.reflectData)
     } else if (useSpecificAvroReader && !writerSchemaIsPrimitive) {
-      new SpecificDatumReader(writerSchema, readerSchema, AvroUtils.specificData)
+      StringForcingDatumReaderProvider.specificDatumReader[AnyRef](writerSchema, readerSchema, AvroUtils.specificData)
     } else {
-      new GenericDatumReader(writerSchema, readerSchema, AvroUtils.genericData)
+      StringForcingDatumReaderProvider.genericDatumReader[AnyRef](writerSchema, readerSchema, AvroUtils.genericData)
     }
   }
 }
