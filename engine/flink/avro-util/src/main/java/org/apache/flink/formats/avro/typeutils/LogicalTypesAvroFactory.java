@@ -20,17 +20,14 @@ package org.apache.flink.formats.avro.typeutils;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DatumWriter;
 import org.apache.avro.reflect.Nullable;
 import org.apache.avro.reflect.ReflectData;
-import org.apache.avro.reflect.ReflectDatumReader;
 import org.apache.avro.reflect.ReflectDatumWriter;
 import org.apache.avro.specific.SpecificData;
-import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.specific.SpecificDatumWriter;
 import org.apache.avro.specific.SpecificRecord;
 import org.apache.flink.annotation.Internal;
@@ -39,6 +36,7 @@ import org.apache.flink.formats.avro.utils.DataOutputEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pl.touk.nussknacker.engine.avro.AvroUtils;
+import pl.touk.nussknacker.engine.avro.schema.StringForcingDatumReaderProvider;
 
 import java.util.Optional;
 
@@ -101,25 +99,25 @@ public final class LogicalTypesAvroFactory<T> {
 		SpecificData specificData = AvroUtils.specificData();
 		Schema newSchema = extractAvroSpecificSchema(type, specificData);
 
-		return new LogicalTypesAvroFactory<>(
-			specificData,
-			newSchema,
-			new SpecificDatumReader<>(previousSchema.orElse(newSchema), newSchema, specificData),
-			new SpecificDatumWriter<>(newSchema, specificData)
+		return new LogicalTypesAvroFactory<T>(
+				specificData,
+				newSchema,
+				new StringForcingDatumReaderProvider<T>().specificDatumReader(previousSchema.orElse(newSchema), newSchema, specificData),
+				new SpecificDatumWriter<>(newSchema, specificData)
 		);
 	}
 
 	private static <T> LogicalTypesAvroFactory<T> fromGeneric(ClassLoader cl, Schema schema) {
 		checkNotNull(schema,
-			"Unable to create an AvroSerializer with a GenericRecord type without a schema");
+				"Unable to create an AvroSerializer with a GenericRecord type without a schema");
 		// HERE IS CHANGED CODE
 		GenericData genericData = AvroUtils.genericData();
 
-		return new LogicalTypesAvroFactory<>(
-			genericData,
-			schema,
-			new GenericDatumReader<>(schema, schema, genericData),
-			new GenericDatumWriter<>(schema, genericData)
+		return new LogicalTypesAvroFactory<T>(
+				genericData,
+				schema,
+				new StringForcingDatumReaderProvider<T>().genericDatumReader(schema, schema, genericData),
+				new GenericDatumWriter<>(schema, genericData)
 		);
 	}
 
@@ -129,11 +127,11 @@ public final class LogicalTypesAvroFactory<T> {
 		ReflectData reflectData = AvroUtils.reflectData();
 		Schema newSchema = reflectData.getSchema(type);
 
-		return new LogicalTypesAvroFactory<>(
-			reflectData,
-			newSchema,
-			new ReflectDatumReader<>(previousSchema.orElse(newSchema), newSchema, reflectData),
-			new ReflectDatumWriter<>(newSchema, reflectData)
+		return new LogicalTypesAvroFactory<T>(
+				reflectData,
+				newSchema,
+				new StringForcingDatumReaderProvider<T>().reflectDatumReader(previousSchema.orElse(newSchema), newSchema, reflectData),
+				new ReflectDatumWriter<>(newSchema, reflectData)
 		);
 	}
 
