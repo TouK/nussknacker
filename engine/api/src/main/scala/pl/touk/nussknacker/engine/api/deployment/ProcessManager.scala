@@ -24,4 +24,10 @@ trait ProcessManager extends AutoCloseable {
 
   def processStateDefinitionManager: ProcessStateDefinitionManager
 
+  /*
+  TODO:
+    1. Action params
+    2. ProcessStateDefinitionManager should define allowed custom actions based on a current process state
+   */
+  def customAction(customAction: CustomActionReq): Future[Either[CustomActionErr, CustomActionRes]]
 }

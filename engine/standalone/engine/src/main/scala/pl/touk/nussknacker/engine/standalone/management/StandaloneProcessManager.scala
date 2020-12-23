@@ -89,6 +89,10 @@ class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessCl
   override def close(): Unit = {
     
   }
+
+  override def customAction(customAction: CustomActionReq): Future[Either[CustomActionErr, CustomActionRes]] = Future.successful {
+    Left(CustomActionErr("Not implemented"))
+  }
 }
 
 object StandaloneTestMain {

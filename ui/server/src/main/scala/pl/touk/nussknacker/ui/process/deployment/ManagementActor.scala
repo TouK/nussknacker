@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.ui.process.deployment
 
 import java.time.LocalDateTime
-
 import akka.actor.{ActorRefFactory, Props, Status}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
+import pl.touk.nussknacker.engine.api.deployment
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.deployment._
@@ -115,6 +115,14 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
       }
     case DeploymentStatus =>
       reply(Future.successful(DeploymentStatusResponse(beingDeployed)))
+
+    case CustomAction(actionName, id, user) =>
+      implicit val loggedUser: LoggedUser = user
+      val response = for {
+        manager <- processManager(id.id)
+        res <- manager.customAction(deployment.CustomActionReq(actionName, id.id.value))
+      } yield res
+      reply(response)
   }
 
   //This method handles some corner cases like retention for keeping old states - some engine can cleanup canceled states. It's more Flink hermetic.
@@ -324,6 +332,8 @@ case class DeploymentDetails(version: Long, comment: Option[String], deployedAt:
 case class DeploymentActionFinished(id: ProcessIdWithName, user: LoggedUser, failureOrDetails: Either[Throwable, DeploymentDetails])
 
 case class DeployInfo(userId: String, time: Long, action: DeploymentActionType)
+
+case class CustomAction(name: String, processId: ProcessIdWithName, user: LoggedUser)
 
 sealed trait DeploymentActionType
 

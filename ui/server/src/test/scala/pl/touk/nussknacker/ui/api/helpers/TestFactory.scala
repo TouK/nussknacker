@@ -1,14 +1,13 @@
 package pl.touk.nussknacker.ui.api.helpers
 
 import java.util.concurrent.atomic.AtomicReference
-
 import akka.http.scaladsl.server.Route
 import cats.instances.future._
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessDeploymentData, ProcessState, SavepointResult, StateStatus, User}
+import pl.touk.nussknacker.engine.api.deployment.{CustomActionErr, CustomActionReq, CustomActionRes, DeploymentId, ProcessDeploymentData, ProcessState, SavepointResult, StateStatus, User}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -191,8 +190,14 @@ object TestFactory extends TestPermissions{
 
     override protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit] = ???
 
-    override def close(): Unit = {}
+    override def customAction(customAction: CustomActionReq): Future[Either[CustomActionErr, CustomActionRes]] = Future.successful {
+      customAction.name match {
+        case "hello" => Right(CustomActionRes("Hi"))
+        case _ => Left(CustomActionErr("Invalid action"))
+      }
+    }
 
+    override def close(): Unit = {}
   }
 
   class SampleSubprocessRepository(subprocesses: Set[CanonicalProcess]) extends SubprocessRepository {
