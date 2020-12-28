@@ -7,7 +7,7 @@ import {ToolbarsSide} from "../../reducers/toolbars"
 
 import TipsPanel from "../tips/Tips"
 
-import EditPanel, {SelectionActions} from "./edit/EditPanel"
+import EditPanel, {CustomAction, SelectionActions} from "./edit/EditPanel"
 import ProcessInfo from "./status/ProcessInfo"
 import ViewPanel from "./view/ViewPanel"
 import ProcessPanels from "./process/ProcessPanel"
@@ -24,17 +24,18 @@ import {Toolbar} from "../toolbarComponents/toolbar"
 
 type Props = {
   selectionActions: SelectionActions,
+  customActions: Array<CustomAction>
   isReady: boolean,
 }
 
 function Toolbars(props: Props) {
-  const {isReady, selectionActions} = props
+  const {isReady, selectionActions, customActions} = props
   const fetchedProcessDetails = useSelector(getFetchedProcessDetails)
 
   const toolbars: Toolbar[] = [
     {
       id: "PROCESS-INFO",
-      component: <ProcessInfo/>,
+      component: <ProcessInfo customActions={customActions} />,
       defaultSide: ToolbarsSide.TopRight,
     },
     {

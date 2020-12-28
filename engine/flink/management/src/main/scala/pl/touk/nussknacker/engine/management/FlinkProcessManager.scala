@@ -79,8 +79,11 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     }
   }
 
-  override def customAction(customAction: CustomAction): Future[Either[CustomActionError, CustomActionResult]] = Future.successful {
-    Left(CustomActionError("Not implemented"))
+  override def customAction(actionRequest: CustomActionRequest): Future[Either[CustomActionError, CustomActionResult]] = Future.successful {
+    actionRequest.name match {
+      case "test" => Right(CustomActionResult("OK"))
+      case _ => Left(CustomActionError("Not implemented"))
+    }
   }
 
   private def requireRunningProcess[T](processName: ProcessName)(action: ProcessState => Future[T]): Future[T] = {

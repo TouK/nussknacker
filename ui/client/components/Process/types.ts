@@ -1,5 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import {UnknownRecord} from "../../types/common"
+import {CustomAction} from "../toolbars/edit/EditPanel";
 
 export enum ActionType {
   Deploy = "DEPLOY",
@@ -63,6 +64,7 @@ export type ProcessStateType = {
   },
   deploymentId?: string,
   allowedActions: Array<ActionType>,
+  customActions: Array<CustomAction>,
   icon?: string,
   tooltip?: string,
   description?: string,

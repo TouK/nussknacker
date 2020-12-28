@@ -116,11 +116,10 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
     case DeploymentStatus =>
       reply(Future.successful(DeploymentStatusResponse(beingDeployed)))
 
-    case CustomAction(actionName, id, user, params) =>
-      implicit val loggedUser: LoggedUser = user
+    case (CustomActionRequest(actionName, id, params), user: LoggedUser) =>
       val response = for {
-        manager <- processManager(id.id)
-        res <- manager.customAction(deployment.CustomAction(actionName, id.id.value, params))
+        manager <- processManager(ProcessId(id))(ec, user)
+        res <- manager.customAction(deployment.CustomActionRequest(actionName, id, params))
       } yield res
       reply(response)
   }
@@ -332,8 +331,6 @@ case class DeploymentDetails(version: Long, comment: Option[String], deployedAt:
 case class DeploymentActionFinished(id: ProcessIdWithName, user: LoggedUser, failureOrDetails: Either[Throwable, DeploymentDetails])
 
 case class DeployInfo(userId: String, time: Long, action: DeploymentActionType)
-
-case class CustomAction(name: String, processId: ProcessIdWithName, user: LoggedUser, params: Map[String, String])
 
 sealed trait DeploymentActionType
 

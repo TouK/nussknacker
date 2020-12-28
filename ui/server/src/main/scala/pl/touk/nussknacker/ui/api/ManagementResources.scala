@@ -26,7 +26,7 @@ import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.api.deployment.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
-import pl.touk.nussknacker.ui.process.deployment.{Cancel, CustomAction, Deploy, Snapshot, Stop, Test}
+import pl.touk.nussknacker.ui.process.deployment.{Cancel, Deploy, Snapshot, Stop, Test}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -206,10 +206,9 @@ class ManagementResources(processCounter: ProcessCounter,
         }
       } ~
       path("processManagement" / "customAction" / Segment) { processName =>
-        (post & processId(processName) & entity(as[CustomActionRequest])) { (processId, req) =>
+        (post & processId(processName) & entity(as[CustomActionRequest])) { (processId, actionRequest) =>
           complete {
-            val action = CustomAction(req.actionName, processId, user, req.params.getOrElse(Map.empty))
-            (managementActor ? action)
+            (managementActor ? (actionRequest, user))
               .mapTo[Either[CustomActionError, CustomActionResult]]
               .flatMap {
                 case Right(res) =>

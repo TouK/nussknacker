@@ -18,16 +18,21 @@ import SaveButton from "../process/buttons/SaveButton"
 import {ToolbarButtons} from "../../toolbarComponents/ToolbarButtons"
 import {CollapsibleToolbar} from "../../toolbarComponents/CollapsibleToolbar"
 import i18next from "i18next"
+import CustomActionButton from "./buttons/CustomActionButton";
+import {CustomAction} from "../edit/EditPanel";
 
 type State = UnknownRecord
 
 type OwnProps = {
   iconHeight: number,
   iconWidth: number,
+  customActions: Array<CustomAction>
 }
 
+type Props = OwnProps & StateProps
+
 //TODO: In future information about archived process should be return from BE as state.
-class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
+class ProcessInfo extends React.Component<Props, State> {
   static defaultProps = {
     isStateLoaded: false,
     iconHeight: 32,
@@ -88,6 +93,15 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
     `${process.id}` :
     `${process.id}-${processState?.icon || process?.state?.icon || unknownIcon}`
 
+  private buttons = [
+    <SaveButton/>,
+    <Deploy/>,
+    <Cancel/>,
+    <Metrics/>
+  ]
+
+  private customButtons = (this.props.customActions || []).map(ca => <CustomActionButton actionName={ca.name} />)
+
   render() {
     const {process, processState, isStateLoaded, iconHeight, iconWidth, capabilities} = this.props
     const description = this.getDescription(process, processState, isStateLoaded)
@@ -111,10 +125,7 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
             </CssFade>
           </SwitchTransition>
           <ToolbarButtons>
-            <SaveButton/>
-            <Deploy/>
-            <Cancel/>
-            <Metrics/>
+            {[...this.buttons, ...this.customButtons]}
           </ToolbarButtons>
         </DragHandle>
       </CollapsibleToolbar>

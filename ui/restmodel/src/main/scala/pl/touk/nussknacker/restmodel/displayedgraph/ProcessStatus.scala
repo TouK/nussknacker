@@ -1,17 +1,17 @@
 package pl.touk.nussknacker.restmodel.displayedgraph
 
 import java.net.URI
-
 import io.circe.generic.JsonCodec
 import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ProcessStateDefinitionManager, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{CustomAction, ProcessState, ProcessStateDefinitionManager, StateStatus}
 
 //TODO: Do we really  we need ProcessStatus and ProcessState - Do these DTO's do the same things?
 @JsonCodec case class ProcessStatus(status: StateStatus,
                                     deploymentId: Option[String],
                                     allowedActions: List[ProcessActionType],
+                                    customActions: List[CustomAction],
                                     icon: Option[URI],
                                     tooltip: Option[String],
                                     description: Option[String],
@@ -34,6 +34,7 @@ object ProcessStatus {
       status = status,
       previousState.map(_.deploymentId.value),
       allowedActions = SimpleProcessStateDefinitionManager.statusActions(status),
+      customActions = List.empty, // TODO
       icon = if (icon.isDefined) icon else SimpleProcessStateDefinitionManager.statusIcon(status),
       tooltip = if (tooltip.isDefined) tooltip else SimpleProcessStateDefinitionManager.statusTooltip(status),
       description = if (description.isDefined) description else SimpleProcessStateDefinitionManager.statusDescription(status),
@@ -55,6 +56,7 @@ object ProcessStatus {
       status,
       deploymentId,
       allowedActions = processStateDefinitionManager.statusActions(status),
+      customActions = processStateDefinitionManager.customActions,
       icon = processStateDefinitionManager.statusIcon(status),
       tooltip = processStateDefinitionManager.statusTooltip(status),
       description = processStateDefinitionManager.statusDescription(status),
@@ -68,6 +70,7 @@ object ProcessStatus {
       deploymentId = Some(processState.deploymentId.value),
       status = processState.status,
       allowedActions = processState.allowedActions,
+      customActions = List.empty, // TODO
       icon = processState.icon,
       tooltip = processState.tooltip,
       description = processState.description,

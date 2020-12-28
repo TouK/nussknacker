@@ -308,6 +308,7 @@ class Visualization extends React.Component {
               paste: () => this.pasteSelectionFromClipboard(null),
               canPaste: true,
             }}
+            customActions={(this.props.fetchedProcessDetails && this.props.fetchedProcessDetails.state.customActions || []) }
           />
         </GraphProvider>
 
