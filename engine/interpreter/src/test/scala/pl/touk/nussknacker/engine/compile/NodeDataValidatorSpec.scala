@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.compile
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Inside, Matchers}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, MissingCustomNodeExecutor, MissingService, MissingSinkFactory, MissingSourceFactory, OverwrittenVariable}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, InvalidVariableOutputName, MissingCustomNodeExecutor, MissingService, MissingSinkFactory, MissingSourceFactory, OverwrittenVariable}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
@@ -45,8 +45,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
       "genericParametersSink" -> WithCategories(GenericParametersSink)
     )
   })
-
-
+  
   test("should validate sink factory") {
     validate(Sink("tst1", SinkRef("genericParametersSink",
       List(par("par1", "'a,b'"),
@@ -128,6 +127,12 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
     }
   }
 
+  test("should allow user variable") {
+    inside(validate(Variable("var1", "specialVariable_2", "42L", None), ValidationContext())) {
+      case ValidationPerformed(Nil, None, _) =>
+    }
+  }
+
   test("should validate variable definition") {
     inside(
       validate(Variable("var1", "var1", "doNotExist", None), ValidationContext(Map.empty))
@@ -141,14 +146,18 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
     inside(
       validate(Variable("var1", "var1", "42L", None), ValidationContext(localVariables = Map("var1" -> typing.Unknown)))
     ) {
-      case ValidationPerformed(OverwrittenVariable("var1", "var1") :: Nil, None, _) =>
+      case ValidationPerformed(OverwrittenVariable("var1", "var1", _) :: Nil, None, _) =>
+    }
+  }
+
+  test("should not allow to use special chars in variable name") {
+    inside(validate(Variable("var1", "var@ 2", "42L", None), ValidationContext())) {
+      case ValidationPerformed(InvalidVariableOutputName("var@ 2", "var1", _) :: Nil, None, _) =>
     }
   }
 
   test("should return expression type info for variable definition") {
-    inside(
-      validate(Variable("var1", "var1", "42L", None), ValidationContext(Map.empty))
-    ) {
+    inside(validate(Variable("var1", "var1", "42L", None), ValidationContext(Map.empty))) {
       case ValidationPerformed(Nil, _, Some(expressionType)) => expressionType.display shouldBe "Long"
     }
   }
@@ -166,7 +175,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
     inside(
       validate(VariableBuilder("var1", "var1", Nil, None), ValidationContext(localVariables = Map("var1" -> typing.Unknown)))
     ) {
-      case ValidationPerformed(OverwrittenVariable("var1", "var1") :: Nil, None, _) =>
+      case ValidationPerformed(OverwrittenVariable("var1", "var1", _) :: Nil, None, _) =>
     }
   }
 
