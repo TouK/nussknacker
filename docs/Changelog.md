@@ -13,6 +13,7 @@ Nussknacker versions
 * More precise TypeInformation generation
     * [#1338](https://github.com/TouK/nussknacker/pull/1338) Defining TypeInformation based on TypingResult
     * [#1343](https://github.com/TouK/nussknacker/pull/1343) Aggregators compute stored types    
+    * [#1343](https://github.com/TouK/nussknacker/pull/1359) Improvements in variable output validation 
 
 
 0.3.1 (not released yet) 
