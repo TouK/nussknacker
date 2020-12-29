@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management
 
 import java.net.URI
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.deployment.{CustomAction, ProcessActionType, ProcessStateDefinitionManager, StateStatus}
 
 object FlinkProcessStateDefinitionManager extends ProcessStateDefinitionManager  {
@@ -31,7 +31,12 @@ object FlinkProcessStateDefinitionManager extends ProcessStateDefinitionManager 
   override def statusActions(stateStatus: StateStatus): List[ProcessActionType] =
     statusActionsMap.getOrElse(stateStatus, SimpleProcessStateDefinitionManager.statusActions(stateStatus))
 
-  override val customActions: List[CustomAction] = List(CustomAction("test"))
+//  TODO
+  override val customActions: List[CustomAction] = {
+    List(
+      CustomAction("test", SimpleStateStatus.NotDeployed :: Nil)
+    )
+  }
 
   override def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus =
     SimpleProcessStateDefinitionManager.mapActionToStatus(stateAction)

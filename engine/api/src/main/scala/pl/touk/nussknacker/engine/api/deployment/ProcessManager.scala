@@ -24,10 +24,7 @@ trait ProcessManager extends AutoCloseable {
 
   def processStateDefinitionManager: ProcessStateDefinitionManager
 
-  /*
-  TODO:
-    1. Check if custom action can be executed: e.g if we have custom deploy action, it should be validated against possible StatusAction's
-    2. Return list of available custom actions
-   */
-  def customAction(actionRequest: CustomActionRequest): Future[Either[CustomActionError, CustomActionResult]]
+  def customActions: List[CustomAction]
+
+  def invokeCustomAction(actionRequest: CustomActionRequest): Future[Either[CustomActionError, CustomActionResult]]
 }

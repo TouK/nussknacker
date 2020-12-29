@@ -190,7 +190,7 @@ object TestFactory extends TestPermissions{
 
     override protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit] = ???
 
-    override def customAction(actionRequest: CustomActionRequest): Future[Either[CustomActionError, CustomActionResult]] = Future.successful {
+    override def invokeCustomAction(actionRequest: CustomActionRequest): Future[Either[CustomActionError, CustomActionResult]] = Future.successful {
       actionRequest.name match {
         case "hello" => Right(CustomActionResult("Hi"))
         case _ => Left(CustomActionError("Invalid action"))

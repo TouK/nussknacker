@@ -3,6 +3,7 @@ package pl.touk.nussknacker.restmodel.displayedgraph
 import java.net.URI
 import io.circe.generic.JsonCodec
 import io.circe.{Decoder, Encoder, Json}
+import pl.touk.nussknacker.engine.api.deployment
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.deployment.{CustomAction, ProcessState, ProcessStateDefinitionManager, StateStatus}
@@ -11,17 +12,28 @@ import pl.touk.nussknacker.engine.api.deployment.{CustomAction, ProcessState, Pr
 @JsonCodec case class ProcessStatus(status: StateStatus,
                                     deploymentId: Option[String],
                                     allowedActions: List[ProcessActionType],
-                                    customActions: List[CustomAction],
+                                    customActions: List[ProcessStatus.CustomAction],
                                     icon: Option[URI],
                                     tooltip: Option[String],
                                     description: Option[String],
                                     startTime: Option[Long],
                                     attributes: Option[Json],
-                                    errors: List[String])
+                                    errors: List[String]) {
+}
 
 object ProcessStatus {
   implicit val uriEncoder: Encoder[URI] = Encoder.encodeString.contramap(_.toString)
   implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
+
+  object CustomAction {
+    def apply(action: deployment.CustomAction, status: StateStatus): CustomAction =
+       CustomAction(
+         name = action.name,
+         isDisabled = !action.allowedProcessStates.contains(status),
+         icon = action.icon)
+  }
+  @JsonCodec
+  case class CustomAction(name: String, isDisabled: Boolean, icon: Option[URI])
 
   def simple(status: StateStatus, deploymentId: Option[String], errors: List[String]): ProcessStatus =
     ProcessStatus(status, SimpleProcessStateDefinitionManager, deploymentId, Option.empty, Option.empty, errors)
@@ -34,7 +46,7 @@ object ProcessStatus {
       status = status,
       previousState.map(_.deploymentId.value),
       allowedActions = SimpleProcessStateDefinitionManager.statusActions(status),
-      customActions = List.empty, // TODO
+      customActions = List.empty,
       icon = if (icon.isDefined) icon else SimpleProcessStateDefinitionManager.statusIcon(status),
       tooltip = if (tooltip.isDefined) tooltip else SimpleProcessStateDefinitionManager.statusTooltip(status),
       description = if (description.isDefined) description else SimpleProcessStateDefinitionManager.statusDescription(status),
@@ -56,7 +68,7 @@ object ProcessStatus {
       status,
       deploymentId,
       allowedActions = processStateDefinitionManager.statusActions(status),
-      customActions = processStateDefinitionManager.customActions,
+      customActions = processStateDefinitionManager.customActions.map(ProcessStatus.CustomAction(_, status)),
       icon = processStateDefinitionManager.statusIcon(status),
       tooltip = processStateDefinitionManager.statusTooltip(status),
       description = processStateDefinitionManager.statusDescription(status),

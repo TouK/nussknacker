@@ -15,6 +15,7 @@ import io.circe.generic.JsonCodec
 import io.circe.parser.parse
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Json}
+import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{ExceptionResult, ExpressionInvocationResult, MockedResult, NodeResult, ResultContext, TestData, TestResults}
 import pl.touk.nussknacker.engine.api.DisplayJson
 import pl.touk.nussknacker.engine.api.deployment.{CustomActionError, CustomActionResult, SavepointResult}
@@ -206,9 +207,9 @@ class ManagementResources(processCounter: ProcessCounter,
         }
       } ~
       path("processManagement" / "customAction" / Segment) { processName =>
-        (post & processId(processName) & entity(as[CustomActionRequest])) { (processId, actionRequest) =>
+        (post & processId(processName) & entity(as[CustomActionRequest])) { (process, req) =>
           complete {
-            (managementActor ? (actionRequest, user))
+            (managementActor ? (req.toEngineRequest(process.name), process.id, user))
               .mapTo[Either[CustomActionError, CustomActionResult]]
               .flatMap {
                 case Right(res) =>

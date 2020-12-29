@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.management
 
 import java.io.File
-
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -79,7 +79,10 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     }
   }
 
-  override def customAction(actionRequest: CustomActionRequest): Future[Either[CustomActionError, CustomActionResult]] = Future.successful {
+  // TODO
+  override def customActions: List[CustomAction] = CustomAction("test", List(SimpleStateStatus.NotDeployed)) :: Nil
+
+  override def invokeCustomAction(actionRequest: CustomActionRequest): Future[Either[CustomActionError, CustomActionResult]] = Future.successful {
     actionRequest.name match {
       case "test" => Right(CustomActionResult("OK"))
       case _ => Left(CustomActionError("Not implemented"))

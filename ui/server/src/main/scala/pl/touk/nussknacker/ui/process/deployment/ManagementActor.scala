@@ -116,12 +116,11 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
     case DeploymentStatus =>
       reply(Future.successful(DeploymentStatusResponse(beingDeployed)))
 
-    case (CustomActionRequest(actionName, id, params), user: LoggedUser) =>
-      val response = for {
-        manager <- processManager(ProcessId(id))(ec, user)
-        res <- manager.customAction(deployment.CustomActionRequest(actionName, id, params))
-      } yield res
-      reply(response)
+    case (action: CustomActionRequest, id: ProcessId, user: LoggedUser) =>
+      reply(for {
+        manager <- processManager(id)(ec, user)
+        response <- CustomAction.invokeWithValidation(action, manager)
+      } yield response)
   }
 
   //This method handles some corner cases like retention for keeping old states - some engine can cleanup canceled states. It's more Flink hermetic.
