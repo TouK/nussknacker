@@ -151,7 +151,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
 
   def compileFields(fields: List[graph.variable.Field], 
                     ctx: ValidationContext,
-                    outputVarName: Option[String])
+                    outputVar: Option[OutputVar])
                    (implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.variable.Field]] = {
     val compilationResult: ValidatedNel[ProcessCompilationError, List[ExpressionCompilation[compiledgraph.variable.Field]]] = fields.map { field =>
       objectParametersExpressionCompiler
@@ -172,7 +172,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     NodeCompilationResult(
       expressionTypingInfo = fieldsTypingInfo,
       parameters = None,
-      validationContext = outputVarName.map(ctx.withVariable(_, typedObject)).getOrElse(Valid(ctx)),
+      validationContext = outputVar.map(output => ctx.withVariable(output.outputName, typedObject)(nodeId,  Some(output.fieldName))).getOrElse(Valid(ctx)),
       compiledObject = compiledFields,
       expressionType = Some(typedObject)
     )
@@ -182,7 +182,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
                         ctx: ValidationContext,
                         expectedType: TypingResult,
                         fieldName: String = DefaultExpressionId,
-                        outputVarName: Option[String])
+                        outputVar: Option[OutputVar])
                        (implicit nodeId: NodeId): NodeCompilationResult[api.expression.Expression] = {
     val expressionCompilation = objectParametersExpressionCompiler
       .compile(expr, Some(fieldName), ctx, expectedType)
@@ -192,7 +192,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     NodeCompilationResult(
       expressionTypingInfo = expressionCompilation.expressionTypingInfo,
       parameters = None,
-      validationContext = outputVarName.map(ctx.withVariable(_, expressionCompilation.typingResult)).getOrElse(Valid(ctx)),
+      validationContext = outputVar.map(output => ctx.withVariable(output.outputName, expressionCompilation.typingResult)(nodeId, Some(output.fieldName))).getOrElse(Valid(ctx)),
       compiledObject = expressionCompilation.validated,
       expressionType = Some(expressionCompilation.typingResult)
     )
@@ -440,3 +440,11 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
   }
 }
 
+case class OutputVar(fieldName: String, outputName: String)
+
+object OutputVar {
+  val DefaultFieldName = "varName"
+
+  def apply(outputName: String): OutputVar =
+    OutputVar(DefaultFieldName, outputName)
+}

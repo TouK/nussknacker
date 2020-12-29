@@ -621,7 +621,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .emptySink("id2", "sink")
     val compilationResult = validate(process, definitionWithTypedSource)
     compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
+      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite", _), _)) =>
     }
     compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(process.metaData), "processHelper" -> Typed(ProcessHelper.getClass), "var1" -> Typed[String])
   }
@@ -635,7 +635,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .switch("var1overwrite", "''", "var1", GraphBuilder.emptySink("id2", "sink"))
 
     validate(process, definitionWithTypedSource).result should matchPattern {
-      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
+      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite", _), _)) =>
     }
   }
 
@@ -649,7 +649,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .emptySink("id2", "sink")
 
     validate(process, definitionWithTypedSource).result should matchPattern {
-      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
+      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite", _), _)) =>
     }
   }
 
@@ -662,7 +662,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .buildVariable("var1overwrite", "var1", "a" -> "''")
       .emptySink("id2", "sink")
     validate(process, definitionWithTypedSource).result should matchPattern {
-      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
+      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite", _), _)) =>
     }
   }
 
@@ -691,7 +691,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .emptySink("id2", "sink")
 
     validate(process, definitionWithTypedSourceAndTransformNode).result should matchPattern {
-      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
+      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite", _), _)) =>
     }
   }
 

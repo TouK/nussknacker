@@ -19,8 +19,8 @@ object PrettyValidationErrors {
              fieldName: Option[String] = None): NodeValidationError
       = NodeValidationError(typ, message, description, fieldName, errorType)
 
-    def handleParameterValidationError(error: ParameterValidationError): NodeValidationError
-      = node(error.message, error.description, fieldName = Some(error.paramName))
+    def handleParameterValidationError(error: ParameterValidationError): NodeValidationError =
+      node(error.message, error.description, fieldName = Some(error.paramName))
 
     error match {
       case ExpressionParseError(message, _, fieldName, _) => node(s"Failed to parse expression: $message",
@@ -47,7 +47,8 @@ object PrettyValidationErrors {
       case RedundantParameters(params, _) => node(s"Redundant parameters", s"Please omit redundant parameters: ${params.mkString(", ")}")
       case WrongParameters(requiredParameters, passedParameters, _) =>
         node(s"Wrong parameters", s"Please provide ${requiredParameters.mkString(", ")} instead of ${passedParameters.mkString(", ")}")
-      case OverwrittenVariable(varName, _) => node(s"Variable $varName is already defined", "You cannot overwrite variables")
+      case OverwrittenVariable(varName, _, paramName) => node(s"Variable $varName is already defined", "You cannot overwrite variables", fieldName = paramName)
+      case InvalidVariableOutputName(varName, _, paramName) => node(s"Provided variable name includes unsupported chars.", "Please use only letters, numbers or '_'.", fieldName = paramName)
       case NotSupportedExpressionLanguage(languageId, _) => node(s"Language $languageId is not supported", "Currently only SPEL expressions are supported")
       case MissingPart(id) => node("MissingPart", s"Node $id has missing part")
       case WrongProcessType() => node("Wrong process type", "Process type doesn't match category - please check configuration")
