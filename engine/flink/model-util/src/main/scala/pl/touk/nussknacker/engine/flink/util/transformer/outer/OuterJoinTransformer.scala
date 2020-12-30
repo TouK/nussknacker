@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer.outer
 
 import java.time.Duration
 import java.util.concurrent.TimeUnit
+
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction
 import org.apache.flink.streaming.api.scala._
@@ -51,9 +52,7 @@ class OuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandler[T
       (`AggregateByParamName`, aggregateBy: DefinedSingleParameter) :: Nil, _) =>
       val outName = OutputVariableNameDependency.extract(dependencies)
       val mainCtx = mainId(branchTypeByBranchId).map(contexts).getOrElse(ValidationContext())
-      val withVariable = aggregator.computeOutputType(aggregateBy.returnType).leftMap(CustomNodeError(_, Some(AggregatorParamName)))
-        .toValidatedNel[ProcessCompilationError, TypingResult]
-        .andThen(typ => mainCtx.withVariable(OutputVar.customNode(outName), typ))
+      val withVariable = mainCtx.withVariable(outName, aggregateBy.returnType)
       FinalResults(withVariable.getOrElse(mainCtx), withVariable.swap.map(_.toList).getOrElse(Nil))
   }
 

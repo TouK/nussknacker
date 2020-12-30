@@ -27,22 +27,19 @@ case class ValidationContext(localVariables: Map[String, TypingResult] = Map.emp
 
   def contains(name: String): Boolean = variables.contains(name)
 
-  def withVariable(name: String, value: TypingResult, paramName: Option[String])
-                  (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, ValidationContext] = {
+  def withVariable(name: String, value: TypingResult)
+                  (implicit nodeId: NodeId, paramName: Option[String] = None): ValidatedNel[PartSubGraphCompilationError, ValidationContext] = {
 
-    List(validateVariableExists(name, paramName), validateVariableFormat(name, paramName))
+    List(validateVariableExists(name), validateVariableFormat(name))
       .sequence
       .map(_ => copy(localVariables = localVariables + (name -> value)))
   }
 
-  def withVariable(outputVar: OutputVar, value: TypingResult)(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, ValidationContext] =
-    withVariable(outputVar.outputName, value, Some(outputVar.fieldName))
+  private def validateVariableExists(name: String)(implicit nodeId: NodeId, paramName: Option[String] = None): ValidatedNel[PartSubGraphCompilationError, String] =
+    if (variables.contains(name)) Invalid(OverwrittenVariable(name)).toValidatedNel else Valid(name)
 
-  private def validateVariableExists(name: String, paramName: Option[String])(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, String] =
-    if (variables.contains(name)) Invalid(OverwrittenVariable(name, paramName)).toValidatedNel else Valid(name)
-
-  private def validateVariableFormat(name: String, paramName: Option[String])(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, String] =
-    if (SourceVersion.isIdentifier(name)) Valid(name) else Invalid(InvalidVariableOutputName(name, paramName)).toValidatedNel
+  private def validateVariableFormat(name: String)(implicit nodeId: NodeId, paramName: Option[String] = None): ValidatedNel[PartSubGraphCompilationError, String] =
+    if (SourceVersion.isIdentifier(name)) Valid(name) else Invalid(InvalidVariableOutputName(name)).toValidatedNel
 
   //TODO: what about parent context? This is tricky - e.g. some aggregations in subprocess can clear also
   //variables in main process??
@@ -56,38 +53,4 @@ case class ValidationContext(localVariables: Map[String, TypingResult] = Map.emp
       case Some(ctx) => Valid(ctx)
       case None => Invalid(NoParentContext(nodeId.id)).toValidatedNel
     }
-}
-
-/**
-  * Right now we have a few different ways to name output param in node.. OutputVar allows us to skip using strings.
-  * @TODO: Provide one way for naming output in all nodes.
-  */
-case class OutputVar(fieldName: String, outputName: String)
-
-object OutputVar {
-
-  val VariableFieldName = "varName"
-
-  val EnricherFieldName = "output"
-
-  val SubprocessFieldName = "outputName"
-
-  val SwitchFieldName = "exprVal"
-
-  val CustomNodeFieldName = "outputVar"
-
-  def variable(outputName: String): OutputVar =
-    OutputVar(VariableFieldName, outputName)
-
-  def enricher(outputName: String): OutputVar =
-    OutputVar(EnricherFieldName, outputName)
-
-  def subprocess(outputName: String): OutputVar =
-    OutputVar(SubprocessFieldName, outputName)
-
-  def switch(outputName: String): OutputVar =
-    OutputVar(SwitchFieldName, outputName)
-
-  def customNode(outputName: String): OutputVar =
-    OutputVar(CustomNodeFieldName, outputName)
 }

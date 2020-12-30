@@ -5,11 +5,11 @@ import cats.data.{NonEmptyList, ValidatedNel}
 import cats.instances.list._
 import cats.instances.option._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
-import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
+import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeCompiler, OutputVar}
 import pl.touk.nussknacker.engine.compiledgraph.node
 import pl.touk.nussknacker.engine.compiledgraph.node.{Node, SubprocessEnd}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
@@ -64,7 +64,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
 
       case splittednode.SwitchNode(graph.node.Switch(id, expression, varName, _), nexts, defaultNext) =>
         val NodeCompilationResult(expressionTyping, _, newCtxValidated, compiledExpression, _) =
-          nodeCompiler.compileExpression(expression, ctx, expectedType = Unknown, outputVar = Some(OutputVar.switch(varName)))
+          nodeCompiler.compileExpression(expression, ctx, expectedType = Unknown, outputVar = Some(OutputVar(varName)))
         val newCtx = newCtxValidated.getOrElse(ctx)
         CompilationResult.map4(
           f0 = CompilationResult(newCtxValidated),
@@ -122,7 +122,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
         toCompilationResult(Valid(compiledgraph.node.Sink(id, outputName, None, isDisabled = false)), Map.empty)
       case SubprocessOutputDefinition(id, outputName, fields, _) =>
         val NodeCompilationResult(typingInfo, _, ctxV, compiledFields, _) =
-          nodeCompiler.compileFields(fields, ctx, outputVar = Some(OutputVar.subprocess(outputName)))
+          nodeCompiler.compileFields(fields, ctx, outputVar = Some(OutputVar(outputName)))
         CompilationResult.map2(
           fa = CompilationResult(ctxV),
           fb = toCompilationResult(compiledFields, typingInfo)
@@ -143,7 +143,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
     data match {
       case graph.node.Variable(id, varName, expression, _) =>
         val NodeCompilationResult(typingInfo, _, newCtx, compiledExpression, t) =
-          nodeCompiler.compileExpression(expression, ctx, expectedType = Unknown, outputVar = Some(OutputVar.variable(varName)))
+          nodeCompiler.compileExpression(expression, ctx, expectedType = Unknown, outputVar = Some(OutputVar(varName)))
         CompilationResult.map3(
           f0 = CompilationResult(newCtx),
           f1 = toCompilationResult(compiledExpression, typingInfo),
@@ -153,7 +153,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
         }
       case graph.node.VariableBuilder(id, varName, fields, _) =>
         val NodeCompilationResult(typingInfo, _, newCtxV, compiledFields, _) =
-          nodeCompiler.compileFields(fields, ctx, outputVar = Some(OutputVar.variable(varName)))
+          nodeCompiler.compileFields(fields, ctx, outputVar = Some(OutputVar(varName)))
         CompilationResult.map3(
           f0 = CompilationResult(newCtxV),
           f1 = toCompilationResult(compiledFields, typingInfo),
@@ -167,13 +167,13 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
         CompilationResult.map2(toCompilationResult(validatedServiceRef, typingInfo), compile(next, ctx))((ref, next) =>
           compiledgraph.node.Processor(id, ref, next, isDisabled.contains(true)))
 
-      case enricher@graph.node.Enricher(id, _, output, _) =>
-        val NodeCompilationResult(typingInfo, _, newCtx, validatedServiceRef, _) = nodeCompiler.compileEnricher(enricher, ctx, outputVar = Some(OutputVar.enricher(output)))
+      case enricher@graph.node.Enricher(id, _, outName, _) =>
+        val NodeCompilationResult(typingInfo, _, newCtx, validatedServiceRef, _) = nodeCompiler.compileEnricher(enricher, ctx)
 
         CompilationResult.map3(
           toCompilationResult(validatedServiceRef, typingInfo),
           CompilationResult(newCtx),
-          compile(next, newCtx.getOrElse(ctx)))((ref, _, next) => compiledgraph.node.Enricher(id, ref, output, next))
+          compile(next, newCtx.getOrElse(ctx)))((ref, _, next) => compiledgraph.node.Enricher(id, ref, outName, next))
 
       //here we don't do anything, in subgraphcompiler it's just pass through, we can't add input context here because it contains output variable context (not input)
       case graph.node.CustomNode(id, _, _, _, _) =>
@@ -194,9 +194,9 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
       case SubprocessOutput(id, outputName, fields, _) =>
         ctx.popContext.map { parentCtx =>
           val NodeCompilationResult(typingInfo, _, ctxWithSubOutV, compiledFields, typingResult) =
-            nodeCompiler.compileFields(fields, ctx, outputVar = Some(OutputVar.subprocess(outputName)))
+            nodeCompiler.compileFields(fields, ctx, outputVar = Some(OutputVar(outputName)))
           val parentCtxWithSubOut = parentCtx
-            .withVariable(OutputVar.subprocess(outputName), typingResult.getOrElse(Unknown))
+            .withVariable(outputName, typingResult.getOrElse(Unknown))
             .getOrElse(parentCtx)
           CompilationResult.map3(
             f0 = CompilationResult(ctxWithSubOutV),
