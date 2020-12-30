@@ -7,14 +7,12 @@ import cats.data._
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression._
-import pl.touk.nussknacker.engine.api.lazyy.LazyValuesProvider
-import pl.touk.nussknacker.engine.api.typed.{TypedMap, typing}
+import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.sql.columnmodel.CreateColumnModel
 import pl.touk.nussknacker.engine.sql.preparevalues.PrepareTables
 
 import scala.collection.JavaConverters._
-import scala.concurrent.Future
 
 object SqlExpressionParser extends ExpressionParser {
 
@@ -100,10 +98,9 @@ class SqlExpression(private[sql] val columnModels: Map[String, ColumnModel],
     new HsqlSqlQueryableDataBase(original, columnModels)
   }
 
-  override def evaluate[T](ctx: Context, globals: Map[String, Any], lazyValuesProvider: LazyValuesProvider): ValueWithLazyContext[T] = {
+  override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = {
     //TODO: optimize if needed
-    val result = evaluate(ctx.variables ++ globals).asJava.asInstanceOf[T]
-    ValueWithLazyContext(result, ctx.lazyContext)
+    evaluate(ctx.variables ++ globals).asJava.asInstanceOf[T]
   }
 
   private def evaluate[T](variables: Map[String, Any]): List[TypedMap] = {

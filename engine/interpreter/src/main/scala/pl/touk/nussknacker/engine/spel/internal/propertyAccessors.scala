@@ -2,18 +2,12 @@ package pl.touk.nussknacker.engine.spel.internal
 
 import java.lang.reflect.{Method, Modifier}
 import java.util.Optional
-import java.util.concurrent.TimeoutException
-
-import cats.data.{State, StateT}
-import cats.effect.IO
 import org.apache.commons.lang3.ClassUtils
 import org.springframework.expression.spel.support.ReflectivePropertyAccessor
 import org.springframework.expression.{EvaluationContext, PropertyAccessor, TypedValue}
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
-import pl.touk.nussknacker.engine.api.lazyy.{ContextWithLazyValuesProvider, LazyContext, LazyValuesProvider}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{LazyContextVariableName, LazyValuesProviderVariableName}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
@@ -27,7 +21,6 @@ object propertyAccessors {
     Seq(
       new ReflectivePropertyAccessor(),
       NullPropertyAccessor, //must come before other non-standard ones
-      new ScalaLazyPropertyAccessor(lazyValuesTimeout), // must be before scalaPropertyAccessor
       ScalaOptionOrNullPropertyAccessor, // must be before scalaPropertyAccessor
       JavaOptionalOrNullPropertyAccessor,
       NoParamMethodPropertyAccessor,
@@ -133,36 +126,6 @@ object propertyAccessors {
     }
 
     override def getSpecificTargetClasses: Array[Class[_]] = null
-  }
-
-
-  class ScalaLazyPropertyAccessor(lazyValuesTimeout: Duration) extends PropertyAccessor with ReadOnly with Caching {
-
-    // TODO: handle methods with multiple args or at least validate that they can't be called
-    //       - see test for similar case for Futures: "usage of methods with some argument returning future"
-    override protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method] = {
-      target.getMethods.find(
-        m => m.getParameterCount == 0 &&
-        m.getReturnType == classOf[State[_,_]] &&
-        m.getName == name)
-    }
-
-    override protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext): Any = {
-      val f = method
-        .invoke(target)
-        .asInstanceOf[StateT[IO, ContextWithLazyValuesProvider, Any]]
-      val lazyProvider = context.lookupVariable(LazyValuesProviderVariableName).asInstanceOf[LazyValuesProvider]
-      val ctx = context.lookupVariable(LazyContextVariableName).asInstanceOf[LazyContext]
-      val futureResult = f.run(ContextWithLazyValuesProvider(ctx, lazyProvider))
-      //TODO: async invocation :)
-      val (modifiedContext, value) = futureResult.unsafeRunTimed(lazyValuesTimeout)
-        .getOrElse(throw new TimeoutException(s"Timout on evaluation ${method.getDeclaringClass}:${method.getName}"))
-      context.setVariable(LazyContextVariableName, modifiedContext.context)
-      value
-    }
-
-    override def getSpecificTargetClasses: Array[Class[_]] = null
-
   }
 
   object MapPropertyAccessor extends PropertyAccessor with ReadOnly {

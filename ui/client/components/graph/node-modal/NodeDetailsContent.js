@@ -409,7 +409,7 @@ export class NodeDetailsContent extends React.Component {
           ),
           this.createField(
             "checkbox",
-            "Should use async interpretation (lazy variables not allowed)",
+            "Should use async interpretation",
             "typeSpecificProperties.useAsyncInterpretation",
             false,
             [errorValidator(fieldErrors, "useAsyncInterpretation")],

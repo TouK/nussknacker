@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.api.expression
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 import scala.concurrent.Future
@@ -14,7 +13,7 @@ trait Expression {
 
   def original: String
 
-  def evaluate[T](ctx: Context, globals: Map[String, Any], lazyValuesProvider: LazyValuesProvider): ValueWithLazyContext[T]
+  def evaluate[T](ctx: Context, globals: Map[String, Any]): T
 }
 
 trait ExpressionParser {
@@ -29,8 +28,6 @@ trait ExpressionParser {
 }
 
 case class ExpressionParseError(message: String)
-
-case class ValueWithLazyContext[T](value: T, lazyContext: LazyContext)
 
 
 sealed trait TypedValue

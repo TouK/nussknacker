@@ -15,6 +15,7 @@ Nussknacker versions
     * [#1343](https://github.com/TouK/nussknacker/pull/1343) Aggregators compute stored types    
     * [#1343](https://github.com/TouK/nussknacker/pull/1359) Improvements in variable output validation 
     * [#1360](https://github.com/TouK/nussknacker/pull/1360) Service query can use global variables
+* [#1361](https://github.com/TouK/nussknacker/pull/1361) Lazy vars removal
 
 0.3.1 (not released yet) 
 ------------------------

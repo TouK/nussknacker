@@ -1,17 +1,14 @@
 package pl.touk.nussknacker.engine.api
 
-import pl.touk.nussknacker.engine.api.lazyy.LazyContext
-
 object Context {
 
-  def apply(id: String) : Context = Context(id, Map.empty, LazyContext(id), None)
+  def apply(id: String) : Context = Context(id, Map.empty, None)
 
 }
 
 case class ContextId(value: String)
 
-case class Context(id: String, variables: Map[String, Any],
-                   lazyContext: LazyContext, parentContext: Option[Context]) {
+case class Context(id: String, variables: Map[String, Any], parentContext: Option[Context]) {
 
   def apply[T](name: String): T =
     getOrElse(name, throw new RuntimeException(s"Unknown variable: $name"))
@@ -34,16 +31,11 @@ case class Context(id: String, variables: Map[String, Any],
   def withVariables(otherVariables: Map[String, Any]): Context =
     copy(variables = variables ++ otherVariables)
 
-  def withLazyContext(lazyContext: LazyContext) : Context =
-    copy(lazyContext = lazyContext)
-
   def pushNewContext(variables: Map[String, Any]) : Context = {
-    Context(id, variables, lazyContext, Some(this))
+    Context(id, variables, Some(this))
   }
 
   def popContext : Context =
-    parentContext
-      .map(parent => parent.copy(lazyContext = parent.lazyContext.withEvaluatedValues(this.lazyContext.evaluatedValues)))
-      .getOrElse(throw new RuntimeException("No parent context available"))
+    parentContext.getOrElse(throw new RuntimeException("No parent context available"))
 
 }

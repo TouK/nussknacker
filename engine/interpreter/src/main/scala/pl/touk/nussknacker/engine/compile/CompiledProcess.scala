@@ -40,7 +40,7 @@ object CompiledProcess {
     processCompiler.compile(process).result.map { compiledProcess =>
       val globalVariablesPreparer = GlobalVariablesPreparer(definitions.expressionConfig)
 
-      val expressionEvaluator = ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners, process.metaData, servicesDefs)
+      val expressionEvaluator = ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners, process.metaData)
 
       val interpreter = Interpreter(listeners, expressionEvaluator)
 

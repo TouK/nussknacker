@@ -6,7 +6,6 @@ import org.apache.flink.api.common.typeutils.TypeSerializer
 import org.apache.flink.api.java.typeutils.{ListTypeInfo, MapTypeInfo}
 import org.apache.flink.api.scala.typeutils.{CaseClassTypeInfo, OptionTypeInfo, ScalaCaseClassSerializer}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.lazyy.LazyContext
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.{Context, InterpretationResult, PartReference, ValueWithContext}
@@ -39,12 +38,11 @@ class TypingResultAwareTypeInformationDetection(additionalTypeInfoDeterminerPrep
   def forContext(validationContext: ValidationContext): TypeInformation[Context] = {
     val id = TypeInformation.of(classOf[String])
     val variables = forType(TypedObjectTypingResult(validationContext.localVariables, Typed.typedClass[Map[String, AnyRef]]))
-    val lazyContext = forLazyContext
     val parentCtx = new OptionTypeInfo[Context, Option[Context]](validationContext.parent.map(forContext).getOrElse(FixedValueSerializers.nullValueTypeInfo))
 
-    val typeInfos = List(id, variables, lazyContext, parentCtx)
+    val typeInfos = List(id, variables, parentCtx)
     new CaseClassTypeInfo[Context](classOf[Context],
-      Array.empty, typeInfos, List("id", "variables", "lazyContext", "parentContext")) {
+      Array.empty, typeInfos, List("id", "variables", "parentContext")) {
       override def createSerializer(config: ExecutionConfig): TypeSerializer[Context] = {
         new ScalaCaseClassSerializer[Context](classOf[Context], typeInfos.map(_.createSerializer(config)).toArray)
       }
@@ -112,18 +110,6 @@ class TypingResultAwareTypeInformationDetection(additionalTypeInfoDeterminerPrep
   private def fallback[T:ClassTag]: TypeInformation[T] = fallback(implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]])
 
   private def fallback[T](kl: Class[T]): TypeInformation[T] = TypeInformation.of(kl)
-
-  private val forLazyContext: TypeInformation[LazyContext] = {
-    val id = TypeInformation.of(classOf[String])
-    val evaluatedValues = FixedValueSerializers.emptyMapTypeInfo
-    val typeInfos = List(id, evaluatedValues)
-    new CaseClassTypeInfo[LazyContext](classOf[LazyContext],
-      Array.empty, typeInfos, List("id", "evaluatedValues")) {
-      override def createSerializer(config: ExecutionConfig): TypeSerializer[LazyContext] = {
-        new ScalaCaseClassSerializer[LazyContext](classOf[LazyContext], typeInfos.map(_.createSerializer(config)).toArray)
-      }
-    }
-  }
 
 }
 

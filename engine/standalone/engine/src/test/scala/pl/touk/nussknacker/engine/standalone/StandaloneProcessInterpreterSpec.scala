@@ -5,7 +5,6 @@ import com.typesafe.config.ConfigFactory
 import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
-import pl.touk.nussknacker.engine.api.lazyy.LazyContext
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{Context, JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
@@ -210,7 +209,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
     result shouldBe Left(NonEmptyList.of(
       EspExceptionInfo(Some("sink"),
         SinkException("FailingSink failed"),
-        Context( "context-id", Map("input" -> Request1("a","b")), LazyContext("context-id",Map()),None))
+        Context( "context-id", Map("input" -> Request1("a","b")), None))
     ))
   }
 
