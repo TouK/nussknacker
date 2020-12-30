@@ -45,7 +45,7 @@ object validationHelpers {
     @MethodToInvoke
     def execute(@OutputVariableName variableName: String)(implicit nodeId: NodeId) = {
       ContextTransformation
-        .definedBy(_.withVariable(variableName, Typed[String]))
+        .definedBy(_.withVariable(variableName, Typed[String], paramName = None))
         .implementedBy(null)
     }
 
@@ -73,7 +73,7 @@ object validationHelpers {
           val newType = TypedObjectTypingResult((1 to numberOfFields).map { i =>
             s"field$i" -> Typed[String]
           }.toMap)
-          context.withVariable(variableName, newType)
+          context.withVariable(variableName, newType, paramName = None)
         }
         .implementedBy(null)
     }
@@ -123,7 +123,7 @@ object validationHelpers {
                 branchId -> valueByBranchId(branchId).returnType
             }.toMap)
 
-            mainBranchContext.withVariable(variableName, newType)
+            mainBranchContext.withVariable(variableName, newType, paramName = None)
           }
         }
         .implementedBy(null)
@@ -243,7 +243,7 @@ object validationHelpers {
 
     protected def finalResult(context: ValidationContext, rest: List[(String, BaseDefinedParameter)], name: String)(implicit nodeId: NodeId): this.FinalResults = {
       val result = TypedObjectTypingResult(rest.toMap.mapValues(_.returnType))
-      context.withVariable(name, result).fold(
+      context.withVariable(name, result, paramName = None).fold(
         errors => FinalResults(context, errors.toList),
         FinalResults(_))
     }
@@ -277,7 +277,7 @@ object validationHelpers {
         val out = rightValue.returnType
         val outName = OutputVariableNameDependency.extract(dependencies)
         val leftCtx = contexts(left(byBranch))
-        val context = leftCtx.withVariable(outName, out)
+        val context = leftCtx.withVariable(outName, out, paramName = None)
         FinalResults(context.getOrElse(leftCtx), context.fold(_.toList, _ => Nil))
     }
 

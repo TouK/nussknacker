@@ -49,5 +49,5 @@ abstract class Aggregator extends AggregateFunction[AnyRef, AnyRef, AnyRef] {
     ValidationContext => ValidatedNel[ProcessCompilationError, ValidationContext] = validationCtx => computeOutputType(aggregateBy.returnType)
     //TODO: better error?
       .leftMap(message => NonEmptyList.of(CannotCreateObjectError(message, nodeId.id)))
-      .andThen(validationCtx.withVariable(variableName, _))
+      .andThen(validationCtx.withVariable(variableName, _, paramName = None))
 }

@@ -6,7 +6,7 @@ import org.apache.flink.streaming.api.functions.co.KeyedCoProcessFunction
 import org.apache.flink.streaming.api.scala.DataStream
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
-import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.{Context, CustomStreamTransformer, LazyParameter, ValueWithContext}
@@ -46,7 +46,7 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
         =>
         val outName = OutputVariableNameDependency.extract(dependencies)
         val leftCtx = left(byBranch).map(contexts).getOrElse(ValidationContext())
-        val context = leftCtx.withVariable(outName, rightValue.returnType)
+        val context = leftCtx.withVariable(OutputVar.customNode(outName), rightValue.returnType)
         FinalResults(context.getOrElse(leftCtx), context.fold(_.toList, _ => Nil))
     }
 
