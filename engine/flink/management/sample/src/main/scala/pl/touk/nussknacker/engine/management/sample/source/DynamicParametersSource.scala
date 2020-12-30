@@ -23,6 +23,6 @@ object DynamicParametersSource extends FlinkSourceFactory[AnyRef] with DynamicPa
 
     validationContext.withVariable("input", TypedObjectTypingResult(
       otherParams.toMap.mapValues(_.returnType)
-    )).fold(a => FinalResults(validationContext, a.toList), FinalResults(_))
+    ), paramName = None).fold(a => FinalResults(validationContext, a.toList), FinalResults(_))
   }
 }

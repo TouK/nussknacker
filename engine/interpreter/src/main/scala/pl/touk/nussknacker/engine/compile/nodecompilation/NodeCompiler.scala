@@ -83,13 +83,13 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
       definitions.sourceFactories.get(ref.typ) match {
         case Some(definition) =>
           def defaultContextTransformation(compiled: Option[Any]) =
-            contextWithOnlyGlobalVariables.withVariable(Interpreter.InputParamName, compiled.flatMap(a => returnType(definition, a)).getOrElse(Unknown))
+            contextWithOnlyGlobalVariables.withVariable(Interpreter.InputParamName, compiled.flatMap(a => returnType(definition, a)).getOrElse(Unknown), paramName = None)
 
           compileObjectWithTransformation[Source[_]](a, Left(contextWithOnlyGlobalVariables), Some(Interpreter.InputParamName), definition, defaultContextTransformation)
         case None =>
           val error = Invalid(NonEmptyList.of(MissingSourceFactory(ref.typ)))
           //TODO: is this default behaviour ok?
-          val defaultCtx = contextWithOnlyGlobalVariables.withVariable(Interpreter.InputParamName, Unknown)
+          val defaultCtx = contextWithOnlyGlobalVariables.withVariable(Interpreter.InputParamName, Unknown, paramName = None)
           NodeCompilationResult(Map.empty, None, defaultCtx, error)
       }
     case SubprocessInputDefinition(_, params, _) =>
@@ -98,10 +98,10 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
 
   def compileCustomNodeObject(data: CustomNodeData, ctx: GenericValidationContext, ending: Boolean)
                              (implicit metaData: MetaData, nodeId: NodeId): NodeCompilationResult[AnyRef] = {
-    val outputVar = data.outputVar
 
+    val maybeOutputVar = data.outputVar.map(OutputVar.customNode)
     val defaultCtx = ctx.fold(identity, _ => contextWithOnlyGlobalVariables)
-    val defaultCtxToUse = data.outputVar.map(defaultCtx.withVariable(_, Unknown)).getOrElse(Valid(defaultCtx))
+    val defaultCtxToUse = maybeOutputVar.map(defaultCtx.withVariable(_, Unknown)).getOrElse(Valid(defaultCtx))
 
     definitions.customStreamTransformers.get(data.nodeType) match {
       case Some((_, additionalData)) if ending && !additionalData.canBeEnding =>
@@ -109,7 +109,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
         NodeCompilationResult(Map.empty, None, defaultCtxToUse, error)
       case Some((nodeDefinition, additionalData)) =>
         val default = defaultContextAfter(additionalData, data, ending, ctx, nodeDefinition)
-        compileObjectWithTransformation(data, ctx, outputVar, nodeDefinition, default)
+        compileObjectWithTransformation(data, ctx, maybeOutputVar.map(_.outputName), nodeDefinition, default)
       case None =>
         val error = Invalid(NonEmptyList.of(MissingCustomNodeExecutor(data.nodeType)))
         NodeCompilationResult(Map.empty, None, defaultCtxToUse, error)
@@ -140,7 +140,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
 
     val childCtx = ctx.pushNewContext()
     val newCtx = paramNamesWithType.foldLeft[ValidatedNel[ProcessCompilationError, ValidationContext]](Valid(childCtx)) {
-      case (acc, (paramName, typ)) => acc.andThen(_.withVariable(paramName, typ))
+      case (acc, (paramName, typ)) => acc.andThen(_.withVariable(OutputVar(paramName), typ))
     }
     val validParams = validParamDefs.andThen { paramDefs =>
       objectParametersExpressionCompiler.compileEagerObjectParameters(paramDefs, ref.parameters, ctx)
@@ -149,9 +149,9 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     NodeCompilationResult(expressionTypingInfo, None, newCtx, validParams)
   }
 
-  def compileFields(fields: List[graph.variable.Field], 
+  def compileFields(fields: List[graph.variable.Field],
                     ctx: ValidationContext,
-                    outputVar: Option[OutputVar])
+                    maybeOutputVar: Option[OutputVar])
                    (implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.variable.Field]] = {
     val compilationResult: ValidatedNel[ProcessCompilationError, List[ExpressionCompilation[compiledgraph.variable.Field]]] = fields.map { field =>
       objectParametersExpressionCompiler
@@ -172,7 +172,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     NodeCompilationResult(
       expressionTypingInfo = fieldsTypingInfo,
       parameters = None,
-      validationContext = outputVar.map(output => ctx.withVariable(output.outputName, typedObject)(nodeId,  Some(output.fieldName))).getOrElse(Valid(ctx)),
+      validationContext = maybeOutputVar.map(ctx.withVariable(_, typedObject)).getOrElse(Valid(ctx)),
       compiledObject = compiledFields,
       expressionType = Some(typedObject)
     )
@@ -182,7 +182,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
                         ctx: ValidationContext,
                         expectedType: TypingResult,
                         fieldName: String = DefaultExpressionId,
-                        outputVar: Option[OutputVar])
+                        maybeOutputVar: Option[OutputVar])
                        (implicit nodeId: NodeId): NodeCompilationResult[api.expression.Expression] = {
     val expressionCompilation = objectParametersExpressionCompiler
       .compile(expr, Some(fieldName), ctx, expectedType)
@@ -192,7 +192,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     NodeCompilationResult(
       expressionTypingInfo = expressionCompilation.expressionTypingInfo,
       parameters = None,
-      validationContext = outputVar.map(output => ctx.withVariable(output.outputName, expressionCompilation.typingResult)(nodeId, Some(output.fieldName))).getOrElse(Valid(ctx)),
+      validationContext = maybeOutputVar.map(ctx.withVariable(_, expressionCompilation.typingResult)).getOrElse(Valid(ctx)),
       compiledObject = expressionCompilation.validated,
       expressionType = Some(expressionCompilation.typingResult)
     )
@@ -203,11 +203,11 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     compileService(n.service, ctx, None)
   }
 
-  def compileEnricher(n: Enricher, ctx: ValidationContext) (implicit nodeId: NodeId): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
-    compileService(n.service, ctx, Some(n.output))
+  def compileEnricher(n: Enricher, ctx: ValidationContext, maybeOutputVar: Option[OutputVar]) (implicit nodeId: NodeId): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+    compileService(n.service, ctx, maybeOutputVar)
   }
 
-  private def compileService(n: ServiceRef, validationContext: ValidationContext, outputVar: Option[String])(implicit nodeId: NodeId): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+  private def compileService(n: ServiceRef, validationContext: ValidationContext, outputVar: Option[OutputVar] = None)(implicit nodeId: NodeId): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
     definitions.services.get(n.id) match {
       case Some(objectWithMethodDef) =>
         ServiceCompiler.compile(n, outputVar, objectWithMethodDef, validationContext)
@@ -244,15 +244,15 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     val validationContext = branchCtx.left.getOrElse(contextWithOnlyGlobalVariables)
     val maybeClearedContext = if (additionalData.clearsContext) validationContext.clearVariables else validationContext
 
-    def ctxWithVar(varName: String, typ: TypingResult) = maybeClearedContext.withVariable(varName, typ)
+    def ctxWithVar(varName: String, typ: TypingResult, paramName: Option[String]) = maybeClearedContext.withVariable(varName, typ, paramName)
       //ble... NonEmptyList is invariant...
       .asInstanceOf[ValidatedNel[ProcessCompilationError, ValidationContext]]
 
     maybeCNode match {
-      case None => node.outputVar.map(ctxWithVar(_, Unknown)).getOrElse(Valid(maybeClearedContext))
+      case None => node.outputVar.map(ctxWithVar(_, Unknown, None)).getOrElse(Valid(maybeClearedContext))
       case Some(cNode) =>
         (node.outputVar, returnType(nodeDefinition, cNode)) match {
-          case (Some(varName), Some(typ)) => ctxWithVar(varName, typ)
+          case (Some(varName), Some(typ)) => ctxWithVar(varName, typ, Some("OutputVariable"))
           case (None, None) => Valid(maybeClearedContext)
           case (Some(_), None) => Invalid(NonEmptyList.of(RedundantParameters(Set("OutputVariable"))))
           case (None, Some(_)) if ending => Valid(maybeClearedContext)
@@ -393,15 +393,15 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
   object ServiceCompiler {
 
     def compile(n: ServiceRef,
-                outputVar: Option[String],
+                maybeOutputVar: Option[OutputVar],
                 objWithMethod: ObjectWithMethodDef,
                 ctx: ValidationContext)(implicit nodeId: NodeId): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
       val computedParameters = objectParametersExpressionCompiler.compileEagerObjectParameters(objWithMethod.parameters, n.parameters, ctx)
-      val outputCtx = outputVar match {
-        case Some(varName) =>
+      val outputCtx = maybeOutputVar match {
+        case Some(outputVar) =>
           NodeValidationExceptionHandler.handleExceptions {
             computeReturnType(objWithMethod, computedParameters)
-          }.andThen(ctx.withVariable(varName, _))
+          }.andThen(ctx.withVariable(outputVar, _))
         case None => Valid(ctx)
       }
 
@@ -440,11 +440,3 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
   }
 }
 
-case class OutputVar(fieldName: String, outputName: String)
-
-object OutputVar {
-  val DefaultFieldName = "varName"
-
-  def apply(outputName: String): OutputVar =
-    OutputVar(DefaultFieldName, outputName)
-}

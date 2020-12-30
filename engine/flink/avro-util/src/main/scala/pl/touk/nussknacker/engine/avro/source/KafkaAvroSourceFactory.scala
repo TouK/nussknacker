@@ -50,7 +50,7 @@ class KafkaAvroSourceFactory[T:ClassTag](val schemaRegistryProvider: SchemaRegis
   }
 
   private def finalCtx(context: ValidationContext, dependencies: List[NodeDependencyValue], result: typing.TypingResult)(implicit nodeId: NodeId): ValidationContext = {
-    context.withVariable(variableName(dependencies), result).getOrElse(context)
+    context.withVariable(variableName(dependencies), result, None).getOrElse(context)
   }
 
   private def variableName(dependencies: List[NodeDependencyValue]) = {

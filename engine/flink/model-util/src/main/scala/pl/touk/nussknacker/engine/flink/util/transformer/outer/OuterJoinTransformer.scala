@@ -56,7 +56,7 @@ class OuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandler[T
       val mainCtx = mainId(branchTypeByBranchId).map(contexts).getOrElse(ValidationContext())
       val withVariable = aggregator.computeOutputType(aggregateBy.returnType).leftMap(CustomNodeError(_, Some(AggregatorParamName)))
         .toValidatedNel[ProcessCompilationError, TypingResult]
-        .andThen(typ => mainCtx.withVariable(outName, typ))
+        .andThen(typ => mainCtx.withVariable(outName, typ, paramName = None))
       FinalResults(withVariable.getOrElse(mainCtx), withVariable.swap.map(_.toList).getOrElse(Nil))
   }
 

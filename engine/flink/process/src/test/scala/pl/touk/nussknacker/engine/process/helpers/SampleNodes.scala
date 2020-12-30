@@ -457,7 +457,7 @@ object SampleNodes {
       dependencies.collectFirst { case OutputVariableNameValue(name) => name } match {
         case Some(name) =>
           val result = TypedObjectTypingResult(rest.toMap.mapValuesNow(_.returnType))
-          context.withVariable(name, result).fold(
+          context.withVariable(name, result, paramName = None).fold(
             errors => FinalResults(context, errors.toList),
             FinalResults(_))
         case None =>
@@ -493,7 +493,7 @@ object SampleNodes {
     override def contextTransformation(context: ValidationContext,
                                        dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): this.NodeTransformationDefinition = {
       case TransformationStep(Nil, _) =>
-        context.withVariable(OutputVariableNameDependency.extract(dependencies), Typed[Boolean])
+        context.withVariable(OutputVariableNameDependency.extract(dependencies), Typed[Boolean], paramName = None)
           .map(FinalResults(_, state = Some(context.contains(VariableThatShouldBeDefinedBeforeNodeName))))
           .valueOr( errors => FinalResults(context, errors.toList))
     }
@@ -538,7 +538,7 @@ object SampleNodes {
     private def output(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId) = {
       context.withVariable(dependencies.collectFirst {
         case OutputVariableNameValue(name) => name
-      }.get, Typed[String]).fold(
+      }.get, Typed[String], paramName = None).fold(
         errors => FinalResults(context, errors.toList),
         FinalResults(_))
     }

@@ -46,7 +46,7 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
         =>
         val outName = OutputVariableNameDependency.extract(dependencies)
         val leftCtx = left(byBranch).map(contexts).getOrElse(ValidationContext())
-        val context = leftCtx.withVariable(outName, rightValue.returnType)
+        val context = leftCtx.withVariable(outName, rightValue.returnType, paramName = None)
         FinalResults(context.getOrElse(leftCtx), context.fold(_.toList, _ => Nil))
     }
 

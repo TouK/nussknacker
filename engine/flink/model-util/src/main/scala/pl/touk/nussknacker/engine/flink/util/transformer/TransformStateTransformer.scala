@@ -37,7 +37,7 @@ object TransformStateTransformer extends CustomStreamTransformer with ExplicitUi
              @OutputVariableName variableName: String)
             (implicit nodeId: NodeId): ContextTransformation =
     ContextTransformation
-      .definedBy(_.withVariable(variableName, newValue.returnType))
+      .definedBy(_.withVariable(variableName, newValue.returnType, None))
       .implementedBy(
         FlinkCustomStreamTransformation { (stream, nodeContext) =>
           setUidToNodeIdIfNeed(nodeContext,

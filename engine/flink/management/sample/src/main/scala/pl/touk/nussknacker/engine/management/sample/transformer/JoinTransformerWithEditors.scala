@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.management.sample.transformer
 
 import java.time.Duration
-
 import cats.data.Validated.Invalid
+
 import javax.annotation.Nullable
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, CustomNodeError, FatalUnknownError, NodeId}
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ProcessCompilationError}
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, OutputVar, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.sample.JavaSampleEnum
 
@@ -31,7 +31,7 @@ object JoinTransformerWithEditors extends CustomStreamTransformer with Serializa
         val mainBranchContext = mainBranches.head._2
         val joinedBranchId = joinedBranches.head._1
 
-        mainBranchContext.withVariable(variableName, valueByBranchId(joinedBranchId).returnType)
+        mainBranchContext.withVariable(OutputVar("variableName", variableName), valueByBranchId(joinedBranchId).returnType)
       }
     }.implementedBy {
       () => ???
