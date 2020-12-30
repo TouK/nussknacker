@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.definition.LazyInterpreterDependencies
 import pl.touk.nussknacker.engine.flink.api.RuntimeContextLifecycle
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.FlinkProcessSignalSenderProvider
+import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 
 import scala.concurrent.duration.FiniteDuration
@@ -28,16 +29,17 @@ class CompiledProcessWithDeps(compiledProcess: CompiledProcess,
                               val processTimeout: FiniteDuration
                              ) {
 
-  def open(runtimeContext: RuntimeContext) : Unit = {
-    compiledProcess.lifecycle.foreach {_.open(jobData)}
-    compiledProcess.lifecycle.collect{
+  def open(runtimeContext: RuntimeContext, nodesToUse: List[_<:NodeData]) : Unit = {
+    val lifecycle = compiledProcess.lifecycle(nodesToUse)
+    lifecycle.foreach {_.open(jobData)}
+    lifecycle.collect{
       case s:RuntimeContextLifecycle =>
         s.open(runtimeContext)
     }
   }
 
-  def close() : Unit = {
-    compiledProcess.lifecycle.foreach(_.close())
+  def close(nodesToUse: List[_<:NodeData]) : Unit = {
+    compiledProcess.lifecycle(nodesToUse).foreach(_.close())
   }
 
   def compileSubPart(node: SplittedNode[_], validationContext: ValidationContext): Node = {

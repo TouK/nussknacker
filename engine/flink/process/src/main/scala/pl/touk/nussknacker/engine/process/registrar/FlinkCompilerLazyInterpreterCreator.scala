@@ -9,13 +9,13 @@ class FlinkCompilerLazyInterpreterCreator(runtimeContext: RuntimeContext, withDe
   extends CompilerLazyParameterInterpreter {
 
   //TODO: is this good place?
-  withDeps.open(runtimeContext)
+  withDeps.open(runtimeContext, Nil)
 
   val deps: LazyInterpreterDependencies = withDeps.lazyInterpreterDeps
 
   val metaData: MetaData = withDeps.metaData
 
   override def close(): Unit = {
-    withDeps.close()
+    withDeps.close(Nil)
   }
 }

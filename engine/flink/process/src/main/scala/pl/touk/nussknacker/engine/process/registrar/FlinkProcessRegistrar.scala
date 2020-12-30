@@ -219,7 +219,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => Clas
               val typ = part.node.data.ref.typ
               val prepareFunction = sink.testDataOutput.getOrElse(throw new IllegalArgumentException(s"Sink $typ cannot be mocked"))
               val collectingSink = SinkInvocationCollector(runId, part.id, typ, prepareFunction)
-              startAfterSinkEvaluated.addSink(new CollectingSinkFunction(compiledProcessWithDeps, collectingSink, part))
+              startAfterSinkEvaluated.addSink(new CollectingSinkFunction(compiledProcessWithDeps, collectingSink, part.id))
           }
 
           withSinkAdded.name(s"${metaData.id}-${part.id}-sink")
