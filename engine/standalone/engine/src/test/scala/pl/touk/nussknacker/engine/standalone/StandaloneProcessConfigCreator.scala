@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.engine.standalone
 
 import java.util.concurrent.atomic.AtomicInteger
-
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker._
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.ContextTransformation
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
@@ -126,7 +125,7 @@ object StandaloneCustomExtractor extends CustomStreamTransformer {
              @OutputVariableName outputVariableName: String)
             (implicit nodeId: NodeId): ContextTransformation = {
     ContextTransformation
-      .definedBy(ctx => ctx.withVariable(outputVariableName, expression.returnType))
+      .definedBy(ctx => ctx.withVariable(OutputVar.customNode(outputVariableName), expression.returnType))
       .implementedBy(
         new StandaloneCustomExtractor(outputVariableName, expression))
   }

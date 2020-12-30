@@ -184,14 +184,14 @@ object ProcessCompilationError {
     extends PartSubGraphCompilationError with InASingleNode
 
   object OverwrittenVariable {
-    def apply(variableName: String)(implicit nodeId: NodeId, paramName: Option[String] = None): PartSubGraphCompilationError =
+    def apply(variableName: String, paramName: Option[String])(implicit nodeId: NodeId): PartSubGraphCompilationError =
       OverwrittenVariable(variableName, nodeId.id, paramName)
   }
 
   case class InvalidVariableOutputName(name: String, nodeId: String, paramName: Option[String]) extends PartSubGraphCompilationError with InASingleNode
 
   object InvalidVariableOutputName {
-    def apply(variableName: String)(implicit nodeId: NodeId, paramName: Option[String]): PartSubGraphCompilationError =
+    def apply(variableName: String, paramName: Option[String])(implicit nodeId: NodeId): PartSubGraphCompilationError =
       InvalidVariableOutputName(variableName, nodeId.id, paramName)
   }
 
