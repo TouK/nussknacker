@@ -100,8 +100,8 @@ class SpelExpressionGenSpec extends FunSuite with ScalaCheckDrivenPropertyChecks
       List.empty, SpelExpressionParser.Standard, strictMethodsChecking = true)(ClassExtractionSettings.Default)
     implicit val nodeId: NodeId = NodeId("fooNode")
     val validationContext = ValidationContext.empty
-      .withVariable("a", Typed.fromInstance(a)).toOption.get
-      .withVariable("b", Typed.fromInstance(b)).toOption.get
+      .withVariable("a", Typed.fromInstance(a), paramName = None).toOption.get
+      .withVariable("b", Typed.fromInstance(b), paramName = None).toOption.get
     parser.parse(expr, validationContext, Unknown)
   }
 

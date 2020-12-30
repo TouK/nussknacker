@@ -33,7 +33,7 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
         |  { "name": "stringField", "type": "string" },
         |  { "name": "booleanField", "type": "boolean" }
         |]""".stripMargin)
-    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)).toOption.get
+    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).toOption.get
 
     parse[Integer]("#input.intField", ctx) should be ('valid)
     parse[CharSequence]("#input.intField", ctx) should be ('invalid)
@@ -60,7 +60,7 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
         |    }
         |  }
         |]""".stripMargin)
-    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)).toOption.get
+    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).toOption.get
 
     parse[CharSequence]("#input.array[0].foo", ctx) should be ('valid)
     parse[CharSequence]("#input.array[0].bar", ctx) should be ('invalid)
@@ -83,7 +83,7 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
         |    }
         |  }
         |]""".stripMargin)
-    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)).toOption.get
+    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).toOption.get
 
     parse[CharSequence]("#input.map['ala'].foo", ctx) should be ('valid)
     parse[CharSequence]("#input.map['ala'].bar", ctx) should be ('invalid)
@@ -106,7 +106,7 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
         |    ]
         |  }
         |]""".stripMargin)
-    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)).toOption.get
+    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).toOption.get
 
     parse[CharSequence]("#input.union.foo", ctx) should be ('valid)
     parse[CharSequence]("#input.union.bar", ctx) should be ('invalid)
@@ -124,7 +124,7 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
         |    ]
         |  }
         |]""".stripMargin)
-    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)).toOption.get
+    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).toOption.get
 
     parse[Int]("#input.union", ctx) should be ('valid)
     parse[Long]("#input.union", ctx) should be ('valid)
@@ -132,7 +132,7 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
   }
 
   it("should recognize record with enum") {
-    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(PaymentV1.schema)).toOption.get
+    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(PaymentV1.schema), paramName = None).toOption.get
 
     parse[CharSequence]("#input.currency", ctx) should be ('valid)
     parse[EnumSymbol]("#input.currency", ctx) should be ('valid)
@@ -140,14 +140,14 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
 
   it("should not skipp nullable field vat from schema PaymentV1 when skippNullableFields is set") {
     val typeResult = AvroSchemaTypeDefinitionExtractor.typeDefinitionWithoutNullableFields(PaymentV1.schema, AvroSchemaTypeDefinitionExtractor.DefaultPossibleTypes)
-    val ctx = ValidationContext.empty.withVariable("input", typeResult).toOption.get
+    val ctx = ValidationContext.empty.withVariable("input", typeResult, paramName = None).toOption.get
 
     parse[Int]("#input.vat", ctx) should be ('valid)
   }
 
   it("should skipp optional fields from schema PaymentV2 when skippNullableFields is set") {
     val typeResult = AvroSchemaTypeDefinitionExtractor.typeDefinitionWithoutNullableFields(PaymentV2.schema, AvroSchemaTypeDefinitionExtractor.DefaultPossibleTypes)
-    val ctx = ValidationContext.empty.withVariable("input", typeResult).toOption.get
+    val ctx = ValidationContext.empty.withVariable("input", typeResult, paramName = None).toOption.get
 
     parse[Int]("#input.cnt", ctx) should be ('invalid)
     parse[Map[String, Any]]("#input.attributes", ctx) should be ('invalid)
@@ -163,7 +163,7 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
         |  }
         |]""".stripMargin)
     val ctx = ValidationContext.empty.withVariable("input",
-      AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)).andThen(_.withVariable("DICT1", TypedDict(dictId, Typed.typedClass[String]))).toOption.get
+      AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).andThen(_.withVariable("DICT1", TypedDict(dictId, Typed.typedClass[String]), paramName = None)).toOption.get
 
     parse[CharSequence]("#input.withDict", ctx) should be ('valid)
     parse[Boolean]("#input.withDict == #DICT1['key1']", ctx) should be ('valid)

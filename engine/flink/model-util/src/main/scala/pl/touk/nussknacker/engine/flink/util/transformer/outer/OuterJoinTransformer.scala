@@ -2,14 +2,13 @@ package pl.touk.nussknacker.engine.flink.util.transformer.outer
 
 import java.time.Duration
 import java.util.concurrent.TimeUnit
-
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
-import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, ParameterWithExtractor}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
@@ -52,7 +51,7 @@ class OuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandler[T
       (`AggregateByParamName`, aggregateBy: DefinedSingleParameter) :: Nil, _) =>
       val outName = OutputVariableNameDependency.extract(dependencies)
       val mainCtx = mainId(branchTypeByBranchId).map(contexts).getOrElse(ValidationContext())
-      val withVariable = mainCtx.withVariable(outName, aggregateBy.returnType)
+      val withVariable = mainCtx.withVariable(OutputVar.customNode(outName), aggregateBy.returnType)
       FinalResults(withVariable.getOrElse(mainCtx), withVariable.swap.map(_.toList).getOrElse(Nil))
   }
 
