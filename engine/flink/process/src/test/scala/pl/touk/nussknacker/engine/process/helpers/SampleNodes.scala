@@ -4,9 +4,9 @@ import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Date, Optional, UUID}
-
 import cats.data.Validated.Valid
 import io.circe.generic.JsonCodec
+
 import javax.annotation.Nullable
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
@@ -19,7 +19,7 @@ import org.apache.flink.streaming.api.windowing.time.Time
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation._
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
@@ -457,7 +457,7 @@ object SampleNodes {
       dependencies.collectFirst { case OutputVariableNameValue(name) => name } match {
         case Some(name) =>
           val result = TypedObjectTypingResult(rest.toMap.mapValuesNow(_.returnType))
-          context.withVariable(name, result, paramName = None).fold(
+          context.withVariable(OutputVar.customNode(name), result).fold(
             errors => FinalResults(context, errors.toList),
             FinalResults(_))
         case None =>
@@ -493,7 +493,7 @@ object SampleNodes {
     override def contextTransformation(context: ValidationContext,
                                        dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): this.NodeTransformationDefinition = {
       case TransformationStep(Nil, _) =>
-        context.withVariable(OutputVariableNameDependency.extract(dependencies), Typed[Boolean], paramName = None)
+        context.withVariable(OutputVar.customNode(OutputVariableNameDependency.extract(dependencies)), Typed[Boolean])
           .map(FinalResults(_, state = Some(context.contains(VariableThatShouldBeDefinedBeforeNodeName))))
           .valueOr( errors => FinalResults(context, errors.toList))
     }
@@ -536,11 +536,14 @@ object SampleNodes {
     }
 
     private def output(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId) = {
-      context.withVariable(dependencies.collectFirst {
+      val name = dependencies.collectFirst {
         case OutputVariableNameValue(name) => name
-      }.get, Typed[String], paramName = None).fold(
+      }.get
+
+      context.withVariable(OutputVar.customNode(name), Typed[String]).fold(
         errors => FinalResults(context, errors.toList),
-        FinalResults(_))
+        FinalResults(_)
+      )
     }
 
     override def initialParameters: List[Parameter] = Parameter[String]("type")

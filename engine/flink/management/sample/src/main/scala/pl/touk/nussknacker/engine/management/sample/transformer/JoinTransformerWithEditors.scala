@@ -31,7 +31,7 @@ object JoinTransformerWithEditors extends CustomStreamTransformer with Serializa
         val mainBranchContext = mainBranches.head._2
         val joinedBranchId = joinedBranches.head._1
 
-        mainBranchContext.withVariable(OutputVar("variableName", variableName), valueByBranchId(joinedBranchId).returnType)
+        mainBranchContext.withVariable(OutputVar.customNode(variableName), valueByBranchId(joinedBranchId).returnType)
       }
     }.implementedBy {
       () => ???

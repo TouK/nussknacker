@@ -66,7 +66,7 @@ case class OutputVar(fieldName: String, outputName: String)
 
 object OutputVar {
 
-  val DefaultFieldName = "varName"
+  val VariableFieldName = "varName"
 
   val EnricherFieldName = "output"
 
@@ -76,8 +76,8 @@ object OutputVar {
 
   val CustomNodeFieldName = "outputVar"
 
-  def apply(outputName: String): OutputVar =
-    OutputVar(DefaultFieldName, outputName)
+  def variable(outputName: String): OutputVar =
+    OutputVar(VariableFieldName, outputName)
 
   def enricher(outputName: String): OutputVar =
     OutputVar(EnricherFieldName, outputName)

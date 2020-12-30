@@ -5,7 +5,7 @@ import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.ContextTransformation
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomStreamTransformation, FlinkLazyParameterFunctionHelper, LazyParameterInterpreterFunction}
@@ -37,7 +37,7 @@ object TransformStateTransformer extends CustomStreamTransformer with ExplicitUi
              @OutputVariableName variableName: String)
             (implicit nodeId: NodeId): ContextTransformation =
     ContextTransformation
-      .definedBy(_.withVariable(variableName, newValue.returnType, None))
+      .definedBy(_.withVariable(OutputVar.customNode(variableName), newValue.returnType))
       .implementedBy(
         FlinkCustomStreamTransformation { (stream, nodeContext) =>
           setUidToNodeIdIfNeed(nodeContext,

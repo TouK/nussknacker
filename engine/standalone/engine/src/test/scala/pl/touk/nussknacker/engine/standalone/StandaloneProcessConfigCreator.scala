@@ -125,7 +125,7 @@ object StandaloneCustomExtractor extends CustomStreamTransformer {
              @OutputVariableName outputVariableName: String)
             (implicit nodeId: NodeId): ContextTransformation = {
     ContextTransformation
-      .definedBy(ctx => ctx.withVariable(OutputVar("outputVariableName", outputVariableName), expression.returnType))
+      .definedBy(ctx => ctx.withVariable(OutputVar.customNode(outputVariableName), expression.returnType))
       .implementedBy(
         new StandaloneCustomExtractor(outputVariableName, expression))
   }
