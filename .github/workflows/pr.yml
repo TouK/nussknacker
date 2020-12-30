@@ -6,8 +6,8 @@ on:
       - staging
 
 jobs:
-  tests:
-    name: Tests
+  build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
@@ -20,13 +20,47 @@ jobs:
           key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
       - uses: olafurpg/setup-scala@v10
+      - name: Build
+        shell: bash
+        run: ./ciRunSbt.sh clean compile
+      - name: Tar artifacts
+        shell: bash
+        run:  find . -wholename "**/target/**/*" -printf '%P\0' | tar --null -C '.' --files-from=- -czf 'target.tgz'
+      - name: Store target
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-target
+          path: target.tgz
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v1
+      - uses: olafurpg/setup-scala@v10
+      - uses: actions/download-artifact@v2
+        with:
+          name: build-target
+      - name: Untar artifacts
+        shell: bash
+        run:  tar xfz target.tgz
+      - name: Cache ivy packages
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.ivy2/cache
+            ~/.sbt
+          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
+          restore-keys: ${{ runner.os }}-sbt
       - name: Backend tests
         shell: bash
-        run: ./ciBackendTest.sh
+        #TODO: coverage?
+        run: ./ciRunSbt.sh test
 
   crossCompile:
     name: CrossCompile
     runs-on: ubuntu-latest
+    needs: [ build ]
     steps:
       - uses: actions/checkout@v1
       - name: Cache ivy packages
@@ -38,11 +72,18 @@ jobs:
           key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
       - uses: olafurpg/setup-scala@v10
+      - uses: actions/download-artifact@v2
+        with:
+          name: build-target
+      - name: Untar artifacts
+        shell: bash
+        run:  tar xfz target.tgz
       - name: Compile
         shell: bash
-        run: CROSS_BUILD=true ./ciRunSbt.sh clean compile:compile test:compile
+        run: CROSS_BUILD=true ./ciRunSbt.sh compile:compile test:compile
   integrationTests:
     name: IntegrationTests
+    needs: [ build ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
@@ -55,12 +96,19 @@ jobs:
           key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
       - uses: olafurpg/setup-scala@v10
+      - uses: actions/download-artifact@v2
+        with:
+          name: build-target
+      - name: Untar artifacts
+        shell: bash
+        run:  tar xfz target.tgz
       - name: Integration tests
         shell: bash
-        run: ./ciRunSbt.sh clean flinkProcessManager/it:test engineStandalone/it:test
+        run: ./ciRunSbt.sh flinkProcessManager/it:test engineStandalone/it:test
   slowTest:
     name: Slow tests
     runs-on: ubuntu-latest
+    needs: [ build ]
     steps:
       - uses: actions/checkout@v1
       - name: Cache ivy packages
@@ -72,9 +120,15 @@ jobs:
           key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
       - uses: olafurpg/setup-scala@v10
+      - uses: actions/download-artifact@v2
+        with:
+          name: build-target
+      - name: Untar artifacts
+        shell: bash
+        run:  tar xfz target.tgz
       - name: Slow tests
         shell: bash
-        run: ./ciRunSbt.sh clean ui/slow:test
+        run: ./ciRunSbt.sh ui/slow:test
 
   frontendTests:
     name: FrontendTests
