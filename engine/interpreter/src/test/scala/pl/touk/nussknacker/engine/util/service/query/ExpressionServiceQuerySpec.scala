@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.util.service.query
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.Service
+import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
@@ -15,7 +16,10 @@ class ExpressionServiceQuerySpec extends FlatSpec with Matchers with PatientScal
 
   override def spanScaleFactor: Double = 2
   import scala.concurrent.ExecutionContext.Implicits.global
-  val modelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator())
+  val modelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator() {
+    override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig =
+      super.expressionConfig(processObjectDependencies).copy(globalProcessVariables = Map("GLOBAL" -> WithCategories("globalValue")))
+  })
 
   it should "evaluate spel expressions" in {
     whenReady(invokeConcatService("'foo'", "'bar'")) { r =>
@@ -26,6 +30,12 @@ class ExpressionServiceQuerySpec extends FlatSpec with Matchers with PatientScal
   it should "evaluate spel expressions with math expression" in {
     whenReady(invokeConcatService("'foo'", "(1 + 2).toString()")) { r =>
       r.result shouldBe "foo3"
+    }
+  }
+
+  it should "allow using global variables" in {
+    whenReady(invokeConcatService("'foo'", "#GLOBAL")) { r =>
+      r.result shouldBe "fooglobalValue"
     }
   }
 
