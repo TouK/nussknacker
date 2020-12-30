@@ -146,5 +146,40 @@ jobs:
         with:
           node-version: 14.11.0
       - run: ./ciFrontendTest.sh
-
-
+  dockerTest:
+    name: DockerTest
+    runs-on: ubuntu-latest
+    needs: [ build ]
+    steps:
+      - uses: actions/checkout@v1
+      - name: Cache npm
+        uses: actions/cache@v2
+        with:
+          path: |
+            **/node_modules
+          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.11.0
+      - name: Cache ivy packages
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.ivy2/cache
+            ~/.sbt
+          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
+          restore-keys: ${{ runner.os }}-sbt
+      - uses: olafurpg/setup-scala@v10
+      - uses: actions/download-artifact@v2
+        with:
+          name: build-target
+      - name: Untar artifacts
+        shell: bash
+        run:  tar xfz target.tgz
+      - name: Prepare docker
+        shell: bash
+        run: echo "version in ThisBuild := \"$GITHUB_SHA\"" > version.sbt && ./ciRunSbt.sh dist/docker:publishLocal
+      - name: Test docker
+        shell: bash
+        run: cd ./demo/docker && echo "NUSSKNACKER_VERSION=$GITHUB_SHA" > .env && ./testQuickstart.sh
