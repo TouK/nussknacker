@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.engine.api.deployment.simple
 
 import java.net.URI
-
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessStateDefinitionManager, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{CustomAction, ProcessActionType, ProcessStateDefinitionManager, StateStatus}
 
 object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager {
   val defaultActions = List()
@@ -77,6 +76,8 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
 
   override def statusActions(stateStatus: StateStatus): List[ProcessActionType] =
     statusActionsMap.getOrElse(stateStatus, defaultActions)
+
+  override val customActions: List[CustomAction] = List.empty
 
   override def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus =
     stateAction

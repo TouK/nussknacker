@@ -1,4 +1,4 @@
-import {ActionType, ProcessStateType, StatusType} from "./types"
+import {ActionType, ProcessStateType, StatusTypeType} from "./types"
 
 class ProcessStateUtils {
 
@@ -6,7 +6,7 @@ class ProcessStateUtils {
 
   public canCancel = (state: ProcessStateType): boolean => state?.allowedActions.includes(ActionType.Cancel)
 
-  public isRunning = (state: ProcessStateType): boolean => state?.status.type === StatusType.Running.toString()
+  public isRunning = (state: ProcessStateType): boolean => state?.status.type === StatusTypeType.Running.toString()
 
 }
 

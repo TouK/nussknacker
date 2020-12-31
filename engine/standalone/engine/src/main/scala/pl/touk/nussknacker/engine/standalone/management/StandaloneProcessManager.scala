@@ -87,7 +87,11 @@ class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessCl
   override def processStateDefinitionManager: ProcessStateDefinitionManager = SimpleProcessStateDefinitionManager
 
   override def close(): Unit = {
-    
+
+  }
+
+  override def invokeCustomAction(actionRequest: CustomActionRequest): Future[Either[CustomActionError, CustomActionResult]] = Future.successful {
+    Left(CustomActionError("Not implemented"))
   }
 }
 

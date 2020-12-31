@@ -15,15 +15,18 @@ import io.circe.generic.JsonCodec
 import io.circe.parser.parse
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Json}
+import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{ExceptionResult, ExpressionInvocationResult, MockedResult, NodeResult, ResultContext, TestData, TestResults}
 import pl.touk.nussknacker.engine.api.DisplayJson
-import pl.touk.nussknacker.engine.api.deployment.SavepointResult
+import pl.touk.nussknacker.engine.api.deployment.{CustomActionError, CustomActionResult, SavepointResult}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
+import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
+import pl.touk.nussknacker.ui.api.deployment.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.process.deployment.{Cancel, Deploy, Snapshot, Stop, Test}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
@@ -201,6 +204,17 @@ class ManagementResources(processCounter: ProcessCounter,
                 }
               }
             }
+          }
+        }
+      } ~
+      path("processManagement" / "customAction" / Segment) { processName =>
+        (post & processId(processName) & entity(as[CustomActionRequest])) { (process, req) =>
+          complete {
+            (managementActor ? (req.toEngineRequest(process.name), process.id, user))
+              .mapTo[Either[CustomActionError, CustomActionResult]]
+              .map(CustomActionResponse(_))
+              .flatMap(Marshal(_).to[MessageEntity])
+              .map(en => HttpResponse(entity = en))
           }
         }
       }

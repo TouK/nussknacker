@@ -18,6 +18,7 @@ import SaveButton from "../process/buttons/SaveButton"
 import {ToolbarButtons} from "../../toolbarComponents/ToolbarButtons"
 import {CollapsibleToolbar} from "../../toolbarComponents/CollapsibleToolbar"
 import i18next from "i18next"
+import CustomActionButton from "./buttons/CustomActionButton";
 
 type State = UnknownRecord
 
@@ -88,11 +89,20 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
     `${process.id}` :
     `${process.id}-${processState?.icon || process?.state?.icon || unknownIcon}`
 
+  private buttons = [
+    <SaveButton/>,
+    <Deploy/>,
+    <Cancel/>,
+    <Metrics/>
+  ]
+
   render() {
     const {process, processState, isStateLoaded, iconHeight, iconWidth, capabilities} = this.props
     const description = this.getDescription(process, processState, isStateLoaded)
     const icon = this.getIcon(process, processState, isStateLoaded, iconHeight, iconWidth, description)
     const transitionKey = this.getTransitionKey(process, processState)
+    const customActions = process.state.customActions || []
+    const customButtons = customActions.map(a => <CustomActionButton action={a} processId={process.id} processStatus={process.state.status} />)
 
     return (
       <CollapsibleToolbar title={i18next.t("panels.status.title", "Status")} id="PROCESS-INFO">
@@ -111,10 +121,7 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
             </CssFade>
           </SwitchTransition>
           <ToolbarButtons>
-            <SaveButton/>
-            <Deploy/>
-            <Cancel/>
-            <Metrics/>
+            {[...this.buttons, ...customButtons]}
           </ToolbarButtons>
         </DragHandle>
       </CollapsibleToolbar>
