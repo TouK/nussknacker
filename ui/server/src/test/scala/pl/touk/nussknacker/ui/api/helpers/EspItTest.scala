@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.api.helpers
 
 import java.net.URI
-
 import akka.actor.ActorRef
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
@@ -22,6 +21,7 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process
 import pl.touk.nussknacker.ui.api._
+import pl.touk.nussknacker.ui.api.deployment.CustomActionRequest
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
@@ -197,6 +197,11 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   def stop(processName: String): RouteTestResult = {
     Post(s"/adminProcessManagement/stop/$processName") ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead)
+  }
+
+  def customAction(processName: String, reqPayload: CustomActionRequest): RouteTestResult = {
+    Post(s"/processManagement/customAction/$processName", TestFactory.posting.toRequest(reqPayload)) ~>
+      withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead)
   }
 
   def getSampleProcess: RouteTestResult = {

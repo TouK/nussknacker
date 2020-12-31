@@ -6,25 +6,32 @@ import io.circe.generic.JsonCodec
 import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ProcessStateDefinitionManager, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{CustomAction, ProcessState, ProcessStateDefinitionManager, StateStatus}
 
 //TODO: Do we really  we need ProcessStatus and ProcessState - Do these DTO's do the same things?
 @JsonCodec case class ProcessStatus(status: StateStatus,
                                     deploymentId: Option[String],
                                     allowedActions: List[ProcessActionType],
+                                    customActions: List[ProcessStatus.CustomActionDTO],
                                     icon: Option[URI],
                                     tooltip: Option[String],
                                     description: Option[String],
                                     startTime: Option[Long],
                                     attributes: Option[Json],
-                                    errors: List[String])
+                                    errors: List[String]) {
+}
 
 object ProcessStatus {
   implicit val uriEncoder: Encoder[URI] = Encoder.encodeString.contramap(_.toString)
   implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
 
-  def simple(status: StateStatus, deploymentId: Option[String], errors: List[String]): ProcessStatus =
-    ProcessStatus(status, SimpleProcessStateDefinitionManager, deploymentId, Option.empty, Option.empty, errors)
+  object CustomActionDTO {
+    def apply(action: CustomAction, status: StateStatus): CustomActionDTO = CustomActionDTO(
+       name = action.name, allowedProcessStates = action.allowedProcessStates, icon = action.icon
+    )
+  }
+  @JsonCodec
+  case class CustomActionDTO(name: String, allowedProcessStates: List[StateStatus], icon: Option[URI])
 
   def simple(status: StateStatus): ProcessStatus =
     ProcessStatus(status, SimpleProcessStateDefinitionManager)
@@ -34,6 +41,7 @@ object ProcessStatus {
       status = status,
       previousState.map(_.deploymentId.value),
       allowedActions = SimpleProcessStateDefinitionManager.statusActions(status),
+      customActions = List.empty,
       icon = if (icon.isDefined) icon else SimpleProcessStateDefinitionManager.statusIcon(status),
       tooltip = if (tooltip.isDefined) tooltip else SimpleProcessStateDefinitionManager.statusTooltip(status),
       description = if (description.isDefined) description else SimpleProcessStateDefinitionManager.statusDescription(status),
@@ -55,6 +63,7 @@ object ProcessStatus {
       status,
       deploymentId,
       allowedActions = processStateDefinitionManager.statusActions(status),
+      customActions = processStateDefinitionManager.customActions.map(CustomActionDTO(_, status)),
       icon = processStateDefinitionManager.statusIcon(status),
       tooltip = processStateDefinitionManager.statusTooltip(status),
       description = processStateDefinitionManager.statusDescription(status),
@@ -68,6 +77,7 @@ object ProcessStatus {
       deploymentId = Some(processState.deploymentId.value),
       status = processState.status,
       allowedActions = processState.allowedActions,
+      customActions = List.empty,
       icon = processState.icon,
       tooltip = processState.tooltip,
       description = processState.description,

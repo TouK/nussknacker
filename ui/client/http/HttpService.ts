@@ -169,6 +169,18 @@ class HttpService {
     })
   }
 
+  customAction(processId, actionName) {
+    const data = { actionName: actionName, params: {} }
+    return api.post(`/processManagement/customAction/${processId}`, data).then(res => {
+      this.addInfo(res.data.msg)
+      return {isSuccess: res.data.isSuccess}
+    }).catch(error => {
+      return this.addError(`Failed to submit action for ${processId}`, error, true).then(() => {
+        return {isSuccess: false}
+      })
+    })
+  }
+
   invokeService(processingType, serviceName, parameters) {
     return api.post(`/service/${processingType}/${serviceName}`, parameters)
   }

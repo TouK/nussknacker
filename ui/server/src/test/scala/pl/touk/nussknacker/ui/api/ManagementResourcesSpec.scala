@@ -9,7 +9,7 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import cats.instances.all._
 import cats.syntax.semigroup._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.{Json}
+import io.circe.Json
 import io.circe.syntax._
 import org.scalatest._
 import org.scalatest.matchers.BeMatcher
@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.restmodel.processdetails._
 import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.ui.api.deployment.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, SampleProcess, TestFactory, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -223,6 +224,22 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> "ala\nbela", "processJson" -> displayableProcess.asJson.noSpaces)()
     Post(s"/processManagement/test/${process.id}", multiPart) ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead) ~> check {
       status shouldEqual StatusCodes.OK
+    }
+  }
+
+  test("execute valid custom action") {
+    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+    customAction(SampleProcess.process.id, CustomActionRequest("hello")) ~> check {
+      status shouldBe StatusCodes.OK
+      responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = true, msg = "Hi")
+    }
+  }
+
+  test("execute invalid custom action") {
+    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+    customAction(SampleProcess.process.id, CustomActionRequest("invalid-action")) ~> check {
+      status shouldBe StatusCodes.InternalServerError
+      responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = false, msg = "Invalid action")
     }
   }
 
