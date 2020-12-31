@@ -119,7 +119,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
     case (action: CustomActionRequest, id: ProcessId, user: LoggedUser) =>
       reply(for {
         manager <- processManager(id)(ec, user)
-        response <- CustomAction.invokeWithValidation(action, manager)
+        response <- manager.invokeCustomAction(action)
       } yield response)
   }
 

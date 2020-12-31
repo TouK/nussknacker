@@ -1,6 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
 import {UnknownRecord} from "../../types/common"
-import {CustomAction} from "../toolbars/edit/EditPanel";
 
 export enum ActionType {
   Deploy = "DEPLOY",
@@ -8,7 +7,7 @@ export enum ActionType {
   Pause = "PAUSE",
 }
 
-export enum StatusType {
+export enum StatusTypeType {
   Running = "RunningStateStatus",
   NotDeployed= "AllowDeployStateStatus"
 }
@@ -58,10 +57,7 @@ export interface ProcessType {
 }
 
 export type ProcessStateType = {
-  status: {
-    name: StatusName,
-    type: StatusType,
-  },
+  status: StatusType,
   deploymentId?: string,
   allowedActions: Array<ActionType>,
   customActions: Array<CustomAction>,
@@ -71,4 +67,15 @@ export type ProcessStateType = {
   startTime?: Date,
   attributes?: UnknownRecord,
   errors?: Array<string>,
+}
+
+export type StatusType = {
+  name: StatusName,
+  type: StatusTypeType,
+}
+
+export type CustomAction = {
+  name: string,
+  allowedProcessStates: Array<StatusType>,
+  icon: string | null
 }

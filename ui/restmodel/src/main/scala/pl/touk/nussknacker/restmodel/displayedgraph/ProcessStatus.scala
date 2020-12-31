@@ -3,7 +3,6 @@ package pl.touk.nussknacker.restmodel.displayedgraph
 import java.net.URI
 import io.circe.generic.JsonCodec
 import io.circe.{Decoder, Encoder, Json}
-import pl.touk.nussknacker.engine.api.deployment
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.deployment.{CustomAction, ProcessState, ProcessStateDefinitionManager, StateStatus}
@@ -12,7 +11,7 @@ import pl.touk.nussknacker.engine.api.deployment.{CustomAction, ProcessState, Pr
 @JsonCodec case class ProcessStatus(status: StateStatus,
                                     deploymentId: Option[String],
                                     allowedActions: List[ProcessActionType],
-                                    customActions: List[ProcessStatus.CustomAction],
+                                    customActions: List[ProcessStatus.CustomActionDTO],
                                     icon: Option[URI],
                                     tooltip: Option[String],
                                     description: Option[String],
@@ -25,18 +24,13 @@ object ProcessStatus {
   implicit val uriEncoder: Encoder[URI] = Encoder.encodeString.contramap(_.toString)
   implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
 
-  object CustomAction {
-    def apply(action: deployment.CustomAction, status: StateStatus): CustomAction =
-       CustomAction(
-         name = action.name,
-         isDisabled = !action.allowedProcessStates.contains(status),
-         icon = action.icon)
+  object CustomActionDTO {
+    def apply(action: CustomAction, status: StateStatus): CustomActionDTO = CustomActionDTO(
+       name = action.name, allowedProcessStates = action.allowedProcessStates, icon = action.icon
+    )
   }
   @JsonCodec
-  case class CustomAction(name: String, isDisabled: Boolean, icon: Option[URI])
-
-  def simple(status: StateStatus, deploymentId: Option[String], errors: List[String]): ProcessStatus =
-    ProcessStatus(status, SimpleProcessStateDefinitionManager, deploymentId, Option.empty, Option.empty, errors)
+  case class CustomActionDTO(name: String, allowedProcessStates: List[StateStatus], icon: Option[URI])
 
   def simple(status: StateStatus): ProcessStatus =
     ProcessStatus(status, SimpleProcessStateDefinitionManager)
@@ -68,7 +62,7 @@ object ProcessStatus {
       status,
       deploymentId,
       allowedActions = processStateDefinitionManager.statusActions(status),
-      customActions = processStateDefinitionManager.customActions.map(ProcessStatus.CustomAction(_, status)),
+      customActions = processStateDefinitionManager.customActions.map(CustomActionDTO(_, status)),
       icon = processStateDefinitionManager.statusIcon(status),
       tooltip = processStateDefinitionManager.statusTooltip(status),
       description = processStateDefinitionManager.statusDescription(status),

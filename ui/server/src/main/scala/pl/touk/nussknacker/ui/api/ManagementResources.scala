@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
+import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.api.deployment.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
@@ -211,16 +212,9 @@ class ManagementResources(processCounter: ProcessCounter,
           complete {
             (managementActor ? (req.toEngineRequest(process.name), process.id, user))
               .mapTo[Either[CustomActionError, CustomActionResult]]
-              .flatMap {
-                case Right(res) =>
-                  Marshal(CustomActionResponse(res.msg)).to[MessageEntity].map { resEntity =>
-                    HttpResponse(status = StatusCodes.OK, entity = resEntity)
-                  }
-                case Left(err) =>
-                  Marshal(CustomActionResponse(err.msg)).to[MessageEntity].map { resEntity =>
-                    HttpResponse(status = StatusCodes.InternalServerError, entity = resEntity)
-                  }
-            }
+              .map(CustomActionResponse(_))
+              .flatMap(Marshal(_).to[MessageEntity])
+              .map(en => HttpResponse(entity = en))
           }
         }
       }

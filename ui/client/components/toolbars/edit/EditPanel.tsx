@@ -24,9 +24,6 @@ export type SelectionActions = {
   canPaste: boolean,
 }
 
-export type CustomAction = {
-  name: string
-}
 
 function EditPanel(props: Props) {
   const {write} = useSelector(getCapabilities)

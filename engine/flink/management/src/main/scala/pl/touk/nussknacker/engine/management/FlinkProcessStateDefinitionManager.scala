@@ -34,7 +34,7 @@ object FlinkProcessStateDefinitionManager extends ProcessStateDefinitionManager 
 //  TODO
   override val customActions: List[CustomAction] = {
     List(
-      CustomAction("test", SimpleStateStatus.NotDeployed :: Nil)
+      CustomAction("test", SimpleStateStatus.NotDeployed :: SimpleStateStatus.Canceled :: Nil)
     )
   }
 

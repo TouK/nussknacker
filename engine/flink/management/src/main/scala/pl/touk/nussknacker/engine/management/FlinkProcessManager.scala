@@ -79,9 +79,6 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     }
   }
 
-  // TODO
-  override def customActions: List[CustomAction] = CustomAction("test", List(SimpleStateStatus.NotDeployed)) :: Nil
-
   override def invokeCustomAction(actionRequest: CustomActionRequest): Future[Either[CustomActionError, CustomActionResult]] = Future.successful {
     actionRequest.name match {
       case "test" => Right(CustomActionResult("OK"))
