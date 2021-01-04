@@ -175,7 +175,7 @@ class HttpService {
       this.addInfo(res.data.msg)
       return {isSuccess: res.data.isSuccess}
     }).catch(error => {
-      return this.addError(`Failed to submit action for ${processId}`, error, true).then(() => {
+      return this.addError(`Action ${actionName} failed`, error, true).then(() => {
         return {isSuccess: false}
       })
     })
