@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.lazyy.ContextWithLazyValuesProvider
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed._
@@ -1170,8 +1169,6 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     private val privateValue = "priv"
 
     def invoke1: Future[AnotherSimpleRecord] = ???
-
-    def invoke2: State[ContextWithLazyValuesProvider, AnotherSimpleRecord] = ???
 
     def someMethod(a: Int): Int = ???
   }

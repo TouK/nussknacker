@@ -15,7 +15,6 @@ import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, Validati
 import pl.touk.nussknacker.engine.api.definition.ServiceWithExplicitMethod
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.expression.{Expression => _, _}
-import pl.touk.nussknacker.engine.api.lazyy.{LazyValuesProvider, UsingLazyValues}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -312,57 +311,6 @@ class InterpreterSpec extends FunSuite with Matchers {
     interpretSource(process, Transaction(msisdn = "125")) should equal("e3")
 
   }
-
-  test("lazy enrich context") {
-
-    val process = GraphBuilder
-      .source("start", "transaction-source")
-      .buildVariable("bv1", "foo", "f1" -> "#input.account.name", "f2" -> "#input.account.name")
-      .buildVariable("bv2", "bar", "f1" -> "#input.account.name")
-      .sink("end", "#input.account.name", typ = "dummySink")
-
-    interpretSource(process, Transaction(accountId = "123")) should equal("zielonka")
-    AccountService.invocations shouldEqual 1
-  }
-
-  test("lazy enrich nested value") {
-
-    val process = GraphBuilder
-      .source("start", "transaction-source")
-      .buildVariable("bv1", "foo", "f1" -> "#input.account.translatedName", "f2" -> "#input.account.translatedName")
-      .buildVariable("bv2", "bar", "f1" -> "#input.account.translatedName")
-      .sink("end", "#input.account.translatedName", typ = "dummySink")
-
-    interpretSource(process, Transaction(accountId = "123")) should equal("translatedzielonka")
-    AccountService.invocations shouldEqual 1
-    NameDictService.invocations shouldEqual 1
-  }
-
-  test("lazy enrich multiple values with the same service") {
-
-    val process = GraphBuilder
-      .source("start", "transaction-source")
-      .buildVariable("bv1", "foo", "f1" -> "#input.account.translatedName", "f2" -> "#input.account.translatedName")
-      .buildVariable("bv2", "bar", "f1" -> "#input.account.translatedName")
-      .sink("end", "#input.account.translatedName2", typ = "dummySink")
-
-    interpretSource(process, Transaction(accountId = "123")) should equal("translatedbordo")
-    AccountService.invocations shouldEqual 1
-    NameDictService.invocations shouldEqual 2
-  }
-
-  test("lazy enrich context with dependent fields") {
-
-    val process = GraphBuilder
-      .source("start", "transaction-source")
-      .buildVariable("bv1", "bar", "f1" -> "#input.dictAccount.name")
-      .sink("end", "#input.dictAccount.name", typ = "dummySink")
-
-    interpretSource(process, Transaction(accountId = "123")) should equal("zielonka")
-    AccountService.invocations shouldEqual 1
-    NameDictService.invocations shouldEqual 1
-  }
-
 
   test("invoke listeners") {
 
@@ -684,25 +632,9 @@ class CustomException(message: String) extends Exception(message)
 object InterpreterSpec {
 
   case class Transaction(msisdn: String = "123",
-                         accountId: String = "123") extends UsingLazyValues {
+                         accountId: String = "123")
 
-    val account = lazyValue[Account]("accountService", "id" -> accountId)
-
-    val dictAccount =
-      for {
-        translatedId <- lazyValue[String]("dictService", "name" -> accountId)
-        _ <- lazyValue[String]("dictService", "name" -> accountId) // invoked twice to check caching
-        account <- lazyValue[Account]("accountService", "id" -> translatedId)
-      } yield account
-  }
-
-  case class Account(marketingAgreement1: Boolean, name: String, name2: String) extends UsingLazyValues {
-
-    val translatedName = lazyValue[String]("dictService", "name" -> name)
-
-    val translatedName2 = lazyValue[String]("dictService", "name" -> name2)
-
-  }
+  case class Account(marketingAgreement1: Boolean, name: String, name2: String)
 
   object AccountService extends Service {
 
@@ -799,8 +731,7 @@ object InterpreterSpec {
     case class LiteralExpression(original: String) extends pl.touk.nussknacker.engine.api.expression.Expression {
       override def language: String = languageId
 
-      override def evaluate[T](ctx: Context, globals: Map[String, Any], lazyValuesProvider: LazyValuesProvider): ValueWithLazyContext[T]
-      = ValueWithLazyContext(original.asInstanceOf[T], ctx.lazyContext)
+      override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = original.asInstanceOf[T]
     }
 
     override def languageId: String = "literal"

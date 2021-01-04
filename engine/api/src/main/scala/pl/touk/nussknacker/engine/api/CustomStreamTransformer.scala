@@ -38,8 +38,8 @@ abstract class CustomStreamTransformer {
   * Lazy parameter is representation of parameter of custom node which should be evaluated for each record:
   * ```def execute(@ParamName("keyBy") keyBy: LazyParameter[String], @ParamName ("length") length: String)```
   * In this case, length is computed as constant during process compilation, while keyBy is evaluated for each event
-  * Cannot be evaluated directly (no method like 'evaluate',
-  * as evaluation may need e.g. lazy variables and we have to take care of lifecycle, to use it see LazyParameterInterpreter
+  * Cannot be evaluated directly (no method like 'evaluate'),
+  * as evaluation may need lifecycle handling, to use it see LazyParameterInterpreter
   *
   * @tparam T type of evaluated parameter. It has upper bound AnyRef because currently we don't support correctly extraction of
   *          primitive types from generic parameters

@@ -14,6 +14,8 @@ To see biggest differences please consult the [changelog](Changelog.md).
   (implemented in runtime by ```org.apache.avro.util.Utf8```). This setting is available through environment variable 
   ```AVRO_USE_STRING_FOR_STRING_TYPE```. Please mind that this setting is global - it applies to all processes running on Flink
   and also requires restarting TaskManager when changing the value.
+* [#1361](https://github.com/TouK/nussknacker/pull/1361) Lazy variables are removed, you should use standard enrichers for those cases.
+  Their handling has been source of many problems and they made it harder to reason about the exeuction of process.   
   
 ## In version 0.3.0
 

@@ -8,8 +8,7 @@ import org.springframework.core.convert.TypeDescriptor
 import org.springframework.expression.{EvaluationContext, MethodExecutor, MethodResolver, PropertyAccessor}
 import org.springframework.expression.spel.support.{ReflectiveMethodExecutor, ReflectiveMethodResolver, StandardEvaluationContext, StandardTypeLocator}
 import pl.touk.nussknacker.engine.api.Context
-import pl.touk.nussknacker.engine.api.lazyy.LazyValuesProvider
-import pl.touk.nussknacker.engine.spel.{OmitAnnotationsMethodExecutor, SpelExpressionParser}
+import pl.touk.nussknacker.engine.spel.OmitAnnotationsMethodExecutor
 
 import scala.collection.JavaConverters._
 
@@ -19,8 +18,8 @@ class EvaluationContextPreparer(classLoader: ClassLoader,
                                 expressionFunctions: Map[String, Method]) {
 
   //this method is evaluated for *each* expression evaluation, we want to extract as much as possible to fields in this class
-  def prepareEvaluationContext(ctx: Context, globals: Map[String, Any], lazyValuesProvider: LazyValuesProvider): EvaluationContext = {
-    val optimized = new OptimizedEvaluationContext(ctx, globals, lazyValuesProvider, expressionFunctions)
+  def prepareEvaluationContext(ctx: Context, globals: Map[String, Any]): EvaluationContext = {
+    val optimized = new OptimizedEvaluationContext(ctx, globals, expressionFunctions)
     optimized.setTypeLocator(locator)
     optimized.setPropertyAccessors(propertyAccessorsList)
     optimized.setMethodResolvers(optimizedMethodResolvers)
@@ -46,21 +45,16 @@ class EvaluationContextPreparer(classLoader: ClassLoader,
 }
 
 class OptimizedEvaluationContext(ctx: Context, globals: Map[String, Any],
-                                 lazyValuesProvider: LazyValuesProvider, expressionFunctions: Map[String, Method]) extends StandardEvaluationContext {
-
-  @volatile private var lazyCtx: AnyRef = ctx.lazyContext
+                                 expressionFunctions: Map[String, Method]) extends StandardEvaluationContext {
 
   //We *don't* want to initialize any Maps here, as this code is in our tightest loop
   override def lookupVariable(name: String): AnyRef = {
-    if (name == SpelExpressionParser.LazyContextVariableName) return lazyCtx
-    if (name == SpelExpressionParser.LazyValuesProviderVariableName) return lazyValuesProvider
     ctx.get(name)
       .orElse(globals.get(name))
       .orElse(expressionFunctions.get(name))
       .orNull.asInstanceOf[AnyRef]
   }
 
-  override def setVariable(name: String, value: AnyRef): Unit = if (name == SpelExpressionParser.LazyContextVariableName) {
-    lazyCtx = value
-  } else throw new IllegalArgumentException(s"Cannot set variable: $name")
+  override def setVariable(name: String, value: AnyRef): Unit = throw new IllegalArgumentException(s"Cannot set variable: $name")
+
 }

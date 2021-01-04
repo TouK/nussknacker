@@ -39,9 +39,7 @@ object ProcessAdditionalFields {
                     additionalFields: Option[ProcessAdditionalFields] = None,
                     subprocessVersions: Map[String, Long] = Map.empty)
 
-@ConfiguredJsonCodec sealed trait TypeSpecificData {
-  def allowLazyVars(implicit defaultAsyncValue: DefaultAsyncInterpretationValue) : Boolean
-}
+@ConfiguredJsonCodec sealed trait TypeSpecificData
 
 case class StreamMetaData(parallelism: Option[Int] = None,
                           //we assume it's safer to split state to disk and fix performance than to fix heap problems...
@@ -52,8 +50,6 @@ case class StreamMetaData(parallelism: Option[Int] = None,
   def checkpointIntervalDuration  : Option[Duration]= checkpointIntervalInSeconds.map(Duration.apply(_, TimeUnit.SECONDS))
 
   def shouldUseAsyncInterpretation(implicit defaultValue: DefaultAsyncInterpretationValue) : Boolean = useAsyncInterpretation.getOrElse(defaultValue.value)
-
-  override def allowLazyVars(implicit defaultAsyncValue: DefaultAsyncInterpretationValue): Boolean = !shouldUseAsyncInterpretation
 
 }
 
@@ -67,6 +63,4 @@ object StreamMetaData {
   }
 }
 
-case class StandaloneMetaData(path: Option[String]) extends TypeSpecificData {
-  override def allowLazyVars(implicit defaultAsyncValue: DefaultAsyncInterpretationValue): Boolean = true
-}
+case class StandaloneMetaData(path: Option[String]) extends TypeSpecificData
