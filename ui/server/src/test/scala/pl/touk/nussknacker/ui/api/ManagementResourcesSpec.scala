@@ -238,7 +238,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   test("execute invalid custom action") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     customAction(SampleProcess.process.id, CustomActionRequest("invalid-action")) ~> check {
-      status shouldBe StatusCodes.InternalServerError
+      status shouldBe StatusCodes.OK
       responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = false, msg = "Invalid action")
     }
   }
