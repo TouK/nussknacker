@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessAction
 //@TODO: In future clean up it.
 trait ProcessStateDefinitionManager {
   def statusActions(stateStatus: StateStatus): List[ProcessActionType]
-  def customActions: List[CustomAction]
   def statusTooltip(stateStatus: StateStatus): Option[String]
   def statusDescription(stateStatus: StateStatus): Option[String]
   def statusIcon(stateStatus: StateStatus): Option[URI]

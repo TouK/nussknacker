@@ -77,8 +77,6 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
   override def statusActions(stateStatus: StateStatus): List[ProcessActionType] =
     statusActionsMap.getOrElse(stateStatus, defaultActions)
 
-  override val customActions: List[CustomAction] = List.empty
-
   override def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus =
     stateAction
       .map(sa => actionStatusMap.getOrElse(sa, SimpleStateStatus.Unknown))
