@@ -90,10 +90,10 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
     `${process.id}-${processState?.icon || process?.state?.icon || unknownIcon}`
 
   private buttons = [
-    <SaveButton/>,
-    <Deploy/>,
-    <Cancel/>,
-    <Metrics/>
+    <SaveButton key={0}/>,
+    <Deploy key={1}/>,
+    <Cancel key={2}/>,
+    <Metrics key={3}/>
   ]
 
   render() {
@@ -102,7 +102,9 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
     const icon = this.getIcon(process, processState, isStateLoaded, iconHeight, iconWidth, description)
     const transitionKey = this.getTransitionKey(process, processState)
     const customActions = process.state.customActions || []
-    const customButtons = customActions.map(a => <CustomActionButton action={a} processId={process.id} processStatus={process.state.status} />)
+    const customButtons = customActions.map((a, ix) => <CustomActionButton
+        action={a} processId={process.id} processStatus={process.state.status} key={ix + this.buttons.length}
+    />)
 
     return (
       <CollapsibleToolbar title={i18next.t("panels.status.title", "Status")} id="PROCESS-INFO">
