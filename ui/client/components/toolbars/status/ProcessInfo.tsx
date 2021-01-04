@@ -19,6 +19,7 @@ import {ToolbarButtons} from "../../toolbarComponents/ToolbarButtons"
 import {CollapsibleToolbar} from "../../toolbarComponents/CollapsibleToolbar"
 import i18next from "i18next"
 import CustomActionButton from "./buttons/CustomActionButton";
+import {getProcessDefinitionData} from "../../../reducers/selectors/settings";
 
 type State = UnknownRecord
 
@@ -97,11 +98,11 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
   ]
 
   render() {
-    const {process, processState, isStateLoaded, iconHeight, iconWidth, capabilities} = this.props
+    const {process, processState, isStateLoaded, iconHeight, iconWidth, processDefinitionData} = this.props
     const description = this.getDescription(process, processState, isStateLoaded)
     const icon = this.getIcon(process, processState, isStateLoaded, iconHeight, iconWidth, description)
     const transitionKey = this.getTransitionKey(process, processState)
-    const customActions = process.state.customActions || []
+    const customActions = processDefinitionData.customActions || []
     const customButtons = customActions.map((a, ix) => <CustomActionButton
         action={a} processId={process.id} processStatus={process.state.status} key={ix + this.buttons.length}
     />)
@@ -136,6 +137,7 @@ const mapState = (state: RootState) => ({
   process: getFetchedProcessDetails(state),
   capabilities: getCapabilities(state),
   processState: getProcessState(state),
+  processDefinitionData: getProcessDefinitionData(state),
 })
 
 type StateProps = ReturnType<typeof mapState>

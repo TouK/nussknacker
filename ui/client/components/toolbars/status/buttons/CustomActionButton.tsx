@@ -4,8 +4,9 @@ import {ReactComponent as DefaultIcon} from "../../../../assets/img/toolbarButto
 import {loadProcessState} from "../../../../actions/nk";
 import HttpService from "../../../../http/HttpService";
 import {useDispatch} from "react-redux";
-import {CustomAction, StatusType} from "../../../Process/types";
+import {StatusType} from "../../../Process/types";
 import {useTranslation} from "react-i18next";
+import {CustomAction} from "../../../../types";
 
 type Props = {
   action: CustomAction,

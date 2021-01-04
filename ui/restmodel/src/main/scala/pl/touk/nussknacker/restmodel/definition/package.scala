@@ -4,12 +4,15 @@ import io.circe.Decoder
 import io.circe.generic.JsonCodec
 import io.circe.generic.semiauto.deriveDecoder
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterEditor, ParameterValidator}
+import pl.touk.nussknacker.engine.api.deployment.{CustomAction, StateStatus}
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.definition.TypeInfos.MethodInfo
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
+
+import java.net.URI
 
 package object definition {
 
@@ -18,6 +21,7 @@ package object definition {
                                                             nodesConfig: Map[String, SingleNodeConfig],
                                                             additionalPropertiesConfig: Map[String, UiAdditionalPropertyConfig],
                                                             edgesForNodes: List[NodeEdges],
+                                                            customActions: List[UICustomAction],
                                                             defaultAsyncInterpretation: Boolean)
 
   @JsonCodec(encodeOnly = true) case class UIProcessDefinition(services: Map[String, UIObjectDefinition],
@@ -76,5 +80,15 @@ package object definition {
     implicit def decoder(implicit typing: Decoder[TypingResult]): Decoder[UIParameter] = deriveDecoder[UIParameter]
 
   }
+
+  object UICustomAction {
+    import pl.touk.nussknacker.restmodel.codecs.URICodecs.{uriDecoder, uriEncoder}
+
+    def apply(action: CustomAction): UICustomAction = UICustomAction(
+      name = action.name, allowedProcessStates = action.allowedProcessStates, icon = action.icon
+    )
+  }
+  @JsonCodec
+  case class UICustomAction(name: String, allowedProcessStates: List[StateStatus], icon: Option[URI])
 
 }

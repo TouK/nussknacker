@@ -90,6 +90,8 @@ class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessCl
 
   }
 
+  override def customActions: List[CustomAction] = List.empty
+
   override def invokeCustomAction(actionRequest: CustomActionRequest): Future[Either[CustomActionError, CustomActionResult]] = Future.successful {
     Left(CustomActionError("Not implemented"))
   }

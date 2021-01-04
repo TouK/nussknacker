@@ -60,7 +60,6 @@ export type ProcessStateType = {
   status: StatusType,
   deploymentId?: string,
   allowedActions: Array<ActionType>,
-  customActions: Array<CustomAction>,
   icon?: string,
   tooltip?: string,
   description?: string,
@@ -72,10 +71,4 @@ export type ProcessStateType = {
 export type StatusType = {
   name: StatusName,
   type: StatusTypeType,
-}
-
-export type CustomAction = {
-  name: string,
-  allowedProcessStates: Array<StatusType>,
-  icon: string | null
 }

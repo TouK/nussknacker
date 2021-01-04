@@ -31,8 +31,6 @@ object FlinkProcessStateDefinitionManager extends ProcessStateDefinitionManager 
   override def statusActions(stateStatus: StateStatus): List[ProcessActionType] =
     statusActionsMap.getOrElse(stateStatus, SimpleProcessStateDefinitionManager.statusActions(stateStatus))
 
-  override val customActions: List[CustomAction] = List.empty
-
   override def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus =
     SimpleProcessStateDefinitionManager.mapActionToStatus(stateAction)
 
