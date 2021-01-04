@@ -63,4 +63,3 @@ export type ActionTypes =
   | "REDO"
   | "CLEAR"
   | "PROCESS_STATE_LOADED"
-  | "CUSTOM_ACTION"
