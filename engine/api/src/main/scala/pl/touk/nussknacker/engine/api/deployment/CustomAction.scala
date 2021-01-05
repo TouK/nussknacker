@@ -6,10 +6,11 @@ import java.net.URI
 
 /*
 This is an experimental/wip version.
+CustomActions purpose is to allow non standard process management actions (like deploy, cancel, etc.)
+
 FIXME:
-1. There is no validation on BE to check if given action can be processed,
-   eg if an action is some sort of custom process deployment we should validate it against current process status.
-   For now we only disable custom action buttons on FE when action's allowed process states doesn't include current process state.
+1. Additional validations on action invoke, like checking if process definition is valid
+2. Handle CustomActionRequest#params
 
 Things to consider in future changes:
 1. Allowing for attaching comments to custom actions, similarly to stop/deploy comments.

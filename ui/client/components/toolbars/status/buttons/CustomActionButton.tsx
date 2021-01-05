@@ -32,10 +32,11 @@ export default function CustomActionButton(props: Props) {
       ? t("panels.actions.custom-action.tooltips.disabled", "Disabled for {{statusName}} status.", {statusName})
       : null
 
+  // TODO: handle additional params
   const onClick = () => {
     confirm(`Do you want to run ${action.name}`)
       && dispatch(HttpService
-          .customAction(processId, action.name)
+          .customAction(processId, action.name, {})
           .finally(() => dispatch(loadProcessState(processId))))
   }
 
