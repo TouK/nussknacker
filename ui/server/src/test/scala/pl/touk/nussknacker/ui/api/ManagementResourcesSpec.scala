@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
 import java.time.LocalDateTime
-
 import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
 import akka.http.scaladsl.server
 import akka.http.scaladsl.testkit.ScalatestRouteTest
@@ -13,7 +12,7 @@ import io.circe.Json
 import io.circe.syntax._
 import org.scalatest._
 import org.scalatest.matchers.BeMatcher
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.{CustomActionError, CustomActionResult, CustomProcess, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -239,7 +238,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     customAction(SampleProcess.process.id, CustomActionRequest("invalid-action")) ~> check {
       status shouldBe StatusCodes.OK
-      responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = false, msg = "Invalid action")
+      responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = false, msg = "invalid-action is not existing")
     }
   }
 
