@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model.{HttpResponse, MessageEntity, StatusCodes}
+import akka.http.scaladsl.model.{HttpResponse, MessageEntity, StatusCode, StatusCodes}
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import akka.pattern.ask
@@ -18,7 +18,7 @@ import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{ExceptionResult, ExpressionInvocationResult, MockedResult, NodeResult, ResultContext, TestData, TestResults}
 import pl.touk.nussknacker.engine.api.DisplayJson
 import pl.touk.nussknacker.ui.process.{deployment => uideployment}
-import pl.touk.nussknacker.engine.api.deployment.{CustomActionError, CustomActionResult, SavepointResult}
+import pl.touk.nussknacker.engine.api.deployment.{CustomActionError, CustomActionFailure, CustomActionInvalidStatus, CustomActionNonExisting, CustomActionNotImplemented, CustomActionResult, SavepointResult}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
@@ -211,13 +211,25 @@ class ManagementResources(processCounter: ProcessCounter,
           complete {
             (managementActor ? uideployment.CustomAction(req.toEngineRequest(process.name), process, user))
               .mapTo[Either[CustomActionError, CustomActionResult]]
-              .map(CustomActionResponse(_))
-              .flatMap(Marshal(_).to[MessageEntity])
-              .map(en => HttpResponse(entity = en))
+              .flatMap {
+                case res@Right(_) =>
+                  toHttpResponse(CustomActionResponse(res))(StatusCodes.OK)
+                case res@Left(err) =>
+                  val response = toHttpResponse(CustomActionResponse(res)) _
+                  err match {
+                    case _: CustomActionFailure => response(StatusCodes.InternalServerError)
+                    case _: CustomActionInvalidStatus => response(StatusCodes.Forbidden)
+                    case _: CustomActionNotImplemented => response(StatusCodes.NotImplemented)
+                    case _: CustomActionNonExisting => response(StatusCodes.NotFound)
+                  }
+              }
           }
         }
       }
   }
+
+  private def toHttpResponse[A:Encoder](a: A)(code: StatusCode): Future[HttpResponse] =
+    Marshal(a).to[MessageEntity].map(en => HttpResponse(entity = en, status = code))
 
   private def performTest(id: ProcessIdWithName, testData: Array[Byte], displayableProcessJson: String)(implicit user: LoggedUser): Future[ResultsWithCounts] = {
     parse(displayableProcessJson).right.flatMap(Decoder[DisplayableProcess].decodeJson) match {
