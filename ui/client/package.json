@@ -21,7 +21,7 @@
     "@hot-loader/react-dom": "^16.13.0",
     "@juggle/resize-observer": "^3.2.0",
     "ajv": "^6.12.6",
-    "axios": "^0.20.0",
+    "axios": "^0.21.1",
     "bootstrap": "npm:bootstrap-styl@^5.0.9",
     "classnames": "~2.2.6",
     "dagre": "^0.8.4",
