@@ -11,15 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - name: Cache ivy packages
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.ivy2/cache
-            ~/.sbt
-          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
-          restore-keys: ${{ runner.os }}-sbt
-      - uses: olafurpg/setup-scala@v10
+      - uses: ./.github/actions/setup
       - name: Build
         shell: bash
         run: ./ciRunSbt.sh clean compile

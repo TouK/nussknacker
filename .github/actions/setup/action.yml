@@ -1,0 +1,25 @@
+name: 'setup'
+description: 'setup'
+#TODO: cache only when needed
+runs:
+  using: "composite"
+  steps:
+    - name: Cache ivy packages
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.ivy2/cache
+          ~/.sbt
+        key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
+        restore-keys: ${{ runner.os }}-sbt
+    - uses: olafurpg/setup-scala@v10
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: 14.11.0
+    - name: Cache npm
+      uses: actions/cache@v2
+      with:
+        path: |
+          **/node_modules
+        key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
