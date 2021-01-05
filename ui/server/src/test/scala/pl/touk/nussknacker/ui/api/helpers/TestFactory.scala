@@ -193,7 +193,7 @@ object TestFactory extends TestPermissions{
     override def customActions: List[CustomAction] = List(
       CustomAction(name = "hello", allowedProcessStates = List(SimpleStateStatus.Warning, SimpleStateStatus.NotDeployed)),
       CustomAction(name = "not-implemented", allowedProcessStates = List(SimpleStateStatus.Warning, SimpleStateStatus.NotDeployed)),
-      CustomAction(name = "invalid-status", allowedProcessStates = Nil),
+      CustomAction(name = "invalid-status", allowedProcessStates = Nil)
     )
 
     override def invokeCustomAction(actionRequest: CustomActionRequest): Future[Either[CustomActionNotImplemented, CustomActionResult]] = Future.successful {
