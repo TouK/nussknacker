@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.deployment.{CustomAction, CustomActionNotImplemented, CustomActionRequest, CustomActionResult, DeploymentId, ProcessDeploymentData, ProcessState, SavepointResult, StateStatus, User}
+import pl.touk.nussknacker.engine.api.deployment.{CustomAction, CustomActionError, CustomActionNotImplemented, CustomActionRequest, CustomActionResult, DeploymentId, ProcessDeploymentData, ProcessState, SavepointResult, StateStatus, User}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -196,7 +196,7 @@ object TestFactory extends TestPermissions{
       CustomAction(name = "invalid-status", allowedProcessStates = Nil)
     )
 
-    override def invokeCustomAction(actionRequest: CustomActionRequest): Future[Either[CustomActionNotImplemented, CustomActionResult]] = Future.successful {
+    override def invokeCustomAction(actionRequest: CustomActionRequest): Future[Either[CustomActionError, CustomActionResult]] = Future.successful {
       actionRequest.name match {
         case "hello" | "invalid-status" => Right(CustomActionResult(actionRequest, "Hi"))
         case _ => Left(CustomActionNotImplemented(actionRequest))

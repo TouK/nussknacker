@@ -175,7 +175,7 @@ class HttpService {
       this.addInfo(res.data.msg)
       return {isSuccess: res.data.isSuccess}
     }).catch(error => {
-      return this.addError(`Action ${actionName} failed`, error, true).then(() => {
+      return this.addError(error.response.data.msg, error, false).then(() => {
         return {isSuccess: false}
       })
     })
