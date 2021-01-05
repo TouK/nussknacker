@@ -82,7 +82,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
   override def customActions: List[CustomAction] = List.empty
 
   override def invokeCustomAction(actionRequest: CustomActionRequest): Future[Either[CustomActionError, CustomActionResult]] =
-    Future.successful(Left(CustomActionError("Not implemented")))
+    Future.successful(Left(CustomActionNotImplemented(actionRequest)))
 
   private def requireRunningProcess[T](processName: ProcessName)(action: ProcessState => Future[T]): Future[T] = {
     val name = processName.value

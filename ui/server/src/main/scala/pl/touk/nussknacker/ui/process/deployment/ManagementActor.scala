@@ -82,15 +82,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
       reply(processStatus)
 
     case CheckStatus(id, user) =>
-      implicit val loggedUser: LoggedUser = user
-
-      val processStatus = for {
-        actions <- processRepository.fetchProcessActions(id.id)
-        manager <- processManager(id.id)
-        state <- manager.findJobStatus(id.name)
-        _ <- handleFinishedProcess(id, state)
-      } yield Option(handleObsoleteStatus(state, actions.headOption))
-      reply(processStatus)
+      reply(getProcessStatus(id)(user))
 
     case DeploymentActionFinished(process, user, result) =>
       implicit val loggedUser: LoggedUser = user
@@ -116,12 +108,32 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
     case DeploymentStatus =>
       reply(Future.successful(DeploymentStatusResponse(beingDeployed)))
 
-    case (action: CustomActionRequest, id: ProcessId, user: LoggedUser) =>
-      reply(for {
-        manager <- processManager(id)(ec, user)
-        response <- manager.invokeCustomAction(action)
-      } yield response)
+    case CustomAction(actionReq, id, user) =>
+      val res: Future[Either[CustomActionError, CustomActionResult]] = processManager(id.id)(ec, user).flatMap { manager =>
+        manager.customActions.find(_.name == actionReq.name) match {
+          case Some(customAction) =>
+            getProcessStatus(id)(user).flatMap {
+              case Some(status) if customAction.allowedProcessStates.contains(status.status) =>
+                manager.invokeCustomAction(actionReq)
+              case Some(invalidStatus) =>
+                Future(Left(CustomActionInvalidStatus(actionReq, invalidStatus.status)))
+              case None =>
+                Future(Left(CustomActionFailure(actionReq, msg = s"Action ${actionReq.name} failure: process ${actionReq.processName} status is unknown")))
+            }
+          case None =>
+            Future(Left(CustomActionNonExisting(actionReq)))
+        }
+      }
+      reply(res)
   }
+
+  private def getProcessStatus(id: ProcessIdWithName)(implicit user: LoggedUser): Future[Option[ProcessStatus]] =
+    for {
+      actions <- processRepository.fetchProcessActions(id.id)
+      manager <- processManager(id.id)
+      state <- manager.findJobStatus(id.name)
+      _ <- handleFinishedProcess(id, state)
+    } yield Option(handleObsoleteStatus(state, actions.headOption))
 
   //This method handles some corner cases like retention for keeping old states - some engine can cleanup canceled states. It's more Flink hermetic.
   //TODO: In future we should move this functionality to ProcessManager.
@@ -330,6 +342,8 @@ case class DeploymentDetails(version: Long, comment: Option[String], deployedAt:
 case class DeploymentActionFinished(id: ProcessIdWithName, user: LoggedUser, failureOrDetails: Either[Throwable, DeploymentDetails])
 
 case class DeployInfo(userId: String, time: Long, action: DeploymentActionType)
+
+case class CustomAction(action: CustomActionRequest, id: ProcessIdWithName, user: LoggedUser)
 
 sealed trait DeploymentActionType
 

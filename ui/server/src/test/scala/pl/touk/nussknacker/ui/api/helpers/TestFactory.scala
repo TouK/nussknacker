@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.deployment.{CustomAction, CustomActionError, CustomActionRequest, CustomActionResult, DeploymentId, ProcessDeploymentData, ProcessState, SavepointResult, StateStatus, User}
+import pl.touk.nussknacker.engine.api.deployment.{CustomAction, CustomActionNotImplemented, CustomActionRequest, CustomActionResult, DeploymentId, ProcessDeploymentData, ProcessState, SavepointResult, StateStatus, User}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -190,12 +190,12 @@ object TestFactory extends TestPermissions{
 
     override protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit] = ???
 
-    override def customActions: List[CustomAction] = List(CustomAction(name = "Hi", allowedProcessStates = List.empty))
+    override def customActions: List[CustomAction] = List(CustomAction(name = "hello", allowedProcessStates = List(SimpleStateStatus.Warning, SimpleStateStatus.NotDeployed)))
 
-    override def invokeCustomAction(actionRequest: CustomActionRequest): Future[Either[CustomActionError, CustomActionResult]] = Future.successful {
+    override def invokeCustomAction(actionRequest: CustomActionRequest): Future[Either[CustomActionNotImplemented, CustomActionResult]] = Future.successful {
       actionRequest.name match {
-        case "hello" => Right(CustomActionResult("Hi"))
-        case _ => Left(CustomActionError("Invalid action"))
+        case "hello" => Right(CustomActionResult(actionRequest, "Hi"))
+        case _ => Left(CustomActionNotImplemented(actionRequest))
       }
     }
 
