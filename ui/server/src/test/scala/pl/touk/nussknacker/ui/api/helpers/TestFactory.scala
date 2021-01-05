@@ -190,11 +190,15 @@ object TestFactory extends TestPermissions{
 
     override protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit] = ???
 
-    override def customActions: List[CustomAction] = List(CustomAction(name = "hello", allowedProcessStates = List(SimpleStateStatus.Warning, SimpleStateStatus.NotDeployed)))
+    override def customActions: List[CustomAction] = List(
+      CustomAction(name = "hello", allowedProcessStates = List(SimpleStateStatus.Warning, SimpleStateStatus.NotDeployed)),
+      CustomAction(name = "not-implemented", allowedProcessStates = List(SimpleStateStatus.Warning, SimpleStateStatus.NotDeployed)),
+      CustomAction(name = "invalid-status", allowedProcessStates = Nil),
+    )
 
     override def invokeCustomAction(actionRequest: CustomActionRequest): Future[Either[CustomActionNotImplemented, CustomActionResult]] = Future.successful {
       actionRequest.name match {
-        case "hello" => Right(CustomActionResult(actionRequest, "Hi"))
+        case "hello" | "invalid-status" => Right(CustomActionResult(actionRequest, "Hi"))
         case _ => Left(CustomActionNotImplemented(actionRequest))
       }
     }

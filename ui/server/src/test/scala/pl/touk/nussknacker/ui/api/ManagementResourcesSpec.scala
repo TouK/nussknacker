@@ -234,11 +234,27 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     }
   }
 
-  test("execute invalid custom action") {
+  test("execute non existing custom action") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    customAction(SampleProcess.process.id, CustomActionRequest("invalid-action")) ~> check {
-      status shouldBe StatusCodes.OK
-      responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = false, msg = "invalid-action is not existing")
+    customAction(SampleProcess.process.id, CustomActionRequest("non-existing")) ~> check {
+      status shouldBe StatusCodes.NotFound
+      responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = false, msg = "non-existing is not existing")
+    }
+  }
+
+  test("execute not implemented custom action") {
+    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+    customAction(SampleProcess.process.id, CustomActionRequest("not-implemented")) ~> check {
+      status shouldBe StatusCodes.NotImplemented
+      responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = false, msg = "not-implemented is not implemented")
+    }
+  }
+
+  test("execute custom action with not allowed process status") {
+    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+    customAction(SampleProcess.process.id, CustomActionRequest("invalid-status")) ~> check {
+      status shouldBe StatusCodes.Forbidden
+      responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = false, msg = s"Process status: WARNING is not allowed for action invalid-status")
     }
   }
 
