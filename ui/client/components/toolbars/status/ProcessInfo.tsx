@@ -103,6 +103,7 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
     const icon = this.getIcon(process, processState, isStateLoaded, iconHeight, iconWidth, description)
     const transitionKey = this.getTransitionKey(process, processState)
     const customActions = processDefinitionData.customActions || []
+    // TODO: better styling of process info toolbar in case of many custom actions
     const customButtons = customActions.map((a, ix) => <CustomActionButton
         action={a} processId={process.id} processStatus={process.state.status} key={ix + this.buttons.length}
     />)
