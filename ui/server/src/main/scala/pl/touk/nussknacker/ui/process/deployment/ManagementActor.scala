@@ -109,22 +109,25 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
       reply(Future.successful(DeploymentStatusResponse(beingDeployed)))
 
     case CustomAction(actionReq, id, user) =>
-      val res: Future[Either[CustomActionError, CustomActionResult]] = processManager(id.id)(ec, user).flatMap { manager =>
-        manager.customActions.find(_.name == actionReq.name) match {
-          case Some(customAction) =>
-            getProcessStatus(id)(user).flatMap {
-              case Some(status) if customAction.allowedProcessStates.contains(status.status) =>
-                manager.invokeCustomAction(actionReq)
-              case Some(invalidStatus) =>
-                Future(Left(CustomActionInvalidStatus(actionReq, invalidStatus.status)))
-              case None =>
-                Future(Left(CustomActionFailure(actionReq, msg = s"Action ${actionReq.name} failure: process ${actionReq.processName} status is unknown")))
-            }
-          case None =>
-            Future(Left(CustomActionNonExisting(actionReq)))
+      // TODO: Currently we're treating all custom actions as deployment actions; i.e. they can be invoked only if there is no deployment in progress
+      ensureNoDeploymentRunning {
+        val res: Future[Either[CustomActionError, CustomActionResult]] = processManager(id.id)(ec, user).flatMap { manager =>
+          manager.customActions.find(_.name == actionReq.name) match {
+            case Some(customAction) =>
+              getProcessStatus(id)(user).flatMap {
+                case Some(status) if customAction.allowedProcessStates.contains(status.status) =>
+                  manager.invokeCustomAction(actionReq)
+                case Some(invalidStatus) =>
+                  Future(Left(CustomActionInvalidStatus(actionReq, invalidStatus.status)))
+                case None =>
+                  Future(Left(CustomActionFailure(actionReq, msg = s"Action ${actionReq.name} failure: process ${actionReq.processName} status is unknown")))
+              }
+            case None =>
+              Future(Left(CustomActionNonExisting(actionReq)))
+          }
         }
+        reply(res)
       }
-      reply(res)
   }
 
   private def getProcessStatus(id: ProcessIdWithName)(implicit user: LoggedUser): Future[Option[ProcessStatus]] =
