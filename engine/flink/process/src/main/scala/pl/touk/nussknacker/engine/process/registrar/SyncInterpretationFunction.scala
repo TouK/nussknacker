@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.{Context, InterpretationResult}
 import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.engine.process.WithCompiledProcessDeps
+import pl.touk.nussknacker.engine.process.ProcessPartFunction
 import pl.touk.nussknacker.engine.process.compiler.CompiledProcessWithDeps
 import pl.touk.nussknacker.engine.splittedgraph.SplittedNodesCollector
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
@@ -15,16 +15,14 @@ import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 import scala.concurrent.{Await, ExecutionContext}
 import scala.util.control.NonFatal
 
-private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsProvider: (ClassLoader) => CompiledProcessWithDeps,
-                                 node: SplittedNode[_<:NodeData], validationContext: ValidationContext)
-  extends RichFlatMapFunction[Context, InterpretationResult] with WithCompiledProcessDeps {
+private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsProvider: ClassLoader => CompiledProcessWithDeps,
+                                                    val node: SplittedNode[_<:NodeData], validationContext: ValidationContext)
+  extends RichFlatMapFunction[Context, InterpretationResult] with ProcessPartFunction {
 
   private lazy implicit val ec: ExecutionContext = SynchronousExecutionContext.ctx
   private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node, validationContext)
 
   import compiledProcessWithDeps._
-
-  override def nodesUsed: List[NodeData] = SplittedNodesCollector.collectNodes(node).map(_.data)
 
   override def flatMap(input: Context, collector: Collector[InterpretationResult]): Unit = {
     (try {

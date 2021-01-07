@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.splittedgraph.end.{DeadEnd, End, NormalEnd}
 import pl.touk.nussknacker.engine.splittedgraph.part._
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.{NextNode, PartRef}
 
+//NOTE: logic of splitter should match logic in SplittedNodesCollector
 object ProcessSplitter {
 
   def split(process: EspProcess): SplittedProcess = {
