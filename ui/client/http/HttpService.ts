@@ -169,7 +169,7 @@ class HttpService {
     })
   }
 
-  customAction(processId: string, actionName: string, params: object) {
+  customAction(processId: string, actionName: string, params: Record<string, unknown>) {
     const data = {actionName: actionName, params: params}
     return api.post(`/processManagement/customAction/${processId}`, data).then(res => {
       this.addInfo(res.data.msg)
