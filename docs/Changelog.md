@@ -17,6 +17,7 @@ Nussknacker versions
     * [#1360](https://github.com/TouK/nussknacker/pull/1360) Service query can use global variables
 * [#1361](https://github.com/TouK/nussknacker/pull/1361) Lazy vars removal
 * [#1363](https://github.com/TouK/nussknacker/pull/1363) Open/close only services that are actually used in process
+* [#1367](https://github.com/TouK/nussknacker/pull/1367) Custom actions - experimental/wip version
 
 0.3.1 (not released yet) 
 ------------------------
