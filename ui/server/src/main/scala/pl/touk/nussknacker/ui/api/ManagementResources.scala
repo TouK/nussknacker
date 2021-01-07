@@ -34,7 +34,8 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
+import java.util.concurrent.TimeUnit
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 
 object ManagementResources {
@@ -107,8 +108,10 @@ class ManagementResources(processCounter: ProcessCounter,
     with ProcessDirectives {
 
   //TODO: in the future we could use https://github.com/akka/akka-http/pull/1828 when we can bump version to 10.1.x
-  private val durationFromConfig = system.settings.config.getDuration("akka.http.server.request-timeout")
-  private implicit val timeout: Timeout = Timeout(durationFromConfig.toMillis millis)
+  private val requestTimeoutDuration = FiniteDuration(
+    length = system.settings.config.getDuration("akka.http.server.request-timeout").toNanos,
+    unit = TimeUnit.NANOSECONDS)
+  private implicit val timeout: Timeout = Timeout(requestTimeoutDuration)
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] = Unmarshaller.byteArrayUnmarshaller
   private implicit final val plainString: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller
 
@@ -206,23 +209,26 @@ class ManagementResources(processCounter: ProcessCounter,
           }
         }
       } ~
+    // TODO: Support concurrent calls.
+   //  Currently invoking custom action is synchronous. We're blocking/awaiting the response from ManagementActor
       path("processManagement" / "customAction" / Segment) { processName =>
         (post & processId(processName) & entity(as[CustomActionRequest])) { (process, req) =>
+          val responseF = (managementActor ? uideployment.CustomAction(req.toEngineRequest(process.name), process, user))
+            .mapTo[Either[CustomActionError, CustomActionResult]]
+            .flatMap {
+              case res@Right(_) =>
+                toHttpResponse(CustomActionResponse(res))(StatusCodes.OK)
+              case res@Left(err) =>
+                val response = toHttpResponse(CustomActionResponse(res)) _
+                err match {
+                  case _: CustomActionFailure => response(StatusCodes.InternalServerError)
+                  case _: CustomActionInvalidStatus => response(StatusCodes.Forbidden)
+                  case _: CustomActionNotImplemented => response(StatusCodes.NotImplemented)
+                  case _: CustomActionNonExisting => response(StatusCodes.NotFound)
+                }
+            }
           complete {
-            (managementActor ? uideployment.CustomAction(req.toEngineRequest(process.name), process, user))
-              .mapTo[Either[CustomActionError, CustomActionResult]]
-              .flatMap {
-                case res@Right(_) =>
-                  toHttpResponse(CustomActionResponse(res))(StatusCodes.OK)
-                case res@Left(err) =>
-                  val response = toHttpResponse(CustomActionResponse(res)) _
-                  err match {
-                    case _: CustomActionFailure => response(StatusCodes.InternalServerError)
-                    case _: CustomActionInvalidStatus => response(StatusCodes.Forbidden)
-                    case _: CustomActionNotImplemented => response(StatusCodes.NotImplemented)
-                    case _: CustomActionNonExisting => response(StatusCodes.NotFound)
-                  }
-              }
+            Await.result(responseF, requestTimeoutDuration)
           }
         }
       }
