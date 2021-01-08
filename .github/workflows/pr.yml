@@ -177,6 +177,9 @@ jobs:
       - name: Untar artifacts
         shell: bash
         run:  tar xfz target.tgz
+      - name: setup node
+        shell: bash
+        run: (cd ui/client; npm ci)
       - name: Prepare docker
         shell: bash
         run: echo "version in ThisBuild := \"$GITHUB_SHA\"" > version.sbt && ./ciRunSbt.sh dist/docker:publishLocal
