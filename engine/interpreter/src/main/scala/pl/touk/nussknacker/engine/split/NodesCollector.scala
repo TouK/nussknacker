@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.splittedgraph.SplittedNodesCollector.collectNo
 
 object NodesCollector {
 
-  def collectNodesInAllParts(parts: NonEmptyList[ProcessPart]): List[SplittedNode[_]]
+  def collectNodesInAllParts(parts: NonEmptyList[ProcessPart]): List[SplittedNode[_<:NodeData]]
     = parts.toList.flatMap(collectNodesInAllParts)
 
   def collectNodesInAllParts(part: ProcessPart): List[SplittedNode[_<:NodeData]] =

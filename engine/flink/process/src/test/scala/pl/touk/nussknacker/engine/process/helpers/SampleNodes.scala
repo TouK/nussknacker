@@ -121,6 +121,31 @@ object SampleNodes {
     }
   }
 
+  object LifecycleService extends Service with Lifecycle {
+
+    var opened: Boolean = false
+    var closed: Boolean = false
+
+    def reset(): Unit = {
+      opened = false
+      closed = false
+    }
+
+    override def open(jobData: JobData): Unit = {
+      opened = true
+    }
+
+    override def close(): Unit = {
+      closed = true
+    }
+
+    @MethodToInvoke
+    def invoke(): Future[Unit] = {
+      Future.successful(())
+    }
+  }
+
+
   object ServiceAcceptingScalaOption extends Service {
     @MethodToInvoke
     def invoke(@ParamName("scalaOptionParam") scalaOptionParam: Option[String]): Future[Option[String]] = Future.successful(scalaOptionParam)

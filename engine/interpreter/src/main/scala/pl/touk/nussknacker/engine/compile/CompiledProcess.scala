@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessD
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.node.{NodeData, WithComponent}
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 import scala.concurrent.duration.FiniteDuration
@@ -44,12 +45,13 @@ object CompiledProcess {
 
       val interpreter = Interpreter(listeners, expressionEvaluator)
 
-      CompiledProcess(
+      new CompiledProcess(
         compiledProcess,
         subCompiler,
         LazyInterpreterDependencies(expressionEvaluator, expressionCompiler, FiniteDuration(10, TimeUnit.SECONDS)),
         interpreter,
-        listeners ++ servicesDefs.values.map(_.obj.asInstanceOf[Lifecycle])
+        listeners,
+        servicesDefs.mapValues(_.obj.asInstanceOf[Lifecycle])
       )
 
     }
@@ -62,8 +64,18 @@ object CompiledProcess {
 
 }
 
-case class CompiledProcess(parts: CompiledProcessParts,
-                           subPartCompiler: PartSubGraphCompiler,
-                           lazyInterpreterDeps: LazyInterpreterDependencies,
-                           interpreter: Interpreter,
-                           lifecycle: Seq[Lifecycle])
+class CompiledProcess(val parts: CompiledProcessParts,
+                      val subPartCompiler: PartSubGraphCompiler,
+                      val lazyInterpreterDeps: LazyInterpreterDependencies,
+                      val interpreter: Interpreter,
+                      listeners: Seq[Lifecycle],
+                      services: Map[String, Lifecycle]) {
+
+  def lifecycle(nodesToUse: List[_ <: NodeData]): Seq[Lifecycle] = {
+    val componentIds = nodesToUse.collect {
+      case e:WithComponent => e.componentId
+    }
+    listeners ++ services.filterKeys(componentIds.contains).values
+  }
+
+}

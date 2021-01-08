@@ -16,6 +16,7 @@ Nussknacker versions
     * [#1343](https://github.com/TouK/nussknacker/pull/1359) Improvements in variable output validation 
     * [#1360](https://github.com/TouK/nussknacker/pull/1360) Service query can use global variables
 * [#1361](https://github.com/TouK/nussknacker/pull/1361) Lazy vars removal
+* [#1363](https://github.com/TouK/nussknacker/pull/1363) Open/close only services that are actually used in process
 
 0.3.1 (not released yet) 
 ------------------------

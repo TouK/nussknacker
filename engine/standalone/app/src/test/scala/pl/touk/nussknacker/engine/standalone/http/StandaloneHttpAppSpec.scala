@@ -12,10 +12,13 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.Encoder
+import io.circe.{Encoder, _}
+import io.circe.parser._
 import io.circe.syntax._
+import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.StandaloneProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -25,11 +28,6 @@ import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import pl.touk.nussknacker.engine.standalone.utils.logging.StandaloneRequestResponseLogger
 import pl.touk.nussknacker.engine.testing.ModelJarBuilder
-import io.circe._
-import io.circe.parser._
-import io.dropwizard.metrics5.MetricRegistry
-import pl.touk.nussknacker.engine.api.deployment.StateStatus
-import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
 
 class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTest with BeforeAndAfterEach with FailFastCirceSupport {
 
@@ -77,6 +75,14 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     .exceptionHandler()
     .source("start", "request1-post-source")
     .filter("filter1", "#input.field1() == 'a'")
+    .sink("endNodeIID", "#input.field2", "response-sink"))
+
+  def processWithLifecycleService = processToJson(StandaloneProcessBuilder
+    .id(procId)
+      .path(Some("customPath1"))
+    .exceptionHandler()
+    .source("start", "request1-post-source")
+    .processor("service", "lifecycleService")
     .sink("endNodeIID", "#input.field2", "response-sink"))
 
   def noFilterProcessJson = processToJson(StandaloneProcessBuilder
@@ -200,13 +206,25 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
     }
   }
 
-  it should "open and close services" in {
+  it should "open and close used services" in {
     assertProcessNotRunning(procId)
-    Post("/deploy", toEntity(deploymentData(processWithPathJson))) ~> managementRoute ~> check {
+    LifecycleService.reset()
+    Post("/deploy", toEntity(deploymentData(processWithLifecycleService))) ~> managementRoute ~> check {
       status shouldBe StatusCodes.OK
       LifecycleService.opened shouldBe true
       cancelProcess(procId)
       LifecycleService.closed shouldBe true
+    }
+  }
+
+  it should "not open not used services" in {
+    assertProcessNotRunning(procId)
+    LifecycleService.reset()
+    Post("/deploy", toEntity(deploymentData(processWithPathJson))) ~> managementRoute ~> check {
+      status shouldBe StatusCodes.OK
+      LifecycleService.opened shouldBe false
+      cancelProcess(procId)
+      LifecycleService.closed shouldBe false
     }
   }
 

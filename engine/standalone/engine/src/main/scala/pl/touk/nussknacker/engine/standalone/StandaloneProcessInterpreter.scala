@@ -17,6 +17,8 @@ import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, LazyInterpreterDependencies, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.node.NodeData
+import pl.touk.nussknacker.engine.split.{NodesCollector, ProcessSplitter}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.standalone.api.types._
 import pl.touk.nussknacker.engine.standalone.api.{StandaloneCustomTransformer, StandaloneSource, types}
@@ -61,8 +63,11 @@ object StandaloneProcessInterpreter {
       // defaultAsyncValue is not important here because it doesn't used in standalone mode
     )(DefaultAsyncInterpretationValueDeterminer.DefaultValue).andThen { compiledProcess =>
       val source = extractSource(compiledProcess)
+
+      val nodesUsed = NodesCollector.collectNodesInAllParts(ProcessSplitter.split(process).sources).map(_.data)
+      val lifecycle = compiledProcess.lifecycle(nodesUsed)
       StandaloneInvokerCompiler(compiledProcess).compile.map(_.run).map { case (sinkTypes, invoker) =>
-        StandaloneProcessInterpreter(source, sinkTypes, contextPreparer.prepare(process.id), invoker, compiledProcess.lifecycle, modelData)
+        StandaloneProcessInterpreter(source, sinkTypes, contextPreparer.prepare(process.id), invoker, lifecycle, modelData)
       }
     }
   }
