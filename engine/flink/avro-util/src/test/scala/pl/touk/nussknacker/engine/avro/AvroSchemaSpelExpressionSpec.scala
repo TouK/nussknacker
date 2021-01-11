@@ -6,7 +6,7 @@ import org.apache.avro.generic.GenericData.EnumSymbol
 import org.apache.avro.generic.GenericRecord
 import org.scalatest.{FunSpec, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, TypedExpression}
@@ -177,7 +177,7 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
           |  { "name": "stringField", "type": "string" }
           |]""".stripMargin)
 
-      val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)).toOption.get
+      val ctx = ValidationContext.empty.withVariable(OutputVar.variable("input"), AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)).toOption.get
 
       parse[String]("#input.stringField", ctx) should be('valid)
     }
