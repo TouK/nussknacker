@@ -171,6 +171,13 @@ class PeriodicProcessManager(delegate: ProcessManager,
     toClose()
     delegate.close()
   }
+
+  override def customActions: List[CustomAction] = Nil
+
+  override def invokeCustomAction(actionRequest: CustomActionRequest): Future[Either[CustomActionError, CustomActionResult]] =
+    Future.successful {
+      Left(CustomActionNotImplemented(actionRequest))
+    }
 }
 
 case class ScheduledStatus(nextRunAt: LocalDateTime) extends CustomStateStatus("SCHEDULED") {

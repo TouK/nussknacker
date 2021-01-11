@@ -41,5 +41,12 @@ class ProcessManagerStub extends ProcessManager {
   override def processStateDefinitionManager: ProcessStateDefinitionManager = FlinkProcessStateDefinitionManager
 
   override def close(): Unit = ???
+
+  override def customActions: List[CustomAction] = Nil
+
+  override def invokeCustomAction(actionRequest: CustomActionRequest): Future[Either[CustomActionError, CustomActionResult]] =
+    Future.successful {
+      Left(CustomActionNotImplemented(actionRequest))
+    }
 }
 
