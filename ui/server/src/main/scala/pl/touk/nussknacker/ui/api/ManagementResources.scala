@@ -208,8 +208,10 @@ class ManagementResources(processCounter: ProcessCounter,
       } ~
       path("processManagement" / "customAction" / Segment) { processName =>
         (post & processId(processName) & entity(as[CustomActionRequest])) { (process, req) =>
+          val params = req.params.getOrElse(Map.empty)
+          val customAction = uideployment.CustomAction(req.actionName, process, user, params)
           complete {
-            (managementActor ? uideployment.CustomAction(req.toEngineRequest(process.name), process, user))
+            (managementActor ? customAction)
               .mapTo[Either[CustomActionError, CustomActionResult]]
               .flatMap {
                 case res@Right(_) =>

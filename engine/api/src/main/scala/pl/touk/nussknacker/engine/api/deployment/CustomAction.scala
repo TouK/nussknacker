@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.ProcessVersion
 
 import java.net.URI
 
@@ -22,7 +22,8 @@ case class CustomAction(name: String,
                         icon: Option[URI] = None)
 
 case class CustomActionRequest(name: String,
-                               processName: ProcessName,
+                               processVersion: ProcessVersion,
+                               user: User,
                                params: Map[String, String])
 
 case class CustomActionResult(req: CustomActionRequest, msg: String)

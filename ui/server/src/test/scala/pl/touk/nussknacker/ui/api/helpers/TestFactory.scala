@@ -196,11 +196,13 @@ object TestFactory extends TestPermissions{
       CustomAction(name = "invalid-status", allowedProcessStates = Nil)
     )
 
-    override def invokeCustomAction(actionRequest: CustomActionRequest): Future[Either[CustomActionError, CustomActionResult]] = Future.successful {
-      actionRequest.name match {
-        case "hello" | "invalid-status" => Right(CustomActionResult(actionRequest, "Hi"))
-        case _ => Left(CustomActionNotImplemented(actionRequest))
-      }
+    override def invokeCustomAction(actionRequest: CustomActionRequest,
+                                    processDeploymentData: ProcessDeploymentData): Future[Either[CustomActionError, CustomActionResult]] =
+      Future.successful {
+        actionRequest.name match {
+          case "hello" | "invalid-status" => Right(CustomActionResult(actionRequest, "Hi"))
+          case _ => Left(CustomActionNotImplemented(actionRequest))
+        }
     }
 
     override def close(): Unit = {}

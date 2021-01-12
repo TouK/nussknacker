@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -108,23 +109,35 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
     case DeploymentStatus =>
       reply(Future.successful(DeploymentStatusResponse(beingDeployed)))
 
-    case CustomAction(actionReq, id, user) =>
-      // TODO: Currently we're treating all custom actions as deployment actions; i.e. they can be invoked only if there is no deployment in progress
+    case CustomAction(actionName, id, user, params) =>
+      implicit val loggedUser: LoggedUser = user
+      // TODO: Currently we're treating all custom actions as deployment actions; i.e. they can't be invoked if there is some deployment in progress
       ensureNoDeploymentRunning {
-        val res: Future[Either[CustomActionError, CustomActionResult]] = processManager(id.id)(ec, user).flatMap { manager =>
-          manager.customActions.find(_.name == actionReq.name) match {
-            case Some(customAction) =>
-              getProcessStatus(id)(user).flatMap {
-                case Some(status) if customAction.allowedProcessStates.contains(status.status) =>
-                  manager.invokeCustomAction(actionReq)
-                case Some(invalidStatus) =>
-                  Future(Left(CustomActionInvalidStatus(actionReq, invalidStatus.status)))
+        val processVersionF = processRepository.fetchLatestProcessVersion[DisplayableProcess](id.id)
+        val res: Future[Either[CustomActionError, CustomActionResult]] = processVersionF.flatMap {
+          case Some(processVersionData) =>
+            val actionReq = engine.api.deployment.CustomActionRequest(
+              name = actionName,
+              processVersion = processVersionData.toProcessVersion(id.name),
+              user = toManagerUser(user),
+              params = params)
+            processManager(id.id).flatMap { manager =>
+              manager.customActions.find(_.name == actionName) match {
+                case Some(customAction) =>
+                  getProcessStatus(id).flatMap {
+                    case Some(status) if customAction.allowedProcessStates.contains(status.status) =>
+                      manager.invokeCustomAction(actionReq, processVersionData.deploymentData)
+                    case Some(invalidStatus) =>
+                      Future(Left(CustomActionInvalidStatus(actionReq, invalidStatus.status)))
+                    case None =>
+                      Future(Left(CustomActionFailure(actionReq, msg = s"Action ${actionReq.name} failure: process ${id.name.value} status is unknown")))
+                  }
                 case None =>
-                  Future(Left(CustomActionFailure(actionReq, msg = s"Action ${actionReq.name} failure: process ${actionReq.processName} status is unknown")))
+                  Future(Left(CustomActionNonExisting(actionReq)))
               }
-            case None =>
-              Future(Left(CustomActionNonExisting(actionReq)))
-          }
+            }
+          case None =>
+            Future.failed(ProcessNotFoundError(id.id.value.toString))
         }
         reply(res)
       }
@@ -346,7 +359,7 @@ case class DeploymentActionFinished(id: ProcessIdWithName, user: LoggedUser, fai
 
 case class DeployInfo(userId: String, time: Long, action: DeploymentActionType)
 
-case class CustomAction(action: CustomActionRequest, id: ProcessIdWithName, user: LoggedUser)
+case class CustomAction(actionName: String, id: ProcessIdWithName, user: LoggedUser, params: Map[String, String])
 
 sealed trait DeploymentActionType
 
