@@ -9,18 +9,22 @@ import org.apache.flink.api.common.typeutils.{TypeSerializer, TypeSerializerSnap
 import org.apache.flink.core.memory.{DataInputViewStreamWrapper, DataOutputViewStreamWrapper}
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{BaseJavaMapBasedSerializer, TypedObjectBasedSerializerSnapshot, TypedObjectBasedTypeInformation, TypedObjectBasedTypeSerializer}
 import pl.touk.nussknacker.engine.process.typeinformation.testTypedObject.{CustomObjectTypeInformation, CustomTypedObject}
 import pl.touk.nussknacker.engine.util.Implicits._
+
 import scala.collection.JavaConverters._
 
 class TypingResultAwareTypeInformationDetectionSpec extends FunSuite with Matchers {
 
-  private val informationDetection = new TypingResultAwareTypeInformationDetection(detection => {
-    case e: TypedObjectTypingResult if e.objType == Typed.typedClass[CustomTypedObject] =>
-      new CustomObjectTypeInformation(e.fields.mapValuesNow(detection.forType))
+  private val informationDetection = new TypingResultAwareTypeInformationDetection(new TypingResultAwareTypeInformationCustomisation {
+    override def customise(originalDetection: TypingResultAwareTypeInformationDetection): PartialFunction[typing.TypingResult, TypeInformation[_]] = {
+      case e: TypedObjectTypingResult if e.objType == Typed.typedClass[CustomTypedObject] =>
+        new CustomObjectTypeInformation(e.fields.mapValuesNow(originalDetection.forType))
+    }
   })
 
   private val executionConfigWithoutKryo = new ExecutionConfig {

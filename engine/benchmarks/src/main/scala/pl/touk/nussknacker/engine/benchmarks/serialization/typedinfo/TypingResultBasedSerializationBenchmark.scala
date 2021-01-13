@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.benchmarks.serialization.SerializationBenchmarkSetup
 import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection
+import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection.CompositeCustomisation
 
 import scala.collection.JavaConverters._
 
@@ -42,7 +43,7 @@ class TypingResultBasedSerializationBenchmark {
     "var2" -> 11L,
     "map" -> mapToSerialize))
 
-  private val determiner = new TypingResultAwareTypeInformationDetection()
+  private val determiner = new TypingResultAwareTypeInformationDetection(new CompositeCustomisation(Nil))
 
   private val genericContextSetup = new SerializationBenchmarkSetup(TypeInformation.of(classOf[Context]), contextToSerialize)
   
