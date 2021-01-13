@@ -40,9 +40,6 @@ val addDevModel = System.getProperty("addDevModel", "false").toBoolean
 publishTo := Some(Resolver.defaultLocal)
 crossScalaVersions := Nil
 
-//have some problems with force() - e.g. with forcing circe version in httpUtils...
-ThisBuild / useCoursier := false
-
 lazy val publishSettings = Seq(
   publishMavenStyle := true,
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
@@ -169,7 +166,21 @@ lazy val commonSettings =
         "commons-io" % "commons-io" % commonsIOV,
         //we stick to version in Flink to avoid nasty bugs in process runtime...
         //NOTE: commons-text (in api) uses 3.9...
-        "org.apache.commons" % "commons-lang3" % commonsLangV
+        "org.apache.commons" % "commons-lang3" % commonsLangV,
+
+        //we force circe version here, because sttp has 0.12.1 for scala 2.12, we don't want it ATM
+        "io.circe" %% "circe-core" % circeV,
+        "io.circe" %% "circe-parser" % circeV,
+
+        // Force akka-http and akka-stream versions to avoid bumping by akka-http-circe.
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV,
+        "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV,
+        "com.typesafe.akka" %% "akka-stream" % akkaV,
+        "com.typesafe.akka" %% "akka-testkit" % akkaV,
+
+        //Our main kafka dependencies are Confluent (for avro) and Flink (Kafka connector)
+        "org.apache.kafka" % "kafka-clients" % kafkaV,
+        "org.apache.kafka" %% "kafka" % kafkaV
       )
     )
 
@@ -187,7 +198,10 @@ val forkSettings = Seq(
 val akkaV = "2.5.21" //same version as in Flink
 val flinkV = "1.11.2"
 val avroV = "1.9.2" // for java time logical types conversions purpose
+//we should use max(version used by confluent, version used by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
+//however, we stick to 2.4.1, as it's last version supported by scala 2.11 (we use kafka server in tests...)
 val kafkaV = "2.4.1"
+val kafkaServerV = "2.4.1"
 val springV = "5.1.19.RELEASE"
 val scalaTestV = "3.0.8"
 val scalaCheckV = "1.14.0"
@@ -346,11 +360,10 @@ lazy val standaloneApp = (project in engine("standalone/app")).
     libraryDependencies ++= {
       Seq(
         "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
-        // Force akka-http and akka-stream versions to avoid bumping by akka-http-circe.
-        "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
-        "com.typesafe.akka" %% "akka-stream" % akkaV force(),
-        "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
-        "com.typesafe.akka" %% "akka-testkit" % akkaV % "test" force(),
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV,
+        "com.typesafe.akka" %% "akka-stream" % akkaV,
+        "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test",
+        "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
         "com.typesafe.akka" %% "akka-slf4j" % akkaV,
         "ch.qos.logback" % "logback-classic" % logbackV
       )
@@ -675,8 +688,8 @@ lazy val standaloneUtil = (project in engine("standalone/util")).
 
         "io.dropwizard.metrics5" % "metrics-core" % dropWizardV,
         //akka-http is only for StandaloneRequestResponseLogger
-        "com.typesafe.akka" %% "akka-http" % akkaHttpV % "provided" force(),
-        "com.typesafe.akka" %% "akka-stream" % akkaV % "provided" force()
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV % "provided",
+        "com.typesafe.akka" %% "akka-stream" % akkaV % "provided"
       )
     }
   ).dependsOn(util, standaloneApi, testUtil % "test")
@@ -717,17 +730,16 @@ lazy val security = (project in engine("security")).
     name := "nussknacker-security",
     libraryDependencies ++= {
       Seq(
-        "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
-        "com.typesafe.akka" %% "akka-stream" % akkaV force(),
-        "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV,
+        "com.typesafe.akka" %% "akka-stream" % akkaV,
+        "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test",
+        "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
         "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
-        "com.typesafe.akka" %% "akka-stream" % akkaV force(),
         "com.typesafe" % "config" % configV ,
         "org.mindrot" % "jbcrypt" % jbcryptV,
         //Packages below are only for plugin providers purpose
         "io.circe" %% "circe-core" % circeV,
         "com.pauldijou" %% "jwt-circe" % jwtCirceV,
-        "com.typesafe.akka" %% "akka-testkit" % akkaV % "test" force(),
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV
       )
     }
@@ -766,9 +778,8 @@ lazy val httpUtils = (project in engine("httpUtils")).
     libraryDependencies ++= {
       val sttpV = "2.2.3"
       Seq(
-        //we force circe version here, because sttp has 0.12.1 for scala 2.12, we don't want it ATM
-        "io.circe" %% "circe-core" % circeV force(),
-        "io.circe" %% "circe-parser" % circeV force(),
+        "io.circe" %% "circe-core" % circeV,
+        "io.circe" %% "circe-parser" % circeV,
         "org.dispatchhttp" %% "dispatch-core" % dispatchV,
         "org.scala-lang.modules" %% "scala-parser-combinators" % scalaParsersV, // scalaxb deps
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
@@ -859,10 +870,12 @@ lazy val ui = (project in file("ui/server"))
     ).value,
     libraryDependencies ++= {
       Seq(
-        // Force akka-http and akka-stream versions to avoid bumping by akka-http-circe.
-        "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
-        "com.typesafe.akka" %% "akka-stream" % akkaV force(),
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV,
+        "com.typesafe.akka" %% "akka-stream" % akkaV,
+        "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test",
+        "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
         "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
+
         "ch.qos.logback" % "logback-core" % logbackV,
         "ch.qos.logback" % "logback-classic" % logbackV,
         "org.slf4j" % "log4j-over-slf4j" % slf4jV,
@@ -878,8 +891,7 @@ lazy val ui = (project in file("ui/server"))
         "org.postgresql" % "postgresql" % postgresV,
         "org.flywaydb" % "flyway-core" % flywayV,
         "org.apache.xmlgraphics" % "fop" % "2.3",
-        "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
-        "com.typesafe.akka" %% "akka-testkit" % akkaV % "test" force(),
+
 
         "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
         "com.whisk" %% "docker-testkit-scalatest" % "0.9.8" % "test",
