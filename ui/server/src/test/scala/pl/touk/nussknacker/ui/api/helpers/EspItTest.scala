@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.api.helpers
 
 import java.net.URI
-
 import akka.actor.ActorRef
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
@@ -12,16 +11,18 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.{Encoder, Json, Printer, parser}
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
-import pl.touk.nussknacker.engine.ProcessingTypeConfig
+import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig, ProcessingTypeData}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessActionType, ProcessManager}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.management.FlinkStreamingProcessManagerProvider
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process
 import pl.touk.nussknacker.ui.api._
+import pl.touk.nussknacker.ui.api.deployment.CustomActionRequest
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
@@ -55,6 +56,9 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   val existingProcessingType = "streaming"
 
   val processManager = new MockProcessManager
+  val processManagerProvider = new FlinkStreamingProcessManagerProvider {
+    override def createProcessManager(modelData: ModelData, config: Config): ProcessManager = processManager
+  }
   val processChangeListener = new TestProcessChangeListener()
   def createManagementActorRef = {
     system.actorOf(ManagementActor.props(
@@ -97,9 +101,13 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   val settingsRoute = new SettingsResources(featureTogglesConfig, typeToConfig, authenticationConfig, analyticsConfig)
 
   val processesExportResources = new ProcessesExportResources(processRepository, processActivityRepository, processResolving)
+
+  val processingTypeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig)
   val definitionResources = new DefinitionResources(
-    mapProcessingTypeDataProvider(existingProcessingType ->
-      ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig).toModelData), subprocessRepository, typesForCategories)
+    modelDataProvider = mapProcessingTypeDataProvider(existingProcessingType -> processingTypeConfig.toModelData),
+    processingTypeDataProvider = mapProcessingTypeDataProvider(existingProcessingType -> ProcessingTypeData.createProcessingTypeData(processManagerProvider, processingTypeConfig)),
+    subprocessRepository,
+    typesForCategories)
 
   val processesRouteWithAllPermissions = withAllPermissions(processesRoute)
 
@@ -197,6 +205,11 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   def stop(processName: String): RouteTestResult = {
     Post(s"/adminProcessManagement/stop/$processName") ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead)
+  }
+
+  def customAction(processName: String, reqPayload: CustomActionRequest): RouteTestResult = {
+    Post(s"/processManagement/customAction/$processName", TestFactory.posting.toRequest(reqPayload)) ~>
+      withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead)
   }
 
   def getSampleProcess: RouteTestResult = {

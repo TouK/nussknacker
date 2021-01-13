@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.restmodel.displayedgraph
 
 import java.net.URI
-
 import io.circe.generic.JsonCodec
-import io.circe.{Decoder, Encoder, Json}
+import io.circe.Json
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ProcessStateDefinitionManager, StateStatus}
+import pl.touk.nussknacker.restmodel.codecs.URICodecs.{uriDecoder, uriEncoder}
 
 //TODO: Do we really  we need ProcessStatus and ProcessState - Do these DTO's do the same things?
 @JsonCodec case class ProcessStatus(status: StateStatus,
@@ -17,14 +17,10 @@ import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ProcessStateDefi
                                     description: Option[String],
                                     startTime: Option[Long],
                                     attributes: Option[Json],
-                                    errors: List[String])
+                                    errors: List[String]) {
+}
 
 object ProcessStatus {
-  implicit val uriEncoder: Encoder[URI] = Encoder.encodeString.contramap(_.toString)
-  implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
-
-  def simple(status: StateStatus, deploymentId: Option[String], errors: List[String]): ProcessStatus =
-    ProcessStatus(status, SimpleProcessStateDefinitionManager, deploymentId, Option.empty, Option.empty, errors)
 
   def simple(status: StateStatus): ProcessStatus =
     ProcessStatus(status, SimpleProcessStateDefinitionManager)

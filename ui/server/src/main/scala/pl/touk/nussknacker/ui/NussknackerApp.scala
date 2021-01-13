@@ -124,7 +124,7 @@ object NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         ManagementResources(counter, managementActor, testResultsMaxSizeInBytes,
           processAuthorizer, processRepository, featureTogglesConfig, processResolving),
         new ValidationResources(processResolving),
-        new DefinitionResources(modelData, subprocessRepository, typesForCategories),
+        new DefinitionResources(modelData, typeToConfig, subprocessRepository, typesForCategories),
         new SignalsResources(modelData, processRepository, processAuthorizer),
         new UserResources(typesForCategories),
         new NotificationResources(managementActor, processRepository),

@@ -87,8 +87,14 @@ class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessCl
   override def processStateDefinitionManager: ProcessStateDefinitionManager = SimpleProcessStateDefinitionManager
 
   override def close(): Unit = {
-    
+
   }
+
+  override def customActions: List[CustomAction] = List.empty
+
+  override def invokeCustomAction(actionRequest: CustomActionRequest,
+                                  processDeploymentData: ProcessDeploymentData): Future[Either[CustomActionError, CustomActionResult]] =
+    Future.successful(Left(CustomActionNotImplemented(actionRequest)))
 }
 
 object StandaloneTestMain {

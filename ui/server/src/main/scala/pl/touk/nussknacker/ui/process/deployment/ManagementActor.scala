@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -82,15 +83,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
       reply(processStatus)
 
     case CheckStatus(id, user) =>
-      implicit val loggedUser: LoggedUser = user
-
-      val processStatus = for {
-        actions <- processRepository.fetchProcessActions(id.id)
-        manager <- processManager(id.id)
-        state <- manager.findJobStatus(id.name)
-        _ <- handleFinishedProcess(id, state)
-      } yield Option(handleObsoleteStatus(state, actions.headOption))
-      reply(processStatus)
+      reply(getProcessStatus(id)(user))
 
     case DeploymentActionFinished(process, user, result) =>
       implicit val loggedUser: LoggedUser = user
@@ -115,7 +108,48 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
       }
     case DeploymentStatus =>
       reply(Future.successful(DeploymentStatusResponse(beingDeployed)))
+
+    case CustomAction(actionName, id, user, params) =>
+      implicit val loggedUser: LoggedUser = user
+      // TODO: Currently we're treating all custom actions as deployment actions; i.e. they can't be invoked if there is some deployment in progress
+      ensureNoDeploymentRunning {
+        val processVersionF = processRepository.fetchLatestProcessVersion[DisplayableProcess](id.id)
+        val res: Future[Either[CustomActionError, CustomActionResult]] = processVersionF.flatMap {
+          case Some(processVersionData) =>
+            val actionReq = engine.api.deployment.CustomActionRequest(
+              name = actionName,
+              processVersion = processVersionData.toProcessVersion(id.name),
+              user = toManagerUser(user),
+              params = params)
+            processManager(id.id).flatMap { manager =>
+              manager.customActions.find(_.name == actionName) match {
+                case Some(customAction) =>
+                  getProcessStatus(id).flatMap {
+                    case Some(status) if customAction.allowedProcessStates.contains(status.status) =>
+                      manager.invokeCustomAction(actionReq, processVersionData.deploymentData)
+                    case Some(invalidStatus) =>
+                      Future(Left(CustomActionInvalidStatus(actionReq, invalidStatus.status)))
+                    case None =>
+                      Future(Left(CustomActionFailure(actionReq, msg = s"Action ${actionReq.name} failure: process ${id.name.value} status is unknown")))
+                  }
+                case None =>
+                  Future(Left(CustomActionNonExisting(actionReq)))
+              }
+            }
+          case None =>
+            Future.failed(ProcessNotFoundError(id.id.value.toString))
+        }
+        reply(res)
+      }
   }
+
+  private def getProcessStatus(id: ProcessIdWithName)(implicit user: LoggedUser): Future[Option[ProcessStatus]] =
+    for {
+      actions <- processRepository.fetchProcessActions(id.id)
+      manager <- processManager(id.id)
+      state <- manager.findJobStatus(id.name)
+      _ <- handleFinishedProcess(id, state)
+    } yield Option(handleObsoleteStatus(state, actions.headOption))
 
   //This method handles some corner cases like retention for keeping old states - some engine can cleanup canceled states. It's more Flink hermetic.
   //TODO: In future we should move this functionality to ProcessManager.
@@ -324,6 +358,8 @@ case class DeploymentDetails(version: Long, comment: Option[String], deployedAt:
 case class DeploymentActionFinished(id: ProcessIdWithName, user: LoggedUser, failureOrDetails: Either[Throwable, DeploymentDetails])
 
 case class DeployInfo(userId: String, time: Long, action: DeploymentActionType)
+
+case class CustomAction(actionName: String, id: ProcessIdWithName, user: LoggedUser, params: Map[String, String])
 
 sealed trait DeploymentActionType
 
