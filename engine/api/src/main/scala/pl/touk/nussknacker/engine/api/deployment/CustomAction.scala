@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import java.net.URI
 
 /*
-This is an experimental/wip version.
+This is an experimental version, API will change in the future.
 CustomActions purpose is to allow non standard process management actions (like deploy, cancel, etc.)
 
 FIXME:
