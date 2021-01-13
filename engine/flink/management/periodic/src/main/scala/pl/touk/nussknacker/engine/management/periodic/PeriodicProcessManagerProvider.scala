@@ -10,8 +10,8 @@ import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.{ModelData, ProcessManagerProvider}
 
 class PeriodicProcessManagerProvider(delegate: ProcessManagerProvider,
-                                     periodicPropertyExtractor: PeriodicPropertyExtractor,
-                                     enrichDeploymentWithJarDataFactory: EnrichDeploymentWithJarDataFactory) extends ProcessManagerProvider with LazyLogging {
+                                     periodicPropertyExtractor: PeriodicPropertyExtractor = CronPropertyExtractor(),
+                                     enrichDeploymentWithJarDataFactory: EnrichDeploymentWithJarDataFactory = EnrichDeploymentWithJarDataFactory.noOp) extends ProcessManagerProvider with LazyLogging {
 
   override def name: String = s"${delegate.name}Periodic"
 
