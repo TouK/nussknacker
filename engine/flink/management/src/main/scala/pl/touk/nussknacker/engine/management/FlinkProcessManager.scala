@@ -17,10 +17,6 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
   protected lazy val jarFile: File = new FlinkModelJar().buildJobJar(modelData)
 
-  protected lazy val buildInfoJson: String = {
-    Encoder[Map[String, String]].apply(modelData.configCreator.buildInfo()).spaces2
-  }
-
   private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
   private lazy val testRunner = new FlinkProcessTestRunner(modelData)
@@ -118,9 +114,9 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     val configPart = modelData.processConfigFromConfiguration.render()
     processDeploymentData match {
       case GraphProcess(processAsJson) =>
-        List(processAsJson, toJsonString(processVersion), configPart, buildInfoJson)
+        List(processAsJson, toJsonString(processVersion), configPart)
       case CustomProcess(_) =>
-        List(processVersion.processName.value, configPart, buildInfoJson)
+        List(processVersion.processName.value, configPart)
     }
   }
   private def toJsonString(processVersion: ProcessVersion): String = {

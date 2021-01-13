@@ -49,7 +49,7 @@ class FlinkTestMain(val modelData: ModelData, val process: EspProcess, testData:
       env.getConfig,
       modelData.objectNaming),
       modelData.processConfig,
-      ExecutionConfigPreparer.defaultChain(modelData, None))
+      ExecutionConfigPreparer.defaultChain(modelData))
   }
 }
 

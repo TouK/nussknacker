@@ -335,7 +335,7 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
 
   private def executionConfigPreparerChain(modelData: LocalModelData) = {
     ExecutionConfigPreparer.chain(
-      ProcessSettingsPreparer(modelData, None),
+      ProcessSettingsPreparer(modelData),
       new UnoptimizedSerializationPreparer(modelData),
       new ExecutionConfigPreparer {
         override def prepareExecutionConfig(config: ExecutionConfig)(metaData: MetaData, processVersion: ProcessVersion): Unit = {

@@ -31,7 +31,7 @@ class SampleRecommendationProcess extends FlatSpec with FlinkSpec with Matchers 
 
     val env = flinkMiniCluster.createExecutionEnvironment()
     val modelData = LocalModelData(config, creator)
-    FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
+    FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData))
       .register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty)
 
     env.withJobRunning(process.id) {}
