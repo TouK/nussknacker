@@ -234,7 +234,7 @@ val postgresV = "42.2.12"
 val flywayV = "6.3.3"
 val confluentV = "5.5.0"
 val jbcryptV = "0.4"
-val cronParserV = "3.1.1"
+val cronParserV = "9.1.3"
 val javaxValidationApiV = "2.0.1.Final"
 val caffeineCacheV = "2.8.2"
 
@@ -403,6 +403,25 @@ lazy val flinkProcessManager = (project in engine("flink/management")).
     queryableState,
     httpUtils % "provided",
     kafkaTestUtil % "it,test")
+
+lazy val flinkPeriodicProcessManager = (project in engine("flink/management/periodic")).
+  settings(commonSettings).
+  settings(assemblySettings("nussknacker-flink-periodic-manager.jar", includeScala = false): _*).
+  settings(
+    name := "nussknacker-flink-periodic-manager",
+    libraryDependencies ++= {
+      Seq(
+        "org.typelevel" %% "cats-core" % catsV % "provided",
+        "com.typesafe.slick" %% "slick" % slickV % "provided",
+        "org.flywaydb" % "flyway-core" % flywayV % "provided",
+        "com.cronutils" % "cron-utils" % cronParserV
+      )
+    }
+  ).dependsOn(flinkProcessManager,
+    interpreter % "provided",
+    api % "provided",
+    httpUtils % "provided",
+    testUtil % "test")
 
 lazy val standaloneSample = (project in engine("standalone/engine/sample")).
   settings(commonSettings).
@@ -913,7 +932,7 @@ lazy val ui = (project in file("ui/server"))
 lazy val root = (project in file("."))
   .aggregate(
     // TODO: get rid of this duplication
-    engineStandalone, standaloneApp, flinkProcessManager, standaloneSample, flinkManagementSample, managementJavaSample, demo, generic,
+    engineStandalone, standaloneApp, flinkProcessManager, flinkPeriodicProcessManager, standaloneSample, flinkManagementSample, managementJavaSample, demo, generic,
     process, interpreter, benchmarks, kafka, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
     flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils, queryableState,
     restmodel, listenerApi, ui,
