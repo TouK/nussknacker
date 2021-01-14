@@ -4,7 +4,7 @@ import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.flink.streaming.api.graph.{StreamGraph, StreamNode}
-import org.apache.flink.streaming.api.operators.async.{AsyncWaitOperator, AsyncWaitOperatorFactory}
+import org.apache.flink.streaming.api.operators.async.AsyncWaitOperatorFactory
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api._
@@ -76,7 +76,7 @@ class FlinkStreamingProcessRegistrarOperatorUidSpec extends FunSuite with Proces
 
     val env = flinkMiniCluster.createExecutionEnvironment()
     val modelData = LocalModelData(config, creator)
-    FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
+    FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData))
       .register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty)
     env.getStreamGraph
   }
