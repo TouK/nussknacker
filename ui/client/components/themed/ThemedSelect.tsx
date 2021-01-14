@@ -6,7 +6,7 @@ import {useNkTheme} from "../../containers/theme"
 
 const className = "form-select"
 
-export function ThemedSelect<T = string>(props: SelectProps<T>) {
+export function ThemedSelect<T = string, IsMulti extends boolean = false>(props: SelectProps<T, IsMulti>) {
   const {theme} = useNkTheme()
   return (
     <Select
@@ -32,13 +32,13 @@ export function ThemedSelect<T = string>(props: SelectProps<T>) {
             borderColor: theme.colors.neutral30,
           },
         }),
-        input: (provided, {theme}) => ({
+        input: (provided) => ({
           ...provided,
           color: theme.colors.neutral90,
         }),
         option: (provided, {theme, isDisabled, isSelected, isFocused}) => ({
           ...provided,
-          fontSize: theme.fontSize,
+          fontSize: theme["fontSize"],
           color: isDisabled ?
             theme.colors.neutral20 :
             isSelected || isFocused ?
