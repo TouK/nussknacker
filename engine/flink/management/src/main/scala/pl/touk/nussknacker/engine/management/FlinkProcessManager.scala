@@ -31,7 +31,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
     val stoppingResult = for {
       oldJob <- OptionT(findJobStatus(processName))
-      _ <- OptionT[Future, Unit](if (!oldJob.status.canDeploy)
+      _ <- OptionT[Future, Unit](if (!oldJob.allowedActions.contains(ProcessActionType.Deploy))
         Future.failed(new IllegalStateException(s"Job ${processName.value} cannot be deployed, status: ${oldJob.status.name}")) else Future.successful(Some(())))
       //when it's failed we don't need savepoint...
       if oldJob.isDeployed
@@ -67,7 +67,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
   override def cancel(processName: ProcessName, user: User): Future[Unit] = {
     findJobStatus(processName).flatMap {
-      case Some(state) if state.status.isRunning =>
+      case Some(state) if state.allowedActions.contains(ProcessActionType.Cancel) =>
         cancel(state)
       case state =>
         logger.warn(s"Trying to cancel ${processName.value} which is not running but in status: $state")

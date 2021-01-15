@@ -62,8 +62,7 @@ class PeriodicProcessManagerTest extends FunSuite
     val status = state.value.status
     status shouldBe a[ScheduledStatus]
     status.isRunning shouldBe true
-    status.canDeploy shouldBe true
-    state.value.allowedActions shouldBe List(ProcessActionType.Cancel)
+    state.value.allowedActions shouldBe List(ProcessActionType.Cancel, ProcessActionType.Deploy)
   }
 
   test("findJobStatus - should be scheduled when process scheduled and job finished on Flink") {
@@ -75,7 +74,7 @@ class PeriodicProcessManagerTest extends FunSuite
 
     val status = state.value.status
     status shouldBe a[ScheduledStatus]
-    state.value.allowedActions shouldBe List(ProcessActionType.Cancel)
+    state.value.allowedActions shouldBe List(ProcessActionType.Cancel, ProcessActionType.Deploy)
   }
 
   test("findJobStatus - should be running when process deployed and job running on Flink") {

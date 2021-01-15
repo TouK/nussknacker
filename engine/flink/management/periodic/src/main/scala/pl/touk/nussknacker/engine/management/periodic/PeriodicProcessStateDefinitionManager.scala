@@ -13,7 +13,7 @@ class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionMana
 
   override def statusActions(stateStatus: StateStatus): List[ProcessActionType] = stateStatus match {
     case _: RunningStateStatus => List(ProcessActionType.Cancel) //periodic processes cannot be redeployed from GUI
-    case _: ScheduledStatus => List(ProcessActionType.Cancel)
+    case _: ScheduledStatus => List(ProcessActionType.Cancel, ProcessActionType.Deploy)
     case WaitingForScheduleStatus => List(ProcessActionType.Cancel) //or maybe should it be empty??
     case _: FailedStateStatus => List(ProcessActionType.Cancel) //original FailedStateStatus allows redeployment
     case _ => delegate.statusActions(stateStatus)

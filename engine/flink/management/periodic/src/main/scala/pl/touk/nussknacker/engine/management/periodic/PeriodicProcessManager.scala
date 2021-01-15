@@ -183,12 +183,9 @@ class PeriodicProcessManager(delegate: ProcessManager,
 case class ScheduledStatus(nextRunAt: LocalDateTime) extends CustomStateStatus("SCHEDULED") {
   override def isFollowingDeployAction: Boolean = true
   override def isRunning: Boolean = true
-  override def canDeploy: Boolean = true
 }
 
 case object WaitingForScheduleStatus extends CustomStateStatus("WAITING_FOR_SCHEDULE") {
   override def isFollowingDeployAction: Boolean = true
   override def isRunning: Boolean = true
-  //TODO: handle re-deploy for running job (this can be tricky e.g. as batch job are not always "checkpointable" in Flink)
-  override def canDeploy: Boolean = false
 }
