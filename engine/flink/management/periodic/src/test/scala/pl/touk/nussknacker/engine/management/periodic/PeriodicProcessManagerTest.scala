@@ -62,7 +62,7 @@ class PeriodicProcessManagerTest extends FunSuite
     val status = state.value.status
     status shouldBe a[ScheduledStatus]
     status.isRunning shouldBe true
-    status.canDeploy shouldBe false
+    status.canDeploy shouldBe true
     state.value.allowedActions shouldBe List(ProcessActionType.Cancel)
   }
 
