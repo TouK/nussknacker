@@ -115,6 +115,7 @@ class PeriodicProcessManager(delegate: ProcessManager,
               status = ScheduledStatus(scheduledRunDetails.runAt),
               version = Option(scheduledRunDetails.processVersion),
               definitionManager = processStateDefinitionManager,
+              //TODO: this date should be passed/handled through attributes
               startTime = Option(scheduledRunDetails.runAt.toEpochSecond(ZoneOffset.UTC)),
               attributes = Option.empty,
               errors = List.empty
