@@ -33,7 +33,7 @@ class FlinkVerificationMain(val modelData: ModelData, val process: EspProcess, p
 
   protected def prepareRegistrar(env: StreamExecutionEnvironment): FlinkProcessRegistrar = {
     FlinkProcessRegistrar(new VerificationFlinkProcessCompiler(
-      process, env.getConfig, modelData.configCreator, modelData.processConfigFromConfiguration, modelData.objectNaming),
+      process, env.getConfig, modelData.configCreator, modelData.modelConfigToLoad, modelData.objectNaming),
       modelData.processConfig, ExecutionConfigPreparer.defaultChain(modelData))
   }
 }

@@ -112,12 +112,11 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
   }
 
   private def prepareProgramArgs(processVersion: ProcessVersion, processDeploymentData: ProcessDeploymentData) : List[String] = {
-    val configPart = modelData.processConfigFromConfiguration.render()
     processDeploymentData match {
       case GraphProcess(processAsJson) =>
-        List(processAsJson, toJsonString(processVersion), configPart)
+        List(processAsJson, toJsonString(processVersion), modelData.serializedConfigPassedInExecution)
       case CustomProcess(_) =>
-        List(processVersion.processName.value, configPart)
+        List(processVersion.processName.value, modelData.serializedConfigPassedInExecution)
     }
   }
   private def toJsonString(processVersion: ProcessVersion): String = {

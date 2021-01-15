@@ -22,7 +22,7 @@ private[periodic] object JarManager {
     new DefaultJarManager(
       flinkClient = new HttpFlinkClient(uri"${flinkConfig.restUrl}"),
       jarsDir = Paths.get(periodicBatchConfig.jarsDir),
-      modelConfig = modelData.processConfigFromConfiguration.render(),
+      modelConfig = modelData.serializedConfigPassedInExecution,
       buildInfo = modelData.configCreator.buildInfo(),
       createCurrentModelJarFile = new FlinkModelJar().buildJobJar(modelData),
       enrichDeploymentWithJarData = enrichDeploymentWithJarData

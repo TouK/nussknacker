@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine
 
-import java.io.Closeable
 import java.net.URL
 
 import com.typesafe.config.Config
@@ -56,7 +55,7 @@ case class ProcessingTypeConfig(engineType: String,
                                 engineConfig: Config,
                                 modelConfig: Config) {
 
-  def toModelData = ModelData(modelConfig, classPath)
+  def toModelData: ModelData = ModelData(modelConfig, classPath)
 
 }
 

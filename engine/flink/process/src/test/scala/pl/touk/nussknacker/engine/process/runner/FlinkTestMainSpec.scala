@@ -34,7 +34,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     RecordingExceptionHandler.clear()
   }
 
-  private val modelData = ClassLoaderModelData(ModelConfigToLoad(ConfigFactory.load()), ModelClassLoader.empty)
+  private val modelData = ClassLoaderModelData(ConfigFactory.load(), ModelClassLoader.empty)
 
   private def marshall(process: EspProcess): String = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
 

@@ -42,7 +42,7 @@ class FlinkTestMain(val modelData: ModelData, val process: EspProcess, testData:
   protected def prepareRegistrar[T](env: StreamExecutionEnvironment, collectingListener: ResultsCollectingListener): FlinkProcessRegistrar = {
     FlinkProcessRegistrar(new TestFlinkProcessCompiler(
       modelData.configCreator,
-      modelData.processConfigFromConfiguration,
+      modelData.modelConfigToLoad,
       collectingListener,
       process,
       testData,

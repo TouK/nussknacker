@@ -35,7 +35,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  def this(modelData: ModelData) = this(modelData.configCreator, modelData.processConfigFromConfiguration, true, modelData.objectNaming)
+  def this(modelData: ModelData) = this(modelData.configCreator, modelData.modelConfigToLoad, true, modelData.objectNaming)
 
   def compileProcess(process: EspProcess, processVersion: ProcessVersion)(userCodeClassLoader: ClassLoader): CompiledProcessWithDeps = {
     val config = loadConfig(userCodeClassLoader)
