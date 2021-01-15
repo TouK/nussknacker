@@ -139,7 +139,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
 
         val cursorState = docs.hcursor
 
-        cursorState.downField("deploymentId").downField("value").focus shouldBe Some(Json.fromString(procId.value))
+        cursorState.downField("deploymentId").focus shouldBe Some(Json.fromString(procId.value))
         cursorState.downField("startTime").focus shouldBe Some(Json.fromBigDecimal(testEpoch))
         cursorState.downField("status").downField("type").focus shouldBe Some(Json.fromString(SimpleStateStatus.Running.getClass.getSimpleName))
         cursorState.downField("status").downField("name").focus shouldBe Some(Json.fromString(SimpleStateStatus.Running.name))

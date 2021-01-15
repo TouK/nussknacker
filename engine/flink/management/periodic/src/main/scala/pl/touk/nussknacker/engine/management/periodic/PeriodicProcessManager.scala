@@ -111,7 +111,7 @@ class PeriodicProcessManager(delegate: ProcessManager,
         maybeScheduledRunDetails.map { scheduledRunDetails =>
           scheduledRunDetails.status match {
             case PeriodicProcessDeploymentStatus.Scheduled => Some(ProcessState(
-              DeploymentId("future"),
+              Some(DeploymentId("future")),
               status = ScheduledStatus(scheduledRunDetails.runAt),
               version = Option(scheduledRunDetails.processVersion),
               definitionManager = processStateDefinitionManager,
@@ -121,7 +121,7 @@ class PeriodicProcessManager(delegate: ProcessManager,
               errors = List.empty
             ))
             case PeriodicProcessDeploymentStatus.Failed => Some(ProcessState(
-              DeploymentId("failed"),
+              Some(DeploymentId("future")),
               status = SimpleStateStatus.Failed,
               version = Option(scheduledRunDetails.processVersion),
               definitionManager = processStateDefinitionManager,
@@ -181,11 +181,9 @@ class PeriodicProcessManager(delegate: ProcessManager,
 }
 
 case class ScheduledStatus(nextRunAt: LocalDateTime) extends CustomStateStatus("SCHEDULED") {
-  override def isFollowingDeployAction: Boolean = true
   override def isRunning: Boolean = true
 }
 
 case object WaitingForScheduleStatus extends CustomStateStatus("WAITING_FOR_SCHEDULE") {
-  override def isFollowingDeployAction: Boolean = true
   override def isRunning: Boolean = true
 }

@@ -13,7 +13,7 @@ class ProcessManagerStub extends ProcessManager {
 
   def setStateStatus(status: StateStatus): Unit = {
     jobStatus = Some(ProcessState(
-      deploymentId = DeploymentId("1"),
+      deploymentId = Some(DeploymentId("1")),
       status = status,
       version = None,
       allowedActions = Nil,

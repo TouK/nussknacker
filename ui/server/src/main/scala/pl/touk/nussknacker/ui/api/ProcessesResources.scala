@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.api
 
-
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
@@ -9,7 +8,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.instances.future._
 import cats.data.{EitherT, Validated}
 import cats.syntax.either._
-import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessManager}
+import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessManager, ProcessState}
 import pl.touk.nussknacker.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -350,15 +349,15 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
   private def rejectSavingArchivedProcess: Future[ToResponseMarshallable]=
     Future.successful(HttpResponse(status = StatusCodes.Forbidden, entity = "Cannot save archived process"))
 
-  private def fetchProcessStatesForProcesses(processes: List[BaseProcessDetails[Unit]])(implicit user: LoggedUser): Future[Map[String, Option[ProcessStatus]]] = {
+  private def fetchProcessStatesForProcesses(processes: List[BaseProcessDetails[Unit]])(implicit user: LoggedUser): Future[Map[String, Option[ProcessState]]] = {
     import cats.instances.future._
     import cats.instances.list._
     import cats.syntax.traverse._
     processes.map(process => findJobStatus(process.idWithName, process.processingType).map(status => process.name -> status))
-      .sequence[Future, (String, Option[ProcessStatus])].map(_.toMap)
+      .sequence[Future, (String, Option[ProcessState])].map(_.toMap)
   }
 
-  private def findJobStatus(processId: ProcessIdWithName, processingType: ProcessingType)(implicit ec: ExecutionContext, user: LoggedUser): Future[Option[ProcessStatus]] = {
+  private def findJobStatus(processId: ProcessIdWithName, processingType: ProcessingType)(implicit ec: ExecutionContext, user: LoggedUser): Future[Option[ProcessState]] = {
     jobStatusService.retrieveJobStatus(processId).recover {
       case NonFatal(e) =>
         logger.warn(s"Failed to get status of $processId: ${e.getMessage}", e)
@@ -374,7 +373,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
   //This is temporary function to enriching process state data
   //TODO: Remove it when we will support cache for state
   private def enrichDetailsWithProcessState[PS: ProcessShapeFetchStrategy](process: BaseProcessDetails[PS]): BaseProcessDetails[PS] =
-    process.copy(state = processManager(process.processingType).map(m => ProcessStatus(
+    process.copy(state = processManager(process.processingType).map(m => ProcessStatus.createState(
       m.processStateDefinitionManager.mapActionToStatus(process.lastAction.map(_.action)),
       m.processStateDefinitionManager
     )))

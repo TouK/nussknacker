@@ -101,7 +101,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
           case Nil => Future.successful(None)
           case duplicates if duplicates.count(isNotFinished) > 1 =>
             Future.successful(Some(ProcessState(
-              DeploymentId(duplicates.head.jid),
+              Some(DeploymentId(duplicates.head.jid)),
               //we cannot have e.g. Failed here as we don't want to allow more jobs
               FlinkStateStatus.MultipleJobsRunning,
               definitionManager = processStateDefinitionManager,
@@ -122,7 +122,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
               }
 
               Some(ProcessState(
-                DeploymentId(job.jid),
+                Some(DeploymentId(job.jid)),
                 stateStatus,
                 version = version,
                 definitionManager = processStateDefinitionManager,
@@ -206,21 +206,21 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
 
   override protected def cancel(job: ProcessState): Future[Unit] = {
     basicRequest
-      .patch(flinkUrl.path("jobs", job.deploymentId.value))
+      .patch(flinkUrl.path("jobs", job.deploymentId.get.value))
       .send()
       .flatMap(handleUnitResponse)
   }
 
   override protected def makeSavepoint(job: ProcessState, savepointDir: Option[String]): Future[SavepointResult] = {
     val savepointRequest = basicRequest
-      .post(flinkUrl.path("jobs", job.deploymentId.value, "savepoints"))
+      .post(flinkUrl.path("jobs", job.deploymentId.get.value, "savepoints"))
       .body(SavepointTriggerRequest(`target-directory` = savepointDir, `cancel-job` = false))
     processSavepointRequest(job, savepointRequest)
   }
 
   override protected def stop(job: ProcessState, savepointDir: Option[String]): Future[SavepointResult] = {
     val stopRequest = basicRequest
-      .post(flinkUrl.path("jobs", job.deploymentId.value, "stop"))
+      .post(flinkUrl.path("jobs", job.deploymentId.get.value, "stop"))
       .body(StopRequest(targetDirectory = savepointDir, drain = false))
     processSavepointRequest(job, stopRequest)
   }
@@ -231,7 +231,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
       .send()
       .flatMap(SttpJson.failureToFuture)
       .flatMap { response =>
-        waitForSavepoint(job.deploymentId, response.`request-id`)
+        waitForSavepoint(job.deploymentId.get, response.`request-id`)
       }
   }
 
