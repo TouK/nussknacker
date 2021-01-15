@@ -22,7 +22,8 @@ Nussknacker versions
     * [#1368](https://github.com/TouK/nussknacker/pull/1368) Publish docker images/jars via GH actions (experimental)
     * [#1381](https://github.com/TouK/nussknacker/pull/1381) Use GH Actions for coverage
     * [#1383](https://github.com/TouK/nussknacker/pull/1383) Switch github badges
-                               
+* [#1373](https://github.com/TouK/nussknacker/pull/1373) Ability to load custom model config programmatically
+
 0.3.1 (not released yet) 
 ------------------------
 * Performance fixes:

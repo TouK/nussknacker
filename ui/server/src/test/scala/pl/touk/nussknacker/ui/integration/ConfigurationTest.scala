@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.integration
 
-import com.typesafe.config.{ConfigFactory, ConfigRenderOptions, ConfigResolveOptions}
+import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.ui.config.ConfigWithDefaults
@@ -33,6 +33,12 @@ class ConfigurationTest extends FunSuite with Matchers {
     modelDataConfig.getString("additionalPropertiesConfig.environment.value") shouldBe "OverriddenByConf"
     //in model.conf it's: ${documentationBase}"filter", in ui.conf we substitute documentationBase only
     modelDataConfig.getString("nodes.filter.docsUrl") shouldBe "https://touk.github.io/nussknacker/filter"
+  }
+
+  // See SampleModelConfigLoader.
+  test("should load config using custom loader") {
+    modelDataConfig.getLong("configLoadedMs") shouldBe < (System.currentTimeMillis)
+    modelDataConfig.getString("addedConstantProperty") shouldBe "const"
   }
 
   //to be able to run this test:

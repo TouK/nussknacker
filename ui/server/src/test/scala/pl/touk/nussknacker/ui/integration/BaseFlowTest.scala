@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.ui.integration
 
 import java.io.File
-import java.nio.charset.Charset
 import java.util.UUID
 
 import akka.http.javadsl.model.headers.HttpCredentials
-import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, MediaTypes, StatusCodes}
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import com.typesafe.config.Config
@@ -20,6 +19,7 @@ import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
@@ -300,9 +300,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       PrettyValidationErrors.formatErrorMessage(RedundantParameters(Set(parameterUUID), "end"))
     )), List.empty, List.empty)
 
-    Post("/api/app/processingtype/reload") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
-      status shouldEqual StatusCodes.NoContent
-    }
+    reloadModel()
 
     val afterReload =  generationTime
     beforeReload should not be afterReload
@@ -311,6 +309,41 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
     updateProcess(processWithService(parameterUUID -> "'emptyString'")).errors shouldBe ValidationErrors.success
     firstMockedResult(testProcess(processWithService(parameterUUID -> "#input.firstField"), "field1|field2")) shouldBe Some("field1")
 
+  }
+
+  test("should reload model config") {
+    def invokeModelConfigReader(configPath: String): String = {
+      val serviceParameters = List(Parameter("configPath", s"'$configPath'"))
+      val entity = HttpEntity(MediaTypes.`application/json`, serviceParameters.asJson.noSpaces)
+
+      Post("/api/service/streaming/modelConfigReader", entity) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+        status shouldEqual StatusCodes.OK
+        val resultJson = entityAs[Json]
+        resultJson
+          .hcursor
+          .downField("result")
+          .as[String]
+          .fold(error => throw error, identity)
+      }
+    }
+
+    val configLoadedMsBeforeReload = invokeModelConfigReader("configLoadedMs").toLong
+    val addedConstantPropertyBeforeReload = invokeModelConfigReader("addedConstantProperty")
+    val propertyFromResourcesBeforeReload = invokeModelConfigReader("signalsTopic")
+
+    configLoadedMsBeforeReload shouldBe < (System.currentTimeMillis())
+    addedConstantPropertyBeforeReload shouldBe "const"
+    propertyFromResourcesBeforeReload shouldBe "nk.signals"
+
+    reloadModel()
+
+    val configLoadedMsAfterReload = invokeModelConfigReader("configLoadedMs").toLong
+    val addedConstantPropertyAfterReload = invokeModelConfigReader("addedConstantProperty")
+    val propertyFromResourcesAfterReload = invokeModelConfigReader("signalsTopic")
+
+    configLoadedMsAfterReload should (be < System.currentTimeMillis() and be > configLoadedMsBeforeReload)
+    addedConstantPropertyAfterReload shouldBe addedConstantPropertyBeforeReload
+    propertyFromResourcesAfterReload shouldBe propertyFromResourcesBeforeReload
   }
 
   private def saveProcess(process: EspProcess): ValidationResult = {
@@ -338,7 +371,13 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
     }
   }
 
-  def checkWithClue[T](body: => T): RouteTestResult => T = check {
+  private def reloadModel(): Unit = {
+    Post("/api/app/processingtype/reload") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+      status shouldEqual StatusCodes.NoContent
+    }
+  }
+
+  private def checkWithClue[T](body: => T): RouteTestResult => T = check {
     withClue(s"response: '${responseAs[String]}'") {
       body
     }
