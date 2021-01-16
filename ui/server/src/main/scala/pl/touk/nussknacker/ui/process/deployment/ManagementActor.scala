@@ -119,7 +119,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
               manager.customActions.find(_.name == actionName) match {
                 case Some(customAction) =>
                   getProcessStatus(id).flatMap {
-                    case Some(status) if customAction.allowedProcessStates.contains(status.status) =>
+                    case Some(status) if customAction.allowedProcessStates.map(_.name).contains(status.status.name) =>
                       manager.invokeCustomAction(actionReq, processVersionData.deploymentData)
                     case Some(invalidStatus) =>
                       Future(Left(CustomActionInvalidStatus(actionReq, invalidStatus.status)))
