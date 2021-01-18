@@ -11,3 +11,7 @@ npm-debug.log
 coverage/
 dist/
 translations/
+
+cypress/videos
+cypress/screenshots
+cypress/fixtures/env.json
