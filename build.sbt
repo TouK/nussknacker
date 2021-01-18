@@ -281,7 +281,7 @@ lazy val dockerSettings = {
       val latestBranch = Some(git.gitCurrentBranch.value + "-latest")
 
       List(dockerVersion, updateLatest, latestBranch, dockerTagName)
-        //FIXME: remove githubactions
+        //FIXME: remove ghactionstest when all publishing will be done with githbub actions
         .map(_.map("ghactionstest-" + _).map(sanitize))
         .map(alias.withTag).distinct
     },
