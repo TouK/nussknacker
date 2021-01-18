@@ -182,11 +182,11 @@ object TestFactory extends TestPermissions{
       }
     }
 
-    override protected def cancel(job: ProcessState): Future[Unit] = Future.successful(Unit)
+    override protected def cancel(deploymentId: DeploymentId): Future[Unit] = Future.successful(Unit)
 
-    override protected def makeSavepoint(job: ProcessState, savepointDir: Option[String]): Future[SavepointResult] = Future.successful(SavepointResult(path = savepointPath))
+    override protected def makeSavepoint(deploymentId: DeploymentId, savepointDir: Option[String]): Future[SavepointResult] = Future.successful(SavepointResult(path = savepointPath))
 
-    override protected def stop(job: ProcessState, savepointDir: Option[String]): Future[SavepointResult] = Future.successful(SavepointResult(path = stopSavepointPath))
+    override protected def stop(deploymentId: DeploymentId, savepointDir: Option[String]): Future[SavepointResult] = Future.successful(SavepointResult(path = stopSavepointPath))
 
     override protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit] = ???
 
