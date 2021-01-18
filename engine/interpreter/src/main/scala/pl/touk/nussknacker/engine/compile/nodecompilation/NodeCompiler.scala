@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation.{JoinGenericNodeTransformation, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
-import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParser, ExpressionTypingInfo, TypedExpression, TypedExpressionMap}
+import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo, TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType}
@@ -120,15 +120,17 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
                  (implicit nodeId: NodeId,
                   metaData: MetaData): NodeCompilationResult[api.process.Sink] = {
     val ref = sink.ref
-    definitions.sinkFactories.get(ref.typ) match {
+    val endResultExprValidation = sink.endResult
+      .map(expr => compileExpression(expr, ctx, Typed[Any], outputVar = None).compiledObject.map(_ => ()))
+      .getOrElse(Valid(()))
+    val compilationResult = definitions.sinkFactories.get(ref.typ) match {
       case Some(definition) =>
-        compileObjectWithTransformation[api.process.Sink](sink, Left(ctx), None, definition._1,
-          (_: Any) => sink.endResult.map(expr => compileExpression(expr, ctx, Typed[Any], outputVarName = None).compiledObject.map(_ => ctx))
-            .getOrElse(Valid(ctx)))
+        compileObjectWithTransformation[api.process.Sink](sink, Left(ctx), None, definition._1, (_: Any) => Valid(ctx))
       case None =>
         val error = invalid(MissingSinkFactory(sink.ref.typ)).toValidatedNel
         NodeCompilationResult(Map.empty[String, ExpressionTypingInfo], None, Valid(ctx), error)
     }
+    compilationResult.copy(compiledObject = endResultExprValidation.ap(compilationResult.compiledObject.map(self => _ => self)))
   }
 
   def compileSubprocessInput(subprocessInput: SubprocessInput, ctx: ValidationContext)
