@@ -14,9 +14,10 @@ object LocalModelData {
   def apply(inputConfig: Config,
             configCreator: ProcessConfigCreator,
             migrations: ProcessMigrations = ProcessMigrations.empty,
+            modelConfigLoader: ModelConfigLoader = new DefaultModelConfigLoader,
             modelClassLoader: ModelClassLoader = ModelClassLoader.empty,
             objectNaming: ObjectNaming = DefaultNamespacedObjectNaming): LocalModelData =
-    new LocalModelData(inputConfig, new DefaultModelConfigLoader, configCreator, migrations, modelClassLoader, objectNaming)
+    new LocalModelData(inputConfig, modelConfigLoader, configCreator, migrations, modelClassLoader, objectNaming)
 
 }
 
