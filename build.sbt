@@ -18,27 +18,35 @@ lazy val supportedScalaVersions = List(scala212, scala211)
 val silencerV_2_12 = "1.6.0"
 val silencerV = "1.7.0"
 
+//TODO: replace configuration by system properties with configuration via environment after removing travis scripts
+//then we can change names to snake case, for "normal" env variables
+def propOrEnv(name: String, default: String): String = propOrEnv(name).getOrElse(default)
+def propOrEnv(name: String): Option[String] = Option(System.getProperty(name)).orElse(sys.env.get(name))
+
+
 //by default we include flink and scala, we want to be able to disable this behaviour for performance reasons
-val includeFlinkAndScala = Option(System.getProperty("includeFlinkAndScala", "true")).exists(_.toBoolean)
+val includeFlinkAndScala = propOrEnv("includeFlinkAndScala", "true").toBoolean
 
 val flinkScope = if (includeFlinkAndScala) "compile" else "provided"
-val nexusUrlFromProps = Option(System.getProperty("nexusUrl"))
+val nexusUrlFromProps = propOrEnv("nexusUrl")
 //TODO: this is pretty clunky, but works so far for our case...
 val nexusHostFromProps = nexusUrlFromProps.map(_.replaceAll("http[s]?://", "").replaceAll("[:/].*", ""))
 
 //Docker release configuration
-val dockerTagName = Option(System.getProperty("dockerTagName"))
-val dockerPort = System.getProperty("dockerPort", "8080").toInt
-val dockerUserName = Some(System.getProperty("dockerUserName", "touk"))
-val dockerPackageName = System.getProperty("dockerPackageName", "nussknacker")
-val dockerUpLatestFromProp = Option(System.getProperty("dockerUpLatest")).flatMap(p => Try(p.toBoolean).toOption)
-val addDevModel = System.getProperty("addDevModel", "false").toBoolean
+val dockerTagName = propOrEnv("dockerTagName")
+val dockerPort = propOrEnv("dockerPort", "8080").toInt
+val dockerUserName = Option(propOrEnv("dockerUserName", "touk"))
+val dockerPackageName = propOrEnv("dockerPackageName", "nussknacker")
+val dockerUpLatestFromProp = propOrEnv("dockerUpLatest").flatMap(p => Try(p.toBoolean).toOption)
+val addDevModel = propOrEnv("addDevModel", "false").toBoolean
 
 // `publishArtifact := false` should be enough to keep sbt from publishing root module,
 // unfortunately it does not work, so we resort to hack by publishing root module to Resolver.defaultLocal
 //publishArtifact := false
 publishTo := Some(Resolver.defaultLocal)
 crossScalaVersions := Nil
+
+ThisBuild / isSnapshot := version(_ contains "-SNAPSHOT").value
 
 lazy val publishSettings = Seq(
   publishMavenStyle := true,
@@ -69,7 +77,7 @@ lazy val publishSettings = Seq(
   organization := "pl.touk.nussknacker",
   homepage := Some(url(s"https://github.com/touk/nussknacker")),
   credentials := nexusHostFromProps.map(host => Credentials("Sonatype Nexus Repository Manager",
-    host, System.getProperty("nexusUser", "touk"), System.getProperty("nexusPassword"))
+    host, propOrEnv("nexusUser", "touk"), propOrEnv("nexusPassword", null))
     // otherwise ~/.sbt/1.0/sonatype.sbt will be used
   ).toSeq
 )
@@ -251,7 +259,6 @@ lazy val dockerSettings = {
     packageName := dockerPackageName,
     dockerUpdateLatest := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
     dockerLabels := Map(
-      "tag" -> dockerTagName.getOrElse(version.value),
       "version" -> version.value,
       "scala" -> scalaVersion.value,
       "flink" -> flinkV
@@ -264,7 +271,20 @@ lazy val dockerSettings = {
       "OAUTH2_GRANT_TYPE" -> "authorization_code",
       "OAUTH2_SCOPE" -> "read:user",
     ),
-    version in Docker := dockerTagName.getOrElse(version.value)
+    dockerAliases := {
+      //https://docs.docker.com/engine/reference/commandline/tag/#extended-description
+      def sanitize(str: String) = str.replaceAll("[^a-zA-Z0-9.\\-_]", "_")
+      val alias = dockerAlias.value
+
+      val updateLatest = if (dockerUpdateLatest.value) Some("latest") else None
+      val dockerVersion = Some(version.value)
+      val latestBranch = Some(git.gitCurrentBranch.value + "-latest")
+
+      List(dockerVersion, updateLatest, latestBranch, dockerTagName)
+        //FIXME: remove ghactionstest when all publishing will be done with githbub actions
+        .map(_.map("ghactionstest-" + _).map(sanitize))
+        .map(alias.withTag).distinct
+    },
   )
 }
 
