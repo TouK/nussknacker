@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties
 import io.circe.generic.semiauto.deriveDecoder
 import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.restmodel.definition.UIParameter
 import pl.touk.nussknacker.ui.validation.PrettyValidationErrors
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -67,6 +68,25 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
           parameters = None,
           expressionType = Some(typing.Unknown),
           validationErrors = List(PrettyValidationErrors.formatErrorMessage(ExpressionParseError("Bad expression type, expected: Boolean, found: String", data.id, Some(NodeTypingInfo.DefaultExpressionId), data.expression.expression))),
+          validationPerformed = true)
+      }
+    }
+  }
+
+  test("validates sink expression") {
+    val testProcess = ProcessTestData.sampleDisplayableProcess
+    saveProcess(testProcess) {
+      val data: node.Sink = node.Sink("mysink", SinkRef("kafka-string", List(Parameter("topic", Expression("spel", "'test-topic'")))),
+        Some(Expression("spel", "notvalidspelexpression")), None, None)
+      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData(),
+        ExceptionHandlerRef(Nil)), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None)
+
+      Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
+        responseAs[NodeValidationResult] shouldBe NodeValidationResult(
+          parameters = None,
+          expressionType = None,
+          validationErrors = List(PrettyValidationErrors.formatErrorMessage(ExpressionParseError("Non reference 'notvalidspelexpression' occurred. Maybe you missed '#' in front of it?", data.id, Some(NodeTypingInfo.DefaultExpressionId),
+            data.endResult.map(_.expression).getOrElse("")))),
           validationPerformed = true)
       }
     }
