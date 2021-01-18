@@ -66,22 +66,16 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
         val cancelRes = cancelProcess(id, comment)
         reply(withDeploymentInfo(id, user, DeploymentActionType.Cancel, comment, cancelRes))
       }
+    //TODO: should be handled in ProcessManager
     case CheckStatus(id, user) if isBeingDeployed(id.name) =>
       implicit val loggedUser: LoggedUser = user
-      val info = beingDeployed(id.name)
-
       val processStatus = for {
         manager <- processManager(id.id)
-      } yield Some(ProcessStatus(
+      } yield Some(ProcessStatus.createState(
         SimpleStateStatus.DuringDeploy,
-        manager.processStateDefinitionManager,
-        deploymentId = Option.empty,
-        startTime = Some(info.time),
-        attributes = Option.empty,
-        errors = List.empty
+        manager.processStateDefinitionManager
       ))
       reply(processStatus)
-
     case CheckStatus(id, user) =>
       reply(getProcessStatus(id)(user))
 
@@ -143,7 +137,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
       }
   }
 
-  private def getProcessStatus(id: ProcessIdWithName)(implicit user: LoggedUser): Future[Option[ProcessStatus]] =
+  private def getProcessStatus(id: ProcessIdWithName)(implicit user: LoggedUser): Future[Option[ProcessState]] =
     for {
       actions <- processRepository.fetchProcessActions(id.id)
       manager <- processManager(id.id)
@@ -153,18 +147,18 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
 
   //This method handles some corner cases like retention for keeping old states - some engine can cleanup canceled states. It's more Flink hermetic.
   //TODO: In future we should move this functionality to ProcessManager.
-  private def handleObsoleteStatus(processState: Option[ProcessState], lastAction: Option[ProcessAction]): ProcessStatus =
+  private def handleObsoleteStatus(processState: Option[ProcessState], lastAction: Option[ProcessAction]): ProcessState =
     (processState, lastAction) match {
-      case (Some(state), _) if state.status.isFailed => ProcessStatus(state)
+      case (Some(state), _) if state.status.isFailed => state
       case (_, Some(action)) if action.isDeployed => handleMismatchDeployedLastAction(processState, action)
-      case (Some(state), _) if state.status.isFollowingDeployAction => handleFollowingDeployState(state, lastAction)
+      case (Some(state), _) if state.isDeployed => handleFollowingDeployState(state, lastAction)
       case (_, Some(action)) if action.isCanceled => handleCanceledState(processState)
       case (Some(state), _) => handleState(state, lastAction)
       case (None, None) => ProcessStatus.simple(SimpleStateStatus.NotDeployed)
     }
 
   //TODO: In future we should move this functionality to ProcessManager.
-  private def handleState(state: ProcessState, lastAction: Option[ProcessAction]): ProcessStatus =
+  private def handleState(state: ProcessState, lastAction: Option[ProcessAction]): ProcessState =
     state.status match {
       case SimpleStateStatus.NotFound | SimpleStateStatus.NotDeployed if lastAction.isEmpty =>
         ProcessStatus.simple(SimpleStateStatus.NotDeployed)
@@ -172,44 +166,44 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
       //avoid dependency on FlinkProcessManager
       case SimpleStateStatus.DuringCancel | SimpleStateStatus.Finished if lastAction.isEmpty =>
         ProcessStatus.simpleWarningProcessWithoutAction(Some(state))
-      case _ => ProcessStatus(state)
+      case _ => state
     }
 
   //Thise method handles some corner cases for canceled process -> with last action = Canceled
   //TODO: In future we should move this functionality to ProcessManager.
-  private def handleCanceledState(processState: Option[ProcessState]): ProcessStatus =
+  private def handleCanceledState(processState: Option[ProcessState]): ProcessState =
     processState match {
       case Some(state) => state.status match {
         case SimpleStateStatus.NotFound => ProcessStatus.simple(SimpleStateStatus.Canceled)
-        case _ => ProcessStatus(state)
+        case _ => state
       }
       case None => ProcessStatus.simple(SimpleStateStatus.Canceled)
     }
 
   //This method handles some corner cases for following deploy state mismatch last action version
   //TODO: In future we should move this functionality to ProcessManager.
-  private def handleFollowingDeployState(state: ProcessState, lastAction: Option[ProcessAction]): ProcessStatus =
+  private def handleFollowingDeployState(state: ProcessState, lastAction: Option[ProcessAction]): ProcessState =
     lastAction match {
       case Some(action) if action.isCanceled =>
         ProcessStatus.simpleWarningShouldNotBeRunning(Some(state), true)
       case Some(_) =>
-        ProcessStatus(state)
+        state
       case None =>
         ProcessStatus.simpleWarningShouldNotBeRunning(Some(state), false)
     }
 
   //This method handles some corner cases for deployed action mismatch state version
   //TODO: In future we should move this functionality to ProcessManager.
-  private def handleMismatchDeployedLastAction(processState: Option[ProcessState], action: ProcessAction): ProcessStatus =
+  private def handleMismatchDeployedLastAction(processState: Option[ProcessState], action: ProcessAction): ProcessState =
     processState match {
       case Some(state) =>
         state.version match {
-          case Some(_) if !state.status.isFollowingDeployAction =>
+          case Some(_) if !state.isDeployed =>
             ProcessStatus.simpleErrorShouldBeRunning(action.processVersionId, action.user, processState)
           case Some(ver) if ver.versionId != action.processVersionId =>
             ProcessStatus.simpleErrorMismatchDeployedVersion(ver.versionId, action.processVersionId, action.user, processState)
           case Some(ver) if ver.versionId == action.processVersionId =>
-            ProcessStatus(state)
+            state
           case None => //TODO: we should remove Option from ProcessVersion?
             ProcessStatus.simpleWarningMissingDeployedVersion(action.processVersionId, action.user, processState)
           case _ =>

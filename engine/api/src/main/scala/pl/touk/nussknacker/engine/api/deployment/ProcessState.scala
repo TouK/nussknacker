@@ -22,9 +22,9 @@ object ProcessState {
   implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
 
   def apply(deploymentId: String, status: StateStatus, version: Option[ProcessVersion], definitionManager: ProcessStateDefinitionManager): ProcessState =
-    ProcessState(DeploymentId(deploymentId), status, version, definitionManager, Option.empty, Option.empty, List.empty)
+    ProcessState(Some(DeploymentId(deploymentId)), status, version, definitionManager, Option.empty, Option.empty, List.empty)
 
-  def apply(deploymentId: DeploymentId, //DeploymentId should by Optional - error cases
+  def apply(deploymentId: Option[DeploymentId],
             status: StateStatus,
             version: Option[ProcessVersion],
             definitionManager: ProcessStateDefinitionManager,
@@ -46,7 +46,7 @@ object ProcessState {
 
 }
 
-@JsonCodec case class ProcessState(deploymentId: DeploymentId,
+@JsonCodec case class ProcessState(deploymentId: Option[DeploymentId],
                                    status: StateStatus,
                                    version: Option[ProcessVersion],
                                    allowedActions: List[ProcessActionType],
@@ -77,13 +77,15 @@ object StateStatus {
 }
 
 @ConfiguredJsonCodec sealed trait StateStatus {
+  //used for filtering processes (e.g. shouldBeRunning)
   def isDuringDeploy: Boolean = false
+  //used for handling finished
   def isFinished: Boolean = false
+
   def isRunning: Boolean = false
   def isFailed: Boolean = false
   def name: String
 
-  def isFollowingDeployAction: Boolean = isDuringDeploy || isRunning
 }
 
 final case class AllowDeployStateStatus(name: String) extends StateStatus

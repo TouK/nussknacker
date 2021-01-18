@@ -101,7 +101,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
           case Nil => Future.successful(None)
           case duplicates if duplicates.count(isNotFinished) > 1 =>
             Future.successful(Some(ProcessState(
-              DeploymentId(duplicates.head.jid),
+              Some(DeploymentId(duplicates.head.jid)),
               //we cannot have e.g. Failed here as we don't want to allow more jobs
               FlinkStateStatus.MultipleJobsRunning,
               definitionManager = processStateDefinitionManager,
@@ -122,7 +122,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
               }
 
               Some(ProcessState(
-                DeploymentId(job.jid),
+                Some(DeploymentId(job.jid)),
                 stateStatus,
                 version = version,
                 definitionManager = processStateDefinitionManager,
@@ -204,34 +204,34 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
     }
   }
 
-  override protected def cancel(job: ProcessState): Future[Unit] = {
+  override protected def cancel(deploymentId: DeploymentId): Future[Unit] = {
     basicRequest
-      .patch(flinkUrl.path("jobs", job.deploymentId.value))
+      .patch(flinkUrl.path("jobs", deploymentId.value))
       .send()
       .flatMap(handleUnitResponse)
   }
 
-  override protected def makeSavepoint(job: ProcessState, savepointDir: Option[String]): Future[SavepointResult] = {
+  override protected def makeSavepoint(deploymentId: DeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
     val savepointRequest = basicRequest
-      .post(flinkUrl.path("jobs", job.deploymentId.value, "savepoints"))
+      .post(flinkUrl.path("jobs", deploymentId.value, "savepoints"))
       .body(SavepointTriggerRequest(`target-directory` = savepointDir, `cancel-job` = false))
-    processSavepointRequest(job, savepointRequest)
+    processSavepointRequest(deploymentId, savepointRequest)
   }
 
-  override protected def stop(job: ProcessState, savepointDir: Option[String]): Future[SavepointResult] = {
+  override protected def stop(deploymentId: DeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
     val stopRequest = basicRequest
-      .post(flinkUrl.path("jobs", job.deploymentId.value, "stop"))
+      .post(flinkUrl.path("jobs", deploymentId.value, "stop"))
       .body(StopRequest(targetDirectory = savepointDir, drain = false))
-    processSavepointRequest(job, stopRequest)
+    processSavepointRequest(deploymentId, stopRequest)
   }
 
-  private def processSavepointRequest(job: ProcessState, request: RequestT[Identity, Either[String, String], Nothing]): Future[SavepointResult] = {
+  private def processSavepointRequest(deploymentId: DeploymentId, request: RequestT[Identity, Either[String, String], Nothing]): Future[SavepointResult] = {
     request
       .response(asJson[SavepointTriggerResponse])
       .send()
       .flatMap(SttpJson.failureToFuture)
       .flatMap { response =>
-        waitForSavepoint(job.deploymentId, response.`request-id`)
+        waitForSavepoint(deploymentId, response.`request-id`)
       }
   }
 

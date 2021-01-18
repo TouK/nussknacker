@@ -278,8 +278,7 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     processDetails.isNotDeployed shouldBe true
   }
 
-  private def isFollowingDeploy(state: ProcessStatus): Boolean =
-    state.status.isDuringDeploy || state.status.isRunning
+  private def isFollowingDeploy(state: ProcessState): Boolean = state.isDeployed
 
   private def prepareDeployedProcess(processName: ProcessName): Future[process.ProcessId] =
     for {

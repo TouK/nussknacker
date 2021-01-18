@@ -13,7 +13,7 @@ object SimpleProcessState {
             attributes: Option[Json] = Option.empty,
             errors: List[String] = List.empty): ProcessState =
     ProcessState(
-      deploymentId = deploymentId,
+      deploymentId = Some(deploymentId),
       status = status,
       version = version,
       definitionManager = SimpleProcessStateDefinitionManager,

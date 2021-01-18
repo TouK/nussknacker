@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import java.util.Collections
+
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.testkit.TestProbe
@@ -9,7 +10,7 @@ import com.typesafe.config.ConfigFactory
 import io.circe.Json
 import io.circe.syntax.EncoderOps
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuite, Matchers, OptionValues}
-import pl.touk.nussknacker.engine.api.deployment.StateStatus
+import pl.touk.nussknacker.engine.api.deployment.{ProcessState, StateStatus}
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -29,8 +30,8 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
     override def reloadAll(): Unit = ???
   }
 
-  private def processStatus(deploymentId: Option[String], status: StateStatus): ProcessStatus =
-    ProcessStatus(status, SimpleProcessStateDefinitionManager, deploymentId, Option.empty, Option.empty, Nil)
+  private def processStatus(status: StateStatus): ProcessState =
+    ProcessStatus.createState(status, SimpleProcessStateDefinitionManager)
 
   private def prepareBasicAppResources(statusCheck: TestProbe) = {
     new AppResources(ConfigFactory.empty(), emptyReload, emptyProcessingTypeDataProvider, processRepository, TestFactory.processValidation,
@@ -51,7 +52,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
     statusCheck.reply(akka.actor.Status.Failure(new Exception("Failed to check status")))
 
     statusCheck.expectMsgClass(classOf[CheckStatus])
-    statusCheck.reply(Some(processStatus(None, SimpleStateStatus.Running)))
+    statusCheck.reply(Some(processStatus(SimpleStateStatus.Running)))
 
     val third = statusCheck.expectMsgClass(classOf[CheckStatus])
     statusCheck.reply(None)
@@ -92,9 +93,9 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
     val result = Get("/app/healthCheck/process/deployment") ~> withPermissions(resources, testPermissionRead)
 
     statusCheck.expectMsgClass(classOf[CheckStatus])
-    statusCheck.reply(Some(processStatus(None, SimpleStateStatus.Running)))
+    statusCheck.reply(Some(processStatus(SimpleStateStatus.Running)))
     statusCheck.expectMsgClass(classOf[CheckStatus])
-    statusCheck.reply(Some(processStatus(None, SimpleStateStatus.Running)))
+    statusCheck.reply(Some(processStatus(SimpleStateStatus.Running)))
 
     result ~> check {
       status shouldBe StatusCodes.OK
@@ -110,7 +111,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
     val result = Get("/app/healthCheck/process/deployment") ~> withPermissions(resources, testPermissionRead)
 
     statusCheck.expectMsgClass(classOf[CheckStatus])
-    statusCheck.reply(Some(processStatus(None, SimpleStateStatus.Running)))
+    statusCheck.reply(Some(processStatus(SimpleStateStatus.Running)))
 
     result ~> check {
       status shouldBe StatusCodes.OK

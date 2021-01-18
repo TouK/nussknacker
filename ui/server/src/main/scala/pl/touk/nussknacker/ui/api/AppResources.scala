@@ -11,6 +11,7 @@ import io.circe.syntax._
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
+import pl.touk.nussknacker.engine.api.deployment.ProcessState
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
@@ -126,13 +127,13 @@ class AppResources(config: Config,
       }
     }
 
-  private def notRunningProcessesThatShouldRun(implicit ec: ExecutionContext, user: LoggedUser): Future[Map[String, Option[ProcessStatus]]] = {
+  private def notRunningProcessesThatShouldRun(implicit ec: ExecutionContext, user: LoggedUser): Future[Map[String, Option[ProcessState]]] = {
     for {
       processes <- processRepository.fetchDeployedProcessesDetails[Unit]()
       statusMap <- Future.sequence(statusList(processes)).map(_.toMap)
     } yield {
       statusMap.filterNot{
-        case (_, status) => status.exists(st => st.status.isDuringDeploy || st.status.isRunning)
+        case (_, status) => status.exists(_.isDeployed)
       }.map{
         case (process, status) => (process.name, status)
       }
@@ -148,13 +149,13 @@ class AppResources(config: Config,
     }
   }
 
-  private def statusList(processes: Seq[BaseProcessDetails[_]])(implicit user: LoggedUser) : Seq[Future[(String, Option[ProcessStatus])]] =
+  private def statusList(processes: Seq[BaseProcessDetails[_]])(implicit user: LoggedUser) : Seq[Future[(String, Option[ProcessState])]] =
     processes.map(process =>
       findJobStatus(process.idWithName, process.processingType)
         .map((process.name, _))
     )
 
-  private def findJobStatus(processId: ProcessIdWithName, processingType: ProcessingType)(implicit ec: ExecutionContext, user: LoggedUser): Future[Option[ProcessStatus]] = {
+  private def findJobStatus(processId: ProcessIdWithName, processingType: ProcessingType)(implicit ec: ExecutionContext, user: LoggedUser): Future[Option[ProcessState]] = {
     jobStatusService.retrieveJobStatus(processId).recover {
       case NonFatal(e) =>
         logger.warn(s"Failed to get status of $processId: ${e.getMessage}", e)

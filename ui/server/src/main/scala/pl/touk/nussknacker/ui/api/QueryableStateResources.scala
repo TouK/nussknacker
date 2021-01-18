@@ -65,7 +65,7 @@ class QueryableStateResources(typeToConfig: ProcessingTypeDataProvider[Processin
       processingType <- EitherT.liftF(processRepository.fetchProcessingType(processId.id))
       state <- EitherT(jobStatusService.retrieveJobStatus(processId).map(Either.fromOption(_, noJob(processId.name.value))))
       jobId <- EitherT.fromEither(Either.fromOption(state.deploymentId, if (state.status.isDuringDeploy) deployInProgress(processId.name.value) else noJobRunning(processId.name.value)))
-      jsonString <- EitherT.right(fetchState(processingType, jobId, queryName, key))
+      jsonString <- EitherT.right(fetchState(processingType, jobId.value, queryName, key))
       json <- EitherT.fromEither(parse(jsonString).leftMap(msg => wrongJson(msg.message, jsonString)))
     } yield json
     fetchedJsonState.value.map {
