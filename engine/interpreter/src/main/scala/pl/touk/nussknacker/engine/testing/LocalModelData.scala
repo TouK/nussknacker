@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.testing
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.ModelConfigLoader
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
-import pl.touk.nussknacker.engine.{DefaultModelConfigLoader, ModelData}
+import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.modelconfig.{DefaultModelConfigLoader, ModelConfigLoader}
 
 object LocalModelData {
 

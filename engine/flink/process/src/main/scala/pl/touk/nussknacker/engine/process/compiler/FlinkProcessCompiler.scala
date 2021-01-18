@@ -20,7 +20,8 @@ import pl.touk.nussknacker.engine.flink.util.async.DefaultAsyncExecutionConfigPr
 import pl.touk.nussknacker.engine.flink.util.listener.NodeCountMetricListener
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.util.LoggingListener
-import pl.touk.nussknacker.engine.{ModelConfigToLoad, ModelData}
+import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.modelconfig.ModelConfigToLoad
 
 import scala.concurrent.duration.FiniteDuration
 

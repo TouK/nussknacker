@@ -16,7 +16,9 @@ To see biggest differences please consult the [changelog](Changelog.md).
   and also requires restarting TaskManager when changing the value.
 * [#1361](https://github.com/TouK/nussknacker/pull/1361) Lazy variables are removed, you should use standard enrichers for those cases.
   Their handling has been source of many problems and they made it harder to reason about the exeuction of process.   
-  
+* [#1373](https://github.com/TouK/nussknacker/pull/1373) Use plain config to create `ClassLoaderModelData`,
+  wrapping with ModelConfigToLoad by yourself is not needed.
+
 ## In version 0.3.0
 
 * [#1313](https://github.com/TouK/nussknacker/pull/1313) Kafka Avro API passes `KafkaConfig` during `TypeInformation` determining

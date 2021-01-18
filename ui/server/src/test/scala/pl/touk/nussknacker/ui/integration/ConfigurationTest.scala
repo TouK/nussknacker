@@ -46,7 +46,7 @@ class ConfigurationTest extends FunSuite with Matchers {
   //set env variable: CONFIG_FORCE_processTypes_streaming_modelConfig_testProperty=testValue
   ignore("check if env properties are used/passed") {
     modelDataConfig.getString("testProperty") shouldBe "testValue"
-    ConfigFactory.parseString(modelData.serializedConfigPassedInExecution).getString("testProperty") shouldBe "testValue"
+    ConfigFactory.parseString(modelData.serializedConfigToPassInExecution).getString("testProperty") shouldBe "testValue"
   }
 
 

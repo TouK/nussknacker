@@ -4,7 +4,6 @@ import java.net.URL
 
 import com.typesafe.config.{Config, ConfigRenderOptions}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.ModelConfigLoader
 import pl.touk.nussknacker.engine.api.dict.UiDictServices
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
@@ -14,6 +13,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessD
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor, TypeInfos}
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
+import pl.touk.nussknacker.engine.modelconfig.{DefaultModelConfigLoader, ModelConfigLoader, ModelConfigToLoad}
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ProcessConfigCreatorLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
@@ -97,11 +97,14 @@ trait ModelData extends AutoCloseable {
 
   protected def modelConfigLoader: ModelConfigLoader
 
-  lazy val processConfig: Config = modelConfigLoader.resolveFullConfig(configPassedInExecution, modelClassLoader.classLoader)
+  lazy val processConfig: Config = modelConfigLoader.resolveConfigDuringExecution(configToPassInExecution, modelClassLoader.classLoader)
 
-  // Config passed in execution (see FlinkProcessManager).
-  private lazy val configPassedInExecution: Config = modelConfigLoader.resolveConfigPassedInExecution(inputConfig, modelClassLoader.classLoader)
-  lazy val serializedConfigPassedInExecution: String = configPassedInExecution.root().render(ConfigRenderOptions.concise())
+  // Config to pass in execution (see FlinkProcessManager).
+  private lazy val configToPassInExecution: Config = {
+    val defaultConfigDuringExecution = modelConfigLoader.resolveConfigDuringExecution(inputConfig, modelClassLoader.classLoader)
+    modelConfigLoader.resolveConfigToPassInExecution(defaultConfigDuringExecution, modelClassLoader.classLoader).transform(inputConfig)
+  }
+  lazy val serializedConfigToPassInExecution: String = configToPassInExecution.root().render(ConfigRenderOptions.concise())
 
   // Used by a process running on Flink.
   def modelConfigToLoad: ModelConfigToLoad = ModelConfigToLoad(inputConfig, modelConfigLoader)

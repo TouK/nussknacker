@@ -4,6 +4,7 @@ import java.util.Collections
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.modelconfig.DefaultModelConfigLoader
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
@@ -16,7 +17,7 @@ class DefaultModelConfigLoaderTest extends FunSuite with Matchers {
       override def modelConfigResource: String = "notExist.conf"
     }
 
-    val config = loader.resolveFullConfig(inputConfig, getClass.getClassLoader)
+    val config = loader.resolveConfigDuringExecution(inputConfig, getClass.getClassLoader)
 
     config.getString("property1") shouldBe "value1"
     config.getString("property2") shouldBe "shouldBeOverriden"
@@ -33,8 +34,8 @@ class DefaultModelConfigLoaderTest extends FunSuite with Matchers {
     config.getBoolean("otherProperty") shouldBe true
   }
 
-  test("should load only config passed in execution") {
-    val config = ConfigFactory.parseString(LocalModelData(inputConfig, new EmptyProcessConfigCreator).serializedConfigPassedInExecution)
+  test("should load only config to pass in execution") {
+    val config = ConfigFactory.parseString(LocalModelData(inputConfig, new EmptyProcessConfigCreator).serializedConfigToPassInExecution)
 
     config.getString("property1") shouldBe "value1"
     config.hasPath("property2") shouldBe false
