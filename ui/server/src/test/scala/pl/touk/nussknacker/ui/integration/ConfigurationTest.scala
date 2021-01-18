@@ -38,7 +38,7 @@ class ConfigurationTest extends FunSuite with Matchers {
   // See SampleModelConfigLoader.
   test("should load config using custom loader") {
     modelDataConfig.getLong("configLoadedMs") shouldBe < (System.currentTimeMillis)
-    modelDataConfig.getString("addedConstantProperty") shouldBe "const"
+    modelDataConfig.getString("duplicatedSignalsTopic") shouldBe "nk.signals"
   }
 
   //to be able to run this test:
