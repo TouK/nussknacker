@@ -29,6 +29,7 @@
   },
   "exclude": [
     "node_modules",
-    "flow_typed"
+    "flow_typed",
+    "cypress"
   ]
 }

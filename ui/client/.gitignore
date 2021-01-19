@@ -15,3 +15,5 @@ translations/
 cypress/videos
 cypress/screenshots
 cypress/fixtures/env.json
+cypress/**/__image_snapshots__/**/*.actual.png
+cypress/**/__image_snapshots__/**/*.diff.png
