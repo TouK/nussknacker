@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine
 
 import java.net.URL
 
-import com.typesafe.config.{Config, ConfigRenderOptions}
+import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.dict.UiDictServices
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
@@ -21,11 +21,16 @@ import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 
 object ModelData extends LazyLogging {
 
-  def apply(inputConfig: Config, classpath: List[URL]) : ModelData = {
-    //TODO: ability to generate additional classpath?
-    val jarClassLoader = ModelClassLoader(classpath)
-    logger.debug("Loading model data from classpath: " + classpath)
-    ClassLoaderModelData(inputConfig, jarClassLoader)
+  def apply(inputConfig: Config, modelClassLoader: ModelClassLoader) : ModelData = {
+    logger.debug("Loading model data from: " + modelClassLoader)
+    ClassLoaderModelData(
+      modelConfigLoader => modelConfigLoader.resolveInputConfigDuringExecution(inputConfig, modelClassLoader.classLoader),
+      modelClassLoader)
+  }
+
+  // Used on Flink, where we start already with resolved config so we should not resolve it twice.
+  def duringExecution(inputConfig: Config): ModelData = {
+    ClassLoaderModelData(_ => InputConfigDuringExecution(inputConfig), ModelClassLoader(Nil))
   }
 
   //TODO: remove jarPath
@@ -35,7 +40,8 @@ object ModelData extends LazyLogging {
 }
 
 
-case class ClassLoaderModelData(inputConfig: Config, modelClassLoader: ModelClassLoader)
+case class ClassLoaderModelData private(private val resolveInputConfigDuringExecution: ModelConfigLoader => InputConfigDuringExecution,
+                                        modelClassLoader: ModelClassLoader)
   extends ModelData {
 
   //this is not lazy, to be able to detect if creator can be created...
@@ -49,6 +55,8 @@ case class ClassLoaderModelData(inputConfig: Config, modelClassLoader: ModelClas
         throw new IllegalArgumentException(s"More than one ModelConfigLoader instance found: $moreThanOne")
     }
   }
+
+  override lazy val inputConfigDuringExecution: InputConfigDuringExecution = resolveInputConfigDuringExecution(modelConfigLoader)
 
   override lazy val migrations: ProcessMigrations = {
     Multiplicity(ScalaServiceLoader.load[ProcessMigrations](modelClassLoader.classLoader)) match {
@@ -93,13 +101,11 @@ trait ModelData extends AutoCloseable {
 
   def modelClassLoader : ModelClassLoader
 
-  def inputConfig: Config
-
   def modelConfigLoader: ModelConfigLoader
 
-  lazy val processConfig: Config = modelConfigLoader.resolveConfig(inputConfigDuringExecution, modelClassLoader.classLoader)
+  def inputConfigDuringExecution: InputConfigDuringExecution
 
-  lazy val inputConfigDuringExecution: InputConfigDuringExecution = modelConfigLoader.resolveInputConfigDuringExecution(inputConfig, modelClassLoader.classLoader)
+  lazy val processConfig: Config = modelConfigLoader.resolveConfig(inputConfigDuringExecution, modelClassLoader.classLoader)
 
   def close(): Unit = {
     dictServices.close()

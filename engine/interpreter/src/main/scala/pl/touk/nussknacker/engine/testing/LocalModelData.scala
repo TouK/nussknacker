@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.modelconfig.{DefaultModelConfigLoader, ModelConfigLoader}
+import pl.touk.nussknacker.engine.modelconfig.{DefaultModelConfigLoader, InputConfigDuringExecution, ModelConfigLoader}
 
 object LocalModelData {
 
@@ -17,11 +17,11 @@ object LocalModelData {
             modelConfigLoader: ModelConfigLoader = new DefaultModelConfigLoader,
             modelClassLoader: ModelClassLoader = ModelClassLoader.empty,
             objectNaming: ObjectNaming = DefaultNamespacedObjectNaming): LocalModelData =
-    new LocalModelData(inputConfig, modelConfigLoader, configCreator, migrations, modelClassLoader, objectNaming)
+    new LocalModelData(InputConfigDuringExecution(inputConfig), modelConfigLoader, configCreator, migrations, modelClassLoader, objectNaming)
 
 }
 
-case class LocalModelData(inputConfig: Config,
+case class LocalModelData(inputConfigDuringExecution: InputConfigDuringExecution,
                           modelConfigLoader: ModelConfigLoader,
                           configCreator: ProcessConfigCreator,
                           migrations: ProcessMigrations,

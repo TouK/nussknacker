@@ -7,6 +7,7 @@ import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.api.TypeSpecificData
 import pl.touk.nussknacker.engine.api.deployment.ProcessManager
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
+import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
 
 trait ProcessManagerProvider {
@@ -55,7 +56,7 @@ case class ProcessingTypeConfig(engineType: String,
                                 engineConfig: Config,
                                 modelConfig: Config) {
 
-  def toModelData: ModelData = ModelData(modelConfig, classPath)
+  def toModelData: ModelData = ModelData(modelConfig, ModelClassLoader(classPath))
 
 }
 

@@ -6,7 +6,6 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.VerificationFlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
@@ -33,7 +32,7 @@ class FlinkVerificationMain(val modelData: ModelData, val process: EspProcess, p
 
   protected def prepareRegistrar(): FlinkProcessRegistrar = {
     FlinkProcessRegistrar(new VerificationFlinkProcessCompiler(
-      process, modelData.configCreator, InputConfigDuringExecution(modelData.inputConfig), modelData.modelConfigLoader, modelData.objectNaming),
+      process, modelData.configCreator, modelData.inputConfigDuringExecution, modelData.modelConfigLoader, modelData.objectNaming),
       modelData.processConfig, ExecutionConfigPreparer.defaultChain(modelData))
   }
 }
