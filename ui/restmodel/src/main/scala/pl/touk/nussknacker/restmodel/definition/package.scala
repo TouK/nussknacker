@@ -85,10 +85,10 @@ package object definition {
     import pl.touk.nussknacker.restmodel.codecs.URICodecs.{uriDecoder, uriEncoder}
 
     def apply(action: CustomAction): UICustomAction = UICustomAction(
-      name = action.name, allowedProcessStates = action.allowedStateStatusNames, icon = action.icon
+      name = action.name, allowedStateStatusNames = action.allowedStateStatusNames, icon = action.icon
     )
   }
   @JsonCodec
-  case class UICustomAction(name: String, allowedProcessStates: List[String], icon: Option[URI])
+  case class UICustomAction(name: String, allowedStateStatusNames: List[String], icon: Option[URI])
 
 }

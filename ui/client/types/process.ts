@@ -1,7 +1,6 @@
 import {Edge} from "./edge"
 import {NodeType} from "./node"
 import {ValidationResult} from "./validation"
-import {StatusType} from "../components/Process/types";
 
 export type Process = {
   nodes: NodeType[],
@@ -28,7 +27,7 @@ export type NodesGroup = {
 
 export type CustomAction = {
   name: string,
-  allowedProcessStates: Array<string>,
+  allowedStateStatusNames: Array<string>,
   icon: string | null
 }
 
