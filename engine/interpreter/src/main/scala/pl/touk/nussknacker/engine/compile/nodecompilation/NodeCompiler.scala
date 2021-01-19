@@ -120,6 +120,9 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
                  (implicit nodeId: NodeId,
                   metaData: MetaData): NodeCompilationResult[api.process.Sink] = {
     val ref = sink.ref
+
+    // We compile this expression only for validation purpose (so we can display errors).
+    // This expression is also compiled by PartSubGraphCompiler, which actually uses the compilation result.
     val endResultExprValidation = sink.endResult
       .map(expr => compileExpression(expr, ctx, Typed[Any], outputVar = None).compiledObject.map(_ => ()))
       .getOrElse(Valid(()))
@@ -130,7 +133,10 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
         val error = invalid(MissingSinkFactory(sink.ref.typ)).toValidatedNel
         NodeCompilationResult(Map.empty[String, ExpressionTypingInfo], None, Valid(ctx), error)
     }
-    compilationResult.copy(compiledObject = endResultExprValidation.ap(compilationResult.compiledObject.map(self => _ => self)))
+
+    // compiledObject validation errors are complemented with endResult validation errors.
+    val compiledObject = ValidatedNelApplicative.map2(endResultExprValidation, compilationResult.compiledObject) { case (_, obj) => obj }
+    compilationResult.copy(compiledObject = compiledObject)
   }
 
   def compileSubprocessInput(subprocessInput: SubprocessInput, ctx: ValidationContext)
