@@ -16,6 +16,7 @@
     "pretest": "npm run check",
     "test": "jest",
     "test:e2e": "cypress run",
+    "test:e2e:ci": "start-server-and-test start-backend-demo http-get://localhost:3000/static/main.html test:e2e",
     "test:e2e:dev": "cypress open"
   },
   "dependencies": {
@@ -183,6 +184,7 @@
     "raw-loader": "^4.0.2",
     "react-scrollbars-custom": "^4.0.25",
     "redux-mock-store": "^1.5.4",
+    "start-server-and-test": "^1.11.7",
     "stream-browserify": "^3.0.0",
     "stream-http": "^3.1.1",
     "style-loader": "^2.0.0",
