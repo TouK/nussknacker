@@ -26,7 +26,7 @@ export default function CustomActionButton(props: Props) {
       : <DefaultIcon/>
 
   const statusName = processStatus.name
-  const isDisabled = !action.allowedProcessStates.map(s => s.name).includes(statusName)
+  const isDisabled = !action.allowedProcessStates.includes(statusName)
 
   const toolTip = isDisabled
       ? t("panels.actions.custom-action.tooltips.disabled", "Disabled for {{statusName}} status.", {statusName})

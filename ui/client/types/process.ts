@@ -28,7 +28,7 @@ export type NodesGroup = {
 
 export type CustomAction = {
   name: string,
-  allowedProcessStates: Array<StatusType>,
+  allowedProcessStates: Array<string>,
   icon: string | null
 }
 

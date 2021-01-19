@@ -18,7 +18,8 @@ Things to consider in future changes:
  */
 
 case class CustomAction(name: String,
-                        allowedProcessStates: List[StateStatus],
+                        // We cannot use "engine.api.deployment.StateStatus" because it can be implemented as a class containing nonconstant attributes
+                        allowedStateStatusNames: List[String],
                         icon: Option[URI] = None)
 
 case class CustomActionRequest(name: String,
@@ -38,8 +39,8 @@ sealed trait CustomActionError extends Exception {
 
 case class CustomActionFailure(request: CustomActionRequest, msg: String) extends CustomActionError
 
-case class CustomActionInvalidStatus(request: CustomActionRequest, stateStatus: StateStatus) extends CustomActionError {
-  override val msg: String = s"Process status: ${stateStatus.name} is not allowed for action ${request.name}"
+case class CustomActionInvalidStatus(request: CustomActionRequest, stateStatusName: String) extends CustomActionError {
+  override val msg: String = s"Process status: $stateStatusName is not allowed for action ${request.name}"
 }
 
 case class CustomActionNotImplemented(request: CustomActionRequest) extends CustomActionError {
