@@ -25,10 +25,12 @@ describe("Processes diagram", () => {
 
   it("should import JSON and save", () => {
     cy.intercept("PUT", "/api/processes/*").as("save")
+    cy.intercept("POST", "/api/processes/import/*").as("import")
     cy.fixture("testProcess").then(json => cy.get("[title=import]")
       .next("[type=file]")
       .should("exist")
       .attachFile({fileContent: jsonToBlob({...json, metaData: {...json.metaData, id: processName}})}))
+    cy.wait("@import").its("response.statusCode").should("eq", 200)
     cy.get("#graphContainer").toMatchImageSnapshot()
     cy.contains(/^save/i).should("be.enabled").click()
     cy.contains(/^ok$/i).should("be.enabled").click()
