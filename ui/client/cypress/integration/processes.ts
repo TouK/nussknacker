@@ -1,19 +1,18 @@
-import {BASIC_AUTH, HOST} from "../fixtures/env.json"
-import {deleteTestProcess, getProcessName} from "../support/tools"
-
-let processName: string
+import {deleteTestProcess, getProcessName, getTestProcesses} from "../support/tools"
 
 describe("Processes list", () => {
+  let processName: string
+
   before(() => {
-    cy.request({
-      url: `${HOST}/api/processes`,
-      auth: BASIC_AUTH,
-    }).should(({body}) => body.filter(({id}) => id.includes("cypress")).map(({id}) => deleteTestProcess(id)))
+    getTestProcesses().should(processes => processes.map(deleteTestProcess))
     processName = getProcessName()
   })
 
   beforeEach(() => {
-    cy.visit(HOST, {auth: BASIC_AUTH})
+    cy.fixture("env").then((env) => {
+      const {BASIC_AUTH} = env
+      cy.visit("/", {auth: BASIC_AUTH})
+    })
     cy.url().should("match", /processes/)
   })
 
@@ -22,7 +21,7 @@ describe("Processes list", () => {
   })
 
   it("should have no process matching filter", () => {
-    cy.get("[placeholder='Filter by text...']").type(processName)
+    cy.get("[placeholder='Filter by text...']").type("cypress")
     cy.contains(/^No matching records found.$/i).should("be.visible")
   })
 
@@ -34,7 +33,7 @@ describe("Processes list", () => {
   })
 
   it("should have test process on list", () => {
-    cy.get("[placeholder='Filter by text...']").type(processName)
+    cy.get("[placeholder='Filter by text...']").type("cypress")
     cy.get("tbody tr").should("have.length", 1).within(() => {
       cy.get("input").should("have.value", processName)
       cy.get("[label=Edit] a").should("have.attr", "href")

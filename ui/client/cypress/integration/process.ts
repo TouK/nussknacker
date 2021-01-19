@@ -1,16 +1,16 @@
-import {BASIC_AUTH, HOST} from "../fixtures/env.json"
 import {createTestProcess, deleteTestProcess, getProcessName, jsonToBlob} from "../support/tools"
 
-let processName: string
-
 describe("Processes diagram", () => {
+  let processName: string
+
   before(() => {
     processName = getProcessName()
     createTestProcess(processName)
   })
 
   beforeEach(() => {
-    cy.visit(`${HOST}/visualization/${processName}?businessView=false`, {auth: BASIC_AUTH})
+    cy.fixture("env")
+      .then(({BASIC_AUTH}) => cy.visit(`/visualization/${processName}?businessView=false`, {auth: BASIC_AUTH}))
   })
 
   after(() => {
@@ -22,7 +22,7 @@ describe("Processes diagram", () => {
     cy.contains(/has never been deployed/i).should("be.visible")
   })
 
-  it("should import JSON", () => {
+  it("should import JSON and allow drag", () => {
     cy.fixture("testProcess.json").then(json => cy.get("[title=import]")
       .next("[type=file]")
       .should("exist")
