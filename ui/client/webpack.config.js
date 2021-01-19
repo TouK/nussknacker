@@ -59,7 +59,6 @@ module.exports = {
     },
     minimizer: [new TerserPlugin({
       parallel: true,
-      sourceMap: true,
       //Reactable bug: https://github.com/abdulrahman-khankan/reactable/issues/3
       terserOptions: {
         mangle: {

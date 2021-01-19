@@ -1,0 +1,214 @@
+{
+  "metaData": {
+    "id" : "FeaturesTest",
+    "typeSpecificData": {
+      "parallelism": 1,
+      "splitStateToDisk": true,
+      "useAsyncInterpretation": null,
+      "checkpointIntervalInSeconds": null,
+      "type": "StreamMetaData"
+    },
+    "isSubprocess": false,
+    "additionalFields": {
+      "description": null,
+      "groups": [],
+      "properties": {
+        "numberOfThreads": "1",
+        "environment": "test"
+      }
+    },
+    "subprocessVersions": {}
+  },
+  "exceptionHandlerRef": {
+    "parameters": []
+  },
+  "nodes": [
+    {
+      "id": "kafka-transaction",
+      "ref": {
+        "typ": "kafka-transaction",
+        "parameters": []
+      },
+      "additionalFields": {
+        "description": null,
+        "layoutData": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "type": "Source"
+    },
+    {
+      "id": "configuratorService",
+      "service": {
+        "id": "configuratorService",
+        "parameters": [
+          {
+            "name": "Template ID",
+            "expression": {
+              "language": "spel",
+              "expression": "'ddddddd'"
+            }
+          },
+          {
+            "name": "Version",
+            "expression": {
+              "language": "spel",
+              "expression": "0"
+            }
+          },
+          {
+            "name": "JsonConfig",
+            "expression": {
+              "language": "spel",
+              "expression": "'sdfsaf'"
+            }
+          }
+        ]
+      },
+      "isDisabled": null,
+      "additionalFields": {
+        "description": null,
+        "layoutData": {
+          "x": 0,
+          "y": 135
+        }
+      },
+      "type": "Processor"
+    },
+    {
+      "nextFalse": [],
+      "id": "filter",
+      "expression": {
+        "language": "spel",
+        "expression": "true"
+      },
+      "isDisabled": null,
+      "additionalFields": {
+        "description": null,
+        "layoutData": {
+          "x": 0,
+          "y": 270
+        }
+      },
+      "type": "Filter"
+    },
+    {
+      "outputs": {
+        "output": [
+          {
+            "id": "meetingService",
+            "service": {
+              "id": "meetingService",
+              "parameters": [
+                {
+                  "name": "Date",
+                  "expression": {
+                    "language": "spel",
+                    "expression": "T(java.time.LocalDateTime).parse('2020-11-11T00:00')"
+                  }
+                },
+                {
+                  "name": "EndTime",
+                  "expression": {
+                    "language": "spel",
+                    "expression": "T(java.time.LocalTime).parse('02:00:00')"
+                  }
+                },
+                {
+                  "name": "Duration",
+                  "expression": {
+                    "language": "spel",
+                    "expression": "T(java.time.Duration).parse('P1D')"
+                  }
+                },
+                {
+                  "name": "Period",
+                  "expression": {
+                    "language": "spel",
+                    "expression": "T(java.time.Period).parse('P2Y')"
+                  }
+                },
+                {
+                  "name": "NextMeeting",
+                  "expression": {
+                    "language": "spel",
+                    "expression": "T(java.time.LocalDate).parse('2020-11-05')"
+                  }
+                },
+                {
+                  "name": "Scheduler",
+                  "expression": {
+                    "language": "spel",
+                    "expression": "new com.cronutils.parser.CronParser(T(com.cronutils.model.definition.CronDefinitionBuilder).instanceDefinitionFor(T(com.cronutils.model.CronType).QUARTZ)).parse('0 0 00 1/1 * ? *')"
+                  }
+                }
+              ]
+            },
+            "isDisabled": null,
+            "additionalFields": {
+              "description": null,
+              "layoutData": {
+                "x": 0,
+                "y": 540
+              }
+            },
+            "type": "Processor"
+          },
+          {
+            "id": "kafka-string",
+            "ref": {
+              "typ": "kafka-string",
+              "parameters": [
+                {
+                  "name": "topic",
+                  "expression": {
+                    "language": "spel",
+                    "expression": "'ala'"
+                  }
+                }
+              ]
+            },
+            "endResult": {
+              "language": "spel",
+              "expression": "#input"
+            },
+            "isDisabled": null,
+            "additionalFields": {
+              "description": null,
+              "layoutData": {
+                "x": 0,
+                "y": 675
+              }
+            },
+            "type": "Sink"
+          }
+        ]
+      },
+      "id": "enricher",
+      "ref": {
+        "id": "enricher",
+        "parameters": [
+          {
+            "name": "param",
+            "expression": {
+              "language": "spel",
+              "expression": "'default value'"
+            }
+          }
+        ]
+      },
+      "additionalFields": {
+        "description": null,
+        "layoutData": {
+          "x": 0,
+          "y": 405
+        }
+      },
+      "isDisabled": null,
+      "subprocessParams": null,
+      "type": "SubprocessInput"
+    }
+  ],
+  "additionalBranches": []
+}

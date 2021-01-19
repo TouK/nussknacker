@@ -1,4 +1,4 @@
-import Flattenizer from "flattenizer"
+import * as Flattenizer from "flattenizer"
 import _ from "lodash"
 
 //tryStringify and tryParse are hacky functions.
