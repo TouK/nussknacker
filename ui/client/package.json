@@ -14,7 +14,9 @@
     "start": "BACKEND_DOMAIN=http://localhost:8080 webpack serve",
     "start-backend-demo": "BACKEND_DOMAIN=https://staging.nussknacker.io webpack serve",
     "pretest": "npm run check",
-    "test": "jest"
+    "test": "jest",
+    "test:e2e": "cypress run",
+    "test:e2e:dev": "cypress open"
   },
   "dependencies": {
     "@babel/runtime": "^7.12.5",
