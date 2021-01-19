@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessD
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor, TypeInfos}
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
-import pl.touk.nussknacker.engine.modelconfig.{DefaultModelConfigLoader, ModelConfigLoader, ModelConfigToLoad}
+import pl.touk.nussknacker.engine.modelconfig.{DefaultModelConfigLoader, ModelConfigLoader}
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ProcessConfigCreatorLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
@@ -93,9 +93,9 @@ trait ModelData extends AutoCloseable {
 
   def modelClassLoader : ModelClassLoader
 
-  protected def inputConfig: Config
+  def inputConfig: Config
 
-  protected def modelConfigLoader: ModelConfigLoader
+  def modelConfigLoader: ModelConfigLoader
 
   lazy val processConfig: Config = modelConfigLoader.resolveConfigDuringExecution(configToPassInExecution, modelClassLoader.classLoader)
 
@@ -105,9 +105,6 @@ trait ModelData extends AutoCloseable {
     modelConfigLoader.resolveConfigToPassInExecution(defaultConfigDuringExecution, modelClassLoader.classLoader).transform(inputConfig)
   }
   lazy val serializedConfigToPassInExecution: String = configToPassInExecution.root().render(ConfigRenderOptions.concise())
-
-  // Used by a process running on Flink.
-  def modelConfigToLoad: ModelConfigToLoad = ModelConfigToLoad(inputConfig, modelConfigLoader)
 
   def close(): Unit = {
     dictServices.close()

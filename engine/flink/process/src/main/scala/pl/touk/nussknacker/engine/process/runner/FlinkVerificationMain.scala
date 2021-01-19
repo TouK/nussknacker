@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.process.runner
 
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
-import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.test.TestRunId
@@ -26,14 +25,14 @@ class FlinkVerificationMain(val modelData: ModelData, val process: EspProcess, p
 
   def runTest(): Unit = {
     val env = createEnv
-    val registrar = prepareRegistrar(env)
+    val registrar = prepareRegistrar()
     registrar.register(env, process, processVersion, Option(TestRunId("dummy")))
     execute(env, SavepointRestoreSettings.forPath(savepointPath, true))
   }
 
-  protected def prepareRegistrar(env: StreamExecutionEnvironment): FlinkProcessRegistrar = {
+  protected def prepareRegistrar(): FlinkProcessRegistrar = {
     FlinkProcessRegistrar(new VerificationFlinkProcessCompiler(
-      process, env.getConfig, modelData.configCreator, modelData.modelConfigToLoad, modelData.objectNaming),
+      process, modelData.configCreator, modelData.inputConfig, modelData.modelConfigLoader, modelData.objectNaming),
       modelData.processConfig, ExecutionConfigPreparer.defaultChain(modelData))
   }
 }
