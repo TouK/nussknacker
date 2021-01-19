@@ -38,17 +38,22 @@ abstract class ModelConfigLoader extends Serializable {
     * Resolves full config used inside [[pl.touk.nussknacker.engine.api.process.ProcessConfigCreator]]. Invoked both
     * in NK and running process.
     *
-    * Default implementation loads model config the from following locations:
+    * Default implementation [[resolveConfigUsingDefaults]] should rather not be changed.
+    */
+  def resolveConfigDuringExecution(configPassedInExecution: Config, classLoader: ClassLoader): Config = {
+    resolveConfigUsingDefaults(configPassedInExecution, classLoader)
+  }
+
+  /**
+    * Default implementation of [[resolveConfigDuringExecution]]. Loads model config the from following locations:
     * <ol>
     * <li> param configPassedInExecution resolved by [[resolveConfigToPassInExecution]], by default part of main config
     * file of nussknacker (in path processTypes.{type_name}.modelConfig)</li>
     * <li>defaultModelConfig.conf from model jar</li>
     * <li>reference.conf from model jar</li
     * </ol
-    *
-    * Default implementation should rather not be changed.
     */
-  def resolveConfigDuringExecution(configPassedInExecution: Config, classLoader: ClassLoader): Config = {
+  protected def resolveConfigUsingDefaults(configPassedInExecution: Config, classLoader: ClassLoader): Config = {
     val configFallbackFromModel = ConfigFactory.parseResources(classLoader, modelConfigResource)
     configPassedInExecution
       .withFallback(configFallbackFromModel)
