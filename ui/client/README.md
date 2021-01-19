@@ -26,6 +26,8 @@ open http://localhost:3000
 
 ```npm test:e2e``` or ```npm test:e2e:dev```
 
+_You should copy and fill `cypress/fixtures/env.json.template` into `cypress/fixtures/env.json` before start._
+
 # Background
 
 As a initial template was used todomvc example from https://github.com/gaearon/redux-devtools (commit
