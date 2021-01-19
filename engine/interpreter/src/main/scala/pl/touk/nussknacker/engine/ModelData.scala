@@ -99,7 +99,6 @@ trait ModelData extends AutoCloseable {
 
   lazy val processConfig: Config = modelConfigLoader.resolveConfig(inputConfigDuringExecution, modelClassLoader.classLoader)
 
-  // Config to pass during execution (see FlinkProcessManager).
   lazy val inputConfigDuringExecution: InputConfigDuringExecution = modelConfigLoader.resolveInputConfigDuringExecution(inputConfig, modelClassLoader.classLoader)
 
   def close(): Unit = {

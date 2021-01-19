@@ -52,6 +52,15 @@ abstract class ModelConfigLoader extends Serializable {
     * </ol
     */
   protected def resolveConfigUsingDefaults(inputConfig: Config, classLoader: ClassLoader): Config = {
+    /*
+      We want to be able to embed config in model jar, to avoid excessive config files
+      For most cases using reference.conf would work, however there are subtle problems with substitution:
+      https://github.com/lightbend/config#note-about-resolving-substitutions-in-referenceconf-and-applicationconf
+      https://github.com/lightbend/config/issues/167
+      By using separate model.conf we can define configs there like:
+      service1Url: ${baseUrl}/service1
+      and have baseUrl taken from application config
+    */
     val configFallbackFromModel = ConfigFactory.parseResources(classLoader, modelConfigResource)
     inputConfig
       .withFallback(configFallbackFromModel)
