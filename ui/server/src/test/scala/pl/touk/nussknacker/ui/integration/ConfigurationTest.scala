@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.integration
 
-import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.ui.config.ConfigWithDefaults
@@ -46,7 +45,7 @@ class ConfigurationTest extends FunSuite with Matchers {
   //set env variable: CONFIG_FORCE_processTypes_streaming_modelConfig_testProperty=testValue
   ignore("check if env properties are used/passed") {
     modelDataConfig.getString("testProperty") shouldBe "testValue"
-    ConfigFactory.parseString(modelData.serializedConfigToPassInExecution).getString("testProperty") shouldBe "testValue"
+    modelData.inputConfigDuringExecution.config.getString("testProperty") shouldBe "testValue"
   }
 
 

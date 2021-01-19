@@ -12,7 +12,7 @@ object ModelConfigLoader {
 /**
   * Loads model configs.
   *
-  * Configs are resolved once when loading model data. Implement this trait when you want to add dynamic configuration
+  * Configs are resolved once when loading model data. Implement when you want to add dynamic configuration
   * that is fetched from external source, for example OpenAPI specification and you would like this configuration to
   * be immutable for deployed processes.
   *
@@ -21,18 +21,17 @@ object ModelConfigLoader {
 abstract class ModelConfigLoader extends Serializable {
 
   /**
-    * Resolves config part to pass in execution during e.g. process deployment on Flink cluster. When running
-    * a process (e.g. on Flink) resolved config part is used to construct full config.
+    * Resolves config part to pass during execution while e.g. process deployment on Flink cluster. When running
+    * a process (e.g. on Flink) resolved config part is used to construct full config (see
+    * [[resolveConfig]])
     *
     * Method used for performance reasons to reduce serialized configuration size inside deployed processes. By default
-    * config from main nussknacker file at path: processTypes.{type_name}.modelConfig is used.
+    * config from main nussknacker file at path: processTypes.{type_name}.modelConfig is passed unchanged.
     *
-    * @param configDuringModelAnalysis default config resolved by [[resolveConfigDuringExecution]] for configuration
-    *                                  from processTypes.{type_name}.modelConfig
-    * @return transformation of config part (processTypes.{type_name}.modelConfig) that is later passed to a running
-    *         process (see e.g. FlinkProcessCompiler, ModelConfigToLoad).
+    * @param inputConfig configuration from processTypes.{type_name}.modelConfig
+    * @return config part that is later passed to a running process (see e.g. FlinkProcessCompiler)
     */
-  def resolveConfigToPassInExecution(configDuringModelAnalysis: Config, classLoader: ClassLoader): ConfigToPassInExecution
+  def resolveInputConfigDuringExecution(inputConfig: Config, classLoader: ClassLoader): InputConfigDuringExecution
 
   /**
     * Resolves full config used inside [[pl.touk.nussknacker.engine.api.process.ProcessConfigCreator]]. Invoked both
@@ -40,22 +39,21 @@ abstract class ModelConfigLoader extends Serializable {
     *
     * Default implementation [[resolveConfigUsingDefaults]] should rather not be changed.
     */
-  def resolveConfigDuringExecution(configPassedInExecution: Config, classLoader: ClassLoader): Config = {
-    resolveConfigUsingDefaults(configPassedInExecution, classLoader)
+  def resolveConfig(inputConfigDuringExecution: InputConfigDuringExecution, classLoader: ClassLoader): Config = {
+    resolveConfigUsingDefaults(inputConfigDuringExecution.config, classLoader)
   }
 
   /**
-    * Default implementation of [[resolveConfigDuringExecution]]. Loads model config the from following locations:
+    * Default implementation of [[resolveConfig]]. Loads model config the from following locations:
     * <ol>
-    * <li> param configPassedInExecution resolved by [[resolveConfigToPassInExecution]], by default part of main config
-    * file of nussknacker (in path processTypes.{type_name}.modelConfig)</li>
+    * <li>param inputConfig
     * <li>defaultModelConfig.conf from model jar</li>
     * <li>reference.conf from model jar</li
     * </ol
     */
-  protected def resolveConfigUsingDefaults(configPassedInExecution: Config, classLoader: ClassLoader): Config = {
+  protected def resolveConfigUsingDefaults(inputConfig: Config, classLoader: ClassLoader): Config = {
     val configFallbackFromModel = ConfigFactory.parseResources(classLoader, modelConfigResource)
-    configPassedInExecution
+    inputConfig
       .withFallback(configFallbackFromModel)
       //this is for reference.conf resources from model jar
       .withFallback(ConfigFactory.load(classLoader))

@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResu
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, registrar}
 import pl.touk.nussknacker.engine.process.compiler.TestFlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
@@ -42,7 +43,7 @@ class FlinkTestMain(val modelData: ModelData, val process: EspProcess, testData:
   protected def prepareRegistrar[T](env: StreamExecutionEnvironment, collectingListener: ResultsCollectingListener): FlinkProcessRegistrar = {
     FlinkProcessRegistrar(new TestFlinkProcessCompiler(
       modelData.configCreator,
-      modelData.inputConfig,
+      InputConfigDuringExecution(modelData.inputConfig),
       modelData.modelConfigLoader,
       collectingListener,
       process,

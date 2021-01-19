@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.process.compiler
 
-import com.typesafe.config.Config
 import org.apache.flink.api.common.serialization.DeserializationSchema
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.scala.{ConnectedStreams, DataStream}
@@ -14,15 +13,15 @@ import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.flink.util.source.EmptySourceFunction
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Source
-import pl.touk.nussknacker.engine.modelconfig.ModelConfigLoader
+import pl.touk.nussknacker.engine.modelconfig.{InputConfigDuringExecution, ModelConfigLoader}
 import shapeless.syntax.typeable._
 
 abstract class StubbedFlinkProcessCompiler(process: EspProcess,
                                            creator: ProcessConfigCreator,
-                                           inputConfig: Config,
+                                           inputConfigDuringExecution: InputConfigDuringExecution,
                                            modelConfigLoader: ModelConfigLoader,
                                            objectNaming: ObjectNaming)
-  extends FlinkProcessCompiler(creator, inputConfig, modelConfigLoader, diskStateBackendSupport = false, objectNaming) {
+  extends FlinkProcessCompiler(creator, inputConfigDuringExecution, modelConfigLoader, diskStateBackendSupport = false, objectNaming) {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 

@@ -4,10 +4,8 @@ import com.typesafe.config.Config
 
 class DefaultModelConfigLoader extends ModelConfigLoader {
 
-  override def resolveConfigToPassInExecution(configDuringModelAnalysis: Config, classLoader: ClassLoader): ConfigToPassInExecution = {
-    new ConfigToPassInExecution {
-      override def transform(config: Config): Config = config
-    }
+  override def resolveInputConfigDuringExecution(inputConfig: Config, classLoader: ClassLoader): InputConfigDuringExecution = {
+    InputConfigDuringExecution(inputConfig)
   }
 
 }
