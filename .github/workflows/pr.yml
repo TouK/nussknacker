@@ -195,7 +195,8 @@ jobs:
         run:  tar xfz target.tgz
       - name: Prepare docker
         shell: bash
-        run: echo "version in ThisBuild := \"$GITHUB_SHA\"" > version.sbt && ./ciRunSbt.sh dist/docker:publishLocal
+        #Doc generation is rather costly, we don't want it in test image creation
+        run: echo "version in ThisBuild := \"$GITHUB_SHA\"" > version.sbt && sbt "set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" dist/docker:publishLocal
       - name: Test docker
         shell: bash
         env:
@@ -249,6 +250,6 @@ jobs:
           nexusUser: ${{ secrets.SONATYPE_USER }}
           nexusPassword: ${{ secrets.SONATYPE_PASSWORD }}
           addDevModel: ${{ github.ref == 'refs/heads/staging' }}
-        #TODO: handle version better
-        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := (version in ThisBuild).value.replace(\"-SNAPSHOT\", \"-$(date -I)-$GITHUB_RUN_NUMBER-$GITHUB_SHA-ghactionstest-SNAPSHOT\")" publish dist/docker:publish
+        #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
+        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := (version in ThisBuild).value.replace(\"-SNAPSHOT\", \"-$(date -I)-$GITHUB_RUN_NUMBER-$GITHUB_SHA-ghactionstest-SNAPSHOT\")" +publish dist/docker:publish
 
