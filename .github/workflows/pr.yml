@@ -13,7 +13,8 @@ on:
       - '**'
 env:
   #we use this variable in ciRunSbt.sh
-  CROSS_BUILD: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || startsWith(github.head_ref, 'preview') }}
+  #NOTE: for publishing we use different settings, we don't use ciRunSbt.sh there
+  CROSS_BUILD: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' }}
 
 jobs:
   build:
@@ -207,7 +208,8 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     needs: [build, tests, crossCompile, integrationTests, slowTests, frontendTests, dockerTest]
-    if: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || startsWith(github.head_ref, 'preview') }}
+    #TODO: should we publish everything on all those branches?
+    if: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.head_ref, 'preview') }}
     steps:
       - uses: actions/checkout@v1
       - name: Cache npm
