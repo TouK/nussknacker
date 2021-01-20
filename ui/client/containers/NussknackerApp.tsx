@@ -2,6 +2,7 @@ import React from "react"
 import {Redirect, Route, RouteComponentProps} from "react-router"
 import {matchPath, withRouter} from "react-router-dom"
 import _ from "lodash"
+import {urlChange} from "../actions/nk"
 import {MenuBar} from "../components/MenuBar"
 import {UnknownRecord} from "../types/common"
 import {ProcessesTabData} from "./Processes"
@@ -48,7 +49,7 @@ export class NussknackerApp extends React.Component<Props, State> {
   componentDidMount() {
     this.mountedHistory = this.props.history.listen((location, action) => {
       if (action === "PUSH") {
-        this.props.actions.urlChange(location)
+        this.props.urlChange(location)
       }
     })
   }
@@ -98,43 +99,46 @@ export class NussknackerApp extends React.Component<Props, State> {
   }
 
   environmentAlert(params) {
-    if (params && params.content)
+    if (params && params.content) {
       return (
         <span className={`indicator ${params.cssClass}`} title={params.content}>{params.content}</span>
       )
+    }
   }
 
   render() {
     const AllDialogs = Dialogs.AllDialogs
-    return this.props.resolved ? (
-      <div id="app-container">
-        <div className="hide">{JSON.stringify(__GIT__)}</div>
-        { this.renderMenu() }
-        <main>
-          <DragArea>
-            <AllDialogs/>
-            <div id="working-area" className={this.props.leftPanelIsOpened ? "is-opened" : null}>
-              <ErrorHandler>
-                <TransitionRouteSwitch>
-                  <Route
-                    path={[ProcessesTabData.path, SubProcessesTabData.path, ArchiveTabData.path]}
-                    component={ProcessTabs}
-                    exact
-                  />
-                  <Route path={Visualization.path} component={Visualization} exact/>
-                  <Route path={Metrics.path} component={Metrics} exact/>
-                  <Route path={Signals.path} component={Signals} exact/>
-                  <Route path={AdminPage.path} component={NkAdminPage} exact/>
-                  <Route path={`${CustomTabPath}/:id`} component={CustomTab} exact/>
-                  <Redirect from={this.path} to={ProcessesTabData.path} exact/>
-                  <Route component={NotFound}/>
-                </TransitionRouteSwitch>
-              </ErrorHandler>
-            </div>
-          </DragArea>
-        </main>
-      </div>
-    ) : null
+    return this.props.resolved ?
+      (
+        <div id="app-container">
+          <div className="hide">{JSON.stringify(__GIT__)}</div>
+          {this.renderMenu()}
+          <main>
+            <DragArea>
+              <AllDialogs/>
+              <div id="working-area" className={this.props.leftPanelIsOpened ? "is-opened" : null}>
+                <ErrorHandler>
+                  <TransitionRouteSwitch>
+                    <Route
+                path={[ProcessesTabData.path, SubProcessesTabData.path, ArchiveTabData.path]}
+                component={ProcessTabs}
+                exact
+              />
+                    <Route path={Visualization.path} component={Visualization} exact/>
+                    <Route path={Metrics.path} component={Metrics} exact/>
+                    <Route path={Signals.path} component={Signals} exact/>
+                    <Route path={AdminPage.path} component={NkAdminPage} exact/>
+                    <Route path={`${CustomTabPath}/:id`} component={CustomTab} exact/>
+                    <Redirect from={this.path} to={ProcessesTabData.path} exact/>
+                    <Route component={NotFound}/>
+                  </TransitionRouteSwitch>
+                </ErrorHandler>
+              </div>
+            </DragArea>
+          </main>
+        </div>
+      ) :
+      null
   }
 }
 
@@ -148,12 +152,15 @@ function mapState(state) {
   }
 }
 
-type Props = OwnProps & ReturnType<typeof mapState> & EspActionsProps &  WithTranslation & RouteComponentProps
+const mapDispatch = {urlChange}
+
+type StateProps = ReturnType<typeof mapState> & typeof mapDispatch
+type Props = OwnProps & StateProps & WithTranslation & RouteComponentProps
 
 const enhance = compose(
   withRouter,
-  connect(mapState, ActionsUtils.mapDispatchWithEspActions),
+  connect(mapState, mapDispatch),
   withTranslation(),
 )
 
-export const NkApp = enhance(NussknackerApp)
+export const NkApp: React.ComponentClass<OwnProps> = enhance(NussknackerApp)
