@@ -13,7 +13,8 @@ on:
       - '**'
 env:
   #we use this variable in ciRunSbt.sh
-  CROSS_BUILD: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || startsWith(github.head_ref, 'preview') }}
+  #NOTE: for publishing we use different settings, we don't use ciRunSbt.sh there
+  CROSS_BUILD: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' }}
 
 jobs:
   build:
@@ -30,6 +31,8 @@ jobs:
           key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
       - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "openjdk@1.11"
       - name: Build
         shell: bash
         run: ./ciRunSbt.sh clean compile
@@ -48,6 +51,8 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "openjdk@1.11"
       - uses: actions/download-artifact@v2
         with:
           name: build-target
@@ -86,6 +91,8 @@ jobs:
           key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
       - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "openjdk@1.11"
       - uses: actions/download-artifact@v2
         with:
           name: build-target
@@ -110,6 +117,8 @@ jobs:
           key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
       - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "openjdk@1.11"
       - uses: actions/download-artifact@v2
         with:
           name: build-target
@@ -134,6 +143,8 @@ jobs:
           key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
       - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "openjdk@1.11"
       - uses: actions/download-artifact@v2
         with:
           name: build-target
@@ -187,6 +198,8 @@ jobs:
           key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
       - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "openjdk@1.11"
       - uses: actions/download-artifact@v2
         with:
           name: build-target
@@ -195,7 +208,8 @@ jobs:
         run:  tar xfz target.tgz
       - name: Prepare docker
         shell: bash
-        run: echo "version in ThisBuild := \"$GITHUB_SHA\"" > version.sbt && ./ciRunSbt.sh dist/docker:publishLocal
+        #Doc generation is rather costly, we don't want it in test image creation
+        run: echo "version in ThisBuild := \"$GITHUB_SHA\"" > version.sbt && sbt "set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" dist/docker:publishLocal
       - name: Test docker
         shell: bash
         env:
@@ -206,7 +220,8 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     needs: [build, tests, crossCompile, integrationTests, slowTests, frontendTests, dockerTest]
-    if: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || startsWith(github.head_ref, 'preview') }}
+    #TODO: should we publish everything on all those branches?
+    if: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.head_ref, 'preview') }}
     steps:
       - uses: actions/checkout@v1
       - name: Cache npm
@@ -230,6 +245,8 @@ jobs:
           key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
       - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "openjdk@1.11"
       - uses: actions/download-artifact@v2
         with:
           name: build-target
@@ -249,6 +266,6 @@ jobs:
           nexusUser: ${{ secrets.SONATYPE_USER }}
           nexusPassword: ${{ secrets.SONATYPE_PASSWORD }}
           addDevModel: ${{ github.ref == 'refs/heads/staging' }}
-        #TODO: handle version better
-        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := (version in ThisBuild).value.replace(\"-SNAPSHOT\", \"-$(date -I)-$GITHUB_RUN_NUMBER-$GITHUB_SHA-ghactionstest-SNAPSHOT\")" publish dist/docker:publish
+        #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
+        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := (version in ThisBuild).value.replace(\"-SNAPSHOT\", \"-$(date -I)-$GITHUB_RUN_NUMBER-$GITHUB_SHA-ghactionstest-SNAPSHOT\")" +publish dist/docker:publish
 
