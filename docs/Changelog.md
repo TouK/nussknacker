@@ -15,6 +15,7 @@ Nussknacker versions
     * [#1343](https://github.com/TouK/nussknacker/pull/1343) Aggregators compute stored types    
     * [#1343](https://github.com/TouK/nussknacker/pull/1359) Improvements in variable output validation 
     * [#1360](https://github.com/TouK/nussknacker/pull/1360) Service query can use global variables
+    * [#1375](https://github.com/TouK/nussknacker/pull/1375) Opt-in for new TypeInformation detection for inter operator serialization
 * [#1361](https://github.com/TouK/nussknacker/pull/1361) Lazy vars removal
 * [#1363](https://github.com/TouK/nussknacker/pull/1363) Open/close only services that are actually used in process
 * [#1367](https://github.com/TouK/nussknacker/pull/1367) Custom actions - first, experimental version
@@ -22,6 +23,7 @@ Nussknacker versions
     * [#1368](https://github.com/TouK/nussknacker/pull/1368) Publish docker images/jars via GH actions (experimental)
     * [#1381](https://github.com/TouK/nussknacker/pull/1381) Use GH Actions for coverage
     * [#1383](https://github.com/TouK/nussknacker/pull/1383) Switch github badges
+* [#1382](https://github.com/TouK/nussknacker/pull/1382) First E2E FE tests                                                             
 * [#1373](https://github.com/TouK/nussknacker/pull/1373) Ability to load custom model config programmatically
 
 0.3.1 (not released yet) 
