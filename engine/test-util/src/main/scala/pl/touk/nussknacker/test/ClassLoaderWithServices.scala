@@ -21,7 +21,7 @@ object ClassLoaderWithServices {
       servicesDir.toFile.mkdirs()
       services.foreach { case (interface, implementation) =>
         val file = servicesDir.resolve(interface.getName)
-        Files.writeString(file, implementation.getName)
+        Files.write(file, implementation.getName.getBytes)
         filesToDelete.append(file)
       }
       filesToDelete.append(servicesDir, servicesDir.getParent, tempDir)
