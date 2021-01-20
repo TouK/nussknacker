@@ -105,7 +105,7 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
     const customActions = processDefinitionData.customActions || []
     // TODO: better styling of process info toolbar in case of many custom actions
     const customButtons = customActions.map((a, ix) => <CustomActionButton
-        action={a} processId={process.id} processStatus={process.state.status} key={ix + this.buttons.length}
+        action={a} processId={process.id} processStatus={processState?.status} key={ix + this.buttons.length}
     />)
 
     return (

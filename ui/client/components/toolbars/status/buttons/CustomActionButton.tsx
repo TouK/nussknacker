@@ -11,7 +11,7 @@ import {CustomAction} from "../../../../types";
 type Props = {
   action: CustomAction,
   processId: string,
-  processStatus: StatusType
+  processStatus: StatusType | null
 }
 
 export default function CustomActionButton(props: Props) {
@@ -25,8 +25,8 @@ export default function CustomActionButton(props: Props) {
       ? <img alt={`custom-action-${action.name}`} src={action.icon} />
       : <DefaultIcon/>
 
-  const statusName = processStatus.name
-  const isDisabled = !action.allowedProcessStates.map(s => s.name).includes(statusName)
+  const statusName = processStatus?.name
+  const isDisabled = !action.allowedStateStatusNames.includes(statusName)
 
   const toolTip = isDisabled
       ? t("panels.actions.custom-action.tooltips.disabled", "Disabled for {{statusName}} status.", {statusName})
