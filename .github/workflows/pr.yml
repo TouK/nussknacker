@@ -213,7 +213,7 @@ jobs:
       - name: Test docker
         shell: bash
         env:
-          NUSSKNACKER_VERSION: ghactionstest-${{ github.sha }}
+          NUSSKNACKER_VERSION: ${{ github.sha }}
         run: cd ./demo/docker && ./testQuickstart.sh
 
 #TODO: extract to different workflow?
@@ -267,5 +267,5 @@ jobs:
           nexusPassword: ${{ secrets.SONATYPE_PASSWORD }}
           addDevModel: ${{ github.ref == 'refs/heads/staging' }}
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
-        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := (version in ThisBuild).value.replace(\"-SNAPSHOT\", \"-$(date -I)-$GITHUB_RUN_NUMBER-$GITHUB_SHA-ghactionstest-SNAPSHOT\")" +publish dist/docker:publish
+        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := (version in ThisBuild).value.replace(\"-SNAPSHOT\", \"-$(date -I)-$GITHUB_RUN_NUMBER-$GITHUB_SHA-SNAPSHOT\")" +publish dist/docker:publish
 
