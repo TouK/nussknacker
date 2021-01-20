@@ -170,7 +170,12 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 14.11.0
-      - run: ./ciFrontendTest.sh
+      - name: Test FE
+        run: |
+          cd ui/client
+          npm ci
+          npm test
+          npm build
   dockerTest:
     name: DockerTest
     runs-on: ubuntu-latest
