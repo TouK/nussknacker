@@ -31,6 +31,8 @@ jobs:
           key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
       - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "openjdk@1.11"
       - name: Build
         shell: bash
         run: ./ciRunSbt.sh clean compile
@@ -49,6 +51,8 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "openjdk@1.11"
       - uses: actions/download-artifact@v2
         with:
           name: build-target
@@ -87,6 +91,8 @@ jobs:
           key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
       - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "openjdk@1.11"
       - uses: actions/download-artifact@v2
         with:
           name: build-target
@@ -111,6 +117,8 @@ jobs:
           key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
       - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "openjdk@1.11"
       - uses: actions/download-artifact@v2
         with:
           name: build-target
@@ -135,6 +143,8 @@ jobs:
           key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
       - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "openjdk@1.11"
       - uses: actions/download-artifact@v2
         with:
           name: build-target
@@ -188,6 +198,8 @@ jobs:
           key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
       - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "openjdk@1.11"
       - uses: actions/download-artifact@v2
         with:
           name: build-target
@@ -233,6 +245,8 @@ jobs:
           key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
       - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "openjdk@1.11"
       - uses: actions/download-artifact@v2
         with:
           name: build-target
