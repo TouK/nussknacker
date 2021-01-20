@@ -5,8 +5,7 @@ import pl.touk.nussknacker.engine.modelconfig.{InputConfigDuringExecution, Model
 
 class SampleModelConfigLoader extends ModelConfigLoader {
 
-  override def resolveInputConfigDuringExecution(inputConfig: Config, classLoader: ClassLoader): InputConfigDuringExecution = {
-    val configWithDefaults = resolveConfigUsingDefaults(inputConfig, classLoader)
+  override def resolveInputConfigDuringExecution(inputConfig: Config, configWithDefaults: Config, classLoader: ClassLoader): InputConfigDuringExecution = {
     InputConfigDuringExecution(
       inputConfig
         .withValue("configLoadedMs", ConfigValueFactory.fromAnyRef(System.currentTimeMillis()))

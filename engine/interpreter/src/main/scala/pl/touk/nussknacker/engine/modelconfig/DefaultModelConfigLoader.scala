@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 
 class DefaultModelConfigLoader extends ModelConfigLoader {
 
-  override def resolveInputConfigDuringExecution(inputConfig: Config, classLoader: ClassLoader): InputConfigDuringExecution = {
+  override protected def resolveInputConfigDuringExecution(inputConfig: Config, configWithDefaults: Config, classLoader: ClassLoader): InputConfigDuringExecution = {
     InputConfigDuringExecution(inputConfig)
   }
 

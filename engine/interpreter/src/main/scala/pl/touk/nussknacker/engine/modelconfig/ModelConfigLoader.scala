@@ -16,7 +16,7 @@ object ModelConfigLoader {
   * that is fetched from external source, for example OpenAPI specification and you would like this configuration to
   * be immutable for deployed processes.
   *
-  * This trait is optional to implement.
+  * This class is optional to implement.
   */
 abstract class ModelConfigLoader extends Serializable {
 
@@ -31,7 +31,15 @@ abstract class ModelConfigLoader extends Serializable {
     * @param inputConfig configuration from processTypes.{type_name}.modelConfig
     * @return config part that is later passed to a running process (see e.g. FlinkProcessCompiler)
     */
-  def resolveInputConfigDuringExecution(inputConfig: Config, classLoader: ClassLoader): InputConfigDuringExecution
+  def resolveInputConfigDuringExecution(inputConfig: Config, classLoader: ClassLoader): InputConfigDuringExecution = {
+    resolveInputConfigDuringExecution(inputConfig, resolveConfigUsingDefaults(inputConfig, classLoader), classLoader)
+  }
+
+  /**
+    * Same as [[resolveInputConfigDuringExecution]] but with provided param configWithDefaults containing inputConfig
+    * with resolved default values.
+    */
+  protected def resolveInputConfigDuringExecution(inputConfig: Config, configWithDefaults: Config, classLoader: ClassLoader): InputConfigDuringExecution
 
   /**
     * Resolves full config used inside [[pl.touk.nussknacker.engine.api.process.ProcessConfigCreator]]. Invoked both
