@@ -8,6 +8,9 @@ on:
     branches:
       - master
       - staging
+    #TODO: currently release is done manually, we don't want to run this pipeline on released version, to avoid accidental pushes
+    tags-ignore:
+      - '**'
 env:
   #we use this variable in ciRunSbt.sh
   CROSS_BUILD: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || startsWith(github.head_ref, 'preview') }}
@@ -61,8 +64,12 @@ jobs:
           restore-keys: ${{ runner.os }}-sbt
       - name: Backend tests
         shell: bash
-        #TODO: coverage?
-        run: ./ciRunSbt.sh test
+        run: ./ciRunSbt.sh coverage test coverageReport
+      - name: Upload Coverage data to Coveralls
+        shell: bash
+        run: ./ciRunSbt.sh coverageAggregate coveralls
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   crossCompile:
     name: CrossCompile
@@ -169,6 +176,8 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 14.11.0
+      - name: Setup npm
+        run: (cd ui/client; npm ci)
       - name: Cache ivy packages
         uses: actions/cache@v2
         with:
@@ -239,6 +248,7 @@ jobs:
           nexusUrl: https://oss.sonatype.org/content/repositories/snapshots
           nexusUser: ${{ secrets.SONATYPE_USER }}
           nexusPassword: ${{ secrets.SONATYPE_PASSWORD }}
+          addDevModel: ${{ github.ref == 'refs/heads/staging' }}
         #TODO: handle version better
         run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := (version in ThisBuild).value.replace(\"-SNAPSHOT\", \"-$(date -I)-$GITHUB_RUN_NUMBER-$GITHUB_SHA-ghactionstest-SNAPSHOT\")" publish dist/docker:publish
 
