@@ -7,21 +7,17 @@ const HtmlWebpackPlugin = require("html-webpack-plugin")
 const TerserPlugin = require("terser-webpack-plugin")
 const CopyPlugin = require("copy-webpack-plugin")
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin")
+const {camelCase} = require("lodash")
 
 const NODE_ENV = process.env.NODE_ENV || "development"
 const GIT_HASH = childProcess.execSync("git log -1 --format=%H").toString()
 const GIT_DATE = childProcess.execSync("git log -1 --format=%cd").toString()
 const isProd = NODE_ENV === "production"
 
+const {ModuleFederationPlugin} = webpack.container
+const {dependencies, name} = require("./package.json")
 const entry = {
-  main: path.resolve(__dirname, "./index.js"),
-}
-
-if (!isProd) {
-  entry["developer-tools"] = [
-    "webpack-dev-server/client?http://localhost:3000",
-    "react-hot-loader/patch",
-  ]
+  main: path.resolve(__dirname, "./init.js"),
 }
 
 const cssPreLoaders = [
@@ -73,9 +69,6 @@ module.exports = {
   },
   resolve: {
     extensions: [".ts", ".tsx", ".js", ".jsx", ".json"],
-    alias: {
-      "react-dom": "@hot-loader/react-dom",
-    },
     fallback: {
       path: require.resolve("path-browserify"), //reason: react-markdown
       crypto: require.resolve("crypto-browserify"), //reason: jsonwebtoken
@@ -99,7 +92,6 @@ module.exports = {
       index: "/static/main.html",
     },
     hot: true,
-    hotOnly: true,
     port: 3000,
     proxy: {
       "/api": {
@@ -116,13 +108,16 @@ module.exports = {
     },
   },
   plugins: [
+    new ModuleFederationPlugin({
+      name: camelCase(name),
+      shared: dependencies,
+    }),
     new HtmlWebpackPlugin({
       title: "Nussknacker",
       hash: true,
       filename: "main.html",
       template: "index_template_no_doctype.ejs",
     }),
-    isProd ? null : new webpack.HotModuleReplacementPlugin(),
     new CopyPlugin({
       patterns: [
         {from: "translations", to: "assets/locales"},

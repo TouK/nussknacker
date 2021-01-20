@@ -33,15 +33,3 @@ _You should copy and fill `cypress/fixtures/env.json.template` into `cypress/fix
 
 ### GUI test with running devServer
 ```npm test:e2e:dev```
-
-
-# Background
-
-As a initial template was used todomvc example from https://github.com/gaearon/redux-devtools (commit
-619a18b26a5482585b10eddd331ccacf582ba913)
-It contains:
-
-- react in version 15.0.1
-- redux in version 3.1.1
-- application embraces [react-devtools-extension](https://github.com/zalmoxisus/redux-devtools-extension)
-- react-hot-loader in version 3.0.0-beta.1
