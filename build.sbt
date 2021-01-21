@@ -278,8 +278,9 @@ lazy val dockerSettings = {
 
       val updateLatest = if (dockerUpdateLatest.value) Some("latest") else None
       val dockerVersion = Some(version.value)
-      //TODO: handle it more nicely
-      val currentBranch = propOrEnv("GITHUB_REF").map(_.replace("refs/heads/", "")).getOrElse(git.gitCurrentBranch.value)
+      //TODO: handle it more nicely, checkout actions in CI are not checking out actual branch
+      //other option would be to reset source branch to checkout out commit
+      val currentBranch = sys.env.getOrElse("GIT_SOURCE_BRANCH", git.gitCurrentBranch.value)
       val latestBranch = Some(currentBranch + "-latest")
 
       List(dockerVersion, updateLatest, latestBranch, dockerTagName)

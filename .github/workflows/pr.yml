@@ -258,6 +258,14 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      #TODO: Figure out how to version SNAPSHOTs
+      - name: Define version and branch
+        shell: bash
+        run: |
+          GIT_SOURCE_BRANCH=`([ "${GITHUB_HEAD_REF}" != "" ] && echo "${GITHUB_HEAD_REF}" || echo "${GITHUB_REF}") | sed 's/refs/heads/g' `
+          echo "GIT_SOURCE_BRANCH=$GIT_SOURCE_BRANCH" >> $GITHUB_ENV
+          SANITIZED_BRANCH=`echo ${GIT_SOURCE_BRANCH} | sed 's/[^a-zA-Z0-9.\-_]/\_/g' | awk '{print tolower($0)}'`
+          echo "VERSION_SUFFIX=-$SANITIZED_BRANCH-$(date -I)-$GITHUB_RUN_NUMBER-$GITHUB_SHA" >> $GITHUB_ENV
       - name: Build
         shell: bash
         env:
@@ -267,5 +275,5 @@ jobs:
           nexusPassword: ${{ secrets.SONATYPE_PASSWORD }}
           addDevModel: ${{ github.ref == 'refs/heads/staging' }}
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
-        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := (version in ThisBuild).value.replace(\"-SNAPSHOT\", \"-$(date -I)-$GITHUB_RUN_NUMBER-$GITHUB_SHA-SNAPSHOT\")" +publish dist/docker:publish
+        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := (version in ThisBuild).value.replace(\"-SNAPSHOT\", \"${VERSION_SUFFIX}-SNAPSHOT\")" +publish dist/docker:publish
 
