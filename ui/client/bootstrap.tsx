@@ -7,7 +7,6 @@ import {Router} from "react-router-dom"
 import {PersistGate} from "redux-persist/integration/react"
 import LoaderSpinner from "./components/Spinner"
 
-import "./config"
 import Notifications from "./containers/Notifications"
 import {NkApp} from "./containers/NussknackerApp"
 import NussknackerInitializer from "./containers/NussknackerInitializer"
