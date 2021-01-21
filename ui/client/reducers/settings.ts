@@ -2,6 +2,12 @@ import {Action} from "../actions/reduxTypes"
 import User from "../common/models/User"
 import {ProcessDefinitionData} from "../types"
 
+export enum AuthBackends {
+  BASIC = "BasicAuth",
+  OAUTH2 = "OAuth2",
+  REMOTE = "Remote",
+}
+
 export type SettingsState = {
   loggedUser: Partial<User>,
   featuresSettings: $TodoType,
@@ -12,8 +18,8 @@ export type SettingsState = {
 }
 
 export type AuthenticationSettings = {
-  backend: string,
-  authorizeUrl?: URL,
+  backend: AuthBackends,
+  authorizeUrl?: string,
   jwtAuthServerPublicKey?: string,
   jwtIdTokenNonceVerificationRequired?: boolean,
   implicitGrantEnabled?: boolean,
@@ -23,8 +29,7 @@ const initialState: SettingsState = {
   loggedUser: {},
   featuresSettings: {},
   authenticationSettings: {
-    // eslint-disable-next-line i18next/no-literal-string
-    backend: "BasicAuth",
+    backend: AuthBackends.BASIC,
   },
   analyticsSettings: {},
   processDefinitionData: {},

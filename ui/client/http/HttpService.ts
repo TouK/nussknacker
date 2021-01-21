@@ -1,7 +1,9 @@
 /* eslint-disable i18next/no-literal-string */
 import {AxiosError} from "axios"
 import FileSaver from "file-saver"
+import {SettingsData} from "../actions/nk"
 import api from "../api"
+import {UserData} from "../common/models/User"
 import {ProcessStateType, ProcessType} from "../components/Process/types"
 import {API_URL} from "../config"
 
@@ -91,11 +93,11 @@ class HttpService {
   }
 
   fetchSettings() {
-    return api.get("/settings")
+    return api.get<SettingsData>("/settings")
   }
 
   fetchLoggedUser() {
-    return api.get("/user")
+    return api.get<UserData>("/user")
   }
 
   fetchProcessDefinitionData(processingType, isSubprocess, data) {
@@ -358,8 +360,8 @@ class HttpService {
       .catch(error => this.addError("Failed to send signal", error))
   }
 
-  fetchOAuth2AccessToken(authorizeCode) {
-    return api.get(`/authentication/oauth2?code=${authorizeCode}`)
+  fetchOAuth2AccessToken<T>(authorizeCode: string | string[]) {
+    return api.get<T>(`/authentication/oauth2?code=${authorizeCode}`)
   }
 
   async fetchProcessesNames() {
