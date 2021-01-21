@@ -21,7 +21,7 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Cache ivy packages
         uses: actions/cache@v2
         with:
@@ -49,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build]
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: olafurpg/setup-scala@v10
         with:
           java-version: "openjdk@1.11"
@@ -81,7 +81,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ build ]
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Cache ivy packages
         uses: actions/cache@v2
         with:
@@ -107,7 +107,7 @@ jobs:
     needs: [ build ]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Cache ivy packages
         uses: actions/cache@v2
         with:
@@ -133,7 +133,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ build ]
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Cache ivy packages
         uses: actions/cache@v2
         with:
@@ -159,7 +159,7 @@ jobs:
     name: FrontendTests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Cache npm
         uses: actions/cache@v2
         with:
@@ -176,7 +176,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ build ]
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Cache npm
         uses: actions/cache@v2
         with:
@@ -223,7 +223,7 @@ jobs:
     #TODO: should we publish everything on all those branches?
     if: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.head_ref, 'preview') }}
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Cache npm
         uses: actions/cache@v2
         with:
@@ -258,6 +258,14 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      #TODO: Figure out how to version SNAPSHOTs
+      - name: Define version and branch
+        shell: bash
+        run: |
+          GIT_SOURCE_BRANCH=`([ "${GITHUB_HEAD_REF}" != "" ] && echo "${GITHUB_HEAD_REF}" || echo "${GITHUB_REF}") | sed 's/refs/heads/g' `
+          echo "GIT_SOURCE_BRANCH=$GIT_SOURCE_BRANCH" >> $GITHUB_ENV
+          SANITIZED_BRANCH=`echo ${GIT_SOURCE_BRANCH} | sed 's/[^a-zA-Z0-9.\-_]/\_/g' | awk '{print tolower($0)}'`
+          echo "VERSION_SUFFIX=-$SANITIZED_BRANCH-$(date -I)-$GITHUB_RUN_NUMBER-$GITHUB_SHA" >> $GITHUB_ENV
       - name: Build
         shell: bash
         env:
@@ -267,5 +275,5 @@ jobs:
           nexusPassword: ${{ secrets.SONATYPE_PASSWORD }}
           addDevModel: ${{ github.ref == 'refs/heads/staging' }}
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
-        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := (version in ThisBuild).value.replace(\"-SNAPSHOT\", \"-$(date -I)-$GITHUB_RUN_NUMBER-$GITHUB_SHA-SNAPSHOT\")" +publish dist/docker:publish
+        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := (version in ThisBuild).value.replace(\"-SNAPSHOT\", \"${VERSION_SUFFIX}-SNAPSHOT\")" +publish dist/docker:publish
 
