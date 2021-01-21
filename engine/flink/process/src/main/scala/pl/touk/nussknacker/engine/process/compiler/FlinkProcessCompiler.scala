@@ -20,14 +20,16 @@ import pl.touk.nussknacker.engine.flink.util.async.DefaultAsyncExecutionConfigPr
 import pl.touk.nussknacker.engine.flink.util.listener.NodeCountMetricListener
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.util.LoggingListener
-import pl.touk.nussknacker.engine.{ModelConfigToLoad, ModelData}
+import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.modelconfig.{InputConfigDuringExecution, ModelConfigLoader}
 
 import scala.concurrent.duration.FiniteDuration
 
 //This class is serialized in Flink Job graph, on jobmanager etc. That's why we struggle to keep parameters as small as possible
-//and we have ModelConfigToLoad and not whole config
+//and we have InputConfigDuringExecution with ModelConfigLoader and not whole config
 class FlinkProcessCompiler(creator: ProcessConfigCreator,
-                           configToLoad: ModelConfigToLoad,
+                           inputConfigDuringExecution: InputConfigDuringExecution,
+                           modelConfigLoader: ModelConfigLoader,
                            val diskStateBackendSupport: Boolean,
                            objectNaming: ObjectNaming) extends Serializable {
 
@@ -35,7 +37,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  def this(modelData: ModelData) = this(modelData.configCreator, modelData.processConfigFromConfiguration, true, modelData.objectNaming)
+  def this(modelData: ModelData) = this(modelData.configCreator, modelData.inputConfigDuringExecution, modelData.modelConfigLoader, diskStateBackendSupport = true, modelData.objectNaming)
 
   def compileProcess(process: EspProcess, processVersion: ProcessVersion)(userCodeClassLoader: ClassLoader): CompiledProcessWithDeps = {
     val config = loadConfig(userCodeClassLoader)
@@ -98,5 +100,5 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
     }
   }
 
-  private def loadConfig(userClassLoader: ClassLoader): Config = configToLoad.loadConfig(userClassLoader)
+  private def loadConfig(userClassLoader: ClassLoader): Config = modelConfigLoader.resolveConfig(inputConfigDuringExecution, userClassLoader)
 }

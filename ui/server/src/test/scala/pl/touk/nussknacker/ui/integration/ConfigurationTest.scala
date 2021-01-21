@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.integration
 
-import com.typesafe.config.{ConfigFactory, ConfigRenderOptions, ConfigResolveOptions}
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.ui.config.ConfigWithDefaults
@@ -35,12 +34,18 @@ class ConfigurationTest extends FunSuite with Matchers {
     modelDataConfig.getString("nodes.filter.docsUrl") shouldBe "https://touk.github.io/nussknacker/filter"
   }
 
+  // See SampleModelConfigLoader.
+  test("should load config using custom loader") {
+    modelDataConfig.getLong("configLoadedMs") shouldBe < (System.currentTimeMillis)
+    modelDataConfig.getString("duplicatedSignalsTopic") shouldBe "nk.signals"
+  }
+
   //to be able to run this test:
   //add -Dconfig.override_with_env_vars=true to VM parameters
   //set env variable: CONFIG_FORCE_processTypes_streaming_modelConfig_testProperty=testValue
   ignore("check if env properties are used/passed") {
     modelDataConfig.getString("testProperty") shouldBe "testValue"
-    ConfigFactory.parseString(modelData.processConfigFromConfiguration.render()).getString("testProperty") shouldBe "testValue"
+    modelData.inputConfigDuringExecution.config.getString("testProperty") shouldBe "testValue"
   }
 
 

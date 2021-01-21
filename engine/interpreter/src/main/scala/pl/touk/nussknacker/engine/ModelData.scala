@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessD
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor, TypeInfos}
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
+import pl.touk.nussknacker.engine.modelconfig.{DefaultModelConfigLoader, InputConfigDuringExecution, ModelConfigLoader}
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ProcessConfigCreatorLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
@@ -20,28 +21,44 @@ import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 
 object ModelData extends LazyLogging {
 
-  def apply(processConfig: Config, classpath: List[URL]) : ModelData = {
-    //TODO: ability to generate additional classpath?
-    val jarClassLoader = ModelClassLoader(classpath)
-    logger.debug("Loading model data from classpath: " + classpath)
-    ClassLoaderModelData(ModelConfigToLoad(processConfig), jarClassLoader)
+  def apply(inputConfig: Config, modelClassLoader: ModelClassLoader) : ModelData = {
+    logger.debug("Loading model data from: " + modelClassLoader)
+    ClassLoaderModelData(
+      modelConfigLoader => modelConfigLoader.resolveInputConfigDuringExecution(inputConfig, modelClassLoader.classLoader),
+      modelClassLoader)
+  }
+
+  // Used on Flink, where we start already with resolved config so we should not resolve it twice.
+  def duringExecution(inputConfig: Config): ModelData = {
+    ClassLoaderModelData(_ => InputConfigDuringExecution(inputConfig), ModelClassLoader(Nil))
   }
 
   //TODO: remove jarPath
   case class ClasspathConfig(jarPath: Option[URL], classpath: Option[List[URL]]) {
     def urls: List[URL] = jarPath.toList ++ classpath.getOrElse(List())
   }
-
 }
 
 
-case class ClassLoaderModelData(processConfigFromConfiguration: ModelConfigToLoad, modelClassLoader: ModelClassLoader)
+case class ClassLoaderModelData private(private val resolveInputConfigDuringExecution: ModelConfigLoader => InputConfigDuringExecution,
+                                        modelClassLoader: ModelClassLoader)
   extends ModelData {
 
   //this is not lazy, to be able to detect if creator can be created...
-  val configCreator : ProcessConfigCreator = ProcessConfigCreatorLoader.justOne(modelClassLoader.classLoader)
+  override val configCreator : ProcessConfigCreator = ProcessConfigCreatorLoader.justOne(modelClassLoader.classLoader)
 
-  lazy val migrations: ProcessMigrations = {
+  override lazy val modelConfigLoader: ModelConfigLoader = {
+    Multiplicity(ScalaServiceLoader.load[ModelConfigLoader](modelClassLoader.classLoader)) match {
+      case Empty() => new DefaultModelConfigLoader
+      case One(modelConfigLoader) => modelConfigLoader
+      case Many(moreThanOne) =>
+        throw new IllegalArgumentException(s"More than one ModelConfigLoader instance found: $moreThanOne")
+    }
+  }
+
+  override lazy val inputConfigDuringExecution: InputConfigDuringExecution = resolveInputConfigDuringExecution(modelConfigLoader)
+
+  override lazy val migrations: ProcessMigrations = {
     Multiplicity(ScalaServiceLoader.load[ProcessMigrations](modelClassLoader.classLoader)) match {
       case Empty() => ProcessMigrations.empty
       case One(migrationsDef) => migrationsDef
@@ -84,9 +101,11 @@ trait ModelData extends AutoCloseable {
 
   def modelClassLoader : ModelClassLoader
 
-  def processConfigFromConfiguration: ModelConfigToLoad
+  def modelConfigLoader: ModelConfigLoader
 
-  lazy val processConfig: Config = processConfigFromConfiguration.loadConfig(modelClassLoader.classLoader)
+  def inputConfigDuringExecution: InputConfigDuringExecution
+
+  lazy val processConfig: Config = modelConfigLoader.resolveConfig(inputConfigDuringExecution, modelClassLoader.classLoader)
 
   def close(): Unit = {
     dictServices.close()
