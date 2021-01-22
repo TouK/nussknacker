@@ -1,12 +1,17 @@
 package pl.touk.nussknacker.engine.flink.queryablestate
 
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.Json
 import org.apache.flink.api.common.{ExecutionConfig, JobID}
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.queryablestate.client.QueryableStateClient
 import org.apache.flink.streaming.api.scala._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.deployment.DeploymentId
+import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.engine.api.queryablestate.{QueryableClient, QueryableState}
+import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
 
 import scala.compat.java8.FutureConverters
 import scala.concurrent.{ExecutionContext, Future}
@@ -56,12 +61,12 @@ object FlinkQueryableClient {
 class FlinkQueryableClient(createClients: => List[QueryableStateClient]) extends QueryableClient with LazyLogging {
 
   private lazy val clients = createClients
-
-  def fetchState[V: TypeInformation](jobId: String, queryName: String, key: String)
+  
+  def fetchState[V: TypeInformation](jobId: DeploymentId, queryName: String, key: String)
                                     (implicit ec: ExecutionContext): Future[V] = {
     val keyTypeInfo = implicitly[TypeInformation[String]]
     val valueTypeInfo = implicitly[TypeInformation[V]]
-    val flinkJobId = JobID.fromHexString(jobId)
+    val flinkJobId = JobID.fromHexString(jobId.value)
     val stateDescriptor = new ValueStateDescriptor[V](key, valueTypeInfo)
 
     //TODO: this is workaround for https://issues.apache.org/jira/browse/FLINK-10225, we want to be able to configure all task managers
@@ -82,19 +87,32 @@ class FlinkQueryableClient(createClients: => List[QueryableStateClient]) extends
     tryToFetchState(clients, None)
   }
 
-  def fetchJsonState(jobId: String, queryName: String, key: String)
+  def fetchJsonState(jobId: DeploymentId, queryName: String, key: String)
                     (implicit ec: ExecutionContext): Future[String] = {
     fetchState[String](jobId, queryName, key)
   }
 
-  def fetchJsonState(jobId: String, queryName: String)
+  def fetchJsonState(jobId: DeploymentId, queryName: String)
                     (implicit ec: ExecutionContext): Future[String] = {
     fetchState[String](jobId, queryName)
   }
 
-  def fetchState[V: TypeInformation](jobId: String, queryName: String)
+  def fetchState[V: TypeInformation](jobId: DeploymentId, queryName: String)
                 (implicit ec: ExecutionContext): Future[V] = {
     fetchState[V](jobId, queryName, QueryableState.defaultKey)
+  }
+
+  override def fetchState(deploymentId: DeploymentId,
+                          nodeId: NodeId,
+                          queryName: String,
+                          transformationObject: Any,
+                          keyId: String
+                )(implicit ec: ExecutionContext): Future[AnyRef] = {
+    implicit val transformation: TypeInformation[AnyRef] = transformationObject.asInstanceOf[FlinkCustomStreamTransformation]
+      .queryableStateTypes().apply(queryName).asInstanceOf[TypeInformation[AnyRef]]
+    //TODO: probably we should include nodeId in state name, otherwise there won't be possibility to have e.g two aggregates?
+    val keyWithNode = /*nodeId.id + "-" +*/ keyId
+    fetchState[AnyRef](deploymentId, queryName, keyWithNode)
   }
 
   def close(): Unit = {

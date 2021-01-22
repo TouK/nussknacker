@@ -29,8 +29,10 @@ taskmanager.hostname: taskmanager
 
 taskmanager.data.port: 6126
 
-taskmanager.memory.task.heap.size: 256m
-taskmanager.memory.managed.size: 204m
+taskmanager.memory.task.heap.size: 512m
+taskmanager.memory.managed.size: 1512m
+#queryable state...
+taskmanager.memory.framework.off-heap.size: 256m
 
 env.java.opts.taskmanager: "-Dcom.sun.management.jmxremote -Djava.rmi.server.hostname=localhost -Dcom.sun.management.jmxremote.port=9009 -Dcom.sun.management.jmxremote.rmi.port=9008 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false"
 
@@ -90,5 +92,6 @@ metrics.scope.operator: demo.<host>.taskmanagerTask.<tm_id>.<job_name>.<operator
 classloader.resolve-order: parent-first
 akka.framesize: 209715200b
 
+queryable-state.enable: true
 query.server.port: 6125
 blob.server.port: 6124

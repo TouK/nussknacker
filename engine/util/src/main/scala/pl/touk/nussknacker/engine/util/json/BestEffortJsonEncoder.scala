@@ -44,8 +44,8 @@ case class BestEffortJsonEncoder(failOnUnkown: Boolean, highPriority: PartialFun
       case a: Instant => Encoder[Instant].apply(a)
       case a: OffsetDateTime => Encoder[OffsetDateTime].apply(a)
       case a: DisplayJson => a.asJson
-      case a: scala.collection.Map[String@unchecked, _] => encodeMap(a.toMap)
-      case a: java.util.Map[String@unchecked, _] => encodeMap(a.asScala.toMap)
+      case a: scala.collection.Map[String@unchecked, _] if a.forall(_._1.isInstanceOf[String]) => encodeMap(a.toMap)
+      case a: java.util.Map[String@unchecked, _] if a.asScala.forall(_._1.isInstanceOf[String]) => encodeMap(a.asScala.toMap)
       case a: Traversable[_] => fromValues(a.map(encode).toList)
       case a: java.util.Collection[_] => fromValues(a.asScala.map(encode).toList)
       case _ if !failOnUnkown => safeString(any.toString)

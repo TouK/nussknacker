@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.transformers.aggregatorQueryable
 
 import scala.concurrent.duration.Duration
 
@@ -115,6 +116,7 @@ object sampleTransformers {
   object SlidingAggregateTransformerV2 extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
     @MethodToInvoke(returnType = classOf[AnyRef])
+    @QueryableStateNames(values = Array("aggregate"))
     def execute(@ParamName("keyBy") keyBy: LazyParameter[CharSequence],
                 @ParamName("aggregator")
                 @DualEditor(simpleEditor = new SimpleEditor(
@@ -136,6 +138,7 @@ object sampleTransformers {
       val windowDuration = Duration(length.toMillis, TimeUnit.MILLISECONDS)
       transformers.slidingTransformer(keyBy, aggregateBy, aggregator, windowDuration, variableName, emitWhenEventLeft, explicitUidInStatefulOperators)
     }
+
   }
 
   object TumblingAggregateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {

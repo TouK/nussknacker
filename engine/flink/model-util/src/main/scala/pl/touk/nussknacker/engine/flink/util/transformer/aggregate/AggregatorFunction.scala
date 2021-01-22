@@ -30,7 +30,9 @@ import scala.language.higherKinds
 // Flinks SlidingWindows are something that is often called HoppingWindow. They consume a lot of memory because each element
 // is stored in multiple windows with different offsets.
 class AggregatorFunction[MapT[K,V]](protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long,
-                                    override val nodeId: NodeId, protected val storedAggregateType: TypingResult)
+                                    override val nodeId: NodeId,
+                                    protected val storedAggregateType: TypingResult,
+                                    override val aggregateTypeInformation: TypeInformation[AnyRef])
                                    (implicit override val rangeMap: FlinkRangeMap[MapT])
   extends LatelyEvictableStateFunction[ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef], MapT[Long, AnyRef]]
   with AggregatorFunctionMixin[MapT] {
@@ -153,9 +155,12 @@ trait AggregatorFunctionMixin[MapT[K,V]] { self: StateHolder[MapT[Long, AnyRef]]
   protected def readStateOrInitial(): MapT[Long, aggregator.Aggregate] =
     Option(readState().asInstanceOf[MapT[Long, aggregator.Aggregate]]).getOrElse(rangeMap.empty[Long, aggregator.Aggregate])
 
-  override protected def stateDescriptor: ValueStateDescriptor[MapT[Long, AnyRef]] =
-    new ValueStateDescriptor[MapT[Long, AnyRef]]("state",
+  override protected def stateDescriptor: ValueStateDescriptor[MapT[Long, AnyRef]] = {
+    val descriptor = new ValueStateDescriptor[MapT[Long, AnyRef]]("state",
       rangeMap.typeInformation[Long, AnyRef](implicitly[TypeInformation[Long]], aggregateTypeInformation))
+    descriptor.setQueryable(transformers.aggregatorQueryable)
+    descriptor
+  }
 
   // TODO pass type information based on validatedStoredType for fast (de)serialization
   protected def aggregateTypeInformation: TypeInformation[AnyRef] = {

@@ -10,6 +10,7 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.DeploymentId
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.queryablestate.FlinkQueryableClient
@@ -75,7 +76,7 @@ class QueryableStateTest extends FlatSpec with FlinkSpec with Matchers with Kafk
       val client = FlinkQueryableClient(s"localhost:$strangePort, localhost:$queryStateProxyPortLow, localhost:${queryStateProxyPortLow + 1}")
 
       def queryState(jobId: String): Future[Boolean] = client.fetchState[java.lang.Boolean](
-        jobId = jobId,
+        jobId = DeploymentId(jobId),
         queryName = "single-lock-state",
         key = DevProcessConfigCreator.oneElementValue).map(Boolean.box(_))
 

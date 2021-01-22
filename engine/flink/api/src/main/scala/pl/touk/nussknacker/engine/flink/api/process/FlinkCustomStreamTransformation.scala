@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.api.process
 
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.scala.DataStream
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
@@ -13,6 +14,13 @@ object FlinkCustomStreamTransformation {
   : FlinkCustomStreamTransformation = new FlinkCustomStreamTransformation {
     override def transform(start: DataStream[Context], context: FlinkCustomNodeContext)
     : DataStream[ValueWithContext[AnyRef]] = fun(start, context)
+  }
+
+  def apply(fun: (DataStream[Context], FlinkCustomNodeContext) => DataStream[ValueWithContext[AnyRef]], states: Map[String, TypeInformation[_]])
+  : FlinkCustomStreamTransformation = new FlinkCustomStreamTransformation {
+    override def transform(start: DataStream[Context], context: FlinkCustomNodeContext)
+    : DataStream[ValueWithContext[AnyRef]] = fun(start, context)
+    override def queryableStateTypes(): Map[String, TypeInformation[_]] = states
   }
 
   def apply(fun: (DataStream[Context], FlinkCustomNodeContext) => DataStream[ValueWithContext[AnyRef]],
@@ -29,6 +37,9 @@ trait FlinkCustomStreamTransformation {
 
   // TODO: To be consistent with ContextTransformation should return Context
   def transform(start: DataStream[Context], context: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]]
+
+  //this will be used by FlinkQueryableClient
+  def queryableStateTypes(): Map[String, TypeInformation[_]] = Map.empty
 
 }
 

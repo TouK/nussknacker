@@ -702,7 +702,7 @@ lazy val flinkModelUtil = (project in engine("flink/model-util")).
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
       )
     }
-  ).dependsOn(flinkUtil, flinkTestUtil % "test", process % "test")
+  ).dependsOn(flinkUtil, flinkTestUtil % "test", process)
 
 lazy val flinkTestUtil = (project in engine("flink/test-util")).
   settings(commonSettings).
@@ -844,7 +844,7 @@ lazy val queryableState = (project in engine("queryableState")).
         "com.typesafe" % "config" % configV
       )
     }
-  ).dependsOn(api)
+  ).dependsOn(api, flinkApi, util)
 
 
 

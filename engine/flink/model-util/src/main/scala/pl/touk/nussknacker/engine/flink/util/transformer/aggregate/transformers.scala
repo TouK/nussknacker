@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import org.apache.flink.annotation.PublicEvolving
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
@@ -10,6 +11,8 @@ import pl.touk.nussknacker.engine.api.{Context => NkContext, _}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValueMapper
+import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap.SortedMapFlinkRangeMap
+import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection
 
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.Duration
@@ -18,6 +21,8 @@ import scala.concurrent.duration.Duration
 @PublicEvolving // will be only one version for each method, with explicitUidInStatefulOperators = true
                 // in the future - see ExplicitUidInOperatorsCompat for more info
 object transformers {
+
+  val aggregatorQueryable = "aggregate"
 
   def slidingTransformer(keyBy: LazyParameter[CharSequence],
                          aggregateBy: LazyParameter[AnyRef],
@@ -35,23 +40,32 @@ object transformers {
                          emitWhenEventLeft: Boolean,
                          explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean
                         )(implicit nodeId: NodeId): ContextTransformation = {
+
+    val typeInformationDetection = new TypingResultAwareTypeInformationDetection()
+    val storedAggregateType = aggregator
+      .computeStoredType(aggregateBy.returnType).valueOr(msg => throw new IllegalArgumentException(msg))
+
+    val typeInformation = typeInformationDetection.forType(storedAggregateType).asInstanceOf[TypeInformation[AnyRef]]
+    val ti = Map(aggregatorQueryable ->
+      SortedMapFlinkRangeMap.typeInformation(implicitly[TypeInformation[Long]], typeInformation))
+
+
     ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, aggregateBy))
       .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
-          val storedAggregateType = aggregator.computeStoredType(aggregateBy.returnType).valueOr(msg => throw new IllegalArgumentException(msg))
           val expectedType = aggregator.computeOutputType(aggregateBy.returnType).valueOr(msg => throw new IllegalArgumentException(msg))
           val aggregatorFunction =
             if (emitWhenEventLeft)
               new EmitWhenEventLeftAggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, storedAggregateType)
             else
-              new AggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, storedAggregateType)
+              new AggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, storedAggregateType, typeInformation)
           val statefulStream = start
             .map(new StringKeyedValueMapper(ctx.lazyParameterHelper, keyBy, aggregateBy))
             .keyBy(_.value.key)
             .process(aggregatorFunction)
           ExplicitUidInOperatorsSupport.setUidIfNeed(explicitUidInStatefulOperators(ctx), ctx.nodeId)(statefulStream)
             .map(_.map(aggregator.alignToExpectedType(_, expectedType)))
-        }))
+        }, ti))
   }
 
   def tumblingTransformer(keyBy: LazyParameter[CharSequence],
