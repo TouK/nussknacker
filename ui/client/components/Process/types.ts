@@ -9,12 +9,15 @@ export enum ActionType {
 
 export enum StatusType {
   Running = "RunningStateStatus",
-  NotDeployed= "AllowDeployStateStatus"
+  NotDeployed= "AllowDeployStateStatus",
 }
 
 export enum StatusName {
   Running = "RUNNING",
   NotDeployed = "NOT_DEPLOYED",
+  //FIXME: It's just fast fix for support periodic running status. Remove it after when we will properly support actions.
+  Scheduled = "SCHEDULED",
+  WaitingForSchedule = "WAITING_FOR_SCHEDULE",
 }
 
 export type ProcessVersionId = number
