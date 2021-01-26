@@ -16,8 +16,9 @@ object TypeInformationDetection extends LazyLogging {
     and use TypingResultAwareTypeInformationDetection for true, GenericTypeInformationDetection (default) otherwise
    */
   def forExecutionConfig(executionConfig: ExecutionConfig, classLoader: ClassLoader): TypeInformationDetection = {
-    val defaultTypeInformationDetection: TypeInformationDetection = prepareDefaultTypeInformationDetection(executionConfig, classLoader)
-    val detectionToUse = ScalaServiceLoader.load[TypeInformationDetection](classLoader).headOption.getOrElse(defaultTypeInformationDetection)
+    val detectionToUse = ScalaServiceLoader.loadClass[TypeInformationDetection](classLoader) {
+      prepareDefaultTypeInformationDetection(executionConfig, classLoader)
+    }
     logger.info(s"Using TypeInformationDetection: $detectionToUse")
     detectionToUse
   }
