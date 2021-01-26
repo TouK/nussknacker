@@ -4,12 +4,15 @@ import java.time.Duration
 
 import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
+import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource, SourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, TimestampWatermarkHandler}
+import pl.touk.nussknacker.engine.flink.util.context.InitContextFunction
 import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunctuatedExtractor
 
 import scala.annotation.nowarn
@@ -20,7 +23,8 @@ import scala.annotation.nowarn
 @silent("deprecated")
 @nowarn("deprecated")
 class EmitWatermarkAfterEachElementCollectionSource[T: TypeInformation](list: Seq[T],
-                                                                        timestampAssigner: AssignerWithPunctuatedWatermarks[T]) extends FlinkSource[T] {
+                                                                        timestampAssigner: AssignerWithPunctuatedWatermarks[T])
+  extends FlinkSource[T] with SourceTestSupport[T] {
 
   private val flinkSourceFunction: SourceFunction[T] = {
     // extracted for serialization purpose
@@ -49,11 +53,12 @@ class EmitWatermarkAfterEachElementCollectionSource[T: TypeInformation](list: Se
     }
   }
 
-  override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[T] = {
+  override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[Context] = {
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
     env
       .addSource(flinkSourceFunction)
       .name(s"${flinkNodeContext.metaData.id}-${flinkNodeContext.nodeId}-source")
+      .map(new InitContextFunction[T](flinkNodeContext.metaData.id, flinkNodeContext.nodeId))(implicitly[TypeInformation[Context]])
   }
 
   override def typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]

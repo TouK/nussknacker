@@ -6,12 +6,15 @@ import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue, TimeUnit}
 
 import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
+import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource, SourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, TimestampWatermarkHandler}
+import pl.touk.nussknacker.engine.flink.util.context.InitContextFunction
 import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunctuatedExtractor
 
 import scala.annotation.nowarn
@@ -23,7 +26,8 @@ import scala.collection.JavaConverters._
  */
 @silent("deprecated")
 @nowarn("deprecated")
-class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPunctuatedWatermarks[T]) extends FlinkSource[T] with Serializable {
+class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPunctuatedWatermarks[T])
+  extends FlinkSource[T] with SourceTestSupport[T] with Serializable {
 
   private val id = UUID.randomUUID().toString
 
@@ -62,11 +66,12 @@ class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPun
     }
   }
 
-  override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[T] = {
+  override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[Context] = {
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
     env
       .addSource(flinkSourceFunction)
       .name(s"${flinkNodeContext.metaData.id}-${flinkNodeContext.nodeId}-source")
+      .map(new InitContextFunction[T](flinkNodeContext.metaData.id, flinkNodeContext.nodeId))(implicitly[TypeInformation[Context]])
   }
 
   override def typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
