@@ -12,8 +12,23 @@ import pl.touk.nussknacker.engine.api.{Context, InterpretationResult, PartRefere
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{TypedJavaMapTypeInformation, TypedMapTypeInformation, TypedScalaMapTypeInformation}
 import pl.touk.nussknacker.engine.process.typeinformation.internal.{FixedValueSerializers, InterpretationResultMapTypeInfo}
 import pl.touk.nussknacker.engine.util.Implicits._
+import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
 import scala.reflect.ClassTag
+
+object TypingResultAwareTypeInformationDetection {
+
+  def apply(classLoader: ClassLoader): TypingResultAwareTypeInformationDetection = {
+    val customisations = ScalaServiceLoader.load[TypingResultAwareTypeInformationCustomisation](classLoader)
+    new TypingResultAwareTypeInformationDetection(new CompositeCustomisation(customisations))
+  }
+
+  class CompositeCustomisation(customisations: List[TypingResultAwareTypeInformationCustomisation]) extends TypingResultAwareTypeInformationCustomisation {
+    override def customise(originalDetection: TypingResultAwareTypeInformationDetection): PartialFunction[TypingResult, TypeInformation[_]] =
+      customisations.map(_.customise(originalDetection)).reduceOption(_.orElse(_)).getOrElse(Map.empty)
+  }
+
+}
 
 /*
   This is *experimental* TypeInformationDetection, which generates TypeInformation based on ValidationContext and TypingResult.
@@ -23,10 +38,10 @@ import scala.reflect.ClassTag
   To use it for serialization between operators use TypeInformationDetection service loading.
   To use it for state serialization one can use it directly in operators/process functions (compatibility is *NOT* guaranteed ATM).
  */
-class TypingResultAwareTypeInformationDetection(additionalTypeInfoDeterminerPreparer:
-                                                TypingResultAwareTypeInformationDetection => PartialFunction[TypingResult, TypeInformation[_]] = _ => Map.empty) extends TypeInformationDetection {
+class TypingResultAwareTypeInformationDetection(customisation:
+                                                TypingResultAwareTypeInformationCustomisation) extends TypeInformationDetection {
 
-  private val additionalTypeInfoDeterminer = additionalTypeInfoDeterminerPreparer(this)
+  private val additionalTypeInfoDeterminer = customisation.customise(this)
 
   private val registeredTypeInfos: Set[TypeInformation[_]] = {
     import org.apache.flink.api.scala._
@@ -69,7 +84,7 @@ class TypingResultAwareTypeInformationDetection(additionalTypeInfoDeterminerPrep
       //TODO: better handle specific map implementations - other than HashMap?
       case a:TypedObjectTypingResult if classOf[java.util.Map[String, _]].isAssignableFrom(a.objType.klass) =>
         TypedJavaMapTypeInformation(a.fields.mapValuesNow(forType))
-      //TODO: how can we handle union - at leasy of some types?
+      //TODO: how can we handle union - at least of some types?
       case _ =>
         fallback[Any]
     }).asInstanceOf[TypeInformation[Any]]
