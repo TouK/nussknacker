@@ -4,6 +4,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel, Writer}
+import pl.touk.nussknacker.engine.Interpreter.{FutureShape, InterpreterShape}
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnsupportedPart
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
@@ -145,7 +146,9 @@ object StandaloneProcessInterpreter {
       compilePartInvokers(parts).map(_.map { partsInvokers =>
         (ctx: Context, ec: ExecutionContext) => {
           implicit val iec: ExecutionContext = ec
-          processCompilerData.interpreter.interpret(node, processCompilerData.metaData, ctx).flatMap { maybeResult =>
+          //TODO: refactor StandaloneInterpreter to use IO
+          implicit val shape: InterpreterShape[Future] = new FutureShape
+          processCompilerData.interpreter.interpret[Future](node, processCompilerData.metaData, ctx).flatMap { maybeResult =>
             maybeResult.fold[InterpreterOutputType](
             ir => Future.sequence(ir.map(interpretationInvoke(partsInvokers))).map(foldResults),
             a => Future.successful(Left(NonEmptyList.of(a))))

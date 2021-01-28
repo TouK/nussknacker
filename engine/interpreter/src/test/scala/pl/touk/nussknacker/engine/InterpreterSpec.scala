@@ -4,6 +4,7 @@ import java.util.Optional
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.effect.IO
 import com.typesafe.config.ConfigFactory
 import javax.annotation.Nullable
 import javax.validation.constraints.NotBlank
@@ -77,6 +78,8 @@ class InterpreterSpec extends FunSuite with Matchers {
                               services: Map[String, Service] = servicesDef,
                               transformers: Map[String, CustomStreamTransformer] = Map()): Any = {
     import SynchronousExecutionContext.ctx
+    import Interpreter._
+
     AccountService.clear()
     NameDictService.clear()
 
@@ -92,7 +95,7 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     val initialCtx = Context("abc").withVariable(Interpreter.InputParamName, transaction)
 
-    val resultBeforeSink = Await.result(interpreter.interpret(compileNode(parts.sources.head), process.metaData, initialCtx), 10 seconds) match {
+    val resultBeforeSink = interpreter.interpret[IO](compileNode(parts.sources.head), process.metaData, initialCtx).unsafeRunSync() match {
       case Left(result) => result
       case Right(exceptionInfo) => throw exceptionInfo.throwable
     }
@@ -103,7 +106,7 @@ class InterpreterSpec extends FunSuite with Matchers {
           case sink: SinkPart if sink.id == nextPartId => sink
           case endingCustomPart: CustomNodePart if endingCustomPart.id == nextPartId => endingCustomPart
         }.get
-        Await.result(interpreter.interpret(compileNode(sink), metaData, resultBeforeSink.head.finalContext), 10 seconds).left.get.head.output
+        interpreter.interpret(compileNode(sink), metaData, resultBeforeSink.head.finalContext).unsafeRunSync().left.get.head.output
       case _: EndReference =>
         resultBeforeSink.head.output
       case _: DeadEndReference =>
