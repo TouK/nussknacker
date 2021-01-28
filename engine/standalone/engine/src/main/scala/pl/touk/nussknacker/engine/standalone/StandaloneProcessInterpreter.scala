@@ -26,7 +26,7 @@ import pl.touk.nussknacker.engine.standalone.api.types._
 import pl.touk.nussknacker.engine.standalone.api.{StandaloneCustomTransformer, StandaloneSource, types}
 import pl.touk.nussknacker.engine.standalone.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.standalone.utils.{StandaloneContext, StandaloneContextLifecycle, StandaloneContextPreparer, StandaloneSinkWithParameters}
-import pl.touk.nussknacker.engine.{Interpreter, ModelData, compiledgraph}
+import pl.touk.nussknacker.engine.{ModelData, compiledgraph}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -197,7 +197,7 @@ case class StandaloneProcessInterpreter(source: StandaloneSource[Any],
   def invokeToResult(input: Any, contextIdOpt: Option[String] = None)(implicit ec: ExecutionContext): InterpreterOutputType = modelData.withThisAsContextClassLoader {
     val contextId = contextIdOpt.getOrElse(s"${context.processId}-${counter.getAndIncrement()}")
     measureTime {
-      val ctx = Context(contextId).withVariable(Interpreter.InputParamName, input)
+      val ctx = Context(contextId).withVariable(ContextInterpreter.InputVariableName, input)
       invoker(ctx, ec)
     }
   }

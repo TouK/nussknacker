@@ -3,14 +3,13 @@ package pl.touk.nussknacker.engine.avro.sink
 import com.typesafe.config.ConfigFactory
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.generic.GenericContainer
-import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.TypedNodeDependencyValue
 import pl.touk.nussknacker.engine.api.process.Sink
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException, typing}
-import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{ContextInterpreter, LazyParameter, MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer._
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2, GeneratedAvroClassWithLogicalTypes, PaymentV1}
@@ -42,7 +41,7 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
     implicit val meta: MetaData = MetaData("processId", StreamMetaData())
     implicit val nodeId: NodeId = NodeId("id")
     val paramsList = params.toList.map(p => Parameter(p._1, p._2))
-    validator.validateNode(avroSinkFactory, paramsList, Nil, Some(Interpreter.InputParamName))(ValidationContext()).toOption.get
+    validator.validateNode(avroSinkFactory, paramsList, Nil, Some(ContextInterpreter.InputVariableName))(ValidationContext()).toOption.get
   }
 
   protected def createSink(topic: String, versionOption: SchemaVersionOption, value: LazyParameter[GenericContainer], validationMode: ValidationMode): Sink = {

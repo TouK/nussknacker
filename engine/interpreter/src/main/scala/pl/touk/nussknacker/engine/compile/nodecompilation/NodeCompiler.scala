@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{ServiceInvocati
 import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType}
-import pl.touk.nussknacker.engine.api.{Context, ContextId, EagerService, MetaData, ServiceInvoker}
+import pl.touk.nussknacker.engine.api.{Context, ContextInterpreter, ContextId, EagerService, MetaData, ServiceInvoker}
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo.DefaultExpressionId
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{ExpressionCompilation, NodeCompilationResult}
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeTypingInfo, NodeValidationExceptionHandler, ProcessObjectFactory}
@@ -32,7 +32,7 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.{evaluatedparam, node}
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import pl.touk.nussknacker.engine.{Interpreter, api, compiledgraph, graph}
+import pl.touk.nussknacker.engine.{api, compiledgraph, graph}
 import shapeless.Typeable
 import shapeless.syntax.typeable._
 
@@ -85,14 +85,14 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
       definitions.sourceFactories.get(ref.typ) match {
         case Some(definition) =>
           def defaultContextTransformation(compiled: Option[Any]) =
-            contextWithOnlyGlobalVariables.withVariable(Interpreter.InputParamName, compiled.flatMap(a => returnType(definition, a)).getOrElse(Unknown), paramName = None)
+            contextWithOnlyGlobalVariables.withVariable(ContextInterpreter.InputVariableName, compiled.flatMap(a => returnType(definition, a)).getOrElse(Unknown), paramName = None)
 
           compileObjectWithTransformation[Source[_]](a.parameters, Nil,
-            Left(contextWithOnlyGlobalVariables), Some(Interpreter.InputParamName), definition, defaultContextTransformation)
+            Left(contextWithOnlyGlobalVariables), Some(ContextInterpreter.InputVariableName), definition, defaultContextTransformation)
         case None =>
           val error = Invalid(NonEmptyList.of(MissingSourceFactory(ref.typ)))
           //TODO: is this default behaviour ok?
-          val defaultCtx = contextWithOnlyGlobalVariables.withVariable(Interpreter.InputParamName, Unknown, paramName = None)
+          val defaultCtx = contextWithOnlyGlobalVariables.withVariable(ContextInterpreter.InputVariableName, Unknown, paramName = None)
           NodeCompilationResult(Map.empty, None, defaultCtx, error)
       }
     case SubprocessInputDefinition(_, params, _) =>

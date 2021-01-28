@@ -7,7 +7,6 @@ import java.util.{Date, Optional, UUID}
 import cats.data.Validated.Valid
 import com.github.ghik.silencer.silent
 import io.circe.generic.JsonCodec
-
 import javax.annotation.Nullable
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
@@ -642,6 +641,44 @@ object SampleNodes {
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source[AnyRef] = {
       val out = params("type") + "-" + params("version")
       CollectionSource(StreamExecutionEnvironment.getExecutionEnvironment.getConfig, out::Nil, None, Typed[String])
+    }
+
+    override def nodeDependencies: List[NodeDependency] = OutputVariableNameDependency :: Nil
+  }
+
+  object GenericParametersSourceWithAdditionalVariable extends FlinkSourceFactory[String] with SingleInputGenericNodeTransformation[Source[String]] {
+
+    override type State = Nothing
+
+    override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): this.NodeTransformationDefinition = {
+      case TransformationStep(Nil, _) => FinalResults(finalCtx(context, dependencies))
+    }
+
+    private def finalCtx(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): ValidationContext = {
+      val name = dependencies.collectFirst {
+        case OutputVariableNameValue(name) => name
+      }.get
+      val ctxWithInput = context.withVariable(OutputVar.customNode(name), Typed[String]).toOption.get
+      val ctxWithInputAndAdditional = ctxWithInput.withVariable("additionalVariableOnStart", Typed[String], None).toOption.get
+      ctxWithInputAndAdditional
+    }
+
+    override def initialParameters: List[Parameter] = Nil
+
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[GenericParametersSourceWithAdditionalVariable.State]): Source[String] = {
+      val emittedElement = "emitted element"
+
+      new CollectionSource[String](StreamExecutionEnvironment.getExecutionEnvironment.getConfig, emittedElement::Nil, None, Typed[String]) {
+
+        override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[Context] = {
+          val stream = super.sourceStream(env, flinkNodeContext)
+          stream.map(context => {
+            val rawInputValue = context.get[String](ContextInterpreter.InputVariableName).orNull
+            context.withVariable("additionalVariableOnStart", s"some additional value (${rawInputValue})")
+          })
+        }
+
+      }
     }
 
     override def nodeDependencies: List[NodeDependency] = OutputVariableNameDependency :: Nil

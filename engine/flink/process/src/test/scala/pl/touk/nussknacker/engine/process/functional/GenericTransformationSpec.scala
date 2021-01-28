@@ -68,4 +68,18 @@ class GenericTransformationSpec extends FunSuite with Matchers with ProcessTestH
 
     SinkForStrings.data shouldBe List("type2-3+type1-2")
   }
+
+  test("be able to generic source with multiple variables on start") {
+    val process = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("procSource", "genericParametersSourceWithAdditionalVariable")
+      .filter("filter-id", "#additionalVariableOnStart != null")
+      .customNode("generic-node", "result", "nodePassingStateToImplementation")
+      .buildSimpleVariable("variable-id", "varName", "#result ? 'prefix' : 'prefix'")
+      .emptySink("proc2", "genericParametersSink", "value" -> "#varName + ' ' + #additionalVariableOnStart", "type" -> "'type1'", "version" -> "2")
+
+    processInvoker.invokeWithSampleData(process, Nil)
+
+    SinkForStrings.data shouldBe List("prefix some additional value (emitted element)+type1-2")
+  }
 }
