@@ -267,6 +267,9 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   def prepareCancel(id: process.ProcessId): Future[ProcessActionEntityData] =
     deploymentProcessRepository.markProcessAsCancelled(id, 1, Some("Cancel comment"))
 
+  def createProcess(processName: ProcessName): process.ProcessId =
+    createProcess(processName, testCategoryName, false)
+
   def createProcess(processName: ProcessName, category: String, isSubprocess: Boolean): process.ProcessId =
     prepareProcess(processName, category, isSubprocess).futureValue
 
@@ -281,8 +284,8 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     createDeployedProcess(processName, testCategoryName, isSubprocess)
 
   //TODO replace all processName: String to processName: ProcessName
-  def createDeployedProcess(processName: String): process.ProcessId =
-    createDeployedProcess(ProcessName(processName), testCategoryName, false)
+  def createDeployedProcess(processName: ProcessName): process.ProcessId =
+    createDeployedProcess(processName, testCategoryName, false)
 
   def createDeployedCanceledProcess(processName: ProcessName, category: String, isSubprocess: Boolean) : process.ProcessId = {
     (for {

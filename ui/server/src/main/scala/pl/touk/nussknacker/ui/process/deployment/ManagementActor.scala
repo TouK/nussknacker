@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.process.deployment
 
 import java.time.LocalDateTime
-
 import akka.actor.{ActorRefFactory, Props, Status}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
@@ -27,6 +26,7 @@ import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.{CatsSyntax, FailurePropagatingActor}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
 object ManagementActor {
@@ -71,10 +71,10 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
       implicit val loggedUser: LoggedUser = user
       val processStatus = for {
         manager <- processManager(id.id)
-      } yield Some(ProcessStatus.createState(
+      } yield ProcessStatus.createState(
         SimpleStateStatus.DuringDeploy,
         manager.processStateDefinitionManager
-      ))
+      )
       reply(processStatus)
     case CheckStatus(id, user) =>
       reply(getProcessStatus(id)(user))
@@ -118,14 +118,12 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
             processManager(id.id).flatMap { manager =>
               manager.customActions.find(_.name == actionName) match {
                 case Some(customAction) =>
-                  getProcessStatus(id).flatMap {
-                    case Some(status) if customAction.allowedStateStatusNames.contains(status.status.name) =>
+                  getProcessStatus(id).flatMap(status => {
+                    if (customAction.allowedStateStatusNames.contains(status.status.name))
                       manager.invokeCustomAction(actionReq, processVersionData.deploymentData)
-                    case Some(invalidState) =>
-                      Future(Left(CustomActionInvalidStatus(actionReq, invalidState.status.name)))
-                    case None =>
-                      Future(Left(CustomActionFailure(actionReq, msg = s"Action ${actionReq.name} failure: process ${id.name.value} status is unknown")))
-                  }
+                    else
+                      Future(Left(CustomActionInvalidStatus(actionReq, status.status.name)))
+                  })
                 case None =>
                   Future(Left(CustomActionNonExisting(actionReq)))
               }
@@ -137,13 +135,20 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
       }
   }
 
-  private def getProcessStatus(id: ProcessIdWithName)(implicit user: LoggedUser): Future[Option[ProcessState]] =
+  private def getProcessStatus(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[ProcessState] =
     for {
-      actions <- processRepository.fetchProcessActions(id.id)
-      manager <- processManager(id.id)
-      state <- manager.findJobStatus(id.name)
-      _ <- handleFinishedProcess(id, state)
-    } yield Option(handleObsoleteStatus(state, actions.headOption))
+      actions <- processRepository.fetchProcessActions(processIdWithName.id)
+      manager <- processManager(processIdWithName.id)
+      state <- findJobState(manager, processIdWithName)
+      _ <- handleFinishedProcess(processIdWithName, state)
+    } yield handleObsoleteStatus(state, actions.headOption)
+
+  private def findJobState(processManager: ProcessManager, processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[Option[ProcessState]] =
+    processManager.findJobStatus(processIdWithName.name).recover {
+      case NonFatal(e) =>
+        logger.warn(s"Failed to get status of ${processIdWithName.id}: ${e.getMessage}", e)
+        Some(ProcessStatus.failedToGet)
+    }
 
   //This method handles some corner cases like retention for keeping old states - some engine can cleanup canceled states. It's more Flink hermetic.
   //TODO: In future we should move this functionality to ProcessManager.
