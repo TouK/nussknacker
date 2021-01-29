@@ -8,7 +8,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.instances.future._
 import cats.data.{EitherT, Validated}
 import cats.syntax.either._
-import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessManager, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessActionType, ProcessManager, ProcessState}
 import pl.touk.nussknacker.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -76,7 +76,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
           (post & processId(processName)) { processId =>
             canWrite(processId) {
               complete {
-                writeArchive(processId.id, isArchived = false)
+                writeArchive(processId, isArchived = false)
                   .withSideEffect(_ => processChangeListener.handle(OnUnarchived(processId.id)))
               }
             }
@@ -84,11 +84,8 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
         } ~ path("archive" / Segment) { processName =>
           (post & processId(processName)) { processId =>
             canWrite(processId) {
-              /*
-              should not allow to archive still used subprocess IGNORED TEST
-              */
               complete {
-                writeArchive(processId.id, isArchived = true)
+                writeArchive(processId, isArchived = true)
                   .withSideEffect(_ => processChangeListener.handle(OnArchived(processId.id)))
               }
             }
@@ -264,15 +261,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
         } ~ path("processes" / Segment / "status") { processName =>
           (get & processId(processName)) { processId =>
             complete {
-              processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).flatMap[ToResponseMarshallable] {
-                case Some(process) =>
-                  findJobStatus(processId, process.processingType).map {
-                    case Some(status) => status
-                    case None => ProcessStatus.notFound
-                  }
-                case None =>
-                  Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Process not found"))
-              }
+              jobStatusService.retrieveJobStatus(processId).map(ToResponseMarshallable(_))
             }
           }
         } ~ path("processes" / "category" / Segment / Segment) { (processName, category) =>
@@ -320,10 +309,10 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
     }
   }
 
-  private def writeArchive(processId: ProcessId, isArchived: Boolean) = {
-    writeRepository.archive(processId = processId, isArchived = isArchived)
+  private def writeArchive(processId: ProcessIdWithName, isArchived: Boolean): Future[HttpResponse] =
+    writeRepository.archive(processId = processId.id, isArchived = isArchived)
       .map(toResponse(StatusCodes.OK))
-  }
+
   private def isArchived(processId: ProcessId)(implicit loggedUser: LoggedUser): Future[Boolean] =
     processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId)
       .map {
@@ -349,20 +338,12 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
   private def rejectSavingArchivedProcess: Future[ToResponseMarshallable]=
     Future.successful(HttpResponse(status = StatusCodes.Forbidden, entity = "Cannot save archived process"))
 
-  private def fetchProcessStatesForProcesses(processes: List[BaseProcessDetails[Unit]])(implicit user: LoggedUser): Future[Map[String, Option[ProcessState]]] = {
+  private def fetchProcessStatesForProcesses(processes: List[BaseProcessDetails[Unit]])(implicit user: LoggedUser): Future[Map[String, ProcessState]] = {
     import cats.instances.future._
     import cats.instances.list._
     import cats.syntax.traverse._
-    processes.map(process => findJobStatus(process.idWithName, process.processingType).map(status => process.name -> status))
-      .sequence[Future, (String, Option[ProcessState])].map(_.toMap)
-  }
-
-  private def findJobStatus(processId: ProcessIdWithName, processingType: ProcessingType)(implicit ec: ExecutionContext, user: LoggedUser): Future[Option[ProcessState]] = {
-    jobStatusService.retrieveJobStatus(processId).recover {
-      case NonFatal(e) =>
-        logger.warn(s"Failed to get status of $processId: ${e.getMessage}", e)
-        Some(ProcessStatus.failedToGet)
-    }
+    processes.map(process => jobStatusService.retrieveJobStatus(process.idWithName).map(status => process.name -> status))
+      .sequence[Future, (String, ProcessState)].map(_.toMap)
   }
 
   private def makeEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean) = {

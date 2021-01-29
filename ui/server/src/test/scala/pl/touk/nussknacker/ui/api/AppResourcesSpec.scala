@@ -42,20 +42,20 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
     val statusCheck = TestProbe()
     val resources = prepareBasicAppResources(statusCheck)
 
-    createDeployedProcess("id1")
-    createDeployedProcess("id2")
-    createDeployedProcess("id3")
+    createDeployedProcess(ProcessName("id1"))
+    createDeployedProcess(ProcessName("id2"))
+    createDeployedProcess(ProcessName("id3"))
 
     val result = Get("/app/healthCheck/process/deployment") ~> withPermissions(resources, testPermissionRead)
 
     val first = statusCheck.expectMsgClass(classOf[CheckStatus])
-    statusCheck.reply(akka.actor.Status.Failure(new Exception("Failed to check status")))
+    statusCheck.reply(processStatus(SimpleStateStatus.FailedToGet))
 
     statusCheck.expectMsgClass(classOf[CheckStatus])
-    statusCheck.reply(Some(processStatus(SimpleStateStatus.Running)))
+    statusCheck.reply(processStatus(SimpleStateStatus.Running))
 
     val third = statusCheck.expectMsgClass(classOf[CheckStatus])
-    statusCheck.reply(None)
+    statusCheck.reply(processStatus(SimpleStateStatus.NotFound))
 
     result ~> check {
       status shouldBe StatusCodes.InternalServerError
@@ -74,7 +74,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
     val result = Get("/app/healthCheck/process/deployment") ~> withPermissions(resources, testPermissionRead)
 
     val second = statusCheck.expectMsgClass(classOf[CheckStatus])
-    statusCheck.reply(None)
+    statusCheck.reply(processStatus(SimpleStateStatus.NotFound))
 
     result ~> check {
       status shouldBe StatusCodes.InternalServerError
@@ -87,15 +87,15 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
     val statusCheck = TestProbe()
     val resources = prepareBasicAppResources(statusCheck)
 
-    createDeployedProcess("id1")
-    createDeployedProcess("id2")
+    createDeployedProcess(ProcessName("id1"))
+    createDeployedProcess(ProcessName("id2"))
 
     val result = Get("/app/healthCheck/process/deployment") ~> withPermissions(resources, testPermissionRead)
 
     statusCheck.expectMsgClass(classOf[CheckStatus])
-    statusCheck.reply(Some(processStatus(SimpleStateStatus.Running)))
+    statusCheck.reply(processStatus(SimpleStateStatus.Running))
     statusCheck.expectMsgClass(classOf[CheckStatus])
-    statusCheck.reply(Some(processStatus(SimpleStateStatus.Running)))
+    statusCheck.reply(processStatus(SimpleStateStatus.Running))
 
     result ~> check {
       status shouldBe StatusCodes.OK
@@ -106,12 +106,12 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
     val statusCheck = TestProbe()
     val resources = prepareBasicAppResources(statusCheck)
 
-    createDeployedProcess("id1")
+    createDeployedProcess(ProcessName("id1"))
 
     val result = Get("/app/healthCheck/process/deployment") ~> withPermissions(resources, testPermissionRead)
 
     statusCheck.expectMsgClass(classOf[CheckStatus])
-    statusCheck.reply(Some(processStatus(SimpleStateStatus.Running)))
+    statusCheck.reply(processStatus(SimpleStateStatus.Running))
 
     result ~> check {
       status shouldBe StatusCodes.OK

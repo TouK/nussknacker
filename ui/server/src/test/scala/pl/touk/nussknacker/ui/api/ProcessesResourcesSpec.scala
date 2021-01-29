@@ -54,7 +54,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
 
   test("return single process") {
-    createDeployedProcess(processName.value)
+    createDeployedProcess(processName)
 
     Get(s"/processes/${processName.value}") ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
@@ -73,10 +73,10 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
 
   ignore("not allow to archive still used subprocess") {
-    val processWithSubreocess = ProcessTestData.validProcessWithSubprocess(processName)
-    val displayableSubprocess = ProcessConverter.toDisplayable(processWithSubreocess.subprocess, TestProcessingTypes.Streaming)
+    val processWithSubprocess = ProcessTestData.validProcessWithSubprocess(processName)
+    val displayableSubprocess = ProcessConverter.toDisplayable(processWithSubprocess.subprocess, TestProcessingTypes.Streaming)
     saveSubProcess(displayableSubprocess)(succeed)
-    saveProcess(processName, processWithSubreocess.process)(succeed)
+    saveProcess(processName, processWithSubprocess.process)(succeed)
     archiveProcess(ProcessName(displayableSubprocess.id)) ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.Conflict
       responseAs[List[String]] shouldEqual List(processName) // returns list of porcesses using subprocess
@@ -629,6 +629,41 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
         }
       }
     }
+  }
+
+  test("fetching status for non exists process should return 404 ") {
+    Get(s"/processes/non-exists-process/status") ~> routeWithAllPermissions ~> check {
+      status shouldEqual StatusCodes.NotFound
+    }
+  }
+
+  test("fetching status for deployed process should properly return status") {
+    createDeployedProcess(processName)
+
+    processManager.withProcessStateStatus(SimpleStateStatus.Running) {
+      Get(s"/processes/${processName.value}/status") ~> routeWithAllPermissions ~> check {
+        status shouldEqual StatusCodes.OK
+        val stateStatusResponse = parseStateResponse(responseAs[Json])
+        stateStatusResponse.name shouldBe SimpleStateStatus.Running.name
+        stateStatusResponse.`type` shouldBe SimpleStateStatus.Running.getClass.getSimpleName
+      }
+    }
+  }
+
+  case class StateStatusResponse(name: String, `type`: String)
+
+  private def parseStateResponse(stateResponse: Json): StateStatusResponse = {
+    val name = stateResponse.hcursor
+      .downField("status")
+      .downField("name")
+      .as[String].right.get
+
+    val statusType = stateResponse.hcursor
+      .downField("status")
+      .downField("type")
+      .as[String].right.get
+
+    StateStatusResponse(name, statusType)
   }
 
   private def checkSampleProcessRootIdEquals(expected: String): Assertion = {
