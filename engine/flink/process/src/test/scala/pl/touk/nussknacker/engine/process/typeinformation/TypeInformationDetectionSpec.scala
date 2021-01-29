@@ -7,7 +7,7 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.api.{Context, InterpretationResult, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{Context, InterpretationResult, ProcessVersion, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.{ConfigGlobalParameters, NkGlobalParameters}
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.TypedScalaMapTypeInformation
 import pl.touk.nussknacker.test.ClassLoaderWithServices
@@ -79,5 +79,7 @@ class CustomTypeInformationDetection extends TypeInformationDetection {
   override def forInterpretationResults(results: Map[String, ValidationContext]): TypeInformation[InterpretationResult] = throw new IllegalArgumentException("Checking loader :)")
 
   override def forContext(validationContext: ValidationContext): TypeInformation[Context] = throw new IllegalArgumentException("Checking loader :)")
+
+  override def forValueWithContext[T](validationContext: ValidationContext, value: typing.TypingResult): TypeInformation[ValueWithContext[T]] = throw new IllegalArgumentException("Checking loader :)")
 }
 

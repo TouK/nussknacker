@@ -5,7 +5,7 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.{Context, InterpretationResult}
+import pl.touk.nussknacker.engine.api.{Context, InterpretationResult, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
@@ -45,6 +45,8 @@ object GenericTypeInformationDetection extends TypeInformationDetection {
 
   override def forContext(validationContext: ValidationContext): TypeInformation[Context] = implicitly[TypeInformation[Context]]
 
+  override def forValueWithContext[T](validationContext: ValidationContext, value: TypingResult): TypeInformation[ValueWithContext[T]]
+    = implicitly[TypeInformation[ValueWithContext[AnyRef]]].asInstanceOf[TypeInformation[ValueWithContext[T]]]
 }
 
 
@@ -59,4 +61,7 @@ trait TypeInformationDetection extends Serializable {
   def forInterpretationResults(results: Map[String, ValidationContext]): TypeInformation[InterpretationResult]
 
   def forContext(validationContext: ValidationContext): TypeInformation[Context]
+
+  def forValueWithContext[T](validationContext: ValidationContext, value: TypingResult): TypeInformation[ValueWithContext[T]]
+
 }
