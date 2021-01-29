@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.api.process
 
 import org.apache.flink.api.common.functions.RuntimeContext
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.{JobData, MetaData}
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
@@ -16,7 +17,8 @@ case class FlinkCustomNodeContext(jobData: JobData,
                                   lazyParameterHelper: FlinkLazyParameterFunctionHelper,
                                   signalSenderProvider: FlinkProcessSignalSenderProvider,
                                   exceptionHandlerPreparer: RuntimeContext => FlinkEspExceptionHandler,
-                                  globalParameters: Option[NkGlobalParameters]) {
+                                  globalParameters: Option[NkGlobalParameters],
+                                  validationContext: Either[ValidationContext, Map[String, ValidationContext]]) {
   def metaData: MetaData = jobData.metaData
 }
 

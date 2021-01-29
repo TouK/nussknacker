@@ -111,12 +111,12 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => Clas
     val metaData = processWithDeps.metaData
 
     val globalParameters = NkGlobalParameters.readFromContext(env.getConfig)
-    def nodeContext(nodeId: String): FlinkCustomNodeContext = {
+    def nodeContext(nodeId: String, validationContext: Either[ValidationContext, Map[String, ValidationContext]]): FlinkCustomNodeContext = {
       FlinkCustomNodeContext(processWithDeps.jobData, nodeId, processWithDeps.processTimeout,
         lazyParameterHelper = new FlinkLazyParameterFunctionHelper(createInterpreter(compiledProcessWithDeps)),
         signalSenderProvider = processWithDeps.signalSenders,
         exceptionHandlerPreparer = runtimeContext => compiledProcessWithDeps(runtimeContext.getUserCodeClassLoader).prepareExceptionHandler(runtimeContext),
-        globalParameters = globalParameters)
+        globalParameters = globalParameters, validationContext)
     }
 
     val wrapAsync: (DataStream[Context], ProcessPart, String) => DataStream[Unit]
@@ -133,10 +133,11 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => Clas
     //thanks to correct sorting, we know that branchEnds contain all edges to joinPart
     def registerJoinPart(joinPart: CustomNodePart,
                          branchEnds: Map[BranchEndDefinition, BranchEndData]): Map[BranchEndDefinition, BranchEndData] = {
-      val inputs: Map[String, DataStream[Context]] = branchEnds.collect {
+      val inputs: Map[String, (DataStream[Context], ValidationContext)] = branchEnds.collect {
         case (BranchEndDefinition(id, joinId), BranchEndData(validationContext, stream)) if joinPart.id == joinId =>
-          id -> stream.map(_.finalContext)(typeInformationDetection.forContext(validationContext))
+          id -> (stream.map(_.finalContext)(typeInformationDetection.forContext(validationContext)), validationContext)
       }
+
 
       val transformer = joinPart.transformer match {
         case joinTransformer: FlinkCustomJoinTransformation => joinTransformer
@@ -149,7 +150,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => Clas
       val newContextFun = (ir: ValueWithContext[_]) => ir.context.withVariable(outputVar, ir.value)
 
       val newStart = transformer
-        .transform(inputs, nodeContext(joinPart.id))
+        .transform(inputs.mapValues(_._1), nodeContext(joinPart.id, Right(inputs.mapValues(_._2))))
         .map(newContextFun)(typeInformationDetection.forContext(joinPart.validationContext))
 
       val afterSplit = wrapAsync(newStart, joinPart, "branchInterpretation")
@@ -161,7 +162,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => Clas
       val source = part.obj.asInstanceOf[FlinkSource[Any]]
 
       val start = source
-        .sourceStream(env, nodeContext(part.id))
+        .sourceStream(env, nodeContext(part.id, Left(ValidationContext.empty)))
         .process(new EventTimeDelayMeterFunction("eventtimedelay", part.id, eventTimeMetricDuration))(source.typeInformation)
         .map(new RateMeterFunction[Any]("source", part.id))(source.typeInformation)
         .map(InitContextFunction(metaData.id, part.id))(typeInformationDetection.forContext(part.validationContext))
@@ -214,7 +215,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => Clas
           //TODO: maybe this logic should be moved to compiler instead?
           val withSinkAdded = testRunId match {
             case None =>
-              sink.registerSink(startAfterSinkEvaluated, nodeContext(part.id))
+              sink.registerSink(startAfterSinkEvaluated, nodeContext(part.id, Left(contextBefore)))
             case Some(runId) =>
               val typ = part.node.data.ref.typ
               val prepareFunction = sink.testDataOutput.getOrElse(throw new IllegalArgumentException(s"Sink $typ cannot be mocked"))
@@ -227,7 +228,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => Clas
 
         case part: SinkPart =>
           throw new IllegalArgumentException(s"Process can only use flink sinks, instead given: ${part.obj}")
-        case part@CustomNodePart(transformerObj, node, _, contextAfter, _, _) =>
+        case part@CustomNodePart(transformerObj, node, contextBefore, contextAfter, _, _) =>
 
           val transformer = transformerObj match {
             case t: FlinkCustomStreamTransformation => t
@@ -241,7 +242,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => Clas
             case None => ir.context
           }
 
-          val customNodeContext = nodeContext(part.id)
+          val customNodeContext = nodeContext(part.id, Left(part.contextBefore))
           val newStart = transformer
             .transform(start, customNodeContext)
             .map(newContextFun)(typeInformationDetection.forContext(contextAfter))
