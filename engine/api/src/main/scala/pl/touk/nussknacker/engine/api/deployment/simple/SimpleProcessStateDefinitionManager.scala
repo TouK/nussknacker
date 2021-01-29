@@ -10,7 +10,7 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
   val actionStatusMap: Map[ProcessActionType, StateStatus] = Map(
     ProcessActionType.Deploy -> SimpleStateStatus.Running,
     ProcessActionType.Cancel -> SimpleStateStatus.Canceled,
-    ProcessActionType.Archive -> SimpleStateStatus.Archived,
+    ProcessActionType.Archive -> SimpleStateStatus.NotFound, //We assume that state is not available after archive process
     ProcessActionType.UnArchive -> SimpleStateStatus.NotDeployed
   )
 
@@ -25,8 +25,7 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.Finished -> List(ProcessActionType.Deploy, ProcessActionType.Archive),
     SimpleStateStatus.Error -> List(ProcessActionType.Deploy, ProcessActionType.Cancel),
     SimpleStateStatus.Warning -> List(ProcessActionType.Deploy, ProcessActionType.Cancel),
-    SimpleStateStatus.FailedToGet -> List(ProcessActionType.Deploy, ProcessActionType.Archive),
-    SimpleStateStatus.Archived -> List(ProcessActionType.UnArchive)
+    SimpleStateStatus.FailedToGet -> List(ProcessActionType.Deploy, ProcessActionType.Archive)
   )
 
   val statusIconsMap: Map[StateStatus, String] = Map(
@@ -41,8 +40,7 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.Failed -> "/assets/states/failed.svg",
     SimpleStateStatus.Finished -> "/assets/states/success.svg",
     SimpleStateStatus.Error -> "/assets/states/error.svg",
-    SimpleStateStatus.Warning -> "/assets/states/warning.svg",
-    SimpleStateStatus.Archived -> "/assets/states/archived.svg"
+    SimpleStateStatus.Warning -> "/assets/states/warning.svg"
   )
 
   val statusTooltipsMap: Map[StateStatus, String] = Map(
@@ -57,8 +55,7 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.Failed -> "There are some problems with process.",
     SimpleStateStatus.Finished -> "The process completed successfully.",
     SimpleStateStatus.Error -> "There are some errors. Please check if everything is okay with process!",
-    SimpleStateStatus.Warning -> "There are some warnings. Please check if everything is okay with process!",
-    SimpleStateStatus.Archived -> "The process has been successfully archived."
+    SimpleStateStatus.Warning -> "There are some warnings. Please check if everything is okay with process!"
   )
 
   val statusDescriptionsMap: Map[StateStatus, String] = Map(
@@ -73,8 +70,7 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.Failed -> "There are some problems with process.",
     SimpleStateStatus.Finished -> "The process has finished.",
     SimpleStateStatus.Error -> "There are errors establishing a process state.",
-    SimpleStateStatus.Warning -> "There are some warnings establishing a process state.",
-    SimpleStateStatus.Archived -> "The process is archived."
+    SimpleStateStatus.Warning -> "There are some warnings establishing a process state."
   )
 
   override def statusIcon(stateStatus: StateStatus): Option[URI] =

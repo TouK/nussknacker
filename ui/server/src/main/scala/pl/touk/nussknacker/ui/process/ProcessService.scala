@@ -76,7 +76,6 @@ class ProcessService(managerActor: ActorRef,
       case Some(process) if !process.isArchived =>
         Future(Left(ProcessIllegalAction("Can't unarchive not archived process.")))
       case Some(process) =>
-        //FIXME: Should we check allowed actions for process state?
         doUnArchive(process)
       case None =>
         Future(Left(ProcessNotFoundError(processIdWithName.id.value.toString)))

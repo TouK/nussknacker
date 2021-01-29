@@ -35,7 +35,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
-  override protected def createProcessManager(): MockProcessManager = new MockProcessManager(SimpleStateStatus.NotDeployed)
+  override protected def createProcessManager(): MockProcessManager = new MockProcessManager(SimpleStateStatus.NotFound)
 
   val routeWithRead: Route = withPermissions(processesRoute, testPermissionRead)
   val routeWithWrite: Route = withPermissions(processesRoute, testPermissionWrite)
@@ -503,7 +503,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
         status shouldEqual StatusCodes.OK
         val process = decodeJsonProcess(responseAs[String])
         process.lastActionType shouldBe Some(ProcessActionType.Archive.toString)
-        process.stateStatus shouldBe Some(SimpleStateStatus.Archived.name)
+        process.stateStatus shouldBe Some(SimpleStateStatus.NotFound.name)
         process.isArchived shouldBe true
       }
     }

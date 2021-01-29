@@ -277,14 +277,23 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     processDetails.isNotDeployed shouldBe true
   }
 
-  test("Should return archived status for archived process with canceled state") {
+  test("Should return NotFound state for archived process with missing state") {
+    val id = prepareArchivedProcess(processName).futureValue
+
+    processManager.withEmptyProcessState {
+      val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+
+      state.status shouldBe SimpleStateStatus.NotFound
+    }
+  }
+
+  test("Should return any status for archived process with any available state") {
     val id = prepareArchivedProcess(processName).futureValue
 
     processManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
       val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      state.status shouldBe SimpleStateStatus.Archived
-      state.allowedActions shouldBe List(ProcessActionType.UnArchive)
+      state.status shouldBe SimpleStateStatus.Canceled
     }
   }
 

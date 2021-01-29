@@ -25,6 +25,6 @@ class SimpleProcessStateSpec extends FunSpec with Matchers with Inside with Eith
   it ("process state should be finished") {
     val state = createProcessState(SimpleStateStatus.Finished)
     state.status.isFinished shouldBe true
-    state.allowedActions shouldBe List(ProcessActionType.Deploy)
+    state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Archive)
   }
 }

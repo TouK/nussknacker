@@ -347,7 +347,7 @@ object ProcessJson{
       process.hcursor.downField("state").downField("icon").as[Option[String]].right.get.map(URI.create),
       process.hcursor.downField("state").downField("tooltip").as[Option[String]].right.get,
       process.hcursor.downField("state").downField("description").as[Option[String]].right.get,
-      process.hcursor.downField("isArchived").as[Boolean].right.get,
+      process.hcursor.downField("isArchived").as[Boolean].right.get
     )
   }
 }
