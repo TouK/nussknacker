@@ -19,7 +19,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider, withPermissions}
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestFactory}
-import pl.touk.nussknacker.ui.process.JobStatusService
+import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment.CheckStatus
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReload
 
@@ -35,7 +35,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
 
   private def prepareBasicAppResources(statusCheck: TestProbe) = {
     new AppResources(ConfigFactory.empty(), emptyReload, emptyProcessingTypeDataProvider, processRepository, TestFactory.processValidation,
-      new JobStatusService(statusCheck.ref))
+      new ProcessService(statusCheck.ref, processRepository, actionRepository, writeProcessRepository))
   }
 
   test("it should return healthcheck also if cannot retrieve statuses") {
@@ -125,8 +125,9 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
     val modelData = LocalModelData(ConfigFactory.empty(), creatorWithBuildInfo)
 
     val globalConfig = Map("testConfig" -> "testValue", "otherConfig" -> "otherValue")
+    val processService = new ProcessService(TestProbe().ref, processRepository, actionRepository, writeProcessRepository)
     val resources = new AppResources(ConfigFactory.parseMap(Collections.singletonMap("globalBuildInfo", globalConfig.asJava)), emptyReload,
-       mapProcessingTypeDataProvider("test1" -> modelData), processRepository, TestFactory.processValidation, new JobStatusService(TestProbe().ref))
+       mapProcessingTypeDataProvider("test1" -> modelData), processRepository, TestFactory.processValidation, processService)
 
     val result = Get("/app/buildInfo") ~> TestFactory.withoutPermissions(resources)
     result ~> check {

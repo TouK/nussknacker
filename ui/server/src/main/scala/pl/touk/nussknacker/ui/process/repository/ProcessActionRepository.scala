@@ -37,6 +37,12 @@ class ProcessActionRepository(val dbConfig: DbConfig, buildInfos: ProcessingType
     //TODO: remove Stop: after adding custom icons
     action(processId, processVersion, comment.map("Stop: " + _), ProcessActionType.Cancel, None)
 
+  def markProcessAsArchived(processId: ProcessId, processVersion: Long, comment: Option[String])(implicit ec: ExecutionContext, user: LoggedUser): Future[ProcessActionEntityData] =
+    action(processId, processVersion, comment, ProcessActionType.Archive, None)
+
+  def markProcessAsUnArchived(processId: ProcessId, processVersion: Long, comment: Option[String])(implicit ec: ExecutionContext, user: LoggedUser): Future[ProcessActionEntityData] =
+    action(processId, processVersion, comment, ProcessActionType.UnArchive, None)
+
   private def action(processId: ProcessId, processVersion: Long, comment: Option[String], action: ProcessActionType, buildInfo: Option[String])(implicit ec: ExecutionContext, user: LoggedUser): Future[ProcessActionEntityData] = {
     val actionToRun = for {
       commentId <- withComment(processId, processVersion, comment)

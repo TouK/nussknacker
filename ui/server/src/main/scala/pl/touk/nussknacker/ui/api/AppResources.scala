@@ -15,7 +15,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Validat
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
-import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessObjectsFinder}
+import pl.touk.nussknacker.ui.process.{ProcessService, ProcessObjectsFinder}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
@@ -27,7 +27,7 @@ class AppResources(config: Config,
                    modelData: ProcessingTypeDataProvider[ModelData],
                    processRepository: FetchingProcessRepository[Future],
                    processValidation: ProcessValidation,
-                   jobStatusService: JobStatusService)(implicit ec: ExecutionContext)
+                   processService: ProcessService)(implicit ec: ExecutionContext)
   extends Directives with FailFastCirceSupport with LazyLogging with RouteWithUser with RouteWithoutUser with SecurityDirectives {
 
   //We use duplicated pathPrefix("app") code - look at comment in NussknackerApp where routes are created
@@ -148,5 +148,5 @@ class AppResources(config: Config,
   }
 
   private def statusList(processes: Seq[BaseProcessDetails[_]])(implicit user: LoggedUser) : Seq[Future[(String, ProcessState)]] =
-    processes.map(process => jobStatusService.retrieveJobStatus(process.idWithName).map((process.name, _)))
+    processes.map(process => processService.getProcessState(process.idWithName).map((process.name, _)))
 }

@@ -15,4 +15,5 @@ object SimpleStateStatus {
   val Failed: StateStatus = FailedStateStatus("FAILED")
   val Error: StateStatus = AllowDeployStateStatus("ERROR")
   val Warning: StateStatus = AllowDeployStateStatus("WARNING")
+  val Archived: StateStatus = NotEstablishedStateStatus("ARCHIVED")
 }

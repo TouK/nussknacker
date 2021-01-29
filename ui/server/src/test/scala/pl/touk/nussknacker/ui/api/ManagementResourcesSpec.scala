@@ -94,7 +94,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     val processId = "Process1"
     whenReady(writeProcessRepository.saveNewProcess(ProcessName(processId), testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)) { res =>
       deployProcess(processId) ~> check { status shouldBe StatusCodes.OK }
-      getProcess(processId) ~> check {
+      getProcess(ProcessName(processId)) ~> check {
         val processDetails = responseAs[ProcessDetails]
         processDetails.lastAction shouldBe deployedWithVersions(1)
         processDetails.isDeployed shouldBe true

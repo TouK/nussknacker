@@ -91,7 +91,7 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
                                              ) extends Process {
     def mapProcess[NewShape](action: ProcessShape => NewShape) : BaseProcessDetails[NewShape] = copy(json = json.map(action))
     // todo: unsafe toLong; we need it for now - we use this class for both backend (id == real id) and frontend (id == name) purposes
-    def idWithName: ProcessIdWithName = ProcessIdWithName(ProcessId(processId.value), ProcessName(name))
+    lazy val idWithName: ProcessIdWithName = ProcessIdWithName(ProcessId(processId.value), ProcessName(name))
   }
 
   // TODO we should split ProcessDetails and ProcessShape (json), than it won't be needed. Also BasicProcess won't be necessary than.
@@ -127,5 +127,6 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
                                        buildInfo: Map[String, String]) {
     def isDeployed: Boolean = action.equals(ProcessActionType.Deploy)
     def isCanceled: Boolean = action.equals(ProcessActionType.Cancel)
+    def isArchived: Boolean = action.equals(ProcessActionType.Archive)
   }
 }

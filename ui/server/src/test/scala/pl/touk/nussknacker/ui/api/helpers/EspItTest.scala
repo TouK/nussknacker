@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.api.helpers
 import java.net.URI
 import akka.actor.ActorRef
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
+import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import cats.instances.all._
 import cats.syntax.semigroup._
@@ -48,28 +49,31 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   val writeProcessRepository = newWriteProcessRepository(db)
   val subprocessRepository = newSubprocessRepository(db)
-  val deploymentProcessRepository = newDeploymentProcessRepository(db)
+  val actionRepository = newActionProcessRepository(db)
   val processActivityRepository = newProcessActivityRepository(db)
 
   val typesForCategories = new ProcessTypesForCategories(testConfig)
 
   val existingProcessingType = "streaming"
 
-  val processManager = new MockProcessManager
+  protected def createProcessManager(): MockProcessManager = new MockProcessManager
+
+  lazy val processManager = createProcessManager()
+
   val processManagerProvider = new FlinkStreamingProcessManagerProvider {
     override def createProcessManager(modelData: ModelData, config: Config): ProcessManager = processManager
   }
   val processChangeListener = new TestProcessChangeListener()
-  def createManagementActorRef = {
+  def createManagementActorRef: ActorRef = {
     system.actorOf(ManagementActor.props(
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> processManager),
       processRepository,
-      deploymentProcessRepository,
+      actionRepository,
       TestFactory.sampleResolver,
       processChangeListener), "management")
   }
   val managementActor: ActorRef = createManagementActorRef
-  val jobStatusService = new JobStatusService(managementActor)
+  val processService = new ProcessService(managementActor, processRepository, actionRepository, writeProcessRepository)
   val newProcessPreparer = new NewProcessPreparer(
     mapProcessingTypeDataProvider("streaming" ->  ProcessTestData.processDefinition),
     mapProcessingTypeDataProvider("streaming" -> (_ => StreamMetaData(None))),
@@ -84,7 +88,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   val processesRoute = new ProcessesResources(
     processRepository = processRepository,
     writeRepository = writeProcessRepository,
-    jobStatusService = jobStatusService,
+    processService = processService,
     processValidation = processValidation,
     processResolving = processResolving,
     typesForCategories = typesForCategories,
@@ -109,9 +113,9 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     subprocessRepository,
     typesForCategories)
 
-  val processesRouteWithAllPermissions = withAllPermissions(processesRoute)
+  val processesRouteWithAllPermissions: Route = withAllPermissions(processesRoute)
 
-  val settingsRouteWithoutPermissions = withoutPermissions(settingsRoute)
+  val settingsRouteWithoutPermissions: Route = withoutPermissions(settingsRoute)
 
   def deployRoute(requireComment: Boolean = false) = new ManagementResources(
     processCounter = new ProcessCounter(TestFactory.sampleSubprocessRepository),
@@ -216,8 +220,16 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     Get(s"/processes/${SampleProcess.process.id}") ~> withPermissions(processesRoute, testPermissionRead)
   }
 
-  def getProcess(processId: String): RouteTestResult = {
-    Get(s"/processes/$processId") ~> withPermissions(processesRoute, testPermissionRead)
+  def getProcess(processName: ProcessName): RouteTestResult = {
+    Get(s"/processes/${processName.value}") ~> withPermissions(processesRoute, testPermissionRead)
+  }
+
+  def archiveProcess(processName: ProcessName): RouteTestResult = {
+    Post(s"/archive/${processName.value}") ~> withPermissions(processesRoute, testPermissionWrite |+| testPermissionRead)
+  }
+
+ def unArchiveProcess(processName: ProcessName): RouteTestResult = {
+    Post(s"/unarchive/${processName.value}") ~> withPermissions(processesRoute, testPermissionWrite |+| testPermissionRead)
   }
 
   def getProcesses: RouteTestResult = {
@@ -262,16 +274,24 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   }
 
   def prepareDeploy(id: process.ProcessId): Future[ProcessActionEntityData] =
-    deploymentProcessRepository.markProcessAsDeployed(id, 1, "stream", Some("Deploy comment"))
+    actionRepository.markProcessAsDeployed(id, 1, "stream", Some("Deploy comment"))
 
   def prepareCancel(id: process.ProcessId): Future[ProcessActionEntityData] =
-    deploymentProcessRepository.markProcessAsCancelled(id, 1, Some("Cancel comment"))
+    actionRepository.markProcessAsCancelled(id, 1, Some("Cancel comment"))
 
   def createProcess(processName: ProcessName): process.ProcessId =
     createProcess(processName, testCategoryName, false)
 
   def createProcess(processName: ProcessName, category: String, isSubprocess: Boolean): process.ProcessId =
     prepareProcess(processName, category, isSubprocess).futureValue
+
+  def createArchivedProcess(processName: ProcessName, isSubprocess: Boolean): process.ProcessId = {
+    (for {
+      id <- prepareProcess(processName, testCategoryName, isSubprocess)
+      _ <- writeProcessRepository.archive(id, isArchived = true)
+      _ <- actionRepository.markProcessAsArchived(id, 1, Some("Archived process"))
+    } yield id).futureValue
+  }
 
   def createDeployedProcess(processName: ProcessName, category: String, isSubprocess: Boolean) : process.ProcessId = {
     (for {
@@ -326,7 +346,8 @@ object ProcessJson{
       process.hcursor.downField("state").downField("status").downField("name").as[Option[String]].right.get,
       process.hcursor.downField("state").downField("icon").as[Option[String]].right.get.map(URI.create),
       process.hcursor.downField("state").downField("tooltip").as[Option[String]].right.get,
-      process.hcursor.downField("state").downField("description").as[Option[String]].right.get
+      process.hcursor.downField("state").downField("description").as[Option[String]].right.get,
+      process.hcursor.downField("isArchived").as[Boolean].right.get,
     )
   }
 }
@@ -339,7 +360,8 @@ case class ProcessJson(id: String,
                        stateStatus: Option[String],
                        stateIcon: Option[URI],
                        stateTooltip: Option[String],
-                       stateDescription: Option[String]) {
+                       stateDescription: Option[String],
+                       isArchived: Boolean) {
 
   def isDeployed: Boolean = lastActionType.contains(ProcessActionType.Deploy.toString)
   def isCanceled: Boolean = lastActionType.contains(ProcessActionType.Cancel.toString)
