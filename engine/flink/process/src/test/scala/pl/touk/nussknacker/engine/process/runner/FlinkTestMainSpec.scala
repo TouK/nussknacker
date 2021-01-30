@@ -270,6 +270,23 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
       )
   }
 
+  test("handle custom variables in source") {
+    val process = EspProcessBuilder
+      .id("proc1")
+      .exceptionHandler()
+      .source("id", "genericSourceWithCustomVariables", "elements" -> "{'abc'}")
+      .sink("out", "#additionalOne + '|' + #additionalTwo", "monitor")
+    val testData = TestData(List("abc").mkString("\n"))
+
+    val results = FlinkTestMain.run(modelData, marshall(process), testData, FlinkTestConfiguration.configuration(), identity)
+
+    results.nodeResults("id") should have size 1
+    results.mockedResults("out") shouldBe
+      List(
+        MockedResult("proc1-id-0-0", "monitor", "transformed:abc|3")
+      )
+  }
+
   test("give meaningful error messages for sink errors") {
     val process =
       EspProcessBuilder

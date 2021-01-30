@@ -88,7 +88,7 @@ object ProcessTestHelpers {
       "intInputWithParam" -> WithCategories(new IntParamSourceFactory(new ExecutionConfig)),
       "kafka-keyvalue" -> WithCategories(new KeyValueKafkaSourceFactory(processObjectDependencies)),
       "genericParametersSource" -> WithCategories(GenericParametersSource),
-      "genericParametersSourceWithAdditionalVariable" -> WithCategories(GenericParametersSourceWithAdditionalVariable)
+      "genericSourceWithCustomVariables" -> WithCategories(GenericSourceWithCustomVariables)
     )
 
     override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(

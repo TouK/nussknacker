@@ -19,7 +19,7 @@ import org.apache.flink.streaming.api.windowing.time.Time
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation._
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, OutputVar, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, OutputVar, ValidationContext, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
@@ -646,42 +646,73 @@ object SampleNodes {
     override def nodeDependencies: List[NodeDependency] = OutputVariableNameDependency :: Nil
   }
 
-  object GenericParametersSourceWithAdditionalVariable extends FlinkSourceFactory[String] with SingleInputGenericNodeTransformation[Source[String]] {
+  object GenericSourceWithCustomVariables extends FlinkSourceFactory[String] with SingleInputGenericNodeTransformation[Source[String]] {
 
     override type State = Nothing
 
-    override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): this.NodeTransformationDefinition = {
-      case TransformationStep(Nil, _) => FinalResults(finalCtx(context, dependencies))
+    //There is only one parameter in this source
+    private val elementsParamName = "elements"
+
+    override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId)
+    : GenericSourceWithCustomVariables.NodeTransformationDefinition = {
+      //Component has simple parameters based only on initialParameters.
+      case TransformationStep(Nil, _) => NextParameters(initialParameters)
+      case TransformationStep((`elementsParamName`, _)::Nil, None) => FinalResults(finalCtx(context, dependencies))
     }
 
     private def finalCtx(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): ValidationContext = {
+      //Here goes basic declaration of output variable. Append default output variable (name = "input") to ValidationContext.
       val name = dependencies.collectFirst {
         case OutputVariableNameValue(name) => name
       }.get
-      val ctxWithInput = context.withVariable(OutputVar.customNode(name), Typed[String]).toOption.get
-      val ctxWithInputAndAdditional = ctxWithInput.withVariable("additionalVariableOnStart", Typed[String], None).toOption.get
-      ctxWithInputAndAdditional
+      val validatedContextWithInput = context.withVariable(OutputVar.customNode(name), Typed[String])
+
+      //Append additional variables to ValidationContext.
+      val additionalVariables = Map(
+        "additionalOne" -> Typed[String],
+        "additionalTwo" -> Typed[Int]
+      )
+      val validatedContextWithInputAndAdditional = additionalVariables.foldLeft(validatedContextWithInput){
+        case (acc, (name, typingResult)) => acc.andThen(_.withVariable(name, typingResult, None))
+      }
+      validatedContextWithInputAndAdditional.getOrElse(context)
     }
 
-    override def initialParameters: List[Parameter] = Nil
+    override def initialParameters: List[Parameter] = Parameter[java.util.List[String]](`elementsParamName`)  :: Nil
 
-    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[GenericParametersSourceWithAdditionalVariable.State]): Source[String] = {
-      val emittedElement = "emitted element"
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source[String] = {
+      import scala.collection.JavaConverters._
+      val elements = params(`elementsParamName`).asInstanceOf[java.util.List[String]].asScala.toList
 
-      new CollectionSource[String](StreamExecutionEnvironment.getExecutionEnvironment.getConfig, emittedElement::Nil, None, Typed[String]) {
+      new CollectionSource[String](StreamExecutionEnvironment.getExecutionEnvironment.getConfig, elements, None, Typed[String])
+        with TestDataGenerator
+        with TestDataParserProvider[String] {
 
-        override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[Context] = {
-          val stream = super.sourceStream(env, flinkNodeContext)
-          stream.map(context => {
-            val rawInputValue = context.get[String](ContextInterpreter.InputVariableName).orNull
-            context.withVariable("additionalVariableOnStart", s"some additional value (${rawInputValue})")
-          })
+        override def customContextTransformation: Option[Context => Context] = Some({
+          ctx => {
+            //access raw input value
+            val rawInputValue = ctx.get[String](ContextInterpreter.InputVariableName).orNull
+            //perform some transformations and/or computations
+            val additionalValues = Map[String, Any](
+              "additionalOne" -> s"transformed:${rawInputValue}",
+              "additionalTwo" -> rawInputValue.length()
+            )
+            //append computed values to context and release to DataStream
+            ctx.withVariables(additionalValues)
+          }
+        })
+
+        override def generateTestData(size: Int): Array[Byte] = elements.mkString("\n").getBytes
+
+        override def testDataParser: TestDataParser[String] = new NewLineSplittedTestDataParser[String] {
+          override def parseElement(testElement: String): String = testElement
         }
 
       }
     }
 
-    override def nodeDependencies: List[NodeDependency] = OutputVariableNameDependency :: Nil
+    override def nodeDependencies: List[NodeDependency] = Nil
+
   }
 
   object GenericParametersSink extends SinkFactory with SingleInputGenericNodeTransformation[Sink]  {

@@ -63,7 +63,8 @@ class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[FlinkSourceFactory[_]]] = Map(
     "input" -> WithCategories(simpleRecordSource(Nil), "cat2"),
     "jsonInput" -> WithCategories(jsonSource, "cat2"),
-    "typedJsonInput" -> WithCategories(TypedJsonSource, "cat2")
+    "typedJsonInput" -> WithCategories(TypedJsonSource, "cat2"),
+    "genericSourceWithCustomVariables" -> WithCategories(GenericSourceWithCustomVariables)
   )
 
   override def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[TestProcessSignalFactory]] = Map("sig1" ->

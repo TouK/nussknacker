@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
-import pl.touk.nussknacker.engine.api.ProcessListener
+import pl.touk.nussknacker.engine.api.{Context, ProcessListener}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientException}
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocatio
 import pl.touk.nussknacker.engine.api.test.ResultsCollectingListener
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkSource, SourceTestSupport}
+import pl.touk.nussknacker.engine.flink.api.process.{SourceContextTransformation, FlinkSource, SourceTestSupport}
 import pl.touk.nussknacker.engine.flink.util.exception.ConsumingNonTransientExceptions
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -31,11 +31,18 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
 
   override protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef): ObjectWithMethodDef = {
     overrideObjectWithMethod(sourceFactory, (paramFun, outputVariableNameOpt, additional, returnType) => {
-      val originalSource = sourceFactory.invokeMethod(paramFun, outputVariableNameOpt, additional).asInstanceOf[FlinkSource[Object] with SourceTestSupport[Object]]
+      val originalSource = sourceFactory.invokeMethod(paramFun, outputVariableNameOpt, additional)
       originalSource match {
-        case testDataParserProvider: TestDataParserProvider[Object@unchecked] =>
+        case testDataParserProvider: TestDataParserProvider[Object@unchecked] with SourceTestSupport[Object@unchecked] =>
           val testObjects = testDataParserProvider.testDataParser.parseTestData(testData.testData)
-          CollectionSource[Object](executionConfig, testObjects, originalSource.timestampAssignerForTest, returnType())(originalSource.typeInformation)
+          testDataParserProvider match {
+            case providerWithTransformation: SourceContextTransformation[Object@unchecked] =>
+              new CollectionSource[Object](executionConfig, testObjects, testDataParserProvider.timestampAssignerForTest, returnType())(testDataParserProvider.typeInformation) {
+                override def customContextTransformation: Option[Context => Context] = providerWithTransformation.customContextTransformation
+              }
+            case _ =>
+              new CollectionSource[Object](executionConfig, testObjects, testDataParserProvider.timestampAssignerForTest, returnType())(testDataParserProvider.typeInformation)
+          }
         case _ =>
           throw new IllegalArgumentException(s"Source ${originalSource.getClass} cannot be stubbed - it does'n provide test data parser")
       }

@@ -6,13 +6,18 @@ import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
 import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.api.{Context, ContextInterpreter}
 
-case class InitContextFunction[T](processId: String, taskName: String) extends RichMapFunction[T, Context] with ContextInitializingFunction {
+case class InitContextFunction[T](processId: String, taskName: String, customContextTransformation: Option[Context => Context]) extends RichMapFunction[T, Context] with ContextInitializingFunction {
 
   override def open(parameters: Configuration): Unit = {
     init(getRuntimeContext)
   }
 
-  override def map(input: T): Context = newContext.withVariable(ContextInterpreter.InputVariableName, input)
+  override def map(input: T): Context = {
+    val initializedContextWithInput = newContext.withVariable(ContextInterpreter.InputVariableName, input)
+    customContextTransformation
+      .map(mapper => mapper(initializedContextWithInput))
+      .getOrElse(initializedContextWithInput)
+  }
 }
 
 

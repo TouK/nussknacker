@@ -5,8 +5,6 @@ import java.util.concurrent.TimeUnit
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.{LazyLogging, Logger}
 import org.apache.flink.api.common.functions.RuntimeContext
-import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.environment.RemoteStreamEnvironment
 import org.apache.flink.streaming.api.scala.{DataStream, OutputTag, StreamExecutionEnvironment}
 import org.apache.flink.streaming.api.windowing.time.Time
@@ -166,12 +164,13 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Option[
       //TODO: get rid of cast (but how??)
       val source = part.obj.asInstanceOf[FlinkSource[Any]]
 
-      val contextTypeInformation = implicitly[TypeInformation[Context]]
+      //TODO: source.typeInformation ??
+      val typeInformation = typeInformationDetection.forContext(part.validationContext)
 
       val start = source
         .sourceStream(env, nodeContext(part.id, Left(ValidationContext.empty)))
-        .process(new EventTimeDelayMeterFunction[Context]("eventtimedelay", part.id, eventTimeMetricDuration))(contextTypeInformation)
-        .map(new RateMeterFunction[Context]("source", part.id))(contextTypeInformation)
+        .process(new EventTimeDelayMeterFunction[Context]("eventtimedelay", part.id, eventTimeMetricDuration))(typeInformation)
+        .map(new RateMeterFunction[Context]("source", part.id))(typeInformation)
 
       val asyncAssigned = wrapAsync(start, part, "interpretation")
 

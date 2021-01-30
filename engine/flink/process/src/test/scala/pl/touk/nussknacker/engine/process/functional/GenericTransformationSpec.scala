@@ -69,17 +69,19 @@ class GenericTransformationSpec extends FunSuite with Matchers with ProcessTestH
     SinkForStrings.data shouldBe List("type2-3+type1-2")
   }
 
-  test("be able to generic source with multiple variables on start") {
+  test("be able to generic source with multiple variables on start (with multipart compilation)") {
     val process = EspProcessBuilder.id("proc1")
       .exceptionHandler()
-      .source("procSource", "genericParametersSourceWithAdditionalVariable")
-      .filter("filter-id", "#additionalVariableOnStart != null")
-      .customNode("generic-node", "result", "nodePassingStateToImplementation")
-      .buildSimpleVariable("variable-id", "varName", "#result ? 'prefix' : 'prefix'")
-      .emptySink("proc2", "genericParametersSink", "value" -> "#varName + ' ' + #additionalVariableOnStart", "type" -> "'type1'", "version" -> "2")
+      .source("procSource", "genericSourceWithCustomVariables", "elements" -> "{'test'}")
+      .filter("filter-uses-custom-variable-id1", "#additionalOne != null")
+      .filter("filter-uses-custom-variable-id2", "#additionalTwo != null")
+      .customNode("dummy-generic-node", "result", "nodePassingStateToImplementation")
+      .buildSimpleVariable("dummy-variable", "varName1", "#result ? 'prefix' : 'prefix'")
+      .buildSimpleVariable("variable-uses-custom-variable-id", "varName2", "#input + '|' + #additionalOne + '|' + #additionalTwo")
+      .emptySink("proc2", "genericParametersSink", "value" -> "#varName2", "type" -> "'type1'", "version" -> "2")
 
     processInvoker.invokeWithSampleData(process, Nil)
 
-    SinkForStrings.data shouldBe List("prefix some additional value (emitted element)+type1-2")
+    SinkForStrings.data shouldBe List("test|transformed:test|4+type1-2")
   }
 }

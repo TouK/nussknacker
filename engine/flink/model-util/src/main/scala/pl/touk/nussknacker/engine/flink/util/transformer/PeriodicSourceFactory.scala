@@ -53,7 +53,7 @@ class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]
         val rawSourceWithTimestamp = timestampAssigner.assignTimestampAndWatermarks(stream)
 
         rawSourceWithTimestamp
-          .map(new InitContextFunction[AnyRef](flinkNodeContext.metaData.id, flinkNodeContext.nodeId))(implicitly[TypeInformation[Context]])
+          .map(new InitContextFunction[AnyRef](flinkNodeContext.metaData.id, flinkNodeContext.nodeId, None))(implicitly[TypeInformation[Context]])
       }
 
       override def timestampAssignerForTest: Option[TimestampWatermarkHandler[AnyRef]] = Some(timestampAssigner)
