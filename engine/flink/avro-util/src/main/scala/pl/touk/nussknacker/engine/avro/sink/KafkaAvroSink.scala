@@ -2,24 +2,96 @@ package pl.touk.nussknacker.engine.avro.sink
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.avro.generic.GenericContainer
-import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
+import org.apache.flink.api.common.functions.{RichFlatMapFunction, RichMapFunction, RuntimeContext}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.formats.avro.typeutils.NkSerializableAvroSchema
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
-import pl.touk.nussknacker.engine.api.{InterpretationResult, LazyParameter, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{Context, InterpretationResult, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaVersionOption}
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroSerializationSchemaFactory
+import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSink.KeyedObjectMapper
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionHandler, WithFlinkEspExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
-import pl.touk.nussknacker.engine.flink.util.keyed.{KeyedValue, KeyedValueMapper}
+import pl.touk.nussknacker.engine.flink.util.keyed.{BaseKeyedValueMapper, KeyedValue, KeyedValueMapper}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaProducer, PreparedKafkaTopic}
 
-class KafkaAvroSink(preparedTopic: PreparedKafkaTopic, versionOption: SchemaVersionOption, key: LazyParameter[AnyRef], value: LazyParameter[AnyRef],
-                    kafkaConfig: KafkaConfig, serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
-                    schema: NkSerializableAvroSchema, runtimeSchema: Option[NkSerializableAvroSchema],
-                    clientId: String, validationMode: ValidationMode)
+object KafkaAvroSink {
+
+  import com.typesafe.scalalogging.LazyLogging
+  import org.apache.flink.api.common.functions.RichFlatMapFunction
+  import org.apache.flink.util.Collector
+  import pl.touk.nussknacker.engine.api.typed.typing
+  import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter, ValueWithContext}
+  import pl.touk.nussknacker.engine.flink.api.process.{FlinkLazyParameterFunctionHelper, LazyParameterInterpreterFunction}
+  import pl.touk.nussknacker.engine.flink.util.keyed
+  import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValue
+
+  import scala.util.control.NonFatal
+
+
+  class KeyedObjectMapper(protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
+                          key: LazyParameter[AnyRef],
+                          fields: List[(String, LazyParameter[AnyRef])])
+    extends RichFlatMapFunction[Context, ValueWithContext[KeyedValue[AnyRef, AnyRef]]]
+      with LazyParameterInterpreterFunction with LazyLogging {
+    implicit def lazyParameterInterpreterImpl: LazyParameterInterpreter = lazyParameterInterpreter
+
+    lazy val buildObject: LazyParameter[Map[String, AnyRef]] = {
+      val emptyObj = Map.empty[String, AnyRef]
+      lazyObjectFieldsSequence
+        .map { list =>
+          list.foldLeft(emptyObj) { case (obj, field) =>
+            obj + (field._1 -> field._2)
+          }
+        }
+    }
+
+    override def flatMap(value: Context, out: Collector[ValueWithContext[KeyedValue[AnyRef, AnyRef]]]): Unit = {
+      try {
+        out.collect(ValueWithContext(interpret(value), value))
+      } catch {
+        case NonFatal(e) => logger.error(e.getMessage, e)
+      }
+    }
+
+    private def interpret(ctx: Context): keyed.KeyedValue[AnyRef, AnyRef] =
+      lazyParameterInterpreter.syncInterpretationFunction(
+        buildObject.map(obj => KeyedValue(key, obj))
+      )(ctx)
+
+    private def lazyObjectFieldsSequence: LazyParameter[List[(String, AnyRef)]] = {
+      val outType = typing.Typed[List[(String, AnyRef)]]
+      val empty = lazyParameterInterpreter.pure[List[(String, AnyRef)]](Nil, outType)
+      fields.foldLeft(empty) { case (agg, lazyField) =>
+        aggregateLazyParam(agg, lazyField)
+      }
+    }
+
+    private def aggregateLazyParam(agg: LazyParameter[List[(String, AnyRef)]], lazyField: (String, LazyParameter[AnyRef])): LazyParameter[List[(String, AnyRef)]] = {
+      val outType = typing.Typed[List[(String, AnyRef)]]
+      agg.product(lazyField._2).map(
+        fun = {
+          case (list, value) =>
+            (lazyField._1, value) :: list
+        },
+        outputTypingResult = outType
+      )
+    }
+  }
+}
+
+class KafkaAvroSink(preparedTopic: PreparedKafkaTopic,
+                    versionOption: SchemaVersionOption,
+                    key: LazyParameter[AnyRef],
+                    valueEither: Either[List[(String, LazyParameter[AnyRef])], LazyParameter[AnyRef]],
+                    kafkaConfig: KafkaConfig,
+                    serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
+                    schema: NkSerializableAvroSchema,
+                    runtimeSchema: Option[NkSerializableAvroSchema],
+                    clientId: String,
+                    validationMode: ValidationMode)
   extends FlinkSink with Serializable with LazyLogging {
 
   import org.apache.flink.streaming.api.scala._
@@ -28,11 +100,16 @@ class KafkaAvroSink(preparedTopic: PreparedKafkaTopic, versionOption: SchemaVers
   @transient final protected lazy val avroEncoder = BestEffortAvroEncoder(validationMode)
 
   override def registerSink(dataStream: DataStream[InterpretationResult], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] = {
+    val fields = valueEither match {
+      case Right(value) => Nil
+      case Left(fs) => fs
+    }
     dataStream
       .map(_.finalContext)
-      .map(new KeyedValueMapper(flinkNodeContext.lazyParameterHelper, key, value))
+//      .map(new KeyedValueMapper(flinkNodeContext.lazyParameterHelper, key, ???))
+      .flatMap(new KeyedObjectMapper(flinkNodeContext.lazyParameterHelper, key, fields))
       .map(new EncodeAvroRecordFunction(flinkNodeContext))
-      .filter(_.value != null)
+//      .filter(_.value != null)
       .addSink(toFlinkFunction)
   }
 

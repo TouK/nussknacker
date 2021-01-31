@@ -21,7 +21,7 @@ abstract class BaseKafkaAvroSinkFactory extends SinkFactory {
   protected def createSink(preparedTopic: PreparedKafkaTopic,
                            version: SchemaVersionOption,
                            key: LazyParameter[AnyRef],
-                           value: LazyParameter[AnyRef],
+                           valueEither: Either[List[(String, LazyParameter[AnyRef])], LazyParameter[AnyRef]],
                            kafkaConfig: KafkaConfig,
                            serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
                            schemaDeterminer: AvroSchemaDeterminer, validationMode: ValidationMode)
@@ -29,11 +29,12 @@ abstract class BaseKafkaAvroSinkFactory extends SinkFactory {
                            nodeId: NodeId): FlinkSink = {
     //This is a bit redundant, since we already validate during creation
     val schemaData = schemaDeterminer.determineSchemaUsedInTyping.valueOr(SchemaDeterminerErrorHandler.handleSchemaRegistryErrorAndThrowException)
-    validateValueType(value.returnType, schemaData.schema, validationMode).valueOr(err => throw new CustomNodeValidationException(err.message, err.paramName, null))
+    // TODO
+//    validateValueType(value.returnType, schemaData.schema, validationMode).valueOr(err => throw new CustomNodeValidationException(err.message, err.paramName, null))
     val schemaUsedInRuntime = schemaDeterminer.toRuntimeSchema(schemaData)
 
     val clientId = s"${processMetaData.id}-${preparedTopic.prepared}"
-    new KafkaAvroSink(preparedTopic, version, key, value, kafkaConfig, serializationSchemaFactory,
+    new KafkaAvroSink(preparedTopic, version, key, valueEither, kafkaConfig, serializationSchemaFactory,
       schemaData.serializableSchema, schemaUsedInRuntime.map(_.serializableSchema), clientId, validationMode)
   }
 
