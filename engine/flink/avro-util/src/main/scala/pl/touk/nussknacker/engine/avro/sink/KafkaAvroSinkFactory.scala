@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.avro.sink
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
-import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerParameter, NodeDependencyValue}
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
@@ -12,17 +12,16 @@ import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectTypingResult, Typ
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
-import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, RuntimeSchemaData, SchemaDeterminerError, SchemaDeterminerErrorHandler}
+import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, SinkValueParamName, TopicParamName}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
 import pl.touk.nussknacker.engine.api.typed
+import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
 
 object KafkaAvroSinkFactory {
 
-  private val restrictedParamNames = Set(
-    SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, TopicParamName
-  )
+  private val restrictedParamNames = Set(SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, TopicParamName)
 
   private val paramsDeterminedAfterSchema = List(
     Parameter[String](SinkValidationModeParameterName)
@@ -30,15 +29,18 @@ object KafkaAvroSinkFactory {
     Parameter.optional[CharSequence](SinkKeyParamName).copy(isLazyParameter = true)
   )
 
+  private def extractValidationMode(value: String): ValidationMode =
+    ValidationMode.byName(value).getOrElse(throw CustomNodeValidationException(s"Unknown validation mode: $value", Some(SinkValidationModeParameterName)))
+
   private def containsRestrictedNames(obj: TypedObjectTypingResult): Boolean =
     (obj.fields.keySet & restrictedParamNames).nonEmpty
-
   private def toParamEither(typing: TypingResult)(implicit nodeId: NodeId): Validated[ProcessCompilationError, Either[List[Parameter], Parameter]] = {
-    // TODO: optional params with default in avro schema
-
-    // TODO: ParameterEditor
     def toSingleParam(name: String, typing: TypingResult) =
-      Parameter(name, typing).copy(isLazyParameter = true)
+      Parameter(name, typing).copy(
+        isLazyParameter = true,
+        // TODO
+        editor = new ParameterTypeEditorDeterminer(typing).determine()
+      )
 
     def toObjectFieldParams(typedObject: TypedObjectTypingResult) =
       typedObject.fields.map { case (name, typing) =>
@@ -66,6 +68,7 @@ object KafkaAvroSinkFactory {
 class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, val processObjectDependencies: ProcessObjectDependencies)
   extends BaseKafkaAvroSinkFactory with KafkaAvroBaseTransformer[FlinkSink] {
   import KafkaAvroSinkFactory._
+  import cats.implicits.catsSyntaxEither
 
   private var paramEither: Either[List[Parameter], Parameter] = Left(Nil)
 
@@ -110,10 +113,8 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, v
       }.valueOr(e => FinalResults(context, e :: Nil))
   }
 
-  /*
-TODO, FIXME:
-2. dedykowane formatki, np dla bool
-3.
+  /* TODO, FIXME:
+    1. optional params with default in avro schema
  */
   protected def finalParamStep(context: ValidationContext)(implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep(
@@ -135,16 +136,13 @@ TODO, FIXME:
           finalParamStep(context)
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkSink = {
-    import cats.implicits.catsSyntaxEither
     val preparedTopic = extractPreparedTopic(params)
     val versionOption = extractVersionOption(params)
     val key = params(SinkKeyParamName).asInstanceOf[LazyParameter[CharSequence]]
-
+    val validationMode = extractValidationMode(params(SinkValidationModeParameterName).asInstanceOf[String])
     val valueEither = paramEither
       .map(_ => params(SinkValueParamName).asInstanceOf[LazyParameter[AnyRef]])
       .leftMap(_.map(p => (p.name, params(p.name).asInstanceOf[LazyParameter[AnyRef]])))
-
-    val validationMode = extractValidationMode(params(SinkValidationModeParameterName).asInstanceOf[String])
 
     createSink(preparedTopic, versionOption, key, valueEither,
       kafkaConfig, schemaRegistryProvider.serializationSchemaFactory, prepareSchemaDeterminer(preparedTopic, versionOption), validationMode)(
@@ -152,7 +150,4 @@ TODO, FIXME:
   }
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]), TypedNodeDependency(classOf[NodeId]))
-
-  private def extractValidationMode(value: String): ValidationMode
-    = ValidationMode.byName(value).getOrElse(throw CustomNodeValidationException(s"Unknown validation mode: $value", Some(SinkValidationModeParameterName)))
 }
