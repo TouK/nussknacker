@@ -1,15 +1,11 @@
 package pl.touk.nussknacker.ui.process
 
-import akka.actor.ActorRef
-import akka.pattern.ask
-import akka.util.Timeout
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.ui.EspError.XError
-import pl.touk.nussknacker.ui.IllegalOperationError
-import pl.touk.nussknacker.ui.process.deployment.CheckStatus
+import pl.touk.nussknacker.ui.process.deployment.ManagementService
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActionRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -17,24 +13,17 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.concurrent.{ExecutionContext, Future}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 
-class ProcessService(managerActor: ActorRef,
+class ProcessService(managementService: ManagementService,
                      processRepository: FetchingProcessRepository[Future],
                      processActionRepository: ProcessActionRepository,
                      writeRepository: WriteProcessRepository) extends LazyLogging {
-  import scala.concurrent.duration._
 
-  type ArchiveResponse = XError[Unit]
+  type EmptyResponse = XError[Unit]
+  type DeployResponse = XError[Any]
 
-  /**
-    * Handling error at retrieving status from manager is created at ManagementActor
-    */
-  def getProcessState(processIdWithName: ProcessIdWithName)(implicit ec: ExecutionContext, user: LoggedUser): Future[ProcessState] = {
-    implicit val timeout: Timeout = Timeout(1 minute)
-    (managerActor ? CheckStatus(processIdWithName, user)).mapTo[ProcessState]
-  }
-
-  def archiveProcess(processIdWithName: ProcessIdWithName)(implicit ec: ExecutionContext, user: LoggedUser): Future[ArchiveResponse] = {
+  def archiveProcess(processIdWithName: ProcessIdWithName)(implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] = {
     processRepository.fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id).flatMap {
       case Some(process) if process.isArchived =>
         Future(Left(ProcessIllegalAction("Can't archive already archived process.")))
@@ -50,28 +39,28 @@ class ProcessService(managerActor: ActorRef,
   /**
     * FIXME: Add checking subprocess is used by any of already working process. ProcessResourcesSpec contains ignored test for it.
     */
-  private def archiveSubprocess(process: BaseProcessDetails[_])(implicit ec: ExecutionContext, user: LoggedUser): Future[ArchiveResponse] =
+  private def archiveSubprocess(process: BaseProcessDetails[_])(implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] =
     doArchive(process)
 
   private def doOnProcessStateVerification(process: BaseProcessDetails[_], actionToCheck: ProcessActionType)
-                                          (action: BaseProcessDetails[_] => Future[ArchiveResponse])
-                                          (implicit ec: ExecutionContext, user: LoggedUser): Future[ArchiveResponse] =
-    getProcessState(process.idWithName).flatMap(state => {
+                                          (action: BaseProcessDetails[_] => Future[EmptyResponse])
+                                          (implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] =
+    managementService.getProcessState(process.idWithName).flatMap(state => {
       if (state.allowedActions.contains(actionToCheck)) {
         action(process)
       } else {
-        Future(Left(ProcessIllegalAction(process.idWithName, state)))
+        Future(Left(ProcessIllegalAction(actionToCheck, process.idWithName, state)))
       }
     })
 
   //FIXME: Right now we don't do it in transaction..
-  private def doArchive(process: BaseProcessDetails[_])(implicit ec: ExecutionContext, user: LoggedUser): Future[ArchiveResponse] =
+  private def doArchive(process: BaseProcessDetails[_])(implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] =
     for {
       archive <- writeRepository.archive(processId = process.idWithName.id, isArchived = true)
       _ <- processActionRepository.markProcessAsArchived(process.idWithName.id, process.processVersionId, None)
     } yield archive
 
-  def unArchiveProcess(processIdWithName: ProcessIdWithName)(implicit ec: ExecutionContext, user: LoggedUser): Future[ArchiveResponse] = {
+  def unArchiveProcess(processIdWithName: ProcessIdWithName)(implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] = {
     processRepository.fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id).flatMap {
       case Some(process) if !process.isArchived =>
         Future(Left(ProcessIllegalAction("Can't unarchive not archived process.")))
@@ -83,16 +72,44 @@ class ProcessService(managerActor: ActorRef,
   }
 
   //FIXME: Right now we don't do it in transaction..
-  private def doUnArchive(process: BaseProcessDetails[_])(implicit ec: ExecutionContext, user: LoggedUser): Future[ArchiveResponse] =
+  private def doUnArchive(process: BaseProcessDetails[_])(implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] =
     for {
       archive <- writeRepository.archive(processId = process.idWithName.id, isArchived = false)
       _ <- processActionRepository.markProcessAsUnArchived(process.idWithName.id, process.processVersionId, None)
     } yield archive
-}
 
-object ProcessIllegalAction {
-  def apply(processIdWithName: ProcessIdWithName, state: ProcessState): ProcessIllegalAction =
-    ProcessIllegalAction(s"Can't archive process ${processIdWithName.name.value} with state: ${state.status.name}, allowed actions for process: ${state.allowedActions.mkString(",")}.")
-}
+   def deployProcess(processIdWithName: ProcessIdWithName, savepointPath: Option[String], comment: Option[String])(implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] =
+     doAction(ProcessActionType.Deploy, processIdWithName, savepointPath, comment){ (processIdWithName: ProcessIdWithName, savepointPath: Option[String], comment: Option[String]) =>
+       managementService
+         .deployProcess(processIdWithName, savepointPath, comment)
+         .map(_ => Right(Unit))
+     }
 
-case class ProcessIllegalAction(message: String) extends Exception(message) with IllegalOperationError
+  def cancelProcess(processIdWithName: ProcessIdWithName, comment: Option[String])(implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] =
+   doAction(ProcessActionType.Cancel, processIdWithName, None, comment){ (processIdWithName: ProcessIdWithName, _: Option[String], comment: Option[String]) =>
+     managementService
+       .cancelProcess(processIdWithName, comment)
+       .map(_ => Right(Unit))
+   }
+
+  private def doAction(action: ProcessActionType, processIdWithName: ProcessIdWithName, savepointPath: Option[String], comment: Option[String])
+                      (actionToDo: (ProcessIdWithName, Option[String], Option[String]) => Future[EmptyResponse])
+                      (implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] = {
+    processRepository.fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id).flatMap {
+      case Some(process) if process.isArchived =>
+        Future(Left(ProcessIllegalAction.archived(action, processIdWithName)))
+      case Some(process) if process.isSubprocess =>
+        Future(Left(ProcessIllegalAction.subprocess(action, processIdWithName)))
+      case Some(_) =>
+        managementService.getProcessState(processIdWithName).flatMap(ps => {
+          if (ps.allowedActions.contains(action)) {
+            actionToDo(processIdWithName, savepointPath, comment)
+          } else {
+            Future(Left(ProcessIllegalAction(action, processIdWithName, ps)))
+          }
+        })
+      case None =>
+        Future(Left(ProcessNotFoundError(processIdWithName.id.value.toString)))
+    }
+  }
+}

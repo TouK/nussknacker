@@ -5,6 +5,7 @@ import akka.actor.ActorRef
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.testkit.TestProbe
 import cats.instances.all._
 import cats.syntax.semigroup._
 import com.typesafe.config.Config
@@ -28,12 +29,13 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
 import pl.touk.nussknacker.ui.process._
-import pl.touk.nussknacker.ui.process.deployment.ManagementActor
+import pl.touk.nussknacker.ui.process.deployment.{ManagementActor, ManagementService}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReader
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{DefaultAuthenticationConfiguration, LoggedUser}
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
+import java.time
 import scala.concurrent.Future
 
 
@@ -73,7 +75,8 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
       processChangeListener), "management")
   }
   val managementActor: ActorRef = createManagementActorRef
-  val processService = new ProcessService(managementActor, processRepository, actionRepository, writeProcessRepository)
+  val managementService = new ManagementService(managementActor, time.Duration.ofMinutes(1))
+  val processService = new ProcessService(managementService, processRepository, actionRepository, writeProcessRepository)
   val newProcessPreparer = new NewProcessPreparer(
     mapProcessingTypeDataProvider("streaming" ->  ProcessTestData.processDefinition),
     mapProcessingTypeDataProvider("streaming" -> (_ => StreamMetaData(None))),
@@ -89,6 +92,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     processRepository = processRepository,
     writeRepository = writeProcessRepository,
     processService = processService,
+    managementService = managementService,
     processValidation = processValidation,
     processResolving = processResolving,
     typesForCategories = typesForCategories,
@@ -124,7 +128,8 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     processAuthorizer = processAuthorizer,
     processRepository = processRepository,
     deploySettings = Some(DeploySettings(requireComment = requireComment)),
-    processResolving = processResolving
+    processResolving = processResolving,
+    processService = processService
   )
   val attachmentService = new ProcessAttachmentService(attachmentsPath, processActivityRepository)
   val processActivityRoute = new ProcessActivityResource(processActivityRepository, processRepository)

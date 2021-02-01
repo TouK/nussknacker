@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
 import java.util.Collections
-
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.testkit.TestProbe
@@ -20,8 +19,10 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider, withPermissions}
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestFactory}
 import pl.touk.nussknacker.ui.process.ProcessService
-import pl.touk.nussknacker.ui.process.deployment.CheckStatus
+import pl.touk.nussknacker.ui.process.deployment.{CheckStatus, ManagementService}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReload
+
+import java.time
 
 class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers with PatientScalaFutures with FailFastCirceSupport
   with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
@@ -34,8 +35,8 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
     ProcessStatus.createState(status, SimpleProcessStateDefinitionManager)
 
   private def prepareBasicAppResources(statusCheck: TestProbe) = {
-    new AppResources(ConfigFactory.empty(), emptyReload, emptyProcessingTypeDataProvider, processRepository, TestFactory.processValidation,
-      new ProcessService(statusCheck.ref, processRepository, actionRepository, writeProcessRepository))
+    val managementService = new ManagementService(statusCheck.ref, time.Duration.ofMinutes(1))
+    new AppResources(ConfigFactory.empty(), emptyReload, emptyProcessingTypeDataProvider, processRepository, TestFactory.processValidation, managementService)
   }
 
   test("it should return healthcheck also if cannot retrieve statuses") {
@@ -125,9 +126,10 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
     val modelData = LocalModelData(ConfigFactory.empty(), creatorWithBuildInfo)
 
     val globalConfig = Map("testConfig" -> "testValue", "otherConfig" -> "otherValue")
-    val processService = new ProcessService(TestProbe().ref, processRepository, actionRepository, writeProcessRepository)
+
+    val managementService = new ManagementService(TestProbe().ref, time.Duration.ofMinutes(1))
     val resources = new AppResources(ConfigFactory.parseMap(Collections.singletonMap("globalBuildInfo", globalConfig.asJava)), emptyReload,
-       mapProcessingTypeDataProvider("test1" -> modelData), processRepository, TestFactory.processValidation, processService)
+       mapProcessingTypeDataProvider("test1" -> modelData), processRepository, TestFactory.processValidation, managementService)
 
     val result = Get("/app/buildInfo") ~> TestFactory.withoutPermissions(resources)
     result ~> check {
