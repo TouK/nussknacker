@@ -115,11 +115,20 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Option[
 
     val globalParameters = NkGlobalParameters.readFromContext(env.getConfig)
     def nodeContext(nodeId: String, validationContext: Either[ValidationContext, Map[String, ValidationContext]]): FlinkCustomNodeContext = {
+
+      import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+
+      val contextTypeInformation = validationContext
+        .map(r => r.mapValuesNow(typeInformationDetection.forContext))
+        .left.map(typeInformationDetection.forContext)
+
       FlinkCustomNodeContext(processWithDeps.jobData, nodeId, processWithDeps.processTimeout,
         lazyParameterHelper = new FlinkLazyParameterFunctionHelper(createInterpreter(compiledProcessWithDeps)),
         signalSenderProvider = processWithDeps.signalSenders,
         exceptionHandlerPreparer = runtimeContext => compiledProcessWithDeps(runtimeContext.getUserCodeClassLoader).prepareExceptionHandler(runtimeContext),
-        globalParameters = globalParameters, validationContext)
+        globalParameters = globalParameters,
+        validationContext,
+        contextTypeInformation)
     }
 
     val wrapAsync: (DataStream[Context], ProcessPart, String) => DataStream[Unit]
@@ -164,13 +173,12 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Option[
       //TODO: get rid of cast (but how??)
       val source = part.obj.asInstanceOf[FlinkSource[Any]]
 
-      //TODO: source.typeInformation ??
-      val typeInformation = typeInformationDetection.forContext(part.validationContext)
+      val contextTypeInformation = typeInformationDetection.forContext(part.validationContext)
 
       val start = source
-        .sourceStream(env, nodeContext(part.id, Left(ValidationContext.empty)))
-        .process(new EventTimeDelayMeterFunction[Context]("eventtimedelay", part.id, eventTimeMetricDuration))(typeInformation)
-        .map(new RateMeterFunction[Context]("source", part.id))(typeInformation)
+        .sourceStream(env, nodeContext(part.id, Left(part.validationContext)))
+        .process(new EventTimeDelayMeterFunction[Context]("eventtimedelay", part.id, eventTimeMetricDuration))(contextTypeInformation)
+        .map(new RateMeterFunction[Context]("source", part.id))(contextTypeInformation)
 
       val asyncAssigned = wrapAsync(start, part, "interpretation")
 

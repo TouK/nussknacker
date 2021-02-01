@@ -53,9 +53,6 @@ trait BasicFlinkSource[T] extends FlinkSource[T] with SourceTestSupport[T] with 
 
   override def timestampAssignerForTest : Option[TimestampWatermarkHandler[T]] = timestampAssigner
 
-  //TODO: use TypeInformationDetection?
-  def contextTypeInformation: TypeInformation[Context] = implicitly[TypeInformation[Context]]
-
   override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[Context] = {
 
     env.setStreamTimeCharacteristic(if (timestampAssigner.isDefined) TimeCharacteristic.EventTime else TimeCharacteristic.IngestionTime)
@@ -69,7 +66,7 @@ trait BasicFlinkSource[T] extends FlinkSource[T] with SourceTestSupport[T] with 
       .getOrElse(rawSourceWithUid)
 
     rawSourceWithUidAndTimestamp
-      .map(new InitContextFunction[T](flinkNodeContext.metaData.id, flinkNodeContext.nodeId, customContextTransformation))(contextTypeInformation)
+      .map(new InitContextFunction[T](flinkNodeContext.metaData.id, flinkNodeContext.nodeId, customContextTransformation))(flinkNodeContext.contextTypeInformation.left.get)
   }
 }
 

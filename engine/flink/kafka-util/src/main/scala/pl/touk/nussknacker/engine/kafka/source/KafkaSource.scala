@@ -48,7 +48,7 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
       .getOrElse(rawSourceWithUid)
 
     rawSourceWithUidAndTimestamp
-      .map(new InitContextFunction[T](flinkNodeContext.metaData.id, flinkNodeContext.nodeId, customContextTransformation))(implicitly[TypeInformation[Context]])
+      .map(new InitContextFunction[T](flinkNodeContext.metaData.id, flinkNodeContext.nodeId, customContextTransformation))(flinkNodeContext.contextTypeInformation.left.get)
   }
 
   override val typeInformation: TypeInformation[T] = deserializationSchema.getProducedType

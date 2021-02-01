@@ -71,7 +71,7 @@ class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPun
     env
       .addSource(flinkSourceFunction)
       .name(s"${flinkNodeContext.metaData.id}-${flinkNodeContext.nodeId}-source")
-      .map(new InitContextFunction[T](flinkNodeContext.metaData.id, flinkNodeContext.nodeId, None))(implicitly[TypeInformation[Context]])
+      .map(new InitContextFunction[T](flinkNodeContext.metaData.id, flinkNodeContext.nodeId, None))(flinkNodeContext.contextTypeInformation.left.get)
   }
 
   override def typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
