@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNod
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory}
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
@@ -66,7 +66,7 @@ object KafkaAvroSinkFactory {
 }
 
 class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, val processObjectDependencies: ProcessObjectDependencies)
-  extends BaseKafkaAvroSinkFactory with KafkaAvroBaseTransformer[FlinkSink] {
+  extends SinkFactory with KafkaAvroBaseTransformer[FlinkSink] {
   import KafkaAvroSinkFactory._
   import cats.implicits.catsSyntaxEither
 
@@ -144,10 +144,18 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, v
       .map(_ => params(SinkValueParamName).asInstanceOf[LazyParameter[AnyRef]])
       .leftMap(_.map(p => (p.name, params(p.name).asInstanceOf[LazyParameter[AnyRef]])))
 
-    createSink(preparedTopic, versionOption, key, valueEither,
-      kafkaConfig, schemaRegistryProvider.serializationSchemaFactory, prepareSchemaDeterminer(preparedTopic, versionOption), validationMode)(
-      typedDependency[MetaData](dependencies), typedDependency[NodeId](dependencies))
+    implicit val nodeId = typedDependency[NodeId](dependencies)
+    val schemaDeterminer = prepareSchemaDeterminer(preparedTopic, versionOption)
+    val schemaData = schemaDeterminer.determineSchemaUsedInTyping.valueOr(SchemaDeterminerErrorHandler.handleSchemaRegistryErrorAndThrowException)
+    val schemaUsedInRuntime = schemaDeterminer.toRuntimeSchema(schemaData)
+    val processMetaData = typedDependency[NodeId](dependencies)
+    val clientId = s"${processMetaData.id}-${preparedTopic.prepared}"
+
+    new KafkaAvroSink(preparedTopic, versionOption, key, valueEither, kafkaConfig, schemaRegistryProvider.serializationSchemaFactory,
+      schemaData.serializableSchema, schemaUsedInRuntime.map(_.serializableSchema), clientId, validationMode)
   }
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]), TypedNodeDependency(classOf[NodeId]))
+
+  override def requiresOutput: Boolean = false
 }
