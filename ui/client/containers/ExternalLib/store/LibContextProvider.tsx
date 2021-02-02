@@ -9,6 +9,13 @@ interface Props<M extends Module> {
   scope: ModuleString,
 }
 
+/**
+ * Module context provider. If store is available in context extend existing store with module.
+ * @param lib module to store in context
+ * @param scope name of module - based on remote ModuleFederationPlugin config
+ * @param children
+ * @constructor
+ */
 export function LibContextProvider<M extends Module>({lib, scope, children}: PropsWithChildren<Props<M>>): JSX.Element {
   const {context} = useExternalLib()
 

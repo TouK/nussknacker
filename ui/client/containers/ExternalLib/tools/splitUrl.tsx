@@ -1,5 +1,9 @@
 import {ModuleString, ModuleUrl, PathString, ScopeString, ScriptUrl} from "../types"
 
+/**
+ * Split ExternalModule url to url and module parts.
+ * @param url
+ */
 export function splitUrl(url: ModuleUrl): [ModuleUrl, ModuleString, ScriptUrl, ScopeString, PathString] {
   const [module, script] = url.split("@")
   const [scope] = module.split("/")

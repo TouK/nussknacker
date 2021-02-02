@@ -4,8 +4,14 @@ import {LibContextProvider} from "./store"
 import {createScript, loadComponent, splitUrl} from "./tools"
 import {Module, ModuleUrl} from "./types"
 
-export function ExternalModule<M extends Module>(props: PropsWithChildren<{url: ModuleUrl}>): JSX.Element {
-  const {url, children} = props
+/**
+ * Loads external module (federation) from url. Works as modules context provider.
+ * After loading module renders children providing context with module accessible by hooks
+ * @param url "url" to module in format `${federatedModuleName}/${exposedModule}@http(...).js`
+ * @param children
+ * @constructor
+ */
+export function ExternalModule<M extends Module>({children, url}: PropsWithChildren<{url: ModuleUrl}>): JSX.Element {
   const [, context, scriptUrl, scope, module] = splitUrl(url)
 
   const LoadedLib = useMemo(() => lazy.lib(async () => {
@@ -16,13 +22,11 @@ export function ExternalModule<M extends Module>(props: PropsWithChildren<{url: 
 
   return (
     <LoadedLib>
-      {(lib: M) => {
-        return (
-          <LibContextProvider<M> lib={lib} scope={context}>
-            {children}
-          </LibContextProvider>
-        )
-      }}
+      {(lib: M) => (
+        <LibContextProvider<M> lib={lib} scope={context}>
+          {children}
+        </LibContextProvider>
+      )}
     </LoadedLib>
   )
 }
