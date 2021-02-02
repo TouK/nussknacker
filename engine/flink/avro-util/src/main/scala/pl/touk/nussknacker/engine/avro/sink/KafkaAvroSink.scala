@@ -6,7 +6,7 @@ import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
 import org.apache.flink.formats.avro.typeutils.NkSerializableAvroSchema
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
-import pl.touk.nussknacker.engine.api.{InterpretationResult, LazyParameter, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{Context, InterpretationResult, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaVersionOption}
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroSerializationSchemaFactory
@@ -29,6 +29,7 @@ object KafkaAvroSink {
 
   import scala.util.control.NonFatal
 
+  case class InvalidSinkValueError(msg: String) extends Exception(msg)
 
   // TODO FIXME: sanitize key!
   class KeyedObjectMapper(protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
@@ -85,7 +86,7 @@ object KafkaAvroSink {
 class KafkaAvroSink(preparedTopic: PreparedKafkaTopic,
                     versionOption: SchemaVersionOption,
                     key: LazyParameter[AnyRef],
-                    valueEither: Either[List[(String, LazyParameter[AnyRef])], LazyParameter[AnyRef]],
+                    sinkValue: AvroSinkValue,
                     kafkaConfig: KafkaConfig,
                     serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
                     schema: NkSerializableAvroSchema,
@@ -99,19 +100,19 @@ class KafkaAvroSink(preparedTopic: PreparedKafkaTopic,
   // We don't want serialize it because of flink serialization..
   @transient final protected lazy val avroEncoder = BestEffortAvroEncoder(validationMode)
 
-  override def registerSink(dataStream: DataStream[InterpretationResult], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] = {
-    val ds1 = dataStream.map(_.finalContext)
-    val ds2 = valueEither match {
-      case Right(value) =>
-        ds1.map(new KeyedValueMapper(flinkNodeContext.lazyParameterHelper, key, value))
-      case Left(fields) =>
-        ds1.flatMap(new KeyedObjectMapper(flinkNodeContext.lazyParameterHelper, key, fields))
+  private def toValueWithContext(ds: DataStream[Context], flinkNodeContext: FlinkCustomNodeContext): DataStream[ValueWithContext[KeyedValue[AnyRef, AnyRef]]] =
+    sinkValue match {
+      case AvroSinkSingleValue(value) =>
+        ds.map(new KeyedValueMapper(flinkNodeContext.lazyParameterHelper, key, value))
+      case AvroSinkRecordValue(fields) =>
+        ds.flatMap(new KeyedObjectMapper(flinkNodeContext.lazyParameterHelper, key, fields))
     }
-    ds2
+
+  override def registerSink(dataStream: DataStream[InterpretationResult], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] =
+    toValueWithContext(dataStream.map(_.finalContext), flinkNodeContext)
       .map(new EncodeAvroRecordFunction(flinkNodeContext))
       .filter(_.value != null)
       .addSink(toFlinkFunction)
-  }
 
   /**
    * Right now we support it incorrectly, because we don't use default sink behavior with expression..

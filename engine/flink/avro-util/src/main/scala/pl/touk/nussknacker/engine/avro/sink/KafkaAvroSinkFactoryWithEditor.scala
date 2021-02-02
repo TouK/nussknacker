@@ -1,73 +1,34 @@
 package pl.touk.nussknacker.engine.avro.sink
 
-import cats.data.Validated
-import cats.data.Validated.{Invalid, Valid}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
-import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory}
-import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, SinkValueParamName, TopicParamName}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
-import pl.touk.nussknacker.engine.api.typed
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory.extractValidationMode
-import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
 
-object KafkaAvroSinkFactoryV2 {
+
+object KafkaAvroSinkFactoryWithEditor {
+
   private val paramsDeterminedAfterSchema = List(
     Parameter[String](KafkaAvroBaseTransformer.SinkValidationModeParameterName)
       .copy(editor = Some(FixedValuesParameterEditor(ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label))))),
     Parameter.optional[CharSequence](KafkaAvroBaseTransformer.SinkKeyParamName).copy(isLazyParameter = true)
   )
-
-  private val restrictedParamNames = Set(SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, TopicParamName)
-
-  private def containsRestrictedNames(obj: TypedObjectTypingResult): Boolean =
-    (obj.fields.keySet & restrictedParamNames).nonEmpty
-
-  private def toParamEither(typing: TypingResult)(implicit nodeId: NodeId): Validated[ProcessCompilationError, Either[List[Parameter], Parameter]] = {
-    def toSingleParam(name: String, typing: TypingResult) =
-      Parameter(name, typing).copy(
-        isLazyParameter = true,
-        // TODO
-        editor = new ParameterTypeEditorDeterminer(typing).determine()
-      )
-
-    def toObjectFieldParams(typedObject: TypedObjectTypingResult) =
-      typedObject.fields.map { case (name, typing) =>
-        toSingleParam(name, typing)
-      }.toList
-
-    def toParamEither(typing: TypingResult, isRoot: Boolean)(implicit nodeId: NodeId) =
-      typing match {
-        case typed.typing.Unknown =>
-          Invalid(CustomNodeError(nodeId.id, "Cannot determine typing for provided schema", None))
-        case typedObject: TypedObjectTypingResult if containsRestrictedNames(typedObject) =>
-          Invalid(CustomNodeError(nodeId.id, s"""Record field name is restricted. Restricted names are ${restrictedParamNames.mkString(", ")}""", None))
-        case typedObject: TypedObjectTypingResult if isRoot =>
-          Valid(Left(toObjectFieldParams(typedObject)))
-        case _: TypedObjectTypingResult =>
-          Valid(Right(toSingleParam(SinkValueParamName, typing)))
-        case _ =>
-          Valid(Right(toSingleParam(SinkValueParamName, typing)))
-      }
-
-    toParamEither(typing, isRoot = true)
-  }
 }
 
-class KafkaAvroSinkFactoryV2(val schemaRegistryProvider: SchemaRegistryProvider, val processObjectDependencies: ProcessObjectDependencies)
+class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryProvider, val processObjectDependencies: ProcessObjectDependencies)
   extends SinkFactory with KafkaAvroBaseTransformer[FlinkSink] {
-  import KafkaAvroSinkFactoryV2._
-  import cats.implicits.catsSyntaxEither
+  import KafkaAvroSinkFactoryWithEditor._
 
-  private var paramEither: Either[List[Parameter], Parameter] = Left(Nil)
+  private var sinkValueParameter: AvroSinkValueParameter = AvroSinkValueEmptyParameter
 
   protected def topicParamStep(implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep(Nil, _) =>
@@ -100,13 +61,8 @@ class KafkaAvroSinkFactoryV2(val schemaRegistryProvider: SchemaRegistryProvider,
         .leftMap(SchemaDeterminerErrorHandler.handleSchemaRegistryError(_))
       schemaValidated.andThen { runtimeSchema =>
         val typing = AvroSchemaTypeDefinitionExtractor.typeDefinition(runtimeSchema.schema)
-        toParamEither(typing).map { paramE =>
-          paramEither = paramE
-          paramEither match {
-            case Right(value) => NextParameters(value :: Nil)
-            case Left(fields) => NextParameters(fields)
-          }
-        }
+        AvroSinkValueParameter(typing).foreach(sinkValueParameter = _)
+        AvroSinkValueParameter(typing).map(_ => NextParameters(sinkValueParameter.toParameters))
       }.valueOr(e => FinalResults(context, e :: Nil))
   }
 
@@ -133,22 +89,19 @@ class KafkaAvroSinkFactoryV2(val schemaRegistryProvider: SchemaRegistryProvider,
           finalParamStep(context)
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkSink = {
+    implicit val nodeId = typedDependency[NodeId](dependencies)
     val preparedTopic = extractPreparedTopic(params)
     val versionOption = extractVersionOption(params)
     val key = params(SinkKeyParamName).asInstanceOf[LazyParameter[CharSequence]]
     val validationMode = extractValidationMode(params(SinkValidationModeParameterName).asInstanceOf[String])
-    val valueEither = paramEither
-      .map(_ => params(SinkValueParamName).asInstanceOf[LazyParameter[AnyRef]])
-      .leftMap(_.map(p => (p.name, params(p.name).asInstanceOf[LazyParameter[AnyRef]])))
-
-    implicit val nodeId = typedDependency[NodeId](dependencies)
+    val sinkValue = AvroSinkValue.applyUnsafe(sinkValueParameter, parameterValues = params)
     val schemaDeterminer = prepareSchemaDeterminer(preparedTopic, versionOption)
     val schemaData = schemaDeterminer.determineSchemaUsedInTyping.valueOr(SchemaDeterminerErrorHandler.handleSchemaRegistryErrorAndThrowException)
     val schemaUsedInRuntime = schemaDeterminer.toRuntimeSchema(schemaData)
     val processMetaData = typedDependency[NodeId](dependencies)
     val clientId = s"${processMetaData.id}-${preparedTopic.prepared}"
 
-    new KafkaAvroSink(preparedTopic, versionOption, key, valueEither, kafkaConfig, schemaRegistryProvider.serializationSchemaFactory,
+    new KafkaAvroSink(preparedTopic, versionOption, key, sinkValue, kafkaConfig, schemaRegistryProvider.serializationSchemaFactory,
       schemaData.serializableSchema, schemaUsedInRuntime.map(_.serializableSchema), clientId, validationMode)
   }
 

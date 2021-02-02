@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
-import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactoryV2
+import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactoryWithEditor
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
@@ -58,7 +58,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "monitor" -> categories(SinkFactory.noParam(EmptySink)),
       "communicationSink" -> categories(DynamicParametersSink),
       "kafka-string" -> all(new KafkaSinkFactory(new SimpleSerializationSchema[Any](_, String.valueOf), processObjectDependencies)),
-      "kafka-avro" -> all(new KafkaAvroSinkFactoryV2(ConfluentSchemaRegistryProvider(processObjectDependencies), processObjectDependencies))
+      "kafka-avro-v2" -> all(new KafkaAvroSinkFactoryWithEditor(ConfluentSchemaRegistryProvider(processObjectDependencies), processObjectDependencies))
     )
 
   override def listeners(processObjectDependencies: ProcessObjectDependencies) = List(LoggingListener)

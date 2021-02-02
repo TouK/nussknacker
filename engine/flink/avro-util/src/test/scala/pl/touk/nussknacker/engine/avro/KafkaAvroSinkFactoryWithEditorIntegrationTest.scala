@@ -6,8 +6,8 @@ import org.scalatest.BeforeAndAfter
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.avro.KafkaAvroTestProcessConfigCreator.recordingExceptionHandler
-import pl.touk.nussknacker.engine.avro.encode.ValidationMode
-import pl.touk.nussknacker.engine.avro.schema.{PaymentV1, TestSchemaWithRecord}
+import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
+import pl.touk.nussknacker.engine.avro.schema.TestSchemaWithRecord
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaRegistryProvider}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory}
@@ -16,9 +16,20 @@ import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import spel.Implicits.asSpelExpression
 
-object KafkaAvroSinkFactoryV2IntegrationTest {
-  import spel.Implicits._
+
+object KafkaAvroSinkFactoryWithEditorIntegrationTest {
+
+  private object MyPrimitive {
+    val avroEncoder = BestEffortAvroEncoder(ValidationMode.strict)
+
+    val stringSchema: String = """{"type": "long"}"""
+
+    lazy val schema: Schema = AvroUtils.parseSchema(stringSchema)
+
+    def encoded(v: Long): AnyRef = avroEncoder.encode(v, schema).valueOr(e =>  throw new Exception(e.head))
+  }
 
   private object MyRecord extends TestSchemaWithRecord {
 
@@ -50,10 +61,8 @@ object KafkaAvroSinkFactoryV2IntegrationTest {
   }
 }
 
-class KafkaAvroSinkFactoryV2IntegrationTest extends KafkaAvroSpecMixin with BeforeAndAfter {
-  import KafkaAvroSinkFactoryV2IntegrationTest._
-  import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils._
-  import spel.Implicits._
+class KafkaAvroSinkFactoryWithEditorIntegrationTest extends KafkaAvroSpecMixin with BeforeAndAfter {
+  import KafkaAvroSinkFactoryWithEditorIntegrationTest._
 
   private lazy val processConfigCreator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
     override protected def createSchemaRegistryProvider(processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider =
@@ -74,13 +83,23 @@ class KafkaAvroSinkFactoryV2IntegrationTest extends KafkaAvroSpecMixin with Befo
     recordingExceptionHandler.clear()
   }
 
-  test("should read event in the same version as source requires and save it in the same version") {
-    val topicConfig = createAndRegisterTopicConfig("simple", MyRecord.schema)
+  test("record") {
+    val topicConfig = createAndRegisterTopicConfig("record", MyRecord.schema)
     val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
     val sinkParam = SinkAvroParam(topic = topicConfig.output, versionOption = ExistingSchemaVersion(1),
       valueEither = Left(MyRecord.toSampleParams), key = "", ValidationMode.strict, sinkId = "kafka-avro-v2")
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, event = MyRecord.record, expected = MyRecord.record)
+  }
+
+  test("plain value") {
+    val topicConfig = createAndRegisterTopicConfig("plain", MyPrimitive.schema)
+    val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
+    val sinkParam = SinkAvroParam(topic = topicConfig.output, versionOption = ExistingSchemaVersion(1),
+      valueEither = Right("42L"), key = "", ValidationMode.strict, sinkId = "kafka-avro-v2")
+    val process = createAvroProcess(sourceParam, sinkParam)
+    val encoded = MyPrimitive.encoded(42L)
+    runAndVerifyResult(process, topicConfig, event = encoded, expected = encoded)
   }
 }
