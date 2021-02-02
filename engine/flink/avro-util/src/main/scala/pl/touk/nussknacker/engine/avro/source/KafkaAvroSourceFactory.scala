@@ -25,11 +25,11 @@ class KafkaAvroSourceFactory[T:ClassTag](val schemaRegistryProvider: SchemaRegis
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
                                     (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
     case TransformationStep(Nil, _) =>
-      val initial = topicParam
+      val initial = getTopicParam
       NextParameters(List(initial.value), initial.written)
     case TransformationStep((TopicParamName, DefinedEagerParameter(topic:String, _)) :: Nil, _) =>
       val preparedTopic = prepareTopic(topic)
-      val versionOption = versionParam(preparedTopic)
+      val versionOption = getVersionParam(preparedTopic)
      NextParameters(List(versionOption.value), versionOption.written, None)
     case TransformationStep((TopicParamName, _) :: Nil, _) =>
       NextParameters(List(fallbackVersionOptionParam), Nil, None)
@@ -60,7 +60,7 @@ class KafkaAvroSourceFactory[T:ClassTag](val schemaRegistryProvider: SchemaRegis
   }
 
   override def initialParameters: List[Parameter] = {
-    List(topicParam(NodeId("")).value, versionParam(Nil))
+    List(getTopicParam(NodeId("")).value, getVersionParam(Nil))
   }
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkSource[T] = {

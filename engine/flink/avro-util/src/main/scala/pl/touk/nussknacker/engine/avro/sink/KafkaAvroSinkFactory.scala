@@ -11,31 +11,37 @@ import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
-import pl.touk.nussknacker.engine.util.ThreadUtils
 
-class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, val processObjectDependencies: ProcessObjectDependencies)
-  extends BaseKafkaAvroSinkFactory with KafkaAvroBaseTransformer[FlinkSink] {
+object KafkaAvroSinkFactory {
 
-  private val paramsDeterminedAfterSchema = List(
+  private[sink] val paramsDeterminedAfterSchema = List(
     Parameter[String](KafkaAvroBaseTransformer.SinkValidationModeParameterName)
       .copy(editor = Some(FixedValuesParameterEditor(ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label))))),
     Parameter.optional[CharSequence](KafkaAvroBaseTransformer.SinkKeyParamName).copy(isLazyParameter = true),
     Parameter[AnyRef](KafkaAvroBaseTransformer.SinkValueParamName).copy(isLazyParameter = true)
   )
 
+  private[sink] def extractValidationMode(value: String): ValidationMode =
+    ValidationMode.byName(value).getOrElse(throw CustomNodeValidationException(s"Unknown validation mode: $value", Some(KafkaAvroBaseTransformer.SinkValidationModeParameterName)))
+}
+
+class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, val processObjectDependencies: ProcessObjectDependencies)
+  extends BaseKafkaAvroSinkFactory with KafkaAvroBaseTransformer[FlinkSink] {
+  import KafkaAvroSinkFactory._
+
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
                                     (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
     case TransformationStep(Nil, _) =>
-      val initial = topicParam.map(List(_))
+      val initial = getTopicParam.map(List(_))
       NextParameters(initial.value, initial.written)
     case TransformationStep((KafkaAvroBaseTransformer.TopicParamName, DefinedEagerParameter(topic: String, _)) :: Nil, _) =>
       val preparedTopic = prepareTopic(topic)
-      val version = versionParam(preparedTopic)
+      val version = getVersionParam(preparedTopic)
       NextParameters(List(version.value) ++ paramsDeterminedAfterSchema, version.written, None)
     case TransformationStep((KafkaAvroBaseTransformer.TopicParamName, _) :: Nil, _) =>
       NextParameters(List(fallbackVersionOptionParam) ++ paramsDeterminedAfterSchema)
     case TransformationStep(
-      (KafkaAvroBaseTransformer.TopicParamName, DefinedEagerParameter(topic: String, _)) ::
+    (KafkaAvroBaseTransformer.TopicParamName, DefinedEagerParameter(topic: String, _)) ::
       (KafkaAvroBaseTransformer.SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::
       (KafkaAvroBaseTransformer.SinkValidationModeParameterName, DefinedEagerParameter(mode: String, _)) ::
       (KafkaAvroBaseTransformer.SinkKeyParamName, _: BaseDefinedParameter) ::
@@ -51,7 +57,7 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, v
       FinalResults(context, validationResult)
     //edge case - for some reason Topic/Version is not defined
     case TransformationStep(
-      (KafkaAvroBaseTransformer.TopicParamName, _) ::
+    (KafkaAvroBaseTransformer.TopicParamName, _) ::
       (KafkaAvroBaseTransformer.SchemaVersionParamName, _) ::
       (KafkaAvroBaseTransformer.SinkValidationModeParameterName, _) ::
       (KafkaAvroBaseTransformer.SinkKeyParamName, _) ::
@@ -61,8 +67,8 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, v
 
   override def initialParameters: List[Parameter] = {
     implicit val nodeId: NodeId = NodeId("")
-    val topic = topicParam.value
-    List(topic, versionParam(Nil)) ++ paramsDeterminedAfterSchema
+    val topic = getTopicParam.value
+    List(topic, getVersionParam(Nil)) ++ paramsDeterminedAfterSchema
   }
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkSink = {
@@ -78,7 +84,4 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, v
   }
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]), TypedNodeDependency(classOf[NodeId]))
-
-  private def extractValidationMode(value: String): ValidationMode
-    = ValidationMode.byName(value).getOrElse(throw CustomNodeValidationException(s"Unknown validation mode: $value", Some(KafkaAvroBaseTransformer.SinkValidationModeParameterName)))
 }
