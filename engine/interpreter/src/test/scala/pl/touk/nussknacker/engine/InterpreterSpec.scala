@@ -83,12 +83,12 @@ class InterpreterSpec extends FunSuite with Matchers {
     val metaData = MetaData("process1", StreamMetaData())
     val process = EspProcess(metaData, ExceptionHandlerRef(List.empty), NonEmptyList.of(node))
 
-    val compiledProcess = compile(services, transformers, process, listeners)
-    val interpreter = compiledProcess.interpreter
-    val parts = compiledProcess.parts
+    val processCompilerData = compile(services, transformers, process, listeners)
+    val interpreter = processCompilerData.interpreter
+    val parts = failOnErrors(processCompilerData.compile())
 
     def compileNode(part: ProcessPart) =
-      failOnErrors(compiledProcess.subPartCompiler.compile(part.node, part.validationContext).result)
+      failOnErrors(processCompilerData.subPartCompiler.compile(part.node, part.validationContext).result)
 
     val initialCtx = Context("abc").withVariable(Interpreter.InputParamName, transaction)
 
@@ -113,7 +113,7 @@ class InterpreterSpec extends FunSuite with Matchers {
     }
   }
 
-  def compile(servicesToUse: Map[String, Service], customStreamTransformersToUse: Map[String, CustomStreamTransformer], process: EspProcess, listeners: Seq[ProcessListener]): CompiledProcess = {
+  def compile(servicesToUse: Map[String, Service], customStreamTransformersToUse: Map[String, CustomStreamTransformer], process: EspProcess, listeners: Seq[ProcessListener]): ProcessCompilerData = {
 
     val configCreator: ProcessConfigCreator = new EmptyProcessConfigCreator {
 
@@ -135,7 +135,7 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, api.process.ProcessObjectDependencies(ConfigFactory.empty(), ObjectNamingProvider(getClass.getClassLoader)))
 
-    failOnErrors(CompiledProcess.compile(process, definitions, listeners, getClass.getClassLoader)(DefaultAsyncInterpretationValueDeterminer.DefaultValue))
+    ProcessCompilerData.prepare(process, definitions, listeners, getClass.getClassLoader)(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
   }
 
   private def failOnErrors[T](obj: ValidatedNel[ProcessCompilationError, T]): T = obj match {

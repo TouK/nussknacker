@@ -11,7 +11,7 @@ import org.apache.flink.streaming.api.operators.StreamOperatorFactory
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.flink.streaming.runtime.operators.windowing.WindowOperator
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.process.compiler.CompiledProcessWithDeps
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
 import pl.touk.nussknacker.engine.process.util.{MetaDataExtractor, StateConfiguration}
 import pl.touk.nussknacker.engine.process.{CheckpointConfig, ExecutionConfigPreparer}
@@ -25,9 +25,9 @@ import scala.collection.JavaConverters._
  */
 trait StreamExecutionEnvPreparer {
 
-  def preRegistration(env: StreamExecutionEnvironment, compiledProcessWithDeps: CompiledProcessWithDeps): Unit
+  def preRegistration(env: StreamExecutionEnvironment, compiledProcessWithDeps: FlinkProcessCompilerData): Unit
 
-  def postRegistration(env: StreamExecutionEnvironment, compiledProcessWithDeps: CompiledProcessWithDeps): Unit
+  def postRegistration(env: StreamExecutionEnvironment, compiledProcessWithDeps: FlinkProcessCompilerData): Unit
 
   def flinkClassLoaderSimulation: ClassLoader
 }
@@ -36,7 +36,7 @@ class DefaultStreamExecutionEnvPreparer(checkpointConfig: Option[CheckpointConfi
                                         rocksDBStateBackendConfig: Option[RocksDBStateBackendConfig],
                                        executionConfigPreparer: ExecutionConfigPreparer) extends StreamExecutionEnvPreparer with LazyLogging {
 
-  override def preRegistration(env: StreamExecutionEnvironment, processWithDeps: CompiledProcessWithDeps): Unit = {
+  override def preRegistration(env: StreamExecutionEnvironment, processWithDeps: FlinkProcessCompilerData): Unit = {
 
     executionConfigPreparer.prepareExecutionConfig(env.getConfig)(processWithDeps.metaData, processWithDeps.jobData.processVersion)
 
@@ -58,7 +58,7 @@ class DefaultStreamExecutionEnvPreparer(checkpointConfig: Option[CheckpointConfi
     env.setStateBackend(StateConfiguration.prepareRocksDBStateBackend(config).asInstanceOf[StateBackend])
   }
 
-  override def postRegistration(env: StreamExecutionEnvironment, compiledProcessWithDeps: CompiledProcessWithDeps): Unit = {
+  override def postRegistration(env: StreamExecutionEnvironment, compiledProcessWithDeps: FlinkProcessCompilerData): Unit = {
     initializeStateDescriptors(env)
   }
 

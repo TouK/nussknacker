@@ -3,9 +3,9 @@ package pl.touk.nussknacker.engine.process.registrar
 import org.apache.flink.api.common.functions.RuntimeContext
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, LazyInterpreterDependencies}
-import pl.touk.nussknacker.engine.process.compiler.CompiledProcessWithDeps
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
 
-class FlinkCompilerLazyInterpreterCreator(runtimeContext: RuntimeContext, withDeps: CompiledProcessWithDeps)
+class FlinkCompilerLazyInterpreterCreator(runtimeContext: RuntimeContext, withDeps: FlinkProcessCompilerData)
   extends CompilerLazyParameterInterpreter {
 
   //TODO: is this good place?

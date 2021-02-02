@@ -8,9 +8,9 @@ import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
 import pl.touk.nussknacker.engine.api.{JobData, MetaData}
-import pl.touk.nussknacker.engine.compile.CompiledProcess
+import pl.touk.nussknacker.engine.compile.ProcessCompilerData
+import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
-import pl.touk.nussknacker.engine.compiledgraph.part.PotentiallyStartPart
 import pl.touk.nussknacker.engine.definition.LazyInterpreterDependencies
 import pl.touk.nussknacker.engine.flink.api.RuntimeContextLifecycle
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
@@ -20,13 +20,20 @@ import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 
 import scala.concurrent.duration.FiniteDuration
 
-class CompiledProcessWithDeps(compiledProcess: CompiledProcess,
-                              val jobData: JobData,
-                              // Exception handler is not opened and closed in this class. Use prepareExceptionHandler.
-                              exceptionHandler: FlinkEspExceptionHandler,
-                              val signalSenders: FlinkProcessSignalSenderProvider,
-                              val asyncExecutionContextPreparer: AsyncExecutionContextPreparer,
-                              val processTimeout: FiniteDuration
+/*
+  This class augments ProcessCompilerData with Flink specific stuff. In particular, we handle Flink lifecycle here.
+  Instances are created inside Flink operators (they use compileSubPart)
+  and one additional instance is created during graph creation (it uses compileProcess).
+
+  NOTE: this class is *NOT* serializable, it should be created on each operator via FlinkProcessCompiler.
+ */
+class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
+                               val jobData: JobData,
+                               // Exception handler is not opened and closed in this class. Use prepareExceptionHandler.
+                               exceptionHandler: FlinkEspExceptionHandler,
+                               val signalSenders: FlinkProcessSignalSenderProvider,
+                               val asyncExecutionContextPreparer: AsyncExecutionContextPreparer,
+                               val processTimeout: FiniteDuration
                              ) {
 
   def open(runtimeContext: RuntimeContext, nodesToUse: List[_<:NodeData]) : Unit = {
@@ -51,13 +58,13 @@ class CompiledProcessWithDeps(compiledProcess: CompiledProcess,
     case Invalid(err) => throw new scala.IllegalArgumentException(err.toList.mkString("Compilation errors: ", ", ", ""))
   }
 
-  val metaData: MetaData = compiledProcess.parts.metaData
+  val metaData: MetaData = compiledProcess.metaData
 
   val interpreter : Interpreter = compiledProcess.interpreter
 
   val lazyInterpreterDeps: LazyInterpreterDependencies = compiledProcess.lazyInterpreterDeps
 
-  val sources: NonEmptyList[PotentiallyStartPart] = compiledProcess.parts.sources
+  def compileProcess(): CompiledProcessParts = validateOrFail(compiledProcess.compile())
 
   def restartStrategy: RestartStrategies.RestartStrategyConfiguration = exceptionHandler.restartStrategy
 
@@ -67,4 +74,5 @@ class CompiledProcessWithDeps(compiledProcess: CompiledProcess,
     exceptionHandler
   }
 }
+
 

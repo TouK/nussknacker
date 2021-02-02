@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, _}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
-import pl.touk.nussknacker.engine.process.compiler.{CompiledProcessWithDeps, FlinkProcessCompiler}
+import pl.touk.nussknacker.engine.process.compiler.{FlinkProcessCompilerData, FlinkProcessCompiler}
 import pl.touk.nussknacker.engine.process.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
 import pl.touk.nussknacker.engine.process.util.{MetaDataExtractor, UserClassLoader}
@@ -39,7 +39,7 @@ import scala.language.implicitConversions
   NOTE: We should try to use *ONLY* core Flink API here, to avoid version compatibility problems.
   Various NK-dependent Flink hacks should be, if possible, placed in StreamExecutionEnvPreparer.
  */
-class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => ClassLoader => CompiledProcessWithDeps,
+class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => ClassLoader => FlinkProcessCompilerData,
                             streamExecutionEnvPreparer: StreamExecutionEnvPreparer,
                             eventTimeMetricDuration: FiniteDuration) extends LazyLogging {
 
@@ -70,8 +70,8 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => Clas
     }
   }
 
-  protected def prepareWrapAsync(processWithDeps: CompiledProcessWithDeps,
-                                 compiledProcessWithDeps: ClassLoader => CompiledProcessWithDeps,
+  protected def prepareWrapAsync(processWithDeps: FlinkProcessCompilerData,
+                                 compiledProcessWithDeps: ClassLoader => FlinkProcessCompilerData,
                                  globalParameters: Option[NkGlobalParameters], typeInformationDetection: TypeInformationDetection)
                                 (beforeAsync: DataStream[Context],
                                  part: ProcessPart,
@@ -99,13 +99,13 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => Clas
       .process(new SplitFunction(outputContexts, typeInformationDetection))(org.apache.flink.streaming.api.scala.createTypeInformation[Unit])
   }
 
-  protected def createInterpreter(compiledProcessWithDepsProvider: ClassLoader => CompiledProcessWithDeps): RuntimeContext => FlinkCompilerLazyInterpreterCreator =
+  protected def createInterpreter(compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData): RuntimeContext => FlinkCompilerLazyInterpreterCreator =
     (runtimeContext: RuntimeContext) =>
       new FlinkCompilerLazyInterpreterCreator(runtimeContext, compiledProcessWithDepsProvider(runtimeContext.getUserCodeClassLoader))
 
   private def register(env: StreamExecutionEnvironment,
-                       compiledProcessWithDeps: ClassLoader => CompiledProcessWithDeps,
-                       processWithDeps: CompiledProcessWithDeps,
+                       compiledProcessWithDeps: ClassLoader => FlinkProcessCompilerData,
+                       processWithDeps: FlinkProcessCompilerData,
                        testRunId: Option[TestRunId], typeInformationDetection: TypeInformationDetection): Unit = {
 
     val metaData = processWithDeps.metaData
@@ -124,7 +124,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => Clas
 
     {
       //it is *very* important that source are in correct order here - see ProcessCompiler.compileSources comments
-      processWithDeps.sources.toList.foldLeft(Map.empty[BranchEndDefinition, BranchEndData]) {
+      processWithDeps.compileProcess().sources.toList.foldLeft(Map.empty[BranchEndDefinition, BranchEndData]) {
         case (branchEnds, next: SourcePart) => branchEnds ++ registerSourcePart(next)
         case (branchEnds, joinPart: CustomNodePart) => branchEnds ++ registerJoinPart(joinPart, branchEnds)
       }

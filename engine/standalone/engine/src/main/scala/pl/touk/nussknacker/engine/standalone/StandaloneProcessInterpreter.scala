@@ -12,12 +12,12 @@ import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{process, _}
 import pl.touk.nussknacker.engine.compile._
+import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.{Node, Sink}
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, LazyInterpreterDependencies, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.split.{NodesCollector, ProcessSplitter}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.standalone.api.types._
@@ -56,27 +56,29 @@ object StandaloneProcessInterpreter {
     val definitions = definitionsPostProcessor(extractedDefinitions)
     val listeners = creator.listeners(processObjectDependencies) ++ additionalListeners
 
-    CompiledProcess.compile(process,
+    val compilerData = ProcessCompilerData.prepare(process,
       definitions,
       listeners,
       modelData.modelClassLoader.classLoader
       // defaultAsyncValue is not important here because it doesn't used in standalone mode
-    )(DefaultAsyncInterpretationValueDeterminer.DefaultValue).andThen { compiledProcess =>
+    )(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
+
+    compilerData.compile().andThen { compiledProcess =>
       val source = extractSource(compiledProcess)
 
       val nodesUsed = NodesCollector.collectNodesInAllParts(ProcessSplitter.split(process).sources).map(_.data)
-      val lifecycle = compiledProcess.lifecycle(nodesUsed)
-      StandaloneInvokerCompiler(compiledProcess).compile.map(_.run).map { case (sinkTypes, invoker) =>
+      val lifecycle = compilerData.lifecycle(nodesUsed)
+      StandaloneInvokerCompiler(compiledProcess, compilerData).compile.map(_.run).map { case (sinkTypes, invoker) =>
         StandaloneProcessInterpreter(source, sinkTypes, contextPreparer.prepare(process.id), invoker, lifecycle, modelData)
       }
     }
   }
 
-  private def extractSource(compiledProcess: CompiledProcess): StandaloneSource[Any]
-    = compiledProcess.parts.sources.head.asInstanceOf[SourcePart].obj.asInstanceOf[StandaloneSource[Any]]
+  private def extractSource(compiledProcess: CompiledProcessParts): StandaloneSource[Any]
+    = compiledProcess.sources.head.asInstanceOf[SourcePart].obj.asInstanceOf[StandaloneSource[Any]]
 
 
-  private case class StandaloneInvokerCompiler(compiledProcess: CompiledProcess) {
+  private case class StandaloneInvokerCompiler(compiledProcess: CompiledProcessParts, processCompilerData: ProcessCompilerData) {
 
     import cats.implicits._
     type CompilationResult[K] = ValidatedNel[ProcessCompilationError, K]
@@ -84,12 +86,12 @@ object StandaloneProcessInterpreter {
     type WithSinkTypes[K] = Writer[Map[String, TypingResult], K]
 
     private def compileWithCompilationErrors(node: SplittedNode[_], validationContext: ValidationContext): ValidatedNel[ProcessCompilationError, Node] =
-      compiledProcess.subPartCompiler.compile(node, validationContext).result
+      processCompilerData.subPartCompiler.compile(node, validationContext).result
 
     private def lazyParameterInterpreter: CompilerLazyParameterInterpreter = new CompilerLazyParameterInterpreter {
-      override def deps: LazyInterpreterDependencies = compiledProcess.lazyInterpreterDeps
+      override def deps: LazyInterpreterDependencies = processCompilerData.lazyInterpreterDeps
 
-      override def metaData: MetaData = compiledProcess.parts.metaData
+      override def metaData: MetaData = processCompilerData.metaData
 
       override def close(): Unit = {}
     }
@@ -143,7 +145,7 @@ object StandaloneProcessInterpreter {
       compilePartInvokers(parts).map(_.map { partsInvokers =>
         (ctx: Context, ec: ExecutionContext) => {
           implicit val iec: ExecutionContext = ec
-          compiledProcess.interpreter.interpret(node, compiledProcess.parts.metaData, ctx).flatMap { maybeResult =>
+          processCompilerData.interpreter.interpret(node, processCompilerData.metaData, ctx).flatMap { maybeResult =>
             maybeResult.fold[InterpreterOutputType](
             ir => Future.sequence(ir.map(interpretationInvoke(partsInvokers))).map(foldResults),
             a => Future.successful(Left(NonEmptyList.of(a))))
@@ -167,7 +169,7 @@ object StandaloneProcessInterpreter {
     }
 
     def compile: CompilationResult[WithSinkTypes[InterpreterType]]
-      = compiledPartInvoker(compiledProcess.parts.sources.head)
+      = compiledPartInvoker(compiledProcess.sources.head)
 
   }
 
