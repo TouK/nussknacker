@@ -58,7 +58,7 @@ object KafkaAvroSink {
 
     private def interpret(ctx: Context): keyed.KeyedValue[AnyRef, AnyRef] =
       lazyParameterInterpreter.syncInterpretationFunction(
-        buildObject.map(obj => KeyedValue(key, obj))
+        key.product(buildObject).map(tuple => KeyedValue(tuple._1, tuple._2))
       )(ctx)
 
     private def lazyObjectFieldsSequence: LazyParameter[List[(String, AnyRef)]] = {

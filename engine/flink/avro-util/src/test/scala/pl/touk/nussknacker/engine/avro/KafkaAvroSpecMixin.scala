@@ -168,10 +168,22 @@ trait KafkaAvroSpecMixin extends FunSuite with FlinkSpec with KafkaSpec with Mat
   protected def validationModeParam(validationMode: ValidationMode): expression.Expression = s"'${validationMode.name}'"
 
   protected def createAvroProcess(source: SourceAvroParam, sink: SinkAvroParam, filterExpression: Option[String] = None): EspProcess = {
+    import spel.Implicits._
     val sourceParams = List(TopicParamName -> asSpelExpression(s"'${source.topic}'")) ++ (source match {
       case GenericSourceAvroParam(_, version) => List(SchemaVersionParamName -> asSpelExpression(formatVersionParam(version)))
       case SpecificSourceAvroParam(_) => List.empty
     })
+
+    val baseSinkParams: List[(String, expression.Expression)] = List(
+      TopicParamName -> s"'${sink.topic}'",
+      SchemaVersionParamName -> formatVersionParam(sink.versionOption),
+      SinkKeyParamName -> sink.key,
+      SinkValidationModeParameterName -> validationModeParam(sink.validationMode))
+
+    val valueParams = sink.valueEither match {
+      case Right(value) => (SinkValueParamName, value) :: Nil
+      case Left(fields) => fields
+    }
 
     val builder = EspProcessBuilder
       .id(s"avro-test")
@@ -189,12 +201,8 @@ trait KafkaAvroSpecMixin extends FunSuite with FlinkSpec with KafkaSpec with Mat
 
     filteredBuilder.emptySink(
       "end",
-      "kafka-avro",
-      TopicParamName -> s"'${sink.topic}'",
-      SchemaVersionParamName -> formatVersionParam(sink.versionOption),
-      SinkKeyParamName -> sink.key,
-      SinkValidationModeParameterName -> validationModeParam(sink.validationMode),
-      SinkValueParamName -> sink.value
+      sink.sinkId,
+      baseSinkParams ++ valueParams: _*
     )
   }
 
@@ -265,12 +273,18 @@ trait KafkaAvroSpecMixin extends FunSuite with FlinkSpec with KafkaSpec with Mat
 
   }
 
-  case class SinkAvroParam(topic: String, versionOption: SchemaVersionOption, value: String, key: String,
-                           validationMode: ValidationMode)
+  case class SinkAvroParam(topic: String,
+                           versionOption: SchemaVersionOption,
+                           valueEither: Either[List[(String, expression.Expression)], expression.Expression],
+                           key: String,
+                           validationMode: ValidationMode,
+                           sinkId: String)
 
   object SinkAvroParam {
+    import spel.Implicits._
+
     def apply(topicConfig: TopicConfig, version: SchemaVersionOption, value: String, key: String = "", validationMode: ValidationMode = ValidationMode.strict): SinkAvroParam =
-      new SinkAvroParam(topicConfig.output, version, value, key, validationMode)
+      new SinkAvroParam(topicConfig.output, version, Right(value), key, validationMode, "kafka-avro")
   }
 }
 

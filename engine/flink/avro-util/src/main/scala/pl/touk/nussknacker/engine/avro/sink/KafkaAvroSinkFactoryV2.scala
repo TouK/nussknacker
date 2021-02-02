@@ -15,9 +15,16 @@ import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionPa
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
 import pl.touk.nussknacker.engine.api.typed
+import pl.touk.nussknacker.engine.avro.encode.ValidationMode
+import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory.extractValidationMode
 import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
 
 object KafkaAvroSinkFactoryV2 {
+  private val paramsDeterminedAfterSchema = List(
+    Parameter[String](KafkaAvroBaseTransformer.SinkValidationModeParameterName)
+      .copy(editor = Some(FixedValuesParameterEditor(ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label))))),
+    Parameter.optional[CharSequence](KafkaAvroBaseTransformer.SinkKeyParamName).copy(isLazyParameter = true)
+  )
 
   private val restrictedParamNames = Set(SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, TopicParamName)
 
@@ -58,7 +65,6 @@ object KafkaAvroSinkFactoryV2 {
 class KafkaAvroSinkFactoryV2(val schemaRegistryProvider: SchemaRegistryProvider, val processObjectDependencies: ProcessObjectDependencies)
   extends SinkFactory with KafkaAvroBaseTransformer[FlinkSink] {
   import KafkaAvroSinkFactoryV2._
-  import KafkaAvroSinkFactory._
   import cats.implicits.catsSyntaxEither
 
   private var paramEither: Either[List[Parameter], Parameter] = Left(Nil)
