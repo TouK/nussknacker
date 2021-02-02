@@ -1,45 +1,51 @@
 import {ComponentType, PropsWithChildren} from "react"
 
-interface AuthRedirectState {
+interface RedirectState {
   targetPath: string,
   action: string,
 }
 
-interface RedirectCallback<S extends AuthRedirectState = AuthRedirectState> {
-  (state?: S): void,
-}
-
-interface AuthProviderConfig {
-  audience: string,
-  domain: string,
-  client_id: string,
-}
-
 interface Props {
-  config: AuthProviderConfig,
-  onRedirect?: RedirectCallback,
+  /**
+   * override default redirect after login
+   * @param state
+   */
+  onRedirect?: <S extends RedirectState = RedirectState>(state?: S) => void,
   onInit?: <U>(auth: AuthClient<U>) => void,
 }
 
-export interface PropsWithDefaults extends Omit<Props, "config"> {
-  withDefaults: true,
-  config?: Partial<AuthProviderConfig>,
-}
-
-type AuthProps = PropsWithChildren<Props | PropsWithDefaults>
-
-export interface AuthClient<U = any> {
-  user: U,
+export interface AuthClient<User = any> {
+  user: User,
   isLoading: boolean,
   isAuthenticated: boolean,
+  /**
+   * login with redirects
+   * @param options
+   */
   login: (options?: any) => void,
-  loginWithPopup: (params?: any) => Promise<void>,
+  /**
+   * login without redirects (popup)
+   * @param options
+   */
+  loginWithPopup: (options?: any) => Promise<void>,
   logout: (options?: any) => void,
   getToken: () => Promise<string>,
 }
 
+/**
+ * Types for external (module federation) auth module based on NkCloud Auth0 module
+ */
 export interface ExternalAuthModule {
-  default: ComponentType<AuthProps>,
+  /**
+   * provides auth context for hooks
+   */
+  default: ComponentType<PropsWithChildren<Props>>,
+  /**
+   * returns auth client from context
+   */
   useAuth: () => AuthClient,
+  /**
+   * tries to login on init and returns auth client from context
+   */
   useLogin: () => AuthClient,
 }

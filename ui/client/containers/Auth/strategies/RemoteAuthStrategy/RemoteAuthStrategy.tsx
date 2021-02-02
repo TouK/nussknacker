@@ -15,7 +15,7 @@ function AuthProvider(props: PropsWithChildren<{scope: ModuleString, onInit: Aut
   const {scope, onInit, children} = props
   const {module: {default: Component}} = useExternalLib<ExternalAuthModule>(scope)
   return (
-    <Component withDefaults onInit={onInit}>
+    <Component onInit={onInit}>
       {children}
     </Component>
   )

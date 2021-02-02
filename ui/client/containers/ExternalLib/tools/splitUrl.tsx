@@ -9,7 +9,5 @@ export function splitUrl(url: ModuleUrl): [ModuleUrl, ModuleString, ScriptUrl, S
     throw new Error("invalid remote module url")
   }
 
-  console.table([url, module, script, scope, path])
-
   return [url, module as ModuleString, script as ScriptUrl, scope as ScopeString, path as PathString]
 }

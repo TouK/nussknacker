@@ -10,10 +10,13 @@ export interface StrategyConstructor {
 }
 
 export interface Strategy {
+  // add when some React work is needed for strategy init
   Wrapper?: ComponentType,
 
+  // intercept axios errors (to handle 401)
   inteceptor?<E>(error: E): Promise<unknown>,
 
+  // init strategy and try to authorize (show login)
   handleAuth(): Promise<unknown>,
 
   setOnErrorCallback?(callback: (error: AuthErrorCodes) => void): void,
