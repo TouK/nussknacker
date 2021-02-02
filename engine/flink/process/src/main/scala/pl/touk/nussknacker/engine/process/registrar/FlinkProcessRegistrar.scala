@@ -87,17 +87,17 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => Clas
     val metaData = processWithDeps.metaData
     val streamMetaData = MetaDataExtractor.extractTypeSpecificDataOrFail[StreamMetaData](metaData)
 
-    val useIO = globalParameters.flatMap(_.configParameters).flatMap(_.useIOInInterpreter).getOrElse(true)
+    val useIOMonad = globalParameters.flatMap(_.configParameters).flatMap(_.useIOMonadInInterpreter).getOrElse(true)
     //TODO: we should detect automatically that Interpretation has no async enrichers and invoke sync function then, as async comes with
     //performance penalty...
     (if (streamMetaData.shouldUseAsyncInterpretation) {
-      val asyncFunction = new AsyncInterpretationFunction(compiledProcessWithDeps, node, validationContext, asyncExecutionContextPreparer, useIO)
+      val asyncFunction = new AsyncInterpretationFunction(compiledProcessWithDeps, node, validationContext, asyncExecutionContextPreparer, useIOMonad)
       ExplicitUidInOperatorsSupport.setUidIfNeed(ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators(globalParameters), node.id + "-$async")(
         new DataStream(org.apache.flink.streaming.api.datastream.AsyncDataStream.orderedWait(beforeAsync.javaStream, asyncFunction,
           processWithDeps.processTimeout.toMillis, TimeUnit.MILLISECONDS, asyncExecutionContextPreparer.bufferSize)))
     } else {
       val ti = typeInformationDetection.forInterpretationResults(outputContexts)
-      beforeAsync.flatMap(new SyncInterpretationFunction(compiledProcessWithDeps, node, validationContext, useIO))(ti)
+      beforeAsync.flatMap(new SyncInterpretationFunction(compiledProcessWithDeps, node, validationContext, useIOMonad))(ti)
     }).name(s"${metaData.id}-${node.id}-$name")
       .process(new SplitFunction(outputContexts, typeInformationDetection))(org.apache.flink.streaming.api.scala.createTypeInformation[Unit])
   }

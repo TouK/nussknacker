@@ -37,8 +37,8 @@ case class NkGlobalParameters(buildInfo: String,
 case class ConfigGlobalParameters(useLegacyMetrics: Option[Boolean],
                                   explicitUidInStatefulOperators: Option[Boolean],
                                   useTypingResultTypeInformation: Option[Boolean],
-                                 //TODO: temporary, until we confirm which method works better
-                                  useIOInInterpreter: Option[Boolean])
+                                 //TODO: temporary, until we confirm that IOMonad is not causing problems
+                                  useIOMonadInInterpreter: Option[Boolean])
 
 case class NamingParameters(tags: Map[String, String])
 

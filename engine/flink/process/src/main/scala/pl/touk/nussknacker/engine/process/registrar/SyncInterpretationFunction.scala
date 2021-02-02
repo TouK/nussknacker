@@ -17,7 +17,7 @@ import scala.util.control.NonFatal
 
 private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
                                                     val node: SplittedNode[_<:NodeData],
-                                                    validationContext: ValidationContext, useIO: Boolean)
+                                                    validationContext: ValidationContext, useIOMonad: Boolean)
   extends RichFlatMapFunction[Context, InterpretationResult] with ProcessPartFunction {
 
   private lazy implicit val ec: ExecutionContext = SynchronousExecutionContext.ctx
@@ -40,7 +40,7 @@ private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsP
 
   private def runInterpreter(input: Context): Either[List[InterpretationResult], EspExceptionInfo[_ <: Throwable]] = {
     //we leave switch to be able to return to Future if IO has some flaws...
-    if (useIO) {
+    if (useIOMonad) {
       interpreter.interpret(compiledNode, metaData, input).unsafeRunSync()
     } else {
       implicit val futureShape: FutureShape = new FutureShape()

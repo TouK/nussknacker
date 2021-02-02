@@ -32,9 +32,9 @@ class OneParamInterpreterBenchmark {
     //.buildSimpleVariable("v3", "v3", "{a:'', b: #out, c: {'d','d','ss','aa'}.?[#this.substring(0, 1) == ''] }")
     .sink("sink", "#out", "sink")
 
-  private val realAsync = true
+  private val instantlyCompletedFuture = false
 
-  private val service = new OneParamService(realAsync)
+  private val service = new OneParamService(instantlyCompletedFuture)
 
   private val interpreterFuture = new InterpreterSetup[String]
     .sourceInterpretation[Future](process, Map("service" -> service), Nil)(new FutureShape()(SynchronousExecutionContext.ctx))
@@ -79,12 +79,12 @@ class OneParamInterpreterBenchmark {
 
 
 }
-class OneParamService(realAsync: Boolean) extends Service {
+class OneParamService(instantlyCompletedFuture: Boolean) extends Service {
 
   @MethodToInvoke
   def methodToInvoke(@ParamName("p1") s: String)(implicit ec: ExecutionContext): Future[String] = {
-    if (realAsync) Future { s }
-    else Future.successful(s)
+    if (instantlyCompletedFuture) Future.successful(s)
+    else Future { s }
   }
 
 }

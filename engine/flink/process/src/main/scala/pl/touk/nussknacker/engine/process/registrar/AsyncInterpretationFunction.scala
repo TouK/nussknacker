@@ -18,11 +18,12 @@ import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 import scala.util.control.NonFatal
 
 private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
                                                      val node: SplittedNode[_<:NodeData], validationContext: ValidationContext,
-                                                     asyncExecutionContextPreparer: AsyncExecutionContextPreparer, useIO: Boolean)
+                                                     asyncExecutionContextPreparer: AsyncExecutionContextPreparer, useIOMonad: Boolean)
   extends RichAsyncFunction[Context, InterpretationResult] with LazyLogging with ProcessPartFunction {
 
   private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node, validationContext)
@@ -57,13 +58,14 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
                                (callback: Either[Throwable, Either[List[InterpretationResult], EspExceptionInfo[_ <: Throwable]]] => Unit): Unit = {
     implicit val ec: ExecutionContext = executionContext
     //we leave switch to be able to return to Future if IO has some flaws...
-    if (useIO) {
+    if (useIOMonad) {
       interpreter.interpret[IO](compiledNode, metaData, input).unsafeRunAsync(callback)
     } else {
       implicit val future: FutureShape = new FutureShape()
-      interpreter.interpret[Future](compiledNode, metaData, input).onComplete { result =>
+      interpreter.interpret[Future](compiledNode, metaData, input).onComplete {
         //use result.toEither after dropping Scala 2.11 support
-        callback(result.fold(Left(_), Right(_)))
+        case Success(a) => callback(Right(a))
+        case Failure(a) => callback(Left(a))
       }
     }
 
