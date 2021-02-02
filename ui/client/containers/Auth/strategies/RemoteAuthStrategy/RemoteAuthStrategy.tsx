@@ -11,22 +11,22 @@ import {AuthClient, ExternalAuthModule} from "./externalAuthModule"
 
 type AuthLibCallback = (a: AuthClient) => void
 
-function AuthProvider(props: PropsWithChildren<{scope: ModuleString, resolve: AuthLibCallback}>) {
-  const {scope, resolve, children} = props
+function AuthProvider(props: PropsWithChildren<{scope: ModuleString, onInit: AuthLibCallback}>) {
+  const {scope, onInit, children} = props
   const {module: {default: Component}} = useExternalLib<ExternalAuthModule>(scope)
   return (
-    <Component withDefaults resolve={resolve}>
+    <Component withDefaults onInit={onInit}>
       {children}
     </Component>
   )
 }
 
-function createAuthWrapper({url, scope}: {url: ModuleUrl, scope: ModuleString}, resolveLib: AuthLibCallback): FunctionComponent {
+function createAuthWrapper({url, scope}: {url: ModuleUrl, scope: ModuleString}, onInit: AuthLibCallback): FunctionComponent {
   return function Wrapper({children}) {
     return (
       <ExternalModule url={url}>
         <ErrorBoundary>
-          <AuthProvider scope={scope} resolve={resolveLib}>
+          <AuthProvider scope={scope} onInit={onInit}>
             {children}
           </AuthProvider>
         </ErrorBoundary>

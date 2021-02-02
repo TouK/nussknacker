@@ -1,10 +1,8 @@
-import React, {createContext, PropsWithChildren, useEffect, useState} from "react"
+import React, {PropsWithChildren, useEffect, useState} from "react"
 import {useDispatch} from "react-redux"
 import {assignSettings, SettingsData} from "../actions/nk"
 import LoaderSpinner from "../components/Spinner"
 import HttpService from "../http/HttpService"
-
-const SettingsContext = createContext<SettingsData>(null)
 
 export function SettingsProvider({children}: PropsWithChildren<unknown>): JSX.Element {
   const [data, setData] = useState<SettingsData>(null)
@@ -19,11 +17,7 @@ export function SettingsProvider({children}: PropsWithChildren<unknown>): JSX.El
       .catch((error) => setData(() => {
         throw new Error(error)
       }))
-  }, [])
+  }, [dispatch])
 
-  return (
-    <>
-      {data ? children : <LoaderSpinner show/>}
-    </>
-  )
+  return data ? <>{children}</> : <LoaderSpinner show/>
 }

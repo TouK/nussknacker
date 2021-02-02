@@ -1,4 +1,4 @@
-import {PropsWithChildren} from "react"
+import {ComponentType} from "react"
 import {AuthenticationSettings} from "../../reducers/settings"
 import {AuthErrorCodes} from "./AuthErrorCodes"
 
@@ -10,7 +10,7 @@ export interface StrategyConstructor {
 }
 
 export interface Strategy {
-  Wrapper?: (props: PropsWithChildren<unknown>) => JSX.Element,
+  Wrapper?: ComponentType,
 
   inteceptor?<E>(error: E): Promise<unknown>,
 

@@ -18,14 +18,12 @@ interface AuthProviderConfig {
 interface Props {
   config: AuthProviderConfig,
   onRedirect?: RedirectCallback,
-  resolve?: <U>(auth: AuthClient<U>) => void,
+  onInit?: <U>(auth: AuthClient<U>) => void,
 }
 
-interface PropsWithDefaults {
+export interface PropsWithDefaults extends Omit<Props, "config"> {
   withDefaults: true,
   config?: Partial<AuthProviderConfig>,
-  onRedirect?: RedirectCallback,
-  resolve?: <U>(auth: AuthClient<U>) => void,
 }
 
 type AuthProps = PropsWithChildren<Props | PropsWithDefaults>
