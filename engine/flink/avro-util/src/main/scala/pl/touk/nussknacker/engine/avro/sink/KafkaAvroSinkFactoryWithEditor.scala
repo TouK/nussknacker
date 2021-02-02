@@ -61,8 +61,9 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
         .leftMap(SchemaDeterminerErrorHandler.handleSchemaRegistryError(_))
       schemaValidated.andThen { runtimeSchema =>
         val typing = AvroSchemaTypeDefinitionExtractor.typeDefinition(runtimeSchema.schema)
-        AvroSinkValueParameter(typing).foreach(sinkValueParameter = _)
-        AvroSinkValueParameter(typing).map(_ => NextParameters(sinkValueParameter.toParameters))
+        val sinkValueParamValidated = AvroSinkValueParameter(typing)
+        sinkValueParamValidated.foreach(sinkValueParameter = _)
+        sinkValueParamValidated.map(_ => NextParameters(sinkValueParameter.toParameters))
       }.valueOr(e => FinalResults(context, e :: Nil))
   }
 

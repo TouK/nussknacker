@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.avro
 
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
-import org.apache.avro.Schema
+import org.apache.avro.{AvroRuntimeException, Schema}
 import org.scalatest.BeforeAndAfter
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
@@ -19,19 +19,15 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import spel.Implicits.asSpelExpression
 
 
-object KafkaAvroSinkFactoryWithEditorIntegrationTest {
+private object KafkaAvroSinkFactoryWithEditorIntegrationTest {
 
-  private object MyPrimitive {
-    val avroEncoder = BestEffortAvroEncoder(ValidationMode.strict)
+  val avroEncoder = BestEffortAvroEncoder(ValidationMode.strict)
 
-    val stringSchema: String = """{"type": "long"}"""
+  def encode(a: Any, schema: Schema): AnyRef =
+    avroEncoder.encode(a, schema)
+      .valueOr(es => throw new AvroRuntimeException(es.toList.mkString(",")))
 
-    lazy val schema: Schema = AvroUtils.parseSchema(stringSchema)
-
-    def encoded(v: Long): AnyRef = avroEncoder.encode(v, schema).valueOr(e =>  throw new Exception(e.head))
-  }
-
-  private object MyRecord extends TestSchemaWithRecord {
+  object MyRecord extends TestSchemaWithRecord {
 
     override val stringSchema: String =
       s"""
@@ -87,19 +83,31 @@ class KafkaAvroSinkFactoryWithEditorIntegrationTest extends KafkaAvroSpecMixin w
     val topicConfig = createAndRegisterTopicConfig("record", MyRecord.schema)
     val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
     val sinkParam = SinkAvroParam(topic = topicConfig.output, versionOption = ExistingSchemaVersion(1),
-      valueEither = Left(MyRecord.toSampleParams), key = "", ValidationMode.strict, sinkId = "kafka-avro-v2")
+      valueParams = MyRecord.toSampleParams, key = "", ValidationMode.strict, sinkId = "kafka-avro-v2")
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, event = MyRecord.record, expected = MyRecord.record)
   }
 
-  test("plain value") {
-    val topicConfig = createAndRegisterTopicConfig("plain", MyPrimitive.schema)
+  test("long") {
+    val schema = AvroUtils.parseSchema("""{"type": "long"}""")
+    val topicConfig = createAndRegisterTopicConfig("long", schema)
     val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
-    val sinkParam = SinkAvroParam(topic = topicConfig.output, versionOption = ExistingSchemaVersion(1),
-      valueEither = Right("42L"), key = "", ValidationMode.strict, sinkId = "kafka-avro-v2")
+    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "42L").copy(sinkId = "kafka-avro-v2")
     val process = createAvroProcess(sourceParam, sinkParam)
-    val encoded = MyPrimitive.encoded(42L)
+    val encoded = encode(42L, schema)
     runAndVerifyResult(process, topicConfig, event = encoded, expected = encoded)
+  }
+
+  test("array") {
+    val schema = AvroUtils.parseSchema("""{"type": "array", "items": "long"}""")
+    val topicConfig = createAndRegisterTopicConfig("array", schema)
+    val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
+    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "{42L}").copy(sinkId = "kafka-avro-v2")
+    val process = createAvroProcess(sourceParam, sinkParam)
+    val thrown = intercept[IllegalArgumentException] {
+      runAndVerifyResult(process, topicConfig, event = null, expected = null)
+    }
+    thrown.getMessage shouldBe "Compilation errors: CustomNodeError(end,Unsupported Avro type. Supported types are null, Boolean, Integer, Long, Float, Double, String, byte[] and IndexedRecord,None)"
   }
 }

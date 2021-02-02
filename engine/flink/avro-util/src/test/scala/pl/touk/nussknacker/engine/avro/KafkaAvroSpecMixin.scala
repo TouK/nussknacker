@@ -180,11 +180,6 @@ trait KafkaAvroSpecMixin extends FunSuite with FlinkSpec with KafkaSpec with Mat
       SinkKeyParamName -> sink.key,
       SinkValidationModeParameterName -> validationModeParam(sink.validationMode))
 
-    val valueParams = sink.valueEither match {
-      case Right(value) => (SinkValueParamName, value) :: Nil
-      case Left(fields) => fields
-    }
-
     val builder = EspProcessBuilder
       .id(s"avro-test")
       .parallelism(1)
@@ -202,7 +197,7 @@ trait KafkaAvroSpecMixin extends FunSuite with FlinkSpec with KafkaSpec with Mat
     filteredBuilder.emptySink(
       "end",
       sink.sinkId,
-      baseSinkParams ++ valueParams: _*
+      baseSinkParams ++ sink.valueParams: _*
     )
   }
 
@@ -275,16 +270,16 @@ trait KafkaAvroSpecMixin extends FunSuite with FlinkSpec with KafkaSpec with Mat
 
   case class SinkAvroParam(topic: String,
                            versionOption: SchemaVersionOption,
-                           valueEither: Either[List[(String, expression.Expression)], expression.Expression],
+                           valueParams: List[(String, expression.Expression)],
                            key: String,
                            validationMode: ValidationMode,
                            sinkId: String)
 
   object SinkAvroParam {
-    import spel.Implicits._
+    import spel.Implicits.asSpelExpression
 
     def apply(topicConfig: TopicConfig, version: SchemaVersionOption, value: String, key: String = "", validationMode: ValidationMode = ValidationMode.strict): SinkAvroParam =
-      new SinkAvroParam(topicConfig.output, version, Right(value), key, validationMode, "kafka-avro")
+      new SinkAvroParam(topicConfig.output, version, (SinkValueParamName -> asSpelExpression(value)) :: Nil, key, validationMode, "kafka-avro")
   }
 }
 
