@@ -6,9 +6,9 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.SinkInvocationCo
 import pl.touk.nussknacker.engine.compiledgraph.part.SinkPart
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.process.{ExceptionHandlerFunction, ProcessPartFunction}
-import pl.touk.nussknacker.engine.process.compiler.CompiledProcessWithDeps
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
 
-private[registrar] class CollectingSinkFunction(val compiledProcessWithDepsProvider: ClassLoader => CompiledProcessWithDeps,
+private[registrar] class CollectingSinkFunction(val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
                                                 collectingSink: SinkInvocationCollector, sinkId: String)
   extends RichSinkFunction[InterpretationResult] with ExceptionHandlerFunction {
 

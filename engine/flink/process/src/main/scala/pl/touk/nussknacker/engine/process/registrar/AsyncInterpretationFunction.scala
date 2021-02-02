@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
 import pl.touk.nussknacker.engine.api.{Context, InterpretationResult}
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.process.ProcessPartFunction
-import pl.touk.nussknacker.engine.process.compiler.CompiledProcessWithDeps
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
 import pl.touk.nussknacker.engine.splittedgraph.SplittedNodesCollector
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 
@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
-private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDepsProvider: ClassLoader => CompiledProcessWithDeps,
+private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
                                                      val node: SplittedNode[_<:NodeData], validationContext: ValidationContext,
                                                      asyncExecutionContextPreparer: AsyncExecutionContextPreparer)
   extends RichAsyncFunction[Context, InterpretationResult] with LazyLogging with ProcessPartFunction {

@@ -4,7 +4,7 @@ import org.apache.flink.api.common.functions.RichFunction
 import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.engine.process.compiler.CompiledProcessWithDeps
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
 import pl.touk.nussknacker.engine.splittedgraph.SplittedNodesCollector
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 
@@ -32,11 +32,11 @@ trait ProcessPartFunction extends ExceptionHandlerFunction {
 //Helper trait dealing with ExceptionHandler lifecycle
 trait ExceptionHandlerFunction extends RichFunction {
 
-  def compiledProcessWithDepsProvider: ClassLoader => CompiledProcessWithDeps
+  def compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData
 
   protected var exceptionHandler: FlinkEspExceptionHandler = _
 
-  protected lazy val compiledProcessWithDeps : CompiledProcessWithDeps = compiledProcessWithDepsProvider(getRuntimeContext.getUserCodeClassLoader)
+  protected lazy val compiledProcessWithDeps : FlinkProcessCompilerData = compiledProcessWithDepsProvider(getRuntimeContext.getUserCodeClassLoader)
 
   override def close(): Unit = {
     if (exceptionHandler != null) {

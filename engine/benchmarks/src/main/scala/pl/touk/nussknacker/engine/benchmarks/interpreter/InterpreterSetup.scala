@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.compile.CompiledProcess
+import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.compiledgraph.part.ProcessPart
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -27,7 +27,7 @@ class InterpreterSetup[T:ClassTag] {
                            services: Map[String, Service], listeners: Seq[ProcessListener]): (Context, ExecutionContext) => Future[Either[List[InterpretationResult], EspExceptionInfo[_ <: Throwable]]] = {
     val compiledProcess = compile(services, process, listeners)
     val interpreter = compiledProcess.interpreter
-    val parts = compiledProcess.parts
+    val parts = failOnErrors(compiledProcess.compile())
 
     def compileNode(part: ProcessPart) =
       failOnErrors(compiledProcess.subPartCompiler.compile(part.node, part.validationContext).result)
@@ -36,7 +36,7 @@ class InterpreterSetup[T:ClassTag] {
       interpreter.interpret(compiled, process.metaData, initialCtx)(ec)
   }
 
-  def compile(servicesToUse: Map[String, Service], process: EspProcess, listeners: Seq[ProcessListener]): CompiledProcess = {
+  def compile(servicesToUse: Map[String, Service], process: EspProcess, listeners: Seq[ProcessListener]): ProcessCompilerData = {
 
     val configCreator: ProcessConfigCreator = new EmptyProcessConfigCreator {
 
@@ -54,7 +54,7 @@ class InterpreterSetup[T:ClassTag] {
     val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(configCreator,
       api.process.ProcessObjectDependencies(ConfigFactory.empty(), ObjectNamingProvider(getClass.getClassLoader)))
 
-    failOnErrors(CompiledProcess.compile(process, definitions, listeners, getClass.getClassLoader)(DefaultAsyncInterpretationValueDeterminer.DefaultValue))
+    ProcessCompilerData.prepare(process, definitions, listeners, getClass.getClassLoader)(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
   }
 
   private def failOnErrors[Y](obj: ValidatedNel[ProcessCompilationError, Y]): Y = obj match {

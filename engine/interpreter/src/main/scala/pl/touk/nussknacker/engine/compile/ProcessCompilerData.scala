@@ -6,7 +6,8 @@ import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValue
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.{Lifecycle, ProcessListener}
+import pl.touk.nussknacker.engine.api.exception.EspExceptionHandler
+import pl.touk.nussknacker.engine.api.{Lifecycle, MetaData, ProcessListener}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
@@ -20,13 +21,17 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 import scala.concurrent.duration.FiniteDuration
 
-object CompiledProcess {
+/*
+  This is helper class, which collects pieces needed for various stages of compilation process
 
-  def compile(process: EspProcess,
+ */
+object ProcessCompilerData {
+
+  def prepare(process: EspProcess,
               definitions: ProcessDefinition[ObjectWithMethodDef],
               listeners: Seq[ProcessListener],
               userCodeClassLoader: ClassLoader
-             )(implicit defaultAsyncValue: DefaultAsyncInterpretationValue): ValidatedNel[ProcessCompilationError, CompiledProcess] = {
+             )(implicit defaultAsyncValue: DefaultAsyncInterpretationValue): ProcessCompilerData = {
     val servicesDefs = definitions.services
 
     val dictRegistryFactory = loadDictRegistry(userCodeClassLoader)
@@ -38,23 +43,23 @@ object CompiledProcess {
     val subCompiler = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
     val processCompiler = new ProcessCompiler(userCodeClassLoader, subCompiler, GlobalVariablesPreparer(definitions.expressionConfig), nodeCompiler)
 
-    processCompiler.compile(process).result.map { compiledProcess =>
-      val globalVariablesPreparer = GlobalVariablesPreparer(definitions.expressionConfig)
+    val globalVariablesPreparer = GlobalVariablesPreparer(definitions.expressionConfig)
 
-      val expressionEvaluator = ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners, process.metaData)
+    val expressionEvaluator = ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners, process.metaData)
 
-      val interpreter = Interpreter(listeners, expressionEvaluator)
+    val interpreter = Interpreter(listeners, expressionEvaluator)
 
-      new CompiledProcess(
-        compiledProcess,
-        subCompiler,
-        LazyInterpreterDependencies(expressionEvaluator, expressionCompiler, FiniteDuration(10, TimeUnit.SECONDS)),
-        interpreter,
-        listeners,
-        servicesDefs.mapValues(_.obj.asInstanceOf[Lifecycle])
-      )
+    new ProcessCompilerData(
+      processCompiler,
+      subCompiler,
+      nodeCompiler,
+      LazyInterpreterDependencies(expressionEvaluator, expressionCompiler, FiniteDuration(10, TimeUnit.SECONDS)),
+      interpreter,
+      process,
+      listeners,
+      servicesDefs.mapValues(_.obj.asInstanceOf[Lifecycle])
+    )
 
-    }
   }
 
   private def loadDictRegistry(userCodeClassLoader: ClassLoader) = {
@@ -64,12 +69,14 @@ object CompiledProcess {
 
 }
 
-class CompiledProcess(val parts: CompiledProcessParts,
-                      val subPartCompiler: PartSubGraphCompiler,
-                      val lazyInterpreterDeps: LazyInterpreterDependencies,
-                      val interpreter: Interpreter,
-                      listeners: Seq[Lifecycle],
-                      services: Map[String, Lifecycle]) {
+class ProcessCompilerData(compiler: ProcessCompiler,
+                          val subPartCompiler: PartSubGraphCompiler,
+                          nodeCompiler: NodeCompiler,
+                          val lazyInterpreterDeps: LazyInterpreterDependencies,
+                          val interpreter: Interpreter,
+                          process: EspProcess,
+                          listeners: Seq[Lifecycle],
+                          services: Map[String, Lifecycle]) {
 
   def lifecycle(nodesToUse: List[_ <: NodeData]): Seq[Lifecycle] = {
     val componentIds = nodesToUse.collect {
@@ -77,5 +84,13 @@ class CompiledProcess(val parts: CompiledProcessParts,
     }
     listeners ++ services.filterKeys(componentIds.contains).values
   }
+
+  def metaData: MetaData = process.metaData
+
+  def compile(): ValidatedNel[ProcessCompilationError, CompiledProcessParts] =
+    compiler.compile(process).result
+
+  def compileExceptionHandler(): ValidatedNel[ProcessCompilationError, EspExceptionHandler] =
+    nodeCompiler.compileExceptionHandler(process.exceptionHandlerRef)(metaData)._2
 
 }
