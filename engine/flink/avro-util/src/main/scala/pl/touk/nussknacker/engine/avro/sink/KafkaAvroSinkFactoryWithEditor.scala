@@ -28,7 +28,7 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
   extends SinkFactory with KafkaAvroBaseTransformer[FlinkSink] {
   import KafkaAvroSinkFactoryWithEditor._
 
-  private var sinkValueParameter: AvroSinkValueParameter = AvroSinkValueEmptyParameter
+  private var sinkValueParameter: Option[AvroSinkValueParameter] = None
 
   protected def topicParamStep(implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep(Nil, _) =>
@@ -61,9 +61,10 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
         .leftMap(SchemaDeterminerErrorHandler.handleSchemaRegistryError(_))
       schemaValidated.andThen { runtimeSchema =>
         val typing = AvroSchemaTypeDefinitionExtractor.typeDefinition(runtimeSchema.schema)
-        val sinkValueParamValidated = AvroSinkValueParameter(typing)
-        sinkValueParamValidated.foreach(sinkValueParameter = _)
-        sinkValueParamValidated.map(_ => NextParameters(sinkValueParameter.toParameters))
+        AvroSinkValueParameter(typing).map { valueParam =>
+          sinkValueParameter = Some(valueParam)
+          NextParameters(valueParam.toParameters)
+        }
       }.valueOr(e => FinalResults(context, e :: Nil))
   }
 
@@ -95,7 +96,7 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
     val versionOption = extractVersionOption(params)
     val key = params(SinkKeyParamName).asInstanceOf[LazyParameter[CharSequence]]
     val validationMode = extractValidationMode(params(SinkValidationModeParameterName).asInstanceOf[String])
-    val sinkValue = AvroSinkValue.applyUnsafe(sinkValueParameter, parameterValues = params)
+    val sinkValue = AvroSinkValue.applyUnsafe(sinkValueParameter.get, parameterValues = params)
     val schemaDeterminer = prepareSchemaDeterminer(preparedTopic, versionOption)
     val schemaData = schemaDeterminer.determineSchemaUsedInTyping.valueOr(SchemaDeterminerErrorHandler.handleSchemaRegistryErrorAndThrowException)
     val schemaUsedInRuntime = schemaDeterminer.toRuntimeSchema(schemaData)

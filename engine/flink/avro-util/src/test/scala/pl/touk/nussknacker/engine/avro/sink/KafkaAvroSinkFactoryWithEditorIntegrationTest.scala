@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.avro
+package pl.touk.nussknacker.engine.avro.sink
 
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.{AvroRuntimeException, Schema}
@@ -8,15 +8,15 @@ import pl.touk.nussknacker.engine.avro.KafkaAvroIntegrationMockSchemaRegistry.sc
 import pl.touk.nussknacker.engine.avro.KafkaAvroTestProcessConfigCreator.recordingExceptionHandler
 import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
 import pl.touk.nussknacker.engine.avro.schema.TestSchemaWithRecord
-import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaRegistryProvider}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaRegistryProvider}
+import pl.touk.nussknacker.engine.avro.{AvroUtils, KafkaAvroSpecMixin, KafkaAvroTestProcessConfigCreator}
 import pl.touk.nussknacker.engine.graph.expression
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
-import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import spel.Implicits.asSpelExpression
 
 
 private object KafkaAvroSinkFactoryWithEditorIntegrationTest {
@@ -42,6 +42,19 @@ private object KafkaAvroSinkFactoryWithEditorIntegrationTest {
          |    {
          |      "name": "amount",
          |      "type": "double"
+         |    },
+         |    {
+         |      "name": "nested",
+         |      "type": {
+         |        "type": "record",
+         |        "name": "nested",
+         |        "fields": [
+         |          {
+         |            "name": "id",
+         |            "type": "string"
+         |          }
+         |        ]
+         |      }
          |    }
          |   ]
          |}
@@ -49,11 +62,17 @@ private object KafkaAvroSinkFactoryWithEditorIntegrationTest {
 
     val toSampleParams: List[(String, expression.Expression)] = List(
       "id" -> "'record1'",
-      "amount" -> "20.0")
+      "amount" -> "20.0",
+      "nested.id" -> "'nested_record1'"
+    )
 
     override def exampleData: Map[String, Any] = Map(
       "id" -> "record1",
-      "amount" -> 20.0)
+      "amount" -> 20.0,
+      "nested" -> Map(
+        "id" -> "nested_record1"
+      )
+    )
   }
 }
 

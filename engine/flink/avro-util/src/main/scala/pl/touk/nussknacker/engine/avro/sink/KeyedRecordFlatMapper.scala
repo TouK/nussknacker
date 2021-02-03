@@ -13,7 +13,7 @@ import scala.util.control.NonFatal
 
 private[sink] class KeyedRecordFlatMapper(protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
                                           key: LazyParameter[AnyRef],
-                                          fields: List[(String, LazyParameter[AnyRef])])
+                                          sinkRecord: AvroSinkRecordValue)
   extends RichFlatMapFunction[Context, ValueWithContext[KeyedValue[AnyRef, AnyRef]]] with LazyParameterInterpreterFunction with LazyLogging {
 
   private implicit def lazyParameterInterpreterImpl: LazyParameterInterpreter =
@@ -23,9 +23,19 @@ private[sink] class KeyedRecordFlatMapper(protected val lazyParameterHelper: Fli
     .pure[Map[String, AnyRef]](Map.empty, typing.Typed[Map[String, AnyRef]])
 
   private lazy val record: LazyParameter[Map[String, AnyRef]] =
-    fields.foldLeft(emptyRecord) { case (lazyRecord, (fieldName, lazyParam)) =>
-      lazyRecord.product(lazyParam).map { case (rec, param) =>
-        rec + (fieldName -> param)
+    merge(emptyRecord, sinkRecord)
+
+  private def merge(agg: LazyParameter[Map[String, AnyRef]], sinkValue: AvroSinkValue): LazyParameter[AnyRef] =
+    sinkValue match {
+      case primitive: AvroSinkPrimitiveValue => primitive.value
+      case sinkRecord: AvroSinkRecordValue => merge(agg, sinkRecord)
+    }
+
+  private def merge(agg: LazyParameter[Map[String, AnyRef]], sinkRecord: AvroSinkRecordValue): LazyParameter[Map[String, AnyRef]] =
+    sinkRecord.fields.foldLeft(agg) { case (lazyRecord, (fieldName, fieldSinkValue)) =>
+      val lazyParam = merge(emptyRecord, fieldSinkValue)
+      lazyRecord.product(lazyParam).map { case (rec, value) =>
+        rec + (fieldName -> value)
       }
     }
 
