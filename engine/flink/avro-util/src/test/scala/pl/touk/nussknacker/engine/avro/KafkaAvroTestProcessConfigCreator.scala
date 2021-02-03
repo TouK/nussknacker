@@ -43,7 +43,7 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
 
     Map(
       "kafka-avro" -> defaultCategory(new KafkaAvroSinkFactory(schemaRegistryProvider, processObjectDependencies)),
-      "kafka-avro-v2" -> defaultCategory(new KafkaAvroSinkFactoryWithEditor(schemaRegistryProvider, processObjectDependencies))
+      "kafka-avro-editor" -> defaultCategory(new KafkaAvroSinkFactoryWithEditor(schemaRegistryProvider, processObjectDependencies))
     )
   }
 

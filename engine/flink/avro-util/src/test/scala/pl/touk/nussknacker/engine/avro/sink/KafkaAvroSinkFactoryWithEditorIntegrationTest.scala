@@ -102,7 +102,7 @@ class KafkaAvroSinkFactoryWithEditorIntegrationTest extends KafkaAvroSpecMixin w
     val topicConfig = createAndRegisterTopicConfig("record", MyRecord.schema)
     val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
     val sinkParam = SinkAvroParam(topic = topicConfig.output, versionOption = ExistingSchemaVersion(1),
-      valueParams = MyRecord.toSampleParams, key = "", ValidationMode.strict, sinkId = "kafka-avro-v2")
+      valueParams = MyRecord.toSampleParams, key = "", ValidationMode.strict, sinkId = "kafka-avro-editor")
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, event = MyRecord.record, expected = MyRecord.record)
@@ -112,7 +112,7 @@ class KafkaAvroSinkFactoryWithEditorIntegrationTest extends KafkaAvroSpecMixin w
     val schema = AvroUtils.parseSchema("""{"type": "long"}""")
     val topicConfig = createAndRegisterTopicConfig("long", schema)
     val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
-    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "42L").copy(sinkId = "kafka-avro-v2")
+    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "42L").copy(sinkId = "kafka-avro-editor")
     val process = createAvroProcess(sourceParam, sinkParam)
     val encoded = encode(42L, schema)
     runAndVerifyResult(process, topicConfig, event = encoded, expected = encoded)
@@ -122,7 +122,7 @@ class KafkaAvroSinkFactoryWithEditorIntegrationTest extends KafkaAvroSpecMixin w
     val schema = AvroUtils.parseSchema("""{"type": "array", "items": "long"}""")
     val topicConfig = createAndRegisterTopicConfig("array", schema)
     val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
-    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "{42L}").copy(sinkId = "kafka-avro-v2")
+    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "{42L}").copy(sinkId = "kafka-avro-editor")
     val process = createAvroProcess(sourceParam, sinkParam)
     val thrown = intercept[IllegalArgumentException] {
       runAndVerifyResult(process, topicConfig, event = null, expected = null)
