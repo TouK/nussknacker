@@ -28,8 +28,11 @@ private[sink] case object AvroSinkValueParameter {
       case typedObject: TypedObjectTypingResult if containsRestrictedNames(typedObject) =>
         Invalid(CustomNodeError(nodeId.id, s"""Record field name is restricted. Restricted names are ${restrictedParamNames.mkString(", ")}""", None))
 
-      case _: TypedUnion | TypedClass(clazz, _) if clazz == classOf[java.util.List[_]] =>
-        Invalid(CustomNodeError(nodeId.id, "Unsupported Avro type. Supported types are null, Boolean, Integer, Long, Float, Double, String, byte[] and IndexedRecord", None))
+      case _: TypedUnion =>
+        Invalid(unsupportedTypeError)
+
+      case TypedClass(clazz, _) if clazz == classOf[java.util.List[_]] =>
+        Invalid(unsupportedTypeError)
 
       case typedObject: TypedObjectTypingResult =>
         val listOfValidatedFieldParams = typedObject.fields.map { case (fieldName, typing) =>
@@ -61,6 +64,9 @@ private[sink] case object AvroSinkValueParameter {
         }
     }
   }
+
+  private def unsupportedTypeError(implicit nodeId: NodeId): CustomNodeError =
+    CustomNodeError(nodeId.id, s"""Record field name is restricted. Restricted names are ${restrictedParamNames.mkString(", ")}""", None)
 }
 
 private[sink] sealed trait AvroSinkValueParameter {
