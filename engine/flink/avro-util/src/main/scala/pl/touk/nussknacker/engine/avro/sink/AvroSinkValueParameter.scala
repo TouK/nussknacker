@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed
-import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypedObjectTypingResult, TypedUnion, TypingResult}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, SinkValueParamName, TopicParamName}
 import pl.touk.nussknacker.engine.avro.sink.AvroSinkValueParameter.FieldName
 import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
@@ -28,10 +28,7 @@ private[sink] case object AvroSinkValueParameter {
       case typedObject: TypedObjectTypingResult if containsRestrictedNames(typedObject) =>
         Invalid(CustomNodeError(nodeId.id, s"""Record field name is restricted. Restricted names are ${restrictedParamNames.mkString(", ")}""", None))
 
-      // TODO: Union exclude
-
-      // FIXME: fragile
-      case TypedClass(clazz, _) if clazz == classOf[java.util.List[_]] =>
+      case _: TypedUnion | TypedClass(clazz, _) if clazz == classOf[java.util.List[_]] =>
         Invalid(CustomNodeError(nodeId.id, "Unsupported Avro type. Supported types are null, Boolean, Integer, Long, Float, Double, String, byte[] and IndexedRecord", None))
 
       case typedObject: TypedObjectTypingResult =>

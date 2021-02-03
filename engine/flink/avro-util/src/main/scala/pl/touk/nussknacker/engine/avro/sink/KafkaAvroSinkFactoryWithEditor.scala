@@ -68,9 +68,6 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
       }.valueOr(e => FinalResults(context, e :: Nil))
   }
 
-  /* TODO, FIXME:
-    1. optional params with default in avro schema
- */
   protected def finalParamStep(context: ValidationContext)(implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep(
       (TopicParamName, _) :: (SchemaVersionParamName, _) :: (SinkValidationModeParameterName, _) :: (SinkKeyParamName, _) ::
@@ -91,7 +88,7 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
           finalParamStep(context)
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkSink = {
-    implicit val nodeId = typedDependency[NodeId](dependencies)
+    implicit val nodeId: NodeId = typedDependency[NodeId](dependencies)
     val preparedTopic = extractPreparedTopic(params)
     val versionOption = extractVersionOption(params)
     val key = params(SinkKeyParamName).asInstanceOf[LazyParameter[CharSequence]]
