@@ -17,7 +17,7 @@ class TypeInformationDetectionSpec extends FunSuite with Matchers {
   private val loader = getClass.getClassLoader
 
   private def executionConfig(useTypingResultAware: Option[Boolean] = None) = new ExecutionConfig {
-    setGlobalJobParameters(NkGlobalParameters("", ProcessVersion.empty, Some(ConfigGlobalParameters(None, None, useTypingResultAware)), None))
+    setGlobalJobParameters(NkGlobalParameters("", ProcessVersion.empty, Some(ConfigGlobalParameters(None, None, useTypingResultAware, None)), None))
   }
 
   private def typeInformationForVariables(detection: TypeInformationDetection,

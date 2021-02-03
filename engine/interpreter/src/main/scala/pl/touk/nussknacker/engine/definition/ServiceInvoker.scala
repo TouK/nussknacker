@@ -15,6 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait ServiceInvoker {
 
+  //TODO: we should allow to use services returning IO and synchronous services
   def invoke(params: Map[String, Any], nodeContext: NodeContext)
             (implicit ec: ExecutionContext, metaData: MetaData): Future[Any]
 
