@@ -303,8 +303,13 @@ class HttpService {
   }
 
   archiveProcess(processId) {
-    return api.post(`/archive/${processId}`, {isArchived: true})
+    return api.post(`/archive/${processId}`)
       .catch(error => this.addError("Failed to archive process", error, true))
+  }
+
+  unArchiveProcess(processId) {
+    return api.post(`/unarchive/${processId}`)
+      .catch(error => this.addError("Failed to unarchive process", error, true))
   }
 
   createProcess(processId, processCategory, isSubprocess) {

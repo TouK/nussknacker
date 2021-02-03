@@ -4,20 +4,9 @@ import {UnknownRecord} from "../../types/common"
 export enum ActionType {
   Deploy = "DEPLOY",
   Cancel = "CANCEL",
+  Archive = "ARCHIVE",
+  UnArchive = "UNARCHIVE",
   Pause = "PAUSE",
-}
-
-export enum StatusTypeType {
-  Running = "RunningStateStatus",
-  NotDeployed= "AllowDeployStateStatus",
-}
-
-export enum StatusName {
-  Running = "RUNNING",
-  NotDeployed = "NOT_DEPLOYED",
-  //FIXME: It's just fast fix for support periodic running status. Remove it after when we will properly support actions.
-  Scheduled = "SCHEDULED",
-  WaitingForSchedule = "WAITING_FOR_SCHEDULE",
 }
 
 export type ProcessVersionId = number
@@ -72,6 +61,6 @@ export type ProcessStateType = {
 }
 
 export type StatusType = {
-  name: StatusName,
-  type: StatusTypeType,
+  name: string,
+  type: string,
 }
