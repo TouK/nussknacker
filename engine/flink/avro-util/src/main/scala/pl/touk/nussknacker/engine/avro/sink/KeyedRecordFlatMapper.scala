@@ -19,21 +19,18 @@ private[sink] class KeyedRecordFlatMapper(protected val lazyParameterHelper: Fli
   private implicit def lazyParameterInterpreterImpl: LazyParameterInterpreter =
     lazyParameterInterpreter
 
-  private def emptyRecord: LazyParameter[Map[String, AnyRef]] = lazyParameterInterpreter
+  private lazy val emptyRecord: LazyParameter[Map[String, AnyRef]] = lazyParameterInterpreter
     .pure[Map[String, AnyRef]](Map.empty, typing.Typed[Map[String, AnyRef]])
 
   private lazy val record: LazyParameter[Map[String, AnyRef]] =
     merge(emptyRecord, sinkRecord)
 
-  private def merge(agg: LazyParameter[Map[String, AnyRef]], sinkValue: AvroSinkValue): LazyParameter[AnyRef] =
-    sinkValue match {
-      case primitive: AvroSinkPrimitiveValue => primitive.value
-      case sinkRecord: AvroSinkRecordValue => merge(agg, sinkRecord)
-    }
-
   private def merge(agg: LazyParameter[Map[String, AnyRef]], sinkRecord: AvroSinkRecordValue): LazyParameter[Map[String, AnyRef]] =
     sinkRecord.fields.foldLeft(agg) { case (lazyRecord, (fieldName, fieldSinkValue)) =>
-      val lazyParam = merge(emptyRecord, fieldSinkValue)
+      val lazyParam = fieldSinkValue match {
+        case primitive: AvroSinkPrimitiveValue => primitive.value
+        case sinkRec: AvroSinkRecordValue => merge(emptyRecord, sinkRec)
+      }
       lazyRecord.product(lazyParam).map { case (rec, value) =>
         rec + (fieldName -> value)
       }
