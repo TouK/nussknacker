@@ -5,8 +5,7 @@ import java.util.concurrent.{CompletionStage, Executor}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{NodeContext, ServiceInvocationCollector, TestServiceInvocationCollector}
-import pl.touk.nussknacker.engine.api.typed.typing.SingleTypingResult
-import pl.touk.nussknacker.engine.api.{MetaData, Service, ContextId}
+import pl.touk.nussknacker.engine.api.{ContextId, EagerServiceInvoker, MetaData, Service}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.UnionDefinitionExtractor
 
@@ -60,6 +59,7 @@ object ServiceInvoker {
   final val Extractor: MethodDefinitionExtractor[Service] = new UnionDefinitionExtractor(
     ServiceDefinitionExtractor ::
       JavaServiceDefinitionExtractor ::
+      EagerServiceDefinitionExtractor ::
       Nil
   )
 
@@ -87,6 +87,14 @@ object ServiceInvoker {
 
     override protected val expectedReturnType: Option[Class[_]] = Some(classOf[java.util.concurrent.CompletionStage[_]])
     override protected val additionalDependencies = Set[Class[_]](classOf[Executor],
+      classOf[ServiceInvocationCollector], classOf[MetaData], classOf[NodeId], classOf[ContextId])
+
+  }
+
+  private object EagerServiceDefinitionExtractor extends AbstractMethodDefinitionExtractor[Service] {
+
+    override protected val expectedReturnType: Option[Class[_]] = Some(classOf[EagerServiceInvoker])
+    override protected val additionalDependencies = Set[Class[_]](classOf[ExecutionContext],
       classOf[ServiceInvocationCollector], classOf[MetaData], classOf[NodeId], classOf[ContextId])
 
   }

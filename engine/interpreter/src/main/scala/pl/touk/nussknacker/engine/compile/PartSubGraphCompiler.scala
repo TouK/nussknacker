@@ -4,6 +4,7 @@ import cats.data.Validated._
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.instances.list._
 import cats.instances.option._
+import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo}
@@ -25,7 +26,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
 
   import CompilationResult._
 
-  def validate(n: splittednode.SplittedNode[_], ctx: ValidationContext): CompilationResult[Unit] = {
+  def validate(n: splittednode.SplittedNode[_], ctx: ValidationContext)(implicit metaData: MetaData): CompilationResult[Unit] = {
     compile(n, ctx).map(_ => ())
   }
 
@@ -33,7 +34,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
   1. Separate validation logic for expressions in nodes and expression not bounded to nodes (e.g. expressions in process properties).
      This way we can make non-optional fieldName
    */
-  def compile(n: SplittedNode[_], ctx: ValidationContext) : CompilationResult[compiledgraph.node.Node] = {
+  def compile(n: SplittedNode[_], ctx: ValidationContext)(implicit metaData: MetaData) : CompilationResult[compiledgraph.node.Node] = {
     implicit val nodeId: NodeId = NodeId(n.id)
 
     def toCompilationResult[T](validated: ValidatedNel[ProcessCompilationError, T],
@@ -79,7 +80,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
     }
   }
 
-  private def handleSourceNode(nodeData: StartingNodeData, ctx: ValidationContext, next: splittednode.Next): CompilationResult[node.Source] = {
+  private def handleSourceNode(nodeData: StartingNodeData, ctx: ValidationContext, next: splittednode.Next)(implicit metaData: MetaData): CompilationResult[node.Source] = {
     // just like in a custom node we can't add input context here because it contains output variable context (not input)
     nodeData match {
       case graph.node.Source(id, _, _) =>
@@ -92,7 +93,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
     }
   }
 
-  private def compileEndingNode(ctx: ValidationContext, data: EndingNodeData)(implicit nodeId: NodeId): CompilationResult[compiledgraph.node.Node] = {
+  private def compileEndingNode(ctx: ValidationContext, data: EndingNodeData)(implicit nodeId: NodeId, metaData: MetaData): CompilationResult[compiledgraph.node.Node] = {
     def toCompilationResult[T](validated: ValidatedNel[ProcessCompilationError, T], expressionsTypingInfo: Map[String, ExpressionTypingInfo]) =
       CompilationResult(Map(nodeId.id -> NodeTypingInfo(ctx, expressionsTypingInfo, None)), validated)
 
@@ -136,7 +137,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
     }
   }
 
-  private def compileSubsequent(ctx: ValidationContext, data: OneOutputSubsequentNodeData, next: Next)(implicit nodeId: NodeId): CompilationResult[Node] = {
+  private def compileSubsequent(ctx: ValidationContext, data: OneOutputSubsequentNodeData, next: Next)(implicit nodeId: NodeId, metaData: MetaData): CompilationResult[Node] = {
     def toCompilationResult[T](validated: ValidatedNel[ProcessCompilationError, T], expressionsTypingInfo: Map[String, ExpressionTypingInfo]) =
       CompilationResult(Map(data.id -> NodeTypingInfo(ctx, expressionsTypingInfo, None)), validated)
 
@@ -209,7 +210,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
     }
   }
 
-  private def compile(next: splittednode.Next, ctx: ValidationContext): CompilationResult[compiledgraph.node.Next] = {
+  private def compile(next: splittednode.Next, ctx: ValidationContext)(implicit metaData: MetaData): CompilationResult[compiledgraph.node.Next] = {
     next match {
       case splittednode.NextNode(n) => compile(n, ctx).map(cn => compiledgraph.node.NextNode(cn))
       case splittednode.PartRef(ref) =>
@@ -218,7 +219,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
   }
 
   private def compile(n: splittednode.Case, ctx: ValidationContext)
-                     (implicit nodeId: NodeId): CompilationResult[compiledgraph.node.Case] =
+                     (implicit nodeId: NodeId, metaData: MetaData): CompilationResult[compiledgraph.node.Case] =
     CompilationResult.map2(
       fa = CompilationResult(nodeCompiler.compileExpression(n.expression, ctx, Typed[Boolean], outputVar = None).compiledObject),
       fb = compile(n.node, ctx)){

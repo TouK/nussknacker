@@ -33,7 +33,7 @@ class InterpreterSetup[T:ClassTag] {
     val parts = failOnErrors(compiledProcess.compile())
 
     def compileNode(part: ProcessPart) =
-      failOnErrors(compiledProcess.subPartCompiler.compile(part.node, part.validationContext).result)
+      failOnErrors(compiledProcess.subPartCompiler.compile(part.node, part.validationContext)(process.metaData).result)
     val compiled = compileNode(parts.sources.head)
     val shape = implicitly[InterpreterShape[F]]
     (initialCtx: Context, ec: ExecutionContext) =>

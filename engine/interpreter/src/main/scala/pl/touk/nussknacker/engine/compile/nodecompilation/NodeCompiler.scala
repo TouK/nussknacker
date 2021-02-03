@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTy
 import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType}
-import pl.touk.nussknacker.engine.api.{Context, MetaData}
+import pl.touk.nussknacker.engine.api.{Context, ContextId, EagerService, EagerServiceInvoker, MetaData}
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeTypingInfo, NodeValidationExceptionHandler, ProcessObjectFactory}
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{FinalStateValue, ObjectWithMethodDef}
@@ -22,19 +22,21 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
 import pl.touk.nussknacker.engine.graph.node._
-import pl.touk.nussknacker.engine.graph
+import pl.touk.nussknacker.engine.{Interpreter, api, compiledgraph, graph}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.{evaluatedparam, node}
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import pl.touk.nussknacker.engine.{Interpreter, api, compiledgraph}
 import shapeless.Typeable
 import shapeless.syntax.typeable._
 import cats.instances.list._
 import cats.implicits.toTraverseOps
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.TestServiceInvocationCollector
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo.DefaultExpressionId
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{ExpressionCompilation, NodeCompilationResult}
 import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 object NodeCompiler {
@@ -209,22 +211,55 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
   }
 
   def compileProcessor(n: Processor, ctx: ValidationContext)
-                     (implicit nodeId: NodeId): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
-    compileService(n.service, ctx, None)
+                     (implicit nodeId: NodeId, metaData: MetaData): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+    compileService(n, n.service, ctx, None)
   }
 
-  def compileEnricher(n: Enricher, ctx: ValidationContext, outputVar: Option[OutputVar]) (implicit nodeId: NodeId): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
-    compileService(n.service, ctx, outputVar)
+  def compileEnricher(n: Enricher, ctx: ValidationContext, outputVar: Option[OutputVar])
+                     (implicit nodeId: NodeId, metaData: MetaData): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+    compileService(n, n.service, ctx, outputVar)
   }
 
-  private def compileService(n: ServiceRef, validationContext: ValidationContext, outputVar: Option[OutputVar] = None)(implicit nodeId: NodeId): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+  private def compileService(nd: NodeData with WithParameters, n: ServiceRef, validationContext: ValidationContext, outputVar: Option[OutputVar] = None)
+                            (implicit nodeId: NodeId, metaData: MetaData): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
     definitions.services.get(n.id) match {
+      case Some(objectWithMethodDef) if objectWithMethodDef.obj.isInstanceOf[EagerService] =>
+        compileEagerService(objectWithMethodDef, nd, validationContext, outputVar)
       case Some(objectWithMethodDef) =>
         ServiceCompiler.compile(n, outputVar, objectWithMethodDef, validationContext)
       case None =>
         val error = invalid(MissingService(n.id)).toValidatedNel
         NodeCompilationResult(Map.empty[String, ExpressionTypingInfo], None, Valid(validationContext), error)
     }
+  }
+
+  private def compileEagerService(objectWithMethodDef: ObjectWithMethodDef,
+                                  nd: NodeData with WithParameters, validationContext: ValidationContext, outputVar: Option[OutputVar])
+                                 (implicit nodeId: NodeId, metaData: MetaData): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+    val ctx: Option[EagerServiceInvoker] => ValidatedNel[ProcessCompilationError, ValidationContext] = invoker => (invoker, outputVar) match {
+      case (Some(serviceRef), Some(out)) => validationContext.withVariable(out, serviceRef.returnType)
+      case (None, Some(out)) => validationContext.withVariable(out, Unknown)
+      case _ => Valid(validationContext)
+    }
+
+    def prepareCompiledLazyParameters(paramsDefs: List[Parameter]) = paramsDefs.zip(nd.parameters).collect {
+      case (paramDef, param) if paramDef.isLazyParameter =>
+        //TODO: do we need better error handling?
+        val compiled = objectParametersExpressionCompiler.compileParam(param, validationContext, paramDef, eager = false)
+          .toOption.get.typedValue.asInstanceOf[TypedExpression]
+        compiledgraph.evaluatedparam.Parameter(compiled, paramDef)
+    }
+
+    //We want to reuse Interpreter handling of ServiceInvoker, so we replace EagerServiceInvoker with ServiceInvoker and let default Interpreter implementation work as before
+    def makeInvoker(service: EagerServiceInvoker, paramsDefs: List[Parameter]) = compiledgraph.service.ServiceRef(nd.id, new ServiceInvoker {
+      override def invoke(params: Map[String, Any], nodeContext: InvocationCollectors.NodeContext)(implicit ec: ExecutionContext, metaData: MetaData): Future[Any] = {
+        service.invokeService(params)(ec, TestServiceInvocationCollector(nodeContext), ContextId(nodeContext.contextId))
+      }
+    }, prepareCompiledLazyParameters(paramsDefs))
+
+    val compiled =
+      compileObjectWithTransformation[EagerServiceInvoker](nd, Left(validationContext), outputVar.map(_.outputName), objectWithMethodDef, ctx)
+    compiled.copy(compiledObject = compiled.compiledObject.map(makeInvoker(_, compiled.parameters.getOrElse(objectWithMethodDef.parameters))))
   }
 
   def compileExceptionHandler(ref: ExceptionHandlerRef)

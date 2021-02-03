@@ -87,7 +87,7 @@ object StandaloneProcessInterpreter {
     type WithSinkTypes[K] = Writer[Map[String, TypingResult], K]
 
     private def compileWithCompilationErrors(node: SplittedNode[_], validationContext: ValidationContext): ValidatedNel[ProcessCompilationError, Node] =
-      processCompilerData.subPartCompiler.compile(node, validationContext).result
+      processCompilerData.subPartCompiler.compile(node, validationContext)(compiledProcess.metaData).result
 
     private def lazyParameterInterpreter: CompilerLazyParameterInterpreter = new CompilerLazyParameterInterpreter {
       override def deps: LazyInterpreterDependencies = processCompilerData.lazyInterpreterDeps

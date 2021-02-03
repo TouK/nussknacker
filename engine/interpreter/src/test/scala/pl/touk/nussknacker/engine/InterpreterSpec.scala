@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine
 
-import java.util.Optional
+import java.util.{Collections, Optional}
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
@@ -10,10 +10,11 @@ import javax.annotation.Nullable
 import javax.validation.constraints.NotBlank
 import org.scalatest.{FunSuite, Matchers}
 import org.springframework.expression.spel.standard.SpelExpression
-import pl.touk.nussknacker.engine.InterpreterSpec._
+import pl.touk.nussknacker.engine.InterpreterSpec.{DynamicEagerService, _}
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedLazyParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.ServiceWithExplicitMethod
+import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, ParameterWithExtractor, ServiceWithExplicitMethod}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.expression.{Expression => _, _}
 import pl.touk.nussknacker.engine.api.process._
@@ -62,7 +63,9 @@ class InterpreterSpec extends FunSuite with Matchers {
     "optionalTypesService" -> OptionalTypesService,
     "nullableTypesService" -> NullableTypesService,
     "mandatoryTypesService" -> MandatoryTypesService,
-    "notBlankTypesService" -> NotBlankTypesService
+    "notBlankTypesService" -> NotBlankTypesService,
+    "eagerServiceWithMethod" -> EagerServiceWithMethod,
+    "dynamicEagerService" -> DynamicEagerService
   )
 
   def listenersDef(listener: Option[ProcessListener] = None): Seq[ProcessListener] =
@@ -91,7 +94,7 @@ class InterpreterSpec extends FunSuite with Matchers {
     val parts = failOnErrors(processCompilerData.compile())
 
     def compileNode(part: ProcessPart) =
-      failOnErrors(processCompilerData.subPartCompiler.compile(part.node, part.validationContext).result)
+      failOnErrors(processCompilerData.subPartCompiler.compile(part.node, part.validationContext)(metaData).result)
 
     val initialCtx = Context("abc").withVariable(Interpreter.InputParamName, transaction)
 
@@ -277,6 +280,7 @@ class InterpreterSpec extends FunSuite with Matchers {
         @MethodToInvoke
         def create(): Unit = {
         }
+
         override def canBeEnding: Boolean = true
       }
     )
@@ -512,7 +516,7 @@ class InterpreterSpec extends FunSuite with Matchers {
         ))),
         canonicalnode.FlatNode(SubprocessOutputDefinition(
           "subOutput1", "output", List(Field("result", "#toMultiply * #multiplyBy")))
-    )
+        )
       ), None)
 
     val resolved = SubprocessResolver(Set(subprocess)).resolve(process).andThen(ProcessCanonizer.uncanonize)
@@ -621,6 +625,30 @@ class InterpreterSpec extends FunSuite with Matchers {
       interpretSource(process, Transaction())
     }.getMessage shouldBe "Compilation errors: BlankParameter(This field value is required and can not be blank,Please fill field value for this parameter,expression,customNode)"
   }
+
+  test("use eager service") {
+    val process = GraphBuilder
+      .source("start", "transaction-source")
+      .enricher("customNode", "data", "eagerServiceWithMethod",
+        "eager" -> s"'${EagerServiceWithMethod.checkEager}'",
+        "lazy" -> "{bool: '' == null}")
+      .filter("filter", "!#data.bool")
+      .sink("end", "#data", "dummySink")
+
+    interpretSource(process, Transaction()) shouldBe Collections.singletonMap("bool", false)
+  }
+
+  test("use dynamic service") {
+    val process = GraphBuilder
+      .source("start", "transaction-source")
+      .enricher("customNode", "data", "dynamicEagerService",
+        DynamicEagerService.staticParamName -> "'param987'",
+        "param987" -> "{bool: '' == null}")
+      .filter("filter", "!#data.bool")
+      .sink("end", "#data", "dummySink")
+
+    interpretSource(process, Transaction()) shouldBe Collections.singletonMap("bool", false)
+  }
 }
 
 class ThrowingService extends Service {
@@ -638,6 +666,8 @@ object InterpreterSpec {
                          accountId: String = "123")
 
   case class Account(marketingAgreement1: Boolean, name: String, name2: String)
+
+  case class LiteralExpressionTypingInfo(typingResult: TypingResult) extends ExpressionTypingInfo
 
   object AccountService extends Service {
 
@@ -731,12 +761,6 @@ object InterpreterSpec {
 
   object LiteralExpressionParser extends ExpressionParser {
 
-    case class LiteralExpression(original: String) extends pl.touk.nussknacker.engine.api.expression.Expression {
-      override def language: String = languageId
-
-      override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = original.asInstanceOf[T]
-    }
-
     override def languageId: String = "literal"
 
     override def parse(original: String, ctx: ValidationContext, expectedType: typing.TypingResult): Validated[NonEmptyList[ExpressionParseError], TypedExpression] =
@@ -745,8 +769,79 @@ object InterpreterSpec {
     override def parseWithoutContextValidation(original: String, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError],
       pl.touk.nussknacker.engine.api.expression.Expression]
     = Valid(LiteralExpression(original))
+
+    case class LiteralExpression(original: String) extends pl.touk.nussknacker.engine.api.expression.Expression {
+      override def language: String = languageId
+
+      override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = original.asInstanceOf[T]
+    }
+
   }
 
-  case class LiteralExpressionTypingInfo(typingResult: TypingResult) extends ExpressionTypingInfo
+  object EagerServiceWithMethod extends EagerService {
+
+    val checkEager = "@&#%@Q&#"
+
+    @MethodToInvoke
+    def prepare(@ParamName("eager") eagerOne: String, @ParamName("lazy") lazyOne: LazyParameter[AnyRef]): EagerServiceInvoker = {
+      if (eagerOne != checkEager) throw new IllegalArgumentException("Should be not empty?")
+
+      new EagerServiceInvoker {
+
+        override def invokeService(params: Map[String, Any])
+                                  (implicit ec: ExecutionContext, collector: InvocationCollectors.ServiceInvocationCollector, contextId: ContextId): Future[AnyRef] = {
+          Future.successful(params("lazy").asInstanceOf[AnyRef])
+        }
+
+        override def returnType: TypingResult = lazyOne.returnType
+      }
+    }
+
+  }
+
+  object DynamicEagerService extends EagerService with SingleInputGenericNodeTransformation[EagerServiceInvoker] {
+
+    override type State = Nothing
+
+    final val staticParamName = "static"
+
+    private val staticParam = ParameterWithExtractor.mandatory[String](staticParamName)
+
+    override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
+                                      (implicit nodeId: ProcessCompilationError.NodeId): DynamicEagerService.NodeTransformationDefinition = {
+      case TransformationStep(Nil, _) =>
+        NextParameters(initialParameters)
+      case TransformationStep((`staticParamName`, DefinedEagerParameter(value: String, _)) :: Nil, _) =>
+        NextParameters(dynamicParam(value).parameter :: Nil)
+      case TransformationStep((`staticParamName`, DefinedEagerParameter(value: String, _)) ::
+        (otherName, DefinedLazyParameter(expression)) :: Nil, _) if value == otherName =>
+        val finalCtx = context.withVariable(OutputVariableNameDependency.extract(dependencies), expression.returnType, None)
+        FinalResults(finalCtx.getOrElse(context), finalCtx.swap.map(_.toList).getOrElse(Nil))
+    }
+
+    override def initialParameters: List[pl.touk.nussknacker.engine.api.definition.Parameter] = List(staticParam.parameter)
+
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue],
+                                finalState: Option[Nothing]): EagerServiceInvoker = {
+
+      val paramName = staticParam.extractValue(params)
+      val dynamic = dynamicParam(paramName)
+
+      new EagerServiceInvoker {
+        override def invokeService(params: Map[String, Any])
+                                  (implicit ec: ExecutionContext,
+                                   collector: InvocationCollectors.ServiceInvocationCollector, contextId: ContextId): Future[AnyRef] = {
+          Future.successful(params(paramName).asInstanceOf[AnyRef])
+        }
+
+        override def returnType: TypingResult = dynamic.extractValue(params).returnType
+      }
+    }
+
+    private def dynamicParam(name: String) = ParameterWithExtractor.lazyMandatory[AnyRef](name)
+
+    override def nodeDependencies: List[NodeDependency] = Nil
+
+  }
 
 }
