@@ -29,7 +29,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
 import pl.touk.nussknacker.ui.process._
-import pl.touk.nussknacker.ui.process.deployment.{ManagementActor, ManagementService}
+import pl.touk.nussknacker.ui.process.deployment.{ManagementActor}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReader
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{DefaultAuthenticationConfiguration, LoggedUser}
@@ -75,8 +75,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
       processChangeListener), "management")
   }
   val managementActor: ActorRef = createManagementActorRef
-  val managementService = new ManagementService(managementActor, time.Duration.ofMinutes(1))
-  val processService = new ProcessService(managementService, processRepository, actionRepository, writeProcessRepository)
+  val processService = new ProcessService(managementActor, time.Duration.ofMinutes(1), processRepository, actionRepository, writeProcessRepository)
   val newProcessPreparer = new NewProcessPreparer(
     mapProcessingTypeDataProvider("streaming" ->  ProcessTestData.processDefinition),
     mapProcessingTypeDataProvider("streaming" -> (_ => StreamMetaData(None))),
@@ -92,7 +91,6 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     processRepository = processRepository,
     writeRepository = writeProcessRepository,
     processService = processService,
-    managementService = managementService,
     processValidation = processValidation,
     processResolving = processResolving,
     typesForCategories = typesForCategories,

@@ -24,7 +24,7 @@ import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerFactory
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.process._
-import pl.touk.nussknacker.ui.process.deployment.{ManagementActor, ManagementService}
+import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
 import pl.touk.nussknacker.ui.process.processingtypedata.{BasicProcessingTypeDataReload, ProcessingTypeDataReader}
 import pl.touk.nussknacker.ui.process.repository._
@@ -96,12 +96,12 @@ object NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
       NussknackerServices(new PullProcessRepository(processRepository))
     )
 
+    val systemRequestTimeout = system.settings.config.getDuration("akka.http.server.request-timeout")
     val managementActor = system.actorOf(ManagementActor.props(managers, processRepository, actionRepository, subprocessResolver, processChangeListener), "management")
-    val managementService = new ManagementService(managementActor, system.settings.config.getDuration("akka.http.server.request-timeout"))
-    val processService = new ProcessService(managementService, processRepository, actionRepository, writeProcessRepository)
+    val processService = new ProcessService(managementActor, systemRequestTimeout, processRepository, actionRepository, writeProcessRepository)
 
     val processAuthorizer = new AuthorizeProcess(processRepository)
-    val appResources = new AppResources(config, reload, modelData, processRepository, processValidation, managementService)
+    val appResources = new AppResources(config, reload, modelData, processRepository, processValidation, processService)
 
     val countsReporter = featureTogglesConfig.counts.map(prepareCountsReporter(environment, _))
 
@@ -111,7 +111,6 @@ object NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
           processRepository = processRepository,
           writeRepository = writeProcessRepository,
           processService = processService,
-          managementService = managementService,
           processValidation = processValidation,
           processResolving = processResolving,
           typesForCategories = typesForCategories,
@@ -146,7 +145,7 @@ object NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         Some(new QueryableStateResources(
           typeToConfig = typeToConfig,
           processRepository = processRepository,
-          managementService = managementService,
+          processService = processService,
           processAuthorizer = processAuthorizer
         ))
       ).flatten

@@ -11,7 +11,6 @@ import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.{ProcessObjectsFinder, ProcessService}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
-import pl.touk.nussknacker.ui.process.deployment.ManagementService
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -19,7 +18,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class QueryableStateResources(typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData],
                               val processRepository: FetchingProcessRepository[Future],
-                              managementService: ManagementService,
+                              processService: ProcessService,
                               val processAuthorizer:AuthorizeProcess)
                              (implicit val ec: ExecutionContext)
   extends Directives
@@ -64,7 +63,7 @@ class QueryableStateResources(typeToConfig: ProcessingTypeDataProvider[Processin
 
     val fetchedJsonState = for {
       processingType <- EitherT.liftF(processRepository.fetchProcessingType(processId.id))
-      state <- EitherT.liftF(managementService.getProcessState(processId))
+      state <- EitherT.liftF(processService.getProcessState(processId))
       jobId <- EitherT.fromEither(Either.fromOption(state.deploymentId, if (state.status.isDuringDeploy) deployInProgress(processId.name.value) else noJobRunning(processId.name.value)))
       jsonString <- EitherT.right(fetchState(processingType, jobId.value, queryName, key))
       json <- EitherT.fromEither(parse(jsonString).leftMap(msg => wrongJson(msg.message, jsonString)))

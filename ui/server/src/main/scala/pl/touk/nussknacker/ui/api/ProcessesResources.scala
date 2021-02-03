@@ -41,13 +41,11 @@ import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnCategoryChanged
-import pl.touk.nussknacker.ui.process.deployment.ManagementService
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
 class ProcessesResources(val processRepository: FetchingProcessRepository[Future],
                          writeRepository: WriteProcessRepository,
                          processService: ProcessService,
-                         managementService: ManagementService,
                          processValidation: ProcessValidation,
                          processResolving: UIProcessResolving,
                          typesForCategories: ProcessTypesForCategories,
@@ -265,7 +263,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
         } ~ path("processes" / Segment / "status") { processName =>
           (get & processId(processName)) { processId =>
             complete {
-              managementService.getProcessState(processId).map(ToResponseMarshallable(_))
+              processService.getProcessState(processId).map(ToResponseMarshallable(_))
             }
           }
         } ~ path("processes" / "category" / Segment / Segment) { (processName, category) =>
@@ -344,7 +342,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
     import cats.instances.future._
     import cats.instances.list._
     import cats.syntax.traverse._
-    processes.map(process => managementService.getProcessState(process.idWithName).map(status => process.name -> status))
+    processes.map(process => processService.getProcessState(process.idWithName).map(status => process.name -> status))
       .sequence[Future, (String, ProcessState)].map(_.toMap)
   }
 
