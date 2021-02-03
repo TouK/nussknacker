@@ -25,6 +25,8 @@ private[sink] case object AvroSinkValueParameter {
       case typedObject: TypedObjectTypingResult if containsRestrictedNames(typedObject) =>
         Invalid(CustomNodeError(nodeId.id, s"""Record field name is restricted. Restricted names are ${restrictedParamNames.mkString(", ")}""", None))
 
+      // TODO: Union exclude
+
       // FIXME: fragile
       case TypedClass(clazz, _) if clazz == classOf[java.util.List[_]] =>
         Invalid(CustomNodeError(nodeId.id, "Unsupported Avro type. Supported types are null, Boolean, Integer, Long, Float, Double, String, byte[] and IndexedRecord", None))

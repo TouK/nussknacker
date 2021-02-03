@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.{Context, InterpretationResult, LazyParame
 import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaVersionOption}
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroSerializationSchemaFactory
-import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSink.KeyedObjectMapper
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionHandler, WithFlinkEspExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyedValue, KeyedValueMapper}
@@ -18,69 +17,7 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaPr
 
 object KafkaAvroSink {
 
-  import com.typesafe.scalalogging.LazyLogging
-  import org.apache.flink.api.common.functions.RichFlatMapFunction
-  import org.apache.flink.util.Collector
-  import pl.touk.nussknacker.engine.api.typed.typing
-  import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter, ValueWithContext}
-  import pl.touk.nussknacker.engine.flink.api.process.{FlinkLazyParameterFunctionHelper, LazyParameterInterpreterFunction}
-  import pl.touk.nussknacker.engine.flink.util.keyed
-  import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValue
-
-  import scala.util.control.NonFatal
-
   case class InvalidSinkValueError(msg: String) extends Exception(msg)
-
-  // TODO FIXME: sanitize key!
-  class KeyedObjectMapper(protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
-                          key: LazyParameter[AnyRef],
-                          fields: List[(String, LazyParameter[AnyRef])])
-    extends RichFlatMapFunction[Context, ValueWithContext[KeyedValue[AnyRef, AnyRef]]]
-      with LazyParameterInterpreterFunction with LazyLogging {
-    implicit def lazyParameterInterpreterImpl: LazyParameterInterpreter = lazyParameterInterpreter
-
-    lazy val buildObject: LazyParameter[Map[String, AnyRef]] = {
-      val emptyObj = Map.empty[String, AnyRef]
-      lazyObjectFieldsSequence
-        .map { list =>
-          list.foldLeft(emptyObj) { case (obj, field) =>
-            obj + (field._1 -> field._2)
-          }
-        }
-    }
-
-    override def flatMap(value: Context, out: Collector[ValueWithContext[KeyedValue[AnyRef, AnyRef]]]): Unit = {
-      try {
-        out.collect(ValueWithContext(interpret(value), value))
-      } catch {
-        case NonFatal(e) => logger.error(e.getMessage, e)
-      }
-    }
-
-    private def interpret(ctx: Context): keyed.KeyedValue[AnyRef, AnyRef] =
-      lazyParameterInterpreter.syncInterpretationFunction(
-        key.product(buildObject).map(tuple => KeyedValue(tuple._1, tuple._2))
-      )(ctx)
-
-    private def lazyObjectFieldsSequence: LazyParameter[List[(String, AnyRef)]] = {
-      val outType = typing.Typed[List[(String, AnyRef)]]
-      val empty = lazyParameterInterpreter.pure[List[(String, AnyRef)]](Nil, outType)
-      fields.foldLeft(empty) { case (agg, lazyField) =>
-        aggregateLazyParam(agg, lazyField)
-      }
-    }
-
-    private def aggregateLazyParam(agg: LazyParameter[List[(String, AnyRef)]], lazyField: (String, LazyParameter[AnyRef])): LazyParameter[List[(String, AnyRef)]] = {
-      val outType = typing.Typed[List[(String, AnyRef)]]
-      agg.product(lazyField._2).map(
-        fun = {
-          case (list, value) =>
-            (lazyField._1, value) :: list
-        },
-        outputTypingResult = outType
-      )
-    }
-  }
 }
 
 class KafkaAvroSink(preparedTopic: PreparedKafkaTopic,
@@ -105,7 +42,7 @@ class KafkaAvroSink(preparedTopic: PreparedKafkaTopic,
       case AvroSinkSingleValue(value) =>
         ds.map(new KeyedValueMapper(flinkNodeContext.lazyParameterHelper, key, value))
       case AvroSinkRecordValue(fields) =>
-        ds.flatMap(new KeyedObjectMapper(flinkNodeContext.lazyParameterHelper, key, fields))
+        ds.flatMap(new KeyedRecordFlatMapper(flinkNodeContext.lazyParameterHelper, key, fields))
     }
 
   override def registerSink(dataStream: DataStream[InterpretationResult], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] =
