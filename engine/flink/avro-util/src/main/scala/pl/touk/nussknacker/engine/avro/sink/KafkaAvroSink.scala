@@ -37,14 +37,6 @@ class KafkaAvroSink(preparedTopic: PreparedKafkaTopic,
   // We don't want serialize it because of flink serialization..
   @transient final protected lazy val avroEncoder = BestEffortAvroEncoder(validationMode)
 
-  private def toValueWithContext(ds: DataStream[Context], flinkNodeContext: FlinkCustomNodeContext): DataStream[ValueWithContext[KeyedValue[AnyRef, AnyRef]]] =
-    sinkValue match {
-      case AvroSinkSingleValue(value) =>
-        ds.map(new KeyedValueMapper(flinkNodeContext.lazyParameterHelper, key, value))
-      case AvroSinkRecordValue(fields) =>
-        ds.flatMap(new KeyedRecordFlatMapper(flinkNodeContext.lazyParameterHelper, key, fields))
-    }
-
   override def registerSink(dataStream: DataStream[InterpretationResult], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] =
     toValueWithContext(dataStream.map(_.finalContext), flinkNodeContext)
       .map(new EncodeAvroRecordFunction(flinkNodeContext))
@@ -55,6 +47,14 @@ class KafkaAvroSink(preparedTopic: PreparedKafkaTopic,
    * Right now we support it incorrectly, because we don't use default sink behavior with expression..
    */
   override def testDataOutput: Option[Any => String] = Some(value => Option(value).map(_.toString).getOrElse(""))
+
+  private def toValueWithContext(ds: DataStream[Context], flinkNodeContext: FlinkCustomNodeContext): DataStream[ValueWithContext[KeyedValue[AnyRef, AnyRef]]] =
+    sinkValue match {
+      case AvroSinkSingleValue(value) =>
+        ds.map(new KeyedValueMapper(flinkNodeContext.lazyParameterHelper, key, value))
+      case AvroSinkRecordValue(fields) =>
+        ds.flatMap(new KeyedRecordFlatMapper(flinkNodeContext.lazyParameterHelper, key, fields))
+    }
 
   private def toFlinkFunction: SinkFunction[KeyedValue[AnyRef, AnyRef]] = {
     val versionOpt = Option(versionOption).collect {
