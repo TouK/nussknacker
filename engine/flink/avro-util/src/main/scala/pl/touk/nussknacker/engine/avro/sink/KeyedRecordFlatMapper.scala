@@ -1,20 +1,26 @@
 package pl.touk.nussknacker.engine.avro.sink
 
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.api.common.functions.RichFlatMapFunction
+import org.apache.flink.api.common.functions.{RichFlatMapFunction, RuntimeContext}
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter, ValueWithContext}
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkLazyParameterFunctionHelper, LazyParameterInterpreterFunction}
+import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionHandler, WithFlinkEspExceptionHandler}
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkLazyParameterFunctionHelper, LazyParameterInterpreterFunction}
 import pl.touk.nussknacker.engine.flink.util.keyed
 import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValue
 
-import scala.util.control.NonFatal
 
-private[sink] class KeyedRecordFlatMapper(protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
+private[sink] class KeyedRecordFlatMapper(
+                                          protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
+                                          protected val exceptionHandlerPreparer: RuntimeContext => FlinkEspExceptionHandler ,
+                                          nodeId: String,
                                           key: LazyParameter[AnyRef],
                                           fields: List[(String, LazyParameter[AnyRef])])
-  extends RichFlatMapFunction[Context, ValueWithContext[KeyedValue[AnyRef, AnyRef]]] with LazyParameterInterpreterFunction with LazyLogging {
+  extends RichFlatMapFunction[Context, ValueWithContext[KeyedValue[AnyRef, AnyRef]]]
+    // mixin order is crucial here for setting lazyParameterInterpreter variable
+    with WithFlinkEspExceptionHandler with LazyParameterInterpreterFunction
+{
 
   private implicit def lazyParameterInterpreterImpl: LazyParameterInterpreter =
     lazyParameterInterpreter
@@ -30,8 +36,9 @@ private[sink] class KeyedRecordFlatMapper(protected val lazyParameterHelper: Fli
     }
 
   override def flatMap(value: Context, out: Collector[ValueWithContext[KeyedValue[AnyRef, AnyRef]]]): Unit =
-    try out.collect(ValueWithContext(interpret(value), value))
-    catch { case NonFatal(e) => logger.error(e.getMessage, e) }
+    exceptionHandler.handling(Some(nodeId), value) {
+      out.collect(ValueWithContext(interpret(value), value))
+    }
 
   private def interpret(ctx: Context): keyed.KeyedValue[AnyRef, AnyRef] =
     lazyParameterInterpreter.syncInterpretationFunction(
