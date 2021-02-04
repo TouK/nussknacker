@@ -1,7 +1,8 @@
 import React, {useCallback} from "react"
+import {useTranslation} from "react-i18next"
 
 export type ErrorProps = {
-  message: string,
+  message?: string,
   description?: string,
   buttonLabel?: string,
   showButton?: boolean,
@@ -10,16 +11,21 @@ export type ErrorProps = {
 
 function InitializeError(props: ErrorProps): JSX.Element {
   const defaultOnClick = useCallback(() => window.location.reload(), [])
+  const {t} = useTranslation()
+  const title = t("InitializeError.title", "Oops!")
   const {
-    message = "Application Unexpected Error",
-    description = "An unexpected error seems to have occurred. Please contact with system administrators.",
-    buttonLabel = "Try to refresh page",
+    message = t("InitializeError.message", "Application Unexpected Error"),
+    description = t(
+      "InitializeError.description",
+      "An unexpected error seems to have occurred. Please contact with system administrators.",
+    ),
+    buttonLabel = t("InitializeError.buttonLabel", "Try to refresh page"),
     buttonOnClick = defaultOnClick,
     showButton = true,
   } = props
   return (
     <div className="error-template center-block">
-      <h1>Oops!</h1>
+      <h1>{title}</h1>
       <h2>{message}</h2>
       <div className="error-details">
         <br/>

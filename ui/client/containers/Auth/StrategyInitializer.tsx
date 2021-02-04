@@ -57,35 +57,34 @@ export function StrategyInitializer(props: PropsWithChildren<Props>): JSX.Elemen
     switch (error) {
       case AuthErrorCodes.HTTP_UNAUTHORIZED_CODE:
         return {
-          message: t("nussknackerInitializer.errors.401.message", "Unauthorized Error"),
+          message: t("auth.StrategyInitializer.errors.401.message", "Unauthorized Error"),
           description: t(
-            "nussknackerInitializer.errors.401.description",
+            "auth.StrategyInitializer.errors.401.description",
             "It seems you are not authenticated... Why not try to authenticate again?",
           ),
-          buttonLabel: t("nussknackerInitializer.errors.401.buttonLabel", "Try authenticate again"),
+          buttonLabel: t("auth.StrategyInitializer.errors.401.buttonLabel", "Try authenticate again"),
         }
       case AuthErrorCodes.HTTP_TIMEOUT_CODE:
         return {
-          message: t("nussknackerInitializer.errors.504.message", "504 Gateway Timeout Error"),
+          message: t("auth.StrategyInitializer.errors.504.message", "504 Gateway Timeout Error"),
           description: t(
-            "nussknackerInitializer.errors.504.description",
+            "auth.StrategyInitializer.errors.504.description",
             "It seems server has some problems... Why not to try refreshing your page? Or you can contact with system administrators.",
           ),
         }
       case AuthErrorCodes.HTTP_APPLICATION_CODE:
         return {
-          message: t("nussknackerInitializer.errors.500.message", "Application Unexpected Error"),
           showButton: false,
         }
       case AuthErrorCodes.ACCESS_TOKEN_CODE:
         return {
-          message: t("nussknackerInitializer.errors.accessToken.message", "Authentication Error"),
+          message: t("auth.StrategyInitializer.errors.accessToken.message", "Authentication Error"),
           buttonOnClick: () => {
             authenticate()
           },
-          buttonLabel: t("nussknackerInitializer.errors.504.buttonLabel", "Go to authentication page"),
+          buttonLabel: t("auth.StrategyInitializer.errors.504.buttonLabel", "Go to authentication page"),
           description: t(
-            "nussknackerInitializer.errors.504.description",
+            "auth.StrategyInitializer.errors.504.description",
             "It seems application has some problem with authentication. Please contact with system administrators.",
           ),
         }
