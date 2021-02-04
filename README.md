@@ -14,10 +14,6 @@ Visit our [pages](https://touk.github.io/nussknacker) to see documentation.
 Visit our [quickstart](https://touk.github.io/nussknacker/Quickstart.html) to have a look around.
 Talk to us on our [mailing list](https://groups.google.com/forum/#!forum/nussknacker)
 
-## License
-
-**Nussknacker** is published under [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0).
-
 ## Scala compatibility
 
 Currently we do support Scala 2.11 and 2.12, we cross publish versions.
@@ -30,3 +26,12 @@ However, it should be possible to run Nussknacker with older Flink version.
 While we don't provide out-of-the-box
 support as it would complicate the build process, there is separate [repo](https://github.com/TouK/nussknacker-flink-compatibility)
 with detailed instructions how to run Nussknacker with some of the older versions.  
+
+## Related projects
+
+- [nussknacker-flink-compatibility](https://github.com/TouK/nussknacker-flink-compatibility) - Toolbox providing backward compatibility for older Flink's versions    
+- [prinz-nussknacker](https://github.com/prinz-nussknacker/prinz) - Nussknacker integration with ML models and model registries - currently supports [mlflow](https://mlflow.org/) 
+
+## License
+
+**Nussknacker** is published under [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0).
