@@ -31,9 +31,7 @@ abstract class  EagerService extends Service {
   final override def close(): Unit = {}
 }
 
-//TODO: replace ServiceInvoker with this trait?
-//TODO: handle lifecycle methods...
-trait EagerServiceInvoker extends Lifecycle {
+trait ServiceInvoker extends Lifecycle {
 
   def invokeService(params: Map[String, Any])(implicit ec: ExecutionContext,
                                                collector: InvocationCollectors.ServiceInvocationCollector,

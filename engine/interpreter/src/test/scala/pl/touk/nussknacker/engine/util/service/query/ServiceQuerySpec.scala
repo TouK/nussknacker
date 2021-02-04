@@ -1,97 +1,89 @@
 package pl.touk.nussknacker.engine.util.service.query
 
-
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, WithCategories}
+import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
+import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, ProcessObjectDependencies, WithCategories}
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
-import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.QueryResult
+import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.{QueryResult, ServiceNotFoundException}
+import pl.touk.nussknacker.engine.util.service.query.QueryServiceTesting.{ConcatService, CreateQuery}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration._
 
-class ServiceQuerySpec extends FunSuite with Matchers with PatientScalaFutures {
+class ServiceQuerySpec extends FlatSpec with Matchers with PatientScalaFutures {
+  import pl.touk.nussknacker.engine.spel.Implicits._
 
-  import QueryServiceTesting._
-  import ServiceQuerySpec._
+  override def spanScaleFactor: Double = 2
+  private implicit val ec: ExecutionContext = SynchronousExecutionContext.ctx
 
-  import ExecutionContext.Implicits.global
-
-  test("should invoke enricher by name") {
-    whenReady(invokeCastService(4)) { r =>
-      r.result shouldBe 4
-    }
+  it should "evaluate spel expressions" in {
+    invokeConcatService("'foo'", "'bar'").futureValue.result shouldBe "foobar"
   }
-  test("should invoke concat service") {
-    whenReady(invokeConcatService("foo", "bar")) { r =>
-      r.result shouldBe "foobar"
-    }
+
+  it should "evaluate spel expressions with math expression" in {
+    invokeConcatService("'foo'", "(1 + 2).toString()").futureValue.result shouldBe "foo3"
   }
-  test("should throw IllegalArgumentExcetion on negative argument") {
-    assertThrows[IllegalArgumentException] {
-      whenReady(invokeCastService(-1)) { _ =>
-        ()
-      }
-    }
+
+  it should "allow using global variables" in {
+    invokeConcatService("'foo'", "#GLOBAL").futureValue.result shouldBe "fooglobalValue"
   }
-  test("should throw exception on unexisting service") {
-    assertThrows[ServiceQuery.ServiceNotFoundException] {
-      whenReady(CreateQuery("cast", new CastIntToLongService).invoke("add")) { _ =>
-        ()
-      }
-    }
+
+  it should "return error on failed on not existing service" in {
+    assertThrows[IllegalArgumentException](Await.result(invokeConcatService("'fail'", "''"), 1 second))
+  }
+
+  it should "throw exception on not existing service" in {
+    assertThrows[ServiceNotFoundException](CreateQuery("srv", new ConcatService).invoke("dummy"))
   }
 
   private def invokeConcatService(s1: String, s2: String) =
-    InvokeService(new ConcatService, "s1" -> s1, "s2" -> s2)
+    invokeService(new ConcatService, "s1" -> s1, "s2" -> s2)
 
-  private def invokeCastService(arg: Int) =
-    InvokeService(new CastIntToLongService, "integer" -> arg)
+  private def invokeService(service: Service, args: (String, Expression)*) = {
+    CreateQuery("srv", service).invoke("srv", args: _*)
+  }
 
 }
 
-object ServiceQuerySpec {
 
-  class CastIntToLongService extends Service {
-    @MethodToInvoke
-    def cast(@ParamName("integer") n: Int)
-            (implicit executionContext: ExecutionContext): Future[Long] = {
-      n match {
-        case negative if negative < 0 =>
-          throw new IllegalArgumentException
-        case _ => Future(n.toLong)
-      }
+object QueryServiceTesting {
+
+  object InvokeService {
+    def apply(service: Service, args: (String, Expression)*)
+             (implicit executionContext: ExecutionContext): Future[QueryResult] = {
+      CreateQuery("srv", service).invoke("srv", args: _*)
+    }
+  }
+
+  object CreateQuery {
+    def apply(serviceName: String, service: Service)
+             (implicit executionContext: ExecutionContext): ServiceQuery = {
+      new ServiceQuery(LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator {
+
+        override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
+          super.expressionConfig(processObjectDependencies).copy(globalProcessVariables = Map("GLOBAL" -> WithCategories("globalValue")))
+        }
+
+        override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
+          super.services(processObjectDependencies) ++ Map(serviceName -> WithCategories(service))
+      }))
     }
   }
 
   class ConcatService extends Service {
     @MethodToInvoke
     def concat(@ParamName("s1") s1: String, @ParamName("s2") s2: String)
-              (implicit executionContext: ExecutionContext) =
-      Future(s1 + s2)
-  }
-
-}
-
-object QueryServiceTesting {
-
-  object InvokeService {
-    def apply(service: Service, args: (String, Any)*)
-             (implicit executionContext: ExecutionContext): Future[QueryResult] = {
-      CreateQuery("srv", service)
-        .invoke("srv", args: _*)
-    }
-  }
-
-  object CreateQuery{
-    def apply(serviceName:String,service:Service)
-             (implicit executionContext: ExecutionContext): ServiceQuery = {
-      new ServiceQuery(LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator {
-        override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
-          super.services(processObjectDependencies) ++ Map(serviceName -> WithCategories(service))
-      }))
+              (implicit executionContext: ExecutionContext): Future[String] = {
+      if (s1 == "fail") {
+        Future.failed(new IllegalArgumentException("Fail"))
+      } else {
+        Future(s1 + s2)
+      }
     }
   }
 

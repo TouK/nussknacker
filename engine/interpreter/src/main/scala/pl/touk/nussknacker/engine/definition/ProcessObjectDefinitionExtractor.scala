@@ -38,7 +38,7 @@ object ProcessObjectDefinitionExtractor {
   val sink = new ProcessObjectDefinitionExtractor[SinkFactory, Sink]
   val exceptionHandler = new ProcessObjectDefinitionExtractor[ExceptionHandlerFactory, EspExceptionHandler]
   val customNodeExecutor: CustomStreamTransformerExtractor.type = CustomStreamTransformerExtractor
-  val service: MethodDefinitionExtractor[Service] = ServiceInvoker.Extractor
+  val service: MethodDefinitionExtractor[Service] = DefaultServiceInvoker.Extractor
   val signals: SignalsDefinitionExtractor.type = SignalsDefinitionExtractor
 
 }

@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.api.test
 
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.CollectorMode.CollectorMode
-import pl.touk.nussknacker.engine.api.{Context, InterpretationResult}
+import pl.touk.nussknacker.engine.api.{ContextId, InterpretationResult}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -23,6 +24,8 @@ object InvocationCollectors {
     type CollectorMode = Value
     val Test, Query, Production = Value
   }
+
+  type ServiceInvocationCollectorForContext = ContextId => ServiceInvocationCollector
 
   trait ServiceInvocationCollector {
 
@@ -91,20 +94,22 @@ object InvocationCollectors {
 
   }
 
-  case class TestServiceInvocationCollector private(runIdOpt: Option[TestRunId], nodeContext: NodeContext) extends ServiceInvocationCollector {
+  case class TestServiceInvocationCollector private(runIdOpt: Option[TestRunId],
+                                                    contextId: ContextId,
+                                                    nodeId: NodeId, serviceRef: String) extends ServiceInvocationCollector {
     def enable(runId: TestRunId) = this.copy(runIdOpt = Some(runId))
     override protected def collectorMode: CollectorMode = CollectorMode.Test
 
     override protected def updateResult(runId: TestRunId, testInvocation: Any, name: String): Unit = {
       ResultsCollectingListenerHolder.updateResults(
-        runId, _.updateMockedResult(nodeContext.nodeId, Context(nodeContext.contextId), nodeContext.ref, testInvocation)
+        runId, _.updateMockedResult(nodeId.id, contextId, serviceRef, testInvocation)
       )
     }
   }
 
   object TestServiceInvocationCollector {
-    def apply(nodeContext: NodeContext): TestServiceInvocationCollector = {
-      TestServiceInvocationCollector(runIdOpt = None, nodeContext = nodeContext)
+    def apply(contextId: ContextId, nodeId: NodeId, serviceRef: String): TestServiceInvocationCollector = {
+      TestServiceInvocationCollector(runIdOpt = None, contextId, nodeId, serviceRef)
     }
   }
 
@@ -118,7 +123,7 @@ object InvocationCollectors {
 
     def collect(result: InterpretationResult): Unit = {
       val mockedResult = outputPreparer(result.output)
-      ResultsCollectingListenerHolder.updateResults(runId, _.updateMockedResult(nodeId, result.finalContext, ref, mockedResult))
+      ResultsCollectingListenerHolder.updateResults(runId, _.updateMockedResult(nodeId, ContextId(result.finalContext.id), ref, mockedResult))
     }
   }
 

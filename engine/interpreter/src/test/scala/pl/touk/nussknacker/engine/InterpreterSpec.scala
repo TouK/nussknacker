@@ -91,7 +91,7 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     val processCompilerData = compile(services, transformers, process, listeners)
     val interpreter = processCompilerData.interpreter
-    val parts = failOnErrors(processCompilerData.compile())
+    val parts = failOnErrors(processCompilerData.compile().result)
 
     def compileNode(part: ProcessPart) =
       failOnErrors(processCompilerData.subPartCompiler.compile(part.node, part.validationContext)(metaData).result)
@@ -783,10 +783,10 @@ object InterpreterSpec {
     val checkEager = "@&#%@Q&#"
 
     @MethodToInvoke
-    def prepare(@ParamName("eager") eagerOne: String, @ParamName("lazy") lazyOne: LazyParameter[AnyRef]): EagerServiceInvoker = {
+    def prepare(@ParamName("eager") eagerOne: String, @ParamName("lazy") lazyOne: LazyParameter[AnyRef]): ServiceInvoker = {
       if (eagerOne != checkEager) throw new IllegalArgumentException("Should be not empty?")
 
-      new EagerServiceInvoker {
+      new ServiceInvoker {
 
         override def invokeService(params: Map[String, Any])
                                   (implicit ec: ExecutionContext, collector: InvocationCollectors.ServiceInvocationCollector, contextId: ContextId): Future[AnyRef] = {
@@ -799,7 +799,7 @@ object InterpreterSpec {
 
   }
 
-  object DynamicEagerService extends EagerService with SingleInputGenericNodeTransformation[EagerServiceInvoker] {
+  object DynamicEagerService extends EagerService with SingleInputGenericNodeTransformation[ServiceInvoker] {
 
     override type State = Nothing
 
@@ -822,12 +822,12 @@ object InterpreterSpec {
     override def initialParameters: List[pl.touk.nussknacker.engine.api.definition.Parameter] = List(staticParam.parameter)
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue],
-                                finalState: Option[Nothing]): EagerServiceInvoker = {
+                                finalState: Option[Nothing]): ServiceInvoker = {
 
       val paramName = staticParam.extractValue(params)
       val dynamic = dynamicParam(paramName)
 
-      new EagerServiceInvoker {
+      new ServiceInvoker {
         override def invokeService(params: Map[String, Any])
                                   (implicit ec: ExecutionContext,
                                    collector: InvocationCollectors.ServiceInvocationCollector, contextId: ContextId): Future[AnyRef] = {

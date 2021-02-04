@@ -30,7 +30,7 @@ class InterpreterSetup[T:ClassTag] {
                            listeners: Seq[ProcessListener]): (Context, ExecutionContext) => F[Either[List[InterpretationResult], EspExceptionInfo[_ <: Throwable]]] = {
     val compiledProcess = compile(services, process, listeners)
     val interpreter = compiledProcess.interpreter
-    val parts = failOnErrors(compiledProcess.compile())
+    val parts = failOnErrors(compiledProcess.compile().result)
 
     def compileNode(part: ProcessPart) =
       failOnErrors(compiledProcess.subPartCompiler.compile(part.node, part.validationContext)(process.metaData).result)

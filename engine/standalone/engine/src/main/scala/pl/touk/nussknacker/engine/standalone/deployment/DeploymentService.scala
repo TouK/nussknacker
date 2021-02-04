@@ -104,7 +104,7 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
 
   private def newInterpreter(canonicalProcess: CanonicalProcess): Validated[NonEmptyList[DeploymentError], StandaloneProcessInterpreter] =
     ProcessCanonizer.uncanonize(canonicalProcess)
-      .andThen(StandaloneProcessInterpreter(_, context, modelData)).leftMap(_.map(DeploymentError(_)))
+      .andThen(StandaloneProcessInterpreter(_, context, modelData).result).leftMap(_.map(DeploymentError(_)))
 
   private def toEspProcess(processJson: String): ValidatedNel[DeploymentError, CanonicalProcess] =
     ProcessMarshaller.fromJson(processJson)

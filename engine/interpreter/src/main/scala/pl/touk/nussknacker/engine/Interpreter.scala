@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.expression.Expression
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.NodeContext
 import pl.touk.nussknacker.engine.compiledgraph.node.{Sink, Source, _}
 import pl.touk.nussknacker.engine.compiledgraph.service._
 import pl.touk.nussknacker.engine.compiledgraph.variable._
@@ -77,12 +76,12 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
         }.getOrElse(parentContext)
         interpretNext(next, newParentContext)
       case Processor(_, ref, next, false) =>
-        invoke(ref, None, ctx).flatMap {
+        invoke(ref, ctx).flatMap {
           case ValueWithContext(_, newCtx) => interpretNext(next, newCtx)
         }
       case Processor(_, _, next, true) => interpretNext(next, ctx)
       case EndingProcessor(id, ref, false) =>
-        invoke(ref, None, ctx).map {
+        invoke(ref, ctx).map {
           case ValueWithContext(output, newCtx) =>
             List(InterpretationResult(EndReference(id), output, newCtx))
         }
@@ -90,7 +89,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
         //FIXME: null??
         monad.pure(List(InterpretationResult(EndReference(id), null, ctx)))
       case Enricher(_, ref, outName, next) =>
-        invoke(ref, Some(outName), ctx).flatMap {
+        invoke(ref, ctx).flatMap {
           case ValueWithContext(out, newCtx) =>
             interpretNext(next, newCtx.withVariable(outName, out))
         }
@@ -178,16 +177,13 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
     }
   }
 
-  private def invoke(ref: ServiceRef, outputVariableNameOpt: Option[String], ctx: Context)(implicit node: Node): F[ValueWithContext[Any]] = {
-    val (newCtx, preparedParams) = expressionEvaluator.evaluateParameters(ref.parameters, ctx)
-    val resultFuture = ref.invoker
-      .invoke(preparedParams, NodeContext(ctx.id, node.id, ref.id, outputVariableNameOpt))
-
+  private def invoke(ref: ServiceRef, ctx: Context)(implicit node: Node): F[ValueWithContext[AnyRef]] = {
+    val (preparedParams, resultFuture) = ref.invoke(ctx, expressionEvaluator)
     resultFuture.onComplete { result =>
       //TODO: what about implicit??
       listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, metaData, preparedParams, result))
     }
-    interpreterShape.fromFuture(resultFuture.map(ValueWithContext(_, newCtx))(SynchronousExecutionContext.ctx))
+    interpreterShape.fromFuture(resultFuture.map(ValueWithContext(_, ctx))(SynchronousExecutionContext.ctx))
   }
 
   private def evaluateExpression[R](expr: Expression, ctx: Context, name: String)

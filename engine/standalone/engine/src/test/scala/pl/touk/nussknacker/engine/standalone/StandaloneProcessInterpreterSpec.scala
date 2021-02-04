@@ -241,7 +241,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
     val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
     val ctx = new StandaloneContextPreparer(metricsProvider)
 
-    val maybeinterpreter = StandaloneProcessInterpreter(process, ctx, simpleModelData)
+    val maybeinterpreter = StandaloneProcessInterpreter(process, ctx, simpleModelData).result
 
     maybeinterpreter shouldBe 'valid
     val interpreter = maybeinterpreter.toOption.get

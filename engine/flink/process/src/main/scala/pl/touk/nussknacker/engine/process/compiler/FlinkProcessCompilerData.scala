@@ -7,15 +7,15 @@ import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
-import pl.touk.nussknacker.engine.api.{JobData, MetaData}
+import pl.touk.nussknacker.engine.api.{JobData, Lifecycle, MetaData}
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
+import pl.touk.nussknacker.engine.compiledgraph.service.ServiceRef
 import pl.touk.nussknacker.engine.definition.LazyInterpreterDependencies
 import pl.touk.nussknacker.engine.flink.api.RuntimeContextLifecycle
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.FlinkProcessSignalSenderProvider
-import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 
 import scala.concurrent.duration.FiniteDuration
@@ -36,21 +36,21 @@ class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
                                val processTimeout: FiniteDuration
                              ) {
 
-  def open(runtimeContext: RuntimeContext, nodesToUse: List[_<:NodeData]) : Unit = {
-    val lifecycle = compiledProcess.lifecycle(nodesToUse)
-    lifecycle.foreach {_.open(jobData)}
-    lifecycle.collect{
-      case s:RuntimeContextLifecycle =>
+  def open(runtimeContext: RuntimeContext, nodesToUse: List[ServiceRef]) : Unit = {
+    compiledProcess.lifecycle(nodesToUse).open(jobData) {
+      case s:RuntimeContextLifecycle with Lifecycle =>
+        s.open(jobData)
         s.open(runtimeContext)
     }
   }
 
-  def close(nodesToUse: List[_<:NodeData]) : Unit = {
-    compiledProcess.lifecycle(nodesToUse).foreach(_.close())
+  def close(nodesToUse: List[ServiceRef]) : Unit = {
+    compiledProcess.lifecycle(nodesToUse).close()
   }
 
-  def compileSubPart(node: SplittedNode[_], validationContext: ValidationContext): Node = {
-    validateOrFail(compiledProcess.subPartCompiler.compile(node, validationContext)(compiledProcess.metaData).result)
+  def compileSubPart(node: SplittedNode[_], validationContext: ValidationContext): (Node, List[ServiceRef]) = {
+    val compilation = compiledProcess.subPartCompiler.compile(node, validationContext)(compiledProcess.metaData)
+    (validateOrFail(compilation.result), compilation.services)
   }
 
   private def validateOrFail[T](validated: ValidatedNel[ProcessCompilationError, T]): T = validated match {
@@ -64,7 +64,7 @@ class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
 
   val lazyInterpreterDeps: LazyInterpreterDependencies = compiledProcess.lazyInterpreterDeps
 
-  def compileProcess(): CompiledProcessParts = validateOrFail(compiledProcess.compile())
+  def compileProcess(): CompiledProcessParts = validateOrFail(compiledProcess.compile().result)
 
   def restartStrategy: RestartStrategies.RestartStrategyConfiguration = exceptionHandler.restartStrategy
 
