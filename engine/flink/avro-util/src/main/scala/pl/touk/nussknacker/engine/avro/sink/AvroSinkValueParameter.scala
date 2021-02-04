@@ -18,9 +18,10 @@ private[sink] case object AvroSinkValueParameter {
   private val restrictedParamNames = Set(SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, TopicParamName)
 
   def apply(typing: TypingResult)(implicit nodeId: NodeId): Validated[ProcessCompilationError, AvroSinkValueParameter] =
-    toSinkValueParameter(typing, paramName = None)
+    toSinkValueParameter(typing, paramName = None, isTopLevel = true)
 
-  private def toSinkValueParameter(typing: TypingResult, paramName: Option[String])(implicit nodeId: NodeId): Validated[ProcessCompilationError, AvroSinkValueParameter] =
+  private def toSinkValueParameter(typing: TypingResult, paramName: Option[String], isTopLevel: Boolean)
+                                  (implicit nodeId: NodeId): Validated[ProcessCompilationError, AvroSinkValueParameter] =
     typing match {
       case typed.typing.Unknown =>
         Invalid(CustomNodeError(nodeId.id, "Cannot determine typing for provided schema", None))
@@ -28,13 +29,15 @@ private[sink] case object AvroSinkValueParameter {
       case typedObject: TypedObjectTypingResult if containsRestrictedNames(typedObject) =>
         Invalid(CustomNodeError(nodeId.id, s"""Record field name is restricted. Restricted names are ${restrictedParamNames.mkString(", ")}""", None))
 
-      case TypedClass(clazz, _) if clazz == classOf[java.util.List[_]] =>
+      /* kafka-avro-serializer does not support Array at top level
+         [https://github.com/confluentinc/schema-registry/issues/1298] */
+      case TypedClass(clazz, _) if isTopLevel && clazz == classOf[java.util.List[_]] =>
         Invalid(unsupportedTypeError)
 
       case typedObject: TypedObjectTypingResult =>
         val listOfValidatedFieldParams = typedObject.fields.map { case (fieldName, typing) =>
           val concatName = paramName.map(pn => s"$pn.$fieldName").getOrElse(fieldName)
-          (fieldName, toSinkValueParameter(typing, Some(concatName)))
+          (fieldName, toSinkValueParameter(typing, Some(concatName), isTopLevel = false))
         }.toList
         sequence(listOfValidatedFieldParams).map(l => AvroSinkRecordParameter(l.toMap))
 
@@ -46,8 +49,10 @@ private[sink] case object AvroSinkValueParameter {
         Valid(AvroSinkPrimitiveValueParameter(parameter))
     }
 
-  private def containsRestrictedNames(obj: TypedObjectTypingResult): Boolean =
-    (obj.fields.keySet & restrictedParamNames).nonEmpty
+  private def containsRestrictedNames(obj: TypedObjectTypingResult): Boolean = {
+    val fieldNames = obj.fields.keySet
+    fieldNames.nonEmpty & (fieldNames & restrictedParamNames).nonEmpty
+  }
 
   private def sequence(l: List[(FieldName, Validated[ProcessCompilationError, AvroSinkValueParameter])])
   : Validated[ProcessCompilationError, List[(FieldName, AvroSinkValueParameter)]] = {
@@ -63,7 +68,7 @@ private[sink] case object AvroSinkValueParameter {
   }
 
   private def unsupportedTypeError(implicit nodeId: NodeId): CustomNodeError =
-    CustomNodeError(nodeId.id, s"""Record field name is restricted. Restricted names are ${restrictedParamNames.mkString(", ")}""", None)
+    CustomNodeError(nodeId.id, s"Unsupported Avro type. Supported types are null, Boolean, Integer, Long, Float, Double, String, byte[] and IndexedRecord", None)
 }
 
 private[sink] sealed trait AvroSinkValueParameter {

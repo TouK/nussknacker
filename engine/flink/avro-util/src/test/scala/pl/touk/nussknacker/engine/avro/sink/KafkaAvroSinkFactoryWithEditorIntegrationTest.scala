@@ -39,6 +39,7 @@ private object KafkaAvroSinkFactoryWithEditorIntegrationTest {
          |      "name": "id",
          |      "type": "string"
          |    },
+         |    { "name": "arr", "type": { "type": "array", "items": "long" } },
          |    {
          |      "name": "amount",
          |      "type": ["double", "string"]
@@ -63,21 +64,31 @@ private object KafkaAvroSinkFactoryWithEditorIntegrationTest {
     val toSampleParams: List[(String, expression.Expression)] = List(
       "id" -> "'record1'",
       "amount" -> "20.0",
+      "arr" -> "{1L}",
       "nested.id" -> "'nested_record1'"
     )
 
     override def exampleData: Map[String, Any] = Map(
       "id" -> "record1",
       "amount" -> 20.0,
+      "arr" -> List(1L),
       "nested" -> Map(
         "id" -> "nested_record1"
       )
     )
   }
+
+  val topicSchemas = Map(
+    "record" -> MyRecord.schema,
+    "long" -> AvroUtils.parseSchema("""{"type": "long"}"""),
+    "array" -> AvroUtils.parseSchema("""{"type": "array", "items": "long"}""")
+  )
 }
 
 class KafkaAvroSinkFactoryWithEditorIntegrationTest extends KafkaAvroSpecMixin with BeforeAndAfter {
   import KafkaAvroSinkFactoryWithEditorIntegrationTest._
+
+  private var topicConfigs: Map[String, TopicConfig] = Map.empty
 
   private lazy val processConfigCreator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
     override protected def createSchemaRegistryProvider(processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider =
@@ -92,6 +103,9 @@ class KafkaAvroSinkFactoryWithEditorIntegrationTest extends KafkaAvroSpecMixin w
     super.beforeAll()
     val modelData = LocalModelData(config, processConfigCreator)
     registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), config, executionConfigPreparerChain(modelData))
+    topicSchemas.foreach { case (topicName, schema) =>
+      topicConfigs = topicConfigs + (topicName -> createAndRegisterTopicConfig(topicName, schema))
+    }
   }
 
   after {
@@ -99,7 +113,7 @@ class KafkaAvroSinkFactoryWithEditorIntegrationTest extends KafkaAvroSpecMixin w
   }
 
   test("record") {
-    val topicConfig = createAndRegisterTopicConfig("record", MyRecord.schema)
+    val topicConfig = topicConfigs("record")
     val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
     val sinkParam = SinkAvroParam(topic = topicConfig.output, versionOption = ExistingSchemaVersion(1),
       valueParams = MyRecord.toSampleParams, key = "", ValidationMode.strict, sinkId = "kafka-avro-editor")
@@ -108,19 +122,17 @@ class KafkaAvroSinkFactoryWithEditorIntegrationTest extends KafkaAvroSpecMixin w
     runAndVerifyResult(process, topicConfig, event = MyRecord.record, expected = MyRecord.record)
   }
 
-  test("long") {
-    val schema = AvroUtils.parseSchema("""{"type": "long"}""")
-    val topicConfig = createAndRegisterTopicConfig("long", schema)
+  test("primitive at top level") {
+    val topicConfig = topicConfigs("long")
     val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
     val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "42L").copy(sinkId = "kafka-avro-editor")
     val process = createAvroProcess(sourceParam, sinkParam)
-    val encoded = encode(42L, schema)
+    val encoded = encode(42L, topicSchemas("long"))
     runAndVerifyResult(process, topicConfig, event = encoded, expected = encoded)
   }
 
-  test("array") {
-    val schema = AvroUtils.parseSchema("""{"type": "array", "items": "long"}""")
-    val topicConfig = createAndRegisterTopicConfig("array", schema)
+  test("array at top level") {
+    val topicConfig = topicConfigs("array")
     val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
     val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "{42L}").copy(sinkId = "kafka-avro-editor")
     val process = createAvroProcess(sourceParam, sinkParam)
