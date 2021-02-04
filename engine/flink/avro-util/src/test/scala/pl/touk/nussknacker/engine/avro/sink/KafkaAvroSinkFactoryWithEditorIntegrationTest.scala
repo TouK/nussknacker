@@ -41,7 +41,7 @@ private object KafkaAvroSinkFactoryWithEditorIntegrationTest {
          |    },
          |    {
          |      "name": "amount",
-         |      "type": "double"
+         |      "type": ["double", "string"]
          |    },
          |    {
          |      "name": "nested",
