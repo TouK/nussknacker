@@ -110,7 +110,16 @@ module.exports = {
   plugins: [
     new ModuleFederationPlugin({
       name: camelCase(name),
-      shared: dependencies,
+      shared: {
+        react: {
+          eager: true,
+          singleton: true,
+        },
+        "react-dom": {
+          eager: true,
+          singleton: true,
+        },
+      },
     }),
     new HtmlWebpackPlugin({
       title: "Nussknacker",

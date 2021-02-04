@@ -10,6 +10,7 @@ import LoaderSpinner from "./components/Spinner"
 import Notifications from "./containers/Notifications"
 import {NkApp} from "./containers/NussknackerApp"
 import NussknackerInitializer from "./containers/NussknackerInitializer"
+import {SettingsProvider} from "./containers/SettingsInitializer"
 import {NkThemeProvider} from "./containers/theme"
 import history from "./history"
 import "./i18n"
@@ -28,10 +29,12 @@ const Root = () => (
         <PersistGate loading={null} persistor={persistor}>
           <Router history={history}>
             <NkThemeProvider>
-              <NussknackerInitializer>
-                <Notifications/>
-                <NkApp/>
-              </NussknackerInitializer>
+              <SettingsProvider>
+                <NussknackerInitializer>
+                  <Notifications/>
+                  <NkApp/>
+                </NussknackerInitializer>
+              </SettingsProvider>
             </NkThemeProvider>
           </Router>
         </PersistGate>

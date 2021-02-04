@@ -1,3 +1,4 @@
+import {AuthenticationSettings} from "../../reducers/settings"
 import {UnknownRecord} from "../../types/common"
 
 type MetricsType = {
@@ -19,11 +20,6 @@ type FeaturesSettings = {
   deploySettings: $TodoType,
 }
 
-type AuthenticationSettings = {
-  backend: string,
-  authorizeUrl?: URL,
-}
-
 type EngineData = {
   actionTooltips: Record<string, string>,
   actionMessages: Record<string, string>,
@@ -31,7 +27,7 @@ type EngineData = {
   actionIcons: Record<string, URL>,
 }
 
-type SettingsData = {
+export interface SettingsData {
   features: FeaturesSettings,
   authentication: AuthenticationSettings,
   engines: Record<string, EngineData>,
