@@ -1,17 +1,29 @@
 package pl.touk.nussknacker.engine.avro.sink
 
-import org.apache.flink.api.common.functions.RichFlatMapFunction
+import org.apache.flink.api.common.functions.{RichFlatMapFunction, RuntimeContext}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter, ValueWithContext}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
-import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkLazyParameterFunctionHelper}
 import pl.touk.nussknacker.engine.flink.util.keyed
 import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValue
 
+private[sink] object KeyedRecordFlatMapper {
+  def apply(flinkCustomNodeContext: FlinkCustomNodeContext, key: LazyParameter[AnyRef], sinkRecord: AvroSinkRecordValue): KeyedRecordFlatMapper =
+    new KeyedRecordFlatMapper(
+      flinkCustomNodeContext.nodeId,
+      flinkCustomNodeContext.lazyParameterHelper,
+      flinkCustomNodeContext.exceptionHandlerPreparer,
+      key,
+      sinkRecord)
+}
 
-private[sink] class KeyedRecordFlatMapper(flinkNodeContext: FlinkCustomNodeContext,
+
+private[sink] class KeyedRecordFlatMapper(nodeId: String,
+                                          lazyParameterHelper: FlinkLazyParameterFunctionHelper,
+                                          exceptionHandlerPreparer: RuntimeContext => FlinkEspExceptionHandler,
                                           key: LazyParameter[AnyRef],
                                           sinkRecord: AvroSinkRecordValue)
   extends RichFlatMapFunction[Context, ValueWithContext[KeyedValue[AnyRef, AnyRef]]] {
@@ -22,8 +34,8 @@ private[sink] class KeyedRecordFlatMapper(flinkNodeContext: FlinkCustomNodeConte
 
   override def open(parameters: Configuration): Unit = {
     super.open(parameters)
-    exceptionHandler = flinkNodeContext.exceptionHandlerPreparer(getRuntimeContext)
-    lazyParameterInterpreter = flinkNodeContext.lazyParameterHelper.createInterpreter(getRuntimeContext)
+    exceptionHandler = exceptionHandlerPreparer(getRuntimeContext)
+    lazyParameterInterpreter = lazyParameterHelper.createInterpreter(getRuntimeContext)
   }
 
   override def close(): Unit = {
@@ -50,7 +62,7 @@ private[sink] class KeyedRecordFlatMapper(flinkNodeContext: FlinkCustomNodeConte
     }
 
   override def flatMap(value: Context, out: Collector[ValueWithContext[KeyedValue[AnyRef, AnyRef]]]): Unit =
-    exceptionHandler.handling(Some(flinkNodeContext.nodeId), value) {
+    exceptionHandler.handling(Some(nodeId), value) {
       out.collect(ValueWithContext(interpret(value), value))
     }.orNull
 
