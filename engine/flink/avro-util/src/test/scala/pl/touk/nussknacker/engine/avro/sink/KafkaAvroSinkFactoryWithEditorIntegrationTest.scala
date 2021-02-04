@@ -139,6 +139,6 @@ class KafkaAvroSinkFactoryWithEditorIntegrationTest extends KafkaAvroSpecMixin w
     val thrown = intercept[IllegalArgumentException] {
       runAndVerifyResult(process, topicConfig, event = null, expected = null)
     }
-    thrown.getMessage shouldBe "Compilation errors: CustomNodeError(end,Unsupported Avro type. Supported types are null, Boolean, Integer, Long, Float, Double, String, byte[] and IndexedRecord,None)"
+    thrown.getMessage shouldBe "Compilation errors: CustomNodeError(end,Unsupported Avro type. Top level Arrays are not supported,None)"
   }
 }

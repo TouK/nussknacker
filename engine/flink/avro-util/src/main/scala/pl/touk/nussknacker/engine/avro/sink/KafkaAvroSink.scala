@@ -15,11 +15,6 @@ import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, Fli
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyedValue, KeyedValueMapper}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaProducer, PreparedKafkaTopic}
 
-object KafkaAvroSink {
-
-  case class InvalidSinkValueError(msg: String) extends Exception(msg)
-}
-
 class KafkaAvroSink(preparedTopic: PreparedKafkaTopic,
                     versionOption: SchemaVersionOption,
                     key: LazyParameter[AnyRef],

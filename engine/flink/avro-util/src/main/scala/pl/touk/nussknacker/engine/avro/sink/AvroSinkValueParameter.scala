@@ -32,7 +32,7 @@ private[sink] case object AvroSinkValueParameter {
       /* kafka-avro-serializer does not support Array at top level
          [https://github.com/confluentinc/schema-registry/issues/1298] */
       case TypedClass(clazz, _) if isTopLevel && clazz == classOf[java.util.List[_]] =>
-        Invalid(unsupportedTypeError)
+        Invalid(CustomNodeError(nodeId.id, "Unsupported Avro type. Top level Arrays are not supported", None))
 
       case typedObject: TypedObjectTypingResult =>
         val listOfValidatedFieldParams = typedObject.fields.map { case (fieldName, typing) =>
@@ -66,9 +66,6 @@ private[sink] case object AvroSinkValueParameter {
         }
     }
   }
-
-  private def unsupportedTypeError(implicit nodeId: NodeId): CustomNodeError =
-    CustomNodeError(nodeId.id, s"Unsupported Avro type. Supported types are null, Boolean, Integer, Long, Float, Double, String, byte[] and IndexedRecord", None)
 }
 
 private[sink] sealed trait AvroSinkValueParameter {
