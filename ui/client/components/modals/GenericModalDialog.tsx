@@ -1,5 +1,5 @@
 import "ladda/dist/ladda.min.css"
-import React from "react"
+import React, {PropsWithChildren} from "react"
 import Draggable from "react-draggable"
 import LaddaButton from "react-ladda"
 import Modal from "react-modal"
@@ -15,7 +15,7 @@ type OwnProps = {
   okBtnConfig?: $TodoType,
   style?: string,
   header?: string,
-  confirm?: (close: () => void) => Promise<void>,
+  confirm?: (close: () => void) => PromiseLike<void>,
   type: DialogType,
   init?: () => void,
 }
@@ -71,12 +71,14 @@ class GenericModalDialog extends React.Component<Props, State> {
       >
         <div className="draggable-container">
           <Draggable bounds="parent" handle=".modal-draggable-handle">
-            <div className={`espModal ${this.props.style || "confirmationModal"}`}>
-              {this.props.header ? (
-                <div className="modal-title modal-draggable-handle" style={{color: "white", backgroundColor: "#70C6CE"}}>
-                  <span>{this.props.header}</span>
-                </div>
-              ) : null}
+            <div className={`espModal ${this.props.style || "confirmationModal"}`} data-testid="modal">
+              {this.props.header ?
+                (
+                  <div className="modal-title modal-draggable-handle" style={{color: "white", backgroundColor: "#70C6CE"}}>
+                    <span>{this.props.header}</span>
+                  </div>
+                ) :
+                null}
               <div className="modalContentDark">
                 {this.props.children}
                 <div className="confirmationButtons">
@@ -103,7 +105,7 @@ const mapState = (state: RootState, props: OwnProps) => ({
 
 const mapDispatch = ActionsUtils.mapDispatchWithEspActions
 
-type Props = OwnProps & ReturnType<typeof mapState> & ReturnType<typeof mapDispatch>
+type Props = PropsWithChildren<OwnProps> & ReturnType<typeof mapState> & ReturnType<typeof mapDispatch>
 
 export default connect(mapState, mapDispatch)(GenericModalDialog)
 

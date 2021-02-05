@@ -17,7 +17,7 @@
     "pretest": "npm run check",
     "test": "jest",
     "test:e2e": "cypress run",
-    "test:e2e:ci": "start-server-and-test start-backend-demo http-get://localhost:3000/static/main.html test:e2e",
+    "test:e2e:ci": "start-server-and-test start-backend-staging http-get://localhost:3000/static/main.html test:e2e",
     "test:e2e:dev": "cypress open"
   },
   "dependencies": {
