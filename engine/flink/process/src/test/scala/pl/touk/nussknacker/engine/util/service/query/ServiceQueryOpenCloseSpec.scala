@@ -2,15 +2,11 @@ package pl.touk.nussknacker.engine.util.service.query
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
-import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.util.service.GenericTimeMeasuringService
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -24,12 +20,14 @@ class ServiceQueryOpenCloseSpec
 
   import ServiceQueryOpenCloseSpec._
 
-  private implicit val executionContext: ExecutionContext = SynchronousExecutionContext.ctx
+  private implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
 
   test("open and close service") {
     val service = createService
     service.wasOpen shouldBe false
-    invokeService(4, service) shouldBe 4
+    whenReady(invokeService(4, service)) { r =>
+      r.result shouldBe 4
+    }
     service.wasOpen shouldBe true
     eventually {
       service.wasClose shouldBe true
@@ -42,24 +40,24 @@ class ServiceQueryOpenCloseSpec
         super.services(processObjectDependencies) ++ Map("cast" -> WithCategories(createService))
     })
 
-    invokeService(4, modelData) shouldBe 4
-    invokeService(5, modelData) shouldBe 5
+    whenReady(new ServiceQuery(modelData).invoke("cast", "integer" -> 4)) {
+      _.result shouldBe 4
+    }
+    whenReady(new ServiceQuery(modelData).invoke("cast", "integer" -> 5)) {
+      _.result shouldBe 5
+    }
   }
 
   private def createService = {
     new CastIntToLongService with TimeMeasuringService
   }
 
-  private def invokeService(arg: Int, modelData: ModelData): Any = {
-    new ServiceQuery(modelData).invoke("cast", "integer" -> (arg.toString: Expression))
-      .futureValue.result
-  }
-
-  private def invokeService(arg: Int, service: Service): Any = {
-    invokeService(arg, LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator {
+  private def invokeService(arg: Int, service: Service) = {
+    new ServiceQuery(LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator {
       override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
         super.services(processObjectDependencies) ++ Map("cast" -> WithCategories(service))
     }))
+      .invoke("cast", "integer" -> arg)
   }
 }
 

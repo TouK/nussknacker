@@ -12,7 +12,8 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
 import io.circe.Decoder
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
-import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.{QueryResult, ServiceInvocationException, ServiceNotFoundException}
+import pl.touk.nussknacker.engine.util.service.query.ExpressionServiceQuery.ParametersCompilationException
+import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.{QueryResult, ServiceNotFoundException}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 
 class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest with FailFastCirceSupport with TestPermissions{
@@ -69,24 +70,23 @@ class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest w
       """.stripMargin)
     Post("/service/streaming/enricher", entity) ~> serviceRoutes.securedRoute ~> check {
       status shouldEqual StatusCodes.InternalServerError
-      entityAs[JsonThrowable].message shouldEqual Some("MissingParameters(Set(tariffType),)")
-      entityAs[JsonThrowable].className shouldEqual classOf[ServiceInvocationException].getCanonicalName
+      entityAs[JsonThrowable].message shouldEqual Some("NonEmptyList(ExpressionParseError(EL1041E: After parsing a valid expression, there is still more data in the expression: 'spell',defaultNodeId,Some(param),not valid spell expression))")
+      entityAs[JsonThrowable].className shouldEqual classOf[ParametersCompilationException].getCanonicalName
     }
   }
   test("display valuable error message for mismatching parameters") {
     val entity = HttpEntity(MediaTypes.`application/json`, "[]")
     Post("/service/streaming/enricher", entity) ~> serviceRoutes.securedRoute ~> check {
       status shouldEqual StatusCodes.InternalServerError
-      entityAs[JsonThrowable].message shouldEqual Some( "MissingParameters(Set(param, tariffType),)")
-      entityAs[JsonThrowable].className shouldEqual classOf[ServiceInvocationException].getCanonicalName
+      entityAs[JsonThrowable].message shouldEqual Some( "Missing parameter: param")
+      entityAs[JsonThrowable].className shouldEqual classOf[IllegalArgumentException].getCanonicalName
     }
   }
-  
   test("display valuable error message for missing service") {
     val entity = HttpEntity(MediaTypes.`application/json`, "[]")
     Post("/service/streaming/unexcitingService", entity) ~> serviceRoutes.securedRoute ~> check {
       status shouldEqual StatusCodes.NotFound
-      entityAs[JsonThrowable].message shouldEqual Some("Service unexcitingService not found")
+      entityAs[JsonThrowable].message shouldEqual Some("service unexcitingService not found")
       entityAs[JsonThrowable].className shouldEqual classOf[ServiceNotFoundException].getCanonicalName
     }
   }
