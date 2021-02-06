@@ -23,19 +23,13 @@ abstract class Service extends Lifecycle
 
 
 //This is marker interface, for services which have Lazy/dynamic parameters. Invocation is handled with EagerServiceInvoker
-//Lifecycle methods are handled on level of EagerServiceInvoker
-abstract class  EagerService extends Service {
-
-  final override def open(jobData: JobData): Unit = {}
-
-  final override def close(): Unit = {}
-}
+abstract class EagerService extends Service
 
 trait ServiceInvoker extends Lifecycle {
 
   def invokeService(params: Map[String, Any])(implicit ec: ExecutionContext,
                                                collector: InvocationCollectors.ServiceInvocationCollector,
-                                               contextId: ContextId): Future[AnyRef]
+                                               contextId: ContextId): Future[Any]
 
   def returnType: TypingResult
 

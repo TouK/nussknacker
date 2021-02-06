@@ -16,7 +16,7 @@ object service {
                         invocationsCollector: ServiceInvocationCollectorForContext) {
 
     def invoke(ctx: Context, expressionEvaluator: ExpressionEvaluator)
-              (implicit nodeId: NodeId, metaData: MetaData, ec: ExecutionContext): (Map[String, AnyRef], Future[AnyRef]) = {
+              (implicit nodeId: NodeId, metaData: MetaData, ec: ExecutionContext): (Map[String, AnyRef], Future[Any]) = {
 
       val (_, preparedParams) = expressionEvaluator.evaluateParameters(parameters, ctx)
       val contextId = ContextId(ctx.id)

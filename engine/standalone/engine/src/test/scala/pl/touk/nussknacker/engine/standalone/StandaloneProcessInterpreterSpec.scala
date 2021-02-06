@@ -117,6 +117,30 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
     result shouldBe Right(List("initialized!"))
   }
 
+  test("init call open method for eager service") {
+    val process = EspProcessBuilder
+      .id("proc1")
+      .exceptionHandler()
+      .source("start", "request1-post-source")
+      .enricher("enricher1", "response1", "eagerEnricherWithOpen", "name" -> "'1'")
+      .customNode("custom", "output", "extractor", "expression" -> "''")
+      .enricher("enricher2", "response2", "eagerEnricherWithOpen", "name" -> "'2'")
+      .sink("sink1", "#response1.field1 + #response2.field1", "response-sink")
+
+    val creator = new StandaloneProcessConfigCreator
+    val result = runProcess(process, Request1("a", "b"), creator)
+
+    result shouldBe Right(List("truetrue"))
+    creator.eagerEnricher.opened shouldBe true
+    creator.eagerEnricher.closed shouldBe true
+    val openedInvokers = creator.eagerEnricher.list.filter(_._2.opened == true)
+    openedInvokers.map(_._1).toSet == Set("1", "2")
+    openedInvokers.foreach { cl =>
+      cl._2.closed shouldBe true
+    }
+
+  }
+
   test("collect metrics for individual services") {
     val process = EspProcessBuilder
       .id("proc1")

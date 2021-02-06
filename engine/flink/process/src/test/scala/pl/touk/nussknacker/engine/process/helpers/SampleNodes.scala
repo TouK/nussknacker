@@ -4,9 +4,9 @@ import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Date, Optional, UUID}
+
 import cats.data.Validated.Valid
 import io.circe.generic.JsonCodec
-
 import javax.annotation.Nullable
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
@@ -43,6 +43,7 @@ import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.test.WithDataList
 
 import scala.collection.JavaConverters._
+import scala.collection.immutable
 import scala.concurrent.{ExecutionContext, Future}
 
 //TODO: clean up sample objects...
@@ -121,7 +122,7 @@ object SampleNodes {
     }
   }
 
-  object LifecycleService extends Service with Lifecycle {
+  trait WithLifecycle extends Lifecycle {
 
     var opened: Boolean = false
     var closed: Boolean = false
@@ -139,10 +140,40 @@ object SampleNodes {
       closed = true
     }
 
+  }
+
+  object LifecycleService extends Service with WithLifecycle {
+
     @MethodToInvoke
     def invoke(): Future[Unit] = {
       Future.successful(())
     }
+  }
+
+  object EagerLifecycleService extends EagerService with WithLifecycle {
+
+    var list: List[WithLifecycle] = List[WithLifecycle]()
+
+    override def reset(): Unit = synchronized {
+      super.reset()
+      list = Nil
+    }
+
+    @MethodToInvoke
+    def invoke(): ServiceInvoker = synchronized {
+      val newI = new ServiceInvoker with WithLifecycle {
+        override def invokeService(params: Map[String, Any])
+                                  (implicit ec: ExecutionContext,
+                                   collector: ServiceInvocationCollector, contextId: ContextId): Future[Any] = {
+          Future.successful(())
+        }
+
+        override def returnType: TypingResult = Typed[Void]
+      }
+      list = newI::list
+      newI
+    }
+
   }
 
 
