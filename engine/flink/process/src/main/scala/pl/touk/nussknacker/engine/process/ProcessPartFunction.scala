@@ -2,8 +2,6 @@ package pl.touk.nussknacker.engine.process
 
 import org.apache.flink.api.common.functions.RichFunction
 import org.apache.flink.configuration.Configuration
-import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.compiledgraph.node.Node
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
@@ -15,22 +13,18 @@ trait ProcessPartFunction extends ExceptionHandlerFunction {
 
   protected def node: SplittedNode[_<:NodeData]
 
-  protected def validationContext: ValidationContext
-
-  protected lazy val (compiledNode, services) = compiledProcessWithDeps.compileSubPart(node, validationContext)
-
   private val nodesUsed = SplittedNodesCollector.collectNodes(node).map(_.data)
 
   override def close(): Unit = {
     super.close()
     if (compiledProcessWithDeps != null) {
-      compiledProcessWithDeps.close(services)
+      compiledProcessWithDeps.close(nodesUsed)
     }
   }
 
   override def open(parameters: Configuration): Unit = {
     super.open(parameters)
-    compiledProcessWithDeps.open(getRuntimeContext, services)
+    compiledProcessWithDeps.open(getRuntimeContext, nodesUsed)
   }
 
 }

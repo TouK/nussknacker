@@ -17,11 +17,11 @@ import scala.util.control.NonFatal
 
 private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
                                                     val node: SplittedNode[_<:NodeData],
-                                                    val validationContext: ValidationContext,
-                                                    useIOMonad: Boolean)
+                                                    validationContext: ValidationContext, useIOMonad: Boolean)
   extends RichFlatMapFunction[Context, InterpretationResult] with ProcessPartFunction {
 
   private lazy implicit val ec: ExecutionContext = SynchronousExecutionContext.ctx
+  private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node, validationContext)
 
   import compiledProcessWithDeps._
 

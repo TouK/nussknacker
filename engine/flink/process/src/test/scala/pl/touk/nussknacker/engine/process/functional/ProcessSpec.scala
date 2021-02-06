@@ -221,11 +221,10 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
     val processWithService = EspProcessBuilder.id("proc1")
         .exceptionHandler()
         .source("id", "input")
+        .processor("processor1", "eagerLifecycleService", "name" -> "'1'")
         //just to test we open also in different process parts
         .customNodeNoOutput("custom", "customFilter", "input" -> "''", "stringVal" -> "''")
-        .processor("processor1", "eagerLifecycleService")
-        .processor("processor2", "eagerLifecycleService")
-
+        .processor("processor2", "eagerLifecycleService", "name" -> "'2'")
         .processorEnd("enricher", "lifecycleService")
 
     val processWithoutService = EspProcessBuilder.id("proc1")
@@ -243,10 +242,10 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
     EagerLifecycleService.opened shouldBe true
     EagerLifecycleService.closed shouldBe true
 
-    val opened = EagerLifecycleService.list.filter(_.opened == true)
-    opened.foreach { instance =>
-      instance.closed shouldBe true
-      instance.opened shouldBe true
+    val openedInvokers = EagerLifecycleService.list.filter(_._2.opened == true)
+    openedInvokers.map(_._1).toSet == Set("1", "2")
+    openedInvokers.foreach { cl =>
+      cl._2.closed shouldBe true
     }
 
     LifecycleService.reset()

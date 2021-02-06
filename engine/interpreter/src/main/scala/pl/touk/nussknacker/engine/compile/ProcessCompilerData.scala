@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.exception.EspExceptionHandler
 import pl.touk.nussknacker.engine.api.{Lifecycle, MetaData, ProcessListener}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
-import pl.touk.nussknacker.engine.compiledgraph.service.ServiceRef
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.LazyInterpreterDependencies
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
@@ -18,7 +17,6 @@ import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.{NodeData, WithComponent}
-import pl.touk.nussknacker.engine.util.LifecycleHandler
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 import scala.concurrent.duration.FiniteDuration
@@ -80,14 +78,17 @@ class ProcessCompilerData(compiler: ProcessCompiler,
                           listeners: Seq[Lifecycle],
                           services: Map[String, Lifecycle]) {
 
-  def lifecycle(usedServices: List[ServiceRef]): LifecycleHandler = {
-    val componentIds = usedServices.map(_.id)
-    new LifecycleHandler(listeners ++ services.filterKeys(componentIds.contains).values, usedServices)
+  def lifecycle(nodesToUse: List[_ <: NodeData]): Seq[Lifecycle] = {
+    val componentIds = nodesToUse.collect {
+      case e:WithComponent => e.componentId
+    }
+    listeners ++ services.filterKeys(componentIds.contains).values
   }
 
   def metaData: MetaData = process.metaData
 
-  def compile(): CompilationResult[CompiledProcessParts] = compiler.compile(process)
+  def compile(): ValidatedNel[ProcessCompilationError, CompiledProcessParts] =
+    compiler.compile(process).result
 
   def compileExceptionHandler(): ValidatedNel[ProcessCompilationError, EspExceptionHandler] =
     nodeCompiler.compileExceptionHandler(process.exceptionHandlerRef)(metaData)._2

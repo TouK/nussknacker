@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 import scala.reflect.ClassTag
 
@@ -30,7 +30,7 @@ class InterpreterSetup[T:ClassTag] {
                            listeners: Seq[ProcessListener]): (Context, ExecutionContext) => F[Either[List[InterpretationResult], EspExceptionInfo[_ <: Throwable]]] = {
     val compiledProcess = compile(services, process, listeners)
     val interpreter = compiledProcess.interpreter
-    val parts = failOnErrors(compiledProcess.compile().result)
+    val parts = failOnErrors(compiledProcess.compile())
 
     def compileNode(part: ProcessPart) =
       failOnErrors(compiledProcess.subPartCompiler.compile(part.node, part.validationContext)(process.metaData).result)

@@ -22,11 +22,11 @@ import scala.util.{Failure, Success}
 import scala.util.control.NonFatal
 
 private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
-                                                     val node: SplittedNode[_<:NodeData],
-                                                     val validationContext: ValidationContext,
-                                                     asyncExecutionContextPreparer: AsyncExecutionContextPreparer,
-                                                     useIOMonad: Boolean)
+                                                     val node: SplittedNode[_<:NodeData], validationContext: ValidationContext,
+                                                     asyncExecutionContextPreparer: AsyncExecutionContextPreparer, useIOMonad: Boolean)
   extends RichAsyncFunction[Context, InterpretationResult] with LazyLogging with ProcessPartFunction {
+
+  private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node, validationContext)
 
   import compiledProcessWithDeps._
 

@@ -4,7 +4,7 @@ import cats.data.Validated._
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.instances.list._
 import cats.instances.option._
-import pl.touk.nussknacker.engine.api.{Lifecycle, MetaData}
+import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo}
@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompi
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compiledgraph.node
 import pl.touk.nussknacker.engine.compiledgraph.node.{Node, SubprocessEnd}
-import pl.touk.nussknacker.engine.compiledgraph.service.ServiceRef
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.splittedgraph._
@@ -40,7 +39,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
 
     def toCompilationResult[T](validated: ValidatedNel[ProcessCompilationError, T],
                                expressionsTypingInfo: Map[String, ExpressionTypingInfo]) =
-      CompilationResult(Map(n.id -> NodeTypingInfo(ctx, expressionsTypingInfo, None)), Nil, validated)
+      CompilationResult(Map(n.id -> NodeTypingInfo(ctx, expressionsTypingInfo, None)), validated)
 
     n match {
       case splittednode.SourceNode(nodeData, next) => handleSourceNode(nodeData, ctx, next)
@@ -95,15 +94,13 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
   }
 
   private def compileEndingNode(ctx: ValidationContext, data: EndingNodeData)(implicit nodeId: NodeId, metaData: MetaData): CompilationResult[compiledgraph.node.Node] = {
-    def toCompilationResult[T](validated: ValidatedNel[ProcessCompilationError, T],
-                               expressionsTypingInfo: Map[String, ExpressionTypingInfo],
-                               lifecycle: T => List[ServiceRef] = (_: T) => Nil) =
-      CompilationResult(Map(data.id -> NodeTypingInfo(ctx, expressionsTypingInfo, None)), validated.map(lifecycle).getOrElse(Nil), validated)
+    def toCompilationResult[T](validated: ValidatedNel[ProcessCompilationError, T], expressionsTypingInfo: Map[String, ExpressionTypingInfo]) =
+      CompilationResult(Map(nodeId.id -> NodeTypingInfo(ctx, expressionsTypingInfo, None)), validated)
 
     data match {
       case processor@graph.node.Processor(id, _, disabled, _) =>
         val NodeCompilationResult(typingInfo, _, _, validatedServiceRef, _) = nodeCompiler.compileProcessor(processor, ctx)
-        toCompilationResult[ServiceRef](validatedServiceRef, typingInfo, k => List(k)).map(ref => compiledgraph.node.EndingProcessor(id, ref, disabled.contains(true)))
+        toCompilationResult(validatedServiceRef.map(ref => compiledgraph.node.EndingProcessor(id, ref, disabled.contains(true))), typingInfo)
 
       case graph.node.Sink(id, ref, optionalExpression, disabled, _) =>
         val (expressionInfo , compiledOptionalExpression) = optionalExpression.map { expression =>
@@ -141,10 +138,8 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
   }
 
   private def compileSubsequent(ctx: ValidationContext, data: OneOutputSubsequentNodeData, next: Next)(implicit nodeId: NodeId, metaData: MetaData): CompilationResult[Node] = {
-    def toCompilationResult[T](validated: ValidatedNel[ProcessCompilationError, T],
-                               expressionsTypingInfo: Map[String, ExpressionTypingInfo],
-                               lifecycle: T => List[ServiceRef] = (_: T) => Nil) =
-      CompilationResult(Map(data.id -> NodeTypingInfo(ctx, expressionsTypingInfo, None)), validated.map(lifecycle).getOrElse(Nil), validated)
+    def toCompilationResult[T](validated: ValidatedNel[ProcessCompilationError, T], expressionsTypingInfo: Map[String, ExpressionTypingInfo]) =
+      CompilationResult(Map(data.id -> NodeTypingInfo(ctx, expressionsTypingInfo, None)), validated)
 
     data match {
       case graph.node.Variable(id, varName, expression, _) =>
@@ -170,15 +165,14 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
 
       case processor@graph.node.Processor(id, _, isDisabled, _) =>
         val NodeCompilationResult(typingInfo, _, _, validatedServiceRef, _) = nodeCompiler.compileProcessor(processor, ctx)
-        CompilationResult.map2(toCompilationResult[ServiceRef](validatedServiceRef, typingInfo, sr => List(sr)), compile(next, ctx))((ref, next) =>
+        CompilationResult.map2(toCompilationResult(validatedServiceRef, typingInfo), compile(next, ctx))((ref, next) =>
           compiledgraph.node.Processor(id, ref, next, isDisabled.contains(true)))
 
       case enricher@graph.node.Enricher(id, _, output, _) =>
-        val NodeCompilationResult(typingInfo, _, newCtx, validatedServiceRef, _) = nodeCompiler
-          .compileEnricher(enricher, ctx, outputVar = Some(OutputVar.enricher(output)))
+        val NodeCompilationResult(typingInfo, _, newCtx, validatedServiceRef, _) = nodeCompiler.compileEnricher(enricher, ctx, outputVar = Some(OutputVar.enricher(output)))
 
         CompilationResult.map3(
-          toCompilationResult[ServiceRef](validatedServiceRef, typingInfo, sr => List(sr)),
+          toCompilationResult(validatedServiceRef, typingInfo),
           CompilationResult(newCtx),
           compile(next, newCtx.getOrElse(ctx)))((ref, _, next) => compiledgraph.node.Enricher(id, ref, output, next))
 
@@ -220,7 +214,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
     next match {
       case splittednode.NextNode(n) => compile(n, ctx).map(cn => compiledgraph.node.NextNode(cn))
       case splittednode.PartRef(ref) =>
-        CompilationResult(Map(ref -> NodeTypingInfo(ctx, Map.empty, None)), Nil, Valid(compiledgraph.node.PartRef(ref)))
+        CompilationResult(Map(ref -> NodeTypingInfo(ctx, Map.empty, None)), Valid(compiledgraph.node.PartRef(ref)))
     }
   }
 

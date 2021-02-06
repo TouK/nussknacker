@@ -91,7 +91,7 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     val processCompilerData = compile(services, transformers, process, listeners)
     val interpreter = processCompilerData.interpreter
-    val parts = failOnErrors(processCompilerData.compile().result)
+    val parts = failOnErrors(processCompilerData.compile())
 
     def compileNode(part: ProcessPart) =
       failOnErrors(processCompilerData.subPartCompiler.compile(part.node, part.validationContext)(metaData).result)

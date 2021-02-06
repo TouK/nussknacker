@@ -6,19 +6,16 @@ import cats.instances.map._
 import cats.kernel.Semigroup
 import cats.{Applicative, Traverse}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.Lifecycle
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ProcessUncanonizationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonize.{MaybeArtificial, MaybeArtificialExtractor}
-import pl.touk.nussknacker.engine.compiledgraph.service.ServiceRef
 
 import scala.language.{higherKinds, reflectiveCalls}
 
 case class CompilationResult[+Result](typing: Map[String, NodeTypingInfo],
-                                      services: List[ServiceRef],
-                                      result: ValidatedNel[ProcessCompilationError, Result]) {
+                                     result: ValidatedNel[ProcessCompilationError, Result]) {
 
   import CompilationResult._
 
@@ -26,8 +23,8 @@ case class CompilationResult[+Result](typing: Map[String, NodeTypingInfo],
     result match {
       case Valid(a)       =>
         val newResult = f(a)
-        newResult.copy(typing = Semigroup.combine(typing, newResult.typing), services = services ++ newResult.services)
-      case i @ Invalid(_) => CompilationResult(typing, services, i)
+        newResult.copy(typing = Semigroup.combine(typing, newResult.typing))
+      case i @ Invalid(_) => CompilationResult(typing, i)
     }
 
   def map[T](action: Result => T) : CompilationResult[T] = copy(result = result.map(action))
@@ -50,12 +47,12 @@ case class CompilationResult[+Result](typing: Map[String, NodeTypingInfo],
 //in fact, I'm not quite sure it's really, formally Applicative - but for our purposes it should be ok...
 object CompilationResult extends Applicative[CompilationResult] {
 
-  def apply[Result](validatedProcess: ValidatedNel[ProcessCompilationError, Result]) : CompilationResult[Result] = CompilationResult(Map(), Nil, validatedProcess)
+  def apply[Result](validatedProcess: ValidatedNel[ProcessCompilationError, Result]) : CompilationResult[Result] = CompilationResult(Map(), validatedProcess)
 
-  override def pure[A](x: A): CompilationResult[A] = CompilationResult(Map(), Nil, Valid(x))
+  override def pure[A](x: A): CompilationResult[A] = CompilationResult(Map(), Valid(x))
 
   override def ap[A, B](ff: CompilationResult[A => B])(fa: CompilationResult[A]): CompilationResult[B] =
-    CompilationResult(Semigroup.combine(fa.typing, ff.typing), fa.services ++ ff.services, fa.result.ap(ff.result))
+    CompilationResult(Semigroup.combine(fa.typing, ff.typing), fa.result.ap(ff.result))
 
   implicit class CompilationResultTraverseOps[T[_]: Traverse, B](traverse: T[CompilationResult[B]]) {
     def sequence: CompilationResult[T[B]] = {

@@ -114,7 +114,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
 
     val result = runProcess(process, Request1("a", "b"))
 
-    result shouldBe Right(List("initialized!"))
+    result shouldBe Right(List("true"))
   }
 
   test("init call open method for eager service") {
@@ -155,7 +155,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
     interpreter.open(JobData(process.metaData, ProcessVersion.empty))
     val result = interpreter.invoke(Request1("a", "b")).futureValue
 
-    result shouldBe Right(List("initialized!"))
+    result shouldBe Right(List("true"))
 
     eventually {
       metricRegistry.getGauges().get(MetricRegistry.name("invocation", "success", "instantRate")
@@ -265,7 +265,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
     val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
     val ctx = new StandaloneContextPreparer(metricsProvider)
 
-    val maybeinterpreter = StandaloneProcessInterpreter(process, ctx, simpleModelData).result
+    val maybeinterpreter = StandaloneProcessInterpreter(process, ctx, simpleModelData)
 
     maybeinterpreter shouldBe 'valid
     val interpreter = maybeinterpreter.toOption.get

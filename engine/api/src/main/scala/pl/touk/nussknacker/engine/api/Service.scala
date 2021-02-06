@@ -24,16 +24,15 @@ abstract class Service extends Lifecycle
 
 /*
   This is marker interface, for services which have Lazy/dynamic parameters. Invocation is handled with EagerServiceInvoker
-  Lifecycle can be handled on both levels, open/close methods are called:
-   - for each created EagerService object that is used in a node (e.g. in each Flink operator)
-   - for each created ServiceInvoker object
-   A sample use case is as follows:
-     - Enrichment with data from SQL database, ConnectionPool is created on level of EagerService
-     - Each ServiceInvoker has different SQL query, ServiceInvoker stores PreparedStatement
+  Lifecycle is handled on EagerService level (like in standard Service).
+  A sample use case is as follows:
+    - Enrichment with data from SQL database, ConnectionPool is created on level of EagerService
+    - Each ServiceInvoker has different SQL query, ServiceInvoker stores PreparedStatement
+  Please see EagerLifecycleService to see how such scenario can be achieved.
  */
 abstract class EagerService extends Service
 
-trait ServiceInvoker extends Lifecycle {
+trait ServiceInvoker {
 
   def invokeService(params: Map[String, Any])(implicit ec: ExecutionContext,
                                                collector: InvocationCollectors.ServiceInvocationCollector,

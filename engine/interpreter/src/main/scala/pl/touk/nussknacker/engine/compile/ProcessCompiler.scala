@@ -92,7 +92,7 @@ protected trait ProcessCompilerBase {
     val nodeTypingInfo = Map(NodeTypingInfo.ExceptionHandlerNodeId -> NodeTypingInfo(contextWithOnlyGlobalVariables, typingInfo, None))
     CompilationResult.map3(
       CompilationResult(findDuplicates(splittedProcess.sources).toValidatedNel),
-      CompilationResult(nodeTypingInfo, Nil, compiledExceptionHandler),
+      CompilationResult(nodeTypingInfo, compiledExceptionHandler),
       compileSources(splittedProcess.sources)
     ) { (_, exceptionHandler, sources) =>
       CompiledProcessParts(splittedProcess.metaData, exceptionHandler, sources)
@@ -176,7 +176,7 @@ protected trait ProcessCompilerBase {
       validatedSource,
       compileParts(part.nextParts, typesForParts),
       CompilationResult(initialCtx),
-      CompilationResult(nodeTypingInfo, Nil, compiledSource)) { (_, nextParts, ctx, obj) =>
+      CompilationResult(nodeTypingInfo, compiledSource)) { (_, nextParts, ctx, obj) =>
       compiledgraph.part.SourcePart(obj, splittednode.SourceNode(sourceData, part.node.next), ctx, nextParts,
         part.ends.map(e => TypedEnd(e, typesForParts(e.nodeId))))
     }
@@ -185,7 +185,7 @@ protected trait ProcessCompilerBase {
   def compileSinkPart(node: EndingNode[Sink], ctx: ValidationContext)(implicit metaData: MetaData, nodeId: NodeId): CompilationResult[part.SinkPart] = {
     val NodeCompilationResult(typingInfo, parameters, _, compiledSink, _) = nodeCompiler.compileSink(node.data, ctx)
     val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo, parameters))
-    CompilationResult.map2(sub.validate(node, ctx), CompilationResult(nodeTypingInfo, Nil, compiledSink))((_, obj) =>
+    CompilationResult.map2(sub.validate(node, ctx), CompilationResult(nodeTypingInfo, compiledSink))((_, obj) =>
       compiledgraph.part.SinkPart(obj, node, ctx, ctx)
     )
   }
@@ -197,7 +197,7 @@ protected trait ProcessCompilerBase {
     val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo, parameters))
 
     CompilationResult.map2(
-      CompilationResult(nodeTypingInfo, Nil, compiledNode),
+      CompilationResult(nodeTypingInfo, compiledNode),
       CompilationResult(validatedNextCtx)
     ) { (nodeInvoker, nextCtx) =>
       compiledgraph.part.CustomNodePart(nodeInvoker, node, ctx, nextCtx, List.empty, List(TypedEnd(NormalEnd(node.id), ctx)))
@@ -214,7 +214,7 @@ protected trait ProcessCompilerBase {
     val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx.left.getOrElse(contextWithOnlyGlobalVariables), typingInfo, parameters))
 
     CompilationResult.map4(
-      CompilationResult(nodeTypingInfo, Nil, compiledNode),
+      CompilationResult(nodeTypingInfo, compiledNode),
       nextPartsValidation,
       compileParts(part.nextParts, typesForParts),
       CompilationResult(validatedNextCtx)

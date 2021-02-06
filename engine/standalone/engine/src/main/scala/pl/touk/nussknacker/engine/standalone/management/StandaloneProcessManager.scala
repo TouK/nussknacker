@@ -129,7 +129,7 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
     val standaloneInterpreter = StandaloneProcessInterpreter(process, testContext, modelData,
       definitionsPostProcessor = prepareMocksForTest(collectingListener),
       additionalListeners = List(collectingListener)
-    ).result match {
+    ) match {
       case Valid(interpreter) => interpreter
       case Invalid(errors) => throw new IllegalArgumentException("Error during interpreter preparation: " + errors.toList.mkString(", "))
     }

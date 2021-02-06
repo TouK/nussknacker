@@ -127,6 +127,16 @@ class EagerEnricherWithOpen extends EagerService with WithLifecycle {
 
   var list: List[(String, WithLifecycle)] = Nil
 
+  override def open(jobData: JobData): Unit = {
+    super.open(jobData)
+    list.foreach(_._2.open(jobData))
+  }
+
+  override def close(): Unit = {
+    super.close()
+    list.foreach(_._2.close())
+  }
+
   override def reset(): Unit = synchronized {
     super.reset()
     list = Nil

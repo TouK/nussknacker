@@ -152,7 +152,17 @@ object SampleNodes {
 
   object EagerLifecycleService extends EagerService with WithLifecycle {
 
-    var list: List[WithLifecycle] = List[WithLifecycle]()
+    var list: List[(String, WithLifecycle)] = Nil
+
+    override def open(jobData: JobData): Unit = {
+      super.open(jobData)
+      list.foreach(_._2.open(jobData))
+    }
+
+    override def close(): Unit = {
+      super.close()
+      list.foreach(_._2.close())
+    }
 
     override def reset(): Unit = synchronized {
       super.reset()
@@ -160,17 +170,20 @@ object SampleNodes {
     }
 
     @MethodToInvoke
-    def invoke(): ServiceInvoker = synchronized {
+    def invoke(@ParamName("name") name: String): ServiceInvoker = synchronized {
       val newI = new ServiceInvoker with WithLifecycle {
         override def invokeService(params: Map[String, Any])
                                   (implicit ec: ExecutionContext,
                                    collector: ServiceInvocationCollector, contextId: ContextId): Future[Any] = {
+          if (!opened) {
+            throw new IllegalArgumentException
+          }
           Future.successful(())
         }
 
         override def returnType: TypingResult = Typed[Void]
       }
-      list = newI::list
+      list = (name -> newI)::list
       newI
     }
 
