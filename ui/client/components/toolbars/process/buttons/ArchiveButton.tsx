@@ -41,7 +41,7 @@ function ArchiveButton(props: StateProps) {
 const mapState = (state: RootState) => {
   return {
     processId: getProcessId(state),
-    canArchive: !isSubprocess(state) && isArchivePossible(state) || isSubprocess(state),
+    canArchive: isSubprocess(state) || isArchivePossible(state),
   }
 }
 
