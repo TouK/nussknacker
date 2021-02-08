@@ -23,7 +23,7 @@ abstract class Service extends Lifecycle
 
 
 /*
-  This is marker interface, for services which have Lazy/dynamic parameters. Invocation is handled with EagerServiceInvoker
+  This is marker interface, for services which have Lazy/dynamic parameters. Invocation is handled with ServiceInvoker
   Lifecycle is handled on EagerService level (like in standard Service).
   A sample use case is as follows:
     - Enrichment with data from SQL database, ConnectionPool is created on level of EagerService

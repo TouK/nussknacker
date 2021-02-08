@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Date, Optional, UUID}
 
 import cats.data.Validated.Valid
+import com.github.ghik.silencer.silent
 import io.circe.generic.JsonCodec
 import javax.annotation.Nullable
 import org.apache.flink.api.common.ExecutionConfig
@@ -42,6 +43,7 @@ import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.test.WithDataList
 
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 import scala.collection.immutable
 import scala.concurrent.{ExecutionContext, Future}
@@ -304,6 +306,9 @@ object SampleNodes {
 
   }
 
+  // Remove @silent after upgrade to silencer 1.7
+  @silent("deprecated")
+  @nowarn("deprecated")
   object ReturningDependentTypeService extends Service with ServiceReturningType {
 
     @MethodToInvoke

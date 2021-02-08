@@ -26,6 +26,7 @@ trait ReturningType {
   * This trait is more complex, as Service is not factory but is invoked directly
   */
 // TODO: Replace with EagerService with LazyParameter's and ContextTransformation API
+@deprecated("Use EagerService instead", since = "0.4.0")
 trait ServiceReturningType {
 
   /**

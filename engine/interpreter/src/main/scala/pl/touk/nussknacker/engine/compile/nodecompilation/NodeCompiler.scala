@@ -250,11 +250,13 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
 
     def prepareCompiledLazyParameters(paramsDefs: List[Parameter]) = paramsDefs.collect {
       case paramDef if paramDef.isLazyParameter =>
-        //TODO: do we need better error handling?
-        val param = serviceRef.parameters.find(_.name == paramDef.name).get
-        val compiled = objectParametersExpressionCompiler.compileParam(param, validationContext, paramDef, eager = false)
-          .toOption.get.typedValue.asInstanceOf[TypedExpression]
-        compiledgraph.evaluatedparam.Parameter(compiled, paramDef)
+        val compiledParam = (for {
+          param <- serviceRef.parameters.find(_.name == paramDef.name)
+          compiled <- objectParametersExpressionCompiler
+            .compileParam(param, validationContext, paramDef, eager = false).toOption
+            .flatMap(_.typedValue.cast[TypedExpression])
+        } yield compiled).getOrElse(throw new IllegalArgumentException(s"$paramDef is not defined as TypedExpression"))
+        compiledgraph.evaluatedparam.Parameter(compiledParam, paramDef)
     }
 
     def makeInvoker(service: ServiceInvoker, paramsDefs: List[Parameter])
