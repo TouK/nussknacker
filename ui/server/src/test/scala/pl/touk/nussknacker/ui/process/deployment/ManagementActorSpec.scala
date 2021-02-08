@@ -334,6 +334,6 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
   private def prepareArchivedProcess(processName: ProcessName): Future[process.ProcessId] =
     for {
       id <- prepareProcess(processName)
-      _ <- actionRepository.markProcessAsArchived(id, 1, Some("Archived"))
+      _ <- writeProcessRepository.archive(id, isArchived = true)
     }  yield id
 }

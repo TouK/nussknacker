@@ -292,7 +292,6 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     (for {
       id <- prepareProcess(processName, testCategoryName, isSubprocess)
       _ <- writeProcessRepository.archive(id, isArchived = true)
-      _ <- actionRepository.markProcessAsArchived(id, 1, Some("Archived process"))
     } yield id).futureValue
   }
 

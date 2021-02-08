@@ -49,7 +49,9 @@ class ProcessService(managerActor: ActorRef,
       case Some(process) if process.isSubprocess =>
         archiveSubprocess(process)
       case Some(process) =>
-        doOnProcessStateVerification(process, ProcessActionType.Archive)(doArchive)
+        doOnProcessStateVerification(process, ProcessActionType.Archive)(process => {
+          writeRepository.archive(processId = process.idWithName.id, isArchived = true)
+        })
       case None =>
         Future(Left(ProcessNotFoundError(processIdWithName.id.value.toString)))
     }
@@ -59,7 +61,7 @@ class ProcessService(managerActor: ActorRef,
     * FIXME: Add checking subprocess is used by any of already working process. ProcessResourcesSpec contains ignored test for it.
     */
   private def archiveSubprocess(process: BaseProcessDetails[_])(implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] =
-    doArchive(process)
+    writeRepository.archive(processId = process.idWithName.id, isArchived = true)
 
   private def doOnProcessStateVerification(process: BaseProcessDetails[_], actionToCheck: ProcessActionType)
                                           (action: BaseProcessDetails[_] => Future[EmptyResponse])
@@ -72,32 +74,19 @@ class ProcessService(managerActor: ActorRef,
       }
     })
 
-  //FIXME: Right now we don't do it in transaction..
-  private def doArchive(process: BaseProcessDetails[_])(implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] =
-    for {
-      archive <- writeRepository.archive(processId = process.idWithName.id, isArchived = true)
-      _ <- processActionRepository.markProcessAsArchived(process.idWithName.id, process.processVersionId, None)
-    } yield archive
 
   def unArchiveProcess(processIdWithName: ProcessIdWithName)(implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] = {
     processRepository.fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id).flatMap {
       case Some(process) if !process.isArchived =>
         Future(Left(ProcessIllegalAction("Can't unarchive not archived process.")))
       case Some(process) =>
-        doUnArchive(process)
+        writeRepository.archive(processId = process.idWithName.id, isArchived = false)
       case None =>
         Future(Left(ProcessNotFoundError(processIdWithName.id.value.toString)))
     }
   }
 
-  //FIXME: Right now we don't do it in transaction..
-  private def doUnArchive(process: BaseProcessDetails[_])(implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] =
-    for {
-      archive <- writeRepository.archive(processId = process.idWithName.id, isArchived = false)
-      _ <- processActionRepository.markProcessAsUnArchived(process.idWithName.id, process.processVersionId, None)
-    } yield archive
-
-   def deployProcess(processIdWithName: ProcessIdWithName, savepointPath: Option[String], comment: Option[String])(implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] =
+  def deployProcess(processIdWithName: ProcessIdWithName, savepointPath: Option[String], comment: Option[String])(implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] =
      doAction(ProcessActionType.Deploy, processIdWithName, savepointPath, comment){ (processIdWithName: ProcessIdWithName, savepointPath: Option[String], comment: Option[String]) =>
        (managerActor ? Deploy(processIdWithName, user, savepointPath, comment))
          .map(_ => Right(Unit))

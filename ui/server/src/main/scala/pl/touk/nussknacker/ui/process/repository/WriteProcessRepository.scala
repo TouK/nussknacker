@@ -1,17 +1,16 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import java.time.LocalDateTime
-
 import cats.data._
 import cats.syntax.either._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData}
+import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, ProcessActionType, ProcessDeploymentData}
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError._
 import pl.touk.nussknacker.ui.db.DbConfig
-import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessEntityData, ProcessVersionEntityData}
+import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessActionEntityData, ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.ProcessType
@@ -25,6 +24,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DateUtils
 import slick.dbio.DBIOAction
 
+import java.sql.Timestamp
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.higherKinds
@@ -49,7 +49,7 @@ trait WriteProcessRepository {
 
   def updateCategory(processId: ProcessId, category: String)(implicit loggedUser: LoggedUser): Future[XError[Unit]]
 
-  def archive(processId: ProcessId, isArchived: Boolean): Future[XError[Unit]]
+  def archive(processId: ProcessId, isArchived: Boolean)(implicit loggedUser: LoggedUser): Future[XError[Unit]]
 
   def deleteProcess(processId: ProcessId): Future[XError[Unit]]
 
@@ -139,13 +139,32 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
     run(action)
   }
 
-  def archive(processId: ProcessId, isArchived: Boolean): F[XError[Unit]] = {
-    val isArchivedQuery = for {c <- processesTable if c.id === processId.value} yield c.isArchived
-    val action: DB[XError[Unit]] = isArchivedQuery.update(isArchived).map {
+  def archive(processId: ProcessId, isArchived: Boolean)(implicit user: LoggedUser): F[XError[Unit]] = {
+    val updateArchiveQuery = processesTable.filter(_.id === processId.value).map(_.isArchived).update(isArchived).map {
       case 0 => Left(ProcessNotFoundError(processId.value.toString))
       case 1 => Right(())
     }
-    run(action)
+
+    val createActionQuery = for {
+      latestProcessVersion <- fetchProcessLatestVersionsQuery(processId)(ProcessShapeFetchStrategy.FetchDisplayable).result.head
+      processActionData = ProcessActionEntityData(
+        processId = processId.value,
+        processVersionId = latestProcessVersion.id,
+        user = user.username,
+        performedAt = Timestamp.valueOf(LocalDateTime.now()),
+        action = if (isArchived) ProcessActionType.Archive else ProcessActionType.UnArchive,
+        commentId = None,
+        buildInfo = None
+      )
+      _ <- processActionsTable += processActionData
+    } yield Right(processActionData)
+
+    val combinedAction = DBIO.seq[Effect.All](
+      updateArchiveQuery,
+      createActionQuery
+    ).map(_ => ().asRight).transactionally
+
+    run(combinedAction)
   }
 
   //accessible only from initializing scripts so far
