@@ -83,7 +83,7 @@ object TestFactory extends TestPermissions{
     new DbSubprocessRepository(db, implicitly[ExecutionContext])
   }
 
-  def newDeploymentProcessRepository(db: DbConfig) = new ProcessActionRepository(db,
+  def newActionProcessRepository(db: DbConfig) = new ProcessActionRepository(db,
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> buildInfo))
 
   def newProcessActivityRepository(db: DbConfig) = new ProcessActivityRepository(db)
@@ -117,9 +117,13 @@ object TestFactory extends TestPermissions{
     val stopSavepointPath = "savepoints/246-stop-savepoint"
   }
 
-  class MockProcessManager extends FlinkProcessManager(ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig).toModelData, shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED"){
+  class MockProcessManager(val defaultProcessStateStatus: StateStatus) extends FlinkProcessManager(ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig).toModelData, shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED"){
 
     import MockProcessManager._
+
+    def this() {
+      this(SimpleStateStatus.Running)
+    }
 
     private def prepareProcessState(status: StateStatus): Option[ProcessState ]=
       prepareProcessState(status, Some(ProcessVersion.empty))
@@ -135,7 +139,7 @@ object TestFactory extends TestPermissions{
 
     private var deployResult: Future[Unit] = Future.successful(())
 
-    private val managerProcessState = new AtomicReference[Option[ProcessState]](prepareProcessState(SimpleStateStatus.Running))
+    private val managerProcessState = new AtomicReference[Option[ProcessState]](prepareProcessState(defaultProcessStateStatus))
 
     def withWaitForDeployFinish[T](action: => T): T = {
       val promise = Promise[Unit]
@@ -178,7 +182,7 @@ object TestFactory extends TestPermissions{
         managerProcessState.set(status)
         action
       } finally {
-        managerProcessState.set(prepareProcessState(SimpleStateStatus.Running))
+        managerProcessState.set(prepareProcessState(defaultProcessStateStatus))
       }
     }
 

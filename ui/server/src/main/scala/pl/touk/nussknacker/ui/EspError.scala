@@ -18,3 +18,5 @@ trait FatalError extends EspError
 trait NotFoundError extends EspError
 
 trait BadRequestError extends EspError
+
+trait IllegalOperationError extends EspError

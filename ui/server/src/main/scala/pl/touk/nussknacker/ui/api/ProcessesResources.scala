@@ -45,7 +45,7 @@ import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvi
 
 class ProcessesResources(val processRepository: FetchingProcessRepository[Future],
                          writeRepository: WriteProcessRepository,
-                         jobStatusService: JobStatusService,
+                         processService: ProcessService,
                          processValidation: ProcessValidation,
                          processResolving: UIProcessResolving,
                          typesForCategories: ProcessTypesForCategories,
@@ -76,7 +76,8 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
           (post & processId(processName)) { processId =>
             canWrite(processId) {
               complete {
-                writeArchive(processId, isArchived = false)
+                processService.unArchiveProcess(processId)
+                  .map(toResponse(StatusCodes.OK))
                   .withSideEffect(_ => processChangeListener.handle(OnUnarchived(processId.id)))
               }
             }
@@ -85,7 +86,8 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
           (post & processId(processName)) { processId =>
             canWrite(processId) {
               complete {
-                writeArchive(processId, isArchived = true)
+                processService.archiveProcess(processId)
+                  .map(toResponse(StatusCodes.OK))
                   .withSideEffect(_ => processChangeListener.handle(OnArchived(processId.id)))
               }
             }
@@ -261,7 +263,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
         } ~ path("processes" / Segment / "status") { processName =>
           (get & processId(processName)) { processId =>
             complete {
-              jobStatusService.retrieveJobStatus(processId).map(ToResponseMarshallable(_))
+              processService.getProcessState(processId).map(ToResponseMarshallable(_))
             }
           }
         } ~ path("processes" / "category" / Segment / Segment) { (processName, category) =>
@@ -290,6 +292,8 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
       }
   }
 
+
+
   private def validateJsonForImport(processId: ProcessIdWithName, json: String): Validated[EspError, CanonicalProcess] = {
     ProcessMarshaller.fromJson(json) match {
       case Valid(process) if process.metaData.id != processId.name.value =>
@@ -308,10 +312,6 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
       toResponseXor(validatedProcess)
     }
   }
-
-  private def writeArchive(processId: ProcessIdWithName, isArchived: Boolean): Future[HttpResponse] =
-    writeRepository.archive(processId = processId.id, isArchived = isArchived)
-      .map(toResponse(StatusCodes.OK))
 
   private def isArchived(processId: ProcessId)(implicit loggedUser: LoggedUser): Future[Boolean] =
     processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId)
@@ -342,7 +342,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
     import cats.instances.future._
     import cats.instances.list._
     import cats.syntax.traverse._
-    processes.map(process => jobStatusService.retrieveJobStatus(process.idWithName).map(status => process.name -> status))
+    processes.map(process => processService.getProcessState(process.idWithName).map(status => process.name -> status))
       .sequence[Future, (String, ProcessState)].map(_.toMap)
   }
 

@@ -32,11 +32,11 @@ import scala.util.{Failure, Success}
 object ManagementActor {
   def props(managers: ProcessingTypeDataProvider[ProcessManager],
             processRepository: FetchingProcessRepository[Future],
-            deployedProcessRepository: ProcessActionRepository,
+            processActionRepository: ProcessActionRepository,
             subprocessResolver: SubprocessResolver,
             processChangeListener: ProcessChangeListener)
            (implicit context: ActorRefFactory): Props = {
-    Props(classOf[ManagementActor], managers, processRepository, deployedProcessRepository, subprocessResolver, processChangeListener)
+    Props(classOf[ManagementActor], managers, processRepository, processActionRepository, subprocessResolver, processChangeListener)
   }
 }
 
@@ -159,6 +159,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
       case (Some(state), _) if state.isDeployed => handleFollowingDeployState(state, lastAction)
       case (_, Some(action)) if action.isCanceled => handleCanceledState(processState)
       case (Some(state), _) => handleState(state, lastAction)
+      case (None, Some(action)) if action.isArchived => ProcessStatus.simple(SimpleStateStatus.NotFound)
       case (None, None) => ProcessStatus.simple(SimpleStateStatus.NotDeployed)
     }
 
@@ -189,7 +190,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
   //TODO: In future we should move this functionality to ProcessManager.
   private def handleFollowingDeployState(state: ProcessState, lastAction: Option[ProcessAction]): ProcessState =
     lastAction match {
-      case Some(action) if action.isCanceled =>
+      case Some(action) if !action.isDeployed =>
         ProcessStatus.simpleWarningShouldNotBeRunning(Some(state), true)
       case Some(_) =>
         state

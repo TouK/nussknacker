@@ -19,7 +19,7 @@ abstract class FetchingProcessRepository[F[_]: Monad] extends ProcessRepository[
   def fetchLatestProcessDetailsForProcessId[PS: ProcessShapeFetchStrategy](id: ProcessId, businessView: Boolean = false)
                                                                           (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[BaseProcessDetails[PS]]]
 
-  def fetchLatestProcessDetailsForProcessIdEither[PS: ProcessShapeFetchStrategy](id: ProcessId, businessView: Boolean = false)
+  def fetchLatestProcessDetailsForProcessIdEither[PS: ProcessShapeFetchStrategy](id: ProcessId)
                                                                                 (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[XError[BaseProcessDetails[PS]]] = {
     fetchLatestProcessDetailsForProcessId(id).map[XError[BaseProcessDetails[PS]]] {
       case None => Left(ProcessNotFoundError(id.value.toString))

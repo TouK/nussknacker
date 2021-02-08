@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.api.deployment
 import java.net.URI
-
 import io.circe._
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 
 //@TODO: In future clean up it.
 trait ProcessStateDefinitionManager {
@@ -66,6 +66,8 @@ object ProcessActionType extends Enumeration {
   type ProcessActionType = Value
   val Deploy: Value = Value("DEPLOY")
   val Cancel: Value = Value("CANCEL")
+  val Archive: Value = Value("ARCHIVE")
+  val UnArchive: Value = Value("UNARCHIVE")
   val Pause: Value = Value("PAUSE") //TODO: To implement in future..
 }
 

@@ -12,15 +12,18 @@ import io.circe.Json
 import io.circe.syntax._
 import org.scalatest._
 import org.scalatest.matchers.BeMatcher
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{CustomActionError, CustomActionResult, CustomProcess, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
+import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.restmodel.processdetails._
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.deployment.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, SampleProcess, TestFactory, TestProcessingTypes}
+import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
@@ -30,6 +33,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
+  private val processName: ProcessName = ProcessName(SampleProcess.process.id)
 
   private val fixedTime = LocalDateTime.now()
 
@@ -39,7 +43,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
       ).matcher[Option[ProcessAction]]
     ).compose[Option[ProcessAction]](_.map(_.copy(performedAt = fixedTime)))
 
-  test("process deployment should be visible in process history") {
+   test("process deployment should be visible in process history") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     deployProcess(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK
@@ -52,6 +56,58 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
           }
         }
       }
+    }
+  }
+
+  test("process during deploy can't be deploy again") {
+    createDeployedProcess(processName, testCategoryName, isSubprocess = false)
+
+    processManager.withProcessStateStatus(SimpleStateStatus.DuringDeploy) {
+      deployProcess(processName.value) ~> check {
+        status shouldBe StatusCodes.Conflict
+      }
+    }
+  }
+
+  test("canceled process can't be canceled again") {
+    createDeployedCanceledProcess(processName, testCategoryName, isSubprocess = false)
+
+    processManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
+      cancelProcess(processName.value) ~> check {
+        status shouldBe StatusCodes.Conflict
+      }
+    }
+  }
+
+  test("can't deploy archived process") {
+    val id = createArchivedProcess(processName, isSubprocess = false)
+    val processIdWithName = ProcessIdWithName(id, processName)
+
+    processManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
+      deployProcess(processName.value) ~> check {
+        status shouldBe StatusCodes.Conflict
+        responseAs[String] shouldBe ProcessIllegalAction.archived(ProcessActionType.Deploy, processIdWithName).message
+      }
+    }
+  }
+
+  test("can't deploy subprocess") {
+    val id = createProcess(processName, testCategoryName, isSubprocess = true)
+    val processIdWithName = ProcessIdWithName(id, processName)
+
+    deployProcess(processName.value) ~> check {
+      status shouldBe StatusCodes.Conflict
+      responseAs[String] shouldBe ProcessIllegalAction.subprocess(ProcessActionType.Deploy, processIdWithName).message
+    }
+  }
+
+  test("can't cancel subprocess") {
+    val id = createProcess(processName, testCategoryName, isSubprocess = true)
+    val processIdWithName = ProcessIdWithName(id, processName)
+
+    deployProcess(processName.value) ~> check {
+      status shouldBe StatusCodes.Conflict
+      responseAs[String] shouldBe ProcessIllegalAction.subprocess(ProcessActionType.Deploy, processIdWithName).message
     }
   }
 
@@ -94,7 +150,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     val processId = "Process1"
     whenReady(writeProcessRepository.saveNewProcess(ProcessName(processId), testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)) { res =>
       deployProcess(processId) ~> check { status shouldBe StatusCodes.OK }
-      getProcess(processId) ~> check {
+      getProcess(ProcessName(processId)) ~> check {
         val processDetails = responseAs[ProcessDetails]
         processDetails.lastAction shouldBe deployedWithVersions(1)
         processDetails.isDeployed shouldBe true
