@@ -24,7 +24,7 @@ import java.time
   * Each action includes verification based on actual process state and checking process is subprocess / archived.
   */
 class ProcessService(managerActor: ActorRef,
-                     duration: time.Duration,
+                     requestTimeLimit: time.Duration,
                      processRepository: FetchingProcessRepository[Future],
                      processActionRepository: ProcessActionRepository,
                      writeRepository: WriteProcessRepository) extends LazyLogging {
@@ -34,15 +34,13 @@ class ProcessService(managerActor: ActorRef,
 
   import scala.concurrent.duration._
 
-  private implicit val timeout: Timeout = Timeout(duration.toMillis millis)
+  private implicit val timeout: Timeout = Timeout(requestTimeLimit.toMillis millis)
 
   /**
     * Handling error at retrieving status from manager is created at ManagementActor
     */
-  def getProcessState(processIdWithName: ProcessIdWithName)(implicit ec: ExecutionContext, user: LoggedUser): Future[ProcessState] = {
-    implicit val timeout: Timeout = Timeout(1 minute)
+  def getProcessState(processIdWithName: ProcessIdWithName)(implicit ec: ExecutionContext, user: LoggedUser): Future[ProcessState] =
     (managerActor ? CheckStatus(processIdWithName, user)).mapTo[ProcessState]
-  }
 
   def archiveProcess(processIdWithName: ProcessIdWithName)(implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] = {
     processRepository.fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id).flatMap {
