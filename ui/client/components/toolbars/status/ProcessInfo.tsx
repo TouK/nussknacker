@@ -18,8 +18,8 @@ import SaveButton from "../process/buttons/SaveButton"
 import {ToolbarButtons} from "../../toolbarComponents/ToolbarButtons"
 import {CollapsibleToolbar} from "../../toolbarComponents/CollapsibleToolbar"
 import i18next from "i18next"
-import CustomActionButton from "./buttons/CustomActionButton";
-import {getProcessDefinitionData} from "../../../reducers/selectors/settings";
+import CustomActionButton from "./buttons/CustomActionButton"
+import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
 
 type State = UnknownRecord
 
@@ -28,7 +28,6 @@ type OwnProps = {
   iconWidth: number,
 }
 
-//TODO: In future information about archived process should be return from BE as state.
 class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
   static defaultProps = {
     isStateLoaded: false,
@@ -104,9 +103,14 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
     const transitionKey = this.getTransitionKey(process, processState)
     const customActions = processDefinitionData.customActions || []
     // TODO: better styling of process info toolbar in case of many custom actions
-    const customButtons = customActions.map((a, ix) => <CustomActionButton
-        action={a} processId={process.id} processStatus={processState?.status} key={ix + this.buttons.length}
-    />)
+    const customButtons = customActions.map((a, ix) => (
+      <CustomActionButton
+        action={a}
+        processId={process.id}
+        processStatus={processState?.status}
+        key={ix + this.buttons.length}
+      />
+    ))
 
     return (
       <CollapsibleToolbar title={i18next.t("panels.status.title", "Status")} id="PROCESS-INFO">

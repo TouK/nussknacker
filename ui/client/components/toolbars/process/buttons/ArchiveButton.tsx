@@ -9,13 +9,13 @@ import {events} from "../../../../analytics/TrackingEvents"
 import {toggleConfirmDialog} from "../../../../actions/nk/ui/toggleConfirmDialog"
 import {bindActionCreators} from "redux"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
-import {isRunning, getProcessId} from "../../../../reducers/selectors/graph"
+import {isArchivePossible, isSubprocess, getProcessId} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/archive.svg"
 
 function ArchiveButton(props: StateProps) {
   const {
-    processId, isRunning,
+    processId, canArchive,
     toggleConfirmDialog,
   } = props
   const {t} = useTranslation()
@@ -24,8 +24,8 @@ function ArchiveButton(props: StateProps) {
     <ToolbarButton
       name={t("panels.actions.process-archive.button", "archive")}
       icon={<Icon/>}
-      disabled={isRunning}
-      onClick={() => !isRunning && toggleConfirmDialog(
+      disabled={!canArchive}
+      onClick={() => canArchive && toggleConfirmDialog(
         true,
         DialogMessages.archiveProcess(processId),
         () => HttpService.archiveProcess(processId).then(() => history.push(ArchiveTabData.path)),
@@ -41,7 +41,7 @@ function ArchiveButton(props: StateProps) {
 const mapState = (state: RootState) => {
   return {
     processId: getProcessId(state),
-    isRunning: isRunning(state),
+    canArchive: isSubprocess(state) || isArchivePossible(state),
   }
 }
 

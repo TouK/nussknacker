@@ -4,6 +4,7 @@ import {connect} from "react-redux"
 import {isEmpty} from "lodash"
 import {CollapsibleToolbar} from "../../toolbarComponents/CollapsibleToolbar"
 import ArchiveButton from "./buttons/ArchiveButton"
+import UnArchiveButton from "./buttons/UnArchiveButton"
 import PDFButton from "./buttons/PDFButton"
 import JSONButton from "./buttons/JSONButton"
 import ImportButton from "./buttons/ImportButton"
@@ -13,13 +14,13 @@ import {getFeatureSettings} from "../../../reducers/selectors/settings"
 import {useTranslation} from "react-i18next"
 import {getCapabilities} from "../../../reducers/selectors/other"
 import Properties from "../status/buttons/PropertiesButton"
-import {isSubprocess} from "../../../reducers/selectors/graph"
+import {isSubprocess, isArchived} from "../../../reducers/selectors/graph"
 import {ToolbarButtons} from "../../toolbarComponents/ToolbarButtons"
 
 type Props = StateProps
 
 function ProcessPanel(props: Props) {
-  const {capabilities, featuresSettings, isSubprocess} = props
+  const {capabilities, featuresSettings, isSubprocess, isArchived} = props
   const {t} = useTranslation()
 
   return (
@@ -31,7 +32,8 @@ function ProcessPanel(props: Props) {
         {capabilities.write ? <ImportButton/> : null}
         <JSONButton/>
         <PDFButton/>
-        {capabilities.write ? <ArchiveButton/> : null}
+        {capabilities.change && !isArchived ? <ArchiveButton/> : null}
+        {capabilities.change && isArchived ? <UnArchiveButton/> : null}
       </ToolbarButtons>
     </CollapsibleToolbar>
   )
@@ -41,6 +43,7 @@ const mapState = (state: RootState) => ({
   featuresSettings: getFeatureSettings(state),
   capabilities: getCapabilities(state),
   isSubprocess: isSubprocess(state),
+  isArchived: isArchived(state),
 })
 
 type StateProps = ReturnType<typeof mapState>
