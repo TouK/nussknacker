@@ -53,7 +53,9 @@ class ProcessService[F[_]](managerActor: ActorRef,
       case Some(process) if process.isSubprocess =>
         archiveSubprocess(process)
       case Some(process) =>
-        doOnProcessStateVerification(process, ProcessActionType.Archive)(doArchive)
+        doOnProcessStateVerification(process, ProcessActionType.Archive)(process => {
+          writeRepository.archive(processId = process.idWithName.id, isArchived = true)
+        })
       case None =>
         Future(Left(ProcessNotFoundError(processIdWithName.id.value.toString)))
     }
@@ -67,7 +69,7 @@ class ProcessService[F[_]](managerActor: ActorRef,
   }
 
   private def archiveSubprocess(process: BaseProcessDetails[_])(implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] =
-    doArchive(process)
+    writeRepository.archive(processId = process.idWithName.id, isArchived = true)
 
   private def doOnProcessStateVerification(process: BaseProcessDetails[_], actionToCheck: ProcessActionType)
                                           (action: BaseProcessDetails[_] => Future[EmptyResponse])
