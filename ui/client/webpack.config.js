@@ -92,6 +92,8 @@ module.exports = {
       index: "/static/main.html",
     },
     hot: true,
+    host: "0.0.0.0",
+    disableHostCheck: true,
     port: 3000,
     proxy: {
       "/api": {

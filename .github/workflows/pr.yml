@@ -179,6 +179,16 @@ jobs:
           npm ci
           npm test
           npm build
+      - name: Store test results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-results
+          path: |
+            ui/client/cypress/**/__image_snapshots__/
+            ui/client/cypress/screenshots/
+            ui/client/cypress/videos/
+          if-no-files-found: ignore
   dockerTest:
     name: DockerTest
     runs-on: ubuntu-latest

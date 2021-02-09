@@ -11,6 +11,7 @@ declare global {
       deleteAllTestProcesses: typeof deleteAllTestProcesses,
       createTestProcessName: typeof createTestProcessName,
       importTestProcess: typeof importTestProcess,
+      visitNewProcess: typeof visitNewProcess,
       postFormData: typeof postFormData,
     }
   }
@@ -20,17 +21,25 @@ function createTestProcessName(name?: string) {
   return cy.wrap(`${Cypress.env("processNamePrefix")}-${Date.now()}-${name}-test-process`)
 }
 
-function createTestProcess(processName?: string) {
-  return cy.createTestProcessName(processName).then(name => {
-    const url = `/api/processes/${name}/Category1`
-    return cy.request({method: "POST", url}).its("status").should("equal", 201).then(() => {
-      return cy.wrap(name)
-    })
+function createTestProcess(name?: string, fixture?: string) {
+  return cy.createTestProcessName(name).then(processName => {
+    const url = `/api/processes/${processName}/Category1`
+    cy.request({method: "POST", url}).its("status").should("equal", 201)
+    return fixture ? cy.importTestProcess(processName, fixture) : cy.wrap(processName)
   })
 }
 
-function deleteTestProcess(name: string) {
-  const url = `/api/processes/${name}`
+function visitNewProcess(name?: string, fixture?: string) {
+  cy.intercept("GET", "/api/processes/*").as("fetch")
+  return cy.createTestProcess(name, fixture).then(processName => {
+    cy.visit(`/visualization/${processName}?businessView=false`)
+    cy.wait("@fetch").its("response.statusCode").should("eq", 200)
+    return cy.wrap(processName)
+  })
+}
+
+function deleteTestProcess(processName: string) {
+  const url = `/api/processes/${processName}`
   return cy.request({method: "DELETE", url, failOnStatusCode: false})
     .its("status").should("be.oneOf", [200, 404])
 }
@@ -49,14 +58,19 @@ function postFormData(url: string, auth: {username: string, password: string}, b
   }))
 }
 
-function importTestProcess(name: string) {
-  return cy.fixture("testProcess").then(json => {
+function importTestProcess(name: string, fixture = "testProcess") {
+  return cy.fixture(fixture).then(json => {
     const formData = new FormData()
     const blob = jsonToBlob({...json, metaData: {...json.metaData, id: name}})
     formData.set("process", blob, "data.json")
-    return cy.postFormData(`/api/processes/import/${name}`, Cypress.env("testUser"), formData)
+    const auth = {
+      username: Cypress.env("testUserUsername"),
+      password: Cypress.env("testUserPassword"),
+    }
+    return cy.postFormData(`/api/processes/import/${name}`, auth, formData)
   }).then((process) => {
-    return cy.request("PUT", `/api/processes/${name}`, {comment: "import test data", process})
+    cy.request("PUT", `/api/processes/${name}`, {comment: "import test data", process})
+    return cy.wrap(name)
   })
 }
 
@@ -80,4 +94,5 @@ Cypress.Commands.add("getTestProcesses", getTestProcesses)
 Cypress.Commands.add("deleteAllTestProcesses", deleteAllTestProcesses)
 Cypress.Commands.add("createTestProcessName", createTestProcessName)
 Cypress.Commands.add("importTestProcess", importTestProcess)
+Cypress.Commands.add("visitNewProcess", visitNewProcess)
 Cypress.Commands.add("postFormData", postFormData)

@@ -8,9 +8,13 @@
 node_modules/
 npm-debug.log
 
-coverage/
 dist/
 translations/
+
+coverage/
+*-coverage/
+.nyc_output/
+reports/
 
 cypress.env.json
 cypress/videos

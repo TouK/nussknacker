@@ -8,7 +8,7 @@
     "cypress-plugin-snapshots": {
       "imageConfig": {
         "resizeDevicePixelRatio": false,
-        "threshold": 0.001
+        "threshold": 0.0015
       },
       "screenshotConfig": {
         "scale": false
