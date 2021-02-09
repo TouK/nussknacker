@@ -1,6 +1,8 @@
+/* eslint-disable i18next/no-literal-string */
 import moment, {Moment, MomentInput} from "moment"
 import React, {useCallback, useState} from "react"
 import DateTimePicker from "react-datetime"
+import {TFunction, useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
 import {fetchAndDisplayProcessCounts} from "../../actions/nk"
 import {getProcessId} from "../../reducers/selectors/graph"
@@ -22,33 +24,35 @@ interface Range {
   to: () => Moment,
 }
 
-const predefinedRanges: Range[] = [
-  {
-    name: "Last hour",
-    from: () => moment().subtract(1, "hours"),
-    to: () => moment(),
-  },
-  {
-    name: "Today",
-    from: () => moment().startOf("day"),
-    to: () => moment(),
-  },
-  {
-    name: "Yesterday",
-    from: () => moment().subtract(1, "days").startOf("day"),
-    to: () => moment().startOf("day"),
-  },
-  {
-    name: "Day before yesterday",
-    from: () => moment().subtract(2, "days").startOf("day"),
-    to: () => moment().subtract(1, "days").startOf("day"),
-  },
-  {
-    name: "This day last week",
-    from: () => moment().subtract(8, "days").startOf("day"),
-    to: () => moment().subtract(7, "days").startOf("day"),
-  },
-]
+function predefinedRanges(t: TFunction<string>): Range[] {
+  return [
+    {
+      name: t("calculateCounts.range.lastHour", "Last hour"),
+      from: () => moment().subtract(1, "hours"),
+      to: () => moment(),
+    },
+    {
+      name: t("calculateCounts.range.today", "Today"),
+      from: () => moment().startOf("day"),
+      to: () => moment(),
+    },
+    {
+      name: t("calculateCounts.range.yesterday", "Yesterday"),
+      from: () => moment().subtract(1, "days").startOf("day"),
+      to: () => moment().startOf("day"),
+    },
+    {
+      name: t("calculateCounts.range.dayBeforeYesterday", "Day before yesterday"),
+      from: () => moment().subtract(2, "days").startOf("day"),
+      to: () => moment().subtract(1, "days").startOf("day"),
+    },
+    {
+      name: t("calculateCounts.range.thisDayLastWeek", "This day last week"),
+      from: () => moment().subtract(8, "days").startOf("day"),
+      to: () => moment().subtract(7, "days").startOf("day"),
+    },
+  ]
+}
 
 type PickerProps = {label: string, onChange: (date: MomentInput) => void, value: Date}
 const Picker = ({label, onChange, value}: PickerProps): JSX.Element => (
@@ -81,14 +85,17 @@ const RangeButton = ({range, onChange}: RangeButtonProps): JSX.Element => {
 }
 
 type RangesProps = {label: string, onChange: (value: [Moment, Moment]) => void}
-const Ranges = ({label, onChange}: RangesProps): JSX.Element => (
-  <>
-    <p>{label}</p>
-    {predefinedRanges.map(range => (
-      <RangeButton key={range.name} range={range} onChange={onChange}/>
-    ))}
-  </>
-)
+const Ranges = ({label, onChange}: RangesProps): JSX.Element => {
+  const {t} = useTranslation()
+  return (
+    <>
+      <p>{label}</p>
+      {predefinedRanges(t).map(range => (
+        <RangeButton key={range.name} range={range} onChange={onChange}/>
+      ))}
+    </>
+  )
+}
 
 type State = {from: Date, to: Date}
 
@@ -102,6 +109,7 @@ const initState = (): State => {
 }
 
 function CalculateCountsDialog(): JSX.Element {
+  const {t} = useTranslation()
   const [{from, to}, setState] = useState<State>(initState)
   const processId = useSelector(getProcessId)
   const dispatch = useDispatch()
@@ -130,17 +138,17 @@ function CalculateCountsDialog(): JSX.Element {
   return (
     <GenericModalDialog init={init} confirm={confirm} type={Dialogs.types.calculateCounts}>
       <Picker
-        label="Process counts from"
+        label={t("calculateCounts.processCountsFrom", "Process counts from")}
         onChange={setFrom}
         value={from}
       />
       <Picker
-        label="Process counts to"
+        label={t("calculateCounts.processCountsTo", "Process counts to")}
         onChange={setTo}
         value={to}
       />
       <Ranges
-        label="Quick ranges"
+        label={t("calculateCounts.quickRanges", "Quick ranges")}
         onChange={setRange}
       />
     </GenericModalDialog>
