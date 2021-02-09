@@ -2,13 +2,24 @@ package pl.touk.nussknacker.engine.util.service.query
 
 import java.util.UUID
 
+import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{NodeContext, QueryServiceInvocationCollector, QueryServiceResult}
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{QueryServiceInvocationCollector, QueryServiceResult}
 import pl.touk.nussknacker.engine.api.test.TestRunId
-import pl.touk.nussknacker.engine.api.{process, _}
+import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.definition.{DefaultServiceInvoker, ProcessDefinitionExtractor, ProcessObjectDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
+import pl.touk.nussknacker.engine.graph.evaluatedparam
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.service.ServiceRef
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -17,42 +28,53 @@ class ServiceQuery(modelData: ModelData) {
 
   import ServiceQuery._
 
+  private val evaluator = ExpressionEvaluator.unOptimizedEvaluator(modelData)
 
-  def invoke(serviceName: String, serviceParameters: (String, Any)*)
+  private val ctx = Context("")
+
+  def invoke(serviceName: String, args: (String, Expression)*)
+            (implicit executionContext: ExecutionContext): Future[QueryResult] = {
+    val params = args.map(pair => evaluatedparam.Parameter(pair._1, pair._2)).toList
+    invoke(serviceName, params)
+  }
+
+  def invoke(serviceName: String,
+             params: List[evaluatedparam.Parameter])
             (implicit executionContext: ExecutionContext): Future[QueryResult] = {
 
-    //this map has to be created for each invocation, because we close service after invocation (to avoid connection leaks etc.)
-    val serviceMethodMap: Map[String, ObjectWithMethodDef] = modelData.withThisAsContextClassLoader {
-      val servicesMap = modelData.configCreator.services(process.ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming))
-      ObjectWithMethodDef.forMap(servicesMap, ProcessObjectDefinitionExtractor.service,
-        ProcessDefinitionExtractor.extractNodesConfig(modelData.processConfig))
+    //we create new definitions each time, to avoid lifecycle problems
+    val definitions = modelData.withThisAsContextClassLoader {
+      ProcessDefinitionExtractor.extractObjectWithMethods(modelData.configCreator, ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming))
     }
-    val serviceDef: ObjectWithMethodDef = serviceMethodMap.getOrElse(serviceName, throw ServiceNotFoundException(serviceName))
+    val compiler = new NodeCompiler(definitions, ExpressionCompiler.withoutOptimization(modelData), modelData.modelClassLoader.classLoader)
 
 
+    withOpenedService(serviceName, definitions) { 
 
-    val lifecycle = closableService(serviceDef)
-    lifecycle.open(jobData)
-    val runId = TestRunId(UUID.randomUUID().toString)
-    val collector = QueryServiceInvocationCollector(serviceName).enable(runId)
-    val invocationResult = DefaultServiceInvoker(metaData, NodeId(dummyNodeContext.nodeId), None, serviceDef)
-      .invokeService(serviceParameters.toMap)(executionContext, collector, ContextId(dummyNodeContext.contextId))
-    val queryResult = invocationResult.map { ff =>
-      QueryResult(ff, collector.getResults)
-    }.recover { case ex: Exception =>
-      QueryResult(s"Service query error: ${ex.getMessage}", collector.getResults)
+      val collector = QueryServiceInvocationCollector(serviceName)
+        .enable(TestRunId(UUID.randomUUID().toString))
+
+      val variablesPreparer = GlobalVariablesPreparer(definitions.expressionConfig)
+      val validationContext = variablesPreparer.emptyValidationContext(metaData)
+
+      val compiled = compiler.compileService(ServiceRef(serviceName, params), validationContext, None, Some(_ => collector))(NodeId(""), metaData)
+      compiled.compiledObject.map { service =>
+          service.invoke(ctx, ExpressionEvaluator.unOptimizedEvaluator(variablesPreparer))._2.map(QueryResult(_, collector.getResults))
+      }.valueOr(e => Future.failed(ServiceInvocationException(e)))
     }
-    queryResult.onComplete { _ =>
-      lifecycle.close()
-      collector.cleanResults()
-    }
-    queryResult
+
   }
-  private def closableService(methodDef: ObjectWithMethodDef): Lifecycle = {
-    methodDef.obj match {
-      case lifecycle: Lifecycle => lifecycle
-      case _ => throw new IllegalArgumentException
+
+  private def withOpenedService[T](serviceName: String, definitions: ProcessDefinition[ObjectWithMethodDef])
+                                  (action: => Future[T])(implicit ec: ExecutionContext): Future[T] = {
+    val service = definitions.services.get(serviceName).map(_.obj) match {
+      case Some(lifecycle: Lifecycle) => lifecycle
+      case _ => throw ServiceNotFoundException(s"Service $serviceName not found")
     }
+    service.open(jobData)
+    val result = action
+    result.onComplete(_ => service.close())
+    result
   }
 }
 
@@ -60,18 +82,20 @@ object ServiceQuery {
 
   case class QueryResult(result: Any, collectedResults: List[QueryServiceResult])
 
-  private val dummyNodeContext = NodeContext(
-    contextId = "dummyContextId",
-    nodeId = "dummyNodeId",
-    ref = "dummyRef",
-    outputVariableNameOpt = None
-  )
-  implicit val metaData: MetaData = MetaData(
+  private implicit val nodeId: NodeId = NodeId("defaultNodeId")
+
+  private implicit val metaData: MetaData = MetaData(
     id = "testProcess",
     typeSpecificData = StandaloneMetaData(None),
     additionalFields = None
   )
-  val jobData = JobData(metaData, ProcessVersion.empty)
 
-  case class ServiceNotFoundException(serviceName: String) extends RuntimeException(s"service $serviceName not found")
+  private val jobData = JobData(metaData, ProcessVersion.empty)
+
+  //TODO: remove this and return ValidatedNel, let NK-UI handle error display...
+  case class ServiceInvocationException(nel: NonEmptyList[ProcessCompilationError])
+    extends IllegalArgumentException(nel.toList.mkString(", "))
+
+  case class ServiceNotFoundException(message: String)
+    extends IllegalArgumentException(message)
 }
