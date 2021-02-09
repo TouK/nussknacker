@@ -14,7 +14,8 @@ private[sink] case object AvroSinkValueParameter {
 
   type FieldName = String
 
-  private val restrictedParamNames = Set(SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, TopicParamName)
+  val restrictedParamNames: Set[FieldName] =
+    Set(SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, TopicParamName)
 
   def apply(typing: TypingResult)(implicit nodeId: NodeId): Validated[ProcessCompilationError, AvroSinkValueParameter] =
     toSinkValueParameter(typing, paramName = None, isTopLevel = true)
