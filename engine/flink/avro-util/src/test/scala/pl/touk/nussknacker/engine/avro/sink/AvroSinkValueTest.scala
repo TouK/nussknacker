@@ -33,11 +33,11 @@ class AvroSinkValueTest extends FunSuite with Matchers {
       .asInstanceOf[AvroSinkRecordValue]
       .fields
 
-    fields("a").asInstanceOf[AvroSinkPrimitiveValue].value shouldBe value
-    fields("b").asInstanceOf[AvroSinkRecordValue].fields("c").asInstanceOf[AvroSinkPrimitiveValue].value shouldBe value
+    fields("a").asInstanceOf[AvroSinkSingleValue].value shouldBe value
+    fields("b").asInstanceOf[AvroSinkRecordValue].fields("c").asInstanceOf[AvroSinkSingleValue].value shouldBe value
   }
 
-  test("sink params to AvroSinkPrimitiveValue") {
+  test("sink params to AvroSinkSingleValue") {
     val value = new LazyParameter[AnyRef] {
       override def returnType: typing.TypingResult = Typed[java.lang.Long]
     }
@@ -46,7 +46,7 @@ class AvroSinkValueTest extends FunSuite with Matchers {
 
     AvroSinkValue
       .applyUnsafe(sinkParam, parameterValues)
-      .asInstanceOf[AvroSinkPrimitiveValue]
+      .asInstanceOf[AvroSinkSingleValue]
       .value shouldBe value
   }
 }

@@ -54,7 +54,7 @@ private[sink] class KeyedRecordFlatMapper(nodeId: String,
   private def merge(agg: LazyParameter[Map[String, AnyRef]], sinkRecord: AvroSinkRecordValue): LazyParameter[Map[String, AnyRef]] =
     sinkRecord.fields.foldLeft(agg) { case (lazyRecord, (fieldName, fieldSinkValue)) =>
       val lazyParam = fieldSinkValue match {
-        case primitive: AvroSinkPrimitiveValue => primitive.value
+        case single: AvroSinkSingleValue => single.value
         case sinkRec: AvroSinkRecordValue => merge(emptyRecord, sinkRec)
       }
       lazyRecord.product(lazyParam).map { case (rec, value) =>

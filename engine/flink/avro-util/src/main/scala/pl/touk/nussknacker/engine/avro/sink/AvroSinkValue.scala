@@ -10,7 +10,7 @@ object AvroSinkValue {
     sinkParameter match {
       case AvroSinkPrimitiveValueParameter(param) =>
         val value = parameterValues(param.name)
-        AvroSinkPrimitiveValue(toLazyParameter(value, param.name))
+        AvroSinkSingleValue(toLazyParameter(value, param.name))
 
       case AvroSinkRecordParameter(paramFields) =>
         val fields = paramFields.map { case (fieldName, sinkParam) =>
@@ -29,7 +29,7 @@ object AvroSinkValue {
 
 private[sink] sealed trait AvroSinkValue
 
-private[sink] case class AvroSinkPrimitiveValue(value: LazyParameter[AnyRef])
+private[sink] case class AvroSinkSingleValue(value: LazyParameter[AnyRef])
   extends AvroSinkValue
 
 private[sink] case class AvroSinkRecordValue(fields: Map[String, AvroSinkValue])
