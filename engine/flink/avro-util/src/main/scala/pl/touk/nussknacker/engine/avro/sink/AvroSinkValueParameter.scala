@@ -26,6 +26,8 @@ private[sink] case object AvroSinkValueParameter {
       case typed.typing.Unknown =>
         Invalid(CustomNodeError(nodeId.id, "Cannot determine typing for provided schema", None))
 
+      /* TODO: Since GenericNodeTransformation#implementation passes all parameters in a single Map we need to restrict value parameter names,
+               so they do not collide with other parameters like Topic or Key. */
       case typedObject: TypedObjectTypingResult if containsRestrictedNames(typedObject) =>
         Invalid(CustomNodeError(nodeId.id, s"""Record field name is restricted. Restricted names are ${restrictedParamNames.mkString(", ")}""", None))
 
