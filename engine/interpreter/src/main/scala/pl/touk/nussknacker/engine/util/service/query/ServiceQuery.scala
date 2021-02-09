@@ -3,11 +3,12 @@ package pl.touk.nussknacker.engine.util.service.query
 import java.util.UUID
 
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{NodeContext, QueryServiceInvocationCollector, QueryServiceResult}
 import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.api.{process, _}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, ProcessObjectDefinitionExtractor, ServiceInvoker}
+import pl.touk.nussknacker.engine.definition.{DefaultServiceInvoker, ProcessDefinitionExtractor, ProcessObjectDefinitionExtractor}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -34,7 +35,8 @@ class ServiceQuery(modelData: ModelData) {
     lifecycle.open(jobData)
     val runId = TestRunId(UUID.randomUUID().toString)
     val collector = QueryServiceInvocationCollector(serviceName).enable(runId)
-    val invocationResult = ServiceInvoker(serviceDef, Some(collector)).invoke(serviceParameters.toMap, dummyNodeContext)
+    val invocationResult = DefaultServiceInvoker(metaData, NodeId(dummyNodeContext.nodeId), None, serviceDef)
+      .invokeService(serviceParameters.toMap)(executionContext, collector, ContextId(dummyNodeContext.contextId))
     val queryResult = invocationResult.map { ff =>
       QueryResult(ff, collector.getResults)
     }.recover { case ex: Exception =>

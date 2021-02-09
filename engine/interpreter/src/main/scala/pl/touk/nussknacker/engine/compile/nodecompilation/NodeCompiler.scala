@@ -2,6 +2,8 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid, invalid, valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.implicits.toTraverseOps
+import cats.instances.list._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation.{JoinGenericNodeTransformation, SingleInputGenericNodeTransformation}
@@ -9,31 +11,29 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo, TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.api.process.Source
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{ServiceInvocationCollectorForContext, TestServiceInvocationCollector}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType}
-import pl.touk.nussknacker.engine.api.{Context, MetaData}
+import pl.touk.nussknacker.engine.api.{Context, ContextId, EagerService, MetaData, ServiceInvoker}
+import pl.touk.nussknacker.engine.compile.NodeTypingInfo.DefaultExpressionId
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{ExpressionCompilation, NodeCompilationResult}
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeTypingInfo, NodeValidationExceptionHandler, ProcessObjectFactory}
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{FinalStateValue, ObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition}
-import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, ServiceInvoker}
+import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
+import pl.touk.nussknacker.engine.definition.{DefaultServiceInvoker, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
 import pl.touk.nussknacker.engine.graph.node._
-import pl.touk.nussknacker.engine.graph
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.{evaluatedparam, node}
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import pl.touk.nussknacker.engine.{Interpreter, api, compiledgraph}
+import pl.touk.nussknacker.engine.{Interpreter, api, compiledgraph, graph}
 import shapeless.Typeable
 import shapeless.syntax.typeable._
-import cats.instances.list._
-import cats.implicits.toTraverseOps
-import pl.touk.nussknacker.engine.compile.NodeTypingInfo.DefaultExpressionId
-import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{ExpressionCompilation, NodeCompilationResult}
-import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
 
 import scala.util.{Failure, Success, Try}
 
@@ -85,7 +85,8 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
           def defaultContextTransformation(compiled: Option[Any]) =
             contextWithOnlyGlobalVariables.withVariable(Interpreter.InputParamName, compiled.flatMap(a => returnType(definition, a)).getOrElse(Unknown), paramName = None)
 
-          compileObjectWithTransformation[Source[_]](a, Left(contextWithOnlyGlobalVariables), Some(Interpreter.InputParamName), definition, defaultContextTransformation)
+          compileObjectWithTransformation[Source[_]](a.parameters, Nil,
+            Left(contextWithOnlyGlobalVariables), Some(Interpreter.InputParamName), definition, defaultContextTransformation)
         case None =>
           val error = Invalid(NonEmptyList.of(MissingSourceFactory(ref.typ)))
           //TODO: is this default behaviour ok?
@@ -109,7 +110,8 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
         NodeCompilationResult(Map.empty, None, defaultCtxToUse, error)
       case Some((nodeDefinition, additionalData)) =>
         val default = defaultContextAfter(additionalData, data, ending, ctx, nodeDefinition)
-        compileObjectWithTransformation(data, ctx, outputVar.map(_.outputName), nodeDefinition, default)
+        compileObjectWithTransformation(data.parameters,
+          data.cast[Join].map(_.branchParameters).getOrElse(Nil), ctx, outputVar.map(_.outputName), nodeDefinition, default)
       case None =>
         val error = Invalid(NonEmptyList.of(MissingCustomNodeExecutor(data.nodeType)))
         NodeCompilationResult(Map.empty, None, defaultCtxToUse, error)
@@ -128,7 +130,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
       .getOrElse(Valid(()))
     val compilationResult = definitions.sinkFactories.get(ref.typ) match {
       case Some(definition) =>
-        compileObjectWithTransformation[api.process.Sink](sink, Left(ctx), None, definition._1, (_: Any) => Valid(ctx))
+        compileObjectWithTransformation[api.process.Sink](sink.parameters, Nil, Left(ctx), None, definition._1, (_: Any) => Valid(ctx))
       case None =>
         val error = invalid(MissingSinkFactory(sink.ref.typ)).toValidatedNel
         NodeCompilationResult(Map.empty[String, ExpressionTypingInfo], None, Valid(ctx), error)
@@ -209,22 +211,60 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
   }
 
   def compileProcessor(n: Processor, ctx: ValidationContext)
-                     (implicit nodeId: NodeId): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
-    compileService(n.service, ctx, None)
+                     (implicit nodeId: NodeId, metaData: MetaData): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+    compileService(n.service, ctx, None, None)
   }
 
-  def compileEnricher(n: Enricher, ctx: ValidationContext, outputVar: Option[OutputVar]) (implicit nodeId: NodeId): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
-    compileService(n.service, ctx, outputVar)
+  def compileEnricher(n: Enricher, ctx: ValidationContext, outputVar: Option[OutputVar])
+                     (implicit nodeId: NodeId, metaData: MetaData): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+    compileService(n.service, ctx, outputVar, None)
   }
 
-  private def compileService(n: ServiceRef, validationContext: ValidationContext, outputVar: Option[OutputVar] = None)(implicit nodeId: NodeId): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+  def compileService(n: ServiceRef,
+                     validationContext: ValidationContext,
+                     outputVar: Option[OutputVar],
+                     serviceCollectorOpt: Option[ServiceInvocationCollectorForContext])
+                    (implicit nodeId: NodeId, metaData: MetaData): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+
+    val serviceCollector = serviceCollectorOpt.getOrElse((c: ContextId) => TestServiceInvocationCollector(c, nodeId, n.id))
     definitions.services.get(n.id) match {
+      case Some(objectWithMethodDef) if objectWithMethodDef.obj.isInstanceOf[EagerService] =>
+        compileEagerService(n, objectWithMethodDef, validationContext, outputVar, serviceCollector)
       case Some(objectWithMethodDef) =>
-        ServiceCompiler.compile(n, outputVar, objectWithMethodDef, validationContext)
+        ServiceCompiler.compile(n, outputVar, serviceCollector, objectWithMethodDef, validationContext)
       case None =>
         val error = invalid(MissingService(n.id)).toValidatedNel
         NodeCompilationResult(Map.empty[String, ExpressionTypingInfo], None, Valid(validationContext), error)
     }
+  }
+
+  private def compileEagerService(serviceRef: ServiceRef, objectWithMethodDef: ObjectWithMethodDef,
+                                  validationContext: ValidationContext, outputVar: Option[OutputVar],
+                                  invocationCollector: ServiceInvocationCollectorForContext)
+                                 (implicit nodeId: NodeId, metaData: MetaData): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+    val ctx: Option[ServiceInvoker] => ValidatedNel[ProcessCompilationError, ValidationContext] = invoker => (invoker, outputVar) match {
+      case (Some(serviceRef), Some(out)) => validationContext.withVariable(out, serviceRef.returnType)
+      case (None, Some(out)) => validationContext.withVariable(out, Unknown)
+      case _ => Valid(validationContext)
+    }
+
+    def prepareCompiledLazyParameters(paramsDefs: List[Parameter]) = paramsDefs.collect {
+      case paramDef if paramDef.isLazyParameter =>
+        val compiledParam = (for {
+          param <- serviceRef.parameters.find(_.name == paramDef.name)
+          compiled <- objectParametersExpressionCompiler
+            .compileParam(param, validationContext, paramDef, eager = false).toOption
+            .flatMap(_.typedValue.cast[TypedExpression])
+        } yield compiled).getOrElse(throw new IllegalArgumentException(s"$paramDef is not defined as TypedExpression"))
+        compiledgraph.evaluatedparam.Parameter(compiledParam, paramDef)
+    }
+
+    def makeInvoker(service: ServiceInvoker, paramsDefs: List[Parameter])
+        = compiledgraph.service.ServiceRef(serviceRef.id, service, prepareCompiledLazyParameters(paramsDefs), invocationCollector)
+
+    val compiled =
+      compileObjectWithTransformation[ServiceInvoker](serviceRef.parameters, Nil, Left(validationContext), outputVar.map(_.outputName), objectWithMethodDef, ctx)
+    compiled.copy(compiledObject = compiled.compiledObject.map(makeInvoker(_, compiled.parameters.getOrElse(objectWithMethodDef.parameters))))
   }
 
   def compileExceptionHandler(ref: ExceptionHandlerRef)
@@ -289,14 +329,13 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     subprocessParameter.typ.toRuntimeClass(classLoader).map(Typed(_)).getOrElse(throw new IllegalArgumentException(
       s"Failed to load subprocess parameter: ${subprocessParameter.typ.refClazzName} for ${nodeId.id}"))
 
-  private def compileObjectWithTransformation[T](data: NodeData with WithParameters,
+  private def compileObjectWithTransformation[T](parameters: List[evaluatedparam.Parameter],
+                                                 branchParameters: List[evaluatedparam.BranchParameters],
                                                  ctx: GenericValidationContext,
                                                  outputVar: Option[String],
                                                  nodeDefinition: ObjectWithMethodDef,
                                                  defaultCtxForCreatedObject: Option[T] => ValidatedNel[ProcessCompilationError, ValidationContext])
                                                 (implicit metaData: MetaData, nodeId: NodeId): NodeCompilationResult[T] = {
-    val branchParameters = data.cast[Join].map(_.branchParameters).getOrElse(List.empty)
-    val parameters = data.parameters
     val generic = validateGenericTransformer(ctx, parameters, branchParameters, outputVar)
     if (generic.isDefinedAt(nodeDefinition)) {
       val afterValidation = generic(nodeDefinition).map {
@@ -315,7 +354,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
       val (typingInfo, validProcessObject) = createProcessObject[T](nodeDefinition, parameters,
         branchParameters, outputVar, ctx, None, Seq.empty)
       val nextCtx = validProcessObject.fold(_ => defaultCtxForCreatedObject(None), cNode =>
-        contextAfterNode(data, cNode, ctx, (c: T) => defaultCtxForCreatedObject(Some(c)))
+        contextAfterNode(cNode, ctx, (c: T) => defaultCtxForCreatedObject(Some(c)))
       )
       NodeCompilationResult(typingInfo, None, nextCtx, validProcessObject)
     }
@@ -363,7 +402,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     (compiledObjectWithTypingInfo.map(_._1).valueOr(_ => Map.empty), compiledObjectWithTypingInfo.map(_._2))
   }
 
-  private def contextAfterNode[T](node: NodeData, cNode: T,
+  private def contextAfterNode[T](cNode: T,
                                   validationContexts: GenericValidationContext,
                                   legacy: T => ValidatedNel[ProcessCompilationError, ValidationContext])
                                  (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, ValidationContext] = {
@@ -404,8 +443,9 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
 
     def compile(n: ServiceRef,
                 outputVar: Option[OutputVar],
+                collector: ServiceInvocationCollectorForContext,
                 objWithMethod: ObjectWithMethodDef,
-                ctx: ValidationContext)(implicit nodeId: NodeId): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
+                ctx: ValidationContext)(implicit metaData: MetaData, nodeId: NodeId): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
       val computedParameters = objectParametersExpressionCompiler.compileEagerObjectParameters(objWithMethod.parameters, n.parameters, ctx)
       val outputCtx = outputVar match {
         case Some(output) =>
@@ -416,7 +456,8 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
       }
 
       val serviceRef = computedParameters.map { params =>
-        compiledgraph.service.ServiceRef(n.id, ServiceInvoker(objWithMethod), params)
+        compiledgraph.service.ServiceRef(n.id, DefaultServiceInvoker(metaData, nodeId, outputVar, objWithMethod),
+          params, collector)
       }
       val nodeTypingInfo = computedParameters.map(_.map(p => p.name -> p.typingInfo).toMap).getOrElse(Map.empty)
       NodeCompilationResult(nodeTypingInfo, None, outputCtx, serviceRef)

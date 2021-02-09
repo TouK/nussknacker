@@ -78,6 +78,7 @@ object ProcessTestHelpers {
     override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
       "logService" -> WithCategories(new MockService),
       "lifecycleService" -> WithCategories(LifecycleService),
+      "eagerLifecycleService" -> WithCategories(EagerLifecycleService),
       "enricherWithOpenService" -> WithCategories(new EnricherWithOpenService),
       "serviceAcceptingOptionalValue" -> WithCategories(ServiceAcceptingScalaOption)
     )

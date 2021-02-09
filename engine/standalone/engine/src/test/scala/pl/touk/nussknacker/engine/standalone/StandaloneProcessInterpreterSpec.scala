@@ -114,7 +114,31 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
 
     val result = runProcess(process, Request1("a", "b"))
 
-    result shouldBe Right(List("initialized!"))
+    result shouldBe Right(List("true"))
+  }
+
+  test("init call open method for eager service") {
+    val process = EspProcessBuilder
+      .id("proc1")
+      .exceptionHandler()
+      .source("start", "request1-post-source")
+      .enricher("enricher1", "response1", "eagerEnricherWithOpen", "name" -> "'1'")
+      .customNode("custom", "output", "extractor", "expression" -> "''")
+      .enricher("enricher2", "response2", "eagerEnricherWithOpen", "name" -> "'2'")
+      .sink("sink1", "#response1.field1 + #response2.field1", "response-sink")
+
+    val creator = new StandaloneProcessConfigCreator
+    val result = runProcess(process, Request1("a", "b"), creator)
+
+    result shouldBe Right(List("truetrue"))
+    creator.eagerEnricher.opened shouldBe true
+    creator.eagerEnricher.closed shouldBe true
+    val openedInvokers = creator.eagerEnricher.list.filter(_._2.opened == true)
+    openedInvokers.map(_._1).toSet == Set("1", "2")
+    openedInvokers.foreach { cl =>
+      cl._2.closed shouldBe true
+    }
+
   }
 
   test("collect metrics for individual services") {
@@ -131,7 +155,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
     interpreter.open(JobData(process.metaData, ProcessVersion.empty))
     val result = interpreter.invoke(Request1("a", "b")).futureValue
 
-    result shouldBe Right(List("initialized!"))
+    result shouldBe Right(List("true"))
 
     eventually {
       metricRegistry.getGauges().get(MetricRegistry.name("invocation", "success", "instantRate")

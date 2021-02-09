@@ -18,6 +18,7 @@ To see biggest differences please consult the [changelog](Changelog.md).
   Their handling has been source of many problems and they made it harder to reason about the exeuction of process.   
 * [#1373](https://github.com/TouK/nussknacker/pull/1373) Creating `ClassLoaderModelData` directly is not allowed, use
   `ModelData.apply` with plain config, wrapping with ModelConfigToLoad by yourself is not needed.
+* [#1406](https://github.com/TouK/nussknacker/pull/1406) `ServiceReturningType` is deprecated in favour of `EagerService` 
 
 ## In version 0.3.0
 

@@ -5,7 +5,8 @@ import java.util.function.Supplier
 
 import org.scalatest.{FlatSpec, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.NodeContext
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.TestServiceInvocationCollector
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -14,35 +15,38 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ServiceInvokerTest extends FlatSpec with PatientScalaFutures with OptionValues with Matchers {
 
-  implicit val metadata = MetaData("proc1", StreamMetaData())
-  val jobData = JobData(metadata, ProcessVersion.empty)
+  private implicit val metadata: MetaData = MetaData("proc1", StreamMetaData())
+  private val nodeId = NodeId("id")
+  private val jobData: JobData = JobData(metadata, ProcessVersion.empty)
+  private implicit val ctxId: ContextId = ContextId("")
+  private implicit val collector: TestServiceInvocationCollector = TestServiceInvocationCollector(ctxId, nodeId, "")
 
   it should "invoke service method with declared parameters as scala params" in {
     val mock = new MockService(jobData)
-    val definition = ObjectWithMethodDef.withEmptyConfig(mock, ServiceInvoker.Extractor)
-    val invoker = ServiceInvoker(definition)
+    val definition = ObjectWithMethodDef.withEmptyConfig(mock, DefaultServiceInvoker.Extractor)
+    val invoker = DefaultServiceInvoker(metadata, nodeId, None, definition)
 
-    whenReady(invoker.invoke(Map("foo" -> "aa", "bar" -> 1), NodeContext("", "", "", None))) { _ =>
+    whenReady(invoker.invokeService(Map("foo" -> "aa", "bar" -> 1))) { _ =>
       mock.invoked.value.shouldEqual(("aa", 1, metadata))
     }
   }
 
   it should "throw excpetion with nice message when parameters do not match" in {
     val mock = new MockService(jobData)
-    val definition = ObjectWithMethodDef.withEmptyConfig(mock, ServiceInvoker.Extractor)
-    val invoker = ServiceInvoker(definition)
+    val definition = ObjectWithMethodDef.withEmptyConfig(mock, DefaultServiceInvoker.Extractor)
+    val invoker = DefaultServiceInvoker(metadata, nodeId, None, definition)
 
     intercept[IllegalArgumentException](
-      invoker.invoke(Map("foo" -> "aa", "bar" -> "terefere"), NodeContext("", "", "", None)))
+      invoker.invokeService(Map("foo" -> "aa", "bar" -> "terefere")))
         .getMessage shouldBe """Failed to invoke "invoke" on MockService with parameter types: List(String, String, ExecutionContextImpl): argument type mismatch"""
   }
 
   it should "invoke service method with CompletionStage return type" in {
     val mock = new MockCompletionStageService(jobData)
-    val definition = ObjectWithMethodDef.withEmptyConfig(mock, ServiceInvoker.Extractor)
-    val invoker = ServiceInvoker(definition)
+    val definition = ObjectWithMethodDef.withEmptyConfig(mock, DefaultServiceInvoker.Extractor)
+    val invoker = DefaultServiceInvoker(metadata, nodeId, None, definition)
 
-    whenReady(invoker.invoke(Map("foo" -> "aa", "bar" -> 1), NodeContext("", "", "", None))) { _ =>
+    whenReady(invoker.invokeService(Map("foo" -> "aa", "bar" -> 1))) { _ =>
       mock.invoked.value.shouldEqual(("aa", 1, metadata))
     }
   }

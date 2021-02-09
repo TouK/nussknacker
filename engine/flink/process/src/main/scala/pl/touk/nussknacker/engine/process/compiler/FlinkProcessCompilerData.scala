@@ -50,7 +50,7 @@ class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
   }
 
   def compileSubPart(node: SplittedNode[_], validationContext: ValidationContext): Node = {
-    validateOrFail(compiledProcess.subPartCompiler.compile(node, validationContext).result)
+    validateOrFail(compiledProcess.subPartCompiler.compile(node, validationContext)(compiledProcess.metaData).result)
   }
 
   private def validateOrFail[T](validated: ValidatedNel[ProcessCompilationError, T]): T = validated match {

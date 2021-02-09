@@ -25,6 +25,7 @@ Nussknacker versions
     * [#1383](https://github.com/TouK/nussknacker/pull/1383) Switch github badges
 * [#1382](https://github.com/TouK/nussknacker/pull/1382) First E2E FE tests                                                             
 * [#1373](https://github.com/TouK/nussknacker/pull/1373) Ability to load custom model config programmatically
+* [#1406](https://github.com/TouK/nussknacker/pull/1406) Eager services - ability to create service object using static parameters
 
 0.3.1 (not released yet) 
 ------------------------

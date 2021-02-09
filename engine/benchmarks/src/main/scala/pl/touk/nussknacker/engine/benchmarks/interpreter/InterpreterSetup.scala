@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 import scala.reflect.ClassTag
 
@@ -33,7 +33,7 @@ class InterpreterSetup[T:ClassTag] {
     val parts = failOnErrors(compiledProcess.compile())
 
     def compileNode(part: ProcessPart) =
-      failOnErrors(compiledProcess.subPartCompiler.compile(part.node, part.validationContext).result)
+      failOnErrors(compiledProcess.subPartCompiler.compile(part.node, part.validationContext)(process.metaData).result)
     val compiled = compileNode(parts.sources.head)
     val shape = implicitly[InterpreterShape[F]]
     (initialCtx: Context, ec: ExecutionContext) =>

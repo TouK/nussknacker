@@ -4,9 +4,10 @@ import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Date, Optional, UUID}
-import cats.data.Validated.Valid
-import io.circe.generic.JsonCodec
 
+import cats.data.Validated.Valid
+import com.github.ghik.silencer.silent
+import io.circe.generic.JsonCodec
 import javax.annotation.Nullable
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
@@ -42,7 +43,9 @@ import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.test.WithDataList
 
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
+import scala.collection.immutable
 import scala.concurrent.{ExecutionContext, Future}
 
 //TODO: clean up sample objects...
@@ -121,7 +124,7 @@ object SampleNodes {
     }
   }
 
-  object LifecycleService extends Service with Lifecycle {
+  trait WithLifecycle extends Lifecycle {
 
     var opened: Boolean = false
     var closed: Boolean = false
@@ -139,10 +142,53 @@ object SampleNodes {
       closed = true
     }
 
+  }
+
+  object LifecycleService extends Service with WithLifecycle {
+
     @MethodToInvoke
     def invoke(): Future[Unit] = {
       Future.successful(())
     }
+  }
+
+  object EagerLifecycleService extends EagerService with WithLifecycle {
+
+    var list: List[(String, WithLifecycle)] = Nil
+
+    override def open(jobData: JobData): Unit = {
+      super.open(jobData)
+      list.foreach(_._2.open(jobData))
+    }
+
+    override def close(): Unit = {
+      super.close()
+      list.foreach(_._2.close())
+    }
+
+    override def reset(): Unit = synchronized {
+      super.reset()
+      list = Nil
+    }
+
+    @MethodToInvoke
+    def invoke(@ParamName("name") name: String): ServiceInvoker = synchronized {
+      val newI = new ServiceInvoker with WithLifecycle {
+        override def invokeService(params: Map[String, Any])
+                                  (implicit ec: ExecutionContext,
+                                   collector: ServiceInvocationCollector, contextId: ContextId): Future[Any] = {
+          if (!opened) {
+            throw new IllegalArgumentException
+          }
+          Future.successful(())
+        }
+
+        override def returnType: TypingResult = Typed[Void]
+      }
+      list = (name -> newI)::list
+      newI
+    }
+
   }
 
 
@@ -260,6 +306,9 @@ object SampleNodes {
 
   }
 
+  // Remove @silent after upgrade to silencer 1.7
+  @silent("deprecated")
+  @nowarn("deprecated")
   object ReturningDependentTypeService extends Service with ServiceReturningType {
 
     @MethodToInvoke

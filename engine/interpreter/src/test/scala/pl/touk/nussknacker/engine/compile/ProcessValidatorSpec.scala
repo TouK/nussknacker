@@ -5,6 +5,7 @@ import java.util.Collections
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.instances.string._
+import com.github.ghik.silencer.silent
 import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api._
@@ -35,6 +36,7 @@ import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcess
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.engine.variables.MetaVariables
 
+import scala.annotation.nowarn
 import scala.concurrent.{ExecutionContext, Future}
 
 class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
@@ -1187,6 +1189,9 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     def futureValue: Future[String] = Future.successful("123")
   }
 
+  // Remove @silent after upgrade to silencer 1.7
+  @silent("deprecated")
+  @nowarn("deprecated")
   object ServiceReturningTypeSample extends Service with ServiceReturningType {
 
     @MethodToInvoke
@@ -1203,6 +1208,9 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     }
   }
 
+  // Remove @silent after upgrade to silencer 1.7
+  @silent("deprecated")
+  @nowarn("deprecated")
   object ServiceReturningTypeWithExplicitMethodSample extends Service with ServiceReturningType with ServiceWithExplicitMethod {
 
     override def returnType(parameters: Map[String, (TypingResult, Option[Any])]): typing.TypingResult = {
@@ -1240,6 +1248,9 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   }
 
 
+  // Remove @silent after upgrade to silencer 1.7
+  @silent("deprecated")
+  @nowarn("deprecated")
   object ServiceWithCustomValidation extends Service with ServiceReturningType {
 
     @MethodToInvoke

@@ -1,11 +1,16 @@
 package pl.touk.nussknacker.engine.management.sample.service
 
+import com.github.ghik.silencer.silent
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException, ServiceReturningType}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 
+import scala.annotation.nowarn
 import scala.concurrent.Future
 
+// Remove @silent after upgrade to silencer 1.7
+@silent("deprecated")
+@nowarn("deprecated")
 class CustomValidatedService extends Service with ServiceReturningType {
 
   @MethodToInvoke
