@@ -58,7 +58,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "monitor" -> categories(SinkFactory.noParam(EmptySink)),
       "communicationSink" -> categories(DynamicParametersSink),
       "kafka-string" -> all(new KafkaSinkFactory(new SimpleSerializationSchema[Any](_, String.valueOf), processObjectDependencies)),
-      "kafka-avro-editor" -> all(new KafkaAvroSinkFactoryWithEditor(ConfluentSchemaRegistryProvider(processObjectDependencies), processObjectDependencies))
+      "kafka-avro" -> all(new KafkaAvroSinkFactoryWithEditor(ConfluentSchemaRegistryProvider(processObjectDependencies), processObjectDependencies))
     )
 
   override def listeners(processObjectDependencies: ProcessObjectDependencies) = List(LoggingListener)

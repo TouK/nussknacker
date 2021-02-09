@@ -116,7 +116,7 @@ class KafkaAvroSinkFactoryWithEditorIntegrationTest extends KafkaAvroSpecMixin w
     val topicConfig = topicConfigs("record")
     val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
     val sinkParam = SinkAvroParam(topic = topicConfig.output, versionOption = ExistingSchemaVersion(1),
-      valueParams = MyRecord.toSampleParams, key = "", ValidationMode.strict, sinkId = "kafka-avro-editor")
+      valueParams = MyRecord.toSampleParams, key = "", ValidationMode.strict, sinkId = "kafka-avro")
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, event = MyRecord.record, expected = MyRecord.record)
@@ -125,7 +125,7 @@ class KafkaAvroSinkFactoryWithEditorIntegrationTest extends KafkaAvroSpecMixin w
   test("primitive at top level") {
     val topicConfig = topicConfigs("long")
     val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
-    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "42L").copy(sinkId = "kafka-avro-editor")
+    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "42L").copy(sinkId = "kafka-avro")
     val process = createAvroProcess(sourceParam, sinkParam)
     val encoded = encode(42L, topicSchemas("long"))
     runAndVerifyResult(process, topicConfig, event = encoded, expected = encoded)
@@ -134,7 +134,7 @@ class KafkaAvroSinkFactoryWithEditorIntegrationTest extends KafkaAvroSpecMixin w
   test("array at top level") {
     val topicConfig = topicConfigs("array")
     val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
-    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "{42L}").copy(sinkId = "kafka-avro-editor")
+    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "{42L}").copy(sinkId = "kafka-avro")
     val process = createAvroProcess(sourceParam, sinkParam)
     val thrown = intercept[IllegalArgumentException] {
       runAndVerifyResult(process, topicConfig, event = null, expected = null)

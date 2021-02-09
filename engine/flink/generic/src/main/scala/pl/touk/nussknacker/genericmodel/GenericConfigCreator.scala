@@ -49,8 +49,8 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
 
     Map(
       "kafka-json" -> defaultCategory(new GenericKafkaJsonSink(processObjectDependencies)),
-      "kafka-avro" -> defaultCategory(kafkaAvroSinkFactory),
-      "kafka-avro-editor" -> defaultCategory(kafkaAvroSinkFactoryWithEditor),
+      "kafka-avro-raw" -> defaultCategory(kafkaAvroSinkFactory),
+      "kafka-avro" -> defaultCategory(kafkaAvroSinkFactoryWithEditor),
       "dead-end" -> defaultCategory(SinkFactory.noParam(EmptySink))
     )
   }

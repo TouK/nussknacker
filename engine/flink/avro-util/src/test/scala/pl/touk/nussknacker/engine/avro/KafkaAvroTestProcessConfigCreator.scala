@@ -42,8 +42,8 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
     val schemaRegistryProvider = createSchemaRegistryProvider(processObjectDependencies)
 
     Map(
-      "kafka-avro" -> defaultCategory(new KafkaAvroSinkFactory(schemaRegistryProvider, processObjectDependencies)),
-      "kafka-avro-editor" -> defaultCategory(new KafkaAvroSinkFactoryWithEditor(schemaRegistryProvider, processObjectDependencies))
+      "kafka-avro-raw" -> defaultCategory(new KafkaAvroSinkFactory(schemaRegistryProvider, processObjectDependencies)),
+      "kafka-avro" -> defaultCategory(new KafkaAvroSinkFactoryWithEditor(schemaRegistryProvider, processObjectDependencies))
     )
   }
 

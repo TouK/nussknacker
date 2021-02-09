@@ -279,7 +279,7 @@ trait KafkaAvroSpecMixin extends FunSuite with FlinkSpec with KafkaSpec with Mat
     import spel.Implicits.asSpelExpression
 
     def apply(topicConfig: TopicConfig, version: SchemaVersionOption, value: String, key: String = "", validationMode: ValidationMode = ValidationMode.strict): SinkAvroParam =
-      new SinkAvroParam(topicConfig.output, version, (SinkValueParamName -> asSpelExpression(value)) :: Nil, key, validationMode, "kafka-avro")
+      new SinkAvroParam(topicConfig.output, version, (SinkValueParamName -> asSpelExpression(value)) :: Nil, key, validationMode, "kafka-avro-raw")
   }
 }
 
