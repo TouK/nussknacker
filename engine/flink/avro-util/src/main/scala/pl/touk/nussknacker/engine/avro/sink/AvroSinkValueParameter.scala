@@ -5,8 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.typed
-import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypedObjectTypingResult, TypedUnion, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, SinkValueParamName, TopicParamName}
 import pl.touk.nussknacker.engine.avro.sink.AvroSinkValueParameter.FieldName
 import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
@@ -23,9 +22,6 @@ private[sink] case object AvroSinkValueParameter {
   private def toSinkValueParameter(typing: TypingResult, paramName: Option[String], isTopLevel: Boolean)
                                   (implicit nodeId: NodeId): Validated[ProcessCompilationError, AvroSinkValueParameter] =
     typing match {
-      case typed.typing.Unknown =>
-        Invalid(CustomNodeError(nodeId.id, "Cannot determine typing for provided schema", None))
-
       /* TODO: Since GenericNodeTransformation#implementation passes all parameters in a single Map we need to restrict value parameter names,
                so they do not collide with other parameters like Topic or Key. */
       case typedObject: TypedObjectTypingResult if containsRestrictedNames(typedObject) =>
