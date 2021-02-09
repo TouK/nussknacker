@@ -65,7 +65,7 @@ private[sink] class KeyedRecordFlatMapper(nodeId: String,
   override def flatMap(value: Context, out: Collector[ValueWithContext[KeyedValue[AnyRef, AnyRef]]]): Unit =
     exceptionHandler.handling(Some(nodeId), value) {
       out.collect(ValueWithContext(interpret(value), value))
-    }.orNull
+    }
 
   private def interpret(ctx: Context): keyed.KeyedValue[AnyRef, AnyRef] =
     lazyParameterInterpreter.syncInterpretationFunction(
