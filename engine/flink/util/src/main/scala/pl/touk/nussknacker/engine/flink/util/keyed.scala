@@ -48,6 +48,7 @@ object keyed {
 
   }
 
+  /* TODO, FIXME: Errors on interpret should be handled with FlinkEspExceptionHandler; see KeyedRecordFlatMapper */
   abstract class BaseKeyedValueMapper[OutputKey <: AnyRef: TypeTag] extends RichMapFunction[Context, ValueWithContext[KeyedValue[OutputKey, AnyRef]]] with LazyParameterInterpreterFunction {
 
     protected implicit def lazyParameterInterpreterImpl: LazyParameterInterpreter = lazyParameterInterpreter
