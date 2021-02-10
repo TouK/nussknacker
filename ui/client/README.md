@@ -1,9 +1,6 @@
 # Prerequisites
 
-To run make sure that you have the newest version of nodejs (currently it is 6.3.0) and npm (currently it is 3.10.3). If you have older
-versions follow the insruction
-on http://askubuntu.com/questions/594656/how-to-install-the-latest-versions-of-nodejs-and-npm-for-ubuntu-14-04-lts
-After that you may need to cleanup npm global modules (result of `sudo npm -g list` should be blank).
+Make sure you have relatively new nodejs/npm version (see `.nvmrc` for details)
 
 # Run
 

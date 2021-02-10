@@ -1,5 +1,10 @@
 # Contributing
 
+## Setting up development environment
+
+- For working on engine - standard `sbt` setup should be enough
+- For working/running GUI please see `ui/README.md` for details instructions
+
 ## Java interoperability
 
 The Nussknacker project is developed in Scala, but we want to keep API interoperable with Java in most of places.
