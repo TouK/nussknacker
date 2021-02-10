@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.avro.sink
 
 import cats.data.NonEmptyList
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
@@ -55,9 +55,13 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, v
       val determinedSchema = schemaDeterminer.determineSchemaUsedInTyping
         .leftMap(SchemaDeterminerErrorHandler.handleSchemaRegistryError)
         .leftMap(NonEmptyList.one)
-      val validationResult = (determinedSchema andThen validateSchema)
-        .andThen { schemaData =>
-          validateValueType(value.returnType, schemaData.schema, extractValidationMode(mode))
+      val validatedSchema = determinedSchema.andThen { s =>
+        schemaRegistryProvider.validateSchema(s.schema)
+          .leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None)))
+      }
+      val validationResult = validatedSchema
+        .andThen { schema =>
+          validateValueType(value.returnType, schema, extractValidationMode(mode))
             .leftMap(NonEmptyList.one)
         }.swap.toList.flatMap(_.toList)
       FinalResults(context, validationResult)

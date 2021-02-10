@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.engine.avro.sink
 
+import cats.data.NonEmptyList
 import cats.data.Validated.Invalid
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SinkValueParamName, SinkKeyParamName}
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SinkKeyParamName, SinkValueParamName}
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
 class AvroSinkValueParameterTest extends FunSuite with Matchers {
@@ -43,6 +44,6 @@ class AvroSinkValueParameterTest extends FunSuite with Matchers {
         "b" -> "Long"
       ))
     val result =  AvroSinkValueParameter(typ)
-    result shouldBe Invalid(CustomNodeError(nodeId.id, s"""Record field name is restricted. Restricted names are Schema version, Key, Value validation mode, Topic""", None))
+    result shouldBe Invalid(NonEmptyList.one(CustomNodeError(nodeId.id, s"""Record field name is restricted. Restricted names are Schema version, Key, Value validation mode, Topic""", None)))
   }
 }
