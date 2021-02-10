@@ -51,8 +51,9 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, v
       val preparedTopic = prepareTopic(topic)
       val versionOption = parseVersionOption(version)
       val schemaDeterminer = prepareSchemaDeterminer(preparedTopic, versionOption)
-      val validationResult = schemaDeterminer.determineSchemaUsedInTyping
+      val determinedSchema = schemaDeterminer.determineSchemaUsedInTyping
         .leftMap(SchemaDeterminerErrorHandler.handleSchemaRegistryError)
+      val validationResult = (determinedSchema andThen validateSchema)
         .andThen(schemaData => validateValueType(value.returnType, schemaData.schema, extractValidationMode(mode))).swap.toList
       FinalResults(context, validationResult)
     //edge case - for some reason Topic/Version is not defined

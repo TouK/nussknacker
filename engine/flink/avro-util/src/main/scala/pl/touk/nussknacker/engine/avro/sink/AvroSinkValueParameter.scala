@@ -18,9 +18,9 @@ private[sink] case object AvroSinkValueParameter {
     Set(SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, TopicParamName)
 
   def apply(typing: TypingResult)(implicit nodeId: NodeId): Validated[ProcessCompilationError, AvroSinkValueParameter] =
-    toSinkValueParameter(typing, paramName = None, isTopLevel = true)
+    toSinkValueParameter(typing, paramName = None)
 
-  private def toSinkValueParameter(typing: TypingResult, paramName: Option[String], isTopLevel: Boolean)
+  private def toSinkValueParameter(typing: TypingResult, paramName: Option[String])
                                   (implicit nodeId: NodeId): Validated[ProcessCompilationError, AvroSinkValueParameter] =
     typing match {
       /* TODO: Since GenericNodeTransformation#implementation passes all parameters in a single Map we need to restrict value parameter names,
@@ -28,15 +28,10 @@ private[sink] case object AvroSinkValueParameter {
       case typedObject: TypedObjectTypingResult if containsRestrictedNames(typedObject) =>
         Invalid(CustomNodeError(nodeId.id, s"""Record field name is restricted. Restricted names are ${restrictedParamNames.mkString(", ")}""", None))
 
-      /* kafka-avro-serializer does not support Array at top level
-         [https://github.com/confluentinc/schema-registry/issues/1298] */
-      case TypedClass(clazz, _) if isTopLevel && clazz == classOf[java.util.List[_]] =>
-        Invalid(CustomNodeError(nodeId.id, "Unsupported Avro type. Top level Arrays are not supported", None))
-
       case typedObject: TypedObjectTypingResult =>
         val listOfValidatedFieldParams = typedObject.fields.map { case (fieldName, typing) =>
           val concatName = paramName.map(pn => s"$pn.$fieldName").getOrElse(fieldName)
-          (fieldName, toSinkValueParameter(typing, Some(concatName), isTopLevel = false))
+          (fieldName, toSinkValueParameter(typing, Some(concatName)))
         }.toList
         sequence(listOfValidatedFieldParams).map(l => AvroSinkRecordParameter(l.toMap))
 

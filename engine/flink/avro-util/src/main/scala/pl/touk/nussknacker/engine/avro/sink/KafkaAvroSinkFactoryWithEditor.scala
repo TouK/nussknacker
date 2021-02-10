@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFa
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, SchemaDeterminerErrorHandler}
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, SinkValueParamName, TopicParamName}
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, TopicParamName}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
@@ -39,8 +39,8 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
   protected def schemaParamStep(implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep((TopicParamName, DefinedEagerParameter(topic: String, _)) :: Nil, _) =>
       val preparedTopic = prepareTopic(topic)
-      val version = getVersionParam(preparedTopic)
-      NextParameters(version.value :: paramsDeterminedAfterSchema, errors = version.written)
+      val versionParam = getVersionParam(preparedTopic)
+      NextParameters(versionParam.value :: paramsDeterminedAfterSchema, errors = versionParam.written)
     case TransformationStep((TopicParamName, _) :: Nil, _) =>
       NextParameters(parameters = fallbackVersionOptionParam :: paramsDeterminedAfterSchema)
   }
@@ -56,10 +56,11 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
       val preparedTopic = prepareTopic(topic)
       val versionOption = parseVersionOption(version)
       val schemaDeterminer = prepareSchemaDeterminer(preparedTopic, versionOption)
-      val schemaValidated = schemaDeterminer
+      val determinedSchema = schemaDeterminer
         .determineSchemaUsedInTyping
         .leftMap(SchemaDeterminerErrorHandler.handleSchemaRegistryError(_))
-      schemaValidated.andThen { runtimeSchema =>
+
+      (determinedSchema andThen validateSchema).andThen { runtimeSchema =>
         val typing = AvroSchemaTypeDefinitionExtractor.typeDefinition(runtimeSchema.schema)
         AvroSinkValueParameter(typing).map { valueParam =>
           sinkValueParameter = Some(valueParam)
