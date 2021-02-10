@@ -51,15 +51,10 @@ private[sink] case object AvroSinkValueParameter {
 
   private def sequence(l: List[(FieldName, ValidatedNel[ProcessCompilationError, AvroSinkValueParameter])])
   : ValidatedNel[ProcessCompilationError, List[(FieldName, AvroSinkValueParameter)]] = {
-    val zero: ValidatedNel[ProcessCompilationError, List[(FieldName, AvroSinkValueParameter)]] = Valid(Nil)
-    l.foldLeft(zero) {
-      case (aggValidated, (fieldName, validatedField)) =>
-        aggValidated.andThen { parameters =>
-          validatedField.map { parameter =>
-            (fieldName, parameter) :: parameters
-          }
-        }
-    }
+    import cats.implicits.{toTraverseOps, catsStdInstancesForList}
+    l.map { case (fieldName, validated) =>
+      validated.map(sinkValueParam => (fieldName, sinkValueParam))
+    }.sequence
   }
 }
 
