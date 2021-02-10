@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.avro.sink
 
+import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -59,6 +60,7 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
       val determinedSchema = schemaDeterminer
         .determineSchemaUsedInTyping
         .leftMap(SchemaDeterminerErrorHandler.handleSchemaRegistryError(_))
+        .leftMap(NonEmptyList.one)
 
       (determinedSchema andThen validateSchema).andThen { runtimeSchema =>
         val typing = AvroSchemaTypeDefinitionExtractor.typeDefinition(runtimeSchema.schema)
@@ -66,7 +68,7 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
           sinkValueParameter = Some(valueParam)
           NextParameters(valueParam.toParameters)
         }
-      }.valueOr(e => FinalResults(context, e :: Nil))
+      }.valueOr(e => FinalResults(context, e.toList))
   }
 
   protected def finalParamStep(context: ValidationContext)(implicit nodeId: NodeId): NodeTransformationDefinition = {

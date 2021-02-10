@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.avro.sink
 
+import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
@@ -53,8 +54,12 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, v
       val schemaDeterminer = prepareSchemaDeterminer(preparedTopic, versionOption)
       val determinedSchema = schemaDeterminer.determineSchemaUsedInTyping
         .leftMap(SchemaDeterminerErrorHandler.handleSchemaRegistryError)
+        .leftMap(NonEmptyList.one)
       val validationResult = (determinedSchema andThen validateSchema)
-        .andThen(schemaData => validateValueType(value.returnType, schemaData.schema, extractValidationMode(mode))).swap.toList
+        .andThen { schemaData =>
+          validateValueType(value.returnType, schemaData.schema, extractValidationMode(mode))
+            .leftMap(NonEmptyList.one)
+        }.swap.toList.flatMap(_.toList)
       FinalResults(context, validationResult)
     //edge case - for some reason Topic/Version is not defined
     case TransformationStep(

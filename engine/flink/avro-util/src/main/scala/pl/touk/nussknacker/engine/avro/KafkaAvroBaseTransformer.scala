@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.avro
 
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.{Validated, Writer}
+import cats.data.{NonEmptyList, ValidatedNel, Writer}
 import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
@@ -88,11 +88,12 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
     new BasedOnVersionAvroSchemaDeterminer(schemaRegistryClient, preparedTopic.prepared, version)
   }
 
-  protected def validateSchema(schema: RuntimeSchemaData)(implicit nodeId: NodeId): Validated[CustomNodeError, RuntimeSchemaData] =
+  protected def validateSchema(schema: RuntimeSchemaData)(implicit nodeId: NodeId): ValidatedNel[CustomNodeError, RuntimeSchemaData] =
   /* kafka-avro-serializer does not support Array at top level
  [https://github.com/confluentinc/schema-registry/issues/1298] */
     if (schema.schema.getType == Schema.Type.ARRAY)
-      Invalid(CustomNodeError(nodeId.id, "Unsupported Avro type. Top level Arrays are not supported", None))
+      Invalid(NonEmptyList.of(
+        CustomNodeError(nodeId.id, "Unsupported Avro type. Top level Arrays are not supported", None)))
     else
       Valid(schema)
 
