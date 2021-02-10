@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.avro.KafkaAvroTestProcessConfigCreator.recordi
 import pl.touk.nussknacker.engine.avro.schema.GeneratedAvroClassWithLogicalTypes
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
-import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
+import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
 import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
@@ -42,7 +42,8 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
     val schemaRegistryProvider = createSchemaRegistryProvider(processObjectDependencies)
 
     Map(
-      "kafka-avro" -> defaultCategory(new KafkaAvroSinkFactory(schemaRegistryProvider, processObjectDependencies))
+      "kafka-avro-raw" -> defaultCategory(new KafkaAvroSinkFactory(schemaRegistryProvider, processObjectDependencies)),
+      "kafka-avro" -> defaultCategory(new KafkaAvroSinkFactoryWithEditor(schemaRegistryProvider, processObjectDependencies))
     )
   }
 

@@ -90,6 +90,7 @@ def nussknackerMergeStrategy: String => MergeStrategy = {
   case PathList(ps@_*) if ps.last == "NumberUtils.class" => MergeStrategy.first
   case PathList(ps@_*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first
   case PathList(ps@_*) if ps.last == "libnetty_transport_native_kqueue_x86_64.jnilib" => MergeStrategy.first
+  case PathList("com", "sun", "el", xs @ _*) => MergeStrategy.first
   case PathList("org", "w3c", "dom", "events", xs @ _*) => MergeStrategy.first
   case PathList("org", "apache", "commons", "logging", xs @ _*) => MergeStrategy.first
   case PathList("javax", "validation", xs @ _*) => MergeStrategy.first //after confluent bump up to 5.5
@@ -469,7 +470,7 @@ lazy val flinkManagementSample = (project in engine("flink/management/sample")).
     }
   ).
   // depends on interpreter because of SampleNodeAdditionalInfoProvider which takes NodeData as a parameter
-  dependsOn(kafkaFlinkUtil, flinkModelUtil, interpreter, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test")
+  dependsOn(kafkaFlinkUtil, flinkModelUtil, avroFlinkUtil, interpreter, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test")
 
 lazy val managementJavaSample = (project in engine("flink/management/java_sample")).
   settings(commonSettings).
@@ -604,7 +605,7 @@ lazy val avroFlinkUtil = (project in engine("flink/avro-util")).
       )
     }
   )
-  .dependsOn(kafkaFlinkUtil, kafkaTestUtil % "test", flinkTestUtil % "test", process % "test")
+  .dependsOn(kafkaFlinkUtil, interpreter, kafkaTestUtil % "test", flinkTestUtil % "test", process % "test")
 
 lazy val kafkaFlinkUtil = (project in engine("flink/kafka-util")).
   settings(commonSettings).

@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.management.sample
 
 import java.time.LocalDateTime
-
 import com.typesafe.config.Config
 import io.circe.Encoder
 import org.apache.flink.api.common.serialization.SimpleStringSchema
@@ -11,6 +10,8 @@ import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedVal
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactoryWithEditor
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
@@ -51,12 +52,14 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   private def kafkaConfig(config: Config) = KafkaConfig.parseConfig(config)
 
-  override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
-    "sendSms" -> all(SinkFactory.noParam(EmptySink)),
-    "monitor" -> categories(SinkFactory.noParam(EmptySink)),
-    "communicationSink" -> categories(DynamicParametersSink),
-    "kafka-string" -> all(new KafkaSinkFactory(new SimpleSerializationSchema[Any](_, String.valueOf), processObjectDependencies))
-  )
+  override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] =
+    Map(
+      "sendSms" -> all(SinkFactory.noParam(EmptySink)),
+      "monitor" -> categories(SinkFactory.noParam(EmptySink)),
+      "communicationSink" -> categories(DynamicParametersSink),
+      "kafka-string" -> all(new KafkaSinkFactory(new SimpleSerializationSchema[Any](_, String.valueOf), processObjectDependencies)),
+      "kafka-avro" -> all(new KafkaAvroSinkFactoryWithEditor(ConfluentSchemaRegistryProvider(processObjectDependencies), processObjectDependencies))
+    )
 
   override def listeners(processObjectDependencies: ProcessObjectDependencies) = List(LoggingListener)
 

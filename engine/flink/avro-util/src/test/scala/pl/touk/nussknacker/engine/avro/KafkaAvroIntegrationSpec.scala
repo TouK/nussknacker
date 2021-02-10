@@ -234,7 +234,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
       "timestampToSet" -> (timeToSetInProcess.toString + "L"))
       .emptySink(
         "end",
-        "kafka-avro",
+        "kafka-avro-raw",
         TopicParamName -> s"'${topicConfig.output}'",
         SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
         SinkKeyParamName -> "",
@@ -263,7 +263,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
       "timestampToSet" -> "10000")
       .emptySink(
         "end",
-        "kafka-avro",
+        "kafka-avro-raw",
         TopicParamName -> s"'${topicConfig.output}'",
         SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
         SinkKeyParamName -> "",

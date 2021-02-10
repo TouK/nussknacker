@@ -14,7 +14,7 @@ class DefaultValueDeterminerChainTest extends FunSuite with Matchers {
   private val confMap = Map("node1" -> Map("param1" -> param1Config))
 
   private val uiParamInt = createUIParameter(Parameter[Int]("param=2"))
-  private val uiFixedValuesParam = createUIParameter(Parameter[JavaSampleEnum](name = "fixedVakuesParam")
+  private val uiFixedValuesParam = createUIParameter(Parameter[JavaSampleEnum](name = "fixedValuesParam")
     .copy(editor = new ParameterTypeEditorDeterminer(Typed[JavaSampleEnum]).determine()))
   
   private val uiParamWithConfig = createUIParameter(Parameter[Int]("param1"))

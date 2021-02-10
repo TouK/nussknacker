@@ -126,7 +126,7 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
       .filter("name-filter", "#input.first == 'Jan'")
       .emptySink(
         "end",
-        "kafka-avro",
+        "kafka-avro-raw",
         KafkaAvroBaseTransformer.SinkKeyParamName  -> "",
         KafkaAvroBaseTransformer.SinkValueParamName  -> "#input",
         KafkaAvroBaseTransformer.TopicParamName  -> s"'${topicConfig.output}'",
@@ -148,7 +148,7 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
       )
       .emptySink(
         "end",
-        "kafka-avro",
+        "kafka-avro-raw",
         KafkaAvroBaseTransformer.SinkKeyParamName -> "",
         KafkaAvroBaseTransformer.SinkValueParamName -> s"{first: #input.first, last: #input.last}",
         KafkaAvroBaseTransformer.TopicParamName -> s"'${topicConfig.output}'",
