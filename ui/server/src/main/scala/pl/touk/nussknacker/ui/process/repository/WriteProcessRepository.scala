@@ -139,6 +139,9 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
     run(action)
   }
 
+  /**
+    * FIXME: Move these two operations to separated repositories and call it on some transaction abstraction
+    */
   def archive(processId: ProcessId, isArchived: Boolean)(implicit user: LoggedUser): F[XError[Unit]] = {
     val updateArchiveQuery = processesTable.filter(_.id === processId.value).map(_.isArchived).update(isArchived).map {
       case 0 => Left(ProcessNotFoundError(processId.value.toString))

@@ -43,7 +43,7 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     "management"
   )
 
-  private val processService = new ProcessService(managementActor, time.Duration.ofMinutes(1), processRepository, actionRepository, writeProcessRepository)
+  private val processService = new ProcessService(managementActor, time.Duration.ofMinutes(1), processRepository, writeProcessRepository)
 
   test("should return state correctly when state is deployed") {
     val id: process.ProcessId =  prepareProcess(processName).futureValue

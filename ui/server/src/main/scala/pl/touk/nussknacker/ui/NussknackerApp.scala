@@ -98,7 +98,7 @@ object NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val systemRequestTimeout = system.settings.config.getDuration("akka.http.server.request-timeout")
     val managementActor = system.actorOf(ManagementActor.props(managers, processRepository, actionRepository, subprocessResolver, processChangeListener), "management")
-    val processService = new ProcessService(managementActor, systemRequestTimeout, processRepository, actionRepository, writeProcessRepository)
+    val processService = new ProcessService(managementActor, systemRequestTimeout, processRepository, writeProcessRepository)
 
     val processAuthorizer = new AuthorizeProcess(processRepository)
     val appResources = new AppResources(config, reload, modelData, processRepository, processValidation, processService)

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.process.deployment.{Cancel, CheckStatus, Deploy}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActionRepository, WriteProcessRepository}
+import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, WriteProcessRepository}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -26,13 +26,12 @@ import java.time
 class ProcessService(managerActor: ActorRef,
                      requestTimeLimit: time.Duration,
                      processRepository: FetchingProcessRepository[Future],
-                     processActionRepository: ProcessActionRepository,
                      writeRepository: WriteProcessRepository) extends LazyLogging {
 
   type EmptyResponse = XError[Unit]
-  type DeployResponse = XError[Any]
 
   import scala.concurrent.duration._
+  import cats.syntax.either._
 
   private implicit val timeout: Timeout = Timeout(requestTimeLimit.toMillis millis)
 
@@ -89,13 +88,13 @@ class ProcessService(managerActor: ActorRef,
   def deployProcess(processIdWithName: ProcessIdWithName, savepointPath: Option[String], comment: Option[String])(implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] =
      doAction(ProcessActionType.Deploy, processIdWithName, savepointPath, comment){ (processIdWithName: ProcessIdWithName, savepointPath: Option[String], comment: Option[String]) =>
        (managerActor ? Deploy(processIdWithName, user, savepointPath, comment))
-         .map(_ => Right(Unit))
+         .map(_ => ().asRight)
      }
 
   def cancelProcess(processIdWithName: ProcessIdWithName, comment: Option[String])(implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] =
    doAction(ProcessActionType.Cancel, processIdWithName, None, comment){ (processIdWithName: ProcessIdWithName, _: Option[String], comment: Option[String]) =>
      (managerActor ? Cancel(processIdWithName, user, comment))
-       .map(_ => Right(Unit))
+       .map(_ => ().asRight)
    }
 
   private def doAction(action: ProcessActionType, processIdWithName: ProcessIdWithName, savepointPath: Option[String], comment: Option[String])

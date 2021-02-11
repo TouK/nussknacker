@@ -75,7 +75,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
       processChangeListener), "management")
   }
   val managementActor: ActorRef = createManagementActorRef
-  val processService = new ProcessService(managementActor, time.Duration.ofMinutes(1), processRepository, actionRepository, writeProcessRepository)
+  val processService = new ProcessService(managementActor, time.Duration.ofMinutes(1), processRepository, writeProcessRepository)
   val newProcessPreparer = new NewProcessPreparer(
     mapProcessingTypeDataProvider("streaming" ->  ProcessTestData.processDefinition),
     mapProcessingTypeDataProvider("streaming" -> (_ => StreamMetaData(None))),
