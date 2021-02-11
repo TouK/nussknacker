@@ -35,7 +35,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
     ProcessStatus.createState(status, SimpleProcessStateDefinitionManager)
 
   private def prepareBasicAppResources(statusCheck: TestProbe) = {
-    val processService = new ProcessService(statusCheck.ref, time.Duration.ofMinutes(1), processRepository, writeProcessRepository)
+    val processService = new ProcessService(statusCheck.ref, time.Duration.ofMinutes(1), dbTransactionSupport, processRepository, actionRepository, writeProcessRepository)
     new AppResources(ConfigFactory.empty(), emptyReload, emptyProcessingTypeDataProvider, processRepository, TestFactory.processValidation, processService)
   }
 
@@ -127,7 +127,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
 
     val globalConfig = Map("testConfig" -> "testValue", "otherConfig" -> "otherValue")
 
-    val processService = new ProcessService(TestProbe().ref, time.Duration.ofMinutes(1), processRepository, writeProcessRepository)
+    val processService = new ProcessService(TestProbe().ref, time.Duration.ofMinutes(1), dbTransactionSupport, processRepository, actionRepository, writeProcessRepository)
     val resources = new AppResources(ConfigFactory.parseMap(Collections.singletonMap("globalBuildInfo", globalConfig.asJava)), emptyReload,
        mapProcessingTypeDataProvider("test1" -> modelData), processRepository, TestFactory.processValidation, processService)
 

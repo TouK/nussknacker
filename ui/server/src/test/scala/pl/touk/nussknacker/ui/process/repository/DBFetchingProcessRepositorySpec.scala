@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.ui.process.repository
 
-import java.time.LocalDateTime
+import db.util.DBIOActionInstances.DB
 
+import java.time.LocalDateTime
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -31,7 +32,7 @@ class DBFetchingProcessRepositorySpec
   import cats.syntax.either._
 
   private val writingRepo = new DbWriteProcessRepository[Future](db, mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> 0))
-    with WriteProcessRepository with BasicRepository {
+    with WriteProcessRepository[DB] with BasicRepository {
     override protected def now: LocalDateTime = currentTime
   }
   private var currentTime : LocalDateTime = LocalDateTime.now()

@@ -6,11 +6,11 @@ import cats.syntax.either._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, ProcessActionType, ProcessDeploymentData}
+import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData}
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError._
 import pl.touk.nussknacker.ui.db.DbConfig
-import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessActionEntityData, ProcessEntityData, ProcessVersionEntityData}
+import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.ProcessType
@@ -23,41 +23,39 @@ import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdatePr
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DateUtils
 import slick.dbio.DBIOAction
-
-import java.sql.Timestamp
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.higherKinds
 
 object WriteProcessRepository {
 
-  def create(dbConfig: DbConfig, modelData: ProcessingTypeDataProvider[ModelData]): WriteProcessRepository =
+  def create(dbConfig: DbConfig, modelData: ProcessingTypeDataProvider[ModelData]): WriteProcessRepository[DB] =
 
-    new DbWriteProcessRepository[Future](dbConfig, modelData.mapValues(_.migrations.version)) with WriteProcessRepository with BasicRepository
+    new DbWriteProcessRepository[Future](dbConfig, modelData.mapValues(_.migrations.version)) with WriteProcessRepository[DB] with BasicRepository
 
   case class UpdateProcessAction(id: ProcessId, deploymentData: ProcessDeploymentData, comment: String)
 
 }
 
-trait WriteProcessRepository {
+//FIXME: Refactor F[_] - it should be split
+trait WriteProcessRepository[F[_]] {
 
   def saveNewProcess(processName: ProcessName, category: String, processDeploymentData: ProcessDeploymentData,
                      processingType: ProcessingType, isSubprocess: Boolean)(implicit loggedUser: LoggedUser): Future[XError[Option[ProcessVersionEntityData]]]
 
-  def updateProcess(action: UpdateProcessAction)
-                   (implicit loggedUser: LoggedUser): Future[XError[Option[ProcessVersionEntityData]]]
+  def updateProcess(action: UpdateProcessAction)(implicit loggedUser: LoggedUser): Future[XError[Option[ProcessVersionEntityData]]]
 
   def updateCategory(processId: ProcessId, category: String)(implicit loggedUser: LoggedUser): Future[XError[Unit]]
 
-  def archive(processId: ProcessId, isArchived: Boolean)(implicit loggedUser: LoggedUser): Future[XError[Unit]]
+  def archive(processId: ProcessId, isArchived: Boolean): F[XError[Unit]]
 
   def deleteProcess(processId: ProcessId): Future[XError[Unit]]
 
   def renameProcess(processId: ProcessId, newName: String): Future[XError[Unit]]
 }
 
-abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
-                                              val modelVersion: ProcessingTypeDataProvider[Int])
+abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig, val modelVersion: ProcessingTypeDataProvider[Int])
   extends LazyLogging with ProcessRepository[F] with CommentActions {
 
   import profile.api._
@@ -139,36 +137,11 @@ abstract class DbWriteProcessRepository[F[_]](val dbConfig: DbConfig,
     run(action)
   }
 
-  /**
-    * FIXME: Move these two operations to separated repositories and call it on some transaction abstraction
-    */
-  def archive(processId: ProcessId, isArchived: Boolean)(implicit user: LoggedUser): F[XError[Unit]] = {
-    val updateArchiveQuery = processesTable.filter(_.id === processId.value).map(_.isArchived).update(isArchived).map {
+  def archive(processId: ProcessId, isArchived: Boolean) =
+    processesTable.filter(_.id === processId.value).map(_.isArchived).update(isArchived).map {
       case 0 => Left(ProcessNotFoundError(processId.value.toString))
       case 1 => Right(())
     }
-
-    val createActionQuery = for {
-      latestProcessVersion <- fetchProcessLatestVersionsQuery(processId)(ProcessShapeFetchStrategy.FetchDisplayable).result.head
-      processActionData = ProcessActionEntityData(
-        processId = processId.value,
-        processVersionId = latestProcessVersion.id,
-        user = user.username,
-        performedAt = Timestamp.valueOf(LocalDateTime.now()),
-        action = if (isArchived) ProcessActionType.Archive else ProcessActionType.UnArchive,
-        commentId = None,
-        buildInfo = None
-      )
-      _ <- processActionsTable += processActionData
-    } yield Right(processActionData)
-
-    val combinedAction = DBIO.seq[Effect.All](
-      updateArchiveQuery,
-      createActionQuery
-    ).map(_ => ().asRight).transactionally
-
-    run(combinedAction)
-  }
 
   //accessible only from initializing scripts so far
   def updateCategory(processId: ProcessId, category: String)(implicit loggedUser: LoggedUser): F[XError[Unit]] = {

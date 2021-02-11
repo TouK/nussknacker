@@ -23,14 +23,16 @@ import pl.touk.nussknacker.engine.management.FlinkStreamingProcessManagerProvide
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process
+import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.deployment.CustomActionRequest
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
 import pl.touk.nussknacker.ui.process._
-import pl.touk.nussknacker.ui.process.deployment.{ManagementActor}
+import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReader
+import pl.touk.nussknacker.ui.process.repository.DBTransaction
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{DefaultAuthenticationConfiguration, LoggedUser}
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
@@ -46,6 +48,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   val env = "test"
   val attachmentsPath = "/tmp/attachments" + System.currentTimeMillis()
 
+  val dbTransactionSupport = new DBTransaction(db)
   val processRepository = newProcessRepository(db)
   val processAuthorizer = new AuthorizeProcess(processRepository)
 
@@ -75,7 +78,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
       processChangeListener), "management")
   }
   val managementActor: ActorRef = createManagementActorRef
-  val processService = new ProcessService(managementActor, time.Duration.ofMinutes(1), processRepository, writeProcessRepository)
+  val processService = new ProcessService(managementActor, time.Duration.ofMinutes(1), dbTransactionSupport, processRepository, actionRepository, writeProcessRepository)
   val newProcessPreparer = new NewProcessPreparer(
     mapProcessingTypeDataProvider("streaming" ->  ProcessTestData.processDefinition),
     mapProcessingTypeDataProvider("streaming" -> (_ => StreamMetaData(None))),
@@ -291,7 +294,10 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   def createArchivedProcess(processName: ProcessName, isSubprocess: Boolean): process.ProcessId = {
     (for {
       id <- prepareProcess(processName, testCategoryName, isSubprocess)
-      _ <- writeProcessRepository.archive(id, isArchived = true)
+      _ <- dbTransactionSupport.runInTransaction(
+        writeProcessRepository.archive(processId = id, isArchived = true),
+        actionRepository.markProcessAsArchived(processId = id, 1)
+      )
     } yield id).futureValue
   }
 

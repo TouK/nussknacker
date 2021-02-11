@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.server.{Directives, Route}
 import cats.data.EitherT
+import db.util.DBIOActionInstances.DB
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
 import io.circe.parser.parse
@@ -18,8 +19,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class QueryableStateResources(typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData],
                               val processRepository: FetchingProcessRepository[Future],
-                              processService: ProcessService,
-                              val processAuthorizer:AuthorizeProcess)
+                              processService: ProcessService[DB],
+                              val processAuthorizer: AuthorizeProcess)
                              (implicit val ec: ExecutionContext)
   extends Directives
     with FailFastCirceSupport
@@ -58,6 +59,7 @@ class QueryableStateResources(typeToConfig: ProcessingTypeDataProvider[Processin
 
   import cats.instances.future._
   import cats.syntax.either._
+
   private def queryState(processId: ProcessIdWithName, queryName: String, key: Option[String])(implicit user: LoggedUser): Future[Json] = {
     import QueryStateErrors._
 
@@ -89,8 +91,11 @@ class QueryableStateResources(typeToConfig: ProcessingTypeDataProvider[Processin
 
   object QueryStateErrors {
     def noJob(processId: String) = s"There is no job for $processId"
+
     def noJobRunning(processId: String) = s"There is no running job for $processId"
+
     def deployInProgress(processId: String) = s"There is pending deployment for $processId, Try again later"
+
     def wrongJson(msg: String, json: String) = s"Unparsable json. Message: $msg, json: $json"
   }
 

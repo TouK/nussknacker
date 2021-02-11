@@ -8,28 +8,33 @@ import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.process.deployment.{Cancel, CheckStatus, Deploy}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, WriteProcessRepository}
+import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActionRepository, TransactionSupport, WriteProcessRepository}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-
 import scala.concurrent.{ExecutionContext, Future}
-import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import akka.actor.ActorRef
 import akka.pattern.ask
+
 import java.time
+import scala.language.higherKinds
 
 /**
   * ProcessService provides functionality for archive, unarchive, deploy, cancel process.
   * Each action includes verification based on actual process state and checking process is subprocess / archived.
+  *
+  * FIXME: Refactor F[_] - it should be split
   */
-class ProcessService(managerActor: ActorRef,
-                     requestTimeLimit: time.Duration,
-                     processRepository: FetchingProcessRepository[Future],
-                     writeRepository: WriteProcessRepository) extends LazyLogging {
+class ProcessService[F[_]](managerActor: ActorRef,
+                           requestTimeLimit: time.Duration,
+                           transactionSupport: TransactionSupport[F],
+                           processRepository: FetchingProcessRepository[Future],
+                           processActionRepository: ProcessActionRepository[F],
+                           writeRepository: WriteProcessRepository[F]) extends LazyLogging {
 
   type EmptyResponse = XError[Unit]
 
+  import pl.touk.nussknacker.engine.api.CirceUtil._
   import scala.concurrent.duration._
   import cats.syntax.either._
 
@@ -48,19 +53,21 @@ class ProcessService(managerActor: ActorRef,
       case Some(process) if process.isSubprocess =>
         archiveSubprocess(process)
       case Some(process) =>
-        doOnProcessStateVerification(process, ProcessActionType.Archive)(process => {
-          writeRepository.archive(processId = process.idWithName.id, isArchived = true)
-        })
+        doOnProcessStateVerification(process, ProcessActionType.Archive)(doArchive)
       case None =>
         Future(Left(ProcessNotFoundError(processIdWithName.id.value.toString)))
     }
   }
 
-  /**
-    * FIXME: Add checking subprocess is used by any of already working process. ProcessResourcesSpec contains ignored test for it.
-    */
+  private def doArchive(process: BaseProcessDetails[_])(implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] = {
+    transactionSupport.runInTransaction(
+      writeRepository.archive(processId = process.idWithName.id, isArchived = true),
+      processActionRepository.markProcessAsArchived(processId = process.idWithName.id, process.processVersionId)
+    ).map(_ => ().asRight)
+  }
+
   private def archiveSubprocess(process: BaseProcessDetails[_])(implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] =
-    writeRepository.archive(processId = process.idWithName.id, isArchived = true)
+    doArchive(process)
 
   private def doOnProcessStateVerification(process: BaseProcessDetails[_], actionToCheck: ProcessActionType)
                                           (action: BaseProcessDetails[_] => Future[EmptyResponse])
@@ -79,7 +86,10 @@ class ProcessService(managerActor: ActorRef,
       case Some(process) if !process.isArchived =>
         Future(Left(ProcessIllegalAction("Can't unarchive not archived process.")))
       case Some(process) =>
-        writeRepository.archive(processId = process.idWithName.id, isArchived = false)
+        transactionSupport.runInTransaction(
+          writeRepository.archive(processId = process.idWithName.id, isArchived = false),
+          processActionRepository.markProcessAsUnArchived(processId = process.idWithName.id, process.processVersionId)
+        ).map(_ => ().asRight)
       case None =>
         Future(Left(ProcessNotFoundError(processIdWithName.id.value.toString)))
     }

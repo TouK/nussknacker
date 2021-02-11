@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
+import db.util.DBIOActionInstances.DB
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
@@ -8,7 +9,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.instances.future._
 import cats.data.{EitherT, Validated}
 import cats.syntax.either._
-import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessActionType, ProcessManager, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessManager, ProcessState}
 import pl.touk.nussknacker.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -36,7 +37,6 @@ import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
@@ -44,8 +44,8 @@ import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnCategoryChanged
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
 class ProcessesResources(val processRepository: FetchingProcessRepository[Future],
-                         writeRepository: WriteProcessRepository,
-                         processService: ProcessService,
+                         writeRepository: WriteProcessRepository[DB],
+                         processService: ProcessService[DB],
                          processValidation: ProcessValidation,
                          processResolving: UIProcessResolving,
                          typesForCategories: ProcessTypesForCategories,

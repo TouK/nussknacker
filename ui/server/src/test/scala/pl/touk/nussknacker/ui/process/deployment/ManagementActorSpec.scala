@@ -14,6 +14,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockProcessManager, mapPr
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessingTypes, WithHsqlDbTesting}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.ProcessService
+import pl.touk.nussknacker.ui.process.repository.DBTransaction
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.time
@@ -27,6 +28,7 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
   val processName: ProcessName = ProcessName("proces1")
 
   private val processManager = new MockProcessManager
+  private val dbTransactionSupport = new DBTransaction(db)
   private val processRepository = newProcessRepository(db)
   private val writeProcessRepository = newWriteProcessRepository(db)
   private val actionRepository = newActionProcessRepository(db)
@@ -43,7 +45,7 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     "management"
   )
 
-  private val processService = new ProcessService(managementActor, time.Duration.ofMinutes(1), processRepository, writeProcessRepository)
+  private val processService = new ProcessService(managementActor, time.Duration.ofMinutes(1), dbTransactionSupport, processRepository, actionRepository, writeProcessRepository)
 
   test("should return state correctly when state is deployed") {
     val id: process.ProcessId =  prepareProcess(processName).futureValue
@@ -280,7 +282,6 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
 
   test("Should return NotFound state for archived process with missing state") {
     val id = prepareArchivedProcess(processName).futureValue
-
     processManager.withEmptyProcessState {
       val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
@@ -331,9 +332,13 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     } yield id
 
 
-  private def prepareArchivedProcess(processName: ProcessName): Future[process.ProcessId] =
-    for {
-      id <- prepareProcess(processName)
-      _ <- writeProcessRepository.archive(id, isArchived = true)
-    }  yield id
+  private def prepareArchivedProcess(processName: ProcessName): Future[process.ProcessId] = {
+      for {
+        id <- prepareProcess(processName)
+        _ <- dbTransactionSupport.runInTransaction(
+          writeProcessRepository.archive(processId = id, isArchived = true),
+          actionRepository.markProcessAsArchived(processId = id, 1)
+        )
+      } yield id
+  }
 }
