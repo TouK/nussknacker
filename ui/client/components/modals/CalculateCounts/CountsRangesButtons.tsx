@@ -1,7 +1,7 @@
 import {Moment} from "moment"
 import React, {useCallback, useMemo} from "react"
-import {ButtonWithFocus} from "../withFocus"
-import {SelectButton} from "./selectButton"
+import {DropdownButton} from "../../common/DropdownButton"
+import {ButtonWithFocus} from "../../withFocus"
 
 export interface Range {
   name: string,
@@ -15,7 +15,7 @@ interface RangesButtonsProps {
   limit?: number,
 }
 
-export function RangesButtons({ranges, onChange, limit = 2}: RangesButtonsProps): JSX.Element {
+export function CountsRangesButtons({ranges, onChange, limit = 2}: RangesButtonsProps): JSX.Element {
   const changeHandler = useCallback(
     ({from, to}: Range) => onChange([from(), to()]),
     [onChange],
@@ -43,7 +43,7 @@ export function RangesButtons({ranges, onChange, limit = 2}: RangesButtonsProps)
 
       {collapsed.length > 0 ?
         (
-          <SelectButton
+          <DropdownButton
             options={collapsed.map((value) => ({label: value.name, value}))}
             onRangeSelect={changeHandler}
             className="predefinedRangeButton"
@@ -56,7 +56,7 @@ export function RangesButtons({ranges, onChange, limit = 2}: RangesButtonsProps)
             }}
           >
             Select more...
-          </SelectButton>
+          </DropdownButton>
         ) :
         null}
     </>

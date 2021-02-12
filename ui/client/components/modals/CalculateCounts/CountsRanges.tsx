@@ -1,10 +1,10 @@
 import moment, {Moment} from "moment"
-import React, {useEffect, useMemo, useState} from "react"
+import React, {CSSProperties, useEffect, useMemo, useState} from "react"
 import {TFunction, useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"
-import HttpService from "../../http/HttpService"
-import {getProcessId} from "../../reducers/selectors/graph"
-import {Range, RangesButtons} from "./RangesButtons"
+import HttpService from "../../../http/HttpService"
+import {getProcessId} from "../../../reducers/selectors/graph"
+import {Range, CountsRangesButtons} from "./CountsRangesButtons"
 
 function predefinedRanges(t: TFunction<string>): Range[] {
   return [
@@ -41,10 +41,8 @@ interface RangesProps {
   onChange: (value: [Moment, Moment]) => void,
 }
 
-export function Ranges({label, onChange}: RangesProps): JSX.Element {
+function useDeployHistory(processId: string): Range[] {
   const {t} = useTranslation()
-  const processId = useSelector(getProcessId)
-
   const [deploys, setDeploys] = useState<Range[]>([])
   useEffect(() => {
     HttpService.fetchProcessesDeployments(processId)
@@ -61,14 +59,28 @@ export function Ranges({label, onChange}: RangesProps): JSX.Element {
       }))
       .then(setDeploys)
   }, [t, processId])
+  return deploys
+}
 
-  const ranges = useMemo(() => predefinedRanges(t), [t])
+const rangesStyle: CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  justifyContent: "center",
+  padding: "4%",
+}
+
+export function CountsRanges({label, onChange}: RangesProps): JSX.Element {
+  const {t} = useTranslation()
+  const processId = useSelector(getProcessId)
+  const deploys = useDeployHistory(processId)
+  const ranges = useMemo(() => [...predefinedRanges(t), ...deploys], [t, deploys])
+
   return (
     <>
       <p>{label}</p>
 
-      <div style={{display: "flex", flexWrap: "wrap", justifyContent: "center", padding: "4%"}}>
-        <RangesButtons ranges={[...ranges, ...deploys]} onChange={onChange} limit={6}/>
+      <div style={rangesStyle}>
+        <CountsRangesButtons ranges={[...ranges, ...deploys]} onChange={onChange} limit={6}/>
       </div>
     </>
   )

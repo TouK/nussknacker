@@ -2,28 +2,22 @@
 import React, {CSSProperties, PropsWithChildren, useCallback, useState} from "react"
 import {createPortal} from "react-dom"
 
-import Select, {components} from "react-select"
-import {ReactComponent as CollapseIcon} from "../../assets/img/arrows/panel-hide-arrow.svg"
+import Select from "react-select"
 import styles from "../../stylesheets/select.styl"
 import {ButtonProps, ButtonWithFocus} from "../withFocus"
 
+const forceHideStyles: CSSProperties = {
+  height: "0 !important",
+  minHeight: "0 !important",
+  maxHeight: "0 !important",
+  overflow: "hidden",
+  margin: 0,
+  padding: 0,
+}
+
 const styleOverride = {
-  container: () => ({
-    height: "0 !important",
-    minHeight: "0 !important",
-    maxHeight: "0 !important",
-    overflow: "hidden",
-    margin: 0,
-    padding: 0,
-  }),
-  control: () => ({
-    height: "0 !important",
-    minHeight: "0 !important",
-    maxHeight: "0 !important",
-    overflow: "hidden",
-    margin: 0,
-    padding: 0,
-  }),
+  container: () => forceHideStyles,
+  control: () => forceHideStyles,
   menuPortal: ({width, ...base}) => ({...base, zIndex: 1000}),
   menu: ({position, ...base}) => ({...base}),
 }
@@ -39,7 +33,7 @@ interface Props<T = any> {
   wrapperStyle?: CSSProperties,
 }
 
-export function SelectButton<T = any>(props: PropsWithChildren<ButtonProps & Props<T>>): JSX.Element {
+export function DropdownButton<T = any>(props: PropsWithChildren<ButtonProps & Props<T>>): JSX.Element {
   const [isOpen, setIsOpen] = useState<boolean>()
   const {options, onRangeSelect: onSelect, children, onClick, wrapperStyle, ...buttonProps} = props
 

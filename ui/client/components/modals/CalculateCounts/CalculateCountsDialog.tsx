@@ -3,13 +3,13 @@ import moment, {MomentInput} from "moment"
 import React, {useCallback, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
-import {fetchAndDisplayProcessCounts} from "../../actions/nk"
-import {getProcessId} from "../../reducers/selectors/graph"
-import "../../stylesheets/visualization.styl"
-import Dialogs from "./Dialogs"
-import GenericModalDialog from "./GenericModalDialog"
+import {fetchAndDisplayProcessCounts} from "../../../actions/nk"
+import {getProcessId} from "../../../reducers/selectors/graph"
+import "../../../stylesheets/visualization.styl"
+import Dialogs from "../Dialogs"
+import GenericModalDialog from "../GenericModalDialog"
 import {Picker} from "./Picker"
-import {Ranges} from "./Ranges"
+import {CountsRanges} from "./CountsRanges"
 
 interface State {
   from: Date,
@@ -69,7 +69,7 @@ function CalculateCountsDialog(): JSX.Element {
         onChange={setTo}
         value={to}
       />
-      <Ranges
+      <CountsRanges
         label={t("calculateCounts.quickRanges", "Quick ranges")}
         onChange={setRange}
       />
