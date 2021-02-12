@@ -64,12 +64,19 @@ class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest w
         |       "language":"spel",
         |       "expression":"not valid spell expression"
         |    }
+        | },
+        | {
+        |    "name": "tariffType",
+        |    "expression": {
+        |       "language": "spel",
+        |       "expression": "null"
+        |    }
         | }
         |]
       """.stripMargin)
     Post("/service/streaming/enricher", entity) ~> serviceRoutes.securedRoute ~> check {
       status shouldEqual StatusCodes.InternalServerError
-      entityAs[JsonThrowable].message shouldEqual Some("MissingParameters(Set(tariffType),)")
+      entityAs[JsonThrowable].message shouldEqual Some("ExpressionParseError(EL1041E: After parsing a valid expression, there is still more data in the expression: 'spell',,Some(param),not valid spell expression)")
       entityAs[JsonThrowable].className shouldEqual classOf[ServiceInvocationException].getCanonicalName
     }
   }

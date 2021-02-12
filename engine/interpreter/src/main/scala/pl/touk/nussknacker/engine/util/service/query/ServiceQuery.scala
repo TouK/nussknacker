@@ -59,7 +59,7 @@ class ServiceQuery(modelData: ModelData) {
 
       val compiled = compiler.compileService(ServiceRef(serviceName, params), validationContext, None, Some(_ => collector))(NodeId(""), metaData)
       compiled.compiledObject.map { service =>
-          service.invoke(ctx, ExpressionEvaluator.unOptimizedEvaluator(variablesPreparer))._2.map(QueryResult(_, collector.getResults))
+          service.invoke(ctx, evaluator)._2.map(QueryResult(_, collector.getResults))
       }.valueOr(e => Future.failed(ServiceInvocationException(e)))
     }
 
