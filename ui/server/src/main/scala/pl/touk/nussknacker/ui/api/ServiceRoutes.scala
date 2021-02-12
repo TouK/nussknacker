@@ -7,8 +7,7 @@ import akka.http.scaladsl.server.{Directives, ExceptionHandler, Route}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
-import pl.touk.nussknacker.engine.util.service.query.{ExpressionServiceQuery, ServiceQuery}
-import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.{QueryResult, ServiceNotFoundException}
+import pl.touk.nussknacker.engine.util.service.query.ServiceQuery
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
@@ -18,6 +17,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Encoder, Json}
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.{QueryResult, ServiceNotFoundException}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
 class ServiceRoutes(modelDataMap: ProcessingTypeDataProvider[ModelData])
@@ -82,8 +82,7 @@ class ServiceRoutes(modelDataMap: ProcessingTypeDataProvider[ModelData])
   }
 
   private def invokeService(serviceName: String, modelData: ModelData, params: List[Parameter]): Future[QueryResult] = {
-    ExpressionServiceQuery(new ServiceQuery(modelData), modelData)
-      .invoke(serviceName, params)
+    new ServiceQuery(modelData).invoke(serviceName, params)
   }
 }
 
