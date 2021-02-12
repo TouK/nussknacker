@@ -1,127 +1,182 @@
 package pl.touk.nussknacker.ui.process.repository
 
-import java.sql.Timestamp
-
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
+import java.time.LocalDateTime
+import cats.data._
+import cats.syntax.either._
+import com.typesafe.scalalogging.LazyLogging
+import db.util.DBIOActionInstances._
+import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData}
+import pl.touk.nussknacker.ui.EspError
+import pl.touk.nussknacker.ui.EspError._
+import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
+import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessEntityData, ProcessEntityFactory, ProcessVersionEntityData, ProcessVersionEntityFactory}
+import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.restmodel.ProcessType
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.restmodel.process.ProcessId
-import pl.touk.nussknacker.restmodel.processdetails.{ProcessAction, ProcessVersion, ProcessShapeFetchStrategy}
-import pl.touk.nussknacker.ui.app.BuildInfo
-import pl.touk.nussknacker.ui.db.EspTables
-import pl.touk.nussknacker.ui.db.entity._
-import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser, Permission}
+import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository._
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, UpdateProcessAction}
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DateUtils
-import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
+import slick.dbio.DBIOAction
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.language.higherKinds
-
-trait ProcessRepository[F[_]] extends Repository[F] with EspTables {
-  import api._
-
-  protected def processTableFilteredByUser(implicit loggedUser: LoggedUser): Query[ProcessEntityFactory#ProcessEntity, ProcessEntityData, Seq] = {
-    loggedUser match {
-      case user: CommonUser => processesTable.filter(_.processCategory inSet user.categories(Permission.Read))
-      case _: AdminUser => processesTable
-    }
-  }
-
-  protected def fetchProcessLatestVersionsQuery(processId: ProcessId)(implicit fetchShape: ProcessShapeFetchStrategy[_]): Query[ProcessVersionEntityFactory#BaseProcessVersionEntity, ProcessVersionEntityData, Seq] =
-    processVersionsTableQuery
-      .filter(_.processId === processId.value)
-      .sortBy(_.createDate.desc)
-
-  protected def fetchLastDeployedActionPerProcessQuery: Query[(api.Rep[Long], (ProcessActionEntityFactory#ProcessActionEntity, api.Rep[Option[CommentEntityFactory#CommentEntity]])), (Long, (ProcessActionEntityData, Option[CommentEntityData])), Seq] =
-    fetchLastActionPerProcessQuery
-      .filter(_._2._1.action === ProcessActionType.Deploy)
-
-  protected def fetchLastActionPerProcessQuery: Query[(Rep[Long], (ProcessActionEntityFactory#ProcessActionEntity, Rep[Option[CommentEntityFactory#CommentEntity]])), (Long, (ProcessActionEntityData, Option[CommentEntityData])), Seq] =
-    processActionsTable
-      .groupBy(_.processId)
-      .map { case (processId, group) => (processId, group.map(_.performedAt).max) }
-      .join(processActionsTable)
-      .on { case ((processId, maxPerformedAt), action) => action.processId === processId && action.performedAt === maxPerformedAt } //We fetch exactly this one  with max deployment
-      .map { case ((processId, _), action) => processId -> action }
-      .joinLeft(commentsTable)
-      .on { case ((_, action), comment) => action.commentId === comment.id }
-      .map{ case ((processId, action), comment) => processId -> (action, comment) }
-
-  protected def fetchProcessLatestActionsQuery(processId: ProcessId): Query[(ProcessActionEntityFactory#ProcessActionEntity, Rep[Option[CommentEntityFactory#CommentEntity]]), (ProcessActionEntityData, Option[CommentEntityData]), Seq] =
-    processActionsTable
-      .filter(_.processId === processId.value)
-      .joinLeft(commentsTable)
-      .on { case (action, comment) => action.commentId === comment.id }
-      .map{ case (action, comment) => (action, comment) }
-      .sortBy(_._1.performedAt.desc)
-
-  protected def fetchLatestProcessesQuery(query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
-                                          lastDeployedActionPerProcess: Seq[(Long, (ProcessActionEntityData, Option[CommentEntityData]))],
-                                          isDeployed: Option[Boolean])(implicit fetchShape: ProcessShapeFetchStrategy[_], loggedUser: LoggedUser, ec: ExecutionContext): Query[(((Rep[Long], Rep[Option[Timestamp]]), ProcessVersionEntityFactory#BaseProcessVersionEntity), ProcessEntityFactory#ProcessEntity), (((Long, Option[Timestamp]), ProcessVersionEntityData), ProcessEntityData), Seq] =
-    processVersionsTableNoJson
-      .groupBy(_.processId)
-      .map { case (n, group) => (n, group.map(_.createDate).max) }
-      .join(processVersionsTableQuery)
-      .on { case (((processId, latestVersionDate)), processVersion) => processVersion.processId === processId && processVersion.createDate === latestVersionDate }
-      .join(processTableFilteredByUser.filter(query))
-      .on { case ((_, latestVersion), process) => latestVersion.processId === process.id }
-      .filter{ case ((_, _), process) =>
-        isDeployed match {
-          case None => true: Rep[Boolean]
-          case Some(dep) => process.id.inSet(lastDeployedActionPerProcess.map(_._1)) === dep
-        }
-      }
-
-  protected def fetchTagsPerProcess(implicit fetchShape: ProcessShapeFetchStrategy[_], ec: ExecutionContext): DBIOAction[Map[Long, List[TagsEntityData]], NoStream, Effect.Read] =
-    tagsTable.result.map(_.toList.groupBy(_.processId).withDefaultValue(Nil))
-
-  protected def processVersionsTableQuery(implicit fetchShape: ProcessShapeFetchStrategy[_]): TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity] =
-    fetchShape match {
-      case ProcessShapeFetchStrategy.FetchDisplayable | ProcessShapeFetchStrategy.FetchCanonical =>
-        processVersionsTable.asInstanceOf[TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity]]
-      case ProcessShapeFetchStrategy.NotFetch =>
-        processVersionsTableNoJson.asInstanceOf[TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity]]
-    }
-
-  protected def latestProcessVersionsNoJsonQuery(processName: ProcessName): Query[ProcessVersionEntityFactory#BaseProcessVersionEntity, ProcessVersionEntityData, Seq] =
-    processesTable
-      .filter(_.name === processName.value)
-      .join(processVersionsTableNoJson)
-      .on { case (process, version) => process.id === version.id }
-      .map(_._2)
-      .sortBy(_.createDate.desc)
-}
 
 object ProcessRepository {
 
-  def toProcessVersion(versionData: ProcessVersionEntityData, actions: List[(ProcessActionEntityData, Option[CommentEntityData])]): ProcessVersion = ProcessVersion(
-    processVersionId = versionData.id,
-    createDate = DateUtils.toLocalDateTime(versionData.createDate),
-    modelVersion = versionData.modelVersion,
-    user = versionData.user,
-    actions = actions.map(toProcessAction)
-  )
+  def create(dbConfig: DbConfig, modelData: ProcessingTypeDataProvider[ModelData]): DBProcessRepository =
+    new DBProcessRepository(dbConfig, modelData.mapValues(_.migrations.version))
 
-  def toProcessAction(actionData: (ProcessActionEntityData, Option[CommentEntityData])): ProcessAction = ProcessAction(
-    processVersionId = actionData._1.processVersionId,
-    performedAt = actionData._1.performedAtTime,
-    user = actionData._1.user,
-    action = actionData._1.action,
-    commentId = actionData._2.map(_.id),
-    comment = actionData._2.map((_.content)),
-    buildInfo = actionData._1.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty)
-  )
+  case class UpdateProcessAction(id: ProcessId, deploymentData: ProcessDeploymentData, comment: String)
 
-  case class ProcessNotFoundError(id: String) extends Exception(s"No process $id found") with NotFoundError
+  case class CreateProcessAction(processName: ProcessName, category: String, processDeploymentData: ProcessDeploymentData, processingType: ProcessingType, isSubprocess: Boolean)
+}
 
-  case class ProcessAlreadyExists(id: String) extends BadRequestError {
-    def getMessage = s"Process $id already exists"
+trait ProcessRepository[F[_]] {
+
+  def saveNewProcess(action: CreateProcessAction)(implicit loggedUser: LoggedUser): F[XError[Option[ProcessVersionEntityData]]]
+
+  def updateProcess(action: UpdateProcessAction)(implicit loggedUser: LoggedUser): F[XError[Option[ProcessVersionEntityData]]]
+
+  def updateCategory(processId: ProcessId, category: String)(implicit loggedUser: LoggedUser): F[XError[Unit]]
+
+  def archive(processId: ProcessId, isArchived: Boolean): F[XError[Unit]]
+
+  def deleteProcess(processId: ProcessId): F[XError[Unit]]
+
+  def renameProcess(processId: ProcessId, newName: String): F[XError[Unit]]
+}
+
+class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTypeDataProvider[Int])
+  extends ProcessRepository[DB] with EspTables with LazyLogging with CommentActions with ProcessDBQueryRepository[Future] with BasicRepository {
+
+  import profile.api._
+
+  /**
+    * These action should be done on transaction - move it to ProcessService.createProcess
+    */
+  def saveNewProcess(action: CreateProcessAction)(implicit loggedUser: LoggedUser): DB[XError[Option[ProcessVersionEntityData]]] = {
+    val processToSave = ProcessEntityData(
+      id = -1L, name = action.processName.value, processCategory = action.category,
+      description = None, processType = ProcessType.fromDeploymentData(action.processDeploymentData),
+      processingType = action.processingType, isSubprocess = action.isSubprocess, isArchived = false,
+      createdAt = DateUtils.toTimestamp(now), createdBy = loggedUser.username)
+
+    val insertNew = processesTable.returning(processesTable.map(_.id)).into { case (entity, newId) => entity.copy(id = newId) }
+
+    val insertAction = logDebug(s"Saving process ${action.processName.value} by user $loggedUser").flatMap { _ =>
+      latestProcessVersionsNoJsonQuery(action.processName).result.headOption.flatMap {
+        case Some(_) => DBIOAction.successful(ProcessAlreadyExists(action.processName.value).asLeft)
+        case None => processesTable.filter(_.name === action.processName.value).result.headOption.flatMap {
+          case Some(_) => DBIOAction.successful(ProcessAlreadyExists(action.processName.value).asLeft)
+          case None => (insertNew += processToSave).flatMap(entity => updateProcessInternal(ProcessId(entity.id), action.processDeploymentData))
+        }
+      }
+    }
+
+    insertAction
   }
 
-  case class ProcessAlreadyDeployed(id: String) extends BadRequestError {
-    def getMessage = s"Process $id is already deployed"
+  def updateProcess(updateProcessAction: UpdateProcessAction)(implicit loggedUser: LoggedUser): DB[XError[Option[ProcessVersionEntityData]]] =
+    updateProcessInternal(updateProcessAction.id, updateProcessAction.deploymentData).flatMap {
+      case Right(Some(newVersion)) =>
+        newCommentAction(ProcessId(newVersion.processId), newVersion.id, updateProcessAction.comment).map(_ => Right(Some(newVersion)))
+      case a => DBIO.successful(a)
+    }
+
+  private def updateProcessInternal(processId: ProcessId, processDeploymentData: ProcessDeploymentData)(implicit loggedUser: LoggedUser): DB[XError[Option[ProcessVersionEntityData]]] = {
+    val (maybeJson, maybeMainClass) = processDeploymentData match {
+      case GraphProcess(json) => (Some(json), None)
+      case CustomProcess(mainClass) => (None, Some(mainClass))
+    }
+
+    def versionToInsert(latestProcessVersion: Option[ProcessVersionEntityData], processesVersionCount: Int, processingType: ProcessingType): Option[ProcessVersionEntityData] = latestProcessVersion match {
+      case Some(version) if version.json == maybeJson && version.mainClass == maybeMainClass => None
+      case _ => Option(ProcessVersionEntityData(id = processesVersionCount + 1, processId = processId.value,
+        json = maybeJson, mainClass = maybeMainClass, createDate = DateUtils.toTimestamp(now),
+        user = loggedUser.username, modelVersion = modelVersion.forType(processingType)))
+    }
+
+    //TODO: why EitherT.right doesn't infere properly here?
+    def rightT[T](value: DB[T]): EitherT[DB, EspError, T] = EitherT[DB, EspError, T](value.map(Right(_)))
+
+    val insertAction = for {
+      _ <- rightT(logDebug(s"Updating process $processId by user $loggedUser"))
+      maybeProcess <- rightT(processTableFilteredByUser.filter(_.id === processId.value).result.headOption)
+      process <- EitherT.fromEither[DB](Either.fromOption(maybeProcess, ProcessNotFoundError(processId.value.toString)))
+      _ <- EitherT.fromEither(Either.cond(process.processType == ProcessType.fromDeploymentData(processDeploymentData), (), InvalidProcessTypeError(processId.value.toString))) //FIXME: Move this condition to service..
+      processesVersionCount <- rightT(processVersionsTableNoJson.filter(p => p.processId === processId.value).length.result)
+      latestProcessVersion <- rightT(fetchProcessLatestVersionsQuery(processId)(ProcessShapeFetchStrategy.FetchDisplayable).result.headOption)
+      newProcessVersion <- EitherT.fromEither(Right(versionToInsert(latestProcessVersion, processesVersionCount, process.processingType)))
+      _ <- EitherT.right[EspError](newProcessVersion.map(processVersionsTable += _).getOrElse(dbMonad.pure(0)))
+    } yield newProcessVersion
+    insertAction.value
   }
 
-  case class InvalidProcessTypeError(id: String) extends BadRequestError {
-    def getMessage = s"Process $id is not GraphProcess"
+  private def logDebug(s: String) = {
+    dbMonad.pure(()).map(_ => logger.debug(s))
   }
+
+  def deleteProcess(processId: ProcessId): DB[XError[Unit]] =
+    processesTable.filter(_.id === processId.value).delete.map {
+      case 0 => Left(ProcessNotFoundError(processId.value.toString))
+      case 1 => Right(())
+    }
+
+  def archive(processId: ProcessId, isArchived: Boolean): DB[XError[Unit]] =
+    processesTable.filter(_.id === processId.value).map(_.isArchived).update(isArchived).map {
+      case 0 => Left(ProcessNotFoundError(processId.value.toString))
+      case 1 => Right(())
+    }
+
+  //accessible only from initializing scripts so far
+  def updateCategory(processId: ProcessId, category: String)(implicit loggedUser: LoggedUser): DB[XError[Unit]] =
+    processesTable.filter(_.id === processId.value).map(_.processCategory).update(category).map {
+      case 0 => Left(ProcessNotFoundError(processId.value.toString))
+      case 1 => Right(())
+    }
+
+  def renameProcess(processId: ProcessId, newName: String): DB[XError[Unit]] = {
+    def updateNameInSingleProcessVersion(processVersion: ProcessVersionEntityData, process: ProcessEntityData) = {
+      processVersion.json match {
+        case Some(json) =>
+          val updatedJson = ProcessConverter.modify(json, process.processingType)(_.copy(id = newName))
+          val updatedProcessVersion = processVersion.copy(json = Some(updatedJson))
+          processVersionsTable.filter(version => version.id === processVersion.id && version.processId === process.id)
+            .update(updatedProcessVersion)
+        case None => DBIO.successful(())
+      }
+    }
+
+    val updateNameInProcessJson =
+      processVersionsTable.filter(_.processId === processId.value)
+        .join(processesTable)
+        .on { case (version, process) => version.processId === process.id }
+        .result.flatMap { processVersions =>
+        DBIO.seq(processVersions.map((updateNameInSingleProcessVersion _).tupled): _*)
+      }
+
+    val updateNameInProcess =
+      processesTable.filter(_.id === processId.value).map(_.name).update(newName)
+
+    val action = processesTable.filter(_.name === newName).result.headOption.flatMap {
+      case Some(_) => DBIO.successful(ProcessAlreadyExists(newName).asLeft)
+      case None =>
+        DBIO.seq[Effect.All](
+          updateNameInProcess,
+          updateNameInProcessJson
+        ).map(_ => ().asRight).transactionally
+    }
+
+    action
+  }
+
+  //to override in tests
+  protected def now: LocalDateTime = LocalDateTime.now()
 }

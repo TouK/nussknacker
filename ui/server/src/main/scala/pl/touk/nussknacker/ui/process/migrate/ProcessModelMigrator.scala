@@ -8,7 +8,7 @@ import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.UpdateProcessAction
 
 case class MigrationResult(process: CanonicalProcess, migrationsApplied: List[ProcessMigration]) {
 

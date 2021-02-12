@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName, ProcessIdWithNameAndCategory}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
+import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}

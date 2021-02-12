@@ -12,7 +12,7 @@ import pl.touk.nussknacker.restmodel.processdetails.{ProcessShapeFetchStrategy, 
 import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.db.entity._
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
+import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DateUtils
 
@@ -104,8 +104,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       )}).map(_.toList)
   }
 
-  override def fetchLatestProcessDetailsForProcessId[PS: ProcessShapeFetchStrategy](id: ProcessId, businessView: Boolean)
-                                                                                   (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[BaseProcessDetails[PS]]] = {
+  override def fetchLatestProcessDetailsForProcessId[PS: ProcessShapeFetchStrategy](id: ProcessId, businessView: Boolean)(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[BaseProcessDetails[PS]]] = {
     run(fetchLatestProcessDetailsForProcessIdQuery(id, businessView))
   }
 
@@ -126,7 +125,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
   }
 
   override def fetchProcessId(processName: ProcessName)(implicit ec: ExecutionContext): F[Option[ProcessId]] = {
-    run(processesTable.filter(_.name === processName.value).map(_.id).result.headOption.map(_.map(ProcessId)))
+    run(processesTable.filter(_.name === processName.value).map(_.id).result.headOption.map(_.map(id => ProcessId(id))))
   }
 
   def fetchProcessName(processId: ProcessId)(implicit ec: ExecutionContext): F[Option[ProcessName]] = {
@@ -138,7 +137,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
   }
 
   override def fetchProcessActions(processId: ProcessId)(implicit ec: ExecutionContext): F[List[ProcessAction]] =
-    run(fetchProcessLatestActionsQuery(processId).result.map(_.toList.map(ProcessRepository.toProcessAction)))
+    run(fetchProcessLatestActionsQuery(processId).result.map(_.toList.map(ProcessDBQueryRepository.toProcessAction)))
 
   override def fetchProcessingType(processId: ProcessId)(implicit user: LoggedUser, ec: ExecutionContext): F[ProcessingType] = {
     run {
@@ -174,7 +173,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       isLatestVersion = isLatestVersion,
       tags = tags,
       history = processVersions.map(
-        v => ProcessRepository.toProcessVersion(v, actions.filter(p => p._1.processVersionId == v.id).toList)
+        v => ProcessDBQueryRepository.toProcessVersion(v, actions.filter(p => p._1.processVersionId == v.id).toList)
       ),
       businessView = businessView
     )
@@ -200,8 +199,8 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       processType = process.processType,
       processingType = process.processingType,
       processCategory = process.processCategory,
-      lastAction = lastActionData.map(ProcessRepository.toProcessAction),
-      lastDeployedAction = lastDeployedActionData.map(ProcessRepository.toProcessAction),
+      lastAction = lastActionData.map(ProcessDBQueryRepository.toProcessAction),
+      lastDeployedAction = lastDeployedActionData.map(ProcessDBQueryRepository.toProcessAction),
       tags = tags.map(_.name).toList,
       modificationDate = DateUtils.toLocalDateTime(processVersion.createDate),
       createdAt = DateUtils.toLocalDateTime(process.createdAt),

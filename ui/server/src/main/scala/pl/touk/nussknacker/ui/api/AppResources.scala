@@ -28,7 +28,7 @@ class AppResources(config: Config,
                    modelData: ProcessingTypeDataProvider[ModelData],
                    processRepository: FetchingProcessRepository[Future],
                    processValidation: ProcessValidation,
-                   processService: ProcessService[DB])(implicit ec: ExecutionContext)
+                   processService: ProcessService)(implicit ec: ExecutionContext)
   extends Directives with FailFastCirceSupport with LazyLogging with RouteWithUser with RouteWithoutUser with SecurityDirectives {
 
   //We use duplicated pathPrefix("app") code - look at comment in NussknackerApp where routes are created

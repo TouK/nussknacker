@@ -10,7 +10,6 @@ import akka.stream.Materializer
 import akka.util.Timeout
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
-import db.util.DBIOActionInstances.DB
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
 import io.circe.parser.parse
@@ -47,7 +46,7 @@ object ManagementResources {
             processAuthorizator: AuthorizeProcess,
             processRepository: FetchingProcessRepository[Future], featuresOptions: FeatureTogglesConfig,
             processResolving: UIProcessResolving,
-            processService: ProcessService[DB])
+            processService: ProcessService)
            (implicit ec: ExecutionContext,
             mat: Materializer, system: ActorSystem): ManagementResources = {
     new ManagementResources(
@@ -101,9 +100,10 @@ class ManagementResources(processCounter: ProcessCounter,
                           val managementActor: ActorRef,
                           testResultsMaxSizeInBytes: Int,
                           val processAuthorizer: AuthorizeProcess,
-                          val processRepository: FetchingProcessRepository[Future], deploySettings: Option[DeploySettings],
+                          val processRepository: FetchingProcessRepository[Future],
+                          deploySettings: Option[DeploySettings],
                           processResolving: UIProcessResolving,
-                          processService: ProcessService[DB])
+                          processService: ProcessService)
                          (implicit val ec: ExecutionContext, mat: Materializer, system: ActorSystem)
   extends Directives
     with LazyLogging

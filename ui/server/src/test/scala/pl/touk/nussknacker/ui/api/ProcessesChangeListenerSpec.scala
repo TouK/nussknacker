@@ -28,11 +28,10 @@ class ProcessesChangeListenerSpec extends FunSuite with ScalatestRouteTest with 
   }
 
   test("listen to category change") {
-    val newCategory = "expectedCategory"
     val processId = createProcess(processName, testCategoryName, false)
 
-    Post(s"/processes/category/${processName.value}/$newCategory") ~> routeWithAdminPermissions ~> checkEventually {
-      TestProcessChangeListener.events.head should matchPattern { case OnCategoryChanged(`processId`, `testCategoryName`, `newCategory`) => }
+    Post(s"/processes/category/${processName.value}/$secondTestCategoryName") ~> routeWithAdminPermissions ~> checkEventually {
+      TestProcessChangeListener.events.head should matchPattern { case OnCategoryChanged(`processId`, `testCategoryName`, `secondTestCategoryName`) => }
     }
   }
 
@@ -89,6 +88,7 @@ class ProcessesChangeListenerSpec extends FunSuite with ScalatestRouteTest with 
       TestProcessChangeListener.events.head should matchPattern { case OnDeployActionSuccess(`processId`, 1L, `comment`, _, ProcessActionType.Deploy) => }
     }
   }
+
   test("listen to deployment failure") {
     val processId = createProcess(processName, testCategoryName, false)
 

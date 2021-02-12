@@ -17,7 +17,7 @@ import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.db.entity.EnvironmentsEntityData
 import pl.touk.nussknacker.ui.process.migrate.ProcessModelMigrator
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, UpdateProcessAction}
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser, Permission}
 import slick.dbio.DBIOAction
@@ -35,17 +35,16 @@ object Initialization {
            environment: String,
            customProcesses: Option[Map[String, String]])(implicit ec: ExecutionContext) : Unit = {
 
-    val transactionalRepository = new DbWriteProcessRepository[DB](db, migrations.mapValues(_.version)) {
-      override def run[R]: DB[R] => DB[R] = identity
-    }
+    val processRepository = new DBProcessRepository(db, migrations.mapValues(_.version))
+
     val transactionalFetchingRepository = new DBFetchingProcessRepository[DB](db) {
       override def run[R]: DB[R] => DB[R] = identity
     }
 
     val operations : List[InitialOperation] = List(
       new EnvironmentInsert(environment, db),
-      new AutomaticMigration(migrations, transactionalRepository, transactionalFetchingRepository)
-    ) ++ customProcesses.map(new TechnicalProcessUpdate(_, transactionalRepository, transactionalFetchingRepository))
+      new AutomaticMigration(migrations, processRepository, transactionalFetchingRepository)
+    ) ++ customProcesses.map(new TechnicalProcessUpdate(_, processRepository, transactionalFetchingRepository))
 
     runOperationsTransactionally(db, operations)
   }
@@ -89,7 +88,7 @@ class EnvironmentInsert(environmentName: String, dbConfig: DbConfig) extends Ini
 }
 
 //FIXME: this is pretty clunky - e.g. cannot define category/processingtype for technical type - it's hardcoded as streaming...
-class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: DbWriteProcessRepository[DB], fetchingProcessRepository: DBFetchingProcessRepository[DB])
+class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: DBProcessRepository, fetchingProcessRepository: DBFetchingProcessRepository[DB])
   extends InitialOperation  {
 
   def runOperation(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
@@ -108,20 +107,20 @@ class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: D
     results.map(_ => ())
   }
 
-  private def saveOrUpdate(processName: ProcessName, category: String, deploymentData: ProcessDeploymentData,
-                           processingType: ProcessingType, isSubprocess: Boolean)(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
+  private def saveOrUpdate(processName: ProcessName, category: String, deploymentData: ProcessDeploymentData, processingType: ProcessingType, isSubprocess: Boolean)
+                          (implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
     (for {
       processIdOpt <- EitherT.right[EspError](fetchingProcessRepository.fetchProcessId(processName))
       _ <- EitherT[DB, EspError, Unit] {
         processIdOpt match {
           case None =>
-            repository.saveNewProcess(
+            repository.saveNewProcess(CreateProcessAction(
               processName = processName,
               category = category,
               processDeploymentData = deploymentData,
               processingType = processingType,
               isSubprocess = isSubprocess
-            ).map(_.right.map(_ => ()))
+            )).map(_.right.map(_ => ()))
           case Some(processId) =>
             fetchingProcessRepository.fetchLatestProcessVersion[Unit](processId).flatMap {
               case Some(version) if version.user == Initialization.nussknackerUser.username =>
@@ -142,7 +141,8 @@ class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: D
 }
 
 class AutomaticMigration(migrations: ProcessingTypeDataProvider[ProcessMigrations],
-                         repository: DbWriteProcessRepository[DB], fetchingProcessRepository: DBFetchingProcessRepository[DB]) extends InitialOperation {
+                         processRepository: DBProcessRepository,
+                         fetchingProcessRepository: DBFetchingProcessRepository[DB]) extends InitialOperation {
 
   private val migrator = new ProcessModelMigrator(migrations)
 
@@ -159,7 +159,7 @@ class AutomaticMigration(migrations: ProcessingTypeDataProvider[ProcessMigration
   private def migrateOne(processDetails: ProcessDetails)(implicit ec: ExecutionContext, lu: LoggedUser) : DB[Unit] = {
     // todo: unsafe processId?
     migrator.migrateProcess(processDetails).map(_.toUpdateAction(ProcessId(processDetails.processId.value))) match {
-      case Some(action) => repository.updateProcess(action).flatMap {
+      case Some(action) => processRepository.updateProcess(action).flatMap {
         case Left(error) => DBIOAction.failed(new RuntimeException(s"Failed to migrate ${processDetails.name}: $error"))
         case Right(_) => DBIOAction.successful(())
       }

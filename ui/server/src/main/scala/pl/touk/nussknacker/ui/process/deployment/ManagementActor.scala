@@ -19,7 +19,7 @@ import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.db.entity.{ProcessActionEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
+import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, DbProcessActionRepository}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}

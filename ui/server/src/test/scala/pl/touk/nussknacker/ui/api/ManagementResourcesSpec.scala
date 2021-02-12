@@ -80,13 +80,12 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   }
 
   test("can't deploy archived process") {
-    val id = createArchivedProcess(processName, isSubprocess = false)
+    val id = createArchivedProcess(processName)
     val processIdWithName = ProcessIdWithName(id, processName)
 
     processManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
       deployProcess(processName.value) ~> check {
         status shouldBe StatusCodes.Conflict
-        responseAs[String] shouldBe ProcessIllegalAction.archived(ProcessActionType.Deploy, processIdWithName).message
       }
     }
   }
@@ -146,15 +145,14 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   }
 
   test("deploy technical process and mark it as deployed") {
-    implicit val loggedUser: LoggedUser = user(permissions = Map(testCategoryName->Set(Permission.Write, Permission.Deploy, Permission.Read)))
-    val processId = "Process1"
-    whenReady(writeProcessRepository.saveNewProcess(ProcessName(processId), testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)) { res =>
-      deployProcess(processId) ~> check { status shouldBe StatusCodes.OK }
-      getProcess(ProcessName(processId)) ~> check {
-        val processDetails = responseAs[ProcessDetails]
-        processDetails.lastAction shouldBe deployedWithVersions(1)
-        processDetails.isDeployed shouldBe true
-      }
+    createProcess(processName, testCategoryName, false)
+
+    deployProcess(processName.value) ~> check { status shouldBe StatusCodes.OK }
+
+    getProcess(processName) ~> check {
+      val processDetails = responseAs[ProcessDetails]
+      processDetails.lastAction shouldBe deployedWithVersions(1)
+      processDetails.isDeployed shouldBe true
     }
   }
 

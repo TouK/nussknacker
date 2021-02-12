@@ -12,6 +12,9 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.migrate.TestMigrations
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
+
+import scala.concurrent.ExecutionContextExecutor
 
 @Slow
 class InitializationOnPostgresItSpec
@@ -25,11 +28,15 @@ class InitializationOnPostgresItSpec
 
   import Initialization.nussknackerUser
 
+  private implicit val ds: ExecutionContextExecutor = system.dispatcher
+
   private val processId = "proc1"
 
   private val migrations = mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new TestMigrations(1, 2))
 
-  private lazy val repository = TestFactory.newProcessRepository(db, Some(1))
+  private lazy val repository = TestFactory.newFetchingProcessRepository(db, Some(1))
+
+  private lazy val repositoryManager = TestFactory.newDBRepositoryManager(db)
 
   private lazy val writeRepository = TestFactory.newWriteProcessRepository(db)
 
@@ -60,7 +67,11 @@ class InitializationOnPostgresItSpec
   }
 
   private def saveSampleProcess(processName: String = processId, subprocess: Boolean = false): Unit = {
-    writeRepository.saveNewProcess(ProcessName(processName), "RTM", sampleDeploymentData(processId), TestProcessingTypes.Streaming, subprocess).futureValue
+    val action = CreateProcessAction(ProcessName(processName), "RTM", sampleDeploymentData(processId), TestProcessingTypes.Streaming, subprocess)
+
+    repositoryManager
+      .run(writeRepository.saveNewProcess(action))
+      .futureValue
   }
 
   it should "run initialization transactionally" in {
