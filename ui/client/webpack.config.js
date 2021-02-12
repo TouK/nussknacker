@@ -9,6 +9,7 @@ const CopyPlugin = require("copy-webpack-plugin")
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin")
 const {camelCase} = require("lodash")
 const MomentLocalesPlugin = require("moment-locales-webpack-plugin")
+const ReactRefreshWebpackPlugin = require("@pmmmwh/react-refresh-webpack-plugin")
 
 const NODE_ENV = process.env.NODE_ENV || "development"
 const GIT_HASH = childProcess.execSync("git log -1 --format=%H").toString()
@@ -160,6 +161,7 @@ module.exports = {
       }
     }),
     new ForkTsCheckerWebpackPlugin(),
+    !isProd && new ReactRefreshWebpackPlugin(),
   ].filter(p => p !== null),
   module: {
     rules: [
