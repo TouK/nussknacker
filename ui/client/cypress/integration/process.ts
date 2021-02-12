@@ -61,5 +61,15 @@ describe("Process", () => {
       cy.get("@button").click()
       cy.get("[data-testid=modal]").should("be.visible").toMatchImageSnapshot()
     })
+
+    it("should have \"latest deploy\" button", () => {
+      cy.contains(/^deploy$/i).click()
+      cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy")
+      cy.contains(/^ok$/i).should("be.enabled").click()
+      cy.wait("@deploy").its("response.statusCode").should("eq", 200)
+      cy.contains(/process is running/i).should("exist")
+      cy.contains(/^counts$/i).click()
+      cy.get("[data-testid=modal]").should("be.visible").toMatchImageSnapshot()
+    })
   })
 })
