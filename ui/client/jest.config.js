@@ -3,7 +3,7 @@
 module.exports = {
   clearMocks: true,
   collectCoverage: true,
-  coverageDirectory: "coverage",
+  coverageDirectory: "jest-coverage",
   globals: {
     __DEV__: true,
     __webpack_public_path__: "",

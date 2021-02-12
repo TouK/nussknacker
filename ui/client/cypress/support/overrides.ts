@@ -1,4 +1,5 @@
 import {defaultsDeep} from "lodash"
+import UAParser from "ua-parser-js"
 
 const getRequestOptions = (...args): Partial<Cypress.RequestOptions> => {
   const [first, second, third] = args
@@ -10,16 +11,23 @@ const getRequestOptions = (...args): Partial<Cypress.RequestOptions> => {
 }
 
 Cypress.Commands.overwrite("request", (original: Cypress.Chainable["request"], ...args) => original({
-  auth: Cypress.env("testUser"),
+  auth: {
+    username: Cypress.env("testUserUsername"),
+    password: Cypress.env("testUserPassword"),
+  },
   ...getRequestOptions(...args),
 }))
-
 Cypress.Commands.overwrite("visit", (original: Cypress.Chainable["visit"], first, second) => {
-  const auth = Cypress.env("testUser")
+  const auth = {
+    username: Cypress.env("testUserUsername"),
+    password: Cypress.env("testUserPassword"),
+  }
+
+  const {name: os} = new UAParser().getOS()
   const pixelRatio = window.devicePixelRatio
   Cypress.env(defaultsDeep({
     "cypress-plugin-snapshots": {
-      separator: pixelRatio !== 1 ? ` [x${pixelRatio}] #` : " #",
+      separator: pixelRatio !== 1 ? ` [${os} x${pixelRatio}] #` : ` [${os}] #`,
     },
   }, Cypress.env()))
   return original(typeof first === "string" ? {auth, ...second, url: first} : {auth, ...first})

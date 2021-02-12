@@ -8,6 +8,7 @@ const TerserPlugin = require("terser-webpack-plugin")
 const CopyPlugin = require("copy-webpack-plugin")
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin")
 const {camelCase} = require("lodash")
+const MomentLocalesPlugin = require("moment-locales-webpack-plugin")
 
 const NODE_ENV = process.env.NODE_ENV || "development"
 const GIT_HASH = childProcess.execSync("git log -1 --format=%H").toString()
@@ -92,6 +93,8 @@ module.exports = {
       index: "/static/main.html",
     },
     hot: true,
+    host: "0.0.0.0",
+    disableHostCheck: true,
     port: 3000,
     proxy: {
       "/api": {
@@ -108,6 +111,9 @@ module.exports = {
     },
   },
   plugins: [
+    new MomentLocalesPlugin({
+      localesToKeep: ["pl"],
+    }),
     new ModuleFederationPlugin({
       name: camelCase(name),
       shared: {
