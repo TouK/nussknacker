@@ -45,12 +45,13 @@ describe("Process", () => {
     })
 
     it("should allow drag model", () => {
+      cy.get("[title='toggle left panel']").click()
+      cy.get("[title='toggle right panel']").click()
       cy.get("[model-id=dynamicService]")
         .should("be.visible")
         .trigger("mousedown", {which: 1})
-        .trigger("mousemove", {clientX: -10, clientY: -10})
+        .trigger("mousemove", {clientX: 100, clientY: 100})
         .trigger("mouseup", {force: true})
-      cy.get("[model-id=dynamicService]").should("not.be.visible")
       cy.get("#graphContainer").toMatchImageSnapshot()
     })
 
