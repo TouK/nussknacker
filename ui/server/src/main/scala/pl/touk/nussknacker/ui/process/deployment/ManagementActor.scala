@@ -20,7 +20,7 @@ import pl.touk.nussknacker.ui.db.entity.{ProcessActionEntityData, ProcessVersion
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActionRepository}
+import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, DbProcessActionRepository}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.{CatsSyntax, FailurePropagatingActor}
@@ -32,7 +32,7 @@ import scala.util.{Failure, Success}
 object ManagementActor {
   def props(managers: ProcessingTypeDataProvider[ProcessManager],
             processRepository: FetchingProcessRepository[Future],
-            processActionRepository: ProcessActionRepository,
+            processActionRepository: DbProcessActionRepository,
             subprocessResolver: SubprocessResolver,
             processChangeListener: ProcessChangeListener)
            (implicit context: ActorRefFactory): Props = {
@@ -42,7 +42,7 @@ object ManagementActor {
 
 class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
                       processRepository: FetchingProcessRepository[Future],
-                      deployedProcessRepository: ProcessActionRepository,
+                      deployedProcessRepository: DbProcessActionRepository,
                       subprocessResolver: SubprocessResolver,
                       processChangeListener: ProcessChangeListener) extends FailurePropagatingActor with LazyLogging {
 

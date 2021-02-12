@@ -54,8 +54,7 @@ trait CommentActions {
   }
 
   def newCommentAction(processId: ProcessId, processVersionId: Long, comment: String)
-                      (implicit ec: ExecutionContext,
-                       loggedUser: LoggedUser): DB[Option[Long]] = {
+                      (implicit ec: ExecutionContext, loggedUser: LoggedUser): DB[Option[Long]] = {
     if (comment.nonEmpty) {
       for {
         newId <- nextIdAction

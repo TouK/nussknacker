@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.api.helpers
 import java.util.concurrent.atomic.AtomicReference
 import akka.http.scaladsl.server.Route
 import cats.instances.future._
+import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
@@ -77,13 +78,13 @@ object TestFactory extends TestPermissions{
 
   def newWriteProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
     new DbWriteProcessRepository[Future](dbs, mapProcessingTypeDataProvider(modelVersions.map(TestProcessingTypes.Streaming -> _).toList: _*))
-        with WriteProcessRepository with BasicRepository
+        with WriteProcessRepository[DB] with BasicRepository
 
   def newSubprocessRepository(db: DbConfig): DbSubprocessRepository = {
     new DbSubprocessRepository(db, implicitly[ExecutionContext])
   }
 
-  def newActionProcessRepository(db: DbConfig) = new ProcessActionRepository(db,
+  def newActionProcessRepository(db: DbConfig) = new DbProcessActionRepository(db,
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> buildInfo))
 
   def newProcessActivityRepository(db: DbConfig) = new ProcessActivityRepository(db)

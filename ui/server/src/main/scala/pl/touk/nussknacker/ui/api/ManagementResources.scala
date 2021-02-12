@@ -10,6 +10,7 @@ import akka.stream.Materializer
 import akka.util.Timeout
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
+import db.util.DBIOActionInstances.DB
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
 import io.circe.parser.parse
@@ -28,8 +29,7 @@ import pl.touk.nussknacker.ui.api.EspErrorToHttp.toResponse
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.api.deployment.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
-import pl.touk.nussknacker.ui.process.deployment.{Cancel, Deploy, Snapshot, Stop, Test}
-import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
+import pl.touk.nussknacker.ui.process.deployment.{Snapshot, Stop, Test}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -47,7 +47,7 @@ object ManagementResources {
             processAuthorizator: AuthorizeProcess,
             processRepository: FetchingProcessRepository[Future], featuresOptions: FeatureTogglesConfig,
             processResolving: UIProcessResolving,
-            processService: ProcessService)
+            processService: ProcessService[DB])
            (implicit ec: ExecutionContext,
             mat: Materializer, system: ActorSystem): ManagementResources = {
     new ManagementResources(
@@ -82,9 +82,10 @@ object ManagementResources {
     }
   }
 
-  val testResultsVariableEncoder : Any => io.circe.Json = {
+  val testResultsVariableEncoder: Any => io.circe.Json = {
     case displayable: DisplayJson =>
       def safeString(a: String) = Option(a).map(Json.fromString).getOrElse(Json.Null)
+
       val displayableJson = displayable.asJson
       displayable.originalDisplay match {
         case None => Json.obj("pretty" -> displayableJson)
@@ -102,7 +103,7 @@ class ManagementResources(processCounter: ProcessCounter,
                           val processAuthorizer: AuthorizeProcess,
                           val processRepository: FetchingProcessRepository[Future], deploySettings: Option[DeploySettings],
                           processResolving: UIProcessResolving,
-                          processService: ProcessService)
+                          processService: ProcessService[DB])
                          (implicit val ec: ExecutionContext, mat: Materializer, system: ActorSystem)
   extends Directives
     with LazyLogging
@@ -157,7 +158,7 @@ class ManagementResources(processCounter: ProcessCounter,
       } ~
       path("processManagement" / "deploy" / Segment) { processName =>
         (post & processId(processName)) { processId =>
-          canDeploy(processId){
+          canDeploy(processId) {
             withComment { comment =>
               complete {
                 processService
@@ -235,7 +236,7 @@ class ManagementResources(processCounter: ProcessCounter,
       }
   }
 
-  private def toHttpResponse[A:Encoder](a: A)(code: StatusCode): Future[HttpResponse] =
+  private def toHttpResponse[A: Encoder](a: A)(code: StatusCode): Future[HttpResponse] =
     Marshal(a).to[MessageEntity].map(en => HttpResponse(entity = en, status = code))
 
   private def performTest(id: ProcessIdWithName, testData: Array[Byte], displayableProcessJson: String)(implicit user: LoggedUser): Future[ResultsWithCounts] = {
@@ -264,7 +265,7 @@ class ManagementResources(processCounter: ProcessCounter,
     }
   }
 
-  private def computeCounts(canonical: CanonicalProcess, results: TestResults[_]) : Map[String, NodeCount] = {
+  private def computeCounts(canonical: CanonicalProcess, results: TestResults[_]): Map[String, NodeCount] = {
     val counts = results.nodeResults.map { case (key, nresults) =>
       key -> RawCount(nresults.size.toLong, results.exceptions.find(_.nodeId.contains(key)).size.toLong)
     }
@@ -284,6 +285,7 @@ class ManagementResources(processCounter: ProcessCounter,
       }
       result
     }
+
     Directive[Unit](toStrict0)
   }
 

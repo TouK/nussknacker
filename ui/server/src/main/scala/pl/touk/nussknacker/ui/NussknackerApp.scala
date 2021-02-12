@@ -79,10 +79,11 @@ object NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val substitutorsByProcessType = modelData.mapValues(modelData => ProcessDictSubstitutor(modelData.dictServices.dictRegistry))
     val processResolving = new UIProcessResolving(processValidation, substitutorsByProcessType)
 
+    val dBTransactionSupport = new DBTransaction(dbConfig)
     val processRepository = DBFetchingProcessRepository.create(dbConfig)
     val writeProcessRepository = WriteProcessRepository.create(dbConfig, modelData)
 
-    val actionRepository = ProcessActionRepository.create(dbConfig, modelData)
+    val actionRepository = DbProcessActionRepository.create(dbConfig, modelData)
     val processActivityRepository = new ProcessActivityRepository(dbConfig)
 
     val authenticator = AuthenticatorProvider(config, getClass.getClassLoader, typesForCategories.getAllCategories)
@@ -98,7 +99,7 @@ object NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val systemRequestTimeout = system.settings.config.getDuration("akka.http.server.request-timeout")
     val managementActor = system.actorOf(ManagementActor.props(managers, processRepository, actionRepository, subprocessResolver, processChangeListener), "management")
-    val processService = new ProcessService(managementActor, systemRequestTimeout, processRepository, actionRepository, writeProcessRepository)
+    val processService = new ProcessService(managementActor, systemRequestTimeout, dBTransactionSupport, processRepository, actionRepository, writeProcessRepository)
 
     val processAuthorizer = new AuthorizeProcess(processRepository)
     val appResources = new AppResources(config, reload, modelData, processRepository, processValidation, processService)

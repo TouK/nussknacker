@@ -8,31 +8,35 @@ import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.process.deployment.{Cancel, CheckStatus, Deploy}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActionRepository, WriteProcessRepository}
+import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActionRepository, TransactionSupport, WriteProcessRepository}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-
 import scala.concurrent.{ExecutionContext, Future}
-import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import akka.actor.ActorRef
 import akka.pattern.ask
+
 import java.time
+import scala.language.higherKinds
 
 /**
   * ProcessService provides functionality for archive, unarchive, deploy, cancel process.
   * Each action includes verification based on actual process state and checking process is subprocess / archived.
+  *
+  * FIXME: Refactor F[_] - it should be split
   */
-class ProcessService(managerActor: ActorRef,
-                     requestTimeLimit: time.Duration,
-                     processRepository: FetchingProcessRepository[Future],
-                     processActionRepository: ProcessActionRepository,
-                     writeRepository: WriteProcessRepository) extends LazyLogging {
+class ProcessService[F[_]](managerActor: ActorRef,
+                           requestTimeLimit: time.Duration,
+                           transactionSupport: TransactionSupport[F],
+                           processRepository: FetchingProcessRepository[Future],
+                           processActionRepository: ProcessActionRepository[F],
+                           writeRepository: WriteProcessRepository[F]) extends LazyLogging {
 
   type EmptyResponse = XError[Unit]
-  type DeployResponse = XError[Any]
 
+  import pl.touk.nussknacker.engine.api.CirceUtil._
   import scala.concurrent.duration._
+  import cats.syntax.either._
 
   private implicit val timeout: Timeout = Timeout(requestTimeLimit.toMillis millis)
 
@@ -55,9 +59,13 @@ class ProcessService(managerActor: ActorRef,
     }
   }
 
-  /**
-    * FIXME: Add checking subprocess is used by any of already working process. ProcessResourcesSpec contains ignored test for it.
-    */
+  private def doArchive(process: BaseProcessDetails[_])(implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] = {
+    transactionSupport.runInTransaction(
+      writeRepository.archive(processId = process.idWithName.id, isArchived = true),
+      processActionRepository.markProcessAsArchived(processId = process.idWithName.id, process.processVersionId)
+    ).map(_ => ().asRight)
+  }
+
   private def archiveSubprocess(process: BaseProcessDetails[_])(implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] =
     doArchive(process)
 
@@ -72,41 +80,31 @@ class ProcessService(managerActor: ActorRef,
       }
     })
 
-  //FIXME: Right now we don't do it in transaction..
-  private def doArchive(process: BaseProcessDetails[_])(implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] =
-    for {
-      archive <- writeRepository.archive(processId = process.idWithName.id, isArchived = true)
-      _ <- processActionRepository.markProcessAsArchived(process.idWithName.id, process.processVersionId, None)
-    } yield archive
 
   def unArchiveProcess(processIdWithName: ProcessIdWithName)(implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] = {
     processRepository.fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id).flatMap {
       case Some(process) if !process.isArchived =>
         Future(Left(ProcessIllegalAction("Can't unarchive not archived process.")))
       case Some(process) =>
-        doUnArchive(process)
+        transactionSupport.runInTransaction(
+          writeRepository.archive(processId = process.idWithName.id, isArchived = false),
+          processActionRepository.markProcessAsUnArchived(processId = process.idWithName.id, process.processVersionId)
+        ).map(_ => ().asRight)
       case None =>
         Future(Left(ProcessNotFoundError(processIdWithName.id.value.toString)))
     }
   }
 
-  //FIXME: Right now we don't do it in transaction..
-  private def doUnArchive(process: BaseProcessDetails[_])(implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] =
-    for {
-      archive <- writeRepository.archive(processId = process.idWithName.id, isArchived = false)
-      _ <- processActionRepository.markProcessAsUnArchived(process.idWithName.id, process.processVersionId, None)
-    } yield archive
-
-   def deployProcess(processIdWithName: ProcessIdWithName, savepointPath: Option[String], comment: Option[String])(implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] =
+  def deployProcess(processIdWithName: ProcessIdWithName, savepointPath: Option[String], comment: Option[String])(implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] =
      doAction(ProcessActionType.Deploy, processIdWithName, savepointPath, comment){ (processIdWithName: ProcessIdWithName, savepointPath: Option[String], comment: Option[String]) =>
        (managerActor ? Deploy(processIdWithName, user, savepointPath, comment))
-         .map(_ => Right(Unit))
+         .map(_ => ().asRight)
      }
 
   def cancelProcess(processIdWithName: ProcessIdWithName, comment: Option[String])(implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] =
    doAction(ProcessActionType.Cancel, processIdWithName, None, comment){ (processIdWithName: ProcessIdWithName, _: Option[String], comment: Option[String]) =>
      (managerActor ? Cancel(processIdWithName, user, comment))
-       .map(_ => Right(Unit))
+       .map(_ => ().asRight)
    }
 
   private def doAction(action: ProcessActionType, processIdWithName: ProcessIdWithName, savepointPath: Option[String], comment: Option[String])
