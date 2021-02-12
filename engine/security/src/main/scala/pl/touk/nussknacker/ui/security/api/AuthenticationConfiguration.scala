@@ -91,7 +91,7 @@ case class CachingHashesConfig(enabled: Option[Boolean],
 
   def isEnabled: Boolean = enabled.getOrElse(CachingHashesConfig.defaultEnabledValue)
 
-  def toCacheConfig: Option[CacheConfig] =
+  def toCacheConfig: Option[CacheConfig[(String, String), String]] =
     if (isEnabled) {
       Some(CacheConfig(
         maximumSize.getOrElse(CacheConfig.defaultMaximumSize),
