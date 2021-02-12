@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo} from "react"
+import React, {useCallback, useEffect, useMemo} from "react"
 import {ProcessType} from "../../components/Process/types"
 import HttpService, {StatusesType} from "../../http/HttpService"
 import {useFetch} from "../hooks/useFetch"
@@ -21,7 +21,8 @@ export function ProcessesList(props: BaseProcessesOwnProps): JSX.Element {
   const {processes, getProcesses, isLoading} = useFilteredProcesses(filters)
   useIntervalRefresh(getProcesses)
 
-  const [statuses, getStatuses] = useFetch(HttpService.fetchProcessesStates)
+  const fetchAction = useCallback(() => HttpService.fetchProcessesStates(), [])
+  const [statuses, getStatuses] = useFetch(fetchAction)
   useEffect(
     () => {
       if (withStatuses && processes.length) {

@@ -18,9 +18,13 @@ export function useFetch<T>(fetchAction: () => Promise<AxiosResponse<T>>, initVa
   const getData = useCallback(
     async () => {
       setIsLoading(true)
-      const response = await fetchAction()
-      if (response && isMounted.current) {
-        setData(response.data)
+      try {
+        const response = await fetchAction()
+        if (response && isMounted.current) {
+          setData(response.data)
+        }
+      } catch (error) {
+      } finally {
         setIsLoading(false)
       }
     },
