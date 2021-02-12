@@ -1,10 +1,11 @@
 /* eslint-disable i18next/no-literal-string */
 import moment, {Moment, MomentInput} from "moment"
-import React, {useCallback, useState} from "react"
+import React, {useCallback, useEffect, useMemo, useState} from "react"
 import DateTimePicker from "react-datetime"
 import {TFunction, useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
 import {fetchAndDisplayProcessCounts} from "../../actions/nk"
+import HttpService from "../../http/HttpService"
 import {getProcessId} from "../../reducers/selectors/graph"
 import "../../stylesheets/visualization.styl"
 import {ButtonWithFocus} from "../withFocus"
@@ -28,23 +29,23 @@ function predefinedRanges(t: TFunction<string>): Range[] {
   return [
     {
       name: t("calculateCounts.range.lastHour", "Last hour"),
-      from: () => moment().subtract(1, "hours"),
-      to: () => moment(),
+      from: () => moment().subtract(1, "hour").startOf("minute"),
+      to: () => moment().add(1, "day").startOf("day"),
     },
     {
       name: t("calculateCounts.range.today", "Today"),
       from: () => moment().startOf("day"),
-      to: () => moment(),
+      to: () => moment().add(1, "day").startOf("day"),
     },
     {
       name: t("calculateCounts.range.yesterday", "Yesterday"),
-      from: () => moment().subtract(1, "days").startOf("day"),
+      from: () => moment().subtract(1, "day").startOf("day"),
       to: () => moment().startOf("day"),
     },
     {
       name: t("calculateCounts.range.dayBeforeYesterday", "Day before yesterday"),
       from: () => moment().subtract(2, "days").startOf("day"),
-      to: () => moment().subtract(1, "days").startOf("day"),
+      to: () => moment().subtract(1, "day").startOf("day"),
     },
     {
       name: t("calculateCounts.range.thisDayLastWeek", "This day last week"),
@@ -87,10 +88,36 @@ const RangeButton = ({range, onChange}: RangeButtonProps): JSX.Element => {
 type RangesProps = {label: string, onChange: (value: [Moment, Moment]) => void}
 const Ranges = ({label, onChange}: RangesProps): JSX.Element => {
   const {t} = useTranslation()
+  const processId = useSelector(getProcessId)
+
+  const [[lastDeploy, ...deploys], setDeploys] = useState<Range[]>([])
+  useEffect(() => {
+    HttpService.fetchProcessesDeployments(processId)
+      .then(dates => dates.map((current, i, all) => {
+        const from = current
+        const to = all[i - 1]
+        return {
+          from: () => moment(from),
+          to: () => to ? moment(to) : moment().add(1, "day").startOf("day"),
+          name: i ?
+            t("calculateCounts.range.prevDeploy", "Deploy ({{i}})", {i: all.length - i, date: moment(from).toLocaleString()}) :
+            t("calculateCounts.range.lastDeploy", "Latest deploy"),
+        }
+      }))
+      .then(setDeploys)
+  }, [t, processId])
+
+  const ranges = useMemo(() => predefinedRanges(t), [t])
   return (
     <>
       <p>{label}</p>
-      {predefinedRanges(t).map(range => (
+      {ranges.map(range => (
+        <RangeButton key={range.name} range={range} onChange={onChange}/>
+      ))}
+
+      {lastDeploy && <RangeButton range={lastDeploy} onChange={onChange}/>}
+
+      {deploys.map(range => (
         <RangeButton key={range.name} range={range} onChange={onChange}/>
       ))}
     </>
@@ -136,7 +163,12 @@ function CalculateCountsDialog(): JSX.Element {
   }, [])
 
   return (
-    <GenericModalDialog init={init} confirm={confirm} type={Dialogs.types.calculateCounts}>
+    <GenericModalDialog
+      init={init}
+      confirm={confirm}
+      type={Dialogs.types.calculateCounts}
+      // header={t("calculateCounts.title", "counts")}
+    >
       <Picker
         label={t("calculateCounts.processCountsFrom", "Process counts from")}
         onChange={setFrom}
