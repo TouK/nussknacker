@@ -7,8 +7,13 @@
   "env": {
     "cypress-plugin-snapshots": {
       "imageConfig": {
-        "threshold": 0.01
-      }
+        "resizeDevicePixelRatio": false,
+        "threshold": 0.001
+      },
+      "screenshotConfig": {
+        "scale": false
+      },
+      "backgroundBlend": "overlay"
     }
   }
 }

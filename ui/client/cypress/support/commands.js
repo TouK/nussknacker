@@ -26,3 +26,5 @@
 
 import "cypress-file-upload"
 import "cypress-plugin-snapshots/commands"
+import "./process"
+import "./overrides"

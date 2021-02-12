@@ -1,49 +1,55 @@
-import {createTestProcess, deleteTestProcess, getProcessName, jsonToBlob} from "../support/tools"
+import {jsonToBlob} from "../support/tools"
 
-describe("Processes diagram", () => {
-  let processName: string
+const seed = "process"
 
+describe("Process", () => {
   before(() => {
-    processName = getProcessName()
-    createTestProcess(processName)
+    cy.deleteAllTestProcesses(seed)
   })
 
   beforeEach(() => {
-    cy.fixture("env")
-      .then(({BASIC_AUTH}) => cy.visit(`/visualization/${processName}?businessView=false`, {auth: BASIC_AUTH}))
-    cy.get("#graphContainer").toMatchImageSnapshot()
+    cy.createTestProcess(seed).as("processName")
   })
 
   after(() => {
-    deleteTestProcess(processName)
+    cy.deleteAllTestProcesses(seed)
   })
 
-  it("should show process diagram", () => {
-    cy.url().should("contain", `visualization\/${processName}`)
-    cy.contains(/has never been deployed/i).should("be.visible")
-  })
-
-  it("should import JSON and save", () => {
+  it("should import JSON and save", function() {
+    cy.visit(`/visualization/${this.processName}?businessView=false`)
+    cy.get("#graphContainer").toMatchImageSnapshot()
     cy.intercept("PUT", "/api/processes/*").as("save")
+    cy.contains(/is not deployed/i).should("be.visible")
+
     cy.intercept("POST", "/api/processes/import/*").as("import")
-    cy.fixture("testProcess").then(json => cy.get("[title=import]")
-      .next("[type=file]")
-      .should("exist")
-      .attachFile({fileContent: jsonToBlob({...json, metaData: {...json.metaData, id: processName}})}))
+    cy.fixture("testProcess").then(json => {
+      cy.get("[title=import]")
+        .next("[type=file]")
+        .should("exist")
+        .attachFile({fileContent: jsonToBlob({...json, metaData: {...json.metaData, id: this.processName}})})
+    })
     cy.wait("@import").its("response.statusCode").should("eq", 200)
+
     cy.get("#graphContainer").toMatchImageSnapshot()
     cy.contains(/^save/i).should("be.enabled").click()
     cy.contains(/^ok$/i).should("be.enabled").click()
     cy.wait("@save").its("response.statusCode").should("eq", 200)
   })
 
-  it("should allow drag model", () => {
-    cy.get("[model-id=meetingService]")
-      .should("be.visible")
-      .trigger("mousedown", {which: 1})
-      .trigger("mousemove", {clientX: 10, clientY: 10})
-      .trigger("mouseup", {force: true})
-    cy.get("[model-id=meetingService]").should("not.be.visible")
-    cy.get("#graphContainer").toMatchImageSnapshot()
+  describe("with data", () => {
+    beforeEach(function() {
+      cy.importTestProcess(this.processName)
+      cy.visit(`/visualization/${this.processName}?businessView=false`)
+    })
+
+    it("should allow drag model", function() {
+      cy.get("[model-id=dynamicService]")
+        .should("be.visible")
+        .trigger("mousedown", {which: 1})
+        .trigger("mousemove", {clientX: -10, clientY: -10})
+        .trigger("mouseup", {force: true})
+      cy.get("[model-id=dynamicService]").should("not.be.visible")
+      cy.get("#graphContainer").toMatchImageSnapshot()
+    })
   })
 })
