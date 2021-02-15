@@ -14,7 +14,7 @@ class BasicHttpAuthenticator(configuration: DefaultAuthenticationConfiguration, 
   private val users = prepareUsers()
 
   private val hashesCache =
-    configuration.cachingHashesOrDefault.toCacheConfig.map(DefaultCache[(String, String), String])
+    configuration.cachingHashesOrDefault.toCacheConfig.map(new DefaultCache[(String, String), String](_))
 
   def apply(credentials: Credentials): Future[Option[LoggedUser]] = Future.successful {
     credentials match {
