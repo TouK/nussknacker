@@ -161,7 +161,7 @@ module.exports = {
       }
     }),
     new ForkTsCheckerWebpackPlugin(),
-    !isProd && new ReactRefreshWebpackPlugin(),
+    !isProd ? new ReactRefreshWebpackPlugin() : null,
   ].filter(p => p !== null),
   module: {
     rules: [
