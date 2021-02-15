@@ -178,7 +178,7 @@ jobs:
           cd ui/client
           npm ci
           npm test
-          npm build
+          npm run build
       - name: Store test results
         if: always()
         uses: actions/upload-artifact@v2
