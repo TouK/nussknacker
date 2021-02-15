@@ -112,6 +112,12 @@ val slowTestsSettings =
 val scalaTestReports = Tests.Argument(TestFrameworks.ScalaTest, "-u", "target/surefire-reports", "-oFGD")
 val ignoreSlowTests = Tests.Argument(TestFrameworks.ScalaTest, "-l", "org.scalatest.tags.Slow")
 
+def forScalaVersion[T](version: String, default: T, specific: ((Int, Int), T)*): T = {
+  CrossVersion.partialVersion(version).flatMap { case (k, v) =>
+    specific.toMap.get(k.toInt, v.toInt)
+  }.getOrElse(default)
+}
+
 lazy val commonSettings =
   publishSettings ++
     Seq(
@@ -126,10 +132,8 @@ lazy val commonSettings =
       testOptions in IntegrationTest += scalaTestReports,
       addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
       // We can't use addCompilerPlugin because it not support usage of scalaVersion.value
-      libraryDependencies += compilerPlugin("com.github.ghik" % "silencer-plugin" % (CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((2, 12)) => silencerV_2_12
-        case _             => silencerV
-      }) cross CrossVersion.full),
+      libraryDependencies += compilerPlugin("com.github.ghik" % "silencer-plugin" % forScalaVersion(scalaVersion.value,
+        silencerV, (2, 12) -> silencerV_2_12) cross CrossVersion.full),
       scalacOptions := Seq(
         "-unchecked",
         "-deprecation",
@@ -538,6 +542,10 @@ lazy val interpreter = (project in engine("interpreter")).
   settings(commonSettings).
   settings(
     name := "nussknacker-interpreter",
+    //We hit https://github.com/scala/bug/issues/7046 in strange places during doc generation.
+    //Shortly, we should stop building for 2.11, for now we just skip scaladoc for 2.11 here...
+    sources in doc in Compile :=
+           forScalaVersion(scalaVersion.value, (sources in Compile).value, (2, 11) -> Nil),
     libraryDependencies ++= {
       Seq(
         "org.springframework" % "spring-expression" % springV,
