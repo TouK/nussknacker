@@ -2,9 +2,10 @@ import moment, {Moment} from "moment"
 import React, {CSSProperties, useEffect, useMemo, useState} from "react"
 import {TFunction, useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"
+import {useFFlags} from "../../../common/FeatureFlagsUtils"
 import HttpService from "../../../http/HttpService"
 import {getProcessId} from "../../../reducers/selectors/graph"
-import {Range, CountsRangesButtons} from "./CountsRangesButtons"
+import {CountsRangesButtons, Range} from "./CountsRangesButtons"
 
 function predefinedRanges(t: TFunction<string>): Range[] {
   return [
@@ -44,21 +45,26 @@ interface RangesProps {
 function useDeployHistory(processId: string): Range[] {
   const {t} = useTranslation()
   const [deploys, setDeploys] = useState<Range[]>([])
+  const {showDeploymentsInCounts} = useFFlags()
   useEffect(() => {
-    HttpService.fetchProcessesDeployments(processId)
-      .then(dates => dates.map((current, i, all) => {
-        const from = current
-        const to = all[i - 1]
-        return {
-          from: () => moment(from),
-          to: () => to ? moment(to) : moment().add(1, "day").startOf("day"),
-          name: i ?
-            t("calculateCounts.range.prevDeploy", "Previous deploy #{{i}} ({{date}})", {i: all.length - i, date: from}) :
-            t("calculateCounts.range.lastDeploy", "Latest deploy"),
-        }
-      }))
-      .then(setDeploys)
-  }, [t, processId])
+    if (!showDeploymentsInCounts) {
+      setDeploys([])
+    } else {
+      HttpService.fetchProcessesDeployments(processId)
+        .then(dates => dates.map((current, i, all) => {
+          const from = current
+          const to = all[i - 1]
+          return {
+            from: () => moment(from),
+            to: () => to ? moment(to) : moment().add(1, "day").startOf("day"),
+            name: i ?
+              t("calculateCounts.range.prevDeploy", "Previous deploy #{{i}} ({{date}})", {i: all.length - i, date: from}) :
+              t("calculateCounts.range.lastDeploy", "Latest deploy"),
+          }
+        }))
+        .then(setDeploys)
+    }
+  }, [showDeploymentsInCounts, t, processId])
 
   return deploys
 }

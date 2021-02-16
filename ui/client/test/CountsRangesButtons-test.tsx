@@ -33,9 +33,11 @@ describe("CountsRangesButtons tests", () => {
   })
 
   it("should collapse buttons", () => {
+    const root = document.createElement("div")
+    document.body.append(root)
     const wrapper = mount(
       <CountsRangesButtons ranges={ranges} onChange={changeFn} limit={1}/>,
-      {attachTo: document.body},
+      {attachTo: root},
     )
 
     const buttons = wrapper.find("button")
