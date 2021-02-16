@@ -3,12 +3,13 @@ package pl.touk.nussknacker.engine.management.sample.component
 import com.typesafe.config.{Config, ConfigValueFactory}
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
-import pl.touk.nussknacker.engine.api.definition.{Parameter, ServiceWithExplicitMethod}
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{ContextId, MetaData}
+import pl.touk.nussknacker.engine.util.service.SimpleServiceWithFixedParameters
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
@@ -32,13 +33,15 @@ class SampleComponentProvider extends ComponentProvider {
   override def isCompatible(version: NussknackerVersion): Boolean = true
 }
 
-case class SampleProvidedComponent(param: String) extends ServiceWithExplicitMethod {
+case class SampleProvidedComponent(param: String) extends SimpleServiceWithFixedParameters {
 
-  override def invokeService(params: List[AnyRef])(implicit ec: ExecutionContext,
-                                                   collector: InvocationCollectors.ServiceInvocationCollector,
-                                                   metaData: MetaData, contextId: ContextId): Future[AnyRef] = Future.successful(null)
 
-  override def parameterDefinition: List[Parameter] = List(Parameter[String](s"fromConfig-$param"))
+  override def invoke(params: Map[String, Any])
+                     (implicit ec: ExecutionContext, collector: InvocationCollectors.ServiceInvocationCollector, contextId: ContextId, metaData: MetaData): Future[Any] = {
+    Future.successful(null)
+  }
+
+  override def parameters: List[Parameter] = List(Parameter[String](s"fromConfig-$param"))
 
   override def returnType: typing.TypingResult = Typed[Void]
 

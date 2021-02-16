@@ -5,17 +5,18 @@ import pl.touk.nussknacker.engine.api.definition.{Parameter, ServiceWithExplicit
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.util.service.SimpleServiceWithFixedParameters
 
 import scala.collection.immutable.ListMap
 import scala.concurrent.{ExecutionContext, Future}
 
-case object UnionReturnObjectService extends ServiceWithExplicitMethod {
+case object UnionReturnObjectService extends SimpleServiceWithFixedParameters {
 
-  override def invokeService(params: List[AnyRef])
-                            (implicit ec: ExecutionContext, collector: ServiceInvocationCollector, metaData: MetaData, contextId: ContextId): Future[AnyRef] =
+  override def invoke(params: Map[String, Any])
+                            (implicit ec: ExecutionContext, collector: ServiceInvocationCollector, contextId: ContextId, metaData: MetaData): Future[AnyRef] =
     Future.successful(Map("foo" -> 1))
 
-  override def parameterDefinition: List[Parameter] = List.empty
+  override def parameters: List[Parameter] = List.empty
 
   override def returnType: typing.TypingResult = Typed(
     TypedObjectTypingResult(ListMap("foo" -> Typed[Int])),

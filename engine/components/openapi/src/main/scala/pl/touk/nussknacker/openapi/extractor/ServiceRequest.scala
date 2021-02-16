@@ -16,7 +16,7 @@ object ServiceRequest {
 
   type SwaggerRequestType = RequestT[Identity, Either[ResponseError[circe.Error], Option[Json]], Nothing]
 
-  def apply(rootUrl: URL, swaggerService: SwaggerService, inputParams: Map[String, AnyRef]): SwaggerRequestType =
+  def apply(rootUrl: URL, swaggerService: SwaggerService, inputParams: Map[String, Any]): SwaggerRequestType =
     addSecurities(swaggerService, new ServiceRequest(rootUrl, swaggerService, inputParams).apply)
 
   def addSecurities(swaggerService: SwaggerService, request: SwaggerRequestType) =
@@ -26,7 +26,7 @@ object ServiceRequest {
     }
 }
 
-private class ServiceRequest(rootUrl: URL, swaggerService: SwaggerService, inputParams: Map[String, AnyRef]) {
+private class ServiceRequest(rootUrl: URL, swaggerService: SwaggerService, inputParams: Map[String, Any]) {
 
   private val uri: Uri = {
     val root = Uri(rootUrl.toURI)
@@ -69,6 +69,6 @@ private class ServiceRequest(rootUrl: URL, swaggerService: SwaggerService, input
   }
 
   //flatMap is for handling null values in the map
-  private def safeParam(name: String): Option[AnyRef] = inputParams.get(name).flatMap(Option(_))
+  private def safeParam(name: String): Option[Any] = inputParams.get(name).flatMap(Option(_))
 
 }

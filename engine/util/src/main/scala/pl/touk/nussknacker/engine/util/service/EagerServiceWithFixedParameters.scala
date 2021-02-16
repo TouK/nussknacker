@@ -1,0 +1,81 @@
+package pl.touk.nussknacker.engine.util.service
+
+import cats.data.Validated.Valid
+import cats.data.ValidatedNel
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedSingleParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency}
+import pl.touk.nussknacker.engine.api.process.RunMode
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.{ContextId, EagerService, LazyParameter, MetaData, ServiceInvoker}
+
+import scala.concurrent.{ExecutionContext, Future}
+
+trait EagerServiceWithFixedParameters extends EagerService with SingleInputGenericNodeTransformation[ServiceInvoker] {
+
+  override type State = TypingResult
+
+  private val metaData = TypedNodeDependency(classOf[MetaData])
+
+  override def initialParameters: List[Parameter] = parameters
+
+  def parameters: List[Parameter]
+
+  def hasOutput: Boolean
+
+  def serviceImplementation(eagerParameters: Map[String, Any],
+                            typingResult: TypingResult,
+                            metaData: MetaData): ServiceInvoker
+
+  def returnType(validationContext: ValidationContext, parameters: Map[String, DefinedSingleParameter]): ValidatedNel[ProcessCompilationError, TypingResult]
+
+  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
+                                    (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
+    case TransformationStep(Nil, _) if initialParameters.nonEmpty => NextParameters(initialParameters)
+    case TransformationStep(list, _) if hasOutput =>
+      val output = returnType(context, list.toMap)
+      val finalCtx = context.withVariable(OutputVariableNameDependency.extract(dependencies), output.getOrElse(Unknown), None)
+      FinalResults(finalCtx.getOrElse(context), output.swap.map(_.toList).getOrElse(Nil) ++ finalCtx.swap.map(_.toList).getOrElse(Nil))
+    case TransformationStep(_, _) => FinalResults(context, Nil)
+  }
+
+  override def nodeDependencies: List[NodeDependency] = if (hasOutput) List(OutputVariableNameDependency, metaData) else List(metaData)
+
+  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[TypingResult]): ServiceInvoker = {
+    serviceImplementation(
+      params.filterNot(_._2.isInstanceOf[LazyParameter[_]]),
+      finalState.getOrElse(Unknown),
+      metaData.extract(dependencies))
+  }
+
+}
+
+trait SimpleServiceWithFixedParameters extends EagerServiceWithFixedParameters {
+
+  def returnType: TypingResult
+
+  def invoke(params: Map[String, Any])(implicit ec: ExecutionContext,
+                                       collector: InvocationCollectors.ServiceInvocationCollector,
+                                       contextId: ContextId,
+                                       metaData: MetaData): Future[Any]
+
+  override def serviceImplementation(eagerParameters: Map[String, Any], typingResult: TypingResult, metaData: MetaData): ServiceInvoker = {
+    implicit val metaImplicit: MetaData = metaData
+    new ServiceInvoker {
+
+      override def invokeService(params: Map[String, Any])(implicit ec: ExecutionContext,
+                                                           collector: InvocationCollectors.ServiceInvocationCollector,
+                                                           contextId: ContextId,
+                                                           runMode: RunMode): Future[Any] =
+        invoke(params ++ eagerParameters)
+
+      override def returnType: TypingResult = typingResult
+    }
+  }
+
+  override def hasOutput: Boolean = !List(Typed[Void], Typed[Unit]).contains(returnType)
+
+  override def returnType(validationContext: ValidationContext,
+                          parameters: Map[String, DefinedSingleParameter]): ValidatedNel[ProcessCompilationError, TypingResult] = Valid(returnType)
+}

@@ -44,6 +44,7 @@ import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCol
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
+import pl.touk.nussknacker.engine.util.service.SimpleServiceWithFixedParameters
 import pl.touk.nussknacker.engine.util.{LoggingListener, SynchronousExecutionContext}
 
 import scala.concurrent.duration._
@@ -747,16 +748,18 @@ object InterpreterSpec {
 
   }
 
-  object WithExplicitDefinitionService extends Service with ServiceWithExplicitMethod {
+  object WithExplicitDefinitionService extends SimpleServiceWithFixedParameters {
 
-    override def parameterDefinition: List[api.definition.Parameter]
+    override def parameters: List[api.definition.Parameter]
     = List(api.definition.Parameter[Long]("param1"))
-
 
     override def returnType: typing.TypingResult = Typed[String]
 
-    override def invokeService(params: List[AnyRef])(implicit ec: ExecutionContext, collector: InvocationCollectors.ServiceInvocationCollector, metaData: MetaData, contextId: ContextId): Future[AnyRef] = {
-      Future.successful(params.head.asInstanceOf[Long].toString)
+    override def invoke(params: Map[String, Any])(implicit ec: ExecutionContext,
+                                                  collector: InvocationCollectors.ServiceInvocationCollector,
+                                                  contextId: ContextId,
+                                                  metaData: MetaData): Future[AnyRef] = {
+      Future.successful(params.head._2.toString)
     }
 
   }

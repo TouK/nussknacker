@@ -1,12 +1,16 @@
 package pl.touk.nussknacker.openapi.enrichers
 
+import cats.data.Validated.Valid
+import cats.data.ValidatedNel
 import org.asynchttpclient.DefaultAsyncHttpClient
-import pl.touk.nussknacker.engine.api.definition.{Parameter, ServiceWithExplicitMethod}
+import pl.touk.nussknacker.engine.api.context.transformation.DefinedSingleParameter
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{ContextId, MetaData}
-import pl.touk.nussknacker.engine.util.service.GenericTimeMeasuringService
+import pl.touk.nussknacker.engine.util.service.{GenericTimeMeasuringService, SimpleServiceWithFixedParameters}
 import pl.touk.nussknacker.openapi.SwaggerService
 import pl.touk.nussknacker.openapi.extractor.ParametersExtractor
 import pl.touk.nussknacker.openapi.http.SwaggerSttpService
@@ -19,7 +23,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 abstract class BaseSwaggerEnricher(rootUrl: Option[URL], swaggerService: SwaggerService,
-                                   fixedParams: Map[String, () => AnyRef]) extends ServiceWithExplicitMethod with GenericTimeMeasuringService {
+                                   fixedParams: Map[String, () => AnyRef]) extends SimpleServiceWithFixedParameters with GenericTimeMeasuringService {
 
   override protected def serviceName: String = swaggerService.name
 
@@ -29,18 +33,17 @@ abstract class BaseSwaggerEnricher(rootUrl: Option[URL], swaggerService: Swagger
 
   implicit protected def httpBackendForEc(implicit ec: ExecutionContext): SttpBackend[Future, Nothing, Nothing]
 
-  override def parameterDefinition: List[Parameter] = parameterExtractor.parameterDefinition
+  override def parameters: List[Parameter] = parameterExtractor.parameterDefinition
 
-  override def returnType: typing.TypingResult =
-    swaggerService.responseSwaggerType.map(_.typingResult)
-      .getOrElse(Typed[Unit])
+  override def hasOutput: Boolean = true
 
-  override def invokeService(params: List[AnyRef])(implicit ec: ExecutionContext,
-                                                   collector: ServiceInvocationCollector,
-                                                   metaData: MetaData,
-                                                   contextId: ContextId): Future[AnyRef] = measuring {
+  override def returnType: typing.TypingResult = swaggerService.responseSwaggerType.map(_.typingResult).getOrElse(Typed[Unit])
+
+  override def invoke(params: Map[String, Any])
+                     (implicit ec: ExecutionContext, collector: ServiceInvocationCollector, contextId: ContextId, metaData: MetaData): Future[AnyRef] = {
     swaggerHttpService.invoke(parameterExtractor.prepareParams(params))
   }
+
 
 }
 

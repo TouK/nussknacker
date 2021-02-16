@@ -3,14 +3,17 @@ package pl.touk.nussknacker.engine.definition
 import java.lang.annotation.Annotation
 import java.lang.reflect.Method
 
+import com.github.ghik.silencer.silent
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.api.typed.MissingOutputVariableException
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
-import pl.touk.nussknacker.engine.definition.parameter.{StandardParameterEnrichment, ParameterExtractor}
+import pl.touk.nussknacker.engine.definition.parameter.{ParameterExtractor, StandardParameterEnrichment}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
+
+import scala.annotation.nowarn
 
 // We should think about things that happens here as a Dependency Injection where @ParamName and so on are kind of
 // BindingAnnotation in guice meaning. Maybe we should switch to some lightweight DI framework (like guice) instead
@@ -21,6 +24,8 @@ private[definition] trait MethodDefinitionExtractor[T] {
 
 }
 
+@silent("deprecated")
+@nowarn("deprecated")
 private[definition] object WithExplicitMethodToInvokeMethodDefinitionExtractor extends MethodDefinitionExtractor[WithExplicitMethodToInvoke] {
   override def extractMethodDefinition(obj: WithExplicitMethodToInvoke, methodToInvoke: Method, nodeConfig: SingleNodeConfig): Either[String, MethodDefinition] = {
     val parametersList = StandardParameterEnrichment.enrichParameterDefinitions(obj.parameterDefinition, nodeConfig)

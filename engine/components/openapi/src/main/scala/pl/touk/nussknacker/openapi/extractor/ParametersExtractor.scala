@@ -6,7 +6,7 @@ import pl.touk.nussknacker.openapi._
 
 object ParametersExtractor {
 
-  def queryParams(paramDef: QueryParameter, paramInput: AnyRef): List[(String, String)] = {
+  def queryParams(paramDef: QueryParameter, paramInput: Any): List[(String, String)] = {
     import scala.collection.JavaConverters._
     paramDef.`type` match {
       case SwaggerObject(fieldDefs, _) =>
@@ -70,11 +70,11 @@ class ParametersExtractor(swaggerService: SwaggerService, fixedParams: Map[Strin
 
   val parameterDefinition: List[Parameter] = parametersWithFlag.map(_.parameter)
 
-  def prepareParams(paramList: List[AnyRef]): Map[String, AnyRef] = {
+  def prepareParams(params: Map[String, Any]): Map[String, Any] = {
 
-    require(paramList.size == parameterDefinition.size, s"Param list: $paramList, expected params: ${parameterDefinition.map(_.name)}")
-
-    val baseMap = parametersWithFlag.zip(paramList)
+    val baseMap = parametersWithFlag.map { pwb =>
+      (pwb, params.getOrElse(pwb.parameter.name, throw new IllegalArgumentException(s"No param ${pwb.parameter.name}, should not happen")))
+    }
 
     val plainParams = baseMap.collect {
       case (ParameterWithBodyFlag(p, false), value) => p.name -> value

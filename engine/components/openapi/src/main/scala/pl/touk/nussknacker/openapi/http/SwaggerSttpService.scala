@@ -15,7 +15,7 @@ class SwaggerSttpService(rootUrl: Option[URL], swaggerService: SwaggerService) {
   private val baseUrl =
     rootUrl.orElse(swaggerService.servers.headOption).getOrElse(throw new IllegalArgumentException("Host has to be defined"))
 
-  def invoke[F[_]](parameters: Map[String, AnyRef])(implicit backend: SttpBackend[F, Nothing, Nothing]): F[AnyRef] = {
+  def invoke[F[_]](parameters: Map[String, Any])(implicit backend: SttpBackend[F, Nothing, Nothing]): F[AnyRef] = {
     implicit val monad: MonadError[F] = backend.responseMonad
     val request = ServiceRequest(baseUrl, swaggerService, parameters)
     val sendResult = request.send().flatMap(SttpUtils.handleOptionalResponse[F, Json])

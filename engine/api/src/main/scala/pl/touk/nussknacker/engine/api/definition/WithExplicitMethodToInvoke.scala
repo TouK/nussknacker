@@ -1,9 +1,12 @@
 package pl.touk.nussknacker.engine.api.definition
 
+import cats.data.ValidatedNel
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedSingleParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.{ContextId, MetaData, Service}
+import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.{ContextId, EagerService, LazyParameter, MetaData, Service, ServiceInvoker}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -15,6 +18,7 @@ import scala.concurrent.{ExecutionContext, Future}
   * as they handle implicit arguments better
   *
   */
+@deprecated("Use ContextTransformation/GenericNodeTransformation", since = "0.4.0")
 trait WithExplicitMethodToInvoke {
 
   def parameterDefinition: List[Parameter]
@@ -29,7 +33,7 @@ trait WithExplicitMethodToInvoke {
 
 }
 
-
+@deprecated("Use EagerServiceWithFixedParams/SimpleServiceWithFixedParams", since = "0.4.0")
 trait ServiceWithExplicitMethod extends Service with WithExplicitMethodToInvoke {
 
   override final def additionalDependencies: List[Class[_]] = List(classOf[ExecutionContext], classOf[ServiceInvocationCollector], classOf[MetaData], classOf[ContextId])

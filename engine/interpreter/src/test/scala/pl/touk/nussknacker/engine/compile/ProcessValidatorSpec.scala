@@ -8,10 +8,11 @@ import com.github.ghik.silencer.silent
 import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
+import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedSingleParameter}
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, SingleNodeConfig, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, RunMode, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
@@ -32,6 +33,7 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
+import pl.touk.nussknacker.engine.util.service.{EagerServiceWithFixedParameters, SimpleServiceWithFixedParameters}
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.engine.variables.MetaVariables
 
@@ -1343,45 +1345,52 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   // Remove @silent after upgrade to silencer 1.7
   @silent("deprecated")
   @nowarn("cat=deprecation")
-  object ServiceReturningTypeSample extends Service with ServiceReturningType {
+  object ServiceReturningTypeSample extends EagerService {
 
     @MethodToInvoke
-    def invoke(@ParamName("definition") definition: java.util.Map[String, _], @ParamName("inRealTime") inRealTime: String): Future[AnyRef] = Future.successful(null)
+    def invoke(@ParamName("definition") definition: java.util.Map[String, _],
+               @ParamName("inRealTime") inRealTime: LazyParameter[String]) = new ServiceInvoker {
+      override def invokeService(params: Map[String, Any])
+                                (implicit ec: ExecutionContext,
+                                 collector: InvocationCollectors.ServiceInvocationCollector,
+                                 contextId: ContextId,
+                                 runMode: RunMode): Future[Any] = Future.successful(null)
 
-    //returns list of type defined by definition parameter
-    override def returnType(parameters: Map[String, (TypingResult, Option[Any])]): typing.TypingResult = {
-      parameters
-        .get("definition")
-        .flatMap(_._2)
-        .map(definition => TypingUtils.typeMapDefinition(definition.asInstanceOf[java.util.Map[String, _]]))
-        .map(param => Typed.genericTypeClass[java.util.List[_]](List(param)))
-        .getOrElse(Unknown)
+      override def returnType: TypingResult = Typed.genericTypeClass[java.util.List[_]](List(TypingUtils.typeMapDefinition(definition)))
     }
+
   }
 
   // Remove @silent after upgrade to silencer 1.7
   @silent("deprecated")
   @nowarn("cat=deprecation")
-  object ServiceReturningTypeWithExplicitMethodSample extends Service with ServiceReturningType with ServiceWithExplicitMethod {
+  object ServiceReturningTypeWithExplicitMethodSample extends EagerServiceWithFixedParameters {
 
-    override def returnType(parameters: Map[String, (TypingResult, Option[Any])]): typing.TypingResult = {
-      parameters
-        .get("definition")
-        .flatMap(_._2)
-        .map(definition => TypingUtils.typeMapDefinition(definition.asInstanceOf[java.util.Map[String, _]]))
-        .map(param => Typed.genericTypeClass[java.util.List[_]](List(param)))
-        .getOrElse(Unknown)
+    override val hasOutput = true
+
+    override def returnType(validationContext: ValidationContext,
+                            parameters: Map[String, DefinedSingleParameter]): ValidatedNel[ProcessCompilationError, TypingResult] = {
+      Valid(parameters
+        .get("definition").collect {
+          case DefinedEagerParameter(value: java.util.Map[String@unchecked, _], _) => TypingUtils.typeMapDefinition(value)
+        }.map(param => Typed.genericTypeClass[java.util.List[_]](List(param)))
+        .getOrElse(Unknown))
     }
 
-    override def invokeService(params: List[AnyRef])
-                              (implicit ec: ExecutionContext,
-                               collector: InvocationCollectors.ServiceInvocationCollector,
-                               metaData: MetaData,
-                               contextId: ContextId): Future[AnyRef] = Future.successful(null)
 
+    override def serviceImplementation(eagerParameters: Map[String, Any], typingResult: TypingResult, metaData: MetaData): ServiceInvoker = new ServiceInvoker {
+      override def invokeService(params: Map[String, Any])
+                                (implicit ec: ExecutionContext,
+                                 collector: InvocationCollectors.ServiceInvocationCollector,
+                                 contextId: ContextId,
+                                 runMode: RunMode): Future[Any] = Future.successful(null)
+
+
+      override def returnType: TypingResult = typingResult
+    }
 
     //@ParamName("definition") definition: java.util.Map[String, _], @ParamName("inRealTime") inRealTime: String
-    override def parameterDefinition: List[Parameter] = List(
+    override def parameters: List[Parameter] = List(
       Parameter(
         name = "definition",
         typ = Typed.typedClass(classOf[java.util.Map[_, _]], List(Typed[String], Unknown)),
@@ -1391,37 +1400,46 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         name = "inRealTime",
         typ = Typed.typedClass(classOf[String]),
         validators = Nil
-      )
+      ).copy(isLazyParameter = true)
     )
 
-    // this definition (from ServiceWithExplicitMethod) should be overridden by definition from ServiceReturningType
-    override def returnType: TypingResult = Typed.typedClass(classOf[String])
   }
 
 
   // Remove @silent after upgrade to silencer 1.7
   @silent("deprecated")
   @nowarn("cat=deprecation")
-  object ServiceWithCustomValidation extends Service with ServiceReturningType {
+  object ServiceWithCustomValidation extends EagerService {
 
     @MethodToInvoke
     def invoke(@ParamName("age") age: Int,
-               @ParamName("fields") fields: java.util.Map[String, String]): Future[String] = {
-      Future.successful(s"name: ${fields.get("name")}, age: $age")
+               @ParamName("fields") fields: LazyParameter[java.util.Map[String, String]]): ServiceInvoker = {
+
+      new ServiceInvoker {
+        override def invokeService(params: Map[String, Any])
+                                  (implicit ec: ExecutionContext,
+                                   collector: InvocationCollectors.ServiceInvocationCollector,
+                                   contextId: ContextId,
+                                   runMode: RunMode): Future[Any] =
+          Future.successful(s"name: ${params("fields").asInstanceOf[java.util.Map[String, String]].get("name")}, age: $age")
+
+
+        override def returnType: TypingResult = {
+          if (age < 18) {
+            throw CustomNodeValidationException("Too young", Some("age"))
+          }
+          fields.returnType match {
+            case TypedObjectTypingResult(fields, _, _) if fields.contains("invalid") =>
+              throw CustomNodeValidationException("Service is invalid", None)
+            case TypedObjectTypingResult(fields, _, _) if fields.values.exists(_ != Typed.typedClass[String]) =>
+              throw CustomNodeValidationException("All values should be strings", Some("fields"))
+            case _ => Typed.typedClass[String]
+          }
+        }
+      }
+
     }
 
-    def returnType(params: Map[String, (TypingResult, Option[Any])]): TypingResult = {
-      if (params("age")._2.get.asInstanceOf[Int] < 18) {
-        throw CustomNodeValidationException("Too young", Some("age"))
-      }
-      params("fields")._1 match {
-        case TypedObjectTypingResult(fields, _, _) if fields.contains("invalid") =>
-          throw CustomNodeValidationException("Service is invalid", None)
-        case TypedObjectTypingResult(fields, _, _) if fields.values.exists(_ != Typed.typedClass[String]) =>
-          throw CustomNodeValidationException("All values should be strings", Some("fields"))
-        case _ => Typed.typedClass[String]
-      }
-    }
   }
 }
 
