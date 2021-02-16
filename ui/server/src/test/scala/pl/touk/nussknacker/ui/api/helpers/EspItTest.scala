@@ -41,9 +41,7 @@ import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import java.time
 import scala.concurrent.Future
 
-
-trait
-EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers with ScalaFutures =>
+trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers with ScalaFutures =>
 
   override def testConfig: Config = ConfigWithScalaVersion.config
 
@@ -155,6 +153,11 @@ EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions { self
   def saveProcess(processName: ProcessName, process: EspProcess)(testCode: => Assertion): Assertion = {
     Post(s"/processes/${processName.value}/$testCategoryName?isSubprocess=false") ~> processesRouteWithAllPermissions ~> check {
       status shouldBe StatusCodes.Created
+      val json = parser.decode[Json](responseAs[String]).right.get
+      val resp = CreateProcessResponse(json)
+
+      resp.processName shouldBe processName.value
+
       updateProcess(processName, process)(testCode)
     }
   }
@@ -208,15 +211,13 @@ EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions { self
   }
 
   def deployProcess(processName: String, requireComment: Boolean = false, comment: Option[String] = None): RouteTestResult = {
-    Post(s"/processManagement/deploy/$processName",
-      HttpEntity(ContentTypes.`text/plain(UTF-8)`, comment.getOrElse(""))
-    ) ~> withPermissions(deployRoute(requireComment), testPermissionDeploy |+| testPermissionRead)
+    Post(s"/processManagement/deploy/$processName", HttpEntity(ContentTypes.`application/json`, comment.getOrElse(""))) ~>
+      withPermissions(deployRoute(requireComment), testPermissionDeploy |+| testPermissionRead)
   }
 
   def cancelProcess(id: String, requireComment: Boolean = false, comment: Option[String] = None): RouteTestResult = {
-    Post(s"/processManagement/cancel/$id",
-      HttpEntity(ContentTypes.`text/plain(UTF-8)`, comment.getOrElse(""))
-    ) ~> withPermissions(deployRoute(requireComment), testPermissionDeploy |+| testPermissionRead)
+    Post(s"/processManagement/cancel/$id", HttpEntity(ContentTypes.`application/json`, comment.getOrElse(""))) ~>
+      withPermissions(deployRoute(requireComment), testPermissionDeploy |+| testPermissionRead)
   }
 
   def snapshot(processName: String): RouteTestResult = {
@@ -406,9 +407,6 @@ EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions { self
   def createDeployedCanceledProcess(processName: ProcessName, isSubprocess: Boolean = false) : process.ProcessId =
     createDeployedCanceledProcess(processName, testCategoryName, isSubprocess)
 
-  def cancelProcess(id: process.ProcessId): Assertion =
-    prepareCancel(id).map(_ => ()).futureValue shouldBe (())
-
   def parseResponseToListJsonProcess(response: String): List[ProcessJson] =
     parser.decode[List[Json]](response).right.get.map(j => ProcessJson(j))
 
@@ -417,7 +415,7 @@ EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions { self
     parseResponseToListJsonProcess(response)
       .find(item => item.name === processId)
 
-  def decodeJsonProcess(response: String): ProcessJson =
+  private def decodeJsonProcess(response: String): ProcessJson =
     ProcessJson(parser.decode[Json](response).right.get)
 }
 
@@ -441,18 +439,29 @@ object ProcessJson{
   }
 }
 
-case class ProcessJson(id: String,
-                       name: String,
-                       processId: Long,
-                       lastActionVersionId: Option[Long],
-                       lastActionType: Option[String],
-                       stateStatus: Option[String],
-                       stateIcon: Option[URI],
-                       stateTooltip: Option[String],
-                       stateDescription: Option[String],
-                       processCategory: String,
-                       isArchived: Boolean) {
+final case class ProcessJson(id: String,
+                             name: String,
+                             processId: Long,
+                             lastActionVersionId: Option[Long],
+                             lastActionType: Option[String],
+                             stateStatus: Option[String],
+                             stateIcon: Option[URI],
+                             stateTooltip: Option[String],
+                             stateDescription: Option[String],
+                             processCategory: String,
+                             isArchived: Boolean) {
 
   def isDeployed: Boolean = lastActionType.contains(ProcessActionType.Deploy.toString)
+
   def isCanceled: Boolean = lastActionType.contains(ProcessActionType.Cancel.toString)
 }
+
+object CreateProcessResponse {
+  def apply(data: Json): CreateProcessResponse = CreateProcessResponse(
+    data.hcursor.downField("id").as[Long].right.get,
+    data.hcursor.downField("versionId").as[Long].right.get,
+    data.hcursor.downField("processName").as[String].right.get
+  )
+}
+
+final case class CreateProcessResponse(id: Long, versionId: Long, processName: String)

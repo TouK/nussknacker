@@ -18,36 +18,38 @@ import slick.dbio.DBIOAction
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 
+//TODO: Add missing methods: markProcessAsDeployed and markProcessAsCancelled
 trait ProcessActionRepository[F[_]] {
-  def markProcessAsArchived(processId: ProcessId, processVersion: Long)(implicit ec: ExecutionContext, user: LoggedUser): F[_]
-  def markProcessAsUnArchived(processId: ProcessId, processVersion: Long)(implicit ec: ExecutionContext, user: LoggedUser): F[_]
+  def markProcessAsArchived(processId: ProcessId, processVersion: Long)(implicit user: LoggedUser): F[_]
+  def markProcessAsUnArchived(processId: ProcessId, processVersion: Long)(implicit user: LoggedUser): F[_]
 }
 
 object DbProcessActionRepository {
-  def create(dbConfig: DbConfig, modelData: ProcessingTypeDataProvider[ModelData]): DbProcessActionRepository =
+  def create(dbConfig: DbConfig, modelData: ProcessingTypeDataProvider[ModelData])(implicit ec: ExecutionContext): DbProcessActionRepository =
     new DbProcessActionRepository(dbConfig, modelData.mapValues(_.configCreator.buildInfo()))
 }
 
-class DbProcessActionRepository(val dbConfig: DbConfig, buildInfos: ProcessingTypeDataProvider[Map[String, String]])
-  extends BasicRepository with EspTables with CommentActions with ProcessActionRepository[DB] {
+class DbProcessActionRepository(val dbConfig: DbConfig, buildInfos: ProcessingTypeDataProvider[Map[String, String]]) (implicit ec: ExecutionContext)
+extends BasicRepository with EspTables with CommentActions with ProcessActionRepository[DB]{
 
   import profile.api._
 
-  def markProcessAsDeployed(processId: ProcessId, processVersion: Long, processingType: ProcessingType, comment: Option[String])(implicit ec: ExecutionContext, user: LoggedUser): Future[ProcessActionEntityData] =
-    //TODO: remove Deployment: after adding custom icons
+  //TODO: remove Deployment: after adding custom icons
+  def markProcessAsDeployed(processId: ProcessId, processVersion: Long, processingType: ProcessingType, comment: Option[String])(implicit user: LoggedUser): Future[ProcessActionEntityData] =
     run(action(processId, processVersion, comment.map("Deployment: " + _), ProcessActionType.Deploy, buildInfos.forType(processingType).map(BuildInfo.writeAsJson)))
 
-  def markProcessAsCancelled(processId: ProcessId, processVersion: Long, comment: Option[String])(implicit ec: ExecutionContext, user: LoggedUser): Future[ProcessActionEntityData] =
-    //TODO: remove Stop: after adding custom icons
+  //TODO: remove Stop: after adding custom icons
+  def markProcessAsCancelled(processId: ProcessId, processVersion: Long, comment: Option[String])(implicit user: LoggedUser): Future[ProcessActionEntityData] =
     run(action(processId, processVersion, comment.map("Stop: " + _), ProcessActionType.Cancel, None))
 
-  override def markProcessAsArchived(processId: ProcessId, processVersion: Long)(implicit ec: ExecutionContext, user: LoggedUser): DB[ProcessActionEntityData] =
+  override def markProcessAsArchived(processId: ProcessId, processVersion: Long)(implicit user: LoggedUser): DB[ProcessActionEntityData] =
     action(processId, processVersion, None, ProcessActionType.Archive, None)
 
-  override def markProcessAsUnArchived(processId: ProcessId, processVersion: Long)(implicit ec: ExecutionContext, user: LoggedUser): DB[ProcessActionEntityData] =
+  override def markProcessAsUnArchived(processId: ProcessId, processVersion: Long)(implicit user: LoggedUser): DB[ProcessActionEntityData] =
     action(processId, processVersion, None, ProcessActionType.UnArchive, None)
 
-  private def action(processId: ProcessId, processVersion: Long, comment: Option[String], action: ProcessActionType, buildInfo: Option[String])(implicit ec: ExecutionContext, user: LoggedUser) =
+  //FIXME: Use ProcessVersionId instead of Long at processVersion
+  private def action(processId: ProcessId, processVersion: Long, comment: Option[String], action: ProcessActionType, buildInfo: Option[String])(implicit user: LoggedUser) =
     for {
       commentId <- withComment(processId, processVersion, comment)
       processActionData = ProcessActionEntityData(

@@ -86,6 +86,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     processManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
       deployProcess(processName.value) ~> check {
         status shouldBe StatusCodes.Conflict
+        responseAs[String] shouldBe ProcessIllegalAction.archived(ProcessActionType.Deploy, processIdWithName).message
       }
     }
   }

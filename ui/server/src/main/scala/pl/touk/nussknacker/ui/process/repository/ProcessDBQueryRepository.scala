@@ -16,6 +16,7 @@ import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
+//FIXME: It's temporary trait. In future we should merge and refactor: DBFetchingProcessRepository, ProcessDBQueryRepository and DBProcessRepository to one repository
 trait ProcessDBQueryRepository[F[_]] extends Repository[F] with EspTables {
   import api._
 
