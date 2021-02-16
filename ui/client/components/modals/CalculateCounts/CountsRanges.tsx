@@ -59,6 +59,7 @@ function useDeployHistory(processId: string): Range[] {
       }))
       .then(setDeploys)
   }, [t, processId])
+
   return deploys
 }
 
@@ -80,7 +81,7 @@ export function CountsRanges({label, onChange}: RangesProps): JSX.Element {
       <p>{label}</p>
 
       <div style={rangesStyle}>
-        <CountsRangesButtons ranges={[...ranges, ...deploys]} onChange={onChange} limit={6}/>
+        <CountsRangesButtons ranges={ranges} onChange={onChange} limit={6}/>
       </div>
     </>
   )
