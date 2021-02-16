@@ -17,10 +17,10 @@ object RepositoryManager {
       import api._
 
       override def runInTransaction(actions: DB[_]*): Future[Unit] =
-        dbConfig.run(DBIO.seq[Effect.All](actions: _*).transactionally)
+        run(DBIO.seq[Effect.All](actions: _*))
 
       override def run[T](action: DB[T]): Future[T] =
-        dbConfig.run(action)
+        dbConfig.run(action.transactionally)
     }
 }
 

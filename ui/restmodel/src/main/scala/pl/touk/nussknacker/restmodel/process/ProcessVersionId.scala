@@ -1,5 +1,11 @@
 package pl.touk.nussknacker.restmodel.process
 
-import io.circe.generic.JsonCodec
+import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
+import io.circe.{Decoder, Encoder}
 
-@JsonCodec case class ProcessVersionId(value: Long) extends AnyVal
+object ProcessVersionId {
+  implicit val ProcessVersionIdEncoder: Encoder[ProcessVersionId] = deriveUnwrappedEncoder
+  implicit val ProcessVersionIdDecoder: Decoder[ProcessVersionId] = deriveUnwrappedDecoder
+}
+
+case class ProcessVersionId(value: Long) extends AnyVal

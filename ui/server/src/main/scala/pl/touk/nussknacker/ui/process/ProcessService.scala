@@ -127,7 +127,6 @@ class DBProcessService(managerActor: ActorRef,
         .map(_ => ().asRight)
     }
 
-
   private def doAction(action: ProcessActionType, processIdWithName: ProcessIdWithName, savepointPath: Option[String], comment: Option[String])
                       (actionToDo: (ProcessIdWithName, Option[String], Option[String]) => Future[EmptyResponse])
                       (implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] = {
@@ -227,11 +226,11 @@ class DBProcessService(managerActor: ActorRef,
   private def archiveSubprocess(process: BaseProcessDetails[_])(implicit user: LoggedUser): Future[EmptyResponse] =
     doArchive(process)
 
-  private def doOnProcessStateVerification(process: BaseProcessDetails[_], actionToCheck: ProcessActionType)(action: BaseProcessDetails[_] => Future[EmptyResponse])
+  private def doOnProcessStateVerification(process: BaseProcessDetails[_], actionToCheck: ProcessActionType)(callback: BaseProcessDetails[_] => Future[EmptyResponse])
                                           (implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] =
     getProcessState(process.idWithName).flatMap(state => {
       if (state.allowedActions.contains(actionToCheck)) {
-        action(process)
+        callback(process)
       } else {
         Future(Left(ProcessIllegalAction(actionToCheck, process.idWithName, state)))
       }
@@ -244,19 +243,12 @@ class DBProcessService(managerActor: ActorRef,
     ).map(_ => ().asRight)
 
   private def toProcessResponse(processName: ProcessName, processVersionEntity: ProcessVersionEntityData): ProcessResponse =
-    ProcessResponse(
-      ProcessId(processVersionEntity.processId),
-      ProcessVersionId(processVersionEntity.id),
-      processName,
-      processVersionEntity.json,
-      processVersionEntity.createDate.getTime,
-      processVersionEntity.user
-    )
+    ProcessResponse(ProcessId(processVersionEntity.processId), ProcessVersionId(processVersionEntity.id), processName)
 
-  private def withProcess[T](processIdWithName: ProcessIdWithName)(action: BaseProcessDetails[_] => Future[XError[T]])(implicit user: LoggedUser) = {
+  private def withProcess[T](processIdWithName: ProcessIdWithName)(callback: BaseProcessDetails[_] => Future[XError[T]])(implicit user: LoggedUser) = {
     fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id).flatMap {
       case Some(process) =>
-        action(process)
+        callback(process)
       case None =>
         Future(Left(ProcessNotFoundError(processIdWithName.id.value.toString)))
     }
@@ -303,11 +295,11 @@ class DBProcessService(managerActor: ActorRef,
         Future(Left(ProcessValidationError("Process category not found.")))
     }
 
-  private def withNotCustomProcess[T](process: BaseProcessDetails[_], errorMessage: String)(action: BaseProcessDetails[_] => Future[XError[T]])(implicit user: LoggedUser) = {
+  private def withNotCustomProcess[T](process: BaseProcessDetails[_], errorMessage: String)(callback: BaseProcessDetails[_] => Future[XError[T]])(implicit user: LoggedUser) = {
     if (process.processType == ProcessType.Custom) {
       Future(Left(ProcessIllegalAction(errorMessage)))
     } else {
-      action(process)
+      callback(process)
     }
   }
 }

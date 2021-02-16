@@ -41,6 +41,7 @@ import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnCategoryChanged
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, UpdateProcessCommand}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
+//TODO: Move remained business logic to processService
 class ProcessesResources(val processRepository: FetchingProcessRepository[Future],
                          processService: ProcessService,
                          processValidation: ProcessValidation,
@@ -191,7 +192,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
                   processService
                     .updateProcess(processId, updateCommand)
                     .withSideEffect(response => sideEffectAction(response.toOption.flatMap(_.processResponse)) { resp =>
-                      OnSaved(resp.id, resp.versionId.value)
+                      OnSaved(resp.id, resp.versionId)
                     })
                     .map(_.map(_.validationResult))
                     .map(toResponseEither[ValidationResult])
@@ -240,7 +241,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
                   processService
                     .createProcess(CreateProcessCommand(ProcessName(processName), category, isSubprocess))
                     .withSideEffect(response => sideEffectAction(response) { process =>
-                      OnSaved(process.id, process.versionId.value)
+                      OnSaved(process.id, process.versionId)
                     })
                     .map(toResponseEither[ProcessResponse](_, StatusCodes.Created))
                 }

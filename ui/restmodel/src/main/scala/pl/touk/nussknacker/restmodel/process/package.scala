@@ -7,17 +7,17 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
 
 package object process {
 
-  @JsonCodec case class UpdateProcessCategoryResponse(oldCategory: String, newCategory: String)
+  @JsonCodec final case class UpdateProcessCategoryResponse(oldCategory: String, newCategory: String)
 
   object UpdateProcessNameResponse {
     def create(oldNameString: String, newNameString: String): UpdateProcessNameResponse =
       UpdateProcessNameResponse(ProcessName(oldNameString), ProcessName(newNameString))
   }
 
-  @JsonCodec case class UpdateProcessNameResponse(oldName: ProcessName, newName: ProcessName)
+  @JsonCodec final case class UpdateProcessNameResponse(oldName: ProcessName, newName: ProcessName)
 
-  @JsonCodec case class ProcessResponse(id: ProcessId, versionId: ProcessVersionId, processName: ProcessName, json: Option[String], createDate: Long, user: String)
+  @JsonCodec final case class ProcessResponse(id: ProcessId, versionId: ProcessVersionId, processName: ProcessName)
 
-  @JsonCodec case class UpdateProcessResponse(processResponse: Option[ProcessResponse], validationResult: ValidationResult)
+  @JsonCodec final case class UpdateProcessResponse(processResponse: Option[ProcessResponse], validationResult: ValidationResult)
 
 }
