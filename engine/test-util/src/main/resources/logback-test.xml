@@ -13,6 +13,8 @@
 
     <!-- let's keep here INFO - if it will produce too many logs, we should rather think if our INFO logs are too much verbose... -->
     <logger name="pl.touk.nussknacker" level="INFO"/>
+    <logger name="pl.touk.nussknacker.engine.process.typeinformation" level="WARN"/>
+    <logger name="pl.touk.nussknacker.engine.flink.util.async" level="WARN"/>
     <!-- types info extraction can have significant impact on deployment duration - uncomment this log if you want to measure it -->
 <!--    <logger name="pl.touk.nussknacker.engine.types.TypesInformationExtractor" level="TRACE"/>-->
 
@@ -25,6 +27,8 @@
     <logger name="org.apache.flink" level="${FLINK_LOG_LEVEL:-WARN}"/>
 
     <logger name="org.apache.flink.runtime.webmonitor.WebMonitorUtils" level="ERROR"/>
+    <logger name="org.apache.flink.queryablestate" level="OFF"/>
+
     <logger name="kafka" level="ERROR"/>
     <logger name="org.apache.kafka.consumer" level="ERROR"/>
     <logger name="org.apache.kafka.producer" level="ERROR"/>
@@ -32,6 +36,7 @@
     <logger name="org.apache.kafka.clients.producer" level="ERROR"/>
     <!-- in tests we frequently encounter "Error while fetching metadata" WARNings when auto-creating topics -->
     <logger name="org.apache.kafka.clients.NetworkClient" level="ERROR"/>
+    <logger name="org.apache.kafka.common.utils.AppInfoParser" level="ERROR"/>
 
     <logger name="org.apache.zookeeper.ClientCnxn" level="ERROR"/>
     <logger name="org.flywaydb.core.internal.sqlscript.DefaultSqlScriptExecutor" level="ERROR"/>

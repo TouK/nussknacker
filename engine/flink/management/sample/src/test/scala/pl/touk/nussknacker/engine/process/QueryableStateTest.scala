@@ -102,5 +102,6 @@ object TestConfig {
       .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
       .withValue("kafka.zkAddress", fromAnyRef(kafkaZookeeperServer.zkAddress))
       .withValue("signals.topic", fromAnyRef("esp.signals"))
+      .withValue(DevProcessConfigCreator.emptyMockedSchemaRegistryProperty, fromAnyRef(true))
   }
 }
