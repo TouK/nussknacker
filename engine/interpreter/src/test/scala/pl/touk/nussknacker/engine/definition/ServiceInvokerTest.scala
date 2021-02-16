@@ -19,7 +19,7 @@ class ServiceInvokerTest extends FlatSpec with PatientScalaFutures with OptionVa
   private val nodeId = NodeId("id")
   private val jobData: JobData = JobData(metadata, ProcessVersion.empty)
   private implicit val ctxId: ContextId = ContextId("")
-  private implicit val collector: TestServiceInvocationCollector = TestServiceInvocationCollector(ctxId, nodeId, "")
+  private implicit val collector: TestServiceInvocationCollector = TestServiceInvocationCollector(None, ctxId, nodeId, "")
 
   it should "invoke service method with declared parameters as scala params" in {
     val mock = new MockService(jobData)

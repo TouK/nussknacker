@@ -46,13 +46,12 @@ class ServiceQuery(modelData: ModelData) {
     val definitions = modelData.withThisAsContextClassLoader {
       ProcessDefinitionExtractor.extractObjectWithMethods(modelData.configCreator, ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming))
     }
-    val compiler = new NodeCompiler(definitions, ExpressionCompiler.withoutOptimization(modelData), modelData.modelClassLoader.classLoader)
+    val compiler = new NodeCompiler(definitions, ExpressionCompiler.withoutOptimization(modelData), modelData.modelClassLoader.classLoader, None)
 
 
     withOpenedService(serviceName, definitions) { 
 
-      val collector = QueryServiceInvocationCollector(serviceName)
-        .enable(TestRunId(UUID.randomUUID().toString))
+      val collector = QueryServiceInvocationCollector(Some(TestRunId(UUID.randomUUID().toString)), serviceName)
 
       val variablesPreparer = GlobalVariablesPreparer(definitions.expressionConfig)
       val validationContext = variablesPreparer.emptyValidationContext(metaData)

@@ -39,7 +39,7 @@ import scala.language.implicitConversions
   NOTE: We should try to use *ONLY* core Flink API here, to avoid version compatibility problems.
   Various NK-dependent Flink hacks should be, if possible, placed in StreamExecutionEnvPreparer.
  */
-class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => ClassLoader => FlinkProcessCompilerData,
+class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Option[TestRunId]) => ClassLoader => FlinkProcessCompilerData,
                             streamExecutionEnvPreparer: StreamExecutionEnvPreparer,
                             eventTimeMetricDuration: FiniteDuration) extends LazyLogging {
 
@@ -47,7 +47,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion) => Clas
 
   def register(env: StreamExecutionEnvironment, process: EspProcess, processVersion: ProcessVersion, testRunId: Option[TestRunId] = None): Unit = {
     usingRightClassloader(env) {
-      val processCompilation = compileProcess(process, processVersion)
+      val processCompilation = compileProcess(process, processVersion, testRunId)
       val userClassLoader = UserClassLoader.get("root")
       //here we are sure the classloader is ok
       val processWithDeps = processCompilation(userClassLoader)

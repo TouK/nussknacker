@@ -47,7 +47,8 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
     "enricherService" -> WithCategories(new EnricherService),
     "enricherWithOpenService" -> WithCategories(new EnricherWithOpenService),
     "eagerEnricherWithOpen" -> WithCategories(eagerEnricher),
-    "processorService" -> WithCategories(processorService)
+    "processorService" -> WithCategories(processorService),
+    "collectingEager" -> WithCategories(CollectingEagerService)
   )
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
@@ -155,6 +156,24 @@ class EagerEnricherWithOpen extends EagerService with WithLifecycle {
     }
     list = (name, newI)::list
     newI
+  }
+
+}
+
+object CollectingEagerService extends EagerService {
+
+  @MethodToInvoke
+  def invoke(@ParamName("static") static: String,
+             @ParamName("dynamic") dynamic: LazyParameter[String]): ServiceInvoker = new ServiceInvoker {
+    override def invokeService(params: Map[String, Any])(implicit ec: ExecutionContext,
+                                                         collector: ServiceInvocationCollector,
+                                                         contextId: ContextId): Future[Any] = {
+      collector.collect(s"static-$static-dynamic-${params("dynamic")}", Option(())) {
+        Future.successful(())
+      }
+    }
+
+    override def returnType: TypingResult = Typed[Void]
   }
 
 }

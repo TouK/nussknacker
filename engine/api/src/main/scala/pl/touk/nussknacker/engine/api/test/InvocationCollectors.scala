@@ -29,7 +29,6 @@ object InvocationCollectors {
 
   trait ServiceInvocationCollector {
 
-    def enable(runId: TestRunId): ServiceInvocationCollector
     protected def runIdOpt: Option[TestRunId]
     protected def collectorMode: CollectorMode
     protected def updateResult(runId: TestRunId, testInvocation: Any, name: String): Unit
@@ -64,8 +63,8 @@ object InvocationCollectors {
     }
   }
 
-  case class QueryServiceInvocationCollector private(runIdOpt: Option[TestRunId], serviceName: String) extends ServiceInvocationCollector {
-    def enable(runId: TestRunId) = this.copy(runIdOpt = Some(runId))
+  case class QueryServiceInvocationCollector(runIdOpt: Option[TestRunId], serviceName: String) extends ServiceInvocationCollector {
+
     override protected def collectorMode: CollectorMode = CollectorMode.Query
 
     override protected def updateResult(runId: TestRunId, testInvocation: Any, name: String): Unit = {
@@ -94,28 +93,16 @@ object InvocationCollectors {
 
   }
 
-  case class TestServiceInvocationCollector private(runIdOpt: Option[TestRunId],
+  case class TestServiceInvocationCollector(runIdOpt: Option[TestRunId],
                                                     contextId: ContextId,
                                                     nodeId: NodeId, serviceRef: String) extends ServiceInvocationCollector {
-    def enable(runId: TestRunId) = this.copy(runIdOpt = Some(runId))
+
     override protected def collectorMode: CollectorMode = CollectorMode.Test
 
     override protected def updateResult(runId: TestRunId, testInvocation: Any, name: String): Unit = {
       ResultsCollectingListenerHolder.updateResults(
         runId, _.updateMockedResult(nodeId.id, contextId, serviceRef, testInvocation)
       )
-    }
-  }
-
-  object TestServiceInvocationCollector {
-    def apply(contextId: ContextId, nodeId: NodeId, serviceRef: String): TestServiceInvocationCollector = {
-      TestServiceInvocationCollector(runIdOpt = None, contextId, nodeId, serviceRef)
-    }
-  }
-
-  object QueryServiceInvocationCollector {
-    def apply(serviceName: String): QueryServiceInvocationCollector = {
-      QueryServiceInvocationCollector(runIdOpt = None, serviceName = serviceName)
     }
   }
 

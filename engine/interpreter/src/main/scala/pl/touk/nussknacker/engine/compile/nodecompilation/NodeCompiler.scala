@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExcepti
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo, TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{ServiceInvocationCollectorForContext, TestServiceInvocationCollector}
+import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType}
 import pl.touk.nussknacker.engine.api.{Context, ContextId, EagerService, MetaData, ServiceInvoker}
@@ -61,10 +62,11 @@ object NodeCompiler {
 
 class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
                    objectParametersExpressionCompiler: ExpressionCompiler,
-                   classLoader: ClassLoader) {
+                   classLoader: ClassLoader,
+                   testRunId: Option[TestRunId]) {
 
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): NodeCompiler = {
-    new NodeCompiler(definitions, objectParametersExpressionCompiler.withExpressionParsers(modify), classLoader)
+    new NodeCompiler(definitions, objectParametersExpressionCompiler.withExpressionParsers(modify), classLoader, testRunId)
   }
 
   type GenericValidationContext = Either[ValidationContext, Map[String, ValidationContext]]
@@ -226,7 +228,8 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
                      serviceCollectorOpt: Option[ServiceInvocationCollectorForContext])
                     (implicit nodeId: NodeId, metaData: MetaData): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
 
-    val serviceCollector = serviceCollectorOpt.getOrElse((c: ContextId) => TestServiceInvocationCollector(c, nodeId, n.id))
+    val serviceCollector = serviceCollectorOpt.getOrElse((c: ContextId) => TestServiceInvocationCollector(testRunId, c, nodeId, n.id))
+
     definitions.services.get(n.id) match {
       case Some(objectWithMethodDef) if objectWithMethodDef.obj.isInstanceOf[EagerService] =>
         compileEagerService(n, objectWithMethodDef, validationContext, outputVar, serviceCollector)

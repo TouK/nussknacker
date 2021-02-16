@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.Unsupporte
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{process, _}
 import pl.touk.nussknacker.engine.compile._
@@ -45,22 +46,19 @@ object StandaloneProcessInterpreter {
   }
 
   def apply(process: EspProcess, contextPreparer: StandaloneContextPreparer, modelData: ModelData,
-            additionalListeners: List[ProcessListener] = List(),
-            definitionsPostProcessor: ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef]
-              => ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef] = identity)
+            additionalListeners: List[ProcessListener] = List(), testRunId: Option[TestRunId] = None)
   : ValidatedNel[ProcessCompilationError, StandaloneProcessInterpreter] = modelData.withThisAsContextClassLoader {
 
     val creator = modelData.configCreator
     val processObjectDependencies = ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming)
 
-    val extractedDefinitions = ProcessDefinitionExtractor.extractObjectWithMethods(creator, processObjectDependencies)
-    val definitions = definitionsPostProcessor(extractedDefinitions)
+    val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(creator, processObjectDependencies)
     val listeners = creator.listeners(processObjectDependencies) ++ additionalListeners
 
     val compilerData = ProcessCompilerData.prepare(process,
       definitions,
       listeners,
-      modelData.modelClassLoader.classLoader
+      modelData.modelClassLoader.classLoader, testRunId
       // defaultAsyncValue is not important here because it doesn't used in standalone mode
     )(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
 
