@@ -11,6 +11,7 @@ import pl.touk.nussknacker.ui.security.api.AuthenticationMethod.AuthenticationMe
 import pl.touk.nussknacker.ui.security.oauth2.ProfileFormat.ProfileFormat
 import sttp.model.{Header, HeaderNames, MediaType}
 
+import scala.concurrent.duration.{FiniteDuration, HOURS}
 import scala.io.Source
 
 case class OAuth2Configuration(method: AuthenticationMethod,
@@ -28,7 +29,8 @@ case class OAuth2Configuration(method: AuthenticationMethod,
                                authorizeParams: Map[String, String] = Map.empty,
                                headers: Map[String, String] = Map.empty,
                                authorizationHeader: String = HeaderNames.Authorization,
-                               accessTokenRequestContentType: String = MediaType.ApplicationJson.toString()
+                               accessTokenRequestContentType: String = MediaType.ApplicationJson.toString(),
+                               defaultTokenExpirationTime: FiniteDuration = FiniteDuration(1, HOURS)
                               ) extends AuthenticationConfiguration {
 
   override def authorizeUrl: Option[URI] = Option({

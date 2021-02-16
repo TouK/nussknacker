@@ -40,7 +40,7 @@ class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
   }
 
   it should ("properly parse data from authentication") in {
-    val body = DefaultAccessTokenResponse(access_token = "9IDpWSEYetSNRX41", token_type = "Bearer", refresh_token = Option.apply("QZYuU0FVobxg8oCW"))
+    val body = DefaultAccessTokenResponse(access_token = "9IDpWSEYetSNRX41", token_type = "Bearer", refresh_token = Option.apply("QZYuU0FVobxg8oCW"), expires_in = Some(System.currentTimeMillis()))
     val service = createDefaultServiceMock(body.asJson, config.accessTokenUri)
     val data = service.authenticate("6V1reBXblpmfjRJP").futureValue
 
