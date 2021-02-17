@@ -16,7 +16,7 @@ class OAuth2ClientApiSpec extends FlatSpec with Matchers with BeforeAndAfter wit
 
   val config = ExampleOAuth2ServiceFactory.testConfig
 
-  val body = DefaultAccessTokenResponse(access_token = "9IDpWSEYetSNRX41", token_type = "Bearer", refresh_token = None, expires_in = Some(System.currentTimeMillis()))
+  val body = DefaultAccessTokenResponse(access_token = "9IDpWSEYetSNRX41", token_type = "Bearer", refresh_token = None)
 
   implicit val testingBackend = new RecordingSttpBackend(
     SttpBackendStub.asynchronousFuture
