@@ -144,12 +144,12 @@ class DBFetchingProcessRepositorySpec
     currentTime = now
     val action = CreateProcessAction(ProcessName(espProcess.id), category, GraphProcess(json), TestProcessingTypes.Streaming, false)
 
-    repositoryManager.run(writingRepo.saveNewProcess(action)).futureValue shouldBe 'right
+    repositoryManager.runInTransaction(writingRepo.saveNewProcess(action)).futureValue shouldBe 'right
   }
 
   private def renameProcess(processName: ProcessName, newName: String) = {
     val processId = fetching.fetchProcessId(processName).futureValue.get
-    repositoryManager.run(writingRepo.renameProcess(processId, newName)).futureValue
+    repositoryManager.runInTransaction(writingRepo.renameProcess(processId, newName)).futureValue
   }
 
   private def fetchMetaDataIdsForAllVersions(name: ProcessName) = {

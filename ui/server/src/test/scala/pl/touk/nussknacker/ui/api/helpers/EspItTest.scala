@@ -339,7 +339,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     val action = CreateProcessAction(processName, category, emptyProcess, TestProcessingTypes.Streaming, isSubprocess = false)
 
     for {
-      _ <- repositoryManager.run(writeProcessRepository.saveNewProcess(action))
+      _ <- repositoryManager.runInTransaction(writeProcessRepository.saveNewProcess(action))
       id <- fetchingProcessRepository.fetchProcessId(processName).map(_.get)
     } yield id
   }
@@ -349,7 +349,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     val action = CreateProcessAction(processName, category, emptyProcess, TestProcessingTypes.Streaming, isSubprocess)
 
     for {
-      _ <- repositoryManager.run(writeProcessRepository.saveNewProcess(action))
+      _ <- repositoryManager.runInTransaction(writeProcessRepository.saveNewProcess(action))
       id <- fetchingProcessRepository.fetchProcessId(processName).map(_.get)
     } yield id
   }

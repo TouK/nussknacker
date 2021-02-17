@@ -65,7 +65,7 @@ class InitializationOnHsqlItSpec extends FlatSpec with ScalatestRouteTest with M
     val action = CreateProcessAction(ProcessName(processName), "RTM", sampleDeploymentData(processId), TestProcessingTypes.Streaming, subprocess)
 
     repositoryManager
-      .run(writeRepository.saveNewProcess(action))
+      .runInTransaction(writeRepository.saveNewProcess(action))
       .futureValue
   }
 

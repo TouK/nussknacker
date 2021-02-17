@@ -340,7 +340,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
   private def prepareProcess(processName: ProcessName): Future[process.ProcessId] = {
     val action = CreateProcessAction(processName, testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)
     for {
-      _ <- repositoryManager.run(writeProcessRepository.saveNewProcess(action))
+      _ <- repositoryManager.runInTransaction(writeProcessRepository.saveNewProcess(action))
       id <- fetchingProcessRepository.fetchProcessId(processName).map(_.get)
     } yield id
   }

@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, P
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError._
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
-import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessEntityData, ProcessEntityFactory, ProcessVersionEntityData, ProcessVersionEntityFactory}
+import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.ProcessType
@@ -25,7 +25,6 @@ import pl.touk.nussknacker.ui.util.DateUtils
 import slick.dbio.DBIOAction
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.language.higherKinds
 
 object ProcessRepository {
@@ -54,9 +53,12 @@ trait ProcessRepository[F[_]] {
 }
 
 class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTypeDataProvider[Int])
-  extends ProcessRepository[DB] with EspTables with LazyLogging with CommentActions with ProcessDBQueryRepository[Future] with BasicRepository {
+  extends ProcessRepository[DB] with EspTables with LazyLogging with CommentActions with ProcessDBQueryRepository[DB] {
 
   import profile.api._
+
+  // FIXME: It's temporary way.. After merge and refactor process repositories we can remove it.
+  override def run[R]: DB[R] => DB[R] = identity
 
   /**
     * These action should be done on transaction - move it to ProcessService.createProcess

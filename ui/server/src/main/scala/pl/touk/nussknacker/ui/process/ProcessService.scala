@@ -149,7 +149,7 @@ class DBProcessService(managerActor: ActorRef,
   override def deleteProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[EmptyResponse] =
     withProcess(processIdWithName) { process =>
       withNotRunningState(process, "Can't delete still running process.") { _ =>
-        repositoryManager.run(
+        repositoryManager.runInTransaction(
           processRepository.deleteProcess(processIdWithName.id)
         ).map(_ => ().asRight)
       }
@@ -158,7 +158,7 @@ class DBProcessService(managerActor: ActorRef,
   override def renameProcess(processIdWithName: ProcessIdWithName, name: String)(implicit user: LoggedUser): Future[XError[UpdateProcessNameResponse]] =
     withNotArchivedProcess(processIdWithName, "Can't rename archived process.") { process =>
       withNotRunningState(process, "Can't change name still running process.") { _ =>
-        repositoryManager.run(
+        repositoryManager.runInTransaction(
           processRepository
             .renameProcess(processIdWithName.id, name)
             .map {
@@ -172,7 +172,7 @@ class DBProcessService(managerActor: ActorRef,
   override def updateCategory(processIdWithName: ProcessIdWithName, category: String)(implicit user: LoggedUser): Future[XError[UpdateProcessCategoryResponse]] =
     withNotArchivedProcess(processIdWithName, "Can't update category archived process.") { process =>
       withProcessingType(category) { _ =>
-        repositoryManager.run(
+        repositoryManager.runInTransaction(
           processRepository
             .updateCategory(processIdWithName.id, category)
             .map {
@@ -191,7 +191,7 @@ class DBProcessService(managerActor: ActorRef,
       val action = CreateProcessAction(command.processName, command.category, processDeploymentData, processingType, command.isSubprocess)
 
       repositoryManager
-        .run(processRepository.saveNewProcess(action))
+        .runInTransaction(processRepository.saveNewProcess(action))
         .map{
           case Right(maybeEntity) =>
             maybeEntity
@@ -213,7 +213,7 @@ class DBProcessService(managerActor: ActorRef,
             val json = ProcessMarshaller.toJson(substituted).noSpaces
             GraphProcess(json)
           }
-          processVersionData <- EitherT(repositoryManager.run(processRepository.updateProcess(UpdateProcessAction(processIdWithName.id, deploymentData, action.comment))))
+          processVersionData <- EitherT(repositoryManager.runInTransaction(processRepository.updateProcess(UpdateProcessAction(processIdWithName.id, deploymentData, action.comment))))
         } yield UpdateProcessResponse(
           processVersionData.map(toProcessResponse(processIdWithName.name, _)),
           validation

@@ -32,6 +32,9 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.concurrent.Future
 import scala.language.higherKinds
 
+/**
+  * TODO: On resource tests we should verify permissions and encoded response data. All business logic should be tested at ProcessServiceDb. 
+  */
 class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
   with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
@@ -762,5 +765,5 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     }
 
   private def updateCategory(processId: ProcessId, category: String): XError[Unit] =
-    repositoryManager.run(writeProcessRepository.updateCategory(processId, category)).futureValue
+    repositoryManager.runInTransaction(writeProcessRepository.updateCategory(processId, category)).futureValue
 }
