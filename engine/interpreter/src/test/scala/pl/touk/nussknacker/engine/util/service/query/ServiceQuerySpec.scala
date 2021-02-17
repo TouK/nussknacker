@@ -1,19 +1,18 @@
 package pl.touk.nussknacker.engine.util.service.query
 
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FlatSpec, Matchers, stats}
+import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter, ParameterWithExtractor}
 import pl.touk.nussknacker.engine.api.{ContextId, EagerService, LazyParameter, MethodToInvoke, ParamName, Service, ServiceInvoker}
 import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, ProcessObjectDependencies, WithCategories}
-import pl.touk.nussknacker.engine.api.test.ServiceInvocationCollector
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
-import pl.touk.nussknacker.engine.util.service.query.QueryServiceTesting.CollectingDynamicEagerService.static
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.{QueryResult, ServiceNotFoundException}
 import pl.touk.nussknacker.engine.util.service.query.QueryServiceTesting.{CollectingDynamicEagerService, CollectingEagerService, ConcatService, CreateQuery}
 import pl.touk.nussknacker.test.PatientScalaFutures

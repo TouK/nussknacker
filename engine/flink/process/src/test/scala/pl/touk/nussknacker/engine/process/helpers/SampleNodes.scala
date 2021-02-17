@@ -194,8 +194,7 @@ object SampleNodes {
   object CollectingEagerService extends EagerService {
 
     @MethodToInvoke
-    def invoke(@ParamName("static") static: String,
-               @ParamName("dynamic") dynamic: LazyParameter[String]): ServiceInvoker = new ServiceInvoker {
+    def invoke(@ParamName("static") static: String, @ParamName("dynamic") dynamic: LazyParameter[String]): ServiceInvoker = new ServiceInvoker {
       override def invokeService(params: Map[String, Any])(implicit ec: ExecutionContext,
                                                            collector: ServiceInvocationCollector,
                                                            contextId: ContextId): Future[Any] = {

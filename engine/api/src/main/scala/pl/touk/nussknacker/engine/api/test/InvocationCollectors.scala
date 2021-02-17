@@ -84,7 +84,7 @@ object InvocationCollectors {
       }
     }
 
-    private def withRunIdDefined[T](f: (TestRunId) => T): T = {
+    private def withRunIdDefined[T](f: TestRunId => T): T = {
       runIdOpt match {
         case Some(runId) => f(runId)
         case None => throw new IllegalStateException("RunId is not defined")
@@ -94,8 +94,9 @@ object InvocationCollectors {
   }
 
   case class TestServiceInvocationCollector(runIdOpt: Option[TestRunId],
-                                                    contextId: ContextId,
-                                                    nodeId: NodeId, serviceRef: String) extends ServiceInvocationCollector {
+                                            contextId: ContextId,
+                                            nodeId: NodeId,
+                                            serviceRef: String) extends ServiceInvocationCollector {
 
     override protected def collectorMode: CollectorMode = CollectorMode.Test
 
