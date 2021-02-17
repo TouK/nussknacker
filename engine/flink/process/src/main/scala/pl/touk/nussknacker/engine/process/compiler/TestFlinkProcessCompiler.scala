@@ -43,16 +43,6 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
     })
   }
 
-  override protected def prepareService(service: ObjectWithMethodDef): ObjectWithMethodDef = {
-    overrideObjectWithMethod(service, (parameterCreator: Map[String, Any], outputVariableNameOpt, additional: Seq[AnyRef], _) => {
-      val newAdditional = additional.map {
-        case c: ServiceInvocationCollector => c.enable(collectingListener.runId)
-        case a => a
-      }
-      service.invokeMethod(parameterCreator, outputVariableNameOpt, newAdditional)
-    })
-  }
-
   //exceptions are recorded any way, by listeners
   override protected def prepareExceptionHandler(exceptionHandler: ObjectWithMethodDef): ObjectWithMethodDef = {
     overrideObjectWithMethod(exceptionHandler, (_, _, _, _) =>
@@ -66,6 +56,8 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
     )
   }
 
+  override protected def prepareService(service: ObjectWithMethodDef): ObjectWithMethodDef = service
 }
+
 
 

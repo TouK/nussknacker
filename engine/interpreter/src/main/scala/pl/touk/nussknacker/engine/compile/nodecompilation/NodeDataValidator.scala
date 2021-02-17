@@ -35,7 +35,7 @@ object NodeDataValidator {
         case spel: SpelExpressionParser => spel.typingDictLabels
       }
       val compiler = new NodeCompiler(modelData.processWithObjectsDefinition,
-        expressionCompiler, modelData.modelClassLoader.classLoader)
+        expressionCompiler, modelData.modelClassLoader.classLoader, None)
       implicit val nodeId: NodeId = NodeId(nodeData.id)
 
       nodeData match {

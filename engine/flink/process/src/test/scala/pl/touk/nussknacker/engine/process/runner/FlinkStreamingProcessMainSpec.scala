@@ -45,8 +45,8 @@ class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
     "logService" -> WithCategories(LogService, "c1"),
     "throwingService" -> WithCategories(new ThrowingService(new RuntimeException("Thrown as expected")), "c1"),
     "throwingTransientService" -> WithCategories(new ThrowingService(new ConnectException()), "c1"),
-    "returningDependentTypeService" -> WithCategories(ReturningDependentTypeService, "c1")
-
+    "returningDependentTypeService" -> WithCategories(ReturningDependentTypeService, "c1"),
+    "collectingEager" -> WithCategories(CollectingEagerService, "c1")
   )
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(

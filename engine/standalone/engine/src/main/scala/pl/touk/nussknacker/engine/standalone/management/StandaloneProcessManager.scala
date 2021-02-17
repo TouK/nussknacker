@@ -127,8 +127,7 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
 
     //FIXME: validation??
     val standaloneInterpreter = StandaloneProcessInterpreter(process, testContext, modelData,
-      definitionsPostProcessor = prepareMocksForTest(collectingListener),
-      additionalListeners = List(collectingListener)
+      additionalListeners = List(collectingListener), testRunId = Some(collectingListener.runId)
     ) match {
       case Valid(interpreter) => interpreter
       case Invalid(errors) => throw new IllegalArgumentException("Error during interpreter preparation: " + errors.toList.mkString(", "))
@@ -186,15 +185,6 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
     parsedTestData
   }
 
-  private def prepareMocksForTest(listener: ResultsCollectingListener)(definitions: ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef]): ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef] = {
-    import pl.touk.nussknacker.engine.util.Implicits._
-    val servicesWithEnabledInvocationCollector = definitions.services.mapValuesNow { service =>
-      TestUtils.prepareServiceWithEnabledInvocationCollector(listener.runId, service)
-    }
-    definitions
-      .copy(services = servicesWithEnabledInvocationCollector)
-  }
-
 }
 
 //FIXME deduplicate with pl.touk.nussknacker.engine.process.runner.FlinkRunner?
@@ -215,17 +205,6 @@ object TestUtils {
     }
   }
 
-  def prepareServiceWithEnabledInvocationCollector(runId: TestRunId, service: ObjectWithMethodDef): ObjectWithMethodDef = {
-    new OverriddenObjectWithMethodDef(service) {
-      override def invokeMethod(parameterCreator: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any = {
-        val newAdditional = additional.map {
-          case c: ServiceInvocationCollector => c.enable(runId)
-          case a => a
-        }
-        service.invokeMethod(parameterCreator, outputVariableNameOpt, newAdditional)
-      }
-    }
-  }
 }
 
 class StandaloneProcessManagerProvider extends ProcessManagerProvider {

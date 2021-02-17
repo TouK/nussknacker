@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValue
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.EspExceptionHandler
+import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.api.{Lifecycle, MetaData, ProcessListener}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
@@ -30,7 +31,8 @@ object ProcessCompilerData {
   def prepare(process: EspProcess,
               definitions: ProcessDefinition[ObjectWithMethodDef],
               listeners: Seq[ProcessListener],
-              userCodeClassLoader: ClassLoader
+              userCodeClassLoader: ClassLoader,
+              testRunId: Option[TestRunId]
              )(implicit defaultAsyncValue: DefaultAsyncInterpretationValue): ProcessCompilerData = {
     val servicesDefs = definitions.services
 
@@ -39,7 +41,7 @@ object ProcessCompilerData {
 
     val expressionCompiler = ExpressionCompiler.withOptimization(userCodeClassLoader, dictRegistry, definitions.expressionConfig, definitions.settings)
     //for testing environment it's important to take classloader from user jar
-    val nodeCompiler = new NodeCompiler(definitions, expressionCompiler, userCodeClassLoader)
+    val nodeCompiler = new NodeCompiler(definitions, expressionCompiler, userCodeClassLoader, testRunId)
     val subCompiler = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
     val processCompiler = new ProcessCompiler(userCodeClassLoader, subCompiler, GlobalVariablesPreparer(definitions.expressionConfig), nodeCompiler)
 

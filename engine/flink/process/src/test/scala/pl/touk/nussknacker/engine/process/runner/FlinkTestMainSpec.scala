@@ -46,6 +46,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
         .source("id", "input")
         .filter("filter1", "#input.value1 > 1")
         .buildSimpleVariable("v1", "variable1", "'ala'")
+        .processor("eager1", "collectingEager", "static" -> "'s'", "dynamic" -> "#input.id")
         .processor("proc2", "logService", "all" -> "#input.id")
         .sink("out", "#input.value1", "monitor")
 
@@ -71,6 +72,8 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
 
     results.mockedResults("proc2") shouldBe List(MockedResult("proc1-id-0-1", "logService", "0-collectedDuringServiceInvocation"))
     results.mockedResults("out") shouldBe List(MockedResult("proc1-id-0-1", "monitor", "11"))
+    results.mockedResults("eager1") shouldBe List(MockedResult("proc1-id-0-1", "collectingEager", "static-s-dynamic-0"))
+
     MonitorEmptySink.invocationsCount.get() shouldBe 0
     LogService.invocationsCount.get() shouldBe 0
   }

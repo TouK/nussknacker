@@ -191,6 +191,22 @@ object SampleNodes {
 
   }
 
+  object CollectingEagerService extends EagerService {
+
+    @MethodToInvoke
+    def invoke(@ParamName("static") static: String, @ParamName("dynamic") dynamic: LazyParameter[String]): ServiceInvoker = new ServiceInvoker {
+      override def invokeService(params: Map[String, Any])(implicit ec: ExecutionContext,
+                                                           collector: ServiceInvocationCollector,
+                                                           contextId: ContextId): Future[Any] = {
+        collector.collect(s"static-$static-dynamic-${params("dynamic")}", Option(())) {
+          Future.successful(())
+        }
+      }
+
+      override def returnType: TypingResult = Typed[Void]
+    }
+
+  }
 
   object ServiceAcceptingScalaOption extends Service {
     @MethodToInvoke
