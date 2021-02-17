@@ -14,6 +14,13 @@ import sttp.model.{MediaType, Uri}
 
 import scala.concurrent.{ExecutionContext, Future}
 
+trait StandardAccessTokenResponse {
+  val access_token: String
+  val token_type: String
+  val refresh_token: Option[String]
+  val expires_in: Option[Long]
+}
+
 class OAuth2ClientApi[ProfileResponse: Decoder, AccessTokenResponse: Decoder]
 (configuration: OAuth2Configuration)
 (implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT]) extends LazyLogging {
@@ -76,6 +83,4 @@ object OAuth2ClientApi {
   def apply[ProfileResponse: Decoder, AccessTokenResponse: Decoder](configuration: OAuth2Configuration)
                                                                    (implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): OAuth2ClientApi[ProfileResponse, AccessTokenResponse]
     = new OAuth2ClientApi[ProfileResponse, AccessTokenResponse](configuration)
-
-  @JsonCodec case class DefaultAccessTokenResponse(access_token: String, token_type: String, refresh_token: Option[String], expires_in: Option[Long] = None, id_token: Option[String] = None)
 }
