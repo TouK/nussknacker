@@ -5,6 +5,8 @@ import sbt.{Def, _}
 import sbtassembly.AssemblyPlugin.autoImport.assembly
 import sbtassembly.MergeStrategy
 import ReleaseTransformations._
+import de.heikoseeberger.sbtheader.FileType
+import de.heikoseeberger.sbtheader.FileType.firstLinePattern
 
 import scala.util.Try
 
@@ -123,6 +125,17 @@ lazy val commonSettings =
     Seq(
       test in assembly := {},
       licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
+      organizationName := "TouK",
+      startYear := Some(2016),
+      headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax,
+      headerMappings := headerMappings.value
+        + (FileType("sql") -> HeaderCommentStyle.cStyleBlockComment)
+        + (HeaderFileType.sh -> HeaderCommentStyle.hashLineComment)
+        //now, this is *really* weird, but default first line pattern breaks on some of our xml files...
+        + (FileType("xml", Some("(?s)(<\\?xml.*\\?>)(:?.*)".r)) -> HeaderCommentStyle.xmlStyleBlockComment)
+        + (HeaderFileType.conf -> HeaderCommentStyle.hashLineComment),
+      //headerSources.in(IntegrationTest) := sources.in(Compile).value,
+      //headerResources.in(IntegrationTest) := resources.in(Compile).value,
       crossScalaVersions := supportedScalaVersions,
       scalaVersion  := scala212,
       resolvers ++= Seq(
@@ -338,8 +351,14 @@ lazy val dist = {
         }
       },*/
       publishArtifact := false,
-      SettingsHelper.makeDeploymentSettings(Universal, packageZipTarball in Universal, "tgz")
+      SettingsHelper.makeDeploymentSettings(Universal, packageZipTarball in Universal, "tgz"),
+
+      //unmanagedResourceDirectories.in(Universal) := Nil,
+      //unmanagedSourceDirectories.in(Universal) := Nil,
+      //headerSources.in(Universal) ++= sources.in(Universal).value,
+      //headerResources.in(Universal) ++= headerResources.in(Universal).value,
     )
+    //.settings(headerSettings(Universal))
     .settings(dockerSettings)
     .dependsOn(ui)
   if (addDevModel) {

@@ -19,3 +19,5 @@ addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.5.1")
 addSbtPlugin("net.ruippeixotog" % "sbt-coveralls" % "1.3.0") // fork with scoverage/sbt-coveralls#128 merged in
 
 addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.0")
+
+addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.6.0") 
