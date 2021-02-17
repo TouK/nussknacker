@@ -112,5 +112,6 @@ object ExampleOAuth2ServiceFactory {
 
   @JsonCodec case class TestAccessTokenResponse(access_token: String, token_type: String)
   @JsonCodec case class TestProfileResponse(email: String, uid: String, clearance: TestProfileClearanceResponse)
+  @JsonCodec case class TestTokenIntrospectionResponse(exp: Option[Long])
   @JsonCodec case class TestProfileClearanceResponse(roles: List[String], portals: List[String])
 }

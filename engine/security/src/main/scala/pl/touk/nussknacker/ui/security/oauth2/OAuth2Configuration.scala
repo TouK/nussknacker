@@ -42,10 +42,6 @@ case class OAuth2Configuration(method: AuthenticationMethod,
       .url)
   })
 
-  def jwtEnabled: Boolean = jwt.exists(_.enabled)
-
-  override def authSeverPublicKey: Option[PublicKey] = jwt.filter(_.enabled).map(_.authServerPublicKey)
-
   def idTokenNonceVerificationRequired: Boolean = jwt.exists(_.idTokenNonceVerificationRequired)
 
   def redirectUrl: String = redirectUri.toString
@@ -64,11 +60,12 @@ object OAuth2Configuration {
 object ProfileFormat extends Enumeration {
   type ProfileFormat = Value
   val GITHUB = Value("github")
-  val AUTH0 = Value("auth0")
+  val DEFAULT = Value("default")
 }
 
 trait JwtConfiguration {
-  def enabled: Boolean
+  def accessTokenIsJwt: Boolean
+  def userinfoFromIdToken: Boolean
   def authServerPublicKey: PublicKey
   def idTokenNonceVerificationRequired: Boolean
 }
@@ -81,7 +78,8 @@ object JwtConfiguration {
 
   implicit val jwtConfigurationVR: ValueReader[JwtConfiguration] = ValueReader.relative(_.rootAs[JwtConfig])
 
-  private case class JwtConfig(enabled: Boolean = false,
+  private case class JwtConfig(accessTokenIsJwt: Boolean = false,
+                               userinfoFromIdToken: Boolean = false,
                                publicKey: Option[String],
                                publicKeyFile: Option[String],
                                certificate: Option[String],

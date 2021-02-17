@@ -5,6 +5,7 @@ import java.util.concurrent.Executor
 import com.github.benmanes.caffeine.cache
 import com.github.benmanes.caffeine.cache.{Caffeine, Expiry, Ticker}
 
+import scala.compat.java8.FunctionConverters.asJavaBiFunction
 import scala.concurrent.duration.{Deadline, FiniteDuration, NANOSECONDS}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -58,6 +59,11 @@ class DefaultAsyncCache[K, V](cacheConfig: CacheConfig[K, V], ticker: Ticker = T
     underlying.get(key, asJavaBiFunction((_: K, _: Executor) => {
       value.toJava.toCompletableFuture
     })).toScala
+  }
+
+  override def put(key: K)(value: Future[V]): Unit = {
+    import scala.compat.java8.FutureConverters._
+    underlying.put(key, value.toJava.toCompletableFuture)
   }
 }
 

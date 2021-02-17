@@ -10,6 +10,7 @@ trait Cache[K, V] {
 
 trait AsyncCache[K, V] {
   def getOrCreate(key: K)(value: => Future[V]): Future[V]
+  def put(key: K)(value: Future[V])
 }
 
 trait ExpiryConfig[-K, -V] {
