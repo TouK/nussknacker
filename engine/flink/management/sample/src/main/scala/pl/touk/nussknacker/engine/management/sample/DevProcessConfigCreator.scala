@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.management.sample
 
 import java.time.LocalDateTime
+
 import com.typesafe.config.Config
 import io.circe.Encoder
 import org.apache.flink.api.common.serialization.SimpleStringSchema
@@ -11,6 +12,7 @@ import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactoryWithEditor
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
@@ -32,9 +34,13 @@ import pl.touk.nussknacker.engine.management.sample.signal.{RemoveLockProcessSig
 import pl.touk.nussknacker.engine.management.sample.source._
 import pl.touk.nussknacker.engine.management.sample.transformer._
 import pl.touk.nussknacker.engine.util.LoggingListener
+import net.ceedubs.ficus.Ficus._
 
 object DevProcessConfigCreator {
   val oneElementValue = "One element"
+
+  //This ConfigCreator is used in tests in quite a few places, where we don't have 'real' schema registry and we don't need it.
+  val emptyMockedSchemaRegistryProperty = "withMockedConfluent"
 }
 
 /**
@@ -52,14 +58,20 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   private def kafkaConfig(config: Config) = KafkaConfig.parseConfig(config)
 
-  override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] =
+  override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
+    val mockConfluent = processObjectDependencies.config.getAs[Boolean](DevProcessConfigCreator.emptyMockedSchemaRegistryProperty).contains(true)
+    val confluentFactory: ConfluentSchemaRegistryClientFactory = if (mockConfluent) {
+      new MockConfluentSchemaRegistryClientFactory(new MockSchemaRegistryClient)
+    } else CachedConfluentSchemaRegistryClientFactory()
+
     Map(
       "sendSms" -> all(SinkFactory.noParam(EmptySink)),
       "monitor" -> categories(SinkFactory.noParam(EmptySink)),
       "communicationSink" -> categories(DynamicParametersSink),
       "kafka-string" -> all(new KafkaSinkFactory(new SimpleSerializationSchema[Any](_, String.valueOf), processObjectDependencies)),
-      "kafka-avro" -> all(new KafkaAvroSinkFactoryWithEditor(ConfluentSchemaRegistryProvider(processObjectDependencies), processObjectDependencies))
+      "kafka-avro" -> all(new KafkaAvroSinkFactoryWithEditor(ConfluentSchemaRegistryProvider(confluentFactory, processObjectDependencies), processObjectDependencies))
     )
+  }
 
   override def listeners(processObjectDependencies: ProcessObjectDependencies) = List(LoggingListener)
 
