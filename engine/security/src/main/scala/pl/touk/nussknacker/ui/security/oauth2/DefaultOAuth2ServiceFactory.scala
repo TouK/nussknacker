@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.security.oauth2
 
 import io.circe.Decoder
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2ClientApi.DefaultAccessTokenResponse
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.Future
@@ -18,14 +17,25 @@ import scala.concurrent.Future
   jti: Option[String]
 ) extends JwtStandardClaims
 
+@JsonCodec case class DefaultAccessTokenResponse
+(
+  access_token: String,
+  token_type: String,
+  refresh_token: Option[String],
+  expires_in: Option[Long] = None,
+  id_token: Option[String] = None
+) extends OpenIdConnectAccessTokenResponse
+
 class DefaultOAuth2ServiceFactoryWithProfileFormat[ProfileResponse : Decoder](oAuth2Profile: OAuth2Profile[ProfileResponse]) {
   import scala.concurrent.ExecutionContext.Implicits.global
 
+  type DefaultOAuth2Service[T] = OpenIdConnectService[ProfileResponse, DefaultAccessTokenResponse, DefaultJwtAccessToken]
+
   def defaultService(configuration: OAuth2Configuration, allCategories: List[String]): OAuth2Service =
-    new DefaultOAuth2Service[ProfileResponse, DefaultJwtAccessToken](OAuth2ClientApi[ProfileResponse, DefaultAccessTokenResponse](configuration), oAuth2Profile, configuration, allCategories)
+    new DefaultOAuth2Service[ProfileResponse](OAuth2ClientApi[ProfileResponse, DefaultAccessTokenResponse](configuration), oAuth2Profile.getLoggedUser(_, configuration, allCategories), configuration)
 
   def service(configuration: OAuth2Configuration, allCategories: List[String])(implicit backend: SttpBackend[Future, Nothing, NothingT]): OAuth2Service =
-    new DefaultOAuth2Service[ProfileResponse, DefaultJwtAccessToken](new OAuth2ClientApi[ProfileResponse, DefaultAccessTokenResponse](configuration), oAuth2Profile, configuration, allCategories)
+    new DefaultOAuth2Service[ProfileResponse](new OAuth2ClientApi[ProfileResponse, DefaultAccessTokenResponse](configuration), oAuth2Profile.getLoggedUser(_, configuration, allCategories), configuration)
 }
 
 object DefaultOAuth2ServiceFactoryWithProfileFormat {

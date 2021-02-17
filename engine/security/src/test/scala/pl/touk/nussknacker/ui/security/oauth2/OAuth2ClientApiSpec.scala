@@ -4,7 +4,6 @@ import org.scalatest.Inside.inside
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers, Suite}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.security.http.RecordingSttpBackend
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2ClientApi.DefaultAccessTokenResponse
 import sttp.client.StringBody
 import sttp.client.testing.SttpBackendStub
 import sttp.model.{Header, HeaderNames, MediaType, Uri}
