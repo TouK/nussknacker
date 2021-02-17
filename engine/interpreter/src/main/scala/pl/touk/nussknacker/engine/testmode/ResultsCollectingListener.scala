@@ -5,13 +5,12 @@ import java.util.UUID
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.TestProcess._
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
-import pl.touk.nussknacker.engine.testmode.Collectors.QueryServiceResult
 
 import scala.util.Try
 
 case class TestRunId(id: String)
 
-//FIXME: extract traits and move most of stuff to interpreter, currently there is too much stuff in API...
+//TODO: this class is passed explicitly in too many places, should be more tied to ResultCollector (maybe we can have listeners embedded there?)
 case class ResultsCollectingListener(holderClass: String, runId: TestRunId) extends ProcessListener with Serializable {
 
   def results[T]: TestResults[T] = ResultsCollectingListenerHolder.resultsForId(runId)
@@ -51,32 +50,13 @@ object ResultsCollectingListenerHolder {
     ResultsCollectingListener(getClass.getCanonicalName, runId)
   }
 
-  private[testmode] def updateResults(runId: TestRunId, action: TestResults[_] => TestResults[_]) = synchronized {
+  private[testmode] def updateResults(runId: TestRunId, action: TestResults[_] => TestResults[_]): Unit = synchronized {
     val current = results.getOrElse(runId, throw new IllegalArgumentException("Run was not registered..."))
     results += (runId -> action(current))
   }
 
   def cleanResult(runId: TestRunId): Unit = synchronized {
     results -= runId
-  }
-
-}
-
-private object QueryResultsHolder {
-
-  private var queryResults = Map[TestRunId, List[QueryServiceResult]]()
-
-  private[testmode] def queryResultsForId(id: TestRunId): List[QueryServiceResult] = {
-    queryResults.getOrElse(id, List.empty)
-  }
-
-  private[testmode] def updateResult(runId: TestRunId, queryServiceResult: QueryServiceResult) = synchronized {
-    val current = queryResults.getOrElse(runId, List.empty)
-    queryResults += (runId -> (current ++ List(queryServiceResult)))
-  }
-
-  private[testmode] def cleanResult(runId: TestRunId): Unit = synchronized {
-    queryResults -= runId
   }
 
 }

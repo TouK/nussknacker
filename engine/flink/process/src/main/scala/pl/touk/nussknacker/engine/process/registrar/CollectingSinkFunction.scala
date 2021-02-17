@@ -4,7 +4,7 @@ import org.apache.flink.streaming.api.functions.sink.{RichSinkFunction, SinkFunc
 import pl.touk.nussknacker.engine.api.InterpretationResult
 import pl.touk.nussknacker.engine.process.ExceptionHandlerFunction
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
-import pl.touk.nussknacker.engine.testmode.Collectors.SinkInvocationCollector
+import pl.touk.nussknacker.engine.testmode.SinkInvocationCollector
 
 private[registrar] class CollectingSinkFunction(val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
                                                 collectingSink: SinkInvocationCollector, sinkId: String)

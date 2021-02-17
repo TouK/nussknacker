@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.{JobData, StandaloneMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.{ProcessMarshaller, ProcessUnmarshallError}
+import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import pl.touk.nussknacker.engine.standalone.management.StandaloneProcessManagerProvider
@@ -104,7 +105,7 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
 
   private def newInterpreter(canonicalProcess: CanonicalProcess): Validated[NonEmptyList[DeploymentError], StandaloneProcessInterpreter] =
     ProcessCanonizer.uncanonize(canonicalProcess)
-      .andThen(StandaloneProcessInterpreter(_, context, modelData)).leftMap(_.map(DeploymentError(_)))
+      .andThen(StandaloneProcessInterpreter(_, context, modelData, Nil, ProductionServiceInvocationCollector)).leftMap(_.map(DeploymentError(_)))
 
   private def toEspProcess(processJson: String): ValidatedNel[DeploymentError, CanonicalProcess] =
     ProcessMarshaller.fromJson(processJson)
