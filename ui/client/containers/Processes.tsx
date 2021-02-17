@@ -14,7 +14,7 @@ import {Filterable, getProcessState, ProcessesList, RowsRenderer} from "./Proces
 import {ProcessNameInput} from "./ProcessNameInput"
 import tabStyles from "../components/tabs/processTabs.styl"
 import {SearchItem} from "./TableFilters"
-import {Glyphicon} from "react-bootstrap"
+import ProcessLastAction from "../components/Process/ProcessLastAction"
 
 const ElementsRenderer: RowsRenderer = ({processes, getProcesses, statuses}) => {
   const processState = getProcessState(statuses)
@@ -32,11 +32,8 @@ const ElementsRenderer: RowsRenderer = ({processes, getProcesses, statuses}) => 
         <Td column="modifyDate" className="centered-column" value={process.modificationDate}>
           <Date date={process.modificationDate}/>
         </Td>
-        <Td column="actionDate" className="centered-column" value={process?.lastAction?.performedAt}>
-          { process?.lastAction ? (<Date date={process.lastAction.performedAt}/>): <Glyphicon glyph="minus"/> }
-        </Td>
-        <Td column="actionUser" className="centered-column" value={process?.lastAction?.user}>
-          { process?.lastAction ? process.lastAction.user: <Glyphicon glyph="minus"/> }
+        <Td column="lastAction" className="centered-column" value={process?.lastAction?.performedAt}>
+          <ProcessLastAction process={process}/>
         </Td>
         <Td column="status" className="status-column">
           <ProcessStateIcon
@@ -56,7 +53,7 @@ const ElementsRenderer: RowsRenderer = ({processes, getProcesses, statuses}) => 
   })
 }
 
-const sortable = ["name", "category", "modifyDate", "createdAt", "createdBy", "actionDate", "actionUser"]
+const sortable = ["name", "category", "modifyDate", "createdAt", "createdBy", "lastAction"]
 const filterable: Filterable = ["name", "processCategory", "createdBy"]
 const columns = [
   {key: "name", label: "Name"},
@@ -64,8 +61,7 @@ const columns = [
   {key: "createdBy", label: "Created by"},
   {key: "createdAt", label: "Created at"},
   {key: "modifyDate", label: "Last modification"},
-  {key: "actionDate", label: "Last action date"},
-  {key: "actionUser", label: "Last action user"},
+  {key: "lastAction", label: "Last action"},
   {key: "status", label: "Status"},
   {key: "edit", label: "Edit"},
   {key: "metrics", label: "Metrics"},

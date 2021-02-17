@@ -67,8 +67,11 @@
         &.reactable-th-nodeid
             max-width: 40%
 
-        &.reactable-th-modifydate, &.reactable-th-createdat, &.reactable-th-isdeployed, &.reactable-th-actiondate
+        &.reactable-th-modifydate, &.reactable-th-createdat, &.reactable-th-isdeployed
             max-width: 10%
+
+        &.reactable-th-lastaction
+            max-width: 5%
 
         &:focus
             outline 2px solid focusColor
@@ -93,7 +96,7 @@
         &.reactable-header-sort-desc:after
             content: '\25B2'
 
-    .centered-column, .reactable-th-modifydate, .reactable-th-createdat, .reactable-th-subprocess, .reactable-th-createdby, .reactable-th-cancel, .reactable-th-actiondate, .reactable-th-actionuser
+    .centered-column, .reactable-th-modifydate, .reactable-th-createdat, .reactable-th-subprocess, .reactable-th-createdby, .reactable-th-cancel, .reactable-th-actiondate, .reactable-th-actionuser, .reactable-th-lastaction
         text-align: center
 
     .edit-column, .reactable-th-metrics, .reactable-th-view
