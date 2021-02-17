@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientE
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
-import pl.touk.nussknacker.engine.api.test.ResultsCollectingListener
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSource
@@ -17,6 +16,7 @@ import pl.touk.nussknacker.engine.flink.util.exception.ConsumingNonTransientExce
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.modelconfig.{InputConfigDuringExecution, ModelConfigLoader}
+import pl.touk.nussknacker.engine.testmode.ResultsCollectingListener
 
 class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
                                inputConfigDuringExecution: InputConfigDuringExecution,

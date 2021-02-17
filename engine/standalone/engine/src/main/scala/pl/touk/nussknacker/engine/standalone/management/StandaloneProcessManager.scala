@@ -12,8 +12,9 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessObjectDependencies, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{ServiceInvocationCollector, SinkInvocationCollector}
-import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestRunId}
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
+import pl.touk.nussknacker.engine.testmode.Collectors.SinkInvocationCollector
+import pl.touk.nussknacker.engine.testmode.ResultsCollectingListenerHolder
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -28,6 +29,7 @@ import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import pl.touk.nussknacker.engine.standalone.api.types._
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
 import pl.touk.nussknacker.engine.standalone.utils.metrics.NoOpMetricsProvider
+import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestRunId}
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.engine.{ModelData, _}
 import shapeless.Typeable

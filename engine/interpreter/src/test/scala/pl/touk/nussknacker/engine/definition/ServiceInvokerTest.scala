@@ -6,7 +6,7 @@ import java.util.function.Supplier
 import org.scalatest.{FlatSpec, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.TestServiceInvocationCollector
+import pl.touk.nussknacker.engine.testmode.Collectors.TestServiceInvocationCollector
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.test.PatientScalaFutures
 

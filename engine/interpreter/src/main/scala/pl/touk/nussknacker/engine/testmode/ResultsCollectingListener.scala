@@ -1,11 +1,12 @@
-package pl.touk.nussknacker.engine.api.test
+package pl.touk.nussknacker.engine.testmode
 
 import java.util.UUID
 
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.TestProcess._
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.QueryServiceResult
+import pl.touk.nussknacker.engine.testmode.Collectors.QueryServiceResult
+
 import scala.util.Try
 
 case class TestRunId(id: String)
@@ -50,7 +51,7 @@ object ResultsCollectingListenerHolder {
     ResultsCollectingListener(getClass.getCanonicalName, runId)
   }
 
-  private[test] def updateResults(runId: TestRunId, action: TestResults[_] => TestResults[_]) = synchronized {
+  private[testmode] def updateResults(runId: TestRunId, action: TestResults[_] => TestResults[_]) = synchronized {
     val current = results.getOrElse(runId, throw new IllegalArgumentException("Run was not registered..."))
     results += (runId -> action(current))
   }
@@ -65,16 +66,16 @@ private object QueryResultsHolder {
 
   private var queryResults = Map[TestRunId, List[QueryServiceResult]]()
 
-  private[test] def queryResultsForId(id: TestRunId): List[QueryServiceResult] = {
+  private[testmode] def queryResultsForId(id: TestRunId): List[QueryServiceResult] = {
     queryResults.getOrElse(id, List.empty)
   }
 
-  private[test] def updateResult(runId: TestRunId, queryServiceResult: QueryServiceResult) = synchronized {
+  private[testmode] def updateResult(runId: TestRunId, queryServiceResult: QueryServiceResult) = synchronized {
     val current = queryResults.getOrElse(runId, List.empty)
     queryResults += (runId -> (current ++ List(queryServiceResult)))
   }
 
-  private[test] def cleanResult(runId: TestRunId): Unit = synchronized {
+  private[testmode] def cleanResult(runId: TestRunId): Unit = synchronized {
     queryResults -= runId
   }
 

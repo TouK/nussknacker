@@ -11,8 +11,7 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo, TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.api.process.Source
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{ServiceInvocationCollectorForContext, TestServiceInvocationCollector}
-import pl.touk.nussknacker.engine.api.test.TestRunId
+import pl.touk.nussknacker.engine.testmode.Collectors.{ServiceInvocationCollectorForContext, TestServiceInvocationCollector}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType}
 import pl.touk.nussknacker.engine.api.{Context, ContextId, EagerService, MetaData, ServiceInvoker}
@@ -31,6 +30,7 @@ import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.Subproces
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.{evaluatedparam, node}
+import pl.touk.nussknacker.engine.testmode.TestRunId
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.engine.{Interpreter, api, compiledgraph, graph}
 import shapeless.Typeable

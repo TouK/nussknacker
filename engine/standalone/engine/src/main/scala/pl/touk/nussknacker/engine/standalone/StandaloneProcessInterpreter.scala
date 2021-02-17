@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.Unsupporte
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{process, _}
 import pl.touk.nussknacker.engine.compile._
@@ -26,6 +25,7 @@ import pl.touk.nussknacker.engine.standalone.api.types._
 import pl.touk.nussknacker.engine.standalone.api.{StandaloneCustomTransformer, StandaloneSource, types}
 import pl.touk.nussknacker.engine.standalone.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.standalone.utils.{StandaloneContext, StandaloneContextLifecycle, StandaloneContextPreparer, StandaloneSinkWithParameters}
+import pl.touk.nussknacker.engine.testmode.TestRunId
 import pl.touk.nussknacker.engine.{Interpreter, ModelData, compiledgraph}
 
 import scala.concurrent.{ExecutionContext, Future}

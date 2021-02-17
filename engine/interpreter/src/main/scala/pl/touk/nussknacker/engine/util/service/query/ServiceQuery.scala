@@ -7,8 +7,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{QueryServiceInvocationCollector, QueryServiceResult}
-import pl.touk.nussknacker.engine.api.test.TestRunId
+import pl.touk.nussknacker.engine.testmode.Collectors.{QueryServiceInvocationCollector, QueryServiceResult}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
@@ -19,6 +18,7 @@ import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
+import pl.touk.nussknacker.engine.testmode.TestRunId
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 import scala.concurrent.{ExecutionContext, Future}

@@ -21,8 +21,8 @@ import pl.touk.nussknacker.engine.flink.util.listener.NodeCountMetricListener
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.modelconfig.{InputConfigDuringExecution, ModelConfigLoader}
+import pl.touk.nussknacker.engine.testmode.TestRunId
 
 import scala.concurrent.duration.FiniteDuration
 

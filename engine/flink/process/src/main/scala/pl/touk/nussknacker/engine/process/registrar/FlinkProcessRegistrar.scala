@@ -12,8 +12,7 @@ import org.slf4j.LoggerFactory
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.SinkInvocationCollector
-import pl.touk.nussknacker.engine.api.test.TestRunId
+import pl.touk.nussknacker.engine.testmode.Collectors.SinkInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
@@ -21,12 +20,13 @@ import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, _}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
-import pl.touk.nussknacker.engine.process.compiler.{FlinkProcessCompilerData, FlinkProcessCompiler}
+import pl.touk.nussknacker.engine.process.compiler.{FlinkProcessCompiler, FlinkProcessCompilerData}
 import pl.touk.nussknacker.engine.process.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
 import pl.touk.nussknacker.engine.process.util.{MetaDataExtractor, UserClassLoader}
 import pl.touk.nussknacker.engine.process.{CheckpointConfig, ExecutionConfigPreparer, FlinkCompatibilityProvider}
 import pl.touk.nussknacker.engine.splittedgraph.end.BranchEnd
+import pl.touk.nussknacker.engine.testmode.TestRunId
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 

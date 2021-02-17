@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compiledgraph
 
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollectorForContext
+import pl.touk.nussknacker.engine.testmode.Collectors.ServiceInvocationCollectorForContext
 import pl.touk.nussknacker.engine.api.{Context, ContextId, MetaData, ServiceInvoker}
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
