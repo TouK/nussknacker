@@ -1,5 +1,6 @@
 import {Moment} from "moment"
 import React, {useCallback, useMemo} from "react"
+import {useTranslation} from "react-i18next"
 import {DropdownButton} from "../../common/DropdownButton"
 import {ButtonWithFocus} from "../../withFocus"
 
@@ -16,6 +17,7 @@ interface RangesButtonsProps {
 }
 
 export function CountsRangesButtons({ranges, onChange, limit = 2}: RangesButtonsProps): JSX.Element {
+  const {t}=useTranslation()
   const changeHandler = useCallback(
     ({from, to}: Range) => onChange([from(), to()]),
     [onChange],
@@ -55,7 +57,7 @@ export function CountsRangesButtons({ranges, onChange, limit = 2}: RangesButtons
               flex: 2,
             }}
           >
-            Select more...
+            {t("calculateCounts.more", "Select more...")}
           </DropdownButton>
         ) :
         null}
