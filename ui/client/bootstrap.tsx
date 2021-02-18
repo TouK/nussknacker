@@ -5,6 +5,7 @@ import Modal from "react-modal"
 import {Provider} from "react-redux"
 import {Router} from "react-router-dom"
 import {PersistGate} from "redux-persist/integration/react"
+import {FFProvider} from "./common/FeatureFlagsUtils"
 import LoaderSpinner from "./components/Spinner"
 
 import Notifications from "./containers/Notifications"
@@ -23,24 +24,26 @@ const rootContainer = document.getElementById("root")
 Modal.setAppElement(rootContainer)
 
 const Root = () => (
-  <Suspense fallback={<LoaderSpinner show/>}>
-    <ErrorBoundary>
-      <Provider store={store}>
-        <PersistGate loading={null} persistor={persistor}>
-          <Router history={history}>
-            <NkThemeProvider>
-              <SettingsProvider>
-                <NussknackerInitializer>
-                  <Notifications/>
-                  <NkApp/>
-                </NussknackerInitializer>
-              </SettingsProvider>
-            </NkThemeProvider>
-          </Router>
-        </PersistGate>
-      </Provider>
-    </ErrorBoundary>
-  </Suspense>
+  <FFProvider>
+    <Suspense fallback={<LoaderSpinner show/>}>
+      <ErrorBoundary>
+        <Provider store={store}>
+          <PersistGate loading={null} persistor={persistor}>
+            <Router history={history}>
+              <NkThemeProvider>
+                <SettingsProvider>
+                  <NussknackerInitializer>
+                    <Notifications/>
+                    <NkApp/>
+                  </NussknackerInitializer>
+                </SettingsProvider>
+              </NkThemeProvider>
+            </Router>
+          </PersistGate>
+        </Provider>
+      </ErrorBoundary>
+    </Suspense>
+  </FFProvider>
 )
 
 ReactDOM.render(<Root/>, rootContainer)

@@ -1,9 +1,10 @@
-import {RootState} from "../index"
+import {flatMap} from "lodash"
 import {createSelector} from "reselect"
-import ProcessStateUtils from "../../components/Process/ProcessStateUtils"
 import ProcessUtils from "../../common/ProcessUtils"
-import {GraphState, ProcessCounts} from "../graph"
+import ProcessStateUtils from "../../components/Process/ProcessStateUtils"
 import {Process} from "../../types"
+import {GraphState, ProcessCounts} from "../graph"
+import {RootState} from "../index"
 
 export const getGraph = (state: RootState): GraphState => state.graphReducer
 
