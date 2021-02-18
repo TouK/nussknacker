@@ -17,7 +17,7 @@ interface RangesButtonsProps {
 }
 
 export function CountsRangesButtons({ranges, onChange, limit = 2}: RangesButtonsProps): JSX.Element {
-  const {t}=useTranslation()
+  const {t} = useTranslation()
   const changeHandler = useCallback(
     ({from, to}: Range) => onChange([from(), to()]),
     [onChange],
