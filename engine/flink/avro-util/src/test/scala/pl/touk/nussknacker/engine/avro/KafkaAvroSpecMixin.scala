@@ -98,8 +98,13 @@ trait KafkaAvroSpecMixin extends FunSuite with FlinkSpec with KafkaSpec with Mat
   protected lazy val schemaRegistryProvider: ConfluentSchemaRegistryProvider =
     ConfluentSchemaRegistryProvider(confluentClientFactory, testProcessObjectDependencies)
 
+  protected def serialize(objectTopic: String, obj: Any): Array[Byte] = valueSerializer.serialize(objectTopic, obj)
+
+  protected def deserialize(useSpecificAvroReader: Boolean)
+                           (objectTopic: String, obj: Array[Byte]): Any = prepareValueDeserializer(useSpecificAvroReader).deserialize(objectTopic, obj)
+
   protected def pushMessage(obj: Any, objectTopic: String, topic: Option[String] = None, timestamp: java.lang.Long = null): RecordMetadata = {
-    val serializedObj = valueSerializer.serialize(objectTopic, obj)
+    val serializedObj = serialize(objectTopic, obj)
     kafkaClient.sendRawMessage(topic.getOrElse(objectTopic), Array.empty, serializedObj, None, timestamp).futureValue
   }
 
@@ -130,9 +135,8 @@ trait KafkaAvroSpecMixin extends FunSuite with FlinkSpec with KafkaSpec with Mat
 
   private def consumeMessages(topic: String, count: Int, useSpecificAvroReader: Boolean): List[Any] = {
     val consumer = kafkaClient.createConsumer()
-    val valueDeserializer = prepareValueDeserializer(useSpecificAvroReader)
     consumer.consume(topic).map { record =>
-      valueDeserializer.deserialize(topic, record.message())
+      deserialize(useSpecificAvroReader)(topic, record.message())
     }.take(count).toList
   }
 
