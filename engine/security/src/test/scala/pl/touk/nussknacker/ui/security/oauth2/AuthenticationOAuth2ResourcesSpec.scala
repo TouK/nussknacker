@@ -43,12 +43,15 @@ class AuthenticationOAuth2ResourcesSpec extends FunSpec with Matchers with Scala
       .asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespond(""" {"access_token": "AH4k6h6KuYaLGfTCdbPayK8HzfM4atZm", "token_type": "Bearer", "refresh_token": "yFLU8w5VZtqjYrdpD5K9s27JZdJuCRrL"} """)
+      .whenRequestMatches(_.uri.equals(Uri(config.profileUri)))
+      .thenRespond(""" { "id": "1", "email": "some@email.com" } """)
+
 
     new AuthenticationOAuth2Resources(DefaultOAuth2ServiceFactory.service(config, List.empty))
   }
 
-  def authenticationOauth2(resource: AuthenticationOAuth2Resources, authorizeToken: String) = {
-    Get(s"/authentication/oauth2?code=$authorizeToken") ~> routes(resource)
+  def authenticationOauth2(resource: AuthenticationOAuth2Resources, authorizationCode: String) = {
+    Get(s"/authentication/oauth2?code=$authorizationCode") ~> routes(resource)
   }
 
   it("should return 400 for wrong authorize token") {
@@ -64,7 +67,7 @@ class AuthenticationOAuth2ResourcesSpec extends FunSpec with Matchers with Scala
     }
   }
 
-  it("should redirect for good authorize token") {
+  it("should redirect for good authorization token") {
     authenticationOauth2(authenticationResources, "B5FwrdqF9cLxwdhL") ~> check {
       status shouldBe StatusCodes.OK
       val response = responseAs[Oauth2AuthenticationResponse]

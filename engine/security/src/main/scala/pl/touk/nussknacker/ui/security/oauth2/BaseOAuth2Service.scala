@@ -2,55 +2,43 @@ package pl.touk.nussknacker.ui.security.oauth2
 
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
-import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultAsyncCache, ExpiryConfig}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
+import sttp.client.{NothingT, SttpBackend}
 
-import scala.concurrent.duration.{Deadline, FiniteDuration, MILLISECONDS}
+import scala.concurrent.duration.{Deadline, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 
 class BaseOAuth2Service[
-  ProfileResponse: Decoder,
-  AccessTokenResponse <: StandardAccessTokenResponse : Decoder
-](clientApi: OAuth2ClientApi[ProfileResponse, AccessTokenResponse],
-  createLoggedUser: (ProfileResponse) => LoggedUser,
-  configuration: OAuth2Configuration)
- (implicit ec: ExecutionContext) extends OAuth2Service with LazyLogging {
+  UserInfoData: Decoder,
+  AuthorizationData <: OAuth2AuthorizationData : Decoder
+](protected val clientApi: OAuth2ClientApi[UserInfoData, AuthorizationData])
+ (implicit ec: ExecutionContext) extends OAuth2NewService[UserInfoData, AuthorizationData] with LazyLogging {
 
-  protected val authorizationsCache = new DefaultAsyncCache[String, (LoggedUser, Deadline)](CacheConfig(new ExpiryConfig[String, (LoggedUser, Deadline)]() {
-    override def expireAfterWriteFn(key: String, value: (LoggedUser, Deadline), now: Deadline): Option[Deadline] = Some(value._2)
-  }))
-
-  import pl.touk.nussknacker.ui.security.oauth2.BaseOAuth2Service._
-
-  def authenticate(code: String): Future[OAuth2AuthenticateData] = {
-    clientApi.accessTokenRequest(code).map { resp: AccessTokenResponse =>
-      authorizationsCache.put(resp.access_token) {
-        getProfile(resp).map((createExpiringLoggedUser _).tupled)
-      }
-      OAuth2AuthenticateData(
-        access_token = resp.access_token,
-        token_type = resp.token_type,
-        refresh_token = resp.refresh_token
-      )
+  def obtainAuthorizationAndUserInfo(authorizationCode: String): Future[(AuthorizationData, Option[UserInfoData])] = {
+    clientApi.accessTokenRequest(authorizationCode).flatMap { authorizationData =>
+      clientApi.profileRequest(authorizationData.accessToken).map(Some(_)).map((authorizationData, _))
     }
   }
 
-  def authorize(accessToken: String): Future[LoggedUser] =
-    authorizationsCache.getOrCreate(accessToken) {
-      getProfile(accessToken, None).map((createExpiringLoggedUser _).tupled)
-    }.map { case (user, _) => user }
+  def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Deadline])] =
+    clientApi.profileRequest(accessToken).map((_, None))
+}
 
-  protected def createExpiringLoggedUser(profile: ProfileResponse, expiration: Option[Deadline]): (LoggedUser, Deadline) =
-    (createLoggedUser(profile), expiration.getOrElse(Deadline.now + configuration.defaultTokenExpirationTime))
+@ConfiguredJsonCodec case class DefaultOAuth2AuthorizationData
+(
+  @JsonKey("access_token") accessToken: String,
+  @JsonKey("token_type") tokenType: String,
+  @JsonKey("refresh_token") refreshToken: Option[String],
+  @JsonKey("expires_in") expirationPeriod: Option[FiniteDuration] = None
+) extends OAuth2AuthorizationData
 
-  protected def getProfile(resp: AccessTokenResponse): Future[(ProfileResponse, Option[Deadline])] =
-    getProfile(resp.access_token, resp.expires_in.map(millisToDeadline))
-
-  protected def getProfile(accessToken: String, expiration: Option[Deadline]): Future[(ProfileResponse, Option[Deadline])] =
-    clientApi.profileRequest(accessToken).map((_, expiration))
+object DefaultOAuth2AuthorizationData extends CirceDurationConversions {
+  implicit val config: Configuration = Configuration.default
 }
 
 object BaseOAuth2Service {
-  def millisToDeadline(exp: Long): Deadline =
-    Deadline(FiniteDuration(exp, MILLISECONDS))
+  def apply[
+    UserInfoData: Decoder
+  ](configuration: OAuth2Configuration)(implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT]): BaseOAuth2Service[UserInfoData, DefaultOAuth2AuthorizationData] =
+    new BaseOAuth2Service(OAuth2ClientApi[UserInfoData, DefaultOAuth2AuthorizationData](configuration))
 }

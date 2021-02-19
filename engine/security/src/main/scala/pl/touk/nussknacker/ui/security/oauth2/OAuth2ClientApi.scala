@@ -2,35 +2,25 @@ package pl.touk.nussknacker.ui.security.oauth2
 
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.generic.JsonCodec
 import io.circe.{Decoder, Error}
-import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import pl.touk.nussknacker.engine.sttp.SttpJson
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2AccessTokenRejection, OAuth2CompoundException, OAuth2ServerError}
-import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client.circe._
 import sttp.client.{Response, _}
 import sttp.model.{MediaType, Uri}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait StandardAccessTokenResponse {
-  val access_token: String
-  val token_type: String
-  val refresh_token: Option[String]
-  val expires_in: Option[Long]
-}
-
 class OAuth2ClientApi[ProfileResponse: Decoder, AccessTokenResponse: Decoder]
 (configuration: OAuth2Configuration)
 (implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT]) extends LazyLogging {
   import io.circe.syntax._
 
-  def accessTokenRequest(authorizeToken: String): Future[AccessTokenResponse] = {
+  def accessTokenRequest(authorizationCode: String): Future[AccessTokenResponse] = {
     val payload: Map[String, String] = Map(
       "client_id" -> configuration.clientId,
       "client_secret" -> configuration.clientSecret,
-      "code" -> authorizeToken,
+      "code" -> authorizationCode,
       "redirect_uri" -> configuration.redirectUrl
     ) ++ configuration.accessTokenParams
 

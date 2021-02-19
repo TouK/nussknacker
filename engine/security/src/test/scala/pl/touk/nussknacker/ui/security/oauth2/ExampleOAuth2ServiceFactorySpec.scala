@@ -18,10 +18,11 @@ class ExampleOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
   import io.circe.syntax._
 
   import ExecutionContext.Implicits.global
+  import OAuth2ServiceFactory.BackwardCompatibleOAuth2ServiceWrapper
 
   val config = ExampleOAuth2ServiceFactory.testConfig
 
-  def createErrorOAuth2Service(uri: URI, code: StatusCode): ExampleOAuth2Service = {
+  def createErrorOAuth2Service(uri: URI, code: StatusCode): OAuth2Service = {
     implicit val testingBackend = SttpBackendStub
       .asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(uri)))
@@ -30,23 +31,23 @@ class ExampleOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
     ExampleOAuth2ServiceFactory.service(config)
   }
 
-  def createDefaultServiceMock(body: Json, uri: URI): ExampleOAuth2Service = {
+  def createDefaultServiceMock(body: Json, uri: URI): OAuth2Service = {
     implicit val testingBackend = SttpBackendStub
       .asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(uri)))
       .thenRespond(body.toString)
 
-    ExampleOAuth2ServiceFactory.service(config)
+      ExampleOAuth2ServiceFactory.service(config)
   }
 
   it should ("properly parse data from authentication") in {
-    val body = TestAccessTokenResponse(access_token = "9IDpWSEYetSNRX41", token_type = "Bearer")
+    val body = TestAccessTokenResponse(accessToken = "9IDpWSEYetSNRX41", tokenType = "Bearer")
     val service = createDefaultServiceMock(body.asJson, config.accessTokenUri)
     val data = service.authenticate("6V1reBXblpmfjRJP").futureValue
 
     data shouldBe a[OAuth2AuthenticateData]
-    data.access_token shouldBe body.access_token
-    data.token_type shouldBe body.token_type
+    data.access_token shouldBe body.accessToken
+    data.token_type shouldBe body.tokenType
   }
 
   it should ("handling BadRequest response from authenticate request") in {

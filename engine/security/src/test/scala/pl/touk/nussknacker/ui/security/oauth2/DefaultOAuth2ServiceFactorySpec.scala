@@ -39,14 +39,20 @@ class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
   }
 
   it should ("properly parse data from authentication") in {
-    val body = DefaultAccessTokenResponse(access_token = "9IDpWSEYetSNRX41", token_type = "Bearer", refresh_token = Option.apply("QZYuU0FVobxg8oCW"))
-    val service = createDefaultServiceMock(body.asJson, config.accessTokenUri)
+    val body = DefaultOAuth2AuthorizationData(accessToken = "9IDpWSEYetSNRX41", tokenType = "Bearer", refreshToken = Option.apply("QZYuU0FVobxg8oCW"))
+    implicit val testingBackend = SttpBackendStub
+      .asynchronousFuture
+      .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
+      .thenRespond(body.asJson.toString())
+      .whenRequestMatches(_.uri.equals((Uri(config.profileUri))))
+      .thenRespond(Map("id" -> "1", "email" -> "some@email.com").asJson.toString())
+    val service = DefaultOAuth2ServiceFactory.service(config, List.empty)
     val data = service.authenticate("6V1reBXblpmfjRJP").futureValue
 
     data shouldBe a[OAuth2AuthenticateData]
-    data.access_token shouldBe body.access_token
-    data.token_type shouldBe body.token_type
-    data.refresh_token shouldBe body.refresh_token
+    data.access_token shouldBe body.accessToken
+    data.token_type shouldBe body.tokenType
+    data.refresh_token shouldBe body.refreshToken
   }
 
   it should ("handling BadRequest response from authenticate request") in {
