@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
+import io.circe.Decoder
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 trait OAuth2Profile[ProfileResponse] {

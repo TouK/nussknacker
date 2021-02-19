@@ -25,8 +25,8 @@ class AuthenticationOAuth2Resources(service: OAuth2Service)(implicit ec: Executi
     }
   }
 
-  private def oAuth2Authenticate(authorizeToken: String): Future[ToResponseMarshallable] = {
-    service.authenticate(authorizeToken).map { auth =>
+  private def oAuth2Authenticate(authorizationCode: String): Future[ToResponseMarshallable] = {
+    service.authenticate(authorizationCode).map { auth =>
       ToResponseMarshallable(Oauth2AuthenticationResponse(auth.access_token, auth.token_type))
     }.recover {
       case OAuth2ErrorHandler(ex) => {

@@ -3,32 +3,30 @@ package pl.touk.nussknacker.ui.security.oauth2
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
-import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.security.oauth2.BaseOAuth2Service.millisToDeadline
+import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.OAuth2CompoundException
 
 import scala.concurrent.duration.Deadline
 import scala.concurrent.{ExecutionContext, Future}
 
 trait JwtStandardClaims {
-  val iss: Option[String]
-  val sub: Option[String]
-  val aud: Option[String]
-  val exp: Option[Long]
-  val nbf: Option[Long]
-  val iat: Option[Long]
-  val jti: Option[String]
+  val issuer: Option[String]
+  val subject: Option[String]
+  val audition: Option[List[String]]
+  val expirationTime: Option[Deadline]
+  val notBefore: Option[Deadline]
+  val issuedAt: Option[Deadline]
+  val jwtId: Option[String]
 }
 
 class JwtOAuth2Service[
-  ProfileResponse: Decoder,
-  AccessTokenResponse <: StandardAccessTokenResponse : Decoder,
-  DecodedJwtAccessToken <: JwtStandardClaims : Decoder
-](clientApi: OAuth2ClientApi[ProfileResponse, AccessTokenResponse],
-  createLoggedUser: (ProfileResponse) => LoggedUser,
+  UserInfoData: Decoder,
+  AuthorizationData <: OAuth2AuthorizationData : Decoder,
+  JwtClaims <: JwtStandardClaims : Decoder
+](clientApi: OAuth2ClientApi[UserInfoData, AuthorizationData],
   configuration: OAuth2Configuration)
  (implicit ec: ExecutionContext)
-  extends BaseOAuth2Service[ProfileResponse, AccessTokenResponse](clientApi, createLoggedUser, configuration)
+  extends BaseOAuth2Service[UserInfoData, AuthorizationData](clientApi)
     with LazyLogging {
 
   protected val introspectAccessToken: Boolean = configuration.jwt.exists(_.accessTokenIsJwt)
@@ -41,11 +39,26 @@ class JwtOAuth2Service[
       case Invalid(jwtErrors) => throw OAuth2CompoundException(jwtErrors)
     })
 
-  override protected def getProfile(accessToken: String, expiration: Option[Deadline]): Future[(ProfileResponse, Option[Deadline])] = {
+  override def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Deadline])] = {
     val expirationFromToken =
-      Some(accessToken).filter(_ => introspectAccessToken).flatMap(introspectToken[DefaultJwtAccessToken])
-        .flatMap(_.exp).map(millisToDeadline)
-    super.getProfile(accessToken, expirationFromToken.orElse(expiration))
+      Some(accessToken).filter(_ => introspectAccessToken).flatMap(introspectToken[JwtClaims])
+        .flatMap(_.expirationTime)
+    super.checkAuthorizationAndObtainUserinfo(accessToken)
+      .map { case (userInfo, expiration) => (userInfo, expirationFromToken.orElse(expiration)) }
   }
 }
 
+@ConfiguredJsonCodec case class DefaultJwtAccessToken
+(
+  @JsonKey("iss") issuer: Option[String],
+  @JsonKey("sub") subject: Option[String],
+  @JsonKey("aud") audition: Option[List[String]],
+  @JsonKey("exp") expirationTime: Option[Deadline],
+  @JsonKey("nbf") notBefore: Option[Deadline],
+  @JsonKey("iat") issuedAt: Option[Deadline],
+  @JsonKey("jti") jwtId: Option[String]
+) extends JwtStandardClaims
+
+object DefaultJwtAccessToken extends CirceDurationConversions {
+  implicit val config: Configuration = Configuration.default
+}

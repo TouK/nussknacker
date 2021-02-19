@@ -60,7 +60,7 @@ object OAuth2Configuration {
 object ProfileFormat extends Enumeration {
   type ProfileFormat = Value
   val GITHUB = Value("github")
-  val DEFAULT = Value("default")
+  val OIDC = Value("oidc")
 }
 
 trait JwtConfiguration {

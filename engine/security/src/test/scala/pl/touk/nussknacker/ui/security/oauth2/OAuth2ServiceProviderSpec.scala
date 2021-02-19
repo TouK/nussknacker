@@ -8,6 +8,8 @@ import sttp.client.{NothingT, SttpBackend}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
+import scala.concurrent.ExecutionContext.Implicits.global
+
 class OAuth2ServiceProviderSpec extends FlatSpec with Matchers {
   implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
   it should "return default OAuth2 service" in {
