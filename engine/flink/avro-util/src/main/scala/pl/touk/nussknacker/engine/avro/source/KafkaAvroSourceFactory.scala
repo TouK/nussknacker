@@ -23,16 +23,7 @@ class KafkaAvroSourceFactory[T:ClassTag](val schemaRegistryProvider: SchemaRegis
   extends BaseKafkaAvroSourceFactory(timestampAssigner) with KafkaAvroBaseTransformer[FlinkSource[T]]{
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
-                                    (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
-    case TransformationStep(Nil, _) =>
-      val initial = getTopicParam
-      NextParameters(List(initial.value), initial.written)
-    case TransformationStep((TopicParamName, DefinedEagerParameter(topic:String, _)) :: Nil, _) =>
-      val preparedTopic = prepareTopic(topic)
-      val versionOption = getVersionParam(preparedTopic)
-     NextParameters(List(versionOption.value), versionOption.written, None)
-    case TransformationStep((TopicParamName, _) :: Nil, _) =>
-      NextParameters(List(fallbackVersionOptionParam), Nil, None)
+                                    (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = topicParamStep orElse schemaParamStep orElse {
     case TransformationStep((TopicParamName, DefinedEagerParameter(topic:String, _)) ::
       (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::Nil, _) =>
       //we do casting here and not in case, as version can be null...
@@ -49,6 +40,8 @@ class KafkaAvroSourceFactory[T:ClassTag](val schemaRegistryProvider: SchemaRegis
       FinalResults(finalCtx(context, dependencies, Unknown), Nil)
   }
 
+  override def paramsDeterminedAfterSchema: List[Parameter] = Nil
+
   private def finalCtx(context: ValidationContext, dependencies: List[NodeDependencyValue], result: typing.TypingResult)(implicit nodeId: NodeId): ValidationContext = {
     context.withVariable(variableName(dependencies), result, None).getOrElse(context)
   }
@@ -57,10 +50,6 @@ class KafkaAvroSourceFactory[T:ClassTag](val schemaRegistryProvider: SchemaRegis
     dependencies.collectFirst {
       case OutputVariableNameValue(name) => name
     }.get
-  }
-
-  override def initialParameters: List[Parameter] = {
-    List(getTopicParam(NodeId("")).value, getVersionParam(Nil))
   }
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkSource[T] = {

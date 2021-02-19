@@ -31,16 +31,7 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, v
   import KafkaAvroSinkFactory._
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
-                                    (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
-    case TransformationStep(Nil, _) =>
-      val initial = getTopicParam.map(List(_))
-      NextParameters(initial.value, initial.written)
-    case TransformationStep((KafkaAvroBaseTransformer.TopicParamName, DefinedEagerParameter(topic: String, _)) :: Nil, _) =>
-      val preparedTopic = prepareTopic(topic)
-      val version = getVersionParam(preparedTopic)
-      NextParameters(List(version.value) ++ paramsDeterminedAfterSchema, version.written, None)
-    case TransformationStep((KafkaAvroBaseTransformer.TopicParamName, _) :: Nil, _) =>
-      NextParameters(List(fallbackVersionOptionParam) ++ paramsDeterminedAfterSchema)
+                                    (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = topicParamStep orElse schemaParamStep orElse {
     case TransformationStep(
     (KafkaAvroBaseTransformer.TopicParamName, DefinedEagerParameter(topic: String, _)) ::
       (KafkaAvroBaseTransformer.SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::
@@ -75,11 +66,7 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, v
     ) => FinalResults(context, Nil)
   }
 
-  override def initialParameters: List[Parameter] = {
-    implicit val nodeId: NodeId = NodeId("")
-    val topic = getTopicParam.value
-    List(topic, getVersionParam(Nil)) ++ paramsDeterminedAfterSchema
-  }
+  override def paramsDeterminedAfterSchema: List[Parameter] = KafkaAvroSinkFactory.paramsDeterminedAfterSchema
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkSink = {
     val preparedTopic = extractPreparedTopic(params)
