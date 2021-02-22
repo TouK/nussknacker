@@ -1,11 +1,11 @@
 import React, {Suspense} from "react"
 import ReactDOM from "react-dom"
-import ErrorBoundary from "react-error-boundary"
 import Modal from "react-modal"
 import {Provider} from "react-redux"
 import {Router} from "react-router-dom"
 import {PersistGate} from "redux-persist/integration/react"
 import {FFProvider} from "./common/FeatureFlagsUtils"
+import ErrorBoundary from "./components/common/ErrorBoundary"
 import LoaderSpinner from "./components/Spinner"
 
 import Notifications from "./containers/Notifications"

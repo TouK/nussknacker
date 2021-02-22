@@ -1,7 +1,7 @@
 import React, {FunctionComponent, PropsWithChildren} from "react"
-import ErrorBoundary from "react-error-boundary"
 import {PendingPromise} from "../../../../common/PendingPromise"
 import SystemUtils from "../../../../common/SystemUtils"
+import ErrorBoundary from "../../../../components/common/ErrorBoundary"
 import {AuthenticationSettings} from "../../../../reducers/settings"
 import {ExternalModule, splitUrl, useExternalLib} from "../../../ExternalLib"
 import {ModuleString, ModuleUrl} from "../../../ExternalLib/types"
