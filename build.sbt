@@ -250,6 +250,7 @@ val jbcryptV = "0.4"
 val cronParserV = "9.1.3"
 val javaxValidationApiV = "2.0.1.Final"
 val caffeineCacheV = "2.8.2"
+val sttpV = "2.2.3"
 
 lazy val dockerSettings = {
   val workingDir = "/opt/nussknacker"
@@ -826,7 +827,6 @@ lazy val httpUtils = (project in engine("httpUtils")).
   settings(
     name := "nussknacker-http-utils",
     libraryDependencies ++= {
-      val sttpV = "2.2.3"
       Seq(
         "io.circe" %% "circe-core" % circeV,
         "io.circe" %% "circe-parser" % circeV,
@@ -925,6 +925,7 @@ lazy val ui = (project in file("ui/server"))
         "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test",
         "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
         "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
+        "com.softwaremill.sttp.client" %% "akka-http-backend" % sttpV,
 
         "ch.qos.logback" % "logback-core" % logbackV,
         "ch.qos.logback" % "logback-classic" % logbackV,
@@ -945,7 +946,7 @@ lazy val ui = (project in file("ui/server"))
 
         "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
         "com.whisk" %% "docker-testkit-scalatest" % "0.9.8" % "test",
-        "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.8" % "test"
+        "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.8" % "test",
       )
     }
   )

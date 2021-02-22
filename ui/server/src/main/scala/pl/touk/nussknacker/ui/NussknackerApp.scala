@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui
 
 import java.lang.Thread.UncaughtExceptionHandler
+
 import _root_.cors.CorsSupport
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
@@ -35,6 +36,8 @@ import pl.touk.nussknacker.ui.security.ssl._
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
+import sttp.client.{NothingT, SttpBackend}
+import sttp.client.akkahttp.AkkaHttpBackend
 
 import scala.concurrent.Future
 
@@ -51,6 +54,8 @@ object NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
   override def create(config: Config, dbConfig: DbConfig)(implicit system: ActorSystem, materializer: Materializer): (Route, Iterable[AutoCloseable]) = {
     import system.dispatcher
+
+    implicit val sttpBackend: SttpBackend[Future, Nothing, NothingT] = AkkaHttpBackend()
 
     val testResultsMaxSizeInBytes = config.getOrElse[Int]("testResultsMaxSizeInBytes", 500 * 1024 * 1000)
     val environment = config.getString("environment")

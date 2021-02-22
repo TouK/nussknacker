@@ -5,11 +5,13 @@ import akka.http.scaladsl.server.directives.{Credentials, SecurityDirectives}
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import sttp.client.{NothingT, SttpBackend}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class OAuth2Authenticator(configuration: OAuth2Configuration, service: OAuth2Service) extends SecurityDirectives.AsyncAuthenticator[LoggedUser] with LazyLogging {
+class OAuth2Authenticator(configuration: OAuth2Configuration, service: OAuth2Service)
+                         (implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT])
+  extends SecurityDirectives.AsyncAuthenticator[LoggedUser] with LazyLogging {
   def apply(credentials: Credentials): Future[Option[LoggedUser]] =
     authenticate(credentials)
 
@@ -27,7 +29,7 @@ class OAuth2Authenticator(configuration: OAuth2Configuration, service: OAuth2Ser
 }
 
 object OAuth2Authenticator extends LazyLogging {
-  def apply(configuration: OAuth2Configuration, service: OAuth2Service): OAuth2Authenticator =
+  def apply(configuration: OAuth2Configuration, service: OAuth2Service)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): OAuth2Authenticator =
     new OAuth2Authenticator(configuration, service)
 }
 

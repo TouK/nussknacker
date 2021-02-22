@@ -7,8 +7,7 @@ import pl.touk.nussknacker.engine.util.cache.DefaultCache
 import pl.touk.nussknacker.ui.security.api.{DefaultAuthenticationConfiguration, LoggedUser, RulesSet}
 import pl.touk.nussknacker.ui.security.basicauth.BasicHttpAuthenticator.{EncryptedPassword, PlainPassword, UserWithPassword}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class BasicHttpAuthenticator(configuration: DefaultAuthenticationConfiguration, allCategories: List[String]) extends SecurityDirectives.AsyncAuthenticator[LoggedUser] {
   //If we want use always reloaded config then we need just prepareUsers()
@@ -17,7 +16,7 @@ class BasicHttpAuthenticator(configuration: DefaultAuthenticationConfiguration, 
   private val hashesCache =
     configuration.cachingHashesOrDefault.toCacheConfig.map(DefaultCache[(String, String), String])
 
-  def apply(credentials: Credentials): Future[Option[LoggedUser]] = Future {
+  def apply(credentials: Credentials): Future[Option[LoggedUser]] = Future.successful {
     credentials match {
       case d@Provided(id) => authenticate(d)
       case _ => None

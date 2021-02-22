@@ -9,6 +9,8 @@ import sttp.client.StringBody
 import sttp.client.testing.SttpBackendStub
 import sttp.model.{Header, HeaderNames, MediaType, Uri}
 
+import scala.concurrent.ExecutionContext.Implicits.global
+
 class OAuth2ClientApiSpec extends FlatSpec with Matchers with BeforeAndAfter with PatientScalaFutures with Suite  {
   import io.circe.syntax._
 
