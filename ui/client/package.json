@@ -197,6 +197,7 @@
     "postcss": "^8.2.4",
     "postcss-loader": "^4.1.0",
     "postcss-move-props-to-bg-image-query": "^4.0.0",
+    "process": "^0.11.10",
     "puppeteer": "^5.3.1",
     "raw-loader": "^4.0.2",
     "react-refresh": "^0.9.0",
