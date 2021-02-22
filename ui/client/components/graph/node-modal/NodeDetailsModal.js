@@ -177,7 +177,7 @@ class NodeDetailsModal extends React.Component {
         >
           <div className="draggable-container">
             <Draggable bounds="parent" handle=".modal-draggable-handle">
-              <div className="espModal">
+              <div className="espModal" data-testid="node-modal">
                 <NodeDetailsModalHeader node={nodeToDisplay} nodeSettings={nodeSettings}/>
                 <div className="modalContentDark" id="modal-content">
                   <Scrollbars
