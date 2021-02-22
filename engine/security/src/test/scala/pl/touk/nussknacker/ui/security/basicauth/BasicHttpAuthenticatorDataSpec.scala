@@ -6,6 +6,8 @@ import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.{ConfigRu
 import pl.touk.nussknacker.ui.security.api.AuthenticationMethod.AuthenticationMethod
 import pl.touk.nussknacker.ui.security.api.{AuthenticationMethod, CachingHashesConfig, DefaultAuthenticationConfiguration}
 
+import scala.concurrent.ExecutionContext.Implicits.global
+
 
 class BasicHttpAuthenticatorDataSpec extends FunSpec with Matchers {
   class DummyConfiguration(usersList: List[ConfigUser], rulesList: List[ConfigRule] = List.empty, method: AuthenticationMethod = AuthenticationMethod.BasicAuth,

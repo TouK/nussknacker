@@ -16,8 +16,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class OAuth2ClientApi[ProfileResponse: Decoder, AccessTokenResponse: Decoder]
 (configuration: OAuth2Configuration)
-(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends LazyLogging {
-  private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
+(implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT]) extends LazyLogging {
   import io.circe.syntax._
 
   def accessTokenRequest(authorizeToken: String): Future[AccessTokenResponse] = {
@@ -74,8 +73,8 @@ class OAuth2ClientApi[ProfileResponse: Decoder, AccessTokenResponse: Decoder]
 }
 
 object OAuth2ClientApi {
-  implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
-  def apply[ProfileResponse: Decoder, AccessTokenResponse: Decoder](configuration: OAuth2Configuration): OAuth2ClientApi[ProfileResponse, AccessTokenResponse]
+  def apply[ProfileResponse: Decoder, AccessTokenResponse: Decoder](configuration: OAuth2Configuration)
+                                                                   (implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): OAuth2ClientApi[ProfileResponse, AccessTokenResponse]
     = new OAuth2ClientApi[ProfileResponse, AccessTokenResponse](configuration)
 
   @JsonCodec case class DefaultAccessTokenResponse(access_token: String, token_type: String, refresh_token: Option[String])

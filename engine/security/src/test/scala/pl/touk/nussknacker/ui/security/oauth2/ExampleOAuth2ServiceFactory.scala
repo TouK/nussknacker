@@ -10,10 +10,9 @@ import pl.touk.nussknacker.ui.security.api.{AuthenticationMethod, GlobalPermissi
 import pl.touk.nussknacker.ui.security.oauth2.ExampleOAuth2ServiceFactory.{TestAccessTokenResponse, TestProfileResponse}
 import sttp.client.{NothingT, SttpBackend}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse], configuration: OAuth2Configuration) extends OAuth2Service with LazyLogging {
+class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse], configuration: OAuth2Configuration)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]) extends OAuth2Service with LazyLogging {
   override def authenticate(code: String): Future[OAuth2AuthenticateData] = {
     clientApi.accessTokenRequest(code).map{ resp =>
       OAuth2AuthenticateData(
@@ -38,8 +37,8 @@ class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestA
 }
 
 class ExampleOAuth2ServiceFactory extends OAuth2ServiceFactory {
-  override def create(configuration: OAuth2Configuration, allCategories: List[String]): OAuth2Service =
-    ExampleOAuth2ServiceFactory.defaultService(configuration)
+  override def create(configuration: OAuth2Configuration, allCategories: List[String])(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): OAuth2Service =
+    ExampleOAuth2ServiceFactory.service(configuration)
 }
 
 object ExampleOAuth2ServiceFactory {
@@ -72,13 +71,10 @@ object ExampleOAuth2ServiceFactory {
 
   def apply(): ExampleOAuth2ServiceFactory = new ExampleOAuth2ServiceFactory()
 
-  def defaultService(configuration: OAuth2Configuration): ExampleOAuth2Service =
-    new ExampleOAuth2Service(OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse](configuration), configuration)
-
-  def service(configuration: OAuth2Configuration)(implicit backend: SttpBackend[Future, Nothing, NothingT]): ExampleOAuth2Service =
+  def service(configuration: OAuth2Configuration)(implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT]): ExampleOAuth2Service =
     new ExampleOAuth2Service(testClient(configuration), configuration)
 
-  def testClient(configuration: OAuth2Configuration)(implicit backend: SttpBackend[Future, Nothing, NothingT]): OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse]
+  def testClient(configuration: OAuth2Configuration)(implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT]): OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse]
     = new OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse](configuration)
 
   def testConfig: OAuth2Configuration =

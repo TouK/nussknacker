@@ -8,14 +8,13 @@ import pl.touk.nussknacker.ui.security.oauth2.OAuth2ClientApi.DefaultAccessToken
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.OAuth2CompoundException
 import sttp.client.{NothingT, SttpBackend}
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
 
 class DefaultOAuth2Service[ProfileResponse: Decoder](clientApi: OAuth2ClientApi[ProfileResponse, DefaultAccessTokenResponse],
                                                      oAuth2Profile: OAuth2Profile[ProfileResponse],
                                                      configuration: OAuth2Configuration,
-                                                     allCategories: List[String]) extends OAuth2Service with LazyLogging {
+                                                     allCategories: List[String])(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]) extends OAuth2Service with LazyLogging {
   def authenticate(code: String): Future[OAuth2AuthenticateData] = {
     clientApi.accessTokenRequest(code).map { resp =>
       OAuth2AuthenticateData(
@@ -50,11 +49,8 @@ class DefaultOAuth2Service[ProfileResponse: Decoder](clientApi: OAuth2ClientApi[
 }
 
 class DefaultOAuth2ServiceFactoryWithProfileFormat[ProfileResponse: Decoder](oAuth2Profile: OAuth2Profile[ProfileResponse]) {
-  def defaultService(configuration: OAuth2Configuration, allCategories: List[String]): OAuth2Service =
-    new DefaultOAuth2Service[ProfileResponse](OAuth2ClientApi[ProfileResponse, DefaultAccessTokenResponse](configuration), oAuth2Profile, configuration, allCategories)
-
   def service(configuration: OAuth2Configuration, allCategories: List[String])(implicit backend: SttpBackend[Future, Nothing, NothingT], ec: ExecutionContext): OAuth2Service =
-    new DefaultOAuth2Service[ProfileResponse](new OAuth2ClientApi[ProfileResponse, DefaultAccessTokenResponse](configuration), oAuth2Profile, configuration, allCategories)
+    new DefaultOAuth2Service[ProfileResponse](OAuth2ClientApi[ProfileResponse, DefaultAccessTokenResponse](configuration), oAuth2Profile, configuration, allCategories)
 }
 
 object DefaultOAuth2ServiceFactoryWithProfileFormat {
@@ -69,16 +65,13 @@ object DefaultOAuth2ServiceFactoryWithProfileFormat {
 }
 
 class DefaultOAuth2ServiceFactory extends OAuth2ServiceFactory {
-  def create(configuration: OAuth2Configuration, allCategories: List[String]): OAuth2Service =
-    DefaultOAuth2ServiceFactory.defaultService(configuration, allCategories)
+  def create(configuration: OAuth2Configuration, allCategories: List[String])(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): OAuth2Service =
+    DefaultOAuth2ServiceFactory.service(configuration, allCategories)
 }
 
 object DefaultOAuth2ServiceFactory extends {
   def apply(): DefaultOAuth2ServiceFactory = new DefaultOAuth2ServiceFactory
 
-  def defaultService(configuration: OAuth2Configuration, allCategories: List[String]): OAuth2Service =
-    DefaultOAuth2ServiceFactoryWithProfileFormat(configuration, allCategories).defaultService(configuration, allCategories)
-
-  def service(configuration: OAuth2Configuration, allCategories: List[String])(implicit backend: SttpBackend[Future, Nothing, NothingT]): OAuth2Service =
+  def service(configuration: OAuth2Configuration, allCategories: List[String])(implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT]): OAuth2Service =
     DefaultOAuth2ServiceFactoryWithProfileFormat(configuration, allCategories).service(configuration, allCategories)
 }
