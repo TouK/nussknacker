@@ -62,13 +62,13 @@ object ConfluentUtils extends LazyLogging {
     val isSpecificRecord = AvroUtils.isSpecificRecord[T]
 
     schemaDataOpt match {
-      case Some(schema) if !isSpecificRecord && KryoGenericRecordSchemaIdSerializationSupport.schemaIdSerializationEnabled(kafkaConfig) =>
+      case Some(schemaData) if !isSpecificRecord && KryoGenericRecordSchemaIdSerializationSupport.schemaIdSerializationEnabled(kafkaConfig) =>
         logger.debug("Using LogicalTypesGenericRecordWithSchemaIdAvroTypeInfo for GenericRecord serialization")
-        val schemaId = schema.schemaIdOpt.getOrElse(throw new IllegalStateException("SchemaId serialization enabled but schemaId missed from reader schema data"))
-        new LogicalTypesGenericRecordWithSchemaIdAvroTypeInfo(schema.schema, schemaId).asInstanceOf[TypeInformation[T]]
-      case Some(schema) if !isSpecificRecord =>
+        val schemaId = schemaData.schemaIdOpt.getOrElse(throw new IllegalStateException("SchemaId serialization enabled but schemaId missed from reader schema data"))
+        new LogicalTypesGenericRecordWithSchemaIdAvroTypeInfo(schemaData.schema, schemaId).asInstanceOf[TypeInformation[T]]
+      case Some(schemaData) if !isSpecificRecord =>
         logger.debug("Using LogicalTypesGenericRecordAvroTypeInfo for GenericRecord serialization")
-        new LogicalTypesGenericRecordAvroTypeInfo(schema.schema).asInstanceOf[TypeInformation[T]]
+        new LogicalTypesGenericRecordAvroTypeInfo(schemaData.schema).asInstanceOf[TypeInformation[T]]
       case _ if isSpecificRecord => // For specific records we ignoring version because we have exact schema inside class
         new LogicalTypesAvroTypeInfo(clazz.asInstanceOf[Class[_ <: SpecificRecordBase]]).asInstanceOf[TypeInformation[T]]
       case _ =>

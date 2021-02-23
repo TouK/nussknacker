@@ -25,8 +25,8 @@ class ConfluentSchemaRegistryProvider(schemaRegistryClientFactory: ConfluentSche
     schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
 
   override def validateSchema(schema: Schema): ValidatedNel[SchemaRegistryError, Schema] =
-    /* kafka-avro-serializer does not support Array at top level
-    [https://github.com/confluentinc/schema-registry/issues/1298] */
+  /* kafka-avro-serializer does not support Array at top level
+  [https://github.com/confluentinc/schema-registry/issues/1298] */
     if (schema.getType == Schema.Type.ARRAY)
       Invalid(NonEmptyList.of(
         SchemaRegistryUnsupportedTypeError("Unsupported Avro type. Top level Arrays are not supported")))
@@ -46,6 +46,17 @@ object ConfluentSchemaRegistryProvider extends Serializable {
       formatKey = false
     )
 
+  def avroPayload(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
+                  processObjectDependencies: ProcessObjectDependencies,
+                  formatKey: Boolean): ConfluentSchemaRegistryProvider = {
+    ConfluentSchemaRegistryProvider(
+      schemaRegistryClientFactory,
+      new ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory),
+      new ConfluentKafkaAvroDeserializationSchemaFactory(schemaRegistryClientFactory),
+      processObjectDependencies,
+      formatKey)
+  }
+
   def apply(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
             serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
             deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory,
@@ -61,24 +72,11 @@ object ConfluentSchemaRegistryProvider extends Serializable {
   }
 
   def jsonPayload(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
-              processObjectDependencies: ProcessObjectDependencies,
-              formatKey: Boolean): ConfluentSchemaRegistryProvider = ConfluentSchemaRegistryProvider(schemaRegistryClientFactory,
+                  processObjectDependencies: ProcessObjectDependencies,
+                  formatKey: Boolean): ConfluentSchemaRegistryProvider = ConfluentSchemaRegistryProvider(schemaRegistryClientFactory,
     new ConfluentJsonPayloadSerializerFactory(schemaRegistryClientFactory),
     new ConfluentJsonPayloadDeserializerFactory(schemaRegistryClientFactory),
     processObjectDependencies,
     formatKey)
-
-
-
-  def avroPayload(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
-            processObjectDependencies: ProcessObjectDependencies,
-            formatKey: Boolean): ConfluentSchemaRegistryProvider = {
-    ConfluentSchemaRegistryProvider(
-      schemaRegistryClientFactory,
-      new ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory),
-      new ConfluentKafkaAvroDeserializationSchemaFactory(schemaRegistryClientFactory),
-      processObjectDependencies,
-      formatKey)
-  }
 
 }

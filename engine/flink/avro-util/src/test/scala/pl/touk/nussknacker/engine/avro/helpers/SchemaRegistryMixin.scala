@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.avro.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 
-trait SchemaRegistryMixin extends FunSuite with KafkaSpec with SchemaRegistryOperations {
+trait SchemaRegistryMixin extends FunSuite with KafkaSpec with KafkaWithSchemaRegistryOperations {
 
   override lazy val config: Config = prepareConfig
 

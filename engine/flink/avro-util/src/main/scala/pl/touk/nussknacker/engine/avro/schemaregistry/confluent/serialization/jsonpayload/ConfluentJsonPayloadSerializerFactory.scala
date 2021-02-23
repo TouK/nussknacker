@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 import java.io.OutputStream
 
+//TODO: handle situation, where we have both json and avro payloads for one schema registry
 class ConfluentJsonPayloadSerializerFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
   extends KafkaAvroValueSerializationSchemaFactory {
 

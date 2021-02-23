@@ -16,32 +16,18 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.nio.charset.StandardCharsets
 
-trait SchemaRegistryOperations extends Matchers with PatientScalaFutures {
+trait KafkaWithSchemaRegistryOperations extends Matchers with PatientScalaFutures {
 
   import KafkaZookeeperUtils._
-
-  protected def schemaRegistryClient: CSchemaRegistryClient
-
-  protected def kafkaClient: KafkaClient
-
-  protected def kafkaTopicNamespace: String = getClass.getSimpleName
-
-  /**
-    * Default Confluent Avro serialization components
-    */
-  protected def prepareValueDeserializer(useSpecificAvroReader: Boolean): Deserializer[Any] = new SimpleKafkaAvroDeserializer(schemaRegistryClient, useSpecificAvroReader)
-
-  protected def valueSerializer: Serializer[Any] = new SimpleKafkaAvroSerializer(schemaRegistryClient)
-
-  protected def serialize(objectTopic: String, obj: Any): Array[Byte] = valueSerializer.serialize(objectTopic, obj)
-
-  protected def deserialize(useSpecificAvroReader: Boolean)
-                           (objectTopic: String, obj: Array[Byte]): Any = prepareValueDeserializer(useSpecificAvroReader).deserialize(objectTopic, obj)
 
   def pushMessage(obj: Any, objectTopic: String, topic: Option[String] = None, timestamp: java.lang.Long = null): RecordMetadata = {
     val serializedObj = serialize(objectTopic, obj)
     kafkaClient.sendRawMessage(topic.getOrElse(objectTopic), Array.empty, serializedObj, None, timestamp).futureValue
   }
+
+  protected def serialize(objectTopic: String, obj: Any): Array[Byte] = valueSerializer.serialize(objectTopic, obj)
+
+  protected def valueSerializer: Serializer[Any] = new SimpleKafkaAvroSerializer(schemaRegistryClient)
 
   def pushMessage(kafkaSerializer: KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]], obj: AnyRef, topic: String): RecordMetadata = {
     val record = kafkaSerializer.serialize(StringKeyedValue(null, obj), null)
@@ -75,10 +61,27 @@ trait SchemaRegistryOperations extends Matchers with PatientScalaFutures {
     }.take(count).toList
   }
 
+  protected def deserialize(useSpecificAvroReader: Boolean)
+                           (objectTopic: String, obj: Array[Byte]): Any = prepareValueDeserializer(useSpecificAvroReader).deserialize(objectTopic, obj)
+
   /**
-    * We should register difference input topic and output topic for each tests, because kafka topics are not cleaned up after test,
-    * and we can have wrong results of tests..
-    */
+   * Default Confluent Avro serialization components
+   */
+  protected def prepareValueDeserializer(useSpecificAvroReader: Boolean): Deserializer[Any] = new SimpleKafkaAvroDeserializer(schemaRegistryClient, useSpecificAvroReader)
+
+  protected def schemaRegistryClient: CSchemaRegistryClient
+
+  protected def kafkaClient: KafkaClient
+
+  protected def kafkaTopicNamespace: String = getClass.getSimpleName
+
+  protected def createAndRegisterTopicConfig(name: String, schema: Schema): TopicConfig =
+    createAndRegisterTopicConfig(name, List(schema))
+
+  /**
+   * We should register difference input topic and output topic for each tests, because kafka topics are not cleaned up after test,
+   * and we can have wrong results of tests..
+   */
   protected def createAndRegisterTopicConfig(name: String, schemas: List[Schema]): TopicConfig = {
     val topicConfig = TopicConfig(name, schemas)
 
@@ -92,9 +95,6 @@ trait SchemaRegistryOperations extends Matchers with PatientScalaFutures {
 
     topicConfig
   }
-
-  protected def createAndRegisterTopicConfig(name: String, schema: Schema): TopicConfig =
-    createAndRegisterTopicConfig(name, List(schema))
 
   case class TopicConfig(input: String, output: String, schemas: List[Schema], isKey: Boolean)
 
@@ -113,7 +113,6 @@ trait SchemaRegistryOperations extends Matchers with PatientScalaFutures {
   }
 
 }
-
 
 
 class SimpleKafkaAvroDeserializer(schemaRegistryClient: CSchemaRegistryClient, _useSpecificAvroReader: Boolean) extends AbstractConfluentKafkaAvroDeserializer with Deserializer[Any] {
