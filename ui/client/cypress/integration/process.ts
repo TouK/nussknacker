@@ -86,5 +86,16 @@ describe("Process", () => {
       cy.contains(/^latest deploy$/i).should("exist")
       cy.get("[data-testid=modal]").should("be.visible").toMatchImageSnapshot()
     })
+
+    it("should display some node details in modal", () => {
+      cy.get("[model-id=dynamicService]").should("be.visible").trigger("dblclick")
+      cy.get("[data-testid=node-modal]").should("be.visible").toMatchImageSnapshot()
+      cy.get("[data-testid=node-modal]").contains(/^cancel$/i).click()
+      cy.get("[model-id=boundedSource]").should("be.visible").trigger("dblclick")
+      cy.get("[data-testid=node-modal]").should("be.visible").toMatchImageSnapshot()
+      cy.get("[data-testid=node-modal]").contains(/^cancel$/i).click()
+      cy.get("[model-id=sendSms]").should("be.visible").trigger("dblclick")
+      cy.get("[data-testid=node-modal]").should("be.visible").toMatchImageSnapshot()
+    })
   })
 })

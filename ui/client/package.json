@@ -19,7 +19,7 @@
     "test:unit": "jest",
     "test:e2e": "cypress run",
     "test:e2e:ci": "start-server-and-test start-backend-staging http-get://localhost:3000/static/main.html test:e2e",
-    "test:e2e:docker": "docker run -it -v $PWD:/client -w /client cypress/included:6.4.0 --config baseUrl=http://host.docker.internal:3000",
+    "test:e2e:docker": "docker run -it -v $PWD:/client -w /client cypress/included:6.5.0 --config baseUrl=http://host.docker.internal:3000",
     "test:e2e:dev": "cypress open",
     "coverage": "npx merge-cypress-jest-coverage"
   },
@@ -197,6 +197,7 @@
     "postcss": "^8.2.4",
     "postcss-loader": "^4.1.0",
     "postcss-move-props-to-bg-image-query": "^4.0.0",
+    "process": "^0.11.10",
     "puppeteer": "^5.3.1",
     "raw-loader": "^4.0.2",
     "react-refresh": "^0.9.0",

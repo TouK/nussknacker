@@ -14,6 +14,7 @@ import HttpService from "../../../http/HttpService"
 import {getProcessCounts, isBusinessView} from "../../../reducers/selectors/graph"
 import {getExpandedGroups} from "../../../reducers/selectors/groups"
 import cssVariables from "../../../stylesheets/_variables.styl"
+import ErrorBoundary from "../../common/ErrorBoundary"
 import {ButtonWithFocus} from "../../withFocus"
 import NodeUtils from "../NodeUtils"
 import {SubProcessGraph as BareGraph} from "../SubProcessGraph"
@@ -96,18 +97,19 @@ class NodeDetailsModal extends React.Component {
       <ButtonWithFocus key="2" type="button" title="Cancel node details" className="modalButton" onClick={this.closeModal}>
         Cancel
       </ButtonWithFocus>,
-      !this.props.readOnly ? (
-        <LaddaButton
-          key="1"
-          title="Apply node details"
-          className="modalButton pull-right modalConfirmButton"
-          loading={this.state.pendingRequest}
-          data-style="zoom-in"
-          onClick={this.performNodeEdit}
-        >
-          Apply
-        </LaddaButton>
-      ) :
+      !this.props.readOnly ?
+        (
+          <LaddaButton
+            key="1"
+            title="Apply node details"
+            className="modalButton pull-right modalConfirmButton"
+            loading={this.state.pendingRequest}
+            data-style="zoom-in"
+            onClick={this.performNodeEdit}
+          >
+            Apply
+          </LaddaButton>
+        ) :
         null,
     ]
   }
@@ -124,15 +126,16 @@ class NodeDetailsModal extends React.Component {
 
     const id = this.state.editedNode.id
     const expanded = _.includes(this.props.expandedGroups, id)
-    return expanded ? (
-      <ButtonWithFocus
-        type="button"
-        key="0"
-        title="Collapse group"
-        className="modalButton"
-        onClick={collapse}
-      >Collapse</ButtonWithFocus>
-    ) :
+    return expanded ?
+      (
+        <ButtonWithFocus
+          type="button"
+          key="0"
+          title="Collapse group"
+          className="modalButton"
+          onClick={collapse}
+        >Collapse</ButtonWithFocus>
+      ) :
       (<ButtonWithFocus type="button" title="Expand group" key="0" className="modalButton" onClick={expand}>Expand</ButtonWithFocus>)
   }
 
@@ -174,7 +177,7 @@ class NodeDetailsModal extends React.Component {
         >
           <div className="draggable-container">
             <Draggable bounds="parent" handle=".modal-draggable-handle">
-              <div className="espModal">
+              <div className="espModal" data-testid="node-modal">
                 <NodeDetailsModalHeader node={nodeToDisplay} nodeSettings={nodeSettings}/>
                 <div className="modalContentDark" id="modal-content">
                   <Scrollbars
@@ -183,31 +186,35 @@ class NodeDetailsModal extends React.Component {
                     autoHeightMax={cssVariables.modalContentMaxHeight}
                     renderThumbVertical={props => <div {...props} className="thumbVertical"/>}
                   >
-                    {
-                      this.isGroup() ? (
-                        <NodeGroupDetailsContent
-                          testResults={nodeTestResults}
-                          node={this.state.editedNode}
-                          onChange={this.onNodeGroupChange}
-                          readOnly={readOnly}
-                        />
-                      ) : (
-                        <NodeDetailsContent
-                          isEditMode={!readOnly}
-                          showValidation={true}
-                          showSwitch={true}
-                          node={this.state.editedNode}
-                          originalNodeId={this.state.currentNodeId}
-                          nodeErrors={nodeErrors}
-                          onChange={this.updateNodeState}
-                          toogleCloseOnEsc={this.toogleCloseModalOnEsc}
-                          testResults={nodeTestResults(this.state.currentNodeId)}
-                        />
-                      )
-                    }
-                    {
-                      this.state.subprocessContent ? this.renderSubprocess() : null
-                    }
+                    <ErrorBoundary>
+                      {
+                        this.isGroup() ?
+                          (
+                            <NodeGroupDetailsContent
+                              testResults={nodeTestResults}
+                              node={this.state.editedNode}
+                              onChange={this.onNodeGroupChange}
+                              readOnly={readOnly}
+                            />
+                          ) :
+                          (
+                            <NodeDetailsContent
+                              isEditMode={!readOnly}
+                              showValidation={true}
+                              showSwitch={true}
+                              node={this.state.editedNode}
+                              originalNodeId={this.state.currentNodeId}
+                              nodeErrors={nodeErrors}
+                              onChange={this.updateNodeState}
+                              toogleCloseOnEsc={this.toogleCloseModalOnEsc}
+                              testResults={nodeTestResults(this.state.currentNodeId)}
+                            />
+                          )
+                      }
+                      {
+                        this.state.subprocessContent ? this.renderSubprocess() : null
+                      }
+                    </ErrorBoundary>
                   </Scrollbars>
                 </div>
                 <div className="modalFooter">

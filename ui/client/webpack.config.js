@@ -140,6 +140,9 @@ module.exports = {
         {from: "assets/img/favicon.png", to: "assets/img/favicon.png"},
       ],
     }),
+    new webpack.ProvidePlugin({
+      process: "process/browser",
+    }),
     new webpack.DefinePlugin({
       __DEV__: !isProd,
       "process.version": JSON.stringify(process.version), //reason: jsonwebtoken

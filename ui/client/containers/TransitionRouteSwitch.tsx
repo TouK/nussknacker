@@ -1,8 +1,8 @@
 import React, {PropsWithChildren} from "react"
-import ErrorBoundary from "react-error-boundary"
 import {Switch, useLocation} from "react-router-dom"
 import {CSSTransition} from "react-transition-group"
 import TransitionGroup from "react-transition-group/TransitionGroup"
+import ErrorBoundary from "../components/common/ErrorBoundary"
 import animations from "../stylesheets/animations.styl"
 
 export function TransitionRouteSwitch(props: PropsWithChildren<unknown>) {
