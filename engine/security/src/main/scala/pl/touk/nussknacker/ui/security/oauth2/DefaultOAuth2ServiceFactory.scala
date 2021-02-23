@@ -8,7 +8,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class DefaultOAuth2ServiceFactory extends OAuth2ServiceFactory {
   override def createNew(configuration: OAuth2Configuration, allCategories: List[String])(implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT]): OAuth2NewService[LoggedUser, OAuth2AuthorizationData] = {
-    new CachedOAuth2Service(
+    new CachingOAuth2Service(
       configuration.profileFormat.getOrElse {
         throw new Exception("profileFormat is missing in the authentication configuration")
       } match {
