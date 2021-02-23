@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultAsyncCache, Ex
 import scala.concurrent.duration.Deadline
 import scala.concurrent.{ExecutionContext, Future}
 
-class CachedOAuth2Service[
+class CachingOAuth2Service[
   UserInfoData,
   AuthorizationData <: OAuth2AuthorizationData
 ](delegate: OAuth2NewService[UserInfoData, AuthorizationData],
