@@ -9,11 +9,11 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class UserMappingOAuth2Service[UserInfoData: Decoder, AuthorizationData <: OAuth2AuthorizationData : Decoder]
 (
-  delegate: OAuth2NewService[UserInfoData, AuthorizationData],
+  delegate: OAuth2Service[UserInfoData, AuthorizationData],
   loggedUserFunction: UserInfoData => LoggedUser
 )
 (implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT])
-  extends OAuth2NewService[LoggedUser, AuthorizationData] {
+  extends OAuth2Service[LoggedUser, AuthorizationData] {
 
   def obtainAuthorizationAndUserInfo(authorizationCode: String): Future[(AuthorizationData, Option[LoggedUser])] =
     delegate.obtainAuthorizationAndUserInfo(authorizationCode).map { case (authorization, userInfo) =>

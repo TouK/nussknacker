@@ -9,7 +9,7 @@ import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class OAuth2Authenticator(configuration: OAuth2Configuration, service: OAuth2Service)
+class OAuth2Authenticator(configuration: OAuth2Configuration, service: OAuth2Service[LoggedUser, _])
                          (implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT])
   extends SecurityDirectives.AsyncAuthenticator[LoggedUser] with LazyLogging {
   def apply(credentials: Credentials): Future[Option[LoggedUser]] =
@@ -23,13 +23,13 @@ class OAuth2Authenticator(configuration: OAuth2Configuration, service: OAuth2Ser
   }
 
   private[oauth2] def authenticate(token: String): Future[Option[LoggedUser]] =
-    service.authorize(token).map(prf => Option(prf)).recover {
+    service.checkAuthorizationAndObtainUserinfo(token).map(prf => Option(prf._1)).recover {
       case OAuth2ErrorHandler(_) => Option.empty // Expired or non-exists token - user not authenticated
     }
 }
 
 object OAuth2Authenticator extends LazyLogging {
-  def apply(configuration: OAuth2Configuration, service: OAuth2Service)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): OAuth2Authenticator =
+  def apply(configuration: OAuth2Configuration, service: OAuth2Service[LoggedUser, _])(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): OAuth2Authenticator =
     new OAuth2Authenticator(configuration, service)
 }
 

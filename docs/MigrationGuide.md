@@ -4,6 +4,10 @@ To see biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 0.4.0 (not released yet) 
 
+* [#1416](https://github.com/TouK/nussknacker/pull/1416)
+ `OAuth2Service` has changed. You can still use your old implementation by importing `OAuth2OldService` with an alias.
+ `OAuth2ServiceFactory.create` method now accepts implicit parameters for an `ExecutionContext` and `sttp.HttpBackend`.
+  You can ignore them to maintain previous behaviour, but it is always better to use them instead of locally defined ones.   
 * [#1346](https://github.com/TouK/nussknacker/pull/1346) `AggregatorFunction` now takes type of stored state that can be 
   `immutable.SortedMap` (previous behaviour) or `java.util.Map` (using Flink's serialization) and `validatedStoredType` parameter for 
   providing better `TypeInformation` for aggregated values

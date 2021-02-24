@@ -12,7 +12,7 @@ class BaseOAuth2Service[
   UserInfoData: Decoder,
   AuthorizationData <: OAuth2AuthorizationData : Decoder
 ](protected val clientApi: OAuth2ClientApi[UserInfoData, AuthorizationData])
- (implicit ec: ExecutionContext) extends OAuth2NewService[UserInfoData, AuthorizationData] with LazyLogging {
+ (implicit ec: ExecutionContext) extends OAuth2Service[UserInfoData, AuthorizationData] with LazyLogging {
 
   def obtainAuthorizationAndUserInfo(authorizationCode: String): Future[(AuthorizationData, Option[UserInfoData])] = {
     clientApi.accessTokenRequest(authorizationCode).flatMap { authorizationData =>
