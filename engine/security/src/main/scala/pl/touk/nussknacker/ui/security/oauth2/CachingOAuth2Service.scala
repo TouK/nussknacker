@@ -9,9 +9,9 @@ import scala.concurrent.{ExecutionContext, Future}
 class CachingOAuth2Service[
   UserInfoData,
   AuthorizationData <: OAuth2AuthorizationData
-](delegate: OAuth2NewService[UserInfoData, AuthorizationData],
+](delegate: OAuth2Service[UserInfoData, AuthorizationData],
   configuration: OAuth2Configuration)
- (implicit ec: ExecutionContext) extends OAuth2NewService[UserInfoData, AuthorizationData] with LazyLogging {
+ (implicit ec: ExecutionContext) extends OAuth2Service[UserInfoData, AuthorizationData] with LazyLogging {
 
   protected val authorizationsCache = new DefaultAsyncCache[String, (UserInfoData, Deadline)](CacheConfig(new ExpiryConfig[String, (UserInfoData, Deadline)]() {
     override def expireAfterWriteFn(key: String, value: (UserInfoData, Deadline), now: Deadline): Option[Deadline] = Some(value._2)

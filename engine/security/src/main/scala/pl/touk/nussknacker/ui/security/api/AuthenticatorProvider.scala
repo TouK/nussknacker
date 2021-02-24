@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.ui.security.api.AuthenticatorFactory.AuthenticatorData
 import pl.touk.nussknacker.ui.security.basicauth.BasicAuthenticatorFactory
-import pl.touk.nussknacker.ui.security.api.oauth2.OAuth2AuthenticatorFactory
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2AuthenticatorFactory
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}

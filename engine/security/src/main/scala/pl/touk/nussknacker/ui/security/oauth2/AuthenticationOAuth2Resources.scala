@@ -10,7 +10,7 @@ import io.circe.generic.JsonCodec
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class AuthenticationOAuth2Resources(service: OAuth2Service)(implicit ec: ExecutionContext)
+class AuthenticationOAuth2Resources(service: OAuth2Service[_, OAuth2AuthorizationData])(implicit ec: ExecutionContext)
   extends Directives with LazyLogging with FailFastCirceSupport {
 
   def route(): Route = pathPrefix("authentication") {
@@ -26,8 +26,8 @@ class AuthenticationOAuth2Resources(service: OAuth2Service)(implicit ec: Executi
   }
 
   private def oAuth2Authenticate(authorizationCode: String): Future[ToResponseMarshallable] = {
-    service.authenticate(authorizationCode).map { auth =>
-      ToResponseMarshallable(Oauth2AuthenticationResponse(auth.access_token, auth.token_type))
+    service.obtainAuthorizationAndUserInfo(authorizationCode).map { case (auth, _) =>
+      ToResponseMarshallable(Oauth2AuthenticationResponse(auth.accessToken, auth.tokenType))
     }.recover {
       case OAuth2ErrorHandler(ex) => {
         logger.debug("Retrieving access token error:", ex)

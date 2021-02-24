@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
-import io.circe.generic.JsonCodec
+import java.time.LocalDate
+
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
+import io.circe.java8.time.{JavaTimeDecoders, JavaTimeEncoders}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RulesSet}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2Profile.getUserRoles
 
@@ -9,6 +11,8 @@ import scala.concurrent.duration.Deadline
 
 @ConfiguredJsonCodec case class OpenIdConnectUserInfo
 (
+  // Although the `sub` field is optional claim for a JWT, it becomes mandatory in OIDC context,
+  // hence Some[] overrides here Option[] from JwtStandardClaims.
   @JsonKey("sub") subject: Some[String],
 
   name: Option[String],
@@ -23,7 +27,7 @@ import scala.concurrent.duration.Deadline
   email: Option[String],
   @JsonKey("email_verified") emailVerified: Option[Boolean],
   gender: Option[String],
-  @JsonKey("birth_date") birthDate: Option[String], //ISO 8601
+  birthdate: Option[LocalDate],
   zoneinfo: Option[String],
   locale: Option[String],
   @JsonKey("phone_number") phoneNumber: Option[String], //RFC 3963
@@ -34,7 +38,7 @@ import scala.concurrent.duration.Deadline
   @JsonKey("iss") issuer: Option[String],
   @JsonKey("aud") audition: Option[List[String]],
 
-  // only when the userinfo is from an ID token
+  // All the following are set only when the userinfo is from an ID token
   @JsonKey("exp") expirationTime: Option[Deadline],
   @JsonKey("iat") issuedAt: Option[Deadline],
   @JsonKey("auth_time") authenticationTime: Option[Deadline]
@@ -43,9 +47,10 @@ import scala.concurrent.duration.Deadline
   val notBefore: Option[Deadline] = None
 }
 
-object OpenIdConnectUserInfo extends CirceDurationConversions {
+object OpenIdConnectUserInfo extends CirceDurationConversions with JavaTimeDecoders with JavaTimeEncoders {
   implicit val config: Configuration = Configuration.default
 }
+
 object OpenIdConnectProfile extends OAuth2Profile[OpenIdConnectUserInfo] {
   def getLoggedUser(profile: OpenIdConnectUserInfo, configuration: OAuth2Configuration, allCategories: List[String]): LoggedUser = {
     val userRoles = getUserRoles(profile.email, configuration)

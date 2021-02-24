@@ -4,7 +4,7 @@ import io.circe._
 
 import scala.concurrent.duration.{Deadline, FiniteDuration, MILLISECONDS}
 
-trait CirceDurationConversions {
+protected[oauth2] trait CirceDurationConversions {
   import cats.syntax.either._
   implicit val decodeDeadline: Decoder[Deadline] = new Decoder[Deadline] {
     def apply(c: HCursor): Decoder.Result[Deadline] = {

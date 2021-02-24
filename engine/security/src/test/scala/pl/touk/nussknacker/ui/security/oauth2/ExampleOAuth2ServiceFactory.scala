@@ -15,7 +15,7 @@ import scala.concurrent.duration.{Deadline, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 
 
-class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse], configuration: OAuth2Configuration)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]) extends OAuth2NewService[LoggedUser, OAuth2AuthorizationData] with LazyLogging {
+class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse], configuration: OAuth2Configuration)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]) extends OAuth2Service[LoggedUser, OAuth2AuthorizationData] with LazyLogging {
 
 
   def obtainAuthorizationAndUserInfo(authorizationCode: String): Future[(OAuth2AuthorizationData, Option[LoggedUser])] =
@@ -34,7 +34,7 @@ class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestA
 }
 
 class ExampleOAuth2ServiceFactory extends OAuth2ServiceFactory {
-  override def createNew(configuration: OAuth2Configuration, allCategories: List[String])(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): OAuth2NewService[LoggedUser, OAuth2AuthorizationData] =
+  override def create(configuration: OAuth2Configuration, allCategories: List[String])(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): ExampleOAuth2Service =
     ExampleOAuth2ServiceFactory.service(configuration)
 }
 
