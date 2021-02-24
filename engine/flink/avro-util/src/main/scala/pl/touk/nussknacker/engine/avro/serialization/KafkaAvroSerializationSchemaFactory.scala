@@ -31,7 +31,7 @@ abstract class KafkaAvroValueSerializationSchemaFactory extends KafkaAvroSeriali
 
   protected def createKeySerializer(kafkaConfig: KafkaConfig): Serializer[AnyRef] = new CharSequenceSerializer
 
-  protected def createValueSerializer(schemaOpt: Option[Schema], version: Option[Int], kafkaConfig: KafkaConfig): Serializer[AnyRef]
+  protected def createValueSerializer(schemaOpt: Option[Schema], version: Option[Int], kafkaConfig: KafkaConfig): Serializer[Any]
 
   override def create(topic: String, version: Option[Int], schemaOpt: Option[NkSerializableAvroSchema], kafkaConfig: KafkaConfig): KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] = {
     new KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] {
@@ -77,6 +77,7 @@ abstract class KafkaAvroKeyValueSerializationSchemaFactory extends KafkaAvroSeri
       override def serialize(element: KeyedValue[AnyRef, AnyRef], timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
         val key = keySerializer.serialize(topic, extractKey(element.value))
         val value = valueSerializer.serialize(topic, extractValue(element.value))
+        //TODO: can we e.g. serialize schemaId to headers?
         KafkaProducerHelper.createRecord(topic, key, value, timestamp)
       }
     }

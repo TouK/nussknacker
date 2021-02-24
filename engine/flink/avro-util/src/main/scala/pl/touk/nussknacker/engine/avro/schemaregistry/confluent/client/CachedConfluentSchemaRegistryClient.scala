@@ -23,15 +23,6 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
       latestSchemaRequest(subject)
     }
 
-  override def getLatestSchema(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
-    handleClientError {
-      val subject = ConfluentUtils.topicSubject(topic, isKey)
-      caches.latestSchemaCache.getOrCreate(subject) {
-        logger.debug(s"Cache latest schema for subject: $subject.")
-        latestSchemaRequest(subject)
-      }
-    }
-
   override def getBySubjectAndVersion(topic: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)

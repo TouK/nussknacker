@@ -4,7 +4,7 @@ import cats.data.Validated
 
 trait SchemaRegistryClient extends Serializable {
 
-  def getBySubjectAndVersion(topic: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata]
+  protected def getBySubjectAndVersion(topic: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata]
 
   /**
     * Latest fresh schema by subject - it should be always fresh schema
@@ -13,21 +13,7 @@ trait SchemaRegistryClient extends Serializable {
     * @param isKey
     * @return
     */
-  def getLatestFreshSchema(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata]
-
-  /**
-    * Latest schema by subject - we assume there can be some latency
-    *
-    * @param topic
-    * @param isKey
-    * @return
-    */
-  def getLatestSchema(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata]
-
-  def getSchema(topic: String, version: Option[Int], isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
-    version
-      .map(ver => getBySubjectAndVersion(topic, ver, isKey))
-      .getOrElse(getLatestSchema(topic, isKey))
+  protected def getLatestFreshSchema(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata]
 
   def getFreshSchema(topic: String, version: Option[Int], isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
     version
