@@ -280,12 +280,21 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     processDetails.isNotDeployed shouldBe true
   }
 
-  test("Should return NotFound state for archived process with missing state") {
+  test("Should return NotDeployed state for archived process with missing state") {
     val id = prepareArchivedProcess(processName).futureValue
     processManager.withEmptyProcessState {
       val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      state.status shouldBe SimpleStateStatus.NotFound
+      state.status shouldBe SimpleStateStatus.NotDeployed
+    }
+  }
+
+  test("Should return NotDeployed state for unarchived process with missing state") {
+    val id = prepareUnArchivedProcess(processName).futureValue
+    processManager.withEmptyProcessState {
+      val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+
+      state.status shouldBe SimpleStateStatus.NotDeployed
     }
   }
 
@@ -340,5 +349,15 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
           actionRepository.markProcessAsArchived(processId = id, 1)
         )
       } yield id
+  }
+
+  private def prepareUnArchivedProcess(processName: ProcessName): Future[process.ProcessId] = {
+    for {
+      id <- prepareProcess(processName)
+      _ <- dbTransactionSupport.runInTransaction(
+        actionRepository.markProcessAsArchived(processId = id, 1),
+        actionRepository.markProcessAsUnArchived(processId = id, 1)
+      )
+    } yield id
   }
 }

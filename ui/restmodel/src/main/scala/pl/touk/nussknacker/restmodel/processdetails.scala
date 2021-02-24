@@ -127,6 +127,5 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
                                        buildInfo: Map[String, String]) {
     def isDeployed: Boolean = action.equals(ProcessActionType.Deploy)
     def isCanceled: Boolean = action.equals(ProcessActionType.Cancel)
-    def isArchived: Boolean = action.equals(ProcessActionType.Archive)
   }
 }

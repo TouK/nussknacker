@@ -159,7 +159,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
       case (Some(state), _) if state.isDeployed => handleFollowingDeployState(state, lastAction)
       case (_, Some(action)) if action.isCanceled => handleCanceledState(processState)
       case (Some(state), _) => handleState(state, lastAction)
-      case (None, Some(action)) if action.isArchived => ProcessStatus.simple(SimpleStateStatus.NotFound)
+      case (None, Some(_)) => ProcessStatus.simple(SimpleStateStatus.NotDeployed)
       case (None, None) => ProcessStatus.simple(SimpleStateStatus.NotDeployed)
     }
 
