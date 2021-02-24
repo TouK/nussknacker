@@ -81,6 +81,4 @@ object ProcessStatus {
   val unknown: ProcessState = simple(SimpleStateStatus.Unknown)
 
   val failedToGet: ProcessState = simple(SimpleStateStatus.FailedToGet)
-
-  val notFound: ProcessState = simple(SimpleStateStatus.NotFound)
 }
