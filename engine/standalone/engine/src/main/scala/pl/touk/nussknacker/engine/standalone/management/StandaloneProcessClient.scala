@@ -8,7 +8,7 @@ import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.{ExternalDeploymentId, ProcessState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.standalone.api.DeploymentData
 import sttp.client.circe._
@@ -68,7 +68,7 @@ class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient
             case Some(state) => s"state: ${state.status.name}, startTime: ${state.startTime.getOrElse(None)}"
           }.mkString("; ")
           Some(SimpleProcessState(
-            DeploymentId(name.value),
+            ExternalDeploymentId(name.value),
             SimpleStateStatus.Failed,
             errors = List(s"Inconsistent states between servers: $warningMessage.")
           ))

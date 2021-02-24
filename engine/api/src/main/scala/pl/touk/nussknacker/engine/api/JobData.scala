@@ -1,3 +1,5 @@
 package pl.touk.nussknacker.engine.api
 
-case class JobData(metaData: MetaData, processVersion: ProcessVersion)
+import pl.touk.nussknacker.engine.api.deployment.DeploymentVersion
+
+case class JobData(metaData: MetaData, processVersion: ProcessVersion, deploymentVersion: DeploymentVersion)

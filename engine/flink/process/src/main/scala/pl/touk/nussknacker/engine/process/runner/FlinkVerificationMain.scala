@@ -4,6 +4,7 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.DeploymentVersion
 import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
@@ -12,21 +13,21 @@ import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 
 object FlinkVerificationMain extends FlinkRunner {
 
-  def run(modelData: ModelData, processJson: String, processVersion: ProcessVersion, savepointPath: String, configuration: Configuration): Unit = {
+  def run(modelData: ModelData, processJson: String, processVersion: ProcessVersion, deploymentVersion: DeploymentVersion, savepointPath: String, configuration: Configuration): Unit = {
     val process = readProcessFromArg(processJson)
-    new FlinkVerificationMain(modelData, process,processVersion, savepointPath, configuration).runTest()
+    new FlinkVerificationMain(modelData, process,processVersion, deploymentVersion, savepointPath, configuration).runTest()
   }
 
 }
 
 
-class FlinkVerificationMain(val modelData: ModelData, val process: EspProcess, processVersion: ProcessVersion, savepointPath: String,
+class FlinkVerificationMain(val modelData: ModelData, val process: EspProcess, processVersion: ProcessVersion, deploymentVersion: DeploymentVersion, savepointPath: String,
                             val configuration: Configuration) extends FlinkStubbedRunner {
 
   def runTest(): Unit = {
     val env = createEnv
     val registrar = prepareRegistrar()
-    registrar.register(env, process, processVersion, Option(TestRunId("dummy")))
+    registrar.register(env, process, processVersion, deploymentVersion, Option(TestRunId("dummy")))
     execute(env, SavepointRestoreSettings.forPath(savepointPath, true))
   }
 

@@ -56,14 +56,14 @@ class PeriodicProcessManager(delegate: ProcessManager,
                              toClose: () => Unit)
                             (implicit val ec: ExecutionContext) extends ProcessManager with LazyLogging {
 
-  override def deploy(processVersion: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String], user: User): Future[Unit] = {
+  override def deploy(processVersion: ProcessVersion, deploymentVersion: DeploymentVersion, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]): Future[Unit] = {
     (processDeploymentData, periodicPropertyExtractor(processDeploymentData)) match {
       case (GraphProcess(processJson), Right(periodicProperty)) =>
         logger.info(s"About to (re)schedule ${processVersion.processName} in version ${processVersion.versionId}")
 
         // PeriodicProcessStateDefinitionManager do not allow to redeploy (so doesn't GUI),
         // but NK API does, so we need to handle this situation.
-        cancelIfAlreadyDeployed(processVersion, user)
+        cancelIfAlreadyDeployed(processVersion, deploymentVersion.user)
           .flatMap(_ => {
             logger.info(s"Scheduling ${processVersion.processName}, versionId: ${processVersion.versionId}")
             service.schedule(periodicProperty, processVersion, processJson)
@@ -111,7 +111,7 @@ class PeriodicProcessManager(delegate: ProcessManager,
         maybeScheduledRunDetails.map { scheduledRunDetails =>
           scheduledRunDetails.status match {
             case PeriodicProcessDeploymentStatus.Scheduled => Some(ProcessState(
-              Some(DeploymentId("future")),
+              Some(ExternalDeploymentId("future")),
               status = ScheduledStatus(scheduledRunDetails.runAt),
               version = Option(scheduledRunDetails.processVersion),
               definitionManager = processStateDefinitionManager,
@@ -121,7 +121,7 @@ class PeriodicProcessManager(delegate: ProcessManager,
               errors = List.empty
             ))
             case PeriodicProcessDeploymentStatus.Failed => Some(ProcessState(
-              Some(DeploymentId("future")),
+              Some(ExternalDeploymentId("future")),
               status = SimpleStateStatus.Failed,
               version = Option(scheduledRunDetails.processVersion),
               definitionManager = processStateDefinitionManager,

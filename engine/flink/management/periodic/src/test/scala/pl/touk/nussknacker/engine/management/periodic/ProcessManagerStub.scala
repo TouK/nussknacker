@@ -13,7 +13,7 @@ class ProcessManagerStub extends ProcessManager {
 
   def setStateStatus(status: StateStatus): Unit = {
     jobStatus = Some(ProcessState(
-      deploymentId = Some(DeploymentId("1")),
+      deploymentId = Some(ExternalDeploymentId("1")),
       status = status,
       version = None,
       allowedActions = Nil,
@@ -26,7 +26,8 @@ class ProcessManagerStub extends ProcessManager {
     ))
   }
 
-  override def deploy(processId: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String], user: User): Future[Unit] = Future.successful(())
+
+  override def deploy(processVersion: ProcessVersion, deploymentVersion: DeploymentVersion, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]): Future[Unit] = ???
 
   override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] = ???
 

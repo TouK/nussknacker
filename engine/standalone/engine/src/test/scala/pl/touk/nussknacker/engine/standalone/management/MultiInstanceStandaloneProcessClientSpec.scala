@@ -36,17 +36,17 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
 
   def processVersion(versionId: Option[Long]): Option[ProcessVersion] = versionId.map(id => ProcessVersion(id, ProcessName(""), "", None))
 
-  def processState(deploymentId: DeploymentId, status: StateStatus, client: StandaloneProcessClient, versionId: Option[Long] = Option.empty, startTime: Option[Long] = Option.empty, errors: List[String] = List.empty): ProcessState =
+  def processState(deploymentId: ExternalDeploymentId, status: StateStatus, client: StandaloneProcessClient, versionId: Option[Long] = Option.empty, startTime: Option[Long] = Option.empty, errors: List[String] = List.empty): ProcessState =
     SimpleProcessState(deploymentId, status, processVersion(versionId), startTime = startTime, errors = errors)
 
   test("Deployment should complete when all parts are successful") {
     val multiClient = new MultiInstanceStandaloneProcessClient(List(okClient(), okClient()))
-    multiClient.deploy(DeploymentData("json", 1000, ProcessVersion.empty.copy(processName=id))).futureValue shouldBe (())
+    multiClient.deploy(DeploymentData("json", 1000, ProcessVersion.empty.copy(processName=id), DeploymentVersion.empty)).futureValue shouldBe (())
   }
 
   test("Deployment should fail when one part fails") {
     val multiClient = new MultiInstanceStandaloneProcessClient(List(okClient(), failClient))
-    multiClient.deploy(DeploymentData("json", 1000, ProcessVersion.empty.copy(processName=id))).failed.futureValue shouldBe failure
+    multiClient.deploy(DeploymentData("json", 1000, ProcessVersion.empty.copy(processName=id), DeploymentVersion.empty)).failed.futureValue shouldBe failure
   }
 
   test("Status should be none if no client returns status") {
@@ -91,7 +91,7 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
   }
 
   private val id = ProcessName("id")
-  private val jobId = DeploymentId("id")
+  private val jobId = ExternalDeploymentId("id")
 
   def okClient(status: Option[ProcessState] = None, expectedTime: Long = 1000): StandaloneProcessClient = new StandaloneProcessClient {
 

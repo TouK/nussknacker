@@ -6,6 +6,7 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.scala._
 import org.scalatest.Suite
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.deployment.DeploymentVersion
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
@@ -36,7 +37,7 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
       val env = flinkMiniCluster.createExecutionEnvironment()
       val modelData = LocalModelData(config, creator)
       FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData))
-        .register(new StreamExecutionEnvironment(env), process, processVersion)
+        .register(new StreamExecutionEnvironment(env), process, processVersion, DeploymentVersion.empty)
 
       MockService.clear()
       SinkForStrings.clear()
@@ -52,7 +53,7 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
       val env = flinkMiniCluster.createExecutionEnvironment()
       val modelData = LocalModelData(config, creator)
       registrar.FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData))
-        .register(new StreamExecutionEnvironment(env), process, processVersion)
+        .register(new StreamExecutionEnvironment(env), process, processVersion, DeploymentVersion.empty)
 
       MockService.clear()
       env.withJobRunning(process.id)(actionToInvokeWithJobRunning)

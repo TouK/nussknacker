@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.deployment.{CustomAction, CustomActionError, CustomActionNotImplemented, CustomActionRequest, CustomActionResult, DeploymentId, ProcessDeploymentData, ProcessState, SavepointResult, StateStatus, User}
+import pl.touk.nussknacker.engine.api.deployment.{CustomAction, CustomActionError, CustomActionNotImplemented, CustomActionRequest, CustomActionResult, ExternalDeploymentId, DeploymentVersion, ProcessDeploymentData, ProcessState, SavepointResult, StateStatus, User}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -130,12 +130,13 @@ object TestFactory extends TestPermissions{
       prepareProcessState(status, Some(ProcessVersion.empty))
 
     private def prepareProcessState(status: StateStatus, version: Option[ProcessVersion]): Option[ProcessState] =
-      Some(SimpleProcessState(DeploymentId("1"), status, version))
+      Some(SimpleProcessState(ExternalDeploymentId("1"), status, version))
 
     override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] =
       Future.successful(managerProcessState.get())
 
-    override def deploy(processId: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepoint: Option[String], user: User): Future[Unit] =
+    override def deploy(processId: ProcessVersion, deploymentVersion: DeploymentVersion,
+                        processDeploymentData: ProcessDeploymentData, savepoint: Option[String]): Future[Unit] =
       deployResult
 
     private var deployResult: Future[Unit] = Future.successful(())
@@ -187,11 +188,11 @@ object TestFactory extends TestPermissions{
       }
     }
 
-    override protected def cancel(deploymentId: DeploymentId): Future[Unit] = Future.successful(Unit)
+    override protected def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = Future.successful(Unit)
 
-    override protected def makeSavepoint(deploymentId: DeploymentId, savepointDir: Option[String]): Future[SavepointResult] = Future.successful(SavepointResult(path = savepointPath))
+    override protected def makeSavepoint(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = Future.successful(SavepointResult(path = savepointPath))
 
-    override protected def stop(deploymentId: DeploymentId, savepointDir: Option[String]): Future[SavepointResult] = Future.successful(SavepointResult(path = stopSavepointPath))
+    override protected def stop(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = Future.successful(SavepointResult(path = stopSavepointPath))
 
     override protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit] = ???
 

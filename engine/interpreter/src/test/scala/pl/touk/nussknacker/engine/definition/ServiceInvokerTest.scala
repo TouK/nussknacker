@@ -2,10 +2,10 @@ package pl.touk.nussknacker.engine.definition
 
 import java.util.concurrent.Executor
 import java.util.function.Supplier
-
 import org.scalatest.{FlatSpec, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.deployment.DeploymentVersion
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.TestServiceInvocationCollector
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -17,7 +17,7 @@ class ServiceInvokerTest extends FlatSpec with PatientScalaFutures with OptionVa
 
   private implicit val metadata: MetaData = MetaData("proc1", StreamMetaData())
   private val nodeId = NodeId("id")
-  private val jobData: JobData = JobData(metadata, ProcessVersion.empty)
+  private val jobData: JobData = JobData(metadata, ProcessVersion.empty, DeploymentVersion.empty)
   private implicit val ctxId: ContextId = ContextId("")
   private implicit val collector: TestServiceInvocationCollector = TestServiceInvocationCollector(None, ctxId, nodeId, "")
 

@@ -6,8 +6,8 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{ExternalDeploymentId, ProcessState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{JobData, StandaloneMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -67,7 +67,7 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
                 processRepository.add(processName, deploymentData)
                 processInterpreters.put(processName, (processInterpreter, deploymentData))
                 pathToInterpreterMap.put(pathToDeploy, processInterpreter)
-                processInterpreter.open(JobData(process.metaData, deploymentData.processVersion))
+                processInterpreter.open(JobData(process.metaData, deploymentData.processVersion, deploymentData.deploymentVersion))
                 logger.info(s"Successfully deployed process ${processName.value}")
               }
               interpreter.map(_ => ())
@@ -79,8 +79,8 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
   }
 
   def checkStatus(processName: ProcessName): Option[ProcessState] = {
-    processInterpreters.get(processName).map { case (_, DeploymentData(_, deploymentTime, processVersion)) => SimpleProcessState(
-        deploymentId = DeploymentId(processName.value),
+    processInterpreters.get(processName).map { case (_, DeploymentData(_, deploymentTime, processVersion, _)) => SimpleProcessState(
+        deploymentId = ExternalDeploymentId(processName.value),
         status = SimpleStateStatus.Running,
         version = Option(processVersion),
         startTime = Some(deploymentTime)

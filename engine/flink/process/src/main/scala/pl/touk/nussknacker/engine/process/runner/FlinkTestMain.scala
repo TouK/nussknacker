@@ -5,6 +5,7 @@ import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.DeploymentVersion
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder}
@@ -18,11 +19,15 @@ object FlinkTestMain extends FlinkRunner {
   def run[T](modelData: ModelData, processJson: String, testData: TestData, configuration: Configuration, variableEncoder: Any => T): TestResults[T] = {
     val process = readProcessFromArg(processJson)
     val processVersion = ProcessVersion.empty.copy(processName = ProcessName("snapshot version")) // testing process may be unreleased, so it has no version
-    new FlinkTestMain(modelData, process, testData, processVersion, configuration).runTest(variableEncoder)
+    new FlinkTestMain(modelData, process, testData, processVersion, DeploymentVersion.empty, configuration).runTest(variableEncoder)
   }
 }
 
-class FlinkTestMain(val modelData: ModelData, val process: EspProcess, testData: TestData, processVersion: ProcessVersion,
+class FlinkTestMain(val modelData: ModelData,
+                    val process: EspProcess,
+                    testData: TestData,
+                    processVersion: ProcessVersion,
+                    deploymentVersion: DeploymentVersion,
                     val configuration: Configuration)
   extends FlinkStubbedRunner {
 
@@ -31,7 +36,7 @@ class FlinkTestMain(val modelData: ModelData, val process: EspProcess, testData:
     val collectingListener = ResultsCollectingListenerHolder.registerRun(variableEncoder)
     try {
       val registrar: FlinkProcessRegistrar = prepareRegistrar(env, collectingListener)
-      registrar.register(env, process, processVersion, Option(collectingListener.runId))
+      registrar.register(env, process, processVersion, deploymentVersion, Option(collectingListener.runId))
       execute(env, SavepointRestoreSettings.none())
       collectingListener.results
     } finally {

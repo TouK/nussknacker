@@ -5,7 +5,7 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FunSuite, Inside, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, ProcessActionType, User}
+import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentVersion, GraphProcess, ProcessActionType, User}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -115,7 +115,7 @@ class PeriodicProcessManagerTest extends FunSuite
   test("deploy - should fail for custom process") {
     val f = new Fixture
 
-    val deploymentResult = f.periodicProcessManager.deploy(processVersion, CustomProcess("test"), None, user)
+    val deploymentResult = f.periodicProcessManager.deploy(processVersion, DeploymentVersion.empty, CustomProcess("test"), None)
 
     intercept[PeriodicProcessException](Await.result(deploymentResult, patienceConfig.timeout))
   }
@@ -123,7 +123,7 @@ class PeriodicProcessManagerTest extends FunSuite
   test("deploy - should fail for invalid periodic property") {
     val f = new Fixture
 
-    val deploymentResult = f.periodicProcessManager.deploy(processVersion, GraphProcess("broken"), None, user)
+    val deploymentResult = f.periodicProcessManager.deploy(processVersion, DeploymentVersion.empty, GraphProcess("broken"), None)
 
     intercept[PeriodicProcessException](Await.result(deploymentResult, patienceConfig.timeout))
   }
@@ -131,7 +131,7 @@ class PeriodicProcessManagerTest extends FunSuite
   test("deploy - should schedule periodic process") {
     val f = new Fixture
 
-    f.periodicProcessManager.deploy(processVersion, PeriodicProcessGen(), None, user).futureValue
+    f.periodicProcessManager.deploy(processVersion, DeploymentVersion.empty, PeriodicProcessGen(), None).futureValue
 
     f.repository.processEntities.loneElement.active shouldBe true
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
@@ -141,7 +141,7 @@ class PeriodicProcessManagerTest extends FunSuite
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
 
-    f.periodicProcessManager.deploy(processVersion, PeriodicProcessGen(), None, user).futureValue
+    f.periodicProcessManager.deploy(processVersion, DeploymentVersion.empty, PeriodicProcessGen(), None).futureValue
 
     f.repository.processEntities should have size 2
     f.repository.processEntities.map(_.active) shouldBe List(false, true)

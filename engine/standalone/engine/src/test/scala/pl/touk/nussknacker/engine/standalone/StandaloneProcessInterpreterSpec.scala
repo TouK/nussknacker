@@ -4,6 +4,7 @@ import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
 import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.deployment.DeploymentVersion
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{Context, JobData, ProcessVersion}
@@ -73,7 +74,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
     val metricRegistry = new MetricRegistry
 
     val interpreter = prepareInterpreter(process, creator, metricRegistry)
-    interpreter.open(JobData(process.metaData, ProcessVersion.empty))
+    interpreter.open(JobData(process.metaData, ProcessVersion.empty, DeploymentVersion.empty))
     val contextId = "context-id"
     val result = interpreter.invoke(Request1("a", "b"), Some(contextId)).futureValue
 
@@ -152,7 +153,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
     val metricRegistry = new MetricRegistry
 
     val interpreter = prepareInterpreter(process, new StandaloneProcessConfigCreator, metricRegistry = metricRegistry)
-    interpreter.open(JobData(process.metaData, ProcessVersion.empty))
+    interpreter.open(JobData(process.metaData, ProcessVersion.empty, DeploymentVersion.empty))
     val result = interpreter.invoke(Request1("a", "b")).futureValue
 
     result shouldBe Right(List("true"))
@@ -247,7 +248,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
       creator = creator,
       metricRegistry = metricRegistry
     )
-    interpreter.open(JobData(process.metaData,ProcessVersion.empty))
+    interpreter.open(JobData(process.metaData,ProcessVersion.empty, DeploymentVersion.empty))
     val result = interpreter.invoke(input, contextId).futureValue
     interpreter.close()
     result
