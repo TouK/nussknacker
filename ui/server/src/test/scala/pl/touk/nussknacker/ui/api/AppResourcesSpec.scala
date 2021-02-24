@@ -56,7 +56,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
     statusCheck.reply(processStatus(SimpleStateStatus.Running))
 
     val third = statusCheck.expectMsgClass(classOf[CheckStatus])
-    statusCheck.reply(processStatus(SimpleStateStatus.NotFound))
+    statusCheck.reply(processStatus(SimpleStateStatus.NotDeployed))
 
     result ~> check {
       status shouldBe StatusCodes.InternalServerError
@@ -75,7 +75,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
     val result = Get("/app/healthCheck/process/deployment") ~> withPermissions(resources, testPermissionRead)
 
     val second = statusCheck.expectMsgClass(classOf[CheckStatus])
-    statusCheck.reply(processStatus(SimpleStateStatus.NotFound))
+    statusCheck.reply(processStatus(SimpleStateStatus.NotDeployed))
 
     result ~> check {
       status shouldBe StatusCodes.InternalServerError

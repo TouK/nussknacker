@@ -112,7 +112,7 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
 
     processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction should not be None
 
-    processManager.withProcessStateStatus(SimpleStateStatus.NotFound) {
+    processManager.withEmptyProcessState {
       processService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.Canceled
     }
 
@@ -271,7 +271,7 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     val id = prepareProcess(processName).futureValue
     processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction shouldBe None
 
-    processManager.withProcessStateStatus(SimpleStateStatus.NotFound) {
+    processManager.withEmptyProcessState {
       processService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.NotDeployed
     }
 

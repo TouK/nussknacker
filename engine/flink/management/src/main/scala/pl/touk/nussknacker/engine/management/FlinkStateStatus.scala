@@ -5,7 +5,6 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 
 object FlinkStateStatus  {
   val FailedToGet: StateStatus = SimpleStateStatus.FailedToGet
-  val NotFound: StateStatus = SimpleStateStatus.NotFound
   val Unknown: StateStatus = SimpleStateStatus.Unknown
   val NotDeployed: StateStatus = SimpleStateStatus.NotDeployed
   val DuringDeploy: StateStatus = SimpleStateStatus.DuringDeploy

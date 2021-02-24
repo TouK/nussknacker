@@ -166,7 +166,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
   //TODO: In future we should move this functionality to ProcessManager.
   private def handleState(state: ProcessState, lastAction: Option[ProcessAction]): ProcessState =
     state.status match {
-      case SimpleStateStatus.NotFound | SimpleStateStatus.NotDeployed if lastAction.isEmpty =>
+      case SimpleStateStatus.NotDeployed if lastAction.isEmpty =>
         ProcessStatus.simple(SimpleStateStatus.NotDeployed)
       //TODO: Should FlinkStateStatus.Restarting also be here?. Currently it's not handled to
       //avoid dependency on FlinkProcessManager
@@ -180,7 +180,6 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
   private def handleCanceledState(processState: Option[ProcessState]): ProcessState =
     processState match {
       case Some(state) => state.status match {
-        case SimpleStateStatus.NotFound => ProcessStatus.simple(SimpleStateStatus.Canceled)
         case _ => state
       }
       case None => ProcessStatus.simple(SimpleStateStatus.Canceled)

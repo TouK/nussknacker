@@ -10,14 +10,13 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
   val actionStatusMap: Map[ProcessActionType, StateStatus] = Map(
     ProcessActionType.Deploy -> SimpleStateStatus.Running,
     ProcessActionType.Cancel -> SimpleStateStatus.Canceled,
-    ProcessActionType.Archive -> SimpleStateStatus.NotFound, //We assume that state is not available after archive process
+    ProcessActionType.Archive -> SimpleStateStatus.NotDeployed,
     ProcessActionType.UnArchive -> SimpleStateStatus.NotDeployed
   )
 
   val statusActionsMap: Map[StateStatus, List[ProcessActionType]] = Map(
     SimpleStateStatus.Unknown -> List(ProcessActionType.Deploy),
     SimpleStateStatus.NotDeployed -> List(ProcessActionType.Deploy, ProcessActionType.Archive),
-    SimpleStateStatus.NotFound -> List(ProcessActionType.Deploy, ProcessActionType.Archive),
     SimpleStateStatus.DuringDeploy -> List(ProcessActionType.Cancel),
     SimpleStateStatus.Running -> List(ProcessActionType.Cancel, ProcessActionType.Pause, ProcessActionType.Deploy),
     SimpleStateStatus.Canceled -> List(ProcessActionType.Deploy, ProcessActionType.Archive),
@@ -30,7 +29,6 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
 
   val statusIconsMap: Map[StateStatus, String] = Map(
     SimpleStateStatus.FailedToGet -> "/assets/states/error.svg",
-    SimpleStateStatus.NotFound -> "/assets/states/process-does-not-exist.svg",
     SimpleStateStatus.Unknown -> "/assets/states/status-unknown.svg",
     SimpleStateStatus.NotDeployed -> "/assets/states/not-deployed.svg",
     SimpleStateStatus.DuringDeploy -> "/assets/states/deploy-running-animated.svg",
@@ -45,7 +43,6 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
 
   val statusTooltipsMap: Map[StateStatus, String] = Map(
     SimpleStateStatus.FailedToGet -> "There are problems obtaining the process state. Please check if your engine is working properly.",
-    SimpleStateStatus.NotFound -> "Your engine is working but have no information about the process.",
     SimpleStateStatus.Unknown -> "Unknown state of the process. We can't recognize process state.",
     SimpleStateStatus.NotDeployed -> "The process is not deployed.",
     SimpleStateStatus.DuringDeploy -> "The process has been already started and currently is being deployed.",
@@ -60,7 +57,6 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
 
   val statusDescriptionsMap: Map[StateStatus, String] = Map(
     SimpleStateStatus.FailedToGet -> "Failed to get a state of the process.",
-    SimpleStateStatus.NotFound -> "The process state was not found.",
     SimpleStateStatus.Unknown -> "Unknown state of the process.",
     SimpleStateStatus.NotDeployed -> "The process is not deployed.",
     SimpleStateStatus.DuringDeploy -> "The process is being deployed.",
