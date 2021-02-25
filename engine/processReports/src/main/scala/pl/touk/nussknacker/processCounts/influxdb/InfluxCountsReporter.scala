@@ -13,12 +13,11 @@ import sttp.client.{NothingT, SttpBackend}
 import scala.concurrent.{ExecutionContext, Future}
 
 /*
-  Base
+  Base reporter for counts
  */
 class InfluxCountsReporter(env: String, config: InfluxConfig)(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends CountsReporter with LazyLogging {
 
   val influxGenerator = new InfluxGenerator(config, env)
-  private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
   private val metricsConfig = config.metricsConfig.getOrElse(MetricsConfig())
 
   override def prepareRawCounts(processId: String, countsRequest: CountsRequest)(implicit ec: ExecutionContext): Future[String => Option[Long]] = (countsRequest match {
@@ -42,8 +41,9 @@ class InfluxCountsReporter(env: String, config: InfluxConfig)(implicit backend: 
         case (Nil, QueryMode.OnlySingleDifference) =>
           influxGenerator.queryBySingleDifference(processId, Some(fromDate), toDate, metricsConfig)
         case (dates, QueryMode.OnlySingleDifference) =>
-          Future.failed(CannotFetchCountsError(s"Counts unavailable, as process was restarted/deployed on " +
-          s" following dates: ${dates.map(_.format(dateTimeFormatter)).mkString(", ")}"))
+          Future.failed(CannotFetchCountsError.restartsDetected(dates))
+        //should not happen, unfortunately scalac cannot detect that all enum values were handled...
+        case _ => Future.failed(new IllegalArgumentException(s"Unknown QueryMode ${config.queryMode} for ${restarts.size} restarts"))
       }
     }
   }

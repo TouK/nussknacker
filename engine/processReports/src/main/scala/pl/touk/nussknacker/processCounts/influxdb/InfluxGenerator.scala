@@ -42,10 +42,10 @@ private[influxdb] class InfluxGenerator(config: InfluxConfig, env: String = "tes
     val from = toEpochSeconds(dateFrom)
     val to = toEpochSeconds(dateTo)
     val queryString =
-      //TODO: is it always correct? Will it be performant enough for large (many days) ranges?
-      s"""SELECT derivative(${config.countField}) FROM "${config.sourceCountMetric}" WHERE
+      s"""SELECT diff FROM (
+         |  SELECT difference(${config.countField}) as diff FROM "${config.sourceCountMetric}" WHERE
          | "${config.processTag}" = '$processName' AND ${config.envTag} = '$env'
-         | AND time >= ${from}s and time < ${to}s GROUP BY ${config.slotTag}""".stripMargin
+         | AND time >= ${from}s and time < ${to}s GROUP BY ${config.slotTag}, ${config.nodeIdTag}) where diff < 0 """.stripMargin
     influxClient.query(queryString).map { series =>
       series.headOption.map(readRestartsFromSourceCounts).getOrElse(List())
     }
@@ -53,7 +53,7 @@ private[influxdb] class InfluxGenerator(config: InfluxConfig, env: String = "tes
 
   private def readRestartsFromSourceCounts(sourceCounts: InfluxSerie) : List[LocalDateTime] = {
     val restarts = sourceCounts.values.collect {
-      case (date:String)::(derivative:BigDecimal)::Nil if derivative < 0 => parseInfluxDate(date)
+      case (date:String)::(derivative:BigDecimal)::Nil => parseInfluxDate(date)
     }
     restarts
   }
@@ -80,7 +80,7 @@ object InfluxGenerator extends LazyLogging {
       seriesList.map { oneSeries =>
         //in case of our queries we know there will be only one result (we use only first/last aggregations), rest will be handled by aggregations
         val firstResult = oneSeries.toMap.headOption.getOrElse(Map())
-        (oneSeries.tags.getOrElse(config.nodeIdTag, "UNKNOWN"), firstResult.getOrElse("count", 0L).asInstanceOf[Number].longValue())
+        (oneSeries.tags.getOrElse(Map.empty).getOrElse(config.nodeIdTag, "UNKNOWN"), firstResult.getOrElse("count", 0L).asInstanceOf[Number].longValue())
       }.groupBy(_._1).mapValues(_.map(_._2).sum)
     }
     groupedResults.foreach {

@@ -68,7 +68,7 @@ object InfluxSerie {
 
 }
 
-case class InfluxSerie(name: String, tags: Map[String, String], columns: List[String], values: List[List[Any]] = Nil) {
+case class InfluxSerie(name: String, tags: Option[Map[String, String]], columns: List[String], values: List[List[Any]] = Nil) {
   val toMap: List[Map[String, Any]] = values.map(value => columns.zip(value).toMap)
 }
 

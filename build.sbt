@@ -238,6 +238,7 @@ val commonsIOV = "2.4"
 //In Flink metrics we use bundled dropwizard metrics v. 3.x
 val dropWizardV = "5.0.0-rc3"
 val scalaCollectionsCompatV = "2.1.6"
+val testcontainersScalaV = "0.39.3"
 
 val akkaHttpV = "10.1.8"
 val akkaHttpCirceV = "1.27.0"
@@ -422,6 +423,7 @@ lazy val flinkProcessManager = (project in engine("flink/management")).
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
+        //TODO: move to testcontainers, e.g. https://ci.apache.org/projects/flink/flink-docs-master/api/java/org/apache/flink/tests/util/flink/FlinkContainer.html
         "com.whisk" %% "docker-testkit-scalatest" % "0.9.0" % "it,test",
         "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.0" % "it,test"
       )
@@ -811,17 +813,22 @@ lazy val flinkApi = (project in engine("flink/api")).
   ).dependsOn(api)
 
 lazy val processReports = (project in engine("processReports")).
+  configs(IntegrationTest).
   settings(commonSettings).
+  settings(Defaults.itSettings).
   settings(
     name := "nussknacker-process-reports",
     libraryDependencies ++= {
       Seq(
         "com.typesafe" % "config" % "1.3.0",
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
-        "com.iheart" %% "ficus" % ficusV
+        "com.iheart" %% "ficus" % ficusV,
+        "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
+        "com.dimafeng" %% "testcontainers-scala-influxdb" % testcontainersScalaV % "it,test",
+        "org.influxdb" % "influxdb-java" % "2.21" % "it,test"
       )
     }
-  ).dependsOn(httpUtils, testUtil % "test")
+  ).dependsOn(httpUtils, testUtil % "it,test")
 
 lazy val httpUtils = (project in engine("httpUtils")).
   settings(commonSettings).

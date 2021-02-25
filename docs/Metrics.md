@@ -107,8 +107,16 @@ Nussknacker provides `InfluxCountsReporterCreator` (details below), different im
 via ServiceLoader mechanism. It's important to remember that implementation has to be on main Nussknacker classpath 
 (not in model jars).
 
-Please note that in most cases results will not be exact. 
+Please note that in most cases results will not be exact, as Flink reports metrics every couple of seconds
+Also, when Flink job is restarted, the metrics are reset.                                     
 
 InfluxCountsReporter
 --------------------
-Default `CountsReporter` implementation is based on 
+This `CountsReporter` implementation is based on InfluxDB metrics, stored in ```nodeCount``` measurement by default.
+```QueryMode``` setting can be used to choose metric computation algorithm:
+- `OnlySingleDifference` - subtracts values between end and beginning of requested range. Fast method, but if restart
+  in the requested time range is detected error is returned. We assume the job was restarted when event counter at the source 
+  decreases.
+- `OnlySumOfDifferences` - difference is computed by summing differences in measurements for requested time range. 
+  This method works a bit better for restart situations, but can be slow for large diagrams and wide time ranges.
+- `SumOfDifferencesForRestarts` - if restart is detected, the metrics are computed with `OnlySumDifferences`, otherwis - with `OnlySingleDifferences`
