@@ -21,7 +21,7 @@ class CachingOAuth2Service[
     delegate.obtainAuthorizationAndUserInfo(authorizationCode).map { case (authorization, userInfo) =>
       userInfo.foreach(userInfo => {
         authorizationsCache.put(authorization.accessToken) {
-          Future((userInfo, Deadline.now + authorization.expirationPeriod.getOrElse(defaultExpiration())))
+          Future((userInfo, Deadline.now + authorization.expirationPeriod.getOrElse(defaultExpiration)))
         }
       })
       (authorization, userInfo)
@@ -31,10 +31,10 @@ class CachingOAuth2Service[
   def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Deadline])] = {
     authorizationsCache.getOrCreate(accessToken) {
       delegate.checkAuthorizationAndObtainUserinfo(accessToken).map {
-        case (userInfo, expiration) => (userInfo, expiration.getOrElse(Deadline.now + defaultExpiration()))
+        case (userInfo, expiration) => (userInfo, expiration.getOrElse(Deadline.now + defaultExpiration))
       }
     }.map { case (userInfo, expiration) => (userInfo, Some(expiration)) }
   }
 
-  private def defaultExpiration() = configuration.defaultTokenExpirationTime
+  private lazy val defaultExpiration = configuration.defaultTokenExpirationTime
 }
