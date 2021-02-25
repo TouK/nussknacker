@@ -18,7 +18,6 @@ class ExampleOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
   import io.circe.syntax._
 
   import ExecutionContext.Implicits.global
-//  import OAuth2ServiceFactory.BackwardCompatibleOAuth2ServiceWrapper
 
   val config = ExampleOAuth2ServiceFactory.testConfig
 
