@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.management
 
-import java.io.File
-
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
 import pl.touk.nussknacker.engine.ModelData
@@ -14,8 +12,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolean, mainClassName: String)
   extends ProcessManager with LazyLogging {
-
-  protected lazy val jarFile: File = new FlinkModelJar().buildJobJar(modelData)
 
   private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
