@@ -82,7 +82,7 @@ class ServiceRoutes(modelDataMap: ProcessingTypeDataProvider[ModelData])
   }
 
   private def invokeService(serviceName: String, modelData: ModelData, params: List[Parameter]): Future[QueryResult] = {
-    new ServiceQuery(modelData).invoke(serviceName, params)
+    new ServiceQuery(modelData).invoke(serviceName, params = params)
   }
 }
 

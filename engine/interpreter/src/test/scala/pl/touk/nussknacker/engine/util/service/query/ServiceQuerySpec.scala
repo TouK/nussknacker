@@ -40,6 +40,11 @@ class ServiceQuerySpec extends FlatSpec with Matchers with PatientScalaFutures {
     invokeConcatService("'foo'", "#GLOBAL").futureValue.result shouldBe "fooglobalValue"
   }
 
+  it should "evaluate spel expressions using provided local context variables" in {
+    CreateQuery("srv", new ConcatService).invoke("srv", localVariables = Map("var" -> ("foo", Typed[String])), "s1" -> "#var", "s2" -> "'bar'")
+      .futureValue.result shouldBe "foobar"
+  }
+
   it should "return error on failed on not existing service" in {
     assertThrows[IllegalArgumentException](Await.result(invokeConcatService("'fail'", "''"), 1 second))
   }
@@ -100,7 +105,7 @@ object QueryServiceTesting {
   }
 
   object CreateQuery {
-    def apply(serviceName: String, service: Service)
+    def apply(serviceName: String, service: Service, localVariables: Map[String, Any] = Map.empty)
              (implicit executionContext: ExecutionContext): ServiceQuery = {
       new ServiceQuery(LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator {
 

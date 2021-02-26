@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.util.service.query
 
 import java.util.UUID
-
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
@@ -10,6 +9,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{QueryServiceInvocationCollector, QueryServiceResult}
 import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
@@ -30,15 +30,18 @@ class ServiceQuery(modelData: ModelData) {
 
   private val evaluator = ExpressionEvaluator.unOptimizedEvaluator(modelData)
 
-  private val ctx = Context("")
-
   def invoke(serviceName: String, args: (String, Expression)*)
+            (implicit executionContext: ExecutionContext): Future[QueryResult] =
+    invoke(serviceName, localVariables = Map.empty, args = args: _*)
+
+  def invoke(serviceName: String, localVariables: Map[String, (Any, TypingResult)], args: (String, Expression)*)
             (implicit executionContext: ExecutionContext): Future[QueryResult] = {
     val params = args.map(pair => evaluatedparam.Parameter(pair._1, pair._2)).toList
-    invoke(serviceName, params)
+    invoke(serviceName, localVariables, params)
   }
 
   def invoke(serviceName: String,
+             localVariables: Map[String, (Any, TypingResult)] = Map.empty,
              params: List[evaluatedparam.Parameter])
             (implicit executionContext: ExecutionContext): Future[QueryResult] = {
 
@@ -54,7 +57,8 @@ class ServiceQuery(modelData: ModelData) {
       val collector = QueryServiceInvocationCollector(Some(TestRunId(UUID.randomUUID().toString)), serviceName)
 
       val variablesPreparer = GlobalVariablesPreparer(definitions.expressionConfig)
-      val validationContext = variablesPreparer.emptyValidationContext(metaData)
+      val validationContext = variablesPreparer.validationContextWithLocalVariables(metaData, localVariables.mapValues(_._2))
+      val ctx = Context("", localVariables.mapValues(_._1), None)
 
       val compiled = compiler.compileService(ServiceRef(serviceName, params), validationContext, None, Some(_ => collector))(NodeId(""), metaData)
       compiled.compiledObject.map { service =>
