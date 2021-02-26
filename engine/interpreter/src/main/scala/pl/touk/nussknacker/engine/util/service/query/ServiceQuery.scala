@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.util.service.query
 
 import java.util.UUID
-
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
@@ -10,6 +9,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{QueryServiceInvocationCollector, QueryServiceResult}
 import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
@@ -24,13 +24,11 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import scala.concurrent.{ExecutionContext, Future}
 
 // TODO: Processes using Flink's RuntimeContex, ex. metrics throws NPE, but in another thread, so service works.
-class ServiceQuery(modelData: ModelData) {
+class ServiceQuery(modelData: ModelData, ctx: Context = Context("")) {
 
   import ServiceQuery._
 
   private val evaluator = ExpressionEvaluator.unOptimizedEvaluator(modelData)
-
-  private val ctx = Context("")
 
   def invoke(serviceName: String, args: (String, Expression)*)
             (implicit executionContext: ExecutionContext): Future[QueryResult] = {
@@ -54,7 +52,7 @@ class ServiceQuery(modelData: ModelData) {
       val collector = QueryServiceInvocationCollector(Some(TestRunId(UUID.randomUUID().toString)), serviceName)
 
       val variablesPreparer = GlobalVariablesPreparer(definitions.expressionConfig)
-      val validationContext = variablesPreparer.emptyValidationContext(metaData)
+      val validationContext = variablesPreparer.validationContextWithLocalVariables(metaData, ctx.variables.mapValues(Typed.fromInstance))
 
       val compiled = compiler.compileService(ServiceRef(serviceName, params), validationContext, None, Some(_ => collector))(NodeId(""), metaData)
       compiled.compiledObject.map { service =>
