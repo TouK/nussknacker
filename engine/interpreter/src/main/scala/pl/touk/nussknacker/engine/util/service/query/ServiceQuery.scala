@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{QueryServiceInvocationCollector, QueryServiceResult}
 import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
@@ -24,19 +24,24 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import scala.concurrent.{ExecutionContext, Future}
 
 // TODO: Processes using Flink's RuntimeContex, ex. metrics throws NPE, but in another thread, so service works.
-class ServiceQuery(modelData: ModelData, ctx: Context = Context("")) {
+class ServiceQuery(modelData: ModelData) {
 
   import ServiceQuery._
 
   private val evaluator = ExpressionEvaluator.unOptimizedEvaluator(modelData)
 
   def invoke(serviceName: String, args: (String, Expression)*)
+            (implicit executionContext: ExecutionContext): Future[QueryResult] =
+    invoke(serviceName, localVariables = Map.empty, args = args: _*)
+
+  def invoke(serviceName: String, localVariables: Map[String, (Any, TypingResult)], args: (String, Expression)*)
             (implicit executionContext: ExecutionContext): Future[QueryResult] = {
     val params = args.map(pair => evaluatedparam.Parameter(pair._1, pair._2)).toList
-    invoke(serviceName, params)
+    invoke(serviceName, localVariables, params)
   }
 
   def invoke(serviceName: String,
+             localVariables: Map[String, (Any, TypingResult)] = Map.empty,
              params: List[evaluatedparam.Parameter])
             (implicit executionContext: ExecutionContext): Future[QueryResult] = {
 
@@ -52,7 +57,8 @@ class ServiceQuery(modelData: ModelData, ctx: Context = Context("")) {
       val collector = QueryServiceInvocationCollector(Some(TestRunId(UUID.randomUUID().toString)), serviceName)
 
       val variablesPreparer = GlobalVariablesPreparer(definitions.expressionConfig)
-      val validationContext = variablesPreparer.validationContextWithLocalVariables(metaData, ctx.variables.mapValues(Typed.fromInstance))
+      val validationContext = variablesPreparer.validationContextWithLocalVariables(metaData, localVariables.mapValues(_._2))
+      val ctx = Context("", localVariables.mapValues(_._1), None)
 
       val compiled = compiler.compileService(ServiceRef(serviceName, params), validationContext, None, Some(_ => collector))(NodeId(""), metaData)
       compiled.compiledObject.map { service =>

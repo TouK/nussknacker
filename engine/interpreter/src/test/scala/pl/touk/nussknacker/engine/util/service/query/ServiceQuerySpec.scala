@@ -5,7 +5,7 @@ import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter, ParameterWithExtractor}
-import pl.touk.nussknacker.engine.api.{Context, ContextId, EagerService, LazyParameter, MethodToInvoke, ParamName, Service, ServiceInvoker}
+import pl.touk.nussknacker.engine.api.{ContextId, EagerService, LazyParameter, MethodToInvoke, ParamName, Service, ServiceInvoker}
 import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
@@ -41,7 +41,7 @@ class ServiceQuerySpec extends FlatSpec with Matchers with PatientScalaFutures {
   }
 
   it should "evaluate spel expressions using provided local context variables" in {
-    CreateQuery("srv", new ConcatService, Map("var" -> "foo")).invoke("srv", "s1" -> "#var", "s2" -> "'bar'")
+    CreateQuery("srv", new ConcatService).invoke("srv", localVariables = Map("var" -> ("foo", Typed[String])), "s1" -> "#var", "s2" -> "'bar'")
       .futureValue.result shouldBe "foobar"
   }
 
@@ -115,7 +115,7 @@ object QueryServiceTesting {
 
         override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
           super.services(processObjectDependencies) ++ Map(serviceName -> WithCategories(service))
-      }), Context("").withVariables(localVariables))
+      }))
     }
   }
 
