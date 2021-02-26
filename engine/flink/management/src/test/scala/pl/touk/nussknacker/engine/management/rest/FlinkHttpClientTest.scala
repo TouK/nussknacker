@@ -1,38 +1,43 @@
-package pl.touk.nussknacker.engine.management.periodic
+package pl.touk.nussknacker.engine.management.rest
+
+import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.management.FlinkConfig
+import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{JarFile, JarsResponse, UploadJarResponse}
+import pl.touk.nussknacker.test.PatientScalaFutures
+import sttp.client.Response
+import sttp.client.testing.SttpBackendStub
+import sttp.model.{Method, StatusCode}
 
 import java.io.File
 import java.util.UUID
+import java.util.concurrent.TimeUnit
+import scala.concurrent.ExecutionContext.Implicits._
+import scala.concurrent.duration.FiniteDuration
 
-import pl.touk.nussknacker.engine.management.periodic.PeriodicFlinkRestModel.{JarFile, JarsResponse}
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.management.flinkRestModel.UploadJarResponse
-import pl.touk.nussknacker.test.PatientScalaFutures
-import sttp.client.testing.SttpBackendStub
-import sttp.client.{Response, UriContext}
-import sttp.model.{Method, StatusCode}
-
-class FlinkClientTest extends FunSuite
+class FlinkHttpClientTest extends FunSuite
   with Matchers
   with ScalaFutures
   with PatientScalaFutures {
 
-  private val flinkUri = uri"http://localhost:12345/flink"
-  private val jarFile = new File("/tmp/example.jar")
-  private val jarId = s"${UUID.randomUUID()}-example.jar"
   private val jarFileName = "example.jar"
+  private val jarFile = new File(s"/tmp/${jarFileName}")
+  private val jarId = s"${UUID.randomUUID()}-example.jar"
+  private val flinkJarFile = JarFile(jarId, jarFileName)
+
+  val config: FlinkConfig = FlinkConfig(FiniteDuration(10, TimeUnit.SECONDS), None, "http://localhost:12345/flink", None)
 
   test("uploadJarFileIfNotExists - should upload jar") {
     implicit val backend = SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial {
-      // 404 is returned when checking for jar existence.
+      case req if req.uri.path == List("jars") => Response.ok(Right(JarsResponse(files = Some(Nil))))
       case req if req.uri.path == List("jars", "upload") =>
         Response.ok(Right(UploadJarResponse(filename = jarId)))
     }
-    val flinkClient = new HttpFlinkClient(flinkUri)
+    val flinkClient = new HttpFlinkClient(config)
 
     val result = flinkClient.uploadJarFileIfNotExists(jarFile).futureValue
 
-    result shouldBe jarId
+    result shouldBe flinkJarFile
   }
 
   test("uploadJarFileIfNotExists - should not upload if already exist") {
@@ -40,11 +45,11 @@ class FlinkClientTest extends FunSuite
       case req if req.uri.path == List("jars") =>
         Response.ok(Right(JarsResponse(files = Some(List(JarFile(id = jarId, name = jarFileName))))))
     }
-    val flinkClient = new HttpFlinkClient(flinkUri)
+    val flinkClient = new HttpFlinkClient(config)
 
     val result = flinkClient.uploadJarFileIfNotExists(jarFile).futureValue
 
-    result shouldBe jarId
+    result shouldBe flinkJarFile
   }
 
   test("uploadJarFileIfNotExists - should upload if not recognized jars uploaded") {
@@ -54,21 +59,21 @@ class FlinkClientTest extends FunSuite
       case req if req.uri.path == List("jars", "upload") =>
         Response.ok(Right(UploadJarResponse(filename = jarId)))
     }
-    val flinkClient = new HttpFlinkClient(flinkUri)
+    val flinkClient = new HttpFlinkClient(config)
 
     val result = flinkClient.uploadJarFileIfNotExists(jarFile).futureValue
 
-    result shouldBe jarId
+    result shouldBe flinkJarFile
   }
 
   test("deleteJarIfExists - should do so") {
     implicit val backend = SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial {
       case req if req.uri.path == List("jars") =>
-        Response.ok(Right(JarsResponse(files = Some(List(JarFile(id = jarId, name = jarFileName))))))
-      case req if req.uri.path == List("jars", jarFileName) && req.method == Method.DELETE =>
+        Response.ok(Right(JarsResponse(files = Some(List(flinkJarFile)))))
+      case req if req.uri.path == List("jars", jarId) && req.method == Method.DELETE =>
         Response.ok(Right(()))
     }
-    val flinkClient = new HttpFlinkClient(flinkUri)
+    val flinkClient = new HttpFlinkClient(config)
 
     val result = flinkClient.deleteJarIfExists(jarFileName).futureValue
 
@@ -76,8 +81,10 @@ class FlinkClientTest extends FunSuite
   }
 
   test("deleteJarIfExists - should do nothing if file not found") {
-    implicit val backend = SttpBackendStub.asynchronousFuture
-    val flinkClient = new HttpFlinkClient(flinkUri)
+    implicit val backend = SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial {
+      case req if req.uri.path == List("jars") => Response.ok(Right(JarsResponse(files = Some(Nil))))
+    }
+    val flinkClient = new HttpFlinkClient(config)
 
     val result = flinkClient.deleteJarIfExists(jarFileName).futureValue
 
@@ -88,10 +95,10 @@ class FlinkClientTest extends FunSuite
     implicit val backend = SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial {
       case req if req.uri.path == List("jars") =>
         Response.ok(Right(JarsResponse(files = Some(List(JarFile(id = jarId, name = jarFileName))))))
-      case req if req.uri.path == List("jars", jarFileName) && req.method == Method.DELETE =>
+      case req if req.uri.path == List("jars", jarId) && req.method == Method.DELETE =>
         Response(Right(()), StatusCode.InternalServerError)
     }
-    val flinkClient = new HttpFlinkClient(flinkUri)
+    val flinkClient = new HttpFlinkClient(config)
 
     val result = flinkClient.deleteJarIfExists(jarFileName).futureValue
 

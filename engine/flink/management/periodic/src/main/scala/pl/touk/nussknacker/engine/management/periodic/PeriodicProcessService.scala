@@ -81,9 +81,9 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
       // Order does matter. We need to find process data for *active* process and then
       // it can be safely marked as inactive. Otherwise we would not be able to find the data
       // and leave unused jars.
-      maybeProcessData <- scheduledProcessesRepository.findProcessData(processName)
+      processData <- scheduledProcessesRepository.findProcessData(processName)
       _ <- scheduledProcessesRepository.markInactive(processName)
-      _ <- maybeProcessData.fold(Future.successful(()))(processData => jarManager.deleteJar(processData.jarFileName))
+      _ <- Future.sequence(processData.map(_.jarFileName).map(jarManager.deleteJar))
     } yield ()
   }
 

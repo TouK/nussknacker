@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.management
 
 import java.net.NoRouteToHostException
 import java.util.concurrent.TimeoutException
-
 import com.typesafe.config.ConfigFactory
 import io.circe.Json
 import io.circe.Json.fromString
@@ -11,7 +10,7 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentId, ProcessState, SavepointResult, StateStatus, User}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.management.flinkRestModel.{ExecutionConfig, GetSavepointStatusResponse, JobConfig, JobOverview, JobsResponse, SavepointOperation, SavepointStatus, SavepointTriggerResponse, UploadJarResponse}
+import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{ExecutionConfig, GetSavepointStatusResponse, JarsResponse, JobConfig, JobOverview, JobsResponse, SavepointOperation, SavepointStatus, SavepointTriggerResponse, UploadJarResponse}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -22,6 +21,7 @@ import sttp.model.{Method, StatusCode}
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 
+//TODO move some tests to FlinkHttpClientTest
 class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutures {
 
   private val config = FlinkConfig(10 minute, None, "http://test.pl", None)
@@ -54,7 +54,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
         buildFinishedSavepointResponse(savepointPath)
       case (List("jobs", _, "stop"), Method.POST) if acceptStop=>
         SavepointTriggerResponse(`request-id` = savepointRequestId)
-
+      case (List("jars"), Method.GET) => JarsResponse(files = Some(Nil))
       case (List("jars", `uploadedJarPath`, "run"), Method.POST) if acceptDeploy  =>
         exceptionOnDeploy
           //see e.g. AsyncHttpClientBackend.adjustExceptions.adjustExceptions

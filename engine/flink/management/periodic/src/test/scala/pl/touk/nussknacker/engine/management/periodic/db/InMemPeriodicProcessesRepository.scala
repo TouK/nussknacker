@@ -102,9 +102,9 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
     } yield createDeploymentWithJarData(p)).head
   }
 
-  override def findProcessData(processName: ProcessName): Future[Option[DeploymentWithJarData]] = Future.successful {
+  override def findProcessData(processName: ProcessName): Future[Seq[DeploymentWithJarData]] = Future.successful {
     processEntities
-      .find(activeProcess(processName))
+      .filter(activeProcess(processName))
       .map(createDeploymentWithJarData)
   }
 

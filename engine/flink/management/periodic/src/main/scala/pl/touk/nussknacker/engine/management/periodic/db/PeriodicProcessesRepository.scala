@@ -29,7 +29,7 @@ trait PeriodicProcessesRepository {
 
   def findProcessData(id: PeriodicProcessDeploymentId): Future[DeploymentWithJarData]
 
-  def findProcessData(processName: ProcessName): Future[Option[DeploymentWithJarData]]
+  def findProcessData(processName: ProcessName): Future[Seq[DeploymentWithJarData]]
 
   def markDeployed(id: PeriodicProcessDeploymentId): Future[Unit]
 
@@ -93,8 +93,8 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
     db.run(processWithDeployment.result.head).map { case (process, _) => createDeploymentWithJarData(process) }
   }
 
-  override def findProcessData(processName: ProcessName): Future[Option[DeploymentWithJarData]] = {
-    db.run(PeriodicProcesses.filter(p => p.active === true && p.processName === processName.value).result.headOption)
+  override def findProcessData(processName: ProcessName): Future[Seq[DeploymentWithJarData]] = {
+    db.run(PeriodicProcesses.filter(p => p.active === true && p.processName === processName.value).result)
       .map(maybeProcessEntity => maybeProcessEntity.map(createDeploymentWithJarData))
   }
 
