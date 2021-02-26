@@ -89,7 +89,6 @@ private[periodic] class FlinkJarManager(flinkClient: FlinkClient,
     deploymentWithJarData.processJson ::
       processVersionJson ::
       deploymentWithJarData.modelConfig ::
-      deploymentWithJarData.buildInfoJson ::
       Nil
   }
 

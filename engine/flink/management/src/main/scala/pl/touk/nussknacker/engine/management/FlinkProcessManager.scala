@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.management
 
-import java.io.File
-
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
 import pl.touk.nussknacker.engine.ModelData

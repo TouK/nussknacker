@@ -24,7 +24,7 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
     }
   }
 
-  def checkThatJarWithNameExists(jarName: String): Future[Option[JarFile]] = {
+  private def checkThatJarWithNameExists(jarName: String): Future[Option[JarFile]] = {
     basicRequest
       .get(flinkUrl.path("jars"))
       .response(asJson[JarsResponse])
