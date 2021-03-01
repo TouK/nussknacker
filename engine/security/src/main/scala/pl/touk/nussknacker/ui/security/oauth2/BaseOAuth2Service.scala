@@ -32,7 +32,7 @@ class BaseOAuth2Service[
   @JsonKey("expires_in") expirationPeriod: Option[FiniteDuration] = None
 ) extends OAuth2AuthorizationData
 
-object DefaultOAuth2AuthorizationData extends CirceDurationConversions {
+object DefaultOAuth2AuthorizationData extends EpochSecondsCodecs {
   implicit val config: Configuration = Configuration.default
 }
 

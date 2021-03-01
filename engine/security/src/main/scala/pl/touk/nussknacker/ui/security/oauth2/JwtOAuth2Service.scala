@@ -59,6 +59,6 @@ class JwtOAuth2Service[
   @JsonKey("jti") jwtId: Option[String]
 ) extends JwtStandardClaims
 
-object DefaultJwtAccessToken extends CirceDurationConversions {
+object DefaultJwtAccessToken extends EpochSecondsCodecs {
   implicit val config: Configuration = Configuration.default
 }
