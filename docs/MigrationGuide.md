@@ -157,6 +157,10 @@ To see biggest differences please consult the [changelog](Changelog.md).
   * [#1921](https://github.com/TouK/nussknacker/pull/1921) `ProcessManager` to `DeploymentManager`                           
   * [#1927](https://github.com/TouK/nussknacker/pull/1927) Rename `outer-join` to `single-side-join`
 
+* [#1439](https://github.com/TouK/nussknacker/pull/1439) Upgrade do Flink 1.12.
+  * `TimeCharacteristic` is deprecated, and should be handled automatically by Flink, see `TimeCharacteristicCompatibility` for details. 
+  * `UserClassLoader` was removed, use appropriate Flink objects or context ClassLoader.          
+          
 ## In version 0.3.0
 
 * [#1313](https://github.com/TouK/nussknacker/pull/1313) Kafka Avro API passes `KafkaConfig` during `TypeInformation` determining
