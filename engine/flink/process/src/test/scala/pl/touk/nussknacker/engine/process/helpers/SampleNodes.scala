@@ -39,6 +39,7 @@ import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EspDeseri
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.kafka.{BasicFormatter, KafkaConfig, KafkaUtils}
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.ComplexParameterNode
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.test.WithDataList
@@ -761,5 +762,27 @@ object SampleNodes {
               Some(outOfOrdernessTimestampExtractor[KeyValue](_.date)),
               BasicFormatter,
               processObjectDependencies)
+
+  object ComplexParameterNode extends CustomStreamTransformer with SingleInputGenericNodeTransformation[FlinkCustomStreamTransformation] {
+    
+    override type State = Nothing
+
+    override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
+                                      (implicit nodeId: NodeId): ComplexParameterNode.NodeTransformationDefinition = {
+      case TransformationStep(Nil, _) => NextParameters(initialParameters)
+      case _ => FinalResults(context)
+    }
+
+    override def initialParameters: List[Parameter] = List(Parameter("complex", Unknown)
+      .copy(childArrayParameters = Some(List(Parameter[String]("name"), Parameter[Int]("value").copy(isLazyParameter = true)))
+    ))
+
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[Nothing]): FlinkCustomStreamTransformation = {
+      FlinkCustomStreamTransformation(ds => ds.map(ct => ValueWithContext[AnyRef](null, ct)))
+    }
+
+    override def nodeDependencies: List[NodeDependency] = Nil
+
+  }
 
 }

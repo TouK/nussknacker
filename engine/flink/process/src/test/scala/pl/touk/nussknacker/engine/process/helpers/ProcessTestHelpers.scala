@@ -111,7 +111,8 @@ object ProcessTestHelpers {
       "transformWithNullable" -> WithCategories(TransformerWithNullableParam),
       "optionalEndingCustom" -> WithCategories(OptionalEndingCustom),
       "genericParametersNode" -> WithCategories(GenericParametersNode),
-      "nodePassingStateToImplementation" -> WithCategories(NodePassingStateToImplementation)
+      "nodePassingStateToImplementation" -> WithCategories(NodePassingStateToImplementation),
+      "complexParameters" -> WithCategories(ComplexParameterNode)
     )
 
     override def listeners(processObjectDependencies: ProcessObjectDependencies) = List()

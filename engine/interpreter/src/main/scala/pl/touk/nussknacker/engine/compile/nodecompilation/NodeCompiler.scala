@@ -169,7 +169,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
                    (implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.variable.Field]] = {
     val compilationResult: ValidatedNel[ProcessCompilationError, List[ExpressionCompilation[compiledgraph.variable.Field]]] = fields.map { field =>
       objectParametersExpressionCompiler
-        .compile(field.expression, Some(field.name), ctx, Unknown)
+        .compile(field.expression, ctx, Parameter(field.name, Unknown))
         .map(typedExpression => ExpressionCompilation(field.name, Some(typedExpression), Valid(compiledgraph.variable.Field(field.name, typedExpression.expression))))
     }.sequence
 
@@ -199,7 +199,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
                         outputVar: Option[OutputVar])
                        (implicit nodeId: NodeId): NodeCompilationResult[api.expression.Expression] = {
     val expressionCompilation = objectParametersExpressionCompiler
-      .compile(expr, Some(fieldName), ctx, expectedType)
+      .compile(expr, ctx, Parameter(fieldName, expectedType))
       .map(typedExpr => ExpressionCompilation(fieldName, Some(typedExpr), Valid(typedExpr.expression)))
       .valueOr ( err => ExpressionCompilation(fieldName, None, Invalid(err)))
 

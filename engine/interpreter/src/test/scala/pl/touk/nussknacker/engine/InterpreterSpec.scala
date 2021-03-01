@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine
 
 import java.util.{Collections, Optional}
-
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.effect.IO
 import com.typesafe.config.ConfigFactory
+
 import javax.annotation.Nullable
 import javax.validation.constraints.NotBlank
 import org.scalatest.{FunSuite, Matchers}
@@ -763,10 +763,10 @@ object InterpreterSpec {
 
     override def languageId: String = "literal"
 
-    override def parse(original: String, ctx: ValidationContext, expectedType: typing.TypingResult): Validated[NonEmptyList[ExpressionParseError], TypedExpression] =
-      parseWithoutContextValidation(original, expectedType).map(TypedExpression(_, Typed[String], LiteralExpressionTypingInfo(typing.Unknown)))
+    override def parse(original: String, ctx: ValidationContext, parameter: pl.touk.nussknacker.engine.api.definition.Parameter): Validated[NonEmptyList[ExpressionParseError], TypedExpression] =
+      parseWithoutContextValidation(original, parameter).map(TypedExpression(_, Typed[String], LiteralExpressionTypingInfo(typing.Unknown)))
 
-    override def parseWithoutContextValidation(original: String, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError],
+    override def parseWithoutContextValidation(original: String, parameter: pl.touk.nussknacker.engine.api.definition.Parameter): Validated[NonEmptyList[ExpressionParseError],
       pl.touk.nussknacker.engine.api.expression.Expression]
     = Valid(LiteralExpression(original))
 

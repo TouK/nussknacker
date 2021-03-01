@@ -95,7 +95,7 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
       if (parameter.branchParam) {
         val params = branchParametersFromNode
           .map(bp => bp.parameters.find(_.name == parameter.name) match {
-            case Some(param) => Valid(bp.branchId -> param.expression)
+            case Some(param) => Valid(bp.branchId -> param)
             case None => Invalid[ProcessCompilationError](MissingParameters(Set(parameter.name))).toValidatedNel
           }).sequence
         params.andThen { branchParam =>

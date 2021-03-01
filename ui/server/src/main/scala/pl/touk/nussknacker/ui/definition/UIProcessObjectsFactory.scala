@@ -123,7 +123,8 @@ object UIProcessObjectsFactory {
       branchParam = false,
       isLazyParameter = false,
       scalaOptionParameter = false,
-      javaOptionalParameter = false)
+      javaOptionalParameter = false,
+      childArrayParameters = None)
   }
 
   def createUIObjectDefinition(objectDefinition: ObjectDefinition): UIObjectDefinition = {

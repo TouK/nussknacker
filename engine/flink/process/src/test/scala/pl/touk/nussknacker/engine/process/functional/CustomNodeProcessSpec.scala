@@ -1,9 +1,13 @@
 package pl.touk.nussknacker.engine.process.functional
 
-import java.util.Date
+import io.circe.syntax.EncoderOps
 
+import java.util.Date
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.complexexpression.ComplexExpression
+import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.spel
@@ -302,6 +306,22 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
     //without certain hack (see SpelHack & SpelMapHack) this throws exception.
     processInvoker.invokeWithSampleData(process, data)
     MockService.data shouldBe List("1")
+  }
+
+  test("be able to use complex parameters") {
+    val process = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "input")
+      .customNodeNoOutput("complexParameters", "complexParameters",
+        "complex" -> Expression("complex", ComplexExpression(List(
+          List(Parameter("name", "'bbb'"), Parameter("value", "33")),
+          List(Parameter("name", "'aaa'"), Parameter("value", "#input == null ? 4 : 3"))
+        )).asJson.noSpaces))
+      .processorEnd("proc2", "logService", "all" -> "#input")
+
+    val data = List(SimpleRecord("1", 3, "a", new Date(0)))
+    processInvoker.invokeWithSampleData(process, data)
+
   }
 
 

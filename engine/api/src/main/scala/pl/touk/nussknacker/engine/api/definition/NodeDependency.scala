@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.definition
 
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, OutputVariableNameValue, TypedNodeDependencyValue}
 import pl.touk.nussknacker.engine.api.typed.MissingOutputVariableException
@@ -50,7 +51,7 @@ object Parameter {
 
   def apply(name: String, typ: TypingResult, validators: List[ParameterValidator]): Parameter =
     Parameter(name, typ, editor = None, validators = validators, additionalVariables = Map.empty, variablesToHide = Set.empty,
-      branchParam = false, isLazyParameter = false, scalaOptionParameter = false, javaOptionalParameter = false)
+      branchParam = false, isLazyParameter = false, scalaOptionParameter = false, javaOptionalParameter = false, childArrayParameters = None)
 
   @deprecated("Passing runtimeClass to Parameter.apply is deprecated in favor of passing isLazyParameter", "0.1.0")
   def apply(name: String,
@@ -65,7 +66,7 @@ object Parameter {
             branchParam: Boolean): Parameter = {
     val isLazyParameter = classOf[LazyParameter[_]].isAssignableFrom(runtimeClass)
     Parameter(name, typ, editor, validators, additionalVariables, variablesToHide, branchParam, isLazyParameter,
-      scalaOptionParameter = false, javaOptionalParameter = false)
+      scalaOptionParameter = false, javaOptionalParameter = false, childArrayParameters = None)
   }
 
   def optional[T: TypeTag: NotNothing](name: String): Parameter =
@@ -75,7 +76,7 @@ object Parameter {
   // you should redefine scalaOptionParameter and javaOptionalParameter
   def optional(name: String, typ: TypingResult): Parameter =
     Parameter(name, typ, editor = None, validators = List.empty, additionalVariables = Map.empty, variablesToHide = Set.empty,
-      branchParam = false, isLazyParameter = false, scalaOptionParameter = false, javaOptionalParameter = false)
+      branchParam = false, isLazyParameter = false, scalaOptionParameter = false, javaOptionalParameter = false, childArrayParameters = None)
 
 }
 
@@ -95,4 +96,6 @@ case class Parameter(name: String,
                      branchParam: Boolean,
                      isLazyParameter: Boolean,
                      scalaOptionParameter: Boolean,
-                     javaOptionalParameter: Boolean) extends NodeDependency
+                     javaOptionalParameter: Boolean,
+                     childArrayParameters: Option[List[Parameter]]
+                    ) extends NodeDependency

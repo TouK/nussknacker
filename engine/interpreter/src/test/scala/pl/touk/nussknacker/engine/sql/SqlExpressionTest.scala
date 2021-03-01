@@ -3,12 +3,13 @@ package pl.touk.nussknacker.engine.sql
 import java.sql.Timestamp
 import java.time.{LocalDateTime, ZoneId}
 import java.util
-
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.compile.NodeTypingInfo.DefaultExpressionId
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import scala.collection.JavaConverters._
@@ -80,7 +81,7 @@ class SqlExpressionTest extends FunSuite with Matchers with PatientScalaFutures 
 
   private def parseOrFail(expression: String, validationContext: ValidationContext = validationContext): SqlExpression =
     SqlExpressionParser
-          .parse(expression, validationContext, Typed.fromDetailedType[java.util.List[_]])
+          .parse(expression, validationContext, Parameter(DefaultExpressionId, Typed.fromDetailedType[java.util.List[_]]))
           .leftMap(err => fail(s"Failed to parse: $err")).merge.expression.asInstanceOf[SqlExpression]
 
   case class TestBean(field1: String, isField2: Boolean, getField3: Long)

@@ -32,7 +32,7 @@ object ParameterExtractor {
     val validators = ValidatorsExtractor.extract(ValidatorExtractorParameters(parameterData,
       isScalaOptionParameter || isJavaOptionalParameter, parameterConfig))
     Parameter(name, paramType, extractedEditor, validators, additionalVariables(p), Set.empty, branchParamName.isDefined,
-      isLazyParameter = isLazyParameter, scalaOptionParameter = isScalaOptionParameter, javaOptionalParameter = isJavaOptionalParameter)
+      isLazyParameter = isLazyParameter, scalaOptionParameter = isScalaOptionParameter, javaOptionalParameter = isJavaOptionalParameter, childArrayParameters = None)
   }
 
 
