@@ -23,7 +23,10 @@ To see biggest differences please consult the [changelog](Changelog.md).
 * [#1373](https://github.com/TouK/nussknacker/pull/1373) Creating `ClassLoaderModelData` directly is not allowed, use
   `ModelData.apply` with plain config, wrapping with ModelConfigToLoad by yourself is not needed.
 * [#1406](https://github.com/TouK/nussknacker/pull/1406) `ServiceReturningType` is deprecated in favour of `EagerService` 
-
+* [#1439](https://github.com/TouK/nussknacker/pull/1439) Upgrade do Flink 1.12.
+  * `TimeCharacteristic` is deprecated, and should be handled automatically by Flink, see `TimeCharacteristicCompatibility` for details. 
+  * `UserClassLoader` was removed, use appropriate Flink objects or context ClassLoader.          
+          
 ## In version 0.3.0
 
 * [#1313](https://github.com/TouK/nussknacker/pull/1313) Kafka Avro API passes `KafkaConfig` during `TypeInformation` determining

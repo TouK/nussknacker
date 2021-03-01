@@ -7,8 +7,11 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermar
 
 import scala.annotation.nowarn
 
-//Setting time characteristic is not needed and deprecated in Flink >= 1.12. We use this class not to pollute codebase
-//with deprecation warnings, while remaining compatible with older Flink versions
+/*
+Setting time characteristic is not needed and deprecated in Flink >= 1.12. We use this class not to pollute codebase
+  with deprecation warnings, while remaining compatible with older Flink versions. If Flink removes it completely (which probably
+  won't happen soon), we'll introduce other mechanism to handle it. In its current form it's not well defined for joins anyway
+ */
 // Remove @silent after upgrade to silencer 1.7
 @silent("deprecated")
 @nowarn("deprecated")
