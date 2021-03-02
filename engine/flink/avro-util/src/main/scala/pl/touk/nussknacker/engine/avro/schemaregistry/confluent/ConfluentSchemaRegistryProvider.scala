@@ -18,8 +18,8 @@ class ConfluentSchemaRegistryProvider(schemaRegistryClientFactory: ConfluentSche
                                       kafkaConfig: KafkaConfig,
                                       formatKey: Boolean) extends SchemaRegistryProvider {
 
-  override def recordFormatter(topic: String): Option[RecordFormatter] =
-    Some(ConfluentAvroToJsonFormatter(schemaRegistryClientFactory, kafkaConfig, topic, formatKey))
+  override def recordFormatter: RecordFormatter =
+    ConfluentAvroToJsonFormatter(schemaRegistryClientFactory, kafkaConfig, formatKey)
 
   override def createSchemaRegistryClient: ConfluentSchemaRegistryClient =
     schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)

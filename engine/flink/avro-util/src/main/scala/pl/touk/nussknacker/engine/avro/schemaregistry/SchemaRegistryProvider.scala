@@ -13,7 +13,7 @@ trait SchemaRegistryProvider extends Serializable {
 
   def serializationSchemaFactory: KafkaAvroSerializationSchemaFactory
 
-  def recordFormatter(topic: String): Option[RecordFormatter]
+  def recordFormatter: RecordFormatter
 
   def validateSchema(schema: Schema): ValidatedNel[SchemaRegistryError, Schema]
 }
