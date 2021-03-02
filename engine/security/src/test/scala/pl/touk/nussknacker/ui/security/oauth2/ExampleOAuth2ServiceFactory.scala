@@ -112,7 +112,7 @@ object ExampleOAuth2ServiceFactory {
     val refreshToken: Option[String] = None
   }
 
-  object TestAccessTokenResponse extends CirceDurationConversions {
+  object TestAccessTokenResponse extends EpochSecondsCodecs {
     implicit val config: Configuration = Configuration.default
   }
 

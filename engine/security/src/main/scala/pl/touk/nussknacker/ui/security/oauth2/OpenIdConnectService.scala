@@ -45,7 +45,7 @@ class OpenIdConnectService[
   @JsonKey("id_token") idToken: Option[String] = None
 ) extends OpenIdConnectAuthorizationData
 
-object DefaultOpenIdConnectAuthorizationData extends CirceDurationConversions {
+object DefaultOpenIdConnectAuthorizationData extends EpochSecondsCodecs {
   implicit val config: Configuration = Configuration.default
 }
 

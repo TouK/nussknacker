@@ -47,7 +47,7 @@ import scala.concurrent.duration.Deadline
   val notBefore: Option[Deadline] = None
 }
 
-object OpenIdConnectUserInfo extends CirceDurationConversions with JavaTimeDecoders with JavaTimeEncoders {
+object OpenIdConnectUserInfo extends EpochSecondsCodecs with JavaTimeDecoders with JavaTimeEncoders {
   implicit val config: Configuration = Configuration.default
 }
 
