@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.util.service.query
 import java.util.UUID
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{QueryServiceInvocationCollector, QueryServiceResult}
@@ -60,7 +60,7 @@ class ServiceQuery(modelData: ModelData) {
       val validationContext = variablesPreparer.validationContextWithLocalVariables(metaData, localVariables.mapValues(_._2))
       val ctx = Context("", localVariables.mapValues(_._1), None)
 
-      val compiled = compiler.compileService(ServiceRef(serviceName, params), validationContext, None, Some(_ => collector))(NodeId(""), metaData)
+      val compiled = compiler.compileService(ServiceRef(serviceName, params), validationContext, Some(OutputVar.enricher("output")), Some(_ => collector))(NodeId(""), metaData)
       compiled.compiledObject.map { service =>
           service.invoke(ctx, evaluator)._2.map(QueryResult(_, collector.getResults))
       }.valueOr(e => Future.failed(ServiceInvocationException(e)))

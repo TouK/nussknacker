@@ -4,8 +4,8 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
-import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter, ParameterWithExtractor}
-import pl.touk.nussknacker.engine.api.{ContextId, EagerService, LazyParameter, MethodToInvoke, ParamName, Service, ServiceInvoker}
+import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, ParameterWithExtractor, TypedNodeDependency}
+import pl.touk.nussknacker.engine.api.{ContextId, EagerService, LazyParameter, MetaData, MethodToInvoke, ParamName, Service, ServiceInvoker}
 import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
@@ -137,7 +137,7 @@ object QueryServiceTesting {
                                        dependencies: List[NodeDependencyValue])
                                       (implicit nodeId: ProcessCompilationError.NodeId): CollectingDynamicEagerService.NodeTransformationDefinition = {
       case TransformationStep(Nil, _) => NextParameters(initialParameters)
-      case TransformationStep(_, _) => FinalResults(context)
+      case TransformationStep(_, _) => FinalResults(context.withVariable(OutputVariableNameDependency.extract(dependencies), Typed[String], None).getOrElse(context))
     }
 
     override def initialParameters: List[Parameter] = List(static.parameter, dynamic.parameter)
@@ -146,7 +146,6 @@ object QueryServiceTesting {
                                 dependencies: List[NodeDependencyValue],
                                 finalState: Option[State]): ServiceInvoker = new CollectingEagerInvoker(static.extractValue(params))
 
-    override def nodeDependencies: List[NodeDependency] = Nil
+    override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)
   }
-
 }
