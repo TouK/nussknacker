@@ -74,6 +74,10 @@ trait GraphBuilder[R] {
     build(node => creator(OneOutputSubsequentNode(CustomNode(id, None, customNodeRef, params.map(Parameter.tupled).toList), node)))
 
 
+  def customNodeNoOutputComplex(id: String, customNodeRef: String, params: List[Parameter]): GraphBuilder[R]  =
+    build(node => creator(OneOutputSubsequentNode(CustomNode(id, None, customNodeRef, params), node)))
+
+
   def split(id: String, nexts: SubsequentNode*): R = creator(SplitNode(Split(id), nexts.toList))
 
   def to(node: SubsequentNode): R =

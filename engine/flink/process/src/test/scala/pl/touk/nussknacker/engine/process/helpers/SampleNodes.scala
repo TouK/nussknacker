@@ -27,7 +27,7 @@ import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, NewLineSplittedTestDataParser, TestDataParser, TestParsingUtils}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType, TypedMap, typing}
+import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException, ReturningType, ServiceReturningType, TypedMap, typing}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
@@ -773,11 +773,21 @@ object SampleNodes {
       case _ => FinalResults(context)
     }
 
-    override def initialParameters: List[Parameter] = List(Parameter("complex", Unknown)
-      .copy(childArrayParameters = Some(List(Parameter[String]("name"), Parameter[Int]("value").copy(isLazyParameter = true)))
+    override def initialParameters: List[Parameter] = List(Parameter("complex", Unknown).copy(
+      childArrayParameters = Some(List(Parameter[String]("name"), Parameter[Int]("value").copy(isLazyParameter = true))),
+      validators = Nil
     ))
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[Nothing]): FlinkCustomStreamTransformation = {
+      val valueMap = params("complex").asInstanceOf[java.util.List[java.util.Map[String, Any]]]
+      if (valueMap == null || valueMap.isEmpty) {
+        throw CustomNodeValidationException("Empty list :)", None)
+      }
+      valueMap.asScala.map(_.asScala).foreach { map =>
+        val name = map("name").asInstanceOf[String]
+        val value = map("value").asInstanceOf[LazyParameter[_<:AnyRef]]
+        println(s"Name: ${name}, value: ${value}")
+      }
       FlinkCustomStreamTransformation(ds => ds.map(ct => ValueWithContext[AnyRef](null, ct)))
     }
 

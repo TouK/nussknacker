@@ -1,12 +1,10 @@
 package pl.touk.nussknacker.engine.process.functional
 
-import io.circe.syntax.EncoderOps
 
 import java.util.Date
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
-import pl.touk.nussknacker.engine.complexexpression.ComplexExpression
-import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{ComplexExpression, Parameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
@@ -312,11 +310,11 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
     val process = EspProcessBuilder.id("proc1")
       .exceptionHandler()
       .source("id", "input")
-      .customNodeNoOutput("complexParameters", "complexParameters",
-        "complex" -> Expression("complex", ComplexExpression(List(
+      .customNodeNoOutputComplex("complexParameters", "complexParameters",
+        List(Parameter("complex", "", Some(ComplexExpression(List(
           List(Parameter("name", "'bbb'"), Parameter("value", "33")),
           List(Parameter("name", "'aaa'"), Parameter("value", "#input == null ? 4 : 3"))
-        )).asJson.noSpaces))
+        ))))))
       .processorEnd("proc2", "logService", "all" -> "#input")
 
     val data = List(SimpleRecord("1", 3, "a", new Date(0)))

@@ -9,11 +9,13 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParser, TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
-import pl.touk.nussknacker.engine.complexexpression.ComplexExpressionParser
+import pl.touk.nussknacker.engine.complexexpression.{ComplexExpressionTypingInfo, ParsedComplexExpression}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectMetadata
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.graph.evaluatedparam
+import pl.touk.nussknacker.engine.graph.evaluatedparam.ComplexExpression
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.sql.SqlExpressionParser
 import pl.touk.nussknacker.engine.util.Implicits._
@@ -42,8 +44,7 @@ object ExpressionCompiler {
       SpelExpressionParser.default(loader, dictRegistry, optimizeCompilation, expressionConfig.strictTypeChecking, expressionConfig.globalImports, SpelExpressionParser.Template, expressionConfig.strictMethodsChecking)(settings),
       SqlExpressionParser)
     val parsersSeq = defaultParsers ++ expressionConfig.languages.expressionParsers
-    val complex = new ComplexExpressionParser(parsersSeq)
-    val parsers = (parsersSeq :+ complex).map(p => p.languageId -> p).toMap
+    val parsers = parsersSeq.map(p => p.languageId -> p).toMap
     new ExpressionCompiler(parsers)
   }
 
@@ -101,10 +102,33 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
                    ctx: ValidationContext,
                    definition: Parameter, eager: Boolean)
                   (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, compiledgraph.evaluatedparam.TypedParameter] = {
-    val ctxToUse = if (definition.isLazyParameter || definition.childArrayParameters.isDefined || eager) ctx else ctx.clearVariables
-    enrichContext(ctxToUse, definition).andThen { finalCtx =>
-      compile(param.expression, finalCtx, definition)
-        .map(compiledgraph.evaluatedparam.TypedParameter(param.name, _))
+    param.complexExpression match {
+      case None =>
+        val ctxToUse = if (definition.isLazyParameter || eager) ctx else ctx.clearVariables
+        enrichContext(ctxToUse, definition).andThen { finalCtx =>
+          compile(param.expression, finalCtx, definition)
+            .map(compiledgraph.evaluatedparam.TypedParameter(param.name, _))
+        }
+      case Some(complexExpression) =>
+        val definitions = definition.childArrayParameters.get
+        compileComplexExpression(complexExpression, ctx, definitions).map(TypedParameter(param.name, _))
+    }
+  }
+
+  private def compileComplexExpression(complexExpression: ComplexExpression, vCtx: ValidationContext, definitions: List[Parameter])
+                                      (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, TypedExpression] = {
+    val parts: ValidatedNel[PartSubGraphCompilationError, List[List[(TypedExpression, Parameter)]]] = complexExpression.parts.map { part =>
+      part.map { param =>
+        val paramDef = definitions.find(_.name == param.name).get
+        //eager??
+        compileParam(param, vCtx, paramDef, eager = false).map(tv => (tv.typedValue.asInstanceOf[TypedExpression], paramDef))
+      }.sequence
+    }.sequence
+    parts.map { parts =>
+      val partsType = parts.map(k => TypedObjectTypingResult(k.map(el => el._2.name -> el._1.returnType).toMap))
+      val returnType = TypedClass(classOf[java.util.List[_]], List(Typed(partsType.toArray:_*)))
+      //TODO: original??
+      TypedExpression(new ParsedComplexExpression(parts), returnType, ComplexExpressionTypingInfo)
     }
   }
 
