@@ -60,6 +60,14 @@ else
   exit 1
 fi
 
+CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://admin:admin@localhost:8081/api/processCounts/DetectLargeTransactions?dateFrom=2021-03-02+00:00:00&dateTo=2021-03-03+00:00:00")
+if [[ $CODE == 200 ]]; then
+  echo "Counts queried"
+else
+  echo "Counts query failed with $CODE"
+  exit 1
+fi
+
 waitForOK "api/processes/status" "Checking connect with Flink.." "Frontend not connected with flink" "app"
 
 waitForOK "flink/" "Checking Flink response.." "Flink not started" "jobmanager"

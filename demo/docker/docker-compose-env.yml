@@ -3,7 +3,8 @@ version: '3.7'
 services:
   influxdb:
     container_name: nussknacker_influxdb
-    image: influxdb:${INFLUXDB_VERSION-1.7.10-alpine}
+    hostname: influxdb
+    image: influxdb:${INFLUXDB_VERSION-1.8.4-alpine}
     environment:
       INFLUXDB_DB: esp
     volumes:
