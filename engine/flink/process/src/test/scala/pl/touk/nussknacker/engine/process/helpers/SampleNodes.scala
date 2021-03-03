@@ -4,10 +4,10 @@ import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Date, Optional, UUID}
-
 import cats.data.Validated.Valid
 import com.github.ghik.silencer.silent
 import io.circe.generic.JsonCodec
+
 import javax.annotation.Nullable
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
@@ -37,7 +37,7 @@ import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.signal.KafkaSignalStreamConnector
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EspDeserializationSchema}
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
+import pl.touk.nussknacker.engine.kafka.{BasicFormatter, KafkaConfig, KafkaUtils}
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
@@ -759,7 +759,7 @@ object SampleNodes {
   class KeyValueKafkaSourceFactory(processObjectDependencies: ProcessObjectDependencies) extends KafkaSourceFactory[KeyValue](
               new EspDeserializationSchema[KeyValue](e => CirceUtil.decodeJsonUnsafe[KeyValue](e)),
               Some(outOfOrdernessTimestampExtractor[KeyValue](_.date)),
-              TestParsingUtils.newLineSplit,
+              BasicFormatter,
               processObjectDependencies)
 
 }

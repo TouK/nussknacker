@@ -2,10 +2,10 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter
 
 import java.io._
 import java.nio.charset.StandardCharsets
-
 import org.apache.avro.Schema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
+import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.ConfluentAvroToJsonFormatter._
@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter}
 private[confluent] class ConfluentAvroToJsonFormatter(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
                                                       kafkaConfig: KafkaConfig,
                                                       createFormatter: ConfluentSchemaRegistryClient => ConfluentAvroMessageFormatter,
-                                                      createReader: ConfluentSchemaRegistryClient => ConfluentAvroMessageReader,
+                                                      createReader: ConfluentSchemaRegistryClient => String => ConfluentAvroMessageReader,
                                                       formatKey: Boolean) extends RecordFormatter {
 
   // it should be created lazy because RecordFormatter is created eager during every process validation
@@ -45,7 +45,7 @@ private[confluent] class ConfluentAvroToJsonFormatter(schemaRegistryClientFactor
     printStream.print(Separator)
   }
 
-  override def parseRecord(formatted: Array[Byte]): ProducerRecord[Array[Byte], Array[Byte]] = {
+  override def parseRecord(topic: String, formatted: Array[Byte]): ProducerRecord[Array[Byte], Array[Byte]] = {
     val str = new String(formatted, StandardCharsets.UTF_8)
     val (keySchema, valueSchema, remainingString) = if (formatKey) {
       val (ks, valueSchemaIdAndRest) = readSchemaId(str)
@@ -55,7 +55,7 @@ private[confluent] class ConfluentAvroToJsonFormatter(schemaRegistryClientFactor
       val (vs, rs) = readSchemaId(str)
       (null, vs, rs)
     }
-    reader.readMessage(remainingString, keySchema, valueSchema)
+    reader(topic).readMessage(remainingString, keySchema, valueSchema)
   }
 
   private def readSchemaId(str: String): (Schema, String) = {
@@ -68,18 +68,20 @@ private[confluent] class ConfluentAvroToJsonFormatter(schemaRegistryClientFactor
     val schema = ConfluentUtils.extractSchema(parsedSchema)
     (schema, remaining)
   }
+
+  override def testDataSplit: TestDataSplit = TestParsingUtils.newLineSplit
 }
 
 object ConfluentAvroToJsonFormatter {
 
   private val Separator = "|"
 
-  def apply(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, kafkaConfig: KafkaConfig, topic: String, formatKey: Boolean): ConfluentAvroToJsonFormatter = {
+  def apply(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, kafkaConfig: KafkaConfig, formatKey: Boolean): ConfluentAvroToJsonFormatter = {
     new ConfluentAvroToJsonFormatter(
       schemaRegistryClientFactory,
       kafkaConfig,
       schemaRegistryClient => new ConfluentAvroMessageFormatter(schemaRegistryClient.client),
-      schemaRegistryClient => new ConfluentAvroMessageReader(schemaRegistryClient.client, topic, formatKey, Separator),
+      schemaRegistryClient => topic => new ConfluentAvroMessageReader(schemaRegistryClient.client, topic, formatKey, Separator),
       formatKey
     )
   }

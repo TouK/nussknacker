@@ -23,6 +23,7 @@ To see biggest differences please consult the [changelog](Changelog.md).
 * [#1373](https://github.com/TouK/nussknacker/pull/1373) Creating `ClassLoaderModelData` directly is not allowed, use
   `ModelData.apply` with plain config, wrapping with ModelConfigToLoad by yourself is not needed.
 * [#1406](https://github.com/TouK/nussknacker/pull/1406) `ServiceReturningType` is deprecated in favour of `EagerService` 
+* [#1445](https://gihub.com/TouK/nussknacker/pull/1445) `RecordFormatter` now handles `TestDataSplit` for Kafka sources. It is required in `KafkaSource` creation, instead of `TestDataSplit` 
 
 ## In version 0.3.0
 
