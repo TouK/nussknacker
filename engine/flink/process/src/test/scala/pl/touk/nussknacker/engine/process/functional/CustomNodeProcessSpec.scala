@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.engine.process.functional
 
-
 import java.util.Date
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{ComplexExpression, Parameter}
-import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.spel
@@ -310,16 +309,21 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
     val process = EspProcessBuilder.id("proc1")
       .exceptionHandler()
       .source("id", "input")
-      .customNodeNoOutputComplex("complexParameters", "complexParameters",
-        List(Parameter("complex", "", Some(ComplexExpression(List(
-          List(Parameter("name", "'bbb'"), Parameter("value", "33")),
-          List(Parameter("name", "'aaa'"), Parameter("value", "#input == null ? 4 : 3"))
+      .customNodeWithParams("complexParameters", Some("output"),"dynamicMapComplexParameterNode",
+        List(Parameter("value", "", Some(ComplexExpression(List(
+          //this is list of unknown size, handled by ComplexExpression mechanism
+          List(Parameter("name", "'firstIsString'"), Parameter("value", "'stringValue'")),
+          List(Parameter("name", "'secondIsNumber'"), Parameter("value", "#input == null ? 4 : 3"))
         ))))))
-      .processorEnd("proc2", "logService", "all" -> "#input")
+      .processorEnd("proc2", "logService", "all" -> "#output")
+
+    val outputType = prepareModelData(Nil).validator.validate(process).typing("proc2").inputValidationContext("output")
+    //output type is decoded from value in DynamicMapComplexParameterNode
+    outputType shouldBe TypedObjectTypingResult(Map("firstIsString" -> Typed[String], "secondIsNumber" -> Typed[Integer]))
 
     val data = List(SimpleRecord("1", 3, "a", new Date(0)))
     processInvoker.invokeWithSampleData(process, data)
-
+    MockService.data shouldBe List(Map("firstIsString" -> "stringValue", "secondIsNumber" -> 3))
   }
 
 

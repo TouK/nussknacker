@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.sql
 
 import java.sql.SQLSyntaxErrorException
+
 import cats.data.Validated._
 import cats.data._
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
@@ -18,7 +18,7 @@ object SqlExpressionParser extends ExpressionParser {
 
   override val languageId: String = "sql"
 
-  override def parse(original: String, ctx: ValidationContext, paramter: Parameter)
+  override def parse(original: String, ctx: ValidationContext, expectedType: TypingResult)
   : Validated[NonEmptyList[ExpressionParseError], TypedExpression] = {
     val columnModel = ctx.localVariables.mapValues(CreateColumnModel(_))
 
@@ -60,7 +60,7 @@ object SqlExpressionParser extends ExpressionParser {
     }
   }
 
-  override def parseWithoutContextValidation(original: String, paramter: Parameter): Validated[NonEmptyList[ExpressionParseError], Expression] =
+  override def parseWithoutContextValidation(original: String, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError], Expression] =
     throw new IllegalStateException("shouldn't be used")
 
 }

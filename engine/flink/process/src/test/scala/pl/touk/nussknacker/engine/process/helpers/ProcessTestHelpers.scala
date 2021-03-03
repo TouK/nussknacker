@@ -29,13 +29,10 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
                              data: List[SimpleRecord],
                              processVersion: ProcessVersion = ProcessVersion.empty,
                              parallelism: Int = 1): Unit = {
-      val config = ConfigFactory.load()
-        .withValue("kafka.kafkaAddress", fromAnyRef("http://notexist.pl"))
-      val creator: ProcessConfigCreator = ProcessTestHelpers.prepareCreator(data, config)
+      val modelData: LocalModelData = prepareModelData(data)
 
       val env = flinkMiniCluster.createExecutionEnvironment()
-      val modelData = LocalModelData(config, creator)
-      FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData))
+      FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), modelData.processConfig, ExecutionConfigPreparer.unOptimizedChain(modelData))
         .register(new StreamExecutionEnvironment(env), process, processVersion)
 
       MockService.clear()
@@ -67,6 +64,12 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
     }
   }
 
+  protected def prepareModelData(data: List[SimpleRecord]): LocalModelData = {
+    val config = ConfigFactory.load()
+      .withValue("kafka.kafkaAddress", fromAnyRef("http://notexist.pl"))
+    val creator: ProcessConfigCreator = ProcessTestHelpers.prepareCreator(data, config)
+    LocalModelData(config, creator)
+  }
 }
 
 object ProcessTestHelpers {
@@ -112,7 +115,7 @@ object ProcessTestHelpers {
       "optionalEndingCustom" -> WithCategories(OptionalEndingCustom),
       "genericParametersNode" -> WithCategories(GenericParametersNode),
       "nodePassingStateToImplementation" -> WithCategories(NodePassingStateToImplementation),
-      "complexParameters" -> WithCategories(ComplexParameterNode)
+      "dynamicMapComplexParameterNode" -> WithCategories(DynamicMapComplexParameterNode)
     )
 
     override def listeners(processObjectDependencies: ProcessObjectDependencies) = List()

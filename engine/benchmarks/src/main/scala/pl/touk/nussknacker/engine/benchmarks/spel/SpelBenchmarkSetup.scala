@@ -1,16 +1,15 @@
 package pl.touk.nussknacker.engine.benchmarks.spel
 
 import java.util.concurrent.TimeUnit
+
 import cats.data.Validated.{Invalid, Valid}
 import org.openjdk.jmh.annotations._
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.compile.NodeTypingInfo.DefaultExpressionId
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -28,7 +27,7 @@ class SpelBenchmarkSetup(expression: String, vars: Map[String, AnyRef]) {
   private val validationContext = ValidationContext(vars.mapValues(Typed.fromInstance), Map.empty)
 
   private val compiledExpression = expressionCompiler.compile(Expression(language = "spel", expression = expression),
-    validationContext, Parameter(DefaultExpressionId, Unknown))(NodeId("")) match {
+    None, validationContext, Unknown)(NodeId("")) match {
     case Valid(a) => a.expression
     case Invalid(e) => throw new IllegalArgumentException(s"Failed to parse: $e")
   }

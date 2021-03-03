@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.api.expression
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 import scala.concurrent.Future
@@ -21,10 +20,10 @@ trait ExpressionParser {
 
   def languageId: String
 
-  def parse(original: String, ctx: ValidationContext, parameter: Parameter):
+  def parse(original: String, ctx: ValidationContext, expectedType: TypingResult):
   ValidatedNel[ExpressionParseError, TypedExpression]
 
-  def parseWithoutContextValidation(original: String, parameter: Parameter): ValidatedNel[ExpressionParseError, Expression]
+  def parseWithoutContextValidation(original: String, expectedType: TypingResult): ValidatedNel[ExpressionParseError, Expression]
 
 }
 

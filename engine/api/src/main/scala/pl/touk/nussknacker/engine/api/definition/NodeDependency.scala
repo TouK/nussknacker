@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.api.definition
 
-import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, OutputVariableNameValue, TypedNodeDependencyValue}
 import pl.touk.nussknacker.engine.api.typed.MissingOutputVariableException

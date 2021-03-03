@@ -4,14 +4,14 @@ import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Date, Optional, UUID}
-import cats.data.Validated.Valid
+import cats.data.Validated.{Invalid, Valid}
 import com.github.ghik.silencer.silent
 import io.circe.generic.JsonCodec
 
 import javax.annotation.Nullable
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
-import org.apache.flink.api.common.functions.FilterFunction
+import org.apache.flink.api.common.functions.{FilterFunction, MapFunction}
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.co.RichCoMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
-import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, NewLineSplittedTestDataParser, TestDataParser, TestParsingUtils}
+import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException, ReturningType, ServiceReturningType, TypedMap, typing}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
@@ -39,14 +39,12 @@ import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EspDeseri
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.kafka.{BasicFormatter, KafkaConfig, KafkaUtils}
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
-import pl.touk.nussknacker.engine.process.helpers.SampleNodes.ComplexParameterNode
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.test.WithDataList
 
 import scala.annotation.nowarn
 import scala.collection.JavaConverters._
-import scala.collection.immutable
 import scala.concurrent.{ExecutionContext, Future}
 
 //TODO: clean up sample objects...
@@ -763,35 +761,66 @@ object SampleNodes {
               BasicFormatter,
               processObjectDependencies)
 
-  object ComplexParameterNode extends CustomStreamTransformer with SingleInputGenericNodeTransformation[FlinkCustomStreamTransformation] {
-    
+  //there is one, complex parameter, which represents map of unknown expressions
+  //TODO: make sample more elaborate, e.g. add filter expression
+  object DynamicMapComplexParameterNode extends CustomStreamTransformer with SingleInputGenericNodeTransformation[FlinkCustomStreamTransformation] {
+
     override type State = Nothing
 
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
-                                      (implicit nodeId: NodeId): ComplexParameterNode.NodeTransformationDefinition = {
+                                      (implicit nodeId: NodeId): DynamicMapComplexParameterNode.NodeTransformationDefinition = {
       case TransformationStep(Nil, _) => NextParameters(initialParameters)
-      case _ => FinalResults(context)
+      case TransformationStep(("value", DefinedEagerParameter(value, _))::Nil, _) =>
+        context.withVariable(OutputVariableNameDependency.extract(dependencies), prepareOutput(value), None) match {
+          case Valid(ctx) => FinalResults(ctx)
+          case Invalid(e) => FinalResults(context, e.toList)
+        }
     }
 
-    override def initialParameters: List[Parameter] = List(Parameter("complex", Unknown).copy(
-      childArrayParameters = Some(List(Parameter[String]("name"), Parameter[Int]("value").copy(isLazyParameter = true))),
+    private def prepareOutput(value: Any): TypingResult = {
+      TypedObjectTypingResult(parseComplexParameter(value).mapValuesNow(_.returnType))
+    }
+
+    override def initialParameters: List[Parameter] = List(Parameter("value", Unknown).copy(
+      childArrayParameters = Some(List(Parameter[String]("name"), Parameter[AnyRef]("value").copy(isLazyParameter = true))),
       validators = Nil
     ))
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[Nothing]): FlinkCustomStreamTransformation = {
-      val valueMap = params("complex").asInstanceOf[java.util.List[java.util.Map[String, Any]]]
+      val all: Map[String, LazyParameter[_ <: AnyRef]] = parseComplexParameter(params("value"))
+      FlinkCustomStreamTransformation((ds, ctx) =>
+        ds.map(new MapFunctionDef(all, ctx.lazyParameterHelper))
+      )
+    }
+
+    private def parseComplexParameter(value: Any): Map[String, LazyParameter[_ <: AnyRef]] = {
+      val valueMap = value.asInstanceOf[java.util.List[java.util.Map[String, Any]]]
       if (valueMap == null || valueMap.isEmpty) {
         throw CustomNodeValidationException("Empty list :)", None)
       }
-      valueMap.asScala.map(_.asScala).foreach { map =>
-        val name = map("name").asInstanceOf[String]
-        val value = map("value").asInstanceOf[LazyParameter[_<:AnyRef]]
-        println(s"Name: ${name}, value: ${value}")
-      }
-      FlinkCustomStreamTransformation(ds => ds.map(ct => ValueWithContext[AnyRef](null, ct)))
+      valueMap.asScala.map(_.asScala).map { map =>
+        map("name").asInstanceOf[String] -> map("value").asInstanceOf[LazyParameter[_<:AnyRef]]
+      }.toMap
     }
 
-    override def nodeDependencies: List[NodeDependency] = Nil
+    override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)
+
+    class MapFunctionDef(all: Map[String, LazyParameter[_ <: AnyRef]], lazyParameterHelper: FlinkLazyParameterFunctionHelper)
+      extends AbstractLazyParameterInterpreterFunction(lazyParameterHelper) with MapFunction[Context, ValueWithContext[AnyRef]] {
+
+      private implicit lazy val interpreter: LazyParameterInterpreter = lazyParameterHelper.createInterpreter(getRuntimeContext)
+
+      private lazy val param: Context => Map[String, AnyRef] = {
+        val finalParam = all.foldLeft(interpreter.pure[Map[String, AnyRef]](Map.empty, Unknown)) { case (acc, (name, param)) =>
+          acc.product(param).map { case (map, toAdd) => map + (name -> toAdd) }
+        }
+        interpreter.syncInterpretationFunction(finalParam)
+      }
+
+      override def map(value: Context): ValueWithContext[AnyRef] = {
+        ValueWithContext(param(value), value)
+      }
+    }
 
   }
 
