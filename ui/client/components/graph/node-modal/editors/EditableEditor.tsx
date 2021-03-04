@@ -41,9 +41,17 @@ class EditableEditor extends React.Component<Props, State> {
 
     const editorType = isEmpty(param) ? EditorType.RAW_PARAMETER_EDITOR : param.editor.type
 
+    // FIXME: temporary
+    if (fieldLabel === "sql" && fieldName === "sql") {
+      param.editor.simpleEditor.type = EditorType.SQL_PARAMETER_EDITOR
+    }
+
     const Editor = editors[editorType]
 
     const validators = simpleEditorValidators(param, errors, fieldName, fieldLabel)
+
+    const formatter = expressionObj.language === "spel" ? spelFormatters[param?.typ?.refClazzName] : null
+
     return (
       <div className={`${rowClassName ? rowClassName : " node-row"}`}>
         {fieldLabel && renderFieldLabel(fieldLabel)}
@@ -52,8 +60,7 @@ class EditableEditor extends React.Component<Props, State> {
           editorConfig={param?.editor}
           className={`${valueClassName ? valueClassName : "node-value"}`}
           validators={validators}
-          formatter={expressionObj.language === "spel" && spelFormatters[param?.typ?.refClazzName] != null ?
-            spelFormatters[param.typ.refClazzName] : null}
+          formatter={formatter}
           expressionInfo={validationLabelInfo}
         />
       </div>

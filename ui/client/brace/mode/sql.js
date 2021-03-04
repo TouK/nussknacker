@@ -42,6 +42,10 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
         token : "comment",
         start : "/\\*",
         end : "\\*/"
+      },  {
+        token : "spel",
+        start : "\\#\\{",
+        end : "\\}"
       }, {
         token : "string",           // " string
         regex : '".*?"'

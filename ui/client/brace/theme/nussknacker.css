@@ -92,6 +92,9 @@
 .ace-nussknacker .ace_comment {
     color: #75715E
 }
+.ace-nussknacker .ace_spel {
+    color: #00FF00
+}
 .ace-nussknacker .ace_indent-guide {
     background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAEklEQVQImWPQ0FD0ZXBzd/wPAAjVAoxeSgNeAAAAAElFTkSuQmCC) right repeat-y
 }
