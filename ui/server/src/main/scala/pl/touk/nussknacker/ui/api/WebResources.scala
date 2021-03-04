@@ -11,7 +11,8 @@ class WebResources(publicPath: String) extends Directives {
   private lazy val mainContentFile = {
     val tempMainContentFile = Files.createTempFile("nussknacker", "main.html").toFile
     tempMainContentFile.deleteOnExit()
-    val content = IOUtils.toString(getClass.getClassLoader.getResourceAsStream("web/static/main.html"))
+    val data = getClass.getClassLoader.getResourceAsStream("web/static/main.html")
+    val content = Option(data).map(IOUtils.toString).getOrElse("")
     FileUtils.writeStringToFile(tempMainContentFile, content.replace("__publicPath__", publicPath))
     tempMainContentFile
   }

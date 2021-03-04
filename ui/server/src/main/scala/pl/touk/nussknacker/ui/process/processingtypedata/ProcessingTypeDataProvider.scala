@@ -22,7 +22,8 @@ trait ProcessingTypeDataProvider[+T] {
   def forType(typ: ProcessingType): Option[T]
 
   //TODO: replace with proper forType handling
-  def forTypeUnsafe(typ: ProcessingType): T = forType(typ).get
+  def forTypeUnsafe(typ: ProcessingType): T = forType(typ)
+    .getOrElse(throw new IllegalArgumentException(s"Unknown typ: $typ, known types are: ${all.keys.mkString(", ")}"))
 
   def all: Map[ProcessingType, T]
 
