@@ -8,7 +8,7 @@ import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.{ExecutionContext, Future}
 
-private[influxdb] class InfluxGenerator(config: InfluxConfig, env: String = "test")(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends LazyLogging {
+private[influxdb] class InfluxGenerator(config: InfluxConfig, env: String)(implicit backend: SttpBackend[Future, Nothing, NothingT]) extends LazyLogging {
 
   import InfluxGenerator._
 
@@ -51,7 +51,7 @@ private[influxdb] class InfluxGenerator(config: InfluxConfig, env: String = "tes
     }
   }
 
-  private def readRestartsFromSourceCounts(sourceCounts: InfluxSerie) : List[LocalDateTime] = {
+  private def readRestartsFromSourceCounts(sourceCounts: InfluxSeries) : List[LocalDateTime] = {
     val restarts = sourceCounts.values.collect {
       case (date:String)::(derivative:BigDecimal)::Nil => parseInfluxDate(date)
     }
@@ -75,7 +75,7 @@ object InfluxGenerator extends LazyLogging {
   }
 
   //see InfluxGeneratorSpec for influx return format...
-  def retrieveOnlyResultFromActionValueQuery(config: MetricsConfig, invokeQuery: String => Future[List[InfluxSerie]], queryString: String)(implicit ec: ExecutionContext): Future[Map[String, Long]] = {
+  def retrieveOnlyResultFromActionValueQuery(config: MetricsConfig, invokeQuery: String => Future[List[InfluxSeries]], queryString: String)(implicit ec: ExecutionContext): Future[Map[String, Long]] = {
     val groupedResults = invokeQuery(queryString).map { seriesList =>
       seriesList.map { oneSeries =>
         //in case of our queries we know there will be only one result (we use only first/last aggregations), rest will be handled by aggregations
@@ -92,7 +92,7 @@ object InfluxGenerator extends LazyLogging {
   //influx cannot give us result for "give me value nearest in time to t1", so we try to do it by looking for
   //last point before t1 and first after t1.
   // TODO: probably we should just take one of them, but the one which is closer to t1?
-  class PointInTimeQuery(invokeQuery: String => Future[List[InfluxSerie]], processName: String, env: String, config: MetricsConfig)(implicit ec: ExecutionContext) extends LazyLogging {
+  class PointInTimeQuery(invokeQuery: String => Future[List[InfluxSeries]], processName: String, env: String, config: MetricsConfig)(implicit ec: ExecutionContext) extends LazyLogging {
 
     //two hour window is for possible delays in sending metrics from taskmanager to jobmanager (or upd sending problems...)
     //it's VERY unclear how large it should be. If it's too large, we may overlap with end and still generate

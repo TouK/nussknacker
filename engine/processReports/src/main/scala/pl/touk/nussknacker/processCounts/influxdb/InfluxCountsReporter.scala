@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.processCounts.influxdb
 
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging

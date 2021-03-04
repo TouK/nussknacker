@@ -28,6 +28,7 @@ Nussknacker versions
 * [#1406](https://github.com/TouK/nussknacker/pull/1406) Eager services - ability to create service object using static parameters
 * [#1428](https://gihub.com/TouK/nussknacker/pull/1428) Kafka SchemaRegistry source/sink can use JSON payloads. In this PR we assume one schema registry contains either json or avro payloads but not both.                                         
 * [#1445](https://gihub.com/TouK/nussknacker/pull/1445) Small refactor of RecordFormatter, correct handling different formatting in kafka-json in test data generation
+* [#962](https://gihub.com/TouK/nussknacker/pull/962) New ways of querying InfluxDB for counts, integration tests, no default database name in code
 
 0.3.1 (not released yet) 
 ------------------------

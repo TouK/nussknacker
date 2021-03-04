@@ -105,6 +105,6 @@ class InfluxGeneratorSpec extends FunSuite with Matchers with PatientScalaFuture
     |      ]
   """.stripMargin
 
-  val sampleInfluxOutput: List[InfluxSerie] = CirceUtil.decodeJsonUnsafe[List[InfluxSerie]](sampleInfluxOutputRaw, "failed to decode series")
+  val sampleInfluxOutput: List[InfluxSeries] = CirceUtil.decodeJsonUnsafe[List[InfluxSeries]](sampleInfluxOutputRaw, "failed to decode series")
 
 }
