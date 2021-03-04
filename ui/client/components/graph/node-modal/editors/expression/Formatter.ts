@@ -2,7 +2,7 @@ import {flow} from "lodash"
 import moment from "moment"
 import {Duration} from "./Duration/DurationEditor"
 import {Period} from "./Duration/PeriodEditor"
-import {escapeQuotes, getQuotationMark, quote, unescapeQuotes, unquote} from "./QuotesUtils"
+import {escapeQuotes, getQuotationMark, quote, unescapeQuotes, unquote} from "./SpelQuotesUtils"
 import {concatsToTemplates, escapeTemplates, templatesToConcats, unescapeTemplates} from "./TemplatesUtils"
 import {CronExpression} from "./Cron/CronEditor"
 

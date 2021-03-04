@@ -3,6 +3,7 @@ import React, {useCallback, useEffect, useMemo} from "react"
 import {UnknownFunction} from "../../../../../types/common"
 import {SimpleEditor} from "./Editor"
 import {Formatter, FormatterType, typeFormatters} from "./Formatter"
+import {getQuotedStringPattern, QuotationMark} from "./SpelQuotesUtils"
 import RawEditor from "./RawEditor"
 import {ExpressionObj} from "./types"
 
@@ -46,10 +47,10 @@ const SqlEditor: SimpleEditor<Props> = (props: Props) => {
   )
 }
 
-const stringPattern = /(^'.*'$)|(^".*"$)/su
+const quotedStringPattern = getQuotedStringPattern([QuotationMark.single, QuotationMark.double])
 
 const parseable = ({expression, language}: ExpressionObj) => {
-  return stringPattern.test(expression.trim()) && language === "spel"
+  return language === "spel" && quotedStringPattern.test(expression.trim())
 }
 
 SqlEditor.switchableTo = (expressionObj) => parseable(expressionObj)
