@@ -125,7 +125,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "meetingService" -> features(MeetingService),
     "dynamicService" -> categories(new DynamicService),
     "customValidatedService" -> categories(new CustomValidatedService),
-    "modelConfigReader" -> categories(new ModelConfigReaderService(processObjectDependencies.config))
+    "modelConfigReader" -> categories(new ModelConfigReaderService(processObjectDependencies.config)),
+    "sqlEnricher" -> all(new SqlEnricher)
   )
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(

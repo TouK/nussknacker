@@ -131,6 +131,8 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
       .getOrElse(Valid(()))
     val compilationResult = definitions.sinkFactories.get(ref.typ) match {
       case Some(definition) =>
+//        logger.info("sink compile")
+//        logger.info(sink.parameters.map(_.name).mkString(", "))
         compileObjectWithTransformation[api.process.Sink](sink.parameters, Nil, Left(ctx), None, definition._1, (_: Any) => Valid(ctx))
       case None =>
         val error = invalid(MissingSinkFactory(sink.ref.typ)).toValidatedNel
