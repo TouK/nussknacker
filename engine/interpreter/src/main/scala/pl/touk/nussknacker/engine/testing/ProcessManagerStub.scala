@@ -37,6 +37,8 @@ class ProcessManagerStub extends ProcessManager {
 
 }
 
+//This provider can be used for testing. Override methods to implement more complex behaviour
+//Provider is registered via ServiceLoader, so it can be used e.g. to run simple docker configuration
 class ProcessManagerProviderStub extends ProcessManagerProvider {
 
   override def createProcessManager(modelData: ModelData, config: Config): ProcessManager = new ProcessManagerStub
