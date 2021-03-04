@@ -1,15 +1,17 @@
 package pl.touk.nussknacker.ui
 
 import java.lang.Thread.UncaughtExceptionHandler
-
 import _root_.cors.CorsSupport
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.stream.{ActorMaterializer, Materializer}
+import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromMap}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.commons.io.FileUtils
 import org.hsqldb.server.Server
+import pl.touk.nussknacker.engine.{ModelData, ProcessManagerProvider, ProcessingTypeData}
 import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
@@ -27,7 +29,7 @@ import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
-import pl.touk.nussknacker.ui.process.processingtypedata.{BasicProcessingTypeDataReload, ProcessingTypeDataReader}
+import pl.touk.nussknacker.ui.process.processingtypedata.{BasicProcessingTypeDataReload, MapBasedProcessingTypeDataProvider, ProcessingTypeDataProvider, ProcessingTypeDataReader, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
@@ -39,6 +41,8 @@ import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
 import sttp.client.{NothingT, SttpBackend}
 import sttp.client.akkahttp.AkkaHttpBackend
 
+import java.nio.file.Files
+import scala.collection.JavaConverters._
 import scala.concurrent.Future
 
 trait NusskanckerAppRouter extends Directives with LazyLogging {
@@ -47,10 +51,19 @@ trait NusskanckerAppRouter extends Directives with LazyLogging {
 
 }
 
-object NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
+object NusskanckerDefaultAppRouter extends NusskanckerDefaultAppRouter
+
+trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
   import net.ceedubs.ficus.Ficus._
   import pl.touk.nussknacker.engine.util.config.FicusReaders._
+
+  //override this method to e.g. run UI with local model
+  protected def prepareProcessingTypeData(config: Config): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload) = {
+    BasicProcessingTypeDataReload.wrapWithReloader(
+      () => ProcessingTypeDataReader.loadProcessingTypeData(config)
+    )
+  }
 
   override def create(config: Config, dbConfig: DbConfig)(implicit system: ActorSystem, materializer: Materializer): (Route, Iterable[AutoCloseable]) = {
     import system.dispatcher
@@ -62,9 +75,7 @@ object NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val featureTogglesConfig = FeatureTogglesConfig.create(config)
     logger.info(s"Ui config loaded: \nfeatureTogglesConfig: $featureTogglesConfig")
 
-    val (typeToConfig, reload) = BasicProcessingTypeDataReload.wrapWithReloader(
-      () => ProcessingTypeDataReader.loadProcessingTypeData(config)
-    )
+    val (typeToConfig, reload) = prepareProcessingTypeData(config)
 
     val analyticsConfig = AnalyticsConfig(config)
 
@@ -197,11 +208,14 @@ object NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
   }
 }
 
-object NussknackerAppInitializer extends LazyLogging {
+object NussknackerAppInitializer extends NussknackerAppInitializer(ConfigWithDefaults(ConfigFactory.load()))
+
+class NussknackerAppInitializer(baseConfig: Config) extends LazyLogging {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-  protected val config: Config = ConfigWithDefaults(ConfigFactory.load())
+
+  protected val config: Config = ConfigWithDefaults(baseConfig)
 
   protected implicit val system: ActorSystem = ActorSystem("nussknacker-ui", config)
   protected implicit val materializer: ActorMaterializer = ActorMaterializer()
@@ -213,7 +227,7 @@ object NussknackerAppInitializer extends LazyLogging {
   val interface: String = config.getString("http.interface")
   val port: Int = config.getInt("http.port")
 
-  def apply(router: NusskanckerAppRouter): (Route, Iterable[AutoCloseable]) = {
+  def init(router: NusskanckerAppRouter): (Route, Iterable[AutoCloseable]) = {
     val db = initDb(config)
 
     val (route, objectsToClose) = router.create(config, db)
@@ -297,5 +311,5 @@ object NussknackerAppInitializer extends LazyLogging {
 }
 
 object NussknackerApp extends App {
-  NussknackerAppInitializer(NusskanckerDefaultAppRouter)
+  new NussknackerAppInitializer(ConfigFactory.load()).init(NusskanckerDefaultAppRouter)
 }
