@@ -67,9 +67,9 @@ describe("Process", () => {
       cy.contains(/^deploy$/i).click()
       cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy")
       cy.contains(/^ok$/i).should("be.enabled").click()
-      cy.wait("@deploy").its("response.statusCode").should("eq", 200)
-      //TODO: currently in CI we use stub which does not handle deployment status well
-      //cy.contains(/process is running/i).should("exist")
+      cy.wait(["@deploy", "@fetch"], {timeout: 20000}).each(res => {
+        cy.wrap(res).its("response.statusCode").should("eq", 200)
+      })
       cy.contains(/^counts$/i).click()
       cy.contains(/^latest deploy$/i).should("not.exist")
       cy.get("[data-testid=modal]").should("be.visible").toMatchImageSnapshot()
@@ -81,9 +81,9 @@ describe("Process", () => {
       cy.contains(/^deploy$/i).click()
       cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy")
       cy.contains(/^ok$/i).should("be.enabled").click()
-      cy.wait("@deploy").its("response.statusCode").should("eq", 200)
-      //TODO: currently in CI we use stub which does not handle deployment status well
-      //cy.contains(/process is running/i).should("exist")
+      cy.wait(["@deploy", "@fetch"], {timeout: 20000}).each(res => {
+        cy.wrap(res).its("response.statusCode").should("eq", 200)
+      })
       cy.contains(/^counts$/i).click()
       cy.contains(/^latest deploy$/i).should("exist")
       cy.get("[data-testid=modal]").should("be.visible").toMatchImageSnapshot()
