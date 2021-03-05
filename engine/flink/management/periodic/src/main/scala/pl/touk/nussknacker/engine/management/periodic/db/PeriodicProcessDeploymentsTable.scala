@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.management.periodic.db
 
-import java.time.LocalDateTime
-
+import java.time.{LocalDateTime, ZonedDateTime}
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.{PeriodicProcessDeploymentId, PeriodicProcessDeploymentStatus, PeriodicProcessId}
 import slick.jdbc.JdbcProfile
@@ -24,7 +23,7 @@ trait PeriodicProcessDeploymentsTableFactory {
 
     def createdAt: Rep[LocalDateTime] = column[LocalDateTime]("created_at", NotNull)
 
-    def runAt: Rep[LocalDateTime] = column[LocalDateTime]("run_at", NotNull)
+    def runAt: Rep[ZonedDateTime] = column[ZonedDateTime]("run_at", NotNull)
 
     def deployedAt: Rep[Option[LocalDateTime]] = column[Option[LocalDateTime]]("deployed_at")
 
@@ -37,7 +36,7 @@ trait PeriodicProcessDeploymentsTableFactory {
   }
 
   object PeriodicProcessDeployments extends TableQuery(new PeriodicProcessDeploymentsTable(_)) {
-    val findToBeDeployed = this.filter(e => e.runAt <= LocalDateTime.now() && e.status === (PeriodicProcessDeploymentStatus.Scheduled : PeriodicProcessDeploymentStatus))
+    val findToBeDeployed = this.filter(e => e.runAt <= ZonedDateTime.now() && e.status === (PeriodicProcessDeploymentStatus.Scheduled : PeriodicProcessDeploymentStatus))
   }
 
 }
@@ -45,7 +44,7 @@ trait PeriodicProcessDeploymentsTableFactory {
 case class PeriodicProcessDeploymentEntity(id: PeriodicProcessDeploymentId,
                                            periodicProcessId: PeriodicProcessId,
                                            createdAt: LocalDateTime,
-                                           runAt: LocalDateTime,
+                                           runAt: ZonedDateTime,
                                            deployedAt: Option[LocalDateTime],
                                            completedAt: Option[LocalDateTime],
                                            status: PeriodicProcessDeploymentStatus)

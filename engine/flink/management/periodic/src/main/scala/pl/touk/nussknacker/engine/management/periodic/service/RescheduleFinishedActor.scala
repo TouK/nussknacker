@@ -1,8 +1,8 @@
-package pl.touk.nussknacker.engine.management.periodic
+package pl.touk.nussknacker.engine.management.periodic.service
 
 import akka.actor.{Actor, Props}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.management.periodic.RescheduleFinishedActor.CheckStates
+import pl.touk.nussknacker.engine.management.periodic.service.RescheduleFinishedActor.CheckStates
 
 import scala.concurrent.duration._
 

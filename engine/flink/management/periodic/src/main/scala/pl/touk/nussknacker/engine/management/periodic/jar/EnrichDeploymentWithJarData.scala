@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.management.periodic
+package pl.touk.nussknacker.engine.management.periodic.jar
 
 import scala.concurrent.Future
 

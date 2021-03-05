@@ -1,22 +1,26 @@
-package pl.touk.nussknacker.engine.management.periodic
+package pl.touk.nussknacker.engine.management.periodic.manager
 
-import java.time.{LocalDateTime, ZoneOffset}
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.management.periodic.db.{DbInitializer, SlickPeriodicProcessesRepository}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.FlinkConfig
+import pl.touk.nussknacker.engine.management.periodic._
+import pl.touk.nussknacker.engine.management.periodic.db.{DbInitializer, SlickPeriodicProcessesRepository}
+import pl.touk.nussknacker.engine.management.periodic.definition.PeriodicPropertyExtractor
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
+import pl.touk.nussknacker.engine.management.periodic.jar.EnrichDeploymentWithJarDataFactory
+import pl.touk.nussknacker.engine.management.periodic.service.{DeploymentActor, EmptyListener, PeriodicProcessService, RescheduleFinishedActor}
 import slick.jdbc
 import slick.jdbc.JdbcProfile
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client.{NothingT, SttpBackend}
 
+import java.time.ZonedDateTime
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 
@@ -33,11 +37,12 @@ object PeriodicProcessManager {
     implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend.usingConfigBuilder { builder =>
       builder.setThreadPoolName("AsyncBatchPeriodicClient")
     }
+    val jarManager = FlinkJarManager(flinkConfig, periodicBatchConfig, modelData, enrichDeploymentWithJarDataFactory(originalConfig))
+
 
     val (db: jdbc.JdbcBackend.DatabaseDef, dbProfile: JdbcProfile) = DbInitializer.init(periodicBatchConfig.db)
     val scheduledProcessesRepository = new SlickPeriodicProcessesRepository(db, dbProfile)
-    val jarManager = FlinkJarManager(flinkConfig, periodicBatchConfig, modelData, enrichDeploymentWithJarDataFactory(originalConfig))
-    val service = new PeriodicProcessService(delegate, jarManager, scheduledProcessesRepository)
+    val service = new PeriodicProcessService(delegate, jarManager, scheduledProcessesRepository, EmptyListener, SystemClock)
     system.actorOf(DeploymentActor.props(service, periodicBatchConfig.deployInterval))
     system.actorOf(RescheduleFinishedActor.props(service, periodicBatchConfig.rescheduleCheckInterval))
     val toClose = () => {
@@ -58,7 +63,7 @@ class PeriodicProcessManager(delegate: ProcessManager,
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]): Future[Unit] = {
     (processDeploymentData, periodicPropertyExtractor(processDeploymentData)) match {
-      case (GraphProcess(processJson), Right(periodicProperty)) =>
+      case (GraphProcess(processJson), Right(periodicPropertyMap)) =>
         logger.info(s"About to (re)schedule ${processVersion.processName} in version ${processVersion.versionId}")
 
         // PeriodicProcessStateDefinitionManager do not allow to redeploy (so doesn't GUI),
@@ -66,7 +71,9 @@ class PeriodicProcessManager(delegate: ProcessManager,
         cancelIfAlreadyDeployed(processVersion, deploymentData.user)
           .flatMap(_ => {
             logger.info(s"Scheduling ${processVersion.processName}, versionId: ${processVersion.versionId}")
-            service.schedule(periodicProperty, processVersion, processJson)
+            Future.sequence(periodicPropertyMap.map { case (name, property) =>
+              service.schedule(name, property, processVersion, processJson)
+            }).map(_ => ())
           })
       case (_: GraphProcess, Left(error)) =>
         Future.failed(new PeriodicProcessException(error))
@@ -107,6 +114,7 @@ class PeriodicProcessManager(delegate: ProcessManager,
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
     def handleScheduled(original: Option[ProcessState]): Future[Option[ProcessState]] = {
+      //TODO: to powinno zwracac liste??
       service.getScheduledRunDetails(name).map { maybeScheduledRunDetails =>
         maybeScheduledRunDetails.map { scheduledRunDetails =>
           scheduledRunDetails.status match {
@@ -116,7 +124,7 @@ class PeriodicProcessManager(delegate: ProcessManager,
               version = Option(scheduledRunDetails.processVersion),
               definitionManager = processStateDefinitionManager,
               //TODO: this date should be passed/handled through attributes
-              startTime = Option(scheduledRunDetails.runAt.toEpochSecond(ZoneOffset.UTC)),
+              startTime = Option(scheduledRunDetails.runAt.toInstant.toEpochMilli),
               attributes = Option.empty,
               errors = List.empty
             ))
@@ -180,7 +188,7 @@ class PeriodicProcessManager(delegate: ProcessManager,
     Future.successful(Left(CustomActionNotImplemented(actionRequest)))
 }
 
-case class ScheduledStatus(nextRunAt: LocalDateTime) extends CustomStateStatus("SCHEDULED") {
+case class ScheduledStatus(nextRunAt: ZonedDateTime) extends CustomStateStatus("SCHEDULED") {
   override def isRunning: Boolean = true
 }
 

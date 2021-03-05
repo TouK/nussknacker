@@ -1,13 +1,12 @@
-package pl.touk.nussknacker.engine.management.periodic
+package pl.touk.nussknacker.engine.management.periodic.manager
+
+import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment._
 
 import java.net.URI
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-
-import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{FailedStateStatus, ProcessActionType, ProcessStateDefinitionManager, RunningStateStatus, StateStatus}
 
 class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionManager) extends ProcessStateDefinitionManager  with LazyLogging{
 
@@ -22,13 +21,13 @@ class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionMana
   import PeriodicProcessStateDefinitionManager._
 
   override def statusTooltip(stateStatus: StateStatus): Option[String] = stateStatus match {
-    case ScheduledStatus(nextRunAt) => Some(s"Scheduled at ${nextRunAt.pretty}")
+    case ScheduledStatus(nextRunAt) => Some(s"Scheduled at ${nextRunAt.toLocalDateTime.pretty}")
     case WaitingForScheduleStatus => Some(s"Finished. Waiting for reschedule")
     case _ => delegate.statusTooltip(stateStatus)
   }
 
   override def statusDescription(stateStatus: StateStatus): Option[String] = stateStatus match {
-    case ScheduledStatus(nextRunAt) => Some(s"Scheduled at ${nextRunAt.pretty}")
+    case ScheduledStatus(nextRunAt) => Some(s"Scheduled at ${nextRunAt.toLocalDateTime.pretty}")
     case WaitingForScheduleStatus => Some(s"Finished. Waiting for reschedule")
     case _ => delegate.statusDescription(stateStatus)
   }

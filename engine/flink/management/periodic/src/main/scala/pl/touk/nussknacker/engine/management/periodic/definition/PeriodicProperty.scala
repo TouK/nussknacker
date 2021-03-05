@@ -1,15 +1,13 @@
-package pl.touk.nussknacker.engine.management.periodic
+package pl.touk.nussknacker.engine.management.periodic.definition
 
-import java.time.{Instant, LocalDateTime, ZoneId}
-
-import cats.Alternative.ops.toAllAlternativeOps
-import com.cronutils.model.{Cron, CronType}
 import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.model.time.ExecutionTime
+import com.cronutils.model.{Cron, CronType}
 import com.cronutils.parser.CronParser
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
 
+import java.time.ZonedDateTime
 import scala.util.Try
 
 object PeriodicProperty {
@@ -23,11 +21,11 @@ object PeriodicProperty {
     * If Right(None) is returned it means process should not be run in future anymore e.g. was specified to run once.
     * Right(Some(date)) specifies date when process should start.
     */
-  def nextRunAt(clock: Clock = SystemClock): Either[String, Option[LocalDateTime]]
+  def nextRunAt(afterTime: ZonedDateTime): Either[String, Option[ZonedDateTime]]
 }
 
 @JsonCodec case class CronPeriodicProperty(labelOrCronExpr: String) extends PeriodicProperty {
-  import pl.touk.nussknacker.engine.management.periodic.CronPeriodicProperty._
+  import CronPeriodicProperty._
   import cats.implicits._
 
   private lazy val cronsOrError: Either[String, List[Cron]] = {
@@ -44,25 +42,23 @@ object PeriodicProperty {
     }
   }
 
-  override def nextRunAt(clock: Clock): Either[String, Option[LocalDateTime]] = {
-    val now = clock.currentTimestamp
+  override def nextRunAt(afterTime: ZonedDateTime): Either[String, Option[ZonedDateTime]] = {
     cronsOrError
       .map { crons =>
         crons
-          .map(expr => determineNextDate(expr, now))
+          .map(expr => determineNextDate(expr, afterTime))
           .minBy {
-            case Some(x) => x.atZone(ZoneId.systemDefault()).toInstant.toEpochMilli
+            case Some(x) => x.toInstant.toEpochMilli
             case None => Long.MaxValue
           }
       }
   }
 
-  private def determineNextDate(cron: Cron, currentTimestamp: Long): Option[LocalDateTime] = {
+  private def determineNextDate(cron: Cron, afterTime: ZonedDateTime): Option[ZonedDateTime] = {
     import scala.compat.java8.OptionConverters._
     val compiledCron = ExecutionTime.forCron(cron)
-    val currentBaseTime = Instant.ofEpochMilli(currentTimestamp).atZone(ZoneId.systemDefault())
-    val nextTime = compiledCron.nextExecution(currentBaseTime)
-    nextTime.asScala.map(_.toLocalDateTime)
+    val nextTime = compiledCron.nextExecution(afterTime)
+    nextTime.asScala
   }
 }
 

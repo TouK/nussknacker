@@ -4,6 +4,8 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
+import pl.touk.nussknacker.engine.management.periodic.db.ScheduledRunDetails
+import pl.touk.nussknacker.engine.management.periodic.service.{EmptyListener, PeriodicProcessService}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import scala.concurrent.Future
@@ -26,7 +28,7 @@ class PeriodicProcessServiceTest extends FunSuite
     val periodicProcessService = new PeriodicProcessService(
       delegateProcessManager = delegateProcessManagerStub,
       jarManager = jarManagerStub,
-      scheduledProcessesRepository = repository
+      scheduledProcessesRepository = repository, EmptyListener, SystemClock
     )
   }
 
@@ -69,9 +71,9 @@ class PeriodicProcessServiceTest extends FunSuite
   test("deploy - should deploy and mark as so") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
-    val periodicProcessDeploymentId = f.repository.deploymentEntities.loneElement.id
+    val toSchedule = ScheduledRunDetails(f.repository.processEntities.loneElement, f.repository.deploymentEntities.loneElement)
 
-    f.periodicProcessService.deploy(periodicProcessDeploymentId).futureValue
+    f.periodicProcessService.deploy(toSchedule).futureValue
 
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Deployed
   }
@@ -80,9 +82,9 @@ class PeriodicProcessServiceTest extends FunSuite
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
     f.jarManagerStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
-    val periodicProcessDeploymentId = f.repository.deploymentEntities.loneElement.id
+    val toSchedule = ScheduledRunDetails(f.repository.processEntities.loneElement, f.repository.deploymentEntities.loneElement)
 
-    f.periodicProcessService.deploy(periodicProcessDeploymentId).futureValue
+    f.periodicProcessService.deploy(toSchedule).futureValue
 
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
   }

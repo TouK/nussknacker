@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.management.periodic
+package pl.touk.nussknacker.engine.management.periodic.manager
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
@@ -6,6 +6,9 @@ import pl.touk.nussknacker.engine.api.TypeSpecificData
 import pl.touk.nussknacker.engine.api.deployment.ProcessManager
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.management.FlinkConfig
+import pl.touk.nussknacker.engine.management.periodic.definition.{CronPropertyExtractor, PeriodicPropertyExtractor}
+import pl.touk.nussknacker.engine.management.periodic.PeriodicBatchConfig
+import pl.touk.nussknacker.engine.management.periodic.jar.EnrichDeploymentWithJarDataFactory
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.{ModelData, ProcessManagerProvider}
 

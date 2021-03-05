@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management.periodic
 
-import pl.touk.nussknacker.engine.management.periodic.CronPropertyExtractor.CronPropertyDefaultName
+import pl.touk.nussknacker.engine.management.periodic.definition.CronPropertyExtractor.CronPropertyDefaultName
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
