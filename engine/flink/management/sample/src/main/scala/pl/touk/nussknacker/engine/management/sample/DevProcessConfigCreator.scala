@@ -34,6 +34,9 @@ import pl.touk.nussknacker.engine.management.sample.source._
 import pl.touk.nussknacker.engine.management.sample.transformer._
 import pl.touk.nussknacker.engine.util.LoggingListener
 import net.ceedubs.ficus.Ficus._
+import org.apache.commons.dbcp2.BasicDataSourceFactory
+import pl.touk.nussknacker.engine.flink.util.db.DBPoolsConfig
+import pl.touk.nussknacker.engine.flink.util.service.SqlEnricher
 
 object DevProcessConfigCreator {
   val oneElementValue = "One element"
@@ -87,47 +90,51 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "sql-source" -> categories(SqlSource)
   )
 
-  override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
-    "accountService" -> categories(EmptyService).withNodeConfig(SingleNodeConfig.zero.copy(docsUrl = Some("accountServiceDocs"))),
-    "componentService" -> categories(EmptyService),
-    "transactionService" -> categories(EmptyService),
-    "serviceModelService" -> categories(EmptyService),
-    "paramService" -> categories(OneParamService),
-    "enricher" -> categories(Enricher),
-    "multipleParamsService" -> categories(MultipleParamsService)
-      .withNodeConfig(SingleNodeConfig.zero.copy(
-        params = Some(Map(
-          "foo" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("test", "test")))), None, None),
-          "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None),
-          "baz" -> ParameterConfig(None, Some(StringParameterEditor), None, None)
-        )))
-      ),
-    "complexReturnObjectService" -> categories(ComplexReturnObjectService),
-    "unionReturnObjectService" -> categories(UnionReturnObjectService),
-    "listReturnObjectService" -> categories(ListReturnObjectService),
-    "clientHttpService" -> categories(new ClientFakeHttpService()),
-    "echoEnumService" -> categories(EchoEnumService),
-    // types
-    "simpleTypesService" -> categories(new SimpleTypesService).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types"))),
-    "optionalTypesService" -> categories(new OptionalTypesService)
-      .withNodeConfig(SingleNodeConfig.zero.copy(
-        category = Some("types"),
-        params = Some(Map(
-          "overriddenByDevConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryParameterValidator)), None),
-          "overriddenByFileConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryParameterValidator)), None)
-        ))
-      )),
-    "collectionTypesService" -> categories(new CollectionTypesService).withNodeConfig(SingleNodeConfig.zero.copy(
-      category = Some("types"))),
-    "datesTypesService" -> categories(new DatesTypesService).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types"))),
-    "campaignService" -> features(CampaignService),
-    "configuratorService" -> features(ConfiguratorService),
-    "meetingService" -> features(MeetingService),
-    "dynamicService" -> categories(new DynamicService),
-    "customValidatedService" -> categories(new CustomValidatedService),
-    "modelConfigReader" -> categories(new ModelConfigReaderService(processObjectDependencies.config)),
-    "sqlEnricher" -> all(new SqlEnricher)
-  )
+  override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = {
+    val dBPoolConfig = DBPoolsConfig(processObjectDependencies.config)("devDB")
+    val dbConnectionPool = BasicDataSourceFactory.createDataSource(dBPoolConfig.toProperties)
+    Map(
+      "accountService" -> categories(EmptyService).withNodeConfig(SingleNodeConfig.zero.copy(docsUrl = Some("accountServiceDocs"))),
+      "componentService" -> categories(EmptyService),
+      "transactionService" -> categories(EmptyService),
+      "serviceModelService" -> categories(EmptyService),
+      "paramService" -> categories(OneParamService),
+      "enricher" -> categories(Enricher),
+      "multipleParamsService" -> categories(MultipleParamsService)
+        .withNodeConfig(SingleNodeConfig.zero.copy(
+          params = Some(Map(
+            "foo" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("test", "test")))), None, None),
+            "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None),
+            "baz" -> ParameterConfig(None, Some(StringParameterEditor), None, None)
+          )))
+        ),
+      "complexReturnObjectService" -> categories(ComplexReturnObjectService),
+      "unionReturnObjectService" -> categories(UnionReturnObjectService),
+      "listReturnObjectService" -> categories(ListReturnObjectService),
+      "clientHttpService" -> categories(new ClientFakeHttpService()),
+      "echoEnumService" -> categories(EchoEnumService),
+      // types
+      "simpleTypesService" -> categories(new SimpleTypesService).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types"))),
+      "optionalTypesService" -> categories(new OptionalTypesService)
+        .withNodeConfig(SingleNodeConfig.zero.copy(
+          category = Some("types"),
+          params = Some(Map(
+            "overriddenByDevConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryParameterValidator)), None),
+            "overriddenByFileConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryParameterValidator)), None)
+          ))
+        )),
+      "collectionTypesService" -> categories(new CollectionTypesService).withNodeConfig(SingleNodeConfig.zero.copy(
+        category = Some("types"))),
+      "datesTypesService" -> categories(new DatesTypesService).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("types"))),
+      "campaignService" -> features(CampaignService),
+      "configuratorService" -> features(ConfiguratorService),
+      "meetingService" -> features(MeetingService),
+      "dynamicService" -> categories(new DynamicService),
+      "customValidatedService" -> categories(new CustomValidatedService),
+      "modelConfigReader" -> categories(new ModelConfigReaderService(processObjectDependencies.config)),
+      "sqlEnricher" -> all(new SqlEnricher(dbConnectionPool))
+    )
+  }
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
     "noneReturnTypeTransformer" -> tests(NoneReturnTypeTransformer),
