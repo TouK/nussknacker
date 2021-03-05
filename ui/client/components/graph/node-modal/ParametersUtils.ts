@@ -12,8 +12,7 @@ const findUnusedParameters = (parameters: Array<Parameter>, definitions: Array<U
   return parameters.filter(param => !definitions.find(def => def.name == param.name))
 }
 
-// TODO: add other types when they will be handled
-const propertiesPath = (node) => {
+const parametersPath = (node) => {
   switch (NodeUtils.nodeType(node)) {
     case "CustomNode":
       return "parameters"
@@ -34,7 +33,7 @@ const propertiesPath = (node) => {
 //We want to change parameters in node based on current node definition. This function can be used in
 //two cases: dynamic parameters handling and automatic node migrations (e.g. in subprocesses). Currently we use it only for dynamic parameters
 export const adjustParameters = (node: NodeType, parameterDefinitions: Array<UIParameter>, baseNode: NodeType): AdjustReturn => {
-  const path = propertiesPath(node)
+  const path = parametersPath(node)
   //Currently we try to check if parameter exists in node in toolbox
   const baseNodeParameters = baseNode && get(baseNode, path)
   if (path) {
