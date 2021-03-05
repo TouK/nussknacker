@@ -12,7 +12,7 @@ const findUnusedParameters = (parameters: Array<Parameter>, definitions: Array<U
   return parameters.filter(param => !definitions.find(def => def.name == param.name))
 }
 
-//Currently we want to handle adjustment only for CustomNode,Source and Sink, TODO: add other types when they will be handled
+// TODO: add other types when they will be handled
 const propertiesPath = (node) => {
   switch (NodeUtils.nodeType(node)) {
     case "CustomNode":
@@ -22,6 +22,10 @@ const propertiesPath = (node) => {
     case "Source":
     case "Sink":
       return "ref.parameters"
+    case "Enricher":
+      return "service.parameters"
+    case "Processor":
+      return "service.parameters"
     default:
       return null
   }
