@@ -238,6 +238,7 @@ val configV = "1.4.1"
 val commonsLangV = "3.3.2"
 val commonsTextV = "1.8"
 val commonsIOV = "2.4"
+val commonsDBCP2V = "2.8.0"
 //we want to use 5.x for standalone metrics to have tags, however dropwizard development kind of freezed. Maybe we should consider micrometer?
 //In Flink metrics we use bundled dropwizard metrics v. 3.x
 val dropWizardV = "5.0.0-rc3"
@@ -719,6 +720,7 @@ lazy val flinkModelUtil = (project in engine("flink/model-util")).
     libraryDependencies ++= {
       Seq(
         "javax.validation" % "validation-api" % javaxValidationApiV,
+        "org.apache.commons" % "commons-dbcp2" % commonsDBCP2V,
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
       )
     }
