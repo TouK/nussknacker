@@ -9,9 +9,9 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.typed.{TypedMap, typing}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.flink.util.db.TableDef
+import pl.touk.nussknacker.engine.flink.util.db.{TableDef, WithDBConnectionPool}
 
-import java.sql.{Connection, ParameterMetaData}
+import java.sql.ParameterMetaData
 import java.util.Collections
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -29,24 +29,13 @@ object SqlEnricher {
   case class TransformationState(query: String, argsCount: Int, tableDef: TableDef)
 }
 
-class SqlEnricher(connectionPool: BasicDataSource) extends EagerService with SingleInputGenericNodeTransformation[ServiceInvoker] {
+class SqlEnricher(val connectionPool: BasicDataSource) extends EagerService
+  with SingleInputGenericNodeTransformation[ServiceInvoker] with WithDBConnectionPool {
   import SqlEnricher._
-
-  private var conn: Connection = _
 
   override type State = TransformationState
 
   override val nodeDependencies: List[NodeDependency] = OutputVariableNameDependency :: metaData :: Nil
-
-  override def open(jobData: JobData): Unit = {
-    super.open(jobData)
-    conn = connectionPool.getConnection
-  }
-
-  override def close(): Unit = {
-    Option(conn).foreach(_.close())
-    super.close()
-  }
 
   override def initialParameters: List[Parameter] = QueryParam :: Nil
 
@@ -60,9 +49,8 @@ class SqlEnricher(connectionPool: BasicDataSource) extends EagerService with Sin
         FinalResults(
           context, errors = CustomNodeError("Query is missing", Some(QueryParamName)) :: Nil, state = None)
       } else {
-        val conn_ = connectionPool.getConnection
-        try {
-          val statement = conn_.prepareStatement(query)
+        withConnection { conn =>
+          val statement = conn.prepareStatement(query)
           val queryArgParams = toParameters(statement.getParameterMetaData())
           NextParameters(
             parameters = queryArgParams,
@@ -71,7 +59,7 @@ class SqlEnricher(connectionPool: BasicDataSource) extends EagerService with Sin
               argsCount = queryArgParams.size,
               tableDef = TableDef(statement.getMetaData)
             )))
-        } finally { conn_.close() }
+        }
       }
 
     case TransformationStep(_, state@Some(TransformationState(_, _, tableDef))) =>
@@ -94,18 +82,22 @@ class SqlEnricher(connectionPool: BasicDataSource) extends EagerService with Sin
       override def invokeService(params: Map[String, Any])
                                 (implicit ec: ExecutionContext, collector: InvocationCollectors.ServiceInvocationCollector, contextId: ContextId): Future[Any] = {
         val state = finalState.get
-        val statement = conn.prepareStatement(state.query)
-        (1 to state.argsCount).foreach { argNo =>
-          statement.setObject(argNo, params(s"$ArgPrefix$argNo"))
-        }
-        val resultSet = statement.executeQuery()
         val results: java.util.List[TypedMap] = Collections.emptyList()
-        while (resultSet.next()) {
-          val fields = state.tableDef.columnDefs.map { columnDef =>
-            columnDef.name -> resultSet.getObject(columnDef.no)
-          }.toMap
-          results.add(TypedMap(fields))
+
+        withConnection { conn =>
+          val statement = conn.prepareStatement(state.query)
+          (1 to state.argsCount).foreach { argNo =>
+            statement.setObject(argNo, params(s"$ArgPrefix$argNo"))
+          }
+          val resultSet = statement.executeQuery()
+          while (resultSet.next()) {
+            val fields = state.tableDef.columnDefs.map { columnDef =>
+              columnDef.name -> resultSet.getObject(columnDef.no)
+            }.toMap
+            results.add(TypedMap(fields))
+          }
         }
+
         Future.successful { results }
       }
     }
