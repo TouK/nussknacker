@@ -15,6 +15,8 @@ lazy val supportedScalaVersions = List(scala212, scala211)
 
 // Silencer must be compatible with exact scala version - see compatibility matrix: https://search.maven.org/search?q=silencer-plugin
 // Silencer 1.7.x require Scala 2.12.11 (see warning above)
+// Silencer (and all '@silent' annotations) can be removed after we drop support for Scala 2.11
+// https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
 val silencerV_2_12 = "1.6.0"
 val silencerV = "1.7.0"
 

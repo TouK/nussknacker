@@ -1191,7 +1191,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   // Remove @silent after upgrade to silencer 1.7
   @silent("deprecated")
-  @nowarn("deprecated")
+  @nowarn("cat=deprecation")
   object ServiceReturningTypeSample extends Service with ServiceReturningType {
 
     @MethodToInvoke
@@ -1210,7 +1210,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   // Remove @silent after upgrade to silencer 1.7
   @silent("deprecated")
-  @nowarn("deprecated")
+  @nowarn("cat=deprecation")
   object ServiceReturningTypeWithExplicitMethodSample extends Service with ServiceReturningType with ServiceWithExplicitMethod {
 
     override def returnType(parameters: Map[String, (TypingResult, Option[Any])]): typing.TypingResult = {
@@ -1250,7 +1250,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   // Remove @silent after upgrade to silencer 1.7
   @silent("deprecated")
-  @nowarn("deprecated")
+  @nowarn("cat=deprecation")
   object ServiceWithCustomValidation extends Service with ServiceReturningType {
 
     @MethodToInvoke

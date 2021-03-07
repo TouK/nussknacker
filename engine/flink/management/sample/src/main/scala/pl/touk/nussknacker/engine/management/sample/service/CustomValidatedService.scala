@@ -10,7 +10,7 @@ import scala.concurrent.Future
 
 // Remove @silent after upgrade to silencer 1.7
 @silent("deprecated")
-@nowarn("deprecated")
+@nowarn("cat=deprecation")
 class CustomValidatedService extends Service with ServiceReturningType {
 
   @MethodToInvoke
