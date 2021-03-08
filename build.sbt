@@ -238,7 +238,6 @@ val configV = "1.4.1"
 val commonsLangV = "3.3.2"
 val commonsTextV = "1.8"
 val commonsIOV = "2.4"
-val commonsDBCP2V = "2.8.0"
 //we want to use 5.x for standalone metrics to have tags, however dropwizard development kind of freezed. Maybe we should consider micrometer?
 //In Flink metrics we use bundled dropwizard metrics v. 3.x
 val dropWizardV = "5.0.0-rc3"
@@ -251,6 +250,7 @@ val slickV = "3.3.3"
 val hsqldbV = "2.5.1"
 val postgresV = "42.2.19"
 val flywayV = "6.3.3"
+val hikaricpV = "3.2.0"
 val confluentV = "5.5.0"
 val jbcryptV = "0.4"
 val cronParserV = "9.1.3"
@@ -483,7 +483,7 @@ lazy val flinkManagementSample = (project in engine("flink/management/sample")).
     }
   ).
   // depends on interpreter because of SampleNodeAdditionalInfoProvider which takes NodeData as a parameter
-  dependsOn(kafkaFlinkUtil, flinkModelUtil, avroFlinkUtil, interpreter, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test")
+  dependsOn(extensions, kafkaFlinkUtil, flinkModelUtil, avroFlinkUtil, interpreter, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test")
 
 lazy val managementJavaSample = (project in engine("flink/management/java_sample")).
   settings(commonSettings).
@@ -720,7 +720,6 @@ lazy val flinkModelUtil = (project in engine("flink/model-util")).
     libraryDependencies ++= {
       Seq(
         "javax.validation" % "validation-api" % javaxValidationApiV,
-        "org.apache.commons" % "commons-dbcp2" % commonsDBCP2V,
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
       )
     }
@@ -981,6 +980,19 @@ lazy val ui = (project in file("ui/server"))
     engineStandalone % "provided"
   )
 
+// This module is intended to be moved outside Nussknacker's main repository.
+lazy val extensions = project
+  .settings(commonSettings)
+  .settings(
+    name := "nussknacker-extensions",
+    libraryDependencies ++= {
+      Seq(
+//        "org.springframework" % "spring-core" % springV,
+        "org.springframework" % "spring-jdbc" % springV,
+        "com.zaxxer" % "HikariCP" % hikaricpV
+      )
+    }
+  ).dependsOn(api)
 
 lazy val root = (project in file("."))
   .aggregate(

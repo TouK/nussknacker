@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.flink.util.db
+package pl.touk.nussknacker.extensions.db
 
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypedObjectTypingResult, TypingResult}
 

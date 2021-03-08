@@ -1,6 +1,6 @@
-package pl.touk.nussknacker.engine.flink.util.service
+package pl.touk.nussknacker.extensions.service
 
-import org.apache.commons.dbcp2.BasicDataSource
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
@@ -8,8 +8,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.typed.{TypedMap, typing}
-import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.flink.util.db.{TableDef, WithDBConnectionPool}
+import pl.touk.nussknacker.extensions.db.{DBConnectionPool, TableDef, WithDBConnectionPool}
 
 import java.sql.ParameterMetaData
 import java.util.Collections
@@ -29,7 +28,7 @@ object SqlEnricher {
   case class TransformationState(query: String, argsCount: Int, tableDef: TableDef)
 }
 
-class SqlEnricher(val connectionPool: BasicDataSource) extends EagerService
+class SqlEnricher(val connectionPool: DBConnectionPool) extends EagerService
   with SingleInputGenericNodeTransformation[ServiceInvoker] with WithDBConnectionPool {
   import SqlEnricher._
 
@@ -74,7 +73,6 @@ class SqlEnricher(val connectionPool: BasicDataSource) extends EagerService
   }
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[TransformationState]): ServiceInvoker = {
-
     new ServiceInvoker {
       override val returnType: TypingResult =
         finalState.map(_.tableDef.resultSetType).getOrElse(typing.Unknown)

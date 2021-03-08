@@ -34,9 +34,8 @@ import pl.touk.nussknacker.engine.management.sample.source._
 import pl.touk.nussknacker.engine.management.sample.transformer._
 import pl.touk.nussknacker.engine.util.LoggingListener
 import net.ceedubs.ficus.Ficus._
-import org.apache.commons.dbcp2.BasicDataSourceFactory
-import pl.touk.nussknacker.engine.flink.util.db.DBPoolsConfig
-import pl.touk.nussknacker.engine.flink.util.service.SqlEnricher
+import pl.touk.nussknacker.extensions.db.{DBPoolsConfig, HikariDBConnectionPool}
+import pl.touk.nussknacker.extensions.service.SqlEnricher
 
 object DevProcessConfigCreator {
   val oneElementValue = "One element"
@@ -92,7 +91,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = {
     val dBPoolConfig = DBPoolsConfig(processObjectDependencies.config)("devDB")
-    val dbConnectionPool = BasicDataSourceFactory.createDataSource(dBPoolConfig.toProperties)
+    val dbConnectionPool = HikariDBConnectionPool(dBPoolConfig)
     Map(
       "accountService" -> categories(EmptyService).withNodeConfig(SingleNodeConfig.zero.copy(docsUrl = Some("accountServiceDocs"))),
       "componentService" -> categories(EmptyService),

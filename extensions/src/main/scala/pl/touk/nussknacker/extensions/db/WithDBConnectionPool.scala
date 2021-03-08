@@ -1,12 +1,10 @@
-package pl.touk.nussknacker.engine.flink.util.db
-
-import org.apache.commons.dbcp2.BasicDataSource
+package pl.touk.nussknacker.extensions.db
 
 import java.sql.Connection
 
 trait WithDBConnectionPool {
 
-  def connectionPool: BasicDataSource
+  def connectionPool: DBConnectionPool
 
   def withConnection[T](f: Connection => T): T = {
     val conn = connectionPool.getConnection
