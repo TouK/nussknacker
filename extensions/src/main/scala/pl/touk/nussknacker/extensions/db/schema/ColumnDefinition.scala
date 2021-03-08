@@ -1,15 +1,15 @@
-package pl.touk.nussknacker.extensions.db
+package pl.touk.nussknacker.extensions.db.schema
 
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
 import java.sql.ResultSetMetaData
 
-object ColumnDef {
-  def apply(columnNo: Int, resultMeta: ResultSetMetaData): ColumnDef =
-    ColumnDef(
+object ColumnDefinition {
+  def apply(columnNo: Int, resultMeta: ResultSetMetaData): ColumnDefinition =
+    ColumnDefinition(
       no = columnNo,
       name = resultMeta.getColumnName(columnNo),
       typ = Typed(Class.forName(resultMeta.getColumnClassName(columnNo))))
 }
 
-case class ColumnDef(no: Int, name: String, typ: TypingResult)
+case class ColumnDefinition(no: Int, name: String, typ: TypingResult)

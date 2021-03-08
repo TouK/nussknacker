@@ -987,7 +987,9 @@ lazy val extensions = project
     name := "nussknacker-extensions",
     libraryDependencies ++= {
       Seq(
-        "com.zaxxer" % "HikariCP" % hikaricpV
+        "com.zaxxer" % "HikariCP" % hikaricpV,
+        "org.scalatest" %% "scalatest" % scalaTestV % "test",
+        "org.hsqldb" % "hsqldb" % hsqldbV % "test"
       )
     }
   ).dependsOn(api)

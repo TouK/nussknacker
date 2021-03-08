@@ -34,7 +34,7 @@ import pl.touk.nussknacker.engine.management.sample.source._
 import pl.touk.nussknacker.engine.management.sample.transformer._
 import pl.touk.nussknacker.engine.util.LoggingListener
 import net.ceedubs.ficus.Ficus._
-import pl.touk.nussknacker.extensions.db.{DBPoolsConfig, HikariDataSourceFactory}
+import pl.touk.nussknacker.extensions.db.pool.{DBPoolsConfig, HikariDataSourceFactory}
 import pl.touk.nussknacker.extensions.service.SqlEnricher
 
 object DevProcessConfigCreator {
@@ -90,8 +90,9 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
   )
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = {
-    val dBPoolConfig = DBPoolsConfig(processObjectDependencies.config)("devDB")
-    val dbConnectionPool = HikariDataSourceFactory(dBPoolConfig)
+    val sqlEnrichers = DBPoolsConfig(processObjectDependencies.config).map { case (dbPoolName, dbConfig) =>
+      s"sqlEnricher-$dbPoolName" -> all(new SqlEnricher(HikariDataSourceFactory(dbConfig)))
+    }
     Map(
       "accountService" -> categories(EmptyService).withNodeConfig(SingleNodeConfig.zero.copy(docsUrl = Some("accountServiceDocs"))),
       "componentService" -> categories(EmptyService),
@@ -130,9 +131,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "meetingService" -> features(MeetingService),
       "dynamicService" -> categories(new DynamicService),
       "customValidatedService" -> categories(new CustomValidatedService),
-      "modelConfigReader" -> categories(new ModelConfigReaderService(processObjectDependencies.config)),
-      "sqlEnricher" -> all(new SqlEnricher(dbConnectionPool))
-    )
+      "modelConfigReader" -> categories(new ModelConfigReaderService(processObjectDependencies.config))
+    ) ++ sqlEnrichers
   }
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
