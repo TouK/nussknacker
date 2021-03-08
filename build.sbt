@@ -987,8 +987,6 @@ lazy val extensions = project
     name := "nussknacker-extensions",
     libraryDependencies ++= {
       Seq(
-//        "org.springframework" % "spring-core" % springV,
-        "org.springframework" % "spring-jdbc" % springV,
         "com.zaxxer" % "HikariCP" % hikaricpV
       )
     }

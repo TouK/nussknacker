@@ -34,7 +34,7 @@ import pl.touk.nussknacker.engine.management.sample.source._
 import pl.touk.nussknacker.engine.management.sample.transformer._
 import pl.touk.nussknacker.engine.util.LoggingListener
 import net.ceedubs.ficus.Ficus._
-import pl.touk.nussknacker.extensions.db.{DBPoolsConfig, HikariDBConnectionPool}
+import pl.touk.nussknacker.extensions.db.{DBPoolsConfig, HikariDataSourceFactory}
 import pl.touk.nussknacker.extensions.service.SqlEnricher
 
 object DevProcessConfigCreator {
@@ -91,7 +91,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = {
     val dBPoolConfig = DBPoolsConfig(processObjectDependencies.config)("devDB")
-    val dbConnectionPool = HikariDBConnectionPool(dBPoolConfig)
+    val dbConnectionPool = HikariDataSourceFactory(dBPoolConfig)
     Map(
       "accountService" -> categories(EmptyService).withNodeConfig(SingleNodeConfig.zero.copy(docsUrl = Some("accountServiceDocs"))),
       "componentService" -> categories(EmptyService),

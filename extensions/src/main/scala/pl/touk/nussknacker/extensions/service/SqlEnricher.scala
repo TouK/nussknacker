@@ -8,10 +8,11 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.typed.{TypedMap, typing}
-import pl.touk.nussknacker.extensions.db.{DBConnectionPool, TableDef, WithDBConnectionPool}
+import pl.touk.nussknacker.extensions.db.{TableDef, WithDBConnectionPool}
 
 import java.sql.ParameterMetaData
 import java.util.Collections
+import javax.sql.DataSource
 import scala.concurrent.{ExecutionContext, Future}
 
 object SqlEnricher {
@@ -28,7 +29,7 @@ object SqlEnricher {
   case class TransformationState(query: String, argsCount: Int, tableDef: TableDef)
 }
 
-class SqlEnricher(val connectionPool: DBConnectionPool) extends EagerService
+class SqlEnricher(val dataSource: DataSource) extends EagerService
   with SingleInputGenericNodeTransformation[ServiceInvoker] with WithDBConnectionPool {
   import SqlEnricher._
 
@@ -44,12 +45,11 @@ class SqlEnricher(val connectionPool: DBConnectionPool) extends EagerService
       NextParameters(initialParameters)
 
     case TransformationStep((QueryParamName, DefinedEagerParameter(query: String, _)) :: Nil, None) =>
-      if (query.isBlank) {
+      if (query.isBlank)
         FinalResults(
           context, errors = CustomNodeError("Query is missing", Some(QueryParamName)) :: Nil, state = None)
-      } else {
-        withConnection { conn =>
-          val statement = conn.prepareStatement(query)
+      else
+        withConnection(query) { statement =>
           val queryArgParams = toParameters(statement.getParameterMetaData())
           NextParameters(
             parameters = queryArgParams,
@@ -59,7 +59,6 @@ class SqlEnricher(val connectionPool: DBConnectionPool) extends EagerService
               tableDef = TableDef(statement.getMetaData)
             )))
         }
-      }
 
     case TransformationStep(_, state@Some(TransformationState(_, _, tableDef))) =>
       val newCtxV = context.withVariable(
@@ -82,8 +81,7 @@ class SqlEnricher(val connectionPool: DBConnectionPool) extends EagerService
         val state = finalState.get
         val results: java.util.List[TypedMap] = Collections.emptyList()
 
-        withConnection { conn =>
-          val statement = conn.prepareStatement(state.query)
+        withConnection(state.query) { statement =>
           (1 to state.argsCount).foreach { argNo =>
             statement.setObject(argNo, params(s"$ArgPrefix$argNo"))
           }
