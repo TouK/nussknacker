@@ -4,12 +4,10 @@ import {UnknownFunction} from "../../../../../types/common"
 import ExpressionSuggest from "./ExpressionSuggest"
 import {Editor} from "./Editor"
 import {VariableTypes} from "../../../../../types"
+import {ExpressionObj} from "./types"
 
 type Props = {
-  expressionObj: {
-    expression: string,
-    language: string,
-  },
+  expressionObj: ExpressionObj,
   validators: Array<$TodoType>,
   isMarked: boolean,
   showValidation: boolean,
