@@ -2,7 +2,7 @@ import React from "react"
 import {UnknownFunction} from "../../../../types/common"
 import {editors, EditorType, simpleEditorValidators} from "./expression/Editor"
 import {isEmpty} from "lodash"
-import {ExpressionObj} from "./expression/types"
+import {ExpressionLang, ExpressionObj} from "./expression/types"
 import {spelFormatters} from "./expression/Formatter"
 import {VariableTypes} from "../../../../types"
 import {Error} from "./Validators"
@@ -44,6 +44,9 @@ class EditableEditor extends React.Component<Props, State> {
     const Editor = editors[editorType]
 
     const validators = simpleEditorValidators(param, errors, fieldName, fieldLabel)
+
+    const formatter = expressionObj.language === ExpressionLang.SpEL ? spelFormatters[param?.typ?.refClazzName] : null
+
     return (
       <div className={`${rowClassName ? rowClassName : " node-row"}`}>
         {fieldLabel && renderFieldLabel(fieldLabel)}
@@ -52,8 +55,7 @@ class EditableEditor extends React.Component<Props, State> {
           editorConfig={param?.editor}
           className={`${valueClassName ? valueClassName : "node-value"}`}
           validators={validators}
-          formatter={expressionObj.language === "spel" && spelFormatters[param?.typ?.refClazzName] != null ?
-            spelFormatters[param.typ.refClazzName] : null}
+          formatter={formatter}
           expressionInfo={validationLabelInfo}
         />
       </div>

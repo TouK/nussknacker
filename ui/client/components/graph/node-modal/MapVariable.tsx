@@ -1,4 +1,5 @@
 import _ from "lodash"
+import {ExpressionLang} from "./editors/expression/types"
 import {errorValidator, mandatoryValueValidator, Error} from "./editors/Validators"
 import LabeledInput from "./editors/field/LabeledInput"
 import LabeledTextarea from "./editors/field/LabeledTextarea"
@@ -27,13 +28,16 @@ const MapVariable = (props: Props) => {
     errors, renderFieldLabel, variableTypes, expressionType,
   } = props
 
-  const newField: Field = {name: "", expression: {expression: "", language: "spel"}}
+  const newField: Field = {name: "", expression: {expression: "", language: ExpressionLang.SpEL}}
 
   const addField = () => {
     addElement("fields", newField)
   }
 
-  const onInputChange = (path: string, event: Event) => onChange(path, (event.target as HTMLInputElement).value)
+  const onInputChange = (path: string, event: Event) => {
+    const target = event.target as HTMLInputElement
+    onChange(path, target.value)
+  }
 
   return (
     <div className="node-table-body node-variable-builder-body">

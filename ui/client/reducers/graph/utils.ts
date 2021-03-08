@@ -1,3 +1,4 @@
+import {ExpressionLang} from "../../components/graph/node-modal/editors/expression/types"
 import {GraphState} from "./types"
 import {NodeType, NodeId, Process, GroupType, Edge, EdgeType, ProcessDefinitionData} from "../../types"
 import NodeUtils from "../../components/graph/NodeUtils"
@@ -159,7 +160,6 @@ export function enrichNodeWithProcessDependentData(originalNode: NodeType, proce
       const newBranchParams = declaredBranchParameters.map((branchParamDef) => {
         const existingParamValue = ((existingBranchParams || {}).parameters || []).find(p => p.name === branchParamDef.name)
         const templateParamValue = (node.branchParametersTemplate || []).find(p => p.name === branchParamDef.name)
-        const LANGUAGE = "spel"
         return existingParamValue || cloneDeep(templateParamValue) ||
           // We need to have this fallback to some template for situation when it is existing node and it has't got
           // defined parameters filled. see note in DefinitionPreparer on backend side TODO: remove it after API refactor
@@ -167,7 +167,7 @@ export function enrichNodeWithProcessDependentData(originalNode: NodeType, proce
             name: branchParamDef.name,
             expression: {
               expression: `#${branchParamDef.name}`,
-              language: LANGUAGE,
+              language: ExpressionLang.SpEL,
             },
           })
       })

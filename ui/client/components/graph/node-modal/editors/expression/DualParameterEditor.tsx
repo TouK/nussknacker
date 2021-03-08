@@ -7,35 +7,35 @@ import RawEditor from "./RawEditor"
 import {VariableTypes} from "../../../../../types"
 
 type Props = {
-    editorConfig: $TodoType,
-    expressionObj: ExpressionObj,
-    readOnly: boolean,
-    valueClassName: string,
+  editorConfig: $TodoType,
+  expressionObj: ExpressionObj,
+  readOnly: boolean,
+  valueClassName: string,
 
-    validators: Array<$TodoType>,
-    isMarked: boolean,
-    showValidation: boolean,
-    onValueChange: UnknownFunction,
-    className: string,
-    variableTypes: VariableTypes,
-    showSwitch: boolean,
+  validators: Array<$TodoType>,
+  isMarked: boolean,
+  showValidation: boolean,
+  onValueChange: UnknownFunction,
+  className: string,
+  variableTypes: VariableTypes,
+  showSwitch: boolean,
 }
 
 export default function DualParameterEditor(props: Props) {
-
-  const {editorConfig, readOnly, valueClassName, expressionObj, showSwitch} = props
+  const {editorConfig, readOnly, valueClassName, expressionObj} = props
   const SimpleEditor = editors[editorConfig.simpleEditor.type] as SimpleEditor
-  const simpleEditorAllowsSwitch = SimpleEditor.switchableTo(expressionObj, editorConfig.simpleEditor)
+  const showSwitch = props.showSwitch && SimpleEditor
+  const simpleEditorAllowsSwitch = SimpleEditor?.switchableTo(expressionObj, editorConfig.simpleEditor)
 
   const initialDisplaySimple = editorConfig.defaultMode === DualEditorMode.SIMPLE && simpleEditorAllowsSwitch
   const [displayRawEditor, setDisplayRawEditor] = useState(!initialDisplaySimple)
 
   const switchable = !displayRawEditor || simpleEditorAllowsSwitch
-  const hint = simpleEditorAllowsSwitch ? SimpleEditor.switchableToHint() : SimpleEditor.notSwitchableToHint()
+  const hint = simpleEditorAllowsSwitch ? SimpleEditor?.switchableToHint() : SimpleEditor?.notSwitchableToHint()
 
   const editorProps = {
     ...props,
-    className:  `${valueClassName ? valueClassName : "node-value"} ${showSwitch ? "switchable" : ""}`,
+    className: `${valueClassName ? valueClassName : "node-value"} ${showSwitch ? "switchable" : ""}`,
   }
   return (
     <>
@@ -52,7 +52,8 @@ export default function DualParameterEditor(props: Props) {
             displayRawEditor={displayRawEditor}
             readOnly={readOnly}
           />
-        ) : null }
+        ) :
+        null}
     </>
   )
 }
