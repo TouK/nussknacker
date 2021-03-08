@@ -1,8 +1,9 @@
-package pl.touk.nussknacker.engine.flink.util.db
+package pl.touk.nussknacker.extensions.db
 
 import com.typesafe.config.Config
 
 object DBPoolsConfig {
+
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
