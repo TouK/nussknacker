@@ -41,11 +41,6 @@ class EditableEditor extends React.Component<Props, State> {
 
     const editorType = isEmpty(param) ? EditorType.RAW_PARAMETER_EDITOR : param.editor.type
 
-    // FIXME: temporary until simpleEditor.type in response change
-    if (fieldLabel === "sql" && fieldName === "sql") {
-      param.editor.simpleEditor.type = EditorType.SQL_PARAMETER_EDITOR
-    }
-
     const Editor = editors[editorType]
 
     const validators = simpleEditorValidators(param, errors, fieldName, fieldLabel)

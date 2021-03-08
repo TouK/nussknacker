@@ -19,7 +19,7 @@ export enum FormatterType {
   Time = "java.time.LocalTime",
   Date = "java.time.LocalDate",
   DateTime = "java.time.LocalDateTime",
-  Sql = "java.lang.String", // FIXME: replace with right value
+  Sql = "java.lang.String", // for now same as String
 }
 
 const stringSpelFormatter: Formatter = {
@@ -137,7 +137,6 @@ export const spelFormatters: Record<FormatterType, Formatter> = {
   [FormatterType.Time]: spelLocalTimeFormatter,
   [FormatterType.Date]: spelDateFormatter,
   [FormatterType.DateTime]: spelDateTimeFormatter,
-  [FormatterType.Sql]: stringSpelFormatter,
 }
 
 export const typeFormatters: Record<FormatterType, Formatter> = {
@@ -148,5 +147,4 @@ export const typeFormatters: Record<FormatterType, Formatter> = {
   [FormatterType.DateTime]: dateTimeFormatter,
   [FormatterType.String]: defaultFormatter,
   [FormatterType.Cron]: defaultFormatter,
-  [FormatterType.Sql]: defaultFormatter,
 }

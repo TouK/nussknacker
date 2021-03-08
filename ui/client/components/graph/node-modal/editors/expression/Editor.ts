@@ -55,7 +55,7 @@ export enum EditorType {
   CRON_EDITOR = "CronParameterEditor",
   TEXTAREA_PARAMETER_EDITOR = "TextareaParameterEditor",
   JSON_PARAMETER_EDITOR = "JsonParameterEditor",
-  SQL_PARAMETER_EDITOR = "SQLParameterEditor"
+  SQL_PARAMETER_EDITOR = "SqlParameterEditor"
 }
 
 const configureValidators = (paramConfig: $TodoType): Array<Validator> => {
