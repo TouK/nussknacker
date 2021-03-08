@@ -1,6 +1,7 @@
 import NodeUtils from "../NodeUtils"
 import {NodeType, Parameter, UIParameter} from "../../../types"
 import {cloneDeep, get, set} from "lodash"
+import {ExpressionLang} from "./editors/expression/types"
 
 export type AdjustReturn = {
     node: NodeType,
@@ -43,7 +44,7 @@ export const adjustParameters = (node: NodeType, parameterDefinitions: Array<UIP
       const currentParam = currentParameters.find(p => p.name == def.name)
       const parameterFromBase = baseNodeParameters?.find(p => p.name == def.name)
       //TODO: pass default values from BE, then parameterFromBase wont' be needed
-      const parameterFromDefinition = {name: def.name, expression: {expression: "", language: "spel"}}
+      const parameterFromDefinition = {name: def.name, expression: {expression: "", language: ExpressionLang.SpEL}}
       return currentParam || parameterFromBase || parameterFromDefinition
     })
     const cloned = cloneDeep(node)

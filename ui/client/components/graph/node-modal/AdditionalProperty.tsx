@@ -2,6 +2,7 @@ import {get} from "lodash"
 import {UnknownFunction} from "../../../types/common"
 import EditableEditor from "./editors/EditableEditor"
 import React from "react"
+import {ExpressionLang} from "./editors/expression/types"
 import {PossibleValue} from "./editors/Validators"
 
 type AdditionalPropertyConfig = {
@@ -31,7 +32,7 @@ export default function AdditionalProperty(props: Props) {
 
   const values = propertyConfig.values?.map(value => ({expression: value, label: value}))
   const current = get(editedNode, `additionalFields.properties.${propertyName}`) || ""
-  const expressionObj = {expression: current, value: current, language: "string"}
+  const expressionObj = {expression: current, value: current, language: ExpressionLang.String}
 
   return (
     <EditableEditor

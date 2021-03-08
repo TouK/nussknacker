@@ -5,7 +5,7 @@ import {SimpleEditor} from "./Editor"
 import {Formatter, FormatterType, typeFormatters} from "./Formatter"
 import {getQuotedStringPattern, QuotationMark} from "./SpelQuotesUtils"
 import RawEditor from "./RawEditor"
-import {ExpressionObj} from "./types"
+import {ExpressionLang, ExpressionObj} from "./types"
 
 type Props = {
   expressionObj: ExpressionObj,
@@ -31,7 +31,7 @@ const SqlEditor: SimpleEditor<Props> = (props: Props) => {
 
   const value = useMemo(() => ({
     expression: sqlFormatter.decode(expressionObj.expression.trim()),
-    language: "sql",
+    language: ExpressionLang.SQL,
   }), [sqlFormatter, expressionObj])
 
   useEffect(() => {
@@ -50,7 +50,7 @@ const SqlEditor: SimpleEditor<Props> = (props: Props) => {
 const quotedStringPattern = getQuotedStringPattern([QuotationMark.single, QuotationMark.double])
 
 const parseable = ({expression, language}: ExpressionObj) => {
-  return language === "spel" && quotedStringPattern.test(expression.trim())
+  return language === ExpressionLang.SpEL && quotedStringPattern.test(expression.trim())
 }
 
 SqlEditor.switchableTo = (expressionObj) => parseable(expressionObj)
