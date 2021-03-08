@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.extensions.db
+package pl.touk.nussknacker.extensions.db.pool
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{Duration, FiniteDuration}

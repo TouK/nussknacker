@@ -8,11 +8,14 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.typed.{TypedMap, typing}
-import pl.touk.nussknacker.extensions.db.{TableDef, WithDBConnectionPool}
+import pl.touk.nussknacker.extensions.db.WithDBConnectionPool
+import pl.touk.nussknacker.extensions.db.schema.TableDefinition
 
 import java.sql.ParameterMetaData
 import java.util.Collections
 import javax.sql.DataSource
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
 
 object SqlEnricher {
@@ -26,7 +29,7 @@ object SqlEnricher {
   private val QueryParam: Parameter = Parameter(QueryParamName, Typed[String]).copy(
     editor = Some(TextareaParameterEditor))
 
-  case class TransformationState(query: String, argsCount: Int, tableDef: TableDef)
+  case class TransformationState(query: String, argsCount: Int, tableDef: TableDefinition)
 }
 
 class SqlEnricher(val dataSource: DataSource) extends EagerService
@@ -56,7 +59,7 @@ class SqlEnricher(val dataSource: DataSource) extends EagerService
             state = Some(TransformationState(
               query = query,
               argsCount = queryArgParams.size,
-              tableDef = TableDef(statement.getMetaData)
+              tableDef = TableDefinition(statement.getMetaData)
             )))
         }
 
@@ -79,22 +82,24 @@ class SqlEnricher(val dataSource: DataSource) extends EagerService
       override def invokeService(params: Map[String, Any])
                                 (implicit ec: ExecutionContext, collector: InvocationCollectors.ServiceInvocationCollector, contextId: ContextId): Future[Any] = {
         val state = finalState.get
-        val results: java.util.List[TypedMap] = Collections.emptyList()
+        val results = new ArrayBuffer[TypedMap]()
 
         withConnection(state.query) { statement =>
           (1 to state.argsCount).foreach { argNo =>
             statement.setObject(argNo, params(s"$ArgPrefix$argNo"))
           }
           val resultSet = statement.executeQuery()
+          resultSet.getFetchSize
           while (resultSet.next()) {
             val fields = state.tableDef.columnDefs.map { columnDef =>
               columnDef.name -> resultSet.getObject(columnDef.no)
             }.toMap
-            results.add(TypedMap(fields))
+            results += TypedMap(fields)
           }
         }
+        import scala.collection.JavaConverters._
 
-        Future.successful { results }
+        Future.successful { results.asJava }
       }
     }
   }

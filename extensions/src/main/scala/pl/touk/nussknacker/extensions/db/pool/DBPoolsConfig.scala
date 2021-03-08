@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.extensions.db
+package pl.touk.nussknacker.extensions.db.pool
 
 import com.typesafe.config.Config
 
@@ -9,6 +9,7 @@ object DBPoolsConfig {
 
   final val configPath: String = "dbPools"
 
-  def apply(config: Config): Map[String, DBPoolConfig] =
-    config.as[Map[String, DBPoolConfig]](configPath)
+  def apply(config: Config): Map[String, DBPoolConfig] = config
+    .getAs[Map[String, DBPoolConfig]](configPath)
+    .getOrElse(Map.empty)
 }

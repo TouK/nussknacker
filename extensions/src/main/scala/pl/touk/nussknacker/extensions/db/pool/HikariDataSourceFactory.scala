@@ -1,6 +1,6 @@
-package pl.touk.nussknacker.extensions.db
-import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+package pl.touk.nussknacker.extensions.db.pool
 
+import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 
 object HikariDataSourceFactory {
 
