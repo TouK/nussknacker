@@ -34,7 +34,10 @@ const MapVariable = (props: Props) => {
     addElement("fields", newField)
   }
 
-  const onInputChange = (path: string, event: Event) => onChange(path, event.target as HTMLInputElement.value)
+  const onInputChange = (path: string, event: Event) => {
+    const target = event.target as HTMLInputElement
+    onChange(path, target.value)
+  }
 
   return (
     <div className="node-table-body node-variable-builder-body">
