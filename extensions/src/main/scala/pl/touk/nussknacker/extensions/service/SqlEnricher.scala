@@ -12,9 +12,7 @@ import pl.touk.nussknacker.extensions.db.WithDBConnectionPool
 import pl.touk.nussknacker.extensions.db.schema.TableDefinition
 
 import java.sql.ParameterMetaData
-import java.util.Collections
 import javax.sql.DataSource
-import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -27,7 +25,7 @@ object SqlEnricher {
   private val metaData = TypedNodeDependency(classOf[MetaData])
 
   private val QueryParam: Parameter = Parameter(QueryParamName, Typed[String]).copy(
-    editor = Some(TextareaParameterEditor))
+    editor = Some(SqlParameterEditor))
 
   case class TransformationState(query: String, argsCount: Int, tableDef: TableDefinition)
 }
