@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.{ProcessMarshaller, ProcessUnmarshallError}
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
-import pl.touk.nussknacker.engine.standalone.api.DeploymentData
+import pl.touk.nussknacker.engine.standalone.api.StandaloneDeploymentData
 import pl.touk.nussknacker.engine.standalone.management.StandaloneProcessManagerProvider
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
 
@@ -34,7 +34,7 @@ object DeploymentService {
 class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData,
                         processRepository: ProcessRepository) extends LazyLogging with ProcessInterpreters {
 
-  private val processInterpreters: collection.concurrent.TrieMap[ProcessName, (StandaloneProcessInterpreter, DeploymentData)] = collection.concurrent.TrieMap()
+  private val processInterpreters: collection.concurrent.TrieMap[ProcessName, (StandaloneProcessInterpreter, StandaloneDeploymentData)] = collection.concurrent.TrieMap()
 
   private val pathToInterpreterMap: collection.concurrent.TrieMap[String, StandaloneProcessInterpreter] = collection.concurrent.TrieMap()
 
@@ -49,7 +49,7 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
     }
   }
 
-  def deploy(deploymentData: DeploymentData)(implicit ec: ExecutionContext): Either[NonEmptyList[DeploymentError], Unit] = {
+  def deploy(deploymentData: StandaloneDeploymentData)(implicit ec: ExecutionContext): Either[NonEmptyList[DeploymentError], Unit] = {
     val processName = deploymentData.processVersion.processName
 
     toEspProcess(deploymentData.processJson).andThen { process =>
@@ -79,7 +79,7 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
   }
 
   def checkStatus(processName: ProcessName): Option[ProcessState] = {
-    processInterpreters.get(processName).map { case (_, DeploymentData(_, deploymentTime, processVersion, _)) => SimpleProcessState(
+    processInterpreters.get(processName).map { case (_, StandaloneDeploymentData(_, deploymentTime, processVersion, _)) => SimpleProcessState(
         deploymentId = ExternalDeploymentId(processName.value),
         status = SimpleStateStatus.Running,
         version = Option(processVersion),

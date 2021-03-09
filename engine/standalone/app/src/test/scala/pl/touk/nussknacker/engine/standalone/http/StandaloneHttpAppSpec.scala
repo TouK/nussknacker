@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.engine.standalone.api.DeploymentData
+import pl.touk.nussknacker.engine.standalone.api.StandaloneDeploymentData
 import pl.touk.nussknacker.engine.standalone.utils.logging.StandaloneRequestResponseLogger
 import pl.touk.nussknacker.engine.testing.ModelJarBuilder
 
@@ -44,7 +44,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
 
   private val testEpoch = (math.random * 10000).toLong
 
-  private def deploymentData(processJson: String) = DeploymentData(processJson, testEpoch,
+  private def deploymentData(processJson: String) = StandaloneDeploymentData(processJson, testEpoch,
     ProcessVersion.empty.copy(processName=procId), DeploymentData.empty)
 
   def processJson = processToJson(StandaloneProcessBuilder

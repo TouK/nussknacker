@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.standalone.api.DeploymentData
+import pl.touk.nussknacker.engine.standalone.api.StandaloneDeploymentData
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import scala.concurrent.Future
@@ -20,7 +20,7 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
       Future.failed(failure)
     }
 
-    override def deploy(deploymentData: DeploymentData): Future[Unit] = {
+    override def deploy(deploymentData: StandaloneDeploymentData): Future[Unit] = {
       deploymentData.processVersion.processName shouldBe id
       Future.failed(failure)
     }
@@ -41,12 +41,12 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
 
   test("Deployment should complete when all parts are successful") {
     val multiClient = new MultiInstanceStandaloneProcessClient(List(okClient(), okClient()))
-    multiClient.deploy(DeploymentData("json", 1000, ProcessVersion.empty.copy(processName=id), DeploymentData.empty)).futureValue shouldBe (())
+    multiClient.deploy(StandaloneDeploymentData("json", 1000, ProcessVersion.empty.copy(processName=id), DeploymentData.empty)).futureValue shouldBe (())
   }
 
   test("Deployment should fail when one part fails") {
     val multiClient = new MultiInstanceStandaloneProcessClient(List(okClient(), failClient))
-    multiClient.deploy(DeploymentData("json", 1000, ProcessVersion.empty.copy(processName=id), DeploymentData.empty)).failed.futureValue shouldBe failure
+    multiClient.deploy(StandaloneDeploymentData("json", 1000, ProcessVersion.empty.copy(processName=id), DeploymentData.empty)).failed.futureValue shouldBe failure
   }
 
   test("Status should be none if no client returns status") {
@@ -100,7 +100,7 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
       Future.successful(())
     }
 
-    override def deploy(deploymentData: DeploymentData): Future[Unit] = {
+    override def deploy(deploymentData: StandaloneDeploymentData): Future[Unit] = {
       deploymentData.processVersion.processName shouldBe id
       deploymentData.deploymentTime shouldBe expectedTime
       Future.successful(())
