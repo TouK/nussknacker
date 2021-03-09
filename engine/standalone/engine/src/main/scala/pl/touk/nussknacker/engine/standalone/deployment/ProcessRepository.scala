@@ -4,7 +4,7 @@ import java.io.{File, PrintWriter}
 import java.nio.charset.StandardCharsets
 
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.standalone.api.DeploymentData
+import pl.touk.nussknacker.engine.standalone.api.StandaloneDeploymentData
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.CirceUtil
 
@@ -12,21 +12,21 @@ import scala.io.Source
 
 trait ProcessRepository {
 
-  def add(id: ProcessName, deploymentData: DeploymentData) : Unit
+  def add(id: ProcessName, deploymentData: StandaloneDeploymentData) : Unit
 
   def remove(id: ProcessName) : Unit
 
-  def loadAll: Map[ProcessName, DeploymentData]
+  def loadAll: Map[ProcessName, StandaloneDeploymentData]
 
 }
 
 class EmptyProcessRepository extends ProcessRepository {
 
-  override def add(id: ProcessName, deploymentData: DeploymentData): Unit = {}
+  override def add(id: ProcessName, deploymentData: StandaloneDeploymentData): Unit = {}
 
   override def remove(id: ProcessName): Unit = {}
 
-  override def loadAll: Map[ProcessName, DeploymentData] = Map()
+  override def loadAll: Map[ProcessName, StandaloneDeploymentData] = Map()
 
 }
 
@@ -43,7 +43,7 @@ object FileProcessRepository {
 
 class FileProcessRepository(path: File) extends ProcessRepository {
 
-  override def add(id: ProcessName, deploymentData: DeploymentData): Unit = {
+  override def add(id: ProcessName, deploymentData: StandaloneDeploymentData): Unit = {
     val outFile = new File(path, id.value)
     val writer = new PrintWriter(outFile, StandardCharsets.UTF_8.name())
     try {
@@ -62,8 +62,8 @@ class FileProcessRepository(path: File) extends ProcessRepository {
     try s.getLines().mkString("\n") finally s.close()
   }
 
-  override def loadAll: Map[ProcessName, DeploymentData] = path.listFiles().filter(_.isFile).map { file =>
-    ProcessName(file.getName) -> CirceUtil.decodeJson[DeploymentData](fileToString(file))
+  override def loadAll: Map[ProcessName, StandaloneDeploymentData] = path.listFiles().filter(_.isFile).map { file =>
+    ProcessName(file.getName) -> CirceUtil.decodeJson[StandaloneDeploymentData](fileToString(file))
       .fold(error => throw new IllegalStateException(s"Could not decode deployment data for file: $file", error), identity)
   }.toMap
 

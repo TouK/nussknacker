@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.testing
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData, TypeSpecificData}
-import pl.touk.nussknacker.engine.api.deployment.{CustomAction, CustomActionError, CustomActionNotImplemented, CustomActionRequest, CustomActionResult, ProcessDeploymentData, ProcessManager, ProcessState, ProcessStateDefinitionManager, SavepointResult, TestProcess, User}
+import pl.touk.nussknacker.engine.api.deployment.{CustomAction, CustomActionError, CustomActionNotImplemented, CustomActionRequest, CustomActionResult, DeploymentData, ProcessDeploymentData, ProcessManager, ProcessState, ProcessStateDefinitionManager, SavepointResult, TestProcess, User}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.{ModelData, ProcessManagerProvider}
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
@@ -12,7 +12,8 @@ import scala.concurrent.Future
 
 class ProcessManagerStub extends ProcessManager {
 
-  override def deploy(processId: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String], user: User): Future[Unit] =
+
+  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]): Future[Unit] =
     Future.successful(())
 
   override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] =

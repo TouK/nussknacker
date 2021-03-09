@@ -37,7 +37,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
       case Nil => Future.successful(None)
       case duplicates if duplicates.count(isNotFinished) > 1 =>
         Future.successful(Some(ProcessState(
-          Some(DeploymentId(duplicates.head.jid)),
+          Some(ExternalDeploymentId(duplicates.head.jid)),
           //we cannot have e.g. Failed here as we don't want to allow more jobs
           FlinkStateStatus.MultipleJobsRunning,
           definitionManager = processStateDefinitionManager,
@@ -58,7 +58,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
           }
 
           Some(ProcessState(
-            Some(DeploymentId(job.jid)),
+            Some(ExternalDeploymentId(job.jid)),
             stateStatus,
             version = version,
             definitionManager = processStateDefinitionManager,
@@ -108,15 +108,15 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
   }
 
 
-  override protected def cancel(deploymentId: DeploymentId): Future[Unit] = {
+  override protected def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = {
     client.cancel(deploymentId)
   }
 
-  override protected def makeSavepoint(deploymentId: DeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
+  override protected def makeSavepoint(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
     client.makeSavepoint(deploymentId, savepointDir)
   }
 
-  override protected def stop(deploymentId: DeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
+  override protected def stop(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
     client.stop(deploymentId, savepointDir)
   }
 

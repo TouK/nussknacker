@@ -7,6 +7,7 @@ import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.BeforeAndAfter
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer._
@@ -216,7 +217,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
      */
     pushMessage(PaymentV2.recordWithData, topicConfig.input)
     val env = flinkMiniCluster.createExecutionEnvironment()
-    registrar.register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty)
+    registrar.register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty, DeploymentData.empty)
     val executionResult = env.executeAndWaitForStart(process.id)
     env.waitForJobState(executionResult.getJobID, process.id, ExecutionState.FAILED, ExecutionState.CANCELED)()
   }

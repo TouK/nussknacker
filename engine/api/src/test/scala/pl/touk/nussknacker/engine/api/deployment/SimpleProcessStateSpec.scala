@@ -8,7 +8,7 @@ import scala.collection.immutable.List
 class SimpleProcessStateSpec extends FunSpec with Matchers with Inside with EitherValues {
 
   def createProcessState(stateStatus: StateStatus): ProcessState =
-    SimpleProcessState(DeploymentId("12"), stateStatus)
+    SimpleProcessState(ExternalDeploymentId("12"), stateStatus)
 
   it ("process state should be during deploy") {
     val state = createProcessState(SimpleStateStatus.DuringDeploy)

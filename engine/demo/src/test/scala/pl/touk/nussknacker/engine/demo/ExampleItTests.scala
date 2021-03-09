@@ -2,11 +2,11 @@ package pl.touk.nussknacker.engine.demo
 
 import java.nio.charset.StandardCharsets
 import java.time.{LocalDateTime, ZoneId}
-
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.kafka.clients.producer.RecordMetadata
 import org.scalatest.{Matchers, Outcome, fixture}
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils
@@ -163,7 +163,7 @@ abstract class ExampleItTests extends fixture.FunSuite with Matchers with BaseIT
 
   def register(process: EspProcess)(action: => Unit): Unit = {
     val env = flinkMiniCluster.createExecutionEnvironment()
-    registrar.register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty)
+    registrar.register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty, DeploymentData.empty)
     env.withJobRunning(process.id)(action)
   }
 

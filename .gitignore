@@ -24,3 +24,4 @@ _book/
 *.log.logstashjson
 out/
 *.bsp
+ui/client/cypress/fixtures/env.json
