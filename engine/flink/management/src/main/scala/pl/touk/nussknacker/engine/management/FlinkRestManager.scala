@@ -123,7 +123,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
 
   // this code is executed synchronously by ManagementActor thus we don't care that much about possible races
   // and extraneous jar uploads introduced by asynchronous invocation
-  override protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit] = {
+  override protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     logger.debug(s"Starting to deploy process: $processName with savepoint $savepointPath")
     client.runProgram(jarFile, mainClass, args, savepointPath)
   }

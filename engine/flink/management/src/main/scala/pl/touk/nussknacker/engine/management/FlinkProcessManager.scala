@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.management.FlinkProcessManager.prepareProgramArgs
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -41,9 +42,9 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     stoppingResult.value.flatMap { maybeSavepoint =>
       runProgram(processName,
         prepareProgramMainClass(processDeploymentData),
-        prepareProgramArgs(processVersion, deploymentData, processDeploymentData),
+        prepareProgramArgs(modelData.inputConfigDuringExecution.serialized, processVersion, deploymentData, processDeploymentData),
         savepointPath.orElse(maybeSavepoint))
-    }
+    }.map(_ => ())
   }
 
   override def savepoint(processName: ProcessName, savepointDir: Option[String]): Future[SavepointResult] = {
@@ -107,15 +108,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     } yield savepointPath
   }
 
-  private def prepareProgramArgs(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData) : List[String] = {
-    val serializedConfig = modelData.inputConfigDuringExecution.serialized
-    processDeploymentData match {
-      case GraphProcess(processAsJson) =>
-        List(processAsJson, processVersion.asJson.spaces2, deploymentData.asJson.spaces2, serializedConfig)
-      case CustomProcess(_) =>
-        List(processVersion.processName.value, serializedConfig)
-    }
-  }
+
 
   private def prepareProgramMainClass(processDeploymentData: ProcessDeploymentData) : String = {
     processDeploymentData match {
@@ -130,7 +123,23 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
   protected def stop(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult]
 
-  protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit]
+  protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Option[ExternalDeploymentId]]
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = FlinkProcessStateDefinitionManager
+}
+
+object FlinkProcessManager {
+
+  def prepareProgramArgs(serializedConfig: String,
+                         processVersion: ProcessVersion,
+                         deploymentData: DeploymentData,
+                         processDeploymentData: ProcessDeploymentData) : List[String] = {
+    processDeploymentData match {
+      case GraphProcess(processAsJson) =>
+        List(processAsJson, processVersion.asJson.spaces2, deploymentData.asJson.spaces2, serializedConfig)
+      case CustomProcess(_) =>
+        List(processVersion.processName.value, serializedConfig)
+    }
+  }
+
 }

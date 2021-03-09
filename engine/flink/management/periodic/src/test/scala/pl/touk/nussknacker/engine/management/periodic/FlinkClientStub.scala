@@ -18,7 +18,7 @@ class FlinkClientStub extends FlinkClient {
 
   override def stop(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = ???
 
-  override def runProgram(jarFile: File, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit] = ???
+  override def runProgram(jarFile: File, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = ???
 
   override def deleteJarIfExists(jarFileName: String): Future[Unit] = Future.successful(())
 }

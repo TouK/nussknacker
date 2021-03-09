@@ -23,6 +23,6 @@ trait FlinkClient {
   def runProgram(jarFile: File,
                  mainClass: String,
                  args: List[String],
-                 savepointPath: Option[String]): Future[Unit]
+                 savepointPath: Option[String]): Future[Option[ExternalDeploymentId]]
 }
 

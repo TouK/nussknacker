@@ -2,10 +2,14 @@ package pl.touk.nussknacker.engine.management.periodic
 
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.ProcessListener
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
+import pl.touk.nussknacker.engine.management.periodic.db.ScheduledRunDetails
+import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, DefaultAdditionalDeploymentDataProvider, DeployedEvent, EmptyListener, FailedEvent, FinishedEvent, PeriodicProcessEvent, PeriodicProcessListener, ScheduledEvent}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
 class PeriodicProcessServiceTest extends FunSuite
@@ -23,10 +27,20 @@ class PeriodicProcessServiceTest extends FunSuite
     val repository = new db.InMemPeriodicProcessesRepository
     val delegateProcessManagerStub = new ProcessManagerStub
     val jarManagerStub = new JarManagerStub
+    val events = new ArrayBuffer[PeriodicProcessEvent]()
+    val additionalData = Map("testMap" -> "testValue")
     val periodicProcessService = new PeriodicProcessService(
       delegateProcessManager = delegateProcessManagerStub,
       jarManager = jarManagerStub,
-      scheduledProcessesRepository = repository
+      scheduledProcessesRepository = repository,
+      new PeriodicProcessListener {
+        override def onPeriodicProcessEvent: PartialFunction[PeriodicProcessEvent, Future[Unit]] =
+        { case k => Future.successful(events.append(k)) }
+      },
+      new AdditionalDeploymentDataProvider {
+        override def prepareAdditionalData(runDetails: ScheduledRunDetails): Map[String, String] =
+          additionalData + ("runId" -> runDetails.processDeploymentId.value.toString)
+      }
     )
   }
 
@@ -37,9 +51,13 @@ class PeriodicProcessServiceTest extends FunSuite
 
     f.periodicProcessService.handleFinished.futureValue
 
-    f.repository.processEntities.loneElement.active shouldBe true
+    val processEntity = f.repository.processEntities.loneElement
+    processEntity.active shouldBe true
     f.repository.deploymentEntities should have size 2
     f.repository.deploymentEntities.map(_.status) shouldBe List(PeriodicProcessDeploymentStatus.Finished, PeriodicProcessDeploymentStatus.Scheduled)
+
+    val expectedDetails = ScheduledRunDetails(processEntity, f.repository.deploymentEntities.head)
+    f.events.toList shouldBe List(FinishedEvent(expectedDetails, None), ScheduledEvent(processEntity.id, f.repository.deploymentEntities.last.runAt))
   }
 
   test("handleFinished - should reschedule for finished Flink job") {
@@ -49,9 +67,13 @@ class PeriodicProcessServiceTest extends FunSuite
 
     f.periodicProcessService.handleFinished.futureValue
 
-    f.repository.processEntities.loneElement.active shouldBe true
+    val processEntity = f.repository.processEntities.loneElement
+    processEntity.active shouldBe true
     f.repository.deploymentEntities should have size 2
     f.repository.deploymentEntities.map(_.status) shouldBe List(PeriodicProcessDeploymentStatus.Finished, PeriodicProcessDeploymentStatus.Scheduled)
+
+    val expectedDetails = ScheduledRunDetails(processEntity, f.repository.deploymentEntities.head)
+    f.events.toList shouldBe List(FinishedEvent(expectedDetails, f.delegateProcessManagerStub.jobStatus), ScheduledEvent(processEntity.id, f.repository.deploymentEntities.last.runAt))
   }
 
   test("handleFinished - should mark as failed for failed Flink job") {
@@ -62,28 +84,39 @@ class PeriodicProcessServiceTest extends FunSuite
     f.periodicProcessService.handleFinished.futureValue
 
     // Process is still active and has to be manually canceled by user.
-    f.repository.processEntities.loneElement.active shouldBe true
+    val processEntity = f.repository.processEntities.loneElement
+    processEntity.active shouldBe true
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
+
+    val expectedDetails = ScheduledRunDetails(processEntity, f.repository.deploymentEntities.head)
+    f.events.toList shouldBe List(FailedEvent(expectedDetails, f.delegateProcessManagerStub.jobStatus))
   }
 
   test("deploy - should deploy and mark as so") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
-    val periodicProcessDeploymentId = f.repository.deploymentEntities.loneElement.id
+    val toSchedule = ScheduledRunDetails(f.repository.processEntities.loneElement, f.repository.deploymentEntities.loneElement)
 
-    f.periodicProcessService.deploy(periodicProcessDeploymentId).futureValue
+    f.periodicProcessService.deploy(toSchedule).futureValue
 
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Deployed
+
+    val expectedDetails = ScheduledRunDetails(f.repository.processEntities.loneElement, f.repository.deploymentEntities.loneElement)
+    f.events.toList shouldBe List(DeployedEvent(expectedDetails, None))
+
   }
 
   test("deploy - should handle failed deployment") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
     f.jarManagerStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
-    val periodicProcessDeploymentId = f.repository.deploymentEntities.loneElement.id
+    val toSchedule = ScheduledRunDetails(f.repository.processEntities.loneElement, f.repository.deploymentEntities.loneElement)
 
-    f.periodicProcessService.deploy(periodicProcessDeploymentId).futureValue
+    f.periodicProcessService.deploy(toSchedule).futureValue
 
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
+
+    val expectedDetails = ScheduledRunDetails(f.repository.processEntities.loneElement, f.repository.deploymentEntities.loneElement)
+    f.events.toList shouldBe List(FailedEvent(expectedDetails, None))
   }
 }

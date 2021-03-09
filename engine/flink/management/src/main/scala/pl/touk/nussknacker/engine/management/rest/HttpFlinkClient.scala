@@ -158,7 +158,7 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
   def runProgram(jarFile: File,
                  mainClass: String,
                  args: List[String],
-                 savepointPath: Option[String]): Future[Unit] = {
+                 savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     val program =
       DeployProcessRequest(
         entryClass = mainClass,
@@ -168,15 +168,17 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
       basicRequest
         .post(flinkUrl.path("jars", flinkJarFile.id, "run"))
         .body(program)
+        .response(asJson[RunResponse])
         .send()
-        .flatMap(handleUnitResponse)
+        .flatMap(SttpJson.failureToFuture)
+        .map(ret => Some(ExternalDeploymentId(ret.jobid)))
         .recover({
           //sometimes deploying takes too long, which causes TimeoutException while waiting for deploy response
           //workaround for now, not the best solution though
           //TODO: we should change logic of ManagementActor to mark process deployed for *some* exceptions (like Timeout here)
           case timeoutExtractor(e) =>
             logger.warn("TimeoutException occurred while waiting for deploy result. Recovering with Future.successful...", e)
-            Future.successful(Unit)
+            None
         })
     }
 

@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.management.periodic.db
 
 import java.time.LocalDateTime
 
-import io.circe.parser
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.management.periodic._
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -27,7 +26,6 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
       processVersionId = 1,
       processJson = "{}",
       modelConfig = "",
-      buildInfoJson = "{}",
       jarFileName = "",
       periodicProperty = (CronPeriodicProperty("0 0 * * * ?"): PeriodicProperty).asJson.noSpaces,
       active = true,
@@ -61,7 +59,6 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
       processVersionId = deploymentWithJarData.processVersion.versionId,
       processJson = deploymentWithJarData.processJson,
       modelConfig = deploymentWithJarData.modelConfig,
-      buildInfoJson = deploymentWithJarData.buildInfoJson,
       jarFileName = deploymentWithJarData.jarFileName,
       periodicProperty = periodicProperty.asJson.noSpaces,
       active = true,
@@ -79,20 +76,20 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
     Future.successful(())
   }
 
-  override def getScheduledRunDetails(processName: ProcessName): Future[Option[ScheduledRunDetails]] = Future.successful {
+  override def getScheduledRunDetails(processName: ProcessName): Future[Option[(ScheduledRunDetails, PeriodicProcessDeploymentStatus)]] = Future.successful {
     for {
       process <- processEntities.find(activeProcess(processName))
       deployment <- deploymentEntities.find(_.periodicProcessId == process.id)
-    } yield ScheduledRunDetails(processName, ProcessVersion.empty.copy(versionId = process.processVersionId, processName = processName), deployment.runAt, deployment.status)
+    } yield (ScheduledRunDetails(process, deployment), deployment.status)
   }
 
-  override def findToBeDeployed: Future[Seq[PeriodicProcessDeploymentId]] = ???
+  override def findToBeDeployed: Future[Seq[ScheduledRunDetails]] = ???
 
-  override def findDeployed: Future[Seq[DeployedProcess]] = Future.successful {
+  override def findDeployed: Future[Seq[ScheduledRunDetails]] = Future.successful {
     for {
       p <- processEntities if p.active
       d <- deploymentEntities if d.periodicProcessId == p.id && d.status == PeriodicProcessDeploymentStatus.Deployed
-    } yield DeployedProcess(ProcessName(p.processName), d.id, p.id, parser.decode[PeriodicProperty](p.periodicProperty).right.get)
+    } yield ScheduledRunDetails(p, d)
   }
 
   override def findProcessData(id: PeriodicProcessDeploymentId): Future[DeploymentWithJarData] = Future.successful {
@@ -139,7 +136,6 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
       processVersion = processVersion,
       processJson = processEntity.processJson,
       modelConfig = processEntity.modelConfig,
-      buildInfoJson = processEntity.buildInfoJson,
       jarFileName = processEntity.jarFileName
     )
   }

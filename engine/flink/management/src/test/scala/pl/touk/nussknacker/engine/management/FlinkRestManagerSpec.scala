@@ -8,9 +8,9 @@ import io.circe.Json.fromString
 import org.apache.flink.api.common.JobStatus
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ExternalDeploymentId, DeploymentData, DeploymentId, ProcessState, SavepointResult, StateStatus, User}
+import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentData, DeploymentId, ExternalDeploymentId, ProcessState, SavepointResult, StateStatus, User}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{ExecutionConfig, GetSavepointStatusResponse, JarsResponse, JobConfig, JobOverview, JobsResponse, SavepointOperation, SavepointStatus, SavepointTriggerResponse, UploadJarResponse}
+import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{ExecutionConfig, GetSavepointStatusResponse, JarsResponse, JobConfig, JobOverview, JobsResponse, RunResponse, SavepointOperation, SavepointStatus, SavepointTriggerResponse, UploadJarResponse}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -63,7 +63,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
           //TODO: can be make behaviour more robust?
           .flatMap(SttpClientException.defaultExceptionToSttpClientException)
           .foreach(throw _)
-        ()
+        RunResponse("jobId")
       case (List("jars", "upload"), Method.POST) if acceptDeploy =>
         UploadJarResponse(uploadedJarPath)
     }
