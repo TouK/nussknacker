@@ -4,7 +4,7 @@ import java.net.ConnectException
 import io.circe.Encoder
 import org.scalatest.{FlatSpec, Inside, Matchers}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.deployment.DeploymentVersion
+import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
@@ -34,7 +34,7 @@ class FlinkStreamingProcessMainSpec extends FlatSpec with Matchers with Inside {
 
     FlinkTestConfiguration.setQueryableStatePortRangesBySystemProperties()
     FlinkStreamingProcessMain.main(Array(ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2,
-      Encoder[ProcessVersion].apply(ProcessVersion.empty).noSpaces, Encoder[DeploymentVersion].apply(DeploymentVersion.empty).noSpaces))
+      Encoder[ProcessVersion].apply(ProcessVersion.empty).noSpaces, Encoder[DeploymentData].apply(DeploymentData.empty).noSpaces))
   }
 
 }

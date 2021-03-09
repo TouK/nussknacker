@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.deployment.{CustomAction, CustomActionError, CustomActionNotImplemented, CustomActionRequest, CustomActionResult, ExternalDeploymentId, DeploymentVersion, ProcessDeploymentData, ProcessState, SavepointResult, StateStatus, User}
+import pl.touk.nussknacker.engine.api.deployment.{CustomAction, CustomActionError, CustomActionNotImplemented, CustomActionRequest, CustomActionResult, ExternalDeploymentId, DeploymentData, ProcessDeploymentData, ProcessState, SavepointResult, StateStatus, User}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -135,7 +135,7 @@ object TestFactory extends TestPermissions{
     override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] =
       Future.successful(managerProcessState.get())
 
-    override def deploy(processId: ProcessVersion, deploymentVersion: DeploymentVersion,
+    override def deploy(processId: ProcessVersion, deploymentData: DeploymentData,
                         processDeploymentData: ProcessDeploymentData, savepoint: Option[String]): Future[Unit] =
       deployResult
 

@@ -9,7 +9,7 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.DeploymentVersion
+import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.queryablestate.FlinkQueryableClient
@@ -67,7 +67,7 @@ class QueryableStateTest extends FlatSpec with FlinkSpec with Matchers with Kafk
       .emptySink("sink", "sendSms")
 
     val env = flinkMiniCluster.createExecutionEnvironment()
-    registrar.register(new StreamExecutionEnvironment(env), lockProcess, ProcessVersion.empty, DeploymentVersion.empty)
+    registrar.register(new StreamExecutionEnvironment(env), lockProcess, ProcessVersion.empty, DeploymentData.empty)
     val jobId = env.executeAndWaitForStart(lockProcess.id).getJobID
     try {
       //this port should not exist...

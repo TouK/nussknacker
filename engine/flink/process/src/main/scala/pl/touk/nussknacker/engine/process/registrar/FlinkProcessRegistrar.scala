@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.deployment.DeploymentVersion
+import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.SinkInvocationCollector
 import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
@@ -39,15 +39,15 @@ import scala.language.implicitConversions
   NOTE: We should try to use *ONLY* core Flink API here, to avoid version compatibility problems.
   Various NK-dependent Flink hacks should be, if possible, placed in StreamExecutionEnvPreparer.
  */
-class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, DeploymentVersion, Option[TestRunId]) => ClassLoader => FlinkProcessCompilerData,
+class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, DeploymentData, Option[TestRunId]) => ClassLoader => FlinkProcessCompilerData,
                             streamExecutionEnvPreparer: StreamExecutionEnvPreparer,
                             eventTimeMetricDuration: FiniteDuration) extends LazyLogging {
 
   implicit def millisToTime(duration: Long): Time = Time.of(duration, TimeUnit.MILLISECONDS)
 
-  def register(env: StreamExecutionEnvironment, process: EspProcess, processVersion: ProcessVersion, deploymentVersion: DeploymentVersion, testRunId: Option[TestRunId] = None): Unit = {
+  def register(env: StreamExecutionEnvironment, process: EspProcess, processVersion: ProcessVersion, deploymentData: DeploymentData, testRunId: Option[TestRunId] = None): Unit = {
     usingRightClassloader(env) {
-      val processCompilation = compileProcess(process, processVersion, deploymentVersion, testRunId)
+      val processCompilation = compileProcess(process, processVersion, deploymentData, testRunId)
       val userClassLoader = UserClassLoader.get("root")
       //here we are sure the classloader is ok
       val processWithDeps = processCompilation(userClassLoader)

@@ -8,7 +8,7 @@ import io.circe.Json.fromString
 import org.apache.flink.api.common.JobStatus
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ExternalDeploymentId, DeploymentVersion, DeploymentId, ProcessState, SavepointResult, StateStatus, User}
+import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ExternalDeploymentId, DeploymentData, DeploymentId, ProcessState, SavepointResult, StateStatus, User}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{ExecutionConfig, GetSavepointStatusResponse, JarsResponse, JobConfig, JobOverview, JobsResponse, SavepointOperation, SavepointStatus, SavepointTriggerResponse, UploadJarResponse}
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -35,7 +35,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
   private val savepointRequestId = "123-savepoint"
   private val savepointPath = "savepointPath"
 
-  private val defaultDeploymentVersion = DeploymentVersion(DeploymentId(""), User("user1", "User 1"), Map.empty)
+  private val defaultDeploymentData = DeploymentData(DeploymentId(""), User("user1", "User 1"), Map.empty)
 
   private def createManager(statuses: List[JobOverview] = List(),
                             acceptSavepoint: Boolean = false,
@@ -92,7 +92,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     createManager(statuses, acceptDeploy = true, exceptionOnDeploy = Some(new TimeoutException("tooo looong")))
       .deploy(
         ProcessVersion(1, ProcessName("p1"), "user", None),
-        defaultDeploymentVersion,
+        defaultDeploymentData,
         CustomProcess("nothing"),
         None
       ).futureValue shouldBe (())
@@ -104,7 +104,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
 
     Await.ready(manager.deploy(
         ProcessVersion(1, ProcessName("p1"), "user", None),
-        defaultDeploymentVersion,
+        defaultDeploymentData,
         CustomProcess("nothing"),
         None
       ), 1 second).eitherValue.flatMap(_.left.toOption) shouldBe 'defined
@@ -113,21 +113,21 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
   test("refuse to deploy if process is failing") {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RESTARTING.name()))
 
-    createManager(statuses).deploy(ProcessVersion(1, ProcessName("p1"), "user", None), defaultDeploymentVersion,
+    createManager(statuses).deploy(ProcessVersion(1, ProcessName("p1"), "user", None), defaultDeploymentData,
       CustomProcess("nothing"), None).failed.futureValue.getMessage shouldBe "Job p1 cannot be deployed, status: Restarting"
   }
 
   test("allow deploy if process is failed") {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name()))
 
-    createManager(statuses, acceptDeploy = true).deploy(ProcessVersion(1, ProcessName("p1"), "user", None), defaultDeploymentVersion,
+    createManager(statuses, acceptDeploy = true).deploy(ProcessVersion(1, ProcessName("p1"), "user", None), defaultDeploymentData,
       CustomProcess("nothing"), None).futureValue shouldBe (())
   }
 
   test("allow deploy and make savepoint if process is running") {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name()))
 
-    createManager(statuses, acceptDeploy = true, acceptSavepoint = true).deploy(ProcessVersion(1, ProcessName("p1"), "user", None), defaultDeploymentVersion,
+    createManager(statuses, acceptDeploy = true, acceptSavepoint = true).deploy(ProcessVersion(1, ProcessName("p1"), "user", None), defaultDeploymentData,
       CustomProcess("nothing"), None).futureValue shouldBe (())
   }
 

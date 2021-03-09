@@ -41,12 +41,12 @@ class MultiInstanceStandaloneProcessClientSpec extends FunSuite with Matchers wi
 
   test("Deployment should complete when all parts are successful") {
     val multiClient = new MultiInstanceStandaloneProcessClient(List(okClient(), okClient()))
-    multiClient.deploy(DeploymentData("json", 1000, ProcessVersion.empty.copy(processName=id), DeploymentVersion.empty)).futureValue shouldBe (())
+    multiClient.deploy(DeploymentData("json", 1000, ProcessVersion.empty.copy(processName=id), DeploymentData.empty)).futureValue shouldBe (())
   }
 
   test("Deployment should fail when one part fails") {
     val multiClient = new MultiInstanceStandaloneProcessClient(List(okClient(), failClient))
-    multiClient.deploy(DeploymentData("json", 1000, ProcessVersion.empty.copy(processName=id), DeploymentVersion.empty)).failed.futureValue shouldBe failure
+    multiClient.deploy(DeploymentData("json", 1000, ProcessVersion.empty.copy(processName=id), DeploymentData.empty)).failed.futureValue shouldBe failure
   }
 
   test("Status should be none if no client returns status") {

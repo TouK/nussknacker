@@ -56,14 +56,14 @@ class PeriodicProcessManager(delegate: ProcessManager,
                              toClose: () => Unit)
                             (implicit val ec: ExecutionContext) extends ProcessManager with LazyLogging {
 
-  override def deploy(processVersion: ProcessVersion, deploymentVersion: DeploymentVersion, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]): Future[Unit] = {
+  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]): Future[Unit] = {
     (processDeploymentData, periodicPropertyExtractor(processDeploymentData)) match {
       case (GraphProcess(processJson), Right(periodicProperty)) =>
         logger.info(s"About to (re)schedule ${processVersion.processName} in version ${processVersion.versionId}")
 
         // PeriodicProcessStateDefinitionManager do not allow to redeploy (so doesn't GUI),
         // but NK API does, so we need to handle this situation.
-        cancelIfAlreadyDeployed(processVersion, deploymentVersion.user)
+        cancelIfAlreadyDeployed(processVersion, deploymentData.user)
           .flatMap(_ => {
             logger.info(s"Scheduling ${processVersion.processName}, versionId: ${processVersion.versionId}")
             service.schedule(periodicProperty, processVersion, processJson)

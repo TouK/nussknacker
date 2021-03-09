@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management.streaming
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentVersion, GraphProcess}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, GraphProcess}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -26,7 +26,7 @@ class JavaConfigProcessManagerSpec extends FunSuite with Matchers with Streaming
           .emptySink("endSend", "sink")
 
     val marshaled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
-    assert(processManager.deploy(ProcessVersion.empty.copy(processName=ProcessName(process.id)), DeploymentVersion.empty,
+    assert(processManager.deploy(ProcessVersion.empty.copy(processName=ProcessName(process.id)), DeploymentData.empty,
       GraphProcess(marshaled), None).isReadyWithin(100 seconds))
     Thread.sleep(1000)
     val jobStatus = processManager.findJobStatus(ProcessName(process.id)).futureValue

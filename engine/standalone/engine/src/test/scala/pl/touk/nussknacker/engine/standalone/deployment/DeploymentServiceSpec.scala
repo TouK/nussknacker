@@ -4,7 +4,7 @@ import java.nio.file.Files
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.DeploymentVersion
+import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.StandaloneProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -94,6 +94,6 @@ class DeploymentServiceSpec extends FlatSpec with Matchers {
         .exceptionHandler()
         .source("start", "request1-post-source")
         .sink("endNodeIID", "''", "response-sink"))
-    DeploymentData(ProcessMarshaller.toJson(canonical).spaces2, 0, ProcessVersion.empty.copy(processName = processName), DeploymentVersion.empty)
+    DeploymentData(ProcessMarshaller.toJson(canonical).spaces2, 0, ProcessVersion.empty.copy(processName = processName), DeploymentData.empty)
   }
 }

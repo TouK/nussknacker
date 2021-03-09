@@ -5,7 +5,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.deployment.DeploymentVersion
+import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.flink.util.FlinkArgsDecodeHack
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -22,11 +22,11 @@ trait FlinkProcessMain[Env] extends FlinkRunner with LazyLogging {
       require(args.nonEmpty, "Process json should be passed as a first argument")
       val process = readProcessFromArg(args(0))
       val processVersion = parseProcessVersion(args(1))
-      val deploymentVersion = parseDeploymentVersion(args(2))
+      val deploymentData = parseDeploymentData(args(2))
       val config: Config = readConfigFromArgs(args)
       val modelData = ModelData.duringExecution(config)
       val env = getExecutionEnvironment
-      runProcess(env, modelData, process, processVersion, deploymentVersion, ExecutionConfigPreparer.defaultChain(modelData))
+      runProcess(env, modelData, process, processVersion, deploymentData, ExecutionConfigPreparer.defaultChain(modelData))
     } catch {
       // marker exception for graph optimalization
       // should be necessary only in Flink <=1.9
@@ -46,14 +46,14 @@ trait FlinkProcessMain[Env] extends FlinkRunner with LazyLogging {
                            modelData: ModelData,
                            process: EspProcess,
                            processVersion: ProcessVersion,
-                           deploymentVersion: DeploymentVersion,
+                           deploymentData: DeploymentData,
                            prepareExecutionConfig: ExecutionConfigPreparer): Unit
 
   private def parseProcessVersion(json: String): ProcessVersion =
     CirceUtil.decodeJsonUnsafe[ProcessVersion](json, "invalid process version")
 
-  private def parseDeploymentVersion(json: String): DeploymentVersion =
-    CirceUtil.decodeJsonUnsafe[DeploymentVersion](json, "invalid DeploymentVersion")
+  private def parseDeploymentData(json: String): DeploymentData =
+    CirceUtil.decodeJsonUnsafe[DeploymentData](json, "invalid DeploymentData")
 
   private def readConfigFromArgs(args: Array[String]): Config = {
     val optionalConfigArg = if (args.length > 3) Some(args(3)) else None

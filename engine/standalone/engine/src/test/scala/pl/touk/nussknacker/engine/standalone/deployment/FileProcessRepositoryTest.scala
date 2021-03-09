@@ -22,7 +22,7 @@ class FileProcessRepositoryTest extends FunSuite with Matchers {
       |    "user" : "testUser",
       |    "modelVersion" : 3
       |  },
-      |  "deploymentVersion" : {
+      |  "deploymentData" : {
       |    "deploymentId" : "",
       |    "user": { "id": "userId", "name": "userName" },
       |    "additionalDeploymentData": {}

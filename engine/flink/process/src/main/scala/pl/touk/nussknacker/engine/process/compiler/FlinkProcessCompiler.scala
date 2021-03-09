@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.flink.util.listener.NodeCountMetricListener
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.deployment.DeploymentVersion
+import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.modelconfig.{InputConfigDuringExecution, ModelConfigLoader}
 
@@ -47,7 +47,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
 
   def compileProcess(process: EspProcess,
                      processVersion: ProcessVersion,
-                     deploymentVersion: DeploymentVersion,
+                     deploymentData: DeploymentData,
                      testRunId: Option[TestRunId])(userCodeClassLoader: ClassLoader): FlinkProcessCompilerData = {
     val config = loadConfig(userCodeClassLoader)
     val processObjectDependencies = ProcessObjectDependencies(config, objectNaming)
@@ -73,7 +73,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
 
     new FlinkProcessCompilerData(
       compiledProcess = compiledProcess,
-      jobData = JobData(process.metaData, processVersion, deploymentVersion),
+      jobData = JobData(process.metaData, processVersion, deploymentData),
       exceptionHandler = listeningExceptionHandler,
       signalSenders = new FlinkProcessSignalSenderProvider(signalSenders(processObjectDependencies)),
       asyncExecutionContextPreparer = asyncExecutionContextPreparer,

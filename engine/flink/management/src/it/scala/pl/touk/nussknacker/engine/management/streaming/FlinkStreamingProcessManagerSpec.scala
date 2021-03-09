@@ -9,7 +9,7 @@ import io.circe.Json
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentVersion, GraphProcess}
+import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentData, GraphProcess}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -28,7 +28,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
 
   override protected def classPath: String = s"./engine/flink/management/sample/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/managementSample.jar"
 
-  private val defaultDeploymentVersion = DeploymentVersion.empty
+  private val defaultDeploymentData = DeploymentData.empty
   
   test("deploy process in running flink") {
     val processId = "runningFlink"
@@ -51,7 +51,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     val marshaled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
     val version = ProcessVersion(15, ProcessName(processId), "user1", Some(13))
 
-    val deployedResponse = processManager.deploy(version, defaultDeploymentVersion, GraphProcess(marshaled), None)
+    val deployedResponse = processManager.deploy(version, defaultDeploymentData, GraphProcess(marshaled), None)
 
     assert(deployedResponse.isReadyWithin(70 seconds))
   }
@@ -195,7 +195,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     logger.info("Starting to redeploy")
 
     val newMarshalled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(StatefulSampleProcess.prepareProcessWithLongState(processId))).spaces2
-    val exception = processManager.deploy(empty(process.id), defaultDeploymentVersion, GraphProcess(newMarshalled), None).failed.futureValue
+    val exception = processManager.deploy(empty(process.id), defaultDeploymentData, GraphProcess(newMarshalled), None).failed.futureValue
 
     exception.getMessage shouldBe "State is incompatible, please stop process and start again with clean state"
 
@@ -216,7 +216,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     logger.info("Starting to redeploy")
 
     val newMarshalled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(StatefulSampleProcess.processWithMapAggegator(processId, "#AGG.approxCardinality"))).spaces2
-    val exception = processManager.deploy(empty(process.id), defaultDeploymentVersion, GraphProcess(newMarshalled), None).failed.futureValue
+    val exception = processManager.deploy(empty(process.id), defaultDeploymentData, GraphProcess(newMarshalled), None).failed.futureValue
 
     exception.getMessage shouldBe "State is incompatible, please stop process and start again with clean state"
 
@@ -228,7 +228,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
   test("deploy custom process") {
     val processId = "customProcess"
 
-    assert(processManager.deploy(empty(processId), defaultDeploymentVersion, CustomProcess("pl.touk.nussknacker.engine.management.sample.CustomProcess"), None).isReadyWithin(100 seconds))
+    assert(processManager.deploy(empty(processId), defaultDeploymentData, CustomProcess("pl.touk.nussknacker.engine.management.sample.CustomProcess"), None).isReadyWithin(100 seconds))
 
     val jobStatus = processManager.findJobStatus(ProcessName(processId)).futureValue
     jobStatus.map(_.status.name) shouldBe Some(FlinkStateStatus.Running.name)
@@ -267,7 +267,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
 
   private def deployProcessAndWaitIfRunning(process: EspProcess, processVersion: ProcessVersion, savepointPath : Option[String] = None) = {
     val marshaled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
-    assert(processManager.deploy(processVersion, defaultDeploymentVersion, GraphProcess(marshaled), savepointPath).isReadyWithin(100 seconds))
+    assert(processManager.deploy(processVersion, defaultDeploymentData, GraphProcess(marshaled), savepointPath).isReadyWithin(100 seconds))
     eventually {
 
       val jobStatus = processManager.findJobStatus(ProcessName(process.id)).futureValue

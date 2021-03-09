@@ -19,7 +19,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
   private lazy val verification = new FlinkProcessVerifier(modelData)
 
-  override def deploy(processVersion: ProcessVersion, deploymentVersion: DeploymentVersion, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]): Future[Unit] = {
+  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]): Future[Unit] = {
     val processName = processVersion.processName
 
     import cats.data.OptionT
@@ -41,7 +41,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     stoppingResult.value.flatMap { maybeSavepoint =>
       runProgram(processName,
         prepareProgramMainClass(processDeploymentData),
-        prepareProgramArgs(processVersion, deploymentVersion, processDeploymentData),
+        prepareProgramArgs(processVersion, deploymentData, processDeploymentData),
         savepointPath.orElse(maybeSavepoint))
     }
   }
@@ -107,11 +107,11 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     } yield savepointPath
   }
 
-  private def prepareProgramArgs(processVersion: ProcessVersion, deploymentVersion: DeploymentVersion, processDeploymentData: ProcessDeploymentData) : List[String] = {
+  private def prepareProgramArgs(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData) : List[String] = {
     val serializedConfig = modelData.inputConfigDuringExecution.serialized
     processDeploymentData match {
       case GraphProcess(processAsJson) =>
-        List(processAsJson, processVersion.asJson.spaces2, deploymentVersion.asJson.spaces2, serializedConfig)
+        List(processAsJson, processVersion.asJson.spaces2, deploymentData.asJson.spaces2, serializedConfig)
       case CustomProcess(_) =>
         List(processVersion.processName.value, serializedConfig)
     }

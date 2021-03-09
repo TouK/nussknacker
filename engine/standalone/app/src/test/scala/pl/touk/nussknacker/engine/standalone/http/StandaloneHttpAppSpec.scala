@@ -17,7 +17,7 @@ import io.circe.syntax._
 import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.DeploymentVersion
+import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.StandaloneProcessBuilder
@@ -45,7 +45,7 @@ class StandaloneHttpAppSpec extends FlatSpec with Matchers with ScalatestRouteTe
   private val testEpoch = (math.random * 10000).toLong
 
   private def deploymentData(processJson: String) = DeploymentData(processJson, testEpoch,
-    ProcessVersion.empty.copy(processName=procId), DeploymentVersion.empty)
+    ProcessVersion.empty.copy(processName=procId), DeploymentData.empty)
 
   def processJson = processToJson(StandaloneProcessBuilder
     .id(procId)

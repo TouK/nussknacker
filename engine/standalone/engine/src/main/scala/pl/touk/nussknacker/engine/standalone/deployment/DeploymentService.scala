@@ -67,7 +67,7 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
                 processRepository.add(processName, deploymentData)
                 processInterpreters.put(processName, (processInterpreter, deploymentData))
                 pathToInterpreterMap.put(pathToDeploy, processInterpreter)
-                processInterpreter.open(JobData(process.metaData, deploymentData.processVersion, deploymentData.deploymentVersion))
+                processInterpreter.open(JobData(process.metaData, deploymentData.processVersion, deploymentData.deploymentData))
                 logger.info(s"Successfully deployed process ${processName.value}")
               }
               interpreter.map(_ => ())

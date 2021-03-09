@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.DeploymentVersion
+import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.util.StaticMethodRunner
 
 import scala.concurrent.Future
@@ -17,7 +17,7 @@ class FlinkProcessVerifier(modelData: ModelData) extends StaticMethodRunner(mode
     val processId = processVersion.processName
     try {
       logger.info(s"Starting to verify $processId")
-      tryToInvoke(modelData, processJson, processVersion, DeploymentVersion.empty, savepointPath, new Configuration())
+      tryToInvoke(modelData, processJson, processVersion, DeploymentData.empty, savepointPath, new Configuration())
       logger.info(s"Verification of $processId successful")
       Future.successful(())
     } catch {
