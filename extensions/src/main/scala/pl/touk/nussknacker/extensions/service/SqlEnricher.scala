@@ -32,6 +32,11 @@ object SqlEnricher {
   case class TransformationState(query: String, argsCount: Int, tableDef: TableDefinition)
 }
 
+/*
+TODO:
+1. Named parameters. Maybe we can make use of Spring's NamedJdbcParameterTemplate?
+2. Typed parameters - currently we type them as Objects/Unknowns
+*/
 class SqlEnricher(val dataSource: DataSource) extends EagerService
   with SingleInputGenericNodeTransformation[ServiceInvoker] with WithDBConnectionPool {
   import SqlEnricher._
