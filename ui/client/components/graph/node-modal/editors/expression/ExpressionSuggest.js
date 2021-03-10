@@ -8,11 +8,9 @@ import ActionsUtils from "../../../../../actions/ActionsUtils"
 import ProcessUtils from "../../../../../common/ProcessUtils"
 import HttpService from "../../../../../http/HttpService"
 import ValidationLabels from "../../../../modals/ValidationLabels"
-
-import AceEditor from "./ace"
-import ExpressionSuggester from "./ExpressionSuggester"
 import {allValid} from "../Validators"
-import {reducer as nodeDetails} from "../../../../../reducers/nodeDetailsState"
+import AceEditor from "./AceWrapper"
+import ExpressionSuggester from "./ExpressionSuggester"
 
 //to reconsider
 // - respect categories for global variables?
@@ -22,12 +20,6 @@ var inputExprIdCounter = 0
 
 const identifierRegexpsWithoutDot = [/[#a-zA-Z0-9-_]/]
 const identifierRegexpsIncludingDot = [/[#a-zA-Z0-9-_.]/]
-
-const commandFindConfiguration = {
-  name: "find",
-  bindKey: {win: "Ctrl-F", mac: "Command-F"},
-  exec: () => false,
-}
 
 class ExpressionSuggest extends React.Component {
 
@@ -100,11 +92,11 @@ class ExpressionSuggest extends React.Component {
   //fixme maybe use this.state.id here?
   shouldComponentUpdate(nextProps, nextState) {
     return !isEqual(this.state.value, nextState.value) ||
-        !isEqual(this.state.editorFocused, nextState.editorFocused) ||
-        !isEqual(this.props.validators, nextProps.validators) ||
-        !isEqual(this.props.variableTypes, nextProps.variableTypes) || 
-        !isEqual(this.props.validationLabelInfo, nextProps.validationLabelInfo)
-        
+      !isEqual(this.state.editorFocused, nextState.editorFocused) ||
+      !isEqual(this.props.validators, nextProps.validators) ||
+      !isEqual(this.props.variableTypes, nextProps.variableTypes) ||
+      !isEqual(this.props.validationLabelInfo, nextProps.validationLabelInfo)
+
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -128,10 +120,6 @@ class ExpressionSuggest extends React.Component {
     if (this.props.dataResolved) {
       const {isMarked, showValidation, inputProps, validators} = this.props
       const {editorFocused, value} = this.state
-      const THEME = "nussknacker"
-
-      //monospace font seems to be mandatory to make ace cursor work well,
-      const FONT_FAMILY = "'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace"
 
       return (
         <React.Fragment>
@@ -144,40 +132,16 @@ class ExpressionSuggest extends React.Component {
           ])}
           >
             <AceEditor
-              mode={inputProps.language}
-              width={"100%"}
-              minLines={1}
-              maxLines={50}
-              theme={THEME}
-              onChange={this.onChange}
               value={value}
-              showPrintMargin={false}
-              cursorStart={-1} //line start
-              showGutter={false}
-              highlightActiveLine={false}
-              highlightGutterLine={false}
-              wrapEnabled={true}
-              editorProps={{
-                // eslint-disable-next-line i18next/no-literal-string
-                $blockScrolling: "Infinity",
-              }}
-              className={inputProps.readOnly ? " read-only" : ""}
-              setOptions={{
-                indentedSoftWrap: false, //removes weird spaces for multiline strings when wrapEnabled=true
-                enableBasicAutocompletion: [this.customAceEditorCompleter],
-                enableLiveAutocompletion: true,
-                enableSnippets: false,
-                showLineNumbers: false,
-                fontSize: 16,
-                fontFamily: FONT_FAMILY,
-                readOnly: inputProps.readOnly,
-              }}
-              commands={[commandFindConfiguration]}
+              onChange={this.onChange}
               onFocus={this.setEditorFocus(true)}
               onBlur={this.setEditorFocus(false)}
+              inputProps={inputProps}
+              customAceEditorCompleter={this.customAceEditorCompleter}
             />
           </div>
-          {showValidation && <ValidationLabels validators={validators} values={[value]} validationLabelInfo={this.props.validationLabelInfo}/>}
+          {showValidation &&
+          <ValidationLabels validators={validators} values={[value]} validationLabelInfo={this.props.validationLabelInfo}/>}
         </React.Fragment>
       )
     } else {
