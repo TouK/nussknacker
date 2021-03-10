@@ -36,13 +36,76 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
     }, "identifier", true);
 
     this.$rules = {
+      "alias": [
+        {
+          token : ["text","keyword","text"],
+          regex : /(\s)(AS)(\s+)/,
+          caseInsensitive: true,
+          push: [
+            {include: "spel"},
+            {
+              token : "text",
+              regex : /\s/,
+              next : "pop"
+            },
+            {defaultToken : "alias"},
+          ]
+        },
+        {
+          token : ["text","root","text"],
+          regex : /(\s)(\w+)(\.\w+)/,
+        },
+      ],
+      "string": [
+        {
+          token : "string.start",
+          regex : /"/,
+          push: [
+            {include: "spel"},
+            {
+              token : "string.end",
+              regex : /"/,
+              next : "pop"
+            },
+            {defaultToken : "string"},
+          ]
+        },
+        {
+          token : "string.start",
+          regex : /'/,
+          push: [
+            {include: "spel"},
+            {
+              token : "string.end",
+              regex : /'/,
+              next : "pop"
+            },
+            {defaultToken : "string"},
+          ]
+        },
+        {
+          token : "string.start",
+          regex : /`/,
+          push: [
+            {include: "spel"},
+            {
+              token : "string.end",
+              regex : /`/,
+              next : "pop"
+            },
+            {defaultToken : "string"},
+          ]
+        },
+      ],
       "spel": [ {
         token: "spel.open",
         regex: /#\{/,
-        next: "spel-start"
+        push: [ {include: "spel-start"} ]
       } ],
       "start" : [ {
-          include: "spel"
+        include: "spel"
+      }, {
+        include: "alias"
       }, {
         token : "comment",
         regex : "--.*$"
@@ -51,14 +114,7 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
         start : "/\\*",
         end : "\\*/"
       }, {
-        token : "string",           // " string
-        regex : '".*?"'
-      }, {
-        token : "string",           // ' string
-        regex : "'.*?'"
-      }, {
-        token : "string",           // ` string (apache drill)
-        regex : "`.*?`"
+        include: "string"
       }, {
         token : "constant.numeric", // float
         regex : "[+-]?\\d+(?:(?:\\.\\d*)?(?:[eE][+-]?\\d+)?)?\\b"
