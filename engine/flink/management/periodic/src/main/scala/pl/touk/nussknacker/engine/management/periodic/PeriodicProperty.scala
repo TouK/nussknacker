@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.management.periodic
 
-import java.time.{Instant, LocalDateTime, ZoneId}
-
+import java.time.{Clock, Instant, LocalDateTime, ZoneId, ZonedDateTime}
 import cats.Alternative.ops.toAllAlternativeOps
 import com.cronutils.model.{Cron, CronType}
 import com.cronutils.model.definition.CronDefinitionBuilder
@@ -23,7 +22,7 @@ object PeriodicProperty {
     * If Right(None) is returned it means process should not be run in future anymore e.g. was specified to run once.
     * Right(Some(date)) specifies date when process should start.
     */
-  def nextRunAt(clock: Clock = SystemClock): Either[String, Option[LocalDateTime]]
+  def nextRunAt(clock: Clock): Either[String, Option[LocalDateTime]]
 }
 
 @JsonCodec case class CronPeriodicProperty(labelOrCronExpr: String) extends PeriodicProperty {
@@ -45,7 +44,7 @@ object PeriodicProperty {
   }
 
   override def nextRunAt(clock: Clock): Either[String, Option[LocalDateTime]] = {
-    val now = clock.currentTimestamp
+    val now = ZonedDateTime.now(clock)
     cronsOrError
       .map { crons =>
         crons
@@ -57,11 +56,10 @@ object PeriodicProperty {
       }
   }
 
-  private def determineNextDate(cron: Cron, currentTimestamp: Long): Option[LocalDateTime] = {
+  private def determineNextDate(cron: Cron, zonedDateTime: ZonedDateTime): Option[LocalDateTime] = {
     import scala.compat.java8.OptionConverters._
     val compiledCron = ExecutionTime.forCron(cron)
-    val currentBaseTime = Instant.ofEpochMilli(currentTimestamp).atZone(ZoneId.systemDefault())
-    val nextTime = compiledCron.nextExecution(currentBaseTime)
+    val nextTime = compiledCron.nextExecution(zonedDateTime)
     nextTime.asScala.map(_.toLocalDateTime)
   }
 }

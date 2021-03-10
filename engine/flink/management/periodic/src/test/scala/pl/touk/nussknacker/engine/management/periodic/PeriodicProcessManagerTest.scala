@@ -8,8 +8,11 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentData, GraphProcess, ProcessActionType, User}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
+import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus
+import pl.touk.nussknacker.engine.management.periodic.service.{DefaultAdditionalDeploymentDataProvider, EmptyListener}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
+import java.time.Clock
 import scala.concurrent.Await
 
 class PeriodicProcessManagerTest extends FunSuite
@@ -26,7 +29,6 @@ class PeriodicProcessManagerTest extends FunSuite
 
   private val processName = ProcessName("test1")
   private val processVersion = ProcessVersion(versionId = 42L, processName = processName, user = "test user", modelVersion = None)
-  private val user = User(id = "testUserId", name = "testUserName")
 
   class Fixture {
     val repository = new db.InMemPeriodicProcessesRepository
@@ -35,7 +37,9 @@ class PeriodicProcessManagerTest extends FunSuite
     val periodicProcessService = new PeriodicProcessService(
       delegateProcessManager = delegateProcessManagerStub,
       jarManager = jarManagerStub,
-      scheduledProcessesRepository = repository
+      scheduledProcessesRepository = repository,
+      EmptyListener,
+      DefaultAdditionalDeploymentDataProvider, Clock.systemDefaultZone()
     )
     val periodicProcessManager = new PeriodicProcessManager(
       delegate = delegateProcessManagerStub,

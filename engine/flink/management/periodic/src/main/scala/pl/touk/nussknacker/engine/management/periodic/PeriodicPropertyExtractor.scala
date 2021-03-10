@@ -5,6 +5,8 @@ import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, P
 import pl.touk.nussknacker.engine.management.periodic.CronPropertyExtractor.CronPropertyDefaultName
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
+import java.time.Clock
+
 trait PeriodicPropertyExtractor {
   def apply(processDeploymentData: ProcessDeploymentData): Either[String, PeriodicProperty]
 }
@@ -36,7 +38,7 @@ case class CronPropertyExtractor(propertyName: String = CronPropertyDefaultName)
     for {
       cronProperty <- PeriodicPropertyExtractor.extractProperty(processDeploymentData, propertyName).right
       cronPeriodicProperty <- Right(CronPeriodicProperty(cronProperty)).right
-      _ <- cronPeriodicProperty.nextRunAt().right
+      _ <- cronPeriodicProperty.nextRunAt(Clock.systemDefaultZone()).right
     } yield cronPeriodicProperty
 
 }
