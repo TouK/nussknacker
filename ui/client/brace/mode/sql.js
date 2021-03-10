@@ -41,11 +41,6 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
         regex: /#\{/,
         next: "spel-start"
       } ],
-      "alias": [ {
-        token: "keyword",
-        regex: /\sAS\s/,
-        next: "alias-start"
-      } ],
       "start" : [ {
           include: "spel"
       }, {

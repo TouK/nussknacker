@@ -21,11 +21,13 @@ export default function AceWithFeatureFlags(props: Omit<AceWrapperProps, "noWrap
       name: "showLines",
       bindKey: {win: "F1", mac: "F1"},
       exec: () => toggleFeatureFlags([getFlagName(`showLines`)]),
+      readonly: true,
     },
     {
       name: "noWrap",
       bindKey: {win: "F2", mac: "F2"},
       exec: () => toggleFeatureFlags([getFlagName(`noWrap`)]),
+      readonly: true,
     },
   ], [toggleFeatureFlags, getFlagName])
 
