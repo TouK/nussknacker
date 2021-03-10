@@ -14,7 +14,7 @@ import java.time.temporal.ChronoUnit
 import java.time.{Clock, Instant, LocalDateTime, ZoneId}
 import scala.collection.mutable.ArrayBuffer
 
-//More *integration*
+//Integration test with in-memory hsql
 class PeriodicProcessServiceIntegrationTest extends FunSuite
   with Matchers
   with ScalaFutures
@@ -29,6 +29,7 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
 
   private val clockForSchedule = Clock.fixed(Instant.now().minus(2, ChronoUnit.HOURS), ZoneId.systemDefault())
 
+  //we use different clock for repository to be able to find process for deployment
   private val clockForRepository = Clock.fixed(Instant.now(), ZoneId.systemDefault())
 
   class Fixture {
