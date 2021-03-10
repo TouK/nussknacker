@@ -5,11 +5,14 @@ import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessId
 import pl.touk.nussknacker.engine.management.periodic.db.ScheduledRunDetails
 
 import java.time.LocalDateTime
-import scala.concurrent.Future
 
+/*
+  Listener is at-least-once. If there are problems e.g. with DB, invocation can be repeated for same event.
+  Implementation should be aware of that. Listener is invoked during DB transaction, for that reason it's *synchronous*
+ */
 trait PeriodicProcessListener {
 
-  def onPeriodicProcessEvent: PartialFunction[PeriodicProcessEvent, Future[Unit]]
+  def onPeriodicProcessEvent: PartialFunction[PeriodicProcessEvent, Unit]
 
 }
 
@@ -28,6 +31,6 @@ object EmptyListener extends EmptyListener
 
 trait EmptyListener extends PeriodicProcessListener {
 
-  override def onPeriodicProcessEvent: PartialFunction[PeriodicProcessEvent, Future[Unit]] = Map.empty
+  override def onPeriodicProcessEvent: PartialFunction[PeriodicProcessEvent, Unit] = Map.empty
 
 }

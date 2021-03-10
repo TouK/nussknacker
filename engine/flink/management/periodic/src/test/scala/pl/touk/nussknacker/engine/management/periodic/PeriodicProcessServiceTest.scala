@@ -34,8 +34,7 @@ class PeriodicProcessServiceTest extends FunSuite
       jarManager = jarManagerStub,
       scheduledProcessesRepository = repository,
       new PeriodicProcessListener {
-        override def onPeriodicProcessEvent: PartialFunction[PeriodicProcessEvent, Future[Unit]] =
-        { case k => Future.successful(events.append(k)) }
+        override def onPeriodicProcessEvent: PartialFunction[PeriodicProcessEvent, Unit] = { case k => events.append(k) }
       },
       new AdditionalDeploymentDataProvider {
         override def prepareAdditionalData(runDetails: ScheduledRunDetails): Map[String, String] =

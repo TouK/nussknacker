@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.management.periodic.db
 
-import java.time.LocalDateTime
+import cats.{Id, Monad}
 
+import java.time.LocalDateTime
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.management.periodic._
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -17,6 +18,12 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
 
   var processEntities: mutable.ListBuffer[PeriodicProcessEntity] = ListBuffer.empty
   var deploymentEntities: mutable.ListBuffer[PeriodicProcessDeploymentEntity] = ListBuffer.empty
+
+  override type Action[T] = Id[T]
+
+  override implicit def monad: Monad[Id] = cats.catsInstancesForId
+
+  override def run[T](action: Id[T]): Future[T] = Future.successful(action)
 
   def addActiveProcess(processName: ProcessName, deploymentStatus: PeriodicProcessDeploymentStatus): Unit = {
     val id = PeriodicProcessId(Random.nextLong())
@@ -42,16 +49,15 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
     )
   }
 
-  override def markInactive(processName: ProcessName): Future[Unit] = Future.successful {
+  override def markInactive(processName: ProcessName): Unit =
     processEntities
       .zipWithIndex
       .find(processWithIndex => activeProcess(processName)(processWithIndex._1))
-      .map { case (process, index) =>
+      .foreach { case (process, index) =>
         processEntities.update(index, process.copy(active = false))
       }
-  }
 
-  override def create(deploymentWithJarData: DeploymentWithJarData, periodicProperty: PeriodicProperty, runAt: LocalDateTime): Future[Unit] = {
+  override def create(deploymentWithJarData: DeploymentWithJarData, periodicProperty: PeriodicProperty, runAt: LocalDateTime): Unit = {
     val id = PeriodicProcessId(Random.nextLong())
     processEntities += PeriodicProcessEntity(
       id = id,
@@ -73,51 +79,46 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
       completedAt = None,
       status = PeriodicProcessDeploymentStatus.Scheduled
     )
-    Future.successful(())
   }
 
-  override def getScheduledRunDetails(processName: ProcessName): Future[Option[(ScheduledRunDetails, PeriodicProcessDeploymentStatus)]] = Future.successful {
+  override def getScheduledRunDetails(processName: ProcessName): Option[(ScheduledRunDetails, PeriodicProcessDeploymentStatus)] =
     for {
       process <- processEntities.find(activeProcess(processName))
       deployment <- deploymentEntities.find(_.periodicProcessId == process.id)
     } yield (ScheduledRunDetails(process, deployment), deployment.status)
-  }
 
-  override def findToBeDeployed: Future[Seq[ScheduledRunDetails]] = ???
+  override def findToBeDeployed: Seq[ScheduledRunDetails]= ???
 
-  override def findDeployed: Future[Seq[ScheduledRunDetails]] = Future.successful {
+  override def findDeployed: Seq[ScheduledRunDetails] =
     for {
       p <- processEntities if p.active
       d <- deploymentEntities if d.periodicProcessId == p.id && d.status == PeriodicProcessDeploymentStatus.Deployed
     } yield ScheduledRunDetails(p, d)
-  }
 
-  override def findProcessData(id: PeriodicProcessDeploymentId): Future[DeploymentWithJarData] = Future.successful {
+  override def findProcessData(id: PeriodicProcessDeploymentId): DeploymentWithJarData =
     (for {
       d <- deploymentEntities if d.id == id
       p <- processEntities if p.id == d.periodicProcessId
     } yield createDeploymentWithJarData(p)).head
-  }
 
-  override def findProcessData(processName: ProcessName): Future[Seq[DeploymentWithJarData]] = Future.successful {
+  override def findProcessData(processName: ProcessName): Seq[DeploymentWithJarData] =
     processEntities
       .filter(activeProcess(processName))
       .map(createDeploymentWithJarData)
-  }
 
-  override def markDeployed(id: PeriodicProcessDeploymentId): Future[Unit] = {
+  override def markDeployed(id: PeriodicProcessDeploymentId): Unit = {
     update(id)(_.copy(status = PeriodicProcessDeploymentStatus.Deployed, deployedAt = Some(LocalDateTime.now())))
   }
 
-  override def markFinished(id: PeriodicProcessDeploymentId): Future[Unit] = {
+  override def markFinished(id: PeriodicProcessDeploymentId): Unit = {
     update(id)(_.copy(status = PeriodicProcessDeploymentStatus.Finished, completedAt = Some(LocalDateTime.now())))
   }
 
-  override def markFailed(id: PeriodicProcessDeploymentId): Future[Unit] = {
+  override def markFailed(id: PeriodicProcessDeploymentId): Unit = {
     update(id)(_.copy(status = PeriodicProcessDeploymentStatus.Failed, completedAt = Some(LocalDateTime.now())))
   }
 
-  override def schedule(id: PeriodicProcessId, runAt: LocalDateTime): Future[Unit] = Future.successful {
+  override def schedule(id: PeriodicProcessId, runAt: LocalDateTime): Unit = {
     val deploymentEntity = PeriodicProcessDeploymentEntity(
       id = PeriodicProcessDeploymentId(Random.nextLong()),
       periodicProcessId = id,
@@ -140,11 +141,11 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
     )
   }
 
-  private def update(id: PeriodicProcessDeploymentId)(action: PeriodicProcessDeploymentEntity => PeriodicProcessDeploymentEntity): Future[Unit] = Future.successful {
+  private def update(id: PeriodicProcessDeploymentId)(action: PeriodicProcessDeploymentEntity => PeriodicProcessDeploymentEntity): Unit = {
     deploymentEntities
       .zipWithIndex
       .find { case (deployment, _) => deployment.id == id }
-      .map { case (deployment, index) =>
+      .foreach { case (deployment, index) =>
         deploymentEntities.update(index, action(deployment))
       }
   }

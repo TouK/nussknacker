@@ -1,42 +1,57 @@
 package pl.touk.nussknacker.engine.management.periodic.db
 
+import cats.Monad
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser.decode
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic._
+import slick.dbio
+import slick.dbio.{DBIOAction, Effect, NoStream}
 import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.{JdbcBackend, JdbcProfile}
 
 import java.time.LocalDateTime
 import scala.concurrent.{ExecutionContext, Future}
+import scala.language.higherKinds
 
 
 trait PeriodicProcessesRepository {
-  def markInactive(processName: ProcessName): Future[Unit]
+
+  type Action[_]
+
+  implicit def monad: Monad[Action]
+
+  implicit class RunOps[T](action: Action[T]) {
+    def run: Future[T] = PeriodicProcessesRepository.this.run(action)
+  }
+
+  def run[T](action: Action[T]): Future[T]
+
+  def markInactive(processName: ProcessName): Action[Unit]
 
   def create(deploymentWithJarData: DeploymentWithJarData,
              periodicProperty: PeriodicProperty,
-             runAt: LocalDateTime): Future[Unit]
+             runAt: LocalDateTime): Action[Unit]
 
-  def getScheduledRunDetails(processName: ProcessName): Future[Option[(ScheduledRunDetails, PeriodicProcessDeploymentStatus)]]
+  def getScheduledRunDetails(processName: ProcessName): Action[Option[(ScheduledRunDetails, PeriodicProcessDeploymentStatus)]]
 
-  def findToBeDeployed: Future[Seq[ScheduledRunDetails]]
+  def findToBeDeployed: Action[Seq[ScheduledRunDetails]]
 
-  def findDeployed: Future[Seq[ScheduledRunDetails]]
+  def findDeployed: Action[Seq[ScheduledRunDetails]]
 
-  def findProcessData(id: PeriodicProcessDeploymentId): Future[DeploymentWithJarData]
+  def findProcessData(id: PeriodicProcessDeploymentId): Action[DeploymentWithJarData]
 
-  def findProcessData(processName: ProcessName): Future[Seq[DeploymentWithJarData]]
+  def findProcessData(processName: ProcessName): Action[Seq[DeploymentWithJarData]]
 
-  def markDeployed(id: PeriodicProcessDeploymentId): Future[Unit]
+  def markDeployed(id: PeriodicProcessDeploymentId): Action[Unit]
 
-  def markFinished(id: PeriodicProcessDeploymentId): Future[Unit]
+  def markFinished(id: PeriodicProcessDeploymentId): Action[Unit]
 
-  def markFailed(id: PeriodicProcessDeploymentId): Future[Unit]
+  def markFailed(id: PeriodicProcessDeploymentId): Action[Unit]
 
-  def schedule(id: PeriodicProcessId, runAt: LocalDateTime): Future[Unit]
+  def schedule(id: PeriodicProcessId, runAt: LocalDateTime): Action[Unit]
 }
 
 class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
@@ -48,9 +63,15 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
 
   import io.circe.syntax._
 
+  type Action[T] = DBIOActionInstances.DB[T]
+
+  override implicit def monad: Monad[Action] = DBIOActionInstances.dbMonad
+
+  override def run[T](action: DBIOAction[T, NoStream, Effect.All]): Future[T] = db.run(action.transactionally)
+
   override def create(deploymentWithJarData: DeploymentWithJarData,
                       periodicProperty: PeriodicProperty,
-                      runAt: LocalDateTime): Future[Unit] = {
+                      runAt: LocalDateTime): Action[Unit] = {
     val processEntity = PeriodicProcessEntity(
       id = PeriodicProcessId(-1),
       processName = deploymentWithJarData.processVersion.processName.value,
@@ -75,65 +96,65 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
       )
       _ <- PeriodicProcessDeployments += deploymentEntity
     } yield ()
-    db.run(createAction)
+    createAction
   }
 
-  override def findToBeDeployed: Future[Seq[ScheduledRunDetails]] = {
+  override def findToBeDeployed: Action[Seq[ScheduledRunDetails]] = {
     val active = (PeriodicProcesses join PeriodicProcessDeployments on (_.id === _.periodicProcessId))
       .filter { case (p, _) => p.active === true }
       .filter { case (_, d) => d.runAt <= LocalDateTime.now() && d.status === (PeriodicProcessDeploymentStatus.Scheduled: PeriodicProcessDeploymentStatus) }
-    db.run(active.result).map(_.map {
+    active.result.map(_.map {
       //pobieranie wiecej danych??
       case (p, d) => ScheduledRunDetails(p, d)
     })
   }
 
-  override def findProcessData(id: PeriodicProcessDeploymentId): Future[DeploymentWithJarData] = {
+  override def findProcessData(id: PeriodicProcessDeploymentId): Action[DeploymentWithJarData] = {
     val processWithDeployment = (PeriodicProcesses join PeriodicProcessDeployments on (_.id === _.periodicProcessId))
       .filter { case (_, deployment) => deployment.id === id }
-    db.run(processWithDeployment.result.head).map { case (process, _) => createDeploymentWithJarData(process) }
+    processWithDeployment.result.head.map { case (process, _) => createDeploymentWithJarData(process) }
   }
 
-  override def findProcessData(processName: ProcessName): Future[Seq[DeploymentWithJarData]] = {
-    db.run(PeriodicProcesses.filter(p => p.active === true && p.processName === processName.value).result)
+  override def findProcessData(processName: ProcessName): Action[Seq[DeploymentWithJarData]] = {
+    PeriodicProcesses.filter(p => p.active === true && p.processName === processName.value).result
       .map(maybeProcessEntity => maybeProcessEntity.map(createDeploymentWithJarData))
   }
 
-  override def markDeployed(id: PeriodicProcessDeploymentId): Future[Unit] = {
+  override def markDeployed(id: PeriodicProcessDeploymentId): Action[Unit] = {
     val q = for {
       d <- PeriodicProcessDeployments if d.id === id
     } yield (d.status, d.deployedAt)
     val update = q.update((PeriodicProcessDeploymentStatus.Deployed, Some(LocalDateTime.now())))
-    db.run(update).map(_ => ())
+    update.map(_ => ())
   }
 
-  override def markFailed(id: PeriodicProcessDeploymentId): Future[Unit] = {
+  override def markFailed(id: PeriodicProcessDeploymentId): Action[Unit] = {
     val q = for {
       d <- PeriodicProcessDeployments if d.id === id
     } yield (d.status, d.completedAt)
     val update = q.update((PeriodicProcessDeploymentStatus.Failed, Some(LocalDateTime.now())))
-    db.run(update).map(_ => ())
+    update.map(_ => ())
   }
 
-  override def markFinished(id: PeriodicProcessDeploymentId): Future[Unit] = {
+  override def markFinished(id: PeriodicProcessDeploymentId): Action[Unit] = {
     val q = for {
       d <- PeriodicProcessDeployments if d.id === id
     } yield (d.status, d.completedAt)
     val update = q.update((PeriodicProcessDeploymentStatus.Finished, Some(LocalDateTime.now())))
-    db.run(update).map(_ => ())
+    update.map(_ => ())
   }
 
-  override def getScheduledRunDetails(processName: ProcessName): Future[Option[(ScheduledRunDetails, PeriodicProcessDeploymentStatus)]] = {
+  override def getScheduledRunDetails(processName: ProcessName): Action[Option[(ScheduledRunDetails, PeriodicProcessDeploymentStatus)]] = {
     val processWithDeployment = (PeriodicProcesses join PeriodicProcessDeployments on (_.id === _.periodicProcessId))
       .filter { case (p, _) => (p.active === true) && (p.processName === processName.value) }
       .sortBy { case (_, d) => d.createdAt.desc }
-    db.run(processWithDeployment.result).map(_.map {
+    processWithDeployment.result.map(_.map {
       //pobieranie wiecej danych??
       case (p, d) => (ScheduledRunDetails(p, d), d.status)
     }).map(_.headOption)
   }
 
-  override def schedule(id: PeriodicProcessId, runAt: LocalDateTime): Future[Unit] = {
+  override def schedule(id: PeriodicProcessId, runAt: LocalDateTime): Action[Unit] = {
     val deploymentEntity = PeriodicProcessDeploymentEntity(
       id = PeriodicProcessDeploymentId(-1),
       periodicProcessId = id,
@@ -143,21 +164,21 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
       completedAt = None,
       status = PeriodicProcessDeploymentStatus.Scheduled
     )
-    db.run((PeriodicProcessDeployments += deploymentEntity).map(_ => ()))
+    (PeriodicProcessDeployments += deploymentEntity).map(_ => ())
   }
 
-  override def markInactive(processName: ProcessName): Future[Unit] = {
+  override def markInactive(processName: ProcessName): Action[Unit] = {
     val q = for {
       p <- PeriodicProcesses if p.processName === processName.value && p.active === true
     } yield p.active
     val update = q.update(false)
-    db.run(update).map(_ => ())
+    update.map(_ => ())
   }
 
-  override def findDeployed: Future[Seq[ScheduledRunDetails]] = {
+  override def findDeployed: Action[Seq[ScheduledRunDetails]] = {
     val processWithDeployment = (PeriodicProcesses join PeriodicProcessDeployments on (_.id === _.periodicProcessId))
       .filter { case (p, d) => (p.active === true) && (d.status === (PeriodicProcessDeploymentStatus.Deployed: PeriodicProcessDeploymentStatus)) }
-    db.run(processWithDeployment.result).map(_.map {
+    processWithDeployment.result.map(_.map {
       case (p, d) => ScheduledRunDetails(p, d)
     })
   }
@@ -199,3 +220,25 @@ case class DeployedProcess(
                             periodicProcessId: PeriodicProcessId,
                             periodicProperty: PeriodicProperty
                           )
+
+
+//Copied from ui/server. 
+object DBIOActionInstances {
+
+  type DB[A] = DBIOAction[A, NoStream, Effect.All]
+
+  implicit def dbMonad(implicit ec: ExecutionContext): Monad[DB] = new Monad[DB] {
+
+    override def pure[A](x: A) = dbio.DBIO.successful(x)
+
+    override def flatMap[A, B](fa: DB[A])(f: (A) => DB[B]) = fa.flatMap(f)
+
+    //this is *not* tail recursive
+    override def tailRecM[A, B](a: A)(f: (A) => DB[Either[A, B]]): DB[B] =
+      f(a).flatMap {
+        case Right(r) => pure(r)
+        case Left(l) => tailRecM(l)(f)
+      }
+  }
+
+}
