@@ -19,7 +19,7 @@ export function escapeTemplates(value: string): string {
 
 // serach for: "quotationMark+value+quotationMark" with trimmed value in $1
 function getConcatsSearch(quotationMark: string): RegExp {
-  return RegExp(`${quotationMark}\\+\s*(.+?)\s*\\+${quotationMark}`, `gms`)
+  return RegExp(`${quotationMark}\\+\\s*(.+?)\\s*\\+${quotationMark}`, `gms`)
 }
 
 export const templatesToConcats = curry((quotationMark: string, value: string) => value.replace(
