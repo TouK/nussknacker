@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.management.periodic
 
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.management.periodic.model.DeploymentWithJarData
 
 import scala.concurrent.Future
 
@@ -11,7 +12,7 @@ class JarManagerStub extends JarManager {
 
   override def prepareDeploymentWithJar(processVersion: ProcessVersion, processJson: String): Future[DeploymentWithJarData] = {
     Future.successful(
-      DeploymentWithJarData(processVersion = processVersion, processJson = processJson, modelConfig = "", jarFileName = "")
+      model.DeploymentWithJarData(processVersion = processVersion, processJson = processJson, modelConfig = "", jarFileName = "")
     )
   }
 

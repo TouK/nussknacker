@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
+import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, PeriodicProcessListener}
 import slick.jdbc
 import slick.jdbc.JdbcProfile
@@ -110,23 +111,23 @@ class PeriodicProcessManager(delegate: ProcessManager,
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
     def handleScheduled(original: Option[ProcessState]): Future[Option[ProcessState]] = {
-      service.getScheduledRunDetails(name).map { maybeScheduledRunDetails =>
-        maybeScheduledRunDetails.map { case (scheduledRunDetails, status) =>
-          status match {
+      service.getScheduledRunDetails(name).map { maybeProcessDeployment =>
+        maybeProcessDeployment.map { processDeployment =>
+          processDeployment.state.status match {
             case PeriodicProcessDeploymentStatus.Scheduled => Some(ProcessState(
               Some(ExternalDeploymentId("future")),
-              status = ScheduledStatus(scheduledRunDetails.runAt),
-              version = Option(scheduledRunDetails.processVersion),
+              status = ScheduledStatus(processDeployment.runAt),
+              version = Option(processDeployment.periodicProcess.processVersion),
               definitionManager = processStateDefinitionManager,
               //TODO: this date should be passed/handled through attributes
-              startTime = Option(scheduledRunDetails.runAt.toEpochSecond(ZoneOffset.UTC)),
+              startTime = Option(processDeployment.runAt.toEpochSecond(ZoneOffset.UTC)),
               attributes = Option.empty,
               errors = List.empty
             ))
             case PeriodicProcessDeploymentStatus.Failed => Some(ProcessState(
               Some(ExternalDeploymentId("future")),
               status = SimpleStateStatus.Failed,
-              version = Option(scheduledRunDetails.processVersion),
+              version = Option(processDeployment.periodicProcess.processVersion),
               definitionManager = processStateDefinitionManager,
               startTime = Option.empty,
               attributes = Option.empty,

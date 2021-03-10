@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.management.periodic
+package pl.touk.nussknacker.engine.management.periodic.model
 
 import pl.touk.nussknacker.engine.api.ProcessVersion
 

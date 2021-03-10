@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.management.periodic.db
 
-import java.time.LocalDateTime
-
-import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessId
+import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessId
 import slick.jdbc.JdbcProfile
 import slick.lifted.ProvenShape
 import slick.sql.SqlProfile.ColumnOption.NotNull
+
+import java.time.LocalDateTime
 
 trait PeriodicProcessesTableFactory {
 

@@ -4,7 +4,8 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, ExternalDeploymentId, GraphProcess}
-import pl.touk.nussknacker.engine.management.periodic.{DeploymentWithJarData, EnrichDeploymentWithJarData, JarManager, PeriodicBatchConfig}
+import pl.touk.nussknacker.engine.management.periodic.model.DeploymentWithJarData
+import pl.touk.nussknacker.engine.management.periodic.{EnrichDeploymentWithJarData, JarManager, PeriodicBatchConfig, model}
 import pl.touk.nussknacker.engine.management.rest.{FlinkClient, HttpFlinkClient}
 import pl.touk.nussknacker.engine.management.{FlinkConfig, FlinkModelJar, FlinkProcessManager, FlinkStreamingRestManager}
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
@@ -46,7 +47,7 @@ private[periodic] class FlinkJarManager(flinkClient: FlinkClient,
                                         processJson: String): Future[DeploymentWithJarData] = {
     logger.info(s"Prepare deployment for process: $processVersion")
     copyJarToLocalDir(processVersion).flatMap { jarFileName =>
-      val deploymentWithJarData = DeploymentWithJarData(
+      val deploymentWithJarData = model.DeploymentWithJarData(
         processVersion = processVersion,
         processJson = processJson,
         modelConfig = modelConfig.serialized,

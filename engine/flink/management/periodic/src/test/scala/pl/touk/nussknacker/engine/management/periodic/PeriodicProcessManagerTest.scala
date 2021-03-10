@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentData, GraphProcess, ProcessActionType, User}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
+import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.service.{DefaultAdditionalDeploymentDataProvider, EmptyListener}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
