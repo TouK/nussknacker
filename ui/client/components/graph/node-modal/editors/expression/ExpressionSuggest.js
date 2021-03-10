@@ -9,7 +9,7 @@ import ProcessUtils from "../../../../../common/ProcessUtils"
 import HttpService from "../../../../../http/HttpService"
 import ValidationLabels from "../../../../modals/ValidationLabels"
 import {allValid} from "../Validators"
-import AceEditor from "./AceWrapper"
+import AceEditor from "./AceWithFeatureFlags"
 import ExpressionSuggester from "./ExpressionSuggester"
 
 //to reconsider
