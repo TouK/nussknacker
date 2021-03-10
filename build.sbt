@@ -10,11 +10,14 @@ import scala.util.Try
 
 val scala211 = "2.11.12"
 // Warning: Flink doesn't work correctly with 2.12.11
+// Warning: 2.12.13 + crossVersion break sbt-scoverage: https://github.com/scoverage/sbt-scoverage/issues/319
 val scala212 = "2.12.10"
 lazy val supportedScalaVersions = List(scala212, scala211)
 
 // Silencer must be compatible with exact scala version - see compatibility matrix: https://search.maven.org/search?q=silencer-plugin
 // Silencer 1.7.x require Scala 2.12.11 (see warning above)
+// Silencer (and all '@silent' annotations) can be removed after we drop support for Scala 2.11
+// https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
 val silencerV_2_12 = "1.6.0"
 val silencerV = "1.7.0"
 
@@ -220,37 +223,38 @@ val scalaTestV = "3.0.8"
 val scalaCheckV = "1.14.0"
 val logbackV = "1.1.3"
 val argonautV = "6.2.1"
-val circeV = "0.11.1"
+val circeV = "0.11.2"
+val circeJava8V = "0.11.1"
 val jwtCirceV = "4.0.0"
 val jacksonV = "2.9.2"
 val catsV = "1.5.0"
 val scalaParsersV = "1.0.4"
 val dispatchV = "1.0.1"
-val slf4jV = "1.7.21"
-val scalaLoggingV = "3.9.0"
-val scalaCompatV = "0.9.0"
+val slf4jV = "1.7.30"
+val scalaLoggingV = "3.9.2"
+val scalaCompatV = "0.9.1"
 val ficusV = "1.4.7"
-val configV = "1.4.0"
+val configV = "1.4.1"
 val commonsLangV = "3.3.2"
 val commonsTextV = "1.8"
 val commonsIOV = "2.4"
 //we want to use 5.x for standalone metrics to have tags, however dropwizard development kind of freezed. Maybe we should consider micrometer?
 //In Flink metrics we use bundled dropwizard metrics v. 3.x
 val dropWizardV = "5.0.0-rc3"
-val scalaCollectionsCompatV = "2.1.6"
+val scalaCollectionsCompatV = "2.3.2"
 
 val akkaHttpV = "10.1.8"
 val akkaHttpCirceV = "1.27.0"
-val slickV = "3.3.2"
-val hsqldbV = "2.5.0"
-val postgresV = "42.2.12"
+val slickV = "3.3.3"
+val hsqldbV = "2.5.1"
+val postgresV = "42.2.19"
 val flywayV = "6.3.3"
 val confluentV = "5.5.0"
 val jbcryptV = "0.4"
 val cronParserV = "9.1.3"
 val javaxValidationApiV = "2.0.1.Final"
 val caffeineCacheV = "2.8.8"
-val sttpV = "2.2.3"
+val sttpV = "2.2.9"
 
 lazy val dockerSettings = {
   val workingDir = "/opt/nussknacker"
@@ -659,7 +663,7 @@ lazy val util = (project in engine("util")).
         "com.github.ben-manes.caffeine" % "caffeine" % caffeineCacheV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "com.iheart" %% "ficus" % ficusV,
-        "io.circe" %% "circe-java8" % circeV,
+        "io.circe" %% "circe-java8" % circeJava8V,
         "org.apache.avro" % "avro" % avroV % Optional
       )
     }
@@ -766,7 +770,7 @@ lazy val api = (project in engine("api")).
         "io.circe" %% "circe-parser" % circeV,
         "io.circe" %% "circe-generic" % circeV,
         "io.circe" %% "circe-generic-extras" % circeV,
-        "io.circe" %% "circe-java8" % circeV,
+        "io.circe" %% "circe-java8" % circeJava8V,
         "com.iheart" %% "ficus" % ficusV,
         "org.apache.commons" % "commons-lang3" % commonsLangV,
         "org.apache.commons" % "commons-text" % commonsTextV,
@@ -875,7 +879,7 @@ lazy val restmodel = (project in file("ui/restmodel"))
   .settings(
     name := "nussknacker-restmodel",
     libraryDependencies ++= Seq(
-      "io.circe" %% "circe-java8" % circeV
+      "io.circe" %% "circe-java8" % circeJava8V
     )
   )
   //interpreter needed for evaluatedparam etc

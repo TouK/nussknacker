@@ -35,7 +35,7 @@ object StandardTimestampWatermarkHandler {
 }
 
 @silent("deprecated")
-@nowarn("deprecated")
+@nowarn("cat=deprecation")
 class LegacyTimestampWatermarkHandler[T](timestampAssigner: TimestampAssigner[T]) extends TimestampWatermarkHandler[T] {
   override def assignTimestampAndWatermarks(dataStream: DataStream[T]): DataStream[T] = {
     timestampAssigner match {

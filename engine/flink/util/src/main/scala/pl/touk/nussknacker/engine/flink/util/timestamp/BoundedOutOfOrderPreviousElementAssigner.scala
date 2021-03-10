@@ -12,7 +12,7 @@ import scala.annotation.nowarn
  * See https://ci.apache.org/projects/flink/flink-docs-stable/dev/connectors/kafka.html#using-kafka-timestamps-and-flink-event-time-in-kafka-010
  */
 @silent("deprecated")
-@nowarn("deprecated")
+@nowarn("cat=deprecation")
 class BoundedOutOfOrderPreviousElementAssigner[T](maxOutOfOrdernessMillis: Long)
   extends AssignerWithPeriodicWatermarks[T] with Serializable {
 
