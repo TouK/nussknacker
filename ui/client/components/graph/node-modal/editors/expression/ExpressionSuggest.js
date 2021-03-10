@@ -1,5 +1,6 @@
+import ace from "ace-builds/src-noconflict/ace"
 import cn from "classnames"
-import {isEmpty, isEqual, map} from "lodash"
+import {isEmpty, isEqual, map, overEvery} from "lodash"
 import PropTypes from "prop-types"
 import React from "react"
 import ReactDOMServer from "react-dom/server"
@@ -12,6 +13,8 @@ import {allValid} from "../Validators"
 import AceEditor from "./AceWithFeatureFlags"
 import ExpressionSuggester from "./ExpressionSuggester"
 
+const {TokenIterator} = ace.require("ace/token_iterator")
+
 //to reconsider
 // - respect categories for global variables?
 // - maybe ESC should be allowed to hide suggestions but leave modal open?
@@ -20,6 +23,25 @@ var inputExprIdCounter = 0
 
 const identifierRegexpsWithoutDot = [/[#a-zA-Z0-9-_]/]
 const identifierRegexpsIncludingDot = [/[#a-zA-Z0-9-_.]/]
+
+function isSqlTokenAllowed(iterator, modeId) {
+  if (modeId === "ace/mode/sql") {
+    let token = iterator.getCurrentToken()
+    while (token && (token.type !== "spel.open" && token.type !== "spel.close")) {
+      token = iterator.stepBackward()
+    }
+    return token?.type === "spel.open"
+  }
+  return true
+}
+
+function isSpelTokensAllowed(iterator, modeId) {
+  if (modeId === "ace/mode/spel") {
+    const token = iterator.getCurrentToken()
+    return token?.type !== "string"
+  }
+  return true
+}
 
 class ExpressionSuggest extends React.Component {
 
@@ -34,7 +56,13 @@ class ExpressionSuggest extends React.Component {
   }
 
   customAceEditorCompleter = {
+    isTokenAllowed: overEvery([isSqlTokenAllowed, isSpelTokensAllowed]),
     getCompletions: (editor, session, caretPosition2d, prefix, callback) => {
+      const iterator = new TokenIterator(session, caretPosition2d.row, caretPosition2d.column)
+      if (!this.customAceEditorCompleter.isTokenAllowed(iterator, session.$modeId)) {
+        callback()
+      }
+
       this.expressionSuggester.suggestionsFor(this.state.value, caretPosition2d).then(suggestions => {
         // This trick enforce autocompletion to invoke getCompletions even if some result found before - in case if list of suggestions will change during typing
         editor.completer.activated = false
