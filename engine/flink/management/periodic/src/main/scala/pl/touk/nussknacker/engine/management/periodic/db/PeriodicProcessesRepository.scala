@@ -13,7 +13,7 @@ import slick.dbio.{DBIOAction, Effect, NoStream}
 import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.{JdbcBackend, JdbcProfile}
 
-import java.time.LocalDateTime
+import java.time.{Clock, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 
@@ -81,7 +81,8 @@ trait PeriodicProcessesRepository {
 }
 
 class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
-                                       override val profile: JdbcProfile)
+                                       override val profile: JdbcProfile,
+                                       clock: Clock)
                                       (implicit ec: ExecutionContext)
   extends PeriodicProcessesRepository
     with PeriodicProcessesTableFactory
@@ -107,7 +108,7 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
       jarFileName = deploymentWithJarData.jarFileName,
       periodicProperty = periodicProperty.asJson.noSpaces,
       active = true,
-      createdAt = LocalDateTime.now()
+      createdAt = now()
     )
     for {
       periodicProcessId <- (PeriodicProcesses returning PeriodicProcesses.map(_.id) into ((_, id) => id)) += processEntity
@@ -115,10 +116,12 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
     } yield deployment
   }
 
+  private def now(): LocalDateTime = LocalDateTime.now(clock)
+
   override def findToBeDeployed: Action[Seq[PeriodicProcessDeployment]] = {
     val active = (PeriodicProcesses join PeriodicProcessDeployments on (_.id === _.periodicProcessId))
       .filter { case (p, _) => p.active === true }
-      .filter { case (_, d) => d.runAt <= LocalDateTime.now() && d.status === (PeriodicProcessDeploymentStatus.Scheduled: PeriodicProcessDeploymentStatus) }
+      .filter { case (_, d) => d.runAt <= now && d.status === (PeriodicProcessDeploymentStatus.Scheduled: PeriodicProcessDeploymentStatus) }
     active
       .result
       .map(createPeriodicProcessDeployment)
@@ -142,7 +145,7 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
     val q = for {
       d <- PeriodicProcessDeployments if d.id === id
     } yield (d.status, d.deployedAt)
-    val update = q.update((PeriodicProcessDeploymentStatus.Deployed, Some(LocalDateTime.now())))
+    val update = q.update((PeriodicProcessDeploymentStatus.Deployed, Some(now())))
     update.map(_ => ())
   }
 
@@ -150,7 +153,7 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
     val q = for {
       d <- PeriodicProcessDeployments if d.id === id
     } yield (d.status, d.completedAt)
-    val update = q.update((PeriodicProcessDeploymentStatus.Failed, Some(LocalDateTime.now())))
+    val update = q.update((PeriodicProcessDeploymentStatus.Failed, Some(now())))
     update.map(_ => ())
   }
 
@@ -158,7 +161,7 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
     val q = for {
       d <- PeriodicProcessDeployments if d.id === id
     } yield (d.status, d.completedAt)
-    val update = q.update((PeriodicProcessDeploymentStatus.Finished, Some(LocalDateTime.now())))
+    val update = q.update((PeriodicProcessDeploymentStatus.Finished, Some(now())))
     update.map(_ => ())
   }
 
@@ -176,7 +179,7 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
     val deploymentEntity = PeriodicProcessDeploymentEntity(
       id = PeriodicProcessDeploymentId(-1),
       periodicProcessId = id,
-      createdAt = LocalDateTime.now(),
+      createdAt = now(),
       runAt = runAt,
       deployedAt = None,
       completedAt = None,

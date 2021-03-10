@@ -8,13 +8,15 @@ import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesReposi
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeployment
 import pl.touk.nussknacker.engine.management.periodic.service._
 
+import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
 
 class PeriodicProcessService(delegateProcessManager: ProcessManager,
                              jarManager: JarManager,
                              scheduledProcessesRepository: PeriodicProcessesRepository,
                              periodicProcessListener: PeriodicProcessListener,
-                             additionalDeploymentDataProvider: AdditionalDeploymentDataProvider)
+                             additionalDeploymentDataProvider: AdditionalDeploymentDataProvider,
+                             clock: Clock)
                             (implicit ec: ExecutionContext) extends LazyLogging {
 
   import cats.syntax.all._
@@ -33,7 +35,7 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
   def schedule(periodicProperty: PeriodicProperty,
                processVersion: ProcessVersion,
                processJson: String): Future[Unit] = {
-    periodicProperty.nextRunAt() match {
+    periodicProperty.nextRunAt(clock) match {
       case Right(Some(runAt)) =>
         logger.info("Scheduling periodic process: {} on {}", processVersion, runAt)
         jarManager.prepareDeploymentWithJar(processVersion, processJson).flatMap { deploymentWithJarData =>
@@ -83,7 +85,7 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
       _ <- scheduledProcessesRepository.markFinished(deployment.id)
       currentState <- scheduledProcessesRepository.findProcessData(deployment.id)
       _ <- handleEvent(FinishedEvent(currentState, state))
-      callback <- process.periodicProperty.nextRunAt() match {
+      callback <- process.periodicProperty.nextRunAt(clock) match {
         case Right(Some(futureDate)) =>
           logger.info(s"Rescheduling process $deployment to $futureDate")
           scheduledProcessesRepository.schedule(process.id, futureDate).flatMap { data =>

@@ -441,6 +441,7 @@ lazy val flinkPeriodicProcessManager = (project in engine("flink/management/peri
       Seq(
         "org.typelevel" %% "cats-core" % catsV % "provided",
         "com.typesafe.slick" %% "slick" % slickV % "provided",
+        "com.typesafe.slick" %% "slick-hikaricp" % slickV % "provided",
         "org.flywaydb" % "flyway-core" % flywayV % "provided",
         "com.cronutils" % "cron-utils" % cronParserV
       )

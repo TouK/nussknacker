@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDepl
 import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, DeployedEvent, FailedEvent, FinishedEvent, PeriodicProcessEvent, PeriodicProcessListener, ScheduledEvent}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
+import java.time.Clock
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
@@ -40,7 +41,7 @@ class PeriodicProcessServiceTest extends FunSuite
       new AdditionalDeploymentDataProvider {
         override def prepareAdditionalData(runDetails: PeriodicProcessDeployment): Map[String, String] =
           additionalData + ("runId" -> runDetails.id.value.toString)
-      }
+      }, Clock.systemDefaultZone()
     )
   }
 

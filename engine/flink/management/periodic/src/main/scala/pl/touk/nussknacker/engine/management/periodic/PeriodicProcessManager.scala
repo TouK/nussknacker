@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management.periodic
 
-import java.time.{LocalDateTime, ZoneOffset}
+import java.time.{Clock, LocalDateTime, ZoneOffset}
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
@@ -38,10 +38,12 @@ object PeriodicProcessManager {
       builder.setThreadPoolName("AsyncBatchPeriodicClient")
     }
 
+    val clock = Clock.systemDefaultZone()
+
     val (db: jdbc.JdbcBackend.DatabaseDef, dbProfile: JdbcProfile) = DbInitializer.init(periodicBatchConfig.db)
-    val scheduledProcessesRepository = new SlickPeriodicProcessesRepository(db, dbProfile)
+    val scheduledProcessesRepository = new SlickPeriodicProcessesRepository(db, dbProfile, clock)
     val jarManager = FlinkJarManager(flinkConfig, periodicBatchConfig, modelData, enrichDeploymentWithJarDataFactory(originalConfig))
-    val service = new PeriodicProcessService(delegate, jarManager, scheduledProcessesRepository, listener, additionalDeploymentDataProvider)
+    val service = new PeriodicProcessService(delegate, jarManager, scheduledProcessesRepository, listener, additionalDeploymentDataProvider, clock)
     system.actorOf(DeploymentActor.props(service, periodicBatchConfig.deployInterval))
     system.actorOf(RescheduleFinishedActor.props(service, periodicBatchConfig.rescheduleCheckInterval))
     val toClose = () => {
