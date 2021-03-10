@@ -1,9 +1,10 @@
 // from https://github.com/thlorenz/brace/blob/master/mode/sql.js
-ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib/oop","ace/mode/text_highlight_rules"], function(acequire, exports, module) {
+ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib/oop","ace/mode/text_highlight_rules","ace/mode/spel_highlight_rules"], function(acequire, exports, module) {
   "use strict";
 
   var oop = acequire("../lib/oop");
   var TextHighlightRules = acequire("./text_highlight_rules").TextHighlightRules;
+  var SpelHighlightRules = acequire("./spel_highlight_rules").CssHighlightRules;
 
   var SqlHighlightRules = function() {
 
@@ -35,17 +36,25 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
     }, "identifier", true);
 
     this.$rules = {
+      "spel": [ {
+        token: "spel.open",
+        regex: /#\{/,
+        next: "spel-start"
+      } ],
+      "alias": [ {
+        token: "keyword",
+        regex: /\sAS\s/,
+        next: "alias-start"
+      } ],
       "start" : [ {
+          include: "spel"
+      }, {
         token : "comment",
         regex : "--.*$"
       },  {
         token : "comment",
         start : "/\\*",
         end : "\\*/"
-      },  {
-        token : "spel",
-        start : "\\#\\{",
-        end : "\\}"
       }, {
         token : "string",           // " string
         regex : '".*?"'
@@ -75,6 +84,13 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
         regex : "\\s+"
       } ]
     };
+
+    this.embedRules(SpelHighlightRules, "spel-", [{
+      token: "spel.close",
+      regex: /\}/,
+      next: "pop",
+    }])
+
     this.normalizeRules();
   };
 
