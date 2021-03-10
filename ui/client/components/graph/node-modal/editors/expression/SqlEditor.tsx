@@ -43,6 +43,7 @@ const SqlEditor: SimpleEditor<Props> = (props: Props) => {
       onValueChange={valueChange}
       expressionObj={value}
       className={className}
+      rows={6}
     />
   )
 }
