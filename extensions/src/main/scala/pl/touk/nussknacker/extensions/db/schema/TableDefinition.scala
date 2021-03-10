@@ -8,7 +8,8 @@ object TableDefinition {
 
   def apply(resultMeta: ResultSetMetaData): TableDefinition =
     TableDefinition(
-      columnDefs = (1 to resultMeta.getColumnCount).map(ColumnDefinition(_, resultMeta)).toList)
+      columnDefs = (1 to resultMeta.getColumnCount).map(ColumnDefinition(_, resultMeta)).toList
+    )
 }
 
 case class TableDefinition(columnDefs: List[ColumnDefinition]) {

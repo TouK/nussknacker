@@ -67,7 +67,6 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
               val allErrors = (errorsCombined ++ errors).distinct
               Valid(TransformationResult(allErrors, evaluatedSoFar.map(_._1), finalContext, state))
             case transformer.NextParameters(newParameters, newParameterErrors, state) =>
-            //
               val (parameterEvaluationErrors, newEvaluatedParameters) = newParameters.map { newParam =>
                 val prepared = prepareParameter(newParam)
                 prepared

@@ -15,6 +15,8 @@ import java.sql.ParameterMetaData
 import javax.sql.DataSource
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
+import scala.collection.JavaConverters.bufferAsJavaListConverter
+
 
 object SqlEnricher {
 
@@ -100,7 +102,6 @@ class SqlEnricher(val dataSource: DataSource) extends EagerService
             results += TypedMap(fields)
           }
         }
-        import scala.collection.JavaConverters._
 
         Future.successful { results.asJava }
       }
