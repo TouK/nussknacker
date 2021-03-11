@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParame
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, OutputVariableNameDependency, Parameter, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.extensions.db.query.SingleResultStrategy
 import pl.touk.nussknacker.extensions.db.schema.TableDefinition
 import pl.touk.nussknacker.extensions.definition.TypeToParameterEditor
 import pl.touk.nussknacker.extensions.service.SqlEnricher.TransformationState
@@ -53,7 +54,7 @@ class SqlLookupEnricher(override val dataSource: DataSource) extends SqlEnricher
           val tableDef = TableDefinition(statement.getMetaData)
           NextParameters(
             parameters = keyColumnParam(tableDef) :: Nil,
-            state = Some(TransformationState(query = query, argsCount = 0, tableDef))
+            state = Some(TransformationState(query = query, argsCount = 1, tableDef, strategy = SingleResultStrategy))
           )
         }
       }
@@ -61,11 +62,12 @@ class SqlLookupEnricher(override val dataSource: DataSource) extends SqlEnricher
 
   protected def keyColumnParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])
                                   (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
-    case TransformationStep((TableParamName, _) :: (KeyColumnParamName, DefinedEagerParameter(keyColumn: String, _)) :: Nil, Some(TransformationState(query, _, tableDef)) ) =>
-      val queryWithWhere = s"$query WHERE $keyColumn = ?"
+    case TransformationStep((TableParamName, _) :: (KeyColumnParamName, DefinedEagerParameter(keyColumn: String, _)) :: Nil, Some(state) ) =>
+      val queryWithWhere = s"${state.query} WHERE $keyColumn = ?"
+      val newState = state.copy(query = queryWithWhere)
       NextParameters(
-        parameters = keyValueParam(keyColumn, tableDef) :: Nil,
-        state = Some(TransformationState(query = queryWithWhere, argsCount = 1, tableDef))
+        parameters = keyValueParam(keyColumn, state.tableDef) :: Nil,
+        state = Some(newState)
       )
   }
 

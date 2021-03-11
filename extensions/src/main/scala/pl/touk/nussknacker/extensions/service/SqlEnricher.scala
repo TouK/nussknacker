@@ -7,15 +7,14 @@ import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, Validati
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.typed.{TypedMap, typing}
+import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.extensions.db.WithDBConnectionPool
+import pl.touk.nussknacker.extensions.db.query.{QueryExecutor, QueryResultStrategy, ResultSetStrategy, SingleResultStrategy}
 import pl.touk.nussknacker.extensions.db.schema.TableDefinition
 
 import java.sql.{ParameterMetaData, PreparedStatement}
 import javax.sql.DataSource
-import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
-import scala.collection.JavaConverters.bufferAsJavaListConverter
 
 
 object SqlEnricher {
@@ -24,12 +23,28 @@ object SqlEnricher {
 
   final val QueryParamName: String = "Query"
 
+  final val ResultStrategyParamName: String = "Result strategy"
+
   private val metaData = TypedNodeDependency(classOf[MetaData])
 
   private val QueryParam: Parameter = Parameter(QueryParamName, Typed[String]).copy(
     editor = Some(SqlParameterEditor))
 
-  case class TransformationState(query: String, argsCount: Int, tableDef: TableDefinition)
+  val ResultStrategyParam: Parameter = {
+    val strategyNames = List(SingleResultStrategy.name, ResultSetStrategy.name).map { strategyName =>
+      FixedExpressionValue(s"'$strategyName'", strategyName)
+    }
+    Parameter(ResultStrategyParamName, Typed[String]).copy(
+      editor = Some(FixedValuesParameterEditor(strategyNames))
+    )
+  }
+
+  case class TransformationState(query: String,
+                                 argsCount: Int,
+                                 tableDef: TableDefinition,
+                                 strategy: QueryResultStrategy) {
+    val outputType: TypingResult = strategy.resultType(tableDef)
+  }
 }
 
 /*
@@ -45,7 +60,7 @@ class SqlEnricher(val dataSource: DataSource) extends EagerService
 
   override val nodeDependencies: List[NodeDependency] = OutputVariableNameDependency :: metaData :: Nil
 
-  override def initialParameters: List[Parameter] = QueryParam :: Nil
+  override def initialParameters: List[Parameter] = ResultStrategyParam :: QueryParam :: Nil
 
   protected def initialStep(context: ValidationContext, dependencies: List[NodeDependencyValue])
                            (implicit nodeId: NodeId): NodeTransformationDefinition = {
@@ -55,7 +70,7 @@ class SqlEnricher(val dataSource: DataSource) extends EagerService
 
   protected def queryParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])
                               (implicit nodeId: NodeId): NodeTransformationDefinition = {
-    case TransformationStep((QueryParamName, DefinedEagerParameter(query: String, _)) :: Nil, None) =>
+    case TransformationStep((ResultStrategyParamName, DefinedEagerParameter(strategyName: String, _)) :: (QueryParamName, DefinedEagerParameter(query: String, _)) :: Nil, None) =>
       if (query.isBlank)
         FinalResults(
           context, errors = CustomNodeError("Query is missing", Some(QueryParamName)) :: Nil, state = None)
@@ -67,21 +82,22 @@ class SqlEnricher(val dataSource: DataSource) extends EagerService
             state = Some(TransformationState(
               query = query,
               argsCount = queryArgParams.size,
-              tableDef = TableDefinition(statement.getMetaData)
+              tableDef = TableDefinition(statement.getMetaData),
+              strategy = QueryResultStrategy(strategyName).get
             )))
         }  }
 
   protected def finalStep(context: ValidationContext, dependencies: List[NodeDependencyValue])
                          (implicit nodeId: NodeId): NodeTransformationDefinition = {
-    case TransformationStep(_, state@Some(TransformationState(_, _, tableDef))) =>
+    case TransformationStep(_, Some(state)) =>
       val newCtxV = context.withVariable(
         name = OutputVariableNameDependency.extract(dependencies),
-        value =  tableDef.resultSetType,
+        value = state.outputType,
         paramName = None)
       FinalResults(
         finalContext = newCtxV.getOrElse(context),
         errors = newCtxV.swap.map(_.toList).getOrElse(Nil),
-        state = state)
+        state = Some(state))
   }
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
@@ -94,25 +110,17 @@ class SqlEnricher(val dataSource: DataSource) extends EagerService
     val state = finalState.get
 
     new ServiceInvoker {
-      override val returnType: TypingResult = state.tableDef.resultSetType
+      override val returnType: TypingResult = state.outputType
 
       override def invokeService(params: Map[String, Any])
-                                (implicit ec: ExecutionContext, collector: InvocationCollectors.ServiceInvocationCollector, contextId: ContextId): Future[Any] = {
-        val results = new ArrayBuffer[TypedMap]()
-
-        withConnection(state.query) { statement =>
-          setQueryArguments(statement, state.argsCount, params)
-          val resultSet = statement.executeQuery()
-          while (resultSet.next()) {
-            val fields = state.tableDef.columnDefs.map { columnDef =>
-              columnDef.name -> resultSet.getObject(columnDef.no)
-            }.toMap
-            results += TypedMap(fields)
+                                (implicit ec: ExecutionContext, collector: InvocationCollectors.ServiceInvocationCollector, contextId: ContextId): Future[Any] =
+        Future.successful {
+          withConnection(state.query) { statement =>
+            setQueryArguments(statement, state.argsCount, params)
+            new QueryExecutor(statement, state.tableDef, state.strategy)
+              .execute()
           }
         }
-
-        Future.successful { results.asJava }
-      }
     }
   }
 

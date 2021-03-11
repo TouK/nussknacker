@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.{ContextId, MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{QueryServiceInvocationCollector, ServiceInvocationCollector}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.extensions.db.pool.HikariDataSourceFactory
+import pl.touk.nussknacker.extensions.db.query.ResultSetStrategy
 import pl.touk.nussknacker.extensions.db.schema.TableDefinition
 import pl.touk.nussknacker.extensions.utils.WithDB
 
@@ -35,7 +36,9 @@ class SqlEnricherTest extends FunSuite
     val state = SqlEnricher.TransformationState(
       query = query,
       argsCount = 1,
-      tableDef = TableDefinition(meta))
+      tableDef = TableDefinition(meta),
+      strategy = ResultSetStrategy
+    )
     val invoker = service.implementation(Map.empty, dependencies = Nil, Some(state))
     invoker.returnType.display shouldBe "List[{ID: Integer, NAME: String}]"
     val resultF = invoker.invokeService(Map("arg1" -> 1))
