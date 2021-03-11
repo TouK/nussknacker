@@ -49,23 +49,23 @@ object keyed {
   }
 
   /* TODO, FIXME: Errors on interpret should be handled with FlinkEspExceptionHandler; see KeyedRecordFlatMapper */
-  abstract class BaseKeyedValueMapper[OutputKey <: AnyRef: TypeTag] extends RichMapFunction[Context, ValueWithContext[KeyedValue[OutputKey, AnyRef]]] with LazyParameterInterpreterFunction {
+  abstract class BaseKeyedValueMapper[OutputKey <: AnyRef: TypeTag, OutputValue <:AnyRef: TypeTag] extends RichMapFunction[Context, ValueWithContext[KeyedValue[OutputKey, OutputValue]]] with LazyParameterInterpreterFunction {
 
     protected implicit def lazyParameterInterpreterImpl: LazyParameterInterpreter = lazyParameterInterpreter
 
-    protected def prepareInterpreter(key: LazyParameter[OutputKey], value: LazyParameter[AnyRef]): Context => KeyedValue[OutputKey, AnyRef] = {
+    protected def prepareInterpreter(key: LazyParameter[OutputKey], value: LazyParameter[OutputValue]): Context => KeyedValue[OutputKey, OutputValue] = {
       lazyParameterInterpreter.syncInterpretationFunction(
         key.product(value).map(tuple => KeyedValue(tuple._1, tuple._2)))
     }
 
-    protected def interpret(ctx: Context): KeyedValue[OutputKey, AnyRef]
+    protected def interpret(ctx: Context): KeyedValue[OutputKey, OutputValue]
 
-    override def map(ctx: Context): ValueWithContext[KeyedValue[OutputKey, AnyRef]] = ValueWithContext(interpret(ctx), ctx)
+    override def map(ctx: Context): ValueWithContext[KeyedValue[OutputKey, OutputValue]] = ValueWithContext(interpret(ctx), ctx)
 
   }
 
   class KeyedValueMapper(protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper, key: LazyParameter[AnyRef], value: LazyParameter[AnyRef])
-    extends BaseKeyedValueMapper[AnyRef] {
+    extends BaseKeyedValueMapper[AnyRef, AnyRef] {
 
     private lazy val interpreter = prepareInterpreter(key, value)
 
@@ -73,16 +73,24 @@ object keyed {
 
   }
 
-  class StringKeyedValueMapper(protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper, key: LazyParameter[CharSequence], value: LazyParameter[AnyRef])
-    extends BaseKeyedValueMapper[String] {
 
-    private lazy val interpreter = prepareInterpreter(key.map(transformKey), value)
+
+  class StringKeyedValueMapper[T<:AnyRef:TypeTag](protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
+                                                  key: LazyParameter[CharSequence],
+                                                  value: LazyParameterInterpreter => LazyParameter[T])
+    extends BaseKeyedValueMapper[String, T] {
+
+    def this(lazyParameterHelper: FlinkLazyParameterFunctionHelper,
+        key: LazyParameter[CharSequence],
+        value: LazyParameter[T]) = this(lazyParameterHelper, key, _ => value)
+
+    private lazy val interpreter = prepareInterpreter(key.map(transformKey), value(lazyParameterInterpreter))
 
     protected def transformKey(keyValue: CharSequence): String = {
       Option(keyValue).map(_.toString).getOrElse("")
     }
 
-    override protected def interpret(ctx: Context): KeyedValue[String, AnyRef] = interpreter(ctx)
+    override protected def interpret(ctx: Context): KeyedValue[String, T] = interpreter(ctx)
 
   }
 

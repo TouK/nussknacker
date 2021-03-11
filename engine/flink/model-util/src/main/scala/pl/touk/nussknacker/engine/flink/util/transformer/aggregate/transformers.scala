@@ -4,19 +4,22 @@ import org.apache.flink.annotation.PublicEvolving
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
+import org.apache.flink.streaming.api.windowing.triggers.EventTimeTrigger
+import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.{Context => NkContext, _}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
-import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValueMapper
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.FireOnEachEvent
+import pl.touk.nussknacker.engine.flink.util.transformer.richflink._
 
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.Duration
 
 //TODO: think about merging these with TransformStateFunction and/or PreviousValueFunction
 @PublicEvolving // will be only one version for each method, with explicitUidInStatefulOperators = true
-                // in the future - see ExplicitUidInOperatorsCompat for more info
+// in the future - see ExplicitUidInOperatorsCompat for more info
 object transformers {
 
   def slidingTransformer(keyBy: LazyParameter[CharSequence],
@@ -38,19 +41,17 @@ object transformers {
     ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, aggregateBy))
       .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
-          val storedAggregateType = aggregator.computeStoredType(aggregateBy.returnType).valueOr(msg => throw new IllegalArgumentException(msg))
-          val expectedType = aggregator.computeOutputType(aggregateBy.returnType).valueOr(msg => throw new IllegalArgumentException(msg))
+          implicit val fctx: FlinkCustomNodeContext = ctx
+
           val aggregatorFunction =
             if (emitWhenEventLeft)
-              new EmitWhenEventLeftAggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, storedAggregateType)
+              new EmitWhenEventLeftAggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, aggregateBy.returnType)
             else
-              new AggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, storedAggregateType)
-          val statefulStream = start
-            .map(new StringKeyedValueMapper(ctx.lazyParameterHelper, keyBy, aggregateBy))
-            .keyBy(_.value.key)
+              new AggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, aggregateBy.returnType)
+          start
+            .keyByWithValue(keyBy, _ => aggregateBy)
             .process(aggregatorFunction)
-          ExplicitUidInOperatorsSupport.setUidIfNeed(explicitUidInStatefulOperators(ctx), ctx.nodeId)(statefulStream)
-            .map(_.map(aggregator.alignToExpectedType(_, expectedType)))
+            .setUid(ctx, explicitUidInStatefulOperators)
         }))
   }
 
@@ -59,8 +60,12 @@ object transformers {
                           aggregator: Aggregator,
                           windowLength: Duration,
                           variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
-    tumblingTransformer(keyBy, aggregateBy, aggregator, windowLength, variableName, emitExtraWindowWhenNoData = false,
+    tumblingTransformer(keyBy, aggregateBy, aggregator, windowLength, variableName, TumblingWindowTrigger.OnEnd,
       ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
+  }
+
+  object TumblingWindowTrigger extends Enumeration {
+    val OnEvent, OnEnd, OnEndWithExtraWindow = Value
   }
 
   def tumblingTransformer(keyBy: LazyParameter[CharSequence],
@@ -68,28 +73,32 @@ object transformers {
                           aggregator: Aggregator,
                           windowLength: Duration,
                           variableName: String,
-                          emitExtraWindowWhenNoData: Boolean,
+                          tumblingWindowTrigger: TumblingWindowTrigger.Value,
                           explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean
                          )(implicit nodeId: NodeId): ContextTransformation =
     ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, aggregateBy))
       .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
-          val storedAggregateType = aggregator.computeStoredType(aggregateBy.returnType).valueOr(msg => throw new IllegalArgumentException(msg))
-          val expectedType = aggregator.computeOutputType(aggregateBy.returnType).valueOr(msg => throw new IllegalArgumentException(msg))
+          implicit val fctx: FlinkCustomNodeContext = ctx
+
           val keyedStream = start
-            .map(new StringKeyedValueMapper(ctx.lazyParameterHelper, keyBy, aggregateBy))
-            .keyBy(_.value.key)
-          val statefulStream =
-            if (emitExtraWindowWhenNoData) {
+            .keyByWithValue(keyBy, _ => aggregateBy)
+          (tumblingWindowTrigger match {
+            case TumblingWindowTrigger.OnEvent =>
               keyedStream
-                .process(new EmitExtraWindowWhenNoDataTumblingAggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, storedAggregateType))
-            } else {
+                 .window(TumblingEventTimeWindows.of(Time.milliseconds(windowLength.toMillis)))
+                 .trigger(FireOnEachEvent[AnyRef, TimeWindow](EventTimeTrigger.create()))
+                 .aggregate(new UnwrappingAggregateFunction(aggregator, aggregateBy.returnType, _.value, LastContextStrategy))
+            case TumblingWindowTrigger.OnEnd =>
               keyedStream
-                .window(TumblingEventTimeWindows.of(Time.milliseconds(windowLength.toMillis)))
-                .aggregate(new UnwrappingAggregateFunction(aggregator))
-            }
-          ExplicitUidInOperatorsSupport.setUidIfNeed(explicitUidInStatefulOperators(ctx), ctx.nodeId)(statefulStream)
-            .map(_.map(aggregator.alignToExpectedType(_, expectedType)))
+                 .window(TumblingEventTimeWindows.of(Time.milliseconds(windowLength.toMillis)))
+                //TODO: which context do we want to emit?
+                 .aggregate(new UnwrappingAggregateFunction(aggregator, aggregateBy.returnType, _.value, FirstContextStrategy))
+            case TumblingWindowTrigger.OnEndWithExtraWindow =>
+              keyedStream
+                 //TODO: alignment??
+                 .process(new EmitExtraWindowWhenNoDataTumblingAggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, aggregateBy.returnType))
+          }).setUid(ctx, explicitUidInStatefulOperators)
         }))
 
 }
