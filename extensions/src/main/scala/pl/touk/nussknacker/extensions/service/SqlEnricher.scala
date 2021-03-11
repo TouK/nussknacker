@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.typed.{TypedMap, typing}
 import pl.touk.nussknacker.extensions.db.WithDBConnectionPool
 import pl.touk.nussknacker.extensions.db.schema.TableDefinition
 
-import java.sql.ParameterMetaData
+import java.sql.{ParameterMetaData, PreparedStatement}
 import javax.sql.DataSource
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
@@ -80,19 +80,17 @@ class SqlEnricher(val dataSource: DataSource) extends EagerService
   }
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[TransformationState]): ServiceInvoker = {
+    val state = finalState.get
+
     new ServiceInvoker {
-      override val returnType: TypingResult =
-        finalState.map(_.tableDef.resultSetType).getOrElse(typing.Unknown)
+      override val returnType: TypingResult = state.tableDef.resultSetType
 
       override def invokeService(params: Map[String, Any])
                                 (implicit ec: ExecutionContext, collector: InvocationCollectors.ServiceInvocationCollector, contextId: ContextId): Future[Any] = {
-        val state = finalState.get
         val results = new ArrayBuffer[TypedMap]()
 
         withConnection(state.query) { statement =>
-          (1 to state.argsCount).foreach { argNo =>
-            statement.setObject(argNo, params(s"$ArgPrefix$argNo"))
-          }
+          setQueryArguments(statement, state.argsCount, params)
           val resultSet = statement.executeQuery()
           while (resultSet.next()) {
             val fields = state.tableDef.columnDefs.map { columnDef =>
@@ -111,4 +109,12 @@ class SqlEnricher(val dataSource: DataSource) extends EagerService
     (1 to parameterMeta.getParameterCount).map { paramNo =>
       Parameter(s"$ArgPrefix$paramNo", typing.Unknown).copy(isLazyParameter = true)
     }.toList
+
+  private def setQueryArguments(statement: PreparedStatement,
+                                argsCount: Int,
+                                serviceInvokeParams: Map[String, Any]): Unit = {
+    (1 to argsCount).foreach { argNo =>
+      statement.setObject(argNo, serviceInvokeParams(s"$ArgPrefix$argNo"))
+    }
+  }
 }
