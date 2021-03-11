@@ -41,7 +41,7 @@ describe("Process", () => {
 
   describe("with data", () => {
     beforeEach(() => {
-      cy.visitNewProcess(seed, "testProcess.json")
+      cy.visitNewProcess(seed, "testProcess")
     })
 
     it("should allow drag model", () => {
@@ -98,6 +98,19 @@ describe("Process", () => {
       cy.get("[data-testid=node-modal]").contains(/^cancel$/i).click()
       cy.get("[model-id=sendSms]").should("be.visible").trigger("dblclick")
       cy.get("[data-testid=node-modal]").should("be.visible").toMatchImageSnapshot()
+    })
+  })
+
+  describe("with sql-editor", () => {
+    beforeEach(() => {
+      cy.visitNewProcess(seed, "withSqlEditor")
+    })
+
+    it.only("should display colorfull sql editor", () => {
+      cy.get("[model-id=sql-source]").should("be.visible").trigger("dblclick")
+      cy.get("[data-testid=node-modal]").should("be.visible").toMatchImageSnapshot()
+      cy.get("[title='Switch to basic mode']").trigger("click")
+      cy.get("[data-testid=node-modal]").toMatchImageSnapshot()
     })
   })
 })
