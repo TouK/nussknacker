@@ -57,7 +57,7 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
         },
         {
           token : ["text","root","text"],
-          regex : /(\W*)(\w+)(\.\w+)/,
+          regex : /(\s*)(\w+)(\.\w+)/,
         },
       ],
       "string": [
