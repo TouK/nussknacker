@@ -2,17 +2,17 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import org.apache.flink.api.common.functions.AggregateFunction
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
-import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
 
 /**
  * This class unwraps value from input's KeyedValue. It also accumulate first Nussknacker's context that will be passed in output at the end.
  */
-class UnwrappingAggregateFunction(underlying: AggregateFunction[AnyRef, AnyRef, AnyRef]) extends AggregateFunction[ValueWithContext[StringKeyedValue[AnyRef]], AccumulatorWithContext, ValueWithContext[AnyRef]] {
+class UnwrappingAggregateFunction[T](underlying: AggregateFunction[AnyRef, AnyRef, AnyRef], unwrap: T => AnyRef)
+  extends AggregateFunction[ValueWithContext[T], AccumulatorWithContext, ValueWithContext[AnyRef]] {
 
   override def createAccumulator(): AccumulatorWithContext = AccumulatorWithContext(underlying.createAccumulator(), None)
 
-  override def add(value: ValueWithContext[StringKeyedValue[AnyRef]], accumulator: AccumulatorWithContext): AccumulatorWithContext = {
-    val underlyingAcc = underlying.add(value.value.value, accumulator.value)
+  override def add(value: ValueWithContext[T], accumulator: AccumulatorWithContext): AccumulatorWithContext = {
+    val underlyingAcc = underlying.add(unwrap(value.value), accumulator.value)
     val firstContext = accumulator.context.getOrElse(value.context)
     AccumulatorWithContext(underlyingAcc, Some(firstContext))
   }
