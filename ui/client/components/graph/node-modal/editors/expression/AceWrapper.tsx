@@ -65,6 +65,7 @@ export default function AceWrapper({
       className={readOnly ? " read-only" : ""}
       wrapEnabled={!!wrapEnabled}
       showGutter={!!showLineNumbers}
+      highlightActiveLine={false}
       editorProps={DEFAULF_EDITOR_PROPS}
       setOptions={{...DEFAULT_OPTIONS, showLineNumbers}}
       enableBasicAutocompletion={[customAceEditorCompleter]}

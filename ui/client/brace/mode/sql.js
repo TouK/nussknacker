@@ -39,13 +39,17 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
       "alias": [
         {
           token : ["text","keyword","text"],
-          regex : /(\s)(AS)(\s+)/,
+          regex : /(\W)(AS)(\W+|$)/,
           caseInsensitive: true,
           push: [
+            {
+              token : "text",
+              regex : /^\s+/,
+            },
             {include: "spel"},
             {
               token : "text",
-              regex : /\s/,
+              regex : /\W+|$/,
               next : "pop"
             },
             {defaultToken : "alias"},
@@ -53,7 +57,7 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
         },
         {
           token : ["text","root","text"],
-          regex : /(\s)(\w+)(\.\w+)/,
+          regex : /(\W*)(\w+)(\.\w+)/,
         },
       ],
       "string": [
