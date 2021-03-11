@@ -94,7 +94,6 @@ class SqlEnricher(val dataSource: DataSource) extends EagerService
             statement.setObject(argNo, params(s"$ArgPrefix$argNo"))
           }
           val resultSet = statement.executeQuery()
-          resultSet.getFetchSize
           while (resultSet.next()) {
             val fields = state.tableDef.columnDefs.map { columnDef =>
               columnDef.name -> resultSet.getObject(columnDef.no)
