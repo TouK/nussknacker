@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.management.periodic.service._
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.time.temporal.ChronoUnit
-import java.time.{Clock, Instant, LocalDateTime, ZoneId}
+import java.time.{Clock, Duration, Instant, LocalDateTime, ZoneId}
 import scala.collection.mutable.ArrayBuffer
 
 //Integration test with in-memory hsql
@@ -24,13 +24,17 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
 
   private val processName = ProcessName("test")
 
+  //we truncate to millis, as HSQL stores with that precision...
+  private def fixedClock(instant: Instant) =
+    Clock.tick(Clock.fixed(instant, ZoneId.systemDefault()), Duration.ofMillis(1))
+
   //every hour
   private val cron = CronPeriodicProperty("0 0 * * * ?")
 
-  private val clockForSchedule = Clock.fixed(Instant.now().minus(2, ChronoUnit.HOURS), ZoneId.systemDefault())
+  private val clockForSchedule = fixedClock(Instant.now().minus(2, ChronoUnit.HOURS))
 
   //we use different clock for repository to be able to find process for deployment
-  private val clockForRepository = Clock.fixed(Instant.now(), ZoneId.systemDefault())
+  private val clockForRepository = fixedClock(Instant.now())
 
   class Fixture {
     val (repository, db) = HsqlProcessRepository.prepare(clockForRepository)
