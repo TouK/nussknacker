@@ -41,6 +41,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
                             acceptSavepoint: Boolean = false,
                             acceptDeploy: Boolean = false,
                             acceptStop: Boolean = false,
+                            acceptCancel: Boolean = true,
                             statusCode: StatusCode = StatusCode.Ok, exceptionOnDeploy: Option[Exception] = None)
     = createManagerWithBackend(SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial { case req =>
     val toReturn = (req.uri.path, req.method) match {
@@ -48,7 +49,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
         JobsResponse(statuses)
       case (List("jobs", jobId, "config"), Method.GET) =>
         JobConfig(jobId, ExecutionConfig(configs.getOrElse(jobId, Map())))
-      case (List("jobs", _), Method.PATCH) =>
+      case (List("jobs", _), Method.PATCH) if acceptCancel =>
         ()
       case (List("jobs", _, "savepoints"), Method.POST) if acceptSavepoint  =>
         SavepointTriggerResponse(`request-id` = savepointRequestId)
@@ -145,6 +146,24 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     val manager = createManager(List(buildRunningJobOverview(processName)), acceptStop = true)
 
     manager.stop(processName, savepointDir = None, user = User("user1", "user")).futureValue shouldBe SavepointResult(path = savepointPath)
+  }
+
+  test("allow cancel if process is in running status") {
+    statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name()),
+      JobOverview("1123", "p2", 10L, 10L, JobStatus.RESTARTING.name()),
+      JobOverview("1234", "p3", 10L, 10L, JobStatus.CREATED.name()))
+
+    val manager = createManager(statuses)
+
+    manager.cancel(ProcessName("p1"), User("test_id", "Jack")).futureValue shouldBe (())
+    manager.cancel(ProcessName("p2"), User("test_id", "Jack")).futureValue shouldBe (())
+    manager.cancel(ProcessName("p3"), User("test_id", "Jack")).futureValue shouldBe (())
+  }
+
+  test("allow cancel but do not sent cancel request if process is failed") {
+    statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name()))
+
+    createManager(statuses, acceptCancel = false).cancel(ProcessName("p1"), User("test_id", "Jack")).futureValue shouldBe (())
   }
 
   test("return failed status if two jobs running") {
