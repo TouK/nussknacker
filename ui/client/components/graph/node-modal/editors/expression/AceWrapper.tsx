@@ -57,7 +57,7 @@ export default function AceWrapper({
       mode={language}
       width={"100%"}
       minLines={rows}
-      maxLines={500}
+      maxLines={512}
       theme={"nussknacker"}
       showPrintMargin={false}
       cursorStart={-1} //line start
