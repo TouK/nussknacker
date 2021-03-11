@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import java.util.concurrent.TimeUnit
-
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.transformers.TumblingWindowTrigger
 
 import scala.concurrent.duration.Duration
 
@@ -80,7 +80,7 @@ object sampleTransformers {
                 @ParamName("windowLength") length: java.time.Duration,
                 @OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
       val windowDuration = Duration(length.toMillis, TimeUnit.MILLISECONDS)
-      transformers.tumblingTransformer(keyBy, aggregateBy, toAggregator(aggregatorType), windowDuration, variableName, emitExtraWindowWhenNoData = false, explicitUidInStatefulOperators)
+      transformers.tumblingTransformer(keyBy, aggregateBy, toAggregator(aggregatorType), windowDuration, variableName, TumblingWindowTrigger.OnEnd, explicitUidInStatefulOperators)
     }
 
   }
@@ -157,10 +157,18 @@ object sampleTransformers {
                   )), defaultMode = DualEditorMode.SIMPLE) aggregator: Aggregator,
                 @ParamName("aggregateBy") aggregateBy: LazyParameter[AnyRef],
                 @ParamName("windowLength") length: java.time.Duration,
-                @ParamName("emitExtraWindowWhenNoData") emitExtraWindowWhenNoData: Boolean,
+                @ParamName("emitWhen")
+                @DualEditor(simpleEditor = new SimpleEditor(
+                  `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
+                  possibleValues = Array(
+                    new LabeledExpression(label = "On each event", expression = "'OnEvent'"),
+                    new LabeledExpression(label = "After window closes", expression = "'OnEnd'"),
+                    new LabeledExpression(label = "After window closes, also when no event for key", expression = "'OnEndWithExtraWindow'"))), defaultMode = DualEditorMode.SIMPLE)
+                  emitWhen: String,
                 @OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
       val windowDuration = Duration(length.toMillis, TimeUnit.MILLISECONDS)
-      transformers.tumblingTransformer(keyBy, aggregateBy, aggregator, windowDuration, variableName, emitExtraWindowWhenNoData, explicitUidInStatefulOperators)
+      val trigger = TumblingWindowTrigger.withName(emitWhen)
+      transformers.tumblingTransformer(keyBy, aggregateBy, aggregator, windowDuration, variableName, trigger, explicitUidInStatefulOperators)
     }
 
   }
@@ -185,11 +193,12 @@ object sampleTransformers {
                   )), defaultMode = DualEditorMode.SIMPLE) aggregator: Aggregator,
                 @ParamName("aggregateBy") aggregateBy: LazyParameter[AnyRef],
                 @ParamName("endSessionCondition") endSessionCondition: LazyParameter[java.lang.Boolean],
-                @ParamName("windowLength") length: java.time.Duration,
+                @ParamName("sessionTimeout") sessionTimeout: java.time.Duration,
+                @ParamName("emitOnEveryEvent") emitOnEveryEvent: Boolean,
                 @OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
-      val windowDuration = Duration(length.toMillis, TimeUnit.MILLISECONDS)
+      val sessionTimeoutDuration = Duration(sessionTimeout.toMillis, TimeUnit.MILLISECONDS)
       transformers.sessionWindowTransformer(
-        keyBy, aggregateBy, aggregator, windowDuration, endSessionCondition, variableName, explicitUidInStatefulOperators)
+        keyBy, aggregateBy, aggregator, sessionTimeoutDuration, endSessionCondition, emitOnEveryEvent, variableName)
     }
 
   }

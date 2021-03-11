@@ -7,7 +7,7 @@ import com.typesafe.config.ConfigFactory
 import org.apache.flink.streaming.api.scala._
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
-import pl.touk.nussknacker.engine.api.deployment.DeploymentData
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, TestProcess}
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder}
@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHa
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SessionWindowAggregateTransformer, SlidingAggregateTransformerV2, TumblingAggregateTransformer}
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.transformers.TumblingWindowTrigger
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
@@ -30,6 +31,7 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
+import java.util.Arrays.asList
 import scala.collection.JavaConverters._
 
 class TransformersTest extends FunSuite with FlinkSpec with Matchers {
@@ -118,10 +120,24 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers {
       TestRecord(id, 1, 2, "b"),
       TestRecord(id, 2, 5, "b")))
     val testProcess = tumbling(s"T(${classOf[AggregateHelper].getName}).SUM",
-      "#input.eId", emitExtraWindowWhenNoData = false)
+      "#input.eId", emitWhen = TumblingWindowTrigger.OnEnd)
 
     val aggregateVariables = runCollectOutput[Number](id, model, testProcess)
     aggregateVariables shouldBe List(3, 5)
+  }
+
+  test("sum tumbling aggregate emit on event") {
+    val id = "1"
+
+    val model = modelData(List(
+      TestRecord(id, 0, 1, "a"),
+      TestRecord(id, 1, 2, "b"),
+      TestRecord(id, 2, 5, "b")))
+    val testProcess = tumbling(s"T(${classOf[AggregateHelper].getName}).LIST",
+      "#input.eId", emitWhen = TumblingWindowTrigger.OnEvent)
+
+    val aggregateVariables = runCollectOutput[Number](id, model, testProcess)
+    aggregateVariables shouldBe List(asList(1), asList(1, 2), asList(5))
   }
 
   test("sum tumbling aggregate for out of order elements") {
@@ -132,7 +148,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers {
       TestRecord(id, 1, 2, "b"),
       TestRecord(id, 2, 5, "b"),
       TestRecord(id, 1, 1, "b")))
-    val testProcess = tumbling(s"T(${classOf[AggregateHelper].getName}).SUM", "#input.eId", emitExtraWindowWhenNoData = false)
+    val testProcess = tumbling(s"T(${classOf[AggregateHelper].getName}).SUM", "#input.eId", emitWhen = TumblingWindowTrigger.OnEnd)
 
     val aggregateVariables = runCollectOutput[Number](id, model, testProcess)
     aggregateVariables shouldBe List(4, 5)
@@ -146,7 +162,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers {
       TestRecord(id, 1, 2, "b"),
       TestRecord(id, 2, 5, "b")))
     val testProcess = tumbling(s"T(${classOf[AggregateHelper].getName}).SUM",
-      "#input.eId", emitExtraWindowWhenNoData = true)
+      "#input.eId", emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow)
 
     val aggregateVariables = runCollectOutput[Number](id, model, testProcess)
     aggregateVariables shouldBe List(3, 5, 0)
@@ -162,7 +178,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers {
       TestRecord(id, 1, 1, "b")
     ))
     val testProcess = tumbling(s"T(${classOf[AggregateHelper].getName}).SUM",
-      "#input.eId", emitExtraWindowWhenNoData = true)
+      "#input.eId", emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow)
 
     val aggregateVariables = runCollectOutput[Number](id, model, testProcess)
     aggregateVariables shouldBe List(4, 5, 0)
@@ -185,11 +201,31 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers {
       TestRecord(id, 6, 8, "a")
     ))
     val testProcess = session(s"T(${classOf[AggregateHelper].getName}).LIST",
-      "#input.eId", "#input.str == 'stop'")
+      "#input.eId", "#input.str == 'stop'", emitOnEveryEvent = false)
 
-    val aggregateVariables = runCollectOutput[Number](id, model, testProcess)
-    aggregateVariables shouldBe List(List(1, 2, 3, 4), List(5, 6, 7), List(8)).map(_.map(_.toLong).asJava)
+    val aggregateVariables = runCollectOutputWithEid[Number](id, model, testProcess)
+    aggregateVariables shouldBe List((asList(1, 2, 3, 4), 4), (asList(5, 6, 7), 7), (asList(8), 8))
   }
+
+  test("sum session aggregate on event") {
+    val id = "1"
+
+    val model = modelData(List(
+      TestRecord(id, 0, 1, "a"),
+      TestRecord(id, 2, 2, "d"),
+      //gap
+      TestRecord(id, 6, 3, "b"),
+      TestRecord(id, 6, 4, "stop"),
+      //stop condition
+      TestRecord(id, 6, 5, "a")
+    ))
+    val testProcess = session(s"T(${classOf[AggregateHelper].getName}).LIST",
+      "#input.eId", "#input.str == 'stop'", emitOnEveryEvent = true)
+
+    val aggregateVariables = runCollectOutputWithEid[Number](id, model, testProcess)
+    aggregateVariables shouldBe List((asList(1), 1), (asList(1, 2), 2), (asList(3), 3), (asList(3, 4), 4), (asList(5), 5))
+  }
+
 
 
   test("map aggregate") {
@@ -223,9 +259,15 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers {
   }
 
   private def runCollectOutput[T](key: String, model: LocalModelData, testProcess: EspProcess): List[T] = {
+    runCollectOutputWithEid[T](key, model, testProcess).map(_._1)
+  }
+
+  private def runCollectOutputWithEid[T](key: String, model: LocalModelData, testProcess: EspProcess): List[(T, Int)] = {
     val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
     runProcess(model, testProcess, collectingListener)
-    endAggregateVariable[T](collectingListener, key)
+    variablesForKey(collectingListener, key).map { result =>
+      (result.variableTyped[T]("aggregate").get, result.variableTyped[TestRecord]("input").get.eId)
+    }
   }
 
   private def runProcess(model: LocalModelData, testProcess: EspProcess, collectingListener: ResultsCollectingListener): Unit = {
@@ -237,11 +279,11 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers {
     registrar.register(new StreamExecutionEnvironment(stoppableEnv), testProcess, ProcessVersion.empty, DeploymentData.empty, Some(collectingListener.runId))
     stoppableEnv.executeAndWaitForFinished(testProcess.id)()
   }
-
-  private def endAggregateVariable[T](collectingListener: ResultsCollectingListener, key: String) = {
+                             //.map(_.variableTyped[T](varName).get)
+  private def variablesForKey(collectingListener: ResultsCollectingListener, key: String): List[TestProcess.NodeResult[Any]] = {
     collectingListener.results[Any].nodeResults("end")
       .filter(_.variableTyped("id").contains(key))
-      .map(_.variableTyped[T]("aggregate").get)
+
   }
 
   private def validateError(aggregator: String,
@@ -262,27 +304,29 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers {
     validator.validate(sliding(aggregator, aggregateBy, emitWhenEventLeft = false))
   }
   
-  private def tumbling(aggregator: String, aggregateBy: String, emitExtraWindowWhenNoData: Boolean) = {
-    process("aggregate-tumbling", aggregator, aggregateBy, Map("emitExtraWindowWhenNoData" -> emitExtraWindowWhenNoData.toString))
+  private def tumbling(aggregator: String, aggregateBy: String, emitWhen: TumblingWindowTrigger.Value) = {
+    process("aggregate-tumbling", aggregator, aggregateBy, "windowLength", Map("emitWhen" -> s"'$emitWhen'"))
   }
   
   private def sliding(aggregator: String, aggregateBy: String, emitWhenEventLeft: Boolean) = {
-    process("aggregate-sliding", aggregator, aggregateBy, Map("emitWhenEventLeft" -> emitWhenEventLeft.toString))
+    process("aggregate-sliding", aggregator, aggregateBy, "windowLength", Map("emitWhenEventLeft" -> emitWhenEventLeft.toString))
   }
   
-  private def session(aggregator: String, aggregateBy: String, endSessionCondition: String) = {
-    process("aggregate-session", aggregator, aggregateBy, Map("endSessionCondition" -> endSessionCondition))
+  private def session(aggregator: String, aggregateBy: String, endSessionCondition: String, emitOnEveryEvent: Boolean) = {
+    process("aggregate-session", aggregator, aggregateBy, "sessionTimeout",
+      Map("endSessionCondition" -> endSessionCondition, "emitOnEveryEvent" -> emitOnEveryEvent.toString))
   }
   
   private def process(aggregatingNode: String,
                       aggregator: String,
                       aggregateBy: String,
+                      timeoutParamName: String,
                       additionalParams: Map[String, String]) = {
     val baseParams: List[(String, Expression)] = List(
       "keyBy" -> "#id",
       "aggregateBy" -> aggregateBy,
       "aggregator" -> aggregator,
-      "windowLength" -> "T(java.time.Duration).parse('PT2H')")
+      timeoutParamName -> "T(java.time.Duration).parse('PT2H')")
     val params = baseParams ++ additionalParams.mapValues(asSpelExpression).toList
 
     EspProcessBuilder
@@ -319,6 +363,6 @@ class Creator(input: List[TestRecord]) extends EmptyProcessConfigCreator {
     = ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
 }
 
-case class TestRecord(id: String, timeHours: Int, eId: Long, str: String) {
+case class TestRecord(id: String, timeHours: Int, eId: Int, str: String) {
   def timestamp: Long = timeHours * 3600L * 1000
 }

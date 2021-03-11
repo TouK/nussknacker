@@ -73,16 +73,24 @@ object keyed {
 
   }
 
-  class StringKeyedValueMapper(protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper, key: LazyParameter[CharSequence], value: LazyParameter[AnyRef])
-    extends BaseKeyedValueMapper[String, AnyRef] {
 
-    private lazy val interpreter = prepareInterpreter(key.map(transformKey), value)
+
+  class StringKeyedValueMapper[T<:AnyRef:TypeTag](protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
+                                                  key: LazyParameter[CharSequence],
+                                                  value: LazyParameterInterpreter => LazyParameter[T])
+    extends BaseKeyedValueMapper[String, T] {
+
+    def this(lazyParameterHelper: FlinkLazyParameterFunctionHelper,
+        key: LazyParameter[CharSequence],
+        value: LazyParameter[T]) = this(lazyParameterHelper, key, _ => value)
+
+    private lazy val interpreter = prepareInterpreter(key.map(transformKey), value(lazyParameterInterpreter))
 
     protected def transformKey(keyValue: CharSequence): String = {
       Option(keyValue).map(_.toString).getOrElse("")
     }
 
-    override protected def interpret(ctx: Context): KeyedValue[String, AnyRef] = interpreter(ctx)
+    override protected def interpret(ctx: Context): KeyedValue[String, T] = interpreter(ctx)
 
   }
 
