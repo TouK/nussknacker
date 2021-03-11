@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.extensions.service
 
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
@@ -47,11 +47,14 @@ class SqlEnricher(val dataSource: DataSource) extends EagerService
 
   override def initialParameters: List[Parameter] = QueryParam :: Nil
 
-  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
-                                    (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
+  protected def initialStep(context: ValidationContext, dependencies: List[NodeDependencyValue])
+                           (implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep(Nil, _) =>
       NextParameters(initialParameters)
+  }
 
+  protected def queryParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])
+                              (implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep((QueryParamName, DefinedEagerParameter(query: String, _)) :: Nil, None) =>
       if (query.isBlank)
         FinalResults(
@@ -66,8 +69,10 @@ class SqlEnricher(val dataSource: DataSource) extends EagerService
               argsCount = queryArgParams.size,
               tableDef = TableDefinition(statement.getMetaData)
             )))
-        }
+        }  }
 
+  protected def finalStep(context: ValidationContext, dependencies: List[NodeDependencyValue])
+                         (implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep(_, state@Some(TransformationState(_, _, tableDef))) =>
       val newCtxV = context.withVariable(
         name = OutputVariableNameDependency.extract(dependencies),
@@ -78,6 +83,12 @@ class SqlEnricher(val dataSource: DataSource) extends EagerService
         errors = newCtxV.swap.map(_.toList).getOrElse(Nil),
         state = state)
   }
+
+  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
+                                    (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition =
+    initialStep(context, dependencies) orElse
+      queryParamStep(context, dependencies) orElse
+        finalStep(context, dependencies)
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[TransformationState]): ServiceInvoker = {
     val state = finalState.get
@@ -105,14 +116,14 @@ class SqlEnricher(val dataSource: DataSource) extends EagerService
     }
   }
 
-  private def toParameters(parameterMeta: ParameterMetaData): List[Parameter] =
+  protected def toParameters(parameterMeta: ParameterMetaData): List[Parameter] =
     (1 to parameterMeta.getParameterCount).map { paramNo =>
       Parameter(s"$ArgPrefix$paramNo", typing.Unknown).copy(isLazyParameter = true)
     }.toList
 
-  private def setQueryArguments(statement: PreparedStatement,
-                                argsCount: Int,
-                                serviceInvokeParams: Map[String, Any]): Unit = {
+  protected def setQueryArguments(statement: PreparedStatement,
+                                  argsCount: Int,
+                                  serviceInvokeParams: Map[String, Any]): Unit = {
     (1 to argsCount).foreach { argNo =>
       statement.setObject(argNo, serviceInvokeParams(s"$ArgPrefix$argNo"))
     }
