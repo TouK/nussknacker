@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSink
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SlidingAggregateTransformerV2, TumblingAggregateTransformer}
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SessionWindowAggregateTransformer, SlidingAggregateTransformerV2, TumblingAggregateTransformer}
 import pl.touk.nussknacker.engine.flink.util.transformer.outer.OuterJoinTransformer
 import pl.touk.nussknacker.engine.flink.util.transformer.{DelayTransformer, PeriodicSourceFactory, PreviousValueTransformer, UnionTransformer, UnionWithMemoTransformer}
 import pl.touk.nussknacker.engine.kafka.generic.sinks.GenericKafkaJsonSink
@@ -24,6 +24,7 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
     "previousValue" -> defaultCategory(PreviousValueTransformer),
     "aggregate-sliding" -> defaultCategory(SlidingAggregateTransformerV2),
     "aggregate-tumbling" -> defaultCategory(TumblingAggregateTransformer),
+    "aggregate-session" -> defaultCategory(SessionWindowAggregateTransformer),
     "outer-join" -> defaultCategory(OuterJoinTransformer),
     "union" -> defaultCategory(UnionTransformer),
     "union-memo" -> defaultCategory(UnionWithMemoTransformer),

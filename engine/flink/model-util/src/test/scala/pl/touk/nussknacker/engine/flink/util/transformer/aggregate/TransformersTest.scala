@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SlidingAggregateTransformerV2, TumblingAggregateTransformer}
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SessionWindowAggregateTransformer, SlidingAggregateTransformerV2, TumblingAggregateTransformer}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
@@ -186,6 +186,50 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers {
     aggregateVariables shouldBe List(4, 5, 0)
   }
 
+  test("sum session aggregate") {
+    val id = "1"
+
+    val model = modelData(List(
+      TestRecord(id, 0, 1, "a"),
+      TestRecord(id, 1, 2, "b"),
+      TestRecord(id, 2, 3, "d"),
+      TestRecord(id, 3, 4, "d"),
+
+      //gap
+      TestRecord(id, 6, 5, "b"),
+      TestRecord(id, 6, 6, "b"),
+      TestRecord(id, 6, 7, "stop"),
+      //stop condition
+      TestRecord(id, 6, 8, "a")
+    ))
+    val testProcess = session(s"T(${classOf[AggregateHelper].getName}).LIST",
+      "#input.eId",  SessionWindowTrigger.OnEnd, "#input.str == 'stop'")
+
+    val aggregateVariables = runCollectOutputWithEid[Number](id, model, testProcess)
+    aggregateVariables shouldBe List((asList(4, 3, 2, 1), 4), (asList(7, 6, 5), 7), (asList(8), 8))
+  }
+
+  test("sum session aggregate on event") {
+    val id = "1"
+
+    val model = modelData(List(
+      TestRecord(id, 0, 1, "a"),
+      TestRecord(id, 2, 2, "d"),
+      //gap
+      TestRecord(id, 6, 3, "b"),
+      TestRecord(id, 6, 4, "stop"),
+      //stop condition
+      TestRecord(id, 6, 5, "a")
+    ))
+    val testProcess = session(s"T(${classOf[AggregateHelper].getName}).LIST",
+      "#input.eId", SessionWindowTrigger.OnEvent, "#input.str == 'stop'")
+
+    val aggregateVariables = runCollectOutputWithEid[Number](id, model, testProcess)
+    aggregateVariables shouldBe List((asList(1), 1), (asList(2, 1), 2), (asList(3), 3), (asList(4, 3), 4), (asList(5), 5))
+  }
+
+
+
   test("map aggregate") {
     val id = "1"
 
@@ -292,14 +336,21 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers {
   private def validateConfig(aggregator: String, aggregateBy: String): CompilationResult[Unit] = {
     validator.validate(sliding(aggregator, aggregateBy, emitWhenEventLeft = false))
   }
-  
+
   private def tumbling(aggregator: String, aggregateBy: String, emitWhen: TumblingWindowTrigger) = {
-    process("aggregate-tumbling", aggregator, aggregateBy, "windowLength", Map("emitWhen" ->
-      ParameterTypeEditorDeterminer.extractEnumValue(classOf[TumblingWindowTrigger])(emitWhen).expression))
+    process("aggregate-tumbling", aggregator, aggregateBy, "windowLength", Map("emitWhen" -> enumToExpr(emitWhen)))
   }
-  
+
   private def sliding(aggregator: String, aggregateBy: String, emitWhenEventLeft: Boolean) = {
     process("aggregate-sliding", aggregator, aggregateBy, "windowLength", Map("emitWhenEventLeft" -> emitWhenEventLeft.toString))
+  }
+
+  private def session(aggregator: String, aggregateBy: String, emitWhen: SessionWindowTrigger, endSessionCondition: String) = {
+    process("aggregate-session", aggregator, aggregateBy, "sessionTimeout", Map("endSessionCondition" -> endSessionCondition, "emitWhen" -> enumToExpr(emitWhen)))
+  }
+
+  private def enumToExpr[T<:Enum[T]](enum: T): String = {
+    ParameterTypeEditorDeterminer.extractEnumValue(`enum`.getClass.asInstanceOf[Class[T]])(enum).expression
   }
 
   private def process(aggregatingNode: String,
@@ -340,6 +391,7 @@ class Creator(input: List[TestRecord]) extends EmptyProcessConfigCreator {
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
     Map(
       "aggregate-sliding" -> WithCategories(SlidingAggregateTransformerV2),
+      "aggregate-session" -> WithCategories(SessionWindowAggregateTransformer),
       "aggregate-tumbling" -> WithCategories(TumblingAggregateTransformer))
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] =
