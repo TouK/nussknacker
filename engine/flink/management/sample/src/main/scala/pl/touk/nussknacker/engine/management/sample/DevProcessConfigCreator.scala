@@ -35,7 +35,7 @@ import pl.touk.nussknacker.engine.management.sample.transformer._
 import pl.touk.nussknacker.engine.util.LoggingListener
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.extensions.db.pool.{DBPoolsConfig, HikariDataSourceFactory}
-import pl.touk.nussknacker.extensions.service.SqlEnricher
+import pl.touk.nussknacker.extensions.service.{SqlEnricher, SqlLookupEnricher}
 
 object DevProcessConfigCreator {
   val oneElementValue = "One element"
@@ -93,6 +93,9 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     val sqlEnrichers = DBPoolsConfig(processObjectDependencies.config).map { case (dbPoolName, dbConfig) =>
       s"sqlEnricher-$dbPoolName" -> all(new SqlEnricher(HikariDataSourceFactory(dbConfig)))
     }
+    val sqlLookupEnrichers = DBPoolsConfig(processObjectDependencies.config).map { case (dbPoolName, dbConfig) =>
+      s"sqlLookup-$dbPoolName" -> all(new SqlLookupEnricher(HikariDataSourceFactory(dbConfig)))
+    }
     Map(
       "accountService" -> categories(EmptyService).withNodeConfig(SingleNodeConfig.zero.copy(docsUrl = Some("accountServiceDocs"))),
       "componentService" -> categories(EmptyService),
@@ -132,7 +135,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "dynamicService" -> categories(new DynamicService),
       "customValidatedService" -> categories(new CustomValidatedService),
       "modelConfigReader" -> categories(new ModelConfigReaderService(processObjectDependencies.config))
-    ) ++ sqlEnrichers
+    ) ++ sqlEnrichers ++ sqlLookupEnrichers
   }
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(

@@ -1000,7 +1000,7 @@ lazy val root = (project in file("."))
     engineStandalone, standaloneApp, flinkProcessManager, flinkPeriodicProcessManager, standaloneSample, flinkManagementSample, managementJavaSample, demo, generic,
     process, interpreter, benchmarks, kafka, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
     flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils, queryableState,
-    restmodel, listenerApi, ui,
+    restmodel, listenerApi, ui, extensions
   )
   .settings(commonSettings)
   .settings(
