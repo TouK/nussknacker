@@ -5,6 +5,7 @@ import java.util.Properties
 import kafka.zk.{AdminZkClient, KafkaZkClient}
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.{Callback, ProducerRecord, RecordMetadata}
+import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.utils.Time
 
 import scala.concurrent.{Future, Promise}
@@ -30,10 +31,10 @@ class KafkaClient(kafkaAddress: String, zkAddress: String, id: String) {
     adminClient.deleteTopic(name)
   }
 
-  def sendRawMessage(topic: String, key: Array[Byte], content: Array[Byte], partition: Option[Int] = None, timestamp: java.lang.Long = null): Future[RecordMetadata] = {
+  def sendRawMessage(topic: String, key: Array[Byte], content: Array[Byte], partition: Option[Int] = None, timestamp: java.lang.Long = null, headers: Headers = KafkaRecordHelper.emptyHeaders): Future[RecordMetadata] = {
     val promise = Promise[RecordMetadata]()
-    val record = partition.map(new ProducerRecord[Array[Byte], Array[Byte]](topic, _, timestamp, key, content))
-      .getOrElse(new ProducerRecord[Array[Byte], Array[Byte]](topic, null, timestamp, key, content))
+    val record = partition.map(new ProducerRecord[Array[Byte], Array[Byte]](topic, _, timestamp, key, content, headers))
+      .getOrElse(new ProducerRecord[Array[Byte], Array[Byte]](topic, null, timestamp, key, content, headers))
     rawProducer.send(record, producerCallback(promise))
     promise.future
   }

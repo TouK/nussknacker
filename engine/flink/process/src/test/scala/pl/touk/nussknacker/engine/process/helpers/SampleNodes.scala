@@ -7,6 +7,7 @@ import java.util.{Date, Optional, UUID}
 
 import cats.data.Validated.Valid
 import com.github.ghik.silencer.silent
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import javax.annotation.Nullable
 import org.apache.flink.api.common.ExecutionConfig
@@ -17,10 +18,11 @@ import org.apache.flink.streaming.api.functions.co.RichCoMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.scala.{DataStream, _}
 import org.apache.flink.streaming.api.windowing.time.Time
+import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation._
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, OutputVar, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
@@ -37,7 +39,9 @@ import pl.touk.nussknacker.engine.flink.util.context.InitContextFunction
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.signal.KafkaSignalStreamConnector
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EspDeserializationSchema}
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
+import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordDeserializationSchemaFactory, ConsumerRecordToJsonFormatter, ConsumerRecordVariableProvider, DeserializedConsumerRecord}
+import pl.touk.nussknacker.engine.kafka.serialization.FixedKafkaDeserializationSchemaFactory
+import pl.touk.nussknacker.engine.kafka.source._
 import pl.touk.nussknacker.engine.kafka.{BasicFormatter, KafkaConfig, KafkaUtils}
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import pl.touk.nussknacker.engine.util.Implicits._
@@ -48,6 +52,7 @@ import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 import scala.collection.immutable
 import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.ClassTag
 
 //TODO: clean up sample objects...
 object SampleNodes {
@@ -63,6 +68,8 @@ object SampleNodes {
   case class SimpleRecordAcc(id: String, value1: Long, value2: Set[String], date: Date)
 
   @JsonCodec case class SimpleJsonRecord(id: String, field: String)
+
+  @JsonCodec case class SimpleJsonKey(key: String, timestamp: Long)
 
   class IntParamSourceFactory(exConfig: ExecutionConfig) extends FlinkSourceFactory[Int] {
 
@@ -829,5 +836,19 @@ object SampleNodes {
               Some(outOfOrdernessTimestampExtractor[KeyValue](_.date)),
               BasicFormatter,
               processObjectDependencies)
+
+  object KafkaConsumerRecordSourceHelper {
+
+    def kafkaJsonWithMetaSource[K: ClassTag:Encoder:Decoder, V: ClassTag:Encoder:Decoder](processObjectDependencies: ProcessObjectDependencies)
+    : KafkaGenericNodeSourceFactory[DeserializedConsumerRecord[K,V]] = {
+      val schema = ConsumerRecordDeserializationSchemaFactory.create(bytes => decodeJsonUnsafe[K](bytes), bytes => decodeJsonUnsafe[V](bytes))
+      val testDataRecordFormatter = new ConsumerRecordToJsonFormatter(schema)
+      val deserializationSchemaFactory = new FixedKafkaDeserializationSchemaFactory(schema)
+      val variableProvider = new ConsumerRecordVariableProvider[K,V]
+      val sourceFactory = new KafkaGenericNodeSourceFactory(deserializationSchemaFactory, None, testDataRecordFormatter, processObjectDependencies, Some(variableProvider))
+      sourceFactory
+    }
+
+  }
 
 }

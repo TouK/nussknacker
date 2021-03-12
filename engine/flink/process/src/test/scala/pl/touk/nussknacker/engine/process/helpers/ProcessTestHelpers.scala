@@ -88,7 +88,8 @@ object ProcessTestHelpers {
       "intInputWithParam" -> WithCategories(new IntParamSourceFactory(new ExecutionConfig)),
       "kafka-keyvalue" -> WithCategories(new KeyValueKafkaSourceFactory(processObjectDependencies)),
       "genericParametersSource" -> WithCategories(GenericParametersSource),
-      "genericSourceWithCustomVariables" -> WithCategories(GenericSourceWithCustomVariables)
+      "genericSourceWithCustomVariables" -> WithCategories(GenericSourceWithCustomVariables),
+      "kafka-ConsumerRecord" -> WithCategories(KafkaConsumerRecordSourceHelper.kafkaJsonWithMetaSource[SimpleJsonKey, SimpleJsonRecord](processObjectDependencies))
     )
 
     override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(

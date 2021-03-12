@@ -9,6 +9,7 @@ import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, KafkaDes
 import org.apache.flink.util.Collector
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
+import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.{TestDataGenerator, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.test.TestDataParser
@@ -70,7 +71,7 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
   override def testDataParser: TestDataParser[T] = new TestDataParser[T] {
     override def parseTestData(merged: Array[Byte]): List[T] = {
       val topic = topics.head
-      recordFormatter.parseDataForTest(topic, merged).map(deserialize(topic, _))
+      recordFormatter.parseDataForTest(topic, merged).zipWithIndex.map {case (record, index) => deserializeTestData(topic, record, index)}
     }
   }
 
@@ -79,9 +80,23 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
   //There is deserializationSchema.deserialize method which doesn't need Collector, however
   //for some reason KafkaDeserializationSchemaWrapper throws Exception when used in such way...
   //protected to make it easier for backward compatibility
-  protected def deserialize(topic: String, record: ProducerRecord[Array[Byte], Array[Byte]]): T = {
+  protected def deserializeTestData(topic: String, record: ProducerRecord[Array[Byte], Array[Byte]], offset: Int = -1): T = {
     val collector = new SimpleCollector
-    deserializationSchema.deserialize(new ConsumerRecord[Array[Byte], Array[Byte]](topic, -1, -1, record.key(), record.value()), collector)
+    val partition = Option(record.partition()).getOrElse(Integer.valueOf(-1)).intValue()
+    val consumerRecord = new ConsumerRecord[Array[Byte], Array[Byte]](
+      topic,
+      partition,
+      offset,
+      record.timestamp(),
+      TimestampType.NO_TIMESTAMP_TYPE,
+      0L,
+      Option(record.key()).map(_.length).getOrElse(0),
+      record.value().length,
+      record.key(),
+      record.value(),
+      record.headers()
+    )
+    deserializationSchema.deserialize(consumerRecord, collector)
     collector.output
   }
 
