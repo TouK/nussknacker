@@ -18,6 +18,7 @@ import sttp.client.testing.SttpBackendStub
 import sttp.client.{NothingT, Response, SttpBackend, SttpClientException}
 import sttp.model.{Method, StatusCode}
 
+import java.util.UUID
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 
@@ -148,16 +149,24 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     manager.stop(processName, savepointDir = None, user = User("user1", "user")).futureValue shouldBe SavepointResult(path = savepointPath)
   }
 
-  test("allow cancel if process is in running status") {
-    statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name()),
-      JobOverview("1123", "p2", 10L, 10L, JobStatus.RESTARTING.name()),
-      JobOverview("1234", "p3", 10L, 10L, JobStatus.CREATED.name()))
+  test("allow cancel if process is in non terminal status") {
+    val cancellableStatuses = List(
+        JobStatus.CREATED.name(),
+        JobStatus.RUNNING.name(),
+        JobStatus.FAILING.name(),
+        JobStatus.CANCELLING.name(),
+        JobStatus.RESTARTING.name(),
+        JobStatus.SUSPENDED.name(),
+        JobStatus.RECONCILING.name()
+    )
+    statuses = cancellableStatuses.map(status => JobOverview(UUID.randomUUID().toString, s"process_$status", 10L, 10L, status))
 
     val manager = createManager(statuses)
 
-    manager.cancel(ProcessName("p1"), User("test_id", "Jack")).futureValue shouldBe (())
-    manager.cancel(ProcessName("p2"), User("test_id", "Jack")).futureValue shouldBe (())
-    manager.cancel(ProcessName("p3"), User("test_id", "Jack")).futureValue shouldBe (())
+    cancellableStatuses
+      .map(status => ProcessName(s"process_$status"))
+      .map(manager.cancel(_, User("test_id", "Jack")))
+      .foreach(_.futureValue shouldBe (()))
   }
 
   test("allow cancel but do not sent cancel request if process is failed") {
