@@ -65,7 +65,9 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
   override def cancel(processName: ProcessName, user: User): Future[Unit] = {
     findJobStatus(processName).flatMap {
-      // Flink does not allow to cancel not running job
+      // We check if process is in non-terminal state on Flink (status.isRunning) - if it's not we do not want to make
+      // request to Flink - it would fail. Nevertheless this method has to be invoked in such cases - other implementations
+      // may have some work to do.
       case Some(ProcessState(Some(deploymentId), status, _, actions, _, _, _, _, _, _)) if status.isRunning && actions.contains(ProcessActionType.Cancel) =>
         cancel(deploymentId)
       case state =>
