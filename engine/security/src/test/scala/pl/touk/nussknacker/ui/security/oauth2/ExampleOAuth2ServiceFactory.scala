@@ -11,6 +11,7 @@ import pl.touk.nussknacker.ui.security.api.{AuthenticationMethod, GlobalPermissi
 import pl.touk.nussknacker.ui.security.oauth2.ExampleOAuth2ServiceFactory.{TestAccessTokenResponse, TestProfileResponse}
 import sttp.client.{NothingT, SttpBackend}
 
+import java.io.File
 import scala.concurrent.duration.{Deadline, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -77,7 +78,7 @@ object ExampleOAuth2ServiceFactory {
   def testConfig: OAuth2Configuration =
     OAuth2Configuration(
       AuthenticationMethod.OAuth2,
-      "ui/server/src/test/resources/oauth2-users.conf",
+      new URI("classpath:oauth2-users.conf"),
       URI.create("https://github.com/login/oauth/authorize"),
       "clientSecret",
       "clientId",
