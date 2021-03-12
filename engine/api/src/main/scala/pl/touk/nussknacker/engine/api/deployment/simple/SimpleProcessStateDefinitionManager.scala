@@ -20,8 +20,10 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.DuringDeploy -> List(ProcessActionType.Cancel),
     SimpleStateStatus.Running -> List(ProcessActionType.Cancel, ProcessActionType.Pause, ProcessActionType.Deploy),
     SimpleStateStatus.Canceled -> List(ProcessActionType.Deploy, ProcessActionType.Archive),
-    SimpleStateStatus.Failed -> List(ProcessActionType.Deploy, ProcessActionType.Cancel),
     SimpleStateStatus.Finished -> List(ProcessActionType.Deploy, ProcessActionType.Archive),
+    // When Failed - process is in terminal state in Flink and it doesn't require any cleanup in Flink, but in NK it does
+    // - that's why Cancel action is available
+    SimpleStateStatus.Failed -> List(ProcessActionType.Deploy, ProcessActionType.Cancel),
     SimpleStateStatus.Error -> List(ProcessActionType.Deploy, ProcessActionType.Cancel),
     SimpleStateStatus.Warning -> List(ProcessActionType.Deploy, ProcessActionType.Cancel),
     SimpleStateStatus.FailedToGet -> List(ProcessActionType.Deploy, ProcessActionType.Archive)
