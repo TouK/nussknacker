@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator, TestDa
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
+import pl.touk.nussknacker.engine.flink.util.context.InitContextFunction
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 
 object GenericSourceWithCustomVariablesSample extends FlinkSourceFactory[String] with SingleInputGenericNodeTransformation[Source[String]] {
@@ -54,19 +55,18 @@ object GenericSourceWithCustomVariablesSample extends FlinkSourceFactory[String]
       with TestDataGenerator
       with TestDataParserProvider[String] {
 
-      override def customContextTransformation: Option[Context => Context] = Some({
-        ctx => {
+      override def initContext(processId: String, taskName: String): InitContextFunction[String] = new InitContextFunction[String](processId, taskName) {
+        override def map(input: String): Context = {
           //There is access raw input value...
-          val rawInputValue = ctx.get[String](ContextInterpreter.InputVariableName).orNull
           //... and place to perform some additional transformations and/or computations.
-          val additionalValues = Map[String, Any](
-            "additionalOne" -> s"transformed:${rawInputValue}",
-            "additionalTwo" -> rawInputValue.length()
+          val additionalVariables = Map[String, Any](
+            "additionalOne" -> s"transformed:${input}",
+            "additionalTwo" -> input.length()
           )
           //The results are appended to the context right after context initialization.
-          ctx.withVariables(additionalValues)
+          super.map(input).withVariables(additionalVariables)
         }
-      })
+      }
 
       override def generateTestData(size: Int): Array[Byte] = elements.mkString("\n").getBytes
 

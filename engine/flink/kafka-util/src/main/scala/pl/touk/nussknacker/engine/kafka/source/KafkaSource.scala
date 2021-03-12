@@ -13,9 +13,8 @@ import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.{TestDataGenerator, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.test.TestDataParser
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
-import pl.touk.nussknacker.engine.flink.api.process.{SourceContextTransformation, FlinkCustomNodeContext, FlinkSource, SourceTestSupport}
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource, SourceContextTransformation, SourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
-import pl.touk.nussknacker.engine.flink.util.context.InitContextFunction
 import pl.touk.nussknacker.engine.kafka._
 
 import scala.collection.JavaConverters._
@@ -48,7 +47,7 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
       .getOrElse(rawSourceWithUid)
 
     rawSourceWithUidAndTimestamp
-      .map(new InitContextFunction[T](flinkNodeContext.metaData.id, flinkNodeContext.nodeId, customContextTransformation))(flinkNodeContext.contextTypeInformation.left.get)
+      .map(initContext(flinkNodeContext.metaData.id, flinkNodeContext.nodeId))(flinkNodeContext.contextTypeInformation.left.get)
   }
 
   override val typeInformation: TypeInformation[T] = deserializationSchema.getProducedType

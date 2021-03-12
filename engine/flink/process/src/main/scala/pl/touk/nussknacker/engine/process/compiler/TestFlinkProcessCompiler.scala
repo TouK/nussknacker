@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
-import pl.touk.nussknacker.engine.api.{Context, ProcessListener}
+import pl.touk.nussknacker.engine.api.ProcessListener
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientException}
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
@@ -11,7 +11,8 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocatio
 import pl.touk.nussknacker.engine.api.test.ResultsCollectingListener
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
-import pl.touk.nussknacker.engine.flink.api.process.{SourceContextTransformation, FlinkSource, SourceTestSupport}
+import pl.touk.nussknacker.engine.flink.api.process.{SourceContextTransformation, SourceTestSupport}
+import pl.touk.nussknacker.engine.flink.util.context.InitContextFunction
 import pl.touk.nussknacker.engine.flink.util.exception.ConsumingNonTransientExceptions
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -38,7 +39,7 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
           testDataParserProvider match {
             case providerWithTransformation: SourceContextTransformation[Object@unchecked] =>
               new CollectionSource[Object](executionConfig, testObjects, testDataParserProvider.timestampAssignerForTest, returnType())(testDataParserProvider.typeInformation) {
-                override def customContextTransformation: Option[Context => Context] = providerWithTransformation.customContextTransformation
+                override def initContext(processId: String, taskName: String): InitContextFunction[Object] = providerWithTransformation.initContext(processId, taskName)
               }
             case _ =>
               new CollectionSource[Object](executionConfig, testObjects, testDataParserProvider.timestampAssignerForTest, returnType())(testDataParserProvider.typeInformation)

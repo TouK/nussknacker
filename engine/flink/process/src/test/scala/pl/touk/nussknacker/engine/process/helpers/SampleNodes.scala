@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Date, Optional, UUID}
+
 import cats.data.Validated.Valid
 import com.github.ghik.silencer.silent
 import io.circe.generic.JsonCodec
@@ -19,7 +20,7 @@ import org.apache.flink.streaming.api.windowing.time.Time
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation._
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, OutputVar, ValidationContext, ProcessCompilationError}
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
@@ -32,6 +33,7 @@ import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
+import pl.touk.nussknacker.engine.flink.util.context.InitContextFunction
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.signal.KafkaSignalStreamConnector
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EspDeserializationSchema}
@@ -688,19 +690,17 @@ object SampleNodes {
         with TestDataGenerator
         with TestDataParserProvider[String] {
 
-        override def customContextTransformation: Option[Context => Context] = Some({
-          ctx => {
-            //access raw input value
-            val rawInputValue = ctx.get[String](ContextInterpreter.InputVariableName).orNull
+        override def initContext(processId: String, taskName: String): InitContextFunction[String] = new InitContextFunction[String](processId, taskName) {
+          override def map(input: String): Context = {
             //perform some transformations and/or computations
-            val additionalValues = Map[String, Any](
-              "additionalOne" -> s"transformed:${rawInputValue}",
-              "additionalTwo" -> rawInputValue.length()
+            val additionalVariables = Map[String, Any](
+              "additionalOne" -> s"transformed:${input}",
+              "additionalTwo" -> input.length()
             )
             //append computed values to context and release to DataStream
-            ctx.withVariables(additionalValues)
+            super.map(input).withVariables(additionalVariables)
           }
-        })
+        }
 
         override def generateTestData(size: Int): Array[Byte] = elements.mkString("\n").getBytes
 
