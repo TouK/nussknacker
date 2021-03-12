@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
 import java.net.URI
-
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
@@ -11,6 +10,7 @@ import pl.touk.nussknacker.ui.security.api.{AuthenticationMethod, GlobalPermissi
 import pl.touk.nussknacker.ui.security.oauth2.ExampleOAuth2ServiceFactory.{TestAccessTokenResponse, TestProfileResponse}
 import sttp.client.{NothingT, SttpBackend}
 
+import java.io.File
 import scala.concurrent.duration.{Deadline, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -77,7 +77,7 @@ object ExampleOAuth2ServiceFactory {
   def testConfig: OAuth2Configuration =
     OAuth2Configuration(
       AuthenticationMethod.OAuth2,
-      "ui/server/src/test/resources/oauth2-users.conf",
+      new File("ui/server/src/test/resources/oauth2-users.conf").toURI,
       URI.create("https://github.com/login/oauth/authorize"),
       "clientSecret",
       "clientId",

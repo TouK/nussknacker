@@ -15,7 +15,7 @@ import scala.concurrent.duration.{FiniteDuration, HOURS}
 import scala.io.Source
 
 case class OAuth2Configuration(method: AuthenticationMethod,
-                               usersFile: String,
+                               usersFile: URI,
                                authorizeUri: URI,
                                clientSecret: String,
                                clientId: String,
