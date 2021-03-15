@@ -76,7 +76,8 @@ describe("Process", () => {
     })
 
     it("should have \"latest deploy\" button", () => {
-      window.localStorage.setItem("featureFlags", "showDeploymentsInCounts")
+      window.localStorage.setItem("persist:ff", `{"showDeploymentsInCounts": "true"}`)
+      cy.reload()
       cy.viewport("macbook-15")
       cy.contains(/^deploy$/i).click()
       cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy")
