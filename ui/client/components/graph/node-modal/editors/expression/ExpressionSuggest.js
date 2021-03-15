@@ -35,7 +35,7 @@ function isSqlTokenAllowed(iterator, modeId) {
   return true
 }
 
-function isSpelTokensAllowed(iterator, modeId) {
+function isSpelTokenAllowed(iterator, modeId) {
   if (modeId === "ace/mode/spel") {
     const token = iterator.getCurrentToken()
     return token?.type !== "string"
@@ -56,7 +56,7 @@ class ExpressionSuggest extends React.Component {
   }
 
   customAceEditorCompleter = {
-    isTokenAllowed: overEvery([isSqlTokenAllowed, isSpelTokensAllowed]),
+    isTokenAllowed: overEvery([isSqlTokenAllowed, isSpelTokenAllowed]),
     getCompletions: (editor, session, caretPosition2d, prefix, callback) => {
       const iterator = new TokenIterator(session, caretPosition2d.row, caretPosition2d.column)
       if (!this.customAceEditorCompleter.isTokenAllowed(iterator, session.$modeId)) {

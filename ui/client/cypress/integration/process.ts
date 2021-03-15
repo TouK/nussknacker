@@ -107,7 +107,7 @@ describe("Process", () => {
       cy.visitNewProcess(seed, "withSqlEditor")
     })
 
-    it.only("should display colorfull sql editor", () => {
+    it("should display colorfull sql editor", () => {
       cy.get("[model-id=sql-source]").should("be.visible").trigger("dblclick")
       cy.get("[data-testid=node-modal]").should("be.visible").toMatchImageSnapshot()
       cy.get("[title='Switch to basic mode']").trigger("click")
