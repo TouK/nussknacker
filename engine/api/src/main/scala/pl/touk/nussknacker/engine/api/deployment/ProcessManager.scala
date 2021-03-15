@@ -9,7 +9,7 @@ import scala.concurrent.Future
 trait ProcessManager extends AutoCloseable {
 
   //TODO: savepointPath is very flink specific, how can we handle that differently?
-  def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]) : Future[Unit]
+  def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]) : Future[Option[ExternalDeploymentId]]
 
   def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult]
 

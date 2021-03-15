@@ -38,6 +38,8 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
 
   private val defaultDeploymentData = DeploymentData(DeploymentId(""), User("user1", "User 1"), Map.empty)
 
+  private val returnedJobId = "jobId"
+
   private def createManager(statuses: List[JobOverview] = List(),
                             acceptSavepoint: Boolean = false,
                             acceptDeploy: Boolean = false,
@@ -65,7 +67,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
           //TODO: can be make behaviour more robust?
           .flatMap(SttpClientException.defaultExceptionToSttpClientException)
           .foreach(throw _)
-        RunResponse("jobId")
+        RunResponse(returnedJobId)
       case (List("jars", "upload"), Method.POST) if acceptDeploy =>
         UploadJarResponse(uploadedJarPath)
     }
@@ -97,7 +99,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
         defaultDeploymentData,
         CustomProcess("nothing"),
         None
-      ).futureValue shouldBe (())
+      ).futureValue shouldBe None
   }
 
   test("not continue on random exception exception") {
@@ -123,14 +125,14 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name()))
 
     createManager(statuses, acceptDeploy = true).deploy(ProcessVersion(1, ProcessName("p1"), "user", None), defaultDeploymentData,
-      CustomProcess("nothing"), None).futureValue shouldBe (())
+      CustomProcess("nothing"), None).futureValue shouldBe Some(ExternalDeploymentId(returnedJobId))
   }
 
   test("allow deploy and make savepoint if process is running") {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name()))
 
     createManager(statuses, acceptDeploy = true, acceptSavepoint = true).deploy(ProcessVersion(1, ProcessName("p1"), "user", None), defaultDeploymentData,
-      CustomProcess("nothing"), None).futureValue shouldBe (())
+      CustomProcess("nothing"), None).futureValue shouldBe Some(ExternalDeploymentId(returnedJobId))
   }
 
 
