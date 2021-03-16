@@ -26,6 +26,7 @@ Nussknacker versions
 * [#1382](https://github.com/TouK/nussknacker/pull/1382) First E2E FE tests                                                             
 * [#1373](https://github.com/TouK/nussknacker/pull/1373) Ability to load custom model config programmatically
 * [#1406](https://github.com/TouK/nussknacker/pull/1406) Eager services - ability to create service object using static parameters
+* [#962](https://gihub.com/TouK/nussknacker/pull/962) New ways of querying InfluxDB for counts, integration tests, no default database name in code
 * [#1428](https://github.com/TouK/nussknacker/pull/1428) Kafka SchemaRegistry source/sink can use JSON payloads. In this PR we assume one schema registry contains either json or avro payloads but not both.                                         
 * [#1445](https://github.com/TouK/nussknacker/pull/1445) Small refactor of RecordFormatter, correct handling different formatting in kafka-json in test data generation
 * [#1433](https://github.com/TouK/nussknacker/pull/1433) Pass DeploymentData to process, including deploymentId and possible additional info                

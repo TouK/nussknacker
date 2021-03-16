@@ -10,8 +10,6 @@ import pl.touk.nussknacker.engine.sttp.SttpJson
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-case class InfluxConfig(influxUrl: String, user: String, password: String, database: String = "esp", metricsConfig: Option[MetricsConfig])
-
 class InfluxException(cause: Throwable) extends Exception(cause)
 case class InvalidInfluxResponse(message: String, cause: Throwable) extends InfluxException(cause) {
   override def getMessage: String = s"Influx query failed with message '$message'"
@@ -25,7 +23,7 @@ class SimpleInfluxClient(config: InfluxConfig)(implicit backend: SttpBackend[Fut
 
   private val uri = uri"${config.influxUrl}"
 
-  def query(query: String)(implicit ec: ExecutionContext): Future[List[InfluxSerie]] = {
+  def query(query: String)(implicit ec: ExecutionContext): Future[List[InfluxSeries]] = {
     basicRequest.get(uri.params("db" -> config.database, "q" -> query))
       .auth.basic(config.user, config.password)
       .response(asJson[InfluxResponse])
@@ -50,7 +48,7 @@ object InfluxResponse {
   implicit val decoder: Decoder[InfluxResponse] = deriveDecoder
 }
 
-case class InfluxResult(series: List[InfluxSerie] = Nil)
+case class InfluxResult(series: List[InfluxSeries] = Nil)
 
 object InfluxResult {
   import io.circe.generic.extras.Configuration
@@ -59,18 +57,18 @@ object InfluxResult {
   implicit val decoder: Decoder[InfluxResult] = deriveDecoder
 }
 
-object InfluxSerie {
+object InfluxSeries {
 
   import io.circe.generic.semiauto._
 
   private implicit val numberOrStringDecoder: Decoder[Any] =
     Decoder.decodeBigDecimal.asInstanceOf[Decoder[Any]] or Decoder.decodeString.asInstanceOf[Decoder[Any]] or Decoder.const[Any]("")
 
-  implicit val decoder: Decoder[InfluxSerie] = deriveDecoder[InfluxSerie]
+  implicit val decoder: Decoder[InfluxSeries] = deriveDecoder[InfluxSeries]
 
 }
 
-case class InfluxSerie(name: String, tags: Map[String, String], columns: List[String], values: List[List[Any]] = Nil) {
+case class InfluxSeries(name: String, tags: Option[Map[String, String]], columns: List[String], values: List[List[Any]] = Nil) {
   val toMap: List[Map[String, Any]] = values.map(value => columns.zip(value).toMap)
 }
 
