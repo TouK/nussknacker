@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.deployment.{CustomAction, CustomActionError, CustomActionNotImplemented, CustomActionRequest, CustomActionResult, ExternalDeploymentId, DeploymentData, ProcessDeploymentData, ProcessState, SavepointResult, StateStatus, User}
+import pl.touk.nussknacker.engine.api.deployment.{CustomAction, CustomActionError, CustomActionNotImplemented, CustomActionRequest, CustomActionResult, ExternalDeploymentId, DeploymentData, ProcessDeploymentData, ProcessState, SavepointResult, StateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -136,21 +136,21 @@ object TestFactory extends TestPermissions{
       Future.successful(managerProcessState.get())
 
     override def deploy(processId: ProcessVersion, deploymentData: DeploymentData,
-                        processDeploymentData: ProcessDeploymentData, savepoint: Option[String]): Future[Unit] =
+                        processDeploymentData: ProcessDeploymentData, savepoint: Option[String]): Future[Option[ExternalDeploymentId]] =
       deployResult
 
-    private var deployResult: Future[Unit] = Future.successful(())
+    private var deployResult: Future[Option[ExternalDeploymentId]] = Future.successful(None)
 
     private val managerProcessState = new AtomicReference[Option[ProcessState]](prepareProcessState(defaultProcessStateStatus))
 
     def withWaitForDeployFinish[T](action: => T): T = {
-      val promise = Promise[Unit]
+      val promise = Promise[Option[ExternalDeploymentId]]
       try {
         deployResult = promise.future
         action
       } finally {
-        promise.complete(Try(Unit))
-        deployResult = Future.successful(())
+        promise.complete(Try(None))
+        deployResult = Future.successful(None)
       }
     }
 
@@ -159,7 +159,7 @@ object TestFactory extends TestPermissions{
       try {
         action
       } finally {
-        deployResult = Future.successful(())
+        deployResult = Future.successful(None)
       }
     }
 

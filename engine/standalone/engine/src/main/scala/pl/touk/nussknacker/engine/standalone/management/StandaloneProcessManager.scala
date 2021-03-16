@@ -46,13 +46,13 @@ class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessCl
   private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData,
-                      savepointPath: Option[String]): Future[Unit] = {
+                      savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     savepointPath match {
       case Some(_) => Future.failed(new UnsupportedOperationException("Cannot make savepoint on standalone process"))
       case None =>
         processDeploymentData match {
           case GraphProcess(processAsJson) =>
-            client.deploy(StandaloneDeploymentData(processAsJson, System.currentTimeMillis(), processVersion, deploymentData))
+            client.deploy(StandaloneDeploymentData(processAsJson, System.currentTimeMillis(), processVersion, deploymentData)).map(_ => None)
           case CustomProcess(mainClass) =>
             Future.failed(new UnsupportedOperationException("custom process in standalone engine is not supported"))
         }

@@ -56,13 +56,13 @@ object PeriodicProcessManager {
   }
 }
 
-class PeriodicProcessManager(delegate: ProcessManager,
+class PeriodicProcessManager(val delegate: ProcessManager,
                              service: PeriodicProcessService,
                              periodicPropertyExtractor: PeriodicPropertyExtractor,
                              toClose: () => Unit)
                             (implicit val ec: ExecutionContext) extends ProcessManager with LazyLogging {
 
-  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]): Future[Unit] = {
+  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     (processDeploymentData, periodicPropertyExtractor(processDeploymentData)) match {
       case (GraphProcess(processJson), Right(periodicProperty)) =>
         logger.info(s"About to (re)schedule ${processVersion.processName} in version ${processVersion.versionId}")
@@ -73,7 +73,7 @@ class PeriodicProcessManager(delegate: ProcessManager,
           .flatMap(_ => {
             logger.info(s"Scheduling ${processVersion.processName}, versionId: ${processVersion.versionId}")
             service.schedule(periodicProperty, processVersion, processJson)
-          })
+          }.map(_ => None))
       case (_: GraphProcess, Left(error)) =>
         Future.failed(new PeriodicProcessException(error))
       case _ =>

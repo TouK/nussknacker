@@ -27,7 +27,7 @@ class ProcessManagerStub extends ProcessManager {
   }
 
 
-  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]): Future[Unit] = ???
+  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = ???
 
   override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] = ???
 
