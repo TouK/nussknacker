@@ -6,7 +6,7 @@ import {Editor} from "./Editor"
 import {VariableTypes} from "../../../../../types"
 import {ExpressionObj} from "./types"
 
-type Props = {
+export type RawEditorProps = {
   expressionObj: ExpressionObj,
   validators: Array<$TodoType>,
   isMarked: boolean,
@@ -20,7 +20,7 @@ type Props = {
   validationLabelInfo?: string,
 }
 
-const RawEditor: Editor<Partial<Props>> = (props) => {
+const RawEditor: Editor<Partial<RawEditorProps>> = (props) => {
 
   const {
     expressionObj, validators, isMarked, showValidation, readOnly,
