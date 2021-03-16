@@ -3,7 +3,7 @@ import React, {useMemo} from "react"
 import {useUserSettings} from "../../../../../common/userSettings"
 import AceWrapper, {AceWrapperProps} from "./AceWrapper"
 
-export default function AceWithFeatureFlags(props: Omit<AceWrapperProps, "noWrap" | "showLines">): JSX.Element {
+export default function AceWithSettings(props: Omit<AceWrapperProps, "noWrap" | "showLines">): JSX.Element {
   const [userSettings, toggleSettings] = useUserSettings()
 
   const [showLinesName, noWrapName] = useMemo(

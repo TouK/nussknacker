@@ -10,7 +10,7 @@ import ProcessUtils from "../../../../../common/ProcessUtils"
 import HttpService from "../../../../../http/HttpService"
 import ValidationLabels from "../../../../modals/ValidationLabels"
 import {allValid} from "../Validators"
-import AceEditor from "./AceWithFeatureFlags"
+import AceEditor from "./AceWithSettings"
 import ExpressionSuggester from "./ExpressionSuggester"
 
 const {TokenIterator} = ace.require("ace/token_iterator")

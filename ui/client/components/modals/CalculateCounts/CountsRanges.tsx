@@ -45,7 +45,7 @@ interface RangesProps {
 function useDeployHistory(processId: string): Range[] {
   const {t} = useTranslation()
   const [deploys, setDeploys] = useState<Range[]>([])
-  const [{showDeploymentsInCounts}] = useFeatureFlags()
+  const {showDeploymentsInCounts} = useFeatureFlags()
   useEffect(() => {
     if (!showDeploymentsInCounts) {
       setDeploys([])
