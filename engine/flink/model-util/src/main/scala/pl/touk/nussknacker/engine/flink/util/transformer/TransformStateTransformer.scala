@@ -45,18 +45,19 @@ object TransformStateTransformer extends CustomStreamTransformer with ExplicitUi
           setUidToNodeIdIfNeed(nodeContext,
             stream
               .keyBy(key)
-              .process(new TransformStateFunction(
+              .process(new TransformStateFunction[String](
                 nodeContext.lazyParameterHelper, transformWhen, newValue, stateTimeoutSeconds.seconds)))
         }
       )
 }
 
 
-class TransformStateFunction(protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
+//We don't actually care about T here, but it's needed because of type/variance problems...
+class TransformStateFunction[T](protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
                              transformWhenParam: LazyParameter[java.lang.Boolean],
                              newValueParam: LazyParameter[AnyRef],
                              stateTimeout: FiniteDuration)
-  extends LatelyEvictableStateFunction[ValueWithContext[String], ValueWithContext[AnyRef], GenericState]
+  extends LatelyEvictableStateFunction[ValueWithContext[T], ValueWithContext[AnyRef], GenericState]
   with LazyParameterInterpreterFunction {
 
   override protected def stateDescriptor: ValueStateDescriptor[GenericState] =
@@ -66,8 +67,8 @@ class TransformStateFunction(protected val lazyParameterHelper: FlinkLazyParamet
 
   private lazy val evaluateNewValue = lazyParameterInterpreter.syncInterpretationFunction(newValueParam)
 
-  override def processElement(keyWithContext: ValueWithContext[String],
-                              ctx: KeyedProcessFunction[String, ValueWithContext[String], ValueWithContext[AnyRef]]#Context,
+  override def processElement(keyWithContext: ValueWithContext[T],
+                              ctx: KeyedProcessFunction[String, ValueWithContext[T], ValueWithContext[AnyRef]]#Context,
                               out: Collector[ValueWithContext[AnyRef]]): Unit = {
     val previousValue = Option(state.value()).map(_.value).orNull
     val newValue = if (evaluateTransformWhen(keyWithContext.context)) {

@@ -74,12 +74,12 @@ object aggregates {
 
     override def zero: Aggregate = List()
 
+    //append instead of prepend (assess performance considerations...)
     override def addElement(el: Element, agg: Aggregate): Aggregate = el::agg
 
     override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg1 ++ agg2
 
-    //we revert elements only during final results computation
-    override def result(finalAggregate: Aggregate): AnyRef = new java.util.ArrayList[Any](finalAggregate.reverse.asJava)
+    override def result(finalAggregate: Aggregate): AnyRef = new java.util.ArrayList[Any](finalAggregate.asJava)
 
     override def computeOutputType(input: TypingResult): Validated[String, TypingResult]
       = Valid(Typed.genericTypeClass[java.util.List[_]](List(input)))

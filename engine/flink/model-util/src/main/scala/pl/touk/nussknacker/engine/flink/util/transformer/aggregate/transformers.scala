@@ -64,16 +64,12 @@ object transformers {
       ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
   }
 
-  object TumblingWindowTrigger extends Enumeration {
-    val OnEvent, OnEnd, OnEndWithExtraWindow = Value
-  }
-
   def tumblingTransformer(keyBy: LazyParameter[CharSequence],
                           aggregateBy: LazyParameter[AnyRef],
                           aggregator: Aggregator,
                           windowLength: Duration,
                           variableName: String,
-                          tumblingWindowTrigger: TumblingWindowTrigger.Value,
+                          tumblingWindowTrigger: TumblingWindowTrigger,
                           explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean
                          )(implicit nodeId: NodeId): ContextTransformation =
     ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, aggregateBy))

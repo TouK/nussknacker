@@ -74,7 +74,11 @@ object keyed {
   }
 
 
-
+  /*
+     We pass LazyParameter => ... as value here, because in some places we want to
+     perform further mapping/operations on LazyParameter from user, and LazyParameter.map
+     requires LazyParameterInterpreter
+   */
   class StringKeyedValueMapper[T<:AnyRef:TypeTag](protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
                                                   key: LazyParameter[CharSequence],
                                                   value: LazyParameterInterpreter => LazyParameter[T])

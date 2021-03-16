@@ -16,7 +16,7 @@ class ParameterTypeEditorDeterminer(val typ: TypingResult) extends ParameterEdit
         // We can pick here simple editor, but for compatibility reasons we choose dual editor instead
         // - to be able to provide some other expression
         DualParameterEditor(FixedValuesParameterEditor(
-          possibleValues = klazz.getEnumConstants.toList.map(extractEnumValue(klazz))
+          possibleValues = klazz.getEnumConstants.toList.map(ParameterTypeEditorDeterminer.extractEnumValue(klazz))
         ), DualEditorMode.SIMPLE)
       case klazz if klazz == classOf[java.lang.String] =>
         DualParameterEditor(
@@ -56,7 +56,12 @@ class ParameterTypeEditorDeterminer(val typ: TypingResult) extends ParameterEdit
     }
   }
 
-  private def extractEnumValue(enumClass: Class[_])(enumConst: Any): FixedExpressionValue = {
+}
+
+object ParameterTypeEditorDeterminer {
+
+  //mainly for tests
+  def extractEnumValue(enumClass: Class[_])(enumConst: Any): FixedExpressionValue = {
     val enumConstName = enumClass.getMethod("name").invoke(enumConst)
     FixedExpressionValue(s"T(${enumClass.getName}).$enumConstName", enumConst.toString)
   }
