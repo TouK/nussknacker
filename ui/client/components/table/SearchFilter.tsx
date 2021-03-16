@@ -14,7 +14,7 @@ function AddonIcon(props: {className?: string, svg: string}) {
   return <SvgDiv className={cx(searchIconStyles.icon, props.className)} svgFile={props.svg}/>
 }
 
-function SearchIcon(props: {isEmpty: boolean}) {
+export function SearchIcon(props: {isEmpty: boolean}) {
   const {theme} = useNkTheme()
   const styles = css({
     ".icon-fill": {

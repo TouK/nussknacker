@@ -1,4 +1,4 @@
-import _ from "lodash"
+import _, {defaultsDeep} from "lodash"
 import React from "react"
 import {connect} from "react-redux"
 import ActionsUtils from "../actions/ActionsUtils"
@@ -7,16 +7,18 @@ import ClipboardUtils from "../common/ClipboardUtils"
 import * as JsonUtils from "../common/JsonUtils"
 import ProcessUtils from "../common/ProcessUtils"
 import * as VisualizationUrl from "../common/VisualizationUrl"
-import {ProcessGraph as Graph} from "../components/graph/ProcessGraph"
 import {GraphProvider} from "../components/graph/GraphContext"
 import NodeUtils from "../components/graph/NodeUtils"
+import {ProcessGraph as Graph} from "../components/graph/ProcessGraph"
 import RouteLeavingGuard from "../components/RouteLeavingGuard"
 import SpinnerWrapper from "../components/SpinnerWrapper"
-import "../stylesheets/visualization.styl"
-import {getLoggedUser} from "../reducers/selectors/settings"
+import Toolbars from "../components/toolbars/Toolbars"
 import {getProcessCategory} from "../reducers/selectors/graph"
 import {getCapabilities} from "../reducers/selectors/other"
-import Toolbars from "../components/toolbars/Toolbars"
+import {getLoggedUser} from "../reducers/selectors/settings"
+import "../stylesheets/visualization.styl"
+import {darkTheme} from "./darkTheme"
+import {NkThemeProvider} from "./theme"
 
 class Visualization extends React.Component {
 
@@ -193,7 +195,8 @@ class Visualization extends React.Component {
     // Skip event triggered by writing selection to the clipboard.
     const isNotThisCopyEvent = this.isNotThisCopyEvent(event, copyNodeElementId)
 
-    isNotThisCopyEvent && this.canCopySelection() ? this.copyToClipboard(shouldCreateNotification) :
+    isNotThisCopyEvent && this.canCopySelection() ?
+      this.copyToClipboard(shouldCreateNotification) :
       this.props.notificationActions.error("Can not copy selected content. It should contain only plain nodes without groups")
   }
 
@@ -298,17 +301,19 @@ class Visualization extends React.Component {
         />
 
         <GraphProvider graph={this.getGraphInstance}>
-          <Toolbars
-            isReady={this.state.dataResolved}
-            selectionActions={{
-              copy: () => this.copySelection(null, true),
-              canCopy: this.canCopySelection(),
-              cut: () => this.cutSelection(null),
-              canCut: this.canCutSelection(),
-              paste: () => this.pasteSelectionFromClipboard(null),
-              canPaste: true,
-            }}
-          />
+          <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
+            <Toolbars
+              isReady={this.state.dataResolved}
+              selectionActions={{
+                copy: () => this.copySelection(null, true),
+                canCopy: this.canCopySelection(),
+                cut: () => this.cutSelection(null),
+                canCut: this.canCutSelection(),
+                paste: () => this.pasteSelectionFromClipboard(null),
+                canPaste: true,
+              }}
+            />
+          </NkThemeProvider>
         </GraphProvider>
 
         <SpinnerWrapper isReady={!graphNotReady}>
