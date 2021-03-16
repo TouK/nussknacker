@@ -9,7 +9,7 @@ export type AdjustReturn = {
     unusedParameters: Array<Parameter>,
 }
 
-const findUnusedParameters = (parameters: Array<Parameter>, definitions: Array<UIParameter>) => {
+const findUnusedParameters = (parameters: Array<Parameter>, definitions: Array<UIParameter> = []) => {
   return parameters.filter(param => !definitions.find(def => def.name == param.name))
 }
 
@@ -40,7 +40,7 @@ export const adjustParameters = (node: NodeType, parameterDefinitions: Array<UIP
   if (path) {
     const currentParameters = get(node, path)
     //TODO: currently dynamic branch parameters are *not* supported...
-    const adjustedParameters = parameterDefinitions.filter(def => !def.branchParam).map(def => {
+    const adjustedParameters = parameterDefinitions?.filter(def => !def.branchParam).map(def => {
       const currentParam = currentParameters.find(p => p.name == def.name)
       const parameterFromBase = baseNodeParameters?.find(p => p.name == def.name)
       //TODO: pass default values from BE, then parameterFromBase wont' be needed
