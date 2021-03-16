@@ -4,6 +4,7 @@ export type DialogType = "INFO_MODAL"
   | "GENERATE_TEST_DATA"
   | "CALCULATE_COUNTS"
   | "COMPARE_VERSIONS"
+  | "CUSTOM_ACTION"
 
 export const dialogTypesMap: Record<string, DialogType> = {
   infoModal: "INFO_MODAL",
@@ -12,4 +13,5 @@ export const dialogTypesMap: Record<string, DialogType> = {
   generateTestData: "GENERATE_TEST_DATA",
   calculateCounts: "CALCULATE_COUNTS",
   compareVersions: "COMPARE_VERSIONS",
+  customAction: "CUSTOM_ACTION",
 }

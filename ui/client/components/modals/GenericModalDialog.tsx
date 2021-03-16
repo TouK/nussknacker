@@ -17,7 +17,7 @@ type OwnProps = {
   header?: string,
   confirm?: (close: () => void) => PromiseLike<void>,
   type: DialogType,
-  init?: () => void,
+  init: () => void,
 }
 
 type State = {
@@ -74,8 +74,10 @@ class GenericModalDialog extends React.Component<Props, State> {
             <div className={`espModal ${this.props.style || "confirmationModal"}`} data-testid="modal">
               {this.props.header ?
                 (
-                  <div className="modal-title modal-draggable-handle" style={{color: "white", backgroundColor: "#70C6CE"}}>
-                    <span>{this.props.header}</span>
+                  <div className="modalHeader modal-draggable-handle">
+                    <div className="modal-title" style={{color: "white", backgroundColor: "#70C6CE"}}>
+                      <span>{this.props.header}</span>
+                    </div>
                   </div>
                 ) :
                 null}

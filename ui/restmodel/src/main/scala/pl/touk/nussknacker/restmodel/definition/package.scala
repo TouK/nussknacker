@@ -4,7 +4,7 @@ import io.circe.Decoder
 import io.circe.generic.JsonCodec
 import io.circe.generic.semiauto.deriveDecoder
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterEditor, ParameterValidator}
-import pl.touk.nussknacker.engine.api.deployment.{CustomAction, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.CustomAction
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.definition.TypeInfos.MethodInfo
@@ -85,10 +85,16 @@ package object definition {
     import pl.touk.nussknacker.restmodel.codecs.URICodecs.{uriDecoder, uriEncoder}
 
     def apply(action: CustomAction): UICustomAction = UICustomAction(
-      name = action.name, allowedStateStatusNames = action.allowedStateStatusNames, icon = action.icon
+      name = action.name, allowedStateStatusNames = action.allowedStateStatusNames, icon = action.icon, parameters =
+        action.parameters.map(p => UICustomActionParameter(p.name, p.editor))
     )
   }
-  @JsonCodec
-  case class UICustomAction(name: String, allowedStateStatusNames: List[String], icon: Option[URI])
+
+  @JsonCodec case class UICustomAction(name: String,
+                                       allowedStateStatusNames: List[String],
+                                       icon: Option[URI],
+                                       parameters: List[UICustomActionParameter])
+
+  @JsonCodec case class UICustomActionParameter(name: String, editor: ParameterEditor)
 
 }
