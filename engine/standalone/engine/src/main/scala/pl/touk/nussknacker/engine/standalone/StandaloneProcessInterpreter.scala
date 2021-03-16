@@ -10,16 +10,15 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.Unsupporte
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{process, _}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.{Node, Sink}
 import pl.touk.nussknacker.engine.compiledgraph.part._
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, LazyInterpreterDependencies, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.split.{NodesCollector, ProcessSplitter}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.standalone.api.types._
@@ -46,7 +45,7 @@ object StandaloneProcessInterpreter {
   }
 
   def apply(process: EspProcess, contextPreparer: StandaloneContextPreparer, modelData: ModelData,
-            additionalListeners: List[ProcessListener] = List(), testRunId: Option[TestRunId] = None)
+            additionalListeners: List[ProcessListener], resultCollector: ResultCollector)
   : ValidatedNel[ProcessCompilationError, StandaloneProcessInterpreter] = modelData.withThisAsContextClassLoader {
 
     val creator = modelData.configCreator
@@ -58,7 +57,7 @@ object StandaloneProcessInterpreter {
     val compilerData = ProcessCompilerData.prepare(process,
       definitions,
       listeners,
-      modelData.modelClassLoader.classLoader, testRunId
+      modelData.modelClassLoader.classLoader, resultCollector
       // defaultAsyncValue is not important here because it doesn't used in standalone mode
     )(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
 

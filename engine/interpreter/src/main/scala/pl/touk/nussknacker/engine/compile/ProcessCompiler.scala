@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.expression.ExpressionParser
-import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
@@ -18,7 +17,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompi
 import pl.touk.nussknacker.engine.compiledgraph.part.{PotentiallyStartPart, TypedEnd}
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledProcessParts, part}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ExpressionDefinition, ProcessDefinition}
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.{Sink, Source => _, _}
 import pl.touk.nussknacker.engine.split._
@@ -26,6 +25,7 @@ import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.end.NormalEnd
 import pl.touk.nussknacker.engine.splittedgraph.part._
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.EndingNode
+import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
@@ -242,24 +242,13 @@ protected trait ProcessCompilerBase {
 
 }
 
-object ProcessCompiler {
-
-  def apply(classLoader: ClassLoader,
-            definitions: ProcessDefinition[ObjectWithMethodDef],
-            dictRegistry: DictRegistry,
-            expressionCompilerCreate: (ClassLoader, DictRegistry, ExpressionDefinition[ObjectWithMethodDef], ClassExtractionSettings) => ExpressionCompiler): ProcessCompiler = {
-    val expressionCompiler = expressionCompilerCreate(classLoader, dictRegistry, definitions.expressionConfig, definitions.settings)
-    val nodeCompiler = new NodeCompiler(definitions, expressionCompiler, classLoader, None)
-    val sub = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
-    new ProcessCompiler(classLoader, sub, GlobalVariablesPreparer(definitions.expressionConfig), nodeCompiler)
-  }
-
-}
-
 object ProcessValidator {
 
-  def default(definitions: ProcessDefinition[ObjectWithMethodDef], dictRegistry: DictRegistry, loader: ClassLoader = getClass.getClassLoader): ProcessValidator = {
-    ProcessCompiler(loader, definitions, dictRegistry, ExpressionCompiler.withoutOptimization)
+  def default(definitions: ProcessDefinition[ObjectWithMethodDef], dictRegistry: DictRegistry, classLoader: ClassLoader = getClass.getClassLoader): ProcessValidator = {
+    val expressionCompiler = ExpressionCompiler.withoutOptimization(classLoader, dictRegistry, definitions.expressionConfig, definitions.settings)
+    val nodeCompiler = new NodeCompiler(definitions, expressionCompiler, classLoader, PreventInvocationCollector)
+    val sub = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
+    new ProcessCompiler(classLoader, sub, GlobalVariablesPreparer(definitions.expressionConfig), nodeCompiler)
   }
 
 }

@@ -11,8 +11,8 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
-
 
 sealed trait ValidationResponse
 
@@ -35,7 +35,7 @@ object NodeDataValidator {
         case spel: SpelExpressionParser => spel.typingDictLabels
       }
       val compiler = new NodeCompiler(modelData.processWithObjectsDefinition,
-        expressionCompiler, modelData.modelClassLoader.classLoader, None)
+        expressionCompiler, modelData.modelClassLoader.classLoader, PreventInvocationCollector)
       implicit val nodeId: NodeId = NodeId(nodeData.id)
 
       nodeData match {

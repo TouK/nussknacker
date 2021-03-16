@@ -22,8 +22,8 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
-import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.modelconfig.{InputConfigDuringExecution, ModelConfigLoader}
+import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -48,7 +48,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
   def compileProcess(process: EspProcess,
                      processVersion: ProcessVersion,
                      deploymentData: DeploymentData,
-                     testRunId: Option[TestRunId])(userCodeClassLoader: ClassLoader): FlinkProcessCompilerData = {
+                     resultCollector: ResultCollector)(userCodeClassLoader: ClassLoader): FlinkProcessCompilerData = {
     val config = loadConfig(userCodeClassLoader)
     val processObjectDependencies = ProcessObjectDependencies(config, objectNaming)
 
@@ -64,7 +64,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
     val listenersToUse = listeners(processObjectDependencies)
 
     val compiledProcess =
-      ProcessCompilerData.prepare(process, definitions(processObjectDependencies), listenersToUse, userCodeClassLoader, testRunId)
+      ProcessCompilerData.prepare(process, definitions(processObjectDependencies), listenersToUse, userCodeClassLoader, resultCollector)
 
     val compiledExceptionHandler = validateOrFailProcessCompilation(compiledProcess.compileExceptionHandler())
     val listeningExceptionHandler = new ListeningExceptionHandler(listenersToUse,

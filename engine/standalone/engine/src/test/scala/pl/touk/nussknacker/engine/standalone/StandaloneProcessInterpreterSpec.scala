@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResu
 import pl.touk.nussknacker.engine.api.{Context, JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.api.types.GenericListResultType
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
@@ -266,7 +267,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
     val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
     val ctx = new StandaloneContextPreparer(metricsProvider)
 
-    val maybeinterpreter = StandaloneProcessInterpreter(process, ctx, simpleModelData)
+    val maybeinterpreter = StandaloneProcessInterpreter(process, ctx, simpleModelData, Nil, ProductionServiceInvocationCollector)
 
     maybeinterpreter shouldBe 'valid
     val interpreter = maybeinterpreter.toOption.get

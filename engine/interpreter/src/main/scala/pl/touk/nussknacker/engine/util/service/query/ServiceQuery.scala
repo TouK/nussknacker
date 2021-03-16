@@ -1,16 +1,17 @@
 package pl.touk.nussknacker.engine.util.service.query
 
+import cats.Monad
+import cats.implicits._
 import java.util.UUID
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{QueryServiceInvocationCollector, QueryServiceResult}
-import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ToCollect, TransmissionNames}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
@@ -20,8 +21,10 @@ import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
+import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
+import scala.language.higherKinds
 import scala.concurrent.{ExecutionContext, Future}
 
 // TODO: Processes using Flink's RuntimeContex, ex. metrics throws NPE, but in another thread, so service works.
@@ -50,20 +53,21 @@ class ServiceQuery(modelData: ModelData) {
     val definitions = modelData.withThisAsContextClassLoader {
       ProcessDefinitionExtractor.extractObjectWithMethods(modelData.configCreator, ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming))
     }
-    val compiler = new NodeCompiler(definitions, ExpressionCompiler.withoutOptimization(modelData), modelData.modelClassLoader.classLoader, None)
+
+    val collector = new QueryServiceInvocationCollector()
+    val compiler = new NodeCompiler(definitions, ExpressionCompiler.withoutOptimization(modelData),
+      modelData.modelClassLoader.classLoader, collector)
 
 
     withOpenedService(serviceName, definitions) { 
-
-      val collector = QueryServiceInvocationCollector(Some(TestRunId(UUID.randomUUID().toString)), serviceName)
 
       val variablesPreparer = GlobalVariablesPreparer(definitions.expressionConfig)
       val validationContext = variablesPreparer.validationContextWithLocalVariables(metaData, localVariables.mapValues(_._2))
       val ctx = Context("", localVariables.mapValues(_._1), None)
 
-      val compiled = compiler.compileService(ServiceRef(serviceName, params), validationContext, Some(OutputVar.enricher("output")), Some(_ => collector))(NodeId(""), metaData)
+      val compiled = compiler.compileService(ServiceRef(serviceName, params), validationContext, Some(OutputVar.enricher("output")))(NodeId(""), metaData)
       compiled.compiledObject.map { service =>
-          service.invoke(ctx, evaluator)._2.map(QueryResult(_, collector.getResults))
+          service.invoke(ctx, evaluator)._2.map(QueryResult(_, collector.retrieveResults()))
       }.valueOr(e => Future.failed(ServiceInvocationException(e)))
     }
 
@@ -84,6 +88,8 @@ class ServiceQuery(modelData: ModelData) {
 
 object ServiceQuery {
 
+  case class QueryServiceResult(name: String, result: Any)
+
   case class QueryResult(result: Any, collectedResults: List[QueryServiceResult])
 
   private implicit val nodeId: NodeId = NodeId("defaultNodeId")
@@ -95,6 +101,28 @@ object ServiceQuery {
   )
 
   private val jobData = JobData(metaData, ProcessVersion.empty, DeploymentData.empty)
+
+  class QueryServiceInvocationCollector extends ResultCollector {
+
+    private var queryResults = List[QueryServiceResult]()
+
+    override def collectWithResponse[A, F[_]:Monad](contextId: ContextId, nodeId: NodeId, serviceRef: String, request: => ToCollect, mockValue: Option[A], action: => F[CollectableAction[A]], names: TransmissionNames): F[A] = {
+      add(request, names.invocationName)
+      action.map { collectableAction =>
+        add(collectableAction.toCollect(), names.resultName)
+        collectableAction.result
+      }
+    }
+
+    def add(testInvocation: Any, name: String): Unit = synchronized {
+      queryResults = QueryServiceResult(name, testInvocation) :: queryResults
+    }
+
+    def retrieveResults(): List[QueryServiceResult] = synchronized {
+      queryResults
+    }
+
+  }
 
   //TODO: remove this and return ValidatedNel, let NK-UI handle error display...
   case class ServiceInvocationException(nel: NonEmptyList[ProcessCompilationError])
