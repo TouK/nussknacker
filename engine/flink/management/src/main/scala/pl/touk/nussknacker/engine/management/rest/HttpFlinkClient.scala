@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management.rest
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, SavepointResult}
+import pl.touk.nussknacker.engine.api.deployment.{ExternalDeploymentId, SavepointResult}
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
 import pl.touk.nussknacker.engine.management.{FlinkArgsEncodeHack, FlinkConfig}
 import pl.touk.nussknacker.engine.sttp.SttpJson
@@ -96,7 +96,7 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
   }
 
   //FIXME: get rid of sleep, refactor?
-  def waitForSavepoint(jobId: DeploymentId, savepointId: String, timeoutLeft: Long = config.jobManagerTimeout.toMillis): Future[SavepointResult] = {
+  def waitForSavepoint(jobId: ExternalDeploymentId, savepointId: String, timeoutLeft: Long = config.jobManagerTimeout.toMillis): Future[SavepointResult] = {
     val start = System.currentTimeMillis()
     if (timeoutLeft <= 0) {
       return Future.failed(new Exception(s"Failed to complete savepoint in time for $jobId and trigger $savepointId"))
@@ -122,28 +122,28 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
     }
   }
 
-  def cancel(deploymentId: DeploymentId): Future[Unit] = {
+  def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = {
     basicRequest
       .patch(flinkUrl.path("jobs", deploymentId.value))
       .send()
       .flatMap(handleUnitResponse)
   }
 
-  def makeSavepoint(deploymentId: DeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
+  def makeSavepoint(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
     val savepointRequest = basicRequest
       .post(flinkUrl.path("jobs", deploymentId.value, "savepoints"))
       .body(SavepointTriggerRequest(`target-directory` = savepointDir, `cancel-job` = false))
     processSavepointRequest(deploymentId, savepointRequest)
   }
 
-  def stop(deploymentId: DeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
+  def stop(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
     val stopRequest = basicRequest
       .post(flinkUrl.path("jobs", deploymentId.value, "stop"))
       .body(StopRequest(targetDirectory = savepointDir, drain = false))
     processSavepointRequest(deploymentId, stopRequest)
   }
 
-  private def processSavepointRequest(deploymentId: DeploymentId, request: RequestT[Identity, Either[String, String], Nothing]): Future[SavepointResult] = {
+  private def processSavepointRequest(deploymentId: ExternalDeploymentId, request: RequestT[Identity, Either[String, String], Nothing]): Future[SavepointResult] = {
     request
       .response(asJson[SavepointTriggerResponse])
       .send()
@@ -158,7 +158,7 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
   def runProgram(jarFile: File,
                  mainClass: String,
                  args: List[String],
-                 savepointPath: Option[String]): Future[Unit] = {
+                 savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     val program =
       DeployProcessRequest(
         entryClass = mainClass,
@@ -168,15 +168,17 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
       basicRequest
         .post(flinkUrl.path("jars", flinkJarFile.id, "run"))
         .body(program)
+        .response(asJson[RunResponse])
         .send()
-        .flatMap(handleUnitResponse)
+        .flatMap(SttpJson.failureToFuture)
+        .map(ret => Some(ExternalDeploymentId(ret.jobid)))
         .recover({
           //sometimes deploying takes too long, which causes TimeoutException while waiting for deploy response
           //workaround for now, not the best solution though
           //TODO: we should change logic of ManagementActor to mark process deployed for *some* exceptions (like Timeout here)
           case timeoutExtractor(e) =>
             logger.warn("TimeoutException occurred while waiting for deploy result. Recovering with Future.successful...", e)
-            Future.successful(Unit)
+            None
         })
     }
 

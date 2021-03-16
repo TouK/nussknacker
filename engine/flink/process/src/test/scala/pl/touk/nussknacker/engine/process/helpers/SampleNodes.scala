@@ -324,7 +324,7 @@ object SampleNodes {
 
   // Remove @silent after upgrade to silencer 1.7
   @silent("deprecated")
-  @nowarn("deprecated")
+  @nowarn("cat=deprecation")
   object ReturningDependentTypeService extends Service with ServiceReturningType {
 
     @MethodToInvoke

@@ -161,6 +161,13 @@ jobs:
   frontendTests:
     name: FrontendTests
     runs-on: ubuntu-latest
+    #TODO: currently we use *former* docker image, we should do e2e tests in docker test phase, where we run container from *current* build
+    services:
+      nussknacker:
+        image: touk/nussknacker:staging-latest
+        ports:
+          - 8080:8080
+        options: "-e CONFIG_FORCE_processTypes_streaming_engineConfig_type=stub -e NUSSKNACKER_CONFIG_FILE=/opt/nussknacker/conf/dev-application.conf"
     steps:
       - uses: actions/checkout@v2
       - name: Cache npm

@@ -1,5 +1,6 @@
 import BoolEditor from "./BoolEditor"
 import RawEditor from "./RawEditor"
+import SqlEditor from "./SqlEditor"
 import StringEditor from "./StringEditor"
 import FixedValuesEditor from "./FixedValuesEditor"
 import {concat, isEmpty, omit} from "lodash"
@@ -54,6 +55,7 @@ export enum EditorType {
   CRON_EDITOR = "CronParameterEditor",
   TEXTAREA_PARAMETER_EDITOR = "TextareaParameterEditor",
   JSON_PARAMETER_EDITOR = "JsonParameterEditor",
+  SQL_PARAMETER_EDITOR = "SqlParameterEditor"
 }
 
 const configureValidators = (paramConfig: $TodoType): Array<Validator> => {
@@ -86,17 +88,18 @@ export const simpleEditorValidators = (paramConfig: $TodoType, errors: Array<Err
 }
 
 export const editors: Record<EditorType, Editor> = {
-  BoolParameterEditor: BoolEditor,
-  CronParameterEditor: CronEditor,
-  DateParameterEditor: DateEditor,
-  DateTimeParameterEditor: DateTimeEditor,
-  DualParameterEditor: DualParameterEditor,
-  DurationParameterEditor: DurationEditor,
-  FixedValuesParameterEditor: FixedValuesEditor,
-  JsonParameterEditor: JsonEditor,
-  PeriodParameterEditor: PeriodEditor,
-  RawParameterEditor: RawEditor,
-  StringParameterEditor: StringEditor,
-  TextareaParameterEditor: TextareaEditor,
-  TimeParameterEditor: TimeEditor,
+  [EditorType.BOOL_PARAMETER_EDITOR]: BoolEditor,
+  [EditorType.CRON_EDITOR]: CronEditor,
+  [EditorType.DATE]: DateEditor,
+  [EditorType.DATE_TIME]: DateTimeEditor,
+  [EditorType.DUAL_PARAMETER_EDITOR]: DualParameterEditor,
+  [EditorType.DURATION_EDITOR]: DurationEditor,
+  [EditorType.FIXED_VALUES_PARAMETER_EDITOR]: FixedValuesEditor,
+  [EditorType.JSON_PARAMETER_EDITOR]: JsonEditor,
+  [EditorType.PERIOD_EDITOR]: PeriodEditor,
+  [EditorType.RAW_PARAMETER_EDITOR]: RawEditor,
+  [EditorType.STRING_PARAMETER_EDITOR]: StringEditor,
+  [EditorType.TEXTAREA_PARAMETER_EDITOR]: TextareaEditor,
+  [EditorType.TIME]: TimeEditor,
+  [EditorType.SQL_PARAMETER_EDITOR]: SqlEditor,
 }

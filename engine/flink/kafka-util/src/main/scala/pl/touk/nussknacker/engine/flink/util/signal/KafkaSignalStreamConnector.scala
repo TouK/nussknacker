@@ -28,7 +28,7 @@ trait KafkaSignalStreamConnector {
   //Please note that *in general* it's not OK to assign standard event-based watermark, as signal streams usually
   //can be idle for long time. This prevent advancement of watermark on connected stream, which can lean to unexpected behaviour e.g. in aggregates
   @silent("deprecated")
-  @nowarn("deprecated")
+  @nowarn("cat=deprecation")
   protected def assignTimestampsAndWatermarks[B](dataStream: DataStream[B]): DataStream[B] = {
     dataStream.assignTimestampsAndWatermarks(new IngestionTimeExtractor[B])
   }

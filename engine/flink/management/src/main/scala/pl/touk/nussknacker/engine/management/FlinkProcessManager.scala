@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.engine.management
 
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.Encoder
+import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.management.FlinkProcessManager.prepareProgramArgs
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -19,7 +20,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
   private lazy val verification = new FlinkProcessVerifier(modelData)
 
-  override def deploy(processVersion: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String], user: User): Future[Unit] = {
+  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]): Future[Unit] = {
     val processName = processVersion.processName
 
     import cats.data.OptionT
@@ -41,9 +42,9 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     stoppingResult.value.flatMap { maybeSavepoint =>
       runProgram(processName,
         prepareProgramMainClass(processDeploymentData),
-        prepareProgramArgs(processVersion, processDeploymentData),
+        prepareProgramArgs(modelData.inputConfigDuringExecution.serialized, processVersion, deploymentData, processDeploymentData),
         savepointPath.orElse(maybeSavepoint))
-    }
+    }.map(_ => ())
   }
 
   override def savepoint(processName: ProcessName, savepointDir: Option[String]): Future[SavepointResult] = {
@@ -64,7 +65,10 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
   override def cancel(processName: ProcessName, user: User): Future[Unit] = {
     findJobStatus(processName).flatMap {
-      case Some(ProcessState(Some(deploymentId), _, _, actions, _, _, _, _, _, _)) if actions.contains(ProcessActionType.Cancel) =>
+      // We check if process is in non-terminal state on Flink (status.isRunning) - if it's not we do not want to make
+      // request to Flink - it would fail. Nevertheless this method has to be invoked in such cases - other implementations
+      // may have some work to do.
+      case Some(ProcessState(Some(deploymentId), status, _, actions, _, _, _, _, _, _)) if status.isRunning && actions.contains(ProcessActionType.Cancel) =>
         cancel(deploymentId)
       case state =>
         logger.warn(s"Trying to cancel ${processName.value} which is not running but in status: $state")
@@ -78,7 +82,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
                                   processDeploymentData: ProcessDeploymentData): Future[Either[CustomActionError, CustomActionResult]] =
     Future.successful(Left(CustomActionNotImplemented(actionRequest)))
 
-  private def requireRunningProcess[T](processName: ProcessName)(action: DeploymentId => Future[T]): Future[T] = {
+  private def requireRunningProcess[T](processName: ProcessName)(action: ExternalDeploymentId => Future[T]): Future[T] = {
     val name = processName.value
     findJobStatus(processName).flatMap {
       case Some(ProcessState(Some(deploymentId), status, _, _, _, _, _, _, _, _)) if status.isRunning =>
@@ -97,7 +101,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
       case _ => Future.successful(())
     }
 
-  private def stopSavingSavepoint(processVersion: ProcessVersion, deploymentId: DeploymentId, processDeploymentData: ProcessDeploymentData): Future[String] = {
+  private def stopSavingSavepoint(processVersion: ProcessVersion, deploymentId: ExternalDeploymentId, processDeploymentData: ProcessDeploymentData): Future[String] = {
     logger.debug(s"Making savepoint of  ${processVersion.processName}. Deployment: $deploymentId")
     for {
       savepointResult <- makeSavepoint(deploymentId, savepointDir = None)
@@ -107,17 +111,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     } yield savepointPath
   }
 
-  private def prepareProgramArgs(processVersion: ProcessVersion, processDeploymentData: ProcessDeploymentData) : List[String] = {
-    processDeploymentData match {
-      case GraphProcess(processAsJson) =>
-        List(processAsJson, toJsonString(processVersion), modelData.inputConfigDuringExecution.serialized)
-      case CustomProcess(_) =>
-        List(processVersion.processName.value, modelData.inputConfigDuringExecution.serialized)
-    }
-  }
-  private def toJsonString(processVersion: ProcessVersion): String = {
-    Encoder[ProcessVersion].apply(processVersion).spaces2
-  }
+
 
   private def prepareProgramMainClass(processDeploymentData: ProcessDeploymentData) : String = {
     processDeploymentData match {
@@ -126,13 +120,29 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     }
   }
 
-  protected def cancel(deploymentId: DeploymentId): Future[Unit]
+  protected def cancel(deploymentId: ExternalDeploymentId): Future[Unit]
 
-  protected def makeSavepoint(deploymentId: DeploymentId, savepointDir: Option[String]): Future[SavepointResult]
+  protected def makeSavepoint(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult]
 
-  protected def stop(deploymentId: DeploymentId, savepointDir: Option[String]): Future[SavepointResult]
+  protected def stop(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult]
 
-  protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit]
+  protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Option[ExternalDeploymentId]]
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = FlinkProcessStateDefinitionManager
+}
+
+object FlinkProcessManager {
+
+  def prepareProgramArgs(serializedConfig: String,
+                         processVersion: ProcessVersion,
+                         deploymentData: DeploymentData,
+                         processDeploymentData: ProcessDeploymentData) : List[String] = {
+    processDeploymentData match {
+      case GraphProcess(processAsJson) =>
+        List(processAsJson, processVersion.asJson.spaces2, deploymentData.asJson.spaces2, serializedConfig)
+      case CustomProcess(_) =>
+        List(processVersion.processName.value, serializedConfig)
+    }
+  }
+
 }

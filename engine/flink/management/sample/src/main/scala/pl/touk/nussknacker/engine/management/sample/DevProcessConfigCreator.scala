@@ -83,7 +83,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "boundedSource" -> categories(BoundedSource),
     "oneSource" -> categories(FlinkSourceFactory.noParam(new OneSource)),
     "communicationSource" -> categories(DynamicParametersSource),
-    "csv-source" -> categories(FlinkSourceFactory.noParam(new CsvSource))
+    "csv-source" -> categories(FlinkSourceFactory.noParam(new CsvSource)),
+    "sql-source" -> categories(SqlSource)
   )
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(

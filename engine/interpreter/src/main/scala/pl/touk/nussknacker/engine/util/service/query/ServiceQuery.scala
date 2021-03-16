@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{QueryServiceInvocationCollector, QueryServiceResult}
 import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
@@ -93,7 +94,7 @@ object ServiceQuery {
     additionalFields = None
   )
 
-  private val jobData = JobData(metaData, ProcessVersion.empty)
+  private val jobData = JobData(metaData, ProcessVersion.empty, DeploymentData.empty)
 
   //TODO: remove this and return ValidatedNel, let NK-UI handle error display...
   case class ServiceInvocationException(nel: NonEmptyList[ProcessCompilationError])

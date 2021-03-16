@@ -5,6 +5,7 @@ import {withRouter} from "react-router-dom"
 import ActionsUtils from "../../actions/ActionsUtils"
 import * as JsonUtils from "../../common/JsonUtils"
 import ProcessUtils from "../../common/ProcessUtils"
+import {ExpressionLang} from "../../components/graph/node-modal/editors/expression/types"
 import {InputWithFocus, SelectWithFocus} from "../../components/withFocus"
 import HttpService from "../../http/HttpService"
 import "../../stylesheets/processes.styl"
@@ -51,7 +52,7 @@ class Services extends BaseAdminTab {
       name: paramName,
       expression: {
         //TODO: is it always fixed?
-        language: "spel",
+        language: ExpressionLang.SpEL,
         expression: "",
       },
     }
@@ -164,14 +165,17 @@ class Services extends BaseAdminTab {
         </div>
         <div className="queryServiceResults">
           {
-            !_.isEmpty(this.state.queryResult.response) ? [
-              this.prettyPrint("serviceResult", this.state.queryResult.response.result, "Service result"),
-              <hr key="separator"/>,
-              this.prettyPrint("collectedResults", JsonUtils.removeEmptyProperties(this.state.queryResult.response.collectedResults), "Collected results"),
-            ] : null
+            !_.isEmpty(this.state.queryResult.response) ?
+              [
+                this.prettyPrint("serviceResult", this.state.queryResult.response.result, "Service result"),
+                <hr key="separator"/>,
+                this.prettyPrint("collectedResults", JsonUtils.removeEmptyProperties(this.state.queryResult.response.collectedResults), "Collected results"),
+              ] :
+              null
           }
           {this.state.queryResult.errorMessage ?
-            <p className={"alert alert-danger"}>{this.state.queryResult.errorMessage}</p> : null}
+            <p className={"alert alert-danger"}>{this.state.queryResult.errorMessage}</p> :
+            null}
         </div>
       </div>
     )

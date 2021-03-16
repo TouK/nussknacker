@@ -1,15 +1,13 @@
 package pl.touk.nussknacker.engine.management.periodic
 
-import java.time.{LocalDateTime, ZoneId}
-
+import java.time.{Clock, LocalDateTime, ZoneId, ZonedDateTime}
 import org.scalatest.{FunSuite, Matchers}
 
 class CronPeriodicPropertyTest extends FunSuite with Matchers {
 
-  private val clock_2020_07_28_12_20 = new Clock {
-    override def currentTimestamp: Long = LocalDateTime.of(2020, 7, 28, 12, 20, 10)
-      .atZone(ZoneId.systemDefault()).toInstant.toEpochMilli
-  }
+  private val clock_2020_07_28_12_20 = Clock.fixed(
+    ZonedDateTime.of(2020, 7, 28, 12, 20, 10, 0, ZoneId.systemDefault()).toInstant, ZoneId.systemDefault())
+
 
   test("should return closest to now nextRunAt date") {
     CronPeriodicProperty(
@@ -24,6 +22,6 @@ class CronPeriodicPropertyTest extends FunSuite with Matchers {
 
   test("should fail for invalid expression") {
     CronPeriodicProperty("invalid")
-      .nextRunAt(SystemClock).isLeft shouldBe true
+      .nextRunAt(Clock.systemDefaultZone()).isLeft shouldBe true
   }
 }

@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.management.periodic
 
+import pl.touk.nussknacker.engine.management.periodic.model.DeploymentWithJarData
+
 import scala.concurrent.Future
 
 trait EnrichDeploymentWithJarData {

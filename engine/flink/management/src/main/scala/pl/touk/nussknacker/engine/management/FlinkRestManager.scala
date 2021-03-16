@@ -37,7 +37,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
       case Nil => Future.successful(None)
       case duplicates if duplicates.count(isNotFinished) > 1 =>
         Future.successful(Some(ProcessState(
-          Some(DeploymentId(duplicates.head.jid)),
+          Some(ExternalDeploymentId(duplicates.head.jid)),
           //we cannot have e.g. Failed here as we don't want to allow more jobs
           FlinkStateStatus.MultipleJobsRunning,
           definitionManager = processStateDefinitionManager,
@@ -58,7 +58,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
           }
 
           Some(ProcessState(
-            Some(DeploymentId(job.jid)),
+            Some(ExternalDeploymentId(job.jid)),
             stateStatus,
             version = version,
             definitionManager = processStateDefinitionManager,
@@ -108,22 +108,22 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
   }
 
 
-  override protected def cancel(deploymentId: DeploymentId): Future[Unit] = {
+  override protected def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = {
     client.cancel(deploymentId)
   }
 
-  override protected def makeSavepoint(deploymentId: DeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
+  override protected def makeSavepoint(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
     client.makeSavepoint(deploymentId, savepointDir)
   }
 
-  override protected def stop(deploymentId: DeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
+  override protected def stop(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
     client.stop(deploymentId, savepointDir)
   }
 
 
   // this code is executed synchronously by ManagementActor thus we don't care that much about possible races
   // and extraneous jar uploads introduced by asynchronous invocation
-  override protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit] = {
+  override protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     logger.debug(s"Starting to deploy process: $processName with savepoint $savepointPath")
     client.runProgram(jarFile, mainClass, args, savepointPath)
   }
