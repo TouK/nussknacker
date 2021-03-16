@@ -1,7 +1,9 @@
-import {startsWith} from "lodash"
+import {flow} from "lodash"
 import moment from "moment"
 import {Duration} from "./Duration/DurationEditor"
 import {Period} from "./Duration/PeriodEditor"
+import {escapeQuotes, getQuotationMark, quote, unescapeQuotes, unquote} from "./SpelQuotesUtils"
+import {concatsToTemplates, escapeTemplates, templatesToConcats, unescapeTemplates} from "./TemplatesUtils"
 import {CronExpression} from "./Cron/CronEditor"
 
 export type Formatter = {
@@ -17,18 +19,28 @@ export enum FormatterType {
   Time = "java.time.LocalTime",
   Date = "java.time.LocalDate",
   DateTime = "java.time.LocalDateTime",
+  Sql = "java.lang.String", // for now same as String
 }
 
-const defaultQuotationMark = "'"
-const valueQuotationMark = value => value.charAt(0)
-
-const valueStartsWithQuotationMark = (value) => startsWith(value, "\"") || startsWith(value, "\'")
-
-const quotationMark = value => valueStartsWithQuotationMark(value) ? valueQuotationMark(value) : defaultQuotationMark
-
 const stringSpelFormatter: Formatter = {
-  encode: value => quotationMark(value) + value + quotationMark(value),
-  decode: value => value.substring(1, value.length - 1),
+  encode: value => {
+    const qm = getQuotationMark(value)
+    return flow([
+      escapeQuotes(qm),
+      templatesToConcats(qm),
+      unescapeTemplates,
+      quote(qm),
+    ])(value)
+  },
+  decode: value => {
+    const qm = getQuotationMark(value)
+    return flow([
+      unquote(qm),
+      unescapeQuotes(qm),
+      escapeTemplates,
+      concatsToTemplates(qm),
+    ])(value)
+  },
 }
 
 const spelDurationFormatter: Formatter = {
@@ -62,12 +74,15 @@ const periodFormatter: Formatter = {
 const spelCronFormatter: Formatter = {
   encode: (value: CronExpression) => `new com.cronutils.parser.CronParser(T(com.cronutils.model.definition.CronDefinitionBuilder).instanceDefinitionFor(T(com.cronutils.model.CronType).QUARTZ)).parse('${value}')`,
   decode: value => {
-    const result = /new com\.cronutils\.parser\.CronParser\(T\(com\.cronutils\.model\.definition\.CronDefinitionBuilder\)\.instanceDefinitionFor\(T\(com\.cronutils\.model\.CronType\)\.QUARTZ\)\)\.parse\('(.*?)'\)/.exec(value)
+    const result = /new com\.cronutils\.parser\.CronParser\(T\(com\.cronutils\.model\.definition\.CronDefinitionBuilder\)\.instanceDefinitionFor\(T\(com\.cronutils\.model\.CronType\)\.QUARTZ\)\)\.parse\('(.*?)'\)/.exec(
+      value,
+    )
     return result == null ? null : result[1]
   },
 }
 
 const spelLocalTimeFormatter: Formatter = {
+  // eslint-disable-next-line i18next/no-literal-string
   encode: (m: moment.Moment) => `T(java.time.LocalTime).parse('${m.startOf("second").format("HH:mm:ss")}')`,
   decode: value => {
     const result = /^T\(java\.time\..*\)\.parse\(['"](.*)['"]\)$/.exec(value)
@@ -76,6 +91,7 @@ const spelLocalTimeFormatter: Formatter = {
 }
 
 const localTimeFormatter: Formatter = {
+  // eslint-disable-next-line i18next/no-literal-string
   encode: (m: moment.Moment) => `${m.startOf("second").format("HH:mm:ss")}`,
   decode: value => value,
 }
@@ -94,6 +110,7 @@ const dateFormatter: Formatter = {
 }
 
 const spelDateTimeFormatter: Formatter = {
+  // eslint-disable-next-line i18next/no-literal-string
   encode: (m: moment.Moment) => `T(java.time.LocalDateTime).parse('${m.startOf("minute").format("YYYY-MM-DDTHH:mm")}')`,
   decode: value => {
     const result = /^T\(java\.time\..*\)\.parse\(['"](.*)['"]\)$/.exec(value)
@@ -102,11 +119,12 @@ const spelDateTimeFormatter: Formatter = {
 }
 
 const dateTimeFormatter: Formatter = {
+  // eslint-disable-next-line i18next/no-literal-string
   encode: (m: moment.Moment) => `${m.startOf("minute").format("YYYY-MM-DDTHH:mm")}`,
   decode: value => value,
 }
 
-export const defaultFormatter: Formatter = {
+const defaultFormatter: Formatter = {
   encode: value => value,
   decode: value => value,
 }

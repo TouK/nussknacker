@@ -160,6 +160,13 @@ class HttpService {
       .catch(error => this.addError("Cannot fetch status", error))
   }
 
+  fetchProcessesDeployments(processId: string) {
+    return api.get<{performedAt: string, action: "UNARCHIVE" | "ARCHIVE" | "CANCEL" | "DEPLOY"}[]>(`/processes/${processId}/deployments`)
+      .then(res => res.data
+        .filter(({action}) => action === "DEPLOY")
+        .map(({performedAt}) => performedAt))
+  }
+
   deploy(processId, comment?) {
     return api.post(`/processManagement/deploy/${processId}`, comment).then(() => {
       this.addInfo(`Process ${processId} was deployed`)
@@ -382,3 +389,4 @@ class HttpService {
 }
 
 export default new HttpService()
+

@@ -9,14 +9,11 @@ const newFields = (oldParameters, newParameters) => _.differenceWith(newParamete
 const removedFields = (oldParameters, newParameters) => _.differenceWith(oldParameters, newParameters, parametersEquals)
 const unchangedFields = (oldParameters, newParameters) => _.intersectionWith(oldParameters, newParameters, parametersEquals)
 
-const nodeDefinitionParameters = node => node.ref.parameters
+const nodeDefinitionParameters = node => node?.ref.parameters
 
 export default function ParameterList(props) {
   function nodeDefinitionByName(node) {
-    return _(props.processDefinitionData.nodesToAdd)
-      .flatMap(c => c.possibleNodes)
-      .find(n => n.node.type === node.type && n.label === node.ref.id)
-      .node
+    return _(props.processDefinitionData.nodesToAdd)?.flatMap(c => c.possibleNodes)?.find(n => n.node.type === node.type && n.label === node.ref.id)?.node
   }
   const nodeId = props.savedNode.id
   const savedParameters = nodeDefinitionParameters(props.savedNode)

@@ -1,11 +1,14 @@
 package pl.touk.nussknacker.engine.management.periodic
 
-import java.nio.file.{Files, Path, Paths}
+import com.typesafe.config.ConfigFactory
 
+import java.nio.file.{Files, Path, Paths}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
+import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 class JarManagerTest extends FunSuite
@@ -28,11 +31,10 @@ class JarManagerTest extends FunSuite
   private val jarManager = createJarManager(jarsDir = jarsDir)
 
   private def createJarManager(jarsDir: Path): JarManager = {
-    new DefaultJarManager(
+    new FlinkJarManager(
       flinkClient = new FlinkClientStub,
       jarsDir = jarsDir,
-      modelConfig = "notTestedModelConfig",
-      buildInfo = Map.empty,
+      modelConfig = InputConfigDuringExecution(ConfigFactory.empty()),
       createCurrentModelJarFile = currentModelJarFile,
       enrichDeploymentWithJarData = EnrichDeploymentWithJarData.noOp
     )

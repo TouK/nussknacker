@@ -4,7 +4,6 @@ import pl.touk.nussknacker.engine.api.deployment.{AllowDeployStateStatus, During
 
 object SimpleStateStatus {
   val FailedToGet: StateStatus = NotEstablishedStateStatus("FAILED_TO_GET")
-  val NotFound: StateStatus = AllowDeployStateStatus("NOT_FOUND")
   val Unknown: StateStatus = NotEstablishedStateStatus("UNKNOWN")
   val NotDeployed: StateStatus = AllowDeployStateStatus("NOT_DEPLOYED")
   val DuringDeploy: StateStatus = DuringDeployStateStatus("DURING_DEPLOY")

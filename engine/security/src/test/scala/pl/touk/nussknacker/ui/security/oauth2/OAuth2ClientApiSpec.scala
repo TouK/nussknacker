@@ -4,17 +4,18 @@ import org.scalatest.Inside.inside
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers, Suite}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.security.http.RecordingSttpBackend
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2ClientApi.DefaultAccessTokenResponse
 import sttp.client.StringBody
 import sttp.client.testing.SttpBackendStub
 import sttp.model.{Header, HeaderNames, MediaType, Uri}
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class OAuth2ClientApiSpec extends FlatSpec with Matchers with BeforeAndAfter with PatientScalaFutures with Suite  {
   import io.circe.syntax._
 
   val config = ExampleOAuth2ServiceFactory.testConfig
 
-  val body = DefaultAccessTokenResponse(access_token = "9IDpWSEYetSNRX41", token_type = "Bearer", refresh_token = None)
+  val body = DefaultOpenIdConnectAuthorizationData(accessToken = "9IDpWSEYetSNRX41", tokenType = "Bearer", refreshToken = None)
 
   implicit val testingBackend = new RecordingSttpBackend(
     SttpBackendStub.asynchronousFuture
@@ -27,7 +28,7 @@ class OAuth2ClientApiSpec extends FlatSpec with Matchers with BeforeAndAfter wit
   }
 
   it should ("send access token request in urlencoded") in {
-    val client = new OAuth2ClientApi[GitHubProfileResponse, DefaultAccessTokenResponse](
+    val client = new OAuth2ClientApi[GitHubProfileResponse, DefaultOpenIdConnectAuthorizationData](
       config.copy(accessTokenRequestContentType = MediaType.ApplicationXWwwFormUrlencoded.toString())
     )
 
@@ -42,7 +43,7 @@ class OAuth2ClientApiSpec extends FlatSpec with Matchers with BeforeAndAfter wit
   }
 
   it should ("send access token request as json") in {
-    val client = new OAuth2ClientApi[GitHubProfileResponse, DefaultAccessTokenResponse](
+    val client = new OAuth2ClientApi[GitHubProfileResponse, DefaultOpenIdConnectAuthorizationData](
       config.copy(accessTokenRequestContentType = MediaType.ApplicationJson.toString())
     )
 

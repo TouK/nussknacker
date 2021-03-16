@@ -47,7 +47,8 @@
   "env": {
     "development": {
       "plugins": [
-        "react-refresh/babel"
+        "react-refresh/babel",
+        "istanbul"
       ]
     }
   }

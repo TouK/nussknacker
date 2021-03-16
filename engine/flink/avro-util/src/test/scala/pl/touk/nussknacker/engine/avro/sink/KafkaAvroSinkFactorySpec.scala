@@ -16,7 +16,8 @@ import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2, GeneratedAvroClassWithLogicalTypes, PaymentV1}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaVersionOption}
-import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, KafkaAvroSpecMixin}
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer
+import pl.touk.nussknacker.engine.avro.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.{GenericNodeTransformationValidator, TransformationResult}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter

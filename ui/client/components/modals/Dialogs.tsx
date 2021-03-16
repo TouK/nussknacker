@@ -1,5 +1,5 @@
 import React from "react"
-import CalculateCountsDialog from "./CalculateCountsDialog"
+import CalculateCountsDialog from "./CalculateCounts"
 import CompareVersionsDialog from "./CompareVersionsDialog"
 import ConfirmDialog from "./ConfirmDialog"
 import {dialogTypesMap} from "./DialogsTypes"

@@ -22,7 +22,7 @@ import scala.collection.JavaConverters._
  * This source allow to add elements after creation or decide when input stream is finished. It also emit watermark after each added element.
  */
 @silent("deprecated")
-@nowarn("deprecated")
+@nowarn("cat=deprecation")
 class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPunctuatedWatermarks[T]) extends FlinkSource[T] with Serializable {
 
   private val id = UUID.randomUUID().toString

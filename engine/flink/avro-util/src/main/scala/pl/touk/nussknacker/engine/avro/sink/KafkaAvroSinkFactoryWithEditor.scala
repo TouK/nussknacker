@@ -27,24 +27,10 @@ object KafkaAvroSinkFactoryWithEditor {
 
 class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryProvider, val processObjectDependencies: ProcessObjectDependencies)
   extends SinkFactory with KafkaAvroBaseTransformer[FlinkSink] {
-  import KafkaAvroSinkFactoryWithEditor._
 
   private var sinkValueParameter: Option[AvroSinkValueParameter] = None
 
-  protected def topicParamStep(implicit nodeId: NodeId): NodeTransformationDefinition = {
-    case TransformationStep(Nil, _) =>
-      val topicParam = getTopicParam.map(List(_))
-      NextParameters(parameters = topicParam.value, errors = topicParam.written)
-  }
-
-  protected def schemaParamStep(implicit nodeId: NodeId): NodeTransformationDefinition = {
-    case TransformationStep((TopicParamName, DefinedEagerParameter(topic: String, _)) :: Nil, _) =>
-      val preparedTopic = prepareTopic(topic)
-      val versionParam = getVersionParam(preparedTopic)
-      NextParameters(versionParam.value :: paramsDeterminedAfterSchema, errors = versionParam.written)
-    case TransformationStep((TopicParamName, _) :: Nil, _) =>
-      NextParameters(parameters = fallbackVersionOptionParam :: paramsDeterminedAfterSchema)
-  }
+  override def paramsDeterminedAfterSchema: List[Parameter] = KafkaAvroSinkFactoryWithEditor.paramsDeterminedAfterSchema
 
   private def valueParamStep(context: ValidationContext)(implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep
@@ -81,12 +67,6 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
       valueParams, _) if valueParams.nonEmpty => FinalResults(context, Nil)
   }
 
-  override def initialParameters: List[Parameter] = {
-    implicit val nodeId: NodeId = NodeId("")
-    val topic = getTopicParam.value
-    topic :: getVersionParam(Nil) :: paramsDeterminedAfterSchema
-  }
-
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
                                     (implicit nodeId: NodeId): NodeTransformationDefinition =
     topicParamStep orElse
@@ -98,14 +78,16 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
     implicit val nodeId: NodeId = typedDependency[NodeId](dependencies)
     val preparedTopic = extractPreparedTopic(params)
     val versionOption = extractVersionOption(params)
-    val key = params(SinkKeyParamName).asInstanceOf[LazyParameter[CharSequence]]
-    val validationMode = extractValidationMode(params(SinkValidationModeParameterName).asInstanceOf[String])
-    val sinkValue = AvroSinkValue.applyUnsafe(sinkValueParameter.get, parameterValues = params)
+    val processMetaData = typedDependency[NodeId](dependencies)
+    val clientId = s"${processMetaData.id}-${preparedTopic.prepared}"
+
     val schemaDeterminer = prepareSchemaDeterminer(preparedTopic, versionOption)
     val schemaData = schemaDeterminer.determineSchemaUsedInTyping.valueOr(SchemaDeterminerErrorHandler.handleSchemaRegistryErrorAndThrowException)
     val schemaUsedInRuntime = schemaDeterminer.toRuntimeSchema(schemaData)
-    val processMetaData = typedDependency[NodeId](dependencies)
-    val clientId = s"${processMetaData.id}-${preparedTopic.prepared}"
+
+    val validationMode = extractValidationMode(params(SinkValidationModeParameterName).asInstanceOf[String])
+    val sinkValue = AvroSinkValue.applyUnsafe(sinkValueParameter.get, parameterValues = params)
+    val key = params(SinkKeyParamName).asInstanceOf[LazyParameter[CharSequence]]
 
     new KafkaAvroSink(preparedTopic, versionOption, key, sinkValue, kafkaConfig, schemaRegistryProvider.serializationSchemaFactory,
       schemaData.serializableSchema, schemaUsedInRuntime.map(_.serializableSchema), clientId, validationMode)

@@ -1,16 +1,25 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import sttp.client.{NothingT, SttpBackend}
 
-import scala.concurrent.Future
+import scala.concurrent.duration.{Deadline, FiniteDuration}
+import scala.concurrent.{ExecutionContext, Future}
 
-trait OAuth2Service {
-  def authenticate(code: String): Future[OAuth2AuthenticateData]
-  def authorize(token: String): Future[LoggedUser]
+trait OAuth2AuthorizationData {
+  val accessToken: String
+  val expirationPeriod: Option[FiniteDuration]
+  val tokenType: String
+  val refreshToken: Option[String]
 }
+
+trait OAuth2Service[+UserInfoData, +AuthorizationData <: OAuth2AuthorizationData] {
+  def obtainAuthorizationAndUserInfo(authorizationCode: String): Future[(AuthorizationData, Option[UserInfoData])]
+  def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Deadline])]
+}
+
 
 trait OAuth2ServiceFactory {
-  def create(configuration: OAuth2Configuration, allCategories: List[String]): OAuth2Service
+  def create(configuration: OAuth2Configuration, allCategories: List[String])(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): OAuth2Service[LoggedUser, OAuth2AuthorizationData] =
+    throw new NotImplementedError("Trying to use the new version of the interface, which is not implemented yet")
 }
-
-case class OAuth2AuthenticateData(access_token: String, token_type: String, refresh_token: Option[String])

@@ -44,7 +44,7 @@ abstract class KafkaAvroValueDeserializationSchemaFactory
       private lazy val deserializer = createValueDeserializer[T](schemaDataOpt, kafkaConfig)
 
       override def deserialize(consumerRecord: ConsumerRecord[Array[Byte], Array[Byte]]): T = {
-        val value = deserializer.deserialize(consumerRecord.topic(), consumerRecord.value())
+        val value = deserializer.deserialize(consumerRecord.topic(), consumerRecord.headers(), consumerRecord.value())
         value
       }
 

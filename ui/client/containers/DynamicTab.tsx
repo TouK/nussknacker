@@ -1,6 +1,6 @@
 import * as queryString from "query-string"
 import React, {memo} from "react"
-import ErrorBoundary from "react-error-boundary"
+import ErrorBoundary from "../components/common/ErrorBoundary"
 import {ExternalModule, splitUrl, useExternalLib} from "./ExternalLib"
 import {ModuleString, ModuleUrl} from "./ExternalLib/types"
 

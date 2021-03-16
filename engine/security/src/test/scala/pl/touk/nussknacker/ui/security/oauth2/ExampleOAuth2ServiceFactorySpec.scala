@@ -21,7 +21,7 @@ class ExampleOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
 
   val config = ExampleOAuth2ServiceFactory.testConfig
 
-  def createErrorOAuth2Service(uri: URI, code: StatusCode): ExampleOAuth2Service = {
+  def createErrorOAuth2Service(uri: URI, code: StatusCode) = {
     implicit val testingBackend = SttpBackendStub
       .asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(uri)))
@@ -30,35 +30,35 @@ class ExampleOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
     ExampleOAuth2ServiceFactory.service(config)
   }
 
-  def createDefaultServiceMock(body: Json, uri: URI): ExampleOAuth2Service = {
+  def createDefaultServiceMock(body: Json, uri: URI) = {
     implicit val testingBackend = SttpBackendStub
       .asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(uri)))
       .thenRespond(body.toString)
 
-    ExampleOAuth2ServiceFactory.service(config)
+      ExampleOAuth2ServiceFactory.service(config)
   }
 
   it should ("properly parse data from authentication") in {
-    val body = TestAccessTokenResponse(access_token = "9IDpWSEYetSNRX41", token_type = "Bearer")
+    val body = TestAccessTokenResponse(accessToken = "9IDpWSEYetSNRX41", tokenType = "Bearer")
     val service = createDefaultServiceMock(body.asJson, config.accessTokenUri)
-    val data = service.authenticate("6V1reBXblpmfjRJP").futureValue
+    val (data, _) = service.obtainAuthorizationAndUserInfo("6V1reBXblpmfjRJP").futureValue
 
-    data shouldBe a[OAuth2AuthenticateData]
-    data.access_token shouldBe body.access_token
-    data.token_type shouldBe body.token_type
+    data shouldBe a[OAuth2AuthorizationData]
+    data.accessToken shouldBe body.accessToken
+    data.tokenType shouldBe body.tokenType
   }
 
   it should ("handling BadRequest response from authenticate request") in {
     val service = createErrorOAuth2Service(config.accessTokenUri, StatusCode.BadRequest)
-    service.authenticate("6V1reBXblpmfjRJP").recover {
+    service.obtainAuthorizationAndUserInfo("6V1reBXblpmfjRJP").recover {
       case OAuth2ErrorHandler(_) => succeed
     }.futureValue
   }
 
   it should ("should InternalServerError response from authenticate request") in {
     val service = createErrorOAuth2Service(config.accessTokenUri, StatusCode.InternalServerError)
-    service.authenticate("6V1reBXblpmfjRJP").recover {
+    service.obtainAuthorizationAndUserInfo("6V1reBXblpmfjRJP").recover {
       case ex@OAuth2CompoundException(errors) => errors.toList.collectFirst {
         case _: OAuth2ServerError => succeed
       }.getOrElse(throw ex)
@@ -76,7 +76,7 @@ class ExampleOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
     )
 
     val service = createDefaultServiceMock(response.asJson, config.profileUri)
-    val user = service.authorize("6V1reBXblpmfjRJP").futureValue
+    val (user, _) = service.checkAuthorizationAndObtainUserinfo("6V1reBXblpmfjRJP").futureValue
 
     user shouldBe a[LoggedUser]
     user.isAdmin shouldBe false
@@ -101,7 +101,7 @@ class ExampleOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
     )
 
     val service = createDefaultServiceMock(response.asJson, config.profileUri)
-    val user = service.authorize("6V1reBXblpmfjRJP").futureValue
+    val (user, _) = service.checkAuthorizationAndObtainUserinfo("6V1reBXblpmfjRJP").futureValue
 
     user shouldBe a[LoggedUser]
     user.isAdmin shouldBe false
@@ -126,7 +126,7 @@ class ExampleOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
     )
 
     val service = createDefaultServiceMock(response.asJson, config.profileUri)
-    val user = service.authorize("6V1reBXblpmfjRJP").futureValue
+    val (user, _) = service.checkAuthorizationAndObtainUserinfo("6V1reBXblpmfjRJP").futureValue
 
     user shouldBe a[LoggedUser]
     user.isAdmin shouldBe true
@@ -139,14 +139,14 @@ class ExampleOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
 
   it should ("handling BadRequest response from profile request") in {
     val service = createErrorOAuth2Service(config.profileUri, StatusCode.BadRequest)
-    service.authorize("6V1reBXblpmfjRJP").recover{
+    service.checkAuthorizationAndObtainUserinfo("6V1reBXblpmfjRJP").recover{
       case OAuth2ErrorHandler(_) => succeed
     }.futureValue
   }
 
   it should ("should InternalServerError response from profile request") in {
     val service = createErrorOAuth2Service(config.profileUri, StatusCode.InternalServerError)
-    service.authorize("6V1reBXblpmfjRJP").recover{
+    service.checkAuthorizationAndObtainUserinfo("6V1reBXblpmfjRJP").recover{
       case ex@OAuth2CompoundException(errors) => errors.toList.collectFirst {
         case _: OAuth2ServerError => succeed
       }.getOrElse(throw ex)

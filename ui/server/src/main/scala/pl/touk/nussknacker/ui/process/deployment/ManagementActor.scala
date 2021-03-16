@@ -159,14 +159,14 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
       case (Some(state), _) if state.isDeployed => handleFollowingDeployState(state, lastAction)
       case (_, Some(action)) if action.isCanceled => handleCanceledState(processState)
       case (Some(state), _) => handleState(state, lastAction)
-      case (None, Some(action)) if action.isArchived => ProcessStatus.simple(SimpleStateStatus.NotFound)
+      case (None, Some(_)) => ProcessStatus.simple(SimpleStateStatus.NotDeployed)
       case (None, None) => ProcessStatus.simple(SimpleStateStatus.NotDeployed)
     }
 
   //TODO: In future we should move this functionality to ProcessManager.
   private def handleState(state: ProcessState, lastAction: Option[ProcessAction]): ProcessState =
     state.status match {
-      case SimpleStateStatus.NotFound | SimpleStateStatus.NotDeployed if lastAction.isEmpty =>
+      case SimpleStateStatus.NotDeployed if lastAction.isEmpty =>
         ProcessStatus.simple(SimpleStateStatus.NotDeployed)
       //TODO: Should FlinkStateStatus.Restarting also be here?. Currently it's not handled to
       //avoid dependency on FlinkProcessManager
@@ -180,7 +180,6 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
   private def handleCanceledState(processState: Option[ProcessState]): ProcessState =
     processState match {
       case Some(state) => state.status match {
-        case SimpleStateStatus.NotFound => ProcessStatus.simple(SimpleStateStatus.Canceled)
         case _ => state
       }
       case None => ProcessStatus.simple(SimpleStateStatus.Canceled)
@@ -298,7 +297,9 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
       deploymentResolved <- resolvedDeploymentData
       maybeProcessName <- processRepository.fetchProcessName(ProcessId(latestVersion.processId))
       processName = maybeProcessName.getOrElse(throw new IllegalArgumentException(s"Unknown process Id ${latestVersion.processId}"))
-      _ <- processManagerValue.deploy(latestVersion.toProcessVersion(processName), deploymentResolved, savepointPath, toManagerUser(user))
+      //TODO:
+      deploymentData = DeploymentData(DeploymentId(""), toManagerUser(user), Map.empty)
+      _ <- processManagerValue.deploy(latestVersion.toProcessVersion(processName), deploymentData, deploymentResolved, savepointPath)
       deployedActionData <- deployedProcessRepository.markProcessAsDeployed(
         ProcessId(latestVersion.processId), latestVersion.id, processingType, comment
       )

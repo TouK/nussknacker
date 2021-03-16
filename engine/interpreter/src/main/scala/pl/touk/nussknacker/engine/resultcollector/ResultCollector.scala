@@ -24,7 +24,6 @@ trait ResultCollector extends Serializable {
   def collectWithResponse[A, F[_] : Monad](contextId: ContextId,
                                            nodeId: NodeId,
                                            serviceRef: String,
-
                                            request: => ToCollect,
                                            mockValue: Option[A],
                                            action: => F[CollectableAction[A]],

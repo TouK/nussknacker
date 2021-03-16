@@ -4,6 +4,7 @@ import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectWithMethodDef, ObjectWithType}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.util.Implicits._
@@ -19,8 +20,10 @@ class GlobalVariablesPreparer(globalVariablesWithMethodDef: Map[String, ObjectWi
     }
   }
 
-  def emptyValidationContext(metaData: MetaData): ValidationContext = ValidationContext(
-    Map.empty,
+  def emptyValidationContext(metaData: MetaData): ValidationContext = validationContextWithLocalVariables(metaData, Map.empty)
+
+  def validationContextWithLocalVariables(metaData: MetaData, localVariables: Map[String, TypingResult]): ValidationContext = ValidationContext(
+    localVariables,
     prepareGlobalVariables(metaData).mapValuesNow(_.typ)
   )
 

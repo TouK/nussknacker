@@ -28,6 +28,7 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestamp
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler;
 import pl.touk.nussknacker.engine.javaapi.process.ExpressionConfig;
 import pl.touk.nussknacker.engine.javaapi.process.ProcessConfigCreator;
+import pl.touk.nussknacker.engine.kafka.generic.sources;
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchemaFactory;
 import pl.touk.nussknacker.engine.kafka.serialization.schemas;
 import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory;
@@ -87,7 +88,7 @@ public class DemoProcessConfigCreator implements ProcessConfigCreator {
         return new KafkaSourceFactory<>(
                 schema,
                 Option.apply(extractor),
-                TestParsingUtils.newLineSplit(),
+                sources.JsonRecordFormatter$.MODULE$,
                 processObjectDependencies,
                 ClassTag$.MODULE$.apply(Transaction.class)
         );

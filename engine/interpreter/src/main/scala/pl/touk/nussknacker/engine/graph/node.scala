@@ -79,6 +79,11 @@ object node {
     def componentId: String
   }
 
+  /*
+  When a new implementation of WithParameters is added, the new type needs also to be handled on FE
+  in order to properly display dynamic parameters in NodeDetailsContent.
+  See: ParametersUtils.ts/#parametersPath and ParametersUtils.ts/#adjustParameters
+   */
   trait WithParameters {
     def parameters: List[Parameter]
   }

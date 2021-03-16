@@ -64,10 +64,7 @@ object ProcessingTypeData {
 
   type ProcessingType = String
 
-
-  def createProcessingTypeData(processManagerProvider: ProcessManagerProvider, processTypeConfig: ProcessingTypeConfig): ProcessingTypeData = {
-    val modelData = processTypeConfig.toModelData
-    val managerConfig = processTypeConfig.engineConfig
+  def createProcessingTypeData(processManagerProvider: ProcessManagerProvider, modelData: ModelData, managerConfig: Config): ProcessingTypeData = {
     val manager = processManagerProvider.createProcessManager(modelData, managerConfig)
     val queryableClient = processManagerProvider.createQueryableClient(managerConfig)
     ProcessingTypeData(
@@ -76,5 +73,11 @@ object ProcessingTypeData {
       processManagerProvider.emptyProcessMetadata,
       queryableClient,
       processManagerProvider.supportsSignals)
+  }
+
+  def createProcessingTypeData(processManagerProvider: ProcessManagerProvider, processTypeConfig: ProcessingTypeConfig): ProcessingTypeData = {
+    val modelData = processTypeConfig.toModelData
+    val managerConfig = processTypeConfig.engineConfig
+    createProcessingTypeData(processManagerProvider, modelData, managerConfig)
   }
 }

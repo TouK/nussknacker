@@ -48,8 +48,7 @@ class KafkaSourceFactorySpec extends FlatSpec with KafkaSpec with Matchers {
 
 
   private def createSource(topic: String): KafkaSource[String] = {
-    val sourceFactory = new KafkaSourceFactory[String](new SimpleStringSchema, None,
-      TestParsingUtils.newLineSplit, ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader)))
+    val sourceFactory = new KafkaSourceFactory[String](new SimpleStringSchema, None, BasicFormatter, ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader)))
     sourceFactory.create(MetaData("", StreamMetaData()), topic)(NodeId(""))
   }
 

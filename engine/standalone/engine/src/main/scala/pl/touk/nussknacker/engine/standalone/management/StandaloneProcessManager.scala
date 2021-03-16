@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.testmode.SinkInvocationCollector
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
-import pl.touk.nussknacker.engine.standalone.api.DeploymentData
+import pl.touk.nussknacker.engine.standalone.api.StandaloneDeploymentData
 import pl.touk.nussknacker.engine.standalone.api.types._
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
 import pl.touk.nussknacker.engine.standalone.utils.metrics.NoOpMetricsProvider
@@ -45,14 +45,14 @@ class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessCl
 
   private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
-  override def deploy(processVersion: ProcessVersion, processDeploymentData: ProcessDeploymentData,
-                      savepointPath: Option[String], user: User): Future[Unit] = {
+  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData,
+                      savepointPath: Option[String]): Future[Unit] = {
     savepointPath match {
       case Some(_) => Future.failed(new UnsupportedOperationException("Cannot make savepoint on standalone process"))
       case None =>
         processDeploymentData match {
           case GraphProcess(processAsJson) =>
-            client.deploy(DeploymentData(processAsJson, System.currentTimeMillis(), processVersion))
+            client.deploy(StandaloneDeploymentData(processAsJson, System.currentTimeMillis(), processVersion, deploymentData))
           case CustomProcess(mainClass) =>
             Future.failed(new UnsupportedOperationException("custom process in standalone engine is not supported"))
         }
@@ -137,7 +137,8 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
 
     try {
       val processVersion = ProcessVersion.empty.copy(processName = ProcessName("snapshot version")) // testing process may be unreleased, so it has no version
-      standaloneInterpreter.open(JobData(process.metaData, processVersion))
+      val deploymentData = DeploymentData.empty
+      standaloneInterpreter.open(JobData(process.metaData, processVersion, deploymentData))
       val results = Await.result(Future.sequence(parsedTestData.map(standaloneInterpreter.invokeToResult(_, None))), timeout)
       collectSinkResults(collectingListener.runId, results)
       collectExceptions(collectingListener, results)

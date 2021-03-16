@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.management.sample
 
 import java.time.LocalDateTime
-
 import com.typesafe.config.Config
 import io.circe.Encoder
 import org.apache.flink.api.common.serialization.SimpleStringSchema
@@ -21,7 +20,7 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelp
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.SlidingAggregateTransformerV2
 import pl.touk.nussknacker.engine.flink.util.transformer.outer.OuterJoinTransformer
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer, UnionWithMemoTransformer}
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.{BasicFormatter, KafkaConfig}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
@@ -78,13 +77,14 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
     "real-kafka" -> all(new KafkaSourceFactory[String](new SimpleStringSchema,
                                                         None,
-                                                        TestParsingUtils.newLineSplit,
+                                                        BasicFormatter,
                                                         processObjectDependencies)),
     "kafka-transaction" -> all(FlinkSourceFactory.noParam(new NoEndingSource)),
     "boundedSource" -> categories(BoundedSource),
     "oneSource" -> categories(FlinkSourceFactory.noParam(new OneSource)),
     "communicationSource" -> categories(DynamicParametersSource),
-    "csv-source" -> categories(FlinkSourceFactory.noParam(new CsvSource))
+    "csv-source" -> categories(FlinkSourceFactory.noParam(new CsvSource)),
+    "sql-source" -> categories(SqlSource)
   )
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(

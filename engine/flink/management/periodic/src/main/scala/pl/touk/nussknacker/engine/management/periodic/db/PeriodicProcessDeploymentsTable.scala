@@ -1,14 +1,14 @@
 package pl.touk.nussknacker.engine.management.periodic.db
 
-import java.time.LocalDateTime
-
-import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
-import pl.touk.nussknacker.engine.management.periodic.{PeriodicProcessDeploymentId, PeriodicProcessDeploymentStatus, PeriodicProcessId}
+import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
+import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeploymentId, PeriodicProcessDeploymentStatus, PeriodicProcessId}
 import slick.jdbc.JdbcProfile
 import slick.lifted.ProvenShape
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
-trait PeriodicProcessDeploymentsTableFactory {
+import java.time.LocalDateTime
+
+trait PeriodicProcessDeploymentsTableFactory extends PeriodicProcessesTableFactory {
 
   protected val profile: JdbcProfile
 

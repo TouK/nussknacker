@@ -26,8 +26,8 @@ trait ConfluentAvroSerializerFactory {
 class ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
   extends KafkaAvroValueSerializationSchemaFactory with ConfluentAvroSerializerFactory {
 
-  override protected def createValueSerializer(schemaOpt: Option[Schema], version: Option[Int], kafkaConfig: KafkaConfig): Serializer[AnyRef] =
-    createSerializer[AnyRef](schemaRegistryClientFactory, kafkaConfig, schemaOpt, version, isKey = false)
+  override protected def createValueSerializer(schemaOpt: Option[Schema], version: Option[Int], kafkaConfig: KafkaConfig): Serializer[Any] =
+    createSerializer[Any](schemaRegistryClientFactory, kafkaConfig, schemaOpt, version, isKey = false)
 }
 
 abstract class ConfluentAvroKeyValueSerializationSchemaFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)

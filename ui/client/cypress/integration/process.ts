@@ -61,5 +61,43 @@ describe("Process", () => {
       cy.get("@button").click()
       cy.get("[data-testid=modal]").should("be.visible").toMatchImageSnapshot()
     })
+
+    it("should not have \"latest deploy\" button by default", () => {
+      cy.viewport("macbook-15")
+      cy.contains(/^deploy$/i).click()
+      cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy")
+      cy.contains(/^ok$/i).should("be.enabled").click()
+      cy.wait(["@deploy", "@fetch"], {timeout: 20000}).each(res => {
+        cy.wrap(res).its("response.statusCode").should("eq", 200)
+      })
+      cy.contains(/^counts$/i).click()
+      cy.contains(/^latest deploy$/i).should("not.exist")
+      cy.get("[data-testid=modal]").should("be.visible").toMatchImageSnapshot()
+    })
+
+    it("should have \"latest deploy\" button", () => {
+      window.localStorage.setItem("featureFlags", "showDeploymentsInCounts")
+      cy.viewport("macbook-15")
+      cy.contains(/^deploy$/i).click()
+      cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy")
+      cy.contains(/^ok$/i).should("be.enabled").click()
+      cy.wait(["@deploy", "@fetch"], {timeout: 20000}).each(res => {
+        cy.wrap(res).its("response.statusCode").should("eq", 200)
+      })
+      cy.contains(/^counts$/i).click()
+      cy.contains(/^latest deploy$/i).should("exist")
+      cy.get("[data-testid=modal]").should("be.visible").toMatchImageSnapshot()
+    })
+
+    it("should display some node details in modal", () => {
+      cy.get("[model-id=dynamicService]").should("be.visible").trigger("dblclick")
+      cy.get("[data-testid=node-modal]").should("be.visible").toMatchImageSnapshot()
+      cy.get("[data-testid=node-modal]").contains(/^cancel$/i).click()
+      cy.get("[model-id=boundedSource]").should("be.visible").trigger("dblclick")
+      cy.get("[data-testid=node-modal]").should("be.visible").toMatchImageSnapshot()
+      cy.get("[data-testid=node-modal]").contains(/^cancel$/i).click()
+      cy.get("[model-id=sendSms]").should("be.visible").trigger("dblclick")
+      cy.get("[data-testid=node-modal]").should("be.visible").toMatchImageSnapshot()
+    })
   })
 })

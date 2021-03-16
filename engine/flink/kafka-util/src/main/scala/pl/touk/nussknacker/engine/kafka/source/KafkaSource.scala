@@ -9,7 +9,7 @@ import org.apache.flink.util.Collector
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api.process.{TestDataGenerator, TestDataParserProvider}
-import pl.touk.nussknacker.engine.api.test.{TestDataParser, TestDataSplit}
+import pl.touk.nussknacker.engine.api.test.TestDataParser
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
@@ -21,8 +21,7 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
                      kafkaConfig: KafkaConfig,
                      deserializationSchema: KafkaDeserializationSchema[T],
                      timestampAssigner: Option[TimestampWatermarkHandler[T]],
-                     recordFormatterOpt: Option[RecordFormatter],
-                     testPrepareInfo: TestDataSplit,
+                     recordFormatter: RecordFormatter,
                      overriddenConsumerGroup: Option[String] = None)
   extends FlinkSource[T]
     with Serializable
@@ -57,21 +56,14 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
   override def generateTestData(size: Int): Array[Byte] = {
     val listsFromAllTopics = topics.map(KafkaUtils.readLastMessages(_, size, kafkaConfig))
     val merged = ListUtil.mergeListsFromTopics(listsFromAllTopics, size)
-    val formatted = recordFormatterOpt.map(formatter => merged.map(formatter.formatRecord)).getOrElse {
-      merged.map(_.value())
-    }
-    testPrepareInfo.joinData(formatted)
+    recordFormatter.prepareGeneratedTestData(merged)
   }
 
   override def testDataParser: TestDataParser[T] = new TestDataParser[T] {
-    override def parseTestData(merged: Array[Byte]): List[T] =
-      testPrepareInfo.splitData(merged).map { formatted =>
-        val topic = topics.head
-        val record = recordFormatterOpt
-          .map(formatter => formatter.parseRecord(formatted))
-          .getOrElse(new ProducerRecord(topic, formatted))
-        deserialize(topic, record)
-      }
+    override def parseTestData(merged: Array[Byte]): List[T] = {
+      val topic = topics.head
+      recordFormatter.parseDataForTest(topic, merged).map(deserialize(topic, _))
+    }
   }
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[T]] = timestampAssigner

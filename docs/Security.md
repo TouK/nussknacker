@@ -98,7 +98,8 @@ authentication: {
   profileFormat: ${?OAUTH2_PROFILE_FORMAT}
   implicitGrantEnabled: ${?OAUTH2_IMPLICIT_GRANT_ENABLED}
   jwt {
-    enabled: ${?OAUTH2_JWT_ENABLED} (default: false)
+    accessTokenIsJwt: ${?OAUTH2_ACCESS_TOKEN_IS_JWT} (default: false)
+    userinfoFromIdToken: ${?OAUTH2_USERINFO_FROM_ID_TOKEN} (default: false)
     publicKey: ${?OAUTH2_JWT_AUTH_SERVER_PUBLIC_KEY}
     publicKeyFile: ${?OAUTH2_JWT_AUTH_SERVER_PUBLIC_KEY_FILE}
     certificate: ${?OAUTH2_JWT_AUTH_SERVER_CERTIFICATE}
@@ -122,6 +123,8 @@ authentication: {
 ```
 
 When `method` is set to `OAuth2`, the following fields are mandatory: `clientSecret`, `clientId`, `authorizeUri`, `redirectUri`, `accessTokenUri`, `profileUri`, `profileFormat`, `implicitGrantEnabled`, `usersFile`.
+
+For the `profileFormat` one of `oidc` or `github` is supported by default.
 
 Subconfigs `accessTokenParams`, `accessTokenRequestContentType`, `authorizeParams`, `headers` are optional and every field from any of the subconfigs is optional and could be provided separately.
 
@@ -187,7 +190,9 @@ rules: [
 ]
 ```
 
-### OAuth2 security module - Auth0 example with implicit flow
+### OAuth2 security module - Open ID Connect example with implicit flow
+
+We use Auth0 as an example since it is compatible with OIDC.
 
 #### Auth0 application configuration
 
@@ -208,9 +213,10 @@ authentication: {
   redirectUri: "http://localhost:3000"
   accessTokenUri: "https://<your-auth0-domain>.auth0.com/oauth/token"
   profileUri: "https://<your-auth0-domain>.auth0.com/userinfo"
-  profileFormat: "auth0"
+  profileFormat: "oidc"
   implicitGrantEnabled: true
   jwt {
+    accessTokenIsJwt: true
     certificateFile: "./etc/cert.pem"
     idTokenNonceVerificationRequired: true
   }

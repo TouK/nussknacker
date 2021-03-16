@@ -11,6 +11,7 @@ import pl.touk.nussknacker.ui.security.api.AuthenticationMethod.AuthenticationMe
 import pl.touk.nussknacker.ui.security.oauth2.ProfileFormat.ProfileFormat
 import sttp.model.{Header, HeaderNames, MediaType}
 
+import scala.concurrent.duration.{FiniteDuration, HOURS}
 import scala.io.Source
 
 case class OAuth2Configuration(method: AuthenticationMethod,
@@ -28,7 +29,8 @@ case class OAuth2Configuration(method: AuthenticationMethod,
                                authorizeParams: Map[String, String] = Map.empty,
                                headers: Map[String, String] = Map.empty,
                                authorizationHeader: String = HeaderNames.Authorization,
-                               accessTokenRequestContentType: String = MediaType.ApplicationJson.toString()
+                               accessTokenRequestContentType: String = MediaType.ApplicationJson.toString(),
+                               defaultTokenExpirationTime: FiniteDuration = FiniteDuration(1, HOURS)
                               ) extends AuthenticationConfiguration {
 
   override def authorizeUrl: Option[URI] = Option({
@@ -39,10 +41,6 @@ case class OAuth2Configuration(method: AuthenticationMethod,
       ) ++ authorizeParams).mapValues(v => Seq(v)))
       .url)
   })
-
-  def jwtEnabled: Boolean = jwt.exists(_.enabled)
-
-  override def authSeverPublicKey: Option[PublicKey] = jwt.filter(_.enabled).map(_.authServerPublicKey)
 
   def idTokenNonceVerificationRequired: Boolean = jwt.exists(_.idTokenNonceVerificationRequired)
 
@@ -62,11 +60,12 @@ object OAuth2Configuration {
 object ProfileFormat extends Enumeration {
   type ProfileFormat = Value
   val GITHUB = Value("github")
-  val AUTH0 = Value("auth0")
+  val OIDC = Value("oidc")
 }
 
 trait JwtConfiguration {
-  def enabled: Boolean
+  def accessTokenIsJwt: Boolean
+  def userinfoFromIdToken: Boolean
   def authServerPublicKey: PublicKey
   def idTokenNonceVerificationRequired: Boolean
 }
@@ -79,7 +78,8 @@ object JwtConfiguration {
 
   implicit val jwtConfigurationVR: ValueReader[JwtConfiguration] = ValueReader.relative(_.rootAs[JwtConfig])
 
-  private case class JwtConfig(enabled: Boolean = false,
+  private case class JwtConfig(accessTokenIsJwt: Boolean = false,
+                               userinfoFromIdToken: Boolean = false,
                                publicKey: Option[String],
                                publicKeyFile: Option[String],
                                certificate: Option[String],

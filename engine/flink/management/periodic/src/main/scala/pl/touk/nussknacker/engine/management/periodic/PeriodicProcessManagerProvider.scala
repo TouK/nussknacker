@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.TypeSpecificData
 import pl.touk.nussknacker.engine.api.deployment.ProcessManager
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.management.FlinkConfig
+import pl.touk.nussknacker.engine.management.periodic.service.{DefaultAdditionalDeploymentDataProvider, EmptyListener}
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.{ModelData, ProcessManagerProvider}
 
@@ -30,7 +31,9 @@ class PeriodicProcessManagerProvider(delegate: ProcessManagerProvider,
       periodicBatchConfig = periodicBatchConfig,
       flinkConfig = flinkConfig,
       originalConfig = config,
-      modelData = modelData
+      modelData = modelData,
+      EmptyListener,
+      DefaultAdditionalDeploymentDataProvider
     )
   }
 

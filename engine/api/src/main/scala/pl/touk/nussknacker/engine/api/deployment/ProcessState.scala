@@ -22,9 +22,9 @@ object ProcessState {
   implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
 
   def apply(deploymentId: String, status: StateStatus, version: Option[ProcessVersion], definitionManager: ProcessStateDefinitionManager): ProcessState =
-    ProcessState(Some(DeploymentId(deploymentId)), status, version, definitionManager, Option.empty, Option.empty, List.empty)
+    ProcessState(Some(ExternalDeploymentId(deploymentId)), status, version, definitionManager, Option.empty, Option.empty, List.empty)
 
-  def apply(deploymentId: Option[DeploymentId],
+  def apply(deploymentId: Option[ExternalDeploymentId],
             status: StateStatus,
             version: Option[ProcessVersion],
             definitionManager: ProcessStateDefinitionManager,
@@ -46,7 +46,7 @@ object ProcessState {
 
 }
 
-@JsonCodec case class ProcessState(deploymentId: Option[DeploymentId],
+@JsonCodec case class ProcessState(deploymentId: Option[ExternalDeploymentId],
                                    status: StateStatus,
                                    version: Option[ProcessVersion],
                                    allowedActions: List[ProcessActionType],

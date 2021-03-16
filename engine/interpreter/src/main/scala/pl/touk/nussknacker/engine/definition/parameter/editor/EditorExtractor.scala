@@ -48,6 +48,7 @@ object EditorExtractor {
       case SimpleEditorType.CRON_EDITOR => CronParameterEditor
       case SimpleEditorType.TEXTAREA_EDITOR => TextareaParameterEditor
       case SimpleEditorType.JSON_EDITOR => JsonParameterEditor
+      case SimpleEditorType.SQL_EDITOR => SqlParameterEditor
     }
   }
 }

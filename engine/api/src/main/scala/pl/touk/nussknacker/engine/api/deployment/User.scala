@@ -1,4 +1,6 @@
 package pl.touk.nussknacker.engine.api.deployment
 
+import io.circe.generic.JsonCodec
+
 //used for audit
-case class User(id: String, name: String)
+@JsonCodec case class User(id: String, name: String)

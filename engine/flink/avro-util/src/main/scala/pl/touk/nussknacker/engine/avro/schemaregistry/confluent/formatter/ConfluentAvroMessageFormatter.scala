@@ -28,7 +28,8 @@ private[confluent] class ConfluentAvroMessageFormatter(schemaRegistryClient: Sch
     val schema = AvroSchemaUtils.getSchema(obj)
 
     try {
-      val encoder = encoderFactory.jsonEncoder(schema, output)
+      //pretty = false is important, as we rely on the fact that there are no new lines in message parsing
+      val encoder = encoderFactory.jsonEncoder(schema, output, false)
       val writer = new GenericDatumWriter[AnyRef](schema)
       obj match {
         case bytes: Array[Byte] =>

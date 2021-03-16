@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.process.registrar
 
 import java.util.concurrent.TimeUnit
-
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.{LazyLogging, Logger}
 import org.apache.flink.api.common.functions.RuntimeContext
@@ -12,6 +11,7 @@ import org.slf4j.LoggerFactory
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
+import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.testmode.{SinkInvocationCollector, TestRunId, TestServiceInvocationCollector}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.compiledgraph.part._
@@ -39,18 +39,18 @@ import scala.language.implicitConversions
   NOTE: We should try to use *ONLY* core Flink API here, to avoid version compatibility problems.
   Various NK-dependent Flink hacks should be, if possible, placed in StreamExecutionEnvPreparer.
  */
-class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, ResultCollector) => ClassLoader => FlinkProcessCompilerData,
+class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, DeploymentData, ResultCollector) => ClassLoader => FlinkProcessCompilerData,
                             streamExecutionEnvPreparer: StreamExecutionEnvPreparer,
                             eventTimeMetricDuration: FiniteDuration) extends LazyLogging {
 
   implicit def millisToTime(duration: Long): Time = Time.of(duration, TimeUnit.MILLISECONDS)
 
-  def register(env: StreamExecutionEnvironment, process: EspProcess, processVersion: ProcessVersion, testRunId: Option[TestRunId] = None): Unit = {
+  def register(env: StreamExecutionEnvironment, process: EspProcess, processVersion: ProcessVersion, deploymentData: DeploymentData, testRunId: Option[TestRunId] = None): Unit = {
     usingRightClassloader(env) {
       //TODO: move creation outside Registrar, together with refactoring SinkInvocationCollector...
       val collector = testRunId.map(new TestServiceInvocationCollector(_)).getOrElse(ProductionServiceInvocationCollector)
 
-      val processCompilation = compileProcess(process, processVersion, collector)
+      val processCompilation = compileProcess(process, processVersion, deploymentData, collector)
       val userClassLoader = UserClassLoader.get("root")
       //here we are sure the classloader is ok
       val processWithDeps = processCompilation(userClassLoader)

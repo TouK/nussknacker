@@ -4,12 +4,14 @@ const path = require("path")
 const webpack = require("webpack")
 const childProcess = require("child_process")
 const HtmlWebpackPlugin = require("html-webpack-plugin")
+const HtmlWebpackHarddiskPlugin = require("html-webpack-harddisk-plugin")
 const TerserPlugin = require("terser-webpack-plugin")
 const CopyPlugin = require("copy-webpack-plugin")
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin")
 const {camelCase} = require("lodash")
 const MomentLocalesPlugin = require("moment-locales-webpack-plugin")
 const ReactRefreshWebpackPlugin = require("@pmmmwh/react-refresh-webpack-plugin")
+const PreloadWebpackPlugin = require("@vue/preload-webpack-plugin")
 
 const NODE_ENV = process.env.NODE_ENV || "development"
 const GIT_HASH = childProcess.execSync("git log -1 --format=%H").toString()
@@ -133,12 +135,29 @@ module.exports = {
       hash: true,
       filename: "main.html",
       template: "index_template_no_doctype.ejs",
+
     }),
+    new HtmlWebpackHarddiskPlugin(),
     new CopyPlugin({
       patterns: [
         {from: "translations", to: "assets/locales"},
         {from: "assets/img/favicon.png", to: "assets/img/favicon.png"},
       ],
+    }),
+    new PreloadWebpackPlugin({
+      rel: "preload",
+      as: "font",
+      include: "allAssets",
+      fileWhitelist: [/\.(woff2?|eot|ttf|otf)(\?.*)?$/i],
+    }),
+    new PreloadWebpackPlugin({
+      rel: "preload",
+      as: "image",
+      include: "allAssets",
+      fileWhitelist: [/\.(svg)(\?.*)?$/i],
+    }),
+    new webpack.ProvidePlugin({
+      process: "process/browser",
     }),
     new webpack.DefinePlugin({
       __DEV__: !isProd,

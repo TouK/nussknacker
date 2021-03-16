@@ -14,6 +14,8 @@ class FlinkModelJar extends LazyLogging {
   //TODO: handle multiple models?
   private var modelFile: Option[File] = None
 
+  //we want to have *different* file names for *different* model data (e.g. after rebuild etc.)
+  //currently we just generate random file names
   def buildJobJar(modelData: ModelData): File = synchronized {
     modelFile match {
       case Some(file) => file
@@ -24,12 +26,18 @@ class FlinkModelJar extends LazyLogging {
     }
   }
 
-  private def prepareModelFile(modelData: ModelData): File = {
+  protected def generateModelFileName(modelData: ModelData): File = {
     //currently we want to have one such file for one nussknacker execution
     val tempFile = Files.createTempFile("tempModelJar", ".jar").toFile
     tempFile.deleteOnExit()
+    tempFile
+  }
+
+  private def prepareModelFile(modelData: ModelData): File = {
+    val tempFile = generateModelFileName(modelData)
 
     //It seems that Flink leaks file descriptors (ZipEntries) when using file upload + jars embedded in lib folder...
+    //fixed in https://issues.apache.org/jira/browse/FLINK-21164
     modelData.modelClassLoader.urls match {
       case single :: Nil if single.getPath.endsWith(".jar") =>
         logger.info("Single jar file detected, using directly to upload to Flink")
