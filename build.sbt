@@ -786,7 +786,9 @@ lazy val api = (project in engine("api")).
   ).dependsOn(testUtil % "test")
 
 lazy val security = (project in engine("security")).
+  configs(IntegrationTest).
   settings(commonSettings).
+  settings(Defaults.itSettings).
   settings(
     name := "nussknacker-security",
     libraryDependencies ++= {
@@ -801,11 +803,13 @@ lazy val security = (project in engine("security")).
         //Packages below are only for plugin providers purpose
         "io.circe" %% "circe-core" % circeV,
         "com.pauldijou" %% "jwt-circe" % jwtCirceV,
-        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV
+        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
+        "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
+        "com.github.dasniko" % "testcontainers-keycloak" % "1.6.0" % "it,test"
       )
     }
   )
-  .dependsOn(util, httpUtils, testUtil % "test")
+  .dependsOn(util, httpUtils, testUtil % "it,test")
 
 lazy val flinkApi = (project in engine("flink/api")).
   settings(commonSettings).
