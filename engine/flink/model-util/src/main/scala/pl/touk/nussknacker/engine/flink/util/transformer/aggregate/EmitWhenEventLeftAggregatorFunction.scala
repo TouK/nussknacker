@@ -18,7 +18,7 @@ import scala.language.higherKinds
  * It behaves the same as AggregatorFunction with one difference that also publish events when some event will left the slide.
  */
 class EmitWhenEventLeftAggregatorFunction[MapT[K,V]](protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long,
-                                                     override val nodeId: NodeId, protected val storedAggregateType: TypingResult)
+                                                     override val nodeId: NodeId, protected val aggregateElementType: TypingResult)
                                                     (implicit override val rangeMap: FlinkRangeMap[MapT])
   extends LatelyEvictableStateFunction[ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef], MapT[Long, AnyRef]]
     with AggregatorFunctionMixin[MapT] with AddedElementContextStateHolder[MapT] {

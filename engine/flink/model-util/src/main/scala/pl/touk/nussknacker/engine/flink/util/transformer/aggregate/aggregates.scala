@@ -74,6 +74,7 @@ object aggregates {
 
     override def zero: Aggregate = List()
 
+    //append instead of prepend (assess performance considerations...)
     override def addElement(el: Element, agg: Aggregate): Aggregate = el::agg
 
     override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg1 ++ agg2

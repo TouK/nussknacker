@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.{Aggregator, 
 import scala.language.higherKinds
 
 class OuterJoinAggregatorFunction[MapT[K,V]](protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long,
-                                                          override val nodeId: NodeId, protected val storedAggregateType: TypingResult)
+                                                          override val nodeId: NodeId, protected val aggregateElementType: TypingResult)
                                                          (implicit override val rangeMap: FlinkRangeMap[MapT])
   extends LatelyEvictableStateCoFunction[ValueWithContext[String], ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef], MapT[Long, AnyRef]]
     with AggregatorFunctionMixin[MapT] {

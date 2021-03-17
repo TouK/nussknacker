@@ -29,8 +29,9 @@ import scala.language.higherKinds
 // when some element left the slide. If you want to handle this situation, you should use `EmitWhenEventLeftAggregatorFunction`
 // Flinks SlidingWindows are something that is often called HoppingWindow. They consume a lot of memory because each element
 // is stored in multiple windows with different offsets.
+// NOTE: it would be much cleaner if we evaluated aggregateBy here. However, FLINK-10250 prevents us from doing this and we *have* to compute it before
 class AggregatorFunction[MapT[K,V]](protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long,
-                                    override val nodeId: NodeId, protected val storedAggregateType: TypingResult)
+                                    override val nodeId: NodeId, protected val aggregateElementType: TypingResult)
                                    (implicit override val rangeMap: FlinkRangeMap[MapT])
   extends LatelyEvictableStateFunction[ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef], MapT[Long, AnyRef]]
   with AggregatorFunctionMixin[MapT] {
@@ -74,7 +75,10 @@ trait AggregatorFunctionMixin[MapT[K,V]] { self: StateHolder[MapT[Long, AnyRef]]
 
   protected def timeWindowLengthMillis: Long
 
-  protected def storedAggregateType: TypingResult
+  protected def aggregateElementType: TypingResult
+
+  protected val outputType: TypingResult = aggregator.computeOutputType(aggregateElementType).valueOr(e =>
+    throw new IllegalArgumentException("Failed to compute output type: " + e))
 
   protected implicit def rangeMap: FlinkRangeMap[MapT]
 
@@ -107,7 +111,7 @@ trait AggregatorFunctionMixin[MapT[K,V]] { self: StateHolder[MapT[Long, AnyRef]]
   }
 
   protected def computeFinalValue(newState: MapT[Long, aggregator.Aggregate], timestamp: Long): AnyRef = {
-    computeFoldedAggregatedValue(newState, timestamp)
+    aggregator.alignToExpectedType(computeFoldedAggregatedValue(newState, timestamp), outputType)
   }
 
   protected def computeFoldedAggregatedValue(state: MapT[Long, aggregator.Aggregate], timestamp: Long): AnyRef = {

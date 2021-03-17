@@ -22,7 +22,7 @@ import scala.language.higherKinds
  * state eviction on ours own.
  */
 class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K,V]](protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long,
-                                                                     override val nodeId: NodeId, protected val storedAggregateType: TypingResult)
+                                                                     override val nodeId: NodeId, protected val aggregateElementType: TypingResult)
                                                                     (implicit override val rangeMap: FlinkRangeMap[MapT])
   extends KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]
     with StateHolder[MapT[Long, AnyRef]]
