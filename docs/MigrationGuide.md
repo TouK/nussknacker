@@ -29,6 +29,7 @@ To see biggest differences please consult the [changelog](Changelog.md).
 * [#1464](https://github.com/TouK/nussknacker/pull/1464) 
   - Slight change of API of `StringKeyedValueMapper`
   - Change of semantics of some parameters of `AggregatorFunction`, `AggregatorFunctionMixin` (storedAggregateType becomes aggregateElementType)  
+* [#1405](https://github.com/TouK/nussknacker/pull/1405) 'KafkaAvroSink' requires more generic 'AvroSinkValue' as value parameter
 
 ## In version 0.3.0
 
