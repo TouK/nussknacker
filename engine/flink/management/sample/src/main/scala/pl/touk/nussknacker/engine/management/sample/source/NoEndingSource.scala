@@ -6,20 +6,19 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
-import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
-import org.apache.flink.streaming.api.windowing.time.Time
-import pl.touk.nussknacker.engine.api.process.TestDataParserProvider
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
-import pl.touk.nussknacker.engine.flink.api.process.BasicFlinkSource
+import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSourceTestSupport}
 import org.apache.flink.streaming.api.scala._
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 
 //this not ending source is more reliable in tests than CollectionSource, which terminates quickly
-class NoEndingSource extends BasicFlinkSource[String] with TestDataParserProvider[String] {
+class NoEndingSource extends BasicFlinkSource[String] with FlinkSourceTestSupport[String] {
   override val typeInformation: TypeInformation[String] = implicitly[TypeInformation[String]]
 
   override def timestampAssigner: Option[TimestampWatermarkHandler[String]] = Option(StandardTimestampWatermarkHandler
     .boundedOutOfOrderness[String](_ => System.currentTimeMillis(), Duration.ofMinutes(10)))
+
+  override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner
 
   override def testDataParser: TestDataParser[String] = new NewLineSplittedTestDataParser[String] {
     override def parseElement(testElement: String): String = testElement

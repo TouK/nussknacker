@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNod
 import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerBranchParameter, DefinedEagerParameter, DefinedSingleParameter, FailedToDefineParameter, JoinGenericNodeTransformation, NodeDependencyValue, OutputVariableNameValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency}
-import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, Source, SourceFactory, TestDataGenerator, TestDataParserProvider}
+import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, Source, SourceFactory, TestDataGenerator, SourceTestSupport}
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.TestInfoProvider

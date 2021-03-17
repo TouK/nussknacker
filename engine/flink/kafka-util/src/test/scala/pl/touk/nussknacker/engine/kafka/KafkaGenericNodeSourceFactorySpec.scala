@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.context.transformation.TypedNodeDependencyValue
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.ReturningType
+import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordDeserializationSchemaFactory, ConsumerRecordToJsonFormatter, DeserializedConsumerRecord}
 import pl.touk.nussknacker.engine.kafka.serialization.{FixedKafkaDeserializationSchemaFactory, KafkaDeserializationSchemaFactory}
@@ -94,11 +95,11 @@ class KafkaGenericNodeSourceFactorySpec extends FunSuite with Matchers with Kafk
     source.testDataParser.parseTestData(bytes)
   }
 
-  private def createSource(sourceFactory: KafkaGenericNodeSourceFactory[Any], topic: String): Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef] with ReturningType = {
+  private def createSource(sourceFactory: KafkaGenericNodeSourceFactory[Any], topic: String): Source[AnyRef] with TestDataGenerator with FlinkSourceTestSupport[AnyRef] with ReturningType = {
     val source = sourceFactory
       .implementation(Map(KafkaGenericNodeSourceFactory.TopicParamName -> topic),
         List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)), None)
-      .asInstanceOf[Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef] with ReturningType]
+      .asInstanceOf[Source[AnyRef] with TestDataGenerator with FlinkSourceTestSupport[AnyRef] with ReturningType]
     source
   }
 

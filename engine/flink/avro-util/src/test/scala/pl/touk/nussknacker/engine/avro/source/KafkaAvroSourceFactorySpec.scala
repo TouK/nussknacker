@@ -9,7 +9,7 @@ import org.scalatest.Assertion
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.TypedNodeDependencyValue
-import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator, TestDataParserProvider}
+import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{ContextInterpreter, MetaData, StreamMetaData}
@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, SchemaDeterminerError}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.{GenericNodeTransformationValidator, TransformationResult}
+import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -182,7 +183,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     deserializedObj shouldEqual List(givenObj)
   }
 
-  private def createAndVerifySource(sourceFactory: KafkaAvroSourceFactory[Any], topic: String, versionOption: SchemaVersionOption, expectedSchema: Schema): Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef] with ReturningType = {
+  private def createAndVerifySource(sourceFactory: KafkaAvroSourceFactory[Any], topic: String, versionOption: SchemaVersionOption, expectedSchema: Schema): Source[AnyRef] with TestDataGenerator with FlinkSourceTestSupport[AnyRef] with ReturningType = {
     val version = versionOption match {
       case LatestSchemaVersion => SchemaVersionOption.LatestOptionName
       case ExistingSchemaVersion(version) => version.toString
@@ -190,7 +191,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     val source = sourceFactory
       .implementation(Map(KafkaAvroBaseTransformer.TopicParamName -> topic, KafkaAvroBaseTransformer.SchemaVersionParamName -> version),
         List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)), None)
-      .asInstanceOf[Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef] with ReturningType]
+      .asInstanceOf[Source[AnyRef] with TestDataGenerator with FlinkSourceTestSupport[AnyRef] with ReturningType]
 
     source.returnType shouldEqual AvroSchemaTypeDefinitionExtractor.typeDefinition(expectedSchema)
 

@@ -27,13 +27,13 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
-import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, NewLineSplittedTestDataParser, TestDataParser, TestParsingUtils}
+import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType, TypedMap, typing}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.context.InitContextFunction
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
@@ -695,7 +695,7 @@ object SampleNodes {
 
       new CollectionSource[String](StreamExecutionEnvironment.getExecutionEnvironment.getConfig, elements, None, Typed[String])
         with TestDataGenerator
-        with TestDataParserProvider[String] {
+        with FlinkSourceTestSupport[String] {
 
         override def initContext(processId: String, taskName: String): InitContextFunction[String] = new InitContextFunction[String](processId, taskName) {
           override def map(input: String): Context = {
@@ -715,6 +715,7 @@ object SampleNodes {
           override def parseElement(testElement: String): String = testElement
         }
 
+        override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner
       }
     }
 
@@ -792,13 +793,15 @@ object SampleNodes {
   }
 
   def simpleRecordSource(data: List[SimpleRecord]): FlinkSourceFactory[SimpleRecord] = FlinkSourceFactory.noParam(
-    new CollectionSource[SimpleRecord](new ExecutionConfig, data, Some(ascendingTimestampExtractor), Typed[SimpleRecord]) with TestDataParserProvider[SimpleRecord] {
+    new CollectionSource[SimpleRecord](new ExecutionConfig, data, Some(ascendingTimestampExtractor), Typed[SimpleRecord]) with FlinkSourceTestSupport[SimpleRecord] {
       override def testDataParser: TestDataParser[SimpleRecord] = newLineSplittedTestDataParser
+
+      override def timestampAssignerForTest: Option[TimestampWatermarkHandler[SimpleRecord]] = timestampAssigner
     })
 
 
   val jsonSource: FlinkSourceFactory[SimpleJsonRecord] = FlinkSourceFactory.noParam(
-    new CollectionSource[SimpleJsonRecord](new ExecutionConfig, List(), None, Typed[SimpleJsonRecord]) with TestDataParserProvider[SimpleJsonRecord] {
+    new CollectionSource[SimpleJsonRecord](new ExecutionConfig, List(), None, Typed[SimpleJsonRecord]) with FlinkSourceTestSupport[SimpleJsonRecord] {
       override def testDataParser: TestDataParser[SimpleJsonRecord] = new EmptyLineSplittedTestDataParser[SimpleJsonRecord] {
 
         override def parseElement(json: String): SimpleJsonRecord = {
@@ -806,6 +809,8 @@ object SampleNodes {
         }
 
       }
+
+      override def timestampAssignerForTest: Option[TimestampWatermarkHandler[SimpleJsonRecord]] = timestampAssigner
     }
   )
 
@@ -813,7 +818,7 @@ object SampleNodes {
 
     @MethodToInvoke
     def create(processMetaData: MetaData,  @ParamName("type") definition: java.util.Map[String, _]): Source[_] = {
-      new CollectionSource[TypedMap](new ExecutionConfig, List(), None, Typed[TypedMap]) with TestDataParserProvider[TypedMap] with ReturningType {
+      new CollectionSource[TypedMap](new ExecutionConfig, List(), None, Typed[TypedMap]) with FlinkSourceTestSupport[TypedMap] with ReturningType {
 
         override def testDataParser: TestDataParser[TypedMap] = new EmptyLineSplittedTestDataParser[TypedMap] {
           override def parseElement(json: String): TypedMap = {
@@ -823,6 +828,7 @@ object SampleNodes {
 
         override val returnType: typing.TypingResult = TypingUtils.typeMapDefinition(definition)
 
+        override def timestampAssignerForTest: Option[TimestampWatermarkHandler[TypedMap]] = timestampAssigner
       }
     }
 

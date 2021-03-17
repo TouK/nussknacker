@@ -11,10 +11,10 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.Context
-import pl.touk.nussknacker.engine.api.process.{TestDataGenerator, TestDataParserProvider}
+import pl.touk.nussknacker.engine.api.process.TestDataGenerator
 import pl.touk.nussknacker.engine.api.test.TestDataParser
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource, SourceContextTransformation, SourceTestSupport}
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource, SourceContextTransformation, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.kafka._
 
@@ -28,10 +28,10 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
                      overriddenConsumerGroup: Option[String] = None)
   extends FlinkSource[T]
     with Serializable
-    with SourceTestSupport[T]
+    with FlinkSourceTestSupport[T]
     with SourceContextTransformation[T]
-    with TestDataParserProvider[T]
-    with TestDataGenerator with ExplicitUidInOperatorsSupport {
+    with TestDataGenerator
+    with ExplicitUidInOperatorsSupport {
 
   private lazy val topics: List[String] = preparedTopics.map(_.prepared)
 

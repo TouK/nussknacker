@@ -11,7 +11,7 @@ trait Source[+T] {
 
 }
 
-trait TestDataParserProvider[+T] { self: Source[T] =>
+trait SourceTestSupport[+T] { self: Source[T] =>
   def testDataParser: TestDataParser[T]
 }
 

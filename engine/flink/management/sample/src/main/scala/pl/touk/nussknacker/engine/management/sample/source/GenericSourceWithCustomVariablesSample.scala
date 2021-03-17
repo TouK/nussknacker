@@ -1,15 +1,16 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
 import org.apache.flink.streaming.api.scala._
-import pl.touk.nussknacker.engine.api.{Context, ContextInterpreter}
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, OutputVariableNameValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
-import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator, TestDataParserProvider}
+import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkSourceFactory, FlinkSourceTestSupport}
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.context.InitContextFunction
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 
@@ -53,7 +54,7 @@ object GenericSourceWithCustomVariablesSample extends FlinkSourceFactory[String]
 
     new CollectionSource[String](StreamExecutionEnvironment.getExecutionEnvironment.getConfig, elements, None, Typed[String])
       with TestDataGenerator
-      with TestDataParserProvider[String] {
+      with FlinkSourceTestSupport[String] {
 
       override def initContext(processId: String, taskName: String): InitContextFunction[String] = new InitContextFunction[String](processId, taskName) {
         override def map(input: String): Context = {
@@ -74,6 +75,7 @@ object GenericSourceWithCustomVariablesSample extends FlinkSourceFactory[String]
         override def parseElement(testElement: String): String = testElement
       }
 
+      override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner
     }
   }
 
