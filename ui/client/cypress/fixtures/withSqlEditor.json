@@ -1,0 +1,84 @@
+{
+  "metaData" : {
+    "id" : "sql-editor",
+    "typeSpecificData" : {
+      "parallelism" : 1,
+      "splitStateToDisk" : true,
+      "useAsyncInterpretation" : null,
+      "checkpointIntervalInSeconds" : null,
+      "type" : "StreamMetaData"
+    },
+    "isSubprocess" : false,
+    "additionalFields" : {
+      "description" : null,
+      "groups" : [
+      ],
+      "properties" : {
+        "numberOfThreads" : "1",
+        "environment" : "test"
+      }
+    },
+    "subprocessVersions" : {
+      
+    }
+  },
+  "exceptionHandlerRef" : {
+    "parameters" : [
+    ]
+  },
+  "nodes" : [
+    {
+      "id" : "sql-source",
+      "ref" : {
+        "typ" : "sql-source",
+        "parameters" : [
+          {
+            "name" : "sql",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'SELECT\r\n A.SRV_SUBSCRIPTION_ID AS SUBSCRIPTION_ID, \r\n TO_CHAR(A.SYSDATE,''YYYY-MM-DD'') AS CHAR_DATE\r\nFROM\r\n  TEST.TEST_TABLE AS A\r\nWHERE A.DATE_FIELD='+#DATE.nowTimestamp+''"
+            }
+          }
+        ]
+      },
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : -243,
+          "y" : -302
+        }
+      },
+      "type" : "Source"
+    },
+    {
+      "id" : "kafka-string",
+      "ref" : {
+        "typ" : "kafka-string",
+        "parameters" : [
+          {
+            "name" : "topic",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'out'"
+            }
+          }
+        ]
+      },
+      "endResult" : {
+        "language" : "spel",
+        "expression" : "#input"
+      },
+      "isDisabled" : null,
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : -80,
+          "y" : -94
+        }
+      },
+      "type" : "Sink"
+    }
+  ],
+  "additionalBranches" : [
+  ]
+}

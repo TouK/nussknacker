@@ -214,7 +214,7 @@ export class NodeDetailsContent extends React.Component {
         return (
           <div className="node-table-body">
             {this.idField()}
-            {this.state.editedNode.service.parameters.map((param, index) => {
+            {this.serviceParameters.map((param, index) => {
               return (
                 <div className="node-block" key={this.props.node.id + param.name + index}>
                   {this.createParameterExpressionField(
@@ -510,7 +510,7 @@ export class NodeDetailsContent extends React.Component {
     return (
       <div className="node-table-body">
         {this.idField()}
-        {this.state.editedNode.ref.parameters.map((param, index) => {
+        {this.refParameters.map((param, index) => {
           return (
             <div className="node-block" key={this.props.node.id + param.name + index}>
               {this.createParameterExpressionField(
@@ -670,11 +670,11 @@ export class NodeDetailsContent extends React.Component {
     switch (NodeUtils.nodeType(this.state.editedNode)) {
       case "Source": {
         const commonFields = ["id"]
-        return _.concat(commonFields, this.state.editedNode.ref.parameters.map(param => param.name))
+        return _.concat(commonFields, this.refParameters.map(param => param.name))
       }
       case "Sink": {
         const commonFields = ["id", DEFAULT_EXPRESSION_ID]
-        return _.concat(commonFields, this.state.editedNode.ref.parameters.map(param => param.name))
+        return _.concat(commonFields, this.refParameters.map(param => param.name))
       }
       case "SubprocessInputDefinition": {
         return ["id"]
@@ -685,16 +685,16 @@ export class NodeDetailsContent extends React.Component {
         return ["id", DEFAULT_EXPRESSION_ID]
       case "Enricher":
         const commonFields = ["id", "output"]
-        const paramFields = this.state.editedNode.service.parameters.map(param => param.name)
+        const paramFields = this.serviceParameters.map(param => param.name)
         return _.concat(commonFields, paramFields)
       case "Processor": {
         const commonFields = ["id"]
-        const paramFields = this.state.editedNode.service.parameters.map(param => param.name)
+        const paramFields = this.serviceParameters.map(param => param.name)
         return _.concat(commonFields, paramFields)
       }
       case "SubprocessInput": {
         const commonFields = ["id"]
-        const paramFields = this.state.editedNode.ref.parameters.map(param => param.name)
+        const paramFields = this.refParameters.map(param => param.name)
         return _.concat(commonFields, paramFields)
       }
       case "Join": {
@@ -725,6 +725,14 @@ export class NodeDetailsContent extends React.Component {
       default:
         return []
     }
+  }
+
+  get serviceParameters() {
+    return this.state.editedNode.service.parameters || []
+  }
+
+  get refParameters() {
+    return this.state.editedNode.ref.parameters || []
   }
 
   joinFields = (parametersFromDefinition) => {

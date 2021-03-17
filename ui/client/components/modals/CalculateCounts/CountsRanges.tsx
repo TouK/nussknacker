@@ -2,7 +2,7 @@ import moment, {Moment} from "moment"
 import React, {CSSProperties, useEffect, useMemo, useState} from "react"
 import {TFunction, useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"
-import {useFFlags} from "../../../common/FeatureFlagsUtils"
+import {useFeatureFlags} from "../../../common/featureFlags"
 import HttpService from "../../../http/HttpService"
 import {getProcessId} from "../../../reducers/selectors/graph"
 import {CountsRangesButtons, Range} from "./CountsRangesButtons"
@@ -45,7 +45,7 @@ interface RangesProps {
 function useDeployHistory(processId: string): Range[] {
   const {t} = useTranslation()
   const [deploys, setDeploys] = useState<Range[]>([])
-  const {showDeploymentsInCounts} = useFFlags()
+  const {showDeploymentsInCounts} = useFeatureFlags()
   useEffect(() => {
     if (!showDeploymentsInCounts) {
       setDeploys([])

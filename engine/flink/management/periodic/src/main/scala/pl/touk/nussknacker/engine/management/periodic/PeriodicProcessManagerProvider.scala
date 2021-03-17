@@ -6,13 +6,16 @@ import pl.touk.nussknacker.engine.api.TypeSpecificData
 import pl.touk.nussknacker.engine.api.deployment.ProcessManager
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.management.FlinkConfig
-import pl.touk.nussknacker.engine.management.periodic.service.{DefaultAdditionalDeploymentDataProvider, EmptyListener}
+import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, DefaultAdditionalDeploymentDataProvider, EmptyListener, PeriodicProcessListener}
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.{ModelData, ProcessManagerProvider}
 
 class PeriodicProcessManagerProvider(delegate: ProcessManagerProvider,
                                      periodicPropertyExtractor: PeriodicPropertyExtractor = CronPropertyExtractor(),
-                                     enrichDeploymentWithJarDataFactory: EnrichDeploymentWithJarDataFactory = EnrichDeploymentWithJarDataFactory.noOp) extends ProcessManagerProvider with LazyLogging {
+                                     enrichDeploymentWithJarDataFactory: EnrichDeploymentWithJarDataFactory = EnrichDeploymentWithJarDataFactory.noOp,
+                                     listener: PeriodicProcessListener = EmptyListener,
+                                     additionalDeploymentDataProvider: AdditionalDeploymentDataProvider = DefaultAdditionalDeploymentDataProvider
+                                    ) extends ProcessManagerProvider with LazyLogging {
 
   override def name: String = s"${delegate.name}Periodic"
 
@@ -32,8 +35,8 @@ class PeriodicProcessManagerProvider(delegate: ProcessManagerProvider,
       flinkConfig = flinkConfig,
       originalConfig = config,
       modelData = modelData,
-      EmptyListener,
-      DefaultAdditionalDeploymentDataProvider
+      listener,
+      additionalDeploymentDataProvider
     )
   }
 

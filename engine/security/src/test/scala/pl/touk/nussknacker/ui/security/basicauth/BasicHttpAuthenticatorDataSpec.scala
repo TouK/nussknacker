@@ -6,13 +6,14 @@ import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.{ConfigRu
 import pl.touk.nussknacker.ui.security.api.AuthenticationMethod.AuthenticationMethod
 import pl.touk.nussknacker.ui.security.api.{AuthenticationMethod, CachingHashesConfig, DefaultAuthenticationConfiguration}
 
+import java.net.URI
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
 class BasicHttpAuthenticatorDataSpec extends FunSpec with Matchers {
   class DummyConfiguration(usersList: List[ConfigUser], rulesList: List[ConfigRule] = List.empty, method: AuthenticationMethod = AuthenticationMethod.BasicAuth,
-                           usersFile: String = "", cachingHashes: Option[CachingHashesConfig] = None)
-    extends DefaultAuthenticationConfiguration(method: AuthenticationMethod, usersFile: String, cachingHashes) {
+                           usersFile: URI = URI.create("classpath:basicauth-user.conf"), cachingHashes: Option[CachingHashesConfig] = None)
+    extends DefaultAuthenticationConfiguration(method: AuthenticationMethod, usersFile: URI, cachingHashes) {
     override lazy val users: List[ConfigUser] = usersList
     override lazy val rules: List[ConfigRule] = rulesList
   }

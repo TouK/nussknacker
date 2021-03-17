@@ -1,22 +1,18 @@
 import i18next from "i18next"
 import React, {useCallback, useEffect, useMemo} from "react"
-import {UnknownFunction} from "../../../../../types/common"
 import {SimpleEditor} from "./Editor"
 import {Formatter, FormatterType, typeFormatters} from "./Formatter"
 import {getQuotedStringPattern, QuotationMark} from "./SpelQuotesUtils"
-import RawEditor from "./RawEditor"
+import RawEditor, {RawEditorProps} from "./RawEditor"
 import {ExpressionLang, ExpressionObj} from "./types"
 
-type Props = {
-  expressionObj: ExpressionObj,
-  onValueChange: UnknownFunction,
-  className: string,
+interface Props extends RawEditorProps {
   formatter: Formatter,
 }
 
 const SqlEditor: SimpleEditor<Props> = (props: Props) => {
 
-  const {expressionObj, onValueChange, className, formatter} = props
+  const {expressionObj, onValueChange, className, formatter, ...passProps} = props
   const sqlFormatter = formatter == null ? typeFormatters[FormatterType.Sql] : formatter
 
   const valueChange = useCallback(
@@ -36,13 +32,16 @@ const SqlEditor: SimpleEditor<Props> = (props: Props) => {
 
   useEffect(() => {
     valueChange(value.expression)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (
     <RawEditor
+      {...passProps}
       onValueChange={valueChange}
       expressionObj={value}
       className={className}
+      rows={6}
     />
   )
 }

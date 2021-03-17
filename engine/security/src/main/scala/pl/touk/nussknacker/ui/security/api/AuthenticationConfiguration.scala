@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.ui.security.api
 
 import java.io.File
-import java.net.URI
+import java.net.{URI, URL}
 import java.security.PublicKey
 
 import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.util.cache.CacheConfig
+import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.{ConfigRule, ConfigUser}
 import pl.touk.nussknacker.ui.security.api.AuthenticationMethod.AuthenticationMethod
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
@@ -19,9 +20,9 @@ trait AuthenticationConfiguration {
   def idTokenNonceVerificationRequired: Boolean
   def implicitGrantEnabled: Boolean
   def method: AuthenticationMethod
-  def usersFile: String
+  def usersFile: URI
 
-  val userConfig: Config = ConfigFactory.parseFile(new File(usersFile))
+  val userConfig: Config = ConfigFactoryExt.parseUri(usersFile)
 
   lazy val users: List[ConfigUser] = AuthenticationConfiguration.getUsers(userConfig)
 
@@ -64,7 +65,7 @@ object AuthenticationConfiguration {
                         globalPermissions: List[GlobalPermission] = List.empty)
 }
 
-case class DefaultAuthenticationConfiguration(method: AuthenticationMethod = AuthenticationMethod.Other, usersFile: String,
+case class DefaultAuthenticationConfiguration(method: AuthenticationMethod = AuthenticationMethod.Other, usersFile: URI,
                                               cachingHashes: Option[CachingHashesConfig]) extends AuthenticationConfiguration {
 
   def cachingHashesOrDefault: CachingHashesConfig = cachingHashes.getOrElse(CachingHashesConfig.defaultConfig)
@@ -75,10 +76,10 @@ case class DefaultAuthenticationConfiguration(method: AuthenticationMethod = Aut
 }
 
 object DefaultAuthenticationConfiguration {
-  import net.ceedubs.ficus.Ficus._
+  import AuthenticationConfiguration._
+  import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
-  import AuthenticationConfiguration._
 
   def create(config: Config): DefaultAuthenticationConfiguration =
     config.as[DefaultAuthenticationConfiguration](authenticationConfigPath)
