@@ -10,13 +10,17 @@ import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionPa
 import pl.touk.nussknacker.engine.avro.sink.AvroSinkValueParameter.FieldName
 import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
 
-private[sink] case object AvroSinkValueParameter {
+
+case object AvroSinkValueParameter {
 
   type FieldName = String
 
   val restrictedParamNames: Set[FieldName] =
     Set(SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, TopicParamName)
 
+  /*
+    We extract editor form from TypingResult
+   */
   def apply(typing: TypingResult)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, AvroSinkValueParameter] =
     toSinkValueParameter(typing, paramName = None)
 
@@ -58,7 +62,10 @@ private[sink] case object AvroSinkValueParameter {
   }
 }
 
-private[sink] sealed trait AvroSinkValueParameter {
+/**
+  This trait maps TypingResult information to structure of Avro sink editor (and then to Avro message), see AvroSinkValue
+ */
+sealed trait AvroSinkValueParameter {
 
   def toParameters: List[Parameter] = this match {
     case AvroSinkPrimitiveValueParameter(value) => value :: Nil
@@ -66,8 +73,8 @@ private[sink] sealed trait AvroSinkValueParameter {
   }
 }
 
-private[sink] case class AvroSinkPrimitiveValueParameter(value: Parameter)
+case class AvroSinkPrimitiveValueParameter(value: Parameter)
   extends AvroSinkValueParameter
 
-private[sink] case class AvroSinkRecordParameter(fields: Map[FieldName, AvroSinkValueParameter])
+case class AvroSinkRecordParameter(fields: Map[FieldName, AvroSinkValueParameter])
   extends AvroSinkValueParameter

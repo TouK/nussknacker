@@ -27,10 +27,13 @@ object AvroSinkValue {
     }
 }
 
-private[sink] sealed trait AvroSinkValue
+/*
+  Intermediate object which helps with mapping Avro sink editor structure to Avro message (see AvroSinkValueParameter)
+ */
+sealed trait AvroSinkValue
 
-private[sink] case class AvroSinkSingleValue(value: LazyParameter[AnyRef])
+case class AvroSinkSingleValue(value: LazyParameter[AnyRef])
   extends AvroSinkValue
 
-private[sink] case class AvroSinkRecordValue(fields: Map[String, AvroSinkValue])
+case class AvroSinkRecordValue(fields: Map[String, AvroSinkValue])
   extends AvroSinkValue
