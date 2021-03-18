@@ -20,13 +20,22 @@ open http://localhost:3000
 `Jest` should work out of the box, just click green arrow.
 
 ## E2E (cypress) tests
-_You should copy and fill `cypress/fixtures/env.json.template` into `cypress/fixtures/env.json` before start._
+_You should copy and fill `cypress.env.json.template` into `cypress.env.json` before start._
 
-### Start server and test (CI)
+####Image snapshots are **OS** and are even resolution dependent!
+
+Compare, update (when needed) and commit **image snapshots** made with `BACKEND_DOMAIN` set to url of backend started with `npm run start-backend:docker`
+
+#### Start server and test (CI) with already running BE
+
 ```npm test:e2e:ci```
 
-### CLI test with running devServer
+#### Start BE, start FE server and test inside linux image (snapshots for **CI**) 
+
+```npm test:e2e:docker```
+
+#### CLI test with running devServer
 ```npm test:e2e```
 
-### GUI test with running devServer
+#### GUI test with running devServer
 ```npm test:e2e:dev```
