@@ -1,6 +1,6 @@
 import {css} from "emotion"
 import {isEmpty} from "lodash"
-import React, {useState} from "react"
+import React, {useCallback, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"
 import {useNkTheme} from "../../../containers/theme"
@@ -28,11 +28,14 @@ export function CreatorPanel(): JSX.Element {
   })
 
   const [filter, setFilter] = useState("")
+  const clearFilter = useCallback(() => setFilter(""), [])
+
   return (
     <CollapsibleToolbar id="CREATOR-PANEL" title={t("panels.creator.title", "Creator panel")} isHidden={!capabilities.write}>
       <InputWithIcon
         className={styles}
         onChange={setFilter}
+        onClear={clearFilter}
         value={filter}
         placeholder={t("panels.creator.filter.placeholder", "type here to filter...")}
       >

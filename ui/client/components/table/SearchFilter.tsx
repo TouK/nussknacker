@@ -10,11 +10,11 @@ import {InputWithIcon} from "../themed/InputWithIcon"
 import {ValueFieldProps} from "../valueField"
 import searchIconStyles from "./searchIcon.styl"
 
-function AddonIcon(props: {className?: string, svg: string}) {
+export function AddonIcon(props: {className?: string, svg: string}): JSX.Element {
   return <SvgDiv className={cx(searchIconStyles.icon, props.className)} svgFile={props.svg}/>
 }
 
-export function SearchIcon(props: {isEmpty: boolean}) {
+export function SearchIcon(props: {isEmpty?: boolean}): JSX.Element {
   const {theme} = useNkTheme()
   const styles = css({
     ".icon-fill": {
@@ -32,7 +32,7 @@ function TableFilter(props: PropsWithChildren<{className?: string}>) {
   )
 }
 
-function SearchFilter(props: ValueFieldProps<string>) {
+function SearchFilter(props: ValueFieldProps<string>): JSX.Element {
   const {t} = useTranslation()
   return (
     <TableFilter className={processesTableStyles.filterInput}>
