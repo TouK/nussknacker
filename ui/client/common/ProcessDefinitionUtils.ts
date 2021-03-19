@@ -1,11 +1,11 @@
 import {flatMap} from "lodash"
-import {ProcessDefinitionData, PossibleNode, NodeCategory} from "../types"
+import {NodeCategory, NodesGroup, PossibleNode, ProcessDefinitionData} from "../types"
 
 function getPossibleNodesInCategory(possibleNodes: PossibleNode[], category: NodeCategory) {
   return possibleNodes.filter(node => node.categories.includes(category))
 }
 
-export function getNodesToAddInCategory(processDefinitionData: ProcessDefinitionData, category: NodeCategory) {
+export function getNodesToAddInCategory(processDefinitionData: ProcessDefinitionData, category: NodeCategory): NodesGroup[] {
   return (processDefinitionData.nodesToAdd || []).map(group => {
     return {
       ...group,
@@ -14,7 +14,16 @@ export function getNodesToAddInCategory(processDefinitionData: ProcessDefinition
   })
 }
 
-export function getFlatNodesToAddInCategory(processDefinitionData: ProcessDefinitionData, category: NodeCategory) {
+export function getFlatNodesToAddInCategory(processDefinitionData: ProcessDefinitionData, category: NodeCategory): PossibleNode[] {
   const nodesToAdd = getNodesToAddInCategory(processDefinitionData, category)
   return flatMap(nodesToAdd, group => group.possibleNodes)
+}
+
+export function filterNodesByLabel(filter: string): (nodesGroup: NodesGroup) => NodesGroup {
+  const regExp = RegExp(filter, `ig`)
+  const predicate = ({label}: PossibleNode) => regExp.test(label)
+  return (nodesGroup: NodesGroup): NodesGroup => ({
+    ...nodesGroup,
+    possibleNodes: nodesGroup.possibleNodes.filter(predicate),
+  })
 }

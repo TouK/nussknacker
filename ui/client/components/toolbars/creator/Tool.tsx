@@ -1,12 +1,14 @@
+import {cloneDeep, memoize} from "lodash"
 import React, {useMemo} from "react"
 import {useDrag} from "react-dnd"
-import "../stylesheets/toolBox.styl"
-import {cloneDeep, memoize} from "lodash"
-import {NodeType, PossibleNode} from "../types"
+import Highlighter from "react-highlight-words"
 import {useSelector} from "react-redux"
-import {getProcessDefinitionData} from "../reducers/selectors/settings"
-import ProcessUtils from "../common/ProcessUtils"
-import {absoluteBePath} from "../common/UrlUtils"
+import ProcessUtils from "../../../common/ProcessUtils"
+import {absoluteBePath} from "../../../common/UrlUtils"
+import {useNkTheme} from "../../../containers/theme"
+import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
+import "../../../stylesheets/toolBox.styl"
+import {NodeType} from "../../../types"
 
 export const DndTypes = {
   ELEMENT: "element",
@@ -15,21 +17,32 @@ export const DndTypes = {
 type OwnProps = {
   nodeModel: NodeType,
   label: string,
+  highlight?: string,
 }
 
 export default function Tool(props: OwnProps): JSX.Element {
-  const {label, nodeModel} = props
+  const {label, nodeModel, highlight} = props
   const icon = useToolIcon(nodeModel)
   const [collectedProps, drag] = useDrag({
     item: {...cloneDeep(nodeModel), id: label, type: DndTypes.ELEMENT},
     begin: () => ({...cloneDeep(nodeModel), id: label}),
   })
 
+  const {theme} = useNkTheme()
+
   return (
     <div className="tool" ref={drag}>
       <div className="toolWrapper">
-        <img src={icon} alt={"node icon"} className="toolIcon"/>
-        {label}
+        <img src={icon} alt={`node icon`} className="toolIcon"/>
+        <Highlighter
+          textToHighlight={label}
+          searchWords={[highlight]}
+          highlightTag={`span`}
+          highlightStyle={{
+            color: theme.colors.warning,
+            background: theme.colors.secondaryBackground,
+          }}
+        />
       </div>
     </div>
   )
