@@ -18,7 +18,7 @@ export type SettingsState = {
 }
 
 export type AuthenticationSettings = {
-  backend: AuthBackends,
+  backend?: AuthBackends,
   authorizeUrl?: string,
   jwtAuthServerPublicKey?: string,
   jwtIdTokenNonceVerificationRequired?: boolean,
@@ -28,9 +28,7 @@ export type AuthenticationSettings = {
 const initialState: SettingsState = {
   loggedUser: {},
   featuresSettings: {},
-  authenticationSettings: {
-    backend: AuthBackends.BASIC,
-  },
+  authenticationSettings: {},
   analyticsSettings: {},
   processDefinitionData: {},
   availableQueryableStates: {},
