@@ -22,7 +22,7 @@ open http://localhost:3000
 ## E2E (cypress) tests
 _You should copy and fill `cypress.env.json.template` into `cypress.env.json` before start._
 
-####Image snapshots are **OS** and are even resolution dependent!
+##### Image snapshots are **OS** and even resolution dependent!
 
 Compare, update (when needed) and commit **image snapshots** made with `BACKEND_DOMAIN` set to url of backend started with `npm run start-backend:docker`
 
