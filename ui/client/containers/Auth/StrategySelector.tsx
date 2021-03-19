@@ -3,18 +3,19 @@ import {useSelector} from "react-redux"
 import {RootState} from "../../reducers"
 import {AuthenticationSettings} from "../../reducers/settings"
 import {STRATEGIES} from "./strategies"
-import {Strategy, StrategyConstructor} from "./Strategy"
+import {Strategy} from "./Strategy"
 
-export function StrategySelector({children, onChange, fallback = STRATEGIES.fallback}: PropsWithChildren<{
+interface Props {
   onChange: (strategy: Strategy) => void,
-  fallback?: StrategyConstructor,
-}>): JSX.Element {
+}
+
+export function StrategySelector({children, onChange}: PropsWithChildren<Props>): JSX.Element {
   const authenticationSettings = useSelector<RootState, AuthenticationSettings>(state => state.settings.authenticationSettings)
   const {backend} = authenticationSettings
 
-  const strategyConstructor = useMemo(() => STRATEGIES[backend] || fallback, [backend, fallback])
-  const strategy = useMemo(() => new strategyConstructor(authenticationSettings), [strategyConstructor, authenticationSettings])
-  const {Wrapper = React.Fragment} = strategy
+  const strategyConstructor = useMemo(() => STRATEGIES[backend], [backend])
+  const strategy = useMemo(() => strategyConstructor && new strategyConstructor(authenticationSettings), [strategyConstructor, authenticationSettings])
+  const Wrapper = strategy?.Wrapper || React.Fragment
 
   useEffect(() => onChange(strategy), [strategy, onChange])
 
