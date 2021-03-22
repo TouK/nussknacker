@@ -1,42 +1,70 @@
 package pl.touk.nussknacker.engine.util.cache
 
+import java.util.concurrent.Executor
+
 import com.github.benmanes.caffeine.cache
-import com.github.benmanes.caffeine.cache.Caffeine
+import com.github.benmanes.caffeine.cache.{Caffeine, Expiry, Ticker}
 
-import scala.concurrent.duration.FiniteDuration
+import scala.compat.java8.FunctionConverters.asJavaBiFunction
+import scala.concurrent.duration.{Deadline, FiniteDuration, NANOSECONDS}
+import scala.concurrent.{ExecutionContext, Future}
 
-class DefaultCache[K, V](cacheConfig: CacheConfig) extends Cache[K, V] {
+private object DefaultCacheBuilder {
 
-  import scala.compat.java8.FunctionConverters._
+  implicit class ConfiguredExpiry[K, V](config: ExpiryConfig[K, V]) extends Expiry[K, V] {
 
-  private lazy val underlying: cache.Cache[K, V] = {
-    val builder = Caffeine
-      .newBuilder()
-      .asInstanceOf[Caffeine[K, V]]
+    override def expireAfterCreate(key: K, value: V, currentTime: Long): Long =
+      config.expireAfterWriteFn(key, value, Deadline(currentTime, NANOSECONDS))
+        .map(_.time.toNanos - currentTime).getOrElse(Long.MaxValue)
 
-    builder
-      .maximumSize(cacheConfig.maximumSize)
-      .weakValues()
+    override def expireAfterUpdate(key: K, value: V, currentTime: Long, currentDuration: Long): Long =
+      expireAfterCreate(key, value, currentTime)
 
-    cacheConfig.expireAfterAccess
-      .foreach(expire => builder.expireAfterAccess(java.time.Duration.ofMillis(expire.toMillis)))
-
-    cacheConfig.expireAfterWrite
-      .foreach(expire => builder.expireAfterWrite(java.time.Duration.ofMillis(expire.toMillis)))
-
-    builder
-      .build[K, V]
+    override def expireAfterRead(key: K, value: V, currentTime: Long, currentDuration: Long): Long =
+      config.expireAfterAccessFn(key, value, Deadline(currentTime, NANOSECONDS))
+        .map(_.time.toNanos - currentTime).getOrElse(currentDuration)
   }
 
-  override def getOrCreate(key: K)(value: => V): V =
-    underlying.get(key, asJavaFunction(k => value))
+  def apply[K, V](cacheConfig: CacheConfig[K, V], ticker: Ticker = Ticker.systemTicker()): Caffeine[K, V] = {
+    Caffeine
+      .newBuilder()
+      .ticker(ticker)
+      .asInstanceOf[Caffeine[K, V]]
+      .maximumSize(cacheConfig.maximumSize)
+      .expireAfter(cacheConfig.expiry)
+  }
 }
 
-object DefaultCache {
+class DefaultCache[K, V](cacheConfig: CacheConfig[K, V], ticker: Ticker = Ticker.systemTicker()) extends Cache[K, V] {
+  private lazy val underlying: cache.Cache[K, V] =
+    DefaultCacheBuilder(cacheConfig, ticker).build()
 
-  def apply[K, V](cacheConfig: CacheConfig = CacheConfig()): Cache[K, V] =
-    new DefaultCache[K, V](cacheConfig)
+  override def getOrCreate(key: K)(value: => V): V = {
+    import scala.compat.java8.FunctionConverters._
+    underlying.get(key, asJavaFunction((_: K) => value))
+  }
+}
 
+class DefaultAsyncCache[K, V](cacheConfig: CacheConfig[K, V], ticker: Ticker = Ticker.systemTicker())(implicit ec: ExecutionContext) extends AsyncCache[K, V] {
+  private lazy val underlying: cache.AsyncCache[K, V] =
+    DefaultCacheBuilder(cacheConfig, ticker)
+      .executor(new Executor {
+        override def execute(runnable: Runnable): Unit = ec.execute(runnable)
+      })
+      .buildAsync()
+
+  override def getOrCreate(key: K)(value: => Future[V]): Future[V] = {
+    import scala.compat.java8.FunctionConverters._
+    import scala.compat.java8.FutureConverters._
+    underlying.get(key, asJavaBiFunction((_: K, _: Executor) => {
+      value.toJava.toCompletableFuture
+    })).toScala
+  }
+
+  override def put(key: K)(value: Future[V]): Unit = {
+    import scala.compat.java8.FutureConverters._
+    underlying.put(key, value.toJava.toCompletableFuture)
+  }
 }
 
 class SingleValueCache[T](expireAfterAccess: Option[FiniteDuration], expireAfterWrite: Option[FiniteDuration]) {

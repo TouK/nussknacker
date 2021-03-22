@@ -8,7 +8,16 @@
 node_modules/
 npm-debug.log
 
-flow-typed/
-
 dist/
 translations/
+
+coverage/
+*-coverage/
+.nyc_output/
+reports/
+
+cypress.env.json
+cypress/videos
+cypress/screenshots
+cypress/**/__image_snapshots__/**/*.actual.png
+cypress/**/__image_snapshots__/**/*.diff.png

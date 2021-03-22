@@ -1,30 +1,30 @@
 package pl.touk.nussknacker.engine.avro
 
 import java.nio.charset.StandardCharsets
-
-import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
-import org.apache.avro.Schema
+import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.kafka.common.record.TimestampType
+import org.scalatest.BeforeAndAfter
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.DeploymentData
+import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer._
+import pl.touk.nussknacker.engine.avro.KafkaAvroTestProcessConfigCreator.recordingExceptionHandler
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
+import pl.touk.nussknacker.engine.avro.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.avro.schema._
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder, MockSchemaRegistryClient}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaRegistryProvider, SchemaVersionOption}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
-import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache}
 
-class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
+class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   import KafkaAvroIntegrationMockSchemaRegistry._
   import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils._
@@ -32,7 +32,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
     override protected def createSchemaRegistryProvider(processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider =
-      ConfluentSchemaRegistryProvider(factory, processObjectDependencies)
+      ConfluentSchemaRegistryProvider(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient), processObjectDependencies)
   }
 
   protected val paymentSchemas: List[Schema] = List(PaymentV1.schema, PaymentV2.schema)
@@ -40,12 +40,16 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
 
   override def schemaRegistryClient: MockSchemaRegistryClient = schemaRegistryMockClient
 
-  override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
+  override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val modelData = LocalModelData(config, creator)
-    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
+    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), config, executionConfigPreparerChain(modelData))
+  }
+
+  after {
+    recordingExceptionHandler.clear()
   }
 
   test("should read event in the same version as source requires and save it in the same version") {
@@ -170,13 +174,31 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
     }
   }
 
+  test("should handle exception when saving runtime incompatible event") {
+    val topicConfig = createAndRegisterTopicConfig("runtime-incompatible", Address.schema)
+    val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
+    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "{city: #input.city, street: #input.city == 'Warsaw' ? #input.street : null}")
+    val events = List(Address.encode(Address.exampleData + ("city" -> "Ochota")), Address.record)
+    val process = createAvroProcess(sourceParam, sinkParam)
+
+    runAndVerifyResult(process, topicConfig, events, Address.record)
+
+    recordingExceptionHandler.data should have size 1
+    val espExceptionInfo = recordingExceptionHandler.data.head
+    espExceptionInfo.nodeId shouldBe Some("end")
+    espExceptionInfo.throwable shouldBe a[NonTransientException]
+    val cause = espExceptionInfo.throwable.asInstanceOf[NonTransientException].cause
+    cause shouldBe a[AvroRuntimeException]
+    cause.getMessage should include ("Not expected null for field: Some(street)")
+  }
+
   test("should throw exception when try to filter by missing field") {
     val topicConfig = createAndRegisterTopicConfig("try-filter-by-missing-field", paymentSchemas)
     val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
     val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "#input")
-    val filerParam = Some("#input.cnt == 1")
+    val filterParam = Some("#input.cnt == 1")
     val events = List(PaymentV1.record, PaymentV2.record)
-    val process = createAvroProcess(sourceParam, sinkParam, filerParam)
+    val process = createAvroProcess(sourceParam, sinkParam, filterParam)
 
     assertThrowsWithParent[Exception] {
       runAndVerifyResult(process, topicConfig, events, PaymentV2.recordWithData)
@@ -195,7 +217,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
      */
     pushMessage(PaymentV2.recordWithData, topicConfig.input)
     val env = flinkMiniCluster.createExecutionEnvironment()
-    registrar.register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty)
+    registrar.register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty, DeploymentData.empty)
     val executionResult = env.executeAndWaitForStart(process.id)
     env.waitForJobState(executionResult.getJobID, process.id, ExecutionState.FAILED, ExecutionState.CANCELED)()
   }
@@ -213,7 +235,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
       "timestampToSet" -> (timeToSetInProcess.toString + "L"))
       .emptySink(
         "end",
-        "kafka-avro",
+        "kafka-avro-raw",
         TopicParamName -> s"'${topicConfig.output}'",
         SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
         SinkKeyParamName -> "",
@@ -242,7 +264,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
       "timestampToSet" -> "10000")
       .emptySink(
         "end",
-        "kafka-avro",
+        "kafka-avro-raw",
         TopicParamName -> s"'${topicConfig.output}'",
         SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
         SinkKeyParamName -> "",
@@ -340,6 +362,17 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin {
     }
   }
 
+  test("should represent avro string type as Java string") {
+    AvroStringSettingsInTests.whenEnabled {
+      val topicConfig = createAndRegisterTopicConfig("avro-string-type-test", paymentSchemas)
+      val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(2))
+      val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "#input", validationMode = ValidationMode.allowRedundantAndOptional)
+      val filerParam = Some("#input.id.toLowerCase != 'we use here method that only String class has'")
+      val process = createAvroProcess(sourceParam, sinkParam, filerParam)
+
+      runAndVerifyResult(process, topicConfig, PaymentV1.record, PaymentV1.record)
+    }
+  }
 }
 
 object KafkaAvroIntegrationMockSchemaRegistry {
@@ -348,13 +381,4 @@ object KafkaAvroIntegrationMockSchemaRegistry {
     new MockConfluentSchemaRegistryClientBuilder()
       .build
 
-  /**
-   * It has to be done in this way, because schemaRegistryMockClient is not serializable..
-   * And when we use TestSchemaRegistryClientFactory then flink has problem with serialization this..
-   */
-  val factory: CachedConfluentSchemaRegistryClientFactory =
-    new CachedConfluentSchemaRegistryClientFactory(CacheConfig.defaultMaximumSize, None, None, None) {
-      override protected def confluentClient(kafkaConfig: KafkaConfig): SchemaRegistryClient =
-        schemaRegistryMockClient
-    }
 }

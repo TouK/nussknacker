@@ -38,14 +38,14 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
   }
 
   it("should return all definition services") {
-    getProcessDefinitionServices() ~> check {
+    getProcessDefinitionServices ~> check {
       status shouldBe StatusCodes.OK
       responseAs[Json]
     }
   }
 
   it("should return info about raw editor based on annotation") {
-    getProcessDefinitionServices() ~> check {
+    getProcessDefinitionServices ~> check {
       status shouldBe StatusCodes.OK
 
       val editor = getParamEditor("simpleTypesService", "rawIntParam")
@@ -55,7 +55,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
   }
 
   it("should return info about simple editor based on annotation") {
-    getProcessDefinitionServices() ~> check {
+    getProcessDefinitionServices ~> check {
       status shouldBe StatusCodes.OK
 
       val editor: Json = getParamEditor("simpleTypesService", "booleanParam")
@@ -65,7 +65,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
   }
 
   it("should return info about dual editor based on annotation") {
-    getProcessDefinitionServices() ~> check {
+    getProcessDefinitionServices ~> check {
       status shouldBe StatusCodes.OK
 
       val editor = getParamEditor("simpleTypesService", "DualParam")
@@ -79,7 +79,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
   }
 
   it("should return info about editor based on config file") {
-    getProcessDefinitionServices() ~> check {
+    getProcessDefinitionServices ~> check {
       status shouldBe StatusCodes.OK
 
       val editor: Json = getParamEditor("enricher", "param")
@@ -114,7 +114,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
   }
 
   it("should return info about editor based on dev config") {
-    getProcessDefinitionServices() ~> check {
+    getProcessDefinitionServices ~> check {
       status shouldBe StatusCodes.OK
 
       val editor: Json = getParamEditor("multipleParamsService", "foo")
@@ -132,7 +132,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
   }
 
   it("should override annotation config with dev config") {
-    getProcessDefinitionServices() ~> check {
+    getProcessDefinitionServices ~> check {
       status shouldBe StatusCodes.OK
 
       val editor: Json = getParamEditor("multipleParamsService", "bar")
@@ -142,7 +142,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
   }
 
   it("should override dev config with config from file") {
-    getProcessDefinitionServices() ~> check {
+    getProcessDefinitionServices ~> check {
       status shouldBe StatusCodes.OK
 
       val editor: Json = getParamEditor("multipleParamsService", "baz")
@@ -164,7 +164,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
   }
 
   it("should return info about editor based on enum type") {
-    getProcessDefinitionServices() ~> check {
+    getProcessDefinitionServices ~> check {
       status shouldBe StatusCodes.OK
 
       val editor: Json = getParamEditor("echoEnumService", "id")
@@ -183,7 +183,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
   }
 
   it("should return info about editor based on string type") {
-    getProcessDefinitionServices() ~> check {
+    getProcessDefinitionServices ~> check {
       status shouldBe StatusCodes.OK
 
       val editor: Json = getParamEditor("multipleParamsService", "quax")
@@ -197,7 +197,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
   }
 
   it("should return info about editor based on annotation for Duration param") {
-    getProcessDefinitionServices() ~> check {
+    getProcessDefinitionServices ~> check {
       status shouldBe StatusCodes.OK
 
       val editor: Json = getParamEditor("datesTypesService", "durationParam")
@@ -214,7 +214,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
   }
 
   it("should return info about editor based on annotation for Period param") {
-    getProcessDefinitionServices() ~> check {
+    getProcessDefinitionServices ~> check {
       status shouldBe StatusCodes.OK
 
       val editor: Json = getParamEditor("datesTypesService","periodParam" )
@@ -231,7 +231,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
   }
 
   it("should return info about editor based on annotation for Cron param") {
-    getProcessDefinitionServices() ~> check {
+    getProcessDefinitionServices ~> check {
       status shouldBe StatusCodes.OK
 
       val editor: Json = getParamEditor("datesTypesService","cronScheduleParam" )
@@ -241,7 +241,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
   }
 
   it("return mandatory value validator by default") {
-    getProcessDefinitionServices() ~> check {
+    getProcessDefinitionServices ~> check {
       status shouldBe StatusCodes.OK
 
       val validator: Json = getParamValidator("datesTypesService", "periodParam")
@@ -252,7 +252,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
   }
 
   it("not return mandatory value validator for parameter marked with @Nullable") {
-    getProcessDefinitionServices() ~> check {
+    getProcessDefinitionServices ~> check {
       status shouldBe StatusCodes.OK
 
       val validator: Json = getParamValidator("optionalTypesService", "nullableParam")
@@ -262,7 +262,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
   }
 
   it("override validator based on annotation with validator based on dev config") {
-    getProcessDefinitionServices() ~> check {
+    getProcessDefinitionServices ~> check {
       status shouldBe StatusCodes.OK
 
       val validator: Json = getParamValidator("optionalTypesService", "overriddenByDevConfigParam")
@@ -272,7 +272,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
   }
 
   it("override validator based on dev config with validator based on file config") {
-    getProcessDefinitionServices() ~> check {
+    getProcessDefinitionServices ~> check {
       status shouldBe StatusCodes.OK
 
       val validator: Json = getParamValidator("optionalTypesService", "overriddenByFileConfigParam")
@@ -284,7 +284,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
   }
 
   it("return info about validator based on param fixed value editor for node parameters") {
-    getProcessDefinitionServices() ~> check {
+    getProcessDefinitionServices ~> check {
       status shouldBe StatusCodes.OK
 
       val validator: Json = getParamValidator("paramService", "param")

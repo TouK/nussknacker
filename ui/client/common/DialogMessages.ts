@@ -28,6 +28,10 @@ export const archiveProcess = (processId: ProcessId) => {
   return i18next.t("dialogMessages.archiveProcess", "Are you sure you want to archive {{processId}}?", {processId})
 }
 
+export const unArchiveProcess = (processId: ProcessId) => {
+  return i18next.t("dialogMessages.unArchiveProcess", "Are you sure you want to unarchive {{processId}}?", {processId})
+}
+
 export const deleteComment = () => {
   return i18next.t("dialogMessages.deleteComment", "Are you sure you want to delete comment?")
 }

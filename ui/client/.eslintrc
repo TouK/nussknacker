@@ -240,6 +240,14 @@
   "overrides": [
     {
       "files": [
+        "./cypress/**/*"
+      ],
+      "rules": {
+        "i18next/no-literal-string": "off"
+      }
+    },
+    {
+      "files": [
         "*.ts",
         "*.tsx"
       ],

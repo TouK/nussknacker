@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api.deployment
 
 import java.nio.charset.StandardCharsets
 
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.{Context, ContextId}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 
 object TestProcess {
@@ -27,8 +27,8 @@ object TestProcess {
       copy(invocationResults = invocationResults + (nodeId -> addResults(invocationResult, invocationResults.getOrElse(nodeId, List()))))
     }
 
-    def updateMockedResult(nodeId: String, context: Context, name: String, result: Any) = {
-      val mockedResult = MockedResult(context.id, name, variableEncoder(result))
+    def updateMockedResult(nodeId: String, contextId: ContextId, name: String, result: Any) = {
+      val mockedResult = MockedResult(contextId.value, name, variableEncoder(result))
       copy(mockedResults = mockedResults + (nodeId -> (mockedResults.getOrElse(nodeId, List()) :+ mockedResult)))
     }
 

@@ -4,17 +4,9 @@ import {UnknownRecord} from "../../types/common"
 export enum ActionType {
   Deploy = "DEPLOY",
   Cancel = "CANCEL",
+  Archive = "ARCHIVE",
+  UnArchive = "UNARCHIVE",
   Pause = "PAUSE",
-}
-
-export enum StatusType {
-  Running = "RunningStateStatus",
-  NotDeployed= "AllowDeployStateStatus"
-}
-
-export enum StatusName {
-  Running = "RUNNING",
-  NotDeployed = "NOT_DEPLOYED",
 }
 
 export type ProcessVersionId = number
@@ -57,10 +49,7 @@ export interface ProcessType {
 }
 
 export type ProcessStateType = {
-  status: {
-    name: StatusName,
-    type: StatusType,
-  },
+  status: StatusType,
   deploymentId?: string,
   allowedActions: Array<ActionType>,
   icon?: string,
@@ -69,4 +58,9 @@ export type ProcessStateType = {
   startTime?: Date,
   attributes?: UnknownRecord,
   errors?: Array<string>,
+}
+
+export type StatusType = {
+  name: string,
+  type: string,
 }

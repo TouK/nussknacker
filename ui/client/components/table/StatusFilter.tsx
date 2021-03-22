@@ -9,12 +9,12 @@ const options: OptionType<boolean>[] = [
   {label: "Show only not deployed processes", value: false},
 ]
 
-export function StatusFilter(props: ValueFieldProps<boolean>) {
+export function StatusFilter(props: ValueFieldProps<boolean>): JSX.Element {
   const {onChange} = props
   const value = useParseValue(options, props.value)
   return (
     <TableSelect
-      defaultValue={value}
+      value={value}
       options={options}
       placeholder="Select deployed info..."
       onChange={({value}) => onChange(value)}

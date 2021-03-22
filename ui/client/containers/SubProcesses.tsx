@@ -9,7 +9,7 @@ import "../stylesheets/processes.styl"
 import styles from "../containers/processesTable.styl"
 import {Page} from "./Page"
 import {ProcessesTabData} from "./Processes"
-import {ProcessesList, RowsRenderer} from "./ProcessesList"
+import {Filterable, ProcessesList, RowsRenderer} from "./ProcessesList"
 import {ProcessLink} from "./processLink"
 import tabStyles from "../components/tabs/processTabs.styl"
 import {SearchItem} from "./TableFilters"
@@ -34,13 +34,13 @@ const ElementsRenderer: RowsRenderer = ({processes}) => processes.map(process =>
   </Tr>
 ))
 
-const sortable = ["name", "category", "modifyDate", "createDate", "createdBy"]
-const filterable = ["name", "category", "createdBy"]
+const sortable = ["name", "category", "modifyDate", "createdAt", "createdBy"]
+const filterable: Filterable = ["name", "processCategory", "createdBy"]
 const columns = [
-  {key: "name", label: "Process name"},
+  {key: "name", label: "Name"},
   {key: "category", label: "Category"},
   {key: "createdBy", label: "Created by"},
-  {key: "createdAt", label: "Created"},
+  {key: "createdAt", label: "Created at"},
   {key: "modifyDate", label: "Last modification"},
   {key: "edit", label: "Edit"},
 ]

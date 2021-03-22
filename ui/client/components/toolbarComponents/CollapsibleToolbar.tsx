@@ -6,7 +6,7 @@ import {useDragHandler} from "./DragHandle"
 import Panel from "react-bootstrap/lib/Panel"
 import classNames from "classnames"
 import {getIsCollapsed} from "../../reducers/selectors/toolbars"
-import ErrorBoundary from "react-error-boundary"
+import ErrorBoundary from "../common/ErrorBoundary"
 import {ReactComponent as CollapseIcon} from "../../assets/img/arrows/panel-hide-arrow.svg"
 
 type Props = PropsWithChildren<{
@@ -42,16 +42,18 @@ export function CollapsibleToolbar({title, children, isHidden, id}: Props): JSX.
           isCollapsing && styles.collapsing,
         )}
       >
-        {title ? (
-          <Panel.Heading {...handlerProps}>
-            <Panel.Title toggle>
-              <div className={styles.collapseTitle}>{title}</div>
-              {isCollapsible && (
-                <CollapseIcon className={styles.collapseIcon}/>
-              )}
-            </Panel.Title>
-          </Panel.Heading>
-        ) : null}
+        {title ?
+          (
+            <Panel.Heading {...handlerProps}>
+              <Panel.Title toggle>
+                <div className={styles.collapseTitle}>{title}</div>
+                {isCollapsible && (
+                  <CollapseIcon className={styles.collapseIcon}/>
+                )}
+              </Panel.Title>
+            </Panel.Heading>
+          ) :
+          null}
         <Panel.Collapse
           onEnter={() => {
             setIsCollapsing(false)

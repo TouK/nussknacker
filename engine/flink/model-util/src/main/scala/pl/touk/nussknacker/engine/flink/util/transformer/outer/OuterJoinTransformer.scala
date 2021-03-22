@@ -2,16 +2,16 @@ package pl.touk.nussknacker.engine.flink.util.transformer.outer
 
 import java.time.Duration
 import java.util.concurrent.TimeUnit
-
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
-import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation._
+import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, ParameterWithExtractor}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, FlinkCustomNodeContext}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyOnlyMapper, StringK
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.{AggregateHelper, Aggregator}
 
+import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.FiniteDuration
 
 class OuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandler[TimestampedValue[ValueWithContext[AnyRef]]]])
@@ -48,11 +49,13 @@ class OuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandler[T
 
     case TransformationStep(
     (`BranchTypeParamName`, DefinedEagerBranchParameter(branchTypeByBranchId: Map[String, BranchType]@unchecked, _)) ::
-      (`KeyParamName`, _) :: (`AggregatorParamName`, _) :: (`WindowLengthParamName`, _) ::
+      (`KeyParamName`, _) :: (`AggregatorParamName`, DefinedEagerParameter(aggregator: Aggregator, _)) :: (`WindowLengthParamName`, _) ::
       (`AggregateByParamName`, aggregateBy: DefinedSingleParameter) :: Nil, _) =>
       val outName = OutputVariableNameDependency.extract(dependencies)
       val mainCtx = mainId(branchTypeByBranchId).map(contexts).getOrElse(ValidationContext())
-      val withVariable = mainCtx.withVariable(outName, aggregateBy.returnType)
+      val withVariable = aggregator.computeOutputType(aggregateBy.returnType).leftMap(CustomNodeError(_, Some(AggregatorParamName)))
+        .toValidatedNel[ProcessCompilationError, TypingResult]
+        .andThen(typ => mainCtx.withVariable(OutputVar.customNode(outName), typ))
       FinalResults(withVariable.getOrElse(mainCtx), withVariable.swap.map(_.toList).getOrElse(Nil))
   }
 
@@ -71,7 +74,7 @@ class OuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandler[T
         val keyedJoinedStream = inputs(joinedId(branchTypeByBranchId).get)
           .map(new StringKeyedValueMapper(context.lazyParameterHelper, keyByBranchId(joinedId(branchTypeByBranchId).get), aggregateBy))
 
-        val aggregatorFunction = prepareAggregatorFunction(aggregator, FiniteDuration(window.toMillis, TimeUnit.MILLISECONDS))(NodeId(context.nodeId))
+        val aggregatorFunction = prepareAggregatorFunction(aggregator, FiniteDuration(window.toMillis, TimeUnit.MILLISECONDS), aggregateBy.returnType)(NodeId(context.nodeId))
         val statefulStream = keyedMainBranchStream
           .connect(keyedJoinedStream)
           .keyBy(v => v.value, v => v.value.key)
@@ -93,10 +96,10 @@ class OuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandler[T
     branchTypeByBranchId.find(_._2 == BranchType.JOINED).map(_._1)
   }
 
-  protected def prepareAggregatorFunction(aggregator: Aggregator, stateTimeout: FiniteDuration)
+  protected def prepareAggregatorFunction(aggregator: Aggregator, stateTimeout: FiniteDuration, aggregateElementType: TypingResult)
                                          (implicit nodeId: NodeId):
   CoProcessFunction[ValueWithContext[String], ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]] =
-    new OuterJoinAggregatorFunction(aggregator, stateTimeout.toMillis)
+    new OuterJoinAggregatorFunction[SortedMap](aggregator, stateTimeout.toMillis, nodeId, aggregateElementType)
 
 }
 

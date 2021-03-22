@@ -66,6 +66,10 @@ object LifecycleService extends Service with StandaloneContextLifecycle {
   var opened: Boolean = false
   var closed: Boolean = false
 
+  def reset(): Unit = {
+    opened = false
+    closed = false
+  }
 
   override def open(jobData: JobData, context: StandaloneContext): Unit = {
     opened = true

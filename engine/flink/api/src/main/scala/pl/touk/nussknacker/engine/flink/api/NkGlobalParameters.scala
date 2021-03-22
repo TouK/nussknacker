@@ -35,7 +35,10 @@ case class NkGlobalParameters(buildInfo: String,
 
 //this is part of global parameters that is parsed with typesafe Config (e.g. from application.conf/model.conf)
 case class ConfigGlobalParameters(useLegacyMetrics: Option[Boolean],
-                                  explicitUidInStatefulOperators: Option[Boolean])
+                                  explicitUidInStatefulOperators: Option[Boolean],
+                                  useTypingResultTypeInformation: Option[Boolean],
+                                 //TODO: temporary, until we confirm that IOMonad is not causing problems
+                                  useIOMonadInInterpreter: Option[Boolean])
 
 case class NamingParameters(tags: Map[String, String])
 

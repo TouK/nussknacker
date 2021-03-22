@@ -8,7 +8,6 @@ import java.util.Collections
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import cats.effect.IO
 import org.apache.avro.generic.GenericData
 import org.scalatest.{EitherValues, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.Context
@@ -16,8 +15,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
-import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, TypedExpression, ValueWithLazyContext}
-import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider, UsingLazyValues}
+import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, TypedExpression}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
@@ -32,11 +30,7 @@ import scala.reflect.runtime.universe._
 class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   private class EvaluateSync(expression: Expression) {
-    def evaluateSync[T](ctx: Context = ctx, lvp: LazyValuesProvider = dumbLazyProvider) : ValueWithLazyContext[T]
-      = expression.evaluate[T](ctx, Map.empty, lvp)
-
-    def evaluateSyncToValue[T](ctx: Context = ctx, lvp: LazyValuesProvider = dumbLazyProvider) : T
-      = evaluateSync(ctx, lvp).value
+    def evaluateSync[T](ctx: Context = ctx): T  = expression.evaluate(ctx, Map.empty)
   }
 
   private implicit val nid: NodeId = NodeId("")
@@ -55,15 +49,9 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     .withVariable("processHelper", SampleGlobalObject)
     .withVariable("javaClassWithVarargs", new JavaClassWithVarargs)
 
-  private def dumbLazyProvider: LazyValuesProvider = new LazyValuesProvider {
-    override def apply[T](ctx: LazyContext, serviceId: String, params: Seq[(String, Any)]) = throw new IllegalStateException("Shouln't be invoked")
-  }
-
   private val enrichingServiceId = "serviceId"
 
-  case class Test(id: String, value: Long, children: java.util.List[Test] = List[Test]().asJava, bigValue: BigDecimal = BigDecimal.valueOf(0L)) extends UsingLazyValues {
-    val lazyVal: LazyState[String] = lazyValue[String](enrichingServiceId).map(_ + " ma kota")
-  }
+  case class Test(id: String, value: Long, children: java.util.List[Test] = List[Test]().asJava, bigValue: BigDecimal = BigDecimal.valueOf(0L))
 
   private def parseOrFail[T:TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard) : Expression = {
     parse(expr, context, flavour) match {
@@ -111,11 +99,11 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   }
 
   test("invoke simple expression") {
-    parseOrFail[java.lang.Number]("#obj.value + 4").evaluateSyncToValue[Long](ctx) should equal(6)
+    parseOrFail[java.lang.Number]("#obj.value + 4").evaluateSync[Long](ctx) should equal(6)
   }
 
   test("invoke simple list expression") {
-    parseOrFail[Boolean]("{'1', '2'}.contains('2')").evaluateSyncToValue[Boolean](ctx) shouldBe true
+    parseOrFail[Boolean]("{'1', '2'}.contains('2')").evaluateSync[Boolean](ctx) shouldBe true
   }
 
   test("handle string concatenation correctly") {
@@ -141,18 +129,18 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     val expr = parseOrFail[Any]("#list", contextWithList(Collections.emptyList()))
 
     //first run - nothing happens, we bump the counter
-    expr.evaluateSyncToValue[Any](contextWithList(null))
+    expr.evaluateSync[Any](contextWithList(null))
     //second run - exitTypeDescriptor is set, expression is compiled
-    expr.evaluateSyncToValue[Any](contextWithList(new util.ArrayList[String]()))
+    expr.evaluateSync[Any](contextWithList(new util.ArrayList[String]()))
     //third run - expression is compiled as ArrayList and we fail :(
-    expr.evaluateSyncToValue[Any](contextWithList(Collections.emptyList()))
+    expr.evaluateSync[Any](contextWithList(Collections.emptyList()))
   }
 
   // TODO: fixme
   ignore("perform date operations") {
     val twoDaysAgo = LocalDate.now().minusDays(2)
     val withDays = ctx.withVariable("date", twoDaysAgo)
-    parseOrFail[Any]("#date.until(T(java.time.LocalDate).now())", withDays).evaluateSyncToValue[Integer](withDays)should equal(2)
+    parseOrFail[Any]("#date.until(T(java.time.LocalDate).now())", withDays).evaluateSync[Integer](withDays)should equal(2)
   }
 
   // TODO: fixme
@@ -163,10 +151,10 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   }
 
   test("be possible to use SpEL's #this object") {
-    parseOrFail[Any]("{1, 2, 3}.?[ #this > 1]").evaluateSyncToValue[java.util.List[Integer]](ctx) shouldBe util.Arrays.asList(2, 3)
-    parseOrFail[Any]("{1, 2, 3}.![ #this > 1]").evaluateSyncToValue[java.util.List[Boolean]](ctx) shouldBe util.Arrays.asList(false, true, true)
-    parseOrFail[Any]("{'1', '22', '3'}.?[ #this.length > 1]").evaluateSyncToValue[java.util.List[Boolean]](ctx) shouldBe util.Arrays.asList("22")
-    parseOrFail[Any]("{'1', '22', '3'}.![ #this.length > 1]").evaluateSyncToValue[java.util.List[Boolean]](ctx) shouldBe util.Arrays.asList(false, true, false)
+    parseOrFail[Any]("{1, 2, 3}.?[ #this > 1]").evaluateSync[java.util.List[Integer]](ctx) shouldBe util.Arrays.asList(2, 3)
+    parseOrFail[Any]("{1, 2, 3}.![ #this > 1]").evaluateSync[java.util.List[Boolean]](ctx) shouldBe util.Arrays.asList(false, true, true)
+    parseOrFail[Any]("{'1', '22', '3'}.?[ #this.length > 1]").evaluateSync[java.util.List[Boolean]](ctx) shouldBe util.Arrays.asList("22")
+    parseOrFail[Any]("{'1', '22', '3'}.![ #this.length > 1]").evaluateSync[java.util.List[Boolean]](ctx) shouldBe util.Arrays.asList(false, true, false)
 
   }
 
@@ -227,34 +215,34 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   test("handle big decimals") {
     bigValue.compareTo(BigDecimal.valueOf(50*1024*1024)) should be > 0
     bigValue.compareTo(BigDecimal.valueOf(50*1024*1024L)) should be > 0
-    parseOrFail[Any]("#obj.bigValue").evaluateSyncToValue[BigDecimal](ctx) should equal(bigValue)
-    parseOrFail[Boolean]("#obj.bigValue < 50*1024*1024").evaluateSyncToValue[Boolean](ctx) should equal(false)
-    parseOrFail[Boolean]("#obj.bigValue < 50*1024*1024L").evaluateSyncToValue[Boolean](ctx) should equal(false)
+    parseOrFail[Any]("#obj.bigValue").evaluateSync[BigDecimal](ctx) should equal(bigValue)
+    parseOrFail[Boolean]("#obj.bigValue < 50*1024*1024").evaluateSync[Boolean](ctx) should equal(false)
+    parseOrFail[Boolean]("#obj.bigValue < 50*1024*1024L").evaluateSync[Boolean](ctx) should equal(false)
   }
 
   test("access list elements by index") {
-    parseOrFail[String]("#obj.children[0].id").evaluateSyncToValue[String](ctx) shouldEqual "3"
-    parseOrFail[String]("#mapValue['foo']").evaluateSyncToValue[String](ctx) shouldEqual "bar"
+    parseOrFail[String]("#obj.children[0].id").evaluateSync[String](ctx) shouldEqual "3"
+    parseOrFail[String]("#mapValue['foo']").evaluateSync[String](ctx) shouldEqual "bar"
     parse[Int]("#obj.children[0].id") shouldBe 'invalid
 
   }
 
   test("filter by list predicates") {
 
-    parseOrFail[Any]("#obj.children.?[id == '55'].isEmpty").evaluateSyncToValue[Boolean](ctx) should equal(true)
-    parseOrFail[Any]("#obj.children.?[id == '55' || id == '66'].isEmpty").evaluateSyncToValue[Boolean](ctx) should equal(true)
-    parseOrFail[Any]("#obj.children.?[id == '5'].size()").evaluateSyncToValue[Integer](ctx) should equal(1: Integer)
-    parseOrFail[Any]("#obj.children.?[id == '5' || id == '3'].size()").evaluateSyncToValue[Integer](ctx) should equal(2: Integer)
+    parseOrFail[Any]("#obj.children.?[id == '55'].isEmpty").evaluateSync[Boolean](ctx) should equal(true)
+    parseOrFail[Any]("#obj.children.?[id == '55' || id == '66'].isEmpty").evaluateSync[Boolean](ctx) should equal(true)
+    parseOrFail[Any]("#obj.children.?[id == '5'].size()").evaluateSync[Integer](ctx) should equal(1: Integer)
+    parseOrFail[Any]("#obj.children.?[id == '5' || id == '3'].size()").evaluateSync[Integer](ctx) should equal(2: Integer)
     parseOrFail[Any]("#obj.children.?[id == '5' || id == '3'].![value]")
-      .evaluateSyncToValue[util.ArrayList[Long]](ctx) should equal(new util.ArrayList(util.Arrays.asList(4L, 6L)))
+      .evaluateSync[util.ArrayList[Long]](ctx) should equal(new util.ArrayList(util.Arrays.asList(4L, 6L)))
     parseOrFail[Any]("(#obj.children.?[id == '5' || id == '3'].![value]).contains(4L)")
-      .evaluateSyncToValue[Boolean](ctx) should equal(true)
+      .evaluateSync[Boolean](ctx) should equal(true)
 
   }
 
   test("evaluate map") {
     val ctxWithVar = ctx.withVariable("processVariables", Collections.singletonMap("processingStartTime", 11L))
-    parseOrFail[Any]("#processVariables['processingStartTime']", ctxWithVar).evaluateSyncToValue[Long](ctxWithVar) should equal(11L)
+    parseOrFail[Any]("#processVariables['processingStartTime']", ctxWithVar).evaluateSync[Long](ctxWithVar) should equal(11L)
   }
 
   test("stop validation when property of Any/Object type found") {
@@ -267,14 +255,14 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   }
 
   test("register static variables") {
-    parseOrFail[Any]("#processHelper.add(1, #processHelper.constant())", ctxWithGlobal).evaluateSyncToValue[Integer](ctxWithGlobal) should equal(5)
+    parseOrFail[Any]("#processHelper.add(1, #processHelper.constant())", ctxWithGlobal).evaluateSync[Integer](ctxWithGlobal) should equal(5)
   }
 
   test("allow access to maps in dot notation") {
     val withMapVar = ctx.withVariable("map", Map("key1" -> "value1", "key2" -> 20).asJava)
 
-    parseOrFail[String]("#map.key1", withMapVar).evaluateSyncToValue[String](withMapVar) should equal("value1")
-    parseOrFail[Integer]("#map.key2", withMapVar).evaluateSyncToValue[Integer](withMapVar) should equal(20)
+    parseOrFail[String]("#map.key1", withMapVar).evaluateSync[String](withMapVar) should equal("value1")
+    parseOrFail[Integer]("#map.key2", withMapVar).evaluateSync[Integer](withMapVar) should equal(20)
   }
 
   test("missing keys in Maps") {
@@ -282,17 +270,17 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
       .withVariable("map", TypedObjectTypingResult(Map(
         "foo" -> Typed[Int],
         "nested" -> TypedObjectTypingResult(Map("bar" -> Typed[Int]))
-      )))
+      )), paramName = None)
       .toOption.get
     val ctxWithMap = ctx.withVariable("map", Collections.emptyMap())
-    parseOrFail[Integer]("#map.foo", validationCtx).evaluateSyncToValue[Integer](ctxWithMap) shouldBe null
-    parseOrFail[Integer]("#map.nested?.bar", validationCtx).evaluateSyncToValue[Integer](ctxWithMap) shouldBe null
-    parseOrFail[Boolean]("#map.foo == null && #map?.nested?.bar == null", validationCtx).evaluateSyncToValue[Boolean](ctxWithMap) shouldBe true
+    parseOrFail[Integer]("#map.foo", validationCtx).evaluateSync[Integer](ctxWithMap) shouldBe null
+    parseOrFail[Integer]("#map.nested?.bar", validationCtx).evaluateSync[Integer](ctxWithMap) shouldBe null
+    parseOrFail[Boolean]("#map.foo == null && #map?.nested?.bar == null", validationCtx).evaluateSync[Boolean](ctxWithMap) shouldBe true
 
     val ctxWithTypedMap = ctx.withVariable("map", TypedMap(Map.empty))
     val parseResult = parseOrFail[Integer]("#map.foo", validationCtx)
     a[SpelExpressionEvaluationException] should be thrownBy {
-      parseResult.evaluateSyncToValue[Integer](ctxWithTypedMap)
+      parseResult.evaluateSync[Integer](ctxWithTypedMap)
     }
   }
 
@@ -304,15 +292,15 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   test("allow access to objects with get method in dot notation") {
     val withObjVar = ctx.withVariable("obj", new SampleObjectWithGetMethod(Map("key1" -> "value1", "key2" -> 20)))
 
-    parseOrFail[String]("#obj.key1", withObjVar).evaluateSyncToValue[String](withObjVar) should equal("value1")
-    parseOrFail[Integer]("#obj.key2", withObjVar).evaluateSyncToValue[Integer](withObjVar) should equal(20)
+    parseOrFail[String]("#obj.key1", withObjVar).evaluateSync[String](withObjVar) should equal("value1")
+    parseOrFail[Integer]("#obj.key2", withObjVar).evaluateSync[Integer](withObjVar) should equal(20)
   }
 
   test("check property if is defined even if class has get method") {
     val withObjVar = ctx.withVariable("obj", new SampleObjectWithGetMethod(Map.empty))
 
     parse[Boolean]("#obj.definedProperty == 123", withObjVar) shouldBe 'invalid
-    parseOrFail[Boolean]("#obj.definedProperty == '123'", withObjVar).evaluateSyncToValue[Boolean](withObjVar) shouldBe true
+    parseOrFail[Boolean]("#obj.definedProperty == '123'", withObjVar).evaluateSync[Boolean](withObjVar) shouldBe true
   }
 
   test("check property if is defined even if class has get method - avro generic record") {
@@ -320,23 +308,23 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     record.put("text", "foo")
     val withObjVar = ctx.withVariable("obj", record)
 
-    parseOrFail[String]("#obj.text", withObjVar).evaluateSyncToValue[String](withObjVar) shouldEqual "foo"
+    parseOrFail[String]("#obj.text", withObjVar).evaluateSync[String](withObjVar) shouldEqual "foo"
   }
 
   test("exact check properties in generated avro classes") {
     val withObjVar = ctx.withVariable("obj", GeneratedAvroClass.newBuilder().setText("123").build())
 
     parse[Boolean]("#obj.notExistingProperty == 123", withObjVar) shouldBe 'invalid
-    parseOrFail[Boolean]("#obj.getText == '123'", withObjVar).evaluateSyncToValue[Boolean](withObjVar) shouldBe true
+    parseOrFail[Boolean]("#obj.getText == '123'", withObjVar).evaluateSync[Boolean](withObjVar) shouldBe true
   }
 
   test("allow access to statics") {
     val withMapVar = ctx.withVariable("longClass", classOf[java.lang.Long])
     parseOrFail[Any]("#longClass.valueOf('44')", withMapVar)
-      .evaluateSyncToValue[Long](withMapVar) should equal(44l)
+      .evaluateSync[Long](withMapVar) should equal(44L)
 
     parseOrFail[Any]("T(java.lang.Long).valueOf('44')", ctx)
-      .evaluateSyncToValue[Long](ctx) should equal(44l)
+      .evaluateSync[Long](ctx) should equal(44L)
   }
 
   test("should != correctly for compiled expression - expression is compiled when invoked for the 3rd time") {
@@ -345,21 +333,9 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     val withMapVar = ctx.withVariable("emptyStr", empty)
 
     val expression = parseOrFail[Boolean]("#emptyStr != ''", withMapVar)
-    expression.evaluateSyncToValue[Boolean](withMapVar) should equal(false)
-    expression.evaluateSyncToValue[Boolean](withMapVar) should equal(false)
-    expression.evaluateSyncToValue[Boolean](withMapVar) should equal(false)
-  }
-
-  test("evaluate using lazy value") {
-    val provided = "ala"
-    val lazyValueProvider = new LazyValuesProvider {
-      override def apply[T](context: LazyContext, serviceId: String, params: Seq[(String, Any)]): IO[(LazyContext, T)] =
-        IO.pure((context.withEvaluatedValue(enrichingServiceId, params.toMap, Left(provided)), provided.asInstanceOf[T]))
-    }
-
-    val valueWithModifiedContext = parseOrFail[Any]("#obj.lazyVal").evaluateSync[String](ctx, lazyValueProvider)
-    valueWithModifiedContext.value shouldEqual "ala ma kota"
-    valueWithModifiedContext.lazyContext[String](enrichingServiceId, Map.empty) shouldEqual provided
+    expression.evaluateSync[Boolean](withMapVar) should equal(false)
+    expression.evaluateSync[Boolean](withMapVar) should equal(false)
+    expression.evaluateSync[Boolean](withMapVar) should equal(false)
   }
 
   test("not allow access to variables without hash in methods") {
@@ -410,7 +386,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   }
 
   test("validate selection and projection for list variable") {
-    val vctx = ValidationContext.empty.withVariable("a", Typed.fromDetailedType[java.util.List[String]]).toOption.get
+    val vctx = ValidationContext.empty.withVariable("a", Typed.fromDetailedType[java.util.List[String]], paramName = None).toOption.get
 
     parse[java.util.List[Int]]("#a.![#this.length()].?[#this > 4]", vctx) shouldBe 'valid
     parse[java.util.List[Boolean]]("#a.![#this.length()].?[#this > 4]", vctx) shouldBe 'invalid
@@ -419,7 +395,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   test("allow #this reference inside functions") {
     parseOrFail[java.util.List[String]]("{1, 2, 3}.!['ala'.substring(#this - 1)]", ctx)
-      .evaluateSyncToValue[java.util.List[String]](ctx).asScala.toList shouldBe List("ala", "la", "a")
+      .evaluateSync[java.util.List[String]](ctx).asScala.toList shouldBe List("ala", "la", "a")
   }
 
   test("allow property access in unknown classes") {
@@ -450,14 +426,6 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   }
 
-
-  test("validate lazy value usage") {
-    val ctxWithInput = ctx.withVariable("input", SampleValue(444))
-    parse[String]("#input.lazy1", ctxWithInput) shouldBe 'valid
-    parse[Long]("#input.lazy2", ctxWithInput) shouldBe 'valid
-
-  }
-
   test("not validate plain string ") {
     parse[Any]("abcd", ctx) shouldNot be ('valid)
   }
@@ -467,10 +435,10 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   }
 
   test("evaluate static field/method using property syntax") {
-    parseOrFail[Any]("#processHelper.one", ctxWithGlobal).evaluateSyncToValue[Int](ctxWithGlobal) should equal(1)
-    parseOrFail[Any]("#processHelper.one()", ctxWithGlobal).evaluateSyncToValue[Int](ctxWithGlobal) should equal(1)
-    parseOrFail[Any]("#processHelper.constant", ctxWithGlobal).evaluateSyncToValue[Int](ctxWithGlobal) should equal(4)
-    parseOrFail[Any]("#processHelper.constant()", ctxWithGlobal).evaluateSyncToValue[Int](ctxWithGlobal) should equal(4)
+    parseOrFail[Any]("#processHelper.one", ctxWithGlobal).evaluateSync[Int](ctxWithGlobal) should equal(1)
+    parseOrFail[Any]("#processHelper.one()", ctxWithGlobal).evaluateSync[Int](ctxWithGlobal) should equal(1)
+    parseOrFail[Any]("#processHelper.constant", ctxWithGlobal).evaluateSync[Int](ctxWithGlobal) should equal(4)
+    parseOrFail[Any]("#processHelper.constant()", ctxWithGlobal).evaluateSync[Int](ctxWithGlobal) should equal(4)
   }
 
   test("detect bad type of literal or variable") {
@@ -488,13 +456,13 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   test("resolve imported package") {
     val givenValue = 123
-    parseOrFail[Int](s"new SampleValue($givenValue, '').value").evaluateSyncToValue[Int](ctx) should equal(givenValue)
+    parseOrFail[Int](s"new SampleValue($givenValue, '').value").evaluateSync[Int](ctx) should equal(givenValue)
   }
 
   test("parse typed map with existing field") {
     val ctxWithMap = ValidationContext
       .empty
-      .withVariable("input", TypedObjectTypingResult(Map("str" -> Typed[String], "lon" -> Typed[Long]))).toOption.get
+      .withVariable("input", TypedObjectTypingResult(Map("str" -> Typed[String], "lon" -> Typed[Long])), paramName = None).toOption.get
 
 
     parse[String]("#input.str", ctxWithMap) should be ('valid)
@@ -507,26 +475,26 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   test("be able to convert between primitive types") {
     val ctxWithMap = ValidationContext
       .empty
-      .withVariable("input", TypedObjectTypingResult(Map("int" -> Typed[Int]))).toOption.get
+      .withVariable("input", TypedObjectTypingResult(Map("int" -> Typed[Int])), paramName = None).toOption.get
 
     val ctx = Context("").withVariable("input", TypedMap(Map("int" -> 1)))
 
-    parseOrFail[Long]("#input.int.longValue", ctxWithMap).evaluateSyncToValue[Long](ctx) shouldBe 1L
+    parseOrFail[Long]("#input.int.longValue", ctxWithMap).evaluateSync[Long](ctx) shouldBe 1L
   }
 
   test("evaluate parsed map") {
     val valCtxWithMap = ValidationContext
       .empty
-      .withVariable("input", TypedObjectTypingResult(Map("str" -> Typed[String], "lon" -> Typed[Long]))).toOption.get
+      .withVariable("input", TypedObjectTypingResult(Map("str" -> Typed[String], "lon" -> Typed[Long])), paramName = None).toOption.get
 
     val ctx = Context("").withVariable("input", TypedMap(Map("str" -> "aaa", "lon" -> 3444)))
 
-    parseOrFail[String]("#input.str", valCtxWithMap).evaluateSyncToValue[String](ctx) shouldBe "aaa"
-    parseOrFail[Long]("#input.lon", valCtxWithMap).evaluateSyncToValue[Long](ctx) shouldBe 3444
+    parseOrFail[String]("#input.str", valCtxWithMap).evaluateSync[String](ctx) shouldBe "aaa"
+    parseOrFail[Long]("#input.lon", valCtxWithMap).evaluateSync[Long](ctx) shouldBe 3444
     parse[Any]("#input.notExisting", valCtxWithMap) shouldBe 'invalid
-    parseOrFail[Boolean]("#input.containsValue('aaa')", valCtxWithMap).evaluateSyncToValue[Boolean](ctx) shouldBe true
-    parseOrFail[Int]("#input.size", valCtxWithMap).evaluateSyncToValue[Int](ctx) shouldBe 2
-    parseOrFail[Boolean]("#input == {str: 'aaa', lon: 3444}", valCtxWithMap).evaluateSyncToValue[Boolean](ctx) shouldBe true
+    parseOrFail[Boolean]("#input.containsValue('aaa')", valCtxWithMap).evaluateSync[Boolean](ctx) shouldBe true
+    parseOrFail[Int]("#input.size", valCtxWithMap).evaluateSync[Int](ctx) shouldBe 2
+    parseOrFail[Boolean]("#input == {str: 'aaa', lon: 3444}", valCtxWithMap).evaluateSync[Boolean](ctx) shouldBe true
   }
 
   test("be able to type toString()") {
@@ -543,7 +511,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
       .empty
       .withVariable("input", Typed(
         TypedObjectTypingResult(Map("str" -> Typed[String])),
-        TypedObjectTypingResult(Map("lon" -> Typed[Long])))).toOption.get
+        TypedObjectTypingResult(Map("lon" -> Typed[Long]))), paramName = None).toOption.get
 
 
     parse[String]("#input.str", ctxWithMap) should be ('valid)
@@ -558,7 +526,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
       .empty
       .withVariable("input", Typed(
         Typed[SampleObject],
-        Typed[SampleValue])).toOption.get
+        Typed[SampleValue]), paramName = None).toOption.get
 
 
     parse[List[_]]("#input.list", ctxWithMap) should be ('valid)
@@ -577,18 +545,18 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   }
 
   test("evaluates expression with template context") {
-    parseOrFail[String]("alamakota #{444}", ctx, SpelExpressionParser.Template).evaluateSyncToValue[String]() shouldBe "alamakota 444"
-    parseOrFail[String]("alamakota #{444 + #obj.value} #{#mapValue.foo}", ctx, SpelExpressionParser.Template).evaluateSyncToValue[String]() shouldBe "alamakota 446 bar"
+    parseOrFail[String]("alamakota #{444}", ctx, SpelExpressionParser.Template).evaluateSync[String]() shouldBe "alamakota 444"
+    parseOrFail[String]("alamakota #{444 + #obj.value} #{#mapValue.foo}", ctx, SpelExpressionParser.Template).evaluateSync[String]() shouldBe "alamakota 446 bar"
   }
 
   test("evaluates empty template as empty string") {
-    parseOrFail[String]("", ctx, SpelExpressionParser.Template).evaluateSyncToValue[String]() shouldBe ""
+    parseOrFail[String]("", ctx, SpelExpressionParser.Template).evaluateSync[String]() shouldBe ""
   }
 
   test("variables with TypeMap type") {
     val withObjVar = ctx.withVariable("dicts", TypedMap(Map("foo" -> SampleValue(123))))
 
-    parseOrFail[Int]("#dicts.foo.value", withObjVar).evaluateSyncToValue[Int](withObjVar) should equal(123)
+    parseOrFail[Int]("#dicts.foo.value", withObjVar).evaluateSync[Int](withObjVar) should equal(123)
     parse[String]("#dicts.bar.value", withObjVar) shouldBe 'invalid
   }
 
@@ -636,7 +604,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     val dicts = Map(embeddedDictId -> EmbeddedDictDefinition(Map("fooId" -> "fooLabel")))
     val withObjVar = ctx.withVariable("embeddedDict", DictInstance(embeddedDictId, dicts(embeddedDictId)))
 
-    parseWithDicts[String]("#embeddedDict['fooId']", withObjVar, dicts).toOption.get.expression.evaluateSyncToValue[String](withObjVar) shouldEqual "fooId"
+    parseWithDicts[String]("#embeddedDict['fooId']", withObjVar, dicts).toOption.get.expression.evaluateSync[String](withObjVar) shouldEqual "fooId"
     parseWithDicts[String]("#embeddedDict['wrongId']", withObjVar, dicts) shouldBe 'invalid
   }
 
@@ -648,10 +616,10 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
       .withVariable("enumValue", SimpleEnum.One)
       .withVariable("enum", DictInstance(enumDictId, dicts(enumDictId)))
 
-    parseWithDicts[SimpleEnum.Value]("#enum['one']", withObjVar, dicts).toOption.get.expression.evaluateSyncToValue[SimpleEnum.Value](withObjVar) shouldEqual SimpleEnum.One
+    parseWithDicts[SimpleEnum.Value]("#enum['one']", withObjVar, dicts).toOption.get.expression.evaluateSync[SimpleEnum.Value](withObjVar) shouldEqual SimpleEnum.One
     parseWithDicts[SimpleEnum.Value]("#enum['wrongId']", withObjVar, dicts) shouldBe 'invalid
 
-    parseWithDicts[Boolean]("#enumValue == #enum['one']", withObjVar, dicts).toOption.get.expression.evaluateSyncToValue[Boolean](withObjVar) shouldBe true
+    parseWithDicts[Boolean]("#enumValue == #enum['one']", withObjVar, dicts).toOption.get.expression.evaluateSync[Boolean](withObjVar) shouldBe true
     parseWithDicts[Boolean]("#stringValue == #enum['one']", withObjVar, dicts) shouldBe 'invalid
   }
 
@@ -660,7 +628,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
       val parsed = parseOrFail[T](expr)
       //Bytecode generation happens only after successful invoke at times. To be sure we're there we round it up to 5 ;)
       (1 to 5).foreach { _ =>
-        parsed.evaluateSyncToValue[T](ctx) shouldBe result
+        parsed.evaluateSync[T](ctx) shouldBe result
       }
     }
 
@@ -683,13 +651,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
 case class SampleObject(list: List[SampleValue])
 
-case class SampleValue(value: Int, anyObject: Any = "") extends UsingLazyValues {
-
-  val lazy1 : LazyState[String] = lazyValue[String]("")
-
-  val lazy2 : LazyState[Long] = lazyValue[Long]("")
-
-}
+case class SampleValue(value: Int, anyObject: Any = "")
 
 object SimpleEnum extends Enumeration {
   // we must explicitly define Value class to recognize if type is matching

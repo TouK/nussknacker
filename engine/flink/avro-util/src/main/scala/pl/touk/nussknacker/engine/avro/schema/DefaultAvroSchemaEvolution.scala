@@ -6,7 +6,7 @@ import java.nio.ByteBuffer
 import org.apache.avro.Schema
 import org.apache.avro.generic._
 import org.apache.avro.io.{DatumReader, DecoderFactory, EncoderFactory}
-import pl.touk.nussknacker.engine.avro.AvroUtils
+import pl.touk.nussknacker.engine.avro.{AvroUtils, RuntimeSchemaData}
 
 import scala.util.Try
 
@@ -20,7 +20,7 @@ import scala.util.Try
   *
   * For now it's easiest way to convert GenericContainer record to wanted schema.
   */
-class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWriterMixin {
+class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWriterMixin with RecordDeserializer {
 
   /**
     * In future we can try to configure it
@@ -29,7 +29,7 @@ class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWri
 
   protected final val encoderFactory: EncoderFactory = EncoderFactory.get
 
-  protected final val decoderFactory = DecoderFactory.get
+  override protected final val decoderFactory = DecoderFactory.get
 
   override def alignRecordToSchema(record: GenericContainer, schema: Schema): Any = {
     val writerSchema = record.getSchema
@@ -51,25 +51,19 @@ class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWri
   protected def deserializePayloadToSchema(payload: Array[Byte], writerSchema: Schema, readerSchema: Schema): Any = {
     try {
       // We always want to create generic record at the end, because speecific can has other fields than expected
-      val reader = new GenericDatumReader(writerSchema, readerSchema, AvroUtils.genericData).asInstanceOf[DatumReader[Any]]
+      val reader = StringForcingDatumReaderProvider.genericDatumReader[AnyRef](writerSchema, readerSchema, AvroUtils.genericData).asInstanceOf[DatumReader[AnyRef]]
       val buffer = ByteBuffer.wrap(payload)
-      val length = buffer.limit()
-      if (writerSchema.getType == Schema.Type.BYTES) {
-        val bytes = new Array[Byte](length)
-        buffer.get(bytes, 0, length)
-        bytes
-      } else {
-        val start = buffer.position() + buffer.arrayOffset
-        val binaryDecoder = decoderFactory.binaryDecoder(buffer.array, start, length, null)
-        val result = reader.read(null, binaryDecoder)
-        if (writerSchema.getType == Schema.Type.STRING) result.toString else result
-      }
+      deserializeRecord(RuntimeSchemaData(readerSchema, None), reader, buffer, 0)
     } catch {
       case exc@(_: RuntimeException | _: IOException) =>
         // avro deserialization may throw IOException, AvroRuntimeException, NullPointerException, etc
         throw new AvroSchemaEvolutionException(s"Error at deserialization payload to record.", exc)
     }
   }
+
+  // Currently schema evolution doesn't support schema id serialization. We assume that it is used only on the end of process,
+  // when there won't be any subsequent serializations done
+  override protected def schemaIdSerializationEnabled: Boolean = false
 
   /**
     * Record serialization method, kind of copy paste from AbstractKafkaAvroSerializer#DeserializationContext.read.

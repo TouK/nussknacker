@@ -6,6 +6,7 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.scala._
 import org.scalatest.Suite
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
@@ -35,8 +36,8 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
 
       val env = flinkMiniCluster.createExecutionEnvironment()
       val modelData = LocalModelData(config, creator)
-      FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
-        .register(new StreamExecutionEnvironment(env), process, processVersion)
+      FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData))
+        .register(new StreamExecutionEnvironment(env), process, processVersion, DeploymentData.empty)
 
       MockService.clear()
       SinkForStrings.clear()
@@ -51,8 +52,8 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
                parallelism: Int, actionToInvokeWithJobRunning: => Unit): Unit = {
       val env = flinkMiniCluster.createExecutionEnvironment()
       val modelData = LocalModelData(config, creator)
-      registrar.FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData, None))
-        .register(new StreamExecutionEnvironment(env), process, processVersion)
+      registrar.FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData))
+        .register(new StreamExecutionEnvironment(env), process, processVersion, DeploymentData.empty)
 
       MockService.clear()
       env.withJobRunning(process.id)(actionToInvokeWithJobRunning)
@@ -77,6 +78,8 @@ object ProcessTestHelpers {
 
     override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
       "logService" -> WithCategories(new MockService),
+      "lifecycleService" -> WithCategories(LifecycleService),
+      "eagerLifecycleService" -> WithCategories(EagerLifecycleService),
       "enricherWithOpenService" -> WithCategories(new EnricherWithOpenService),
       "serviceAcceptingOptionalValue" -> WithCategories(ServiceAcceptingScalaOption)
     )
@@ -129,7 +132,7 @@ object ProcessTestHelpers {
     }
 
     override def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[TestProcessSignalFactory]] = {
-      val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config, "kafka")
+      val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config)
       Map("sig1" ->
         WithCategories(new TestProcessSignalFactory(kafkaConfig, signalTopic)))
     }

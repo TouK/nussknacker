@@ -4,10 +4,11 @@ import {reducer as graph} from "./graph"
 import {reducer as httpErrorHandler} from "./httpErrorHandler"
 import {reducer as processActivity} from "./processActivity"
 import {reducer as settings} from "./settings"
-import {reducer as toolbars} from "./toolbars"
+import {toolbars} from "./toolbars"
 import {reducer as nodeDetails} from "./nodeDetailsState"
 import {reducer as ui} from "./ui"
-
+import {featureFlags} from "./featureFlags"
+import {userSettings} from "./userSettings"
 import {undoRedoReducer as undoRedo} from "./undoRedo"
 
 export const reducer = combineReducers({
@@ -18,6 +19,8 @@ export const reducer = combineReducers({
   processActivity,
   notifications,
   toolbars,
+  featureFlags,
+  userSettings,
   nodeDetails,
 })
 

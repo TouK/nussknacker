@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.management.sample
 
 import java.time.LocalDateTime
-
 import com.typesafe.config.Config
 import io.circe.Encoder
 import org.apache.flink.api.common.serialization.SimpleStringSchema
@@ -11,6 +10,9 @@ import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedVal
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.TestParsingUtils
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
+import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactoryWithEditor
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
@@ -18,7 +20,7 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelp
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.SlidingAggregateTransformerV2
 import pl.touk.nussknacker.engine.flink.util.transformer.outer.OuterJoinTransformer
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer, UnionWithMemoTransformer}
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.{BasicFormatter, KafkaConfig}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
@@ -31,9 +33,13 @@ import pl.touk.nussknacker.engine.management.sample.signal.{RemoveLockProcessSig
 import pl.touk.nussknacker.engine.management.sample.source._
 import pl.touk.nussknacker.engine.management.sample.transformer._
 import pl.touk.nussknacker.engine.util.LoggingListener
+import net.ceedubs.ficus.Ficus._
 
 object DevProcessConfigCreator {
   val oneElementValue = "One element"
+
+  //This ConfigCreator is used in tests in quite a few places, where we don't have 'real' schema registry and we don't need it.
+  val emptyMockedSchemaRegistryProperty = "withMockedConfluent"
 }
 
 /**
@@ -49,27 +55,36 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   private def all[T](value: T): WithCategories[T] = WithCategories(value, "Category1", "Category2", "DemoFeatures", "TESTCAT")
 
-  private def kafkaConfig(config: Config) = KafkaConfig.parseConfig(config, "kafka")
+  private def kafkaConfig(config: Config) = KafkaConfig.parseConfig(config)
 
-  override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
-    "sendSms" -> all(SinkFactory.noParam(EmptySink)),
-    "monitor" -> categories(SinkFactory.noParam(EmptySink)),
-    "communicationSink" -> categories(DynamicParametersSink),
-    "kafka-string" -> all(new KafkaSinkFactory(new SimpleSerializationSchema[Any](_, String.valueOf), processObjectDependencies))
-  )
+  override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
+    val mockConfluent = processObjectDependencies.config.getAs[Boolean](DevProcessConfigCreator.emptyMockedSchemaRegistryProperty).contains(true)
+    val confluentFactory: ConfluentSchemaRegistryClientFactory = if (mockConfluent) {
+      new MockConfluentSchemaRegistryClientFactory(new MockSchemaRegistryClient)
+    } else CachedConfluentSchemaRegistryClientFactory()
+
+    Map(
+      "sendSms" -> all(SinkFactory.noParam(EmptySink)),
+      "monitor" -> categories(SinkFactory.noParam(EmptySink)),
+      "communicationSink" -> categories(DynamicParametersSink),
+      "kafka-string" -> all(new KafkaSinkFactory(new SimpleSerializationSchema[Any](_, String.valueOf), processObjectDependencies)),
+      "kafka-avro" -> all(new KafkaAvroSinkFactoryWithEditor(ConfluentSchemaRegistryProvider(confluentFactory, processObjectDependencies), processObjectDependencies))
+    )
+  }
 
   override def listeners(processObjectDependencies: ProcessObjectDependencies) = List(LoggingListener)
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
     "real-kafka" -> all(new KafkaSourceFactory[String](new SimpleStringSchema,
                                                         None,
-                                                        TestParsingUtils.newLineSplit,
+                                                        BasicFormatter,
                                                         processObjectDependencies)),
     "kafka-transaction" -> all(FlinkSourceFactory.noParam(new NoEndingSource)),
     "boundedSource" -> categories(BoundedSource),
     "oneSource" -> categories(FlinkSourceFactory.noParam(new OneSource)),
     "communicationSource" -> categories(DynamicParametersSource),
-    "csv-source" -> categories(FlinkSourceFactory.noParam(new CsvSource))
+    "csv-source" -> categories(FlinkSourceFactory.noParam(new CsvSource)),
+    "sql-source" -> categories(SqlSource)
   )
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
@@ -109,7 +124,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "configuratorService" -> features(ConfiguratorService),
     "meetingService" -> features(MeetingService),
     "dynamicService" -> categories(new DynamicService),
-    "customValidatedService" -> categories(new CustomValidatedService)
+    "customValidatedService" -> categories(new CustomValidatedService),
+    "modelConfigReader" -> categories(new ModelConfigReaderService(processObjectDependencies.config))
   )
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(

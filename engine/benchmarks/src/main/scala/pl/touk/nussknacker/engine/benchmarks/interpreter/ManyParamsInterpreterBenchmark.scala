@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.benchmarks.interpreter
 
 import java.util.concurrent.TimeUnit
 
+import cats.effect.IO
 import org.openjdk.jmh.annotations.{Benchmark, BenchmarkMode, Mode, OutputTimeUnit, Scope, State}
 import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
@@ -28,7 +29,7 @@ class ManyParamsInterpreterBenchmark {
     .sink("sink", "#out", "sink")
 
   private def prepareInterpreter(executionContext: ExecutionContext) = {
-    val setup = new InterpreterSetup[String].sourceInterpretation(process, Map("service" -> new ManyParamsService(executionContext)), Nil)
+    val setup = new InterpreterSetup[String].sourceInterpretation[IO](process, Map("service" -> new ManyParamsService(executionContext)), Nil)
     (ctx: Context) => setup(ctx, executionContext)
   }
 
@@ -39,7 +40,7 @@ class ManyParamsInterpreterBenchmark {
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkSync(): AnyRef = {
-    Await.result(interpreterSync(Context("")), 1 second)
+    interpreterSync(Context("")).unsafeRunSync()
   }
 
 
@@ -47,7 +48,7 @@ class ManyParamsInterpreterBenchmark {
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkAsync(): AnyRef = {
-    Await.result(interpreterAsync(Context("")), 1 second)
+    interpreterAsync(Context("")).unsafeRunSync()
   }
 
 }

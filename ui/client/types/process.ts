@@ -25,9 +25,16 @@ export type NodesGroup = {
   name: string,
 }
 
+export type CustomAction = {
+  name: string,
+  allowedStateStatusNames: Array<string>,
+  icon: string | null
+}
+
 export type ProcessDefinitionData = {
   nodesConfig?: $TodoType,
   nodesToAdd?: NodesGroup[],
   processDefinition?: $TodoType,
+  customActions?: Array<CustomAction>,
   defaultAsyncInterpretation?: boolean,
 }

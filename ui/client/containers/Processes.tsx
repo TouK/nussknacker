@@ -10,10 +10,11 @@ import styles from "../containers/processesTable.styl"
 import {EditItem} from "./editItem"
 import {MetricsItem} from "./metricsItem"
 import {Page} from "./Page"
-import {getProcessState, ProcessesList, RowsRenderer} from "./ProcessesList"
+import {Filterable, getProcessState, ProcessesList, RowsRenderer} from "./ProcessesList"
 import {ProcessNameInput} from "./ProcessNameInput"
 import tabStyles from "../components/tabs/processTabs.styl"
 import {SearchItem} from "./TableFilters"
+import ProcessLastAction from "../components/Process/ProcessLastAction"
 
 const ElementsRenderer: RowsRenderer = ({processes, getProcesses, statuses}) => {
   const processState = getProcessState(statuses)
@@ -30,6 +31,9 @@ const ElementsRenderer: RowsRenderer = ({processes, getProcesses, statuses}) => 
         </Td>
         <Td column="modifyDate" className="centered-column" value={process.modificationDate}>
           <Date date={process.modificationDate}/>
+        </Td>
+        <Td column="lastAction" className="centered-column" value={process?.lastAction?.performedAt}>
+          <ProcessLastAction process={process}/>
         </Td>
         <Td column="status" className="status-column">
           <ProcessStateIcon
@@ -49,14 +53,15 @@ const ElementsRenderer: RowsRenderer = ({processes, getProcesses, statuses}) => 
   })
 }
 
-const sortable = ["name", "category", "modifyDate", "createdAt", "createdBy"]
-const filterable = ["name", "category", "createdBy"]
+const sortable = ["name", "category", "modifyDate", "createdAt", "createdBy", "lastAction"]
+const filterable: Filterable = ["name", "processCategory", "createdBy"]
 const columns = [
   {key: "name", label: "Name"},
   {key: "category", label: "Category"},
   {key: "createdBy", label: "Created by"},
   {key: "createdAt", label: "Created at"},
   {key: "modifyDate", label: "Last modification"},
+  {key: "lastAction", label: "Last action"},
   {key: "status", label: "Status"},
   {key: "edit", label: "Edit"},
   {key: "metrics", label: "Metrics"},

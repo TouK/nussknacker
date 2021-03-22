@@ -3,19 +3,20 @@ package pl.touk.nussknacker.engine.kafka.generic
 import java.nio.charset.StandardCharsets
 import java.util
 import java.util.Collections
-
 import io.circe.{Decoder, Json, JsonObject}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
 import org.apache.flink.streaming.connectors.kafka.internals.KafkaDeserializationSchemaWrapper
+import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator}
-import pl.touk.nussknacker.engine.api.test.TestParsingUtils
+import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.{CirceUtil, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.{KafkaSource, KafkaSourceFactory}
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
+import pl.touk.nussknacker.engine.kafka.{BasicFormatter, KafkaConfig, KafkaUtils, RecordFormatter}
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
@@ -25,7 +26,7 @@ object sources {
   import collection.JavaConverters._
 
   class GenericJsonSourceFactory(processObjectDependencies: ProcessObjectDependencies) extends KafkaSourceFactory[java.util.Map[_, _]](
-    JsonMapDeserialization, None, TestParsingUtils.newLineSplit, processObjectDependencies)
+    JsonMapDeserialization, None, JsonRecordFormatter, processObjectDependencies)
 
   class GenericTypedJsonSourceFactory(processObjectDependencies: ProcessObjectDependencies)
     extends FlinkSourceFactory[TypedMap] with Serializable {
@@ -35,7 +36,7 @@ object sources {
       val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
       val deserializationSchema = new KafkaDeserializationSchemaWrapper(JsonTypedMapDeserialization)
       val preparedTopics = List(KafkaUtils.prepareKafkaTopic(topic, processObjectDependencies))
-      new KafkaSource(preparedTopics, kafkaConfig, deserializationSchema, None, None, TestParsingUtils.newLineSplit) with ReturningType {
+      new KafkaSource(preparedTopics, kafkaConfig, deserializationSchema, None, JsonRecordFormatter) with ReturningType {
         override def returnType: typing.TypingResult = TypingUtils.typeMapDefinition(definition)
       }
     }
@@ -44,9 +45,12 @@ object sources {
   //FIXME: handle numeric conversion and validation here??
   //how should we treat json that is non-object?
   private def deserializeToMap(message: Array[Byte]): java.util.Map[String, _] =
-    toJson(new String(message, StandardCharsets.UTF_8)).asObject.map(jsonObjectToMap).getOrElse(Collections.emptyMap[String, Any])
+    toJson(message).asObject.map(jsonObjectToMap).getOrElse(Collections.emptyMap[String, Any])
 
-  private def toJson(jsonString: String): Json = CirceUtil.decodeJsonUnsafe[Json](jsonString, s"invalid message ($jsonString)")
+  private def toJson(jsonBytes: Array[Byte]): Json = {
+    val value = new String(jsonBytes, StandardCharsets.UTF_8)
+    CirceUtil.decodeJsonUnsafe[Json](value, s"invalid message ($value)")
+  }
 
   private def jsonToMap(jo: Json): Any = jo.fold(
     jsonNull = null,
@@ -70,5 +74,15 @@ object sources {
 
   //TOOD: better error handling?
   class JsonDecoderDeserialization[T:Decoder:TypeInformation] extends EspDeserializationSchema[T](ba => CirceUtil.decodeJsonUnsafe(ba))
+
+  //We format before returning to user, to avoid problems with empty lines etc.
+  object JsonRecordFormatter extends BasicFormatter {
+
+    override def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): Array[Byte] = {
+      toJson(record.value()).spaces2.getBytes(StandardCharsets.UTF_8)
+    }
+
+    override def testDataSplit: TestDataSplit = TestParsingUtils.emptyLineSplit
+  }
 
 }

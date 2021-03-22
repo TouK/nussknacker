@@ -1,4 +1,4 @@
-import moment from "moment"
+import {Moment} from "moment"
 import {dateFormat} from "../../config"
 import HttpService from "../../http/HttpService"
 import {ThunkAction} from "../reduxTypes"
@@ -11,7 +11,7 @@ export function displayProcessCounts(processCounts: ProcessCounts): $TodoType {
   }
 }
 
-export function fetchAndDisplayProcessCounts(processName: string, from: moment.Moment, to: moment.Moment): ThunkAction {
+export function fetchAndDisplayProcessCounts(processName: string, from: Moment, to: Moment): ThunkAction<Promise<void>> {
   return (dispatch) => HttpService.fetchProcessCounts(
     processName,
     from ? from.format(dateFormat) : null,

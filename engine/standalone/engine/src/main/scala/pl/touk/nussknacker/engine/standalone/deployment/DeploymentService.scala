@@ -6,15 +6,16 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{ExternalDeploymentId, ProcessState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{JobData, StandaloneMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.{ProcessMarshaller, ProcessUnmarshallError}
+import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
-import pl.touk.nussknacker.engine.standalone.api.DeploymentData
+import pl.touk.nussknacker.engine.standalone.api.StandaloneDeploymentData
 import pl.touk.nussknacker.engine.standalone.management.StandaloneProcessManagerProvider
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
 
@@ -34,7 +35,7 @@ object DeploymentService {
 class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData,
                         processRepository: ProcessRepository) extends LazyLogging with ProcessInterpreters {
 
-  private val processInterpreters: collection.concurrent.TrieMap[ProcessName, (StandaloneProcessInterpreter, DeploymentData)] = collection.concurrent.TrieMap()
+  private val processInterpreters: collection.concurrent.TrieMap[ProcessName, (StandaloneProcessInterpreter, StandaloneDeploymentData)] = collection.concurrent.TrieMap()
 
   private val pathToInterpreterMap: collection.concurrent.TrieMap[String, StandaloneProcessInterpreter] = collection.concurrent.TrieMap()
 
@@ -49,7 +50,7 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
     }
   }
 
-  def deploy(deploymentData: DeploymentData)(implicit ec: ExecutionContext): Either[NonEmptyList[DeploymentError], Unit] = {
+  def deploy(deploymentData: StandaloneDeploymentData)(implicit ec: ExecutionContext): Either[NonEmptyList[DeploymentError], Unit] = {
     val processName = deploymentData.processVersion.processName
 
     toEspProcess(deploymentData.processJson).andThen { process =>
@@ -67,7 +68,7 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
                 processRepository.add(processName, deploymentData)
                 processInterpreters.put(processName, (processInterpreter, deploymentData))
                 pathToInterpreterMap.put(pathToDeploy, processInterpreter)
-                processInterpreter.open(JobData(process.metaData, deploymentData.processVersion))
+                processInterpreter.open(JobData(process.metaData, deploymentData.processVersion, deploymentData.deploymentData))
                 logger.info(s"Successfully deployed process ${processName.value}")
               }
               interpreter.map(_ => ())
@@ -79,8 +80,8 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
   }
 
   def checkStatus(processName: ProcessName): Option[ProcessState] = {
-    processInterpreters.get(processName).map { case (_, DeploymentData(_, deploymentTime, processVersion)) => SimpleProcessState(
-        deploymentId = DeploymentId(processName.value),
+    processInterpreters.get(processName).map { case (_, StandaloneDeploymentData(_, deploymentTime, processVersion, _)) => SimpleProcessState(
+        deploymentId = ExternalDeploymentId(processName.value),
         status = SimpleStateStatus.Running,
         version = Option(processVersion),
         startTime = Some(deploymentTime)
@@ -104,7 +105,7 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
 
   private def newInterpreter(canonicalProcess: CanonicalProcess): Validated[NonEmptyList[DeploymentError], StandaloneProcessInterpreter] =
     ProcessCanonizer.uncanonize(canonicalProcess)
-      .andThen(StandaloneProcessInterpreter(_, context, modelData)).leftMap(_.map(DeploymentError(_)))
+      .andThen(StandaloneProcessInterpreter(_, context, modelData, Nil, ProductionServiceInvocationCollector)).leftMap(_.map(DeploymentError(_)))
 
   private def toEspProcess(processJson: String): ValidatedNel[DeploymentError, CanonicalProcess] =
     ProcessMarshaller.fromJson(processJson)

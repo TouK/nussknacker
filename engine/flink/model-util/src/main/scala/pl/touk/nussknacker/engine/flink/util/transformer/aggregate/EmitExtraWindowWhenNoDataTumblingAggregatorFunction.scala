@@ -5,11 +5,15 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.TimerService
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.util.Collector
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{ValueWithContext, Context => NkContext}
 import pl.touk.nussknacker.engine.flink.api.state.StateHolder
 import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
+import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap
+import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap._
 
-import scala.collection.immutable.TreeMap
+import scala.language.higherKinds
 
 /**
  * It behaves similar to Flink's TumblingWindow with one difference that we produce extra zero aggregate for each key when no data arrived.
@@ -17,16 +21,18 @@ import scala.collection.immutable.TreeMap
  * it handles out of order elements. The other difference from AggregatorFunction is that we emit event only in timer and handle
  * state eviction on ours own.
  */
-class EmitExtraWindowWhenNoDataTumblingAggregatorFunction(protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long)
+class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K,V]](protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long,
+                                                                     override val nodeId: NodeId, protected val aggregateElementType: TypingResult)
+                                                                    (implicit override val rangeMap: FlinkRangeMap[MapT])
   extends KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]
-    with StateHolder[TreeMap[Long, AnyRef]]
-    with AggregatorFunctionMixin with AddedElementContextStateHolder {
+    with StateHolder[MapT[Long, AnyRef]]
+    with AggregatorFunctionMixin[MapT] with AddedElementContextStateHolder[MapT] {
 
   type FlinkCtx = KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]#Context
   type FlinkOnTimerCtx = KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]#OnTimerContext
 
   @transient
-  protected var state: ValueState[TreeMap[Long, AnyRef]] = _
+  protected var state: ValueState[MapT[Long, AnyRef]] = _
 
   override def open(parameters: Configuration): Unit = {
     state = getRuntimeContext.getState(stateDescriptor)
@@ -49,21 +55,21 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction(protected val aggregat
     val currentStateValue = readStateOrInitial()
     val previousTimestamp = timestamp - timeWindowLengthMillis
 
-    readAddedElementContextOrInitial().to(previousTimestamp).lastOption.foreach {
+    readAddedElementContextOrInitial().toRO(previousTimestamp).toScalaMapRO.lastOption.foreach {
       case (_, nkCtx) =>
         val finalVal = computeFinalValue(currentStateValue, previousTimestamp)
         out.collect(ValueWithContext(finalVal, nkCtx))
     }
     
     val previousTimestampStateAndRest = stateForTimestampToReadUntilEnd(currentStateValue, previousTimestamp)
-    if (previousTimestampStateAndRest.isEmpty) {
+    if (previousTimestampStateAndRest.toScalaMapRO.isEmpty) {
       evictStates()
     } else {
       ctx.timerService().registerEventTimeTimer(timestamp + timeWindowLengthMillis)
     }
   }
 
-  override protected def updateState(stateValue: TreeMap[Long, AnyRef], stateValidity: Long, timeService: TimerService): Unit = {
+  override protected def updateState(stateValue: MapT[Long, AnyRef], stateValidity: Long, timeService: TimerService): Unit = {
     state.update(stateValue)
     invalidateAddedElementContextState(stateValue)
   }
@@ -73,6 +79,6 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction(protected val aggregat
     addedElementContext.clear()
   }
 
-  override protected def readState(): TreeMap[Long, AnyRef] = state.value()
+  override protected def readState(): MapT[Long, AnyRef] = state.value()
 
 }

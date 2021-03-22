@@ -79,7 +79,7 @@ class PeriodicFunction(duration: Duration) extends SourceFunction[Unit] {
 }
 
 @silent("deprecated")
-@nowarn("deprecated")
+@nowarn("cat=deprecation")
 class MapAscendingTimestampExtractor(timestampField: String) extends AscendingTimestampExtractor[AnyRef] {
   override def extractAscendingTimestamp(element: AnyRef): Long = {
     element match {

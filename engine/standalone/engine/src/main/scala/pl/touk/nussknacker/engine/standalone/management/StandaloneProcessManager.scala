@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.standalone.management
 
-import java.lang.annotation.Annotation
 import java.util.concurrent.TimeUnit
 
 import cats.data.Validated.{Invalid, Valid}
@@ -12,23 +11,23 @@ import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResu
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessObjectDependencies, TestDataParserProvider}
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{ServiceInvocationCollector, SinkInvocationCollector}
-import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestRunId}
-import pl.touk.nussknacker.engine.api.{EndingReference, JobData, ProcessVersion, StandaloneMetaData, TypeSpecificData}
+import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectWithMethodDef, OverriddenObjectWithMethodDef}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.nussknacker.engine.definition._
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
+import pl.touk.nussknacker.engine.testmode.SinkInvocationCollector
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
-import pl.touk.nussknacker.engine.standalone.api.DeploymentData
+import pl.touk.nussknacker.engine.standalone.api.StandaloneDeploymentData
 import pl.touk.nussknacker.engine.standalone.api.types._
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
 import pl.touk.nussknacker.engine.standalone.utils.metrics.NoOpMetricsProvider
+import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestRunId, TestServiceInvocationCollector}
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.engine.{ModelData, _}
 import shapeless.Typeable
@@ -46,14 +45,14 @@ class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessCl
 
   private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
-  override def deploy(processVersion: ProcessVersion, processDeploymentData: ProcessDeploymentData,
-                      savepointPath: Option[String], user: User): Future[Unit] = {
+  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData,
+                      savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     savepointPath match {
       case Some(_) => Future.failed(new UnsupportedOperationException("Cannot make savepoint on standalone process"))
       case None =>
         processDeploymentData match {
           case GraphProcess(processAsJson) =>
-            client.deploy(DeploymentData(processAsJson, System.currentTimeMillis(), processVersion))
+            client.deploy(StandaloneDeploymentData(processAsJson, System.currentTimeMillis(), processVersion, deploymentData)).map(_ => None)
           case CustomProcess(mainClass) =>
             Future.failed(new UnsupportedOperationException("custom process in standalone engine is not supported"))
         }
@@ -88,8 +87,14 @@ class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessCl
   override def processStateDefinitionManager: ProcessStateDefinitionManager = SimpleProcessStateDefinitionManager
 
   override def close(): Unit = {
-    
+
   }
+
+  override def customActions: List[CustomAction] = List.empty
+
+  override def invokeCustomAction(actionRequest: CustomActionRequest,
+                                  processDeploymentData: ProcessDeploymentData): Future[Either[CustomActionError, CustomActionResult]] =
+    Future.successful(Left(CustomActionNotImplemented(actionRequest)))
 }
 
 object StandaloneTestMain {
@@ -122,8 +127,7 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
 
     //FIXME: validation??
     val standaloneInterpreter = StandaloneProcessInterpreter(process, testContext, modelData,
-      definitionsPostProcessor = prepareMocksForTest(collectingListener),
-      additionalListeners = List(collectingListener)
+      additionalListeners = List(collectingListener), new TestServiceInvocationCollector(collectingListener.runId)
     ) match {
       case Valid(interpreter) => interpreter
       case Invalid(errors) => throw new IllegalArgumentException("Error during interpreter preparation: " + errors.toList.mkString(", "))
@@ -133,7 +137,8 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
 
     try {
       val processVersion = ProcessVersion.empty.copy(processName = ProcessName("snapshot version")) // testing process may be unreleased, so it has no version
-      standaloneInterpreter.open(JobData(process.metaData, processVersion))
+      val deploymentData = DeploymentData.empty
+      standaloneInterpreter.open(JobData(process.metaData, processVersion, deploymentData))
       val results = Await.result(Future.sequence(parsedTestData.map(standaloneInterpreter.invokeToResult(_, None))), timeout)
       collectSinkResults(collectingListener.runId, results)
       collectExceptions(collectingListener, results)
@@ -181,15 +186,6 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
     parsedTestData
   }
 
-  private def prepareMocksForTest(listener: ResultsCollectingListener)(definitions: ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef]): ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef] = {
-    import pl.touk.nussknacker.engine.util.Implicits._
-    val servicesWithEnabledInvocationCollector = definitions.services.mapValuesNow { service =>
-      TestUtils.prepareServiceWithEnabledInvocationCollector(listener.runId, service)
-    }
-    definitions
-      .copy(services = servicesWithEnabledInvocationCollector)
-  }
-
 }
 
 //FIXME deduplicate with pl.touk.nussknacker.engine.process.runner.FlinkRunner?
@@ -210,17 +206,6 @@ object TestUtils {
     }
   }
 
-  def prepareServiceWithEnabledInvocationCollector(runId: TestRunId, service: ObjectWithMethodDef): ObjectWithMethodDef = {
-    new OverriddenObjectWithMethodDef(service) {
-      override def invokeMethod(parameterCreator: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any = {
-        val newAdditional = additional.map {
-          case c: ServiceInvocationCollector => c.enable(runId)
-          case a => a
-        }
-        service.invokeMethod(parameterCreator, outputVariableNameOpt, newAdditional)
-      }
-    }
-  }
 }
 
 class StandaloneProcessManagerProvider extends ProcessManagerProvider {
@@ -239,9 +224,8 @@ class StandaloneProcessManagerProvider extends ProcessManagerProvider {
 
 object StandaloneProcessManagerProvider {
 
-  import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-  import pl.touk.nussknacker.engine.util.config.FicusReaders._
+  import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 
   def defaultTypeConfig(config: Config): ProcessingTypeConfig = {
     ProcessingTypeConfig("requestResponseStandalone",

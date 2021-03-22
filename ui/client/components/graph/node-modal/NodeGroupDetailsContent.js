@@ -23,6 +23,8 @@ export default function NodeGroupDetailsContent(props) {
                 showValidation={true}
                 showSwitch={true}
                 node={node}
+                //TODO: is it ok? NodeGroupDetails is always in read-only mode so should be ok
+                onChange={() => {}}
                 nodeErrors={props.nodeErrors}
                 testResults={testResults(node.id)}
               />

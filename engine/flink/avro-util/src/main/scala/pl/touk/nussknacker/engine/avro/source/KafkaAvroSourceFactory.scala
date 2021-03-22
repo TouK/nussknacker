@@ -15,29 +15,22 @@ import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSource
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 
-class KafkaAvroSourceFactory(val schemaRegistryProvider: SchemaRegistryProvider,
-                             val processObjectDependencies: ProcessObjectDependencies,
-                             timestampAssigner: Option[TimestampWatermarkHandler[Any]])
-  extends BaseKafkaAvroSourceFactory(timestampAssigner) with KafkaAvroBaseTransformer[FlinkSource[Any]]{
+import scala.reflect.ClassTag
+
+class KafkaAvroSourceFactory[T:ClassTag](val schemaRegistryProvider: SchemaRegistryProvider,
+                                         val processObjectDependencies: ProcessObjectDependencies,
+                                         timestampAssigner: Option[TimestampWatermarkHandler[T]])
+  extends BaseKafkaAvroSourceFactory(timestampAssigner) with KafkaAvroBaseTransformer[FlinkSource[T]]{
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
-                                    (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
-    case TransformationStep(Nil, _) =>
-      val initial = topicParam
-      NextParameters(List(initial.value), initial.written)
-    case TransformationStep((TopicParamName, DefinedEagerParameter(topic:String, _)) :: Nil, _) =>
-      val preparedTopic = prepareTopic(topic)
-      val versionOption = versionParam(preparedTopic)
-     NextParameters(List(versionOption.value), versionOption.written, None)
-    case TransformationStep((TopicParamName, _) :: Nil, _) =>
-      NextParameters(List(fallbackVersionOptionParam), Nil, None)
+                                    (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = topicParamStep orElse schemaParamStep orElse {
     case TransformationStep((TopicParamName, DefinedEagerParameter(topic:String, _)) ::
       (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::Nil, _) =>
       //we do casting here and not in case, as version can be null...
       val preparedTopic = prepareTopic(topic)
       val versionOption = parseVersionOption(version)
       val schemaDeterminer = prepareSchemaDeterminer(preparedTopic, versionOption)
-      val validType = schemaDeterminer.determineSchemaUsedInTyping.map(AvroSchemaTypeDefinitionExtractor.typeDefinition)
+      val validType = schemaDeterminer.determineSchemaUsedInTyping.map(schemaData => AvroSchemaTypeDefinitionExtractor.typeDefinition(schemaData.schema))
       val finalCtxValue = finalCtx(context, dependencies, validType.getOrElse(Unknown))
       val finalErrors = validType.swap.map(error => CustomNodeError(error.getMessage, Some(SchemaVersionParamName))).toList
       FinalResults(finalCtxValue, finalErrors)
@@ -47,8 +40,10 @@ class KafkaAvroSourceFactory(val schemaRegistryProvider: SchemaRegistryProvider,
       FinalResults(finalCtx(context, dependencies, Unknown), Nil)
   }
 
+  override def paramsDeterminedAfterSchema: List[Parameter] = Nil
+
   private def finalCtx(context: ValidationContext, dependencies: List[NodeDependencyValue], result: typing.TypingResult)(implicit nodeId: NodeId): ValidationContext = {
-    context.withVariable(variableName(dependencies), result).getOrElse(context)
+    context.withVariable(variableName(dependencies), result, None).getOrElse(context)
   }
 
   private def variableName(dependencies: List[NodeDependencyValue]) = {
@@ -57,11 +52,7 @@ class KafkaAvroSourceFactory(val schemaRegistryProvider: SchemaRegistryProvider,
     }.get
   }
 
-  override def initialParameters: List[Parameter] = {
-    List(topicParam(NodeId("")).value, versionParam(Nil))
-  }
-
-  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkSource[Any] = {
+  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkSource[T] = {
     val preparedTopic = extractPreparedTopic(params)
     val version = extractVersionOption(params)
     createSource(preparedTopic, kafkaConfig, schemaRegistryProvider.deserializationSchemaFactory, schemaRegistryProvider.recordFormatter,

@@ -8,7 +8,8 @@ import com.esotericsoftware.kryo.{Kryo, KryoSerializable}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
 //Approximate unique count (using https://en.wikipedia.org/wiki/HyperLogLog). Result is number
-case class HyperLogLogPlusAggregator(p: Int = 5, sp: Int = 10)
+//The parameters should be adjusted for use case, see HyperLogLogPlusAggregatorSpec for some experiments
+case class HyperLogLogPlusAggregator(p: Int = 10, sp: Int = 15)
   extends CardinalityAggregator(() => new HyperLogLogPlus(p, sp), ic => new CardinalityWrapper(ic) {
     override def readFromBytes(bytes: Array[Byte]): ICardinality = HyperLogLogPlus.Builder.build(bytes)
   })
@@ -34,6 +35,8 @@ class CardinalityAggregator(zeroCardinality: () => ICardinality, wrapper: ICardi
   override def result(r: CardinalityWrapper): java.lang.Long = r.wrapped.cardinality()
 
   override def computeOutputType(input: TypingResult): Validated[String, TypingResult] = Valid(Typed[Long])
+
+  override def computeStoredType(input: TypingResult): Validated[String, TypingResult] = Valid(Typed[CardinalityWrapper])
 
 }
 

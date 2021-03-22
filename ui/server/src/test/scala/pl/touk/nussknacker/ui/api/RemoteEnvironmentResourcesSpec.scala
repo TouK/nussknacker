@@ -38,7 +38,7 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
   val readWritePermissions: CategorizedPermission = testPermissionRead |+| testPermissionWrite
   it should "fail when process does not exist" in {
     val remoteEnvironment = new MockRemoteEnvironment
-    val route = withPermissions(new RemoteEnvironmentResources(remoteEnvironment, processRepository, processAuthorizer),readWritePermissions)
+    val route = withPermissions(new RemoteEnvironmentResources(remoteEnvironment, fetchingProcessRepository, processAuthorizer),readWritePermissions)
 
     Get(s"/remoteEnvironment/$processId/2/compare/1") ~> route ~> check {
       status shouldEqual StatusCodes.NotFound
@@ -59,7 +59,7 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
     val difference = Map("node1" -> NodeNotPresentInCurrent("node1", Filter("node1", Expression("spel", "#input == 4"))))
     val remoteEnvironment = new MockRemoteEnvironment(mockDifferences = Map(processId -> difference))
 
-    val route = withPermissions(new RemoteEnvironmentResources(remoteEnvironment, processRepository, processAuthorizer), readWritePermissions)
+    val route = withPermissions(new RemoteEnvironmentResources(remoteEnvironment, fetchingProcessRepository, processAuthorizer), readWritePermissions)
 
     saveProcess(processName, ProcessTestData.validProcess) {
       Get(s"/remoteEnvironment/$processId/2/compare/1") ~> route ~> check {
@@ -87,7 +87,7 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
       TestMigrationResult(process.copy(id = "failingProcess"), validationResult, true),
       TestMigrationResult(process.copy(id = "notFailing"), ValidationResult.success, false)
     )
-    val route = withPermissions(new RemoteEnvironmentResources(new MockRemoteEnvironment(results), processRepository, processAuthorizer), testPermissionRead)
+    val route = withPermissions(new RemoteEnvironmentResources(new MockRemoteEnvironment(results), fetchingProcessRepository, processAuthorizer), testPermissionRead)
 
     Get(s"/remoteEnvironment/testAutomaticMigration") ~> route ~> check {
       status shouldEqual StatusCodes.InternalServerError
@@ -104,7 +104,7 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
       TestMigrationResult(process.copy(id = "notFailing"), ValidationResult.success, false)
     )
 
-    val route = withPermissions(new RemoteEnvironmentResources(new MockRemoteEnvironment(results), processRepository, processAuthorizer), testPermissionRead)
+    val route = withPermissions(new RemoteEnvironmentResources(new MockRemoteEnvironment(results), fetchingProcessRepository, processAuthorizer), testPermissionRead)
 
     Get(s"/remoteEnvironment/testAutomaticMigration") ~> route ~> check {
       status shouldEqual StatusCodes.OK
@@ -127,7 +127,7 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
       processId2.value -> Map()
 
     )),
-      processRepository, processAuthorizer), testPermissionRead)
+      fetchingProcessRepository, processAuthorizer), testPermissionRead)
 
     saveProcess(processId1, ProcessTestData.validProcessWithId(processId1.value)) {
       saveProcess(processId2, ProcessTestData.validProcessWithId(processId2.value)) {
@@ -152,7 +152,7 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
     val route = withPermissions(new RemoteEnvironmentResources(new MockRemoteEnvironment(mockDifferences = Map(
       processId1.value -> Map("n1" -> difference)
     )),
-      processRepository, processAuthorizer), readWritePermissions)
+      fetchingProcessRepository, processAuthorizer), readWritePermissions)
 
     saveProcess(processId1, ProcessTestData.validProcessWithId(processId1.value)) {
       saveProcess(processId2, ProcessTestData.validProcessWithId(processId2.value)) {

@@ -1,18 +1,17 @@
 package pl.touk.nussknacker.engine.kafka.source
 
-import javax.validation.constraints.NotBlank
 import org.apache.flink.api.common.serialization.DeserializationSchema
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator}
-import pl.touk.nussknacker.engine.api.test.TestDataSplit
 import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.kafka.KafkaFactory._
 import pl.touk.nussknacker.engine.kafka.serialization.{FixedKafkaDeserializationSchemaFactory, KafkaDeserializationSchemaFactory}
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, RecordFormatter}
 
+import javax.validation.constraints.NotBlank
 import scala.reflect.ClassTag
 
 /** <pre>
@@ -31,18 +30,18 @@ import scala.reflect.ClassTag
   * */
 class KafkaSourceFactory[T: ClassTag](deserializationSchemaFactory: KafkaDeserializationSchemaFactory[T],
                                       timestampAssigner: Option[TimestampWatermarkHandler[T]],
-                                      testPrepareInfo: TestDataSplit,
+                                      formatter: RecordFormatter,
                                       processObjectDependencies: ProcessObjectDependencies)
-  extends BaseKafkaSourceFactory(deserializationSchemaFactory, timestampAssigner, testPrepareInfo, processObjectDependencies) {
+  extends BaseKafkaSourceFactory(deserializationSchemaFactory, timestampAssigner, formatter, processObjectDependencies) {
 
   def this(deserializationSchema: DeserializationSchema[T],
            timestampAssigner: Option[TimestampWatermarkHandler[T]],
-           testPrepareInfo: TestDataSplit,
+           formatter: RecordFormatter,
            processObjectDependencies: ProcessObjectDependencies) =
     this(
       FixedKafkaDeserializationSchemaFactory(deserializationSchema),
       timestampAssigner,
-      testPrepareInfo,
+      formatter,
       processObjectDependencies
     )
 
@@ -53,7 +52,7 @@ class KafkaSourceFactory[T: ClassTag](deserializationSchemaFactory: KafkaDeseria
                defaultMode = DualEditorMode.RAW
              )
              @ParamName(`TopicParamName`) @NotBlank topic: String)
-            (implicit nodeId: NodeId): Source[T] with TestDataGenerator = {
+            (implicit nodeId: NodeId): KafkaSource[T] = {
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
     createSource(List(topic), kafkaConfig, processMetaData, nodeId)
   }
@@ -62,20 +61,20 @@ class KafkaSourceFactory[T: ClassTag](deserializationSchemaFactory: KafkaDeseria
 class SingleTopicKafkaSourceFactory[T: ClassTag](topic: String,
                                                  deserializationSchemaFactory: KafkaDeserializationSchemaFactory[T],
                                                  timestampAssigner: Option[TimestampWatermarkHandler[T]],
-                                                 testPrepareInfo: TestDataSplit,
+                                                 formatter: RecordFormatter,
                                                  processObjectDependencies: ProcessObjectDependencies)
-  extends BaseKafkaSourceFactory(deserializationSchemaFactory, timestampAssigner, testPrepareInfo, processObjectDependencies) {
+  extends BaseKafkaSourceFactory(deserializationSchemaFactory, timestampAssigner, formatter, processObjectDependencies) {
 
   def this(topic: String,
            deserializationSchema: DeserializationSchema[T],
            timestampAssigner: Option[TimestampWatermarkHandler[T]],
-           testPrepareInfo: TestDataSplit,
+           formatter: RecordFormatter,
            processObjectDependencies: ProcessObjectDependencies) =
     this(
       topic,
       FixedKafkaDeserializationSchemaFactory(deserializationSchema),
       timestampAssigner,
-      testPrepareInfo,
+      formatter,
       processObjectDependencies
     )
 
@@ -88,7 +87,7 @@ class SingleTopicKafkaSourceFactory[T: ClassTag](topic: String,
 
 abstract class BaseKafkaSourceFactory[T: ClassTag](deserializationSchemaFactory: KafkaDeserializationSchemaFactory[T],
                                                    timestampAssigner: Option[TimestampWatermarkHandler[T]],
-                                                   testPrepareInfo: TestDataSplit,
+                                                   formatter: RecordFormatter,
                                                    processObjectDependencies: ProcessObjectDependencies)
   extends FlinkSourceFactory[T] with Serializable {
 
@@ -101,6 +100,6 @@ abstract class BaseKafkaSourceFactory[T: ClassTag](deserializationSchemaFactory:
     val preparedTopics = topics.map(KafkaUtils.prepareKafkaTopic(_, processObjectDependencies))
     val serializationSchema = deserializationSchemaFactory.create(topics, kafkaConfig)
     serializationSchema.getProducedType
-    new KafkaSource(preparedTopics, kafkaConfig, serializationSchema, timestampAssigner, None, testPrepareInfo)
+    new KafkaSource(preparedTopics, kafkaConfig, serializationSchema, timestampAssigner, formatter)
   }
 }

@@ -2,38 +2,38 @@ package pl.touk.nussknacker.engine.process.runner
 
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
-import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.test.TestRunId
+import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.VerificationFlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
+import pl.touk.nussknacker.engine.testmode.TestRunId
 
 object FlinkVerificationMain extends FlinkRunner {
 
-  def run(modelData: ModelData, processJson: String, processVersion: ProcessVersion, savepointPath: String, configuration: Configuration): Unit = {
+  def run(modelData: ModelData, processJson: String, processVersion: ProcessVersion, deploymentData: DeploymentData, savepointPath: String, configuration: Configuration): Unit = {
     val process = readProcessFromArg(processJson)
-    new FlinkVerificationMain(modelData, process,processVersion, savepointPath, configuration).runTest()
+    new FlinkVerificationMain(modelData, process,processVersion, deploymentData, savepointPath, configuration).runTest()
   }
 
 }
 
 
-class FlinkVerificationMain(val modelData: ModelData, val process: EspProcess, processVersion: ProcessVersion, savepointPath: String,
+class FlinkVerificationMain(val modelData: ModelData, val process: EspProcess, processVersion: ProcessVersion, deploymentData: DeploymentData, savepointPath: String,
                             val configuration: Configuration) extends FlinkStubbedRunner {
 
   def runTest(): Unit = {
     val env = createEnv
-    val registrar = prepareRegistrar(env)
-    registrar.register(env, process, processVersion, Option(TestRunId("dummy")))
+    val registrar = prepareRegistrar()
+    registrar.register(env, process, processVersion, deploymentData, Option(TestRunId("dummy")))
     execute(env, SavepointRestoreSettings.forPath(savepointPath, true))
   }
 
-  protected def prepareRegistrar(env: StreamExecutionEnvironment): FlinkProcessRegistrar = {
+  protected def prepareRegistrar(): FlinkProcessRegistrar = {
     FlinkProcessRegistrar(new VerificationFlinkProcessCompiler(
-      process, env.getConfig, modelData.configCreator, modelData.processConfigFromConfiguration, modelData.objectNaming),
-      modelData.processConfig, ExecutionConfigPreparer.defaultChain(modelData, None))
+      process, modelData.configCreator, modelData.inputConfigDuringExecution, modelData.modelConfigLoader, modelData.objectNaming),
+      modelData.processConfig, ExecutionConfigPreparer.defaultChain(modelData))
   }
 }

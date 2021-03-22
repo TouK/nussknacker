@@ -8,7 +8,7 @@ import io.circe.parser.parse
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.QueryableStateName
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
-import pl.touk.nussknacker.ui.process.{JobStatusService, ProcessObjectsFinder}
+import pl.touk.nussknacker.ui.process.{ProcessObjectsFinder, ProcessService}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
@@ -18,8 +18,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class QueryableStateResources(typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData],
                               val processRepository: FetchingProcessRepository[Future],
-                              jobStatusService: JobStatusService,
-                              val processAuthorizer:AuthorizeProcess)
+                              processService: ProcessService,
+                              val processAuthorizer: AuthorizeProcess)
                              (implicit val ec: ExecutionContext)
   extends Directives
     with FailFastCirceSupport
@@ -58,14 +58,15 @@ class QueryableStateResources(typeToConfig: ProcessingTypeDataProvider[Processin
 
   import cats.instances.future._
   import cats.syntax.either._
+
   private def queryState(processId: ProcessIdWithName, queryName: String, key: Option[String])(implicit user: LoggedUser): Future[Json] = {
     import QueryStateErrors._
 
     val fetchedJsonState = for {
       processingType <- EitherT.liftF(processRepository.fetchProcessingType(processId.id))
-      state <- EitherT(jobStatusService.retrieveJobStatus(processId).map(Either.fromOption(_, noJob(processId.name.value))))
+      state <- EitherT.liftF(processService.getProcessState(processId))
       jobId <- EitherT.fromEither(Either.fromOption(state.deploymentId, if (state.status.isDuringDeploy) deployInProgress(processId.name.value) else noJobRunning(processId.name.value)))
-      jsonString <- EitherT.right(fetchState(processingType, jobId, queryName, key))
+      jsonString <- EitherT.right(fetchState(processingType, jobId.value, queryName, key))
       json <- EitherT.fromEither(parse(jsonString).leftMap(msg => wrongJson(msg.message, jsonString)))
     } yield json
     fetchedJsonState.value.map {
@@ -89,8 +90,11 @@ class QueryableStateResources(typeToConfig: ProcessingTypeDataProvider[Processin
 
   object QueryStateErrors {
     def noJob(processId: String) = s"There is no job for $processId"
+
     def noJobRunning(processId: String) = s"There is no running job for $processId"
+
     def deployInProgress(processId: String) = s"There is pending deployment for $processId, Try again later"
+
     def wrongJson(msg: String, json: String) = s"Unparsable json. Message: $msg, json: $json"
   }
 

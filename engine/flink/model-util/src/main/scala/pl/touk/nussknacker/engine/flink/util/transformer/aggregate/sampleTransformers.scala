@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import java.util.concurrent.TimeUnit
-
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
@@ -80,7 +79,7 @@ object sampleTransformers {
                 @ParamName("windowLength") length: java.time.Duration,
                 @OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
       val windowDuration = Duration(length.toMillis, TimeUnit.MILLISECONDS)
-      transformers.tumblingTransformer(keyBy, aggregateBy, toAggregator(aggregatorType), windowDuration, variableName, emitExtraWindowWhenNoData = false, explicitUidInStatefulOperators)
+      transformers.tumblingTransformer(keyBy, aggregateBy, toAggregator(aggregatorType), windowDuration, variableName, TumblingWindowTrigger.OnEnd, explicitUidInStatefulOperators)
     }
 
   }
@@ -157,10 +156,10 @@ object sampleTransformers {
                   )), defaultMode = DualEditorMode.SIMPLE) aggregator: Aggregator,
                 @ParamName("aggregateBy") aggregateBy: LazyParameter[AnyRef],
                 @ParamName("windowLength") length: java.time.Duration,
-                @ParamName("emitExtraWindowWhenNoData") emitExtraWindowWhenNoData: Boolean,
+                @ParamName("emitWhen") trigger: TumblingWindowTrigger,
                 @OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
       val windowDuration = Duration(length.toMillis, TimeUnit.MILLISECONDS)
-      transformers.tumblingTransformer(keyBy, aggregateBy, aggregator, windowDuration, variableName, emitExtraWindowWhenNoData, explicitUidInStatefulOperators)
+      transformers.tumblingTransformer(keyBy, aggregateBy, aggregator, windowDuration, variableName, trigger, explicitUidInStatefulOperators)
     }
 
   }

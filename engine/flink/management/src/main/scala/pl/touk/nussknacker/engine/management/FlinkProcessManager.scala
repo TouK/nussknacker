@@ -1,25 +1,18 @@
 package pl.touk.nussknacker.engine.management
 
-import java.io.File
-
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.Encoder
+import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.management.FlinkProcessManager.prepareProgramArgs
 
 import scala.concurrent.{ExecutionContext, Future}
 
 abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolean, mainClassName: String)
   extends ProcessManager with LazyLogging {
-
-  protected lazy val jarFile: File = new FlinkModelJar().buildJobJar(modelData)
-
-  protected lazy val buildInfoJson: String = {
-    Encoder[Map[String, String]].apply(modelData.configCreator.buildInfo()).spaces2
-  }
 
   private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
@@ -27,7 +20,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
   private lazy val verification = new FlinkProcessVerifier(modelData)
 
-  override def deploy(processVersion: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String], user: User): Future[Unit] = {
+  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     val processName = processVersion.processName
 
     import cats.data.OptionT
@@ -35,11 +28,12 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
     val stoppingResult = for {
       oldJob <- OptionT(findJobStatus(processName))
-      _ <- OptionT[Future, Unit](if (!oldJob.status.canDeploy)
+      deploymentId <- OptionT.fromOption[Future](oldJob.deploymentId)
+      _ <- OptionT[Future, Unit](if (!oldJob.allowedActions.contains(ProcessActionType.Deploy))
         Future.failed(new IllegalStateException(s"Job ${processName.value} cannot be deployed, status: ${oldJob.status.name}")) else Future.successful(Some(())))
       //when it's failed we don't need savepoint...
       if oldJob.isDeployed
-      maybeSavePoint <- OptionT.liftF(stopSavingSavepoint(processVersion, oldJob, processDeploymentData))
+      maybeSavePoint <- OptionT.liftF(stopSavingSavepoint(processVersion, deploymentId, processDeploymentData))
     } yield {
       logger.info(s"Deploying $processName. Saving savepoint finished")
       maybeSavePoint
@@ -48,7 +42,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     stoppingResult.value.flatMap { maybeSavepoint =>
       runProgram(processName,
         prepareProgramMainClass(processDeploymentData),
-        prepareProgramArgs(processVersion, processDeploymentData),
+        prepareProgramArgs(modelData.inputConfigDuringExecution.serialized, processVersion, deploymentData, processDeploymentData),
         savepointPath.orElse(maybeSavepoint))
     }
   }
@@ -71,19 +65,28 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
 
   override def cancel(processName: ProcessName, user: User): Future[Unit] = {
     findJobStatus(processName).flatMap {
-      case Some(state) if state.status.isRunning =>
-        cancel(state)
+      // We check if process is in non-terminal state on Flink (status.isRunning) - if it's not we do not want to make
+      // request to Flink - it would fail. Nevertheless this method has to be invoked in such cases - other implementations
+      // may have some work to do.
+      case Some(ProcessState(Some(deploymentId), status, _, actions, _, _, _, _, _, _)) if status.isRunning && actions.contains(ProcessActionType.Cancel) =>
+        cancel(deploymentId)
       case state =>
         logger.warn(s"Trying to cancel ${processName.value} which is not running but in status: $state")
         Future.successful(())
     }
   }
 
-  private def requireRunningProcess[T](processName: ProcessName)(action: ProcessState => Future[T]): Future[T] = {
+  override def customActions: List[CustomAction] = List.empty
+
+  override def invokeCustomAction(actionRequest: CustomActionRequest,
+                                  processDeploymentData: ProcessDeploymentData): Future[Either[CustomActionError, CustomActionResult]] =
+    Future.successful(Left(CustomActionNotImplemented(actionRequest)))
+
+  private def requireRunningProcess[T](processName: ProcessName)(action: ExternalDeploymentId => Future[T]): Future[T] = {
     val name = processName.value
     findJobStatus(processName).flatMap {
-      case Some(state) if state.status.isRunning =>
-        action(state)
+      case Some(ProcessState(Some(deploymentId), status, _, _, _, _, _, _, _, _)) if status.isRunning =>
+        action(deploymentId)
       case Some(state) =>
         Future.failed(new IllegalStateException(s"Job $name is not running, status: ${state.status.name}"))
       case None =>
@@ -98,28 +101,17 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
       case _ => Future.successful(())
     }
 
-  private def stopSavingSavepoint(processVersion: ProcessVersion, job: ProcessState, processDeploymentData: ProcessDeploymentData): Future[String] = {
-    logger.debug(s"Making savepoint of  ${processVersion.processName}. Status: $job")
+  private def stopSavingSavepoint(processVersion: ProcessVersion, deploymentId: ExternalDeploymentId, processDeploymentData: ProcessDeploymentData): Future[String] = {
+    logger.debug(s"Making savepoint of  ${processVersion.processName}. Deployment: $deploymentId")
     for {
-      savepointResult <- makeSavepoint(job, savepointDir = None)
+      savepointResult <- makeSavepoint(deploymentId, savepointDir = None)
       savepointPath = savepointResult.path
       _ <- checkIfJobIsCompatible(savepointPath, processDeploymentData, processVersion)
-      _ <- cancel(job)
+      _ <- cancel(deploymentId)
     } yield savepointPath
   }
 
-  private def prepareProgramArgs(processVersion: ProcessVersion, processDeploymentData: ProcessDeploymentData) : List[String] = {
-    val configPart = modelData.processConfigFromConfiguration.render()
-    processDeploymentData match {
-      case GraphProcess(processAsJson) =>
-        List(processAsJson, toJsonString(processVersion), configPart, buildInfoJson)
-      case CustomProcess(_) =>
-        List(processVersion.processName.value, configPart, buildInfoJson)
-    }
-  }
-  private def toJsonString(processVersion: ProcessVersion): String = {
-    Encoder[ProcessVersion].apply(processVersion).spaces2
-  }
+
 
   private def prepareProgramMainClass(processDeploymentData: ProcessDeploymentData) : String = {
     processDeploymentData match {
@@ -128,13 +120,29 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
     }
   }
 
-  protected def cancel(job: ProcessState): Future[Unit]
+  protected def cancel(deploymentId: ExternalDeploymentId): Future[Unit]
 
-  protected def makeSavepoint(job: ProcessState, savepointDir: Option[String]): Future[SavepointResult]
+  protected def makeSavepoint(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult]
 
-  protected def stop(job: ProcessState, savepointDir: Option[String]): Future[SavepointResult]
+  protected def stop(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult]
 
-  protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit]
+  protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Option[ExternalDeploymentId]]
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = FlinkProcessStateDefinitionManager
+}
+
+object FlinkProcessManager {
+
+  def prepareProgramArgs(serializedConfig: String,
+                         processVersion: ProcessVersion,
+                         deploymentData: DeploymentData,
+                         processDeploymentData: ProcessDeploymentData) : List[String] = {
+    processDeploymentData match {
+      case GraphProcess(processAsJson) =>
+        List(processAsJson, processVersion.asJson.spaces2, deploymentData.asJson.spaces2, serializedConfig)
+      case CustomProcess(_) =>
+        List(processVersion.processName.value, serializedConfig)
+    }
+  }
+
 }

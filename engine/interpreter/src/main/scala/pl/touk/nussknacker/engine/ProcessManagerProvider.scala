@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine
 
-import java.io.Closeable
 import java.net.URL
 
 import com.typesafe.config.Config
@@ -8,6 +7,7 @@ import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.api.TypeSpecificData
 import pl.touk.nussknacker.engine.api.deployment.ProcessManager
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
+import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
 
 trait ProcessManagerProvider {
@@ -38,8 +38,7 @@ case class ProcessingTypeData(processManager: ProcessManager,
 
 object ProcessingTypeConfig {
 
-  import net.ceedubs.ficus.Ficus._
-  import pl.touk.nussknacker.engine.util.config.FicusReaders._
+  import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 
   implicit val reader: ValueReader[ProcessingTypeConfig] = ValueReader.relative(read)
 
@@ -57,7 +56,7 @@ case class ProcessingTypeConfig(engineType: String,
                                 engineConfig: Config,
                                 modelConfig: Config) {
 
-  def toModelData = ModelData(modelConfig, classPath)
+  def toModelData: ModelData = ModelData(modelConfig, ModelClassLoader(classPath))
 
 }
 
@@ -65,10 +64,7 @@ object ProcessingTypeData {
 
   type ProcessingType = String
 
-
-  def createProcessingTypeData(processManagerProvider: ProcessManagerProvider, processTypeConfig: ProcessingTypeConfig): ProcessingTypeData = {
-    val modelData = processTypeConfig.toModelData
-    val managerConfig = processTypeConfig.engineConfig
+  def createProcessingTypeData(processManagerProvider: ProcessManagerProvider, modelData: ModelData, managerConfig: Config): ProcessingTypeData = {
     val manager = processManagerProvider.createProcessManager(modelData, managerConfig)
     val queryableClient = processManagerProvider.createQueryableClient(managerConfig)
     ProcessingTypeData(
@@ -77,5 +73,11 @@ object ProcessingTypeData {
       processManagerProvider.emptyProcessMetadata,
       queryableClient,
       processManagerProvider.supportsSignals)
+  }
+
+  def createProcessingTypeData(processManagerProvider: ProcessManagerProvider, processTypeConfig: ProcessingTypeConfig): ProcessingTypeData = {
+    val modelData = processTypeConfig.toModelData
+    val managerConfig = processTypeConfig.engineConfig
+    createProcessingTypeData(processManagerProvider, modelData, managerConfig)
   }
 }

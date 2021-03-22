@@ -2,180 +2,182 @@
 @require "./_mixins.styl"
 
 .table-filter
-  margin: 45px containerPadding
-  max-width: 450px
-  min-width: 200px
-  flex: 1 1 auto
+    margin: containerPadding
+    max-width: 450px
+    min-width: 200px
+    flex: 1 1 auto
 
 .table-select
-  margin: 10px 0px -20px containerPadding
+    margin: containerPadding
 
-  height formControllHeight
-  background-color: processesSearchInput
-  box-shadow: none
-  font-size 14px
-  color: black
+    height formControllHeight
+    background-color: processessSearchInput
+    box-shadow: none
+    font-size 14px
+    color: black
 
 .input-group
-  .big-blue-button
-    float: right
+    .big-blue-button
+        float: right
 
 .esp-table
-  margin-bottom 20px
-  iconColumnWidth = 50px
+    margin-bottom 20px
+    iconColumnWidth = 50px
 
-  clickableIconColumn()
-    text-align: center
-    width: iconColumnWidth
-    span
-      font-size: 20px
-      cursor: pointer
-
-      &:focus
-        outline 2px solid focusColor
-
-  width: 100%
-  border-collapse: initial
-  font-size: 14px
-  font-weight: 400
-  color: #000000
-
-  & *
-    border: none
-
-  th, td
-    padding: 10px 10px
-    vertical-align: middle
-
-    &:nth-child(1)
-      padding-left: containerPadding
-      padding-top 20px
-      padding-bottom 20px
-
-    &:last-child
-      padding-right: containerPadding
-
-  th
-    background-color: processesTableHeaderColor
-    font-size: 16px
-    font-weight: 600
-    width 0%
-
-    &.reactable-th-category
-      max-width: 30%
-
-    &.reactable-th-nodeid
-      max-width: 40%
-
-    &.reactable-th-modifydate, &.reactable-th-createdat, &.reactable-th-isdeployed
-      max-width: 10%
-
-    &:focus
-      outline 2px solid focusColor
-
-  tr:nth-child(even)
-    background-color: processesTableEvenColor
-
-  tr:nth-child(odd)
-    background-color: processesTableOddColor
-
-  th
-    &.reactable-header-sort-asc
-    &.reactable-header-sort-desc
-      &:after
-        padding-left 10px
-        display inline-block
-        transform scale(.75)
-
-    &.reactable-header-sort-asc:after
-      content: '\25BC'
-
-    &.reactable-header-sort-desc:after
-      content: '\25B2'
-
-  .centered-column, .reactable-th-modifydate, .reactable-th-createdat, .reactable-th-subprocess, .reactable-th-createdby, .reactable-th-cancel
-    text-align: center
-
-  .edit-column, .reactable-th-metrics, .reactable-th-view
-    text-align: center
-    width: iconColumnWidth
-
-    img
-      height: 20px
-      cursor: pointer
-
-    .edit-disabled
-      opacity: 0.4 !important
-      padding: 0
-
-  .name-column
-    input
-      width: 100%
-
-  .metrics-column, .reactable-th-metrics
     clickableIconColumn()
+        text-align: center
+        width: iconColumnWidth
+        span
+            font-size: 20px
+            cursor: pointer
 
-  .edit-column, .reactable-th-edit, .reactable-th-view
-    clickableIconColumn()
+            &:focus
+                outline 2px solid focusColor
 
-  .reactable-th-isdeployed
-    clickableIconColumn()
+    width: 100%
+    border-collapse: initial
+    font-size: 14px
+    font-weight: 400
+    color: #000000
 
-  .deploy-column, .reactable-th-deploy
-    clickableIconColumn()
+    & *
+        border: none
 
-  .cancel-column, .reactable-th-stop
-    clickableIconColumn()
+    th, td
+        padding: 10px 10px
+        vertical-align: middle
 
-  .status-column, .reactable-th-status
-    text-align: center
-    vertical-align: middle
-    width: iconColumnWidth
+        &:nth-child(1)
+            padding-left: containerPadding
+            padding-top 20px
+            padding-bottom 20px
 
-  .tagBlock
-    tagsBlockMixin()
+        &:last-child
+            padding-right: containerPadding
 
-  .reactable-pagination
-    td
-      text-align: center
-      font-weight: 600
-      font-size: 16px
+    th
+        background-color: processesTableHeaderColor
+        font-size: 16px
+        font-weight: 600
 
-    .reactable-next-page, .reactable-previous-page, .reactable-page-button
-      color: #000000
+        &.reactable-th-category
+            max-width: 30%
 
-      &:focus
-        text-decoration: none
+        &.reactable-th-nodeid
+            max-width: 40%
 
-    a.reactable-page-button
-      padding: 4px 10px
-      margin: 0 8px
+        &.reactable-th-modifydate, &.reactable-th-createdat, &.reactable-th-isdeployed
+            max-width: 10%
 
-      &.reactable-current-page
-        background-color: #686868
-        color: white
-        border-radius: 100%
-        text-decoration: none
+        &.reactable-th-lastaction
+            max-width: 5%
+
+        &:focus
+            outline 2px solid focusColor
+
+    tr:nth-child(even)
+        background-color: processesTableEvenColor
+
+    tr:nth-child(odd)
+        background-color: processesTableOddColor
+
+    th
+        &.reactable-header-sort-asc
+        &.reactable-header-sort-desc
+            &:after
+                padding-left 10px
+                display inline-block
+                transform scale(.75)
+
+        &.reactable-header-sort-asc:after
+            content: '\25BC'
+
+        &.reactable-header-sort-desc:after
+            content: '\25B2'
+
+    .centered-column, .reactable-th-modifydate, .reactable-th-createdat, .reactable-th-subprocess, .reactable-th-createdby, .reactable-th-cancel, .reactable-th-actiondate, .reactable-th-actionuser, .reactable-th-lastaction
+        text-align: center
+
+    .edit-column, .reactable-th-metrics, .reactable-th-view
+        text-align: center
+        width: iconColumnWidth
+
+        img
+            height: 20px
+            cursor: pointer
+
+        .edit-disabled
+            opacity: 0.4 !important
+            padding: 0
+
+    .name-column
+        input
+            width: 100%
+
+    .metrics-column, .reactable-th-metrics
+        clickableIconColumn()
+
+    .edit-column, .reactable-th-edit, .reactable-th-view
+        clickableIconColumn()
+
+    .reactable-th-isdeployed
+        clickableIconColumn()
+
+    .deploy-column, .reactable-th-deploy
+        clickableIconColumn()
+
+    .cancel-column, .reactable-th-stop
+        clickableIconColumn()
+
+    .status-column, .reactable-th-status
+        text-align: center
+        vertical-align: middle
+        width: iconColumnWidth
+
+    .tagBlock
+        tagsBlockMixin()
+
+    .reactable-pagination
+        td
+            text-align: center
+            font-weight: 600
+            font-size: 16px
+
+        .reactable-next-page, .reactable-previous-page, .reactable-page-button
+            color: #000000
+
+            &:focus
+                text-decoration: none
+
+        a.reactable-page-button
+            padding: 4px 10px
+            margin: 0 8px
+
+            &.reactable-current-page
+                background-color: #686868
+                color: white
+                border-radius: 100%
+                text-decoration: none
 
 .transparent
-  background-color: rgba(0, 0, 0, 0)
+    background-color: rgba(0, 0, 0, 0)
 
 .validation-label-error
-  color errorColor !important
-  margin-top 3px
-  font-size 12px
+    color errorColor !important
+    margin-top 3px
+    font-size 12px
 
 .validation-label-info
-  color green !important
-  margin-top 3px
-  font-size 12px
+    color green !important
+    margin-top 3px
+    font-size 12px
 
 .validation-labels
-  display inline-grid
+    display inline-grid
 
 .state-pending
-  opacity: 50%
+    opacity: 50%
 
 :local
-  .table-icon
-    padding 0
+    .table-icon
+        padding 0

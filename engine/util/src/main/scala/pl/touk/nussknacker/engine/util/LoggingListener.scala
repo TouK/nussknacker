@@ -1,5 +1,8 @@
 package pl.touk.nussknacker.engine.util
 
+import java.util.concurrent.ConcurrentHashMap
+
+import org.slf4j.Logger
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessListener}
 
@@ -8,12 +11,22 @@ import scala.util.Try
 object LoggingListener extends ProcessListener with Serializable {
   import org.slf4j.LoggerFactory
 
-  val className = getClass.getName.init
+  val className: String = getClass.getName.init
 
-  //don't need to cache loggers, because logback already does it
-  private def debug(keys: List[String], message: => String) = {
-    val loggerKey = keys.mkString(".")
-    val logger = LoggerFactory.getLogger(s"$className.$loggerKey")
+  /*
+    Flink >= 1.11 uses log4j2 as default logging framework. In JDK11 dynamic logger loading can degrade performance:
+    https://issues.apache.org/jira/browse/LOG4J2-2537
+    What's more, under heavy load string concatenation in creating logger name is also no longer negligible...
+   */
+  private val loggerMap = new ConcurrentHashMap[List[String], Logger]()
+
+  private def debug(keys: List[String], message: => String): Unit = {
+    val logger = loggerMap.computeIfAbsent(keys, new java.util.function.Function[List[String], Logger] {
+      override def apply(ks: List[String]): Logger = {
+        val loggerKey = ks.mkString(".")
+        LoggerFactory.getLogger(s"$className.$loggerKey")
+      }
+    })
     if (logger.isDebugEnabled()) {
       logger.debug(message)
     }
@@ -35,11 +48,11 @@ object LoggingListener extends ProcessListener with Serializable {
     debug(List(metadata.id, nodeId, "service", id), s"Invocation ended-up with result: $result. Context: $context")
   }
 
-  override def sinkInvoked(nodeId: String, id: String, context: Context, metadata: MetaData, param: Any) = {
+  override def sinkInvoked(nodeId: String, id: String, context: Context, metadata: MetaData, param: Any): Unit = {
     debug(List(metadata.id, nodeId, "sink", id), s"Sink invoked with param: $param. Context: $context")
   }
 
-  override def exceptionThrown(exceptionInfo: EspExceptionInfo[_ <: Throwable]) = {
+  override def exceptionThrown(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {
     //TODO:??
   }
 }

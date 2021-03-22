@@ -1,26 +1,67 @@
 import {css, cx} from "emotion"
-import React, {PropsWithChildren} from "react"
+import React, {PropsWithChildren, useCallback, useRef} from "react"
 import {useNkTheme} from "../../containers/theme"
-import searchIconStyles from "../table/searchIcon.styl"
+import {AddonIcon} from "../table/SearchFilter"
 import {InputProps, ThemedInput} from "./ThemedInput"
 
-export function InputWithIcon({children, ...props}: PropsWithChildren<InputProps>) {
+export const ClearIcon = () => {
   const {theme} = useNkTheme()
-  const styles = css({
-    width: theme.spacing.controlHeight,
-    height: theme.spacing.controlHeight,
-    padding: theme.spacing.controlHeight / 4,
+  const iconStyles = css({
+    path: {
+      fill: theme.colors.mutedColor,
+    },
+  })
+  return (
+    <AddonIcon className={iconStyles} svg="toolbarButtons/delete.svg"/>
+  )
+}
+
+type Props = PropsWithChildren<InputProps> & {
+  onClear?: () => void,
+  onAddonClick?: () => void,
+}
+
+export function InputWithIcon({children, onAddonClick, onClear, ...props}: Props): JSX.Element {
+  const {theme} = useNkTheme()
+  const size = theme.spacing.controlHeight
+
+  const wrapperWithAddonStyles = css({
+    position: "relative",
+  })
+
+  const addonWrapperStyles = css({
+    position: "absolute",
+    top: 0,
+    right: 0,
+    height: size,
+    display: "flex",
+    padding: size / 4,
+  })
+
+  const addonStyles = css({
+    display: "flex",
+    width: size / 2,
+    height: size / 2,
+    marginLeft: size / 4,
     svg: {
-      boxShadow: `0 0 ${theme.spacing.controlHeight / 4}px ${theme.spacing.controlHeight / 8}px ${theme.colors.secondaryBackground}, 0 0 ${theme.spacing.controlHeight / 2}px ${theme.spacing.controlHeight / 2}px ${theme.colors.secondaryBackground} inset`,
+      boxShadow: `0 0 ${size / 4}px ${size / 8}px ${theme.colors.secondaryBackground}, 0 0 ${size / 2}px ${size / 2}px ${theme.colors.secondaryBackground} inset`,
     },
   })
 
+  const ref = useRef<HTMLInputElement>()
+  const focus = useCallback(() => ref.current.focus(), [ref])
+
   return (
-    <div className={cx(children && searchIconStyles.withAddon)}>
-      <ThemedInput {...props}/>
-      {children && (
-        <div className={cx(searchIconStyles.addon, styles)}>{children}</div>
-      )}
+    <div className={cx(children && wrapperWithAddonStyles)}>
+      <ThemedInput ref={ref} {...props}/>
+      <div className={addonWrapperStyles}>
+        {!!props.value && onClear && (
+          <div className={addonStyles} onClick={onClear}><ClearIcon/></div>
+        )}
+        {children && (
+          <div className={addonStyles} onClick={onAddonClick??focus}>{children}</div>
+        )}
+      </div>
     </div>
   )
 }

@@ -5,14 +5,15 @@ import java.util.Collections
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.instances.string._
+import com.github.ghik.silencer.silent
 import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.lazyy.ContextWithLazyValuesProvider
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, SingleNodeConfig, WithCategories}
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
@@ -35,6 +36,7 @@ import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcess
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.engine.variables.MetaVariables
 
+import scala.annotation.nowarn
 import scala.concurrent.{ExecutionContext, Future}
 
 class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
@@ -620,7 +622,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .emptySink("id2", "sink")
     val compilationResult = validate(process, definitionWithTypedSource)
     compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
+      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite", _), _)) =>
     }
     compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(process.metaData), "processHelper" -> Typed(ProcessHelper.getClass), "var1" -> Typed[String])
   }
@@ -634,7 +636,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .switch("var1overwrite", "''", "var1", GraphBuilder.emptySink("id2", "sink"))
 
     validate(process, definitionWithTypedSource).result should matchPattern {
-      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
+      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite", _), _)) =>
     }
   }
 
@@ -648,7 +650,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .emptySink("id2", "sink")
 
     validate(process, definitionWithTypedSource).result should matchPattern {
-      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
+      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite", _), _)) =>
     }
   }
 
@@ -661,7 +663,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .buildVariable("var1overwrite", "var1", "a" -> "''")
       .emptySink("id2", "sink")
     validate(process, definitionWithTypedSource).result should matchPattern {
-      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
+      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite", _), _)) =>
     }
   }
 
@@ -690,7 +692,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .emptySink("id2", "sink")
 
     validate(process, definitionWithTypedSourceAndTransformNode).result should matchPattern {
-      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite"), _)) =>
+      case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite", _), _)) =>
     }
   }
 
@@ -813,7 +815,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val failingDefinition = base
       .copy(sourceFactories = base.sourceFactories
         .mapValues { case v:StandardObjectWithMethodDef => v.copy(methodDef = v.methodDef.copy(invocation = (_, _)
-        => throw new IllegalArgumentException("You passed incorrect parameter, cannot proceed"))) })
+        => throw new RuntimeException("You passed incorrect parameter, cannot proceed"))) })
 
     val processWithInvalidExpresssion =
       EspProcessBuilder
@@ -850,6 +852,26 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   }
 
+  test("should override parameter definition from WithExplicitMethodToInvoke by definition from ServiceReturningType") {
+    val base = ProcessDefinitionBuilder.withEmptyObjects(baseDefinition)
+    val withServiceRef = base.copy(services = base.services + ("returningTypeService" ->
+      new DefinitionExtractor(ProcessObjectDefinitionExtractor.service).extract(WithCategories(ServiceReturningTypeWithExplicitMethodSample), SingleNodeConfig.zero)))
+
+    val process =
+      EspProcessBuilder
+        .id("process1")
+        .exceptionHandler()
+        .source("id1", "source")
+        .enricher("serviceDef", "defined", "returningTypeService", "definition" -> "{param1: 'String', param2: 'Integer'}", "inRealTime" -> "#input.toString()")
+        .sink("id2", "''", "sink")
+
+    val result = validateWithDef(process, withServiceRef)
+    result.result should matchPattern {
+      case Valid(_) =>
+    }
+    result.variablesInNodes("id2")("defined") shouldBe Typed.genericTypeClass[java.util.List[_]](
+      List(TypedObjectTypingResult(Map("param1" -> Typed[String], "param2" -> Typed[Integer]))))
+  }
 
   test("should be able to run custom validation using ServiceReturningType") {
     val base = ProcessDefinitionBuilder.withEmptyObjects(baseDefinition)
@@ -1150,8 +1172,6 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     def invoke1: Future[AnotherSimpleRecord] = ???
 
-    def invoke2: State[ContextWithLazyValuesProvider, AnotherSimpleRecord] = ???
-
     def someMethod(a: Int): Int = ???
   }
 
@@ -1169,6 +1189,9 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     def futureValue: Future[String] = Future.successful("123")
   }
 
+  // Remove @silent after upgrade to silencer 1.7
+  @silent("deprecated")
+  @nowarn("cat=deprecation")
   object ServiceReturningTypeSample extends Service with ServiceReturningType {
 
     @MethodToInvoke
@@ -1185,6 +1208,49 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     }
   }
 
+  // Remove @silent after upgrade to silencer 1.7
+  @silent("deprecated")
+  @nowarn("cat=deprecation")
+  object ServiceReturningTypeWithExplicitMethodSample extends Service with ServiceReturningType with ServiceWithExplicitMethod {
+
+    override def returnType(parameters: Map[String, (TypingResult, Option[Any])]): typing.TypingResult = {
+      parameters
+        .get("definition")
+        .flatMap(_._2)
+        .map(definition => TypingUtils.typeMapDefinition(definition.asInstanceOf[java.util.Map[String, _]]))
+        .map(param => Typed.genericTypeClass[java.util.List[_]](List(param)))
+        .getOrElse(Unknown)
+    }
+
+    override def invokeService(params: List[AnyRef])
+                              (implicit ec: ExecutionContext,
+                               collector: InvocationCollectors.ServiceInvocationCollector,
+                               metaData: MetaData,
+                               contextId: ContextId): Future[AnyRef] = Future.successful(null)
+
+
+    //@ParamName("definition") definition: java.util.Map[String, _], @ParamName("inRealTime") inRealTime: String
+    override def parameterDefinition: List[Parameter] = List(
+      Parameter(
+        name = "definition",
+        typ = TypedClass(classOf[java.util.Map[_, _]], List(Typed[String], Unknown)),
+        validators = Nil
+      ),
+      Parameter(
+        name = "inRealTime",
+        typ = Typed.typedClass(classOf[String]),
+        validators = Nil
+      )
+    )
+
+    // this definition (from ServiceWithExplicitMethod) should be overridden by definition from ServiceReturningType
+    override def returnType: TypingResult = Typed.typedClass(classOf[String])
+  }
+
+
+  // Remove @silent after upgrade to silencer 1.7
+  @silent("deprecated")
+  @nowarn("cat=deprecation")
   object ServiceWithCustomValidation extends Service with ServiceReturningType {
 
     @MethodToInvoke
@@ -1198,9 +1264,9 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         throw CustomNodeValidationException("Too young", Some("age"))
       }
       params("fields")._1 match {
-        case TypedObjectTypingResult(fields, _) if fields.contains("invalid") =>
+        case TypedObjectTypingResult(fields, _, _) if fields.contains("invalid") =>
           throw CustomNodeValidationException("Service is invalid", None)
-        case TypedObjectTypingResult(fields, _) if fields.values.exists(_ != Typed.typedClass[String]) =>
+        case TypedObjectTypingResult(fields, _, _) if fields.values.exists(_ != Typed.typedClass[String]) =>
           throw CustomNodeValidationException("All values should be strings", Some("fields"))
         case _ => Typed.typedClass[String]
       }

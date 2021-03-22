@@ -46,7 +46,7 @@
           },
           {
             "type" : "Sink",
-            "id" : "save to elastic",
+            "id" : "save to kafka",
             "ref" : {
               "typ" : "kafka-stringSink",
               "parameters" : [

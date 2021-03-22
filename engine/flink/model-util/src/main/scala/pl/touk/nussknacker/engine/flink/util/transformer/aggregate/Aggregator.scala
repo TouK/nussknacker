@@ -20,6 +20,8 @@ abstract class Aggregator extends AggregateFunction[AnyRef, AnyRef, AnyRef] {
 
   def zero: Aggregate
 
+  def isNeutralForAccumulator(element: Element): Boolean = false
+
   def addElement(element: Element, aggregate: Aggregate): Aggregate
 
   def mergeAggregates(aggregate1: Aggregate, aggregate2: Aggregate): Aggregate
@@ -31,6 +33,9 @@ abstract class Aggregator extends AggregateFunction[AnyRef, AnyRef, AnyRef] {
   }
 
   def computeOutputType(input: TypingResult): Validated[String, TypingResult]
+
+  //this can be used e.g. to compute Flink TypeInformation to store
+  def computeStoredType(input: TypingResult): Validated[String, TypingResult]
 
   override final def createAccumulator(): AnyRef = zero
 
@@ -44,5 +49,5 @@ abstract class Aggregator extends AggregateFunction[AnyRef, AnyRef, AnyRef] {
     ValidationContext => ValidatedNel[ProcessCompilationError, ValidationContext] = validationCtx => computeOutputType(aggregateBy.returnType)
     //TODO: better error?
       .leftMap(message => NonEmptyList.of(CannotCreateObjectError(message, nodeId.id)))
-      .andThen(validationCtx.withVariable(variableName, _))
+      .andThen(validationCtx.withVariable(variableName, _, paramName = None))
 }

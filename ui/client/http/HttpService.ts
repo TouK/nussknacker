@@ -1,7 +1,9 @@
 /* eslint-disable i18next/no-literal-string */
 import {AxiosError} from "axios"
 import FileSaver from "file-saver"
+import {SettingsData} from "../actions/nk"
 import api from "../api"
+import {UserData} from "../common/models/User"
 import {ProcessStateType, ProcessType} from "../components/Process/types"
 import {API_URL} from "../config"
 
@@ -91,11 +93,11 @@ class HttpService {
   }
 
   fetchSettings() {
-    return api.get("/settings")
+    return api.get<SettingsData>("/settings")
   }
 
   fetchLoggedUser() {
-    return api.get("/user")
+    return api.get<UserData>("/user")
   }
 
   fetchProcessDefinitionData(processingType, isSubprocess, data) {
@@ -158,12 +160,32 @@ class HttpService {
       .catch(error => this.addError("Cannot fetch status", error))
   }
 
+  fetchProcessesDeployments(processId: string) {
+    return api.get<{performedAt: string, action: "UNARCHIVE" | "ARCHIVE" | "CANCEL" | "DEPLOY"}[]>(`/processes/${processId}/deployments`)
+      .then(res => res.data
+        .filter(({action}) => action === "DEPLOY")
+        .map(({performedAt}) => performedAt))
+  }
+
   deploy(processId, comment?) {
     return api.post(`/processManagement/deploy/${processId}`, comment).then(() => {
       this.addInfo(`Process ${processId} was deployed`)
       return {isSuccess: true}
     }).catch(error => {
       return this.addError(`Failed to deploy ${processId}`, error, true).then(() => {
+        return {isSuccess: false}
+      })
+    })
+  }
+
+  customAction(processId: string, actionName: string, params: Record<string, unknown>) {
+    const data = {actionName: actionName, params: params}
+    return api.post(`/processManagement/customAction/${processId}`, data).then(res => {
+      this.addInfo(res.data.msg)
+      return {isSuccess: res.data.isSuccess}
+    }).catch(error => {
+      const msg = error.response.data.msg || error.response.data
+      return this.addError(msg, error, false).then(() => {
         return {isSuccess: false}
       })
     })
@@ -290,8 +312,13 @@ class HttpService {
   }
 
   archiveProcess(processId) {
-    return api.post(`/archive/${processId}`, {isArchived: true})
+    return api.post(`/archive/${processId}`)
       .catch(error => this.addError("Failed to archive process", error, true))
+  }
+
+  unArchiveProcess(processId) {
+    return api.post(`/unarchive/${processId}`)
+      .catch(error => this.addError("Failed to unarchive process", error, true))
   }
 
   createProcess(processId, processCategory, isSubprocess) {
@@ -345,8 +372,8 @@ class HttpService {
       .catch(error => this.addError("Failed to send signal", error))
   }
 
-  fetchOAuth2AccessToken(authorizeCode) {
-    return api.get(`/authentication/oauth2?code=${authorizeCode}`)
+  fetchOAuth2AccessToken<T>(authorizeCode: string | string[]) {
+    return api.get<T>(`/authentication/oauth2?code=${authorizeCode}`)
   }
 
   async fetchProcessesNames() {
@@ -362,3 +389,4 @@ class HttpService {
 }
 
 export default new HttpService()
+

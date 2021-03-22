@@ -23,14 +23,14 @@ abstract class BaseKafkaAvroSourceFactory[T: ClassTag](timestampAssigner: Option
   def createSource(preparedTopic: PreparedKafkaTopic,
                    kafkaConfig: KafkaConfig,
                    deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory,
-                   createRecordFormatter: String => Option[RecordFormatter],
+                   createRecordFormatter: RecordFormatter,
                    schemaDeterminer: AvroSchemaDeterminer,
                    returnGenericAvroType: Boolean)
                   (implicit processMetaData: MetaData,
                    nodeId: NodeId): KafkaSource[T] = {
 
-    val schema = schemaDeterminer.determineSchemaUsedInTyping.valueOr(SchemaDeterminerErrorHandler.handleSchemaRegistryErrorAndThrowException)
-    val schemaUsedInRuntime = schemaDeterminer.toRuntimeSchema(schema)
+    val schemaData = schemaDeterminer.determineSchemaUsedInTyping.valueOr(SchemaDeterminerErrorHandler.handleSchemaRegistryErrorAndThrowException)
+    val schemaUsedInRuntime = schemaDeterminer.toRuntimeSchema(schemaData)
 
     if (returnGenericAvroType) {
       new KafkaSource(
@@ -38,10 +38,9 @@ abstract class BaseKafkaAvroSourceFactory[T: ClassTag](timestampAssigner: Option
         kafkaConfig,
         deserializationSchemaFactory.create[T](schemaUsedInRuntime, kafkaConfig),
         assignerToUse(kafkaConfig),
-        createRecordFormatter(preparedTopic.prepared),
-        TestParsingUtils.newLineSplit
+        createRecordFormatter
       ) with ReturningType {
-        override def returnType: typing.TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)
+        override def returnType: typing.TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schemaData.schema)
       }
     } else {
       new KafkaSource(
@@ -49,8 +48,7 @@ abstract class BaseKafkaAvroSourceFactory[T: ClassTag](timestampAssigner: Option
         kafkaConfig,
         deserializationSchemaFactory.create[T](schemaUsedInRuntime, kafkaConfig),
         assignerToUse(kafkaConfig),
-        createRecordFormatter(preparedTopic.prepared),
-        TestParsingUtils.newLineSplit
+        createRecordFormatter
       )
     }
   }

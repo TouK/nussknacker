@@ -1,5 +1,6 @@
 import {mapProcessDefinitionToServices} from "../../containers/admin/Services"
 
+jest.mock('../../containers/theme');
 
 describe("translating process structure to services", () => {
 

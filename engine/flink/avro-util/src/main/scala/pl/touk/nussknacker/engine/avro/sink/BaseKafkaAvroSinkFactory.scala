@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.avro.sink
 
 import cats.data.Validated
 import org.apache.avro.Schema
-import org.apache.flink.formats.avro.typeutils.NkSerializableAvroSchema
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.process.SinkFactory
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
@@ -29,13 +28,13 @@ abstract class BaseKafkaAvroSinkFactory extends SinkFactory {
                           (implicit processMetaData: MetaData,
                            nodeId: NodeId): FlinkSink = {
     //This is a bit redundant, since we already validate during creation
-    val schema = schemaDeterminer.determineSchemaUsedInTyping.valueOr(SchemaDeterminerErrorHandler.handleSchemaRegistryErrorAndThrowException)
-    validateValueType(value.returnType, schema, validationMode).valueOr(err => throw new CustomNodeValidationException(err.message, err.paramName, null))
-    val schemaUsedInRuntime = schemaDeterminer.toRuntimeSchema(schema)
+    val schemaData = schemaDeterminer.determineSchemaUsedInTyping.valueOr(SchemaDeterminerErrorHandler.handleSchemaRegistryErrorAndThrowException)
+    validateValueType(value.returnType, schemaData.schema, validationMode).valueOr(err => throw new CustomNodeValidationException(err.message, err.paramName, null))
+    val schemaUsedInRuntime = schemaDeterminer.toRuntimeSchema(schemaData)
 
     val clientId = s"${processMetaData.id}-${preparedTopic.prepared}"
-    new KafkaAvroSink(preparedTopic, version, key, value, kafkaConfig, serializationSchemaFactory,
-      new NkSerializableAvroSchema(schema), schemaUsedInRuntime.map(new NkSerializableAvroSchema(_)), clientId, validationMode)
+    new KafkaAvroSink(preparedTopic, version, key, AvroSinkSingleValue(value), kafkaConfig, serializationSchemaFactory,
+      schemaData.serializableSchema, schemaUsedInRuntime.map(_.serializableSchema), clientId, validationMode)
   }
 
   /**

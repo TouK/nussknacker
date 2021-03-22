@@ -7,7 +7,7 @@ import org.apache.flink.streaming.api.watermark.Watermark
 import scala.annotation.nowarn
 
 @silent("deprecated")
-@nowarn("deprecated")
+@nowarn("cat=deprecation")
 abstract class BoundedOutOfOrdernessPunctuatedExtractor[T](maxOutOfOrdernessMillis: Long)
   extends AssignerWithPunctuatedWatermarks[T] {
 

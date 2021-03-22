@@ -1,0 +1,1 @@
+export {useExternalLib} from "./useExternalLib"

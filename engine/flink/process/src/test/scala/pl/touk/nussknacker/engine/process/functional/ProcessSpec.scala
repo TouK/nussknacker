@@ -216,4 +216,44 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
     MockService.data shouldBe List("123")
   }
 
+  test("Open/close only used services") {
+
+    val processWithService = EspProcessBuilder.id("proc1")
+        .exceptionHandler()
+        .source("id", "input")
+        .processor("processor1", "eagerLifecycleService", "name" -> "'1'")
+        //just to test we open also in different process parts
+        .customNodeNoOutput("custom", "customFilter", "input" -> "''", "stringVal" -> "''")
+        .processor("processor2", "eagerLifecycleService", "name" -> "'2'")
+        .processorEnd("enricher", "lifecycleService")
+
+    val processWithoutService = EspProcessBuilder.id("proc1")
+        .exceptionHandler()
+        .source("id", "input")
+        .processorEnd("proc2", "logService", "all" -> "''")
+
+
+    LifecycleService.reset()
+    EagerLifecycleService.reset()
+
+    processInvoker.invokeWithSampleData(processWithService, Nil)
+    LifecycleService.opened shouldBe true
+    LifecycleService.closed shouldBe true
+    EagerLifecycleService.opened shouldBe true
+    EagerLifecycleService.closed shouldBe true
+
+    val openedInvokers = EagerLifecycleService.list.filter(_._2.opened == true)
+    openedInvokers.map(_._1).toSet == Set("1", "2")
+    openedInvokers.foreach { cl =>
+      cl._2.closed shouldBe true
+    }
+
+    LifecycleService.reset()
+    EagerLifecycleService.reset()
+    processInvoker.invokeWithSampleData(processWithoutService, Nil)
+    LifecycleService.opened shouldBe false
+    LifecycleService.closed shouldBe false
+    EagerLifecycleService.list shouldBe 'empty
+  }
+
 }

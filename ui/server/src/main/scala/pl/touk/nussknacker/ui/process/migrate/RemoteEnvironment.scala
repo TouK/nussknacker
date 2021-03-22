@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.process.migrate
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshal
@@ -21,8 +20,8 @@ import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ProcessDetail
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError.XError
-import pl.touk.nussknacker.ui.process.ProcessToSave
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.InvalidProcessTypeError
+import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
+import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.InvalidProcessTypeError
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ProcessComparator
 import pl.touk.nussknacker.ui.util.ProcessComparator.Difference
@@ -178,7 +177,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
   private def saveProcess(process: DisplayableProcess, comment: String)(implicit ec: ExecutionContext): Future[Unit] = {
     for {
-      processToSave <- Marshal(ProcessToSave(process, comment)).to[MessageEntity](marshaller, ec)
+      processToSave <- Marshal(UpdateProcessCommand(process, comment)).to[MessageEntity](marshaller, ec)
       _ <- invokeJson[ValidationResult](HttpMethods.PUT, List("processes", process.id), requestEntity = processToSave)
     } yield ()
   }

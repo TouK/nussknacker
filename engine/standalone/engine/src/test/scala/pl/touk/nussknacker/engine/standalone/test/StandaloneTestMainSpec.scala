@@ -30,6 +30,7 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
       .filter("filter1", "#input.field1() == 'a'")
       .enricher("enricher", "var1", "enricherService")
       .processor("processor", "processorService")
+      .processor("eagerProcessor", "collectingEager", "static" -> "'s'", "dynamic" -> "#input.field1()")
       .sink("endNodeIID", "#var1", "response-sink")
 
     val input = """{ "field1": "a", "field2": "b" }
@@ -53,6 +54,8 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
     )
 
     results.mockedResults("processor").toSet shouldBe Set(MockedResult("proc1-0", "processorService", "processor service invoked"))
+    results.mockedResults("eagerProcessor").toSet shouldBe Set(MockedResult("proc1-0", "collectingEager", "static-s-dynamic-a"))
+
     results.mockedResults("endNodeIID").toSet shouldBe Set(MockedResult("proc1-0",
       "endNodeIID", s"""{
                       |  "field1" : "alamakota-$defaultContextId"

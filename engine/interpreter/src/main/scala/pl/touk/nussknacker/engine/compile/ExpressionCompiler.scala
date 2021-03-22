@@ -54,12 +54,6 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
 
   import syntax._
 
-  //used only by serviceQuery - consider moving there
-  def compileValidatedObjectParameters(parameters: List[evaluatedparam.Parameter],
-                                       ctx: ValidationContext)(implicit nodeId: NodeId)
-  : ValidatedNel[PartSubGraphCompilationError, List[compiledgraph.evaluatedparam.Parameter]] =
-    compileEagerObjectParameters(parameters.map(p => Parameter.optional(p.name, Unknown)), parameters, ctx)
-
   //used only for services
   def compileEagerObjectParameters(parameterDefinitions: List[Parameter],
                                    parameters: List[evaluatedparam.Parameter],
@@ -167,7 +161,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
     val withoutVariablesToHide = ctx.copy(localVariables = ctx.localVariables
       .filterKeys(variableName => !definition.variablesToHide.contains(variableName)))
     definition.additionalVariables.foldLeft[ValidatedNel[PartSubGraphCompilationError, ValidationContext]](Valid(withoutVariablesToHide)) {
-      case (acc, (name, typingResult)) => acc.andThen(_.withVariable(name, typingResult))
+      case (acc, (name, typingResult)) => acc.andThen(_.withVariable(name, typingResult, None))
     }
   }
 

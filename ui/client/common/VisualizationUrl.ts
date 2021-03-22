@@ -58,7 +58,7 @@ export function extractCountParams(queryParams) {
 
 export const defaultArrayFormat: ParseOptions["arrayFormat"] = "comma"
 
-export function normalizeParams<T>(object: T) {
+export function normalizeParams<T extends Record<any, any>>(object: T) {
   return queryString.parse(queryString.stringify(object, {arrayFormat: defaultArrayFormat})) as Record<keyof T, string>
 }
 

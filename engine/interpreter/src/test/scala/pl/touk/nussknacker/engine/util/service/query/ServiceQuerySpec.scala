@@ -1,98 +1,151 @@
 package pl.touk.nussknacker.engine.util.service.query
 
-
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, WithCategories}
+import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
+import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, ParameterWithExtractor, TypedNodeDependency}
+import pl.touk.nussknacker.engine.api.{ContextId, EagerService, LazyParameter, MetaData, MethodToInvoke, ParamName, Service, ServiceInvoker}
+import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, ProcessObjectDependencies, WithCategories}
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
-import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.QueryResult
+import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.{QueryResult, ServiceNotFoundException}
+import pl.touk.nussknacker.engine.util.service.query.QueryServiceTesting.{CollectingDynamicEagerService, CollectingEagerService, ConcatService, CreateQuery}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration._
 
-class ServiceQuerySpec extends FunSuite with Matchers with PatientScalaFutures {
+class ServiceQuerySpec extends FlatSpec with Matchers with PatientScalaFutures {
 
-  import QueryServiceTesting._
-  import ServiceQuerySpec._
+  import pl.touk.nussknacker.engine.spel.Implicits._
 
-  import ExecutionContext.Implicits.global
+  override def spanScaleFactor: Double = 2
 
-  test("should invoke enricher by name") {
-    whenReady(invokeCastService(4)) { r =>
-      r.result shouldBe 4
-    }
+  private implicit val ec: ExecutionContext = SynchronousExecutionContext.ctx
+
+  it should "evaluate spel expressions" in {
+    invokeConcatService("'foo'", "'bar'").futureValue.result shouldBe "foobar"
   }
-  test("should invoke concat service") {
-    whenReady(invokeConcatService("foo", "bar")) { r =>
-      r.result shouldBe "foobar"
-    }
+
+  it should "evaluate spel expressions with math expression" in {
+    invokeConcatService("'foo'", "(1 + 2).toString()").futureValue.result shouldBe "foo3"
   }
-  test("should throw IllegalArgumentExcetion on negative argument") {
-    assertThrows[IllegalArgumentException] {
-      whenReady(invokeCastService(-1)) { _ =>
-        ()
-      }
-    }
+
+  it should "allow using global variables" in {
+    invokeConcatService("'foo'", "#GLOBAL").futureValue.result shouldBe "fooglobalValue"
   }
-  test("should throw exception on unexisting service") {
-    assertThrows[ServiceQuery.ServiceNotFoundException] {
-      whenReady(CreateQuery("cast", new CastIntToLongService).invoke("add")) { _ =>
-        ()
-      }
+
+  it should "evaluate spel expressions using provided local context variables" in {
+    CreateQuery("srv", new ConcatService).invoke("srv", localVariables = Map("var" -> ("foo", Typed[String])), "s1" -> "#var", "s2" -> "'bar'")
+      .futureValue.result shouldBe "foobar"
+  }
+
+  it should "return error on failed on not existing service" in {
+    assertThrows[IllegalArgumentException](Await.result(invokeConcatService("'fail'", "''"), 1 second))
+  }
+
+  it should "throw exception on not existing service" in {
+    assertThrows[ServiceNotFoundException](Await.result(CreateQuery("srv", new ConcatService).invoke("dummy"), 1 second))
+  }
+
+  it should "invoke eager service" in {
+    List(CollectingDynamicEagerService, CollectingEagerService).foreach { service =>
+      invokeService(service, "static" -> "'s'", "dynamic" -> "'d'").futureValue.result shouldBe "static-s-dynamic-d"
     }
   }
 
   private def invokeConcatService(s1: String, s2: String) =
-    InvokeService(new ConcatService, "s1" -> s1, "s2" -> s2)
+    invokeService(new ConcatService, "s1" -> s1, "s2" -> s2)
 
-  private def invokeCastService(arg: Int) =
-    InvokeService(new CastIntToLongService, "integer" -> arg)
+  private def invokeService(service: Service, args: (String, Expression)*) = {
+    CreateQuery("srv", service).invoke("srv", args: _*)
+  }
 
 }
 
-object ServiceQuerySpec {
 
-  class CastIntToLongService extends Service {
-    @MethodToInvoke
-    def cast(@ParamName("integer") n: Int)
-            (implicit executionContext: ExecutionContext): Future[Long] = {
-      n match {
-        case negative if negative < 0 =>
-          throw new IllegalArgumentException
-        case _ => Future(n.toLong)
-      }
-    }
-  }
+object QueryServiceTesting {
 
   class ConcatService extends Service {
     @MethodToInvoke
     def concat(@ParamName("s1") s1: String, @ParamName("s2") s2: String)
-              (implicit executionContext: ExecutionContext) =
-      Future(s1 + s2)
-  }
-
-}
-
-object QueryServiceTesting {
-
-  object InvokeService {
-    def apply(service: Service, args: (String, Any)*)
-             (implicit executionContext: ExecutionContext): Future[QueryResult] = {
-      CreateQuery("srv", service)
-        .invoke("srv", args: _*)
+              (implicit executionContext: ExecutionContext): Future[String] = {
+      if (s1 == "fail") {
+        Future.failed(new IllegalArgumentException("Fail"))
+      } else {
+        Future(s1 + s2)
+      }
     }
   }
 
-  object CreateQuery{
-    def apply(serviceName:String,service:Service)
+  class CollectingEagerInvoker(static: String) extends ServiceInvoker {
+    override def invokeService(params: Map[String, Any])(implicit ec: ExecutionContext,
+                                                         collector: ServiceInvocationCollector,
+                                                         contextId: ContextId): Future[Any] = {
+      val returnValue = s"static-$static-dynamic-${params("dynamic")}"
+      collector.collect("mocked" + returnValue, Option("")) {
+        Future.successful(returnValue)
+      }
+    }
+
+    override def returnType: TypingResult = Typed[String]
+
+  }
+
+  object InvokeService {
+    def apply(service: Service, args: (String, Expression)*)
+             (implicit executionContext: ExecutionContext): Future[QueryResult] = {
+      CreateQuery("srv", service).invoke("srv", args: _*)
+    }
+  }
+
+  object CreateQuery {
+    def apply(serviceName: String, service: Service, localVariables: Map[String, Any] = Map.empty)
              (implicit executionContext: ExecutionContext): ServiceQuery = {
       new ServiceQuery(LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator {
+
+        override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
+          super.expressionConfig(processObjectDependencies).copy(globalProcessVariables = Map("GLOBAL" -> WithCategories("globalValue")))
+        }
+
         override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
           super.services(processObjectDependencies) ++ Map(serviceName -> WithCategories(service))
       }))
     }
   }
 
+  object CollectingEagerService extends EagerService {
+
+    @MethodToInvoke
+    def invoke(@ParamName("static") static: String,
+               @ParamName("dynamic") dynamic: LazyParameter[String]): ServiceInvoker = new CollectingEagerInvoker(static)
+
+  }
+
+  object CollectingDynamicEagerService extends EagerService with SingleInputGenericNodeTransformation[ServiceInvoker] {
+
+    override type State = Nothing
+    private val static = ParameterWithExtractor.mandatory[String]("static")
+    private val dynamic = ParameterWithExtractor.lazyMandatory[String]("dynamic")
+
+    override def contextTransformation(context: ValidationContext,
+                                       dependencies: List[NodeDependencyValue])
+                                      (implicit nodeId: ProcessCompilationError.NodeId): CollectingDynamicEagerService.NodeTransformationDefinition = {
+      case TransformationStep(Nil, _) => NextParameters(initialParameters)
+      case TransformationStep(_, _) => FinalResults(context.withVariable(OutputVariableNameDependency.extract(dependencies), Typed[String], None).getOrElse(context))
+    }
+
+    override def initialParameters: List[Parameter] = List(static.parameter, dynamic.parameter)
+
+    override def implementation(params: Map[String, Any],
+                                dependencies: List[NodeDependencyValue],
+                                finalState: Option[State]): ServiceInvoker = new CollectingEagerInvoker(static.extractValue(params))
+
+    override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)
+  }
 }

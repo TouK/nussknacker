@@ -6,14 +6,19 @@ import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.avro.KafkaAvroTestProcessConfigCreator.recordingExceptionHandler
 import pl.touk.nussknacker.engine.avro.schema.GeneratedAvroClassWithLogicalTypes
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
-import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
+import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
 import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
-import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
+import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
+
+object KafkaAvroTestProcessConfigCreator {
+  val recordingExceptionHandler = new RecordingExceptionHandler
+}
 
 class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
 
@@ -37,12 +42,13 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
     val schemaRegistryProvider = createSchemaRegistryProvider(processObjectDependencies)
 
     Map(
-      "kafka-avro" -> defaultCategory(new KafkaAvroSinkFactory(schemaRegistryProvider, processObjectDependencies))
+      "kafka-avro-raw" -> defaultCategory(new KafkaAvroSinkFactory(schemaRegistryProvider, processObjectDependencies)),
+      "kafka-avro" -> defaultCategory(new KafkaAvroSinkFactoryWithEditor(schemaRegistryProvider, processObjectDependencies))
     )
   }
 
   override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
-    ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
+    ExceptionHandlerFactory.noParams(_ => recordingExceptionHandler)
 
   protected def defaultCategory[T](obj: T): WithCategories[T] = WithCategories(obj, "TestAvro")
 

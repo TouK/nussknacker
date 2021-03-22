@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.Case
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
-import pl.touk.nussknacker.engine.{ClassLoaderModelData, ModelConfigToLoad, spel}
+import pl.touk.nussknacker.engine.{ModelData, spel}
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -34,7 +34,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     RecordingExceptionHandler.clear()
   }
 
-  private val modelData = ClassLoaderModelData(ModelConfigToLoad(ConfigFactory.load()), ModelClassLoader.empty)
+  private val modelData = ModelData(ConfigFactory.load(), ModelClassLoader.empty)
 
   private def marshall(process: EspProcess): String = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
 
@@ -46,6 +46,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
         .source("id", "input")
         .filter("filter1", "#input.value1 > 1")
         .buildSimpleVariable("v1", "variable1", "'ala'")
+        .processor("eager1", "collectingEager", "static" -> "'s'", "dynamic" -> "#input.id")
         .processor("proc2", "logService", "all" -> "#input.id")
         .sink("out", "#input.value1", "monitor")
 
@@ -71,6 +72,8 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
 
     results.mockedResults("proc2") shouldBe List(MockedResult("proc1-id-0-1", "logService", "0-collectedDuringServiceInvocation"))
     results.mockedResults("out") shouldBe List(MockedResult("proc1-id-0-1", "monitor", "11"))
+    results.mockedResults("eager1") shouldBe List(MockedResult("proc1-id-0-1", "collectingEager", "static-s-dynamic-0"))
+
     MonitorEmptySink.invocationsCount.get() shouldBe 0
     LogService.invocationsCount.get() shouldBe 0
   }

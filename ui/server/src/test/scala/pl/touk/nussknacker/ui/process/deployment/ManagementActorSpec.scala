@@ -1,25 +1,28 @@
 package pl.touk.nussknacker.ui.process.deployment
 
 import akka.actor.ActorSystem
+import com.typesafe.config.Config
 import org.scalatest._
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ProcessActionType, ProcessState}
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.{FlinkProcessStateDefinitionManager, FlinkStateStatus}
-import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.restmodel.process
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockProcessManager, mapProcessingTypeDataProvider, newDeploymentProcessRepository, newProcessActivityRepository, newProcessRepository, newWriteProcessRepository, testCategoryName}
-import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessingTypes, WithHsqlDbTesting}
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockProcessManager, mapProcessingTypeDataProvider, newActionProcessRepository, newDBRepositoryManager, newFetchingProcessRepository, newProcessActivityRepository, newWriteProcessRepository, processResolving, testCategoryName}
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessingTypes, WithHsqlDbTesting}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
-import pl.touk.nussknacker.ui.process.JobStatusService
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
+import pl.touk.nussknacker.ui.process.{DBProcessService, NewProcessPreparer, ProcessTypesForCategories}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
+import java.time
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
-class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with WithHsqlDbTesting {
+class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with WithHsqlDbTesting {
 
   private implicit val system: ActorSystem = ActorSystem()
   private implicit val user: LoggedUser = TestFactory.adminUser("user")
@@ -27,54 +30,65 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
   val processName: ProcessName = ProcessName("proces1")
 
   private val processManager = new MockProcessManager
-  private val processRepository = newProcessRepository(db)
+  private val repositoryManager = newDBRepositoryManager(db)
+  private val fetchingProcessRepository = newFetchingProcessRepository(db)
   private val writeProcessRepository = newWriteProcessRepository(db)
-  private val deploymentProcessRepository = newDeploymentProcessRepository(db)
+  private val actionRepository = newActionProcessRepository(db)
   private val activityRepository = newProcessActivityRepository(db)
+  private val typesForCategories = new ProcessTypesForCategories(ConfigWithScalaVersion.config)
+
+  val newProcessPreparer = new NewProcessPreparer(
+    mapProcessingTypeDataProvider("streaming" ->  ProcessTestData.processDefinition),
+    mapProcessingTypeDataProvider("streaming" -> (_ => StreamMetaData(None))),
+    mapProcessingTypeDataProvider("streaming" -> Map.empty)
+  )
 
   private val managementActor = system.actorOf(
       ManagementActor.props(
         mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> processManager),
-        processRepository,
-        deploymentProcessRepository,
+        fetchingProcessRepository,
+        actionRepository,
         TestFactory.sampleResolver,
         ProcessChangeListener.noop
       ),
     "management"
   )
 
-  private val jobStatusService = new JobStatusService(managementActor)
+  private val processService = new DBProcessService(
+    managementActor, time.Duration.ofMinutes(1), newProcessPreparer, typesForCategories, processResolving,
+    repositoryManager, fetchingProcessRepository, actionRepository, writeProcessRepository
+  )
 
   test("should return state correctly when state is deployed") {
     val id: process.ProcessId =  prepareProcess(processName).futureValue
 
     processManager.withWaitForDeployFinish {
       managementActor ! Deploy(ProcessIdWithName(id, processName), user, None, None)
-      jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.DuringDeploy)
+      processService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.DuringDeploy
     }
     eventually {
-      jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+      processService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.Running
     }
   }
 
   test("Should mark finished process as finished") {
     val id: process.ProcessId = prepareDeployedProcess(processName).futureValue
 
-    jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(isFollowingDeploy) shouldBe Some(true)
-    processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction should not be None
+    isFollowingDeploy(processService.getProcessState(ProcessIdWithName(id, processName)).futureValue) shouldBe true
+    fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction should not be None
 
     processManager.withProcessFinished {
       //we simulate what happens when retrieveStatus is called mulitple times to check only one comment is added
       (1 to 5).foreach { _ =>
-        jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(isFollowingDeploy) shouldBe Some(false)
+        isFollowingDeploy(processService.getProcessState(ProcessIdWithName(id, processName)).futureValue) shouldBe false
       }
-      val finishedStatus = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.get
+      val finishedStatus = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
       finishedStatus.status shouldBe SimpleStateStatus.Finished
-      finishedStatus.allowedActions shouldBe List(ProcessActionType.Deploy)
+      finishedStatus.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Archive)
 
     }
 
-    val processDetails = processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get
+    val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get
     processDetails.lastAction should not be None
     processDetails.isCanceled shouldBe true
     processDetails.lastDeployedAction should be (None)
@@ -86,20 +100,20 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     val id =  prepareCanceledProcess(processName).futureValue
 
     processManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
-      jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Canceled)
+      processService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.Canceled
     }
   }
 
   test("Should return canceled status for canceled process with empty state - cleaned state") {
     val id = prepareCanceledProcess(processName).futureValue
 
-    processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction should not be None
+    fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction should not be None
 
     processManager.withEmptyProcessState {
-      jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Canceled)
+      processService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.Canceled
     }
 
-    val processDetails = processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get
+    val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get
     processDetails.lastAction should not be None
     processDetails.isCanceled shouldBe true
     processDetails.history.head.actions.map(_.action) should be (List(ProcessActionType.Cancel, ProcessActionType.Deploy))
@@ -108,13 +122,13 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
   test("Should return canceled status for canceled process with not founded state - cleaned state") {
     val id = prepareCanceledProcess(processName).futureValue
 
-    processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction should not be None
+    fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction should not be None
 
-    processManager.withProcessStateStatus(SimpleStateStatus.NotFound) {
-      jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Canceled)
+    processManager.withEmptyProcessState {
+      processService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.Canceled
     }
 
-    val processDetails = processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get
+    val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get
     processDetails.lastAction should not be None
     processDetails.isCanceled shouldBe true
     processDetails.history.head.actions.map(_.action) should be (List(ProcessActionType.Cancel, ProcessActionType.Deploy))
@@ -124,12 +138,12 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     val id =  prepareCanceledProcess(processName).futureValue
 
     processManager.withProcessStateStatus(SimpleStateStatus.Running) {
-      val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
+      val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.Warning)
-      state.flatMap(_.icon) shouldBe Some(SimpleProcessStateDefinitionManager.stoppingWarningIcon)
-      state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
-      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.shouldNotBeRunningMessage(true))
+      state.status shouldBe SimpleStateStatus.Warning
+      state.icon shouldBe Some(SimpleProcessStateDefinitionManager.stoppingWarningIcon)
+      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+      state.description shouldBe Some(SimpleProcessStateDefinitionManager.shouldNotBeRunningMessage(true))
     }
   }
 
@@ -137,12 +151,12 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     val id = prepareProcess(processName).futureValue
 
     processManager.withProcessStateStatus(SimpleStateStatus.Running) {
-      val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
+      val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.Warning)
-      state.flatMap(_.icon) shouldBe Some(SimpleProcessStateDefinitionManager.notDeployedWarningIcon)
-      state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
-      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.shouldNotBeRunningMessage(false))
+      state.status shouldBe SimpleStateStatus.Warning
+      state.icon shouldBe Some(SimpleProcessStateDefinitionManager.notDeployedWarningIcon)
+      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+      state.description shouldBe Some(SimpleProcessStateDefinitionManager.shouldNotBeRunningMessage(false))
     }
   }
 
@@ -150,12 +164,12 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     val id = prepareProcess(processName).futureValue
 
     processManager.withProcessStateStatus(SimpleStateStatus.DuringCancel) {
-      val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
+      val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.Warning)
-      state.flatMap(_.icon) shouldBe Some(SimpleProcessStateDefinitionManager.notDeployedWarningIcon)
-      state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
-      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.processWithoutActionMessage)
+      state.status shouldBe SimpleStateStatus.Warning
+      state.icon shouldBe Some(SimpleProcessStateDefinitionManager.notDeployedWarningIcon)
+      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+      state.description shouldBe Some(SimpleProcessStateDefinitionManager.processWithoutActionMessage)
     }
   }
 
@@ -163,11 +177,11 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     val id = prepareProcess(processName).futureValue
 
     processManager.withProcessStateStatus(SimpleStateStatus.Finished) {
-      val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
+      val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.Warning)
-      state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
-      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.processWithoutActionMessage)
+      state.status shouldBe SimpleStateStatus.Warning
+      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+      state.description shouldBe Some(SimpleProcessStateDefinitionManager.processWithoutActionMessage)
     }
   }
 
@@ -177,12 +191,12 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     val state = ProcessState("12", FlinkStateStatus.Restarting, Some(ProcessVersion.empty), FlinkProcessStateDefinitionManager)
 
     processManager.withProcessState(Some(state)) {
-      val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
+      val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
       //See comment in ManagementActor.handleState...
-      state.map(_.status) shouldBe Some(FlinkStateStatus.Restarting)
-      state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Cancel))
-      state.flatMap(_.description) shouldBe Some("Process is restarting...")
+      state.status shouldBe FlinkStateStatus.Restarting
+      state.allowedActions shouldBe List(ProcessActionType.Cancel)
+      state.description shouldBe Some("Process is restarting...")
 
     }
   }
@@ -191,12 +205,12 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     val id = prepareDeployedProcess(processName).futureValue
 
     processManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
-      val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
+      val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
-      state.flatMap(_.icon) shouldBe Some(SimpleProcessStateDefinitionManager.deployFailedIcon)
-      state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
-      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.shouldBeRunningDescription)
+      state.status shouldBe SimpleStateStatus.Error
+      state.icon shouldBe Some(SimpleProcessStateDefinitionManager.deployFailedIcon)
+      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+      state.description shouldBe Some(SimpleProcessStateDefinitionManager.shouldBeRunningDescription)
     }
   }
 
@@ -204,12 +218,12 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     val id = prepareDeployedProcess(processName).futureValue
 
     processManager.withEmptyProcessState {
-      val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
+      val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
-      state.flatMap(_.icon) shouldBe Some(SimpleProcessStateDefinitionManager.deployFailedIcon)
-      state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
-      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.shouldBeRunningDescription)
+      state.status shouldBe SimpleStateStatus.Error
+      state.icon shouldBe Some(SimpleProcessStateDefinitionManager.deployFailedIcon)
+      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+      state.description shouldBe Some(SimpleProcessStateDefinitionManager.shouldBeRunningDescription)
     }
   }
 
@@ -218,12 +232,12 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     val version = Some(ProcessVersion(versionId = 2, processName = ProcessName(""), user = "", modelVersion = None))
 
     processManager.withProcessStateVersion(SimpleStateStatus.Running, version) {
-      val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
+      val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.Error)
-      state.flatMap(_.icon) shouldBe Some(SimpleProcessStateDefinitionManager.deployFailedIcon)
-      state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
-      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.mismatchDeployedVersionDescription)
+      state.status shouldBe SimpleStateStatus.Error
+      state.icon shouldBe Some(SimpleProcessStateDefinitionManager.deployFailedIcon)
+      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+      state.description shouldBe Some(SimpleProcessStateDefinitionManager.mismatchDeployedVersionDescription)
     }
   }
 
@@ -232,10 +246,10 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     val version = Some(ProcessVersion(versionId = 2, processName = ProcessName(""), user = "", modelVersion = None))
 
     processManager.withProcessStateVersion(SimpleStateStatus.Failed, version) {
-      val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
+      val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.Failed)
-      state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
+      state.status shouldBe SimpleStateStatus.Failed
+      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
     }
   }
 
@@ -243,59 +257,121 @@ class ManagementActorSpec extends FunSuite  with Matchers with PatientScalaFutur
     val id =  prepareDeployedProcess(processName).futureValue
 
     processManager.withProcessStateVersion(SimpleStateStatus.Running, Option.empty) {
-      val state = jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue
+      val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      state.map(_.status) shouldBe Some(SimpleStateStatus.Warning)
-      state.flatMap(_.icon) shouldBe Some(SimpleProcessStateDefinitionManager.deployWarningIcon)
-      state.map(_.allowedActions) shouldBe Some(List(ProcessActionType.Deploy, ProcessActionType.Cancel))
-      state.flatMap(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.missingDeployedVersionDescription)
+      state.status shouldBe SimpleStateStatus.Warning
+      state.icon shouldBe Some(SimpleProcessStateDefinitionManager.deployWarningIcon)
+      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+      state.description shouldBe Some(SimpleProcessStateDefinitionManager.missingDeployedVersionDescription)
     }
   }
 
   test("Should return not deployed status for process with empty state - not deployed state") {
     val id = prepareProcess(processName).futureValue
-    processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction shouldBe None
+    fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction shouldBe None
 
     processManager.withEmptyProcessState {
-      jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.NotDeployed)
+      processService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.NotDeployed
     }
 
-    val processDetails = processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get
+    val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get
     processDetails.lastAction shouldBe None
     processDetails.isNotDeployed shouldBe true
   }
 
   test("Should return not deployed status for process with not found state - not deployed state") {
     val id = prepareProcess(processName).futureValue
-    processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction shouldBe None
+    fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction shouldBe None
 
-    processManager.withProcessStateStatus(SimpleStateStatus.NotFound) {
-      jobStatusService.retrieveJobStatus(ProcessIdWithName(id, processName)).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.NotDeployed)
+    processManager.withEmptyProcessState {
+      processService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.NotDeployed
     }
 
-    val processDetails = processRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get
+    val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get
     processDetails.lastAction shouldBe None
     processDetails.isNotDeployed shouldBe true
   }
 
-  private def isFollowingDeploy(state: ProcessStatus): Boolean =
-    state.status.isDuringDeploy || state.status.isRunning
+  test("Should return NotDeployed state for archived process with missing state") {
+    val id = prepareArchivedProcess(processName).futureValue
+    processManager.withEmptyProcessState {
+      val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+
+      state.status shouldBe SimpleStateStatus.NotDeployed
+    }
+  }
+
+  test("Should return NotDeployed state for unarchived process with missing state") {
+    val id = prepareUnArchivedProcess(processName).futureValue
+    processManager.withEmptyProcessState {
+      val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+
+      state.status shouldBe SimpleStateStatus.NotDeployed
+    }
+  }
+
+  test("Should return any status for archived process with any available state") {
+    val id = prepareArchivedProcess(processName).futureValue
+
+    processManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
+      val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+
+      state.status shouldBe SimpleStateStatus.Canceled
+    }
+  }
+
+  test("Should return warning status for archived process with running state") {
+    val id = prepareArchivedProcess(processName).futureValue
+
+    processManager.withProcessStateStatus(SimpleStateStatus.Running) {
+      val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+
+      state.status shouldBe SimpleStateStatus.Warning
+      state.icon shouldBe Some(SimpleProcessStateDefinitionManager.stoppingWarningIcon)
+      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+    }
+  }
+
+  private def isFollowingDeploy(state: ProcessState): Boolean = state.isDeployed
 
   private def prepareDeployedProcess(processName: ProcessName): Future[process.ProcessId] =
     for {
       id <- prepareProcess(processName)
-      _ <- deploymentProcessRepository.markProcessAsDeployed(id, 1, "stream", Some("Deployed"))
+      _ <- actionRepository.markProcessAsDeployed(id, 1, "stream", Some("Deployed"))
     }  yield id
 
   private def prepareCanceledProcess(processName: ProcessName): Future[process.ProcessId] =
     for {
       id <- prepareDeployedProcess(processName)
-      _ <- deploymentProcessRepository.markProcessAsCancelled(id, 1, Some("Canceled"))
+      _ <- actionRepository.markProcessAsCancelled(id, 1, Some("Canceled"))
     } yield id
 
-  private def prepareProcess(processName: ProcessName): Future[process.ProcessId] =
+  private def prepareProcess(processName: ProcessName): Future[process.ProcessId] = {
+    val action = CreateProcessAction(processName, testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)
     for {
-      _ <- writeProcessRepository.saveNewProcess(processName, testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)
-      id <- processRepository.fetchProcessId(processName).map(_.get)
+      _ <- repositoryManager.runInTransaction(writeProcessRepository.saveNewProcess(action))
+      id <- fetchingProcessRepository.fetchProcessId(processName).map(_.get)
     } yield id
+  }
+
+
+  private def prepareArchivedProcess(processName: ProcessName): Future[process.ProcessId] = {
+      for {
+        id <- prepareProcess(processName)
+        _ <- repositoryManager.runInTransaction(
+          writeProcessRepository.archive(processId = id, isArchived = true),
+          actionRepository.markProcessAsArchived(processId = id, 1)
+        )
+      } yield id
+  }
+
+  private def prepareUnArchivedProcess(processName: ProcessName): Future[process.ProcessId] = {
+    for {
+      id <- prepareProcess(processName)
+      _ <- dbTransactionSupport.runInTransaction(
+        actionRepository.markProcessAsArchived(processId = id, 1),
+        actionRepository.markProcessAsUnArchived(processId = id, 1)
+      )
+    } yield id
+  }
 }

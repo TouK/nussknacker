@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
-import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
+import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
@@ -45,10 +45,12 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
     val schemaRegistryProvider = createSchemaProvider(processObjectDependencies)
     val kafkaAvroSinkFactory = new KafkaAvroSinkFactory(schemaRegistryProvider, processObjectDependencies)
+    val kafkaAvroSinkFactoryWithEditor = new KafkaAvroSinkFactoryWithEditor(schemaRegistryProvider, processObjectDependencies)
 
     Map(
       "kafka-json" -> defaultCategory(new GenericKafkaJsonSink(processObjectDependencies)),
-      "kafka-avro" -> defaultCategory(kafkaAvroSinkFactory),
+      "kafka-avro-raw" -> defaultCategory(kafkaAvroSinkFactory),
+      "kafka-avro" -> defaultCategory(kafkaAvroSinkFactoryWithEditor),
       "dead-end" -> defaultCategory(SinkFactory.noParam(EmptySink))
     )
   }

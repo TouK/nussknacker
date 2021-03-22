@@ -8,9 +8,9 @@ import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.{ExternalDeploymentId, ProcessState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.standalone.api.DeploymentData
+import pl.touk.nussknacker.engine.standalone.api.StandaloneDeploymentData
 import sttp.client.circe._
 import pl.touk.nussknacker.engine.sttp.SttpJson
 import pl.touk.nussknacker.engine.sttp.SttpJson.asOptionalJson
@@ -33,7 +33,7 @@ object StandaloneProcessClient {
 
 trait StandaloneProcessClient extends AutoCloseable {
 
-  def deploy(deploymentData: DeploymentData): Future[Unit]
+  def deploy(deploymentData: StandaloneDeploymentData): Future[Unit]
 
   def cancel(name: ProcessName): Future[Unit]
 
@@ -47,7 +47,7 @@ class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient
 
   private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
-  override def deploy(deploymentData: DeploymentData): Future[Unit] = {
+  override def deploy(deploymentData: StandaloneDeploymentData): Future[Unit] = {
     Future.sequence(clients.map(_.deploy(deploymentData))).map(_ => ())
   }
 
@@ -68,7 +68,7 @@ class MultiInstanceStandaloneProcessClient(clients: List[StandaloneProcessClient
             case Some(state) => s"state: ${state.status.name}, startTime: ${state.startTime.getOrElse(None)}"
           }.mkString("; ")
           Some(SimpleProcessState(
-            DeploymentId(name.value),
+            ExternalDeploymentId(name.value),
             SimpleStateStatus.Failed,
             errors = List(s"Inconsistent states between servers: $warningMessage.")
           ))
@@ -87,7 +87,7 @@ class HttpStandaloneProcessClient(managementUrl: String)(implicit backend: SttpB
 
   private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
-  def deploy(deploymentData: DeploymentData): Future[Unit] = {
+  def deploy(deploymentData: StandaloneDeploymentData): Future[Unit] = {
     basicRequest
       .post(managementUri.path("deploy"))
       .body(deploymentData)

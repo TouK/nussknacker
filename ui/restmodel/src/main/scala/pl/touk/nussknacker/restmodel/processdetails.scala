@@ -57,7 +57,7 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
                                      createdBy: String,
                                      lastAction: Option[ProcessAction],
                                      lastDeployedAction: Option[ProcessAction],
-                                     state: Option[ProcessStatus] = Option.empty //It temporary holds mapped action -> status. Now this field is fill at router. In future we will keep there cached sate
+                                     state: Option[ProcessState] = Option.empty //It temporary holds mapped action -> status. Now this field is fill at router. In future we will keep there cached sate
                                     ) extends Process
 
   object BaseProcessDetails {
@@ -87,11 +87,11 @@ object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
                                               json: Option[ProcessShape],
                                               history: List[ProcessVersion],
                                               modelVersion: Option[Int],
-                                              state: Option[ProcessStatus] = Option.empty //It temporary holds mapped action -> status. Now this field is fill at router. In future we will keep there cached sate
+                                              state: Option[ProcessState] = Option.empty //It temporary holds mapped action -> status. Now this field is fill at router. In future we will keep there cached sate
                                              ) extends Process {
     def mapProcess[NewShape](action: ProcessShape => NewShape) : BaseProcessDetails[NewShape] = copy(json = json.map(action))
     // todo: unsafe toLong; we need it for now - we use this class for both backend (id == real id) and frontend (id == name) purposes
-    def idWithName: ProcessIdWithName = ProcessIdWithName(ProcessId(processId.value), ProcessName(name))
+    lazy val idWithName: ProcessIdWithName = ProcessIdWithName(ProcessId(processId.value), ProcessName(name))
   }
 
   // TODO we should split ProcessDetails and ProcessShape (json), than it won't be needed. Also BasicProcess won't be necessary than.

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.splittedgraph
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.{Case, EndingNode, FilterNode, Next, NextNode, OneOutputNode, PartRef, SplitNode, SplittedNode, SwitchNode}
 
+//NOTE: logic of collector should match logic in ProcessSplitter
 object SplittedNodesCollector {
 
   def collectNodes(node: SplittedNode[_<:NodeData]): List[SplittedNode[_<:NodeData]] = {
@@ -17,7 +18,7 @@ object SplittedNodesCollector {
         } ::: n.defaultNext.toList.flatMap(collectNodes)
       case SplitNode(_, nextsWithParts) =>
         nextsWithParts.flatMap(collectNodes)
-      case n: EndingNode[_] =>
+      case _: EndingNode[_] =>
         List.empty
     }
     node :: children
@@ -26,7 +27,7 @@ object SplittedNodesCollector {
   private def collectNodes(next: Next): List[SplittedNode[_<:NodeData]] =
     next match {
       case NextNode(node) => collectNodes(node)
-      case part: PartRef => List.empty
+      case _: PartRef => List.empty
   }
 
 }

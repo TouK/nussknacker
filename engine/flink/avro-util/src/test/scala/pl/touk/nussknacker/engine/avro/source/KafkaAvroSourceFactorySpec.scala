@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.avro.source
 
 import java.nio.charset.StandardCharsets
-
 import com.typesafe.config.ConfigFactory
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.Schema
@@ -16,13 +15,14 @@ import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, TopicParamName}
+import pl.touk.nussknacker.engine.avro.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client._
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.ConfluentAvroSerializationSchemaFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaVersionOption}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, KafkaAvroSpecMixin, SchemaDeterminerError}
+import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, SchemaDeterminerError}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.{GenericNodeTransformationValidator, TransformationResult}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
@@ -157,7 +157,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     validator.validateNode(avroSourceFactory, paramsList, Nil, Some(Interpreter.InputParamName))(ValidationContext()).toOption.get
   }
 
-  private def createKeyValueAvroSourceFactory[K: ClassTag, V: ClassTag]: KafkaAvroSourceFactory = {
+  private def createKeyValueAvroSourceFactory[K: ClassTag, V: ClassTag]: KafkaAvroSourceFactory[Any] = {
     val deserializerFactory = new TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory[K, V](factory)
     val provider = new ConfluentSchemaRegistryProvider(
       factory,
@@ -168,12 +168,12 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     new KafkaAvroSourceFactory(provider, testProcessObjectDependencies, None)
   }
 
-  private def roundTripSingleObject(sourceFactory: KafkaAvroSourceFactory, topic: String, versionOption: SchemaVersionOption, givenObj: Any, expectedSchema: Schema) = {
+  private def roundTripSingleObject(sourceFactory: KafkaAvroSourceFactory[Any], topic: String, versionOption: SchemaVersionOption, givenObj: Any, expectedSchema: Schema) = {
     pushMessage(givenObj, topic)
     readLastMessageAndVerify(sourceFactory, topic, versionOption, givenObj, expectedSchema)
   }
 
-  private def readLastMessageAndVerify(sourceFactory: KafkaAvroSourceFactory, topic: String, versionOption: SchemaVersionOption, givenObj: Any, expectedSchema: Schema): Assertion = {
+  private def readLastMessageAndVerify(sourceFactory: KafkaAvroSourceFactory[Any], topic: String, versionOption: SchemaVersionOption, givenObj: Any, expectedSchema: Schema): Assertion = {
     val source = createAndVerifySource(sourceFactory, topic, versionOption, expectedSchema)
 
     val bytes = source.generateTestData(1)
@@ -183,7 +183,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     deserializedObj shouldEqual List(givenObj)
   }
 
-  private def createAndVerifySource(sourceFactory: KafkaAvroSourceFactory, topic: String, versionOption: SchemaVersionOption, expectedSchema: Schema): Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef] with ReturningType = {
+  private def createAndVerifySource(sourceFactory: KafkaAvroSourceFactory[Any], topic: String, versionOption: SchemaVersionOption, expectedSchema: Schema): Source[AnyRef] with TestDataGenerator with TestDataParserProvider[AnyRef] with ReturningType = {
     val version = versionOption match {
       case LatestSchemaVersion => SchemaVersionOption.LatestOptionName
       case ExistingSchemaVersion(version) => version.toString

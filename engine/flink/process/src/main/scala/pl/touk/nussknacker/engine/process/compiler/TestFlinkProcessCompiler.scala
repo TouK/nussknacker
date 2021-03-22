@@ -3,26 +3,28 @@ package pl.touk.nussknacker.engine.process.compiler
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.scala._
-import pl.touk.nussknacker.engine.ModelConfigToLoad
 import pl.touk.nussknacker.engine.api.ProcessListener
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientException}
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
-import pl.touk.nussknacker.engine.api.test.ResultsCollectingListener
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkSource, FlinkSourceFactory}
+import pl.touk.nussknacker.engine.flink.api.process.FlinkSource
 import pl.touk.nussknacker.engine.flink.util.exception.ConsumingNonTransientExceptions
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.modelconfig.{InputConfigDuringExecution, ModelConfigLoader}
+import pl.touk.nussknacker.engine.testmode.ResultsCollectingListener
 
-class TestFlinkProcessCompiler(creator: ProcessConfigCreator, config: ModelConfigToLoad,
+class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
+                               inputConfigDuringExecution: InputConfigDuringExecution,
+                               modelConfigLoader: ModelConfigLoader,
                                collectingListener: ResultsCollectingListener,
                                process: EspProcess,
                                testData: TestData, executionConfig: ExecutionConfig,
-                               objectNaming: ObjectNaming) extends StubbedFlinkProcessCompiler(process, creator, config, objectNaming) {
+                               objectNaming: ObjectNaming) extends StubbedFlinkProcessCompiler(process, creator, inputConfigDuringExecution, modelConfigLoader, objectNaming) {
 
 
   override protected def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
@@ -41,16 +43,6 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator, config: ModelConfi
     })
   }
 
-  override protected def prepareService(service: ObjectWithMethodDef): ObjectWithMethodDef = {
-    overrideObjectWithMethod(service, (parameterCreator: Map[String, Any], outputVariableNameOpt, additional: Seq[AnyRef], _) => {
-      val newAdditional = additional.map {
-        case c: ServiceInvocationCollector => c.enable(collectingListener.runId)
-        case a => a
-      }
-      service.invokeMethod(parameterCreator, outputVariableNameOpt, newAdditional)
-    })
-  }
-
   //exceptions are recorded any way, by listeners
   override protected def prepareExceptionHandler(exceptionHandler: ObjectWithMethodDef): ObjectWithMethodDef = {
     overrideObjectWithMethod(exceptionHandler, (_, _, _, _) =>
@@ -64,6 +56,8 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator, config: ModelConfi
     )
   }
 
+  override protected def prepareService(service: ObjectWithMethodDef): ObjectWithMethodDef = service
 }
+
 
 

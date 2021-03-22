@@ -1,0 +1,19 @@
+{
+  "baseUrl": "http://localhost:3000",
+  "ignoreTestFiles": [
+    "**/__snapshots__/*",
+    "**/__image_snapshots__/*"
+  ],
+  "env": {
+    "cypress-plugin-snapshots": {
+      "imageConfig": {
+        "resizeDevicePixelRatio": false,
+        "threshold": 0.008
+      },
+      "screenshotConfig": {
+        "scale": false
+      },
+      "backgroundBlend": "overlay"
+    }
+  }
+}

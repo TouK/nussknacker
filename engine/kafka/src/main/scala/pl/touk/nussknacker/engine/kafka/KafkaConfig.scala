@@ -6,7 +6,10 @@ import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 case class KafkaConfig(kafkaAddress: String,
                        kafkaProperties: Option[Map[String, String]],
                        kafkaEspProperties: Option[Map[String, String]],
-                       consumerGroupNamingStrategy: Option[ConsumerGroupNamingStrategy.Value] = None) {
+                       consumerGroupNamingStrategy: Option[ConsumerGroupNamingStrategy.Value] = None,
+                       // Probably better place for this flag would be configParameters inside global parameters but
+                       // for easier usage in AbstractConfluentKafkaAvroDeserializer and ConfluentKafkaAvroDeserializerFactory it is placed here
+                       avroKryoGenericRecordSchemaIdSerialization: Option[Boolean] = None) {
 
   def forceLatestRead: Option[Boolean] = kafkaEspProperties.flatMap(_.get("forceLatestRead")).map(_.toBoolean)
 
@@ -25,12 +28,16 @@ object KafkaConfig {
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
 
-  private val defaultKafkaConfigPath = "kafka"
+  val defaultGlobalKafkaConfigPath = "kafka"
 
-  def parseConfig(config: Config, path: String): KafkaConfig = {
+  def parseConfigOpt(config: Config, path: String = defaultGlobalKafkaConfigPath): Option[KafkaConfig] = {
+    config.getAs[KafkaConfig](path)
+  }
+
+  def parseConfig(config: Config, path: String = defaultGlobalKafkaConfigPath): KafkaConfig = {
     config.as[KafkaConfig](path)
   }
 
   def parseProcessObjectDependencies(processObjectDependencies: ProcessObjectDependencies): KafkaConfig =
-    parseConfig(processObjectDependencies.config, defaultKafkaConfigPath)
+    parseConfig(processObjectDependencies.config, defaultGlobalKafkaConfigPath)
 }

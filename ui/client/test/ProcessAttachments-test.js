@@ -1,7 +1,9 @@
 import React from 'react';
 import Enzyme, {mount} from 'enzyme';
 import {ProcessAttachments} from '../components/ProcessAttachments'; //import redux-independent component
-import Adapter from 'enzyme-adapter-react-16';
+import Adapter from '@wojtekmaj/enzyme-adapter-react-17';
+
+jest.mock('../containers/theme');
 
 describe("ProcessAttachments suite", () => {
   it("should render with no problems", () => {

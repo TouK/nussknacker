@@ -6,14 +6,14 @@ import io.circe.syntax._
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.ui.process.ProcessToSave
+import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 class ProcessPosting {
 
-  private implicit val ptsEncoder: Encoder[ProcessToSave] = io.circe.generic.semiauto.deriveEncoder
+  private implicit val ptsEncoder: Encoder[UpdateProcessCommand] = io.circe.generic.semiauto.deriveEncoder
 
-  private def toRequest[T:Encoder](value: T): RequestEntity = HttpEntity(ContentTypes.`application/json`, value.asJson.spaces2)
+  def toRequest[T:Encoder](value: T): RequestEntity = HttpEntity(ContentTypes.`application/json`, value.asJson.spaces2)
 
   def toEntity(process: EspProcess): RequestEntity = {
     toRequest(ProcessConverter.toDisplayable(ProcessCanonizer.canonize(process), TestProcessingTypes.Streaming))
@@ -21,7 +21,7 @@ class ProcessPosting {
 
   def toEntityAsProcessToSave(process: EspProcess): RequestEntity = {
     val displayable = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(process), TestProcessingTypes.Streaming)
-    toRequest(ProcessToSave(displayable, comment = ""))
+    toRequest(UpdateProcessCommand(displayable, comment = ""))
   }
 
   def toEntity(properties: ProcessProperties): RequestEntity = {
@@ -32,12 +32,12 @@ class ProcessPosting {
     toRequest(process)
   }
 
-  def toEntity(process: ProcessToSave): RequestEntity = {
+  def toEntity(process: UpdateProcessCommand): RequestEntity = {
     toRequest(process)
   }
 
   def toEntityAsProcessToSave(process: DisplayableProcess): RequestEntity = {
-    toRequest(ProcessToSave(process, comment = ""))
+    toRequest(UpdateProcessCommand(process, comment = ""))
   }
 
 }

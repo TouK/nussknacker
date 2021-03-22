@@ -1,3 +1,5 @@
+import {persistReducer} from "redux-persist"
+import storage from "redux-persist/lib/storage"
 import {Reducer} from "../actions/reduxTypes"
 import {combineReducers} from "redux"
 
@@ -123,7 +125,9 @@ const combinedReducers = combineReducers<ToolbarsState>({
   collapsed, positions, nodeToolbox, initData,
 })
 
-export const reducer: Reducer<ToolbarsState> = (state, action) => {
+const reducer: Reducer<ToolbarsState> = (state, action) => {
   const withReset = resetReducer(state, action)
   return combinedReducers(withReset, action)
 }
+
+export const toolbars = persistReducer({key: `toolbars`, storage}, reducer)

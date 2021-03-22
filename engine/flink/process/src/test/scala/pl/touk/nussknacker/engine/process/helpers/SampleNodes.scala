@@ -4,23 +4,23 @@ import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Date, Optional, UUID}
-
 import cats.data.Validated.Valid
+import com.github.ghik.silencer.silent
 import io.circe.generic.JsonCodec
+
 import javax.annotation.Nullable
 import org.apache.flink.api.common.ExecutionConfig
-import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, WatermarkStrategy}
+import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.FilterFunction
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.co.RichCoMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
-import org.apache.flink.streaming.api.functions.timestamps.{AscendingTimestampExtractor, BoundedOutOfOrdernessTimestampExtractor}
 import org.apache.flink.streaming.api.scala.{DataStream, _}
 import org.apache.flink.streaming.api.windowing.time.Time
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation._
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
@@ -31,24 +31,27 @@ import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, StandardTimestampWatermarkHandler}
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler
+import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.signal.KafkaSignalStreamConnector
-import pl.touk.nussknacker.engine.flink.util.source.StaticSource.Watermark
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EspDeserializationSchema}
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
+import pl.touk.nussknacker.engine.kafka.{BasicFormatter, KafkaConfig, KafkaUtils}
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
+import pl.touk.nussknacker.test.WithDataList
 
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
+import scala.collection.immutable
 import scala.concurrent.{ExecutionContext, Future}
 
 //TODO: clean up sample objects...
 object SampleNodes {
 
-  val RecordingExceptionHandler = new CommonTestHelpers.RecordingExceptionHandler
+  val RecordingExceptionHandler = new RecordingExceptionHandler
 
   // Unfortunately we can't use scala Enumeration because of limited scala TypeInformation macro - see note in TypedDictInstance
   case class SimpleRecord(id: String, value1: Long, value2: String, date: Date, value3Opt: Option[BigDecimal] = None,
@@ -119,6 +122,90 @@ object SampleNodes {
         internalVar
       })
     }
+  }
+
+  trait WithLifecycle extends Lifecycle {
+
+    var opened: Boolean = false
+    var closed: Boolean = false
+
+    def reset(): Unit = {
+      opened = false
+      closed = false
+    }
+
+    override def open(jobData: JobData): Unit = {
+      opened = true
+    }
+
+    override def close(): Unit = {
+      closed = true
+    }
+
+  }
+
+  object LifecycleService extends Service with WithLifecycle {
+
+    @MethodToInvoke
+    def invoke(): Future[Unit] = {
+      Future.successful(())
+    }
+  }
+
+  object EagerLifecycleService extends EagerService with WithLifecycle {
+
+    var list: List[(String, WithLifecycle)] = Nil
+
+    override def open(jobData: JobData): Unit = {
+      super.open(jobData)
+      list.foreach(_._2.open(jobData))
+    }
+
+    override def close(): Unit = {
+      super.close()
+      list.foreach(_._2.close())
+    }
+
+    override def reset(): Unit = synchronized {
+      super.reset()
+      list = Nil
+    }
+
+    @MethodToInvoke
+    def invoke(@ParamName("name") name: String): ServiceInvoker = synchronized {
+      val newI = new ServiceInvoker with WithLifecycle {
+        override def invokeService(params: Map[String, Any])
+                                  (implicit ec: ExecutionContext,
+                                   collector: ServiceInvocationCollector, contextId: ContextId): Future[Any] = {
+          if (!opened) {
+            throw new IllegalArgumentException
+          }
+          Future.successful(())
+        }
+
+        override def returnType: TypingResult = Typed[Void]
+      }
+      list = (name -> newI)::list
+      newI
+    }
+
+  }
+
+  object CollectingEagerService extends EagerService {
+
+    @MethodToInvoke
+    def invoke(@ParamName("static") static: String, @ParamName("dynamic") dynamic: LazyParameter[String]): ServiceInvoker = new ServiceInvoker {
+      override def invokeService(params: Map[String, Any])(implicit ec: ExecutionContext,
+                                                           collector: ServiceInvocationCollector,
+                                                           contextId: ContextId): Future[Any] = {
+        collector.collect(s"static-$static-dynamic-${params("dynamic")}", Option(())) {
+          Future.successful(())
+        }
+      }
+
+      override def returnType: TypingResult = Typed[Void]
+    }
+
   }
 
   object ServiceAcceptingScalaOption extends Service {
@@ -235,6 +322,9 @@ object SampleNodes {
 
   }
 
+  // Remove @silent after upgrade to silencer 1.7
+  @silent("deprecated")
+  @nowarn("cat=deprecation")
   object ReturningDependentTypeService extends Service with ServiceReturningType {
 
     @MethodToInvoke
@@ -457,7 +547,7 @@ object SampleNodes {
       dependencies.collectFirst { case OutputVariableNameValue(name) => name } match {
         case Some(name) =>
           val result = TypedObjectTypingResult(rest.toMap.mapValuesNow(_.returnType))
-          context.withVariable(name, result).fold(
+          context.withVariable(OutputVar.customNode(name), result).fold(
             errors => FinalResults(context, errors.toList),
             FinalResults(_))
         case None =>
@@ -493,7 +583,7 @@ object SampleNodes {
     override def contextTransformation(context: ValidationContext,
                                        dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): this.NodeTransformationDefinition = {
       case TransformationStep(Nil, _) =>
-        context.withVariable(OutputVariableNameDependency.extract(dependencies), Typed[Boolean])
+        context.withVariable(OutputVar.customNode(OutputVariableNameDependency.extract(dependencies)), Typed[Boolean])
           .map(FinalResults(_, state = Some(context.contains(VariableThatShouldBeDefinedBeforeNodeName))))
           .valueOr( errors => FinalResults(context, errors.toList))
     }
@@ -536,11 +626,14 @@ object SampleNodes {
     }
 
     private def output(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId) = {
-      context.withVariable(dependencies.collectFirst {
+      val name = dependencies.collectFirst {
         case OutputVariableNameValue(name) => name
-      }.get, Typed[String]).fold(
+      }.get
+
+      context.withVariable(OutputVar.customNode(name), Typed[String]).fold(
         errors => FinalResults(context, errors.toList),
-        FinalResults(_))
+        FinalResults(_)
+      )
     }
 
     override def initialParameters: List[Parameter] = Parameter[String]("type")
@@ -666,7 +759,7 @@ object SampleNodes {
   class KeyValueKafkaSourceFactory(processObjectDependencies: ProcessObjectDependencies) extends KafkaSourceFactory[KeyValue](
               new EspDeserializationSchema[KeyValue](e => CirceUtil.decodeJsonUnsafe[KeyValue](e)),
               Some(outOfOrdernessTimestampExtractor[KeyValue](_.date)),
-              TestParsingUtils.newLineSplit,
+              BasicFormatter,
               processObjectDependencies)
 
 }

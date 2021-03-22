@@ -8,7 +8,7 @@ if (SystemUtils.hasAccessToken()) {
 }
 
 const configuration = {
-  withCredentials: !!SystemUtils.hasAccessToken(),
+  withCredentials: true,
   baseURL: API_URL,
   headers: headers,
 }

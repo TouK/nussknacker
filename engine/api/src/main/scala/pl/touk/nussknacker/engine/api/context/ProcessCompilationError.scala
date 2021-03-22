@@ -180,12 +180,19 @@ object ProcessCompilationError {
       InvalidPropertyFixedValue(paramName, label, value, values, nodeId.id)
   }
 
-  case class OverwrittenVariable(variableName: String, nodeId: String)
+  case class OverwrittenVariable(variableName: String, nodeId: String, paramName: Option[String])
     extends PartSubGraphCompilationError with InASingleNode
 
   object OverwrittenVariable {
-    def apply(variableName: String)(implicit nodeId: NodeId): PartSubGraphCompilationError =
-      OverwrittenVariable(variableName, nodeId.id)
+    def apply(variableName: String, paramName: Option[String])(implicit nodeId: NodeId): PartSubGraphCompilationError =
+      OverwrittenVariable(variableName, nodeId.id, paramName)
+  }
+
+  case class InvalidVariableOutputName(name: String, nodeId: String, paramName: Option[String]) extends PartSubGraphCompilationError with InASingleNode
+
+  object InvalidVariableOutputName {
+    def apply(variableName: String, paramName: Option[String])(implicit nodeId: NodeId): PartSubGraphCompilationError =
+      InvalidVariableOutputName(variableName, nodeId.id, paramName)
   }
 
   case class NoParentContext(nodeId: String) extends PartSubGraphCompilationError with InASingleNode

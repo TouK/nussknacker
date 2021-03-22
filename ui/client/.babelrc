@@ -4,14 +4,8 @@
     "@babel/preset-typescript",
     "@babel/preset-react"
   ],
-  "env": {
-    "development": {
-      "plugins": [
-        "react-hot-loader/babel"
-      ]
-    }
-  },
   "plugins": [
+    "@babel/plugin-transform-dotall-regex",
     "@babel/plugin-transform-runtime",
     "@babel/plugin-syntax-dynamic-import",
     "@babel/plugin-syntax-import-meta",
@@ -50,5 +44,13 @@
         "defaultNS": "main"
       }
     ]
-  ]
+  ],
+  "env": {
+    "development": {
+      "plugins": [
+        "react-refresh/babel",
+        "istanbul"
+      ]
+    }
+  }
 }

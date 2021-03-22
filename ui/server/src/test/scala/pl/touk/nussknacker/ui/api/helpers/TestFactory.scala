@@ -1,14 +1,14 @@
 package pl.touk.nussknacker.ui.api.helpers
 
 import java.util.concurrent.atomic.AtomicReference
-
 import akka.http.scaladsl.server.Route
 import cats.instances.future._
+import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentId, ProcessDeploymentData, ProcessState, SavepointResult, StateStatus, User}
+import pl.touk.nussknacker.engine.api.deployment.{CustomAction, CustomActionError, CustomActionNotImplemented, CustomActionRequest, CustomActionResult, ExternalDeploymentId, DeploymentData, ProcessDeploymentData, ProcessState, SavepointResult, StateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -73,18 +73,20 @@ object TestFactory extends TestPermissions{
     processingType = TestProcessingTypes.Streaming
   )
 
-  def newProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
+  def newDBRepositoryManager(dbs: DbConfig): RepositoryManager[DB] =
+    RepositoryManager.createDbRepositoryManager(dbs)
+
+  def newFetchingProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
     new DBFetchingProcessRepository[Future](dbs) with BasicRepository
 
   def newWriteProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
-    new DbWriteProcessRepository[Future](dbs, mapProcessingTypeDataProvider(modelVersions.map(TestProcessingTypes.Streaming -> _).toList: _*))
-        with WriteProcessRepository with BasicRepository
+    new DBProcessRepository(dbs, mapProcessingTypeDataProvider(modelVersions.map(TestProcessingTypes.Streaming -> _).toList: _*))
 
   def newSubprocessRepository(db: DbConfig): DbSubprocessRepository = {
     new DbSubprocessRepository(db, implicitly[ExecutionContext])
   }
 
-  def newDeploymentProcessRepository(db: DbConfig) = new ProcessActionRepository(db,
+  def newActionProcessRepository(db: DbConfig) = new DbProcessActionRepository(db,
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> buildInfo))
 
   def newProcessActivityRepository(db: DbConfig) = new ProcessActivityRepository(db)
@@ -118,34 +120,39 @@ object TestFactory extends TestPermissions{
     val stopSavepointPath = "savepoints/246-stop-savepoint"
   }
 
-  class MockProcessManager extends FlinkProcessManager(ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig).toModelData, shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED"){
+  class MockProcessManager(val defaultProcessStateStatus: StateStatus) extends FlinkProcessManager(ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig).toModelData, shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED"){
 
     import MockProcessManager._
+
+    def this() {
+      this(SimpleStateStatus.Running)
+    }
 
     private def prepareProcessState(status: StateStatus): Option[ProcessState ]=
       prepareProcessState(status, Some(ProcessVersion.empty))
 
     private def prepareProcessState(status: StateStatus, version: Option[ProcessVersion]): Option[ProcessState] =
-      Some(SimpleProcessState(DeploymentId("1"), status, version))
+      Some(SimpleProcessState(ExternalDeploymentId("1"), status, version))
 
     override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] =
       Future.successful(managerProcessState.get())
 
-    override def deploy(processId: ProcessVersion, processDeploymentData: ProcessDeploymentData, savepoint: Option[String], user: User): Future[Unit] =
+    override def deploy(processId: ProcessVersion, deploymentData: DeploymentData,
+                        processDeploymentData: ProcessDeploymentData, savepoint: Option[String]): Future[Option[ExternalDeploymentId]] =
       deployResult
 
-    private var deployResult: Future[Unit] = Future.successful(())
+    private var deployResult: Future[Option[ExternalDeploymentId]] = Future.successful(None)
 
-    private val managerProcessState = new AtomicReference[Option[ProcessState]](prepareProcessState(SimpleStateStatus.Running))
+    private val managerProcessState = new AtomicReference[Option[ProcessState]](prepareProcessState(defaultProcessStateStatus))
 
     def withWaitForDeployFinish[T](action: => T): T = {
-      val promise = Promise[Unit]
+      val promise = Promise[Option[ExternalDeploymentId]]
       try {
         deployResult = promise.future
         action
       } finally {
-        promise.complete(Try(Unit))
-        deployResult = Future.successful(())
+        promise.complete(Try(None))
+        deployResult = Future.successful(None)
       }
     }
 
@@ -154,7 +161,7 @@ object TestFactory extends TestPermissions{
       try {
         action
       } finally {
-        deployResult = Future.successful(())
+        deployResult = Future.successful(None)
       }
     }
 
@@ -179,20 +186,37 @@ object TestFactory extends TestPermissions{
         managerProcessState.set(status)
         action
       } finally {
-        managerProcessState.set(prepareProcessState(SimpleStateStatus.Running))
+        managerProcessState.set(prepareProcessState(defaultProcessStateStatus))
       }
     }
 
-    override protected def cancel(job: ProcessState): Future[Unit] = Future.successful(Unit)
+    override protected def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = Future.successful(Unit)
 
-    override protected def makeSavepoint(job: ProcessState, savepointDir: Option[String]): Future[SavepointResult] = Future.successful(SavepointResult(path = savepointPath))
+    override protected def makeSavepoint(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = Future.successful(SavepointResult(path = savepointPath))
 
-    override protected def stop(job: ProcessState, savepointDir: Option[String]): Future[SavepointResult] = Future.successful(SavepointResult(path = stopSavepointPath))
+    override protected def stop(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = Future.successful(SavepointResult(path = stopSavepointPath))
 
-    override protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Unit] = ???
+    override protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = ???
+
+    override def customActions: List[CustomAction] = {
+      import SimpleStateStatus._
+      List(
+        CustomAction(name = "hello",            allowedStateStatusNames = List(Warning.name, NotDeployed.name)),
+        CustomAction(name = "not-implemented",  allowedStateStatusNames = List(Warning.name, NotDeployed.name)),
+        CustomAction(name = "invalid-status",   allowedStateStatusNames = Nil)
+      )
+    }
+
+    override def invokeCustomAction(actionRequest: CustomActionRequest,
+                                    processDeploymentData: ProcessDeploymentData): Future[Either[CustomActionError, CustomActionResult]] =
+      Future.successful {
+        actionRequest.name match {
+          case "hello" | "invalid-status" => Right(CustomActionResult(actionRequest, "Hi"))
+          case _ => Left(CustomActionNotImplemented(actionRequest))
+        }
+    }
 
     override def close(): Unit = {}
-
   }
 
   class SampleSubprocessRepository(subprocesses: Set[CanonicalProcess]) extends SubprocessRepository {

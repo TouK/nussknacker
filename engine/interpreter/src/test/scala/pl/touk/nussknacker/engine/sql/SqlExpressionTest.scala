@@ -7,7 +7,6 @@ import java.util
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -76,14 +75,8 @@ class SqlExpressionTest extends FunSuite with Matchers with PatientScalaFutures 
       List(TypedMap(Map("LOCALDATETIMEFIELD" -> Timestamp.from(dateToTest.atZone(ZoneId.systemDefault()).toInstant))))
   }
 
-
-  private val dumbLazyProvider = new LazyValuesProvider {
-    override def apply[T](ctx: LazyContext, serviceId: String, params: Seq[(String, Any)]) = throw new IllegalStateException("Shouln't be invoked")
-  }
-
   private def evaluate(expression: String, ctx: Context = ctx, validationContext: ValidationContext = validationContext): List[TypedMap] =
-    parseOrFail(expression, validationContext).evaluate[java.util.List[TypedMap]](ctx, Map.empty, dumbLazyProvider)
-      .value.asScala.toList
+    parseOrFail(expression, validationContext).evaluate[java.util.List[TypedMap]](ctx, Map.empty).asScala.toList
 
   private def parseOrFail(expression: String, validationContext: ValidationContext = validationContext): SqlExpression =
     SqlExpressionParser

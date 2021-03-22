@@ -1,0 +1,120 @@
+{
+  "metaData": {
+    "id": "e2e-1612884598459-process-test-process",
+    "typeSpecificData": {
+      "parallelism": 1,
+      "splitStateToDisk": true,
+      "useAsyncInterpretation": null,
+      "checkpointIntervalInSeconds": null,
+      "type": "StreamMetaData"
+    },
+    "isSubprocess": false,
+    "additionalFields": {
+      "description": null,
+      "groups": [],
+      "properties": {
+        "numberOfThreads": "1",
+        "environment": "test"
+      }
+    },
+    "subprocessVersions": {}
+  },
+  "exceptionHandlerRef": {
+    "parameters": []
+  },
+  "nodes": [
+    {
+      "id": "boundedSource",
+      "ref": {
+        "typ": "boundedSource",
+        "parameters": [
+          {
+            "name": "elements",
+            "expression": {
+              "language": "spel",
+              "expression": "{'', 'b'}"
+            }
+          }
+        ]
+      },
+      "additionalFields": {
+        "description": null,
+        "layoutData": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "type": "Source"
+    },
+    {
+      "id": "enricher",
+      "service": {
+        "id": "enricher",
+        "parameters": [
+          {
+            "name": "param",
+            "expression": {
+              "language": "spel",
+              "expression": "'default value'"
+            }
+          },
+          {
+            "name": "tariffType",
+            "expression": {
+              "language": "spel",
+              "expression": "T(pl.touk.nussknacker.engine.management.sample.TariffType).NORMAL"
+            }
+          }
+        ]
+      },
+      "output": "output",
+      "additionalFields": {
+        "description": null,
+        "layoutData": {
+          "x": 0,
+          "y": 135
+        }
+      },
+      "type": "Enricher"
+    },
+    {
+      "id": "dynamicService",
+      "service": {
+        "id": "dynamicService",
+        "parameters": [
+        ]
+      },
+      "isDisabled": null,
+      "additionalFields": {
+        "description": null,
+        "layoutData": {
+          "x": 0,
+          "y": 270
+        }
+      },
+      "type": "Processor"
+    },
+    {
+      "id": "sendSms",
+      "ref": {
+        "typ": "sendSms",
+        "parameters": [
+        ]
+      },
+      "endResult": {
+        "language": "spel",
+        "expression": "#input"
+      },
+      "isDisabled": null,
+      "additionalFields": {
+        "description": null,
+        "layoutData": {
+          "x": 0,
+          "y": 405
+        }
+      },
+      "type": "Sink"
+    }
+  ],
+  "additionalBranches": []
+}

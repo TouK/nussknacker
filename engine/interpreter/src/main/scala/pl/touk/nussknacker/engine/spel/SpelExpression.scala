@@ -15,8 +15,7 @@ import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
-import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, ExpressionParser, TypedExpression, ValueWithLazyContext}
-import pl.touk.nussknacker.engine.api.lazyy.{LazyContext, LazyValuesProvider}
+import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -88,18 +87,12 @@ class SpelExpression(parsed: ParsedSpelExpression,
     }
 
   // TODO: better interoperability with scala type, mainly: scala.math.BigDecimal, scala.math.BigInt and collections
-  override def evaluate[T](ctx: Context, globals: Map[String, Any],
-                           lazyValuesProvider: LazyValuesProvider): ValueWithLazyContext[T] = logOnException(ctx) {
+  override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = logOnException(ctx) {
     if (expectedClass == classOf[SpelExpressionRepr]) {
-      return ValueWithLazyContext(SpelExpressionRepr(parsed.parsed, ctx, globals, original).asInstanceOf[T], ctx.lazyContext)
+      return SpelExpressionRepr(parsed.parsed, ctx, globals, original).asInstanceOf[T]
     }
-
-    val evaluationContext = evaluationContextPreparer.prepareEvaluationContext(ctx, globals, lazyValuesProvider)
-
-    //TODO: async evaluation of lazy vals...
-    val value = parsed.getValue[T](evaluationContext, expectedClass)
-    val modifiedLazyContext = evaluationContext.lookupVariable(LazyContextVariableName).asInstanceOf[LazyContext]
-    ValueWithLazyContext(value, modifiedLazyContext)
+    val evaluationContext = evaluationContextPreparer.prepareEvaluationContext(ctx, globals)
+    parsed.getValue[T](evaluationContext, expectedClass)
   }
 
   private def logOnException[A](ctx: Context)(block: => A): A = {

@@ -18,6 +18,8 @@ import SaveButton from "../process/buttons/SaveButton"
 import {ToolbarButtons} from "../../toolbarComponents/ToolbarButtons"
 import {CollapsibleToolbar} from "../../toolbarComponents/CollapsibleToolbar"
 import i18next from "i18next"
+import CustomActionButton from "./buttons/CustomActionButton"
+import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
 
 type State = UnknownRecord
 
@@ -26,7 +28,6 @@ type OwnProps = {
   iconWidth: number,
 }
 
-//TODO: In future information about archived process should be return from BE as state.
 class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
   static defaultProps = {
     isStateLoaded: false,
@@ -88,11 +89,28 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
     `${process.id}` :
     `${process.id}-${processState?.icon || process?.state?.icon || unknownIcon}`
 
+  private buttons = [
+    <SaveButton key={0}/>,
+    <Deploy key={1}/>,
+    <Cancel key={2}/>,
+    <Metrics key={3}/>
+  ]
+
   render() {
-    const {process, processState, isStateLoaded, iconHeight, iconWidth, capabilities} = this.props
+    const {process, processState, isStateLoaded, iconHeight, iconWidth, processDefinitionData} = this.props
     const description = this.getDescription(process, processState, isStateLoaded)
     const icon = this.getIcon(process, processState, isStateLoaded, iconHeight, iconWidth, description)
     const transitionKey = this.getTransitionKey(process, processState)
+    const customActions = processDefinitionData.customActions || []
+    // TODO: better styling of process info toolbar in case of many custom actions
+    const customButtons = customActions.map((a, ix) => (
+      <CustomActionButton
+        action={a}
+        processId={process.id}
+        processStatus={processState?.status}
+        key={ix + this.buttons.length}
+      />
+    ))
 
     return (
       <CollapsibleToolbar title={i18next.t("panels.status.title", "Status")} id="PROCESS-INFO">
@@ -111,10 +129,7 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
             </CssFade>
           </SwitchTransition>
           <ToolbarButtons>
-            <SaveButton/>
-            <Deploy/>
-            <Cancel/>
-            <Metrics/>
+            {[...this.buttons, ...customButtons]}
           </ToolbarButtons>
         </DragHandle>
       </CollapsibleToolbar>
@@ -127,6 +142,7 @@ const mapState = (state: RootState) => ({
   process: getFetchedProcessDetails(state),
   capabilities: getCapabilities(state),
   processState: getProcessState(state),
+  processDefinitionData: getProcessDefinitionData(state),
 })
 
 type StateProps = ReturnType<typeof mapState>

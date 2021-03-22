@@ -1,0 +1,148 @@
+{
+  "id": "testrealm",
+  "realm": "testrealm",
+  "displayName": "testrealm",
+  "displayNameHtml": "",
+  "notBefore": 0,
+  "revokeRefreshToken": false,
+  "refreshTokenMaxReuse": 0,
+  "accessTokenLifespan": 60,
+  "accessTokenLifespanForImplicitFlow": 900,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "offlineSessionIdleTimeout": 2592000,
+  "accessCodeLifespan": 60,
+  "accessCodeLifespanUserAction": 300,
+  "accessCodeLifespanLogin": 1800,
+  "actionTokenGeneratedByAdminLifespan": 43200,
+  "actionTokenGeneratedByUserLifespan": 300,
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "registrationEmailAsUsername": false,
+  "rememberMe": false,
+  "verifyEmail": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 1800,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 1800,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 5,
+  "groups": [
+    {
+      "name": "test1",
+      "path": "/test1",
+      "attributes": {},
+      "realmRoles": [],
+      "clientRoles": {},
+      "subGroups": []
+    }
+  ],
+  "roles": {
+    "client": {
+      "test-client": [
+        {
+          "name": "view-products",
+          "scopeParamRequired": false,
+          "composite": false,
+          "clientRole": true,
+          "containerId": "1"
+        }
+      ]
+    }
+  },
+  "defaultRoles": [],
+  "requiredCredentials": [
+    "password"
+  ],
+  "clients": [
+    {
+      "clientId": "test-client",
+      "name": "Test client",
+      "description": "Test client",
+      "rootUrl": "",
+      "adminUrl": "",
+      "baseUrl": "",
+      "surrogateAuthRequired": false,
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "123456789",
+      "redirectUris": ["http://localhost:1234"],
+      "webOrigins": [],
+      "notBefore": 0,
+      "bearerOnly": false,
+      "consentRequired": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "publicClient": false,
+      "frontchannelLogout": false,
+      "protocol": "openid-connect",
+      "attributes": {
+        "saml.assertion.signature": "false",
+        "saml.force.post.binding": "false",
+        "saml.multivalued.roles": "false",
+        "saml.encrypt": "false",
+        "saml_force_name_id_format": "false",
+        "saml.client.signature": "false",
+        "saml.authnstatement": "false",
+        "saml.server.signature": "false",
+        "saml.server.signature.keyinfo.ext": "false",
+        "saml.onetimeuse.condition": "false"
+      },
+      "fullScopeAllowed": true,
+      "nodeReRegistrationTimeout": -1,
+      "protocolMappers": [
+        {
+          "name": "name",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-full-name-mapper",
+          "consentRequired": false,
+          "config": {
+            "id.token.claim": "true",
+            "access.token.claim": "false",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ],
+      "useTemplateConfig": false,
+      "useTemplateScope": false,
+      "useTemplateMappers": true
+    }
+  ],
+  "clientTemplates": [],
+  "defaultLocale": "en",
+  "eventsEnabled": false,
+  "eventsListeners": [
+    "jboss-logging"
+  ],
+  "enabledEventTypes": [],
+  "adminEventsEnabled": false,
+  "adminEventsDetailsEnabled": false,
+  "users": [
+    {
+      "username": "user1",
+      "email": "user@examples.com",
+      "firstName": "Jan",
+      "lastName": "Kowalski",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "pass1"
+        }
+      ],
+      "groups": ["test1"],
+      "clientRoles": {
+        "account": []
+      }
+    }
+  ]
+}

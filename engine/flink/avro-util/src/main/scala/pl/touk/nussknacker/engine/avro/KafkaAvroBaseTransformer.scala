@@ -2,13 +2,16 @@ package pl.touk.nussknacker.engine.avro
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.Writer
+import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
-import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation, TypedNodeDependencyValue}
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter}
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue, SingleInputGenericNodeTransformation, TypedNodeDependencyValue}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, NodeDependency, Parameter, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.TopicParamName
 import pl.touk.nussknacker.engine.avro.schemaregistry.{BasedOnVersionAvroSchemaDeterminer, SchemaRegistryClient, SchemaRegistryProvider, SchemaVersionOption}
+import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactoryWithEditor.paramsDeterminedAfterSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, PreparedKafkaTopic}
 
 import scala.reflect.ClassTag
@@ -31,18 +34,18 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
 
   override type State = Nothing
 
-  protected def topicParam(implicit nodeId: NodeId): WithError[Parameter] = {
+  protected def getTopicParam(implicit nodeId: NodeId): WithError[Parameter] = {
     val topics = schemaRegistryClient.getAllTopics
 
     (topics match {
       case Valid(topics) => Writer[List[ProcessCompilationError], List[String]](Nil, topics)
       case Invalid(e) => Writer[List[ProcessCompilationError], List[String]](List(CustomNodeError(e.getMessage, Some(KafkaAvroBaseTransformer.TopicParamName))), Nil)
     }).map { topics =>
-      topicParam(topics)
+      getTopicParam(topics)
     }
   }
 
-  private def topicParam(topics: List[String]): Parameter = {
+  private def getTopicParam(topics: List[String]): Parameter = {
     Parameter[String](KafkaAvroBaseTransformer.TopicParamName).copy(editor = Some(FixedValuesParameterEditor(
       nullTopicOption +: topics
         .flatMap(topic => processObjectDependencies.objectNaming.decodeName(topic, processObjectDependencies.config, KafkaUtils.KafkaTopicUsageKey))
@@ -51,15 +54,15 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
     )))
   }
 
-  protected def versionParam(preparedTopic: PreparedKafkaTopic)(implicit nodeId: NodeId): WithError[Parameter] = {
+  protected def getVersionParam(preparedTopic: PreparedKafkaTopic)(implicit nodeId: NodeId): WithError[Parameter] = {
     val versions = schemaRegistryClient.getAllVersions(preparedTopic.prepared, isKey = false)
     (versions match {
       case Valid(versions) => Writer[List[ProcessCompilationError], List[Integer]](Nil, versions)
       case Invalid(e) => Writer[List[ProcessCompilationError], List[Integer]](List(CustomNodeError(e.getMessage, Some(KafkaAvroBaseTransformer.TopicParamName))), Nil)
-    }).map(versionParam)
+    }).map(getVersionParam)
   }
 
-  protected def versionParam(versions: List[Integer]): Parameter = {
+  protected def getVersionParam(versions: List[Integer]): Parameter = {
     val versionValues = FixedExpressionValue(s"'${SchemaVersionOption.LatestOptionName}'", "Latest version") :: versions.sorted.map(v => FixedExpressionValue(s"'$v'", v.toString))
     Parameter[String](KafkaAvroBaseTransformer.SchemaVersionParamName).copy(editor = Some(FixedValuesParameterEditor(versionValues)))
   }
@@ -87,8 +90,31 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
     new BasedOnVersionAvroSchemaDeterminer(schemaRegistryClient, preparedTopic.prepared, version)
   }
 
+  protected def topicParamStep(implicit nodeId: NodeId): NodeTransformationDefinition = {
+    case TransformationStep(Nil, _) =>
+      val topicParam = getTopicParam.map(List(_))
+      NextParameters(parameters = topicParam.value, errors = topicParam.written)
+  }
+
+  protected def schemaParamStep(implicit nodeId: NodeId): NodeTransformationDefinition = {
+    case TransformationStep((TopicParamName, DefinedEagerParameter(topic: String, _)) :: Nil, _) =>
+      val preparedTopic = prepareTopic(topic)
+      val versionParam = getVersionParam(preparedTopic)
+      NextParameters(versionParam.value :: paramsDeterminedAfterSchema, errors = versionParam.written)
+    case TransformationStep((TopicParamName, _) :: Nil, _) =>
+      NextParameters(parameters = fallbackVersionOptionParam :: paramsDeterminedAfterSchema)
+  }
+
+  override def initialParameters: List[Parameter] = {
+    implicit val nodeId: NodeId = NodeId("")
+    val topic = getTopicParam.value
+    topic :: getVersionParam(Nil) :: paramsDeterminedAfterSchema
+  }
+
+  def paramsDeterminedAfterSchema: List[Parameter]
+
   //edge case - for some reason Topic is not defined
-  protected val fallbackVersionOptionParam: Parameter = versionParam(Nil)
+  protected val fallbackVersionOptionParam: Parameter = getVersionParam(Nil)
 
 }
 

@@ -28,7 +28,7 @@ class TestInfoResourcesSpec extends FunSuite with ScalatestRouteTest with Matche
   private implicit final val bytes: FromEntityUnmarshaller[Array[Byte]] =
     Unmarshaller.byteArrayUnmarshaller.forContentTypes(ContentTypeRange(ContentTypes.`application/octet-stream`))
 
-  private val route = new TestInfoResources(mapProcessingTypeDataProvider("streaming" -> testInfoProvider), processAuthorizer, processRepository)
+  private val route = new TestInfoResources(mapProcessingTypeDataProvider("streaming" -> testInfoProvider), processAuthorizer, fetchingProcessRepository)
 
   test("generates data"){
     val process = ProcessTestData.sampleDisplayableProcess

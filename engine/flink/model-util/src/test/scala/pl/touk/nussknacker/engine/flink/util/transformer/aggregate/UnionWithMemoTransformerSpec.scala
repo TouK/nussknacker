@@ -4,15 +4,14 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 import java.time.Duration
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.{util => jul}
-
 import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.streaming.api.scala._
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
-import pl.touk.nussknacker.engine.api.test.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory.NoParamSourceFactory
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
@@ -28,6 +27,7 @@ import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
@@ -103,8 +103,8 @@ class UnionWithMemoTransformerSpec extends FunSuite with FlinkSpec with Matchers
                           collectingListener: ResultsCollectingListener)(action: => Unit): Unit = {
     val model = LocalModelData(ConfigFactory.empty(), new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener))
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
-    val registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(model), model.processConfig, ExecutionConfigPreparer.unOptimizedChain(model, None))
-    registrar.register(new StreamExecutionEnvironment(stoppableEnv), testProcess, ProcessVersion.empty, Some(collectingListener.runId))
+    val registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(model), model.processConfig, ExecutionConfigPreparer.unOptimizedChain(model))
+    registrar.register(new StreamExecutionEnvironment(stoppableEnv), testProcess, ProcessVersion.empty, DeploymentData.empty, Some(collectingListener.runId))
     stoppableEnv.withJobRunning(testProcess.id)(action)
   }
 }

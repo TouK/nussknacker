@@ -1,16 +1,30 @@
-name: PR Build
+name: CI
 on:
   pull_request:
     branches:
       - master
       - staging
+      - fixes/*
+  push:
+    branches:
+      - master
+      - staging
+      - preview/*
+      - fixes/*
+    #TODO: currently release is done manually, we don't want to run this pipeline on released version, to avoid accidental pushes
+    tags-ignore:
+      - '**'
+env:
+  #we use this variable in ciRunSbt.sh
+  #NOTE: for publishing we use different settings, we don't use ciRunSbt.sh there
+  CROSS_BUILD: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/fixes') }}
 
 jobs:
-  tests:
-    name: Tests
+  build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Cache ivy packages
         uses: actions/cache@v2
         with:
@@ -19,16 +33,58 @@ jobs:
             ~/.sbt
           key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
-      - uses: olafurpg/setup-scala@v5
+      - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "openjdk@1.11"
+      - name: Build
+        shell: bash
+        run: ./ciRunSbt.sh clean compile
+      - name: Tar artifacts
+        shell: bash
+        run:  find . -wholename "**/target/**/*" -printf '%P\0' | tar --null -C '.' --files-from=- -czf 'target.tgz'
+      - name: Store target
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-target
+          path: target.tgz
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "openjdk@1.11"
+      - uses: actions/download-artifact@v2
+        with:
+          name: build-target
+      - name: Untar artifacts
+        shell: bash
+        run:  tar xfz target.tgz
+      - name: Cache ivy packages
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.ivy2/cache
+            ~/.sbt
+          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
+          restore-keys: ${{ runner.os }}-sbt
       - name: Backend tests
         shell: bash
-        run: ./ciBackendTest.sh
+        run: ./ciRunSbt.sh coverage test coverageReport
+      - name: Upload Coverage data to Coveralls
+        shell: bash
+        run: ./ciRunSbt.sh coverageAggregate coveralls
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   crossCompile:
     name: CrossCompile
     runs-on: ubuntu-latest
+    needs: [ build ]
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Cache ivy packages
         uses: actions/cache@v2
         with:
@@ -37,15 +93,24 @@ jobs:
             ~/.sbt
           key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
-      - uses: olafurpg/setup-scala@v5
+      - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "openjdk@1.11"
+      - uses: actions/download-artifact@v2
+        with:
+          name: build-target
+      - name: Untar artifacts
+        shell: bash
+        run:  tar xfz target.tgz
       - name: Compile
         shell: bash
-        run: CROSS_BUILD=true ./ciRunSbt.sh clean compile:compile test:compile
+        run: CROSS_BUILD=true ./ciRunSbt.sh compile:compile test:compile
   integrationTests:
     name: IntegrationTests
+    needs: [ build ]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Cache ivy packages
         uses: actions/cache@v2
         with:
@@ -54,15 +119,24 @@ jobs:
             ~/.sbt
           key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
-      - uses: olafurpg/setup-scala@v5
+      - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "openjdk@1.11"
+      - uses: actions/download-artifact@v2
+        with:
+          name: build-target
+      - name: Untar artifacts
+        shell: bash
+        run:  tar xfz target.tgz
       - name: Integration tests
         shell: bash
-        run: ./ciRunSbt.sh clean flinkProcessManager/it:test engineStandalone/it:test
-  slowTest:
+        run: ./ciRunSbt.sh flinkProcessManager/it:test engineStandalone/it:test processReports/it:test security/it:test
+  slowTests:
     name: Slow tests
     runs-on: ubuntu-latest
+    needs: [ build ]
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Cache ivy packages
         uses: actions/cache@v2
         with:
@@ -71,16 +145,31 @@ jobs:
             ~/.sbt
           key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
-      - uses: olafurpg/setup-scala@v5
+      - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "openjdk@1.11"
+      - uses: actions/download-artifact@v2
+        with:
+          name: build-target
+      - name: Untar artifacts
+        shell: bash
+        run:  tar xfz target.tgz
       - name: Slow tests
         shell: bash
-        run: ./ciRunSbt.sh clean ui/slow:test
+        run: ./ciRunSbt.sh ui/slow:test
 
   frontendTests:
     name: FrontendTests
     runs-on: ubuntu-latest
+    #TODO: currently we use *former* docker image, we should do e2e tests in docker test phase, where we run container from *current* build
+    services:
+      nussknacker:
+        image: touk/nussknacker:staging-latest
+        ports:
+          - 8080:8080
+        options: "-e CONFIG_FORCE_processTypes_streaming_engineConfig_type=stub -e NUSSKNACKER_CONFIG_FILE=/opt/nussknacker/conf/dev-application.conf"
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Cache npm
         uses: actions/cache@v2
         with:
@@ -91,6 +180,125 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 14.11.0
-      - run: ./ciFrontendTest.sh
+      - name: Test FE
+        run: |
+          cd ui/client
+          npm ci
+          npm test
+          npm run build
+      - name: Store test results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-results
+          path: |
+            ui/client/cypress/**/__image_snapshots__/
+            ui/client/cypress/screenshots/
+            ui/client/cypress/videos/
+          if-no-files-found: ignore
+  dockerTest:
+    name: DockerTest
+    runs-on: ubuntu-latest
+    needs: [ build ]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Cache npm
+        uses: actions/cache@v2
+        with:
+          path: |
+            **/node_modules
+          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.11.0
+      - name: Setup npm
+        run: (cd ui/client; npm ci)
+      - name: Cache ivy packages
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.ivy2/cache
+            ~/.sbt
+          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
+          restore-keys: ${{ runner.os }}-sbt
+      - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "openjdk@1.11"
+      - uses: actions/download-artifact@v2
+        with:
+          name: build-target
+      - name: Untar artifacts
+        shell: bash
+        run:  tar xfz target.tgz
+      - name: Prepare docker
+        shell: bash
+        #Doc generation is rather costly, we don't want it in test image creation
+        run: echo "version in ThisBuild := \"$GITHUB_SHA\"" > version.sbt && sbt "set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" dist/docker:publishLocal
+      - name: Test docker
+        shell: bash
+        env:
+          NUSSKNACKER_VERSION: ${{ github.sha }}
+        run: cd ./demo/docker && ./testQuickstart.sh
 
+#TODO: extract to different workflow?
+  publish:
+    runs-on: ubuntu-latest
+    needs: [build, tests, crossCompile, integrationTests, slowTests, frontendTests, dockerTest]
+    #TODO: should we publish everything on all those branches?
+    if: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/fixes') || startsWith(github.ref, 'refs/heads/preview') }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Cache npm
+        uses: actions/cache@v2
+        with:
+          path: |
+            **/node_modules
+          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.11.0
+      - name: Setup npm
+        run: (cd ui/client; npm ci)
+      - name: Cache ivy packages
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.ivy2/cache
+            ~/.sbt
+          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
+          restore-keys: ${{ runner.os }}-sbt
+      - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "openjdk@1.11"
+      - uses: actions/download-artifact@v2
+        with:
+          name: build-target
+      - name: Untar artifacts
+        shell: bash
+        run:  tar xfz target.tgz
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      #TODO: Figure out how to version SNAPSHOTs
+      - name: Define version and branch
+        shell: bash
+        run: |
+          GIT_SOURCE_BRANCH=`([ "${GITHUB_HEAD_REF}" != "" ] && echo "${GITHUB_HEAD_REF}" || echo "${GITHUB_REF}") | sed 's/refs\/heads\///g' `
+          echo "GIT_SOURCE_BRANCH=$GIT_SOURCE_BRANCH" >> $GITHUB_ENV
+          SANITIZED_BRANCH=`echo ${GIT_SOURCE_BRANCH} | sed 's/[^a-zA-Z0-9.\-_]/\_/g' | awk '{print tolower($0)}'`
+          echo "VERSION_SUFFIX=-$SANITIZED_BRANCH-$(date -I)-$GITHUB_RUN_NUMBER-$GITHUB_SHA" >> $GITHUB_ENV
+      - name: Build
+        shell: bash
+        env:
+          #TODO: shouldn't be needed...
+          nexusUrl: https://oss.sonatype.org/content/repositories/snapshots
+          nexusUser: ${{ secrets.SONATYPE_USER }}
+          nexusPassword: ${{ secrets.SONATYPE_PASSWORD }}
+          addDevModel: ${{ github.ref == 'refs/heads/staging' }}
+        #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
+        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := (version in ThisBuild).value.replace(\"-SNAPSHOT\", \"${VERSION_SUFFIX}-SNAPSHOT\")" +publish dist/docker:publish
 

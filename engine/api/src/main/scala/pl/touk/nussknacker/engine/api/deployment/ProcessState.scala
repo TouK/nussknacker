@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.api.deployment
 import java.net.URI
-
 import io.circe._
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 
 //@TODO: In future clean up it.
 trait ProcessStateDefinitionManager {
@@ -22,9 +22,9 @@ object ProcessState {
   implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
 
   def apply(deploymentId: String, status: StateStatus, version: Option[ProcessVersion], definitionManager: ProcessStateDefinitionManager): ProcessState =
-    ProcessState(DeploymentId(deploymentId), status, version, definitionManager, Option.empty, Option.empty, List.empty)
+    ProcessState(Some(ExternalDeploymentId(deploymentId)), status, version, definitionManager, Option.empty, Option.empty, List.empty)
 
-  def apply(deploymentId: DeploymentId, //DeploymentId should by Optional - error cases
+  def apply(deploymentId: Option[ExternalDeploymentId],
             status: StateStatus,
             version: Option[ProcessVersion],
             definitionManager: ProcessStateDefinitionManager,
@@ -46,7 +46,7 @@ object ProcessState {
 
 }
 
-@JsonCodec case class ProcessState(deploymentId: DeploymentId,
+@JsonCodec case class ProcessState(deploymentId: Option[ExternalDeploymentId],
                                    status: StateStatus,
                                    version: Option[ProcessVersion],
                                    allowedActions: List[ProcessActionType],
@@ -66,6 +66,8 @@ object ProcessActionType extends Enumeration {
   type ProcessActionType = Value
   val Deploy: Value = Value("DEPLOY")
   val Cancel: Value = Value("CANCEL")
+  val Archive: Value = Value("ARCHIVE")
+  val UnArchive: Value = Value("UNARCHIVE")
   val Pause: Value = Value("PAUSE") //TODO: To implement in future..
 }
 
@@ -77,19 +79,18 @@ object StateStatus {
 }
 
 @ConfiguredJsonCodec sealed trait StateStatus {
+  //used for filtering processes (e.g. shouldBeRunning)
   def isDuringDeploy: Boolean = false
+  //used for handling finished
   def isFinished: Boolean = false
+
   def isRunning: Boolean = false
   def isFailed: Boolean = false
-  def canDeploy: Boolean = false
   def name: String
 
-  def isFollowingDeployAction: Boolean = isDuringDeploy || isRunning
 }
 
-final case class AllowDeployStateStatus(name: String) extends StateStatus {
-  override def canDeploy: Boolean = true
-}
+final case class AllowDeployStateStatus(name: String) extends StateStatus
 
 final case class NotEstablishedStateStatus(name: String) extends StateStatus
 
@@ -99,17 +100,14 @@ final case class DuringDeployStateStatus(name: String) extends StateStatus {
 
 final case class FinishedStateStatus(name: String) extends StateStatus {
   override def isFinished: Boolean = true
-  override def canDeploy: Boolean = true
 }
 
 final case class RunningStateStatus(name: String) extends StateStatus {
   override def isRunning: Boolean = true
-  override def canDeploy: Boolean = true
 }
 
 final case class FailedStateStatus(name: String) extends StateStatus {
   override def isFailed: Boolean = true
-  override def canDeploy: Boolean = true
 }
 
 // This status class is a walk around for fact that StateStatus is encoded and decoded. It causes that there is no easy option

@@ -1,27 +1,25 @@
 package pl.touk.nussknacker.ui.api
 
-
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
 import akka.stream.Materializer
 import cats.data.Validated.{Invalid, Valid}
 import cats.instances.future._
-import cats.data.{EitherT, Validated}
+import cats.data.Validated
 import cats.syntax.either._
-import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessManager}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessManager, ProcessState}
 import pl.touk.nussknacker.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, WriteProcessRepository}
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository._
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.util._
 import pl.touk.nussknacker.ui._
 import EspErrorToHttp._
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.ProcessingTypeData
-import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidation}
+import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -30,27 +28,24 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, BasicProcess, ProcessShapeFetchStrategy, ValidatedProcessDetails}
-import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
-import pl.touk.nussknacker.ui.process.repository.WriteProcessRepository.UpdateProcessAction
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
+import pl.touk.nussknacker.restmodel.process._
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
 import pl.touk.nussknacker.engine.util.Implicits._
-import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
-import pl.touk.nussknacker.ui.listener.ProcessChangeListener
+import pl.touk.nussknacker.ui.EspError.XError
+import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnCategoryChanged
+import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, UpdateProcessCommand}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
+//TODO: Move remained business logic to processService
 class ProcessesResources(val processRepository: FetchingProcessRepository[Future],
-                         writeRepository: WriteProcessRepository,
-                         jobStatusService: JobStatusService,
+                         processService: ProcessService,
                          processValidation: ProcessValidation,
                          processResolving: UIProcessResolving,
-                         typesForCategories: ProcessTypesForCategories,
-                         newProcessPreparer: NewProcessPreparer,
                          val processAuthorizer:AuthorizeProcess,
                          processChangeListener: ProcessChangeListener,
                          typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData])
@@ -77,7 +72,8 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
           (post & processId(processName)) { processId =>
             canWrite(processId) {
               complete {
-                writeArchive(processId.id, isArchived = false)
+                processService.unArchiveProcess(processId)
+                  .map(toResponse(StatusCodes.OK))
                   .withSideEffect(_ => processChangeListener.handle(OnUnarchived(processId.id)))
               }
             }
@@ -85,11 +81,9 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
         } ~ path("archive" / Segment) { processName =>
           (post & processId(processName)) { processId =>
             canWrite(processId) {
-              /*
-              should not allow to archive still used subprocess IGNORED TEST
-              */
               complete {
-                writeArchive(processId.id, isArchived = true)
+                processService.archiveProcess(processId)
+                  .map(toResponse(StatusCodes.OK))
                   .withSideEffect(_ => processChangeListener.handle(OnArchived(processId.id)))
               }
             }
@@ -106,7 +100,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
               complete {
                 processRepository.fetchProcesses[Unit](
                   isSubprocess,
-                  isArchived.orElse(Option(false)), //Back compability
+                  isArchived.orElse(Option(false)), //Back compatibility
                   isDeployed,
                   categories,
                   processingTypes
@@ -179,6 +173,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
         } ~ path("processes" / Segment / "deployments") { processName =>
           processId(processName) { processId =>
             complete {
+              //FIXME: We should provide Deployment definition and return there all deployments, not actions..
               processRepository.fetchProcessActions(processId.id)
             }
           }
@@ -186,24 +181,24 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
           processId(processName) { processId =>
             (delete & canWrite(processId)) {
               complete {
-                writeRepository.deleteProcess(processId.id).map(toResponse(StatusCodes.OK))
+                processService
+                  .deleteProcess(processId)
+                  .map(toResponse(StatusCodes.OK))
                   .withSideEffect(_ => processChangeListener.handle(OnDeleted(processId.id)))
               }
             } ~ (put & canWrite(processId)) {
-              entity(as[ProcessToSave]) { processToSave =>
+              entity(as[UpdateProcessCommand]) { updateCommand =>
                 complete {
-                  isArchived(processId.id).flatMap[ToResponseMarshallable] {
-                    case true =>
-                      rejectSavingArchivedProcess
-                    case false =>
-                      saveProcess(processToSave, processId.id)
-                        .withSideEffect(_.toOption.flatMap(_.processVersionEntityData).foreach(p => processChangeListener.handle(OnSaved(processId.id, p.id))))
-                        .map(_.map(_.validation))
-                        .map(toResponseEither[ValidationResult])
-                  }
+                  processService
+                    .updateProcess(processId, updateCommand)
+                    .withSideEffect(response => sideEffectAction(response.toOption.flatMap(_.processResponse)) { resp =>
+                      OnSaved(resp.id, resp.versionId)
+                    })
+                    .map(_.map(_.validationResult))
+                    .map(toResponseEither[ValidationResult])
                 }
               }
-            } ~ parameter('businessView ? false) { (businessView) =>
+            } ~ parameter('businessView ? false) { businessView =>
               get {
                 complete {
                   processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId.id, businessView).map[ToResponseMarshallable] {
@@ -218,12 +213,12 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
           (put & processId(processName)) { processId =>
             canWrite(processId) {
               complete {
-                processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).flatMap {
-                  case Some(details) if !details.isDeployed =>
-                    writeRepository.renameProcess(processId.id, newName).map(toResponse(StatusCodes.OK))
-                      .withSideEffect(_ => processChangeListener.handle(OnRenamed(processId.id, processId.name, ProcessName(newName))))
-                  case _ => Future.successful(espErrorToHttp(ProcessAlreadyDeployed(processName)))
-                }
+                processService
+                  .renameProcess(processId, newName)
+                  .withSideEffect(response => sideEffectAction(response) { resp =>
+                    OnRenamed(processId.id, resp.oldName, resp.newName)
+                  })
+                  .map(toResponseEither[UpdateProcessNameResponse])
               }
             }
           }
@@ -243,21 +238,12 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
             parameter('isSubprocess ? false) { isSubprocess =>
               post {
                 complete {
-                  typesForCategories.getTypeForCategory(category) match {
-                    case Some(processingType) =>
-                      val emptyProcess = makeEmptyProcess(processName, processingType, isSubprocess)
-                      writeRepository.saveNewProcess(
-                        processName = ProcessName(processName),
-                        category = category,
-                        processDeploymentData = emptyProcess,
-                        processingType = processingType,
-                        isSubprocess = isSubprocess
-                      )
-                        .withSideEffect(_.toOption.flatten.foreach(p => processChangeListener.handle(OnSaved(ProcessId(p.processId), p.id))))
-                        .map(_.map(_ => ()))
-                        .map(toResponse(StatusCodes.Created))
-                    case None => Future(HttpResponse(status = StatusCodes.BadRequest, entity = "Process category not found"))
-                  }
+                  processService
+                    .createProcess(CreateProcessCommand(ProcessName(processName), category, isSubprocess))
+                    .withSideEffect(response => sideEffectAction(response) { process =>
+                      OnSaved(process.id, process.versionId)
+                    })
+                    .map(toResponseEither[ProcessResponse](_, StatusCodes.Created))
                 }
               }
             }
@@ -265,24 +251,19 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
         } ~ path("processes" / Segment / "status") { processName =>
           (get & processId(processName)) { processId =>
             complete {
-              processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).flatMap[ToResponseMarshallable] {
-                case Some(process) =>
-                  findJobStatus(processId, process.processingType).map {
-                    case Some(status) => status
-                    case None => ProcessStatus.notFound
-                  }
-                case None =>
-                  Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Process not found"))
-              }
+              processService.getProcessState(processId).map(ToResponseMarshallable(_))
             }
           }
         } ~ path("processes" / "category" / Segment / Segment) { (processName, category) =>
-          (post & processIdWithCategory(processName)) { data =>
+          (post & processId(processName)) { processId =>
             hasAdminPermission(user) {
               complete {
-                // TODO: Validate that category exists at categories list
-                writeRepository.updateCategory(processId = data.id, category = category).map(toResponse(StatusCodes.OK))
-                  .withSideEffect(_ => processChangeListener.handle(OnCategoryChanged(data.id, oldCategory = data.category, newCategory = category)))
+                processService
+                  .updateCategory(processId, category)
+                  .withSideEffect(response => sideEffectAction(response) { resp =>
+                    OnCategoryChanged(processId.id, resp.oldCategory, resp.newCategory)
+                  })
+                  .map(toResponseEither[UpdateProcessCategoryResponse])
               }
             }
           }
@@ -302,6 +283,12 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
       }
   }
 
+  private def sideEffectAction[T](response: XError[T])(eventAction: T => ProcessChangeEvent)(implicit user: LoggedUser): Unit =
+    sideEffectAction(response.toOption)(eventAction)
+
+  private def sideEffectAction[T](response: Option[T])(eventAction: T => ProcessChangeEvent)(implicit user: LoggedUser): Unit =
+    response.foreach(resp => processChangeListener.handle(eventAction(resp)))
+
   private def validateJsonForImport(processId: ProcessIdWithName, json: String): Validated[EspError, CanonicalProcess] = {
     ProcessMarshaller.fromJson(json) match {
       case Valid(process) if process.metaData.id != processId.name.value =>
@@ -311,8 +298,7 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
     }
   }
 
-  private def importProcess(processId: ProcessIdWithName, process: CanonicalProcess)
-                           (implicit user: LoggedUser): Future[ToResponseMarshallable] = {
+  private def importProcess(processId: ProcessIdWithName, process: CanonicalProcess)(implicit user: LoggedUser): Future[ToResponseMarshallable] = {
     processRepository.fetchLatestProcessDetailsForProcessIdEither[Unit](processId.id).map { detailsXor =>
       val validatedProcess = detailsXor
         .map(details => ProcessConverter.toDisplayable(process, details.processingType))
@@ -321,60 +307,18 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
     }
   }
 
-  private def writeArchive(processId: ProcessId, isArchived: Boolean) = {
-    writeRepository.archive(processId = processId, isArchived = isArchived)
-      .map(toResponse(StatusCodes.OK))
-  }
-  private def isArchived(processId: ProcessId)(implicit loggedUser: LoggedUser): Future[Boolean] =
-    processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId)
-      .map {
-        case Some(details) => details.isArchived
-        case _ => false
-      }
-
-  case class SaveProcessResult(processVersionEntityData: Option[ProcessVersionEntityData], validation: ValidationResults.ValidationResult)
-
-  private def saveProcess(processToSave: ProcessToSave, processId: ProcessId)
-                         (implicit loggedUser: LoggedUser):Future[Either[EspError, SaveProcessResult]] = {
-    val displayableProcess = processToSave.process
-    (for {
-      validation <- EitherT.fromEither[Future](FatalValidationError.saveNotAllowedAsError(processResolving.validateBeforeUiResolving(displayableProcess)))
-      deploymentData = {
-        val substituted = processResolving.resolveExpressions(displayableProcess, validation.typingInfo)
-        val json = ProcessMarshaller.toJson(substituted).noSpaces
-        GraphProcess(json)
-      }
-      updateResult <- EitherT(writeRepository.updateProcess(UpdateProcessAction(processId, deploymentData, processToSave.comment)))
-    } yield SaveProcessResult(updateResult, validation)).value
-  }
-  private def rejectSavingArchivedProcess: Future[ToResponseMarshallable]=
-    Future.successful(HttpResponse(status = StatusCodes.Forbidden, entity = "Cannot save archived process"))
-
-  private def fetchProcessStatesForProcesses(processes: List[BaseProcessDetails[Unit]])(implicit user: LoggedUser): Future[Map[String, Option[ProcessStatus]]] = {
+  private def fetchProcessStatesForProcesses(processes: List[BaseProcessDetails[Unit]])(implicit user: LoggedUser): Future[Map[String, ProcessState]] = {
     import cats.instances.future._
     import cats.instances.list._
     import cats.syntax.traverse._
-    processes.map(process => findJobStatus(process.idWithName, process.processingType).map(status => process.name -> status))
-      .sequence[Future, (String, Option[ProcessStatus])].map(_.toMap)
-  }
-
-  private def findJobStatus(processId: ProcessIdWithName, processingType: ProcessingType)(implicit ec: ExecutionContext, user: LoggedUser): Future[Option[ProcessStatus]] = {
-    jobStatusService.retrieveJobStatus(processId).recover {
-      case NonFatal(e) =>
-        logger.warn(s"Failed to get status of $processId: ${e.getMessage}", e)
-        Some(ProcessStatus.failedToGet)
-    }
-  }
-
-  private def makeEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean) = {
-    val emptyCanonical = newProcessPreparer.prepareEmptyProcess(processId, processingType, isSubprocess)
-    GraphProcess(ProcessMarshaller.toJson(emptyCanonical).noSpaces)
+    processes.map(process => processService.getProcessState(process.idWithName).map(status => process.name -> status))
+      .sequence[Future, (String, ProcessState)].map(_.toMap)
   }
 
   //This is temporary function to enriching process state data
   //TODO: Remove it when we will support cache for state
   private def enrichDetailsWithProcessState[PS: ProcessShapeFetchStrategy](process: BaseProcessDetails[PS]): BaseProcessDetails[PS] =
-    process.copy(state = processManager(process.processingType).map(m => ProcessStatus(
+    process.copy(state = processManager(process.processingType).map(m => ProcessStatus.createState(
       m.processStateDefinitionManager.mapActionToStatus(process.lastAction.map(_.action)),
       m.processStateDefinitionManager
     )))

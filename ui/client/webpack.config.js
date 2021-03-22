@@ -4,26 +4,24 @@ const path = require("path")
 const webpack = require("webpack")
 const childProcess = require("child_process")
 const HtmlWebpackPlugin = require("html-webpack-plugin")
+const HtmlWebpackHarddiskPlugin = require("html-webpack-harddisk-plugin")
 const TerserPlugin = require("terser-webpack-plugin")
 const CopyPlugin = require("copy-webpack-plugin")
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin")
+const {camelCase} = require("lodash")
+const MomentLocalesPlugin = require("moment-locales-webpack-plugin")
+const ReactRefreshWebpackPlugin = require("@pmmmwh/react-refresh-webpack-plugin")
+const PreloadWebpackPlugin = require("@vue/preload-webpack-plugin")
 
 const NODE_ENV = process.env.NODE_ENV || "development"
 const GIT_HASH = childProcess.execSync("git log -1 --format=%H").toString()
 const GIT_DATE = childProcess.execSync("git log -1 --format=%cd").toString()
 const isProd = NODE_ENV === "production"
 
+const {ModuleFederationPlugin} = webpack.container
+const {dependencies, name} = require("./package.json")
 const entry = {
-  main: path.resolve(__dirname, "./index.js"),
-}
-
-let previouslyPrintedPercentage = 0
-
-if (!isProd) {
-  entry["developer-tools"] = [
-    "webpack-dev-server/client?http://localhost:3000",
-    "react-hot-loader/patch",
-  ]
+  main: path.resolve(__dirname, "./init.js"),
 }
 
 const cssPreLoaders = [
@@ -61,7 +59,6 @@ module.exports = {
     },
     minimizer: [new TerserPlugin({
       parallel: true,
-      sourceMap: true,
       //Reactable bug: https://github.com/abdulrahman-khankan/reactable/issues/3
       terserOptions: {
         mangle: {
@@ -76,8 +73,12 @@ module.exports = {
   },
   resolve: {
     extensions: [".ts", ".tsx", ".js", ".jsx", ".json"],
-    alias: {
-      "react-dom": "@hot-loader/react-dom",
+    fallback: {
+      path: require.resolve("path-browserify"), //reason: react-markdown
+      crypto: require.resolve("crypto-browserify"), //reason: jsonwebtoken
+      stream: require.resolve("stream-browserify"), //reason: jsonwebtoken
+      http: require.resolve("stream-http"), //reason: matomo-tracker
+      https: require.resolve("https-browserify"), //reason: matomo-tracker
     },
   },
   entry: entry,
@@ -90,12 +91,13 @@ module.exports = {
   },
   devtool: isProd ? "hidden-source-map" : "eval-source-map",
   devServer: {
-    contentBase: __dirname,
+    publicPath: isProd ? "__publicPath__/static/" : "/static/",
     historyApiFallback: {
       index: "/static/main.html",
     },
     hot: true,
-    hotOnly: true,
+    host: "0.0.0.0",
+    disableHostCheck: true,
     port: 3000,
     proxy: {
       "/api": {
@@ -112,22 +114,55 @@ module.exports = {
     },
   },
   plugins: [
+    new MomentLocalesPlugin({
+      localesToKeep: ["pl"],
+    }),
+    new ModuleFederationPlugin({
+      name: camelCase(name),
+      shared: {
+        react: {
+          eager: true,
+          singleton: true,
+        },
+        "react-dom": {
+          eager: true,
+          singleton: true,
+        },
+      },
+    }),
     new HtmlWebpackPlugin({
       title: "Nussknacker",
       hash: true,
       filename: "main.html",
       template: "index_template_no_doctype.ejs",
+
     }),
-    isProd ? null : new webpack.NamedModulesPlugin(),
-    isProd ? null : new webpack.HotModuleReplacementPlugin(),
+    new HtmlWebpackHarddiskPlugin(),
     new CopyPlugin({
       patterns: [
         {from: "translations", to: "assets/locales"},
         {from: "assets/img/favicon.png", to: "assets/img/favicon.png"},
       ],
     }),
+    new PreloadWebpackPlugin({
+      rel: "preload",
+      as: "font",
+      include: "allAssets",
+      fileWhitelist: [/\.(woff2?|eot|ttf|otf)(\?.*)?$/i],
+    }),
+    new PreloadWebpackPlugin({
+      rel: "preload",
+      as: "image",
+      include: "allAssets",
+      fileWhitelist: [/\.(svg)(\?.*)?$/i],
+    }),
+    new webpack.ProvidePlugin({
+      process: "process/browser",
+    }),
     new webpack.DefinePlugin({
       __DEV__: !isProd,
+      "process.version": JSON.stringify(process.version), //reason: jsonwebtoken
+      "process.browser": true, //reason: jsonwebtoken
       "process.env": {
         NODE_ENV: JSON.stringify(NODE_ENV),
       },
@@ -145,9 +180,19 @@ module.exports = {
       }
     }),
     new ForkTsCheckerWebpackPlugin(),
+    !isProd ? new ReactRefreshWebpackPlugin() : null,
   ].filter(p => p !== null),
   module: {
     rules: [
+      {
+        // TODO: remove after update to babel 7.12
+        // https://github.com/babel/babel/pull/10853
+        // https://github.com/webpack/webpack/issues/11467#issuecomment-691873586
+        test: /\.m?js/,
+        resolve: {
+          fullySpecified: false,
+        },
+      },
       {
         test: require.resolve("jointjs"),
         use: [
@@ -161,12 +206,16 @@ module.exports = {
       },
       {
         test: /\.html$/,
-        loader: "html-loader?minimize=false",
+        use: {
+          loader: "html-loader",
+          options: {
+            minimize: false,
+          },
+        },
       },
       {
         test: /\.[tj]sx?$/,
         use: ["babel-loader"],
-        exclude: /node_modules/,
       },
       {
         test: /\.(css|styl|less)?$/,
@@ -198,7 +247,9 @@ module.exports = {
           {
             loader: "stylus-loader",
             options: {
-              use: [bootstrap()],
+              stylusOptions: {
+                use: [bootstrap()],
+              },
             },
           },
         ],
@@ -235,10 +286,7 @@ module.exports = {
         test: /\.svg$/,
         oneOf: [
           {
-            exclude: /node_modules/,
-            issuer: {
-              test: /\.[tj]sx?$/,
-            },
+            issuer: /\.[tj]sx?$/,
             use: [
               "babel-loader",
               {

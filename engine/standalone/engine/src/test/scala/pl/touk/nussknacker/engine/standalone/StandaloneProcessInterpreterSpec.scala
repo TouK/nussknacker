@@ -4,12 +4,13 @@ import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
 import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
-import pl.touk.nussknacker.engine.api.lazyy.LazyContext
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{Context, JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.api.types.GenericListResultType
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
@@ -74,7 +75,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
     val metricRegistry = new MetricRegistry
 
     val interpreter = prepareInterpreter(process, creator, metricRegistry)
-    interpreter.open(JobData(process.metaData, ProcessVersion.empty))
+    interpreter.open(JobData(process.metaData, ProcessVersion.empty, DeploymentData.empty))
     val contextId = "context-id"
     val result = interpreter.invoke(Request1("a", "b"), Some(contextId)).futureValue
 
@@ -115,7 +116,31 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
 
     val result = runProcess(process, Request1("a", "b"))
 
-    result shouldBe Right(List("initialized!"))
+    result shouldBe Right(List("true"))
+  }
+
+  test("init call open method for eager service") {
+    val process = EspProcessBuilder
+      .id("proc1")
+      .exceptionHandler()
+      .source("start", "request1-post-source")
+      .enricher("enricher1", "response1", "eagerEnricherWithOpen", "name" -> "'1'")
+      .customNode("custom", "output", "extractor", "expression" -> "''")
+      .enricher("enricher2", "response2", "eagerEnricherWithOpen", "name" -> "'2'")
+      .sink("sink1", "#response1.field1 + #response2.field1", "response-sink")
+
+    val creator = new StandaloneProcessConfigCreator
+    val result = runProcess(process, Request1("a", "b"), creator)
+
+    result shouldBe Right(List("truetrue"))
+    creator.eagerEnricher.opened shouldBe true
+    creator.eagerEnricher.closed shouldBe true
+    val openedInvokers = creator.eagerEnricher.list.filter(_._2.opened == true)
+    openedInvokers.map(_._1).toSet == Set("1", "2")
+    openedInvokers.foreach { cl =>
+      cl._2.closed shouldBe true
+    }
+
   }
 
   test("collect metrics for individual services") {
@@ -129,10 +154,10 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
     val metricRegistry = new MetricRegistry
 
     val interpreter = prepareInterpreter(process, new StandaloneProcessConfigCreator, metricRegistry = metricRegistry)
-    interpreter.open(JobData(process.metaData, ProcessVersion.empty))
+    interpreter.open(JobData(process.metaData, ProcessVersion.empty, DeploymentData.empty))
     val result = interpreter.invoke(Request1("a", "b")).futureValue
 
-    result shouldBe Right(List("initialized!"))
+    result shouldBe Right(List("true"))
 
     eventually {
       metricRegistry.getGauges().get(MetricRegistry.name("invocation", "success", "instantRate")
@@ -210,7 +235,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
     result shouldBe Left(NonEmptyList.of(
       EspExceptionInfo(Some("sink"),
         SinkException("FailingSink failed"),
-        Context( "context-id", Map("input" -> Request1("a","b")), LazyContext("context-id",Map()),None))
+        Context( "context-id", Map("input" -> Request1("a","b")), None))
     ))
   }
 
@@ -224,7 +249,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
       creator = creator,
       metricRegistry = metricRegistry
     )
-    interpreter.open(JobData(process.metaData,ProcessVersion.empty))
+    interpreter.open(JobData(process.metaData,ProcessVersion.empty, DeploymentData.empty))
     val result = interpreter.invoke(input, contextId).futureValue
     interpreter.close()
     result
@@ -242,7 +267,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
     val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
     val ctx = new StandaloneContextPreparer(metricsProvider)
 
-    val maybeinterpreter = StandaloneProcessInterpreter(process, ctx, simpleModelData)
+    val maybeinterpreter = StandaloneProcessInterpreter(process, ctx, simpleModelData, Nil, ProductionServiceInvocationCollector)
 
     maybeinterpreter shouldBe 'valid
     val interpreter = maybeinterpreter.toOption.get

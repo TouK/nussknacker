@@ -10,29 +10,38 @@ import scala.util.Try
 
 val scala211 = "2.11.12"
 // Warning: Flink doesn't work correctly with 2.12.11
+// Warning: 2.12.13 + crossVersion break sbt-scoverage: https://github.com/scoverage/sbt-scoverage/issues/319
 val scala212 = "2.12.10"
 lazy val supportedScalaVersions = List(scala212, scala211)
 
 // Silencer must be compatible with exact scala version - see compatibility matrix: https://search.maven.org/search?q=silencer-plugin
 // Silencer 1.7.x require Scala 2.12.11 (see warning above)
+// Silencer (and all '@silent' annotations) can be removed after we drop support for Scala 2.11
+// https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
 val silencerV_2_12 = "1.6.0"
 val silencerV = "1.7.0"
 
+//TODO: replace configuration by system properties with configuration via environment after removing travis scripts
+//then we can change names to snake case, for "normal" env variables
+def propOrEnv(name: String, default: String): String = propOrEnv(name).getOrElse(default)
+def propOrEnv(name: String): Option[String] = Option(System.getProperty(name)).orElse(sys.env.get(name))
+
+
 //by default we include flink and scala, we want to be able to disable this behaviour for performance reasons
-val includeFlinkAndScala = Option(System.getProperty("includeFlinkAndScala", "true")).exists(_.toBoolean)
+val includeFlinkAndScala = propOrEnv("includeFlinkAndScala", "true").toBoolean
 
 val flinkScope = if (includeFlinkAndScala) "compile" else "provided"
-val nexusUrlFromProps = Option(System.getProperty("nexusUrl"))
+val nexusUrlFromProps = propOrEnv("nexusUrl")
 //TODO: this is pretty clunky, but works so far for our case...
 val nexusHostFromProps = nexusUrlFromProps.map(_.replaceAll("http[s]?://", "").replaceAll("[:/].*", ""))
 
 //Docker release configuration
-val dockerTagName = Option(System.getProperty("dockerTagName"))
-val dockerPort = System.getProperty("dockerPort", "8080").toInt
-val dockerUserName = Some(System.getProperty("dockerUserName", "touk"))
-val dockerPackageName = System.getProperty("dockerPackageName", "nussknacker")
-val dockerUpLatestFromProp = Option(System.getProperty("dockerUpLatest")).flatMap(p => Try(p.toBoolean).toOption)
-val addDevModel = System.getProperty("addDevModel", "false").toBoolean
+val dockerTagName = propOrEnv("dockerTagName")
+val dockerPort = propOrEnv("dockerPort", "8080").toInt
+val dockerUserName = Option(propOrEnv("dockerUserName", "touk"))
+val dockerPackageName = propOrEnv("dockerPackageName", "nussknacker")
+val dockerUpLatestFromProp = propOrEnv("dockerUpLatest").flatMap(p => Try(p.toBoolean).toOption)
+val addDevModel = propOrEnv("addDevModel", "false").toBoolean
 
 // `publishArtifact := false` should be enough to keep sbt from publishing root module,
 // unfortunately it does not work, so we resort to hack by publishing root module to Resolver.defaultLocal
@@ -40,8 +49,7 @@ val addDevModel = System.getProperty("addDevModel", "false").toBoolean
 publishTo := Some(Resolver.defaultLocal)
 crossScalaVersions := Nil
 
-//have some problems with force() - e.g. with forcing circe version in httpUtils...
-ThisBuild / useCoursier := false
+ThisBuild / isSnapshot := version(_ contains "-SNAPSHOT").value
 
 lazy val publishSettings = Seq(
   publishMavenStyle := true,
@@ -72,7 +80,7 @@ lazy val publishSettings = Seq(
   organization := "pl.touk.nussknacker",
   homepage := Some(url(s"https://github.com/touk/nussknacker")),
   credentials := nexusHostFromProps.map(host => Credentials("Sonatype Nexus Repository Manager",
-    host, System.getProperty("nexusUser", "touk"), System.getProperty("nexusPassword"))
+    host, propOrEnv("nexusUser", "touk"), propOrEnv("nexusPassword", null))
     // otherwise ~/.sbt/1.0/sonatype.sbt will be used
   ).toSeq
 )
@@ -85,6 +93,7 @@ def nussknackerMergeStrategy: String => MergeStrategy = {
   case PathList(ps@_*) if ps.last == "NumberUtils.class" => MergeStrategy.first
   case PathList(ps@_*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first
   case PathList(ps@_*) if ps.last == "libnetty_transport_native_kqueue_x86_64.jnilib" => MergeStrategy.first
+  case PathList("com", "sun", "el", xs @ _*) => MergeStrategy.first
   case PathList("org", "w3c", "dom", "events", xs @ _*) => MergeStrategy.first
   case PathList("org", "apache", "commons", "logging", xs @ _*) => MergeStrategy.first
   case PathList("javax", "validation", xs @ _*) => MergeStrategy.first //after confluent bump up to 5.5
@@ -106,6 +115,12 @@ val slowTestsSettings =
 val scalaTestReports = Tests.Argument(TestFrameworks.ScalaTest, "-u", "target/surefire-reports", "-oFGD")
 val ignoreSlowTests = Tests.Argument(TestFrameworks.ScalaTest, "-l", "org.scalatest.tags.Slow")
 
+def forScalaVersion[T](version: String, default: T, specific: ((Int, Int), T)*): T = {
+  CrossVersion.partialVersion(version).flatMap { case (k, v) =>
+    specific.toMap.get(k.toInt, v.toInt)
+  }.getOrElse(default)
+}
+
 lazy val commonSettings =
   publishSettings ++
     Seq(
@@ -120,10 +135,8 @@ lazy val commonSettings =
       testOptions in IntegrationTest += scalaTestReports,
       addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
       // We can't use addCompilerPlugin because it not support usage of scalaVersion.value
-      libraryDependencies += compilerPlugin("com.github.ghik" % "silencer-plugin" % (CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((2, 12)) => silencerV_2_12
-        case _             => silencerV
-      }) cross CrossVersion.full),
+      libraryDependencies += compilerPlugin("com.github.ghik" % "silencer-plugin" % forScalaVersion(scalaVersion.value,
+        silencerV, (2, 12) -> silencerV_2_12) cross CrossVersion.full),
       scalacOptions := Seq(
         "-unchecked",
         "-deprecation",
@@ -169,7 +182,21 @@ lazy val commonSettings =
         "commons-io" % "commons-io" % commonsIOV,
         //we stick to version in Flink to avoid nasty bugs in process runtime...
         //NOTE: commons-text (in api) uses 3.9...
-        "org.apache.commons" % "commons-lang3" % commonsLangV
+        "org.apache.commons" % "commons-lang3" % commonsLangV,
+
+        //we force circe version here, because sttp has 0.12.1 for scala 2.12, we don't want it ATM
+        "io.circe" %% "circe-core" % circeV,
+        "io.circe" %% "circe-parser" % circeV,
+
+        // Force akka-http and akka-stream versions to avoid bumping by akka-http-circe.
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV,
+        "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV,
+        "com.typesafe.akka" %% "akka-stream" % akkaV,
+        "com.typesafe.akka" %% "akka-testkit" % akkaV,
+
+        //Our main kafka dependencies are Confluent (for avro) and Flink (Kafka connector)
+        "org.apache.kafka" % "kafka-clients" % kafkaV,
+        "org.apache.kafka" %% "kafka" % kafkaV
       )
     )
 
@@ -187,42 +214,48 @@ val forkSettings = Seq(
 val akkaV = "2.5.21" //same version as in Flink
 val flinkV = "1.11.2"
 val avroV = "1.9.2" // for java time logical types conversions purpose
+//we should use max(version used by confluent, version used by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
+//however, we stick to 2.4.1, as it's last version supported by scala 2.11 (we use kafka server in tests...)
 val kafkaV = "2.4.1"
-val springV = "5.1.4.RELEASE"
+val kafkaServerV = "2.4.1"
+val springV = "5.1.19.RELEASE"
 val scalaTestV = "3.0.8"
 val scalaCheckV = "1.14.0"
 val logbackV = "1.1.3"
 val argonautV = "6.2.1"
-val circeV = "0.11.1"
+val circeV = "0.11.2"
+val circeJava8V = "0.11.1"
 val jwtCirceV = "4.0.0"
 val jacksonV = "2.9.2"
 val catsV = "1.5.0"
 val scalaParsersV = "1.0.4"
 val dispatchV = "1.0.1"
-val slf4jV = "1.7.21"
-val scalaLoggingV = "3.9.0"
-val scalaCompatV = "0.9.0"
-val ficusV = "1.4.1"
-val configV = "1.4.0"
+val slf4jV = "1.7.30"
+val scalaLoggingV = "3.9.2"
+val scalaCompatV = "0.9.1"
+val ficusV = "1.4.7"
+val configV = "1.4.1"
 val commonsLangV = "3.3.2"
 val commonsTextV = "1.8"
 val commonsIOV = "2.4"
 //we want to use 5.x for standalone metrics to have tags, however dropwizard development kind of freezed. Maybe we should consider micrometer?
 //In Flink metrics we use bundled dropwizard metrics v. 3.x
 val dropWizardV = "5.0.0-rc3"
-val scalaCollectionsCompatV = "2.1.6"
+val scalaCollectionsCompatV = "2.3.2"
+val testcontainersScalaV = "0.39.3"
 
 val akkaHttpV = "10.1.8"
 val akkaHttpCirceV = "1.27.0"
-val slickV = "3.3.2"
-val hsqldbV = "2.5.0"
-val postgresV = "42.2.12"
+val slickV = "3.3.3"
+val hsqldbV = "2.5.1"
+val postgresV = "42.2.19"
 val flywayV = "6.3.3"
 val confluentV = "5.5.0"
 val jbcryptV = "0.4"
-val cronParserV = "3.1.1"
+val cronParserV = "9.1.3"
 val javaxValidationApiV = "2.0.1.Final"
-val caffeineCacheV = "2.8.2"
+val caffeineCacheV = "2.8.8"
+val sttpV = "2.2.9"
 
 lazy val dockerSettings = {
   val workingDir = "/opt/nussknacker"
@@ -232,12 +265,11 @@ lazy val dockerSettings = {
     dockerExposedPorts := Seq(dockerPort),
     dockerExposedVolumes := Seq(s"$workingDir/storage", s"$workingDir/data"),
     defaultLinuxInstallLocation in Docker := workingDir,
-    dockerBaseImage := "openjdk:8-jdk",
+    dockerBaseImage := "openjdk:11-jdk-slim",
     dockerUsername := dockerUserName,
     packageName := dockerPackageName,
     dockerUpdateLatest := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
     dockerLabels := Map(
-      "tag" -> dockerTagName.getOrElse(version.value),
       "version" -> version.value,
       "scala" -> scalaVersion.value,
       "flink" -> flinkV
@@ -250,7 +282,22 @@ lazy val dockerSettings = {
       "OAUTH2_GRANT_TYPE" -> "authorization_code",
       "OAUTH2_SCOPE" -> "read:user",
     ),
-    version in Docker := dockerTagName.getOrElse(version.value)
+    dockerAliases := {
+      //https://docs.docker.com/engine/reference/commandline/tag/#extended-description
+      def sanitize(str: String) = str.replaceAll("[^a-zA-Z0-9.\\-_]", "_")
+      val alias = dockerAlias.value
+
+      val updateLatest = if (dockerUpdateLatest.value) Some("latest") else None
+      val dockerVersion = Some(version.value)
+      //TODO: handle it more nicely, checkout actions in CI are not checking out actual branch
+      //other option would be to reset source branch to checkout out commit
+      val currentBranch = sys.env.getOrElse("GIT_SOURCE_BRANCH", git.gitCurrentBranch.value)
+      val latestBranch = Some(currentBranch + "-latest")
+
+      List(dockerVersion, updateLatest, latestBranch, dockerTagName)
+        .map(tag => alias.withTag(tag.map(sanitize)))
+        .distinct
+    },
   )
 }
 
@@ -346,11 +393,10 @@ lazy val standaloneApp = (project in engine("standalone/app")).
     libraryDependencies ++= {
       Seq(
         "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
-        // Force akka-http and akka-stream versions to avoid bumping by akka-http-circe.
-        "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
-        "com.typesafe.akka" %% "akka-stream" % akkaV force(),
-        "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
-        "com.typesafe.akka" %% "akka-testkit" % akkaV % "test" force(),
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV,
+        "com.typesafe.akka" %% "akka-stream" % akkaV,
+        "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test",
+        "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
         "com.typesafe.akka" %% "akka-slf4j" % akkaV,
         "ch.qos.logback" % "logback-classic" % logbackV
       )
@@ -381,6 +427,7 @@ lazy val flinkProcessManager = (project in engine("flink/management")).
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
+        //TODO: move to testcontainers, e.g. https://ci.apache.org/projects/flink/flink-docs-master/api/java/org/apache/flink/tests/util/flink/FlinkContainer.html
         "com.whisk" %% "docker-testkit-scalatest" % "0.9.0" % "it,test",
         "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.0" % "it,test"
       )
@@ -390,6 +437,26 @@ lazy val flinkProcessManager = (project in engine("flink/management")).
     queryableState,
     httpUtils % "provided",
     kafkaTestUtil % "it,test")
+
+lazy val flinkPeriodicProcessManager = (project in engine("flink/management/periodic")).
+  settings(commonSettings).
+  settings(assemblySettings("nussknacker-flink-periodic-manager.jar", includeScala = false): _*).
+  settings(
+    name := "nussknacker-flink-periodic-manager",
+    libraryDependencies ++= {
+      Seq(
+        "org.typelevel" %% "cats-core" % catsV % "provided",
+        "com.typesafe.slick" %% "slick" % slickV % "provided",
+        "com.typesafe.slick" %% "slick-hikaricp" % slickV % "provided, test",
+        "org.flywaydb" % "flyway-core" % flywayV % "provided",
+        "com.cronutils" % "cron-utils" % cronParserV
+      )
+    }
+  ).dependsOn(flinkProcessManager,
+    interpreter % "provided",
+    api % "provided",
+    httpUtils % "provided",
+    testUtil % "test")
 
 lazy val standaloneSample = (project in engine("standalone/engine/sample")).
   settings(commonSettings).
@@ -415,7 +482,7 @@ lazy val flinkManagementSample = (project in engine("flink/management/sample")).
     }
   ).
   // depends on interpreter because of SampleNodeAdditionalInfoProvider which takes NodeData as a parameter
-  dependsOn(kafkaFlinkUtil, flinkModelUtil, interpreter, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test")
+  dependsOn(kafkaFlinkUtil, flinkModelUtil, avroFlinkUtil, interpreter, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test")
 
 lazy val managementJavaSample = (project in engine("flink/management/java_sample")).
   settings(commonSettings).
@@ -463,7 +530,9 @@ lazy val generic = (project in engine("flink/generic")).
         "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
       )
     })
-  .dependsOn(process % "runtime,test", avroFlinkUtil, flinkModelUtil, flinkTestUtil % "test", kafkaTestUtil % "test")
+  .dependsOn(process % "runtime,test", avroFlinkUtil, flinkModelUtil, flinkTestUtil % "test", kafkaTestUtil % "test",
+    //for local development
+    ui % "test")
 
 lazy val process = (project in engine("flink/process")).
   settings(commonSettings).
@@ -483,6 +552,10 @@ lazy val interpreter = (project in engine("interpreter")).
   settings(commonSettings).
   settings(
     name := "nussknacker-interpreter",
+    //We hit https://github.com/scala/bug/issues/7046 in strange places during doc generation.
+    //Shortly, we should stop building for 2.11, for now we just skip scaladoc for 2.11 here...
+    sources in doc in Compile :=
+           forScalaVersion(scalaVersion.value, (sources in Compile).value, (2, 11) -> Nil),
     libraryDependencies ++= {
       Seq(
         "org.springframework" % "spring-expression" % springV,
@@ -504,7 +577,13 @@ lazy val benchmarks = (project in engine("benchmarks")).
   enablePlugins(JmhPlugin).
   settings(
     name := "nussknacker-benchmarks",
-  ).dependsOn(interpreter)
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV,
+        "org.apache.flink" %% "flink-runtime" % flinkV
+      )
+    }
+  ).dependsOn(interpreter, avroFlinkUtil, flinkModelUtil, process, testUtil % "test")
 
 
 lazy val kafka = (project in engine("kafka")).
@@ -537,6 +616,7 @@ lazy val avroFlinkUtil = (project in engine("flink/avro-util")).
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
+        "tech.allegro.schema.json2avro" % "converter" % "0.2.10",
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.apache.flink" % "flink-avro" % flinkV,
         "org.apache.flink" %% s"flink-connector-kafka" % flinkV % "test",
@@ -544,7 +624,7 @@ lazy val avroFlinkUtil = (project in engine("flink/avro-util")).
       )
     }
   )
-  .dependsOn(kafkaFlinkUtil, kafkaTestUtil % "test", flinkTestUtil % "test", process % "test")
+  .dependsOn(kafkaFlinkUtil, interpreter, kafkaTestUtil % "test", flinkTestUtil % "test", process % "test")
 
 lazy val kafkaFlinkUtil = (project in engine("flink/kafka-util")).
   settings(commonSettings).
@@ -586,7 +666,7 @@ lazy val util = (project in engine("util")).
         "com.github.ben-manes.caffeine" % "caffeine" % caffeineCacheV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "com.iheart" %% "ficus" % ficusV,
-        "io.circe" %% "circe-java8" % circeV,
+        "io.circe" %% "circe-java8" % circeJava8V,
         "org.apache.avro" % "avro" % avroV % Optional
       )
     }
@@ -630,7 +710,7 @@ lazy val flinkUtil = (project in engine("flink/util")).
          )
       )
     }
-  ).dependsOn(util, flinkApi)
+  ).dependsOn(util, flinkApi, testUtil % "test")
 
 lazy val flinkModelUtil = (project in engine("flink/model-util")).
   settings(commonSettings).
@@ -658,7 +738,7 @@ lazy val flinkTestUtil = (project in engine("flink/test-util")).
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV
       )
     }
-  ).dependsOn(testUtil, queryableState)
+  ).dependsOn(testUtil, queryableState, flinkUtil)
 
 lazy val standaloneUtil = (project in engine("standalone/util")).
   settings(commonSettings).
@@ -669,8 +749,8 @@ lazy val standaloneUtil = (project in engine("standalone/util")).
 
         "io.dropwizard.metrics5" % "metrics-core" % dropWizardV,
         //akka-http is only for StandaloneRequestResponseLogger
-        "com.typesafe.akka" %% "akka-http" % akkaHttpV % "provided" force(),
-        "com.typesafe.akka" %% "akka-stream" % akkaV % "provided" force()
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV % "provided",
+        "com.typesafe.akka" %% "akka-stream" % akkaV % "provided"
       )
     }
   ).dependsOn(util, standaloneApi, testUtil % "test")
@@ -693,7 +773,7 @@ lazy val api = (project in engine("api")).
         "io.circe" %% "circe-parser" % circeV,
         "io.circe" %% "circe-generic" % circeV,
         "io.circe" %% "circe-generic-extras" % circeV,
-        "io.circe" %% "circe-java8" % circeV,
+        "io.circe" %% "circe-java8" % circeJava8V,
         "com.iheart" %% "ficus" % ficusV,
         "org.apache.commons" % "commons-lang3" % commonsLangV,
         "org.apache.commons" % "commons-text" % commonsTextV,
@@ -706,27 +786,30 @@ lazy val api = (project in engine("api")).
   ).dependsOn(testUtil % "test")
 
 lazy val security = (project in engine("security")).
+  configs(IntegrationTest).
   settings(commonSettings).
+  settings(Defaults.itSettings).
   settings(
     name := "nussknacker-security",
     libraryDependencies ++= {
       Seq(
-        "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
-        "com.typesafe.akka" %% "akka-stream" % akkaV force(),
-        "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV,
+        "com.typesafe.akka" %% "akka-stream" % akkaV,
+        "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test",
+        "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
         "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
-        "com.typesafe.akka" %% "akka-stream" % akkaV force(),
         "com.typesafe" % "config" % configV ,
         "org.mindrot" % "jbcrypt" % jbcryptV,
         //Packages below are only for plugin providers purpose
         "io.circe" %% "circe-core" % circeV,
         "com.pauldijou" %% "jwt-circe" % jwtCirceV,
-        "com.typesafe.akka" %% "akka-testkit" % akkaV % "test" force(),
-        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV
+        "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
+        "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
+        "com.github.dasniko" % "testcontainers-keycloak" % "1.6.0" % "it,test"
       )
     }
   )
-  .dependsOn(util, httpUtils, testUtil % "test")
+  .dependsOn(util, httpUtils, testUtil % "it,test")
 
 lazy val flinkApi = (project in engine("flink/api")).
   settings(commonSettings).
@@ -741,28 +824,31 @@ lazy val flinkApi = (project in engine("flink/api")).
   ).dependsOn(api)
 
 lazy val processReports = (project in engine("processReports")).
+  configs(IntegrationTest).
   settings(commonSettings).
+  settings(Defaults.itSettings).
   settings(
     name := "nussknacker-process-reports",
     libraryDependencies ++= {
       Seq(
         "com.typesafe" % "config" % "1.3.0",
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
-        "com.iheart" %% "ficus" % ficusV
+        "com.iheart" %% "ficus" % ficusV,
+        "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
+        "com.dimafeng" %% "testcontainers-scala-influxdb" % testcontainersScalaV % "it,test",
+        "org.influxdb" % "influxdb-java" % "2.21" % "it,test"
       )
     }
-  ).dependsOn(httpUtils, testUtil % "test")
+  ).dependsOn(httpUtils, testUtil % "it,test")
 
 lazy val httpUtils = (project in engine("httpUtils")).
   settings(commonSettings).
   settings(
     name := "nussknacker-http-utils",
     libraryDependencies ++= {
-      val sttpV = "2.2.3"
       Seq(
-        //we force circe version here, because sttp has 0.12.1 for scala 2.12, we don't want it ATM
-        "io.circe" %% "circe-core" % circeV force(),
-        "io.circe" %% "circe-parser" % circeV force(),
+        "io.circe" %% "circe-core" % circeV,
+        "io.circe" %% "circe-parser" % circeV,
         "org.dispatchhttp" %% "dispatch-core" % dispatchV,
         "org.scala-lang.modules" %% "scala-parser-combinators" % scalaParsersV, // scalaxb deps
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
@@ -805,7 +891,7 @@ lazy val restmodel = (project in file("ui/restmodel"))
   .settings(
     name := "nussknacker-restmodel",
     libraryDependencies ++= Seq(
-      "io.circe" %% "circe-java8" % circeV
+      "io.circe" %% "circe-java8" % circeJava8V
     )
   )
   //interpreter needed for evaluatedparam etc
@@ -853,10 +939,13 @@ lazy val ui = (project in file("ui/server"))
     ).value,
     libraryDependencies ++= {
       Seq(
-        // Force akka-http and akka-stream versions to avoid bumping by akka-http-circe.
-        "com.typesafe.akka" %% "akka-http" % akkaHttpV force(),
-        "com.typesafe.akka" %% "akka-stream" % akkaV force(),
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV,
+        "com.typesafe.akka" %% "akka-stream" % akkaV,
+        "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test",
+        "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
         "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
+        "com.softwaremill.sttp.client" %% "akka-http-backend" % sttpV,
+
         "ch.qos.logback" % "logback-core" % logbackV,
         "ch.qos.logback" % "logback-classic" % logbackV,
         "org.slf4j" % "log4j-over-slf4j" % slf4jV,
@@ -872,12 +961,11 @@ lazy val ui = (project in file("ui/server"))
         "org.postgresql" % "postgresql" % postgresV,
         "org.flywaydb" % "flyway-core" % flywayV,
         "org.apache.xmlgraphics" % "fop" % "2.3",
-        "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test" force(),
-        "com.typesafe.akka" %% "akka-testkit" % akkaV % "test" force(),
+
 
         "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
         "com.whisk" %% "docker-testkit-scalatest" % "0.9.8" % "test",
-        "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.8" % "test"
+        "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.8" % "test",
       )
     }
   )
@@ -895,7 +983,7 @@ lazy val ui = (project in file("ui/server"))
 lazy val root = (project in file("."))
   .aggregate(
     // TODO: get rid of this duplication
-    engineStandalone, standaloneApp, flinkProcessManager, standaloneSample, flinkManagementSample, managementJavaSample, demo, generic,
+    engineStandalone, standaloneApp, flinkProcessManager, flinkPeriodicProcessManager, standaloneSample, flinkManagementSample, managementJavaSample, demo, generic,
     process, interpreter, benchmarks, kafka, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
     flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils, queryableState,
     restmodel, listenerApi, ui,

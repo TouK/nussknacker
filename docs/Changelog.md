@@ -8,8 +8,48 @@ For detailed instructions how to migrate to the newest version please see [migra
 Nussknacker versions
 ====================
 
-0.3.0 (not released yet)
+0.4.0 (not released yet) 
 ------------------------
+* More precise TypeInformation generation
+    * [#1338](https://github.com/TouK/nussknacker/pull/1338) Defining TypeInformation based on TypingResult
+    * [#1343](https://github.com/TouK/nussknacker/pull/1343) Aggregators compute stored types    
+    * [#1343](https://github.com/TouK/nussknacker/pull/1359) Improvements in variable output validation 
+    * [#1360](https://github.com/TouK/nussknacker/pull/1360) Service query can use global variables
+    * [#1375](https://github.com/TouK/nussknacker/pull/1375) Opt-in for new TypeInformation detection for inter operator serialization
+* [#1361](https://github.com/TouK/nussknacker/pull/1361) Lazy vars removal
+* [#1363](https://github.com/TouK/nussknacker/pull/1363) Open/close only services that are actually used in process
+* [#1367](https://github.com/TouK/nussknacker/pull/1367) Custom actions - first, experimental version
+* Migration of CI to github actions
+    * [#1368](https://github.com/TouK/nussknacker/pull/1368) Publish docker images/jars via GH actions (experimental)
+    * [#1381](https://github.com/TouK/nussknacker/pull/1381) Use GH Actions for coverage
+    * [#1383](https://github.com/TouK/nussknacker/pull/1383) Switch github badges
+* [#1382](https://github.com/TouK/nussknacker/pull/1382) First E2E FE tests                                                             
+* [#1373](https://github.com/TouK/nussknacker/pull/1373) Ability to load custom model config programmatically
+* [#1406](https://github.com/TouK/nussknacker/pull/1406) Eager services - ability to create service object using static parameters
+* [#962](https://gihub.com/TouK/nussknacker/pull/962) New ways of querying InfluxDB for counts, integration tests, no default database name in code
+* [#1428](https://github.com/TouK/nussknacker/pull/1428) Kafka SchemaRegistry source/sink can use JSON payloads. In this PR we assume one schema registry contains either json or avro payloads but not both.                                         
+* [#1445](https://github.com/TouK/nussknacker/pull/1445) Small refactor of RecordFormatter, correct handling different formatting in kafka-json in test data generation
+* [#1433](https://github.com/TouK/nussknacker/pull/1433) Pass DeploymentData to process, including deploymentId and possible additional info                
+* [#1458](https://github.com/TouK/nussknacker/pull/1458) `PeriodicProcessListener` allows custom handling of `PeriodicProcess` events                
+* [#1466](https://github.com/TouK/nussknacker/pull/1466) `ProcessManager` API allows to return ExternalDeploymentId immediately from deploy         
+* [#1405](https://github.com/TouK/nussknacker/pull/1405) 'KafkaAvroSinkFactoryWithEditor' for more user-friendly Avro message definition. 
+
+0.3.1 (not released yet) 
+------------------------
+* Performance fixes:
+    * [#1330](https://github.com/TouK/nussknacker/pull/1330) Multiple times parsing expressions in map/product LazyParameter
+    * [#1331](https://github.com/TouK/nussknacker/pull/1331) LoggingListener caches loggers
+    * [#1334](https://github.com/TouK/nussknacker/pull/1334) Type promotion cache
+    * [#1335](https://github.com/TouK/nussknacker/pull/1335) Omitting zeros for sum aggregate to avoid unnecessary buckets 
+    * [#1336](https://github.com/TouK/nussknacker/pull/1336) Aggregation metrics
+* [#1321](https://github.com/TouK/nussknacker/pull/1321) Exception handler accessible via custom node context, avro record encoding errors reported by exception handler
+
+0.3.0 
+------------------------
+* [#1298](https://github.com/TouK/nussknacker/pull/1298) Feature flag `avroKryoGenericRecordSchemaIdSerialization` for avro kryo serialization optimization (default = false)
+* [#1315](https://github.com/TouK/nussknacker/pull/1315) Spring bumped 5.1.4 -> 5.1.19
+* [#1312](https://github.com/TouK/nussknacker/pull/1312) Ficus bumped 1.4.1 -> 1.4.7
+* [#1288](https://github.com/TouK/nussknacker/pull/1288) Namespaces can be configured for ObjectNaming
 * [#1261](https://github.com/TouK/nussknacker/pull/1261) Fix: Access to `map.missingKey` caused `Property or field cannot be found on object`
 * [#1244](https://github.com/TouK/nussknacker/pull/1244) Ability to define `variablesToHide` in `Parameter`
 * [#1165](https://github.com/TouK/nussknacker/pull/1165) Typed global variables
@@ -28,6 +68,9 @@ ProcessManager implementations are separated from UI to allow easier changes in 
 * [#249](https://github.com/TouK/nussknacker/pull/1201) Inferred expression type in node modal
 * [#1255](https://github.com/TouK/nussknacker/pull/1255) Moved displaying `Metrics tab` to `customTabs`
 * [#1257](https://github.com/TouK/nussknacker/pull/1257) Improvements: Flink test util package
+* [#1287](https://github.com/TouK/nussknacker/pull/1287) OAuth2: add accessTokenRequestContentType parameter
+* [#1290](https://github.com/TouK/nussknacker/pull/1290) Own kryo serializers can be provided through SPI
+* [#1303](https://github.com/TouK/nussknacker/pull/1303) TypedObjectTypingResult can have additional info (e.g. Schema for GenericRecord)
 
 0.2.2
 -----------------------

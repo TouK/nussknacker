@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.api.deployment.simple
 
 import java.net.URI
-
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessStateDefinitionManager, StateStatus}
 
@@ -10,26 +9,28 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
 
   val actionStatusMap: Map[ProcessActionType, StateStatus] = Map(
     ProcessActionType.Deploy -> SimpleStateStatus.Running,
-    ProcessActionType.Cancel -> SimpleStateStatus.Canceled
+    ProcessActionType.Cancel -> SimpleStateStatus.Canceled,
+    ProcessActionType.Archive -> SimpleStateStatus.NotDeployed,
+    ProcessActionType.UnArchive -> SimpleStateStatus.NotDeployed
   )
 
   val statusActionsMap: Map[StateStatus, List[ProcessActionType]] = Map(
     SimpleStateStatus.Unknown -> List(ProcessActionType.Deploy),
-    SimpleStateStatus.NotDeployed -> List(ProcessActionType.Deploy),
-    SimpleStateStatus.NotFound -> List(ProcessActionType.Deploy),
+    SimpleStateStatus.NotDeployed -> List(ProcessActionType.Deploy, ProcessActionType.Archive),
     SimpleStateStatus.DuringDeploy -> List(ProcessActionType.Cancel),
     SimpleStateStatus.Running -> List(ProcessActionType.Cancel, ProcessActionType.Pause, ProcessActionType.Deploy),
-    SimpleStateStatus.Canceled -> List(ProcessActionType.Deploy),
+    SimpleStateStatus.Canceled -> List(ProcessActionType.Deploy, ProcessActionType.Archive),
+    SimpleStateStatus.Finished -> List(ProcessActionType.Deploy, ProcessActionType.Archive),
+    // When Failed - process is in terminal state in Flink and it doesn't require any cleanup in Flink, but in NK it does
+    // - that's why Cancel action is available
     SimpleStateStatus.Failed -> List(ProcessActionType.Deploy, ProcessActionType.Cancel),
-    SimpleStateStatus.Finished -> List(ProcessActionType.Deploy),
     SimpleStateStatus.Error -> List(ProcessActionType.Deploy, ProcessActionType.Cancel),
     SimpleStateStatus.Warning -> List(ProcessActionType.Deploy, ProcessActionType.Cancel),
-    SimpleStateStatus.FailedToGet -> List(ProcessActionType.Deploy)
+    SimpleStateStatus.FailedToGet -> List(ProcessActionType.Deploy, ProcessActionType.Archive)
   )
 
   val statusIconsMap: Map[StateStatus, String] = Map(
     SimpleStateStatus.FailedToGet -> "/assets/states/error.svg",
-    SimpleStateStatus.NotFound -> "/assets/states/process-does-not-exist.svg",
     SimpleStateStatus.Unknown -> "/assets/states/status-unknown.svg",
     SimpleStateStatus.NotDeployed -> "/assets/states/not-deployed.svg",
     SimpleStateStatus.DuringDeploy -> "/assets/states/deploy-running-animated.svg",
@@ -44,9 +45,8 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
 
   val statusTooltipsMap: Map[StateStatus, String] = Map(
     SimpleStateStatus.FailedToGet -> "There are problems obtaining the process state. Please check if your engine is working properly.",
-    SimpleStateStatus.NotFound -> "Your engine is working but have no information about the process.",
     SimpleStateStatus.Unknown -> "Unknown state of the process. We can't recognize process state.",
-    SimpleStateStatus.NotDeployed -> "The process has never been deployed.",
+    SimpleStateStatus.NotDeployed -> "The process is not deployed.",
     SimpleStateStatus.DuringDeploy -> "The process has been already started and currently is being deployed.",
     SimpleStateStatus.Running -> "The process has been successfully deployed and currently is running.",
     SimpleStateStatus.Canceled -> "The process has been successfully cancelled.",
@@ -59,9 +59,8 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
 
   val statusDescriptionsMap: Map[StateStatus, String] = Map(
     SimpleStateStatus.FailedToGet -> "Failed to get a state of the process.",
-    SimpleStateStatus.NotFound -> "The process state was not found.",
     SimpleStateStatus.Unknown -> "Unknown state of the process.",
-    SimpleStateStatus.NotDeployed -> "The process has never been deployed.",
+    SimpleStateStatus.NotDeployed -> "The process is not deployed.",
     SimpleStateStatus.DuringDeploy -> "The process is being deployed.",
     SimpleStateStatus.Running -> "The process is running.",
     SimpleStateStatus.Canceled -> "The process is canceled.",

@@ -1,6 +1,6 @@
+import {DialogType, dialogTypesMap} from "../components/modals/DialogsTypes"
 import {ProcessId} from "../types"
 import {Reducer} from "../actions/reduxTypes"
-import {DialogType, types} from "../components/modals/Dialogs"
 import {mergeReducers} from "./mergeReducers"
 
 export type UiState = {
@@ -121,7 +121,7 @@ const uiReducer: Reducer<UiState> = (state = emptyUiState, action) => {
       return {
         ...state,
         modalDialog: {
-          openDialog: types.processAction,
+          openDialog: dialogTypesMap.processAction,
           message: action.message,
           action: action.action,
           displayWarnings: action.displayWarnings,

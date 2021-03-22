@@ -6,12 +6,14 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker._
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.ContextTransformation
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
+import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.standalone.api.StandaloneCustomTransformer
 import pl.touk.nussknacker.engine.standalone.api.types.InterpreterType
 import pl.touk.nussknacker.engine.standalone.utils.customtransformers.ProcessSplitter
@@ -29,6 +31,8 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
 
   val processorService = new ProcessorService
 
+  val eagerEnricher = new EagerEnricherWithOpen
+
   {
     //this is lame, but statics are not reliable
     StandaloneProcessConfigCreator.processorService.set(processorService)
@@ -42,7 +46,9 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
     "enricherService" -> WithCategories(new EnricherService),
     "enricherWithOpenService" -> WithCategories(new EnricherWithOpenService),
-    "processorService" -> WithCategories(processorService)
+    "eagerEnricherWithOpen" -> WithCategories(eagerEnricher),
+    "processorService" -> WithCategories(processorService),
+    "collectingEager" -> WithCategories(CollectingEagerService)
   )
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
@@ -70,7 +76,7 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
 
 @JsonCodec case class Request1(field1: String, field2: String) {
   import scala.collection.JavaConverters._
-  
+
   def toList: java.util.List[String] = List(field1, field2).asJava
 }
 case class Request2(field12: String, field22: String)
@@ -85,25 +91,92 @@ class EnricherService extends Service {
   }
 }
 
-class EnricherWithOpenService extends Service with TimeMeasuringService {
+trait WithLifecycle extends Lifecycle {
 
-  override protected def serviceName = "enricherWithOpenService"
-  var internalVar: String = _
+  var opened: Boolean = false
+  var closed: Boolean = false
+
+  def reset(): Unit = {
+    opened = false
+    closed = false
+  }
 
   override def open(jobData: JobData): Unit = {
-    super.open(jobData)
-    internalVar = "initialized!"
+    opened = true
   }
+
+  override def close(): Unit = {
+    closed = true
+  }
+
+}
+
+class EnricherWithOpenService extends Service with TimeMeasuringService with WithLifecycle {
+
+  override protected def serviceName = "enricherWithOpenService"
 
   @MethodToInvoke
   def invoke()(implicit ex: ExecutionContext, collector: ServiceInvocationCollector): Future[Response] = {
     measuring {
-      Future.successful(Response(internalVar))
+      Future.successful(Response(opened.toString))
     }
   }
 
 }
 
+class EagerEnricherWithOpen extends EagerService with WithLifecycle {
+
+  var list: List[(String, WithLifecycle)] = Nil
+
+  override def open(jobData: JobData): Unit = {
+    super.open(jobData)
+    list.foreach(_._2.open(jobData))
+  }
+
+  override def close(): Unit = {
+    super.close()
+    list.foreach(_._2.close())
+  }
+
+  override def reset(): Unit = synchronized {
+    super.reset()
+    list = Nil
+  }
+
+  @MethodToInvoke
+  def invoke(@ParamName("name") name: String): ServiceInvoker = synchronized {
+    val newI: ServiceInvoker with WithLifecycle = new ServiceInvoker with WithLifecycle {
+      override def invokeService(params: Map[String, Any])
+                                (implicit ec: ExecutionContext,
+                                 collector: ServiceInvocationCollector, contextId: ContextId): Future[Response] = {
+        Future.successful(Response(opened.toString))
+      }
+
+      override def returnType: TypingResult = Typed[Response]
+    }
+    list = (name, newI)::list
+    newI
+  }
+
+}
+
+object CollectingEagerService extends EagerService {
+
+  @MethodToInvoke
+  def invoke(@ParamName("static") static: String,
+             @ParamName("dynamic") dynamic: LazyParameter[String]): ServiceInvoker = new ServiceInvoker {
+    override def invokeService(params: Map[String, Any])(implicit ec: ExecutionContext,
+                                                         collector: ServiceInvocationCollector,
+                                                         contextId: ContextId): Future[Any] = {
+      collector.collect(s"static-$static-dynamic-${params("dynamic")}", Option(())) {
+        Future.successful(())
+      }
+    }
+
+    override def returnType: TypingResult = Typed[Void]
+  }
+
+}
 
 class ProcessorService extends Service {
 
@@ -126,7 +199,7 @@ object StandaloneCustomExtractor extends CustomStreamTransformer {
              @OutputVariableName outputVariableName: String)
             (implicit nodeId: NodeId): ContextTransformation = {
     ContextTransformation
-      .definedBy(ctx => ctx.withVariable(outputVariableName, expression.returnType))
+      .definedBy(ctx => ctx.withVariable(OutputVar.customNode(outputVariableName), expression.returnType))
       .implementedBy(
         new StandaloneCustomExtractor(outputVariableName, expression))
   }

@@ -3,7 +3,7 @@ import {isEmpty} from "lodash"
 import React from "react"
 import {UnknownFunction} from "../../../../../types/common"
 import FixedValuesEditor from "./FixedValuesEditor"
-import {ExpressionObj} from "./types"
+import {ExpressionLang, ExpressionObj} from "./types"
 import {SimpleEditor} from "./Editor"
 
 type Props = {
@@ -14,7 +14,7 @@ type Props = {
   values?: $TodoType,
 }
 
-const SUPPORTED_LANGUAGE = "spel"
+const SUPPORTED_LANGUAGE = ExpressionLang.SpEL
 const TRUE_EXPRESSION = "true"
 const FALSE_EXPRESSION = "false"
 
