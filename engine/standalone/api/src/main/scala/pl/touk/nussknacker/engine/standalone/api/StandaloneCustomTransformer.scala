@@ -7,8 +7,7 @@ trait StandaloneCustomTransformer {
 
   type StandaloneCustomTransformation = (InterpreterType, LazyParameterInterpreter) => InterpreterType
 
-  //TODO: also without variable...
-  def createTransformation(outputVariable: String) : StandaloneCustomTransformation
+  def createTransformation(outputVariable: Option[String]) : StandaloneCustomTransformation
   
 }
 

@@ -26,12 +26,12 @@ object ProcessSplitter extends CustomStreamTransformer {
 class ProcessSplitter(parts: LazyParameter[java.util.Collection[Any]])
   extends StandaloneCustomTransformer with ReturningType {
 
-  override def createTransformation(outputVariable: String): StandaloneCustomTransformation =
+  override def createTransformation(outputVariable: Option[String]): StandaloneCustomTransformation =
     (continuation: InterpreterType, lpi: LazyParameterInterpreter) => (ctx, ec) => {
       implicit val ecc: ExecutionContext = ec
       lpi.createInterpreter(parts)(ec, ctx).flatMap { partsToInterpret =>
         Future.sequence(partsToInterpret.asScala.toList.map { partToInterpret =>
-          val newCtx = ctx.withVariable(outputVariable, partToInterpret)
+          val newCtx = ctx.withVariable(outputVariable.get, partToInterpret)
           continuation(newCtx, ec)
         })
       }.map { results: List[Either[NonEmptyList[EspExceptionInfo[_ <: Throwable]], List[InterpretationResult]]] =>

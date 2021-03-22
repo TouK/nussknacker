@@ -104,7 +104,7 @@ object StandaloneProcessInterpreter {
         }
         validatedTransformer.andThen { transformer =>
           val result = compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, parts))
-          result.map(rs => rs.map(transformer.createTransformation(node.data.outputVar.get)(_, lazyParameterInterpreter)))
+          result.map(rs => rs.map(transformer.createTransformation(node.data.outputVar)(_, lazyParameterInterpreter)))
         }
     }
 
