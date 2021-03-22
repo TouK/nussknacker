@@ -140,7 +140,7 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
         },
         {
           token: "support.function.start",
-          regex: `((${builtinFunctions})\\s*\\(|\\w+\\()`,
+          regex: `((${builtinFunctions})\\s*\\(|(?!.*${keywords})\\w+\\()`,
           push: [
             {
               token: "support.function.end",
