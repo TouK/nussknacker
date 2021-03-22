@@ -6,7 +6,6 @@ import java.time.chrono.ChronoZonedDateTime
 import java.time.{Instant, LocalDate, LocalTime, OffsetDateTime}
 import java.util
 import java.util.UUID
-
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits._
@@ -40,9 +39,10 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
         encodeRecord(map, schema)
       case (Schema.Type.RECORD, map: util.Map[String@unchecked, _]) =>
         encodeRecord(map, schema)
-      case (Schema.Type.ENUM, str: String) =>
+      case (Schema.Type.ENUM, charSeq: CharSequence) =>
+        val str = charSeq.toString
         if (!schema.hasEnumSymbol(str)) {
-          error(s"Not expected symbol: $value for field: $fieldName with schema: $schema")
+          error(s"Not expected symbol: $str for field: $fieldName with schema: $schema")
         } else {
           Valid(new EnumSymbol(schema, str))
         }
