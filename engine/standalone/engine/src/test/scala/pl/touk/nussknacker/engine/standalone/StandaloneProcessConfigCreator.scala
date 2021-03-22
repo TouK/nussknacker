@@ -208,7 +208,7 @@ object StandaloneCustomExtractor extends CustomStreamTransformer {
 
 class StandaloneCustomExtractor(outputVariableName: String, expression: LazyParameter[AnyRef]) extends StandaloneCustomTransformer {
 
-  override def createTransformation(outputVariable: String): StandaloneCustomTransformation =
+  override def createTransformation(outputVariable: Option[String]): StandaloneCustomTransformation =
     (continuation: InterpreterType, lpi: LazyParameterInterpreter) => {
       val exprInterpreter: (ExecutionContext, engine.api.Context) => Future[Any] = lpi.createInterpreter(expression)
       (ctx: engine.api.Context, ec: ExecutionContext) => {
