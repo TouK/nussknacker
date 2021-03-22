@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.process.deployment
 
 import akka.actor.ActorSystem
-import com.typesafe.config.Config
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ProcessActionType, ProcessState}
@@ -368,7 +367,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
   private def prepareUnArchivedProcess(processName: ProcessName): Future[process.ProcessId] = {
     for {
       id <- prepareProcess(processName)
-      _ <- dbTransactionSupport.runInTransaction(
+      _ <- repositoryManager.runInTransaction(
         actionRepository.markProcessAsArchived(processId = id, 1),
         actionRepository.markProcessAsUnArchived(processId = id, 1)
       )
