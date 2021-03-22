@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.repository
 import cats.Monad
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.restmodel.process.ProcessId
+import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessAction, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData}

@@ -28,6 +28,7 @@ case class NkGlobalParameters(buildInfo: String,
     val baseProperties = Map[String, String](
       "buildInfo" -> buildInfo,
       "versionId" -> processVersion.versionId.toString,
+      "processId" -> processVersion.processId.value.toString,
       "modelVersion" -> processVersion.modelVersion.map(_.toString).orNull,
       "user" -> processVersion.user
     )

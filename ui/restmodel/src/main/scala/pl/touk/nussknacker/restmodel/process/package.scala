@@ -2,7 +2,7 @@ package pl.touk.nussknacker.restmodel
 
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 
 package object process {

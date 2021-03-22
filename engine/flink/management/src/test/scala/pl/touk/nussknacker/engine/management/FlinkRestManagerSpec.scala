@@ -6,7 +6,7 @@ import org.apache.flink.api.common.JobStatus
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
@@ -123,7 +123,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
 
     createManager(statuses, acceptDeploy = true, exceptionOnDeploy = Some(new TimeoutException("tooo looong")))
       .deploy(
-        ProcessVersion(1, ProcessName("p1"), "user", None),
+        defaultVersion,
         defaultDeploymentData,
         CustomProcess("nothing"),
         None
@@ -135,31 +135,33 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     val manager = createManager(statuses, acceptDeploy = true, exceptionOnDeploy = Some(new NoRouteToHostException("heeelo?")))
 
     Await.ready(manager.deploy(
-        ProcessVersion(1, ProcessName("p1"), "user", None),
+        defaultVersion,
         defaultDeploymentData,
         CustomProcess("nothing"),
         None
       ), 1 second).eitherValue.flatMap(_.left.toOption) shouldBe 'defined
   }
 
+  private val defaultVersion = ProcessVersion(1, ProcessName("p1"), ProcessId(1), "user", None)
+
   test("refuse to deploy if process is failing") {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RESTARTING.name(), tasksOverview()))
 
-    createManager(statuses).deploy(ProcessVersion(1, ProcessName("p1"), "user", None), defaultDeploymentData,
+    createManager(statuses).deploy(defaultVersion, defaultDeploymentData,
       CustomProcess("nothing"), None).failed.futureValue.getMessage shouldBe "Job p1 cannot be deployed, status: Restarting"
   }
 
   test("allow deploy if process is failed") {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name(), tasksOverview(failed = 1)))
 
-    createManager(statuses, acceptDeploy = true).deploy(ProcessVersion(1, ProcessName("p1"), "user", None), defaultDeploymentData,
+    createManager(statuses, acceptDeploy = true).deploy(defaultVersion, defaultDeploymentData,
       CustomProcess("nothing"), None).futureValue shouldBe Some(ExternalDeploymentId(returnedJobId))
   }
 
   test("allow deploy and make savepoint if process is running") {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name(), tasksOverview(running = 1)))
 
-    createManager(statuses, acceptDeploy = true, acceptSavepoint = true).deploy(ProcessVersion(1, ProcessName("p1"), "user", None), defaultDeploymentData,
+    createManager(statuses, acceptDeploy = true, acceptSavepoint = true).deploy(defaultVersion, defaultDeploymentData,
       CustomProcess("nothing"), None).futureValue shouldBe Some(ExternalDeploymentId(returnedJobId))
   }
 
@@ -276,6 +278,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     val processName = ProcessName("p1")
     val version = 15L
     val user = "user1"
+    val processId = ProcessId(6565L)
 
     statuses = List(JobOverview(jid, processName.value, 40L, 10L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)),
       JobOverview("1111", "p1", 35L, 30L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)))
@@ -284,7 +287,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
 
     val manager = createManager(statuses)
     manager.findJobStatus(processName).futureValue shouldBe Some(processState(
-      manager, ExternalDeploymentId("2343"), FlinkStateStatus.Finished, Some(ProcessVersion(version, processName, user, None)), Some(10L)
+      manager, ExternalDeploymentId("2343"), FlinkStateStatus.Finished, Some(ProcessVersion(version, processName, processId, user, None)), Some(10L)
     ))
   }
 

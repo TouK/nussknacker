@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.restmodel.process.ProcessId
+import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessActionEntityData}
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}

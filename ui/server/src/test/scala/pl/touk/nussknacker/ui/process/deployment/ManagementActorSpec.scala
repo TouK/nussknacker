@@ -5,9 +5,8 @@ import org.scalatest._
 import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, ProcessActionType, ProcessState}
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.management.{FlinkProcessStateDefinitionManager, FlinkStateStatus}
-import pl.touk.nussknacker.restmodel.process
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockDeploymentManager, mapProcessingTypeDataProvider, newActionProcessRepository, newDBRepositoryManager, newFetchingProcessRepository, newProcessActivityRepository, newWriteProcessRepository, processResolving, testCategoryName}
@@ -59,7 +58,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
   )
 
   test("should return state correctly when state is deployed") {
-    val id: process.ProcessId =  prepareProcess(processName).futureValue
+    val id: ProcessId =  prepareProcess(processName).futureValue
 
     deploymentManager.withWaitForDeployFinish {
       managementActor ! Deploy(ProcessIdWithName(id, processName), user, None, None)
@@ -71,7 +70,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
   }
 
   test("Should mark finished process as finished") {
-    val id: process.ProcessId = prepareDeployedProcess(processName).futureValue
+    val id: ProcessId = prepareDeployedProcess(processName).futureValue
 
     isFollowingDeploy(processService.getProcessState(ProcessIdWithName(id, processName)).futureValue) shouldBe true
     fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction should not be None
@@ -228,7 +227,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
 
   test("Should return error state when state is running and process is deployed with mismatch versions") {
     val id =  prepareDeployedProcess(processName).futureValue
-    val version = Some(ProcessVersion(versionId = 2, processName = ProcessName(""), user = "", modelVersion = None))
+    val version = Some(ProcessVersion(versionId = 2, processId = ProcessId(1), processName = ProcessName(""), user = "", modelVersion = None))
 
     deploymentManager.withProcessStateVersion(SimpleStateStatus.Running, version) {
       val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
@@ -242,7 +241,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
 
   test("Should always return process manager failure, even if some other verifications return invalid") {
     val id =  prepareDeployedProcess(processName).futureValue
-    val version = Some(ProcessVersion(versionId = 2, processName = ProcessName(""), user = "", modelVersion = None))
+    val version = Some(ProcessVersion(versionId = 2, processId = ProcessId(1), processName = ProcessName(""), user = "", modelVersion = None))
 
     deploymentManager.withProcessStateVersion(SimpleStateStatus.Failed, version) {
       val state = processService.getProcessState(ProcessIdWithName(id, processName)).futureValue
@@ -333,19 +332,19 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
 
   private def isFollowingDeploy(state: ProcessState): Boolean = state.isDeployed
 
-  private def prepareDeployedProcess(processName: ProcessName): Future[process.ProcessId] =
+  private def prepareDeployedProcess(processName: ProcessName): Future[ProcessId] =
     for {
       id <- prepareProcess(processName)
       _ <- actionRepository.markProcessAsDeployed(id, 1, "stream", Some("Deployed"))
     }  yield id
 
-  private def prepareCanceledProcess(processName: ProcessName): Future[process.ProcessId] =
+  private def prepareCanceledProcess(processName: ProcessName): Future[ProcessId] =
     for {
       id <- prepareDeployedProcess(processName)
       _ <- actionRepository.markProcessAsCancelled(id, 1, Some("Canceled"))
     } yield id
 
-  private def prepareProcess(processName: ProcessName): Future[process.ProcessId] = {
+  private def prepareProcess(processName: ProcessName): Future[ProcessId] = {
     val action = CreateProcessAction(processName, testCategoryName, CustomProcess(""), TestProcessingTypes.Streaming, false)
     for {
       _ <- repositoryManager.runInTransaction(writeProcessRepository.saveNewProcess(action))
@@ -354,7 +353,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
   }
 
 
-  private def prepareArchivedProcess(processName: ProcessName): Future[process.ProcessId] = {
+  private def prepareArchivedProcess(processName: ProcessName): Future[ProcessId] = {
       for {
         id <- prepareProcess(processName)
         _ <- repositoryManager.runInTransaction(
@@ -364,7 +363,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
       } yield id
   }
 
-  private def prepareUnArchivedProcess(processName: ProcessName): Future[process.ProcessId] = {
+  private def prepareUnArchivedProcess(processName: ProcessName): Future[ProcessId] = {
     for {
       id <- prepareProcess(processName)
       _ <- repositoryManager.runInTransaction(

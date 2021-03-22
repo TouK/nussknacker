@@ -2,8 +2,8 @@ package pl.touk.nussknacker.ui.listener
 
 import java.time.LocalDateTime
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessVersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.restmodel.process.ProcessVersionId
 
 sealed trait ProcessChangeEvent {
   val processId: ProcessId

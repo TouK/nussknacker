@@ -13,6 +13,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#2152](https://github.com/TouK/nussknacker/pull/2152) `schedulePropertyExtractor` parameter of `PeriodicDeploymentManagerProvider`
   was changed to a factory, replace with a lambda creating the original property extractor.
 * [#2176](https://github.com/TouK/nussknacker/pull/2176) `EnrichDeploymentWithJarDataFactory` was replaced with `ProcessConfigEnricher`.
+* [#1479](https://github.com/TouK/nussknacker/pull/1479) `ProcessId` moved to API included in `ProcessVersion`, remove spurious `ProcessId` in restmodel.
 
 ## In version 0.4.0
 

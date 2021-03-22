@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessId => ApiProc
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.ProcessType.ProcessType
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
+import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.api.CirceUtil._
 
 object processdetails {
@@ -89,8 +89,8 @@ object processdetails {
                                               state: Option[ProcessState] = Option.empty //It temporary holds mapped action -> status. Now this field is fill at router. In future we will keep there cached sate
                                              ) extends Process {
     def mapProcess[NewShape](action: ProcessShape => NewShape) : BaseProcessDetails[NewShape] = copy(json = json.map(action))
-    // todo: unsafe toLong; we need it for now - we use this class for both backend (id == real id) and frontend (id == name) purposes
-    lazy val idWithName: ProcessIdWithName = ProcessIdWithName(ProcessId(processId.value), ProcessName(name))
+
+    lazy val idWithName: ProcessIdWithName = ProcessIdWithName(processId, ProcessName(name))
   }
 
   // TODO we should split ProcessDetails and ProcessShape (json), than it won't be needed. Also BasicProcess won't be necessary than.
