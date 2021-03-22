@@ -10,7 +10,7 @@ import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestProcessingTypes}
-import pl.touk.nussknacker.ui.process.ProcessToSave
+import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -47,7 +47,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with PatientS
   private def statefulEnvironment(expectedProcessId: String,
                                   expectedProcessCategory: String,
                                   initialRemoteProcessList: List[String],
-                                  onMigrate: Future[ProcessToSave] => Unit) = new MockRemoteEnvironment with TriedToAddProcess {
+                                  onMigrate: Future[UpdateProcessCommand] => Unit) = new MockRemoteEnvironment with TriedToAddProcess {
     private var remoteProcessList = initialRemoteProcessList
 
     override protected def request(path: Uri, method: HttpMethod, request: MessageEntity) : Future[HttpResponse] = {
@@ -104,7 +104,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with PatientS
           }
 
         case UpdateProcess() if remoteProcessList contains expectedProcessId =>
-          onMigrate(Unmarshal(request).to[ProcessToSave])
+          onMigrate(Unmarshal(request).to[UpdateProcessCommand])
 
           Marshal(ValidationResult.errors(Map(), List(), List())).to[RequestEntity].map { entity =>
             HttpResponse(OK, entity = entity)
@@ -187,7 +187,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with PatientS
   }
 
   it should "migrate valid existing process" in {
-    var migrated : Option[Future[ProcessToSave]] = None
+    var migrated : Option[Future[UpdateProcessCommand]] = None
     val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
       ProcessTestData.validProcess.id,
       ProcessTestData.validProcessDetails.processCategory,
@@ -210,7 +210,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with PatientS
   }
 
   it should "migrate valid non-existing process" in {
-    var migrated : Option[Future[ProcessToSave]] = None
+    var migrated : Option[Future[UpdateProcessCommand]] = None
     val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
       ProcessTestData.validProcess.id,
       ProcessTestData.validProcessDetails.processCategory,
@@ -233,7 +233,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with PatientS
   }
 
   it should "migrate subprocess" in {
-    var migrated : Option[Future[ProcessToSave]] = None
+    var migrated : Option[Future[UpdateProcessCommand]] = None
     val subprocess = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess, TestProcessingTypes.Streaming)
     val category = "Category"
     val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(

@@ -73,12 +73,14 @@ object TestFactory extends TestPermissions{
     processingType = TestProcessingTypes.Streaming
   )
 
-  def newProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
+  def newDBRepositoryManager(dbs: DbConfig): RepositoryManager[DB] =
+    RepositoryManager.createDbRepositoryManager(dbs)
+
+  def newFetchingProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
     new DBFetchingProcessRepository[Future](dbs) with BasicRepository
 
   def newWriteProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
-    new DbWriteProcessRepository[Future](dbs, mapProcessingTypeDataProvider(modelVersions.map(TestProcessingTypes.Streaming -> _).toList: _*))
-        with WriteProcessRepository[DB] with BasicRepository
+    new DBProcessRepository(dbs, mapProcessingTypeDataProvider(modelVersions.map(TestProcessingTypes.Streaming -> _).toList: _*))
 
   def newSubprocessRepository(db: DbConfig): DbSubprocessRepository = {
     new DbSubprocessRepository(db, implicitly[ExecutionContext])

@@ -30,7 +30,7 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
-  private val nodeRoute = new NodesResources(processRepository, typeToConfig.mapValues(_.modelData))
+  private val nodeRoute = new NodesResources(fetchingProcessRepository, typeToConfig.mapValues(_.modelData))
 
   private implicit val typingResultDecoder: Decoder[TypingResult]
     = NodesResources.prepareTypingResultDecoder(typeToConfig.all.head._2.modelData)

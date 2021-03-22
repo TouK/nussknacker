@@ -15,7 +15,8 @@ import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestPermissions, TestProcessingTypes, WithHsqlDbTesting}
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.ProcessAlreadyExists
+import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -31,8 +32,9 @@ class DBFetchingProcessRepositorySpec
     with TestPermissions {
   import cats.syntax.either._
 
-  private val writingRepo = new DbWriteProcessRepository[Future](db, mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> 0))
-    with WriteProcessRepository[DB] with BasicRepository {
+  private val repositoryManager = RepositoryManager.createDbRepositoryManager(db)
+
+  private val writingRepo = new DBProcessRepository(db, mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> 0)) {
     override protected def now: LocalDateTime = currentTime
   }
   private var currentTime : LocalDateTime = LocalDateTime.now()
@@ -140,12 +142,14 @@ class DBFetchingProcessRepositorySpec
   private def saveProcess(espProcess: EspProcess, now: LocalDateTime, category: String = "") = {
     val json = ProcessMarshaller.toJson(ProcessCanonizer.canonize(espProcess)).noSpaces
     currentTime = now
-    writingRepo.saveNewProcess(ProcessName(espProcess.id), category, GraphProcess(json), TestProcessingTypes.Streaming, false).futureValue shouldBe 'right
+    val action = CreateProcessAction(ProcessName(espProcess.id), category, GraphProcess(json), TestProcessingTypes.Streaming, false)
+
+    repositoryManager.runInTransaction(writingRepo.saveNewProcess(action)).futureValue shouldBe 'right
   }
 
   private def renameProcess(processName: ProcessName, newName: String) = {
     val processId = fetching.fetchProcessId(processName).futureValue.get
-    writingRepo.renameProcess(processId, newName).futureValue
+    repositoryManager.runInTransaction(writingRepo.renameProcess(processId, newName)).futureValue
   }
 
   private def fetchMetaDataIdsForAllVersions(name: ProcessName) = {

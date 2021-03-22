@@ -95,9 +95,9 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val substitutorsByProcessType = modelData.mapValues(modelData => ProcessDictSubstitutor(modelData.dictServices.dictRegistry))
     val processResolving = new UIProcessResolving(processValidation, substitutorsByProcessType)
 
-    val dBTransactionSupport = new DBTransaction(dbConfig)
+    val dbRepositoryManager = RepositoryManager.createDbRepositoryManager(dbConfig)
     val processRepository = DBFetchingProcessRepository.create(dbConfig)
-    val writeProcessRepository = WriteProcessRepository.create(dbConfig, modelData)
+    val writeProcessRepository = ProcessRepository.create(dbConfig, modelData)
 
     val actionRepository = DbProcessActionRepository.create(dbConfig, modelData)
     val processActivityRepository = new ProcessActivityRepository(dbConfig)
@@ -113,9 +113,11 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
       NussknackerServices(new PullProcessRepository(processRepository))
     )
 
+    val newProcessPreparer = NewProcessPreparer(typeToConfig, additionalProperties)
+
     val systemRequestTimeout = system.settings.config.getDuration("akka.http.server.request-timeout")
     val managementActor = system.actorOf(ManagementActor.props(managers, processRepository, actionRepository, subprocessResolver, processChangeListener), "management")
-    val processService = new ProcessService(managementActor, systemRequestTimeout, dBTransactionSupport, processRepository, actionRepository, writeProcessRepository)
+    val processService = new DBProcessService(managementActor, systemRequestTimeout, newProcessPreparer, typesForCategories, processResolving, dbRepositoryManager, processRepository, actionRepository, writeProcessRepository)
 
     val processAuthorizer = new AuthorizeProcess(processRepository)
     val appResources = new AppResources(config, reload, modelData, processRepository, processValidation, processService)
@@ -126,12 +128,9 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
       val routes = List(
         new ProcessesResources(
           processRepository = processRepository,
-          writeRepository = writeProcessRepository,
           processService = processService,
           processValidation = processValidation,
           processResolving = processResolving,
-          typesForCategories = typesForCategories,
-          newProcessPreparer = NewProcessPreparer(typeToConfig, additionalProperties),
           processAuthorizer = processAuthorizer,
           processChangeListener = processChangeListener,
           typeToConfig = typeToConfig

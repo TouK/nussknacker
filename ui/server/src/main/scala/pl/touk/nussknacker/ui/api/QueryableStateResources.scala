@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.server.{Directives, Route}
 import cats.data.EitherT
-import db.util.DBIOActionInstances.DB
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
 import io.circe.parser.parse
@@ -19,7 +18,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class QueryableStateResources(typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData],
                               val processRepository: FetchingProcessRepository[Future],
-                              processService: ProcessService[DB],
+                              processService: ProcessService,
                               val processAuthorizer: AuthorizeProcess)
                              (implicit val ec: ExecutionContext)
   extends Directives
