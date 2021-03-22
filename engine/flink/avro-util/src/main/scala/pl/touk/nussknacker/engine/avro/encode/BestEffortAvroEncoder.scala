@@ -39,10 +39,13 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
         encodeRecord(map, schema)
       case (Schema.Type.RECORD, map: util.Map[String@unchecked, _]) =>
         encodeRecord(map, schema)
-      case (Schema.Type.ENUM, str: String) =>
-        encodeEnumOrError(str, fieldName, schema)
       case (Schema.Type.ENUM, charSeq: CharSequence) =>
-        encodeEnumOrError(charSeq.toString, fieldName, schema)
+        val str = charSeq.toString
+        if (!schema.hasEnumSymbol(str)) {
+          error(s"Not expected symbol: $str for field: $fieldName with schema: $schema")
+        } else {
+          Valid(new EnumSymbol(schema, str))
+        }
       case (Schema.Type.ARRAY, collection: Traversable[_]) =>
         encodeCollection(collection, schema)
       case (Schema.Type.ARRAY, collection: util.Collection[_]) =>
@@ -117,13 +120,6 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
     val decimalLogicalType = schema.getLogicalType.asInstanceOf[LogicalTypes.Decimal]
     decimal.setScale(decimalLogicalType.getScale, RoundingMode.DOWN).bigDecimal
   }
-
-  def encodeEnumOrError(elem: String, fieldName: Option[String], schema: Schema): WithError[EnumSymbol] =
-    if (!schema.hasEnumSymbol(elem)) {
-      error(s"Not expected symbol: $elem for field: $fieldName with schema: $schema")
-    } else {
-      Valid(new EnumSymbol(schema, elem))
-    }
 
   def encodeRecordOrError(fields: collection.Map[String, _], schema: Schema): GenericData.Record = {
     encodeRecordOrError(fields.asJava, schema)
