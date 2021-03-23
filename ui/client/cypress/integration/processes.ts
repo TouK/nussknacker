@@ -2,12 +2,12 @@ const NAME = "process-list"
 
 describe("Processes list", () => {
   before(() => {
-    cy.deleteAllTestProcesses(NAME)
+    cy.deleteAllTestProcesses({filter: NAME, force: true})
     cy.createTestProcessName(NAME).as("processName")
   })
 
   after(() => {
-    cy.deleteAllTestProcesses(NAME)
+    cy.deleteAllTestProcesses({filter: NAME})
   })
 
   beforeEach(() => {
