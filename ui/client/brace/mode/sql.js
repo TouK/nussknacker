@@ -11,7 +11,8 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
     var keywords = (
       "select|insert|update|delete|from|where|and|or|group|by|order|limit|offset|having|as|case|" +
       "when|else|end|type|left|right|join|on|outer|desc|asc|union|create|table|primary|key|if|" +
-      "foreign|not|references|default|null|inner|cross|natural|database|drop|grant"
+      "foreign|not|references|default|null|inner|cross|natural|database|drop|grant|" +
+      "is|with|procedure"
     );
 
     var builtinConstants = (
@@ -20,7 +21,7 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
 
     var builtinFunctions = (
       "avg|count|first|last|max|min|sum|ucase|lcase|mid|len|round|rank|now|format|" +
-      "coalesce|ifnull|isnull|nvl"
+      "coalesce|ifnull|isnull|nvl|to_char"
     );
 
     var dataTypes = (
@@ -38,26 +39,33 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
     this.$rules = {
       "alias": [
         {
-          token : ["text","keyword","text"],
-          regex : /(\W)(AS)(\W+|$)/,
+          token: ["text", "keyword", "alias.paren.start"],
+          regex: /(^|\s?)(IS|AS)(\s*?\()/,
           caseInsensitive: true,
           push: [
             {
-              token : "text",
-              regex : /^\s+/,
+              token: "alias.paren.end",
+              regex: /\)/,
+              next: "pop",
             },
-            {include: "spel"},
-            {
-              token : "text",
-              regex : /\W+|$/,
-              next : "pop"
-            },
-            {defaultToken : "alias"},
-          ]
+            {include: "start"},
+          ],
         },
         {
-          token : ["text","root","text"],
-          regex : /(\s*)(\w+)(\.\w+)/,
+          token: ["text", "keyword", "text"],
+          regex: /(^|\s?)(IS|AS|WITH)(\s|$)/,
+          caseInsensitive: true,
+          push: [
+            {
+              token: "alias",
+              regex: /\w+/,
+              next: "pop",
+            },
+          ],
+        },
+        {
+          token: ["text", "alias.root", "text"],
+          regex: /(\s*)(\w+)(\.\w+)/,
         },
       ],
       "string": [
@@ -102,12 +110,65 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
         },
       ],
       "spel": [ {
-        token: "spel.open",
+        token: "spel.start",
         regex: /#\{/,
-        push: [ {include: "spel-start"} ]
+        push: [
+          {
+            token: "spel.end",
+            regex: /\}/,
+            next: "pop",
+          },
+          {include: "spel-start"},
+        ]
       } ],
+      "functions": [
+        {
+          token: "support.function",
+          regex: `${builtinFunctions}\\s*$`,
+          push: [
+            {
+              token: "support.function.start",
+              regex: /\(/,
+            },
+            {
+              token: "support.function.end",
+              regex: /\)/,
+              next: "pop",
+            },
+            {include: "start"},
+          ],
+        },
+        {
+          token: "support.function.start",
+          regex: `((${builtinFunctions})\\s*\\(|(?!.*${keywords})\\w+\\()`,
+          push: [
+            {
+              token: "support.function.end",
+              regex: /\)/,
+              next: "pop",
+            },
+            {include: "start"},
+          ],
+        },
+      ],
+      "parens": [{
+        token: "paren.start",
+        regex: /\(/,
+        push: [
+          {
+            token: "paren.end",
+            regex: /\)/,
+            next: "pop",
+          },
+          {include: "start"},
+        ],
+      }],
       "start" : [ {
         include: "spel"
+      }, {
+        include: "functions"
+      }, {
+        include: "parens"
       }, {
         include: "alias"
       }, {
@@ -140,12 +201,7 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
       } ]
     };
 
-    this.embedRules(SpelHighlightRules, "spel-", [{
-      token: "spel.close",
-      regex: /\}/,
-      next: "pop",
-    }])
-
+    this.embedRules(SpelHighlightRules, "spel-")
     this.normalizeRules();
   };
 

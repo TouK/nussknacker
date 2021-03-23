@@ -22,7 +22,7 @@
     "test:e2e": "cypress run",
     "test:e2e:ci": "start-server-and-test start http-get://localhost:3000/static/main.html test:e2e",
     "test:e2e:linux": "docker run -it -v $PWD:/client -w /client cypress/included:6.5.0 --config baseUrl=http://host.docker.internal:3000",
-    "test:e2e:docker": "start-server-and-test start-backend-docker http-get://localhost:3000/static/main.html test:e2e:docker",
+    "test:e2e:docker": "start-server-and-test start:backend-docker http-get://localhost:3000/static/main.html test:e2e:linux",
     "test:e2e:dev": "cypress open",
     "coverage": "npx merge-cypress-jest-coverage"
   },

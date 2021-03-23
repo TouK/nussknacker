@@ -95,8 +95,10 @@
 .ace-nussknacker .ace_spel {
     color: #337AB7
 }
-.ace-nussknacker .ace_alias,
-.ace-nussknacker .ace_root {
+.ace-nussknacker .ace_paren {
+    font-weight: bold;
+}
+.ace-nussknacker .ace_alias {
     color: #37CB86;
 }
 .ace-nussknacker .ace_indent-guide {
