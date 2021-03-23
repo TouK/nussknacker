@@ -179,12 +179,14 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
           }
         } ~ path("processes" / Segment) { processName =>
           processId(processName) { processId =>
-            (delete & canWrite(processId)) {
-              complete {
-                processService
-                  .deleteProcess(processId)
-                  .map(toResponse(StatusCodes.OK))
-                  .withSideEffect(_ => processChangeListener.handle(OnDeleted(processId.id)))
+            parameter('force ? false) { force =>
+              (delete & canWrite(processId)) {
+                complete {
+                  processService
+                    .deleteProcess(processId, user.isAdmin && force)
+                    .map(toResponse(StatusCodes.OK))
+                    .withSideEffect(_ => processChangeListener.handle(OnDeleted(processId.id)))
+                }
               }
             } ~ (put & canWrite(processId)) {
               entity(as[UpdateProcessCommand]) { updateCommand =>

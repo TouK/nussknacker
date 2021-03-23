@@ -50,7 +50,7 @@ trait ProcessService {
 
   def archiveProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[EmptyResponse]
 
-  def deleteProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[EmptyResponse]
+  def deleteProcess(processIdWithName: ProcessIdWithName, allowForceDelete: Boolean)(implicit user: LoggedUser): Future[EmptyResponse]
 
   def unArchiveProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[EmptyResponse]
 
@@ -146,12 +146,16 @@ class DBProcessService(managerActor: ActorRef,
   }
 
   // FIXME: How should look flow? Process -> archive -> delete?
-  override def deleteProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[EmptyResponse] =
+  override def deleteProcess(processIdWithName: ProcessIdWithName, allowForceDelete: Boolean)(implicit user: LoggedUser): Future[EmptyResponse] =
     withProcess(processIdWithName) { process =>
-      withNotRunningState(process, "Can't delete still running process.") { _ =>
-        repositoryManager.runInTransaction(
-          processRepository.deleteProcess(processIdWithName.id)
-        ).map(_ => ().asRight)
+      getProcessState(process.idWithName).flatMap{ ps =>
+        if (isProcessRunning(process, ps) && !allowForceDelete) {
+          Future(Left(ProcessIllegalAction("Can't delete still running process.")))
+        } else if (isProcessRunning(process, ps) && allowForceDelete) {
+          cancelProcess(processIdWithName, None).flatMap{ _ => doDeleteProcess(processIdWithName)}
+        } else {
+          doDeleteProcess(processIdWithName)
+       }
       }
     }
 
@@ -222,6 +226,15 @@ class DBProcessService(managerActor: ActorRef,
         result.value
       }
     }
+
+  private def isProcessRunning(process: BaseProcessDetails[_], processState: ProcessState) =
+    process.isDeployed || processState.status.isRunning
+
+  private def doDeleteProcess(processIdWithName: ProcessIdWithName) = {
+    repositoryManager.runInTransaction(
+      processRepository.deleteProcess(processIdWithName.id)
+    ).map(_ => ().asRight)
+  }
 
   private def archiveSubprocess(process: BaseProcessDetails[_])(implicit user: LoggedUser): Future[EmptyResponse] =
     doArchive(process)

@@ -577,11 +577,23 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   test("not allow to delete still running process") {
     createDeployedProcess(processName)
 
-    deleteProcess(processName) { status =>
+    deleteProcess(processName, force = true) { status =>
       status shouldEqual StatusCodes.Conflict
 
       withProcess(processName) { process =>
         process.isDeployed shouldBe true
+      }
+    }
+  }
+
+  test("allow admin to delete still running process") {
+    createDeployedProcess(processName)
+
+    deleteProcess(processName, adminPermission = true, force = true) { status =>
+      status shouldEqual StatusCodes.OK
+
+      tryProcess(processName) { (status, _) =>
+        status shouldEqual StatusCodes.NotFound
       }
     }
   }
@@ -759,10 +771,12 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
       callback(status)
     }
 
-  private def deleteProcess(processName: ProcessName)(callback: StatusCode => Any): Any =
-    Delete(s"/processes/${processName.value}") ~> withPermissions(processesRoute, testPermissionWrite |+| testPermissionRead) ~> check {
+  private def deleteProcess(processName: ProcessName, adminPermission: Boolean = false, force: Boolean = false)(callback: StatusCode => Any): Any = {
+    val permission = if (adminPermission) withAdminPermissions(processesRoute) else withPermissions(processesRoute, testPermissionWrite |+| testPermissionRead)
+    Delete(s"/processes/${processName.value}?force=$force") ~> permission ~> check {
       callback(status)
     }
+  }
 
   private def updateCategory(processId: ProcessId, category: String): XError[Unit] =
     repositoryManager.runInTransaction(writeProcessRepository.updateCategory(processId, category)).futureValue
