@@ -38,9 +38,17 @@ function visitNewProcess(name?: string, fixture?: string) {
   })
 }
 
-function deleteTestProcess(processName: string) {
+function deleteTestProcess(processName: string, force?: boolean) {
   const url = `/api/processes/${processName}`
-  return cy.request({method: "DELETE", url, failOnStatusCode: false})
+
+  function getRequest() {
+    return cy.request({method: "DELETE", url, failOnStatusCode: false})
+  }
+
+  return getRequest()
+    .then(response => force && response.status === 409 ?
+      cy.request({method: "POST", url: `/api/processManagement/cancel/${processName}`, failOnStatusCode: false}).then(getRequest) :
+      cy.wrap(response))
     .its("status").should("be.oneOf", [200, 404])
 }
 
@@ -82,9 +90,9 @@ function getTestProcesses(filter?: string) {
       .map(({id}) => id))
 }
 
-function deleteAllTestProcesses(filter?: string) {
+function deleteAllTestProcesses({filter, force}: {filter?: string, force?: boolean}) {
   return cy.getTestProcesses(filter).each((id: string) => {
-    cy.deleteTestProcess(id)
+    cy.deleteTestProcess(id, force)
   })
 }
 

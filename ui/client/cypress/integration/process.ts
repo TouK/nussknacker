@@ -4,11 +4,11 @@ const seed = "process"
 
 describe("Process", () => {
   before(() => {
-    cy.deleteAllTestProcesses(seed)
+    cy.deleteAllTestProcesses({filter: seed, force: true})
   })
 
   after(() => {
-    cy.deleteAllTestProcesses(seed)
+    cy.deleteAllTestProcesses({filter: seed})
   })
 
   describe("initially clean", () => {
@@ -73,6 +73,9 @@ describe("Process", () => {
       cy.contains(/^counts$/i).click()
       cy.contains(/^latest deploy$/i).should("not.exist")
       cy.get("[data-testid=modal]").should("be.visible").toMatchImageSnapshot()
+      cy.get("[data-testid=modal]").contains(/^cancel$/i).click()
+      cy.contains(/^cancel$/i).click()
+      cy.contains(/^ok$/i).should("be.enabled").click()
     })
 
     it("should have \"latest deploy\" button", () => {
@@ -88,6 +91,9 @@ describe("Process", () => {
       cy.contains(/^counts$/i).click()
       cy.contains(/^latest deploy$/i).should("exist")
       cy.get("[data-testid=modal]").should("be.visible").toMatchImageSnapshot()
+      cy.get("[data-testid=modal]").contains(/^cancel$/i).click()
+      cy.contains(/^cancel$/i).click()
+      cy.contains(/^ok$/i).should("be.enabled").click()
     })
 
     it("should display some node details in modal", () => {
