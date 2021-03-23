@@ -1,4 +1,5 @@
 import {curry} from "lodash"
+import {dotAllReplacement} from "../../../../../common/regexpCompat"
 
 export enum QuotationMark {
   single = `'`,
@@ -50,6 +51,6 @@ export function getQuotationMark(value: string): QuotationMark {
 }
 
 export function getQuotedStringPattern(quotationMarks: string[]): RegExp {
-  const patterns = quotationMarks.map(mark => `^${mark}.*${mark}$`)
-  return RegExp(patterns.join(`|`), `s`)
+  const patterns = quotationMarks.map(mark => `^${mark}${dotAllReplacement}*${mark}$`)
+  return RegExp(patterns.join(`|`))
 }

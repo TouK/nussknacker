@@ -70,7 +70,7 @@ describe("SpelQuotesUtils", () => {
 
   describe("getQuotedStringPattern", () => {
     it("should return right pattern", () => {
-      expect(SpelQuotesUtils.getQuotedStringPattern([`'`, `"`]).toString()).toBe(`/^'.*'$|^".*"$/s`)
+      expect(SpelQuotesUtils.getQuotedStringPattern([`'`, `"`]).toString()).toBe(`/^'[\\0-\uFFFF]*'$|^\"[\\0-\uFFFF]*\"$/`)
     })
   })
 
