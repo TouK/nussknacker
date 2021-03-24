@@ -198,6 +198,23 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     statuses.map(_.jid).foreach(id => history should contain(HistoryEntry("cancel", Some(id))))
   }
 
+  test("cancel duplicate processes which are in non terminal state") {
+    val jobStatuses = List(
+      JobStatus.RUNNING.name(),
+      JobStatus.RUNNING.name(),
+      JobStatus.FAILED.name()
+    )
+    statuses = jobStatuses.map(status => JobOverview(UUID.randomUUID().toString, "test", 10L, 10L, status))
+
+    val (manager, history)  = createManagerWithHistory(statuses)
+
+    manager.cancel(ProcessName("test"), User("test_id", "Jack")).futureValue shouldBe (())
+
+    history.filter(_.operation == "cancel").map(_.jobId.get) should contain theSameElementsAs
+      statuses.filter(_.state == JobStatus.RUNNING.name()).map(_.jid)
+  }
+
+
   test("allow cancel but do not sent cancel request if process is failed") {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name()))
     val (manager, history) = createManagerWithHistory(statuses, acceptCancel = false)
