@@ -36,11 +36,13 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
       "storage.type": dataTypes
     }, "identifier", true);
 
+    const reservedWords = `(${keywords}|${builtinFunctions}|${dataTypes})`
     this.$rules = {
       "alias": [
         {
+          // AS() | AS ()
           token: ["text", "keyword", "alias.paren.start"],
-          regex: /(^|\s?)(IS|AS)(\s*?\()/,
+          regex: /(^|\s+?)(IS|AS)(\s*?\()/,
           caseInsensitive: true,
           push: [
             {
@@ -52,13 +54,20 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
           ],
         },
         {
+          // AS xxx
           token: ["text", "keyword", "text"],
-          regex: /(^|\s?)(IS|AS|WITH)(\s|$)/,
+          regex: /(^|\s?)(IS|AS|WITH)(?=(\s+|$))/,
           caseInsensitive: true,
           push: [
             {
+              token: "text",
+              regex: `(^|\\W)(?=(\\w+\\(|${reservedWords}(\\W|$)))`,
+              next: "pop",
+            },
+            {include: "spel"},
+            {
               token: "alias",
-              regex: /\w+/,
+              regex: /(^|\W?)\w+/,
               next: "pop",
             },
           ],
@@ -123,6 +132,7 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
       } ],
       "functions": [
         {
+          // TO_CHAR ()
           token: "support.function",
           regex: `${builtinFunctions}\\s*$`,
           push: [
@@ -139,8 +149,9 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
           ],
         },
         {
+          // TO_CHAR() | custom()
           token: "support.function.start",
-          regex: `((${builtinFunctions})\\s*\\(|(?!.*${keywords})\\w+\\()`,
+          regex: `((${builtinFunctions})\\s*\\(|\\W?\\w+\\()`,
           push: [
             {
               token: "support.function.end",
