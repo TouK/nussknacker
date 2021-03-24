@@ -94,8 +94,6 @@ final case class AllowDeployStateStatus(name: String) extends StateStatus
 
 final case class NotEstablishedStateStatus(name: String) extends StateStatus
 
-final case class UndeterminedStateStatus(name: String) extends StateStatus
-
 final case class DuringDeployStateStatus(name: String) extends StateStatus {
   override def isDuringDeploy: Boolean = true
 }

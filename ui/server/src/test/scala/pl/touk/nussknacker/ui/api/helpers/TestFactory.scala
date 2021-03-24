@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessState, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.deployment.{CustomAction, CustomActionError, CustomActionNotImplemented, CustomActionRequest, CustomActionResult, ExternalDeploymentId, DeploymentData, ProcessDeploymentData, ProcessState, SavepointResult, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{CustomAction, CustomActionError, CustomActionNotImplemented, CustomActionRequest, CustomActionResult, DeploymentData, ExternalDeploymentId, ProcessDeploymentData, ProcessState, SavepointResult, StateStatus, User}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -217,6 +217,8 @@ object TestFactory extends TestPermissions{
     }
 
     override def close(): Unit = {}
+
+    override def cancel(name: ProcessName, user: User): Future[Unit] = Future.successful(Unit)
   }
 
   class SampleSubprocessRepository(subprocesses: Set[CanonicalProcess]) extends SubprocessRepository {

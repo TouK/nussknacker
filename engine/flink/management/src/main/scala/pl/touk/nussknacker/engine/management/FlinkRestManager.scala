@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.management
 
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.api.common.JobStatus
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
@@ -26,47 +27,47 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
   private val client = new HttpFlinkClient(config)
 
   /*
-    It's ok to have many jobs with same name, however:
-    - there MUST be at most 1 job in *non-terminal* state with given name
-    - deployment is possible IFF there is NO job in *non-terminal* state with given name
-   */
-  override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
+  It's ok to have many jobs with same name, however:
+  - there MUST be at most 1 job in *non-terminal* state with given name
+  - deployment is possible IFF there is NO job in *non-terminal* state with given name
+ */
+  override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = withJobOverview(name)(
+    whenNone = Future.successful(None),
+    whenDuplicates = duplicates => Future.successful(Some(ProcessState(
+      Some(ExternalDeploymentId(duplicates.head.jid)),
+      //we cannot have e.g. Failed here as we don't want to allow more jobs
+      FlinkStateStatus.MultipleJobsRunning,
+      definitionManager = processStateDefinitionManager,
+      version = Option.empty,
+      attributes = Option.empty,
+      startTime = Some(duplicates.head.`start-time`),
+      errors = List(s"Expected one job, instead: ${duplicates.map(job => s"${job.jid} - ${job.state}").mkString(", ")}"))
+    )),
+    whenSingle = job => withVersion(job.jid, name).map { version =>
+      //TODO: return error when there's no correct version in process
+      //currently we're rather lax on this, so that this change is backward-compatible
+      //we log debug here for now, since it's invoked v. often
+      if (version.isEmpty) {
+        logger.debug(s"No correct version in deployed process: ${job.name}")
+      }
+      Some(ProcessState(
+        Some(ExternalDeploymentId(job.jid)),
+        mapJobStatus(job),
+        version = version,
+        definitionManager = processStateDefinitionManager,
+        startTime = Some(job.`start-time`),
+        attributes = Option.empty,
+        errors = List.empty
+      ))
+    }
+  )
+
+  private def withJobOverview[T](name: ProcessName)(whenNone: => Future[T], whenDuplicates: List[JobOverview] => Future[T], whenSingle: JobOverview => Future[T]): Future[T] = {
     val preparedName = modelData.objectNaming.prepareName(name.value, modelData.processConfig, new NamingContext(FlinkUsageKey))
-
     client.findJobsByName(preparedName).flatMap {
-      case Nil => Future.successful(None)
-      case duplicates if duplicates.count(isNotFinished) > 1 =>
-        Future.successful(Some(ProcessState(
-          Some(ExternalDeploymentId(duplicates.head.jid)),
-          //we cannot have e.g. Failed here as we don't want to allow more jobs
-          FlinkStateStatus.MultipleJobsRunning,
-          definitionManager = processStateDefinitionManager,
-          version = Option.empty,
-          attributes = Option.empty,
-          startTime = Some(duplicates.head.`start-time`),
-          errors = List(s"Expected one job, instead: ${duplicates.map(job => s"${job.jid} - ${job.state}").mkString(", ")}"))
-        ))
-      case jobs =>
-        val job = findRunningOrFirst(jobs)
-        val stateStatus = mapJobStatus(job)
-        withVersion(job.jid, name).map { version =>
-          //TODO: return error when there's no correct version in process
-          //currently we're rather lax on this, so that this change is backward-compatible
-          //we log debug here for now, since it's invoked v. often
-          if (version.isEmpty) {
-            logger.debug(s"No correct version in deployed process: ${job.name}")
-          }
-
-          Some(ProcessState(
-            Some(ExternalDeploymentId(job.jid)),
-            stateStatus,
-            version = version,
-            definitionManager = processStateDefinitionManager,
-            startTime = Some(job.`start-time`),
-            attributes = Option.empty,
-            errors = List.empty
-          ))
-        }
+      case Nil => whenNone
+      case duplicates if duplicates.count(isNotFinished) > 1 => whenDuplicates(duplicates)
+      case jobs => whenSingle(findRunningOrFirst(jobs))
     }
   }
 
@@ -74,13 +75,17 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
 
   //NOTE: Flink <1.10 compatibility - protected to make it easier to work with Flink 1.9, JobStatus changed package, so we use String in case class
   protected def isNotFinished(overview: JobOverview): Boolean = {
-    !org.apache.flink.api.common.JobStatus.valueOf(overview.state).isGloballyTerminalState
+    !toJobStatus(overview).isGloballyTerminalState
+  }
+
+  private def toJobStatus(overview: JobOverview): JobStatus = {
+    import org.apache.flink.api.common.JobStatus
+    JobStatus.valueOf(overview.state)
   }
 
   //NOTE: Flink <1.10 compatibility - protected to make it easier to work with Flink 1.9, JobStatus changed package, so we use String in case class
   protected def mapJobStatus(overview: JobOverview): StateStatus = {
-    import org.apache.flink.api.common.JobStatus
-    JobStatus.valueOf(overview.state) match {
+    toJobStatus(overview) match {
       case JobStatus.RUNNING => FlinkStateStatus.Running
       case JobStatus.FINISHED => FlinkStateStatus.Finished
       case JobStatus.RESTARTING => FlinkStateStatus.Restarting
@@ -107,6 +112,26 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
     }
   }
 
+  override def cancel(processName: ProcessName, user: User): Future[Unit] = withJobOverview(processName)(
+    whenNone = {
+      logger.warn(s"Trying to cancel ${processName.value} which is not present in Flink")
+      Future.successful(())
+    },
+    whenDuplicates = { _ =>
+      //TODO cancel all these jobs
+      logger.warn(s"Trying to cancel ${processName.value} which maps to multiple jobs running in Flink")
+      Future.successful(())
+    },
+    whenSingle = overview => {
+      val status = mapJobStatus(overview)
+      if (processStateDefinitionManager.statusActions(status).contains(ProcessActionType.Cancel) && isNotFinished(overview)) {
+        cancel(ExternalDeploymentId(overview.jid))
+      } else {
+        logger.warn(s"Trying to cancel ${processName.value} which is in status $status")
+        Future.successful(())
+      }
+    }
+  )
 
   override protected def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = {
     client.cancel(deploymentId)
@@ -119,7 +144,6 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
   override protected def stop(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
     client.stop(deploymentId, savepointDir)
   }
-
 
   // this code is executed synchronously by ManagementActor thus we don't care that much about possible races
   // and extraneous jar uploads introduced by asynchronous invocation

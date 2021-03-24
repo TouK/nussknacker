@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.api.deployment.simple
 
-import pl.touk.nussknacker.engine.api.deployment.{AllowDeployStateStatus, DuringDeployStateStatus, FailedStateStatus, FinishedStateStatus, NotEstablishedStateStatus, RunningStateStatus, StateStatus, UndeterminedStateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{AllowDeployStateStatus, DuringDeployStateStatus, FailedStateStatus, FinishedStateStatus, NotEstablishedStateStatus, RunningStateStatus, StateStatus}
 
 object SimpleStateStatus {
-  val FailedToGet: StateStatus = UndeterminedStateStatus("FAILED_TO_GET")
-  val Unknown: StateStatus = UndeterminedStateStatus("UNKNOWN")
+  val FailedToGet: StateStatus = NotEstablishedStateStatus("FAILED_TO_GET")
+  val Unknown: StateStatus = NotEstablishedStateStatus("UNKNOWN")
   val NotDeployed: StateStatus = AllowDeployStateStatus("NOT_DEPLOYED")
   val DuringDeploy: StateStatus = DuringDeployStateStatus("DURING_DEPLOY")
   val Running: StateStatus = RunningStateStatus("RUNNING")
