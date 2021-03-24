@@ -17,6 +17,6 @@ object FlinkStateStatus  {
   val Error: StateStatus = SimpleStateStatus.Error
   val Warning: StateStatus = SimpleStateStatus.Warning
   val Failing: StateStatus =  NotEstablishedStateStatus("Failing")
-  val MultipleJobsRunning: StateStatus = NotEstablishedStateStatus("More than one job running")
+  val MultipleJobsRunning: StateStatus = UndeterminedStateStatus("More than one job running")
 
 }

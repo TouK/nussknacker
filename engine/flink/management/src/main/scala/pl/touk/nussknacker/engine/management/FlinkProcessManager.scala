@@ -64,11 +64,14 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
   }
 
   override def cancel(processName: ProcessName, user: User): Future[Unit] = {
+    def shouldSendCancelRequestToFlink(ps:ProcessState): Boolean = ps.allowedActions.contains(ProcessActionType.Cancel) &&
+      (ps.status.isRunning || ps.status.isInstanceOf[NotEstablishedStateStatus])
+
     findJobStatus(processName).flatMap {
       // We check if process is in non-terminal state on Flink (status.isRunning) - if it's not we do not want to make
       // request to Flink - it would fail. Nevertheless this method has to be invoked in such cases - other implementations
       // may have some work to do.
-      case Some(ProcessState(Some(deploymentId), status, _, actions, _, _, _, _, _, _)) if status.isRunning && actions.contains(ProcessActionType.Cancel) =>
+      case Some(ps@ProcessState(Some(deploymentId), _, _, _, _, _, _, _, _, _)) if shouldSendCancelRequestToFlink(ps) =>
         cancel(deploymentId)
       case state =>
         logger.warn(s"Trying to cancel ${processName.value} which is not running but in status: $state")
