@@ -40,7 +40,8 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
     "splitter" -> WithCategories(ProcessSplitter),
-    "extractor" -> WithCategories(StandaloneCustomExtractor)
+    "extractor" -> WithCategories(StandaloneCustomExtractor),
+    "filterWithLog" -> WithCategories(StandaloneFilterWithLog)
   )
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
@@ -208,7 +209,7 @@ object StandaloneCustomExtractor extends CustomStreamTransformer {
 
 class StandaloneCustomExtractor(outputVariableName: String, expression: LazyParameter[AnyRef]) extends StandaloneCustomTransformer {
 
-  override def createTransformation(outputVariable: String): StandaloneCustomTransformation =
+  override def createTransformation(outputVariable: Option[String]): StandaloneCustomTransformation =
     (continuation: InterpreterType, lpi: LazyParameterInterpreter) => {
       val exprInterpreter: (ExecutionContext, engine.api.Context) => Future[Any] = lpi.createInterpreter(expression)
       (ctx: engine.api.Context, ec: ExecutionContext) => {
@@ -221,6 +222,36 @@ class StandaloneCustomExtractor(outputVariableName: String, expression: LazyPara
     }
 
 }
+
+case class StandaloneLogInformation(filterExpression: Boolean)
+
+object StandaloneFilterWithLog extends CustomStreamTransformer {
+
+  @MethodToInvoke(returnType = classOf[Unit])
+  def invoke(@ParamName("filterExpression") filterExpression: LazyParameter[java.lang.Boolean])
+            (implicit nodeId: NodeId): StandaloneCustomTransformer = {
+    new StandaloneFilterWithLog(filterExpression, nodeId)
+  }
+
+}
+
+class StandaloneFilterWithLog(filterExpression: LazyParameter[java.lang.Boolean], nodeId: NodeId) extends StandaloneCustomTransformer {
+
+  override def createTransformation(outputVariable: Option[String]): StandaloneCustomTransformation =
+    (continuation: InterpreterType, lpi: LazyParameterInterpreter) => {
+      implicit val implicitLpi: LazyParameterInterpreter = lpi
+      val lazyLogInformation = filterExpression.map(StandaloneLogInformation(_))
+      val exprInterpreter: (ExecutionContext, engine.api.Context) => Future[StandaloneLogInformation] = lpi.createInterpreter(lazyLogInformation)
+      (ctx: engine.api.Context, ec: ExecutionContext) => {
+        implicit val ecc: ExecutionContext = ec
+        exprInterpreter(ec, ctx).flatMap(exprResult => {
+          if(exprResult.filterExpression) continuation(ctx, ec)
+          else Future(Right(List(InterpretationResult(DeadEndReference(nodeId.id), exprResult, ctx))))
+        })
+      }
+    }
+}
+
 
 object ParameterResponseSinkFactory extends SinkFactory {
   @MethodToInvoke

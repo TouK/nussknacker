@@ -239,6 +239,31 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
     ))
   }
 
+  test("ignore filter and continue process execution") {
+    val process = EspProcessBuilder
+      .id("proc1")
+      .exceptionHandler()
+      .source("start", "request1-post-source")
+      .customNodeNoOutput("filter", "filterWithLog", "filterExpression" -> "true")
+      .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + 'd'")
+
+    val result = runProcess(process, Request1("abc", "b"))
+
+    result shouldBe Right(List("abcd withRandomString"))
+  }
+
+  test("stop process on filter and return StandaloneLogInformation") {
+    val process = EspProcessBuilder
+      .id("proc1")
+      .exceptionHandler()
+      .source("start", "request1-post-source")
+      .customNodeNoOutput("filter", "filterWithLog", "filterExpression" -> "false")
+      .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + 'd'")
+
+    val result = runProcess(process, Request1("abc", "b"))
+    result shouldBe Right(List(StandaloneLogInformation(false)))
+  }
+
   def runProcess(process: EspProcess,
                  input: Any,
                  creator: StandaloneProcessConfigCreator = new StandaloneProcessConfigCreator,
