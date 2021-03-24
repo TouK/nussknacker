@@ -170,15 +170,24 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
 
       if (currentKeys sameElements newKeys) {
         if (fieldsCompatibility.isCompatibleAsIs) {
+          logger.debug(s"Schema is compatible for keys ${currentKeys.mkString(", ")}")
           TypeSerializerSchemaCompatibility.compatibleAsIs()
           //TODO: handle serializer reconfiguration more gracefully...
         } else if (fieldsCompatibility.isCompatibleWithReconfiguredSerializer || fieldsCompatibility.isCompatibleAfterMigration) {
+          logger.info(s"Schema migration needed, as fields are equal (${currentKeys.mkString(", ")}), but fields compatibility is ${fieldsCompatibility.getFinalResult}")
           TypeSerializerSchemaCompatibility.compatibleAfterMigration()
-        } else TypeSerializerSchemaCompatibility.incompatible()
+        } else {
+          logger.info(s"Schema is incompatible, as fields are equal (${currentKeys.mkString(", ")}), but fields compatibility is ${fieldsCompatibility.getFinalResult}")
+          TypeSerializerSchemaCompatibility.incompatible()
+        }
       } else {
         if (compatibilityRequiresSameKeys || fieldsCompatibility.isIncompatible) {
+          logger.info(s"Schema is incompatible, as fields are not equal (old keys: ${currentKeys.mkString(", ")}, new keys: ${newKeys.mkString(", ")}), " +
+            s" and fields compatibility is ${fieldsCompatibility.getFinalResult}")
           TypeSerializerSchemaCompatibility.incompatible()
         } else {
+          logger.info(s"Schema migration needed, as fields are not equal (old keys: ${currentKeys.mkString(", ")}, new keys: ${newKeys.mkString(", ")}), " +
+            s" fields compatibility is ${fieldsCompatibility.getFinalResult}")
           TypeSerializerSchemaCompatibility.compatibleAfterMigration()
         }
       }
