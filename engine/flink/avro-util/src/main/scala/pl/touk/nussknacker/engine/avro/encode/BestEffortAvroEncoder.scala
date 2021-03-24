@@ -7,7 +7,7 @@ import java.time.{Instant, LocalDate, LocalTime, OffsetDateTime}
 import java.util
 import java.util.UUID
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits._
 import org.apache.avro.generic.GenericData.EnumSymbol
 import org.apache.avro.generic.{GenericContainer, GenericData}
@@ -39,13 +39,10 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
         encodeRecord(map, schema)
       case (Schema.Type.RECORD, map: util.Map[String@unchecked, _]) =>
         encodeRecord(map, schema)
-      case (Schema.Type.ENUM, charSeq: CharSequence) =>
-        val str = charSeq.toString
-        if (!schema.hasEnumSymbol(str)) {
-          error(s"Not expected symbol: $str for field: $fieldName with schema: $schema")
-        } else {
-          Valid(new EnumSymbol(schema, str))
-        }
+      case (Schema.Type.ENUM, symbol: CharSequence) =>
+        encodeEnumOrError(symbol.toString, schema, fieldName)
+      case (Schema.Type.ENUM, symbol: EnumSymbol) =>
+        encodeEnumOrError(symbol.toString, schema, fieldName)
       case (Schema.Type.ARRAY, collection: Traversable[_]) =>
         encodeCollection(collection, schema)
       case (Schema.Type.ARRAY, collection: util.Collection[_]) =>
@@ -120,6 +117,12 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
     val decimalLogicalType = schema.getLogicalType.asInstanceOf[LogicalTypes.Decimal]
     decimal.setScale(decimalLogicalType.getScale, RoundingMode.DOWN).bigDecimal
   }
+
+  def encodeEnumOrError(symbol: String, schema: Schema, fieldName: Option[String]): WithError[EnumSymbol] =
+    if (!schema.hasEnumSymbol(symbol))
+      error(s"Not expected symbol: $symbol for field: $fieldName with schema: $schema")
+    else
+      Valid(new EnumSymbol(schema, symbol))
 
   def encodeRecordOrError(fields: collection.Map[String, _], schema: Schema): GenericData.Record = {
     encodeRecordOrError(fields.asJava, schema)
