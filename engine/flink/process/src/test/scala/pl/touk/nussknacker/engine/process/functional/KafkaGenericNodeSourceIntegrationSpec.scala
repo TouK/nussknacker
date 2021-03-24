@@ -6,7 +6,7 @@ import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import org.apache.kafka.clients.producer.{ProducerRecord, RecordMetadata}
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
-import pl.touk.nussknacker.engine.kafka.KafkaSpec
+import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, KafkaSpec}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.BaseSimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.source.KafkaGenericNodeSourceFactory
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
@@ -24,7 +24,7 @@ class KafkaGenericNodeSourceIntegrationSpec extends FunSuite with Matchers with 
     Topic,
     obj => implicitly[Encoder[SimpleJsonRecord]].apply(obj.value).noSpaces,
     obj => implicitly[Encoder[SimpleJsonKey]].apply(obj.key).noSpaces,
-    obj => obj.headers
+    obj => ConsumerRecordUtils.toHeaders(obj.headers)
   ).asInstanceOf[KafkaSerializationSchema[Any]]
 
   def pushMessage(kafkaSerializer: KafkaSerializationSchema[Any], obj: AnyRef, partition: Option[Int] = None, timestamp: Long = 0L): RecordMetadata = {
@@ -32,7 +32,7 @@ class KafkaGenericNodeSourceIntegrationSpec extends FunSuite with Matchers with 
     kafkaClient.sendRawMessage(topic = record.topic(), key = record.key(), content = record.value(), partition = partition, timestamp = record.timestamp(), headers = record.headers()).futureValue
   }
 
-  test("handle consumer record") {
+  test("handle input variable with metadata provided by consumer record") {
 
     val givenObj = ObjToSerialize(
       SimpleJsonRecord("some id", "some field"),

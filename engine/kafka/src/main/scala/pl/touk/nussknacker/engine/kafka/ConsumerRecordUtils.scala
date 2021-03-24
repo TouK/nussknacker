@@ -7,7 +7,7 @@ import org.apache.kafka.common.header.internals.RecordHeaders
 
 import scala.collection.JavaConverters._
 
-object KafkaRecordHelper {
+object ConsumerRecordUtils {
 
   private val cs: Charset = StandardCharsets.UTF_8
 

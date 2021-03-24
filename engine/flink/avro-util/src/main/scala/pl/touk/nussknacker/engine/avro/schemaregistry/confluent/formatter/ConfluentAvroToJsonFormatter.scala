@@ -45,7 +45,7 @@ private[confluent] class ConfluentAvroToJsonFormatter(schemaRegistryClientFactor
     printStream.print(Separator)
   }
 
-  override def parseRecord(topic: String, formatted: Array[Byte]): ProducerRecord[Array[Byte], Array[Byte]] = {
+  override def parseRecord(topic: String, formatted: Array[Byte]): ConsumerRecord[Array[Byte], Array[Byte]] = {
     val str = new String(formatted, StandardCharsets.UTF_8)
     val (keySchema, valueSchema, remainingString) = if (formatKey) {
       val (ks, valueSchemaIdAndRest) = readSchemaId(str)

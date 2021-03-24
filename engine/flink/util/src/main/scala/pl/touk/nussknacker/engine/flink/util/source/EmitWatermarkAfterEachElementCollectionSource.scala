@@ -9,7 +9,8 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import pl.touk.nussknacker.engine.api.Context
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource, SourceContextTransformation}
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
+import pl.touk.nussknacker.engine.flink.util.context.BasicFlinkContextInitializer
 import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunctuatedExtractor
 
 import scala.annotation.nowarn
@@ -21,7 +22,9 @@ import scala.annotation.nowarn
 @nowarn("deprecated")
 class EmitWatermarkAfterEachElementCollectionSource[T: TypeInformation](list: Seq[T],
                                                                         timestampAssigner: AssignerWithPunctuatedWatermarks[T])
-  extends FlinkSource[T] with SourceContextTransformation[T] {
+  extends FlinkSource[T] {
+
+  private val contextInitializer = new BasicFlinkContextInitializer[T]
 
   private val flinkSourceFunction: SourceFunction[T] = {
     // extracted for serialization purpose
@@ -51,11 +54,12 @@ class EmitWatermarkAfterEachElementCollectionSource[T: TypeInformation](list: Se
   }
 
   override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[Context] = {
+    val typeInformationFromNodeContext = flinkNodeContext.typeInformationDetection.forContext(flinkNodeContext.validationContext.left.get)
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
     env
       .addSource(flinkSourceFunction)
       .name(s"${flinkNodeContext.metaData.id}-${flinkNodeContext.nodeId}-source")
-      .map(initContext(flinkNodeContext.metaData.id, flinkNodeContext.nodeId))(flinkNodeContext.contextTypeInformation.left.get)
+      .map(contextInitializer.initContext(flinkNodeContext.metaData.id, flinkNodeContext.nodeId))(typeInformationFromNodeContext)
   }
 
 }

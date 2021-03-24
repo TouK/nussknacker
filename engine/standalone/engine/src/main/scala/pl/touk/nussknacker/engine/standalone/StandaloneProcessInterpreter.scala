@@ -197,7 +197,7 @@ case class StandaloneProcessInterpreter(source: StandaloneSource[Any],
   def invokeToResult(input: Any, contextIdOpt: Option[String] = None)(implicit ec: ExecutionContext): InterpreterOutputType = modelData.withThisAsContextClassLoader {
     val contextId = contextIdOpt.getOrElse(s"${context.processId}-${counter.getAndIncrement()}")
     measureTime {
-      val ctx = Context(contextId).withVariable(ContextInterpreter.InputVariableName, input)
+      val ctx = Context(contextId).withVariable(VariableConstants.InputVariableName, input)
       invoker(ctx, ec)
     }
   }

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
+import org.apache.flink.api.common.functions.MapFunction
 import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
@@ -11,15 +12,52 @@ import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestD
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkSourceFactory, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
-import pl.touk.nussknacker.engine.flink.util.context.InitContextFunction
+import pl.touk.nussknacker.engine.flink.util.context.{BasicFlinkContextInitializer, FlinkContextInitializer, InitContextFunction}
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 
 object GenericSourceWithCustomVariablesSample extends FlinkSourceFactory[String] with SingleInputGenericNodeTransformation[Source[String]] {
+
+  private class CustomFlinkContextInitializer extends BasicFlinkContextInitializer[String] {
+
+    override def validationContext(context: ValidationContext, name: String)(implicit nodeId: NodeId): ValidationContext = {
+      //Append variable "input"
+      val validatedContextWithInput = context.withVariable(OutputVar.customNode(name), Typed[String])
+
+      //Specify additional variables
+      val additionalVariables = Map(
+        "additionalOne" -> Typed[String],
+        "additionalTwo" -> Typed[Int]
+      )
+
+      //Append additional variables to ValidationContext
+      val validatedContextWithInputAndAdditional = additionalVariables.foldLeft(validatedContextWithInput){
+        case (acc, (name, typingResult)) => acc.andThen(_.withVariable(name, typingResult, None))
+      }
+      validatedContextWithInputAndAdditional.getOrElse(context)
+    }
+
+    override def initContext(processId: String, taskName: String): MapFunction[String, Context] = {
+      new InitContextFunction[String](processId, taskName) {
+        override def map(input: String): Context = {
+          //perform some transformations and/or computations
+          val additionalVariables = Map[String, Any](
+            "additionalOne" -> s"transformed:${input}",
+            "additionalTwo" -> input.length()
+          )
+          //initialize context with input variable and append computed values
+          super.map(input).withVariables(additionalVariables)
+        }
+      }
+    }
+
+  }
 
   override type State = Nothing
 
   //There is only one parameter in this source
   private val elementsParamName = "elements"
+
+  private val customContextInitializer: FlinkContextInitializer[String] = new CustomFlinkContextInitializer
 
   override def initialParameters: List[Parameter] = Parameter[java.util.List[String]](`elementsParamName`)  :: Nil
 
@@ -35,17 +73,8 @@ object GenericSourceWithCustomVariablesSample extends FlinkSourceFactory[String]
     val name = dependencies.collectFirst {
       case OutputVariableNameValue(name) => name
     }.get
-    val validatedContextWithInput = context.withVariable(OutputVar.customNode(name), Typed[String])
 
-    //Here two additional variables are appended to ValidationContext.
-    val additionalVariables = Map(
-      "additionalOne" -> Typed[String],
-      "additionalTwo" -> Typed[Int]
-    )
-    val validatedContextWithInputAndAdditional = additionalVariables.foldLeft(validatedContextWithInput){
-      case (acc, (name, typingResult)) => acc.andThen(_.withVariable(name, typingResult, None))
-    }
-    validatedContextWithInputAndAdditional.getOrElse(context)
+    customContextInitializer.validationContext(context, name)
   }
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source[String] = {
@@ -56,18 +85,7 @@ object GenericSourceWithCustomVariablesSample extends FlinkSourceFactory[String]
       with TestDataGenerator
       with FlinkSourceTestSupport[String] {
 
-      override def initContext(processId: String, taskName: String): InitContextFunction[String] = new InitContextFunction[String](processId, taskName) {
-        override def map(input: String): Context = {
-          //There is access raw input value...
-          //... and place to perform some additional transformations and/or computations.
-          val additionalVariables = Map[String, Any](
-            "additionalOne" -> s"transformed:${input}",
-            "additionalTwo" -> input.length()
-          )
-          //The results are appended to the context right after context initialization.
-          super.map(input).withVariables(additionalVariables)
-        }
-      }
+      override val contextInitializer: FlinkContextInitializer[String] = customContextInitializer
 
       override def generateTestData(size: Int): Array[Byte] = elements.mkString("\n").getBytes
 

@@ -32,7 +32,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
 
     override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
       "mySource" -> WithCategories(SimpleStringSource),
-      "genericParametersSource" -> WithCategories(GenericParametersSource)
+      "genericParametersSource" -> WithCategories(new GenericParametersSource)
     )
 
     override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(

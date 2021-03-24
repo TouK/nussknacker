@@ -7,7 +7,7 @@ import org.apache.avro.Schema.Type
 import org.apache.avro.io.DecoderFactory
 import org.apache.avro.util.Utf8
 import org.apache.avro.{AvroRuntimeException, Schema}
-import org.apache.kafka.clients.producer.ProducerRecord
+import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.errors.SerializationException
 import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.schema.StringForcingDatumReaderProvider
@@ -37,12 +37,12 @@ private[confluent] class ConfluentAvroMessageReader(schemaRegistryClient: Schema
   private val decoderFactory = DecoderFactory.get
 
   // TODO: This implementation won't handle separator escaping
-  def readMessage(str: String, keySchema: Schema, valueSchema: Schema): ProducerRecord[Array[Byte], Array[Byte]] = {
+  def readMessage(str: String, keySchema: Schema, valueSchema: Schema): ConsumerRecord[Array[Byte], Array[Byte]] = {
     try {
       if (!parseKey) {
         val value = jsonToAvro(str, valueSchema)
         val serializedValue = serializeImpl(valueSubject, value)
-        new ProducerRecord(topic, serializedValue)
+        new ConsumerRecord(topic, 0, 0L, Array[Byte](), serializedValue)
       } else {
         val keyIndex = str.indexOf(keySeparator)
         if (keyIndex < 0) {
@@ -54,7 +54,7 @@ private[confluent] class ConfluentAvroMessageReader(schemaRegistryClient: Schema
           val serializedKey = serializeImpl(keySubject, key)
           val value = jsonToAvro(valueString, valueSchema)
           val serializedValue = serializeImpl(valueSubject, value)
-          new ProducerRecord(topic, serializedKey, serializedValue)
+          new ConsumerRecord(topic, 0, 0L, serializedKey, serializedValue)
         }
       }
     } catch {

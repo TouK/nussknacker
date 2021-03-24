@@ -6,7 +6,8 @@ import java.nio.charset.StandardCharsets
 import io.circe.Encoder
 import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import org.apache.kafka.clients.producer.ProducerRecord
-import pl.touk.nussknacker.engine.kafka.KafkaRecordHelper
+import org.apache.kafka.common.header.Headers
+import pl.touk.nussknacker.engine.kafka.ConsumerRecordUtils
 
 import scala.language.implicitConversions
 
@@ -26,29 +27,29 @@ object schemas {
     }
   }
 
-  trait ToHeaderMapSerializer[T] extends Serializable {
-    def serialize(value: T): Map[String, Option[String]]
+  trait ToHeadersSerializer[T] extends Serializable {
+    def serialize(value: T): Headers
   }
   object ToHeaderMapSerializer {
-    def apply[T](fun: T => Map[String, Option[String]]): ToHeaderMapSerializer[T] = new ToHeaderMapSerializer[T] {
-      override def serialize(value: T): Map[String, Option[String]] = fun(value)
+    def apply[T](fun: T => Headers): ToHeadersSerializer[T] = new ToHeadersSerializer[T] {
+      override def serialize(value: T): Headers = fun(value)
     }
   }
 
   class BaseSimpleSerializationSchema[T](topic: String,
                                          valueSerializer: ToStringSerializer[T],
                                          keySerializer: ToStringSerializer[T],
-                                         headerSerializer: ToHeaderMapSerializer[T])
+                                         headersSerializer: ToHeadersSerializer[T])
     extends KafkaSerializationSchema[T] {
 
-    def this(topic: String, valueSerializer: T => String, keySerializer: T => String = (_: T) => null, headerMapSerializer: T => Map[String, Option[String]] = (_: T) => Map.empty) = {
-      this(topic, ToStringSerializer(valueSerializer), ToStringSerializer(keySerializer), ToHeaderMapSerializer(headerMapSerializer))
+    def this(topic: String, valueSerializer: T => String, keySerializer: T => String = (_: T) => null, headersSerializer: T => Headers = (_: T) => ConsumerRecordUtils.emptyHeaders) = {
+      this(topic, ToStringSerializer(valueSerializer), ToStringSerializer(keySerializer), ToHeaderMapSerializer(headersSerializer))
     }
 
     override def serialize(element: T, timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
       val value = valueSerializer.serialize(element)
       val key = Option(keySerializer).map(_.serialize(element)).orNull
-      val headers = Option(headerSerializer).map(_.serialize(element)).map(KafkaRecordHelper.toHeaders).getOrElse(KafkaRecordHelper.emptyHeaders)
+      val headers = Option(headersSerializer).map(_.serialize(element)).getOrElse(ConsumerRecordUtils.emptyHeaders)
       KafkaProducerHelper.createRecord(topic, safeBytes(key), safeBytes(value), timestamp, headers)
     }
   }

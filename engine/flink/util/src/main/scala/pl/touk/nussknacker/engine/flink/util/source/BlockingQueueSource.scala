@@ -11,7 +11,8 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import pl.touk.nussknacker.engine.api.Context
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource, SourceContextTransformation}
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
+import pl.touk.nussknacker.engine.flink.util.context.BasicFlinkContextInitializer
 import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunctuatedExtractor
 
 import scala.annotation.nowarn
@@ -24,13 +25,15 @@ import scala.collection.JavaConverters._
 @silent("deprecated")
 @nowarn("deprecated")
 class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPunctuatedWatermarks[T])
-  extends FlinkSource[T] with SourceContextTransformation[T] with Serializable {
+  extends FlinkSource[T] with Serializable {
 
   private val id = UUID.randomUUID().toString
 
   def add(elements: T*) = BlockingQueueSource.getForId[T](id).addAll(elements.map(Some(_)).asJava)
 
   def finish() = BlockingQueueSource.getForId[T](id).add(None)
+
+  private val contextInitializer = new BasicFlinkContextInitializer[T]
 
   private def flinkSourceFunction: SourceFunction[T] = {
     // extracted for serialization purpose
@@ -64,11 +67,12 @@ class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPun
   }
 
   override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[Context] = {
+    val typeInformationFromNodeContext = flinkNodeContext.typeInformationDetection.forContext(flinkNodeContext.validationContext.left.get)
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
     env
       .addSource(flinkSourceFunction)
       .name(s"${flinkNodeContext.metaData.id}-${flinkNodeContext.nodeId}-source")
-      .map(initContext(flinkNodeContext.metaData.id, flinkNodeContext.nodeId))(flinkNodeContext.contextTypeInformation.left.get)
+      .map(contextInitializer.initContext(flinkNodeContext.metaData.id, flinkNodeContext.nodeId))(typeInformationFromNodeContext)
   }
 
 }

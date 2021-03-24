@@ -160,7 +160,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
 
   //hmm... is this OK?
   private def outputValue(ctx: Context): Any =
-  ctx.getOrElse[Any](ContextInterpreter.OutputVariableName, new java.util.HashMap[String, Any]())
+  ctx.getOrElse[Any](VariableConstants.OutputVariableName, new java.util.HashMap[String, Any]())
 
   private def createOrUpdateVariable(ctx: Context, varName: String, fields: Seq[Field])
                                     (implicit ec: ExecutionContext, metaData: MetaData, node: Node): Context = {

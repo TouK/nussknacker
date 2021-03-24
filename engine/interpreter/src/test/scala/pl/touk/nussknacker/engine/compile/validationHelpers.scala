@@ -199,7 +199,7 @@ object validationHelpers {
 
   }
 
-  object GenericParametersSource extends SourceFactory[String] with GenericParameters[Source[String]] {
+  class GenericParametersSource extends SourceFactory[String] with GenericParameters[Source[String]] {
     override def clazz: Class[_] = classOf[String]
 
     protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
@@ -209,8 +209,31 @@ object validationHelpers {
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[List[String]]): Source[String] = {
 
-      new Source[String] with TestDataGenerator {
+      new Source[String] with SourceTestSupport[String] with TestDataGenerator {
+
+        override def testDataParser: TestDataParser[String] = new NewLineSplittedTestDataParser[String] {
+          override def parseElement(testElement: String): String = testElement
+        }
+
         override def generateTestData(size: Int): Array[Byte] = Array(0)
+      }
+    }
+  }
+
+  class GenericParametersSourceNoTestSupport extends GenericParametersSource {
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[List[String]]): Source[String] = {
+      new Source[String] {
+        //no override
+      }
+    }
+  }
+
+  class GenericParametersSourceNoGenerate extends GenericParametersSource {
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[List[String]]): Source[String] = {
+      new Source[String] with SourceTestSupport[String] {
+        override def testDataParser: TestDataParser[String] = new NewLineSplittedTestDataParser[String] {
+          override def parseElement(testElement: String): String = testElement
+        }
       }
     }
   }

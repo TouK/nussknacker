@@ -12,12 +12,14 @@ import io.circe.generic.JsonCodec
 import javax.annotation.Nullable
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
-import org.apache.flink.api.common.functions.FilterFunction
+import org.apache.flink.api.common.functions.{FilterFunction, MapFunction}
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.co.RichCoMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.scala.{DataStream, _}
 import org.apache.flink.streaming.api.windowing.time.Time
+import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
@@ -35,11 +37,11 @@ import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
-import pl.touk.nussknacker.engine.flink.util.context.InitContextFunction
+import pl.touk.nussknacker.engine.flink.util.context.{BasicFlinkContextInitializer, FlinkContextInitializer, InitContextFunction}
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.signal.KafkaSignalStreamConnector
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EspDeserializationSchema}
-import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordDeserializationSchemaFactory, ConsumerRecordToJsonFormatter, ConsumerRecordVariableProvider, DeserializedConsumerRecord}
+import pl.touk.nussknacker.engine.kafka.consumerrecord.{KafkaContextInitializer, ConsumerRecordDeserializationSchemaFactory, ConsumerRecordToJsonFormatter}
 import pl.touk.nussknacker.engine.kafka.serialization.FixedKafkaDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.source._
 import pl.touk.nussknacker.engine.kafka.{BasicFormatter, KafkaConfig, KafkaUtils}
@@ -657,10 +659,47 @@ object SampleNodes {
 
   object GenericSourceWithCustomVariables extends FlinkSourceFactory[String] with SingleInputGenericNodeTransformation[Source[String]] {
 
+    private class CustomFlinkContextInitializer extends BasicFlinkContextInitializer[String] {
+
+      override def validationContext(context: ValidationContext, name: String)(implicit nodeId: NodeId): ValidationContext = {
+        //Append variable "input"
+        val validatedContextWithInput = context.withVariable(OutputVar.customNode(name), Typed[String])
+
+        //Specify additional variables
+        val additionalVariables = Map(
+          "additionalOne" -> Typed[String],
+          "additionalTwo" -> Typed[Int]
+        )
+
+        //Append additional variables to ValidationContext
+        val validatedContextWithInputAndAdditional = additionalVariables.foldLeft(validatedContextWithInput){
+          case (acc, (name, typingResult)) => acc.andThen(_.withVariable(name, typingResult, None))
+        }
+        validatedContextWithInputAndAdditional.getOrElse(context)
+      }
+
+      override def initContext(processId: String, taskName: String): MapFunction[String, Context] = {
+        new InitContextFunction[String](processId, taskName) {
+          override def map(input: String): Context = {
+            //perform some transformations and/or computations
+            val additionalVariables = Map[String, Any](
+              "additionalOne" -> s"transformed:${input}",
+              "additionalTwo" -> input.length()
+            )
+            //initialize context with input variable and append computed values
+            super.map(input).withVariables(additionalVariables)
+          }
+        }
+      }
+
+    }
+
     override type State = Nothing
 
     //There is only one parameter in this source
     private val elementsParamName = "elements"
+
+    private val customContextInitializer: FlinkContextInitializer[String] = new CustomFlinkContextInitializer
 
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId)
     : GenericSourceWithCustomVariables.NodeTransformationDefinition = {
@@ -674,17 +713,9 @@ object SampleNodes {
       val name = dependencies.collectFirst {
         case OutputVariableNameValue(name) => name
       }.get
-      val validatedContextWithInput = context.withVariable(OutputVar.customNode(name), Typed[String])
 
-      //Append additional variables to ValidationContext.
-      val additionalVariables = Map(
-        "additionalOne" -> Typed[String],
-        "additionalTwo" -> Typed[Int]
-      )
-      val validatedContextWithInputAndAdditional = additionalVariables.foldLeft(validatedContextWithInput){
-        case (acc, (name, typingResult)) => acc.andThen(_.withVariable(name, typingResult, None))
-      }
-      validatedContextWithInputAndAdditional.getOrElse(context)
+      //Use custom FlinkContextInitializer
+      customContextInitializer.validationContext(context, name)
     }
 
     override def initialParameters: List[Parameter] = Parameter[java.util.List[String]](`elementsParamName`)  :: Nil
@@ -697,17 +728,7 @@ object SampleNodes {
         with TestDataGenerator
         with FlinkSourceTestSupport[String] {
 
-        override def initContext(processId: String, taskName: String): InitContextFunction[String] = new InitContextFunction[String](processId, taskName) {
-          override def map(input: String): Context = {
-            //perform some transformations and/or computations
-            val additionalVariables = Map[String, Any](
-              "additionalOne" -> s"transformed:${input}",
-              "additionalTwo" -> input.length()
-            )
-            //append computed values to context and release to DataStream
-            super.map(input).withVariables(additionalVariables)
-          }
-        }
+        override val contextInitializer: FlinkContextInitializer[String] = customContextInitializer
 
         override def generateTestData(size: Int): Array[Byte] = elements.mkString("\n").getBytes
 
@@ -846,11 +867,20 @@ object SampleNodes {
   object KafkaConsumerRecordSourceHelper {
 
     def kafkaJsonWithMetaSource[K: ClassTag:Encoder:Decoder, V: ClassTag:Encoder:Decoder](processObjectDependencies: ProcessObjectDependencies)
-    : KafkaGenericNodeSourceFactory[DeserializedConsumerRecord[K,V]] = {
-      val schema = ConsumerRecordDeserializationSchemaFactory.create(bytes => decodeJsonUnsafe[K](bytes), bytes => decodeJsonUnsafe[V](bytes))
-      val testDataRecordFormatter = new ConsumerRecordToJsonFormatter(schema)
+    : KafkaGenericNodeSourceFactory[ConsumerRecord[K,V]] = {
+
+      import scala.reflect.classTag
+
+      implicit val keyTypeInformation: TypeInformation[K] = TypeInformation.of(classTag[K].runtimeClass.asInstanceOf[Class[K]])
+      implicit val valueTypeInformation: TypeInformation[V] = TypeInformation.of(classTag[V].runtimeClass.asInstanceOf[Class[V]])
+
+      val schema = ConsumerRecordDeserializationSchemaFactory.create(
+        new EspDeserializationSchema[K](bytes => decodeJsonUnsafe[K](bytes)),
+        new EspDeserializationSchema[V](bytes => decodeJsonUnsafe[V](bytes))
+      )
+      val testDataRecordFormatter = new ConsumerRecordToJsonFormatter
       val deserializationSchemaFactory = new FixedKafkaDeserializationSchemaFactory(schema)
-      val variableProvider = new ConsumerRecordVariableProvider[K,V]
+      val variableProvider = new KafkaContextInitializer[K,V]
       val sourceFactory = new KafkaGenericNodeSourceFactory(deserializationSchemaFactory, None, testDataRecordFormatter, processObjectDependencies, Some(variableProvider))
       sourceFactory
     }

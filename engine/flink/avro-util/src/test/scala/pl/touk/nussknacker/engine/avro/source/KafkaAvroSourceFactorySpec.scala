@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.TypedNodeDependency
 import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{ContextInterpreter, MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{VariableConstants, MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, TopicParamName}
 import pl.touk.nussknacker.engine.avro.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2}
@@ -119,7 +119,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     result.errors shouldBe
       CustomNodeError("id", "Schema subject doesn't exist.", Some(TopicParamName)) ::
       CustomNodeError("id", "Fetching schema error for topic: terefere, version: LatestSchemaVersion", Some(SchemaVersionParamName)) :: Nil
-    result.outputContext shouldBe ValidationContext(Map(ContextInterpreter.InputVariableName -> Unknown))
+    result.outputContext shouldBe ValidationContext(Map(VariableConstants.InputVariableName -> Unknown))
   }
 
   test("Should return sane error on invalid version") {
@@ -127,7 +127,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
       SchemaVersionParamName -> "'12345'")
 
     result.errors shouldBe CustomNodeError("id", "Fetching schema error for topic: testAvroRecordTopic1, version: ExistingSchemaVersion(12345)", Some(SchemaVersionParamName)) :: Nil
-    result.outputContext shouldBe ValidationContext(Map(ContextInterpreter.InputVariableName -> Unknown))
+    result.outputContext shouldBe ValidationContext(Map(VariableConstants.InputVariableName -> Unknown))
   }
 
   test("Should properly detect input type") {
@@ -135,7 +135,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
       SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
 
     result.errors shouldBe Nil
-    result.outputContext shouldBe ValidationContext(Map(ContextInterpreter.InputVariableName -> TypedObjectTypingResult(
+    result.outputContext shouldBe ValidationContext(Map(VariableConstants.InputVariableName -> TypedObjectTypingResult(
       Map(
         "first" -> Typed[CharSequence],
         "middle" -> Typed[CharSequence],
@@ -154,7 +154,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     implicit val meta: MetaData = MetaData("processId", StreamMetaData())
     implicit val nodeId: NodeId = NodeId("id")
     val paramsList = params.toList.map(p => Parameter(p._1, p._2))
-    validator.validateNode(avroSourceFactory, paramsList, Nil, Some(ContextInterpreter.InputVariableName))(ValidationContext()).toOption.get
+    validator.validateNode(avroSourceFactory, paramsList, Nil, Some(VariableConstants.InputVariableName))(ValidationContext()).toOption.get
   }
 
   private def createKeyValueAvroSourceFactory[K: ClassTag, V: ClassTag]: KafkaAvroSourceFactory[Any] = {

@@ -15,14 +15,15 @@ import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContex
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.SinkInvocationCollector
 import pl.touk.nussknacker.engine.api.test.TestRunId
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, _}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
-import pl.touk.nussknacker.engine.process.compiler.{FlinkProcessCompilerData, FlinkProcessCompiler}
-import pl.touk.nussknacker.engine.process.typeinformation.TypeInformationDetection
+import pl.touk.nussknacker.engine.process.compiler.{FlinkProcessCompiler, FlinkProcessCompilerData}
+import pl.touk.nussknacker.engine.process.typeinformation.TypeInformationDetectionUtils
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
 import pl.touk.nussknacker.engine.process.util.{MetaDataExtractor, UserClassLoader}
 import pl.touk.nussknacker.engine.process.{CheckpointConfig, ExecutionConfigPreparer, FlinkCompatibilityProvider}
@@ -53,7 +54,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Option[
       val processWithDeps = processCompilation(userClassLoader)
 
       streamExecutionEnvPreparer.preRegistration(env, processWithDeps)
-      val typeInformationDetection = TypeInformationDetection.forExecutionConfig(env.getConfig, userClassLoader)
+      val typeInformationDetection = TypeInformationDetectionUtils.forExecutionConfig(env.getConfig, userClassLoader)
       register(env, processCompilation, processWithDeps, testRunId, typeInformationDetection)
       streamExecutionEnvPreparer.postRegistration(env, processWithDeps)
     }
@@ -116,19 +117,13 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Option[
     val globalParameters = NkGlobalParameters.readFromContext(env.getConfig)
     def nodeContext(nodeId: String, validationContext: Either[ValidationContext, Map[String, ValidationContext]]): FlinkCustomNodeContext = {
 
-      import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-
-      val contextTypeInformation = validationContext
-        .map(r => r.mapValuesNow(typeInformationDetection.forContext))
-        .left.map(typeInformationDetection.forContext)
-
       FlinkCustomNodeContext(processWithDeps.jobData, nodeId, processWithDeps.processTimeout,
         lazyParameterHelper = new FlinkLazyParameterFunctionHelper(createInterpreter(compiledProcessWithDeps)),
         signalSenderProvider = processWithDeps.signalSenders,
         exceptionHandlerPreparer = runtimeContext => compiledProcessWithDeps(runtimeContext.getUserCodeClassLoader).prepareExceptionHandler(runtimeContext),
         globalParameters = globalParameters,
         validationContext,
-        contextTypeInformation)
+        typeInformationDetection)
     }
 
     val wrapAsync: (DataStream[Context], ProcessPart, String) => DataStream[Unit]

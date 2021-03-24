@@ -1,20 +1,16 @@
 package pl.touk.nussknacker.engine.kafka.source
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.scala._
-import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, KafkaDeserializationSchema}
 import org.apache.flink.util.Collector
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import org.apache.kafka.clients.producer.ProducerRecord
-import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.TestDataGenerator
 import pl.touk.nussknacker.engine.api.test.TestDataParser
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource, SourceContextTransformation, FlinkSourceTestSupport}
+import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.kafka._
 
@@ -23,13 +19,13 @@ import scala.collection.JavaConverters._
 class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
                      kafkaConfig: KafkaConfig,
                      deserializationSchema: KafkaDeserializationSchema[T],
-                     timestampAssigner: Option[TimestampWatermarkHandler[T]],
+                     override val timestampAssigner: Option[TimestampWatermarkHandler[T]],
                      recordFormatter: RecordFormatter,
                      overriddenConsumerGroup: Option[String] = None)
   extends FlinkSource[T]
+    with FlinkIntermediateRawSource[T]
     with Serializable
     with FlinkSourceTestSupport[T]
-    with SourceContextTransformation[T]
     with TestDataGenerator
     with ExplicitUidInOperatorsSupport {
 
@@ -37,18 +33,9 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
 
   override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[Context] = {
     val consumerGroupId = overriddenConsumerGroup.getOrElse(ConsumerGroupDeterminer(kafkaConfig).consumerGroup(flinkNodeContext))
-    env.setStreamTimeCharacteristic(if (timestampAssigner.isDefined) TimeCharacteristic.EventTime else TimeCharacteristic.IngestionTime)
+    val sourceFunction = flinkSourceFunction(consumerGroupId)
 
-    val rawSourceWithUid = setUidToNodeIdIfNeed(flinkNodeContext, env
-      .addSource[T](flinkSourceFunction(consumerGroupId))(typeInformation)
-      .name(s"${flinkNodeContext.metaData.id}-${flinkNodeContext.nodeId}-source"))
-
-    val rawSourceWithUidAndTimestamp = timestampAssigner
-      .map(_.assignTimestampAndWatermarks(rawSourceWithUid))
-      .getOrElse(rawSourceWithUid)
-
-    rawSourceWithUidAndTimestamp
-      .map(initContext(flinkNodeContext.metaData.id, flinkNodeContext.nodeId))(flinkNodeContext.contextTypeInformation.left.get)
+    prepareSourceStream(env, flinkNodeContext, sourceFunction)
   }
 
   override val typeInformation: TypeInformation[T] = deserializationSchema.getProducedType
@@ -71,7 +58,7 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
   override def testDataParser: TestDataParser[T] = new TestDataParser[T] {
     override def parseTestData(merged: Array[Byte]): List[T] = {
       val topic = topics.head
-      recordFormatter.parseDataForTest(topic, merged).zipWithIndex.map {case (record, index) => deserializeTestData(topic, record, index)}
+      recordFormatter.parseDataForTest(topic, merged).map {record => deserializeTestData(topic, record)}
     }
   }
 
@@ -80,23 +67,9 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
   //There is deserializationSchema.deserialize method which doesn't need Collector, however
   //for some reason KafkaDeserializationSchemaWrapper throws Exception when used in such way...
   //protected to make it easier for backward compatibility
-  protected def deserializeTestData(topic: String, record: ProducerRecord[Array[Byte], Array[Byte]], offset: Int = -1): T = {
+  protected def deserializeTestData(topic: String, record: ConsumerRecord[Array[Byte], Array[Byte]]): T = {
     val collector = new SimpleCollector
-    val partition = Option(record.partition()).getOrElse(Integer.valueOf(-1)).intValue()
-    val consumerRecord = new ConsumerRecord[Array[Byte], Array[Byte]](
-      topic,
-      partition,
-      offset,
-      record.timestamp(),
-      TimestampType.NO_TIMESTAMP_TYPE,
-      0L,
-      Option(record.key()).map(_.length).getOrElse(0),
-      record.value().length,
-      record.key(),
-      record.value(),
-      record.headers()
-    )
-    deserializationSchema.deserialize(consumerRecord, collector)
+    deserializationSchema.deserialize(record, collector)
     collector.output
   }
 

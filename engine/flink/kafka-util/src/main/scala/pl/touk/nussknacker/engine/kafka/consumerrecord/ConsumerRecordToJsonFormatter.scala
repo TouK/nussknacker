@@ -2,42 +2,84 @@ package pl.touk.nussknacker.engine.kafka.consumerrecord
 
 import java.nio.charset.{Charset, StandardCharsets}
 
-import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
-import io.circe.{Decoder, Encoder}
-import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
+import com.github.ghik.silencer.silent
+import io.circe.Decoder.Result
+import io.circe.{Decoder, Encoder, HCursor, Json}
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import org.apache.kafka.clients.producer.ProducerRecord
+import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
-import pl.touk.nussknacker.engine.kafka.{KafkaRecordHelper, RecordFormatter}
+import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, RecordFormatter}
+import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
-class ConsumerRecordToJsonFormatter[K:Encoder:Decoder, V:Encoder:Decoder](deserializationSchema: KafkaDeserializationSchema[DeserializedConsumerRecord[K,V]]) extends RecordFormatter {
+import scala.annotation.nowarn
+
+@silent("deprecated")
+@nowarn("deprecated")
+class ConsumerRecordToJsonFormatter extends RecordFormatter {
 
   private val cs: Charset = StandardCharsets.UTF_8
 
-  private val deserializer: KafkaDeserializationSchema[DeserializedConsumerRecord[K,V]] = deserializationSchema
-
-  implicit val consumerRecordEncoder: Encoder[DeserializedConsumerRecord[K,V]] = deriveEncoder
-  implicit val consumerRecordDecoder: Decoder[DeserializedConsumerRecord[K,V]] = deriveDecoder
+  implicit val consumerRecordEncoder: Encoder[ConsumerRecord[Array[Byte], Array[Byte]]] = {
+    val encode: Encoder[Any] = BestEffortJsonEncoder(failOnUnkown = false).circeEncoder
+    new Encoder[ConsumerRecord[Array[Byte], Array[Byte]]] {
+      override def apply(a: ConsumerRecord[Array[Byte], Array[Byte]]): Json = Json.obj(
+        "topic" -> encode(a.topic()),
+        "partition" -> encode(a.partition()),
+        "offset" -> encode(a.offset()),
+        "timestamp" -> encode(a.timestamp()),
+        "timestampType" -> encode(a.timestampType().name),
+        "serializedKeySize" -> encode(a.serializedKeySize()),
+        "serializedValueSize" -> encode(a.serializedValueSize()),
+        "key" -> encode(Option(a.key()).map(bytes => new String(bytes)).orNull),
+        "value" -> encode(new String(a.value())),
+        "leaderEpoch" -> encode(a.leaderEpoch().orElse(null)),
+        "checksum" -> encode(a.checksum()),
+        "headers" -> encode(ConsumerRecordUtils.toMap(a.headers()))
+      )
+    }
+  }
+  implicit val consumerRecordDecoder: Decoder[ConsumerRecord[Array[Byte], Array[Byte]]] = {
+    new Decoder[ConsumerRecord[Array[Byte], Array[Byte]]] {
+      override def apply(c: HCursor): Result[ConsumerRecord[Array[Byte], Array[Byte]]] = {
+        for {
+          topic <- c.downField("topic").as[String].right
+          partition <- c.downField("partition").as[Int].right
+          offset <- c.downField("offset").as[Long].right
+          timestamp <- c.downField("timestamp").as[Option[Long]].right
+          timestampType <- c.downField("timestampType").as[Option[String]].right
+          serializedKeySize <- c.downField("serializedKeySize").as[Option[Int]].right
+          serializedValueSize <- c.downField("serializedValueSize").as[Option[Int]].right
+          key <- c.downField("key").as[Option[String]].right
+          value <- c.downField("value").as[Option[String]].right
+          leaderEpoch <- c.downField("leaderEpoch").as[Option[Int]].right
+          checksum <- c.downField("checksum").as[Option[java.lang.Long]].right
+          headers <- c.downField("headers").as[Map[String, Option[String]]].right
+        } yield new ConsumerRecord[Array[Byte], Array[Byte]](
+          topic,
+          partition,
+          offset,
+          timestamp.getOrElse(ConsumerRecord.NO_TIMESTAMP),
+          timestampType.map(TimestampType.forName).getOrElse(TimestampType.NO_TIMESTAMP_TYPE),
+          checksum.getOrElse(ConsumerRecord.NULL_CHECKSUM.toLong),
+          serializedKeySize.getOrElse(ConsumerRecord.NULL_SIZE),
+          serializedValueSize.getOrElse(ConsumerRecord.NULL_SIZE),
+          key.map(_.getBytes()).orNull,
+          value.map(_.getBytes()).orNull,
+          ConsumerRecordUtils.toHeaders(headers),
+          java.util.Optional.ofNullable(leaderEpoch.map(Integer.valueOf).orNull)
+        )
+      }
+    }
+  }
 
   override protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): Array[Byte] = {
-    val consumerRecord = deserializer.deserialize(record)
-    val bytes = implicitly[Encoder[DeserializedConsumerRecord[K,V]]].apply(consumerRecord).noSpaces.getBytes(cs)
+    val bytes = implicitly[Encoder[ConsumerRecord[Array[Byte], Array[Byte]]]].apply(record).noSpaces.getBytes(cs)
     bytes
   }
 
-  override protected def parseRecord(topic: String, bytes: Array[Byte]): ProducerRecord[Array[Byte], Array[Byte]] = {
-    val consumerRecord = CirceUtil.decodeJsonUnsafe[DeserializedConsumerRecord[K,V]](bytes)
-    val keyBytes = consumerRecord.key.map(k => implicitly[Encoder[K]].apply(k).noSpaces.getBytes(cs)).orNull
-    val valueBytes = implicitly[Encoder[V]].apply(consumerRecord.value).noSpaces.getBytes(cs)
-    new ProducerRecord[Array[Byte], Array[Byte]](
-      consumerRecord.topic,
-      consumerRecord.partition,
-      consumerRecord.timestamp,
-      keyBytes,
-      valueBytes,
-      KafkaRecordHelper.toHeaders(consumerRecord.headers)
-    )
+  override protected def parseRecord(topic: String, bytes: Array[Byte]): ConsumerRecord[Array[Byte], Array[Byte]] = {
+    CirceUtil.decodeJsonUnsafe[ConsumerRecord[Array[Byte], Array[Byte]]](bytes)
   }
 
   override protected def testDataSplit: TestDataSplit = TestParsingUtils.newLineSplit

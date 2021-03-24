@@ -10,8 +10,8 @@ import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObje
 import pl.touk.nussknacker.engine.api.test.ResultsCollectingListener
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
-import pl.touk.nussknacker.engine.flink.api.process.{SourceContextTransformation, FlinkSourceTestSupport}
-import pl.touk.nussknacker.engine.flink.util.context.InitContextFunction
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSourceTestSupport}
+import pl.touk.nussknacker.engine.flink.util.context.FlinkContextInitializer
 import pl.touk.nussknacker.engine.flink.util.exception.ConsumingNonTransientExceptions
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -36,9 +36,9 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
         case sourceWithTestSupport: FlinkSourceTestSupport[Object@unchecked] =>
           val testObjects = sourceWithTestSupport.testDataParser.parseTestData(testData.testData)
           sourceWithTestSupport match {
-            case providerWithTransformation: SourceContextTransformation[Object@unchecked] =>
+            case providerWithTransformation: FlinkIntermediateRawSource[Object@unchecked] =>
               new CollectionSource[Object](executionConfig, testObjects, sourceWithTestSupport.timestampAssignerForTest, returnType())(sourceWithTestSupport.typeInformation) {
-                override def initContext(processId: String, taskName: String): InitContextFunction[Object] = providerWithTransformation.initContext(processId, taskName)
+                override val contextInitializer: FlinkContextInitializer[Object] = providerWithTransformation.contextInitializer
               }
             case _ =>
               new CollectionSource[Object](executionConfig, testObjects, sourceWithTestSupport.timestampAssignerForTest, returnType())(sourceWithTestSupport.typeInformation)
