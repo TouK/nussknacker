@@ -4,6 +4,7 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.time.{Instant, LocalDate, LocalTime, ZoneId, ZoneOffset}
 import java.util.UUID
 import cats.data.ValidatedNel
+import org.apache.avro.generic.GenericData.EnumSymbol
 import org.apache.avro.generic.{GenericData, GenericDatumWriter, GenericRecord}
 import org.apache.avro.io.{DecoderFactory, EncoderFactory}
 import org.apache.avro.{AvroRuntimeException, Schema}
@@ -56,23 +57,27 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers with EitherValues 
   }
 
   it("should create record with enum field") {
+    val enumSchemaStr = """{
+                           |  "name": "enum",
+                           |  "type": "enum",
+                           |  "symbols": ["A", "B", "C"]
+                           |}""".stripMargin
     val schema = wrapWithRecordSchema(
-      """[
+      s"""[
         |  {
         |    "name": "enum",
-        |    "type": {
-        |      "name": "enum",
-        |      "type": "enum",
-        |      "symbols": ["A", "B", "C"]
-        |    }
+        |    "type": $enumSchemaStr
         |  }
         |]""".stripMargin)
+
+    val enumSchema = new Schema.Parser().parse(enumSchemaStr)
 
     assertThrows[AvroRuntimeException] {
       avroEncoder.encodeRecordOrError(Map("enum" -> "X").asJava, schema)
     }
 
     roundTripVerifyWriteRead(avroEncoder.encodeRecord(Map("enum" -> "B").asJava, schema))
+    roundTripVerifyWriteRead(avroEncoder.encodeRecord(Map("enum" -> new EnumSymbol(enumSchema, "B")).asJava, schema))
   }
 
   it("should create record with array field") {
