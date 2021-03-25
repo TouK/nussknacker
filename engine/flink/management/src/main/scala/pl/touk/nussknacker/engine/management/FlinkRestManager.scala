@@ -112,17 +112,8 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
     }
   }
 
-  override def cancel(processName: ProcessName, user: User): Future[Unit] = withJobOverview(processName)(
-    whenNone = {
-      logger.warn(s"Trying to cancel ${processName.value} which is not present in Flink")
-      Future.successful(())
-    },
-    whenDuplicates = { _ =>
-      //TODO cancel all these jobs
-      logger.warn(s"Trying to cancel ${processName.value} which maps to multiple jobs running in Flink")
-      Future.successful(())
-    },
-    whenSingle = overview => {
+  override def cancel(processName: ProcessName, user: User): Future[Unit] = {
+    def doCancel(overview: JobOverview) = {
       val status = mapJobStatus(overview)
       if (processStateDefinitionManager.statusActions(status).contains(ProcessActionType.Cancel) && isNotFinished(overview)) {
         cancel(ExternalDeploymentId(overview.jid))
@@ -131,7 +122,19 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
         Future.successful(())
       }
     }
-  )
+
+    withJobOverview(processName)(
+      whenNone = {
+        logger.warn(s"Trying to cancel ${processName.value} which is not present in Flink")
+        Future.successful(())
+      },
+      whenDuplicates = { overviews =>
+        logger.warn(s"Found duplicate jobs of ${processName.value}: $overviews. Cancelling all in non terminal state.")
+        Future.sequence(overviews.map(doCancel)).map(_=> (()))
+      },
+      whenSingle = doCancel
+    )
+  }
 
   override protected def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = {
     client.cancel(deploymentId)
