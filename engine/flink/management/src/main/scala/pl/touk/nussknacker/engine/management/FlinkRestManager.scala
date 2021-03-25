@@ -118,14 +118,14 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
       if (processStateDefinitionManager.statusActions(status).contains(ProcessActionType.Cancel) && isNotFinished(overview)) {
         cancel(ExternalDeploymentId(overview.jid))
       } else {
-        logger.warn(s"Trying to cancel ${processName.value} which is in status $status")
+        logger.warn(s"Trying to cancel ${processName.value} which is in status $status.")
         Future.successful(())
       }
     }
 
     withJobOverview(processName)(
       whenNone = {
-        logger.warn(s"Trying to cancel ${processName.value} which is not present in Flink")
+        logger.warn(s"Trying to cancel ${processName.value} which is not present in Flink.")
         Future.successful(())
       },
       whenDuplicates = { overviews =>

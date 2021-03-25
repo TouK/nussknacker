@@ -7,7 +7,8 @@ import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessStat
 
 object FlinkProcessStateDefinitionManager extends ProcessStateDefinitionManager  {
   val statusActionsMap: Map[StateStatus, List[ProcessActionType]] = Map(
-    FlinkStateStatus.Restarting -> List(ProcessActionType.Cancel)
+    FlinkStateStatus.Restarting -> List(ProcessActionType.Cancel),
+    FlinkStateStatus.MultipleJobsRunning -> List(ProcessActionType.Cancel)
   )
 
   val statusIconsMap: Map[StateStatus, String] = Map(

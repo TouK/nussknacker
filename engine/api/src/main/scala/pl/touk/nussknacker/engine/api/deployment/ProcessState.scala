@@ -5,7 +5,6 @@ import io.circe.generic.JsonCodec
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 
 //@TODO: In future clean up it.
 trait ProcessStateDefinitionManager {
