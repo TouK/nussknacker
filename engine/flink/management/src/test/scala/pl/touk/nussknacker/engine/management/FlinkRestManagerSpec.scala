@@ -18,7 +18,8 @@ import sttp.client.testing.SttpBackendStub
 import sttp.client.{NothingT, Response, SttpBackend, SttpClientException}
 import sttp.model.{Method, StatusCode}
 
-import java.util.UUID
+import java.util.{Collections, UUID}
+import scala.collection.mutable
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 
@@ -45,34 +46,59 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
                             acceptDeploy: Boolean = false,
                             acceptStop: Boolean = false,
                             acceptCancel: Boolean = true,
-                            statusCode: StatusCode = StatusCode.Ok, exceptionOnDeploy: Option[Exception] = None)
-    = createManagerWithBackend(SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial { case req =>
-    val toReturn = (req.uri.path, req.method) match {
-      case (List("jobs", "overview"), Method.GET) =>
-        JobsResponse(statuses)
-      case (List("jobs", jobId, "config"), Method.GET) =>
-        JobConfig(jobId, ExecutionConfig(configs.getOrElse(jobId, Map())))
-      case (List("jobs", _), Method.PATCH) if acceptCancel =>
-        ()
-      case (List("jobs", _, "savepoints"), Method.POST) if acceptSavepoint  =>
-        SavepointTriggerResponse(`request-id` = savepointRequestId)
-      case (List("jobs", _, "savepoints", `savepointRequestId`), Method.GET) if acceptSavepoint || acceptStop=>
-        buildFinishedSavepointResponse(savepointPath)
-      case (List("jobs", _, "stop"), Method.POST) if acceptStop=>
-        SavepointTriggerResponse(`request-id` = savepointRequestId)
-      case (List("jars"), Method.GET) => JarsResponse(files = Some(Nil))
-      case (List("jars", `uploadedJarPath`, "run"), Method.POST) if acceptDeploy  =>
-        exceptionOnDeploy
-          //see e.g. AsyncHttpClientBackend.adjustExceptions.adjustExceptions
-          //TODO: can be make behaviour more robust?
-          .flatMap(SttpClientException.defaultExceptionToSttpClientException)
-          .foreach(throw _)
-        RunResponse(returnedJobId)
-      case (List("jars", "upload"), Method.POST) if acceptDeploy =>
-        UploadJarResponse(uploadedJarPath)
-    }
-    Response(Right(toReturn), statusCode)
-  })
+                            statusCode: StatusCode = StatusCode.Ok, exceptionOnDeploy: Option[Exception] = None): FlinkRestManager =
+    createManagerWithHistory(statuses, acceptSavepoint, acceptDeploy, acceptStop, acceptCancel, statusCode, exceptionOnDeploy)._1
+
+  private case class HistoryEntry(operation: String, jobId: Option[String])
+
+  private def createManagerWithHistory(statuses: List[JobOverview] = List(),
+                            acceptSavepoint: Boolean = false,
+                            acceptDeploy: Boolean = false,
+                            acceptStop: Boolean = false,
+                            acceptCancel: Boolean = true,
+                            statusCode: StatusCode = StatusCode.Ok, exceptionOnDeploy: Option[Exception] = None): (FlinkRestManager, mutable.Buffer[HistoryEntry])
+  = {
+    import scala.collection.JavaConverters._
+    val history: mutable.Buffer[HistoryEntry] = Collections.synchronizedList(new java.util.ArrayList[HistoryEntry]()).asScala
+    val manager = createManagerWithBackend(SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial { case req =>
+      val toReturn = (req.uri.path, req.method) match {
+        case (List("jobs", "overview"), Method.GET) =>
+          history.append(HistoryEntry("overview", None))
+          JobsResponse(statuses)
+        case (List("jobs", jobId, "config"), Method.GET) =>
+          history.append(HistoryEntry("config", Some(jobId)))
+          JobConfig(jobId, ExecutionConfig(configs.getOrElse(jobId, Map())))
+        case (List("jobs", jobId), Method.PATCH) if acceptCancel =>
+          history.append(HistoryEntry("cancel", Some(jobId)))
+          ()
+        case (List("jobs", jobId, "savepoints"), Method.POST) if acceptSavepoint =>
+          history.append(HistoryEntry("makeSavepoint", Some(jobId)))
+          SavepointTriggerResponse(`request-id` = savepointRequestId)
+        case (List("jobs", jobId, "savepoints", `savepointRequestId`), Method.GET) if acceptSavepoint || acceptStop =>
+          history.append(HistoryEntry("getSavepoints", Some(jobId)))
+          buildFinishedSavepointResponse(savepointPath)
+        case (List("jobs", jobId, "stop"), Method.POST) if acceptStop =>
+          history.append(HistoryEntry("stop", Some(jobId)))
+          SavepointTriggerResponse(`request-id` = savepointRequestId)
+        case (List("jars"), Method.GET) =>
+          history.append(HistoryEntry("getJars", None))
+          JarsResponse(files = Some(Nil))
+        case (List("jars", `uploadedJarPath`, "run"), Method.POST) if acceptDeploy =>
+          history.append(HistoryEntry("runJar", None))
+          exceptionOnDeploy
+            //see e.g. AsyncHttpClientBackend.adjustExceptions.adjustExceptions
+            //TODO: can be make behaviour more robust?
+            .flatMap(SttpClientException.defaultExceptionToSttpClientException)
+            .foreach(throw _)
+          RunResponse(returnedJobId)
+        case (List("jars", "upload"), Method.POST) if acceptDeploy =>
+          history.append(HistoryEntry("uploadJar", None))
+          UploadJarResponse(uploadedJarPath)
+      }
+      Response(Right(toReturn), statusCode)
+    })
+    (manager, history)
+  }
 
   def processState(manager: FlinkProcessManager,
                    deploymentId: ExternalDeploymentId,
@@ -152,29 +178,49 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
   }
 
   test("allow cancel if process is in non terminal status") {
+    // JobStatus.CANCELLING & FAILING is skipped here, cause we do not allow Cancel action in ProcessStateDefinitionManager for this status
     val cancellableStatuses = List(
         JobStatus.CREATED.name(),
         JobStatus.RUNNING.name(),
-        JobStatus.FAILING.name(),
-        JobStatus.CANCELLING.name(),
         JobStatus.RESTARTING.name(),
         JobStatus.SUSPENDED.name(),
         JobStatus.RECONCILING.name()
     )
     statuses = cancellableStatuses.map(status => JobOverview(UUID.randomUUID().toString, s"process_$status", 10L, 10L, status))
 
-    val manager = createManager(statuses)
+    val (manager, history)  = createManagerWithHistory(statuses)
 
     cancellableStatuses
       .map(status => ProcessName(s"process_$status"))
       .map(manager.cancel(_, User("test_id", "Jack")))
       .foreach(_.futureValue shouldBe (()))
+
+    statuses.map(_.jid).foreach(id => history should contain(HistoryEntry("cancel", Some(id))))
   }
+
+  test("cancel duplicate processes which are in non terminal state") {
+    val jobStatuses = List(
+      JobStatus.RUNNING.name(),
+      JobStatus.RUNNING.name(),
+      JobStatus.FAILED.name()
+    )
+    statuses = jobStatuses.map(status => JobOverview(UUID.randomUUID().toString, "test", 10L, 10L, status))
+
+    val (manager, history)  = createManagerWithHistory(statuses)
+
+    manager.cancel(ProcessName("test"), User("test_id", "Jack")).futureValue shouldBe (())
+
+    history.filter(_.operation == "cancel").map(_.jobId.get) should contain theSameElementsAs
+      statuses.filter(_.state == JobStatus.RUNNING.name()).map(_.jid)
+  }
+
 
   test("allow cancel but do not sent cancel request if process is failed") {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name()))
+    val (manager, history) = createManagerWithHistory(statuses, acceptCancel = false)
 
-    createManager(statuses, acceptCancel = false).cancel(ProcessName("p1"), User("test_id", "Jack")).futureValue shouldBe (())
+    manager.cancel(ProcessName("p1"), User("test_id", "Jack")).futureValue shouldBe (())
+    history.filter(_.operation == "cancel") shouldBe Nil
   }
 
   test("return failed status if two jobs running") {

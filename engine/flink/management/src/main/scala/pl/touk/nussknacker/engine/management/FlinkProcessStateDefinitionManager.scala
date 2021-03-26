@@ -3,11 +3,12 @@ package pl.touk.nussknacker.engine.management
 import java.net.URI
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
-import pl.touk.nussknacker.engine.api.deployment.{CustomAction, ProcessActionType, ProcessStateDefinitionManager, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessStateDefinitionManager, StateStatus}
 
 object FlinkProcessStateDefinitionManager extends ProcessStateDefinitionManager  {
   val statusActionsMap: Map[StateStatus, List[ProcessActionType]] = Map(
-    FlinkStateStatus.Restarting -> List(ProcessActionType.Cancel)
+    FlinkStateStatus.Restarting -> List(ProcessActionType.Cancel),
+    FlinkStateStatus.MultipleJobsRunning -> List(ProcessActionType.Cancel)
   )
 
   val statusIconsMap: Map[StateStatus, String] = Map(
