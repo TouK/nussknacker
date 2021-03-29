@@ -51,7 +51,7 @@ class CronPropertyExtractorTest extends FunSuite
 
   test("should extract cron property") {
     val result = extractor(PeriodicProcessGen())
-
+    
     inside(result) { case Right(CronPeriodicProperty(_)) => }
   }
 }

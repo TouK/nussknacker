@@ -4,6 +4,7 @@ import org.scalatest.LoneElement.convertToCollectionLoneElementWrapper
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.{FinishedStateStatus, RunningStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.periodic.db.HsqlProcessRepository
 import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeploymentState, PeriodicProcessDeploymentStatus}
@@ -24,53 +25,127 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
 
   private val processName = ProcessName("test")
 
+  private val startTime = Instant.parse("2021-04-06T13:18:00Z")
+
   //we truncate to millis, as HSQL stores with that precision...
   private def fixedClock(instant: Instant) =
     Clock.tick(Clock.fixed(instant, ZoneId.systemDefault()), Duration.ofMillis(1))
 
+  private def localTime(instant: Instant) = LocalDateTime.now(fixedClock(instant))
+
   //every hour
   private val cron = CronPeriodicProperty("0 0 * * * ?")
 
-  private val clockForSchedule = fixedClock(Instant.now().minus(2, ChronoUnit.HOURS))
-
-  //we use different clock for repository to be able to find process for deployment
-  private val clockForRepository = fixedClock(Instant.now())
-
   class Fixture {
-    val (repository, db) = HsqlProcessRepository.prepare(clockForRepository)
+    val hsqlRepo: HsqlProcessRepository = HsqlProcessRepository.prepare
     val delegateProcessManagerStub = new ProcessManagerStub
     val jarManagerStub = new JarManagerStub
     val events = new ArrayBuffer[PeriodicProcessEvent]()
-    val periodicProcessService = new PeriodicProcessService(
+    def periodicProcessService(currentTime: Instant) = new PeriodicProcessService(
       delegateProcessManager = delegateProcessManagerStub,
       jarManager = jarManagerStub,
-      scheduledProcessesRepository = repository,
+      scheduledProcessesRepository = hsqlRepo.forClock(fixedClock(currentTime)),
       new PeriodicProcessListener {
         override def onPeriodicProcessEvent: PartialFunction[PeriodicProcessEvent, Unit] = { case k => events.append(k) }
-      }, DefaultAdditionalDeploymentDataProvider, clockForSchedule
+      }, DefaultAdditionalDeploymentDataProvider, fixedClock(currentTime)
     )
   }
 
   test("base flow test") {
-    val f = new Fixture
+    val timeToTriggerCheck = startTime.plus(2, ChronoUnit.HOURS)
+    val expectedScheduleTime = startTime.plus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS)
 
-    f.periodicProcessService.schedule(cron,
+    var currentTime = startTime
+
+    val f = new Fixture
+    def service = f.periodicProcessService(currentTime)
+
+    service.schedule(cron,
       ProcessVersion.empty.copy(processName = processName), "{}").futureValue
 
-    val processScheduled = f.periodicProcessService.getScheduledRunDetails(processName).futureValue.get
+    val processScheduled = service.getNextScheduledDeployment(processName).futureValue.get
 
     processScheduled.state shouldBe PeriodicProcessDeploymentState(None, None, PeriodicProcessDeploymentStatus.Scheduled)
-    processScheduled.runAt shouldBe LocalDateTime.now(clockForSchedule).plusHours(1).truncatedTo(ChronoUnit.HOURS)
+    processScheduled.runAt shouldBe localTime(expectedScheduleTime)
 
-    val toDeploy = f.periodicProcessService.findToBeDeployed.futureValue.loneElement
-    f.periodicProcessService.deploy(toDeploy).futureValue
+    currentTime = timeToTriggerCheck
+    
+    val toDeploy = service.findToBeDeployed.futureValue.loneElement
+    service.deploy(toDeploy).futureValue
 
-    val processDeployed = f.periodicProcessService.getScheduledRunDetails(processName).futureValue.get
+    val processDeployed = service.getNextScheduledDeployment(processName).futureValue.get
     processDeployed.id shouldBe processScheduled.id
-    processDeployed.state shouldBe PeriodicProcessDeploymentState(Some(LocalDateTime.now(clockForRepository)), None, PeriodicProcessDeploymentStatus.Deployed)
-    processDeployed.runAt shouldBe LocalDateTime.now(clockForSchedule).plusHours(1).truncatedTo(ChronoUnit.HOURS)
+    processDeployed.state shouldBe PeriodicProcessDeploymentState(Some(LocalDateTime.now(fixedClock(timeToTriggerCheck))), None, PeriodicProcessDeploymentStatus.Deployed)
+    processDeployed.runAt shouldBe localTime(expectedScheduleTime)
 
-    f.periodicProcessService.deactivate(processName).futureValue
-    f.periodicProcessService.getScheduledRunDetails(processName).futureValue shouldBe None
+    service.deactivate(processName).futureValue
+    service.getNextScheduledDeployment(processName).futureValue shouldBe None
   }
+
+  test("handle multiple schedules") {
+    val expectedScheduleTime = startTime.plus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS)
+    val timeToTrigger = startTime.plus(2, ChronoUnit.HOURS)
+
+    var currentTime = startTime
+
+    val f = new Fixture
+    def service = f.periodicProcessService(currentTime)
+
+
+    service.schedule(ComplexPeriodicProperty(Map(
+      "scheduleMinute5" -> CronPeriodicProperty("0 5 * * * ?"),
+      "scheduleMinute10" -> CronPeriodicProperty("0 10 * * * ?"))),
+      ProcessVersion.empty.copy(processName = processName), "{}").futureValue
+
+    val processScheduled = service.getNextScheduledDeployment(processName).futureValue.get
+
+    processScheduled.scheduleName shouldBe Some("scheduleMinute5")
+    processScheduled.runAt shouldBe localTime(expectedScheduleTime.plus(5, ChronoUnit.MINUTES))
+
+    currentTime = timeToTrigger
+    val toDeploy = service.findToBeDeployed.futureValue
+
+    toDeploy should have length 2
+    toDeploy.head.runAt shouldBe localTime(expectedScheduleTime.plus(5, ChronoUnit.MINUTES))
+    toDeploy.head.scheduleName shouldBe Some("scheduleMinute5")
+    toDeploy.last.runAt shouldBe localTime(expectedScheduleTime.plus(10, ChronoUnit.MINUTES))
+    toDeploy.last.scheduleName shouldBe Some("scheduleMinute10")
+
+    service.deactivate(processName).futureValue
+    service.getNextScheduledDeployment(processName).futureValue shouldBe None
+  }
+
+  test("wait until other schedule finishes, before deploying next schedule") {
+    val timeToTrigger = startTime.plus(2, ChronoUnit.HOURS)
+
+    var currentTime = startTime
+
+    val f = new Fixture
+    def service = f.periodicProcessService(currentTime)
+
+
+    service.schedule(ComplexPeriodicProperty(Map(
+      "schedule1" -> CronPeriodicProperty("0 5 * * * ?"),
+      "schedule2" -> CronPeriodicProperty("0 5 * * * ?"))),
+      ProcessVersion.empty.copy(processName = processName), "{}").futureValue
+
+    currentTime = timeToTrigger
+
+    val toDeploy = service.findToBeDeployed.futureValue
+    toDeploy should have length 2
+
+    service.deploy(toDeploy.head)
+    f.delegateProcessManagerStub.setStateStatus(RunningStateStatus("running"))
+
+    val toDeployAfterDeploy = service.findToBeDeployed.futureValue
+    toDeployAfterDeploy should have length 0
+
+    f.delegateProcessManagerStub.setStateStatus(FinishedStateStatus("finished"))
+    service.handleFinished.futureValue
+
+    val toDeployAfterFinish = service.findToBeDeployed.futureValue
+    toDeployAfterFinish should have length 1
+    toDeployAfterFinish.head.scheduleName shouldBe Some("schedule2")
+  }
+
 }

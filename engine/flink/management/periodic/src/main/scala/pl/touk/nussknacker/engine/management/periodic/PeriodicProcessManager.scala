@@ -62,7 +62,10 @@ class PeriodicProcessManager(val delegate: ProcessManager,
                              toClose: () => Unit)
                             (implicit val ec: ExecutionContext) extends ProcessManager with LazyLogging {
 
-  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
+  override def deploy(processVersion: ProcessVersion,
+                      deploymentData: DeploymentData,
+                      processDeploymentData: ProcessDeploymentData,
+                      savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     (processDeploymentData, periodicPropertyExtractor(processDeploymentData)) match {
       case (GraphProcess(processJson), Right(periodicProperty)) =>
         logger.info(s"About to (re)schedule ${processVersion.processName} in version ${processVersion.versionId}")
@@ -110,7 +113,7 @@ class PeriodicProcessManager(val delegate: ProcessManager,
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
     def handleFailed(original: Option[ProcessState]): Future[Option[ProcessState]] = {
-      service.getScheduledRunDetails(name).map {
+      service.getNextScheduledDeployment(name).map {
         // this method returns only active schedules, so 'None' means this process has been already canceled
         case None => original.map(_.copy(status = SimpleStateStatus.Canceled))
         case _ => original
@@ -118,7 +121,7 @@ class PeriodicProcessManager(val delegate: ProcessManager,
     }
 
     def handleScheduled(original: Option[ProcessState]): Future[Option[ProcessState]] = {
-      service.getScheduledRunDetails(name).map { maybeProcessDeployment =>
+      service.getNextScheduledDeployment(name).map { maybeProcessDeployment =>
         maybeProcessDeployment.map { processDeployment =>
           processDeployment.state.status match {
             case PeriodicProcessDeploymentStatus.Scheduled => Some(ProcessState(

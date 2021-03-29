@@ -1,16 +1,17 @@
 package pl.touk.nussknacker.engine.management.periodic.db
 
 import cats.{Id, Monad}
-
-import java.time.LocalDateTime
 import io.circe.syntax.EncoderOps
-import pl.touk.nussknacker.engine.management.periodic.{model, _}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.management.periodic
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository.createPeriodicProcessDeployment
-import pl.touk.nussknacker.engine.management.periodic.model.{DeploymentWithJarData, PeriodicProcess, PeriodicProcessDeployment, PeriodicProcessDeploymentId, PeriodicProcessDeploymentStatus, PeriodicProcessId}
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
+import pl.touk.nussknacker.engine.management.periodic.model._
+import pl.touk.nussknacker.engine.management.periodic.{model, _}
 
+import java.time.chrono.ChronoLocalDateTime
+import java.time.{LocalDateTime, ZoneId}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
@@ -21,6 +22,8 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
   var processEntities: mutable.ListBuffer[PeriodicProcessEntity] = ListBuffer.empty
   var deploymentEntities: mutable.ListBuffer[PeriodicProcessDeploymentEntity] = ListBuffer.empty
 
+  private implicit val localDateOrdering: Ordering[LocalDateTime] = Ordering.by(identity[ChronoLocalDateTime[_]])
+
   override type Action[T] = Id[T]
 
   override implicit def monad: Monad[Id] = cats.catsInstancesForId
@@ -28,6 +31,7 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
   override def run[T](action: Id[T]): Future[T] = Future.successful(action)
 
   def addActiveProcess(processName: ProcessName, deploymentStatus: PeriodicProcessDeploymentStatus): Unit = {
+
     val id = PeriodicProcessId(Random.nextLong())
     processEntities += PeriodicProcessEntity(
       id = id,
@@ -36,7 +40,7 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
       processJson = "{}",
       modelConfig = "",
       jarFileName = "",
-      periodicProperty = (CronPeriodicProperty("0 0 * * * ?"): PeriodicProperty).asJson.noSpaces,
+      periodicProperty = CronPeriodicProperty("0 0 * * * ?").asInstanceOf[periodic.BasePeriodicProperty].asJson.noSpaces,
       active = true,
       createdAt = LocalDateTime.now()
     )
@@ -45,6 +49,7 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
       periodicProcessId = id,
       createdAt = LocalDateTime.now(),
       runAt = LocalDateTime.now(),
+      scheduleName = None,
       deployedAt = None,
       completedAt = None,
       status = deploymentStatus
@@ -59,7 +64,7 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
         processEntities.update(index, process.copy(active = false))
       }
 
-  override def create(deploymentWithJarData: DeploymentWithJarData, periodicProperty: PeriodicProperty, runAt: LocalDateTime): PeriodicProcessDeployment = {
+  override def create(deploymentWithJarData: DeploymentWithJarData, periodicProperty: BasePeriodicProperty): PeriodicProcess = {
     val id = PeriodicProcessId(Random.nextLong())
     val periodicProcess = PeriodicProcessEntity(
       id = id,
@@ -73,24 +78,16 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
       createdAt = LocalDateTime.now()
     )
     processEntities += periodicProcess
-    val deploymentEntity = PeriodicProcessDeploymentEntity(
-      id = PeriodicProcessDeploymentId(-1),
-      periodicProcessId = id,
-      createdAt = LocalDateTime.now(),
-      runAt = runAt,
-      deployedAt = None,
-      completedAt = None,
-      status = PeriodicProcessDeploymentStatus.Scheduled
-    )
-    deploymentEntities += deploymentEntity
-    createPeriodicProcessDeployment(periodicProcess ,deploymentEntity)
+    PeriodicProcessesRepository.createPeriodicProcess(periodicProcess)
   }
 
-  override def getScheduledRunDetails(processName: ProcessName): Option[PeriodicProcessDeployment] =
-    for {
-      process <- processEntities.find(activeProcess(processName))
-      deployment <- deploymentEntities.find(_.periodicProcessId == process.id)
-    } yield createPeriodicProcessDeployment(process, deployment)
+  override def getNextScheduledRunForSchedule(processName: ProcessName): List[PeriodicProcessDeployment] =
+    (for {
+      process <- processEntities.filter(activeProcess(processName))
+      deployment <- deploymentEntities
+        .filter(_.periodicProcessId == process.id)
+        .groupBy(_.scheduleName).values.map(_.maxBy(_.runAt.atZone(ZoneId.systemDefault()).toInstant.toEpochMilli))
+    } yield createPeriodicProcessDeployment(process, deployment)).toList
 
   override def findToBeDeployed: Seq[PeriodicProcessDeployment]= ???
 
@@ -123,12 +120,13 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
     update(id)(_.copy(status = PeriodicProcessDeploymentStatus.Failed, completedAt = Some(LocalDateTime.now())))
   }
 
-  override def schedule(id: PeriodicProcessId, runAt: LocalDateTime): PeriodicProcessDeployment = {
+  override def schedule(id: PeriodicProcessId, scheduleName: Option[String], runAt: LocalDateTime): PeriodicProcessDeployment = {
     val deploymentEntity = PeriodicProcessDeploymentEntity(
       id = PeriodicProcessDeploymentId(Random.nextLong()),
       periodicProcessId = id,
       createdAt = LocalDateTime.now(),
       runAt = runAt,
+      scheduleName = scheduleName,
       deployedAt = None,
       completedAt = None,
       status = PeriodicProcessDeploymentStatus.Scheduled

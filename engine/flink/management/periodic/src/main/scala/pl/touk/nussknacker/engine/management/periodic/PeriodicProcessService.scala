@@ -1,15 +1,17 @@
 package pl.touk.nussknacker.engine.management.periodic
 
+import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository
-import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeployment, PeriodicProcessDeploymentStatus}
-import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.{Deployed, Failed}
+import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.Deployed
+import pl.touk.nussknacker.engine.management.periodic.model.{DeploymentWithJarData, PeriodicProcessDeployment}
 import pl.touk.nussknacker.engine.management.periodic.service._
 
-import java.time.Clock
+import java.time.chrono.ChronoLocalDateTime
+import java.time.{Clock, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 
 class PeriodicProcessService(delegateProcessManager: ProcessManager,
@@ -34,26 +36,59 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
     def emptyCallback: RepositoryAction[Callback] = result.map(_ => () => Future.successful(()))
   }
 
-  def schedule(periodicProperty: PeriodicProperty,
+  def schedule(schedule: BasePeriodicProperty,
                processVersion: ProcessVersion,
                processJson: String): Future[Unit] = {
-    periodicProperty.nextRunAt(clock) match {
-      case Right(Some(runAt)) =>
-        logger.info("Scheduling periodic process: {} on {}", processVersion, runAt)
+    findInitialScheduleDates(schedule) match {
+      case Right(scheduleDates) =>
+        logger.info("Scheduling periodic process: {} on {}", processVersion, scheduleDates)
         jarManager.prepareDeploymentWithJar(processVersion, processJson).flatMap { deploymentWithJarData =>
-          scheduledProcessesRepository.create(deploymentWithJarData, periodicProperty, runAt).flatMap { data =>
-            handleEvent(ScheduledEvent(data, firstSchedule = true))
-          }.run
+          initialSchedule(schedule, scheduleDates, deploymentWithJarData)
         }
-      case Right(None) =>
-        Future.failed[Unit](new PeriodicProcessException(s"No future date determined by $periodicProperty"))
       case Left(error) =>
-        Future.failed[Unit](new PeriodicProcessException(error))
+        Future.failed(new PeriodicProcessException(s"Failed to parse periodic property: $error"))
     }
   }
 
+  private def findInitialScheduleDates(schedule: BasePeriodicProperty) = {
+    schedule match {
+      case ComplexPeriodicProperty(schedules) => schedules.map { case (k, pp) =>
+        pp.nextRunAt(clock).map(v => Some(k) -> v)
+      }.toList.sequence
+      case e: PeriodicProperty => e.nextRunAt(clock).right.map(t => List((None, t)))
+    }
+  }
+
+  private def initialSchedule(scheduleMap: BasePeriodicProperty,
+                              scheduleDates: List[(Option[String], Option[LocalDateTime])],
+                              deploymentWithJarData: DeploymentWithJarData): Future[Unit] = {
+    scheduledProcessesRepository.create(deploymentWithJarData, scheduleMap).flatMap { process =>
+      scheduleDates.collect {
+        case (name, Some(date)) =>
+          scheduledProcessesRepository.schedule(process.id, name, date).flatMap { data =>
+            handleEvent(ScheduledEvent(data, firstSchedule = true))
+          }
+        case (name, None) =>
+          logger.warn(s"Schedule $name does not have date to schedule")
+          monad.pure(())
+      }.sequence
+    }.run.map(_ => ())
+  }
+
   def findToBeDeployed: Future[Seq[PeriodicProcessDeployment]] = {
-    scheduledProcessesRepository.findToBeDeployed.run
+    scheduledProcessesRepository.findToBeDeployed.run.flatMap { toDeployList =>
+      Future.sequence(toDeployList.map(checkIfNotRunning)).map(_.flatten)
+    }
+  }
+
+  //Currently we don't allow simultaneous runs of one scenario - only sequential, so if other schedule kicks in, it'll have to wait
+  private def checkIfNotRunning(toDeploy: PeriodicProcessDeployment): Future[Option[PeriodicProcessDeployment]] = {
+    delegateProcessManager.findJobStatus(toDeploy.periodicProcess.processVersion.processName).map {
+      case Some(state) if state.isDeployed =>
+        logger.debug(s"Deferring run of ${toDeploy.periodicProcess} with name ${toDeploy.scheduleName} as process is currently running")
+        None
+      case _ => Some(toDeploy)
+    }
   }
 
   def handleFinished: Future[Unit] = {
@@ -81,8 +116,8 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
     }
     processState match {
       case Some(js) if js.status.isFailed => markFailedAction(deployedProcess, processState).needsReschedule(value = false)
-      case Some(js) if js.status.isFinished => scheduledProcessesRepository.markFinished(deployedProcess.id).needsReschedule(value = true)
-      case None if deployedProcess.state.status == Deployed => scheduledProcessesRepository.markFinished(deployedProcess.id).needsReschedule(value = true)
+      case Some(js) if js.status.isFinished => markFinished(deployedProcess, processState).needsReschedule(value = true)
+      case None if deployedProcess.state.status == Deployed => markFinished(deployedProcess, processState).needsReschedule(value = true)
       case _ => scheduledProcessesRepository.monad.pure(()).needsReschedule(value = false)
     }
   }
@@ -92,13 +127,10 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
     logger.info(s"Rescheduling process $deployment")
     val process = deployment.periodicProcess
     for {
-      _ <- scheduledProcessesRepository.markFinished(deployment.id)
-      currentState <- scheduledProcessesRepository.findProcessData(deployment.id)
-      _ <- handleEvent(FinishedEvent(currentState, state))
-      callback <- process.periodicProperty.nextRunAt(clock) match {
+      callback <- deployment.nextRunAt(clock) match {
         case Right(Some(futureDate)) =>
           logger.info(s"Rescheduling process $deployment to $futureDate")
-          scheduledProcessesRepository.schedule(process.id, futureDate).flatMap { data =>
+          scheduledProcessesRepository.schedule(process.id, deployment.scheduleName, futureDate).flatMap { data =>
             handleEvent(ScheduledEvent(data, firstSchedule = false))
           }.emptyCallback
         case Right(None) =>
@@ -113,6 +145,14 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
     } yield callback
   }
 
+  private def markFinished(deployment: PeriodicProcessDeployment, state: Option[ProcessState]): RepositoryAction[Unit] = {
+    logger.info(s"Marking process $deployment as finished")
+    for {
+      _ <- scheduledProcessesRepository.markFinished(deployment.id)
+      currentState <- scheduledProcessesRepository.findProcessData(deployment.id)
+    } yield handleEvent(FinishedEvent(currentState, state))
+  }
+
   private def markFailedAction(deployment: PeriodicProcessDeployment, state: Option[ProcessState]): RepositoryAction[Unit] = {
     logger.info(s"Marking process $deployment as failed")
     for {
@@ -123,7 +163,7 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
 
   def deactivate(processName: ProcessName): Future[Unit] = for {
     status <- delegateProcessManager.findJobStatus(processName)
-    maybePeriodicDeployment <- getScheduledRunDetails(processName)
+    maybePeriodicDeployment <- getNextScheduledDeployment(processName)
   } yield maybePeriodicDeployment match {
     case Some(periodicDeployment) => handleFinishedAction(periodicDeployment, status)
       .flatMap(_ => deactivateAction(processName))
@@ -144,8 +184,11 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
     } yield () => Future.sequence(processData.map(_.deploymentData.jarFileName).map(jarManager.deleteJar)).map(_ => ())
   }
 
-  def getScheduledRunDetails(processName: ProcessName): Future[Option[PeriodicProcessDeployment]] = {
-    scheduledProcessesRepository.getScheduledRunDetails(processName).run
+  def getNextScheduledDeployment(processName: ProcessName): Future[Option[PeriodicProcessDeployment]] = {
+    implicit val localDateOrdering: Ordering[LocalDateTime] = Ordering.by(identity[ChronoLocalDateTime[_]])
+    //TODO: so far we return only one
+    scheduledProcessesRepository.getNextScheduledRunForSchedule(processName)
+      .map(_.sortBy(_.runAt).headOption).run
   }
 
   def deploy(deployment: PeriodicProcessDeployment): Future[Unit] = {

@@ -11,11 +11,17 @@ import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
 
 import scala.util.Try
 
+object BasePeriodicProperty {
+  implicit val configuration: Configuration = Configuration.default.withDefaults.withDiscriminator("type")
+}
+
+@ConfiguredJsonCodec sealed trait BasePeriodicProperty
+
 object PeriodicProperty {
   implicit val configuration: Configuration = Configuration.default.withDefaults
 }
 
-@ConfiguredJsonCodec sealed trait PeriodicProperty {
+@ConfiguredJsonCodec sealed trait PeriodicProperty extends BasePeriodicProperty {
 
   /**
     * If Left is returned it means periodic property is invalid, e.g. it cannot be parsed.
@@ -24,6 +30,9 @@ object PeriodicProperty {
     */
   def nextRunAt(clock: Clock): Either[String, Option[LocalDateTime]]
 }
+
+@JsonCodec case class ComplexPeriodicProperty(schedules: Map[String, PeriodicProperty]) extends BasePeriodicProperty
+
 
 @JsonCodec case class CronPeriodicProperty(labelOrCronExpr: String) extends PeriodicProperty {
   import pl.touk.nussknacker.engine.management.periodic.CronPeriodicProperty._

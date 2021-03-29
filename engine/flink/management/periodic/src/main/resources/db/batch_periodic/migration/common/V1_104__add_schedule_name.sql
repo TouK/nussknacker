@@ -1,0 +1,1 @@
+ALTER TABLE "periodic_process_deployments" ADD COLUMN "schedule_name" VARCHAR(512);
