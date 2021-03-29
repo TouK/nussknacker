@@ -1,5 +1,6 @@
 import cn from "classnames"
-import React from "react"
+import React, {ForwardedRef, forwardRef} from "react"
+import ReactAce from "react-ace/lib/ace"
 import {UnknownFunction} from "../../../../../types/common"
 import ExpressionSuggest from "./ExpressionSuggest"
 import {Editor} from "./Editor"
@@ -20,7 +21,7 @@ export type RawEditorProps = {
   validationLabelInfo?: string,
 }
 
-const RawEditor: Editor<Partial<RawEditorProps>> = (props) => {
+const RawEditor = forwardRef(function RawEditor(props:RawEditorProps, forwardedRef: ForwardedRef<ReactAce>) {
 
   const {
     expressionObj, validators, isMarked, showValidation, readOnly,
@@ -39,6 +40,7 @@ const RawEditor: Editor<Partial<RawEditorProps>> = (props) => {
           language: expressionObj.language,
           onValueChange: onValueChange,
           readOnly: readOnly,
+          ref: forwardedRef,
         }}
         variableTypes={variableTypes}
         validators={validators}
@@ -48,6 +50,6 @@ const RawEditor: Editor<Partial<RawEditorProps>> = (props) => {
       />
     </div>
   )
-}
+})
 
 export default RawEditor

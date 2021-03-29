@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
-import React from "react"
-import {IAceEditorProps} from "react-ace/lib/ace"
+import React, {ForwardedRef, forwardRef} from "react"
+import ReactAce, {IAceEditorProps} from "react-ace/lib/ace"
 import {IAceOptions, IEditorProps} from "react-ace/src/types"
 import AceEditor from "./ace"
 
@@ -42,18 +42,20 @@ const DEFAULT_COMMANDS = [
   },
 ]
 
-export default function AceWrapper({
+export default forwardRef(function AceWrapper({
   inputProps,
   customAceEditorCompleter,
   showLineNumbers,
   wrapEnabled = true,
   commands = [],
   ...props
-}: AceWrapperProps): JSX.Element {
+}: AceWrapperProps, ref: ForwardedRef<ReactAce>): JSX.Element {
   const {language, readOnly, rows = 1} = inputProps
+
   return (
     <AceEditor
       {...props}
+      ref={ref}
       mode={language}
       width={"100%"}
       minLines={rows}
@@ -72,4 +74,4 @@ export default function AceWrapper({
       commands={[...DEFAULT_COMMANDS, ...commands]}
     />
   )
-}
+})

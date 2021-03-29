@@ -1,9 +1,10 @@
 /* eslint-disable i18next/no-literal-string */
-import React, {useMemo} from "react"
+import React, {ForwardedRef, forwardRef, useMemo} from "react"
+import ReactAce from "react-ace/lib/ace"
 import {useUserSettings} from "../../../../../common/userSettings"
 import AceWrapper, {AceWrapperProps} from "./AceWrapper"
 
-export default function AceWithSettings(props: Omit<AceWrapperProps, "noWrap" | "showLines">): JSX.Element {
+export default forwardRef(function AceWithSettings(props: Omit<AceWrapperProps, "noWrap" | "showLines">, ref: ForwardedRef<ReactAce>): JSX.Element {
   const [userSettings, toggleSettings] = useUserSettings()
 
   const [showLinesName, noWrapName] = useMemo(
@@ -29,9 +30,10 @@ export default function AceWithSettings(props: Omit<AceWrapperProps, "noWrap" | 
   return (
     <AceWrapper
       {...props}
+      ref={ref}
       commands={commands}
       showLineNumbers={userSettings[showLinesName]}
       wrapEnabled={!userSettings[noWrapName]}
     />
   )
-}
+})

@@ -1,3 +1,32 @@
+function quotedStrings(quotes, next = "pop", token = "string") {
+  return quotes.map(q => ({
+    token: `${token}.start`,
+    regex: `${q}`,
+    push: [
+      {include: "spel"},
+      {
+        token: `${token}.escaped`,
+        regex: `\\\\${q}`,
+      },
+      {
+        token: `${token}.end`,
+        regex: `${q}`,
+        next,
+      },
+      {defaultToken: token},
+    ],
+  }))
+}
+
+const popState = (n = 1) => (state, stack) => {
+  let currentState = state
+  for (let i = n; i > 0; i--) {
+    stack.shift()
+    currentState = stack.shift() || "start"
+  }
+  return currentState
+}
+
 // from https://github.com/thlorenz/brace/blob/master/mode/sql.js
 ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib/oop","ace/mode/text_highlight_rules","ace/mode/spel_highlight_rules"], function(acequire, exports, module) {
   "use strict";
@@ -36,9 +65,47 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
       "storage.type": dataTypes
     }, "identifier", true);
 
+    const keywordRule = {
+      token : (value) => keywordMapper(value),
+      regex : "[a-zA-Z_$][a-zA-Z0-9_$]*\\b"
+    }
+
+    this.setAliases = (aliases) => {
+      keywordMapper = this.createKeywordMapper({
+        "support.function": builtinFunctions,
+        "keyword": keywords,
+        "constant.language": builtinConstants,
+        "storage.type": dataTypes,
+        "alias.used": aliases.join("|"),
+      }, "identifier", true)
+    }
+
     const reservedWords = `(${keywords}|${builtinFunctions}|${dataTypes})`
+    const fnStart = `\\s?\\w+\\(`
+    const builtInFnStart = `(${builtinFunctions})\\s*\\(`
     this.$rules = {
       "alias": [
+        {
+          // WITH xxx
+          token: ["text", "keyword", "text"],
+          regex: /(^|\s?)(WITH)(?=(\s+|$))/,
+          caseInsensitive: true,
+          push: [
+            {include: "spel"},
+            {include: "alias"},
+            {
+              token: "alias",
+              regex: `\\w+(?=(\\W+(as|is)|#{))`,
+              caseInsensitive: true,
+            },
+            ...quotedStrings([`"`, `'`], popState(1)),
+            {
+              token: "text",
+              regex: `(^|\\W)(?=(${fnStart}|${reservedWords}(\\W|$)))`,
+              next: "pop",
+            }
+          ],
+        },
         {
           // AS() | AS ()
           token: ["text", "keyword", "alias.paren.start"],
@@ -56,15 +123,16 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
         {
           // AS xxx
           token: ["text", "keyword", "text"],
-          regex: /(^|\s?)(IS|AS|WITH)(?=(\s+|$))/,
+          regex: /(^|\s?)(IS|AS)(?=(\s+|$))/,
           caseInsensitive: true,
           push: [
             {
               token: "text",
-              regex: `(^|\\W)(?=(\\w+\\(|${reservedWords}(\\W|$)))`,
+              regex: `(^|\\W)(?=(${fnStart}|${reservedWords}(\\W|$)))`,
               next: "pop",
             },
             {include: "spel"},
+            ...quotedStrings([`"`, `'`], popState(2)),
             {
               token: "alias",
               regex: /(^|\W?)\w+/,
@@ -72,52 +140,8 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
             },
           ],
         },
-        {
-          token: ["text", "alias.root", "text"],
-          regex: /(\s*)(\w+)(\.\w+)/,
-        },
       ],
-      "string": [
-        {
-          token : "string.start",
-          regex : /"/,
-          push: [
-            {include: "spel"},
-            {
-              token : "string.end",
-              regex : /"/,
-              next : "pop"
-            },
-            {defaultToken : "string"},
-          ]
-        },
-        {
-          token : "string.start",
-          regex : /'/,
-          push: [
-            {include: "spel"},
-            {
-              token : "string.end",
-              regex : /'/,
-              next : "pop"
-            },
-            {defaultToken : "string"},
-          ]
-        },
-        {
-          token : "string.start",
-          regex : /`/,
-          push: [
-            {include: "spel"},
-            {
-              token : "string.end",
-              regex : /`/,
-              next : "pop"
-            },
-            {defaultToken : "string"},
-          ]
-        },
-      ],
+      "string": quotedStrings([`"`, "'", "`"]),
       "spel": [ {
         token: "spel.start",
         regex: /#\{/,
@@ -151,7 +175,7 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
         {
           // TO_CHAR() | custom()
           token: "support.function.start",
-          regex: `((${builtinFunctions})\\s*\\(|\\W?\\w+\\()`,
+          regex: `(${builtInFnStart}|${fnStart})`,
           push: [
             {
               token: "support.function.end",
@@ -194,10 +218,7 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
       }, {
         token : "constant.numeric", // float
         regex : "[+-]?\\d+(?:(?:\\.\\d*)?(?:[eE][+-]?\\d+)?)?\\b"
-      }, {
-        token : keywordMapper,
-        regex : "[a-zA-Z_$][a-zA-Z0-9_$]*\\b"
-      }, {
+      }, keywordRule, {
         token : "keyword.operator",
         regex : "\\+|\\-|\\/|\\/\\/|%|<@>|@>|<@|&|\\^|~|<|>|<=|=>|==|!=|<>|="
       }, {

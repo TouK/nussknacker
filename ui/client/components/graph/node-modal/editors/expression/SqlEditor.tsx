@@ -1,13 +1,54 @@
 import i18next from "i18next"
-import React, {useCallback, useEffect, useMemo} from "react"
+import {flatMap, isEqual, uniq} from "lodash"
+import React, {useCallback, useEffect, useMemo, useRef, useState} from "react"
+import ReactAce from "react-ace/lib/ace"
 import {SimpleEditor} from "./Editor"
 import {Formatter, FormatterType, typeFormatters} from "./Formatter"
-import {getQuotedStringPattern, QuotationMark} from "./SpelQuotesUtils"
 import RawEditor, {RawEditorProps} from "./RawEditor"
+import {getQuotedStringPattern, QuotationMark} from "./SpelQuotesUtils"
 import {ExpressionLang, ExpressionObj} from "./types"
 
 interface Props extends RawEditorProps {
   formatter: Formatter,
+}
+
+function useAliasUsageHighlight(token = "alias") {
+  const [keywords, setKeywords] = useState<string[]>([])
+  const ref = useRef<ReactAce>()
+  const editor = ref.current?.editor
+  const session = useMemo(() => editor?.getSession(), [editor])
+
+  const getValuesForToken = useCallback(
+    (line: string, index: number) => session?.getTokens(index)
+      .filter(({type}) => type === token)
+      .map(({value}) => value.trim().toLowerCase()),
+    [session, token],
+  )
+
+  useEffect(() => {
+    const callback = () => {
+      const allLines = session?.bgTokenizer?.lines
+      const next = uniq(flatMap(allLines, getValuesForToken))
+      setKeywords(current => isEqual(next, current) ? current : next)
+    }
+    session?.on(`tokenizerUpdate`, callback)
+    return () => {
+      session?.off(`tokenizerUpdate`, callback)
+    }
+  }, [session, getValuesForToken])
+
+  const onKeywordsChanged = useCallback(keywords => {
+    const tokenizer = session?.bgTokenizer
+    tokenizer?.stop()
+    session?.getMode()?.$highlightRules.setAliases?.(keywords)
+    tokenizer?.start(0)
+  }, [session])
+
+  useEffect(() => {
+    onKeywordsChanged(keywords)
+  }, [onKeywordsChanged, keywords])
+
+  return ref
 }
 
 const SqlEditor: SimpleEditor<Props> = (props: Props) => {
@@ -35,9 +76,12 @@ const SqlEditor: SimpleEditor<Props> = (props: Props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const ref = useAliasUsageHighlight()
+
   return (
     <RawEditor
       {...passProps}
+      ref={ref}
       onValueChange={valueChange}
       expressionObj={value}
       className={className}

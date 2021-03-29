@@ -160,6 +160,7 @@ class ExpressionSuggest extends React.Component {
           ])}
           >
             <AceEditor
+              ref={inputProps.ref}
               value={value}
               onChange={this.onChange}
               onFocus={this.setEditorFocus(true)}
