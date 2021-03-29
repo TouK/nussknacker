@@ -6,8 +6,8 @@ import java.lang
 object KafkaProducerHelper {
 
   def createRecord(topic: String, key: Array[Byte], value: Array[Byte], timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
-    //Kafka timestamp has to be >= 0, while Flink can use Long.MinValue
-    val timestampToSerialize: lang.Long = Option(timestamp).map(Math.max(0L, _): lang.Long).orNull
+    //Flink can use Long.MinValue (see StreamRecord.getTimestamp), we set it to null to let Kafka producer decide (probably set to currentTimeMillis)
+    val timestampToSerialize: lang.Long = Option(timestamp).filter(_ >= 0).orNull
     new ProducerRecord[Array[Byte], Array[Byte]](topic, null,
       timestampToSerialize,
       key,
