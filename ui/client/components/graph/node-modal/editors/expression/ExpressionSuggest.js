@@ -27,10 +27,10 @@ const identifierRegexpsIncludingDot = [/[#a-zA-Z0-9-_.]/]
 function isSqlTokenAllowed(iterator, modeId) {
   if (modeId === "ace/mode/sql") {
     let token = iterator.getCurrentToken()
-    while (token && (token.type !== "spel.open" && token.type !== "spel.close")) {
+    while (token && (token.type !== "spel.start" && token.type !== "spel.end")) {
       token = iterator.stepBackward()
     }
-    return token?.type === "spel.open"
+    return token?.type === "spel.start"
   }
   return true
 }
@@ -160,6 +160,7 @@ class ExpressionSuggest extends React.Component {
           ])}
           >
             <AceEditor
+              ref={inputProps.ref}
               value={value}
               onChange={this.onChange}
               onFocus={this.setEditorFocus(true)}
