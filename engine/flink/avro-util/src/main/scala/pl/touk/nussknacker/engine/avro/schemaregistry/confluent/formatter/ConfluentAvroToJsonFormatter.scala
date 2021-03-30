@@ -32,22 +32,30 @@ private[confluent] class ConfluentAvroToJsonFormatter(schemaRegistryClientFactor
     }
     printId(record.value(), printStream)
     if (formatKey) {
-      formatter.writeTo(record.key(), printStream)
-      printStream.print(Separator)
+      if (record.key().isEmpty) {
+        printStream.print(Separator)
+      } else {
+        formatter.writeTo(record.key(), printStream)
+        printStream.print(Separator)
+      }
     }
     formatter.writeTo(record.value(), printStream)
     bos.toByteArray
   }
 
   private def printId(bytes: Array[Byte], printStream: PrintStream): Unit = {
-    val id = ConfluentUtils.readId(bytes)
-    printStream.print(id)
-    printStream.print(Separator)
+    if (bytes.isEmpty) {
+      printStream.print(Separator)
+    } else {
+      val id = ConfluentUtils.readId(bytes)
+      printStream.print(id)
+      printStream.print(Separator)
+    }
   }
 
   override def parseRecord(topic: String, formatted: Array[Byte]): ConsumerRecord[Array[Byte], Array[Byte]] = {
     val str = new String(formatted, StandardCharsets.UTF_8)
-    val (keySchema, valueSchema, remainingString) = if (formatKey) {
+    val (keySchema, valueSchema, contentString) = if (formatKey) {
       val (ks, valueSchemaIdAndRest) = readSchemaId(str)
       val (vs, rs) = readSchemaId(valueSchemaIdAndRest)
       (ks, vs, rs)
@@ -55,18 +63,23 @@ private[confluent] class ConfluentAvroToJsonFormatter(schemaRegistryClientFactor
       val (vs, rs) = readSchemaId(str)
       (null, vs, rs)
     }
-    reader(topic).readMessage(remainingString, keySchema, valueSchema)
+    reader(topic).readMessage(contentString, keySchema, valueSchema)
   }
 
   private def readSchemaId(str: String): (Schema, String) = {
     val separatorIndx = str.indexOf(Separator)
-    if (separatorIndx < 1)
+    if (separatorIndx < 0)
       throw new IllegalStateException(s"Cannot find schema id separtor: $Separator in text: $str")
-    val id = Integer.parseInt(str.substring(0, separatorIndx))
+    val idStr = str.substring(0, separatorIndx)
     val remaining = if (separatorIndx + 1 > str.length) "" else str.substring(separatorIndx + 1)
-    val parsedSchema = schemaRegistryClient.client.getSchemaById(id)
-    val schema = ConfluentUtils.extractSchema(parsedSchema)
-    (schema, remaining)
+    if (idStr.length > 0) {
+      val id = Integer.parseInt(idStr)
+      val parsedSchema = schemaRegistryClient.client.getSchemaById(id)
+      val schema = ConfluentUtils.extractSchema(parsedSchema)
+      (schema, remaining)
+    } else {
+      (null, remaining)
+    }
   }
 
   override def testDataSplit: TestDataSplit = TestParsingUtils.newLineSplit

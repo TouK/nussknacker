@@ -56,7 +56,7 @@ class KafkaGenericNodeSourceFactory[T: ClassTag](deserializationSchemaFactory: K
     }.get
 
     contextInitializerOpt
-      .map(_.validationContext(context, name))
+      .map(_.validationContext(context, name, Typed[T]))
       .getOrElse(context.withVariable(OutputVar.customNode(name), Typed[T]).getOrElse(context))
   }
 

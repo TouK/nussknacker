@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValu
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
 import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
+import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkSourceFactory, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
@@ -19,7 +20,7 @@ object GenericSourceWithCustomVariablesSample extends FlinkSourceFactory[String]
 
   private class CustomFlinkContextInitializer extends BasicFlinkContextInitializer[String] {
 
-    override def validationContext(context: ValidationContext, name: String)(implicit nodeId: NodeId): ValidationContext = {
+    override def validationContext(context: ValidationContext, name: String, result: typing.TypingResult)(implicit nodeId: NodeId): ValidationContext = {
       //Append variable "input"
       val validatedContextWithInput = context.withVariable(OutputVar.customNode(name), Typed[String])
 
@@ -74,7 +75,7 @@ object GenericSourceWithCustomVariablesSample extends FlinkSourceFactory[String]
       case OutputVariableNameValue(name) => name
     }.get
 
-    customContextInitializer.validationContext(context, name)
+    customContextInitializer.validationContext(context, name, Typed[String])
   }
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source[String] = {

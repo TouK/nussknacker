@@ -25,7 +25,8 @@ trait KafkaAvroSourceSpecMixin {
   object KafkaAvroSourceMockSchemaRegistry {
 
     val RecordTopic: String = "testAvroRecordTopic1"
-    val IntTopic: String = "testAvroIntTopic1"
+    val IntTopicWithKey: String = "testAvroIntTopic1WithKey"
+    val IntTopicNoKey: String = "testAvroIntTopic1NoKey"
     val InvalidDefaultsTopic: String = "testAvroInvalidDefaultsTopic1"
 
     val IntSchema: Schema = AvroUtils.parseSchema(
@@ -54,8 +55,9 @@ trait KafkaAvroSourceSpecMixin {
     val schemaRegistryMockClient: CSchemaRegistryClient = new MockConfluentSchemaRegistryClientBuilder()
       .register(RecordTopic, FullNameV1.schema, 1, isKey = false)
       .register(RecordTopic, FullNameV2.schema, 2, isKey = false)
-      .register(IntTopic, IntSchema, 1, isKey = false)
-      .register(IntTopic, IntSchema, 1, isKey = true)
+      .register(IntTopicNoKey, IntSchema, 1, isKey = false)
+      .register(IntTopicWithKey, IntSchema, 1, isKey = false)
+      .register(IntTopicWithKey, IntSchema, 1, isKey = true)
       .register(InvalidDefaultsTopic, InvalidDefaultsSchema, 1, isKey = false)
       .build
 

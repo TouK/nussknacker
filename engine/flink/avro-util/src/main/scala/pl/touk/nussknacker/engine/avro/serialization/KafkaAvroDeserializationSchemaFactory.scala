@@ -1,5 +1,8 @@
 package pl.touk.nussknacker.engine.avro.serialization
 
+import java.nio.charset.StandardCharsets
+
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -7,6 +10,7 @@ import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
+import scala.annotation.nowarn
 import scala.reflect._
 
 /**
@@ -17,14 +21,31 @@ trait KafkaAvroDeserializationSchemaFactory extends Serializable {
 
   /**
    * Prepare Flink's KafkaDeserializationSchema based on provided information.
-   * @param schemaDataOpt Schema to which will be used as a reader schema. In case of None, will be used the same schema as writer schema.
-   * @param kafkaConfig Configuration of integration with Kafka
+   * @param valueSchemaDataOpt Schema which will be used as a value reader schema. In case of None, writer schema will be used.
+   * @param kafkaConfig Configuration of integration with Kafka.
+   * @param keySchemaDataOpt Schema which will be used as a key reader schema.
    * @tparam T Type that should be produced by deserialization schema. It is important parameter, because factory can
    *           use other deserialization strategy base on it or provide different TypeInformation
    * @return KafkaDeserializationSchema
    */
-  def create[T: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): KafkaDeserializationSchema[T]
+  def create[T: ClassTag](valueSchemaDataOpt: Option[RuntimeSchemaData],
+                          kafkaConfig: KafkaConfig,
+                          keySchemaDataOpt: Option[RuntimeSchemaData] = None,
+                          valueClassTagOpt: Option[ClassTag[_]] = None,
+                          keyClassTagOpt: Option[ClassTag[_]] = None
+                         ): KafkaDeserializationSchema[T]
 
+}
+
+object KafkaAvroKeyValueDeserializationSchemaFactory {
+
+  val defaultKeyAsStringDeserializer: Deserializer[String] = new Deserializer[String] {
+    override def deserialize(topic: String, data: Array[Byte]): String = {
+      Option(data).map(bytes => new String(bytes, StandardCharsets.UTF_8)).orNull
+    }
+  }
+
+  val defaultKeyAsStringTypeInformation: TypeInformation[String] = TypeInformation.of(classOf[String])
 }
 
 /**
@@ -38,10 +59,15 @@ abstract class KafkaAvroValueDeserializationSchemaFactory
 
   protected def createValueTypeInfo[T: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): TypeInformation[T]
 
-  override def create[T: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): KafkaDeserializationSchema[T] = {
+  override def create[T: ClassTag](valueSchemaDataOpt: Option[RuntimeSchemaData],
+                                   kafkaConfig: KafkaConfig,
+                                   keySchemaDataOpt: Option[RuntimeSchemaData] = None,
+                                   valueClassTagOpt: Option[ClassTag[_]] = None,
+                                   keyClassTagOpt: Option[ClassTag[_]] = None
+                                  ): KafkaDeserializationSchema[T] = {
     new KafkaDeserializationSchema[T] {
       @transient
-      private lazy val deserializer = createValueDeserializer[T](schemaDataOpt, kafkaConfig)
+      private lazy val deserializer = createValueDeserializer[T](valueSchemaDataOpt, kafkaConfig)
 
       override def deserialize(consumerRecord: ConsumerRecord[Array[Byte], Array[Byte]]): T = {
         val value = deserializer.deserialize(consumerRecord.topic(), consumerRecord.headers(), consumerRecord.value())
@@ -50,7 +76,7 @@ abstract class KafkaAvroValueDeserializationSchemaFactory
 
       override def isEndOfStream(nextElement: T): Boolean = false
 
-      override def getProducedType: TypeInformation[T] = createValueTypeInfo(schemaDataOpt, kafkaConfig)
+      override def getProducedType: TypeInformation[T] = createValueTypeInfo(valueSchemaDataOpt, kafkaConfig)
     }
   }
 
@@ -70,46 +96,61 @@ abstract class KafkaAvroKeyValueDeserializationSchemaFactory
 
   protected type O
 
-  // TODO Make this provided in params so one deserialization schema factory will work for multiple deserialization schemas
-  protected def keyClassTag: ClassTag[K]
+  protected def createKeyDeserializer(schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig, keyClassTagOpt: Option[ClassTag[_]]): Deserializer[K]
 
-  protected def valueClassTag: ClassTag[V]
+  protected def createKeyTypeInfo(schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig, keyClassTagOpt: Option[ClassTag[_]]): TypeInformation[K]
 
-  protected def objectClassTag: ClassTag[O]
+  protected def createValueDeserializer(schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig, valueClassTagOpt: Option[ClassTag[_]]): Deserializer[V]
 
-  // TODO We currently not support schema evolution for keys
-  protected def createKeyDeserializer(kafkaConfig: KafkaConfig): Deserializer[K]
+  protected def createValueTypeInfo(schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig, valueClassTagOpt: Option[ClassTag[_]]): TypeInformation[V]
 
-  protected def createKeyTypeInfo(kafkaConfig: KafkaConfig): TypeInformation[K]
-
-  protected def createValueDeserializer(schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[V]
-
-  protected def createValueTypeInfo(schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): TypeInformation[V]
-
-  protected def createObject(key: K, value: V, topic: String): O
+  protected def createObject(record: ConsumerRecord[K, V]): O
 
   protected def createObjectTypeInformation(keyTypeInformation: TypeInformation[K], valueTypeInformation: TypeInformation[V]): TypeInformation[O]
 
-  override def create[T: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): KafkaDeserializationSchema[T] = {
-    if (!classTag[T].runtimeClass.isAssignableFrom(objectClassTag.runtimeClass)) {
-      throw new IllegalArgumentException("Illegal input class: " + classTag[T].runtimeClass)
-    }
+  override def create[T: ClassTag](valueSchemaDataOpt: Option[RuntimeSchemaData],
+                                   kafkaConfig: KafkaConfig,
+                                   keySchemaDataOpt: Option[RuntimeSchemaData] = None,
+                                   valueClassTagOpt: Option[ClassTag[_]] = None,
+                                   keyClassTagOpt: Option[ClassTag[_]] = None
+                                  ): KafkaDeserializationSchema[T] = {
+
     new KafkaDeserializationSchema[T] {
       @transient
-      private lazy val keyDeserializer = createKeyDeserializer(kafkaConfig)
+      private lazy val keyDeserializer = createKeyDeserializer(keySchemaDataOpt, kafkaConfig, keyClassTagOpt)
       @transient
-      private lazy val valueDeserializer = createValueDeserializer(schemaDataOpt, kafkaConfig)
+      private lazy val valueDeserializer = createValueDeserializer(valueSchemaDataOpt, kafkaConfig, valueClassTagOpt)
 
+      @silent("deprecated")
+      @nowarn("deprecated")
       override def deserialize(consumerRecord: ConsumerRecord[Array[Byte], Array[Byte]]): T = {
         val key = keyDeserializer.deserialize(consumerRecord.topic(), consumerRecord.key())
         val value = valueDeserializer.deserialize(consumerRecord.topic(), consumerRecord.value())
-        val obj = createObject(key, value, consumerRecord.topic())
+        val record = new ConsumerRecord[K, V](
+          consumerRecord.topic(),
+          consumerRecord.partition(),
+          consumerRecord.offset(),
+          consumerRecord.timestamp(),
+          consumerRecord.timestampType(),
+          consumerRecord.checksum(),
+          consumerRecord.serializedKeySize(),
+          consumerRecord.serializedValueSize(),
+          key,
+          value,
+          consumerRecord.headers(),
+          consumerRecord.leaderEpoch()
+        )
+        val obj = createObject(record)
         obj.asInstanceOf[T]
       }
 
       override def isEndOfStream(nextElement: T): Boolean = false
 
-      override def getProducedType: TypeInformation[T] = createObjectTypeInformation(createKeyTypeInfo(kafkaConfig), createValueTypeInfo(schemaDataOpt, kafkaConfig)).asInstanceOf[TypeInformation[T]]
+      override def getProducedType: TypeInformation[T] =
+        createObjectTypeInformation(
+          createKeyTypeInfo(keySchemaDataOpt, kafkaConfig, keyClassTagOpt),
+          createValueTypeInfo(valueSchemaDataOpt, kafkaConfig, valueClassTagOpt)
+        ).asInstanceOf[TypeInformation[T]]
     }
   }
 

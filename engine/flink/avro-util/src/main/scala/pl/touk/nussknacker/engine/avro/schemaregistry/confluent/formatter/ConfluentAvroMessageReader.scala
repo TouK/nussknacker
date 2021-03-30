@@ -37,24 +37,36 @@ private[confluent] class ConfluentAvroMessageReader(schemaRegistryClient: Schema
   private val decoderFactory = DecoderFactory.get
 
   // TODO: This implementation won't handle separator escaping
-  def readMessage(str: String, keySchema: Schema, valueSchema: Schema): ConsumerRecord[Array[Byte], Array[Byte]] = {
+  def readMessage(contentStr: String, keySchema: Schema, valueSchema: Schema): ConsumerRecord[Array[Byte], Array[Byte]] = {
     try {
       if (!parseKey) {
-        val value = jsonToAvro(str, valueSchema)
+        val value = jsonToAvro(contentStr, valueSchema)
         val serializedValue = serializeImpl(valueSubject, value)
         new ConsumerRecord(topic, 0, 0L, Array[Byte](), serializedValue)
       } else {
-        val keyIndex = str.indexOf(keySeparator)
+        val keyIndex = contentStr.indexOf(keySeparator)
         if (keyIndex < 0) {
-          throw new SerializationException("No key found in line " + str)
+          throw new SerializationException("No key found in line " + contentStr)
         } else {
-          val keyString = str.substring(0, keyIndex)
-          val valueString = if (keyIndex + 1 > str.length) "" else str.substring(keyIndex + 1)
-          val key = jsonToAvro(keyString, keySchema)
-          val serializedKey = serializeImpl(keySubject, key)
-          val value = jsonToAvro(valueString, valueSchema)
-          val serializedValue = serializeImpl(valueSubject, value)
-          new ConsumerRecord(topic, 0, 0L, serializedKey, serializedValue)
+          val keyString = contentStr.substring(0, keyIndex)
+          val valueString = if (keyIndex + 1 > contentStr.length) "" else contentStr.substring(keyIndex + 1)
+          if (keySchema != null && keyString.length == 0) {
+            // key schema is provided but there is no content
+            throw new SerializationException("No key content found in line " + contentStr)
+          } else if (keySchema == null) {
+            // handle empty key when key parsing is enabled
+            val value = jsonToAvro(valueString, valueSchema)
+            val serializedValue = serializeImpl(valueSubject, value)
+            new ConsumerRecord(topic, 0, 0L, Array[Byte](), serializedValue)
+          }
+          else {
+            // default scenario when key and value is provided
+            val key = jsonToAvro(keyString, keySchema)
+            val serializedKey = serializeImpl(keySubject, key)
+            val value = jsonToAvro(valueString, valueSchema)
+            val serializedValue = serializeImpl(valueSubject, value)
+            new ConsumerRecord(topic, 0, 0L, serializedKey, serializedValue)
+          }
         }
       }
     } catch {

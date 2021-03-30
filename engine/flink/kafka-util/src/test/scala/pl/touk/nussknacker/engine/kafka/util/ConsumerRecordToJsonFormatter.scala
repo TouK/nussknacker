@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.kafka.consumerrecord
+package pl.touk.nussknacker.engine.kafka.util
 
 import java.nio.charset.{Charset, StandardCharsets}
 
@@ -66,7 +66,7 @@ class ConsumerRecordToJsonFormatter extends RecordFormatter {
           serializedValueSize.getOrElse(ConsumerRecord.NULL_SIZE),
           key.map(_.getBytes()).orNull,
           value.map(_.getBytes()).orNull,
-          ConsumerRecordUtils.toHeaders(headers),
+          ConsumerRecordUtils.toHeaders(headers.mapValues(v => v.orNull)),
           java.util.Optional.ofNullable(leaderEpoch.map(Integer.valueOf).orNull)
         )
       }

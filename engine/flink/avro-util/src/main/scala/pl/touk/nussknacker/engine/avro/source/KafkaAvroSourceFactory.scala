@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSource
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
+import pl.touk.nussknacker.engine.kafka.consumerrecord.KafkaAvroContextInitializer
 
 import scala.reflect.ClassTag
 
@@ -29,21 +30,28 @@ class KafkaAvroSourceFactory[T:ClassTag](val schemaRegistryProvider: SchemaRegis
       //we do casting here and not in case, as version can be null...
       val preparedTopic = prepareTopic(topic)
       val versionOption = parseVersionOption(version)
-      val schemaDeterminer = prepareSchemaDeterminer(preparedTopic, versionOption)
-      val validType = schemaDeterminer.determineSchemaUsedInTyping.map(schemaData => AvroSchemaTypeDefinitionExtractor.typeDefinition(schemaData.schema))
-      val finalCtxValue = finalCtx(context, dependencies, validType.getOrElse(Unknown))
-      val finalErrors = validType.swap.map(error => CustomNodeError(error.getMessage, Some(SchemaVersionParamName))).toList
+
+      // value schema
+      val valueSchemaDeterminer = prepareValueSchemaDeterminer(preparedTopic, versionOption)
+      val valueValidType = valueSchemaDeterminer.determineSchemaUsedInTyping.map(schemaData => AvroSchemaTypeDefinitionExtractor.typeDefinition(schemaData.schema))
+      // key schema, optional (default behaviour is fallback to String, see KafkaAvroContextInitializer)
+      val keySchemaDeterminer = prepareKeySchemaDeterminer(preparedTopic)
+      val keyValidType = keySchemaDeterminer.determineSchemaUsedInTyping.map(schemaData => AvroSchemaTypeDefinitionExtractor.typeDefinition(schemaData.schema))
+
+      val finalCtxValue = finalCtx(context, dependencies, keyValidType.getOrElse(Unknown), valueValidType.getOrElse(Unknown))
+      val finalErrors = valueValidType.swap.map(error => CustomNodeError(error.getMessage, Some(SchemaVersionParamName))).toList
       FinalResults(finalCtxValue, finalErrors)
     //edge case - for some reason Topic/Version is not defined
     case TransformationStep((TopicParamName, _) ::
       (SchemaVersionParamName, _) ::Nil, _) =>
-      FinalResults(finalCtx(context, dependencies, Unknown), Nil)
+      FinalResults(finalCtx(context, dependencies, Unknown, Unknown), Nil)
   }
 
   override def paramsDeterminedAfterSchema: List[Parameter] = Nil
 
-  private def finalCtx(context: ValidationContext, dependencies: List[NodeDependencyValue], result: typing.TypingResult)(implicit nodeId: NodeId): ValidationContext = {
-    context.withVariable(variableName(dependencies), result, None).getOrElse(context)
+  private def finalCtx(context: ValidationContext, dependencies: List[NodeDependencyValue], keyResult: typing.TypingResult, valueResult: typing.TypingResult)(implicit nodeId: NodeId): ValidationContext = {
+    customContextInitializer = new KafkaAvroContextInitializer(keyResult)
+    customContextInitializer.validationContext(context, variableName(dependencies), valueResult)
   }
 
   private def variableName(dependencies: List[NodeDependencyValue]) = {
@@ -55,9 +63,15 @@ class KafkaAvroSourceFactory[T:ClassTag](val schemaRegistryProvider: SchemaRegis
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkSource[T] = {
     val preparedTopic = extractPreparedTopic(params)
     val version = extractVersionOption(params)
-    createSource(preparedTopic, kafkaConfig, schemaRegistryProvider.deserializationSchemaFactory, schemaRegistryProvider.recordFormatter,
-      prepareSchemaDeterminer(preparedTopic, version), returnGenericAvroType = true)(
-      typedDependency[MetaData](dependencies), typedDependency[NodeId](dependencies))
+    createSource(
+      preparedTopic,
+      kafkaConfig,
+      schemaRegistryProvider.deserializationSchemaFactory,
+      schemaRegistryProvider.recordFormatter,
+      prepareValueSchemaDeterminer(preparedTopic, version),
+      prepareKeySchemaDeterminer(preparedTopic),
+      returnGenericAvroType = true
+    )(typedDependency[MetaData](dependencies), typedDependency[NodeId](dependencies))
   }
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]),

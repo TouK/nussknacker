@@ -5,18 +5,17 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.kafka.ConsumerRecordUtils
+import pl.touk.nussknacker.engine.kafka.util.ConsumerRecordToJsonFormatter
 
 import scala.annotation.nowarn
 
-@silent("deprecated")
-@nowarn("deprecated")
 class ConsumerRecordToJsonFormatterTest extends FunSuite with Matchers {
 
   private val formatter = new ConsumerRecordToJsonFormatter
 
   private val sampleKey = "Lorem ipsum"
   private val sampleValue = "dolor sit amet"
-  private val sampleHeaders = ConsumerRecordUtils.toHeaders(Map("first" -> Some("notempty"), "second" -> None))
+  private val sampleHeaders = ConsumerRecordUtils.toHeaders(Map("first" -> "notempty", "second" -> null))
 
   test("prepare and parse test data from ConsumerRecord with key, with headers") {
     val givenObj = new ConsumerRecord[Array[Byte], Array[Byte]](
@@ -64,6 +63,8 @@ class ConsumerRecordToJsonFormatterTest extends FunSuite with Matchers {
     checkResult(resultObj, givenObj)
   }
 
+  @silent("deprecated")
+  @nowarn("deprecated")
   private def checkResult(a: ConsumerRecord[Array[Byte], Array[Byte]], b: ConsumerRecord[Array[Byte], Array[Byte]]) = {
     a.topic() shouldEqual b.topic()
     a.partition() shouldEqual b.partition()

@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.kafka.consumerrecord
 
+import java.nio.charset.StandardCharsets
+
 import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.serialization.DeserializationSchema
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -58,13 +60,17 @@ object ConsumerRecordDeserializationSchemaFactory {
   }
 
   /**
-    * Creates ConsumerRecord with deserialized value only. Key is left intact.
+    * Creates ConsumerRecord with deserialized value only. Key is deserialized to String (null safe).
     *
     * @tparam V - type of value of deserialized ConsumerRecord
     */
-  def create[V](valueDeserializationSchema: DeserializationSchema[V]): KafkaDeserializationSchema[ConsumerRecord[Array[Byte], V]] = {
-    implicit val keyTypeInformation: TypeInformation[Array[Byte]] = TypeInformation.of(classOf[Array[Byte]])
-    create(new EspDeserializationSchema[Array[Byte]](identity), valueDeserializationSchema)
+  def create[V](valueDeserializationSchema: DeserializationSchema[V]): KafkaDeserializationSchema[ConsumerRecord[String, V]] = {
+    create(espStringDeserializationSchema, valueDeserializationSchema)
+  }
+
+  private def espStringDeserializationSchema: DeserializationSchema[String] = {
+    implicit val keyTypeInformation: TypeInformation[String] = TypeInformation.of(classOf[String])
+    new EspDeserializationSchema[String](bytes => Option(bytes).map(b => new String(b, StandardCharsets.UTF_8)).orNull)
   }
 
 }

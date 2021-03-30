@@ -13,8 +13,9 @@ import pl.touk.nussknacker.engine.flink.util.keyed.{KeyedValue, StringKeyedValue
 import pl.touk.nussknacker.engine.kafka.{KafkaClient, KafkaZookeeperUtils}
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.test.PatientScalaFutures
-
 import java.nio.charset.StandardCharsets
+
+import org.apache.kafka.clients.consumer.ConsumerRecord
 
 trait KafkaWithSchemaRegistryOperations extends Matchers with PatientScalaFutures {
 
@@ -36,7 +37,8 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with PatientScalaFuture
 
   def consumeAndVerifyMessages(kafkaDeserializer: KafkaDeserializationSchema[_], topic: String, expected: List[Any]): Assertion = {
     val result = consumeMessages(kafkaDeserializer, topic, expected.length)
-    result shouldBe expected
+    val values = result.map(_.asInstanceOf[ConsumerRecord[Any, Any]].value())
+    values shouldBe expected
   }
 
   protected def consumeMessages(kafkaDeserializer: KafkaDeserializationSchema[_], topic: String, count: Int): List[Any] = {

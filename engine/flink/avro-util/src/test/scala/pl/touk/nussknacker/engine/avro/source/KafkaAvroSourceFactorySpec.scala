@@ -5,6 +5,7 @@ import com.typesafe.config.ConfigFactory
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.Schema
 import org.apache.avro.generic.{GenericData, GenericRecord}
+import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.scalatest.Assertion
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -12,7 +13,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.TypedNodeDependency
 import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{VariableConstants, MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData, VariableConstants}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, TopicParamName}
 import pl.touk.nussknacker.engine.avro.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2}
@@ -27,6 +28,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.{GenericNodeTransforma
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.kafka.consumerrecord.InputMeta
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
@@ -75,10 +77,28 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     }
   }
 
-  test("should read last generated simple object") {
+  test("should read last generated simple object without key schema and key content") {
     val givenObj = 123123
 
-    roundTripSingleObject(avroSourceFactory, IntTopic, ExistingSchemaVersion(1), givenObj, IntSchema)
+    roundTripSingleObject(avroSourceFactory, IntTopicNoKey, ExistingSchemaVersion(1), givenObj, IntSchema)
+  }
+
+  test("should raise exception when reading simple object with expected key schema and null key") {
+    val givenObj = 123123
+
+    assertThrowsWithParent[IllegalArgumentException] {
+      roundTripSingleObject(avroSourceFactory, IntTopicWithKey, ExistingSchemaVersion(1), givenObj, IntSchema)
+    }
+  }
+
+  test("should read last generated simple object with expected key schema and valid key") {
+    val givenObj = 123123
+
+    val serializedKey = keySerializer.serialize(IntTopicWithKey, -1)
+    val serializedValue = valueSerializer.serialize(IntTopicWithKey, givenObj)
+    kafkaClient.sendRawMessage(IntTopicWithKey, serializedKey, serializedValue, Some(0))
+
+    readLastMessageAndVerify(avroSourceFactory, IntTopicWithKey, ExistingSchemaVersion(1), givenObj, IntSchema)
   }
 
   test("should read object with invalid defaults") {
@@ -92,11 +112,12 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     val sourceFactory = createKeyValueAvroSourceFactory[Int, Int]
     val givenObj = (123, 345)
 
-    val serializedKey = keySerializer.serialize(IntTopic, givenObj._1)
-    val serializedValue = valueSerializer.serialize(IntTopic, givenObj._2)
-    kafkaClient.sendRawMessage(IntTopic, serializedKey, serializedValue, Some(0))
+    val serializedKey = keySerializer.serialize(IntTopicWithKey, givenObj._1)
+    val serializedValue = valueSerializer.serialize(IntTopicWithKey, givenObj._2)
+    kafkaClient.sendRawMessage(IntTopicWithKey, serializedKey, serializedValue, Some(0))
 
-    readLastMessageAndVerify(sourceFactory, IntTopic, ExistingSchemaVersion(1), givenObj, IntSchema)
+    val resultObj = readLastMessage(sourceFactory, IntTopicWithKey, ExistingSchemaVersion(1), IntSchema)
+    resultObj shouldEqual givenObj
   }
 
   test("Should validate specific version") {
@@ -119,7 +140,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     result.errors shouldBe
       CustomNodeError("id", "Schema subject doesn't exist.", Some(TopicParamName)) ::
       CustomNodeError("id", "Fetching schema error for topic: terefere, version: LatestSchemaVersion", Some(SchemaVersionParamName)) :: Nil
-    result.outputContext shouldBe ValidationContext(Map(VariableConstants.InputVariableName -> Unknown))
+    result.outputContext shouldBe ValidationContext(Map(VariableConstants.InputVariableName -> Unknown, VariableConstants.InputMetaVariableName -> InputMeta.withType[String]))
   }
 
   test("Should return sane error on invalid version") {
@@ -127,7 +148,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
       SchemaVersionParamName -> "'12345'")
 
     result.errors shouldBe CustomNodeError("id", "Fetching schema error for topic: testAvroRecordTopic1, version: ExistingSchemaVersion(12345)", Some(SchemaVersionParamName)) :: Nil
-    result.outputContext shouldBe ValidationContext(Map(VariableConstants.InputVariableName -> Unknown))
+    result.outputContext shouldBe ValidationContext(Map(VariableConstants.InputVariableName -> Unknown, VariableConstants.InputMetaVariableName -> InputMeta.withType[String]))
   }
 
   test("Should properly detect input type") {
@@ -141,7 +162,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
         "middle" -> Typed[CharSequence],
         "last" -> Typed[CharSequence]
       ), Typed.typedClass[GenericRecord]
-    )))
+    ), VariableConstants.InputMetaVariableName -> InputMeta.withType[String]))
   }
 
   private def validate(params: (String, Expression)*): TransformationResult = {
@@ -174,13 +195,16 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
   }
 
   private def readLastMessageAndVerify(sourceFactory: KafkaAvroSourceFactory[Any], topic: String, versionOption: SchemaVersionOption, givenObj: Any, expectedSchema: Schema): Assertion = {
-    val source = createAndVerifySource(sourceFactory, topic, versionOption, expectedSchema)
+    val deserializedObj = readLastMessage(sourceFactory, topic, versionOption, expectedSchema)
+    val resultObj = deserializedObj.asInstanceOf[ConsumerRecord[AnyRef, AnyRef]].value()
+    resultObj shouldEqual givenObj
+  }
 
+  private def readLastMessage(sourceFactory: KafkaAvroSourceFactory[Any], topic: String, versionOption: SchemaVersionOption, expectedSchema: Schema) = {
+    val source = createAndVerifySource(sourceFactory, topic, versionOption, expectedSchema)
     val bytes = source.generateTestData(1)
     info("test object: " + new String(bytes, StandardCharsets.UTF_8))
-    val deserializedObj = source.testDataParser.parseTestData(bytes)
-
-    deserializedObj shouldEqual List(givenObj)
+    source.testDataParser.parseTestData(bytes).head
   }
 
   private def createAndVerifySource(sourceFactory: KafkaAvroSourceFactory[Any], topic: String, versionOption: SchemaVersionOption, expectedSchema: Schema): Source[AnyRef] with TestDataGenerator with FlinkSourceTestSupport[AnyRef] with ReturningType = {

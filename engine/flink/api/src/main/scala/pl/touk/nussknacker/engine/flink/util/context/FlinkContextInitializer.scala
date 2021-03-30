@@ -4,6 +4,7 @@ import org.apache.flink.api.common.functions.MapFunction
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.typed.typing
 
 /**
   * FlinkContextInitializer provides definition of Context returned within DataStream by FlinkSource
@@ -13,7 +14,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
   */
 abstract class FlinkContextInitializer[T] extends Serializable {
 
-  def validationContext(context: ValidationContext, name: String)(implicit nodeId: NodeId): ValidationContext
+  def validationContext(context: ValidationContext, name: String, result: typing.TypingResult)(implicit nodeId: NodeId): ValidationContext
 
   def initContext(processId: String, taskName: String): MapFunction[T, Context]
 }
@@ -26,8 +27,10 @@ abstract class FlinkContextInitializer[T] extends Serializable {
   */
 class BasicFlinkContextInitializer[T] extends FlinkContextInitializer[T] {
 
-  override def validationContext(context: ValidationContext, name: String)(implicit nodeId: NodeId): ValidationContext = ValidationContext.empty
+  override def validationContext(context: ValidationContext, name: String, result: typing.TypingResult)(implicit nodeId: NodeId): ValidationContext =
+    context.withVariable(name, result, None).getOrElse(context)
 
-  override def initContext(processId: String, taskName: String): MapFunction[T, Context] = new InitContextFunction[T](processId, taskName)
+  override def initContext(processId: String, taskName: String): MapFunction[T, Context] =
+    new InitContextFunction[T](processId, taskName)
 
 }

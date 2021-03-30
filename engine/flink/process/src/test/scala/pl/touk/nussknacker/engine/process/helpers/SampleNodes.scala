@@ -7,20 +7,16 @@ import java.util.{Date, Optional, UUID}
 
 import cats.data.Validated.Valid
 import com.github.ghik.silencer.silent
-import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import javax.annotation.Nullable
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.{FilterFunction, MapFunction}
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.co.RichCoMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.scala.{DataStream, _}
 import org.apache.flink.streaming.api.windowing.time.Time
-import org.apache.kafka.clients.consumer.ConsumerRecord
-import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation._
@@ -41,8 +37,6 @@ import pl.touk.nussknacker.engine.flink.util.context.{BasicFlinkContextInitializ
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.signal.KafkaSignalStreamConnector
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EspDeserializationSchema}
-import pl.touk.nussknacker.engine.kafka.consumerrecord.{KafkaContextInitializer, ConsumerRecordDeserializationSchemaFactory, ConsumerRecordToJsonFormatter}
-import pl.touk.nussknacker.engine.kafka.serialization.FixedKafkaDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.source._
 import pl.touk.nussknacker.engine.kafka.{BasicFormatter, KafkaConfig, KafkaUtils}
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
@@ -52,9 +46,7 @@ import pl.touk.nussknacker.test.WithDataList
 
 import scala.annotation.nowarn
 import scala.collection.JavaConverters._
-import scala.collection.immutable
 import scala.concurrent.{ExecutionContext, Future}
-import scala.reflect.ClassTag
 
 //TODO: clean up sample objects...
 object SampleNodes {
@@ -70,8 +62,6 @@ object SampleNodes {
   case class SimpleRecordAcc(id: String, value1: Long, value2: Set[String], date: Date)
 
   @JsonCodec case class SimpleJsonRecord(id: String, field: String)
-
-  @JsonCodec case class SimpleJsonKey(key: String, timestamp: Long)
 
   class IntParamSourceFactory(exConfig: ExecutionConfig) extends FlinkSourceFactory[Int] {
 
@@ -661,7 +651,7 @@ object SampleNodes {
 
     private class CustomFlinkContextInitializer extends BasicFlinkContextInitializer[String] {
 
-      override def validationContext(context: ValidationContext, name: String)(implicit nodeId: NodeId): ValidationContext = {
+      override def validationContext(context: ValidationContext, name: String, result: typing.TypingResult)(implicit nodeId: NodeId): ValidationContext = {
         //Append variable "input"
         val validatedContextWithInput = context.withVariable(OutputVar.customNode(name), Typed[String])
 
@@ -715,7 +705,7 @@ object SampleNodes {
       }.get
 
       //Use custom FlinkContextInitializer
-      customContextInitializer.validationContext(context, name)
+      customContextInitializer.validationContext(context, name, Typed[String])
     }
 
     override def initialParameters: List[Parameter] = Parameter[java.util.List[String]](`elementsParamName`)  :: Nil
@@ -863,28 +853,5 @@ object SampleNodes {
               Some(outOfOrdernessTimestampExtractor[KeyValue](_.date)),
               BasicFormatter,
               processObjectDependencies)
-
-  object KafkaConsumerRecordSourceHelper {
-
-    def kafkaJsonWithMetaSource[K: ClassTag:Encoder:Decoder, V: ClassTag:Encoder:Decoder](processObjectDependencies: ProcessObjectDependencies)
-    : KafkaGenericNodeSourceFactory[ConsumerRecord[K,V]] = {
-
-      import scala.reflect.classTag
-
-      implicit val keyTypeInformation: TypeInformation[K] = TypeInformation.of(classTag[K].runtimeClass.asInstanceOf[Class[K]])
-      implicit val valueTypeInformation: TypeInformation[V] = TypeInformation.of(classTag[V].runtimeClass.asInstanceOf[Class[V]])
-
-      val schema = ConsumerRecordDeserializationSchemaFactory.create(
-        new EspDeserializationSchema[K](bytes => decodeJsonUnsafe[K](bytes)),
-        new EspDeserializationSchema[V](bytes => decodeJsonUnsafe[V](bytes))
-      )
-      val testDataRecordFormatter = new ConsumerRecordToJsonFormatter
-      val deserializationSchemaFactory = new FixedKafkaDeserializationSchemaFactory(schema)
-      val variableProvider = new KafkaContextInitializer[K,V]
-      val sourceFactory = new KafkaGenericNodeSourceFactory(deserializationSchemaFactory, None, testDataRecordFormatter, processObjectDependencies, Some(variableProvider))
-      sourceFactory
-    }
-
-  }
 
 }
