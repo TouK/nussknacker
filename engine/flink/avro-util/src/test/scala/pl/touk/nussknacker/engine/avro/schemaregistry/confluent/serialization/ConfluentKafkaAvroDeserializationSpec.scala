@@ -83,7 +83,7 @@ class ConfluentKafkaAvroDeserializationSpec extends SchemaRegistryMixin with Tab
     pushMessage(FullNameV1.record, fullNameTopic, Some(fromRecordTopic.input))
     pushMessage(FullNameV1.record, fullNameTopic, Some(fromSubjectVersionTopic.input))
 
-    val fromRecordDeserializer = avroSetup.provider.deserializationSchemaFactory.create(None, kafkaConfig)
+    val fromRecordDeserializer = avroSetup.provider.deserializationSchemaFactory.create(kafkaConfig, None)
 
     consumeAndVerifyMessages(fromRecordDeserializer, fromRecordTopic.input, List(FullNameV1.record))
 
@@ -91,7 +91,7 @@ class ConfluentKafkaAvroDeserializationSpec extends SchemaRegistryMixin with Tab
       val subject = ConfluentUtils.topicSubject(fromSubjectVersionTopic.input, fromSubjectVersionTopic.isKey)
       val schemaId = schemaRegistryClient.getId(subject, ConfluentUtils.convertToAvroSchema(PaymentV1.schema))
       val schemaData = RuntimeSchemaData(PaymentV1.schema, Some(schemaId))
-      avroSetup.provider.deserializationSchemaFactory.create(Some(schemaData), kafkaConfig)
+      avroSetup.provider.deserializationSchemaFactory.create(kafkaConfig, Some(schemaData))
     }
 
     assertThrows[SerializationException] {
@@ -111,7 +111,7 @@ class ConfluentKafkaAvroDeserializationSpec extends SchemaRegistryMixin with Tab
       } else {
         None
       }
-      val deserializer = setup.provider.deserializationSchemaFactory.create(schemaDataOpt, kafkaConfig)
+      val deserializer = setup.provider.deserializationSchemaFactory.create(kafkaConfig, schemaDataOpt)
 
       setup.pushMessage(givenObj, topicConfig.input)
 

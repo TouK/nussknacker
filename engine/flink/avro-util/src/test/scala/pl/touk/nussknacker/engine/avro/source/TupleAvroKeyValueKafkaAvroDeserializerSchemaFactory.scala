@@ -14,10 +14,6 @@ class TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory[Key: ClassTag, Value: 
   override protected type V = Value
   override protected type O = (K, V)
 
-  override protected def keyClassTag: ClassTag[Key] = classTag[Key]
-  override protected def valueClassTag: ClassTag[Value] = classTag[Value]
-  override protected def objectClassTag: ClassTag[O] = classTag[(K, V)]
-
   override protected def createObject(key: Key, value: Value, topic: String): (Key, Value) = {
     (key, value)
   }

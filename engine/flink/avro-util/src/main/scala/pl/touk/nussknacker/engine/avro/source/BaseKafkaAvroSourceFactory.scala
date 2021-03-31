@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.avro.source
 
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
@@ -24,29 +23,41 @@ abstract class BaseKafkaAvroSourceFactory[T: ClassTag](timestampAssigner: Option
                    kafkaConfig: KafkaConfig,
                    deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory,
                    createRecordFormatter: RecordFormatter,
-                   schemaDeterminer: AvroSchemaDeterminer,
-                   returnGenericAvroType: Boolean)
+                   valueSchemaDeterminer: AvroSchemaDeterminer,
+                   keySchemaDeterminer: AvroSchemaDeterminer,
+                   returnGenericAvroType: Boolean,
+                   valueClassTagOpt: Option[ClassTag[_]] = None,
+                   keyClassTagOpt: Option[ClassTag[_]] = None)
                   (implicit processMetaData: MetaData,
                    nodeId: NodeId): KafkaSource[T] = {
 
-    val schemaData = schemaDeterminer.determineSchemaUsedInTyping.valueOr(SchemaDeterminerErrorHandler.handleSchemaRegistryErrorAndThrowException)
-    val schemaUsedInRuntime = schemaDeterminer.toRuntimeSchema(schemaData)
+    // value schema
+    val valueSchemaData = valueSchemaDeterminer.determineSchemaUsedInTyping.valueOr(SchemaDeterminerErrorHandler.handleSchemaRegistryErrorAndThrowException)
+    val valueSchemaUsedInRuntime = valueSchemaDeterminer.toRuntimeSchema(valueSchemaData)
+    // key schema, optional
+    val keySchemaDataUsedInRuntime = Option(keySchemaDeterminer).flatMap(determiner => {
+      val keySchemaData = determiner.determineSchemaUsedInTyping.toOption //ignore schema registry error, missing key schema is acceptable
+      keySchemaData.flatMap(determiner.toRuntimeSchema)
+    })
+
+    // prepare KafkaDeserializationSchema based on key and value schema
+    val deserializationSchema = deserializationSchemaFactory.create[T](kafkaConfig, valueSchemaUsedInRuntime, keySchemaDataUsedInRuntime, valueClassTagOpt, keyClassTagOpt)
 
     if (returnGenericAvroType) {
       new KafkaSource(
         List(preparedTopic),
         kafkaConfig,
-        deserializationSchemaFactory.create[T](schemaUsedInRuntime, kafkaConfig),
+        deserializationSchema,
         assignerToUse(kafkaConfig),
         createRecordFormatter
       ) with ReturningType {
-        override def returnType: typing.TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schemaData.schema)
+        override def returnType: typing.TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(valueSchemaData.schema)
       }
     } else {
       new KafkaSource(
         List(preparedTopic),
         kafkaConfig,
-        deserializationSchemaFactory.create[T](schemaUsedInRuntime, kafkaConfig),
+        deserializationSchema,
         assignerToUse(kafkaConfig),
         createRecordFormatter
       )
