@@ -11,19 +11,16 @@ import {EditItem} from "./editItem"
 import {MetricsItem} from "./metricsItem"
 import {Page} from "./Page"
 import {Filterable, getProcessState, ProcessesList, RowsRenderer} from "./ProcessesList"
-import {ProcessNameInput} from "./ProcessNameInput"
 import tabStyles from "../components/tabs/processTabs.styl"
 import {SearchItem} from "./TableFilters"
 import ProcessLastAction from "../components/Process/ProcessLastAction"
 
-const ElementsRenderer: RowsRenderer = ({processes, getProcesses, statuses}) => {
+const ElementsRenderer: RowsRenderer = ({processes, statuses}) => {
   const processState = getProcessState(statuses)
   return processes.map((process, index) => {
     return (
       <Tr key={index} className="row-hover">
-        <Td column="name" className="name-column" value={process.name}>
-          <ProcessNameInput process={process} onChange={getProcesses}/>
-        </Td>
+        <Td column="name" className="name-column" value={process.name}>{process.name}</Td>
         <Td column="category">{process.processCategory}</Td>
         <Td column="createdBy" className="centered-column" value={process.createdBy}>{process.createdBy}</Td>
         <Td column="createdAt" className="centered-column" value={process.createdAt}>
