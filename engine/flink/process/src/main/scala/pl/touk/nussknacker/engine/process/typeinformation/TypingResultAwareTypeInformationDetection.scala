@@ -71,7 +71,7 @@ class TypingResultAwareTypeInformationDetection(customisation:
       case a:TypedTaggedValue => forType(a.underlying)
       case a:TypedDict => forType(a.objType)
       case a:TypedClass if a.params.isEmpty =>
-        //TODO: scala case classes are not handled nicely here...
+        //TODO: scala case classes are not handled nicely here... CaseClassTypeInfo is created only via macro, here Kryo is used
         registeredTypeInfos.find(_.getTypeClass == a.klass).getOrElse(TypeInformation.of(a.klass))
 
       case a:TypedClass if a.klass == classOf[java.util.List[_]] => new ListTypeInfo[Any](forType(a.params.head))

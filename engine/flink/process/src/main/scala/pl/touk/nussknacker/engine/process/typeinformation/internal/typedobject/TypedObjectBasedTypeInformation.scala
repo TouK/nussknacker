@@ -163,31 +163,40 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
       val newKeys = newSerializers.map(_._1)
       val commons = currentKeys.intersect(newKeys)
 
-      val fieldsCompatibility = CompositeTypeSerializerUtil.constructIntermediateCompatibilityResult(
-        newSerializers.filter(k => commons.contains(k._1)).map(_._2),
-        serializersSnapshots.filter(k => commons.contains(k._1)).map(_._2)
-      )
+      val newSerializersToUse = newSerializers.filter(k => commons.contains(k._1))
+      val snapshotsToUse = serializersSnapshots.filter(k => commons.contains(k._1))
+
+      val fieldsCompatibility = CompositeTypeSerializerUtil.constructIntermediateCompatibilityResult(newSerializersToUse.map(_._2), snapshotsToUse.map(_._2))
+
+      //We construct detailed message to show when there are compatibility issues
+      def fieldsCompatibilityMessage: String = newSerializersToUse.zip(snapshotsToUse).map {
+        case ((name, serializer), (_, snapshot)) => s"$name compatibility is ${snapshot.asInstanceOf[TypeSerializerSnapshot[AnyRef]]
+          .resolveSchemaCompatibility(serializer.asInstanceOf[TypeSerializer[AnyRef]])}"
+      }.mkString(", ")
 
       if (currentKeys sameElements newKeys) {
         if (fieldsCompatibility.isCompatibleAsIs) {
           logger.debug(s"Schema is compatible for keys ${currentKeys.mkString(", ")}")
           TypeSerializerSchemaCompatibility.compatibleAsIs()
-          //TODO: handle serializer reconfiguration more gracefully...
-        } else if (fieldsCompatibility.isCompatibleWithReconfiguredSerializer || fieldsCompatibility.isCompatibleAfterMigration) {
-          logger.info(s"Schema migration needed, as fields are equal (${currentKeys.mkString(", ")}), but fields compatibility is ${fieldsCompatibility.getFinalResult}")
+        } else if (fieldsCompatibility.isCompatibleWithReconfiguredSerializer) {
+          logger.info(s"Schema is compatible after serializer reconfiguration")
+          val newSerializer = restoreSerializer(newKeys.zip(fieldsCompatibility.getNestedSerializers))
+          TypeSerializerSchemaCompatibility.compatibleWithReconfiguredSerializer(newSerializer)
+        } else if (fieldsCompatibility.isCompatibleAfterMigration) {
+          logger.info(s"Schema migration needed, as fields are equal (${currentKeys.mkString(", ")}), but fields compatibility is [$fieldsCompatibilityMessage] - returning compatibleAfterMigration")
           TypeSerializerSchemaCompatibility.compatibleAfterMigration()
         } else {
-          logger.info(s"Schema is incompatible, as fields are equal (${currentKeys.mkString(", ")}), but fields compatibility is ${fieldsCompatibility.getFinalResult}")
+          logger.info(s"Schema is incompatible, as fields are equal (${currentKeys.mkString(", ")}), but fields compatibility is [$fieldsCompatibilityMessage] - returning incompatible")
           TypeSerializerSchemaCompatibility.incompatible()
         }
       } else {
         if (compatibilityRequiresSameKeys || fieldsCompatibility.isIncompatible) {
           logger.info(s"Schema is incompatible, as fields are not equal (old keys: ${currentKeys.mkString(", ")}, new keys: ${newKeys.mkString(", ")}), " +
-            s" and fields compatibility is ${fieldsCompatibility.getFinalResult}")
+            s" and fields compatibility is [$fieldsCompatibilityMessage] - returning incompatible")
           TypeSerializerSchemaCompatibility.incompatible()
         } else {
           logger.info(s"Schema migration needed, as fields are not equal (old keys: ${currentKeys.mkString(", ")}, new keys: ${newKeys.mkString(", ")}), " +
-            s" fields compatibility is ${fieldsCompatibility.getFinalResult}")
+            s" fields compatibility is is [$fieldsCompatibilityMessage] - returning compatibleAfterMigration")
           TypeSerializerSchemaCompatibility.compatibleAfterMigration()
         }
       }
