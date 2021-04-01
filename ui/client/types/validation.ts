@@ -4,7 +4,7 @@ export type ValidationResult = {
     validationErrors: ValidationErrors[],
     validationWarnings: ValidationWarnings[],
     nodeResults: NodeResults,
-
+    errors?: ValidationErrors,
 }
 
 export type NodeResults = Record<string, NodeTypingData>

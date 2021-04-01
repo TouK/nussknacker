@@ -1,4 +1,3 @@
-import {flatMap} from "lodash"
 import {createSelector} from "reselect"
 import ProcessUtils from "../../common/ProcessUtils"
 import ProcessStateUtils from "../../components/Process/ProcessStateUtils"
@@ -21,11 +20,17 @@ export const isSubprocess = createSelector(getProcessToDisplay, p => p.propertie
 export const isArchived = createSelector(getFetchedProcessDetails, p => p.isArchived)
 export const isBusinessView = createSelector(getGraph, g => g.businessView)
 export const isPristine = (state: RootState): boolean => ProcessUtils.nothingToSave(state)
-export const hasError = (state: RootState): boolean => !ProcessUtils.hasNoErrors(getProcessToDisplay(state))
+export const hasError = createSelector(getProcessToDisplay, p => !ProcessUtils.hasNoErrors(p))
 export const getNodeToDisplay = createSelector(getGraph, g => g.nodeToDisplay)
 export const getSelectionState = createSelector(getGraph, g => g.selectionState)
 export const getGroupingState = createSelector(getGraph, g => g.groupingState)
 export const getHistory = createSelector(getGraph, g => g.history)
+
+export const isProcessRenamed = createSelector(
+  getProcessId,
+  getProcessToDisplay,
+  (processId, processJson) => processJson.id !== processId,
+)
 
 export const getFetchedProcessState = createSelector(
   getFetchedProcessDetails,

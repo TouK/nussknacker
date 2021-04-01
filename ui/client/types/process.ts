@@ -3,6 +3,7 @@ import {NodeType} from "./node"
 import {ValidationResult} from "./validation"
 
 export type Process = {
+  id: string,
   nodes: NodeType[],
   edges: Edge[],
   properties: NodeType,
@@ -28,7 +29,7 @@ export type NodesGroup = {
 export type CustomAction = {
   name: string,
   allowedStateStatusNames: Array<string>,
-  icon: string | null
+  icon: string | null,
 }
 
 export type ProcessDefinitionData = {
