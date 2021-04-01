@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypedUnion, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.aggregates.{FirstAggregator, LastAggregator, ListAggregator, MapAggregator, MaxAggregator, MinAggregator, SetAggregator, SumAggregator}
 import java.lang.{Integer => JInt, Long => JLong}
 import java.util.{List => JList, Map => JMap, Set => JSet}
@@ -14,7 +14,7 @@ class AggregatesSpec extends FunSuite with TableDrivenPropertyChecks with Matche
   private val justAnyObject = new JustAnyClass
   private val aggregators = Table(
     ("aggregate", "input", "obj", "stored", "output"),
-    (HyperLogLogPlusAggregator(), Typed[String], "", Typed[CardinalityWrapper], Typed[Long]),
+    (HyperLogLogPlusAggregator(), Typed[String], "", Typed[HyperLogLogPlusWrapper], Typed[Long]),
     (SumAggregator, Typed[Int], 1, Typed[JLong], Typed[JLong]),
 
     (MinAggregator, Typed[Int], 1, Typed[JInt], Typed[JInt]),
