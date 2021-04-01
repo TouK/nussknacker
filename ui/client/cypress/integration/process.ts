@@ -16,6 +16,22 @@ describe("Process", () => {
       cy.visitNewProcess(seed).as("processName")
     })
 
+    it("should allow rename", () => {
+      cy.intercept("PUT", "/api/processes/*").as("save")
+
+      cy.contains(/^properties/i).should("be.enabled").click()
+      cy.get("[data-testid=node-modal]").should("be.visible").find("input").first().click().type("-renamed")
+      cy.contains(/^apply/i).should("be.enabled").click()
+
+      cy.contains(/^save/i).should("be.enabled").click()
+      cy.contains(/^ok$/i).should("be.enabled").click()
+      cy.wait("@save").its("response.statusCode").should("eq", 200)
+      cy.contains(/^ok$/i).should("not.exist")
+      cy.contains(/was saved$/i).should("be.visible")
+      cy.contains(/process name changed/i).should("be.visible")
+      cy.location("href").should("contain", "-renamed")
+    })
+
     it("should import JSON and save", () => {
       cy.intercept("PUT", "/api/processes/*").as("save")
       cy.contains(/is not deployed/i).should("be.visible")
