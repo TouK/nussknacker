@@ -8,7 +8,7 @@ trait ExecutionTimeMeasuring { self: LazyLogging =>
     val t0 = System.nanoTime()
     val result = block
     val t1 = System.nanoTime()
-    logger.debug(s"Elapsed time during $additionalMessage: ${ (t1 - t0) / 1000 }ms")
+    logger.debug(s"Elapsed time during $additionalMessage: ${ (t1 - t0) / 1000 }us")
     result
   }
 
