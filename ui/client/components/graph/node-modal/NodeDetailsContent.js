@@ -455,7 +455,7 @@ export class NodeDetailsContent extends React.Component {
         const hasExceptionHandlerParams = this.state.editedNode.exceptionHandler.parameters.length > 0
         return (
           <div className="node-table-body">
-            {_.concat(fields, commonFields, additionalFields)}
+            {[this.idField(), ...fields, ...commonFields, ...additionalFields]}
             {hasExceptionHandlerParams ?
               (
                 <div className="node-row">

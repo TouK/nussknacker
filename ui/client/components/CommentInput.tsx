@@ -7,7 +7,7 @@ type Props = {
   value: string | string[] | number,
 }
 
-const CommentInput = (props: Props): ReactNode => {
+const CommentInput = (props: Props): JSX.Element => {
   const {t} = useTranslation()
   return (
     <TextAreaWithFocus

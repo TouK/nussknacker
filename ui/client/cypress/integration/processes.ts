@@ -30,7 +30,7 @@ describe("Processes list", () => {
   it("should have test process on list", function() {
     cy.get("[placeholder='Filter by text...']").type(NAME)
     cy.get("tbody tr").should("have.length", 1).within(() => {
-      cy.get("input").should("have.value", this.processName)
+      cy.contains(this.processName).should("be.visible")
       cy.get("[label=Edit] a").should("have.attr", "href")
     })
   })

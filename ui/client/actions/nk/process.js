@@ -1,6 +1,6 @@
 import _ from "lodash"
 import {events} from "../../analytics/TrackingEvents"
-import * as GraphUtils from "../../components/graph/GraphUtils"
+import {mapProcessWithNewNode, mapProcessWithProperties} from "../../components/graph/GraphUtils"
 import NodeUtils from "../../components/graph/NodeUtils"
 import * as SubprocessSchemaAligner from "../../components/graph/SubprocessSchemaAligner"
 import HttpService from "../../http/HttpService"
@@ -8,7 +8,6 @@ import * as UndoRedoActions from "../undoRedoActions"
 import {displayProcessActivity} from "./displayProcessActivity"
 import {fetchProcessDefinition} from "./processDefinitionData"
 import {reportEvent} from "./reportEvent"
-import {getProcessToDisplay, getProcessId} from "../../reducers/selectors/graph"
 
 export function fetchProcessToDisplay(processId, versionId, businessView) {
   return (dispatch) => {
@@ -50,18 +49,6 @@ export function displayCurrentProcessVersion(processId) {
   return fetchProcessToDisplay(processId)
 }
 
-export function saveProcess(comment) {
-  return (dispatch, getState) => {
-    const state = getState()
-    const processId = getProcessId(state)
-    const processJson = getProcessToDisplay(state)
-    return HttpService.saveProcess(processId, processJson, comment)
-      .then(() => dispatch(displayCurrentProcessVersion(processId)))
-      .then(() => dispatch(displayProcessActivity(processId)))
-      .then(() => dispatch(UndoRedoActions.clear()))
-  }
-}
-
 export function importProcess(processId, file) {
   return (dispatch) => {
     dispatch({
@@ -97,10 +84,10 @@ export function calculateProcessAfterChange(process, before, after, dispatch) {
       fetchProcessDefinition(process.processingType, process.properties.isSubprocess, subprocessVersions),
     ).then((processDef) => {
       const processWithNewSubprocessSchema = alignSubprocessesWithSchema(process, processDef.processDefinitionData)
-      return GraphUtils.mapProcessWithNewNode(processWithNewSubprocessSchema, before, after)
+      return mapProcessWithProperties(processWithNewSubprocessSchema, after)
     })
   } else {
-    return Promise.resolve(GraphUtils.mapProcessWithNewNode(process, before, after))
+    return Promise.resolve(mapProcessWithNewNode(process, before, after))
   }
 }
 
