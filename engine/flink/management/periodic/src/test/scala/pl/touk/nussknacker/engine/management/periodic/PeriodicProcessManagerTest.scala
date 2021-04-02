@@ -163,7 +163,39 @@ class PeriodicProcessManagerTest extends FunSuite
     status shouldBe SimpleStateStatus.Failed
     state.value.allowedActions shouldBe List(ProcessActionType.Cancel)
   }
-  
+
+  test("should redeploy failed process") {
+    val f = new Fixture
+    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
+    f.delegateProcessManagerStub.setStateStatus(FlinkStateStatus.Failed)
+
+    f.periodicProcessManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen(), None).futureValue
+
+    f.repository.processEntities.map(_.active) shouldBe List(false, true)
+    f.repository.deploymentEntities.map(_.status) shouldBe List(PeriodicProcessDeploymentStatus.Failed, PeriodicProcessDeploymentStatus.Scheduled)
+  }
+
+  test("should redeploy scheduled process") {
+    val f = new Fixture
+    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
+
+    f.periodicProcessManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen(), None).futureValue
+
+    f.repository.processEntities.map(_.active) shouldBe List(false, true)
+    f.repository.deploymentEntities.map(_.status) shouldBe List(PeriodicProcessDeploymentStatus.Scheduled, PeriodicProcessDeploymentStatus.Scheduled)
+  }
+
+  test("should redeploy running process") {
+    val f = new Fixture
+    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
+    f.delegateProcessManagerStub.setStateStatus(FlinkStateStatus.Running)
+
+    f.periodicProcessManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen(), None).futureValue
+
+    f.repository.processEntities.map(_.active) shouldBe List(false, true)
+    f.repository.deploymentEntities.map(_.status) shouldBe List(PeriodicProcessDeploymentStatus.Deployed, PeriodicProcessDeploymentStatus.Scheduled)
+  }
+
   test("should cancel failed job after RescheduleActor handles finished") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
@@ -195,7 +227,7 @@ class PeriodicProcessManagerTest extends FunSuite
     f.periodicProcessManager.findJobStatus(processName).futureValue.get.status shouldBe SimpleStateStatus.Canceled
   }
 
-  test("should cancel failed after disappeared from Flink console") {
+  test("should cancel failed process after disappeared from Flink console") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
     f.delegateProcessManagerStub.setStateStatus(FlinkStateStatus.Failed)

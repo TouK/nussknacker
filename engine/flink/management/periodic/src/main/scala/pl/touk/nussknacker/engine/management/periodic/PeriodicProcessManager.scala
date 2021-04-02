@@ -69,7 +69,7 @@ class PeriodicProcessManager(val delegate: ProcessManager,
 
         // PeriodicProcessStateDefinitionManager do not allow to redeploy (so doesn't GUI),
         // but NK API does, so we need to handle this situation.
-        cancelIfAlreadyDeployed(processVersion, deploymentData.user)
+        cancelIfAlreadyDeployedOrFailed(processVersion, deploymentData.user)
           .flatMap(_ => {
             logger.info(s"Scheduling ${processVersion.processName}, versionId: ${processVersion.versionId}")
             service.schedule(periodicProperty, processVersion, processJson)
@@ -81,10 +81,10 @@ class PeriodicProcessManager(val delegate: ProcessManager,
     }
   }
 
-  private def cancelIfAlreadyDeployed(processVersion: ProcessVersion, user: User): Future[Unit] = {
+  private def cancelIfAlreadyDeployedOrFailed(processVersion: ProcessVersion, user: User): Future[Unit] = {
     findJobStatus(processVersion.processName)
       .map {
-        case Some(s) => s.isDeployed //for periodic status isDeployed=true means deployed or scheduled
+        case Some(s) => s.isDeployed || s.status.isFailed //for periodic status isDeployed=true means deployed or scheduled
         case None => false
       }
       .flatMap(shouldStop => {
