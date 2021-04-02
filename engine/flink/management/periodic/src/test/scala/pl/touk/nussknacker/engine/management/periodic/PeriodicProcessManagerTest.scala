@@ -4,8 +4,9 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FunSuite, Inside, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentData, FailedStateStatus, GraphProcess, ProcessActionType, User}
+import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentData, GraphProcess, ProcessActionType, User}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus
@@ -14,7 +15,6 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.time.Clock
 import scala.concurrent.Await
-import scala.concurrent.duration.{FiniteDuration, HOURS, SECONDS}
 
 class PeriodicProcessManagerTest extends FunSuite
   with Matchers
@@ -48,6 +48,8 @@ class PeriodicProcessManagerTest extends FunSuite
       periodicPropertyExtractor = CronPropertyExtractor(),
       toClose = () => ()
     )
+
+    def getAllowedActions: List[ProcessActionType] = periodicProcessManager.findJobStatus(processName).futureValue.value.allowedActions
   }
 
   test("findJobStatus - should return none for no job") {
@@ -168,6 +170,7 @@ class PeriodicProcessManagerTest extends FunSuite
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
     f.delegateProcessManagerStub.setStateStatus(FlinkStateStatus.Failed)
+    f.getAllowedActions shouldBe List(ProcessActionType.Cancel) // redeploy is blocked in GUI but API allows it
 
     f.periodicProcessManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen(), None).futureValue
 
@@ -178,6 +181,7 @@ class PeriodicProcessManagerTest extends FunSuite
   test("should redeploy scheduled process") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
+    f.getAllowedActions shouldBe List(ProcessActionType.Cancel, ProcessActionType.Deploy)
 
     f.periodicProcessManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen(), None).futureValue
 
@@ -189,6 +193,7 @@ class PeriodicProcessManagerTest extends FunSuite
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
     f.delegateProcessManagerStub.setStateStatus(FlinkStateStatus.Running)
+    f.getAllowedActions shouldBe List(ProcessActionType.Cancel) // redeploy is blocked in GUI but API allows it
 
     f.periodicProcessManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen(), None).futureValue
 
