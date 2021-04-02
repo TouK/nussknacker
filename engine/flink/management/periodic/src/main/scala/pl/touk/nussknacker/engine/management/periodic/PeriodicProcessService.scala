@@ -71,7 +71,7 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
 
   //We assume that this method leaves with data in consistent state
   private def handleFinished(deployedProcess: PeriodicProcessDeployment, processState: Option[ProcessState]): RepositoryAction[Callback] = processState match {
-    case Some(js) if js.status.isFailed => markFailed(deployedProcess, processState).emptyCallback
+    case Some(js) if js.status.isFailed => markFailedAction(deployedProcess, processState).emptyCallback
     case Some(js) if js.status.isFinished => reschedule(deployedProcess, processState)
     case None => reschedule(deployedProcess, processState)
     case _ => scheduledProcessesRepository.monad.pure(()).emptyCallback
@@ -93,17 +93,19 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
           }.emptyCallback
         case Right(None) =>
           logger.info(s"No next run of $deployment. Deactivating")
-          deactivateInternal(process.processVersion.processName)
+          deactivateAction(process.processVersion.processName)
         case Left(error) =>
           // This case should not happen. It would mean periodic property was valid when scheduling a process
           // but was made invalid when rescheduling again.
           logger.error(s"Wrong periodic property, error: $error. Deactivating $deployment")
-          deactivateInternal(process.processVersion.processName)
+          deactivateAction(process.processVersion.processName)
       }
     } yield callback
   }
 
-  private def markFailed(deployment: PeriodicProcessDeployment, state: Option[ProcessState]): RepositoryAction[Unit] = {
+  def markFailed(deployment: PeriodicProcessDeployment, state: Option[ProcessState]): Future[Unit] = markFailedAction(deployment, state).run
+
+  private def markFailedAction(deployment: PeriodicProcessDeployment, state: Option[ProcessState]): RepositoryAction[Unit] = {
     logger.info(s"Marking process $deployment as failed")
     for {
       _ <- scheduledProcessesRepository.markFailed(deployment.id)
@@ -111,9 +113,9 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
     } yield handleEvent(FailedEvent(currentState, state))
   }
 
-  def deactivate(processName: ProcessName): Future[Unit] = deactivateInternal(processName).runWithCallbacks
+  def deactivate(processName: ProcessName): Future[Unit] = deactivateAction(processName).runWithCallbacks
 
-  private def deactivateInternal(processName: ProcessName): RepositoryAction[Callback] = {
+  private def deactivateAction(processName: ProcessName): RepositoryAction[Callback] = {
     logger.info(s"Deactivate $processName")
     for {
       // Order does matter. We need to find process data for *active* process and then
@@ -151,7 +153,7 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
       // We can recover since deployment actor watches only future completion.
       .recoverWith { case exception =>
         logger.error(s"Process deployment failed for deployment id $id", exception)
-        markFailed(deployment, None).run
+        markFailedAction(deployment, None).run
       }
   }
 

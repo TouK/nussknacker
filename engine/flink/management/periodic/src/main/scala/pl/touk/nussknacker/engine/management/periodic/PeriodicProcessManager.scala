@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
-import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus
+import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeployment, PeriodicProcessDeploymentStatus}
 import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, PeriodicProcessListener}
 import slick.jdbc
 import slick.jdbc.JdbcProfile
@@ -96,22 +96,46 @@ class PeriodicProcessManager(val delegate: ProcessManager,
       })
   }
 
-  override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] = {
-    service.deactivate(name).flatMap {
-      _ => delegate.stop(name, savepointDir, user)
-    }
+  override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] = deactivate(name) {
+    delegate.stop(name, savepointDir, user)
   }
 
-  override def cancel(name: ProcessName, user: User): Future[Unit] = {
-    service.deactivate(name).flatMap {
-      _ => delegate.cancel(name, user)
+  override def cancel(name: ProcessName, user: User): Future[Unit] = deactivate(name) {
+    delegate.cancel(name, user)
+  }
+
+  private def deactivate[T](name: ProcessName)(callback: => Future[T]): Future[T] = {
+    def handleFailed(processState: Option[ProcessState], periodicDeploymentOpt: Option[PeriodicProcessDeployment]): Future[Unit] = {
+      import PeriodicProcessDeploymentStatus._
+      periodicDeploymentOpt.map { periodicDeployment =>
+        (processState.map(_.status), periodicDeployment.state.status) match {
+          case (Some(status), Failed | Deployed) if status.isFailed => service.markFailed(periodicDeployment, processState)
+          case _ => Future.successful(())
+        }
+      }.getOrElse(Future.successful(()))
     }
+
+    for {
+      maybeJobStatus <- findJobStatus(name)
+      maybePeriodicStatus <- service.getScheduledRunDetails(name)
+      _ <- handleFailed(maybeJobStatus, maybePeriodicStatus)
+      _ <- service.deactivate(name)
+      res <- callback
+    } yield res
   }
 
   override def test[T](name: ProcessName, json: String, testData: TestProcess.TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] =
     delegate.test(name, json, testData, variableEncoder)
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
+    def handleFailed(original: Option[ProcessState]): Future[Option[ProcessState]] = {
+      service.getScheduledRunDetails(name).map {
+        // this method returns only active schedules, so 'None' means this process has been already canceled
+        case None => original.map(_.copy(status = SimpleStateStatus.Canceled))
+        case _ => original
+      }
+    }
+
     def handleScheduled(original: Option[ProcessState]): Future[Option[ProcessState]] = {
       service.getScheduledRunDetails(name).map { maybeProcessDeployment =>
         maybeProcessDeployment.map { processDeployment =>
@@ -158,6 +182,7 @@ class PeriodicProcessManager(val delegate: ProcessManager,
       .flatMap {
         // Scheduled again or waiting to be scheduled again.
         case state@Some(js) if js.status.isFinished => handleScheduled(state)
+        case state@Some(js) if js.status.isFailed => handleFailed(state)
         // Job was previously canceled and it still exists on Flink but a new periodic job can be already scheduled.
         case state@Some(js) if js.status == SimpleStateStatus.Canceled => handleScheduled(state)
         // Scheduled or never started or latest run already disappeared in Flink.

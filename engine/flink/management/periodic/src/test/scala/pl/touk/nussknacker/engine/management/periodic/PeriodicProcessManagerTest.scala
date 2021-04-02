@@ -163,8 +163,8 @@ class PeriodicProcessManagerTest extends FunSuite
     status shouldBe SimpleStateStatus.Failed
     state.value.allowedActions shouldBe List(ProcessActionType.Cancel)
   }
-
-  ignore("should cancel failed job after RescheduleActor") {
+  
+  test("should cancel failed job after RescheduleActor handles finished") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
     f.delegateProcessManagerStub.setStateStatus(FlinkStateStatus.Failed)
@@ -180,12 +180,10 @@ class PeriodicProcessManagerTest extends FunSuite
 
     f.repository.processEntities.loneElement.active shouldBe false
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
-
-    //this one fails
     f.periodicProcessManager.findJobStatus(processName).futureValue.get.status shouldBe SimpleStateStatus.Canceled
   }
 
-  ignore("should cancel failed job before RescheduleActor") {
+  test("should cancel failed job before RescheduleActor handles finished") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
     f.delegateProcessManagerStub.setStateStatus(FlinkStateStatus.Failed)
@@ -193,9 +191,7 @@ class PeriodicProcessManagerTest extends FunSuite
     f.periodicProcessManager.cancel(processName, User("test", "Tester")).futureValue
 
     f.repository.processEntities.loneElement.active shouldBe false
-    //this one fails
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
-    //this also
     f.periodicProcessManager.findJobStatus(processName).futureValue.get.status shouldBe SimpleStateStatus.Canceled
   }
 
