@@ -46,11 +46,15 @@ class DefaultStreamExecutionEnvPreparer(checkpointConfig: Option[CheckpointConfi
 
     configureCheckpoints(env, streamMetaData)
 
-    rocksDBStateBackendConfig match {
-      case Some(config) if streamMetaData.splitStateToDisk.getOrElse(false) =>
-        logger.debug("Using disk state backend")
+    (rocksDBStateBackendConfig, streamMetaData.splitStateToDisk) match {
+      case (Some(config), Some(true)) =>
+        logger.info("Using RocksDB state backend")
         configureRocksDBBackend(env, config)
-      case _ => logger.debug("Using default state backend")
+      case (None, Some(true)) =>
+        //TODO: handle non-configured rocksDB more transparently e.g. hide checkbox on FE?
+        logger.warn("RocksDB not configured, cannot use splitStateToDisk")
+      case _ =>
+        logger.info("Using default state backend configured by cluster")
     }
   }
 
