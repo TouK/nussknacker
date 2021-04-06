@@ -201,6 +201,18 @@ class PeriodicProcessManagerTest extends FunSuite
     f.repository.deploymentEntities.map(_.status) shouldBe List(PeriodicProcessDeploymentStatus.Deployed, PeriodicProcessDeploymentStatus.Scheduled)
   }
 
+  test("should redeploy finished process") {
+    val f = new Fixture
+    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
+    f.delegateProcessManagerStub.setStateStatus(FlinkStateStatus.Finished)
+    f.getAllowedActions shouldBe List(ProcessActionType.Cancel) // redeploy is blocked in GUI but API allows it
+
+    f.periodicProcessManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen(), None).futureValue
+
+    f.repository.processEntities.map(_.active) shouldBe List(false, true)
+    f.repository.deploymentEntities.map(_.status) shouldBe List(PeriodicProcessDeploymentStatus.Finished, PeriodicProcessDeploymentStatus.Scheduled)
+  }
+
   test("should cancel failed job after RescheduleActor handles finished") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)

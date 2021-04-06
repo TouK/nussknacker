@@ -5,7 +5,8 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository
-import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeployment
+import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeployment, PeriodicProcessDeploymentStatus}
+import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.{Deployed, Failed}
 import pl.touk.nussknacker.engine.management.periodic.service._
 
 import java.time.Clock
@@ -22,7 +23,8 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
   import cats.syntax.all._
   import scheduledProcessesRepository._
   private type RepositoryAction[T] = scheduledProcessesRepository.Action[T]
-  type Callback = () => Future[Unit]
+  private type Callback = () => Future[Unit]
+  private type FinishedSuccessfully = Boolean
 
   private implicit class WithCallbacks(result: RepositoryAction[Callback]) {
     def runWithCallbacks: Future[Unit] = result.run.flatMap(_())
@@ -58,7 +60,10 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
 
     def handleSingleProcess(deployedProcess: PeriodicProcessDeployment): Future[Unit] = {
       delegateProcessManager.findJobStatus(deployedProcess.periodicProcess.processVersion.processName).flatMap { state =>
-        handleFinished(deployedProcess, state).runWithCallbacks
+        handleFinishedAction(deployedProcess, state)
+          .flatMap { finishedSuccessfully =>
+            if (finishedSuccessfully) reschedule(deployedProcess, state) else scheduledProcessesRepository.monad.pure(()).emptyCallback
+          }.runWithCallbacks
       }
     }
 
@@ -70,11 +75,16 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
   }
 
   //We assume that this method leaves with data in consistent state
-  private def handleFinished(deployedProcess: PeriodicProcessDeployment, processState: Option[ProcessState]): RepositoryAction[Callback] = processState match {
-    case Some(js) if js.status.isFailed => markFailedAction(deployedProcess, processState).emptyCallback
-    case Some(js) if js.status.isFinished => reschedule(deployedProcess, processState)
-    case None => reschedule(deployedProcess, processState)
-    case _ => scheduledProcessesRepository.monad.pure(()).emptyCallback
+  private def handleFinishedAction(deployedProcess: PeriodicProcessDeployment, processState: Option[ProcessState]): RepositoryAction[FinishedSuccessfully] = {
+    implicit class RichRepositoryAction[Unit](a: RepositoryAction[Unit]){
+      def finished(successfully: Boolean): RepositoryAction[FinishedSuccessfully] = a.map(_ => successfully)
+    }
+    processState match {
+      case Some(js) if js.status.isFailed => markFailedAction(deployedProcess, processState).finished(successfully = false)
+      case Some(js) if js.status.isFinished => scheduledProcessesRepository.markFinished(deployedProcess.id).finished(successfully = true)
+      case None if deployedProcess.state.status == Deployed => scheduledProcessesRepository.markFinished(deployedProcess.id).finished(successfully = true)
+      case _ => scheduledProcessesRepository.monad.pure(()).finished(successfully = false)
+    }
   }
 
   //Mark process as Finished and reschedule - we do it transactionally
@@ -113,7 +123,15 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
     } yield handleEvent(FailedEvent(currentState, state))
   }
 
-  def deactivate(processName: ProcessName): Future[Unit] = deactivateAction(processName).runWithCallbacks
+  def deactivate(processName: ProcessName): Future[Unit] = for {
+    status <- delegateProcessManager.findJobStatus(processName)
+    maybePeriodicDeployment <- getScheduledRunDetails(processName)
+  } yield maybePeriodicDeployment match {
+    case Some(periodicDeployment) => handleFinishedAction(periodicDeployment, status)
+      .flatMap(_ => deactivateAction(processName))
+      .runWithCallbacks
+    case None => deactivateAction(processName).runWithCallbacks
+  }
 
   private def deactivateAction(processName: ProcessName): RepositoryAction[Callback] = {
     logger.info(s"Deactivate $processName")

@@ -69,7 +69,7 @@ class PeriodicProcessManager(val delegate: ProcessManager,
 
         // PeriodicProcessStateDefinitionManager do not allow to redeploy (so doesn't GUI),
         // but NK API does, so we need to handle this situation.
-        cancelIfAlreadyDeployedOrFailed(processVersion, deploymentData.user)
+        cancelIfJobPresent(processVersion, deploymentData.user)
           .flatMap(_ => {
             logger.info(s"Scheduling ${processVersion.processName}, versionId: ${processVersion.versionId}")
             service.schedule(periodicProperty, processVersion, processJson)
@@ -81,12 +81,9 @@ class PeriodicProcessManager(val delegate: ProcessManager,
     }
   }
 
-  private def cancelIfAlreadyDeployedOrFailed(processVersion: ProcessVersion, user: User): Future[Unit] = {
+  private def cancelIfJobPresent(processVersion: ProcessVersion, user: User): Future[Unit] = {
     findJobStatus(processVersion.processName)
-      .map {
-        case Some(s) => s.isDeployed || s.status.isFailed //for periodic status isDeployed=true means deployed or scheduled
-        case None => false
-      }
+      .map(_.isDefined)
       .flatMap(shouldStop => {
         if (shouldStop) {
           logger.info(s"Process ${processVersion.processName} is running or scheduled. Cancelling before reschedule")
@@ -96,32 +93,16 @@ class PeriodicProcessManager(val delegate: ProcessManager,
       })
   }
 
-  override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] = deactivate(name) {
-    delegate.stop(name, savepointDir, user)
-  }
-
-  override def cancel(name: ProcessName, user: User): Future[Unit] = deactivate(name) {
-    delegate.cancel(name, user)
-  }
-
-  private def deactivate[T](name: ProcessName)(callback: => Future[T]): Future[T] = {
-    def handleFailed(processState: Option[ProcessState], periodicDeploymentOpt: Option[PeriodicProcessDeployment]): Future[Unit] = {
-      import PeriodicProcessDeploymentStatus._
-      periodicDeploymentOpt.map { periodicDeployment =>
-        (processState.map(_.status), periodicDeployment.state.status) match {
-          case (Some(status), Failed | Deployed) if status.isFailed => service.markFailed(periodicDeployment, processState)
-          case _ => Future.successful(())
-        }
-      }.getOrElse(Future.successful(()))
+  override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] = {
+    service.deactivate(name).flatMap {
+      _ => delegate.stop(name, savepointDir, user)
     }
+  }
 
-    for {
-      maybeJobStatus <- findJobStatus(name)
-      maybePeriodicStatus <- service.getScheduledRunDetails(name)
-      _ <- handleFailed(maybeJobStatus, maybePeriodicStatus)
-      _ <- service.deactivate(name)
-      res <- callback
-    } yield res
+  override def cancel(name: ProcessName, user: User): Future[Unit] = {
+    service.deactivate(name).flatMap {
+      _ => delegate.cancel(name, user)
+    }
   }
 
   override def test[T](name: ProcessName, json: String, testData: TestProcess.TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] =
