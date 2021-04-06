@@ -72,6 +72,10 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
     )
   }
 
+  override def buildInfo(): Map[String, String] = {
+    pl.touk.nussknacker.engine.version.BuildInfo.toMap.map { case (k, v) => k -> v.toString } + ("name" -> "generic")
+  }
+
   protected def createSchemaProvider(processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider =
     ConfluentSchemaRegistryProvider(processObjectDependencies)
 
