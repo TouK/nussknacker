@@ -24,7 +24,7 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
   import scheduledProcessesRepository._
   private type RepositoryAction[T] = scheduledProcessesRepository.Action[T]
   private type Callback = () => Future[Unit]
-  private type FinishedSuccessfully = Boolean
+  private type NeedsReschedule = Boolean
 
   private implicit class WithCallbacks(result: RepositoryAction[Callback]) {
     def runWithCallbacks: Future[Unit] = result.run.flatMap(_())
@@ -61,8 +61,8 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
     def handleSingleProcess(deployedProcess: PeriodicProcessDeployment): Future[Unit] = {
       delegateProcessManager.findJobStatus(deployedProcess.periodicProcess.processVersion.processName).flatMap { state =>
         handleFinishedAction(deployedProcess, state)
-          .flatMap { finishedSuccessfully =>
-            if (finishedSuccessfully) reschedule(deployedProcess, state) else scheduledProcessesRepository.monad.pure(()).emptyCallback
+          .flatMap { needsReschedule =>
+            if (needsReschedule) reschedule(deployedProcess, state) else scheduledProcessesRepository.monad.pure(()).emptyCallback
           }.runWithCallbacks
       }
     }
@@ -75,15 +75,15 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
   }
 
   //We assume that this method leaves with data in consistent state
-  private def handleFinishedAction(deployedProcess: PeriodicProcessDeployment, processState: Option[ProcessState]): RepositoryAction[FinishedSuccessfully] = {
+  private def handleFinishedAction(deployedProcess: PeriodicProcessDeployment, processState: Option[ProcessState]): RepositoryAction[NeedsReschedule] = {
     implicit class RichRepositoryAction[Unit](a: RepositoryAction[Unit]){
-      def finished(successfully: Boolean): RepositoryAction[FinishedSuccessfully] = a.map(_ => successfully)
+      def needsReschedule(value: Boolean): RepositoryAction[NeedsReschedule] = a.map(_ => value)
     }
     processState match {
-      case Some(js) if js.status.isFailed => markFailedAction(deployedProcess, processState).finished(successfully = false)
-      case Some(js) if js.status.isFinished => scheduledProcessesRepository.markFinished(deployedProcess.id).finished(successfully = true)
-      case None if deployedProcess.state.status == Deployed => scheduledProcessesRepository.markFinished(deployedProcess.id).finished(successfully = true)
-      case _ => scheduledProcessesRepository.monad.pure(()).finished(successfully = false)
+      case Some(js) if js.status.isFailed => markFailedAction(deployedProcess, processState).needsReschedule(value = false)
+      case Some(js) if js.status.isFinished => scheduledProcessesRepository.markFinished(deployedProcess.id).needsReschedule(value = true)
+      case None if deployedProcess.state.status == Deployed => scheduledProcessesRepository.markFinished(deployedProcess.id).needsReschedule(value = true)
+      case _ => scheduledProcessesRepository.monad.pure(()).needsReschedule(value = false)
     }
   }
 
@@ -112,8 +112,6 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
       }
     } yield callback
   }
-
-  def markFailed(deployment: PeriodicProcessDeployment, state: Option[ProcessState]): Future[Unit] = markFailedAction(deployment, state).run
 
   private def markFailedAction(deployment: PeriodicProcessDeployment, state: Option[ProcessState]): RepositoryAction[Unit] = {
     logger.info(s"Marking process $deployment as failed")
