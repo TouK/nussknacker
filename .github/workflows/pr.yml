@@ -300,5 +300,5 @@ jobs:
           nexusPassword: ${{ secrets.SONATYPE_PASSWORD }}
           addDevModel: ${{ github.ref == 'refs/heads/staging' }}
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
-        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := (version in ThisBuild).value.replace(\"-SNAPSHOT\", \"${VERSION_SUFFIX}-SNAPSHOT\")" +publish dist/docker:publish
+        run: sbt -J-Xms1000M -J-Xmx1000M "set version in ThisBuild := (version in ThisBuild).value.replace(\"-SNAPSHOT\", \"${VERSION_SUFFIX}-SNAPSHOT\")" +publish dist/docker:publish standaloneApp/docker:publish
 

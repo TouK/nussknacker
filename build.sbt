@@ -40,6 +40,7 @@ val dockerTagName = propOrEnv("dockerTagName")
 val dockerPort = propOrEnv("dockerPort", "8080").toInt
 val dockerUserName = Option(propOrEnv("dockerUserName", "touk"))
 val dockerPackageName = propOrEnv("dockerPackageName", "nussknacker")
+val standaloneDockerPackageName = propOrEnv("standaloneDockerPackageName", "nussknacker-standalone-app")
 val dockerUpLatestFromProp = propOrEnv("dockerUpLatest").flatMap(p => Try(p.toBoolean).toOption)
 val addDevModel = propOrEnv("addDevModel", "false").toBoolean
 
@@ -257,23 +258,12 @@ val javaxValidationApiV = "2.0.1.Final"
 val caffeineCacheV = "2.8.8"
 val sttpV = "2.2.9"
 
-lazy val dockerSettings = {
-  val workingDir = "/opt/nussknacker"
-
+lazy val commonDockerSettings = {
   Seq(
-    dockerEntrypoint := Seq(s"$workingDir/bin/nussknacker-entrypoint.sh", dockerPort.toString),
     dockerExposedPorts := Seq(dockerPort),
-    dockerExposedVolumes := Seq(s"$workingDir/storage", s"$workingDir/data"),
-    defaultLinuxInstallLocation in Docker := workingDir,
     dockerBaseImage := "openjdk:11-jdk-slim",
     dockerUsername := dockerUserName,
-    packageName := dockerPackageName,
     dockerUpdateLatest := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
-    dockerLabels := Map(
-      "version" -> version.value,
-      "scala" -> scalaVersion.value,
-      "flink" -> flinkV
-    ),
     dockerEnvVars := Map(
       "AUTHENTICATION_METHOD" -> "BasicAuth",
       "AUTHENTICATION_USERS_FILE" -> "./conf/users.conf",
@@ -297,7 +287,23 @@ lazy val dockerSettings = {
       List(dockerVersion, updateLatest, latestBranch, dockerTagName)
         .map(tag => alias.withTag(tag.map(sanitize)))
         .distinct
-    },
+    }
+  )
+}
+
+lazy val distDockerSettings = {
+  val workingDir = "/opt/nussknacker"
+
+  commonDockerSettings ++ Seq(
+    dockerEntrypoint := Seq(s"$workingDir/bin/nussknacker-entrypoint.sh", dockerPort.toString),
+    packageName := dockerPackageName,
+    dockerLabels := Map(
+      "version" -> version.value,
+      "scala" -> scalaVersion.value,
+      "flink" -> flinkV
+    ),
+    dockerExposedVolumes := Seq(s"$workingDir/storage", s"$workingDir/data"),
+    defaultLinuxInstallLocation in Docker := workingDir
   )
 }
 
@@ -346,7 +352,7 @@ lazy val dist = {
       publishArtifact := false,
       SettingsHelper.makeDeploymentSettings(Universal, packageZipTarball in Universal, "tgz")
     )
-    .settings(dockerSettings)
+    .settings(distDockerSettings)
     .dependsOn(ui)
   if (addDevModel) {
     module
@@ -384,9 +390,25 @@ lazy val engineStandalone = (project in engine("standalone/engine")).
   ).
   dependsOn(interpreter % "provided", standaloneUtil, httpUtils % "provided", testUtil % "it,test")
 
+lazy val standaloneDockerSettings = {
+  val workingDir = "/opt/nussknacker"
+
+  commonDockerSettings ++ Seq(
+    dockerEntrypoint := Seq(s"$workingDir/bin/nussknacker-standalone-entrypoint.sh", dockerPort.toString),
+    dockerExposedVolumes := Seq(s"$workingDir/storage", s"$workingDir/data"),
+    defaultLinuxInstallLocation in Docker := workingDir,
+    packageName := standaloneDockerPackageName,
+    dockerLabels := Map(
+      "version" -> version.value,
+      "scala" -> scalaVersion.value,
+    )
+  )
+}
+
 lazy val standaloneApp = (project in engine("standalone/app")).
   settings(commonSettings).
   settings(publishAssemblySettings: _*).
+  enablePlugins(SbtNativePackager, JavaServerAppPackaging).
   settings(
     name := "nussknacker-standalone-app",
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = true, level = Level.Info),
@@ -402,6 +424,7 @@ lazy val standaloneApp = (project in engine("standalone/app")).
       )
     }
   ).
+  settings(standaloneDockerSettings).
   dependsOn(engineStandalone, interpreter, httpUtils, testUtil % "test")
 
 
