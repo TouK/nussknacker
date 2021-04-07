@@ -5,7 +5,8 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository
-import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeployment
+import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeployment, PeriodicProcessDeploymentStatus}
+import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.{Deployed, Failed}
 import pl.touk.nussknacker.engine.management.periodic.service._
 
 import java.time.Clock
@@ -22,7 +23,8 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
   import cats.syntax.all._
   import scheduledProcessesRepository._
   private type RepositoryAction[T] = scheduledProcessesRepository.Action[T]
-  type Callback = () => Future[Unit]
+  private type Callback = () => Future[Unit]
+  private type NeedsReschedule = Boolean
 
   private implicit class WithCallbacks(result: RepositoryAction[Callback]) {
     def runWithCallbacks: Future[Unit] = result.run.flatMap(_())
@@ -58,7 +60,10 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
 
     def handleSingleProcess(deployedProcess: PeriodicProcessDeployment): Future[Unit] = {
       delegateProcessManager.findJobStatus(deployedProcess.periodicProcess.processVersion.processName).flatMap { state =>
-        handleFinished(deployedProcess, state).runWithCallbacks
+        handleFinishedAction(deployedProcess, state)
+          .flatMap { needsReschedule =>
+            if (needsReschedule) reschedule(deployedProcess, state) else scheduledProcessesRepository.monad.pure(()).emptyCallback
+          }.runWithCallbacks
       }
     }
 
@@ -70,11 +75,16 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
   }
 
   //We assume that this method leaves with data in consistent state
-  private def handleFinished(deployedProcess: PeriodicProcessDeployment, processState: Option[ProcessState]): RepositoryAction[Callback] = processState match {
-    case Some(js) if js.status.isFailed => markFailed(deployedProcess, processState).emptyCallback
-    case Some(js) if js.status.isFinished => reschedule(deployedProcess, processState)
-    case None => reschedule(deployedProcess, processState)
-    case _ => scheduledProcessesRepository.monad.pure(()).emptyCallback
+  private def handleFinishedAction(deployedProcess: PeriodicProcessDeployment, processState: Option[ProcessState]): RepositoryAction[NeedsReschedule] = {
+    implicit class RichRepositoryAction[Unit](a: RepositoryAction[Unit]){
+      def needsReschedule(value: Boolean): RepositoryAction[NeedsReschedule] = a.map(_ => value)
+    }
+    processState match {
+      case Some(js) if js.status.isFailed => markFailedAction(deployedProcess, processState).needsReschedule(value = false)
+      case Some(js) if js.status.isFinished => scheduledProcessesRepository.markFinished(deployedProcess.id).needsReschedule(value = true)
+      case None if deployedProcess.state.status == Deployed => scheduledProcessesRepository.markFinished(deployedProcess.id).needsReschedule(value = true)
+      case _ => scheduledProcessesRepository.monad.pure(()).needsReschedule(value = false)
+    }
   }
 
   //Mark process as Finished and reschedule - we do it transactionally
@@ -93,17 +103,17 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
           }.emptyCallback
         case Right(None) =>
           logger.info(s"No next run of $deployment. Deactivating")
-          deactivateInternal(process.processVersion.processName)
+          deactivateAction(process.processVersion.processName)
         case Left(error) =>
           // This case should not happen. It would mean periodic property was valid when scheduling a process
           // but was made invalid when rescheduling again.
           logger.error(s"Wrong periodic property, error: $error. Deactivating $deployment")
-          deactivateInternal(process.processVersion.processName)
+          deactivateAction(process.processVersion.processName)
       }
     } yield callback
   }
 
-  private def markFailed(deployment: PeriodicProcessDeployment, state: Option[ProcessState]): RepositoryAction[Unit] = {
+  private def markFailedAction(deployment: PeriodicProcessDeployment, state: Option[ProcessState]): RepositoryAction[Unit] = {
     logger.info(s"Marking process $deployment as failed")
     for {
       _ <- scheduledProcessesRepository.markFailed(deployment.id)
@@ -111,9 +121,17 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
     } yield handleEvent(FailedEvent(currentState, state))
   }
 
-  def deactivate(processName: ProcessName): Future[Unit] = deactivateInternal(processName).runWithCallbacks
+  def deactivate(processName: ProcessName): Future[Unit] = for {
+    status <- delegateProcessManager.findJobStatus(processName)
+    maybePeriodicDeployment <- getScheduledRunDetails(processName)
+  } yield maybePeriodicDeployment match {
+    case Some(periodicDeployment) => handleFinishedAction(periodicDeployment, status)
+      .flatMap(_ => deactivateAction(processName))
+      .runWithCallbacks
+    case None => deactivateAction(processName).runWithCallbacks
+  }
 
-  private def deactivateInternal(processName: ProcessName): RepositoryAction[Callback] = {
+  private def deactivateAction(processName: ProcessName): RepositoryAction[Callback] = {
     logger.info(s"Deactivate $processName")
     for {
       // Order does matter. We need to find process data for *active* process and then
@@ -151,7 +169,7 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
       // We can recover since deployment actor watches only future completion.
       .recoverWith { case exception =>
         logger.error(s"Process deployment failed for deployment id $id", exception)
-        markFailed(deployment, None).run
+        markFailedAction(deployment, None).run
       }
   }
 

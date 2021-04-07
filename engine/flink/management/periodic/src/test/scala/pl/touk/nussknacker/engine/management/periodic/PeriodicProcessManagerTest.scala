@@ -4,6 +4,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FunSuite, Inside, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentData, GraphProcess, ProcessActionType, User}
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -47,6 +48,8 @@ class PeriodicProcessManagerTest extends FunSuite
       periodicPropertyExtractor = CronPropertyExtractor(),
       toClose = () => ()
     )
+
+    def getAllowedActions: List[ProcessActionType] = periodicProcessManager.findJobStatus(processName).futureValue.value.allowedActions
   }
 
   test("findJobStatus - should return none for no job") {
@@ -149,5 +152,117 @@ class PeriodicProcessManagerTest extends FunSuite
 
     f.repository.processEntities should have size 2
     f.repository.processEntities.map(_.active) shouldBe List(false, true)
+  }
+
+  test("should get status of failed job") {
+    val f = new Fixture
+    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
+    f.delegateProcessManagerStub.setStateStatus(FlinkStateStatus.Failed)
+
+    val state = f.periodicProcessManager.findJobStatus(processName).futureValue
+
+    val status = state.value.status
+    status shouldBe SimpleStateStatus.Failed
+    state.value.allowedActions shouldBe List(ProcessActionType.Cancel)
+  }
+
+  test("should redeploy failed process") {
+    val f = new Fixture
+    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
+    f.delegateProcessManagerStub.setStateStatus(FlinkStateStatus.Failed)
+    f.getAllowedActions shouldBe List(ProcessActionType.Cancel) // redeploy is blocked in GUI but API allows it
+
+    f.periodicProcessManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen(), None).futureValue
+
+    f.repository.processEntities.map(_.active) shouldBe List(false, true)
+    f.repository.deploymentEntities.map(_.status) shouldBe List(PeriodicProcessDeploymentStatus.Failed, PeriodicProcessDeploymentStatus.Scheduled)
+  }
+
+  test("should redeploy scheduled process") {
+    val f = new Fixture
+    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
+    f.getAllowedActions shouldBe List(ProcessActionType.Cancel, ProcessActionType.Deploy)
+
+    f.periodicProcessManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen(), None).futureValue
+
+    f.repository.processEntities.map(_.active) shouldBe List(false, true)
+    f.repository.deploymentEntities.map(_.status) shouldBe List(PeriodicProcessDeploymentStatus.Scheduled, PeriodicProcessDeploymentStatus.Scheduled)
+  }
+
+  test("should redeploy running process") {
+    val f = new Fixture
+    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
+    f.delegateProcessManagerStub.setStateStatus(FlinkStateStatus.Running)
+    f.getAllowedActions shouldBe List(ProcessActionType.Cancel) // redeploy is blocked in GUI but API allows it
+
+    f.periodicProcessManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen(), None).futureValue
+
+    f.repository.processEntities.map(_.active) shouldBe List(false, true)
+    f.repository.deploymentEntities.map(_.status) shouldBe List(PeriodicProcessDeploymentStatus.Deployed, PeriodicProcessDeploymentStatus.Scheduled)
+  }
+
+  test("should redeploy finished process") {
+    val f = new Fixture
+    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
+    f.delegateProcessManagerStub.setStateStatus(FlinkStateStatus.Finished)
+    f.getAllowedActions shouldBe List(ProcessActionType.Cancel) // redeploy is blocked in GUI but API allows it
+
+    f.periodicProcessManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen(), None).futureValue
+
+    f.repository.processEntities.map(_.active) shouldBe List(false, true)
+    f.repository.deploymentEntities.map(_.status) shouldBe List(PeriodicProcessDeploymentStatus.Finished, PeriodicProcessDeploymentStatus.Scheduled)
+  }
+
+  test("should cancel failed job after RescheduleActor handles finished") {
+    val f = new Fixture
+    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
+    f.delegateProcessManagerStub.setStateStatus(FlinkStateStatus.Failed)
+
+    //this one is cyclically called by RescheduleActor
+    f.periodicProcessService.handleFinished.futureValue
+
+    f.periodicProcessManager.findJobStatus(processName).futureValue.get.status shouldBe SimpleStateStatus.Failed
+    f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
+    f.repository.processEntities.loneElement.active shouldBe true
+
+    f.periodicProcessManager.cancel(processName, User("test", "Tester")).futureValue
+
+    f.repository.processEntities.loneElement.active shouldBe false
+    f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
+    f.periodicProcessManager.findJobStatus(processName).futureValue.get.status shouldBe SimpleStateStatus.Canceled
+  }
+
+  test("should cancel failed job before RescheduleActor handles finished") {
+    val f = new Fixture
+    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
+    f.delegateProcessManagerStub.setStateStatus(FlinkStateStatus.Failed)
+
+    f.periodicProcessManager.cancel(processName, User("test", "Tester")).futureValue
+
+    f.repository.processEntities.loneElement.active shouldBe false
+    f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
+    f.periodicProcessManager.findJobStatus(processName).futureValue.get.status shouldBe SimpleStateStatus.Canceled
+  }
+
+  test("should cancel failed process after disappeared from Flink console") {
+    val f = new Fixture
+    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
+    f.delegateProcessManagerStub.setStateStatus(FlinkStateStatus.Failed)
+
+    //this one is cyclically called by RescheduleActor
+    f.periodicProcessService.handleFinished.futureValue
+
+    //after some time Flink stops returning job status
+    f.delegateProcessManagerStub.jobStatus = None
+
+    f.periodicProcessManager.findJobStatus(processName).futureValue.get.status shouldBe SimpleStateStatus.Failed
+    f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
+    f.repository.processEntities.loneElement.active shouldBe true
+
+    f.periodicProcessManager.cancel(processName, User("test", "Tester")).futureValue
+
+    f.repository.processEntities.loneElement.active shouldBe false
+    f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
+    f.periodicProcessManager.findJobStatus(processName).futureValue shouldBe None
   }
 }

@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
-import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus
+import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeployment, PeriodicProcessDeploymentStatus}
 import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, PeriodicProcessListener}
 import slick.jdbc
 import slick.jdbc.JdbcProfile
@@ -69,7 +69,7 @@ class PeriodicProcessManager(val delegate: ProcessManager,
 
         // PeriodicProcessStateDefinitionManager do not allow to redeploy (so doesn't GUI),
         // but NK API does, so we need to handle this situation.
-        cancelIfAlreadyDeployed(processVersion, deploymentData.user)
+        cancelIfJobPresent(processVersion, deploymentData.user)
           .flatMap(_ => {
             logger.info(s"Scheduling ${processVersion.processName}, versionId: ${processVersion.versionId}")
             service.schedule(periodicProperty, processVersion, processJson)
@@ -81,12 +81,9 @@ class PeriodicProcessManager(val delegate: ProcessManager,
     }
   }
 
-  private def cancelIfAlreadyDeployed(processVersion: ProcessVersion, user: User): Future[Unit] = {
+  private def cancelIfJobPresent(processVersion: ProcessVersion, user: User): Future[Unit] = {
     findJobStatus(processVersion.processName)
-      .map {
-        case Some(s) => s.isDeployed //for periodic status isDeployed=true means deployed or scheduled
-        case None => false
-      }
+      .map(_.isDefined)
       .flatMap(shouldStop => {
         if (shouldStop) {
           logger.info(s"Process ${processVersion.processName} is running or scheduled. Cancelling before reschedule")
@@ -112,6 +109,14 @@ class PeriodicProcessManager(val delegate: ProcessManager,
     delegate.test(name, json, testData, variableEncoder)
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
+    def handleFailed(original: Option[ProcessState]): Future[Option[ProcessState]] = {
+      service.getScheduledRunDetails(name).map {
+        // this method returns only active schedules, so 'None' means this process has been already canceled
+        case None => original.map(_.copy(status = SimpleStateStatus.Canceled))
+        case _ => original
+      }
+    }
+
     def handleScheduled(original: Option[ProcessState]): Future[Option[ProcessState]] = {
       service.getScheduledRunDetails(name).map { maybeProcessDeployment =>
         maybeProcessDeployment.map { processDeployment =>
@@ -158,6 +163,7 @@ class PeriodicProcessManager(val delegate: ProcessManager,
       .flatMap {
         // Scheduled again or waiting to be scheduled again.
         case state@Some(js) if js.status.isFinished => handleScheduled(state)
+        case state@Some(js) if js.status.isFailed => handleFailed(state)
         // Job was previously canceled and it still exists on Flink but a new periodic job can be already scheduled.
         case state@Some(js) if js.status == SimpleStateStatus.Canceled => handleScheduled(state)
         // Scheduled or never started or latest run already disappeared in Flink.
