@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.compile
 
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api
-import pl.touk.nussknacker.engine.api.{AdditionalVariable, AdditionalVariables, BranchParamName, CustomStreamTransformer, LazyParameter, MetaData, MethodToInvoke, OutputVariableName, ParamName, Service}
+import pl.touk.nussknacker.engine.api.{AdditionalVariable, AdditionalVariables, BranchParamName, CustomStreamTransformer, EagerService, LazyParameter, MetaData, MethodToInvoke, OutputVariableName, ParamName, Service, ServiceInvoker}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, FatalUnknownError, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerBranchParameter, DefinedEagerParameter, DefinedSingleParameter, FailedToDefineParameter, JoinGenericNodeTransformation, NodeDependencyValue, OutputVariableNameValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
@@ -10,6 +10,8 @@ import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariable
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, Source, SourceFactory, TestDataGenerator, TestDataParserProvider}
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.compile.validationHelpers.GenericParametersSource.finalResult
+import pl.touk.nussknacker.engine.compile.validationHelpers.GenericParametersTransformer.finalResult
 import pl.touk.nussknacker.engine.definition.TestInfoProvider
 
 import scala.concurrent.Future
@@ -222,6 +224,29 @@ object validationHelpers {
     override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]))
 
   }
+
+  object GenericParametersProcessor extends EagerService with GenericParameters[ServiceInvoker] {
+    protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
+      FinalResults(context)
+    }
+    override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]))
+
+  }
+
+  object GenericParametersEnricher extends EagerService with GenericParameters[ServiceInvoker] {
+
+    protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
+      dependencies.collectFirst { case OutputVariableNameValue(name) => name } match {
+        case Some(name) =>
+          finalResult(context, rest, name)
+        case None =>
+          FinalResults(context, errors = List(CustomNodeError("Output not defined", None)))
+      }
+    }
+    override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency, TypedNodeDependency(classOf[MetaData]))
+  }
+
+
 
   trait GenericParameters[T] extends SingleInputGenericNodeTransformation[T] {
 
