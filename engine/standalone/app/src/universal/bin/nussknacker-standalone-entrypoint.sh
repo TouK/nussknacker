@@ -2,7 +2,6 @@
 
 NUSSKNACKER_DIR=`dirname "$0" | xargs -I{} readlink -f {}/..`
 export STORAGE_DIR="$NUSSKNACKER_DIR/storage"
-PROCESSES_DIR="$NUSSKNACKER_DIR/processes"
 CONF_DIR="$NUSSKNACKER_DIR/conf"
 LIB_DIR="$NUSSKNACKER_DIR/lib"
 MODELS_DIR="$NUSSKNACKER_DIR/models"
@@ -16,7 +15,6 @@ GROUP=${DAEMON_GROUP-${6-"daemon"}}
 mkdir -p ${STORAGE_DIR}/logs
 
 chmod -R ug+wr ${STORAGE_DIR}
-chmod -R ug+wr ${PROCESSES_DIR}
 
 echo "Nussknacker standalone up and running with" \
      "CONFIG: $CONFIG_FILE," \

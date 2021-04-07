@@ -402,7 +402,7 @@ lazy val standaloneDockerSettings = {
       standaloneProcessesPort,
       standaloneManagementPort
     ),
-    dockerExposedVolumes := Seq(s"$workingDir/storage", s"$workingDir/processes"),
+    dockerExposedVolumes := Seq(s"$workingDir/storage"),
     defaultLinuxInstallLocation in Docker := workingDir,
     packageName := standaloneDockerPackageName,
     dockerLabels := Map(
