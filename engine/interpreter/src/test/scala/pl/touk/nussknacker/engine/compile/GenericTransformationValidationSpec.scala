@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MetaData, StreamMetaData, process}
+import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MetaData, Service, StreamMetaData, process}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
@@ -42,12 +42,24 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
       "genericParametersSink" -> WithCategories(GenericParametersSink)
     )
 
+    override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
+      "genericParametersProcessor" -> WithCategories(GenericParametersProcessor),
+      "genericParametersEnricher" -> WithCategories(GenericParametersEnricher)
+    )
   }
 
   private val processBase = EspProcessBuilder.id("proc1").exceptionHandler().source("sourceId", "mySource")
   private val objectWithMethodDef = ProcessDefinitionExtractor.extractObjectWithMethods(MyProcessConfigCreator,
     process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader)))
   private val validator = ProcessValidator.default(objectWithMethodDef, new SimpleDictRegistry(Map.empty))
+
+  private val expectedGenericParameters = List(
+    Parameter[String]("par1").copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))),
+    Parameter[Long]("lazyPar1").copy(isLazyParameter = true),
+    Parameter("val1", Unknown),
+    Parameter("val2", Unknown),
+    Parameter("val3", Unknown)
+  )
 
 
   test("should validate happy path") {
@@ -73,14 +85,8 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
       "val3" -> Typed.fromDetailedType[java.util.List[Boolean]]
     ))
 
-    val parameters = result.parametersInNodes("generic")
-    parameters shouldBe List(
-      Parameter[String]("par1").copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))),
-      Parameter[Long]("lazyPar1").copy(isLazyParameter = true),
-      Parameter("val1", Unknown),
-      Parameter("val2", Unknown),
-      Parameter("val3", Unknown)
-    )
+    result.parametersInNodes("generic") shouldBe expectedGenericParameters
+
 
   }
 
@@ -104,14 +110,8 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
        "val3" -> Typed.fromDetailedType[java.util.List[Boolean]]
      ))
 
-    val parameters = result.parametersInNodes("sourceId")
-    parameters shouldBe List(
-      Parameter[String]("par1").copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))),
-      Parameter[Long]("lazyPar1").copy(isLazyParameter = true),
-      Parameter("val1", Unknown),
-      Parameter("val2", Unknown),
-      Parameter("val3", Unknown)
-    )
+    result.parametersInNodes("sourceId") shouldBe expectedGenericParameters
+
   }
 
   test("should validate sinks") {
@@ -126,14 +126,31 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
      )
      result.result shouldBe 'valid
 
-    val parameters = result.parametersInNodes("end")
-    parameters shouldBe List(
-      Parameter[String]("par1").copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))),
-      Parameter[Long]("lazyPar1").copy(isLazyParameter = true),
-      Parameter("val1", Unknown),
-      Parameter("val2", Unknown),
-      Parameter("val3", Unknown)
+    result.parametersInNodes("end") shouldBe expectedGenericParameters
+
+  }
+
+  test("should validate services") {
+    val result = validator.validate(
+    processBase.processor("genericProcessor", "genericParametersProcessor",
+              "par1" -> "'val1,val2,val3'",
+              "lazyPar1" -> "#input == null ? 1 : 5",
+              "val1" -> "'aa'",
+              "val2" -> "11",
+              "val3" -> "{false}"
+            ).enricher("genericEnricher", "out", "genericParametersProcessor",
+                "par1" -> "'val1,val2,val3'",
+                "lazyPar1" -> "#input == null ? 1 : 5",
+                "val1" -> "'aa'",
+                "val2" -> "11",
+                "val3" -> "{false}"
+              )
+            .emptySink("end", "dummySink")
     )
+    result.result shouldBe 'valid
+
+    result.parametersInNodes("genericProcessor") shouldBe expectedGenericParameters
+    result.parametersInNodes("genericProcessor") shouldBe expectedGenericParameters
   }
 
   test("should dependent parameter in sink") {
