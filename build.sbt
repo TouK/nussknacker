@@ -266,14 +266,6 @@ lazy val commonDockerSettings = {
     dockerBaseImage := "openjdk:11-jdk-slim",
     dockerUsername := dockerUserName,
     dockerUpdateLatest := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
-    dockerEnvVars := Map(
-      "AUTHENTICATION_METHOD" -> "BasicAuth",
-      "AUTHENTICATION_USERS_FILE" -> "./conf/users.conf",
-      "AUTHENTICATION_HEADERS_ACCEPT" -> "application/json",
-      "OAUTH2_RESPONSE_TYPE" -> "code",
-      "OAUTH2_GRANT_TYPE" -> "authorization_code",
-      "OAUTH2_SCOPE" -> "read:user",
-    ),
     dockerAliases := {
       //https://docs.docker.com/engine/reference/commandline/tag/#extended-description
       def sanitize(str: String) = str.replaceAll("[^a-zA-Z0-9.\\-_]", "_")
@@ -299,6 +291,14 @@ lazy val distDockerSettings = {
   commonDockerSettings ++ Seq(
     dockerEntrypoint := Seq(s"$workingDir/bin/nussknacker-entrypoint.sh", dockerPort.toString),
     dockerExposedPorts := Seq(dockerPort),
+    dockerEnvVars := Map(
+      "AUTHENTICATION_METHOD" -> "BasicAuth",
+      "AUTHENTICATION_USERS_FILE" -> "./conf/users.conf",
+      "AUTHENTICATION_HEADERS_ACCEPT" -> "application/json",
+      "OAUTH2_RESPONSE_TYPE" -> "code",
+      "OAUTH2_GRANT_TYPE" -> "authorization_code",
+      "OAUTH2_SCOPE" -> "read:user",
+    ),
     packageName := dockerPackageName,
     dockerLabels := Map(
       "version" -> version.value,
