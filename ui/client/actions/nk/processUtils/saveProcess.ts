@@ -9,6 +9,7 @@ import {displayCurrentProcessVersion} from "../process"
 async function renameProcess(processName: string, newProcessName: string) {
   if (await HttpService.changeProcessName(processName, newProcessName)) {
     history.replace({
+      ...history.location,
       pathname: history.location.pathname.replace(processName, newProcessName),
     })
   }
@@ -18,16 +19,19 @@ export function saveProcess(comment: string): ThunkAction {
   return async (dispatch, getState) => {
     const state = getState()
     const processId = getProcessId(state)
-    const processJson = getProcessToDisplay(state)
+    const {newId, ...processJson} = getProcessToDisplay(state)
 
     // save changes before rename and force same processId everywhere
     await HttpService.saveProcess(processId, {...processJson, id: processId}, comment)
-    await dispatch(displayCurrentProcessVersion(processId))
-    await dispatch(displayProcessActivity(processId))
-    await dispatch(UndoRedoActions.clear())
 
     if (isProcessRenamed(state)) {
-      await renameProcess(processId, processJson.id)
+      await renameProcess(processId, newId)
+      await dispatch(displayCurrentProcessVersion(newId))
+      await dispatch(displayProcessActivity(newId))
+    } else {
+      await dispatch(displayCurrentProcessVersion(processId))
+      await dispatch(displayProcessActivity(processId))
     }
+    await dispatch(UndoRedoActions.clear())
   }
 }

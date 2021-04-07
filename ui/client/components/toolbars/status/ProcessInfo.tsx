@@ -1,25 +1,31 @@
+import i18next from "i18next"
 import React, {memo} from "react"
+import {connect} from "react-redux"
+import {SwitchTransition} from "react-transition-group"
+import {absoluteBePath} from "../../../common/UrlUtils"
+import {RootState} from "../../../reducers"
+import {
+  getFetchedProcessDetails,
+  getProcessNewId,
+  getProcessState,
+  isProcessRenamed,
+  isStateLoaded,
+} from "../../../reducers/selectors/graph"
+import {getCapabilities} from "../../../reducers/selectors/other"
+import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
 import {UnknownRecord} from "../../../types/common"
 import {CssFade} from "../../CssFade"
-import {ProcessStateType, ProcessType} from "../../Process/types"
 import {descriptionProcessArchived, descriptionSubprocess, descriptionSubprocessArchived, unknownDescription} from "../../Process/messages"
-import {SwitchTransition} from "react-transition-group"
 import ProcessStateIcon, {unknownIcon} from "../../Process/ProcessStateIcon"
-import {absoluteBePath} from "../../../common/UrlUtils"
-import {RootState} from "../../../reducers/index"
-import {getFetchedProcessDetails, isStateLoaded, getProcessState} from "../../../reducers/selectors/graph"
-import {connect} from "react-redux"
-import {DragHandle} from "../../toolbarComponents/DragHandle"
-import Deploy from "./buttons/DeployButton"
-import Cancel from "./buttons/CancelDeployButton"
-import Metrics from "./buttons/MetricsButton"
-import {getCapabilities} from "../../../reducers/selectors/other"
-import SaveButton from "../process/buttons/SaveButton"
-import {ToolbarButtons} from "../../toolbarComponents/ToolbarButtons"
+import {ProcessStateType, ProcessType} from "../../Process/types"
 import {CollapsibleToolbar} from "../../toolbarComponents/CollapsibleToolbar"
-import i18next from "i18next"
+import {DragHandle} from "../../toolbarComponents/DragHandle"
+import {ToolbarButtons} from "../../toolbarComponents/ToolbarButtons"
+import SaveButton from "../process/buttons/SaveButton"
+import Cancel from "./buttons/CancelDeployButton"
 import CustomActionButton from "./buttons/CustomActionButton"
-import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
+import Deploy from "./buttons/DeployButton"
+import Metrics from "./buttons/MetricsButton"
 
 type State = UnknownRecord
 
@@ -93,11 +99,11 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
     <SaveButton key={0}/>,
     <Deploy key={1}/>,
     <Cancel key={2}/>,
-    <Metrics key={3}/>
+    <Metrics key={3}/>,
   ]
 
   render() {
-    const {process, processState, isStateLoaded, iconHeight, iconWidth, processDefinitionData} = this.props
+    const {process, processState, isStateLoaded, iconHeight, iconWidth, processDefinitionData, isRenamePending, nextId} = this.props
     const description = this.getDescription(process, processState, isStateLoaded)
     const icon = this.getIcon(process, processState, isStateLoaded, iconHeight, iconWidth, description)
     const transitionKey = this.getTransitionKey(process, processState)
@@ -122,7 +128,13 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
                   {icon}
                 </div>
                 <div className={"process-info-text"}>
-                  <div className={"process-name"}>{process.name}</div>
+                  {isRenamePending ?
+                    (
+                      <div className="process-name process-name-rename" title={process.name}>{nextId}*</div>
+                    ) :
+                    (
+                      <div className="process-name">{process.name}</div>
+                    )}
                   <div className={"process-info-description"}>{description}</div>
                 </div>
               </div>
@@ -140,6 +152,8 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
 const mapState = (state: RootState) => ({
   isStateLoaded: isStateLoaded(state),
   process: getFetchedProcessDetails(state),
+  isRenamePending: isProcessRenamed(state),
+  nextId: getProcessNewId(state),
   capabilities: getCapabilities(state),
   processState: getProcessState(state),
   processDefinitionData: getProcessDefinitionData(state),
