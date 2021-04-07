@@ -40,6 +40,8 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
                processVersion: ProcessVersion,
                processJson: String): Future[Unit] = {
     findInitialScheduleDates(schedule) match {
+      case Right(scheduleDates) if scheduleDates.forall(_._2.isEmpty) =>
+        Future.failed(new PeriodicProcessException(s"No future date determined by $schedule"))
       case Right(scheduleDates) =>
         logger.info("Scheduling periodic process: {} on {}", processVersion, scheduleDates)
         jarManager.prepareDeploymentWithJar(processVersion, processJson).flatMap { deploymentWithJarData =>
