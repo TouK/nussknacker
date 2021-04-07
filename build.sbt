@@ -43,6 +43,10 @@ val dockerPackageName = propOrEnv("dockerPackageName", "nussknacker")
 val dockerUpLatestFromProp = propOrEnv("dockerUpLatest").flatMap(p => Try(p.toBoolean).toOption)
 val addDevModel = propOrEnv("addDevModel", "false").toBoolean
 
+val standaloneManagementPort = propOrEnv("standaloneManagementPort", "8070").toInt
+val standaloneProcessesPort = propOrEnv("standaloneProcessesPort", "8080").toInt
+val standaloneDockerPackageName = propOrEnv("standaloneDockerPackageName", "nussknacker-standalone-app")
+
 // `publishArtifact := false` should be enough to keep sbt from publishing root module,
 // unfortunately it does not work, so we resort to hack by publishing root module to Resolver.defaultLocal
 //publishArtifact := false
@@ -257,31 +261,11 @@ val javaxValidationApiV = "2.0.1.Final"
 val caffeineCacheV = "2.8.8"
 val sttpV = "2.2.9"
 
-lazy val dockerSettings = {
-  val workingDir = "/opt/nussknacker"
-
+lazy val commonDockerSettings = {
   Seq(
-    dockerEntrypoint := Seq(s"$workingDir/bin/nussknacker-entrypoint.sh", dockerPort.toString),
-    dockerExposedPorts := Seq(dockerPort),
-    dockerExposedVolumes := Seq(s"$workingDir/storage", s"$workingDir/data"),
-    defaultLinuxInstallLocation in Docker := workingDir,
     dockerBaseImage := "openjdk:11-jdk-slim",
     dockerUsername := dockerUserName,
-    packageName := dockerPackageName,
     dockerUpdateLatest := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
-    dockerLabels := Map(
-      "version" -> version.value,
-      "scala" -> scalaVersion.value,
-      "flink" -> flinkV
-    ),
-    dockerEnvVars := Map(
-      "AUTHENTICATION_METHOD" -> "BasicAuth",
-      "AUTHENTICATION_USERS_FILE" -> "./conf/users.conf",
-      "AUTHENTICATION_HEADERS_ACCEPT" -> "application/json",
-      "OAUTH2_RESPONSE_TYPE" -> "code",
-      "OAUTH2_GRANT_TYPE" -> "authorization_code",
-      "OAUTH2_SCOPE" -> "read:user",
-    ),
     dockerAliases := {
       //https://docs.docker.com/engine/reference/commandline/tag/#extended-description
       def sanitize(str: String) = str.replaceAll("[^a-zA-Z0-9.\\-_]", "_")
@@ -297,7 +281,32 @@ lazy val dockerSettings = {
       List(dockerVersion, updateLatest, latestBranch, dockerTagName)
         .map(tag => alias.withTag(tag.map(sanitize)))
         .distinct
-    },
+    }
+  )
+}
+
+lazy val distDockerSettings = {
+  val workingDir = "/opt/nussknacker"
+
+  commonDockerSettings ++ Seq(
+    dockerEntrypoint := Seq(s"$workingDir/bin/nussknacker-entrypoint.sh", dockerPort.toString),
+    dockerExposedPorts := Seq(dockerPort),
+    dockerEnvVars := Map(
+      "AUTHENTICATION_METHOD" -> "BasicAuth",
+      "AUTHENTICATION_USERS_FILE" -> "./conf/users.conf",
+      "AUTHENTICATION_HEADERS_ACCEPT" -> "application/json",
+      "OAUTH2_RESPONSE_TYPE" -> "code",
+      "OAUTH2_GRANT_TYPE" -> "authorization_code",
+      "OAUTH2_SCOPE" -> "read:user",
+    ),
+    packageName := dockerPackageName,
+    dockerLabels := Map(
+      "version" -> version.value,
+      "scala" -> scalaVersion.value,
+      "flink" -> flinkV
+    ),
+    dockerExposedVolumes := Seq(s"$workingDir/storage", s"$workingDir/data"),
+    defaultLinuxInstallLocation in Docker := workingDir
   )
 }
 
@@ -346,7 +355,7 @@ lazy val dist = {
       publishArtifact := false,
       SettingsHelper.makeDeploymentSettings(Universal, packageZipTarball in Universal, "tgz")
     )
-    .settings(dockerSettings)
+    .settings(distDockerSettings)
     .dependsOn(ui)
   if (addDevModel) {
     module
@@ -384,9 +393,29 @@ lazy val engineStandalone = (project in engine("standalone/engine")).
   ).
   dependsOn(interpreter % "provided", standaloneUtil, httpUtils % "provided", testUtil % "it,test")
 
+lazy val standaloneDockerSettings = {
+  val workingDir = "/opt/nussknacker"
+
+  commonDockerSettings ++ Seq(
+    dockerEntrypoint := Seq(s"$workingDir/bin/nussknacker-standalone-entrypoint.sh"),
+    dockerExposedPorts := Seq(
+      standaloneProcessesPort,
+      standaloneManagementPort
+    ),
+    dockerExposedVolumes := Seq(s"$workingDir/storage"),
+    defaultLinuxInstallLocation in Docker := workingDir,
+    packageName := standaloneDockerPackageName,
+    dockerLabels := Map(
+      "version" -> version.value,
+      "scala" -> scalaVersion.value,
+    )
+  )
+}
+
 lazy val standaloneApp = (project in engine("standalone/app")).
   settings(commonSettings).
   settings(publishAssemblySettings: _*).
+  enablePlugins(SbtNativePackager, JavaServerAppPackaging).
   settings(
     name := "nussknacker-standalone-app",
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = true, level = Level.Info),
@@ -402,6 +431,7 @@ lazy val standaloneApp = (project in engine("standalone/app")).
       )
     }
   ).
+  settings(standaloneDockerSettings).
   dependsOn(engineStandalone, interpreter, httpUtils, testUtil % "test")
 
 
