@@ -40,9 +40,12 @@ val dockerTagName = propOrEnv("dockerTagName")
 val dockerPort = propOrEnv("dockerPort", "8080").toInt
 val dockerUserName = Option(propOrEnv("dockerUserName", "touk"))
 val dockerPackageName = propOrEnv("dockerPackageName", "nussknacker")
-val standaloneDockerPackageName = propOrEnv("standaloneDockerPackageName", "nussknacker-standalone-app")
 val dockerUpLatestFromProp = propOrEnv("dockerUpLatest").flatMap(p => Try(p.toBoolean).toOption)
 val addDevModel = propOrEnv("addDevModel", "false").toBoolean
+
+val standaloneManagementPort = propOrEnv("standaloneManagementPort", "8070").toInt
+val standaloneProcessesPort = propOrEnv("standaloneProcessesPort", "8080").toInt
+val standaloneDockerPackageName = propOrEnv("standaloneDockerPackageName", "nussknacker-standalone-app")
 
 // `publishArtifact := false` should be enough to keep sbt from publishing root module,
 // unfortunately it does not work, so we resort to hack by publishing root module to Resolver.defaultLocal
@@ -260,7 +263,6 @@ val sttpV = "2.2.9"
 
 lazy val commonDockerSettings = {
   Seq(
-    dockerExposedPorts := Seq(dockerPort),
     dockerBaseImage := "openjdk:11-jdk-slim",
     dockerUsername := dockerUserName,
     dockerUpdateLatest := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
@@ -296,6 +298,7 @@ lazy val distDockerSettings = {
 
   commonDockerSettings ++ Seq(
     dockerEntrypoint := Seq(s"$workingDir/bin/nussknacker-entrypoint.sh", dockerPort.toString),
+    dockerExposedPorts := Seq(dockerPort),
     packageName := dockerPackageName,
     dockerLabels := Map(
       "version" -> version.value,
@@ -394,8 +397,12 @@ lazy val standaloneDockerSettings = {
   val workingDir = "/opt/nussknacker"
 
   commonDockerSettings ++ Seq(
-    dockerEntrypoint := Seq(s"$workingDir/bin/nussknacker-standalone-entrypoint.sh", dockerPort.toString),
-    dockerExposedVolumes := Seq(s"$workingDir/storage", s"$workingDir/data"),
+    dockerEntrypoint := Seq(s"$workingDir/bin/nussknacker-standalone-entrypoint.sh"),
+    dockerExposedPorts := Seq(
+      standaloneProcessesPort,
+      standaloneManagementPort
+    ),
+    dockerExposedVolumes := Seq(s"$workingDir/storage", s"$workingDir/processes"),
     defaultLinuxInstallLocation in Docker := workingDir,
     packageName := standaloneDockerPackageName,
     dockerLabels := Map(
