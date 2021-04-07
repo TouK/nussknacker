@@ -2,7 +2,7 @@ import React, {ChangeEvent, useCallback, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
 import {saveProcess} from "../../actions/nk"
-import {getProcessId, getProcessToDisplay, isProcessRenamed} from "../../reducers/selectors/graph"
+import {getProcessId, getProcessNewId, isProcessRenamed} from "../../reducers/selectors/graph"
 import "../../stylesheets/visualization.styl"
 import CommentInput from "../CommentInput"
 import Dialogs from "./Dialogs"
@@ -14,7 +14,7 @@ function SaveProcessDialog(): JSX.Element {
 
   const dispatch = useDispatch()
   const processId = useSelector(getProcessId)
-  const process = useSelector(getProcessToDisplay)
+  const newId = useSelector(getProcessNewId)
   const isRenamed = useSelector(isProcessRenamed)
 
   const confirm = useCallback(
@@ -32,7 +32,7 @@ function SaveProcessDialog(): JSX.Element {
   return (
     <GenericModalDialog init={reset} confirm={confirm} type={Dialogs.types.saveProcess}>
       <p>{isRenamed ?
-        t("saveProcess.renameTitle", "Save process and rename to {{name}}", {name: process.id}) :
+        t("saveProcess.renameTitle", "Save process and rename to {{name}}", {name: newId}) :
         t("saveProcess.title", "Save process {{name}}", {name: processId})
       }</p>
       <CommentInput onChange={onInputChange} value={comment}/>

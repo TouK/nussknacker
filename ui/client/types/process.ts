@@ -4,6 +4,7 @@ import {ValidationResult} from "./validation"
 
 export type Process = {
   id: string,
+  newId?: string,
   nodes: NodeType[],
   edges: Edge[],
   properties: NodeType,

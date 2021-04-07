@@ -23,8 +23,6 @@ import {NkThemeProvider} from "./theme"
 class Visualization extends React.Component {
 
   state = {
-    timeoutId: null,
-    intervalId: null,
     processStateIntervalTime: 10000,
     processStateIntervalId: null,
     dataResolved: false,
@@ -164,8 +162,6 @@ class Visualization extends React.Component {
 
   componentWillUnmount() {
     clearInterval(this.state.processStateIntervalId)
-    clearTimeout(this.state.timeoutId)
-    clearInterval(this.state.intervalId)
     this.props.actions.clearProcess()
     _.forOwn(this.windowListeners, (listener, type) => window.removeEventListener(type, listener))
   }
