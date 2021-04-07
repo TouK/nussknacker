@@ -10,15 +10,14 @@ import scala.reflect._
 class TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory[Key: ClassTag, Value: ClassTag](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
   extends ConfluentKeyValueKafkaAvroDeserializationFactory(schemaRegistryClientFactory) {
 
-  override protected type K = Key
-  override protected type V = Value
-  override protected type O = (K, V)
+  override protected type O = (Key, Value)
 
-  override protected def createObject(key: Key, value: Value, topic: String): (Key, Value) = {
-    (key, value)
+  override protected def createObject[K: ClassTag, V: ClassTag](key: K, value: V, topic: String): (Key, Value) = {
+    (key.asInstanceOf[Key], value.asInstanceOf[Value])
   }
 
-  override protected def createObjectTypeInformation(keyTypeInformation: TypeInformation[Key], valueTypeInformation: TypeInformation[Value]): TypeInformation[(Key, Value)] =
+  override protected def createObjectTypeInformation[K: ClassTag, V: ClassTag](keyTypeInformation: TypeInformation[K], valueTypeInformation: TypeInformation[V]): TypeInformation[O] =
     createTuple2TypeInformation(keyTypeInformation, valueTypeInformation)
+      .asInstanceOf[TypeInformation[O]]
 
 }

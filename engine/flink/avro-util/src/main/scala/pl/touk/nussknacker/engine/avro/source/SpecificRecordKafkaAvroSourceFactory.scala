@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.editor.{SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
+import pl.touk.nussknacker.engine.avro.FixedNoneSchemaDeterminer
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.TopicParamName
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryProvider, SpecificRecordEmbeddedSchemaDeterminer}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
@@ -28,16 +29,15 @@ class SpecificRecordKafkaAvroSourceFactory[T <: SpecificRecord: ClassTag](schema
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
     val preparedTopic = KafkaUtils.prepareKafkaTopic(topic, processObjectDependencies)
     val valueSchemaDeterminer = new SpecificRecordEmbeddedSchemaDeterminer(classTag[T].runtimeClass.asInstanceOf[Class[_ <: SpecificRecord]])
+    val keySchemaDeterminer = FixedNoneSchemaDeterminer
     createSource(
       preparedTopic,
       kafkaConfig,
       schemaRegistryProvider.deserializationSchemaFactory,
       schemaRegistryProvider.recordFormatter,
+      keySchemaDeterminer,
       valueSchemaDeterminer,
-      keySchemaDeterminer = null,
-      returnGenericAvroType = false,
-      valueClassTagOpt = Some(classTag[T]),
-      keyClassTagOpt = None
+      returnGenericAvroType = false
     )
   }
 

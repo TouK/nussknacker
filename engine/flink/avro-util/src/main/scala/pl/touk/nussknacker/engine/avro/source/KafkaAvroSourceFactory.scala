@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermar
 
 import scala.reflect.ClassTag
 
+//TODO: add key-value as default deserailization scenario
 class KafkaAvroSourceFactory[T:ClassTag](val schemaRegistryProvider: SchemaRegistryProvider,
                                          val processObjectDependencies: ProcessObjectDependencies,
                                          timestampAssigner: Option[TimestampWatermarkHandler[T]])
@@ -30,12 +31,13 @@ class KafkaAvroSourceFactory[T:ClassTag](val schemaRegistryProvider: SchemaRegis
       val preparedTopic = prepareTopic(topic)
       val versionOption = parseVersionOption(version)
 
+      // key schema
+      // TODO: add key schema versioning
+      val keySchemaDeterminer = prepareKeySchemaDeterminer(preparedTopic)
+      val keyValidType = keySchemaDeterminer.determineSchemaUsedInTyping.map(schemaData => AvroSchemaTypeDefinitionExtractor.typeDefinition(schemaData.schema))
       // value schema
       val valueSchemaDeterminer = prepareValueSchemaDeterminer(preparedTopic, versionOption)
       val valueValidType = valueSchemaDeterminer.determineSchemaUsedInTyping.map(schemaData => AvroSchemaTypeDefinitionExtractor.typeDefinition(schemaData.schema))
-      // key schema, optional (default behaviour is fallback to String, see KafkaAvroContextInitializer)
-      val keySchemaDeterminer = prepareKeySchemaDeterminer(preparedTopic)
-      val keyValidType = keySchemaDeterminer.determineSchemaUsedInTyping.map(schemaData => AvroSchemaTypeDefinitionExtractor.typeDefinition(schemaData.schema))
 
       val finalCtxValue = finalCtx(context, dependencies, keyValidType.getOrElse(Unknown), valueValidType.getOrElse(Unknown))
       val finalErrors = valueValidType.swap.map(error => CustomNodeError(error.getMessage, Some(SchemaVersionParamName))).toList
@@ -66,8 +68,8 @@ class KafkaAvroSourceFactory[T:ClassTag](val schemaRegistryProvider: SchemaRegis
       kafkaConfig,
       schemaRegistryProvider.deserializationSchemaFactory,
       schemaRegistryProvider.recordFormatter,
-      prepareValueSchemaDeterminer(preparedTopic, version),
       prepareKeySchemaDeterminer(preparedTopic),
+      prepareValueSchemaDeterminer(preparedTopic, version),
       returnGenericAvroType = true
     )(typedDependency[MetaData](dependencies), typedDependency[NodeId](dependencies))
   }

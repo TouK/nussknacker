@@ -85,11 +85,12 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
     SchemaVersionOption.byName(versionOptionName)
 
   protected def prepareValueSchemaDeterminer(preparedTopic: PreparedKafkaTopic, version: SchemaVersionOption): AvroSchemaDeterminer = {
-    new BasedOnVersionAvroSchemaDeterminer(schemaRegistryClient, preparedTopic.prepared, version, false)
+    new BasedOnVersionAvroSchemaDeterminer(schemaRegistryClient, preparedTopic.prepared, version, isKey = false)
   }
 
+  //TODO: add schema versioning for key schemas
   protected def prepareKeySchemaDeterminer(preparedTopic: PreparedKafkaTopic): AvroSchemaDeterminer = {
-    new BasedOnVersionAvroSchemaDeterminer(schemaRegistryClient, preparedTopic.prepared, LatestSchemaVersion, true)
+    new BasedOnVersionAvroSchemaDeterminer(schemaRegistryClient, preparedTopic.prepared, LatestSchemaVersion, isKey = true)
   }
 
   protected def topicParamStep(implicit nodeId: NodeId): NodeTransformationDefinition = {

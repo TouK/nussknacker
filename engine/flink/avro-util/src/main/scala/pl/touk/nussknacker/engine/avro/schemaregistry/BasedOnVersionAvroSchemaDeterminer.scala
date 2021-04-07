@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, SchemaDeterminerEr
 class BasedOnVersionAvroSchemaDeterminer(schemaRegistryClient: SchemaRegistryClient,
                                          topic: String,
                                          versionOption: SchemaVersionOption,
-                                         isKey: Boolean = false) extends AvroSchemaDeterminer {
+                                         isKey: Boolean) extends AvroSchemaDeterminer {
 
   override def determineSchemaUsedInTyping: Validated[SchemaDeterminerError, RuntimeSchemaData] = {
     val version = versionOption match {

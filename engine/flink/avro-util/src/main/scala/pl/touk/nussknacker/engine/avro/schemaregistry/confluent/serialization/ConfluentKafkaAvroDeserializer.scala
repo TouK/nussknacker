@@ -34,8 +34,8 @@ class ConfluentKafkaAvroDeserializer[T](kafkaConfig: KafkaConfig, schemaData: Ru
     KryoGenericRecordSchemaIdSerializationSupport.schemaIdSerializationEnabled(kafkaConfig)
 
   override def deserialize(topic: String, data: Array[Byte]): T = {
-    val payloadObj = deserialize(topic, isKey, data, schemaData)
-    payloadObj.asInstanceOf[T]
+    val deserializedData = deserialize(topic, isKey, data, schemaData)
+    deserializedData.asInstanceOf[T]
   }
 
   override def close(): Unit = {}
