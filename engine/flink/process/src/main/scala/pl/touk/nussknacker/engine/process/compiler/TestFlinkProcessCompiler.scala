@@ -2,16 +2,14 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
-import org.apache.flink.api.scala._
 import pl.touk.nussknacker.engine.api.ProcessListener
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientException}
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies, TestDataParserProvider}
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
+import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
-import pl.touk.nussknacker.engine.flink.api.process.FlinkSource
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.util.exception.ConsumingNonTransientExceptions
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -34,9 +32,9 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
     overrideObjectWithMethod(sourceFactory, (paramFun, outputVariableNameOpt, additional, returnType) => {
       val originalSource = sourceFactory.invokeMethod(paramFun, outputVariableNameOpt, additional).asInstanceOf[FlinkSource[Object]]
       originalSource match {
-        case testDataParserProvider: TestDataParserProvider[Object@unchecked] =>
-          val testObjects = testDataParserProvider.testDataParser.parseTestData(testData.testData)
-          CollectionSource[Object](executionConfig, testObjects, originalSource.timestampAssignerForTest, returnType())(originalSource.typeInformation)
+        case sourceWithTestSupport: FlinkSourceTestSupport[Object@unchecked] =>
+          val testObjects = sourceWithTestSupport.testDataParser.parseTestData(testData.testData)
+          CollectionSource[Object](executionConfig, testObjects, sourceWithTestSupport.timestampAssignerForTest, returnType())(sourceWithTestSupport.typeInformation)
         case _ =>
           throw new IllegalArgumentException(s"Source ${originalSource.getClass} cannot be stubbed - it does'n provide test data parser")
       }

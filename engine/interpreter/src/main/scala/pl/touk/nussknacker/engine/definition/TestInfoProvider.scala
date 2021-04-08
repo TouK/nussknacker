@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.process.{TestDataGenerator, TestDataParserProvider}
+import pl.touk.nussknacker.engine.api.process.{TestDataGenerator, SourceTestSupport}
 import pl.touk.nussknacker.engine.api.{MetaData, process}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
@@ -33,7 +33,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
 
   override def getTestingCapabilities(metaData: MetaData, source: Source): TestingCapabilities = {
     val sourceObj = prepareSourceObj(source)(metaData)
-    val canTest = sourceObj.exists(_.isInstanceOf[TestDataParserProvider[_]])
+    val canTest = sourceObj.exists(_.isInstanceOf[SourceTestSupport[_]])
     val canGenerateData = sourceObj.exists(_.isInstanceOf[TestDataGenerator])
     TestingCapabilities(canBeTested = canTest, canGenerateTestData = canGenerateData)
   }

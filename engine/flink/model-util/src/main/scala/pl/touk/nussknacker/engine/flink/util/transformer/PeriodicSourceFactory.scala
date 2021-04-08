@@ -52,8 +52,6 @@ class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]
         timestampAssigner.assignTimestampAndWatermarks(stream)
       }
 
-      override def timestampAssignerForTest: Option[TimestampWatermarkHandler[AnyRef]] = Some(timestampAssigner)
-
       override val returnType: typing.TypingResult = value.returnType
 
     }

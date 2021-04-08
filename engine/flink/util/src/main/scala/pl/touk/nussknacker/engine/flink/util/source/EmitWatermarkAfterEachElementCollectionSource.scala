@@ -9,7 +9,6 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunctuatedExtractor
 
 import scala.annotation.nowarn
@@ -57,11 +56,6 @@ class EmitWatermarkAfterEachElementCollectionSource[T: TypeInformation](list: Se
   }
 
   override def typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
-
-  // we already extract timestamp and assign watermark in the source
-  override def timestampAssignerForTest: Option[TimestampWatermarkHandler[T]]
-    = Some(new LegacyTimestampWatermarkHandler[T](timestampAssigner))
-
 
 }
 
