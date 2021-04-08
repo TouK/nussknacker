@@ -9,7 +9,8 @@ import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkSource, FlinkSourceTestSupport}
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSource, FlinkSourceTestSupport}
+import pl.touk.nussknacker.engine.flink.util.context.FlinkContextInitializer
 import pl.touk.nussknacker.engine.flink.util.exception.ConsumingNonTransientExceptions
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -34,7 +35,14 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
       originalSource match {
         case sourceWithTestSupport: FlinkSourceTestSupport[Object@unchecked] =>
           val testObjects = sourceWithTestSupport.testDataParser.parseTestData(testData.testData)
-          CollectionSource[Object](executionConfig, testObjects, sourceWithTestSupport.timestampAssignerForTest, returnType())(sourceWithTestSupport.typeInformation)
+          sourceWithTestSupport match {
+            case providerWithTransformation: FlinkIntermediateRawSource[Object@unchecked] =>
+              new CollectionSource[Object](executionConfig, testObjects, sourceWithTestSupport.timestampAssignerForTest, returnType())(sourceWithTestSupport.typeInformation) {
+                override val contextInitializer: FlinkContextInitializer[Object] = providerWithTransformation.contextInitializer
+              }
+            case _ =>
+              new CollectionSource[Object](executionConfig, testObjects, sourceWithTestSupport.timestampAssignerForTest, returnType())(sourceWithTestSupport.typeInformation)
+          }
         case _ =>
           throw new IllegalArgumentException(s"Source ${originalSource.getClass} cannot be stubbed - it does'n provide test data parser")
       }

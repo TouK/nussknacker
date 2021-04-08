@@ -1,16 +1,16 @@
 package pl.touk.nussknacker.engine.kafka.source
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, KafkaDeserializationSchema}
 import org.apache.flink.util.Collector
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.TestDataGenerator
 import pl.touk.nussknacker.engine.api.test.TestDataParser
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource, FlinkSourceTestSupport}
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkIntermediateRawSource, FlinkSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.kafka._
 
@@ -19,10 +19,11 @@ import scala.collection.JavaConverters._
 class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
                      kafkaConfig: KafkaConfig,
                      deserializationSchema: KafkaDeserializationSchema[T],
-                     timestampAssigner: Option[TimestampWatermarkHandler[T]],
+                     override val timestampAssigner: Option[TimestampWatermarkHandler[T]],
                      recordFormatter: RecordFormatter,
                      overriddenConsumerGroup: Option[String] = None)
   extends FlinkSource[T]
+    with FlinkIntermediateRawSource[T]
     with Serializable
     with FlinkSourceTestSupport[T]
     with TestDataGenerator
@@ -30,16 +31,11 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
 
   private lazy val topics: List[String] = preparedTopics.map(_.prepared)
 
-  override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[T] = {
+  override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[Context] = {
     val consumerGroupId = overriddenConsumerGroup.getOrElse(ConsumerGroupDeterminer(kafkaConfig).consumerGroup(flinkNodeContext))
-    env.setStreamTimeCharacteristic(if (timestampAssigner.isDefined) TimeCharacteristic.EventTime else TimeCharacteristic.IngestionTime)
+    val sourceFunction = flinkSourceFunction(consumerGroupId)
 
-    val newStart = setUidToNodeIdIfNeed(flinkNodeContext,
-      env
-        .addSource[T](flinkSourceFunction(consumerGroupId))(typeInformation)
-        .name(s"${flinkNodeContext.metaData.id}-${flinkNodeContext.nodeId}-source"))
-
-    timestampAssigner.map(_.assignTimestampAndWatermarks(newStart)).getOrElse(newStart)
+    prepareSourceStream(env, flinkNodeContext, sourceFunction)
   }
 
   override val typeInformation: TypeInformation[T] = deserializationSchema.getProducedType

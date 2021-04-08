@@ -172,11 +172,12 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
       //TODO: get rid of cast (but how??)
       val source = part.obj.asInstanceOf[FlinkSource[Any]]
 
+      val contextTypeInformation = typeInformationDetection.forContext(part.validationContext)
+
       val start = source
         .sourceStream(env, nodeContext(part.id, Left(ValidationContext.empty)))
-        .process(new EventTimeDelayMeterFunction("eventtimedelay", part.id, eventTimeMetricDuration))(source.typeInformation)
-        .map(new RateMeterFunction[Any]("source", part.id))(source.typeInformation)
-        .map(InitContextFunction[Any](metaData.id, part.id))(typeInformationDetection.forContext(part.validationContext))
+        .process(new EventTimeDelayMeterFunction[Context]("eventtimedelay", part.id, eventTimeMetricDuration))(contextTypeInformation)
+        .map(new RateMeterFunction[Context]("source", part.id))(contextTypeInformation)
 
       val asyncAssigned = wrapAsync(start, part, "interpretation")
 

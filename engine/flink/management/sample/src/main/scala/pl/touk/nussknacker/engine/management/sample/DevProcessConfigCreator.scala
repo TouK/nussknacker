@@ -84,6 +84,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "oneSource" -> categories(FlinkSourceFactory.noParam(new OneSource)),
     "communicationSource" -> categories(DynamicParametersSource),
     "csv-source" -> categories(FlinkSourceFactory.noParam(new CsvSource)),
+    "genericSourceWithCustomVariables" -> categories(GenericSourceWithCustomVariablesSample),
     "sql-source" -> categories(SqlSource)
   )
 
