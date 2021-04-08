@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.{JobData, MetaData}
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 
 import scala.concurrent.duration.FiniteDuration
 import scala.reflect.ClassTag
@@ -18,7 +19,8 @@ case class FlinkCustomNodeContext(jobData: JobData,
                                   signalSenderProvider: FlinkProcessSignalSenderProvider,
                                   exceptionHandlerPreparer: RuntimeContext => FlinkEspExceptionHandler,
                                   globalParameters: Option[NkGlobalParameters],
-                                  validationContext: Either[ValidationContext, Map[String, ValidationContext]]) {
+                                  validationContext: Either[ValidationContext, Map[String, ValidationContext]],
+                                  typeInformationDetection: TypeInformationDetection) {
   def metaData: MetaData = jobData.metaData
 }
 
