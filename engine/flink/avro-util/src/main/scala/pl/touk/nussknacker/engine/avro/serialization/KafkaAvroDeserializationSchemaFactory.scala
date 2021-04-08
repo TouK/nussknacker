@@ -19,8 +19,9 @@ trait KafkaAvroDeserializationSchemaFactory extends Serializable {
 
   /**
     * Prepare Flink's KafkaDeserializationSchema based on provided information.
-    * @param kafkaConfig Configuration of integration with Kafka.
-    * @param keySchemaDataOpt Schema which will be used as a key reader schema.
+    *
+    * @param kafkaConfig        Configuration of integration with Kafka.
+    * @param keySchemaDataOpt   Schema which will be used as a key reader schema.
     * @param valueSchemaDataOpt Schema which will be used as a value reader schema. In case of None, writer schema will be used.
     * @tparam K Type that should be produced by key deserialization schema.
     * @tparam V Type that should be produced by value deserialization schema. It is important parameter, because factory can
@@ -28,9 +29,9 @@ trait KafkaAvroDeserializationSchemaFactory extends Serializable {
     * @return KafkaDeserializationSchema
     */
   def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig,
-                          keySchemaDataOpt: Option[RuntimeSchemaData] = None,
-                          valueSchemaDataOpt: Option[RuntimeSchemaData]
-                         ): KafkaDeserializationSchema[Any]
+                                       keySchemaDataOpt: Option[RuntimeSchemaData] = None,
+                                       valueSchemaDataOpt: Option[RuntimeSchemaData]
+                                      ): KafkaDeserializationSchema[Any]
 
 }
 
@@ -57,9 +58,9 @@ abstract class KafkaAvroValueDeserializationSchemaFactory
   protected def createValueTypeInfo[T: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): TypeInformation[T]
 
   override def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig,
-                                   keySchemaDataOpt: Option[RuntimeSchemaData] = None,
-                                   valueSchemaDataOpt: Option[RuntimeSchemaData]
-                                  ): KafkaDeserializationSchema[Any] = {
+                                                keySchemaDataOpt: Option[RuntimeSchemaData] = None,
+                                                valueSchemaDataOpt: Option[RuntimeSchemaData]
+                                               ): KafkaDeserializationSchema[Any] = {
     new KafkaDeserializationSchema[V] {
       @transient
       private lazy val deserializer = createValueDeserializer[V](valueSchemaDataOpt, kafkaConfig)
@@ -101,9 +102,9 @@ abstract class KafkaAvroKeyValueDeserializationSchemaFactory
   protected def createObjectTypeInformation[K: ClassTag, V: ClassTag](keyTypeInformation: TypeInformation[K], valueTypeInformation: TypeInformation[V]): TypeInformation[O]
 
   override def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig,
-                                   keySchemaDataOpt: Option[RuntimeSchemaData] = None,
-                                   valueSchemaDataOpt: Option[RuntimeSchemaData]
-                                  ): KafkaDeserializationSchema[Any] = {
+                                                keySchemaDataOpt: Option[RuntimeSchemaData] = None,
+                                                valueSchemaDataOpt: Option[RuntimeSchemaData]
+                                               ): KafkaDeserializationSchema[Any] = {
 
     new KafkaDeserializationSchema[O] {
       @transient
