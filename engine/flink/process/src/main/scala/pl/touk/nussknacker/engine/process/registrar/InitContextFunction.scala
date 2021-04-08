@@ -2,8 +2,7 @@ package pl.touk.nussknacker.engine.process.registrar
 
 import org.apache.flink.api.common.functions.RichMapFunction
 import org.apache.flink.configuration.Configuration
-import pl.touk.nussknacker.engine.Interpreter
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.{Context, VariableConstants}
 import pl.touk.nussknacker.engine.flink.util.ContextInitializingFunction
 
 private[registrar] case class InitContextFunction(processId: String, taskName: String) extends RichMapFunction[Any, Context] with ContextInitializingFunction {
@@ -12,5 +11,5 @@ private[registrar] case class InitContextFunction(processId: String, taskName: S
     init(getRuntimeContext)
   }
 
-  override def map(input: Any): Context = newContext.withVariable(Interpreter.InputParamName, input)
+  override def map(input: Any): Context = newContext.withVariable(VariableConstants.InputVariableName, input)
 }
