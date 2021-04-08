@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.process.registrar
 
 import java.util.concurrent.TimeUnit
+
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.{LazyLogging, Logger}
 import org.apache.flink.api.common.functions.RuntimeContext
@@ -19,6 +20,7 @@ import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, _}
+import pl.touk.nussknacker.engine.flink.util.context.InitContextFunction
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
 import pl.touk.nussknacker.engine.process.compiler.{FlinkProcessCompiler, FlinkProcessCompilerData}
@@ -174,7 +176,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
         .sourceStream(env, nodeContext(part.id, Left(ValidationContext.empty)))
         .process(new EventTimeDelayMeterFunction("eventtimedelay", part.id, eventTimeMetricDuration))(source.typeInformation)
         .map(new RateMeterFunction[Any]("source", part.id))(source.typeInformation)
-        .map(InitContextFunction(metaData.id, part.id))(typeInformationDetection.forContext(part.validationContext))
+        .map(InitContextFunction[Any](metaData.id, part.id))(typeInformationDetection.forContext(part.validationContext))
 
       val asyncAssigned = wrapAsync(start, part, "interpretation")
 
