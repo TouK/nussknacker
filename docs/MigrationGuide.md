@@ -5,7 +5,7 @@ To see biggest differences please consult the [changelog](Changelog.md).
 ## In version 0.4.0 (not released yet) 
 
 * [#1542](https://github.com/TouK/nussknacker/pull/1542)
-  `KafkaConfig` now has new parameter `topicsExistenceValidationConfig`. When `topicsExistenceValidationConfig.enabled = true` 
+  `KafkaConfig` now has new parameter `topicsExistenceValidationConfig`. When `topicsExistenceValidationConfig.enabled = true`
   Kafka sources/sinks do not validate if provided topic does not exist and cluster is configured with `auto.create.topics.enable=false`
 * [#1416](https://github.com/TouK/nussknacker/pull/1416)
  `OAuth2Service` has changed. You can still use your old implementation by importing `OAuth2OldService` with an alias.
@@ -58,11 +58,17 @@ To see biggest differences please consult the [changelog](Changelog.md).
   - `BaseKafkaAvroSourceFactory` is able to read both key and value schema determiner to build proper DeserializationSchema (support for keys is not fully introduced in this change)
 * [#1514](https://github.com/TouK/nussknacker/pull/1514) `ExecutionConfigPreparer` has different method parameter - `JobData`, which has more info than previous parameters
 * [#1532](https://github.com/TouK/nussknacker/pull/1532) `TypedObjectTypingResult#fields` uses now `scala.collection.immutable.ListMap` to keep fields order
-* [#1546](https://github.com/TouK/nussknacker/pull/1546) `StandaloneCustomTransformer` now takes a list of `Context` objects, to process them in one go                                               
+* [#1546](https://github.com/TouK/nussknacker/pull/1546) `StandaloneCustomTransformer` now takes a list of `Context` objects, to process them in one go
 * [#1557](https://github.com/TouK/nussknacker/pull/1556) Some classes from standalone engine were moved to standalone api to remove engine to (model) utils dependency:
   `StandaloneContext`, `StandaloneContextLifecycle`, `MetricsProvider`
-* [#1558](https://github.com/TouK/nussknacker/pull/1558) `FlinkProcessRegistrar` takes configuration directly from `FlinkProcessCompiler` (this can affect some tests setup) 
+* [#1558](https://github.com/TouK/nussknacker/pull/1558) `FlinkProcessRegistrar` takes configuration directly from `FlinkProcessCompiler` (this can affect some tests setup)
 * [#1631](https://github.com/TouK/nussknacker/pull/1631) Introduction of `nussknacker.config.locations` property, drop use of standard `config.file` property. Model configuration no longer has direct access to root UI config.
+* [#1512](https://github.com/TouK/nussknacker/pull/1512) New kafka source `KafkaGenericNodeSourceFactory`, which is based on `GenericNodeTransformation`, gives access to setup of `ValidationContext` and `Context` initialization.
+  It uses `KafkaGenericContextInitializer` to initialize `Context` with additional variable with kafka event metadata. Factory requires proper deserialization to `ConsumerRecord` (see `ConsumerRecordDeserializationSchemaFactory`).
+  To replace basic `KafkaSourceFactory` with `KafkaGenericNodeSourceFactory`:
+  - use `ConsumerRecordDeserializationSchemaFactory` with current `DeserializationSchema` as a value deserializer, add key deserializer
+  - current `RecordFormater` should be sufficient for value-only serialization, or use `ConsumerRecordToJsonFormatter` for metadata serialization
+  - implement timestampAssigner that is able to extract time from `ConsumerRecord[K, V]`
 
 ## In version 0.3.0
 

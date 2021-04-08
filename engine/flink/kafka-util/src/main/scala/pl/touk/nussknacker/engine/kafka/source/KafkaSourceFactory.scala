@@ -26,6 +26,8 @@ import scala.reflect.ClassTag
   *   - KafkaSourceFactory - `topic` parameter has to be passed on frontend
   *   - SingleTopicKafkaSourceFactory - topic is defined on level of configuration
   *
+  * Used to produce simple sources with single input variable.
+  * For sources with full key-value and metadata support use [[pl.touk.nussknacker.engine.kafka.source.KafkaGenericNodeSourceFactory]].
   * </pre>
   * */
 class KafkaSourceFactory[T: ClassTag](deserializationSchemaFactory: KafkaDeserializationSchemaFactory[T],

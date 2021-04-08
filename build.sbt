@@ -586,7 +586,7 @@ lazy val process = (project in engine("flink/process")).
         "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
       )
     }
-  ).dependsOn(flinkUtil, interpreter, kafka % "test", kafkaTestUtil % "test", kafkaFlinkUtil % "test", flinkTestUtil % "test")
+  ).dependsOn(flinkUtil, interpreter, kafka % "test", kafkaTestUtil % "test", kafkaFlinkUtil % "test->test", flinkTestUtil % "test")
 
 lazy val interpreter = (project in engine("interpreter")).
   settings(commonSettings).
