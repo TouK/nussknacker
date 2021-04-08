@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.kafka
 
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
 
 /**
@@ -13,7 +12,7 @@ trait RecordFormatter {
 
   protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): Array[Byte]
 
-  protected def parseRecord(topic: String, bytes: Array[Byte]): ProducerRecord[Array[Byte], Array[Byte]]
+  protected def parseRecord(topic: String, bytes: Array[Byte]): ConsumerRecord[Array[Byte], Array[Byte]]
 
   protected def testDataSplit: TestDataSplit
 
@@ -21,7 +20,7 @@ trait RecordFormatter {
     testDataSplit.joinData(records.map(formatRecord))
   }
 
-  def parseDataForTest(topic: String, mergedData: Array[Byte]): List[ProducerRecord[Array[Byte], Array[Byte]]] = {
+  def parseDataForTest(topic: String, mergedData: Array[Byte]): List[ConsumerRecord[Array[Byte], Array[Byte]]] = {
     testDataSplit.splitData(mergedData).map { formatted =>
       parseRecord(topic, formatted)
     }
@@ -35,8 +34,8 @@ trait BasicFormatter extends RecordFormatter {
 
   override def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): Array[Byte] = record.value()
 
-  override def parseRecord(topic: String, bytes: Array[Byte]): ProducerRecord[Array[Byte], Array[Byte]] =
-    new ProducerRecord[Array[Byte], Array[Byte]](topic, bytes)
+  override def parseRecord(topic: String, bytes: Array[Byte]): ConsumerRecord[Array[Byte], Array[Byte]] =
+    new ConsumerRecord[Array[Byte], Array[Byte]](topic, 0, 0L, Array[Byte](), bytes)
 
   override def testDataSplit: TestDataSplit = TestParsingUtils.newLineSplit
 }

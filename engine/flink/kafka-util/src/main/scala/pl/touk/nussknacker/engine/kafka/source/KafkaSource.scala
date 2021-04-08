@@ -62,7 +62,7 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
   override def testDataParser: TestDataParser[T] = new TestDataParser[T] {
     override def parseTestData(merged: Array[Byte]): List[T] = {
       val topic = topics.head
-      recordFormatter.parseDataForTest(topic, merged).map(deserialize(topic, _))
+      recordFormatter.parseDataForTest(topic, merged).map {deserializeTestData(topic, _)}
     }
   }
 
@@ -71,9 +71,9 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
   //There is deserializationSchema.deserialize method which doesn't need Collector, however
   //for some reason KafkaDeserializationSchemaWrapper throws Exception when used in such way...
   //protected to make it easier for backward compatibility
-  protected def deserialize(topic: String, record: ProducerRecord[Array[Byte], Array[Byte]]): T = {
+  protected def deserializeTestData(topic: String, record: ConsumerRecord[Array[Byte], Array[Byte]]): T = {
     val collector = new SimpleCollector
-    deserializationSchema.deserialize(new ConsumerRecord[Array[Byte], Array[Byte]](topic, -1, -1, record.key(), record.value()), collector)
+    deserializationSchema.deserialize(record, collector)
     collector.output
   }
 
