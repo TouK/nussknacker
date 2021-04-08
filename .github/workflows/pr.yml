@@ -9,6 +9,7 @@ on:
     branches:
       - master
       - staging
+      - demo
       - preview/*
       - fixes/*
     #TODO: currently release is done manually, we don't want to run this pipeline on released version, to avoid accidental pushes
