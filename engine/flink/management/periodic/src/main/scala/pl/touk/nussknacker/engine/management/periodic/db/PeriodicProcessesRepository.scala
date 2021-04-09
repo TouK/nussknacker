@@ -31,7 +31,7 @@ object PeriodicProcessesRepository {
 
   def createPeriodicProcess(processEntity: PeriodicProcessEntity): PeriodicProcess = {
     val processVersion = ProcessVersion.empty.copy(versionId = processEntity.processVersionId, processName = ProcessName(processEntity.processName))
-    val periodicProperty = decode[BasePeriodicProperty](processEntity.periodicProperty).fold(e => throw new IllegalArgumentException(e), identity)
+    val periodicProperty = decode[PeriodicProperty](processEntity.periodicProperty).fold(e => throw new IllegalArgumentException(e), identity)
     PeriodicProcess(processEntity.id, model.DeploymentWithJarData(
       processVersion = processVersion,
       processJson = processEntity.processJson,
@@ -58,7 +58,7 @@ trait PeriodicProcessesRepository {
   def markInactive(processName: ProcessName): Action[Unit]
 
   def create(deploymentWithJarData: DeploymentWithJarData,
-             periodicProperty: BasePeriodicProperty): Action[PeriodicProcess]
+             periodicProperty: PeriodicProperty): Action[PeriodicProcess]
 
   def getNextScheduledRunForSchedule(processName: ProcessName): Action[Seq[PeriodicProcessDeployment]]
 
@@ -97,7 +97,7 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
   override def run[T](action: DBIOAction[T, NoStream, Effect.All]): Future[T] = db.run(action.transactionally)
 
   override def create(deploymentWithJarData: DeploymentWithJarData,
-                      periodicProperty: BasePeriodicProperty): Action[PeriodicProcess] = {
+                      periodicProperty: PeriodicProperty): Action[PeriodicProcess] = {
     val processEntity = PeriodicProcessEntity(
       id = PeriodicProcessId(-1),
       processName = deploymentWithJarData.processVersion.processName.value,

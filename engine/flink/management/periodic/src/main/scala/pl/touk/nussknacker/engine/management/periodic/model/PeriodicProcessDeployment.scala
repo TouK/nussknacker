@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management.periodic.model
 
-import pl.touk.nussknacker.engine.management.periodic.{ComplexPeriodicProperty, PeriodicProperty}
+import pl.touk.nussknacker.engine.management.periodic.{MultiplePeriodicProperty, SinglePeriodicProperty}
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import slick.lifted.MappedTo
 
@@ -13,9 +13,9 @@ case class PeriodicProcessDeployment(id: PeriodicProcessDeploymentId,
                                      state: PeriodicProcessDeploymentState) {
 
   def nextRunAt(clock: Clock): Either[String, Option[LocalDateTime]] = (periodicProcess.periodicProperty, scheduleName) match {
-    case (ComplexPeriodicProperty(schedules), Some(name)) =>
+    case (MultiplePeriodicProperty(schedules), Some(name)) =>
       schedules.get(name).toRight(s"Failed to find schedule: $scheduleName").right.flatMap(_.nextRunAt(clock))
-    case (e:PeriodicProperty, None) => e.nextRunAt(clock)
+    case (e:SinglePeriodicProperty, None) => e.nextRunAt(clock)
     case (schedule, name) => Left(s"Schedule name: $name mismatch with schedule: $schedule")
   }
 

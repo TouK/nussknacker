@@ -143,12 +143,12 @@ class PeriodicProcessServiceTest extends FunSuite
     val cronInFuture = CronPeriodicProperty(s"0 0 6 6 9 ? ${yearNow + 1}")
     val cronInPast = CronPeriodicProperty(s"0 0 6 6 9 ? ${yearNow - 1}")
 
-    def tryToSchedule(schedule: BasePeriodicProperty): Unit = f.periodicProcessService.schedule(schedule, ProcessVersion.empty, "{}").futureValue
+    def tryToSchedule(schedule: PeriodicProperty): Unit = f.periodicProcessService.schedule(schedule, ProcessVersion.empty, "{}").futureValue
 
     tryToSchedule(cronInFuture) shouldBe (())
-    tryToSchedule(ComplexPeriodicProperty(Map("s1" -> cronInFuture, "s2" -> cronInPast))) shouldBe (())
+    tryToSchedule(MultiplePeriodicProperty(Map("s1" -> cronInFuture, "s2" -> cronInPast))) shouldBe (())
 
     intercept[TestFailedException](tryToSchedule(cronInPast)).getCause shouldBe a[PeriodicProcessException]
-    intercept[TestFailedException](tryToSchedule(ComplexPeriodicProperty(Map("s1" -> cronInPast, "s2" -> cronInPast)))).getCause shouldBe a[PeriodicProcessException]
+    intercept[TestFailedException](tryToSchedule(MultiplePeriodicProperty(Map("s1" -> cronInPast, "s2" -> cronInPast)))).getCause shouldBe a[PeriodicProcessException]
   }
 }

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import java.time.Clock
 
 trait PeriodicPropertyExtractor {
-  def apply(processDeploymentData: ProcessDeploymentData): Either[String, BasePeriodicProperty]
+  def apply(processDeploymentData: ProcessDeploymentData): Either[String, PeriodicProperty]
 }
 
 object PeriodicPropertyExtractor {
@@ -34,7 +34,7 @@ object CronPropertyExtractor {
 
 case class CronPropertyExtractor(propertyName: String = CronPropertyDefaultName) extends PeriodicPropertyExtractor with LazyLogging {
 
-  override def apply(processDeploymentData: ProcessDeploymentData): Either[String, BasePeriodicProperty] =
+  override def apply(processDeploymentData: ProcessDeploymentData): Either[String, PeriodicProperty] =
     for {
       cronProperty <- PeriodicPropertyExtractor.extractProperty(processDeploymentData, propertyName).right
       cronPeriodicProperty <- Right(CronPeriodicProperty(cronProperty)).right

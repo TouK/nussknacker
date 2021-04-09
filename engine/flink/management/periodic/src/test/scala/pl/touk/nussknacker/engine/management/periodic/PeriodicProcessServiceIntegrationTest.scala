@@ -98,7 +98,7 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     def service = f.periodicProcessService(currentTime)
 
 
-    service.schedule(ComplexPeriodicProperty(Map(
+    service.schedule(MultiplePeriodicProperty(Map(
       "scheduleMinute5" -> CronPeriodicProperty("0 5 * * * ?"),
       "scheduleMinute10" -> CronPeriodicProperty("0 10 * * * ?"))),
       ProcessVersion.empty.copy(processName = processName), "{}").futureValue
@@ -130,7 +130,7 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     def service = f.periodicProcessService(currentTime)
 
 
-    service.schedule(ComplexPeriodicProperty(Map(
+    service.schedule(MultiplePeriodicProperty(Map(
       "schedule1" -> CronPeriodicProperty("0 5 * * * ?"),
       "schedule2" -> CronPeriodicProperty("0 5 * * * ?"))),
       ProcessVersion.empty.copy(processName = processName), "{}").futureValue
