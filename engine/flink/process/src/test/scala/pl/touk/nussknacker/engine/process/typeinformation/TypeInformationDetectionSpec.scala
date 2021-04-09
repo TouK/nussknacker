@@ -5,6 +5,7 @@ import org.apache.flink.api.common.typeinfo.{NothingTypeInfo, TypeInformation}
 import org.apache.flink.api.scala.typeutils.{CaseClassTypeInfo, TraversableTypeInfo}
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
@@ -18,7 +19,7 @@ class TypeInformationDetectionSpec extends FunSuite with Matchers {
   private val loader = getClass.getClassLoader
 
   private def executionConfig(useTypingResultAware: Option[Boolean] = None) = new ExecutionConfig {
-    setGlobalJobParameters(NkGlobalParameters("", ProcessVersion.empty, Some(ConfigGlobalParameters(None, None, useTypingResultAware, None)), None))
+    setGlobalJobParameters(NkGlobalParameters("", ProcessVersion.empty, DeploymentData.empty, Some(ConfigGlobalParameters(None, None, useTypingResultAware, None)), None))
   }
 
   private def typeInformationForVariables(detection: TypeInformationDetection,

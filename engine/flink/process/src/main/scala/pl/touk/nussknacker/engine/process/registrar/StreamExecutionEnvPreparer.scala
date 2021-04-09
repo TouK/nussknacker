@@ -38,7 +38,7 @@ class DefaultStreamExecutionEnvPreparer(checkpointConfig: Option[CheckpointConfi
 
   override def preRegistration(env: StreamExecutionEnvironment, processWithDeps: FlinkProcessCompilerData): Unit = {
 
-    executionConfigPreparer.prepareExecutionConfig(env.getConfig)(processWithDeps.metaData, processWithDeps.jobData.processVersion)
+    executionConfigPreparer.prepareExecutionConfig(env.getConfig)(processWithDeps.jobData)
 
     val streamMetaData = MetaDataExtractor.extractTypeSpecificDataOrFail[StreamMetaData](processWithDeps.metaData)
     env.setRestartStrategy(processWithDeps.restartStrategy)

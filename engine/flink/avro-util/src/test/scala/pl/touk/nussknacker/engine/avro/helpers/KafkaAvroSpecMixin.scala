@@ -7,8 +7,7 @@ import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
-import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer._
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.kryo.AvroSerializersRegistrar
@@ -45,7 +44,7 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
       ProcessSettingsPreparer(modelData),
       new UnoptimizedSerializationPreparer(modelData),
       new ExecutionConfigPreparer {
-        override def prepareExecutionConfig(config: ExecutionConfig)(metaData: MetaData, processVersion: ProcessVersion): Unit = {
+        override def prepareExecutionConfig(config: ExecutionConfig)(jobData: JobData): Unit = {
           AvroSerializersRegistrar.registerGenericRecordSchemaIdSerializationIfNeed(config, confluentClientFactory, kafkaConfig)
         }
       }
