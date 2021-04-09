@@ -537,7 +537,7 @@ export class NodeDetailsContent extends React.Component {
       (newValue) => this.setNodeDataAt(fieldProperty, newValue, defaultValue),
       readonly,
       this.isMarked(fieldProperty),
-      key,
+      key || fieldProperty || fieldLabel,
       autofocus,
       validators,
     )
