@@ -11,8 +11,7 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import pl.touk.nussknacker.engine.api.Context
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
-import pl.touk.nussknacker.engine.flink.util.context.BasicFlinkContextInitializer
+import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkContextInitializer, FlinkCustomNodeContext, FlinkSource}
 import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunctuatedExtractor
 
 import scala.annotation.nowarn

@@ -11,18 +11,17 @@ import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkSourceFactory, FlinkSourceTestSupport}
+import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkContextInitializer, FlinkContextInitializer, FlinkSourceFactory, FlinkSourceTestSupport, InitContextFunction}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
-import pl.touk.nussknacker.engine.flink.util.context.{BasicFlinkContextInitializer, FlinkContextInitializer, InitContextFunction}
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 
 object GenericSourceWithCustomVariablesSample extends FlinkSourceFactory[String] with SingleInputGenericNodeTransformation[Source[String]] {
 
   private class CustomFlinkContextInitializer extends BasicFlinkContextInitializer[String] {
 
-    override def validationContext(context: ValidationContext, name: String, result: typing.TypingResult)(implicit nodeId: NodeId): ValidationContext = {
+    override def validationContext(context: ValidationContext, outputVariableName: String, outputVariableType: typing.TypingResult)(implicit nodeId: NodeId): ValidationContext = {
       //Append variable "input"
-      val validatedContextWithInput = context.withVariable(OutputVar.customNode(name), Typed[String])
+      val validatedContextWithInput = context.withVariable(OutputVar.customNode(outputVariableName), Typed[String])
 
       //Specify additional variables
       val additionalVariables = Map(

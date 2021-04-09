@@ -14,9 +14,8 @@ import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironm
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource, FlinkSourceFactory}
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource, FlinkSourceFactory, InitContextFunction}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, TimestampWatermarkHandler}
-import pl.touk.nussknacker.engine.flink.util.context.InitContextFunction
 
 import scala.annotation.nowarn
 import scala.collection.JavaConverters._

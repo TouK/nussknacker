@@ -9,8 +9,7 @@ import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSource, FlinkSourceTestSupport}
-import pl.touk.nussknacker.engine.flink.util.context.FlinkContextInitializer
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializer, FlinkIntermediateRawSource, FlinkSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.util.exception.ConsumingNonTransientExceptions
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess

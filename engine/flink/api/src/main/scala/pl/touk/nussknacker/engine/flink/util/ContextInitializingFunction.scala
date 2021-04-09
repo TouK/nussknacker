@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.flink.util.context
+package pl.touk.nussknacker.engine.flink.util
 
 import java.util.concurrent.atomic.AtomicLong
 

@@ -4,10 +4,10 @@ import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Date, Optional, UUID}
+
 import cats.data.Validated.Valid
 import com.github.ghik.silencer.silent
 import io.circe.generic.JsonCodec
-
 import javax.annotation.Nullable
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
@@ -20,7 +20,7 @@ import org.apache.flink.streaming.api.windowing.time.Time
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation._
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, OutputVar, ValidationContext, ProcessCompilationError}
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
@@ -29,11 +29,10 @@ import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, New
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType, TypedMap, typing}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
-import pl.touk.nussknacker.engine.flink.api.process._
+import pl.touk.nussknacker.engine.flink.api.process.{InitContextFunction, _}
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
-import pl.touk.nussknacker.engine.flink.util.context.{BasicFlinkContextInitializer, FlinkContextInitializer, InitContextFunction}
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.signal.KafkaSignalStreamConnector
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EspDeserializationSchema}
@@ -651,9 +650,9 @@ object SampleNodes {
 
     private class CustomFlinkContextInitializer extends BasicFlinkContextInitializer[String] {
 
-      override def validationContext(context: ValidationContext, name: String, result: typing.TypingResult)(implicit nodeId: NodeId): ValidationContext = {
+      override def validationContext(context: ValidationContext, outputVariableName: String, outputVariableType: TypingResult)(implicit nodeId: NodeId): ValidationContext = {
         //Append variable "input"
-        val validatedContextWithInput = context.withVariable(OutputVar.customNode(name), Typed[String])
+        val validatedContextWithInput = context.withVariable(OutputVar.customNode(outputVariableName), Typed[String])
 
         //Specify additional variables
         val additionalVariables = Map(

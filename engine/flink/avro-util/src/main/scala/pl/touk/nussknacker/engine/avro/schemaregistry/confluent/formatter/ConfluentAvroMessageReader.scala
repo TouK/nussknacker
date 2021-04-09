@@ -42,7 +42,7 @@ private[confluent] class ConfluentAvroMessageReader(schemaRegistryClient: Schema
       if (!parseKey) {
         val value = jsonToAvro(str, valueSchema)
         val serializedValue = serializeImpl(valueSubject, value)
-        new ConsumerRecord(topic, 0, 0L, Array[Byte](), serializedValue)
+        new ConsumerRecord(topic, 0, 0L, Array.emptyByteArray, serializedValue)
       } else {
         val keyIndex = str.indexOf(keySeparator)
         if (keyIndex < 0) {
