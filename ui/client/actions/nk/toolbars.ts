@@ -8,7 +8,6 @@ type ResetToolbarsAction = { type: "RESET_TOOLBARS", toolbars: Array<[string, To
 type RegisterToolbarsAction = { type: "REGISTER_TOOLBARS", toolbars: Array<[string, ToolbarsSide]> }
 type MoveToolbarAction = { type: "MOVE_TOOLBAR", from: ToolbarPosition, to: ToolbarPosition }
 type ToggleToolbarAction = { type: "TOGGLE_TOOLBAR", id: string, isCollapsed: boolean }
-type ToggleToolboxGroupAction = { type: "TOGGLE_NODE_TOOLBOX_GROUP", nodeGroup: string }
 type ToggleAllToolbarsAction = { type: "TOGGLE_ALL_TOOLBARS", isCollapsed: boolean }
 
 export const toggleAllToolbars = (isCollapsed: boolean): ToggleAllToolbarsAction => ({type: "TOGGLE_ALL_TOOLBARS", isCollapsed})
@@ -41,17 +40,9 @@ export function toggleToolbar(id: string, isCollapsed = false): ToggleToolbarAct
   }
 }
 
-export function toggleToolboxGroup(nodeGroup: string): ToggleToolboxGroupAction {
-  return {
-    type: "TOGGLE_NODE_TOOLBOX_GROUP",
-    nodeGroup,
-  }
-}
-
 export type ToolbarActions =
   | ResetToolbarsAction
   | RegisterToolbarsAction
   | MoveToolbarAction
   | ToggleToolbarAction
   | ToggleAllToolbarsAction
-  | ToggleToolboxGroupAction

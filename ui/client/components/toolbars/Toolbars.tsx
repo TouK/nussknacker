@@ -1,30 +1,52 @@
 import React, {memo} from "react"
 import {useSelector} from "react-redux"
-import SpinnerWrapper from "../SpinnerWrapper"
 import {getFetchedProcessDetails} from "../../reducers/selectors/graph"
-import ToolbarsLayer from "../toolbarComponents/ToolbarsLayer"
 import {ToolbarsSide} from "../../reducers/toolbars"
 
+import "../../stylesheets/userPanel.styl"
+import SpinnerWrapper from "../SpinnerWrapper"
+
 import TipsPanel from "../tips/Tips"
+import {Toolbar} from "../toolbarComponents/toolbar"
+import ToolbarsLayer from "../toolbarComponents/ToolbarsLayer"
+import {AttachmentsPanel} from "./AttachmentsPanel"
+import {CommentsPanel} from "./CommentsPanel"
+import {CreatorPanel} from "./creator/CreatorPanel"
+import DetailsPanel from "./details/DetailsPanel"
 
 import EditPanel, {SelectionActions} from "./edit/EditPanel"
-import ProcessInfo from "./status/ProcessInfo"
-import ViewPanel from "./view/ViewPanel"
-import ProcessPanels from "./process/ProcessPanel"
-import TestPanel from "./test/TestPanel"
 import GroupPanel from "./group/GroupPanel"
-import DetailsPanel from "./details/DetailsPanel"
-import {CreatorPanel} from "./creator/CreatorPanel"
+import ProcessPanels from "./process/ProcessPanel"
+import ProcessInfo from "./status/ProcessInfo"
+import TestPanel from "./test/TestPanel"
 import {VersionsPanel} from "./VersionsPanel"
-import {CommentsPanel} from "./CommentsPanel"
-import {AttachmentsPanel} from "./AttachmentsPanel"
-
-import "../../stylesheets/userPanel.styl"
-import {Toolbar} from "../toolbarComponents/toolbar"
+import ViewPanel from "./view/ViewPanel"
 
 type Props = {
   selectionActions: SelectionActions,
   isReady: boolean,
+}
+
+type ToolbarSetting = {id: string}
+type ToolbarsSettings = Partial<Record<ToolbarsSide, ToolbarSetting[]>>
+
+const defaultToolbarSettings: ToolbarsSettings = {
+  [ToolbarsSide.TopRight]: [
+    {id: "PROCESS-INFO"},
+    {id: "VIEW-PANEL"},
+    {id: "EDIT-PANEL"},
+    {id: "PROCESS-PANELS"},
+    {id: "TEST-PANEL"},
+    {id: "GROUP-PANEL"},
+    {id: "DETAILS-PANEL"},
+  ],
+  [ToolbarsSide.TopLeft]: [
+    {id: "TIPS-PANEL"},
+    {id: "CREATOR-PANEL"},
+    {id: "VERSIONS-PANEL"},
+    {id: "COMMENTS-PANEL"},
+    {id: "ATTACHMENTS-PANEL"},
+  ],
 }
 
 function Toolbars(props: Props) {

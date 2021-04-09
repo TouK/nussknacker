@@ -11,10 +11,6 @@ export enum ToolbarsSide {
   Hidden = "HIDDEN",
 }
 
-type NodeToolbox = {
-  opened: Record<string, boolean>,
-}
-
 type InitData = Array<[string, ToolbarsSide]>
 
 type Positions = {
@@ -27,27 +23,6 @@ export type ToolbarsState = {
   positions: Positions,
   initData: InitData,
   collapsed: Collapsed,
-  nodeToolbox: NodeToolbox,
-}
-
-const nodeToolbox: Reducer<NodeToolbox> = (state = {opened: {}}, action) => {
-  switch (action.type) {
-    case "TOGGLE_NODE_TOOLBOX_GROUP":
-      return {
-        opened: {
-          ...state.opened,
-          [action.nodeGroup]: !state.opened[action.nodeGroup],
-        },
-      }
-
-    case "RESET_TOOLBARS":
-      return {
-        opened: {},
-      }
-
-    default:
-      return state
-  }
 }
 
 function setupPositions(positions: Positions, toolbars: Array<[string, ToolbarsSide]>): Positions {
@@ -122,7 +97,7 @@ const resetReducer: Reducer<ToolbarsState> = (state, action) => {
 }
 
 const combinedReducers = combineReducers<ToolbarsState>({
-  collapsed, positions, nodeToolbox, initData,
+  collapsed, positions, initData,
 })
 
 const reducer: Reducer<ToolbarsState> = (state, action) => {

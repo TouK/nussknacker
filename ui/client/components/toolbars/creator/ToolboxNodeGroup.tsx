@@ -2,8 +2,8 @@ import cn from "classnames"
 import React, {useCallback, useEffect, useMemo, useState} from "react"
 import {useDispatch, useSelector} from "react-redux"
 import TreeView from "react-treeview"
-import {toggleToolboxGroup} from "../../../actions/nk/toolbars"
-import {getOpenedNodeGroups} from "../../../reducers/selectors/toolbars"
+import {toggleToolboxGroup} from "../../../actions/nk/toolbox"
+import {getOpenedNodeGroups} from "../../../reducers/selectors/toolbox"
 import {NodesGroup} from "../../../types"
 import Tool from "./Tool"
 
@@ -18,7 +18,7 @@ function useStateToggleWithReset(resetCondition: boolean, initialState = false):
     () => {
       if (resetCondition) setFlag(initialState)
     },
-    [resetCondition],
+    [initialState, resetCondition],
   )
 
   const toggle = useCallback(
@@ -29,7 +29,7 @@ function useStateToggleWithReset(resetCondition: boolean, initialState = false):
   return [flag, toggle]
 }
 
-export function ToolboxNodeGroup({nodeGroup, highlight}: {nodeGroup: NodesGroup, highlight?: string}) {
+export function ToolboxNodeGroup({nodeGroup, highlight}: {nodeGroup: NodesGroup, highlight?: string}): JSX.Element {
   const dispatch = useDispatch()
   const openedNodeGroups = useSelector(getOpenedNodeGroups)
   const {name} = nodeGroup

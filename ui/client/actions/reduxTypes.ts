@@ -4,6 +4,7 @@ import {ThunkAction as TA,ThunkDispatch as TD} from "redux-thunk"
 import {ActionTypes} from "./actionTypes"
 import {DisplayProcessActivityAction, ReportEventAction, NodeActions} from "./nk"
 import {FeatureFlagsActions} from "./nk/featureFlags"
+import {ToolboxActions} from "./nk/toolbox"
 import {UserSettingsActions} from "./nk/userSettings"
 import {UiActions} from "./nk/ui/uiActions"
 import {SettingsActions} from "./settingsActions"
@@ -19,6 +20,7 @@ type TypedAction =
   | DisplayProcessActivityAction
   | NodeActions
   | ToolbarActions
+  | ToolboxActions
   | NodeDetailsActions
   | UndoRedoActions
   | FeatureFlagsActions

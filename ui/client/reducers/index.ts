@@ -6,6 +6,7 @@ import {reducer as processActivity} from "./processActivity"
 import {reducer as settings} from "./settings"
 import {toolbars} from "./toolbars"
 import {reducer as nodeDetails} from "./nodeDetailsState"
+import {toolbox} from "./toolbox"
 import {reducer as ui} from "./ui"
 import {featureFlags} from "./featureFlags"
 import {userSettings} from "./userSettings"
@@ -19,6 +20,7 @@ export const reducer = combineReducers({
   processActivity,
   notifications,
   toolbars,
+  toolbox,
   featureFlags,
   userSettings,
   nodeDetails,
