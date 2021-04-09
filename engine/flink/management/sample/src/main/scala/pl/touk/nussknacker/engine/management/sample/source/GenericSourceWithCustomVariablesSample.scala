@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkContextInitializer, FlinkContextInitializer, FlinkSourceFactory, FlinkSourceTestSupport, InitContextFunction}
+import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkContextInitializer, FlinkContextInitializer, FlinkSourceFactory, FlinkSourceTestSupport, BasicContextInitializingFunction}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 
@@ -37,7 +37,7 @@ object GenericSourceWithCustomVariablesSample extends FlinkSourceFactory[String]
     }
 
     override def initContext(processId: String, taskName: String): MapFunction[String, Context] = {
-      new InitContextFunction[String](processId, taskName) {
+      new BasicContextInitializingFunction[String](processId, taskName) {
         override def map(input: String): Context = {
           //perform some transformations and/or computations
           val additionalVariables = Map[String, Any](

@@ -29,7 +29,7 @@ import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, New
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType, TypedMap, typing}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
-import pl.touk.nussknacker.engine.flink.api.process.{InitContextFunction, _}
+import pl.touk.nussknacker.engine.flink.api.process.{BasicContextInitializingFunction, _}
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
@@ -668,7 +668,7 @@ object SampleNodes {
       }
 
       override def initContext(processId: String, taskName: String): MapFunction[String, Context] = {
-        new InitContextFunction[String](processId, taskName) {
+        new BasicContextInitializingFunction[String](processId, taskName) {
           override def map(input: String): Context = {
             //perform some transformations and/or computations
             val additionalVariables = Map[String, Any](
