@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.management.periodic.service._
 import java.time.chrono.ChronoLocalDateTime
 import java.time.{Clock, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 class PeriodicProcessService(delegateProcessManager: ProcessManager,
                              jarManager: JarManager,
@@ -166,12 +167,13 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
   def deactivate(processName: ProcessName): Future[Unit] = for {
     status <- delegateProcessManager.findJobStatus(processName)
     maybePeriodicDeployment <- getNextScheduledDeployment(processName)
-  } yield maybePeriodicDeployment match {
-    case Some(periodicDeployment) => handleFinishedAction(periodicDeployment, status)
-      .flatMap(_ => deactivateAction(processName))
-      .runWithCallbacks
-    case None => deactivateAction(processName).runWithCallbacks
-  }
+    actionResult <- maybePeriodicDeployment match {
+      case Some(periodicDeployment) => handleFinishedAction(periodicDeployment, status)
+        .flatMap(_ => deactivateAction(processName))
+        .runWithCallbacks
+      case None => deactivateAction(processName).runWithCallbacks
+    }
+  } yield actionResult
 
   private def deactivateAction(processName: ProcessName): RepositoryAction[Callback] = {
     logger.info(s"Deactivate $processName")
@@ -220,8 +222,14 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
 
   //TODO: allow access to DB in listener?
   private def handleEvent(event: PeriodicProcessEvent): scheduledProcessesRepository.Action[Unit] = {
-    scheduledProcessesRepository.monad.pure(
-      periodicProcessListener.onPeriodicProcessEvent.applyOrElse(event, (_:PeriodicProcessEvent) => ()))
+    scheduledProcessesRepository.monad.pure {
+      try {
+        periodicProcessListener.onPeriodicProcessEvent.applyOrElse(event, (_:PeriodicProcessEvent) => ())
+      } catch {
+        case NonFatal(e) => throw new PeriodicProcessException("Failed to invoke listener", e)
+      }
+
+    }
   }
 
 }

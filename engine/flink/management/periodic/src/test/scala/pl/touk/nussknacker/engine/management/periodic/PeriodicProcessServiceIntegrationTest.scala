@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.management.periodic
 
 import org.scalatest.LoneElement.convertToCollectionLoneElementWrapper
 import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.exceptions.TestFailedException
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{FinishedStateStatus, RunningStateStatus}
@@ -14,6 +15,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import java.time.temporal.ChronoUnit
 import java.time.{Clock, Duration, Instant, LocalDateTime, ZoneId}
 import scala.collection.mutable.ArrayBuffer
+import scala.concurrent.Future
 
 //Integration test with in-memory hsql
 class PeriodicProcessServiceIntegrationTest extends FunSuite
@@ -41,12 +43,16 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     val delegateProcessManagerStub = new ProcessManagerStub
     val jarManagerStub = new JarManagerStub
     val events = new ArrayBuffer[PeriodicProcessEvent]()
+    var failListener = false
     def periodicProcessService(currentTime: Instant) = new PeriodicProcessService(
       delegateProcessManager = delegateProcessManagerStub,
       jarManager = jarManagerStub,
       scheduledProcessesRepository = hsqlRepo.forClock(fixedClock(currentTime)),
       new PeriodicProcessListener {
-        override def onPeriodicProcessEvent: PartialFunction[PeriodicProcessEvent, Unit] = { case k => events.append(k) }
+        override def onPeriodicProcessEvent: PartialFunction[PeriodicProcessEvent, Unit] = {
+          case k if failListener => throw new Exception(s"$k was ordered to fail")
+          case k => events.append(k)
+        }
       }, DefaultAdditionalDeploymentDataProvider, fixedClock(currentTime)
     )
   }
@@ -148,4 +154,35 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     toDeployAfterFinish.head.scheduleName shouldBe Some("schedule2")
   }
 
+  test("Should handle failed event handler") {
+    val timeToTriggerCheck = startTime.plus(2, ChronoUnit.HOURS)
+    val expectedScheduleTime = startTime.plus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS)
+
+    var currentTime = startTime
+
+    val f = new Fixture
+    def service = f.periodicProcessService(currentTime)
+
+    def tryWithFailedListener[T](action: () => Future[T]): T = {
+      f.failListener = true
+      intercept[TestFailedException](action().futureValue).getCause shouldBe a[PeriodicProcessException]
+      f.failListener = false
+      action().futureValue
+    }
+
+    tryWithFailedListener {
+      () => service.schedule(cron, ProcessVersion.empty.copy(processName = processName), "{}")
+    }
+
+    currentTime = timeToTriggerCheck
+    val toDeploy = service.findToBeDeployed.futureValue
+    toDeploy should have length 1
+    service.deploy(toDeploy.head).futureValue
+    f.delegateProcessManagerStub.setStateStatus(FinishedStateStatus("running"))
+
+    tryWithFailedListener {
+      () => service.deactivate(processName)
+    }
+
+  }
 }
