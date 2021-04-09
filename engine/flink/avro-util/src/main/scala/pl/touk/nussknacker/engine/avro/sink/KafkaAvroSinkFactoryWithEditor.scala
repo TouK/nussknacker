@@ -9,8 +9,9 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFa
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, SchemaDeterminerErrorHandler}
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, TopicParamName}
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, SinkKeyParamName, TopicParamName}
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
+import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactoryWithEditor.TransformationState
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSink
 
@@ -20,12 +21,14 @@ object KafkaAvroSinkFactoryWithEditor {
   private val paramsDeterminedAfterSchema = List(
     Parameter.optional[CharSequence](KafkaAvroBaseTransformer.SinkKeyParamName).copy(isLazyParameter = true)
   )
+
+  case class TransformationState(sinkValueParameter: AvroSinkValueParameter)
 }
 
 class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryProvider, val processObjectDependencies: ProcessObjectDependencies)
   extends SinkFactory with KafkaAvroBaseTransformer[FlinkSink] {
 
-  private var sinkValueParameter: Option[AvroSinkValueParameter] = None
+  override type State = TransformationState
 
   override def paramsDeterminedAfterSchema: List[Parameter] = KafkaAvroSinkFactoryWithEditor.paramsDeterminedAfterSchema
 
@@ -51,15 +54,16 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
       validatedSchema.andThen { schema =>
         val typing = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)
         AvroSinkValueParameter(typing).map { valueParam =>
-          sinkValueParameter = Some(valueParam)
-          NextParameters(valueParam.toParameters)
+          val state = TransformationState(sinkValueParameter = valueParam)
+          NextParameters(valueParam.toParameters, state = Some(state))
         }
       }.valueOr(e => FinalResults(context, e.toList))
   }
 
   protected def finalParamStep(context: ValidationContext)(implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep(
-      (TopicParamName, _) :: (SchemaVersionParamName, _) :: (SinkKeyParamName, _) :: valueParams, _) if valueParams.nonEmpty => FinalResults(context, Nil)
+      (TopicParamName, _) :: (SchemaVersionParamName, _) :: (SinkKeyParamName, _) :: valueParams, state) if valueParams.nonEmpty =>
+        FinalResults(context, Nil, state)
   }
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
@@ -71,6 +75,7 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkSink = {
     implicit val nodeId: NodeId = typedDependency[NodeId](dependencies)
+    val state = finalState.get
     val preparedTopic = extractPreparedTopic(params)
     val versionOption = extractVersionOption(params)
     val processMetaData = typedDependency[NodeId](dependencies)
@@ -80,7 +85,7 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
     val schemaData = schemaDeterminer.determineSchemaUsedInTyping.valueOr(SchemaDeterminerErrorHandler.handleSchemaRegistryErrorAndThrowException)
     val schemaUsedInRuntime = schemaDeterminer.toRuntimeSchema(schemaData)
 
-    val sinkValue = AvroSinkValue.applyUnsafe(sinkValueParameter.get, parameterValues = params)
+    val sinkValue = AvroSinkValue.applyUnsafe(state.sinkValueParameter, parameterValues = params)
     val key = params(SinkKeyParamName).asInstanceOf[LazyParameter[CharSequence]]
 
     new KafkaAvroSink(preparedTopic, versionOption, key, sinkValue, kafkaConfig, schemaRegistryProvider.serializationSchemaFactory,
