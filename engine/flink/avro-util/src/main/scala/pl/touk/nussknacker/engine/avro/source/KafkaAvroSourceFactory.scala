@@ -23,6 +23,8 @@ class KafkaAvroSourceFactory[T:ClassTag](val schemaRegistryProvider: SchemaRegis
                                          timestampAssigner: Option[TimestampWatermarkHandler[T]])
   extends BaseKafkaAvroSourceFactory(timestampAssigner) with KafkaAvroBaseTransformer[FlinkSource[T]]{
 
+  override type State = Nothing
+
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
                                     (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = topicParamStep orElse schemaParamStep orElse {
     case TransformationStep((TopicParamName, DefinedEagerParameter(topic:String, _)) ::

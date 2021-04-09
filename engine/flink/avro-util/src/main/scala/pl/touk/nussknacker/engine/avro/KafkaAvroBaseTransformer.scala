@@ -31,8 +31,6 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
 
   protected val kafkaConfig: KafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
 
-  override type State = Nothing
-
   protected def getTopicParam(implicit nodeId: NodeId): WithError[Parameter] = {
     val topics = schemaRegistryClient.getAllTopics
 
