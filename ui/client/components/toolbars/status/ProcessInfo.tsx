@@ -9,7 +9,7 @@ import {
   getProcessNewId,
   getProcessState,
   isProcessRenamed,
-  isStateLoaded,
+  isProcessStateLoaded,
 } from "../../../reducers/selectors/graph"
 import {getCapabilities} from "../../../reducers/selectors/other"
 import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
@@ -150,7 +150,7 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
 }
 
 const mapState = (state: RootState) => ({
-  isStateLoaded: isStateLoaded(state),
+  isStateLoaded: isProcessStateLoaded(state),
   process: getFetchedProcessDetails(state),
   isRenamePending: isProcessRenamed(state),
   nextId: getProcessNewId(state),
