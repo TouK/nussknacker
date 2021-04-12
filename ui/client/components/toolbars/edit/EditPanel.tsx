@@ -9,7 +9,7 @@ import Paste from "./buttons/PasteButton"
 import {useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"
 import {getCapabilities} from "../../../reducers/selectors/other"
-import {ToolbarButtons} from "../../toolbarComponents/ToolbarButtons"
+import {ButtonsVariant, ToolbarButtons} from "../../toolbarComponents/ToolbarButtons"
 
 type Props = {
   selectionActions: SelectionActions,
@@ -31,7 +31,7 @@ function EditPanel(props: Props) {
 
   return (
     <CollapsibleToolbar id="EDIT-PANEL" title={t("panels.edit.title", "Edit")}>
-      <ToolbarButtons small>
+      <ToolbarButtons variant={ButtonsVariant.small}>
         {write ? <Undo/> : null}
         {write ? <Redo/> : null}
         {write ? <Copy selectionActions={selectionActions}/> : null}
