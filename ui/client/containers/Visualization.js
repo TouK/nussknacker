@@ -288,6 +288,14 @@ class Visualization extends React.Component {
 
   render() {
     const graphNotReady = _.isEmpty(this.props.fetchedProcessDetails) || this.props.graphLoading
+    const selectionActions = {
+      copy: () => this.copySelection(null, true),
+      canCopy: this.canCopySelection(),
+      cut: () => this.cutSelection(null),
+      canCut: this.canCutSelection(),
+      paste: () => this.pasteSelectionFromClipboard(null),
+      canPaste: true,
+    }
 
     return (
       <div className={"Page graphPage"}>
@@ -296,7 +304,7 @@ class Visualization extends React.Component {
           navigate={path => this.props.history.push(path)}
         />
 
-        <GraphProvider graph={this.getGraphInstance}>
+        <GraphProvider graph={this.getGraphInstance} selectionActions={selectionActions}>
           <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
             <Toolbars
               isReady={this.state.dataResolved}
