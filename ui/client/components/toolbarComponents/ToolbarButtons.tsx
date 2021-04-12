@@ -2,17 +2,22 @@ import React, {PropsWithChildren, createContext} from "react"
 import styles from "./ToolbarButtons.styl"
 import cn from "classnames"
 
-type Props = {
-  small?: boolean,
+export enum ButtonsVariant {
+  small = "small",
+  label = "label"
 }
 
-export const ToolbarButtonsContext = createContext<{ small: boolean }>({small: false})
+type Props = {
+  variant?: ButtonsVariant,
+}
 
-export function ToolbarButtons(props: PropsWithChildren<Props>) {
-  const {small} = props
+export const ToolbarButtonsContext = createContext<{variant: ButtonsVariant}>({variant: ButtonsVariant.label})
+
+export function ToolbarButtons(props: PropsWithChildren<Props>): JSX.Element {
+  const {variant = ButtonsVariant.label} = props
 
   return (
-    <ToolbarButtonsContext.Provider value={{small}}>
+    <ToolbarButtonsContext.Provider value={{variant}}>
       <div className={cn(styles.list)}>
         {props.children}
       </div>

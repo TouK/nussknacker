@@ -1,4 +1,4 @@
-import React, {PropsWithChildren, Children, useState} from "react"
+import React, {Children, PropsWithChildren, useMemo, useState} from "react"
 import styles from "./CollapsibleToolbar.styl"
 import {useSelector, useDispatch} from "react-redux"
 import {toggleToolbar} from "../../actions/nk/toolbars"
@@ -9,13 +9,13 @@ import {getIsCollapsed} from "../../reducers/selectors/toolbars"
 import ErrorBoundary from "../common/ErrorBoundary"
 import {ReactComponent as CollapseIcon} from "../../assets/img/arrows/panel-hide-arrow.svg"
 
-type Props = PropsWithChildren<{
+export type CollapsibleToolbarProps = PropsWithChildren<{
   id?: string,
   title?: string,
   isHidden?: boolean,
 }>
 
-export function CollapsibleToolbar({title, children, isHidden, id}: Props): JSX.Element | null {
+export function CollapsibleToolbar({title, children, isHidden, id}: CollapsibleToolbarProps): JSX.Element | null {
   const dispatch = useDispatch()
   const isCollapsed = useSelector(getIsCollapsed(id))
   const [isShort, setIsShort] = useState(isCollapsed)
@@ -25,6 +25,21 @@ export function CollapsibleToolbar({title, children, isHidden, id}: Props): JSX.
   const isCollapsible = !!id
 
   const {tabIndex, ...handlerProps} = useDragHandler()
+
+  const collapseCallbacks = useMemo(() => ({
+    onEnter: () => {
+      setIsCollapsing(false)
+      setIsExpanding(true)
+      setIsShort(false)
+    },
+    onEntered: () => setIsExpanding(false),
+    onExit: () => {
+      setIsCollapsing(true)
+      setIsExpanding(false)
+      setIsShort(true)
+    },
+    onExited: () => setIsCollapsing(false),
+  }), [])
 
   if (isHidden || !Children.count(children)) {
     return null
@@ -54,21 +69,7 @@ export function CollapsibleToolbar({title, children, isHidden, id}: Props): JSX.
             </Panel.Heading>
           ) :
           null}
-        <Panel.Collapse
-          onEnter={() => {
-            setIsCollapsing(false)
-            setIsExpanding(true)
-            setIsShort(false)
-          }}
-          onEntered={() => setIsExpanding(false)}
-
-          onExit={() => {
-            setIsCollapsing(true)
-            setIsExpanding(false)
-            setIsShort(true)
-          }}
-          onExited={() => setIsCollapsing(false)}
-        >
+        <Panel.Collapse {...collapseCallbacks}>
           <Panel.Body>
             <ErrorBoundary>
               {children}

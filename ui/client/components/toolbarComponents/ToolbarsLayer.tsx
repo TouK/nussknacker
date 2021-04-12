@@ -1,4 +1,4 @@
-import React, {useMemo, useEffect, EffectCallback, useState} from "react"
+import React, {useMemo, useEffect, EffectCallback, useState, useCallback} from "react"
 import {DragDropContext, DropResult} from "react-beautiful-dnd"
 import {ToolbarsSide} from "../../reducers/toolbars"
 import {useDispatch} from "react-redux"
@@ -21,7 +21,7 @@ function useIdsEffect<T extends { id: string }>(effect: EffectCallback, array) {
 
 export const ToolbarDraggableType = "TOOLBAR"
 
-function ToolbarsLayer(props: { toolbars: Toolbar[] }) {
+function ToolbarsLayer(props: { toolbars: Toolbar[] }): JSX.Element {
   const dispatch = useDispatch()
   const {toolbars} = props
 
@@ -31,7 +31,7 @@ function ToolbarsLayer(props: { toolbars: Toolbar[] }) {
     dispatch(registerToolbars(toolbars))
   }, toolbars)
 
-  const onDragEnd = (result: DropResult) => {
+  const onDragEnd = useCallback((result: DropResult) => {
     setIsDragging(false)
     const {destination, type, reason, source} = result
     if (reason === "DROP" && type === ToolbarDraggableType && destination) {
@@ -40,10 +40,12 @@ function ToolbarsLayer(props: { toolbars: Toolbar[] }) {
         [destination.droppableId, destination.index],
       ))
     }
-  }
+  }, [dispatch])
+
+  const onDragStart = useCallback(() => {setIsDragging(true)}, [])
 
   return (
-    <DragDropContext onDragEnd={onDragEnd} onDragStart={() => {setIsDragging(true)}}>
+    <DragDropContext onDragEnd={onDragEnd} onDragStart={onDragStart}>
 
       <SidePanel side={PanelSide.Left} className={cn(styles.left, isDragging && styles.isDraggingStarted)}>
         <ToolbarsContainer
