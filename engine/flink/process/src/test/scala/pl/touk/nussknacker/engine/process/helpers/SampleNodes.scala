@@ -648,11 +648,11 @@ object SampleNodes {
 
   object GenericSourceWithCustomVariables extends FlinkSourceFactory[String] with SingleInputGenericNodeTransformation[Source[String]] {
 
-    private class CustomFlinkContextInitializer extends BasicFlinkContextInitializer[String] {
+    private class CustomFlinkContextInitializer extends BasicFlinkGenericContextInitializer[String, DefinedParameter, State] {
 
-      override def validationContext(context: ValidationContext, outputVariableName: String, outputVariableType: TypingResult)(implicit nodeId: NodeId): ValidationContext = {
+      override def validationContext(context: ValidationContext, dependencies: List[NodeDependencyValue], parameters: List[(String, DefinedParameter)], state: Option[State])(implicit nodeId: NodeId): ValidationContext = {
         //Append variable "input"
-        val validatedContextWithInput = context.withVariable(OutputVar.customNode(outputVariableName), Typed[String])
+        val contextWithInput = super.validationContext(context, dependencies, parameters, state)
 
         //Specify additional variables
         val additionalVariables = Map(
@@ -661,11 +661,14 @@ object SampleNodes {
         )
 
         //Append additional variables to ValidationContext
-        val validatedContextWithInputAndAdditional = additionalVariables.foldLeft(validatedContextWithInput){
-          case (acc, (name, typingResult)) => acc.andThen(_.withVariable(name, typingResult, None))
+        additionalVariables.foldLeft(contextWithInput) { case (acc, (name, typingResult)) =>
+          acc.withVariable(name, typingResult, None).getOrElse(acc)
         }
-        validatedContextWithInputAndAdditional.getOrElse(context)
       }
+
+      override protected def outputVariableType(context: ValidationContext, dependencies: List[NodeDependencyValue],
+                                                parameters: List[(String, DefinedSingleParameter)], state: Option[Nothing])
+                                               (implicit nodeId: NodeId): typing.TypingResult = Typed[String]
 
       override def initContext(processId: String, taskName: String): MapFunction[String, Context] = {
         new BasicContextInitializingFunction[String](processId, taskName) {
@@ -688,26 +691,17 @@ object SampleNodes {
     //There is only one parameter in this source
     private val elementsParamName = "elements"
 
-    private val customContextInitializer: FlinkContextInitializer[String] = new CustomFlinkContextInitializer
+    private val customContextInitializer: BasicFlinkGenericContextInitializer[String, DefinedParameter, State] = new CustomFlinkContextInitializer
 
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId)
     : GenericSourceWithCustomVariables.NodeTransformationDefinition = {
       //Component has simple parameters based only on initialParameters.
       case TransformationStep(Nil, _) => NextParameters(initialParameters)
-      case TransformationStep((`elementsParamName`, _)::Nil, None) => FinalResults(finalCtx(context, dependencies))
+      case step@TransformationStep((`elementsParamName`, _) :: Nil, None) =>
+        FinalResults(customContextInitializer.validationContext(context, dependencies, step.parameters, step.state))
     }
 
-    private def finalCtx(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): ValidationContext = {
-      //Here goes basic declaration of output variable. Append default output variable (name = "input") to ValidationContext.
-      val name = dependencies.collectFirst {
-        case OutputVariableNameValue(name) => name
-      }.get
-
-      //Use custom FlinkContextInitializer
-      customContextInitializer.validationContext(context, name, Typed[String])
-    }
-
-    override def initialParameters: List[Parameter] = Parameter[java.util.List[String]](`elementsParamName`)  :: Nil
+    override def initialParameters: List[Parameter] = Parameter[java.util.List[String]](`elementsParamName`) :: Nil
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source[String] = {
       import scala.collection.JavaConverters._

@@ -34,9 +34,12 @@ To see biggest differences please consult the [changelog](Changelog.md).
   - Change of `FlinkSource` API: sourceStream produces stream of initialized `Context` (`DataStream[Context]`)
     This initialization step was previously performed within `FlinkProcessRegistrar.registerSourcePart`. Now it happens explicitly within the flink source.
   - `FlinkIntermediateRawSource` is used as an extension to flink sources, it prepares source with typical stream transformations (add source function, set uid, assign timestamp, initialize `Context`)
-  - `FlinkContextInitializer` is used to initialize `Context`. It provides both definition of variables (for `ValidationContext`) and their values (for `Context`).
-    Default implementation of `FlinkContextInitializer` sets raw event value to singe "input" variable (see `BasicFlinkContextInitializer`).
-    For sources based on `GenericNodeTransformation` it allows to initialize `Context` with more than one variable.
+  - `FlinkContextInitializer` is used to initialize `Context`. It provides map function that transforms raw event (produced by flink source function) into `Context` variable.
+    Default implementation of `FlinkContextInitializer`, see `BasicFlinkContextInitializer`, sets raw event value to singe "input" variable.
+  - For sources based on `GenericNodeTransformation` it allows to initialize `Context` with more than one variable.
+    Default implementation of initializer, see `BasicFlinkGenericContextInitializer`, provides default definition of variables as a `ValidationContext` with single "input" variable.
+    The implementation requires to provide separately the definition of "input" variable type (`TypingResult`).
+    See `GenericSourceWithCustomVariablesSample`.
   - Rename `TestDataParserProvider` to `SourceTestSupport`
   - To enable "test source" functionality, a source needs to be extended with `SourceTestSupport`.
   - To enable test data generator for "test source" , a source needs to be extended with both `SourceTestSupport` and `TestDataGenerator`.
