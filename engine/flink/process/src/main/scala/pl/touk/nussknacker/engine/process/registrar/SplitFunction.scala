@@ -7,7 +7,7 @@ import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.{EndingReference, InterpretationResult, JoinReference, NextPartReference}
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar.EndId
-import pl.touk.nussknacker.engine.process.typeinformation.TypeInformationDetection
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class SplitFunction(nodeToValidationCtx: Map[String, ValidationContext], typeInformationDetection: TypeInformationDetection) extends ProcessFunction[InterpretationResult, Unit] {

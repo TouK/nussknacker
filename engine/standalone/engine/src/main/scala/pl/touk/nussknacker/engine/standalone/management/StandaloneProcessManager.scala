@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.ModelData.ClasspathConfig
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessObjectDependencies, TestDataParserProvider}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessObjectDependencies, SourceTestSupport}
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -179,7 +179,7 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
     //FIXME: asInstanceOf, should be proper handling of SubprocessInputDefinition
     val sourceType = process.roots.head.data.asInstanceOf[Source].ref.typ
     val testDataParser = sourceObj
-      .cast[TestDataParserProvider[_]](Typeable.simpleTypeable(classOf[TestDataParserProvider[_]]))
+      .cast[SourceTestSupport[_]](Typeable.simpleTypeable(classOf[SourceTestSupport[_]]))
       .map(_.testDataParser)
       .getOrElse(throw new IllegalArgumentException(s"Source $sourceType cannot be tested"))
     val parsedTestData = testDataParser.parseTestData(testData.testData)

@@ -4,7 +4,6 @@ import java.io._
 import java.nio.charset.StandardCharsets
 import org.apache.avro.Schema
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory}
@@ -45,7 +44,7 @@ private[confluent] class ConfluentAvroToJsonFormatter(schemaRegistryClientFactor
     printStream.print(Separator)
   }
 
-  override def parseRecord(topic: String, formatted: Array[Byte]): ProducerRecord[Array[Byte], Array[Byte]] = {
+  override def parseRecord(topic: String, formatted: Array[Byte]): ConsumerRecord[Array[Byte], Array[Byte]] = {
     val str = new String(formatted, StandardCharsets.UTF_8)
     val (keySchema, valueSchema, remainingString) = if (formatKey) {
       val (ks, valueSchemaIdAndRest) = readSchemaId(str)

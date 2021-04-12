@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets
 
 import io.circe.Decoder
 import pl.touk.nussknacker.engine.api.{CirceUtil, MethodToInvoke}
-import pl.touk.nussknacker.engine.api.process.{Source, TestDataParserProvider}
+import pl.touk.nussknacker.engine.api.process.{Source, SourceTestSupport}
 import pl.touk.nussknacker.engine.api.test.TestDataParser
 import pl.touk.nussknacker.engine.standalone.api.{StandalonePostSource, StandaloneSourceFactory}
 
@@ -14,7 +14,7 @@ class JsonStandaloneSourceFactory[T:Decoder:ClassTag] extends StandaloneSourceFa
 
   @MethodToInvoke
   def create(): Source[T] = {
-    new StandalonePostSource[T] with TestDataParserProvider[T] {
+    new StandalonePostSource[T] with SourceTestSupport[T] {
 
       override def parse(parameters: Array[Byte]): T = {
         parse(new String(parameters, StandardCharsets.UTF_8))

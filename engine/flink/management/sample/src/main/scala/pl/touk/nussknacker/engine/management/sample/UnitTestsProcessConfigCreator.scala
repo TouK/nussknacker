@@ -8,15 +8,13 @@ import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
-import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.scala._
-import org.apache.flink.streaming.api.windowing.time.Time
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
-import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSourceFactory}
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, StandardTimestampWatermarkHandler}
+import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSourceFactory, FlinkSourceTestSupport}
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
@@ -142,7 +140,7 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
 
     @MethodToInvoke
     def create(@ParamName("ratePerMinute") rate: Int) = {
-      new BasicFlinkSource[T] with Serializable with TestDataParserProvider[T] with TestDataGenerator {
+      new BasicFlinkSource[T] with Serializable with FlinkSourceTestSupport[T] with TestDataGenerator {
 
         override val typeInformation = implicitly[TypeInformation[T]]
 
@@ -172,6 +170,8 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
         override def testDataParser: TestDataParser[T] = new NewLineSplittedTestDataParser[T] {
           override def parseElement(testElement: String) = parser(testElement.split('|').toList)
         }
+
+        override def timestampAssignerForTest: Option[TimestampWatermarkHandler[T]] = timestampAssigner
       }
     }
 
