@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management.periodic
 
-import akka.actor.{Actor, Props}
+import akka.actor.{Actor, Props, Timers}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.management.periodic.RescheduleFinishedActor.CheckStates
 
@@ -13,13 +13,13 @@ object RescheduleFinishedActor {
   case object CheckStates
 }
 
-class RescheduleFinishedActor(service: PeriodicProcessService, interval: FiniteDuration) extends Actor with LazyLogging {
-
-  import context.dispatcher
+class RescheduleFinishedActor(service: PeriodicProcessService, interval: FiniteDuration) extends Actor
+  with Timers
+  with LazyLogging {
 
   override def preStart(): Unit = {
     logger.info(s"Initializing with $interval interval")
-    context.system.scheduler.schedule(initialDelay = Duration.Zero, interval = interval, receiver = self, message = CheckStates)
+    timers.startPeriodicTimer(key = "checkStates", msg = CheckStates, interval = interval)
   }
 
   override def receive: Receive = {

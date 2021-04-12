@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management.periodic
 
-import akka.actor.{Actor, Props}
+import akka.actor.{Actor, Props, Timers}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.management.periodic.DeploymentActor.{CheckToBeDeployed, DeploymentCompleted, WaitingForDeployment}
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeployment
@@ -20,13 +20,15 @@ object DeploymentActor {
   case class DeploymentCompleted(success: Boolean)
 }
 
-class DeploymentActor(service: PeriodicProcessService, interval: FiniteDuration) extends Actor with LazyLogging {
+class DeploymentActor(service: PeriodicProcessService, interval: FiniteDuration) extends Actor
+  with Timers
+  with LazyLogging {
 
   import context.dispatcher
 
   override def preStart(): Unit = {
     logger.info(s"Initializing with $interval interval")
-    context.system.scheduler.schedule(initialDelay = Duration.Zero, interval = interval, receiver = self, message = CheckToBeDeployed)
+    timers.startPeriodicTimer(key = "checkToBeDeployed", msg = CheckToBeDeployed, interval = interval)
   }
 
   override def receive: Receive = {
