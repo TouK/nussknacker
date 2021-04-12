@@ -7,7 +7,7 @@ import {SwitchTransition} from "react-transition-group"
 import ProcessStateIcon, {unknownIcon} from "../../Process/ProcessStateIcon"
 import {absoluteBePath} from "../../../common/UrlUtils"
 import {RootState} from "../../../reducers/index"
-import {getFetchedProcessDetails, isStateLoaded, getProcessState} from "../../../reducers/selectors/graph"
+import {getFetchedProcessDetails, isProcessStateLoaded, getProcessState} from "../../../reducers/selectors/graph"
 import {connect} from "react-redux"
 import {DragHandle} from "../../toolbarComponents/DragHandle"
 import Deploy from "./buttons/DeployButton"
@@ -93,7 +93,7 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
     <SaveButton key={0}/>,
     <Deploy key={1}/>,
     <Cancel key={2}/>,
-    <Metrics key={3}/>
+    <Metrics key={3}/>,
   ]
 
   render() {
@@ -138,7 +138,7 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
 }
 
 const mapState = (state: RootState) => ({
-  isStateLoaded: isStateLoaded(state),
+  isStateLoaded: isProcessStateLoaded(state),
   process: getFetchedProcessDetails(state),
   capabilities: getCapabilities(state),
   processState: getProcessState(state),

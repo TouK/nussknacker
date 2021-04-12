@@ -13,3 +13,4 @@ export const getFilterCategories = createSelector(getLoggedUser, u => ProcessUti
 export const getBaseIntervalTime = createSelector(getFeatureSettings, settings => settings?.intervalTimeSettings?.processes || 15000)
 export const getHealthcheckIntervalTime = createSelector(getFeatureSettings, settings => settings?.intervalTimeSettings?.healthCheck || 40000)
 export const getMetricsSettings = createSelector(getFeatureSettings, settings => settings?.metrics || {})
+export const getCustomActions = createSelector(getProcessDefinitionData, def => def.customActions || [])
