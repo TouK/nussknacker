@@ -5,7 +5,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
-import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
+import pl.touk.nussknacker.ui.config.{AnalyticsConfig, DefaultProcessToolbarsConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
@@ -13,8 +13,9 @@ import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
 import scala.concurrent.ExecutionContext
 
 class SettingsResources(config: FeatureTogglesConfig,
-                        typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData],
+                        defaultProcessToolbarConfig: DefaultProcessToolbarsConfig,
                         authenticationConfig: AuthenticationConfiguration,
+                        typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData],
                         analyticsConfig: Option[AnalyticsConfig])(implicit ec: ExecutionContext)
   extends Directives with FailFastCirceSupport with RouteWithoutUser {
 
@@ -44,7 +45,7 @@ class SettingsResources(config: FeatureTogglesConfig,
           )
 
           val analyticsSettings = analyticsConfig.map(a => AnalyticsSettings(a.engine.toString, a.url.toString, a.siteId))
-          UISettings(toggleOptions, authenticationSettings, analyticsSettings)
+          UISettings(toggleOptions, defaultProcessToolbarConfig, authenticationSettings, analyticsSettings)
         }
       }
     }
@@ -86,5 +87,6 @@ class SettingsResources(config: FeatureTogglesConfig,
 @JsonCodec case class ProcessStateSettings(icons: Map[String, Map[String, String]], tooltips: Map[String, Map[String, String]])
 
 @JsonCodec case class UISettings(features: ToggleFeaturesOptions,
+                                 defaultProcessToolbar: DefaultProcessToolbarsConfig,
                                  authentication: AuthenticationSettings,
                                  analytics: Option[AnalyticsSettings])

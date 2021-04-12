@@ -44,7 +44,8 @@ object ManagementResources {
             managementActor: ActorRef,
             testResultsMaxSizeInBytes: Int,
             processAuthorizator: AuthorizeProcess,
-            processRepository: FetchingProcessRepository[Future], featuresOptions: FeatureTogglesConfig,
+            processRepository: FetchingProcessRepository[Future],
+            featuresOptions: FeatureTogglesConfig,
             processResolving: UIProcessResolving,
             processService: ProcessService)
            (implicit ec: ExecutionContext,

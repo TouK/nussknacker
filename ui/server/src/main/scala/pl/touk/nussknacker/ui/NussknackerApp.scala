@@ -6,12 +6,10 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.stream.{ActorMaterializer, Materializer}
-import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromMap}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.commons.io.FileUtils
 import org.hsqldb.server.Server
-import pl.touk.nussknacker.engine.{ModelData, ProcessManagerProvider, ProcessingTypeData}
+import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
@@ -19,9 +17,8 @@ import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, 
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
-import pl.touk.nussknacker.ui.NusskanckerDefaultAppRouter.logger
 import pl.touk.nussknacker.ui.api._
-import pl.touk.nussknacker.ui.config.{AnalyticsConfig, ConfigWithDefaults, FeatureTogglesConfig}
+import pl.touk.nussknacker.ui.config.{AnalyticsConfig, ConfigWithDefaults, DefaultProcessToolbarsConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DatabaseServer, DbConfig}
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerFactory
@@ -29,7 +26,7 @@ import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
-import pl.touk.nussknacker.ui.process.processingtypedata.{BasicProcessingTypeDataReload, MapBasedProcessingTypeDataProvider, ProcessingTypeDataProvider, ProcessingTypeDataReader, ProcessingTypeDataReload}
+import pl.touk.nussknacker.ui.process.processingtypedata.{BasicProcessingTypeDataReload, ProcessingTypeDataProvider, ProcessingTypeDataReader, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
@@ -41,8 +38,6 @@ import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
 import sttp.client.{NothingT, SttpBackend}
 import sttp.client.akkahttp.AkkaHttpBackend
 
-import java.nio.file.Files
-import scala.collection.JavaConverters._
 import scala.concurrent.Future
 
 trait NusskanckerAppRouter extends Directives with LazyLogging {
@@ -78,6 +73,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val (typeToConfig, reload) = prepareProcessingTypeData(config)
 
     val analyticsConfig = AnalyticsConfig(config)
+    val defaultProcessToolbarsConfig = DefaultProcessToolbarsConfig.create(config)
 
     val modelData = typeToConfig.mapValues(_.modelData)
 
@@ -170,7 +166,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     //TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings
     val apiResourcesWithoutAuthentication: List[Route] = List(
-      new SettingsResources(featureTogglesConfig, typeToConfig, authenticator.config, analyticsConfig).publicRoute(),
+      new SettingsResources(featureTogglesConfig, defaultProcessToolbarsConfig, authenticator.config, typeToConfig, analyticsConfig).publicRoute(),
       appResources.publicRoute()
     ) ++ authenticator.routes
 
