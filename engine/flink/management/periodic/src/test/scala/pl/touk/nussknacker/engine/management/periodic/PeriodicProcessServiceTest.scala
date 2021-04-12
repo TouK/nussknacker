@@ -82,7 +82,7 @@ class PeriodicProcessServiceTest extends FunSuite
   test("handle first schedule") {
     val f = new Fixture
 
-    f.periodicProcessService.schedule(CronPeriodicProperty("0 0 * * * ?"), ProcessVersion.empty, "{}").futureValue
+    f.periodicProcessService.schedule(CronScheduleProperty("0 0 * * * ?"), ProcessVersion.empty, "{}").futureValue
 
     val processEntity = f.repository.processEntities.loneElement
     processEntity.active shouldBe true
@@ -140,15 +140,15 @@ class PeriodicProcessServiceTest extends FunSuite
   test("Schedule new scenario only if at least one date in the future") {
     val f = new Fixture
     val yearNow = LocalDate.now().get(ChronoField.YEAR)
-    val cronInFuture = CronPeriodicProperty(s"0 0 6 6 9 ? ${yearNow + 1}")
-    val cronInPast = CronPeriodicProperty(s"0 0 6 6 9 ? ${yearNow - 1}")
+    val cronInFuture = CronScheduleProperty(s"0 0 6 6 9 ? ${yearNow + 1}")
+    val cronInPast = CronScheduleProperty(s"0 0 6 6 9 ? ${yearNow - 1}")
 
-    def tryToSchedule(schedule: PeriodicProperty): Unit = f.periodicProcessService.schedule(schedule, ProcessVersion.empty, "{}").futureValue
+    def tryToSchedule(schedule: ScheduleProperty): Unit = f.periodicProcessService.schedule(schedule, ProcessVersion.empty, "{}").futureValue
 
     tryToSchedule(cronInFuture) shouldBe (())
-    tryToSchedule(MultiplePeriodicProperty(Map("s1" -> cronInFuture, "s2" -> cronInPast))) shouldBe (())
+    tryToSchedule(MultipleScheduleProperty(Map("s1" -> cronInFuture, "s2" -> cronInPast))) shouldBe (())
 
     intercept[TestFailedException](tryToSchedule(cronInPast)).getCause shouldBe a[PeriodicProcessException]
-    intercept[TestFailedException](tryToSchedule(MultiplePeriodicProperty(Map("s1" -> cronInPast, "s2" -> cronInPast)))).getCause shouldBe a[PeriodicProcessException]
+    intercept[TestFailedException](tryToSchedule(MultipleScheduleProperty(Map("s1" -> cronInPast, "s2" -> cronInPast)))).getCause shouldBe a[PeriodicProcessException]
   }
 }

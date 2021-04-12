@@ -36,7 +36,7 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
   private def localTime(instant: Instant) = LocalDateTime.now(fixedClock(instant))
 
   //every hour
-  private val cron = CronPeriodicProperty("0 0 * * * ?")
+  private val cron = CronScheduleProperty("0 0 * * * ?")
 
   class Fixture {
     val hsqlRepo: HsqlProcessRepository = HsqlProcessRepository.prepare
@@ -98,9 +98,9 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     def service = f.periodicProcessService(currentTime)
 
 
-    service.schedule(MultiplePeriodicProperty(Map(
-      "scheduleMinute5" -> CronPeriodicProperty("0 5 * * * ?"),
-      "scheduleMinute10" -> CronPeriodicProperty("0 10 * * * ?"))),
+    service.schedule(MultipleScheduleProperty(Map(
+      "scheduleMinute5" -> CronScheduleProperty("0 5 * * * ?"),
+      "scheduleMinute10" -> CronScheduleProperty("0 10 * * * ?"))),
       ProcessVersion.empty.copy(processName = processName), "{}").futureValue
 
     val processScheduled = service.getNextScheduledDeployment(processName).futureValue.get
@@ -130,9 +130,9 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     def service = f.periodicProcessService(currentTime)
 
 
-    service.schedule(MultiplePeriodicProperty(Map(
-      "schedule1" -> CronPeriodicProperty("0 5 * * * ?"),
-      "schedule2" -> CronPeriodicProperty("0 5 * * * ?"))),
+    service.schedule(MultipleScheduleProperty(Map(
+      "schedule1" -> CronScheduleProperty("0 5 * * * ?"),
+      "schedule2" -> CronScheduleProperty("0 5 * * * ?"))),
       ProcessVersion.empty.copy(processName = processName), "{}").futureValue
 
     currentTime = timeToTrigger

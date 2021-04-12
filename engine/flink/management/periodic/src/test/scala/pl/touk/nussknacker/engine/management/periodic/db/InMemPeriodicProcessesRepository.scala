@@ -40,7 +40,7 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
       processJson = "{}",
       modelConfig = "",
       jarFileName = "",
-      periodicProperty = CronPeriodicProperty("0 0 * * * ?").asInstanceOf[periodic.PeriodicProperty].asJson.noSpaces,
+      scheduleProperty = CronScheduleProperty("0 0 * * * ?").asInstanceOf[periodic.ScheduleProperty].asJson.noSpaces,
       active = true,
       createdAt = LocalDateTime.now()
     )
@@ -64,7 +64,7 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
         processEntities.update(index, process.copy(active = false))
       }
 
-  override def create(deploymentWithJarData: DeploymentWithJarData, periodicProperty: PeriodicProperty): PeriodicProcess = {
+  override def create(deploymentWithJarData: DeploymentWithJarData, scheduleProperty: ScheduleProperty): PeriodicProcess = {
     val id = PeriodicProcessId(Random.nextLong())
     val periodicProcess = PeriodicProcessEntity(
       id = id,
@@ -73,7 +73,7 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
       processJson = deploymentWithJarData.processJson,
       modelConfig = deploymentWithJarData.modelConfig,
       jarFileName = deploymentWithJarData.jarFileName,
-      periodicProperty = periodicProperty.asJson.noSpaces,
+      scheduleProperty = scheduleProperty.asJson.noSpaces,
       active = true,
       createdAt = LocalDateTime.now()
     )

@@ -45,7 +45,7 @@ class PeriodicProcessManagerTest extends FunSuite
     val periodicProcessManager = new PeriodicProcessManager(
       delegate = delegateProcessManagerStub,
       service = periodicProcessService,
-      periodicPropertyExtractor = CronPropertyExtractor(),
+      schedulePropertyExtractor = CronSchedulePropertyExtractor(),
       toClose = () => ()
     )
 

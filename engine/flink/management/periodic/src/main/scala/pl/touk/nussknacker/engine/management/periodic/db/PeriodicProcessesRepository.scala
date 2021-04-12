@@ -31,13 +31,13 @@ object PeriodicProcessesRepository {
 
   def createPeriodicProcess(processEntity: PeriodicProcessEntity): PeriodicProcess = {
     val processVersion = ProcessVersion.empty.copy(versionId = processEntity.processVersionId, processName = ProcessName(processEntity.processName))
-    val periodicProperty = decode[PeriodicProperty](processEntity.periodicProperty).fold(e => throw new IllegalArgumentException(e), identity)
+    val scheduleProperty = decode[ScheduleProperty](processEntity.scheduleProperty).fold(e => throw new IllegalArgumentException(e), identity)
     PeriodicProcess(processEntity.id, model.DeploymentWithJarData(
       processVersion = processVersion,
       processJson = processEntity.processJson,
       modelConfig = processEntity.modelConfig,
       jarFileName = processEntity.jarFileName
-    ), periodicProperty, processEntity.active, processEntity.createdAt)
+    ), scheduleProperty, processEntity.active, processEntity.createdAt)
   }
 
 
@@ -58,7 +58,7 @@ trait PeriodicProcessesRepository {
   def markInactive(processName: ProcessName): Action[Unit]
 
   def create(deploymentWithJarData: DeploymentWithJarData,
-             periodicProperty: PeriodicProperty): Action[PeriodicProcess]
+             scheduleProperty: ScheduleProperty): Action[PeriodicProcess]
 
   def getNextScheduledRunForSchedule(processName: ProcessName): Action[Seq[PeriodicProcessDeployment]]
 
@@ -97,7 +97,7 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
   override def run[T](action: DBIOAction[T, NoStream, Effect.All]): Future[T] = db.run(action.transactionally)
 
   override def create(deploymentWithJarData: DeploymentWithJarData,
-                      periodicProperty: PeriodicProperty): Action[PeriodicProcess] = {
+                      scheduleProperty: ScheduleProperty): Action[PeriodicProcess] = {
     val processEntity = PeriodicProcessEntity(
       id = PeriodicProcessId(-1),
       processName = deploymentWithJarData.processVersion.processName.value,
@@ -105,7 +105,7 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
       processJson = deploymentWithJarData.processJson,
       modelConfig = deploymentWithJarData.modelConfig,
       jarFileName = deploymentWithJarData.jarFileName,
-      periodicProperty = periodicProperty.asJson.noSpaces,
+      scheduleProperty = scheduleProperty.asJson.noSpaces,
       active = true,
       createdAt = now()
     )

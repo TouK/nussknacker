@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.{ModelData, ProcessManagerProvider}
 
 class PeriodicProcessManagerProvider(delegate: ProcessManagerProvider,
-                                     periodicPropertyExtractor: PeriodicPropertyExtractor = CronPropertyExtractor(),
+                                     schedulePropertyExtractor: SchedulePropertyExtractor = CronSchedulePropertyExtractor(),
                                      enrichDeploymentWithJarDataFactory: EnrichDeploymentWithJarDataFactory = EnrichDeploymentWithJarDataFactory.noOp,
                                      listener: PeriodicProcessListener = EmptyListener,
                                      additionalDeploymentDataProvider: AdditionalDeploymentDataProvider = DefaultAdditionalDeploymentDataProvider
@@ -29,7 +29,7 @@ class PeriodicProcessManagerProvider(delegate: ProcessManagerProvider,
     val flinkConfig = config.rootAs[FlinkConfig]
     PeriodicProcessManager(
       delegate = delegateProcessManager,
-      periodicPropertyExtractor = periodicPropertyExtractor,
+      schedulePropertyExtractor = schedulePropertyExtractor,
       enrichDeploymentWithJarDataFactory = enrichDeploymentWithJarDataFactory,
       periodicBatchConfig = periodicBatchConfig,
       flinkConfig = flinkConfig,

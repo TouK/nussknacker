@@ -11,17 +11,17 @@ import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
 
 import scala.util.Try
 
-object PeriodicProperty {
+object ScheduleProperty {
   implicit val configuration: Configuration = Configuration.default.withDefaults.withDiscriminator("type")
 }
 
-@ConfiguredJsonCodec sealed trait PeriodicProperty
+@ConfiguredJsonCodec sealed trait ScheduleProperty
 
-object SinglePeriodicProperty {
+object SingleScheduleProperty {
   implicit val configuration: Configuration = Configuration.default.withDefaults
 }
 
-@ConfiguredJsonCodec sealed trait SinglePeriodicProperty extends PeriodicProperty {
+@ConfiguredJsonCodec sealed trait SingleScheduleProperty extends ScheduleProperty {
 
   /**
     * If Left is returned it means periodic property is invalid, e.g. it cannot be parsed.
@@ -31,11 +31,11 @@ object SinglePeriodicProperty {
   def nextRunAt(clock: Clock): Either[String, Option[LocalDateTime]]
 }
 
-@JsonCodec case class MultiplePeriodicProperty(schedules: Map[String, SinglePeriodicProperty]) extends PeriodicProperty
+@JsonCodec case class MultipleScheduleProperty(schedules: Map[String, SingleScheduleProperty]) extends ScheduleProperty
 
 
-@JsonCodec case class CronPeriodicProperty(labelOrCronExpr: String) extends SinglePeriodicProperty {
-  import pl.touk.nussknacker.engine.management.periodic.CronPeriodicProperty._
+@JsonCodec case class CronScheduleProperty(labelOrCronExpr: String) extends SingleScheduleProperty {
+  import pl.touk.nussknacker.engine.management.periodic.CronScheduleProperty._
   import cats.implicits._
 
   private lazy val cronsOrError: Either[String, List[Cron]] = {
@@ -73,7 +73,7 @@ object SinglePeriodicProperty {
   }
 }
 
-object CronPeriodicProperty{
+object CronScheduleProperty{
   private lazy val parser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ))
   private val cronExpressionSeparator: Char = '|'
 }

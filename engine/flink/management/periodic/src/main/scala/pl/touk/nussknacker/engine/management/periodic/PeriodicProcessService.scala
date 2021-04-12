@@ -37,7 +37,7 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
     def emptyCallback: RepositoryAction[Callback] = result.map(_ => () => Future.successful(()))
   }
 
-  def schedule(schedule: PeriodicProperty,
+  def schedule(schedule: ScheduleProperty,
                processVersion: ProcessVersion,
                processJson: String): Future[Unit] = {
     findInitialScheduleDates(schedule) match {
@@ -53,16 +53,16 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
     }
   }
 
-  private def findInitialScheduleDates(schedule: PeriodicProperty) = {
+  private def findInitialScheduleDates(schedule: ScheduleProperty) = {
     schedule match {
-      case MultiplePeriodicProperty(schedules) => schedules.map { case (k, pp) =>
+      case MultipleScheduleProperty(schedules) => schedules.map { case (k, pp) =>
         pp.nextRunAt(clock).map(v => Some(k) -> v)
       }.toList.sequence
-      case e: SinglePeriodicProperty => e.nextRunAt(clock).right.map(t => List((None, t)))
+      case e: SingleScheduleProperty => e.nextRunAt(clock).right.map(t => List((None, t)))
     }
   }
 
-  private def initialSchedule(scheduleMap: PeriodicProperty,
+  private def initialSchedule(scheduleMap: ScheduleProperty,
                               scheduleDates: List[(Option[String], Option[LocalDateTime])],
                               deploymentWithJarData: DeploymentWithJarData): Future[Unit] = {
     scheduledProcessesRepository.create(deploymentWithJarData, scheduleMap).flatMap { process =>
