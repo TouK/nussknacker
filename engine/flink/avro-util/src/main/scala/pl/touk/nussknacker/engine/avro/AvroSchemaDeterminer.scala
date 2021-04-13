@@ -36,7 +36,7 @@ object RuntimeSchemaData {
 
 class SchemaDeterminerError(message: String, cause: Throwable) extends RuntimeException(message, cause)
 
-case object FixedNoneSchemaDeterminer extends AvroSchemaDeterminer {
-  override def determineSchemaUsedInTyping: Validated[SchemaDeterminerError, RuntimeSchemaData] = Valid(RuntimeSchemaData(Schema.create(Schema.Type.NULL), None))
+case object FixedStringSchemaDeterminer extends AvroSchemaDeterminer {
+  override def determineSchemaUsedInTyping: Validated[SchemaDeterminerError, RuntimeSchemaData] = Valid(RuntimeSchemaData(Schema.create(Schema.Type.STRING), None))
   override def toRuntimeSchema(schemaUsedInTyping: RuntimeSchemaData): Option[RuntimeSchemaData] = None
 }

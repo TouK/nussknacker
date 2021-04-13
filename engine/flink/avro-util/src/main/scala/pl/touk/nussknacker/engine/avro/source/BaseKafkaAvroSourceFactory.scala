@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, FixedNoneSchemaDeterminer, SchemaDeterminerErrorHandler}
+import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrderPreviousElementAssigner
@@ -31,9 +31,7 @@ abstract class BaseKafkaAvroSourceFactory[T: ClassTag](timestampAssigner: Option
                    nodeId: NodeId): KafkaSource[T] = {
 
     // key schema
-    // TODO: add better support for no-key events with key-value deserialization
-    val keySchemaData = keySchemaDeterminer.determineSchemaUsedInTyping
-      .getOrElse(FixedNoneSchemaDeterminer.determineSchemaUsedInTyping.valueOr(SchemaDeterminerErrorHandler.handleSchemaRegistryErrorAndThrowException))
+    val keySchemaData = keySchemaDeterminer.determineSchemaUsedInTyping.valueOr(SchemaDeterminerErrorHandler.handleSchemaRegistryErrorAndThrowException)
     val keySchemaDataUsedInRuntime = keySchemaDeterminer.toRuntimeSchema(keySchemaData)
 
     // value schema

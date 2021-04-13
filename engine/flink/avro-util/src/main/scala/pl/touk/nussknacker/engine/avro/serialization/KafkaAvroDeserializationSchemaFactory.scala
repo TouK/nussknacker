@@ -35,17 +35,6 @@ trait KafkaAvroDeserializationSchemaFactory extends Serializable {
 
 }
 
-object KafkaAvroKeyValueDeserializationSchemaFactory {
-
-  val fallbackKeyAsStringDeserializer: Deserializer[String] = new Deserializer[String] {
-    override def deserialize(topic: String, data: Array[Byte]): String = {
-      Option(data).map(bytes => new String(bytes, StandardCharsets.UTF_8)).orNull
-    }
-  }
-
-  val fallbackKeyAsStringTypeInformation: TypeInformation[String] = TypeInformation.of(classOf[String])
-}
-
 /**
   * Abstract base implementation of [[KafkaAvroDeserializationSchemaFactory]]
   * which uses Kafka's Deserializer in returned Flink's KeyedDeserializationSchema. It deserializes only value.
