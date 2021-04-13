@@ -1,14 +1,14 @@
 /* eslint-disable quote-props */
 import {ComponentType} from "react"
-import TipsPanel from "../../tips/Tips"
-import {AttachmentsPanel} from "../AttachmentsPanel"
-import {CommentsPanel} from "../CommentsPanel"
-import {CreatorPanel} from "../creator/CreatorPanel"
+import TipsPanel from "../tips/Tips"
+import {AttachmentsPanel} from "../toolbars/AttachmentsPanel"
+import {CommentsPanel} from "../toolbars/CommentsPanel"
+import {CreatorPanel} from "../toolbars/creator/CreatorPanel"
 import {DefaultToolbarPanel, ToolbarPanelProps} from "./DefaultToolbarPanel"
-import DetailsPanel from "../details/DetailsPanel"
-import ProcessInfo from "../status/ProcessInfo"
-import TestPanel from "../test/TestPanel"
-import {VersionsPanel} from "../VersionsPanel"
+import DetailsPanel from "../toolbars/details/DetailsPanel"
+import ProcessInfo from "../toolbars/status/ProcessInfo"
+import TestPanel from "../toolbars/test/TestPanel"
+import {VersionsPanel} from "../toolbars/VersionsPanel"
 
 export const TOOLBAR_COMPONENTS_MAP: Record<string, ComponentType<ToolbarPanelProps>> = {
   DefaultPanel: DefaultToolbarPanel,

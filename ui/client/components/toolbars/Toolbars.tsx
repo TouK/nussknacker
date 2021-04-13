@@ -5,7 +5,7 @@ import {getFetchedProcessDetails} from "../../reducers/selectors/graph"
 import "../../stylesheets/userPanel.styl"
 import SpinnerWrapper from "../SpinnerWrapper"
 import ToolbarsLayer from "../toolbarComponents/ToolbarsLayer"
-import {useToolbarConfig} from "./toolbarSettings/useToolbarConfig"
+import {useToolbarConfig} from "../toolbarSettings/useToolbarConfig"
 
 type Props = {
   isReady: boolean,

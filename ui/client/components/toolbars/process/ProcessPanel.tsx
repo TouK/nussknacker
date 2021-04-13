@@ -1,5 +1,5 @@
 import React from "react"
-import {DefaultToolbarPanel} from "../toolbarSettings/DefaultToolbarPanel"
+import {DefaultToolbarPanel} from "../../toolbarSettings/DefaultToolbarPanel"
 import {ArchiveToggleButton} from "./buttons/ArchiveToggleButton"
 import PDFButton from "./buttons/PDFButton"
 import JSONButton from "./buttons/JSONButton"
