@@ -31,7 +31,7 @@ function ProcessPanel(props: Props) {
         {capabilities.write ? <ImportButton/> : null}
         <JSONButton/>
         <PDFButton/>
-        {capabilities.change && <ArchiveToggleButton/>}
+        <ArchiveToggleButton/>
       </ToolbarButtons>
     </CollapsibleToolbar>
   )
