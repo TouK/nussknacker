@@ -2,7 +2,7 @@ import React from "react"
 import {RootState} from "../../../../reducers/index"
 import {connect} from "react-redux"
 import {startGrouping} from "../../../../actions/nk/groups"
-import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
+import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 import {getGroupingState} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/group-start.svg"
@@ -14,7 +14,8 @@ function GroupStartButton(props: Props) {
   const {t} = useTranslation()
 
   return (
-    <ToolbarButton
+    <CapabilitiesToolbarButton
+      write
       name={t("panels.actions.group-start.button", "start")}
       icon={<Icon/>}
       disabled={groupingState != null}
