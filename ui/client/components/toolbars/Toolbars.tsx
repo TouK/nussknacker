@@ -6,13 +6,30 @@ import ToolbarsLayer from "../toolbarComponents/ToolbarsLayer"
 import {ToolbarsSide} from "../../reducers/toolbars"
 
 import TipsPanel from "../tips/Tips"
+import {DefaultToolbarPanel} from "./DefaultToolbarPanel"
 
 import EditPanel, {SelectionActions} from "./edit/EditPanel"
+import GroupCancel from "./group/buttons/GroupCancelButton"
+import GroupFinish from "./group/buttons/GroupFinishButton"
+import GroupStart from "./group/buttons/GroupStartButton"
+import Ungroup from "./group/buttons/UngroupButton"
+import {ArchiveToggleButton} from "./process/buttons/ArchiveToggleButton"
+import CompareButton from "./process/buttons/CompareButton"
+import ImportButton from "./process/buttons/ImportButton"
+import JSONButton from "./process/buttons/JSONButton"
+import MigrateButton from "./process/buttons/MigrateButton"
+import PDFButton from "./process/buttons/PDFButton"
+import Properties from "./status/buttons/PropertiesButton"
 import ProcessInfo from "./status/ProcessInfo"
-import ViewPanel from "./view/ViewPanel"
-import ProcessPanels from "./process/ProcessPanel"
+import CountsButton from "./test/buttons/CountsButton"
+import FromFileButton from "./test/buttons/FromFileButton"
+import GenerateButton from "./test/buttons/GenerateButton"
+import HideButton from "./test/buttons/HideButton"
+import BussinesViewSwitch from "./view/buttons/BussinesViewSwitch"
+import {ResetViewButton} from "./view/buttons/ResetViewButton"
+import {ZoomInButton} from "./view/buttons/ZoomInButton"
+import {ZoomOutButton} from "./view/buttons/ZoomOutButton"
 import TestPanel from "./test/TestPanel"
-import GroupPanel from "./group/GroupPanel"
 import DetailsPanel from "./details/DetailsPanel"
 import {CreatorPanel} from "./creator/CreatorPanel"
 import {VersionsPanel} from "./VersionsPanel"
@@ -39,7 +56,14 @@ function Toolbars(props: Props) {
     },
     {
       id: "VIEW-PANEL",
-      component: <ViewPanel/>,
+      component: (
+        <DefaultToolbarPanel id="VIEW-PANEL">
+          <BussinesViewSwitch/>
+          <ZoomInButton/>
+          <ZoomOutButton/>
+          <ResetViewButton/>
+        </DefaultToolbarPanel>
+      ),
       defaultSide: ToolbarsSide.TopRight,
     },
     {
@@ -49,17 +73,41 @@ function Toolbars(props: Props) {
     },
     {
       id: "PROCESS-PANELS",
-      component: <ProcessPanels/>,
+      component: (
+        <DefaultToolbarPanel id="PROCESS-PANEL">
+          <Properties/>
+          <CompareButton/>
+          <MigrateButton/>
+          <ImportButton/>
+          <JSONButton/>
+          <PDFButton/>
+          <ArchiveToggleButton/>
+        </DefaultToolbarPanel>
+      ),
       defaultSide: ToolbarsSide.TopRight,
     },
     {
       id: "TEST-PANEL",
-      component: <TestPanel/>,
+      component: (
+        <TestPanel id="TEST-PANEL">
+          <FromFileButton/>
+          <GenerateButton/>
+          <CountsButton/>
+          <HideButton/>
+        </TestPanel>
+      ),
       defaultSide: ToolbarsSide.TopRight,
     },
     {
       id: "GROUP-PANEL",
-      component: <GroupPanel/>,
+      component: (
+        <DefaultToolbarPanel id="GROUP-PANEL">
+          <GroupStart/>
+          <GroupFinish/>
+          <GroupCancel/>
+          <Ungroup/>
+        </DefaultToolbarPanel>
+      ),
       defaultSide: ToolbarsSide.TopRight,
     },
     {
