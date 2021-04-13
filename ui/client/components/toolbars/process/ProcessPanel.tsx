@@ -27,8 +27,8 @@ function ProcessPanel(props: Props) {
       <ToolbarButtons>
         {!isSubprocess ? <Properties/> : null}
         <CompareButton/>
-        {capabilities.deploy && !isEmpty(featuresSettings?.remoteEnvironment) ? <MigrateButton/> : null}
-        {capabilities.write ? <ImportButton/> : null}
+        <MigrateButton/>
+        <ImportButton/>
         <JSONButton/>
         <PDFButton/>
         <ArchiveToggleButton/>

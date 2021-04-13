@@ -5,7 +5,7 @@ import {events} from "../../../../analytics/TrackingEvents"
 import {importFiles} from "../../../../actions/nk/importExport"
 import {reportEvent} from "../../../../actions/nk/reportEvent"
 import {bindActionCreators} from "redux"
-import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
+import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 import {getProcessId} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/import.svg"
@@ -17,7 +17,8 @@ function ImportButton(props: Props) {
   const {t} = useTranslation()
 
   return (
-    <ToolbarButton
+    <CapabilitiesToolbarButton
+      write
       name={t("panels.actions.process-import.button", "import")}
       icon={<Icon/>}
       disabled={false}
