@@ -1,9 +1,11 @@
-import {uniqBy, flatMap} from "lodash"
+import {flatMap, uniqBy} from "lodash"
 import React, {useMemo} from "react"
+import {useSelector} from "react-redux"
 import {ToolbarsSide} from "../../../reducers/toolbars"
 import {Toolbar} from "../../toolbarComponents/toolbar"
-import {defaultToolbarsConfig, ToolbarConfig, ToolbarsConfig} from "../defaultToolbarsConfig"
-import {ToolbarSelector} from "../ToolbarSelector"
+import {ToolbarsConfig} from "./defaultToolbarsConfig"
+import {ToolbarSelector} from "./ToolbarSelector"
+import {getToolbarsConfig} from "./selectors/toolbarsConfig"
 
 const parseCollection = (collection: ToolbarsConfig): Toolbar[] => uniqBy<Toolbar>(
   flatMap(
@@ -15,8 +17,8 @@ const parseCollection = (collection: ToolbarsConfig): Toolbar[] => uniqBy<Toolba
   config => config.id,
 )
 
-export function useToolbarDefualtSettings(): Toolbar[] {
-  const toolbarsCollection = defaultToolbarsConfig
+export function useToolbarConfig(): Toolbar[] {
+  const toolbarsCollection = useSelector(getToolbarsConfig)
   return useMemo(
     () => parseCollection(toolbarsCollection),
     [toolbarsCollection],

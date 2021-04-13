@@ -1,4 +1,4 @@
-import {ActionButtonProps} from "../status/buttons/ActionButton"
+import {ActionButtonProps} from "./ActionButton"
 import {BuiltinButtonTypes} from "./BuiltinButtonTypes"
 import {CustomButtonTypes} from "./CustomButtonTypes"
 

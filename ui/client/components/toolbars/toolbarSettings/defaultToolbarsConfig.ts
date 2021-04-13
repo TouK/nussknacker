@@ -1,7 +1,6 @@
-import {ToolbarsSide} from "../../reducers/toolbars"
-import {ButtonsVariant} from "../toolbarComponents/ToolbarButtons"
-import {BuiltinButtonTypes} from "./toolbarSettings/BuiltinButtonTypes"
-import {ToolbarButtonTypes} from "./toolbarSettings/ToolbarSettingsTypes"
+import {ToolbarsSide} from "../../../reducers/toolbars"
+import {ButtonsVariant} from "../../toolbarComponents/ToolbarButtons"
+import {BuiltinButtonTypes, ToolbarButtonTypes} from "./buttons"
 
 export interface ToolbarConfig {
   id: string,

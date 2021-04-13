@@ -1,8 +1,7 @@
 import React from "react"
 import {ToolbarPanelProps} from "./DefaultToolbarPanel"
-import {TOOLBAR_BUTTONS_MAP} from "./toolbarSettings/TOOLBAR_BUTTONS_MAP"
-import {TOOLBAR_COMPONENTS_MAP} from "./toolbarSettings/TOOLBAR_COMPONENTS_MAP"
-import {ToolbarButtonTypes} from "./toolbarSettings/ToolbarSettingsTypes"
+import {TOOLBAR_BUTTONS_MAP,ToolbarButtonTypes} from "./buttons"
+import {TOOLBAR_COMPONENTS_MAP} from "./TOOLBAR_COMPONENTS_MAP"
 
 export const ToolbarSelector = ({buttons, ...props}: Omit<ToolbarPanelProps, "children"> & {buttons?: ToolbarButtonTypes[]}): JSX.Element => {
   const Component = TOOLBAR_COMPONENTS_MAP[props.id] || TOOLBAR_COMPONENTS_MAP.DefaultPanel

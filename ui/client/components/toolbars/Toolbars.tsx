@@ -5,7 +5,7 @@ import {getFetchedProcessDetails} from "../../reducers/selectors/graph"
 import "../../stylesheets/userPanel.styl"
 import SpinnerWrapper from "../SpinnerWrapper"
 import ToolbarsLayer from "../toolbarComponents/ToolbarsLayer"
-import {useToolbarDefualtSettings} from "./toolbarSettings/useToolbarDefualtSettings"
+import {useToolbarConfig} from "./toolbarSettings/useToolbarConfig"
 
 type Props = {
   isReady: boolean,
@@ -14,7 +14,7 @@ type Props = {
 function Toolbars(props: Props) {
   const {isReady} = props
   const fetchedProcessDetails = useSelector(getFetchedProcessDetails)
-  const toolbars = useToolbarDefualtSettings()
+  const toolbars = useToolbarConfig()
 
   return (
     <SpinnerWrapper isReady={isReady && !!fetchedProcessDetails}>

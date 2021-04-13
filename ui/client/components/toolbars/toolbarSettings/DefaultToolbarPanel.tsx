@@ -1,7 +1,7 @@
 import React, {PropsWithChildren} from "react"
 import {useTranslation} from "react-i18next"
-import {CollapsibleToolbar, CollapsibleToolbarProps} from "../toolbarComponents/CollapsibleToolbar"
-import {ButtonsVariant, ToolbarButtons} from "../toolbarComponents/ToolbarButtons"
+import {CollapsibleToolbar, CollapsibleToolbarProps} from "../../toolbarComponents/CollapsibleToolbar"
+import {ButtonsVariant, ToolbarButtons} from "../../toolbarComponents/ToolbarButtons"
 
 export type ToolbarPanelProps = PropsWithChildren<{
   id: string,
