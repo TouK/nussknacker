@@ -49,6 +49,10 @@ To see biggest differences please consult the [changelog](Changelog.md).
   - For kafka sources `RecordFormatter` parses raw test data to `ConsumerRecord` which fits into deserializer (instead of `ProducerRecord` that required another transformation).
   - Definitions of names of common `Context` variables are moved to `VariableConstants` (instead of `Interpreter`).
 * [#1497](https://github.com/TouK/nussknacker/pull/1497) Changes in `PeriodicProcessManager`, change `PeriodicProperty` to `ScheduleProperty`
+* [#1499](https://github.com/TouK/nussknacker/pull/1499)
+  - trait `KafkaAvroDeserializationSchemaFactory` uses both key and value ClassTags and schemas (instead of value-only), check the order of parameters.
+  - ClassTag is provided in params in avro key-value deserialization schema factory: `KafkaAvroKeyValueDeserializationSchemaFactory`
+  - `BaseKafkaAvroSourceFactory` is able to read both key and value schema determiner to build proper DeserializationSchema (support for keys is not fully introduced in this change)
 
 ## In version 0.3.0
 

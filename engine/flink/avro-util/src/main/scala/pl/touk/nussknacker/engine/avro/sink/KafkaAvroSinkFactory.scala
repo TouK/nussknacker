@@ -42,7 +42,7 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, v
       //we cast here, since null will not be matched in case...
       val preparedTopic = prepareTopic(topic)
       val versionOption = parseVersionOption(version)
-      val schemaDeterminer = prepareSchemaDeterminer(preparedTopic, versionOption)
+      val schemaDeterminer = prepareValueSchemaDeterminer(preparedTopic, versionOption)
       val determinedSchema = schemaDeterminer.determineSchemaUsedInTyping
         .leftMap(SchemaDeterminerErrorHandler.handleSchemaRegistryError)
         .leftMap(NonEmptyList.one)
@@ -76,7 +76,7 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, v
     val validationMode = extractValidationMode(params(KafkaAvroBaseTransformer.SinkValidationModeParameterName).asInstanceOf[String])
 
     createSink(preparedTopic, versionOption, key, value,
-      kafkaConfig, schemaRegistryProvider.serializationSchemaFactory, prepareSchemaDeterminer(preparedTopic, versionOption), validationMode)(
+      kafkaConfig, schemaRegistryProvider.serializationSchemaFactory, prepareValueSchemaDeterminer(preparedTopic, versionOption), validationMode)(
       typedDependency[MetaData](dependencies), typedDependency[NodeId](dependencies))
   }
 

@@ -42,7 +42,7 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
       ) =>
       val preparedTopic = prepareTopic(topic)
       val versionOption = parseVersionOption(version)
-      val schemaDeterminer = prepareSchemaDeterminer(preparedTopic, versionOption)
+      val schemaDeterminer = prepareValueSchemaDeterminer(preparedTopic, versionOption)
       val determinedSchema = schemaDeterminer
         .determineSchemaUsedInTyping
         .leftMap(SchemaDeterminerErrorHandler.handleSchemaRegistryError(_))
@@ -81,7 +81,7 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
     val processMetaData = typedDependency[NodeId](dependencies)
     val clientId = s"${processMetaData.id}-${preparedTopic.prepared}"
 
-    val schemaDeterminer = prepareSchemaDeterminer(preparedTopic, versionOption)
+    val schemaDeterminer = prepareValueSchemaDeterminer(preparedTopic, versionOption)
     val schemaData = schemaDeterminer.determineSchemaUsedInTyping.valueOr(SchemaDeterminerErrorHandler.handleSchemaRegistryErrorAndThrowException)
     val schemaUsedInRuntime = schemaDeterminer.toRuntimeSchema(schemaData)
 

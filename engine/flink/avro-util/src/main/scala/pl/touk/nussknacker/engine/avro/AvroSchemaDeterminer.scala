@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.avro
 
 import cats.data.Validated
+import cats.data.Validated.Valid
 import org.apache.avro.Schema
 import org.apache.flink.formats.avro.typeutils.NkSerializableAvroSchema
 
@@ -34,3 +35,8 @@ object RuntimeSchemaData {
 }
 
 class SchemaDeterminerError(message: String, cause: Throwable) extends RuntimeException(message, cause)
+
+case object FixedStringSchemaDeterminer extends AvroSchemaDeterminer {
+  override def determineSchemaUsedInTyping: Validated[SchemaDeterminerError, RuntimeSchemaData] = Valid(RuntimeSchemaData(Schema.create(Schema.Type.STRING), None))
+  override def toRuntimeSchema(schemaUsedInTyping: RuntimeSchemaData): Option[RuntimeSchemaData] = None
+}

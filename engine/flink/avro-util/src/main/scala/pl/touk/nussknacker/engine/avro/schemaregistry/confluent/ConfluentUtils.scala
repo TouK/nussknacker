@@ -45,7 +45,11 @@ object ConfluentUtils extends LazyLogging {
 
   def parsePayloadToByteBuffer(payload: Array[Byte]): Validated[IllegalArgumentException, ByteBuffer] = {
     val buffer = ByteBuffer.wrap(payload)
-    if (buffer.get != MagicByte)
+    if (buffer.array().isEmpty)
+      // Here parsed payload is an empty buffer. In that case buffer.get below raises "java.nio.BufferUnderflowException".
+      // This usually happens when the content of key or value is null.
+      Validated.invalid(new IllegalArgumentException("Buffer is empty"))
+    else if (buffer.get != MagicByte)
       Validated.invalid(new IllegalArgumentException("Unknown magic byte!"))
     else
       Validated.valid(buffer)
