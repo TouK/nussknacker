@@ -6,7 +6,6 @@ import java.{util => jul}
 import com.github.ghik.silencer.silent
 import javax.annotation.Nullable
 import javax.validation.constraints.Min
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.functions.source.SourceFunction
@@ -15,7 +14,7 @@ import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironm
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource, FlinkSourceFactory}
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource, FlinkSourceFactory, BasicContextInitializingFunction}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, TimestampWatermarkHandler}
 
 import scala.annotation.nowarn
@@ -34,9 +33,7 @@ class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]
              @ParamName("value") value: LazyParameter[AnyRef]): Source[_] = {
     new FlinkSource[AnyRef] with ReturningType {
 
-      override def typeInformation: TypeInformation[AnyRef] = implicitly[TypeInformation[AnyRef]]
-
-      override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[AnyRef] = {
+      override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[Context] = {
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
 
         val count = Option(nullableCount).map(_.toInt).getOrElse(1)
@@ -49,10 +46,12 @@ class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]
             1.to(count).map(_ => v.value)
           }
 
-        timestampAssigner.assignTimestampAndWatermarks(stream)
-      }
+        val rawSourceWithTimestamp = timestampAssigner.assignTimestampAndWatermarks(stream)
 
-      override def timestampAssignerForTest: Option[TimestampWatermarkHandler[AnyRef]] = Some(timestampAssigner)
+        val typeInformationFromNodeContext = flinkNodeContext.typeInformationDetection.forContext(flinkNodeContext.validationContext.left.get)
+        rawSourceWithTimestamp
+          .map(new BasicContextInitializingFunction[AnyRef](flinkNodeContext.metaData.id, flinkNodeContext.nodeId))(typeInformationFromNodeContext)
+      }
 
       override val returnType: typing.TypingResult = value.returnType
 

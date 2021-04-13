@@ -4,14 +4,14 @@ import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Date, Optional, UUID}
+
 import cats.data.Validated.Valid
 import com.github.ghik.silencer.silent
 import io.circe.generic.JsonCodec
-
 import javax.annotation.Nullable
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
-import org.apache.flink.api.common.functions.FilterFunction
+import org.apache.flink.api.common.functions.{FilterFunction, MapFunction}
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.co.RichCoMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
@@ -20,18 +20,18 @@ import org.apache.flink.streaming.api.windowing.time.Time
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation._
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, OutputVar, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
-import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, NewLineSplittedTestDataParser, TestDataParser, TestParsingUtils}
+import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType, TypedMap, typing}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
-import pl.touk.nussknacker.engine.flink.api.process._
+import pl.touk.nussknacker.engine.flink.api.process.{BasicContextInitializingFunction, _}
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.signal.KafkaSignalStreamConnector
@@ -45,7 +45,6 @@ import pl.touk.nussknacker.test.WithDataList
 
 import scala.annotation.nowarn
 import scala.collection.JavaConverters._
-import scala.collection.immutable
 import scala.concurrent.{ExecutionContext, Future}
 
 //TODO: clean up sample objects...
@@ -647,6 +646,87 @@ object SampleNodes {
     override def nodeDependencies: List[NodeDependency] = OutputVariableNameDependency :: Nil
   }
 
+  object GenericSourceWithCustomVariables extends FlinkSourceFactory[String] with SingleInputGenericNodeTransformation[Source[String]] {
+
+    private class CustomFlinkContextInitializer extends BasicFlinkGenericContextInitializer[String, DefinedParameter, State] {
+
+      override def validationContext(context: ValidationContext, dependencies: List[NodeDependencyValue], parameters: List[(String, DefinedParameter)], state: Option[State])(implicit nodeId: NodeId): ValidationContext = {
+        //Append variable "input"
+        val contextWithInput = super.validationContext(context, dependencies, parameters, state)
+
+        //Specify additional variables
+        val additionalVariables = Map(
+          "additionalOne" -> Typed[String],
+          "additionalTwo" -> Typed[Int]
+        )
+
+        //Append additional variables to ValidationContext
+        additionalVariables.foldLeft(contextWithInput) { case (acc, (name, typingResult)) =>
+          acc.withVariable(name, typingResult, None).getOrElse(acc)
+        }
+      }
+
+      override protected def outputVariableType(context: ValidationContext, dependencies: List[NodeDependencyValue],
+                                                parameters: List[(String, DefinedSingleParameter)], state: Option[Nothing])
+                                               (implicit nodeId: NodeId): typing.TypingResult = Typed[String]
+
+      override def initContext(processId: String, taskName: String): MapFunction[String, Context] = {
+        new BasicContextInitializingFunction[String](processId, taskName) {
+          override def map(input: String): Context = {
+            //perform some transformations and/or computations
+            val additionalVariables = Map[String, Any](
+              "additionalOne" -> s"transformed:${input}",
+              "additionalTwo" -> input.length()
+            )
+            //initialize context with input variable and append computed values
+            super.map(input).withVariables(additionalVariables)
+          }
+        }
+      }
+
+    }
+
+    override type State = Nothing
+
+    //There is only one parameter in this source
+    private val elementsParamName = "elements"
+
+    private val customContextInitializer: BasicFlinkGenericContextInitializer[String, DefinedParameter, State] = new CustomFlinkContextInitializer
+
+    override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId)
+    : GenericSourceWithCustomVariables.NodeTransformationDefinition = {
+      //Component has simple parameters based only on initialParameters.
+      case TransformationStep(Nil, _) => NextParameters(initialParameters)
+      case step@TransformationStep((`elementsParamName`, _) :: Nil, None) =>
+        FinalResults(customContextInitializer.validationContext(context, dependencies, step.parameters, step.state))
+    }
+
+    override def initialParameters: List[Parameter] = Parameter[java.util.List[String]](`elementsParamName`) :: Nil
+
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source[String] = {
+      import scala.collection.JavaConverters._
+      val elements = params(`elementsParamName`).asInstanceOf[java.util.List[String]].asScala.toList
+
+      new CollectionSource[String](StreamExecutionEnvironment.getExecutionEnvironment.getConfig, elements, None, Typed[String])
+        with TestDataGenerator
+        with FlinkSourceTestSupport[String] {
+
+        override val contextInitializer: FlinkContextInitializer[String] = customContextInitializer
+
+        override def generateTestData(size: Int): Array[Byte] = elements.mkString("\n").getBytes
+
+        override def testDataParser: TestDataParser[String] = new NewLineSplittedTestDataParser[String] {
+          override def parseElement(testElement: String): String = testElement
+        }
+
+        override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner
+      }
+    }
+
+    override def nodeDependencies: List[NodeDependency] = Nil
+
+  }
+
   object GenericParametersSink extends SinkFactory with SingleInputGenericNodeTransformation[Sink]  {
 
     override type State = Nothing
@@ -717,13 +797,15 @@ object SampleNodes {
   }
 
   def simpleRecordSource(data: List[SimpleRecord]): FlinkSourceFactory[SimpleRecord] = FlinkSourceFactory.noParam(
-    new CollectionSource[SimpleRecord](new ExecutionConfig, data, Some(ascendingTimestampExtractor), Typed[SimpleRecord]) with TestDataParserProvider[SimpleRecord] {
+    new CollectionSource[SimpleRecord](new ExecutionConfig, data, Some(ascendingTimestampExtractor), Typed[SimpleRecord]) with FlinkSourceTestSupport[SimpleRecord] {
       override def testDataParser: TestDataParser[SimpleRecord] = newLineSplittedTestDataParser
+
+      override def timestampAssignerForTest: Option[TimestampWatermarkHandler[SimpleRecord]] = timestampAssigner
     })
 
 
   val jsonSource: FlinkSourceFactory[SimpleJsonRecord] = FlinkSourceFactory.noParam(
-    new CollectionSource[SimpleJsonRecord](new ExecutionConfig, List(), None, Typed[SimpleJsonRecord]) with TestDataParserProvider[SimpleJsonRecord] {
+    new CollectionSource[SimpleJsonRecord](new ExecutionConfig, List(), None, Typed[SimpleJsonRecord]) with FlinkSourceTestSupport[SimpleJsonRecord] {
       override def testDataParser: TestDataParser[SimpleJsonRecord] = new EmptyLineSplittedTestDataParser[SimpleJsonRecord] {
 
         override def parseElement(json: String): SimpleJsonRecord = {
@@ -731,6 +813,8 @@ object SampleNodes {
         }
 
       }
+
+      override def timestampAssignerForTest: Option[TimestampWatermarkHandler[SimpleJsonRecord]] = timestampAssigner
     }
   )
 
@@ -738,7 +822,7 @@ object SampleNodes {
 
     @MethodToInvoke
     def create(processMetaData: MetaData,  @ParamName("type") definition: java.util.Map[String, _]): Source[_] = {
-      new CollectionSource[TypedMap](new ExecutionConfig, List(), None, Typed[TypedMap]) with TestDataParserProvider[TypedMap] with ReturningType {
+      new CollectionSource[TypedMap](new ExecutionConfig, List(), None, Typed[TypedMap]) with FlinkSourceTestSupport[TypedMap] with ReturningType {
 
         override def testDataParser: TestDataParser[TypedMap] = new EmptyLineSplittedTestDataParser[TypedMap] {
           override def parseElement(json: String): TypedMap = {
@@ -748,6 +832,7 @@ object SampleNodes {
 
         override val returnType: typing.TypingResult = TypingUtils.typeMapDefinition(definition)
 
+        override def timestampAssignerForTest: Option[TimestampWatermarkHandler[TypedMap]] = timestampAssigner
       }
     }
 

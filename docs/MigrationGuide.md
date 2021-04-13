@@ -30,6 +30,25 @@ To see biggest differences please consult the [changelog](Changelog.md).
   - Slight change of API of `StringKeyedValueMapper`
   - Change of semantics of some parameters of `AggregatorFunction`, `AggregatorFunctionMixin` (storedAggregateType becomes aggregateElementType)  
 * [#1405](https://github.com/TouK/nussknacker/pull/1405) 'KafkaAvroSink' requires more generic 'AvroSinkValue' as value parameter
+* [#1510](https://github.com/TouK/nussknacker/pull/1510)
+  - Change of `FlinkSource` API: sourceStream produces stream of initialized `Context` (`DataStream[Context]`)
+    This initialization step was previously performed within `FlinkProcessRegistrar.registerSourcePart`. Now it happens explicitly within the flink source.
+  - `FlinkIntermediateRawSource` is used as an extension to flink sources, it prepares source with typical stream transformations (add source function, set uid, assign timestamp, initialize `Context`)
+  - `FlinkContextInitializer` is used to initialize `Context`. It provides map function that transforms raw event (produced by flink source function) into `Context` variable.
+    Default implementation of `FlinkContextInitializer`, see `BasicFlinkContextInitializer`, sets raw event value to singe "input" variable.
+  - For sources based on `GenericNodeTransformation` it allows to initialize `Context` with more than one variable.
+    Default implementation of initializer, see `BasicFlinkGenericContextInitializer`, provides default definition of variables as a `ValidationContext` with single "input" variable.
+    The implementation requires to provide separately the definition of "input" variable type (`TypingResult`).
+    See `GenericSourceWithCustomVariablesSample`.
+  - Rename `TestDataParserProvider` to `SourceTestSupport`
+  - To enable "test source" functionality, a source needs to be extended with `SourceTestSupport`.
+  - To enable test data generator for "test source" , a source needs to be extended with both `SourceTestSupport` and `TestDataGenerator`.
+  - `FlinkSourceTestSupport` is used to provide "test source" functionality for flink sources.
+    What was related to "test source" functionality and was obsolete in `FlinkSource` now is excluded to `FlinkSourceTestSupport`.
+  - `FlinkCustomNodeContext` has access to `TypeInformationDetection`, it allows to get TypeInformation for the node stream mapping from ValidationContext.
+  - For kafka sources `RecordFormatter` parses raw test data to `ConsumerRecord` which fits into deserializer (instead of `ProducerRecord` that required another transformation).
+  - Definitions of names of common `Context` variables are moved to `VariableConstants` (instead of `Interpreter`).
+* [#1497](https://github.com/TouK/nussknacker/pull/1497) Changes in `PeriodicProcessManager`, change `PeriodicProperty` to `ScheduleProperty`
 
 ## In version 0.3.0
 

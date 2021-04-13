@@ -7,6 +7,7 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.api.{Context, InterpretationResult, ProcessVersion, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.{ConfigGlobalParameters, NkGlobalParameters}
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.TypedScalaMapTypeInformation
@@ -28,14 +29,14 @@ class TypeInformationDetectionSpec extends FunSuite with Matchers {
 
   test("Uses generic detection by default") {
 
-    val detection = TypeInformationDetection.forExecutionConfig(executionConfig(), loader)
+    val detection = TypeInformationDetectionUtils.forExecutionConfig(executionConfig(), loader)
     val tr = typeInformationForVariables(detection, ValidationContext(Map("test1" -> Typed[String])))
     tr.isInstanceOf[TraversableTypeInfo[_, _]] shouldBe true
   }
 
   test("Uses TypingResultAware detection if configured") {
 
-    val detection = TypeInformationDetection.forExecutionConfig(executionConfig(Some(true)), loader)
+    val detection = TypeInformationDetectionUtils.forExecutionConfig(executionConfig(Some(true)), loader)
     typeInformationForVariables(detection, ValidationContext(Map("test1" -> Typed[String])))
       .asInstanceOf[TypedScalaMapTypeInformation].informations("test1") shouldBe TypeInformation.of(classOf[String])
   }
@@ -45,7 +46,7 @@ class TypeInformationDetectionSpec extends FunSuite with Matchers {
 
     ClassLoaderWithServices.withCustomServices(List(
       (classOf[TypingResultAwareTypeInformationCustomisation], classOf[CustomTypeInformationCustomisation])), loader) { withServices =>
-      val detection = TypeInformationDetection.forExecutionConfig(ec, withServices)
+      val detection = TypeInformationDetectionUtils.forExecutionConfig(ec, withServices)
       typeInformationForVariables(detection, ValidationContext(Map("test1" -> Unknown)))
         .asInstanceOf[TypedScalaMapTypeInformation].informations("test1") shouldBe new NothingTypeInfo
     }
@@ -54,7 +55,7 @@ class TypeInformationDetectionSpec extends FunSuite with Matchers {
   test("Uses custom TypeInformationDetection if detected") {
     ClassLoaderWithServices.withCustomServices(List(
       (classOf[TypeInformationDetection], classOf[CustomTypeInformationDetection])), loader) { withServices =>
-      val detection = TypeInformationDetection.forExecutionConfig(executionConfig(Some(true)), withServices)
+      val detection = TypeInformationDetectionUtils.forExecutionConfig(executionConfig(Some(true)), withServices)
 
       intercept[IllegalArgumentException] {
         detection.forContext(ValidationContext())
