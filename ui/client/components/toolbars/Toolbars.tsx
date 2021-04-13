@@ -24,6 +24,10 @@ import ImportButton from "./process/buttons/ImportButton"
 import JSONButton from "./process/buttons/JSONButton"
 import MigrateButton from "./process/buttons/MigrateButton"
 import PDFButton from "./process/buttons/PDFButton"
+import SaveButton from "./process/buttons/SaveButton"
+import Cancel from "./status/buttons/CancelDeployButton"
+import Deploy from "./status/buttons/DeployButton"
+import Metrics from "./status/buttons/MetricsButton"
 import Properties from "./status/buttons/PropertiesButton"
 import ProcessInfo from "./status/ProcessInfo"
 import CountsButton from "./test/buttons/CountsButton"
@@ -55,7 +59,14 @@ function Toolbars(props: Props) {
   const toolbars: Toolbar[] = [
     {
       id: "PROCESS-INFO",
-      component: <ProcessInfo/>,
+      component: (
+        <ProcessInfo id="PROCESS-INFO">
+          <SaveButton/>
+          <Deploy/>
+          <Cancel/>
+          <Metrics/>
+        </ProcessInfo>
+      ),
       defaultSide: ToolbarsSide.TopRight,
     },
     {
