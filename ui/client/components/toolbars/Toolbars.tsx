@@ -6,48 +6,14 @@ import {ButtonsVariant} from "../toolbarComponents/ToolbarButtons"
 import ToolbarsLayer from "../toolbarComponents/ToolbarsLayer"
 import {ToolbarsSide} from "../../reducers/toolbars"
 
-import {DefaultToolbarPanel} from "./DefaultToolbarPanel"
-import Copy from "./edit/buttons/CopyButton"
-import Delete from "./edit/buttons/DeleteButton"
-import Layout from "./edit/buttons/LayoutButton"
-import Paste from "./edit/buttons/PasteButton"
-import Redo from "./edit/buttons/RedoButton"
-import Undo from "./edit/buttons/UndoButton"
-import GroupCancel from "./group/buttons/GroupCancelButton"
-import GroupFinish from "./group/buttons/GroupFinishButton"
-import GroupStart from "./group/buttons/GroupStartButton"
-import Ungroup from "./group/buttons/UngroupButton"
-import {ArchiveToggleButton} from "./process/buttons/ArchiveToggleButton"
-import CompareButton from "./process/buttons/CompareButton"
-import ImportButton from "./process/buttons/ImportButton"
-import JSONButton from "./process/buttons/JSONButton"
-import MigrateButton from "./process/buttons/MigrateButton"
-import PDFButton from "./process/buttons/PDFButton"
-import SaveButton from "./process/buttons/SaveButton"
-import Cancel from "./status/buttons/CancelDeployButton"
-import Deploy from "./status/buttons/DeployButton"
-import Metrics from "./status/buttons/MetricsButton"
-import Properties from "./status/buttons/PropertiesButton"
-import CountsButton from "./test/buttons/CountsButton"
-import FromFileButton from "./test/buttons/FromFileButton"
-import GenerateButton from "./test/buttons/GenerateButton"
-import HideButton from "./test/buttons/HideButton"
-import {TOOLBAR_COMPONENTS_MAP} from "./toolbarSettings/TOOLBAR_COMPONENTS_MAP"
-import BussinesViewSwitch from "./view/buttons/BussinesViewSwitch"
-import {ResetViewButton} from "./view/buttons/ResetViewButton"
-import {ZoomInButton} from "./view/buttons/ZoomInButton"
-import {ZoomOutButton} from "./view/buttons/ZoomOutButton"
+import {ToolbarButtonSelector, ToolbarSelector} from "./ToolbarSelector"
+import {BuiltinButtonTypes} from "./toolbarSettings/BuiltinButtonTypes"
 
 import "../../stylesheets/userPanel.styl"
 import {Toolbar} from "../toolbarComponents/toolbar"
 
 type Props = {
   isReady: boolean,
-}
-
-const ToolbarSelector: typeof DefaultToolbarPanel = (props) => {
-  const Component = TOOLBAR_COMPONENTS_MAP[props.id] || TOOLBAR_COMPONENTS_MAP.DefaultPanel
-  return <Component {...props}/>
 }
 
 function Toolbars(props: Props) {
@@ -59,10 +25,10 @@ function Toolbars(props: Props) {
       id: "PROCESS-INFO",
       component: (
         <ToolbarSelector id="PROCESS-INFO">
-          <SaveButton/>
-          <Deploy/>
-          <Cancel/>
-          <Metrics/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.processSave}/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.deploy}/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.deployCanel}/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.deployMetrics}/>
         </ToolbarSelector>
       ),
       defaultSide: ToolbarsSide.TopRight,
@@ -71,10 +37,10 @@ function Toolbars(props: Props) {
       id: "VIEW-PANEL",
       component: (
         <ToolbarSelector id="VIEW-PANEL">
-          <BussinesViewSwitch/>
-          <ZoomInButton/>
-          <ZoomOutButton/>
-          <ResetViewButton/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.viewBussinesView}/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.viewZoomIn}/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.viewZoomOut}/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.viewReset}/>
         </ToolbarSelector>
       ),
       defaultSide: ToolbarsSide.TopRight,
@@ -83,12 +49,12 @@ function Toolbars(props: Props) {
       id: "EDIT-PANEL",
       component: (
         <ToolbarSelector id="EDIT-PANEL" buttonsVariant={ButtonsVariant.small}>
-          <Undo/>
-          <Redo/>
-          <Copy/>
-          <Paste/>
-          <Delete/>
-          <Layout/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.editUndo}/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.editRedo}/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.editCopy}/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.editPaste}/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.editDelete}/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.editLayout}/>
         </ToolbarSelector>
       ),
       defaultSide: ToolbarsSide.TopRight,
@@ -97,13 +63,13 @@ function Toolbars(props: Props) {
       id: "PROCESS-PANELS",
       component: (
         <ToolbarSelector id="PROCESS-PANEL">
-          <Properties/>
-          <CompareButton/>
-          <MigrateButton/>
-          <ImportButton/>
-          <JSONButton/>
-          <PDFButton/>
-          <ArchiveToggleButton/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.editProperties}/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.processCompare}/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.processMigrate}/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.processImport}/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.processJSON}/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.processPDF}/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.processArchive}/>
         </ToolbarSelector>
       ),
       defaultSide: ToolbarsSide.TopRight,
@@ -112,10 +78,10 @@ function Toolbars(props: Props) {
       id: "TEST-PANEL",
       component: (
         <ToolbarSelector id="TEST-PANEL">
-          <FromFileButton/>
-          <GenerateButton/>
-          <CountsButton/>
-          <HideButton/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.testFromFile}/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.testGenerate}/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.testCounts}/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.testHide}/>
         </ToolbarSelector>
       ),
       defaultSide: ToolbarsSide.TopRight,
@@ -124,10 +90,10 @@ function Toolbars(props: Props) {
       id: "GROUP-PANEL",
       component: (
         <ToolbarSelector id="GROUP-PANEL">
-          <GroupStart/>
-          <GroupFinish/>
-          <GroupCancel/>
-          <Ungroup/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.groupStart}/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.groupFinish}/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.groupCancel}/>
+          <ToolbarButtonSelector type={BuiltinButtonTypes.groupUngroup}/>
         </ToolbarSelector>
       ),
       defaultSide: ToolbarsSide.TopRight,
