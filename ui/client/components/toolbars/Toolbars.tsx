@@ -6,7 +6,6 @@ import {ButtonsVariant} from "../toolbarComponents/ToolbarButtons"
 import ToolbarsLayer from "../toolbarComponents/ToolbarsLayer"
 import {ToolbarsSide} from "../../reducers/toolbars"
 
-import TipsPanel from "../tips/Tips"
 import {DefaultToolbarPanel} from "./DefaultToolbarPanel"
 import Copy from "./edit/buttons/CopyButton"
 import Delete from "./edit/buttons/DeleteButton"
@@ -29,27 +28,26 @@ import Cancel from "./status/buttons/CancelDeployButton"
 import Deploy from "./status/buttons/DeployButton"
 import Metrics from "./status/buttons/MetricsButton"
 import Properties from "./status/buttons/PropertiesButton"
-import ProcessInfo from "./status/ProcessInfo"
 import CountsButton from "./test/buttons/CountsButton"
 import FromFileButton from "./test/buttons/FromFileButton"
 import GenerateButton from "./test/buttons/GenerateButton"
 import HideButton from "./test/buttons/HideButton"
+import {TOOLBAR_COMPONENTS_MAP} from "./toolbarSettings/TOOLBAR_COMPONENTS_MAP"
 import BussinesViewSwitch from "./view/buttons/BussinesViewSwitch"
 import {ResetViewButton} from "./view/buttons/ResetViewButton"
 import {ZoomInButton} from "./view/buttons/ZoomInButton"
 import {ZoomOutButton} from "./view/buttons/ZoomOutButton"
-import TestPanel from "./test/TestPanel"
-import DetailsPanel from "./details/DetailsPanel"
-import {CreatorPanel} from "./creator/CreatorPanel"
-import {VersionsPanel} from "./VersionsPanel"
-import {CommentsPanel} from "./CommentsPanel"
-import {AttachmentsPanel} from "./AttachmentsPanel"
 
 import "../../stylesheets/userPanel.styl"
 import {Toolbar} from "../toolbarComponents/toolbar"
 
 type Props = {
   isReady: boolean,
+}
+
+const ToolbarSelector: typeof DefaultToolbarPanel = (props) => {
+  const Component = TOOLBAR_COMPONENTS_MAP[props.id] || TOOLBAR_COMPONENTS_MAP.DefaultPanel
+  return <Component {...props}/>
 }
 
 function Toolbars(props: Props) {
@@ -60,45 +58,45 @@ function Toolbars(props: Props) {
     {
       id: "PROCESS-INFO",
       component: (
-        <ProcessInfo id="PROCESS-INFO">
+        <ToolbarSelector id="PROCESS-INFO">
           <SaveButton/>
           <Deploy/>
           <Cancel/>
           <Metrics/>
-        </ProcessInfo>
+        </ToolbarSelector>
       ),
       defaultSide: ToolbarsSide.TopRight,
     },
     {
       id: "VIEW-PANEL",
       component: (
-        <DefaultToolbarPanel id="VIEW-PANEL">
+        <ToolbarSelector id="VIEW-PANEL">
           <BussinesViewSwitch/>
           <ZoomInButton/>
           <ZoomOutButton/>
           <ResetViewButton/>
-        </DefaultToolbarPanel>
+        </ToolbarSelector>
       ),
       defaultSide: ToolbarsSide.TopRight,
     },
     {
       id: "EDIT-PANEL",
       component: (
-        <DefaultToolbarPanel id="EDIT-PANEL" buttonsVariant={ButtonsVariant.small}>
+        <ToolbarSelector id="EDIT-PANEL" buttonsVariant={ButtonsVariant.small}>
           <Undo/>
           <Redo/>
           <Copy/>
           <Paste/>
           <Delete/>
           <Layout/>
-        </DefaultToolbarPanel>
+        </ToolbarSelector>
       ),
       defaultSide: ToolbarsSide.TopRight,
     },
     {
       id: "PROCESS-PANELS",
       component: (
-        <DefaultToolbarPanel id="PROCESS-PANEL">
+        <ToolbarSelector id="PROCESS-PANEL">
           <Properties/>
           <CompareButton/>
           <MigrateButton/>
@@ -106,63 +104,63 @@ function Toolbars(props: Props) {
           <JSONButton/>
           <PDFButton/>
           <ArchiveToggleButton/>
-        </DefaultToolbarPanel>
+        </ToolbarSelector>
       ),
       defaultSide: ToolbarsSide.TopRight,
     },
     {
       id: "TEST-PANEL",
       component: (
-        <TestPanel id="TEST-PANEL">
+        <ToolbarSelector id="TEST-PANEL">
           <FromFileButton/>
           <GenerateButton/>
           <CountsButton/>
           <HideButton/>
-        </TestPanel>
+        </ToolbarSelector>
       ),
       defaultSide: ToolbarsSide.TopRight,
     },
     {
       id: "GROUP-PANEL",
       component: (
-        <DefaultToolbarPanel id="GROUP-PANEL">
+        <ToolbarSelector id="GROUP-PANEL">
           <GroupStart/>
           <GroupFinish/>
           <GroupCancel/>
           <Ungroup/>
-        </DefaultToolbarPanel>
+        </ToolbarSelector>
       ),
       defaultSide: ToolbarsSide.TopRight,
     },
     {
       id: "DETAILS-PANEL",
       // TODO remove SideNodeDetails? turn out to be not useful
-      component: <DetailsPanel/>,
+      component: <ToolbarSelector id="DETAILS-PANEL"/>,
       defaultSide: ToolbarsSide.TopRight,
     },
     {
       id: "TIPS-PANEL",
-      component: <TipsPanel/>,
+      component: <ToolbarSelector id="TIPS-PANEL"/>,
       defaultSide: ToolbarsSide.TopLeft,
     },
     {
       id: "CREATOR-PANEL",
-      component: <CreatorPanel/>,
+      component: <ToolbarSelector id="CREATOR-PANEL"/>,
       defaultSide: ToolbarsSide.TopLeft,
     },
     {
       id: "VERSIONS-PANEL",
-      component: <VersionsPanel/>,
+      component: <ToolbarSelector id="VERSIONS-PANEL"/>,
       defaultSide: ToolbarsSide.TopLeft,
     },
     {
       id: "COMMENTS-PANEL",
-      component: <CommentsPanel/>,
+      component: <ToolbarSelector id="COMMENTS-PANEL"/>,
       defaultSide: ToolbarsSide.TopLeft,
     },
     {
       id: "ATTACHMENTS-PANEL",
-      component: <AttachmentsPanel/>,
+      component: <ToolbarSelector id="ATTACHMENTS-PANEL"/>,
       defaultSide: ToolbarsSide.TopLeft,
     },
   ]
