@@ -1,48 +1,32 @@
 import React from "react"
-import {RootState} from "../../../../reducers/index"
-import {connect} from "react-redux"
+import {useDispatch, useSelector} from "react-redux"
 import {events} from "../../../../analytics/TrackingEvents"
 import NodeUtils from "../../../graph/NodeUtils"
 import {isEmpty} from "lodash"
 import {deleteSelection} from "../../../../actions/nk/selection"
-import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
+import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 import {getSelectionState, getNodeToDisplay} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
-import {SelectionActions} from "../EditPanel"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/delete.svg"
 
-type OwnProps = {
-  selectionActions: SelectionActions,
-}
-
-type Props = OwnProps & StateProps
-
-function DeleteButton(props: Props) {
-  const {nodeToDisplay, selectionState, deleteSelection} = props
+function DeleteButton(): JSX.Element {
+  const nodeToDisplay = useSelector(getNodeToDisplay)
+  const selectionState = useSelector(getSelectionState)
   const {t} = useTranslation()
+  const dispatch = useDispatch()
 
   return (
-    <ToolbarButton
+    <CapabilitiesToolbarButton
+      write
       name={t("panels.actions.edit-delete.button", "delete")}
       icon={<Icon/>}
       disabled={!NodeUtils.isPlainNode(nodeToDisplay) || isEmpty(selectionState)}
-      onClick={() => deleteSelection(
+      onClick={() => dispatch(deleteSelection(
         selectionState,
         {category: events.categories.rightPanel, action: events.actions.buttonClick},
-      )}
+      ))}
     />
   )
 }
 
-const mapState = (state: RootState) => ({
-  nodeToDisplay: getNodeToDisplay(state),
-  selectionState: getSelectionState(state),
-})
-
-const mapDispatch = {
-  deleteSelection,
-}
-
-type StateProps = typeof mapDispatch & ReturnType<typeof mapState>
-
-export default connect(mapState, mapDispatch)(DeleteButton)
+export default DeleteButton

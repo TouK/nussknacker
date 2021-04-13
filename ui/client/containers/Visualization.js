@@ -310,17 +310,7 @@ class Visualization extends React.Component {
 
         <GraphProvider graph={this.getGraphInstance} selectionActions={selectionActions}>
           <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
-            <Toolbars
-              isReady={this.state.dataResolved}
-              selectionActions={{
-                copy: () => this.copySelection(null, true),
-                canCopy: this.canCopySelection(),
-                cut: () => this.cutSelection(null),
-                canCut: this.canCutSelection(),
-                paste: () => this.pasteSelectionFromClipboard(null),
-                canPaste: true,
-              }}
-            />
+            <Toolbars isReady={this.state.dataResolved}/>
           </NkThemeProvider>
         </GraphProvider>
 

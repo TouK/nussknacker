@@ -2,13 +2,18 @@ import React, {memo} from "react"
 import {useSelector} from "react-redux"
 import SpinnerWrapper from "../SpinnerWrapper"
 import {getFetchedProcessDetails} from "../../reducers/selectors/graph"
+import {ButtonsVariant} from "../toolbarComponents/ToolbarButtons"
 import ToolbarsLayer from "../toolbarComponents/ToolbarsLayer"
 import {ToolbarsSide} from "../../reducers/toolbars"
 
 import TipsPanel from "../tips/Tips"
 import {DefaultToolbarPanel} from "./DefaultToolbarPanel"
-
-import EditPanel, {SelectionActions} from "./edit/EditPanel"
+import Copy from "./edit/buttons/CopyButton"
+import Delete from "./edit/buttons/DeleteButton"
+import Layout from "./edit/buttons/LayoutButton"
+import Paste from "./edit/buttons/PasteButton"
+import Redo from "./edit/buttons/RedoButton"
+import Undo from "./edit/buttons/UndoButton"
 import GroupCancel from "./group/buttons/GroupCancelButton"
 import GroupFinish from "./group/buttons/GroupFinishButton"
 import GroupStart from "./group/buttons/GroupStartButton"
@@ -40,12 +45,11 @@ import "../../stylesheets/userPanel.styl"
 import {Toolbar} from "../toolbarComponents/toolbar"
 
 type Props = {
-  selectionActions: SelectionActions,
   isReady: boolean,
 }
 
 function Toolbars(props: Props) {
-  const {isReady, selectionActions} = props
+  const {isReady} = props
   const fetchedProcessDetails = useSelector(getFetchedProcessDetails)
 
   const toolbars: Toolbar[] = [
@@ -68,7 +72,16 @@ function Toolbars(props: Props) {
     },
     {
       id: "EDIT-PANEL",
-      component: <EditPanel selectionActions={selectionActions}/>,
+      component: (
+        <DefaultToolbarPanel id="EDIT-PANEL" buttonsVariant={ButtonsVariant.small}>
+          <Undo/>
+          <Redo/>
+          <Copy/>
+          <Paste/>
+          <Delete/>
+          <Layout/>
+        </DefaultToolbarPanel>
+      ),
       defaultSide: ToolbarsSide.TopRight,
     },
     {
