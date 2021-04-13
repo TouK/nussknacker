@@ -215,6 +215,37 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers {
     )
   }
 
+  test("base aggregates test") {
+
+    val id = "1"
+
+    val model = modelData(List(
+      TestRecord(id, 1, 2, "a"),
+      TestRecord(id, 2, 1, "b")
+    ))
+
+    val aggregates = List(
+      ("sum", 3),
+      ("first", 2),
+      ("last", 1),
+      ("max", 2),
+      ("min", 1),
+      ("list", util.Arrays.asList(2, 1)),
+      ("approxCardinality", 2)
+    )
+
+    //"aggregate-sliding", aggregator, aggregateBy, "windowLength", Map("emitWhenEventLeft" -> emitWhenEventLeft.toString
+    val testProcess = process(aggregates.map(_._1).map(name =>
+      AggregateData("aggregate-sliding", s"#AGG.$name", "#input.eId", "windowLength", Map("emitWhenEventLeft" -> "false"), name)): _*)
+
+    val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
+    runProcess(model, testProcess, collectingListener)
+    val lastResult = variablesForKey(collectingListener, id).last
+    aggregates.foreach { case (name, expected) =>
+      lastResult.variableTyped[AnyRef](s"aggregate$name").get shouldBe expected
+    }
+  }
+
   private def runCollectOutput[T](key: String, model: LocalModelData, testProcess: EspProcess): List[T] = {
     runCollectOutputWithEid[T](key, model, testProcess).map(_._1)
   }
@@ -250,7 +281,8 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers {
   }
 
   private def validateOk(aggregator: String,
-                         aggregateBy: String, typingResult: TypingResult): Unit = {
+                         aggregateBy: String,
+                         typingResult: TypingResult): Unit = {
     val result = validateConfig(aggregator, aggregateBy)
     result.result shouldBe 'valid
     result.variablesInNodes("end")("aggregate") shouldBe typingResult
@@ -273,22 +305,31 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers {
                       aggregator: String,
                       aggregateBy: String,
                       timeoutParamName: String,
-                      additionalParams: Map[String, String]) = {
+                      additionalParams: Map[String, String]): EspProcess = {
+    process(AggregateData(aggregatingNode, aggregator, aggregateBy, timeoutParamName, additionalParams))
+  }
+
+  private def process(aggregateData: AggregateData*): EspProcess = {
+
+    def params(data: AggregateData) = {
     val baseParams: List[(String, Expression)] = List(
       "keyBy" -> "#id",
-      "aggregateBy" -> aggregateBy,
-      "aggregator" -> aggregator,
-      timeoutParamName -> "T(java.time.Duration).parse('PT2H')")
-    val params = baseParams ++ additionalParams.mapValues(asSpelExpression).toList
-
-    EspProcessBuilder
+      "aggregateBy" -> data.aggregateBy,
+      "aggregator" -> data.aggregator,
+      data.timeoutParamName -> "T(java.time.Duration).parse('PT2H')")
+      baseParams ++ data.additionalParams.mapValues(asSpelExpression).toList
+    }
+    val beforeAggregate = EspProcessBuilder
       .id("aggregateTest")
       .parallelism(1)
       .exceptionHandler()
       .source("start", "start")
       .buildSimpleVariable("id", "id", "#input.id")
-      .customNode("transform", "aggregate", aggregatingNode, params: _*)
-      .emptySink("end", "end")
+
+    aggregateData.foldLeft(beforeAggregate) {
+      case (builder, definition) => builder.customNode(s"transform${definition.idSuffix}",
+        s"aggregate${definition.idSuffix}", definition.aggregatingNode, params(definition): _*)
+    }.emptySink("end", "end")
   }
 
 }
@@ -313,6 +354,12 @@ class Creator(input: List[TestRecord]) extends EmptyProcessConfigCreator {
   override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory
     = ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
 }
+
+case class AggregateData(aggregatingNode: String,
+                      aggregator: String,
+                      aggregateBy: String,
+                      timeoutParamName: String,
+                      additionalParams: Map[String, String], idSuffix: String = "")
 
 case class TestRecord(id: String, timeHours: Int, eId: Int, str: String) {
   def timestamp: Long = timeHours * 3600L * 1000

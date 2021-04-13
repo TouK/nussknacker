@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSink, FlinkSink}
 case object EmptySink extends BasicFlinkSink {
 
   override def testDataOutput: Option[(Any) => String] = Option {
+    case null => "null"
     case a: DisplayJson => a.asJson.spaces2
     case b => b.toString
   }
