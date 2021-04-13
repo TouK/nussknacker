@@ -48,6 +48,7 @@ To see biggest differences please consult the [changelog](Changelog.md).
   - `FlinkCustomNodeContext` has access to `TypeInformationDetection`, it allows to get TypeInformation for the node stream mapping from ValidationContext.
   - For kafka sources `RecordFormatter` parses raw test data to `ConsumerRecord` which fits into deserializer (instead of `ProducerRecord` that required another transformation).
   - Definitions of names of common `Context` variables are moved to `VariableConstants` (instead of `Interpreter`).
+* [#1497](https://github.com/TouK/nussknacker/pull/1497) Changes in `PeriodicProcessManager`, change `PeriodicProperty` to `ScheduleProperty`
 
 ## In version 0.3.0
 

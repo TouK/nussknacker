@@ -12,7 +12,7 @@ process is scheduled to be run again according to the schedule.
 
 - Implement `ProcessManagerProvider` using `PeriodicProcessManagerProvider`. Following components need to provided:
   - Underlying engine, currently only Flink is supported.
-  - Optional `PeriodicPropertyExtractor` to determine how to construct an instance of a periodic property. By default
+  - Optional `SchedulePropertyExtractor` to determine how to construct an instance of a periodic property. By default
     a cron expression set in process properties is used to describe when a process should be run.
   - Optional `EnrichDeploymentWithJarDataFactory` if you would like to, for example, extend process configuration,
     by default nothing is done.
