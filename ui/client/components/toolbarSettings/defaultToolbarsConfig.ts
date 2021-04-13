@@ -1,10 +1,11 @@
+/* eslint-disable i18next/no-literal-string */
 import {ToolbarsSide} from "../../reducers/toolbars"
 import {ButtonsVariant} from "../toolbarComponents/ToolbarButtons"
-import {BuiltinButtonTypes, ToolbarButtonTypes} from "./buttons"
+import {BuiltinButtonTypes, CustomButtonTypes, ToolbarButton} from "./buttons"
 
 export interface ToolbarConfig {
   id: string,
-  buttons?: ToolbarButtonTypes[],
+  buttons?: ToolbarButton[],
   buttonsVariant?: ButtonsVariant,
 }
 
@@ -15,61 +16,67 @@ export const defaultToolbarsConfig: ToolbarsConfig = {
     {
       id: "PROCESS-INFO",
       buttons: [
-        BuiltinButtonTypes.processSave,
-        BuiltinButtonTypes.deploy,
-        BuiltinButtonTypes.deployCanel,
-        BuiltinButtonTypes.deployMetrics,
+        {type: BuiltinButtonTypes.processSave},
+        {type: BuiltinButtonTypes.deploy},
+        {type: BuiltinButtonTypes.deployCanel},
+        {type: BuiltinButtonTypes.deployMetrics},
+        // {
+        //   type: CustomButtonTypes.customLink,
+        //   name: "metrics",
+        //   icon: "toolbarButtons/metrics.svg",
+        //   href: "/metrics/{{processId}}",
+        // },
       ],
     },
     {
       id: "VIEW-PANEL",
       buttons: [
-        BuiltinButtonTypes.viewBussinesView,
-        BuiltinButtonTypes.viewZoomIn,
-        BuiltinButtonTypes.viewZoomOut,
-        BuiltinButtonTypes.viewReset,
+        {type: BuiltinButtonTypes.viewBussinesView},
+        {type: BuiltinButtonTypes.viewZoomIn},
+        {type: BuiltinButtonTypes.viewZoomOut},
+        {type: BuiltinButtonTypes.viewReset},
       ],
     },
     {
       id: "EDIT-PANEL",
       buttonsVariant: ButtonsVariant.small,
       buttons: [
-        BuiltinButtonTypes.editUndo,
-        BuiltinButtonTypes.editRedo,
-        BuiltinButtonTypes.editCopy,
-        BuiltinButtonTypes.editPaste,
-        BuiltinButtonTypes.editDelete,
-        BuiltinButtonTypes.editLayout,
+        {type: BuiltinButtonTypes.editUndo},
+        {type: BuiltinButtonTypes.editRedo},
+        {type: BuiltinButtonTypes.editCopy},
+        {type: BuiltinButtonTypes.editPaste},
+        {type: BuiltinButtonTypes.editDelete},
+        {type: BuiltinButtonTypes.editLayout},
       ],
     },
     {
       id: "PROCESS-PANELS",
       buttons: [
-        BuiltinButtonTypes.editProperties,
-        BuiltinButtonTypes.processCompare,
-        BuiltinButtonTypes.processMigrate,
-        BuiltinButtonTypes.processImport,
-        BuiltinButtonTypes.processJSON,
-        BuiltinButtonTypes.processPDF,
-        BuiltinButtonTypes.processArchive,
+        {type: BuiltinButtonTypes.editProperties},
+        {type: BuiltinButtonTypes.processCompare},
+        {type: BuiltinButtonTypes.processMigrate},
+        {type: BuiltinButtonTypes.processImport},
+        {type: BuiltinButtonTypes.processJSON},
+        {type: BuiltinButtonTypes.processPDF},
+        {type: BuiltinButtonTypes.processArchive},
       ],
     },
     {
       id: "TEST-PANEL",
       buttons: [
-        BuiltinButtonTypes.testFromFile,
-        BuiltinButtonTypes.testGenerate,
-        BuiltinButtonTypes.testCounts,
-        BuiltinButtonTypes.testHide,
+        {type: BuiltinButtonTypes.testFromFile},
+        {type: BuiltinButtonTypes.testGenerate},
+        {type: BuiltinButtonTypes.testCounts},
+        {type: BuiltinButtonTypes.testHide},
       ],
     },
     {
       id: "GROUP-PANEL",
       buttons: [
-        BuiltinButtonTypes.groupStart,
-        BuiltinButtonTypes.groupFinish,
-        BuiltinButtonTypes.groupCancel,
-        BuiltinButtonTypes.groupUngroup,
+        {type: BuiltinButtonTypes.groupStart},
+        {type: BuiltinButtonTypes.groupFinish},
+        {type: BuiltinButtonTypes.groupCancel},
+        {type: BuiltinButtonTypes.groupUngroup},
       ],
     },
     {id: "DETAILS-PANEL"},

@@ -18,6 +18,7 @@ import MigrateButton from "../../toolbars/process/buttons/MigrateButton"
 import PDFButton from "../../toolbars/process/buttons/PDFButton"
 import SaveButton from "../../toolbars/process/buttons/SaveButton"
 import UnArchiveButton from "../../toolbars/process/buttons/UnArchiveButton"
+import {LinkButton} from "./LinkButton"
 import {ActionButton} from "./ActionButton"
 import CancelDeployButton from "../../toolbars/status/buttons/CancelDeployButton"
 import DeployButton from "../../toolbars/status/buttons/DeployButton"
@@ -68,4 +69,5 @@ export const TOOLBAR_BUTTONS_MAP: Record<ToolbarButtonTypes, ComponentType<Toolb
   [BuiltinButtonTypes.groupCancel]: GroupCancelButton,
   [BuiltinButtonTypes.groupUngroup]: UngroupButton,
   [CustomButtonTypes.customAction]: ActionButton,
+  [CustomButtonTypes.customLink]: LinkButton,
 }
