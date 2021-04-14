@@ -26,6 +26,7 @@ import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
+import scala.collection.immutable.ListMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Try
@@ -62,7 +63,7 @@ object TestFactory extends TestPermissions{
       Some(2)),
       ExceptionHandlerRef(List.empty),
       isSubprocess = false,
-      Some(ProcessAdditionalFields(Some("process description"), Set.empty, Map(
+      Some(ProcessAdditionalFields(Some("process description"), Set.empty, ListMap(
         "maxEvents" -> "text",
         "unknown" -> "x",
         "numberOfThreads" -> "wrong fixed value"

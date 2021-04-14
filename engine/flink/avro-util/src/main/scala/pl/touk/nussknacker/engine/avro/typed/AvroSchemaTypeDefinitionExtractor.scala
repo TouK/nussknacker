@@ -9,6 +9,8 @@ import org.apache.avro.generic.{GenericData, GenericRecord}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.avro.schema.AvroStringSettings
 
+import scala.collection.immutable.ListMap
+
 /**
   * Right now we're doing approximate type generation to avoid false positives in validation,
   * so now we add option to skip nullable fields.
@@ -31,9 +33,9 @@ class AvroSchemaTypeDefinitionExtractor(skipOptionalFields: Boolean) {
           //Field is marked as optional when field has default value
           .filterNot(field => skipOptionalFields && field.hasDefaultValue)
           .map(field => field.name() -> typeDefinition(field.schema(), possibleTypes))
-          .toMap
+          .toList
 
-        Typed(possibleTypes.map(pt => TypedObjectTypingResult(fields, pt)))
+        Typed(possibleTypes.map(pt => TypedObjectTypingResult(ListMap(fields: _*), pt)))
       }
       case Schema.Type.ENUM =>  //It's should by Union, because output can store map with string for ENUM
         Typed(Set(Typed.typedClass[EnumSymbol], Typed.typedClass[CharSequence]))

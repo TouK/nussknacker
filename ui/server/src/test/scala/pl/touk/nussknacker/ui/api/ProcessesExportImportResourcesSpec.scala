@@ -17,6 +17,7 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.{FileUploadUtils, MultipartUtils}
 
+import scala.collection.immutable.ListMap
 import scala.language.higherKinds
 
 class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
@@ -77,7 +78,7 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
   test("export process in new version") {
     val description = "alamakota"
     val processToSave = ProcessTestData.sampleDisplayableProcess
-    val processWithDescription = processToSave.copy(properties = processToSave.properties.copy(additionalFields = Some(ProcessAdditionalFields(Some(description), Set.empty, Map.empty))))
+    val processWithDescription = processToSave.copy(properties = processToSave.properties.copy(additionalFields = Some(ProcessAdditionalFields(Some(description), Set.empty, ListMap.empty))))
 
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK

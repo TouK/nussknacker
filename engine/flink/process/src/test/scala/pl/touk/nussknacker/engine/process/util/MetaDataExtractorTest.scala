@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.engine.process.util
 
 import java.time._
-
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
 
+import scala.collection.immutable.ListMap
+
 class MetaDataExtractorTest extends FunSuite with Matchers {
 
-  private val metaData = MetaData("test", StreamMetaData(), false, Some(ProcessAdditionalFields(None, Set.empty, Map(
+  private val metaData = MetaData("test", StreamMetaData(), false, Some(ProcessAdditionalFields(None, Set.empty, ListMap(
     "dateTime" -> "2020-02-25T00:00",
     "date" -> "2020-02-25",
     "time" -> "00:01:00",

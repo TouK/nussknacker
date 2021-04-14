@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.api.helpers
 
 import java.time.LocalDateTime
-
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, Parameter}
 import pl.touk.nussknacker.engine.api.definition.{NotBlankParameter, Parameter}
@@ -34,6 +33,8 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataPr
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
+
+import scala.collection.immutable.ListMap
 
 object ProcessTestData {
 
@@ -248,7 +249,7 @@ object ProcessTestData {
   val sampleDisplayableProcess = {
     DisplayableProcess(
       id = "fooProcess",
-      properties = ProcessProperties(StreamMetaData(Some(2)), ExceptionHandlerRef(List.empty), false, Some(ProcessAdditionalFields(Some("process description"), Set.empty, Map.empty)), subprocessVersions = Map.empty),
+      properties = ProcessProperties(StreamMetaData(Some(2)), ExceptionHandlerRef(List.empty), false, Some(ProcessAdditionalFields(Some("process description"), Set.empty, ListMap.empty)), subprocessVersions = Map.empty),
       nodes = List(
         node.Source(
           id = "sourceId",

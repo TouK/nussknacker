@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.util.MathUtils
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
 
 import scala.collection.JavaConverters._
+import scala.collection.immutable.ListMap
 
 /*
   This class lists some simple aggregates
@@ -213,7 +214,7 @@ object aggregates {
               .map(key -> _)
               .leftMap(m => NonEmptyList.of(s"$key - $m"))
           }.toList.sequence.leftMap(list => s"Invalid fields: ${list.toList.mkString(", ")}")
-          validationRes.map(fields => TypedObjectTypingResult(fields.toMap, objType = objType))
+          validationRes.map(fields => TypedObjectTypingResult(ListMap(fields: _*), objType = objType))
         case TypedObjectTypingResult(inputFields, _, _) =>
           Invalid(s"Fields do not match, aggregateBy: ${inputFields.keys.mkString(", ")}, aggregator: ${scalaFields.keys.mkString(", ")}")
         case _ =>

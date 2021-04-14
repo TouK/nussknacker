@@ -1,22 +1,28 @@
 package pl.touk.nussknacker.engine.util.typing
 
 import java.util
-
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
 import scala.collection.JavaConverters._
+import scala.collection.immutable.ListMap
+import scala.collection.mutable
 
 
 object TypingUtils {
 
-  def typeMapDefinition(definition: java.util.Map[String, _]): TypingResult = {
-    typeMapDefinition(definition.asScala.toMap)
+  def typeMapDefinition(definition: java.util.LinkedHashMap[String, _]): TypingResult = {
+    val arr = new mutable.ArrayBuffer[(String, _)]()
+    definition.forEach((k: String, v: Any) => arr.prepend((k, v)))
+    typeMapDefinition(ListMap(arr: _*))
   }
 
-  def typeMapDefinition(definition: Map[String, _]): TypingResult = {
-    //we force use of Map and not some implicit variants (MapLike) to avoid serialization problems...
-    TypedObjectTypingResult(Map(definition.mapValues(typedMapDefinitionFromParameters).toList: _*))
+  def typeMapDefinition(definition: ListMap[String, _]): TypingResult = {
+    //we force use of ListMap and not some implicit variants (MapLike) to avoid serialization problems...
+    val fieldsTyping = definition.map { case (fieldName, a) =>
+      (fieldName, typedMapDefinitionFromParameters(a))
+    }
+    TypedObjectTypingResult(fieldsTyping)
   }
 
   private def typedMapDefinitionFromParameters(definition: Any): TypingResult = definition match {
@@ -26,9 +32,9 @@ object TypingUtils {
       Typed(clazz)
     case a: String =>
       loadClassFromName(a)
-    case a: Map[String@unchecked, _] =>
+    case a: ListMap[String@unchecked, _] =>
       typeMapDefinition(a)
-    case a: java.util.Map[String@unchecked, _] =>
+    case a: java.util.LinkedHashMap[String@unchecked, _] =>
       typeMapDefinition(a)
     case list: Seq[_] if list.nonEmpty =>
       typeListDefinition(list)

@@ -6,13 +6,15 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResu
 import pl.touk.nussknacker.engine.sql.TypedList
 import pl.touk.nussknacker.engine.sql.columnmodel.CreateColumnModel.NotAListMessage
 
+import scala.collection.immutable.ListMap
+
 class CreateColumnModelTest extends FunSuite with Matchers {
 
   test("throw NotAList for Unknown") {
     CreateColumnModel(Unknown) shouldEqual invalid(Unknown)
   }
   test("throw NotAList for TypedMapTypingResult") {
-    val result = TypedObjectTypingResult(Map.empty[String, TypingResult])
+    val result = TypedObjectTypingResult(ListMap.empty[String, TypingResult])
     CreateColumnModel(result) shouldEqual invalid(result)
   }
 

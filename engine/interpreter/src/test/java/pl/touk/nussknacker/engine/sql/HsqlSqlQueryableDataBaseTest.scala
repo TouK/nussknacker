@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.engine.sql
 import SqlType._
-
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
+
+import scala.collection.immutable.ListMap
 
 class HsqlSqlQueryableDataBaseTest extends FunSuite with Matchers {
 
@@ -16,7 +17,7 @@ class HsqlSqlQueryableDataBaseTest extends FunSuite with Matchers {
 
     val result = impl.query(Map("dogos" -> Table(dogoModel, List(List("Azor"), List("Reksio")))))
 
-    def dogoMap(name: String) = TypedMap(Map("NAME" -> name))
+    def dogoMap(name: String) = TypedMap(ListMap("NAME" -> name))
 
     result shouldEqual List(dogoMap("Azor"), dogoMap("Reksio"))
 

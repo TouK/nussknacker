@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.integration
 
 import java.util.UUID
-
 import akka.http.javadsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
@@ -17,6 +16,7 @@ import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerApp, Nuss
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils}
 
+import scala.collection.immutable.ListMap
 import scala.concurrent.duration._
 
 class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
@@ -134,7 +134,7 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
   private def sampleProcessWithExpression(processId: String, endResultExpression: String) =
     EspProcessBuilder
       .id(processId)
-      .additionalFields(properties = Map("param1" -> "true"))
+      .additionalFields(properties = ListMap("param1" -> "true"))
       .exceptionHandler()
       .source("source", "csv-source")
       .sink(EndNodeId, endResultExpression, "monitor")

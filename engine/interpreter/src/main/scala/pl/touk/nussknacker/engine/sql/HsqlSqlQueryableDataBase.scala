@@ -2,12 +2,12 @@ package pl.touk.nussknacker.engine.sql
 
 import java.sql._
 import java.util.UUID
-
 import com.typesafe.scalalogging.LazyLogging
 import org.hsqldb.jdbc.JDBCDriver
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.typed.{TypedMap, TypedObjectDefinition, typing}
 
+import scala.collection.immutable.ListMap
 import scala.collection.mutable
 import scala.util.control.Exception._
 
@@ -137,12 +137,12 @@ private object HsqlSqlQueryableDataBase extends LazyLogging {
     val result = mutable.Buffer[TypedMap]()
     val types = toTypedMapDefinition(statement.getMetaData)
     while (rs.next()) {
-      var map = Map[String, Any]()
-      types.fields.foreach { case (k, typeRef) =>
+      val arr = new mutable.ArrayBuffer[(String, Any)]()
+      types.fields.foreach { case (name, _) =>
         //FIXME: type conversions...
-        map = map + (k -> rs.getObject(k))
+        arr.prepend((name, rs.getObject(name)))
       }
-      result += TypedMap(map)
+      result += TypedMap(ListMap(arr: _*))
     }
     result.toList
   }
@@ -168,7 +168,7 @@ private object HsqlSqlQueryableDataBase extends LazyLogging {
           Typed[Any]
       }
       name -> typ
-    }.toMap
+    }.toList
 
     TypedObjectDefinition(cols)
   }

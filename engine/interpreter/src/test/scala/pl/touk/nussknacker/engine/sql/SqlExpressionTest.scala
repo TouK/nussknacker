@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.sql
 import java.sql.Timestamp
 import java.time.{LocalDateTime, ZoneId}
 import java.util
-
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -12,6 +11,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import scala.collection.JavaConverters._
+import scala.collection.immutable.ListMap
 
 class SqlExpressionTest extends FunSuite with Matchers with PatientScalaFutures {
 
@@ -36,13 +36,13 @@ class SqlExpressionTest extends FunSuite with Matchers with PatientScalaFutures 
 
   private val ctx = Context("").withVariables(Map(
     "var" -> "blah",
-    "var1" -> util.Arrays.asList(TypedMap(Map(
+    "var1" -> util.Arrays.asList(TypedMap(ListMap(
       "field1" -> "abcd",
       "field2" -> 11L,
       "getField3" -> "tralaala",
       "localDateTimeField" -> dateToTest
     ))),
-    "var12" -> util.Arrays.asList(TypedMap(Map(
+    "var12" -> util.Arrays.asList(TypedMap(ListMap(
       "field3" -> "eeeee",
       "field4" -> 13L,
       "isField5" -> false,
@@ -53,26 +53,26 @@ class SqlExpressionTest extends FunSuite with Matchers with PatientScalaFutures 
 
   test("evaluate case insensitive table names") {
     evaluate("select field1 from VAR1") shouldBe
-      List(TypedMap(Map("FIELD1" -> "abcd")))
+      List(TypedMap(ListMap("FIELD1" -> "abcd")))
   }
 
   test("evaluate expression with getter-like column names") {
     evaluate("select isField5, is_field6 from var12") shouldBe
-      List(TypedMap(Map("ISFIELD5" -> false, "IS_FIELD6" -> true)))
+      List(TypedMap(ListMap("ISFIELD5" -> false, "IS_FIELD6" -> true)))
 
     val z = evaluate("select field1, isfield2, getField3 from var3 where isField2 = true")
     z shouldBe
-      List(TypedMap(Map("FIELD1" -> "a", "ISFIELD2" -> true, "GETFIELD3" -> java.math.BigDecimal.valueOf(11))))
+      List(TypedMap(ListMap("FIELD1" -> "a", "ISFIELD2" -> true, "GETFIELD3" -> java.math.BigDecimal.valueOf(11))))
   }
 
   test("evaluate with var names containing each other") {
     evaluate("select field3 from VAR12 left outer join VAR1 on VAR1.field1 = VAR12.field3") shouldBe
-      List(TypedMap(Map("FIELD3" -> "eeeee")))
+      List(TypedMap(ListMap("FIELD3" -> "eeeee")))
   }
 
   test("use LocalDateTime field as timestamp") {
     evaluate("select localDateTimeField from VAR1") shouldBe
-      List(TypedMap(Map("LOCALDATETIMEFIELD" -> Timestamp.from(dateToTest.atZone(ZoneId.systemDefault()).toInstant))))
+      List(TypedMap(ListMap("LOCALDATETIMEFIELD" -> Timestamp.from(dateToTest.atZone(ZoneId.systemDefault()).toInstant))))
   }
 
   private def evaluate(expression: String, ctx: Context = ctx, validationContext: ValidationContext = validationContext): List[TypedMap] =

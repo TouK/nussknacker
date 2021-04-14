@@ -4,6 +4,8 @@ import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.typed.{TypedGlobalVariable, TypedMap}
 
+import scala.collection.immutable.ListMap
+
 /**
   * Returns sample configuration - list of typed maps, based on environment property from process properties.
   */
@@ -12,9 +14,9 @@ object ConfigTypedGlobalVariable extends TypedGlobalVariable {
   import scala.collection.JavaConverters._
 
   private val configurations = Map(
-      "prod" -> List(TypedMap(Map("a" -> 1, "b" -> "B")), TypedMap(Map("a" -> 2, "b" -> "BB"))).asJava
+      "prod" -> List(TypedMap(ListMap("a" -> 1, "b" -> "B")), TypedMap(ListMap("a" -> 2, "b" -> "BB"))).asJava
     ).withDefaultValue(
-      List(TypedMap(Map[String, Any]("a" -> 1)), TypedMap(Map[String, Any]("a" -> 2)), TypedMap(Map[String, Any]("a" -> 3))).asJava
+      List(TypedMap(ListMap[String, Any]("a" -> 1)), TypedMap(ListMap[String, Any]("a" -> 2)), TypedMap(ListMap[String, Any]("a" -> 3))).asJava
     )
 
   override def value(metadata: MetaData): Any = {

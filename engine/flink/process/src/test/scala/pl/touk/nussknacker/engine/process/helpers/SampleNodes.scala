@@ -4,10 +4,10 @@ import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Date, Optional, UUID}
-
 import cats.data.Validated.Valid
 import com.github.ghik.silencer.silent
 import io.circe.generic.JsonCodec
+
 import javax.annotation.Nullable
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
@@ -45,6 +45,7 @@ import pl.touk.nussknacker.test.WithDataList
 
 import scala.annotation.nowarn
 import scala.collection.JavaConverters._
+import scala.collection.immutable.ListMap
 import scala.concurrent.{ExecutionContext, Future}
 
 //TODO: clean up sample objects...
@@ -330,7 +331,7 @@ object SampleNodes {
     def invoke(@ParamName("definition") definition: java.util.List[String],
                @ParamName("toFill") toFill: String, @ParamName("count") count: Int): Future[java.util.List[_]] = {
       val result = (1 to count)
-        .map(line => definition.asScala.map(_ -> toFill).toMap)
+        .map(line => ListMap(definition.asScala.map(_ -> toFill): _*))
         .map(TypedMap(_))
         .toList.asJava
       Future.successful(result)
@@ -341,7 +342,7 @@ object SampleNodes {
       parameters
         .get("definition")
         .flatMap(_._2)
-        .map(definition => TypedObjectTypingResult(definition.asInstanceOf[java.util.List[String]].asScala.map(_ -> Typed[String]).toMap))
+        .map(definition => TypedObjectTypingResult(definition.asInstanceOf[java.util.List[String]].asScala.map(_ -> Typed[String]).toList))
         .map(param => Typed.genericTypeClass[java.util.List[_]](List(param)))
         .getOrElse(Unknown)
     }
@@ -545,7 +546,7 @@ object SampleNodes {
     private def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
       dependencies.collectFirst { case OutputVariableNameValue(name) => name } match {
         case Some(name) =>
-          val result = TypedObjectTypingResult(rest.toMap.mapValuesNow(_.returnType))
+          val result = TypedObjectTypingResult(rest.map { case (name, typ) => name -> typ.returnType })
           context.withVariable(OutputVar.customNode(name), result).fold(
             errors => FinalResults(context, errors.toList),
             FinalResults(_))
@@ -559,7 +560,7 @@ object SampleNodes {
     )
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): AnyRef = {
-      val map = params.filterNot(k => List("par1", "lazyPar1").contains(k._1))
+      val map = ListMap(params.filterNot(k => List("par1", "lazyPar1").contains(k._1)).toList: _*)
       val bool = params("lazyPar1").asInstanceOf[LazyParameter[java.lang.Boolean]]
       FlinkCustomStreamTransformation((stream, fctx) => {
         stream
@@ -826,11 +827,12 @@ object SampleNodes {
 
         override def testDataParser: TestDataParser[TypedMap] = new EmptyLineSplittedTestDataParser[TypedMap] {
           override def parseElement(json: String): TypedMap = {
-            TypedMap(CirceUtil.decodeJsonUnsafe[Map[String, String]](json, "invalid request"))
+            TypedMap(CirceUtil.decodeJsonUnsafe[ListMap[String, String]](json, "invalid request"))
           }
         }
 
-        override val returnType: typing.TypingResult = TypingUtils.typeMapDefinition(definition)
+        // TODO: alphabetic sorting of fields
+        override val returnType: typing.TypingResult = TypingUtils.typeMapDefinition(ListMap(definition.asScala.toList: _*))
 
         override def timestampAssignerForTest: Option[TimestampWatermarkHandler[TypedMap]] = timestampAssigner
       }

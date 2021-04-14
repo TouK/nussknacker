@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.compile
 
 import java.util.Collections
-
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.instances.string._
@@ -37,6 +36,7 @@ import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.engine.variables.MetaVariables
 
 import scala.annotation.nowarn
+import scala.collection.immutable.ListMap
 import scala.concurrent.{ExecutionContext, Future}
 
 class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
@@ -130,9 +130,9 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       "sampleProcessor2" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass)),
       "bv1" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass), "out" -> Typed[SimpleRecord]),
       "id2" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass), "out" -> Typed[SimpleRecord],
-        "vars" -> TypedObjectTypingResult(Map(
+        "vars" -> TypedObjectTypingResult(ListMap(
           "v1" -> Typed[Integer],
-          "mapVariable" -> TypedObjectTypingResult(Map("Field1" -> Typed[String], "Field2" -> Typed[String], "Field3" -> Typed[BigDecimal])),
+          "mapVariable" -> TypedObjectTypingResult(ListMap("Field1" -> Typed[String], "Field2" -> Typed[String], "Field3" -> Typed[BigDecimal])),
           "spelVariable" ->  Typed[Boolean]
         ))
       )
@@ -848,7 +848,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       case Valid(_) =>
     }
     result.variablesInNodes("id2")("defined") shouldBe Typed.genericTypeClass[java.util.List[_]](
-      List(TypedObjectTypingResult(Map("param1" -> Typed[String], "param2" -> Typed[Integer]))))
+      List(TypedObjectTypingResult(ListMap("param1" -> Typed[String], "param2" -> Typed[Integer]))))
 
   }
 
@@ -870,7 +870,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       case Valid(_) =>
     }
     result.variablesInNodes("id2")("defined") shouldBe Typed.genericTypeClass[java.util.List[_]](
-      List(TypedObjectTypingResult(Map("param1" -> Typed[String], "param2" -> Typed[Integer]))))
+      List(TypedObjectTypingResult(ListMap("param1" -> Typed[String], "param2" -> Typed[Integer]))))
   }
 
   test("should be able to run custom validation using ServiceReturningType") {
@@ -955,7 +955,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val process =
       EspProcessBuilder
         .id("process1")
-        .additionalFields(properties = Map("property1" -> "value1"))
+        .additionalFields(properties = ListMap("property1" -> "value1"))
         .exceptionHandler()
         .source("id1", "source")
         .buildSimpleVariable("var1", "var1", "#meta.properties.property1")
@@ -1193,6 +1193,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   @silent("deprecated")
   @nowarn("cat=deprecation")
   object ServiceReturningTypeSample extends Service with ServiceReturningType {
+    import scala.collection.JavaConverters._
 
     @MethodToInvoke
     def invoke(@ParamName("definition") definition: java.util.Map[String, _], @ParamName("inRealTime") inRealTime: String): Future[AnyRef] = Future.successful(null)
@@ -1202,7 +1203,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       parameters
         .get("definition")
         .flatMap(_._2)
-        .map(definition => TypingUtils.typeMapDefinition(definition.asInstanceOf[java.util.Map[String, _]]))
+        .map(definition => TypingUtils.typeMapDefinition(ListMap(definition.asInstanceOf[java.util.Map[String, _]].asScala.toList: _*)))
         .map(param => Typed.genericTypeClass[java.util.List[_]](List(param)))
         .getOrElse(Unknown)
     }
@@ -1212,12 +1213,13 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   @silent("deprecated")
   @nowarn("cat=deprecation")
   object ServiceReturningTypeWithExplicitMethodSample extends Service with ServiceReturningType with ServiceWithExplicitMethod {
+    import scala.collection.JavaConverters._
 
     override def returnType(parameters: Map[String, (TypingResult, Option[Any])]): typing.TypingResult = {
       parameters
         .get("definition")
         .flatMap(_._2)
-        .map(definition => TypingUtils.typeMapDefinition(definition.asInstanceOf[java.util.Map[String, _]]))
+        .map(definition => TypingUtils.typeMapDefinition(ListMap(definition.asInstanceOf[java.util.Map[String, _]].asScala.toList: _*)))
         .map(param => Typed.genericTypeClass[java.util.List[_]](List(param)))
         .getOrElse(Unknown)
     }

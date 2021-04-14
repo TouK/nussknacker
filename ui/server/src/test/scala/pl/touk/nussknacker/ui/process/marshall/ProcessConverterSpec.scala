@@ -33,6 +33,8 @@ import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.engine.spel.Implicits._
 
+import scala.collection.immutable.ListMap
+
 class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenPropertyChecks {
 
   private val metaData = StreamMetaData(Some(2), Some(false))
@@ -105,7 +107,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
 
 
   test("return variable type information for process that cannot be canonized") {
-    val meta = MetaData("process", metaData, additionalFields = Some(ProcessAdditionalFields(None, Set.empty, Map.empty)))
+    val meta = MetaData("process", metaData, additionalFields = Some(ProcessAdditionalFields(None, Set.empty, ListMap.empty)))
     val process = ValidatedDisplayableProcess(
       meta.id,
       ProcessProperties(meta.typeSpecificData, ExceptionHandlerRef(List()), subprocessVersions = Map.empty),

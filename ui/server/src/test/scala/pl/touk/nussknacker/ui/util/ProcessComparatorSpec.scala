@@ -14,6 +14,8 @@ import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, EdgeT
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.util.ProcessComparator.{EdgeDifferent, EdgeNotPresentInCurrent, EdgeNotPresentInOther, NodeDifferent, NodeNotPresentInCurrent, NodeNotPresentInOther, PropertiesDifferent}
 
+import scala.collection.immutable.ListMap
+
 class ProcessComparatorSpec extends FunSuite with Matchers {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
@@ -102,20 +104,20 @@ class ProcessComparatorSpec extends FunSuite with Matchers {
   }
 
   test("detect changed property") {
-    val current = toDisplayable(_.emptySink("end", "testSink"), properties = Map("key" -> "current"))
-    val other = toDisplayable(_.emptySink("end", "testSink"), properties = Map("key" -> "other"))
+    val current = toDisplayable(_.emptySink("end", "testSink"), properties = ListMap("key" -> "current"))
+    val other = toDisplayable(_.emptySink("end", "testSink"), properties = ListMap("key" -> "other"))
 
     ProcessComparator.compare(current, other) shouldBe Map(
       "Properties" -> PropertiesDifferent(
-        processProperties(properties = Map("key" -> "current")),
-        processProperties(properties = Map("key" -> "other"))
+        processProperties(properties = ListMap("key" -> "current")),
+        processProperties(properties = ListMap("key" -> "other"))
       )
     )
   }
 
   private def toDisplayable(espProcess: GraphBuilder[EspProcess] => EspProcess,
                             description: Option[String] = None,
-                            properties: Map[String, String] = Map.empty) : DisplayableProcess  =
+                            properties: ListMap[String, String] = ListMap.empty) : DisplayableProcess  =
     toDisplayableFromProcess(espProcess(
       EspProcessBuilder.id("test")
         .additionalFields(
@@ -134,7 +136,7 @@ class ProcessComparatorSpec extends FunSuite with Matchers {
     Case(expr, GraphBuilder.emptySink(s"end$id", "end"))
   }
 
-  private def processProperties(description: Option[String] = None, properties: Map[String, String] = Map.empty): ProcessProperties = {
+  private def processProperties(description: Option[String] = None, properties: ListMap[String, String] = ListMap.empty): ProcessProperties = {
     ProcessProperties(
       typeSpecificProperties = StreamMetaData(
         parallelism = Some(1)

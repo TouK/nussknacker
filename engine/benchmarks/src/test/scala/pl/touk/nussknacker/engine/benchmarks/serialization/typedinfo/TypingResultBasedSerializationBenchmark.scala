@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.benchmarks.serialization.typedinfo
 
 import java.util.concurrent.TimeUnit
-
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.openjdk.jmh.annotations._
 import pl.touk.nussknacker.engine.api.Context
@@ -13,6 +12,7 @@ import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeI
 import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection.CompositeCustomisation
 
 import scala.collection.JavaConverters._
+import scala.collection.immutable.ListMap
 
 /*
   Results for sample run are as follows:
@@ -34,7 +34,7 @@ import scala.collection.JavaConverters._
 class TypingResultBasedSerializationBenchmark {
 
   //we use TypedMap here to have TypedObjectTypingResult in Typed.fromInstance
-  private val mapToSerialize = TypedMap(Map("field1" -> "strValue", "field2" -> 333L, "field3" -> 555, "field4" -> 555.3))
+  private val mapToSerialize = TypedMap(ListMap("field1" -> "strValue", "field2" -> 333L, "field3" -> 555, "field4" -> 555.3))
 
   private val mapToSerializeType = Typed.fromInstance(mapToSerialize).asInstanceOf[TypedObjectTypingResult]
 

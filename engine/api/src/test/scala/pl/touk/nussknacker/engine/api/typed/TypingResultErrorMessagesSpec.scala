@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.typed.typing._
 
 class TypingResultErrorMessagesSpec extends FunSuite with Matchers with OptionValues with Inside {
 
-  private def typeMap(args: (String, TypingResult)*) = TypedObjectTypingResult(args.toMap)
+  private def typeMap(args: (String, TypingResult)*) = TypedObjectTypingResult(args.toList)
 
   private def list(arg: TypingResult) = Typed.genericTypeClass[java.util.List[_]](List(arg))
 

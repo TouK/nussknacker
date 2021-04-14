@@ -22,6 +22,8 @@ import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, SimpleJavaEnum, registrar}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
+import scala.collection.immutable.ListMap
+
 trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
 
   object processInvoker {
@@ -128,7 +130,7 @@ object ProcessTestHelpers {
       val globalProcessVariables = Map(
         "processHelper" -> WithCategories(ProcessHelper),
         "enum" -> WithCategories(DictInstance(dictId, dictDef)),
-        "typedMap" -> WithCategories(TypedMap(Map("aField" -> "123"))))
+        "typedMap" -> WithCategories(TypedMap(ListMap("aField" -> "123"))))
       ExpressionConfig(globalProcessVariables, List.empty, dictionaries = Map(dictId -> WithCategories(dictDef)))
     }
 

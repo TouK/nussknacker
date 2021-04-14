@@ -31,6 +31,8 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory.{SampleSubprocessRepositor
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 
+import scala.collection.immutable.ListMap
+
 class ProcessValidationSpec extends FunSuite with Matchers {
   import spel.Implicits._
   import ProcessValidationSpec._
@@ -154,15 +156,15 @@ class ProcessValidationSpec extends FunSuite with Matchers {
         "field2" -> AdditionalPropertyConfig(None, None, None, Some("label2"))
       )), sampleResolver, emptyProcessingTypeDataProvider)
 
-    processValidation.validate(validProcessWithFields(Map("field1" -> "a", "field2" -> "b"))) shouldBe 'ok
+    processValidation.validate(validProcessWithFields(ListMap("field1" -> "a", "field2" -> "b"))) shouldBe 'ok
 
-    processValidation.validate(validProcessWithFields(Map("field1" -> "a"))) shouldBe 'ok
+    processValidation.validate(validProcessWithFields(ListMap("field1" -> "a"))) shouldBe 'ok
 
-    processValidation.validate(validProcessWithFields(Map("field1" -> "", "field2" -> "b")))
+    processValidation.validate(validProcessWithFields(ListMap("field1" -> "", "field2" -> "b")))
       .errors.processPropertiesErrors should matchPattern {
       case List(NodeValidationError("EmptyMandatoryParameter", _, _, Some("field1"), ValidationResults.NodeValidationErrorType.SaveAllowed)) =>
     }
-    processValidation.validate(validProcessWithFields(Map("field2" -> "b")))
+    processValidation.validate(validProcessWithFields(ListMap("field2" -> "b")))
       .errors.processPropertiesErrors should matchPattern {
       case List(NodeValidationError("MissingRequiredProperty", _, _, Some("field1"), ValidationResults.NodeValidationErrorType.SaveAllowed)) =>
     }
@@ -176,7 +178,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
         "field2" -> AdditionalPropertyConfig(None, None, Some(List(MandatoryParameterValidator)), Some("label2"))
       )), sampleResolver, emptyProcessingTypeDataProvider)
 
-    val process = validProcessWithFields(Map())
+    val process = validProcessWithFields(ListMap.empty)
     val subprocess = process.copy(properties = process.properties.copy(isSubprocess = true))
 
     processValidation.validate(subprocess) shouldBe 'ok
@@ -191,13 +193,13 @@ class ProcessValidationSpec extends FunSuite with Matchers {
         "field2" -> AdditionalPropertyConfig(None, None, Some(List(LiteralParameterValidator.integerValidator)), Some("label"))
       )), sampleResolver, emptyProcessingTypeDataProvider)
 
-    processValidation.validate(validProcessWithFields(Map("field1" -> "true"))) shouldBe 'ok
-    processValidation.validate(validProcessWithFields(Map("field1" -> "false"))) shouldBe 'ok
-    processValidation.validate(validProcessWithFields(Map("field1" -> "1"))) should not be 'ok
+    processValidation.validate(validProcessWithFields(ListMap("field1" -> "true"))) shouldBe 'ok
+    processValidation.validate(validProcessWithFields(ListMap("field1" -> "false"))) shouldBe 'ok
+    processValidation.validate(validProcessWithFields(ListMap("field1" -> "1"))) should not be 'ok
 
-    processValidation.validate(validProcessWithFields(Map("field2" -> "1"))) shouldBe 'ok
-    processValidation.validate(validProcessWithFields(Map("field2" -> "1.1"))) should not be 'ok
-    processValidation.validate(validProcessWithFields(Map("field2" -> "true"))) should not be 'ok
+    processValidation.validate(validProcessWithFields(ListMap("field2" -> "1"))) shouldBe 'ok
+    processValidation.validate(validProcessWithFields(ListMap("field2" -> "1.1"))) should not be 'ok
+    processValidation.validate(validProcessWithFields(ListMap("field2" -> "true"))) should not be 'ok
   }
 
   test("handle unknown properties validation") {
@@ -206,7 +208,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
         "field2" -> AdditionalPropertyConfig(None, None, Some(List(LiteralParameterValidator.integerValidator)), Some("label"))
       )), sampleResolver, emptyProcessingTypeDataProvider)
 
-    val result = processValidation.validate(validProcessWithFields(Map("field1" -> "true")))
+    val result = processValidation.validate(validProcessWithFields(ListMap("field1" -> "true")))
 
     result.errors.processPropertiesErrors should matchPattern {
       case List(NodeValidationError("UnknownProperty", _, _, Some("field1"), NodeValidationErrorType.SaveAllowed)) =>
@@ -330,7 +332,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     validationResult.errors.invalidNodes shouldBe 'empty
     validationResult.nodeResults("sink2").variableTypes("input") shouldBe typing.Unknown
     validationResult.nodeResults("sink2").variableTypes("var2") shouldBe Typed(classOf[String])
-    validationResult.nodeResults("sink2").variableTypes("subOut2") shouldBe TypedObjectTypingResult(Map(
+    validationResult.nodeResults("sink2").variableTypes("subOut2") shouldBe TypedObjectTypingResult(ListMap(
       "bar" -> Typed(classOf[String])
     ))
   }
@@ -355,7 +357,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
   }
 
   test("check for wrong fixed expression value in node parameter") {
-    val process: DisplayableProcess = createProcessWithParams(List(evaluatedparam.Parameter("expression", Expression("spel", "wrong fixed value"))), Map.empty)
+    val process: DisplayableProcess = createProcessWithParams(List(evaluatedparam.Parameter("expression", Expression("spel", "wrong fixed value"))), ListMap.empty)
 
     val result = validator.validate(process)
 
@@ -367,7 +369,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
   }
 
   test("check for wrong fixed expression value in additional property") {
-    val process = createProcessWithParams(List.empty, Map(
+    val process = createProcessWithParams(List.empty, ListMap(
       "numberOfThreads" -> "wrong fixed value",
       "requiredStringProperty" -> "test"
     ))
@@ -395,7 +397,7 @@ private object ProcessValidationSpec {
     emptyProcessingTypeDataProvider
   )
 
-  def validProcessWithFields(fields: Map[String, String]) = {
+  def validProcessWithFields(fields: ListMap[String, String]) = {
     createProcess(
       List(
         Source("in", SourceRef("barSource", List())),
@@ -405,7 +407,7 @@ private object ProcessValidationSpec {
     )
   }
 
-  def createProcessWithParams(nodeParams: List[evaluatedparam.Parameter], additionalProperties: Map[String, String]) = {
+  def createProcessWithParams(nodeParams: List[evaluatedparam.Parameter], additionalProperties: ListMap[String, String]) = {
     createProcess(
       List(
         Source("inID", SourceRef("barSource", List())),
@@ -422,7 +424,7 @@ private object ProcessValidationSpec {
   def createProcess(nodes: List[NodeData],
                     edges: List[Edge],
                     `type`: ProcessingTypeData.ProcessingType = TestProcessingTypes.Streaming,
-                    groups: Set[Group] = Set(), additionalFields: Map[String, String] = Map()) = {
+                    groups: Set[Group] = Set(), additionalFields: ListMap[String, String] = ListMap()) = {
     DisplayableProcess("test", ProcessProperties(StreamMetaData(),
       ExceptionHandlerRef(List()), subprocessVersions = Map.empty, additionalFields = Some(ProcessAdditionalFields(None, groups, additionalFields))), nodes, edges, `type`)
   }

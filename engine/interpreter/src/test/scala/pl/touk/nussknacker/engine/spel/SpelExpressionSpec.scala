@@ -5,7 +5,6 @@ import java.text.ParseException
 import java.time.{LocalDate, LocalDateTime}
 import java.util
 import java.util.Collections
-
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import org.apache.avro.generic.GenericData
@@ -24,6 +23,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.types.{GeneratedAvroClass, JavaClassWithVarargs}
 
 import scala.collection.JavaConverters._
+import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 import scala.reflect.runtime.universe._
 
@@ -267,9 +267,9 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   test("missing keys in Maps") {
     val validationCtx = ValidationContext.empty
-      .withVariable("map", TypedObjectTypingResult(Map(
+      .withVariable("map", TypedObjectTypingResult(ListMap(
         "foo" -> Typed[Int],
-        "nested" -> TypedObjectTypingResult(Map("bar" -> Typed[Int]))
+        "nested" -> TypedObjectTypingResult(ListMap("bar" -> Typed[Int]))
       )), paramName = None)
       .toOption.get
     val ctxWithMap = ctx.withVariable("map", Collections.emptyMap())
@@ -277,7 +277,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     parseOrFail[Integer]("#map.nested?.bar", validationCtx).evaluateSync[Integer](ctxWithMap) shouldBe null
     parseOrFail[Boolean]("#map.foo == null && #map?.nested?.bar == null", validationCtx).evaluateSync[Boolean](ctxWithMap) shouldBe true
 
-    val ctxWithTypedMap = ctx.withVariable("map", TypedMap(Map.empty))
+    val ctxWithTypedMap = ctx.withVariable("map", TypedMap(ListMap.empty))
     val parseResult = parseOrFail[Integer]("#map.foo", validationCtx)
     a[SpelExpressionEvaluationException] should be thrownBy {
       parseResult.evaluateSync[Integer](ctxWithTypedMap)
@@ -462,7 +462,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   test("parse typed map with existing field") {
     val ctxWithMap = ValidationContext
       .empty
-      .withVariable("input", TypedObjectTypingResult(Map("str" -> Typed[String], "lon" -> Typed[Long])), paramName = None).toOption.get
+      .withVariable("input", TypedObjectTypingResult(ListMap("str" -> Typed[String], "lon" -> Typed[Long])), paramName = None).toOption.get
 
 
     parse[String]("#input.str", ctxWithMap) should be ('valid)
@@ -475,9 +475,9 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   test("be able to convert between primitive types") {
     val ctxWithMap = ValidationContext
       .empty
-      .withVariable("input", TypedObjectTypingResult(Map("int" -> Typed[Int])), paramName = None).toOption.get
+      .withVariable("input", TypedObjectTypingResult(ListMap("int" -> Typed[Int])), paramName = None).toOption.get
 
-    val ctx = Context("").withVariable("input", TypedMap(Map("int" -> 1)))
+    val ctx = Context("").withVariable("input", TypedMap(ListMap("int" -> 1)))
 
     parseOrFail[Long]("#input.int.longValue", ctxWithMap).evaluateSync[Long](ctx) shouldBe 1L
   }
@@ -485,9 +485,9 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   test("evaluate parsed map") {
     val valCtxWithMap = ValidationContext
       .empty
-      .withVariable("input", TypedObjectTypingResult(Map("str" -> Typed[String], "lon" -> Typed[Long])), paramName = None).toOption.get
+      .withVariable("input", TypedObjectTypingResult(ListMap("str" -> Typed[String], "lon" -> Typed[Long])), paramName = None).toOption.get
 
-    val ctx = Context("").withVariable("input", TypedMap(Map("str" -> "aaa", "lon" -> 3444)))
+    val ctx = Context("").withVariable("input", TypedMap(ListMap("str" -> "aaa", "lon" -> 3444)))
 
     parseOrFail[String]("#input.str", valCtxWithMap).evaluateSync[String](ctx) shouldBe "aaa"
     parseOrFail[Long]("#input.lon", valCtxWithMap).evaluateSync[Long](ctx) shouldBe 3444
@@ -510,8 +510,8 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     val ctxWithMap = ValidationContext
       .empty
       .withVariable("input", Typed(
-        TypedObjectTypingResult(Map("str" -> Typed[String])),
-        TypedObjectTypingResult(Map("lon" -> Typed[Long]))), paramName = None).toOption.get
+        TypedObjectTypingResult(ListMap("str" -> Typed[String])),
+        TypedObjectTypingResult(ListMap("lon" -> Typed[Long]))), paramName = None).toOption.get
 
 
     parse[String]("#input.str", ctxWithMap) should be ('valid)
@@ -554,7 +554,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   }
 
   test("variables with TypeMap type") {
-    val withObjVar = ctx.withVariable("dicts", TypedMap(Map("foo" -> SampleValue(123))))
+    val withObjVar = ctx.withVariable("dicts", TypedMap(ListMap("foo" -> SampleValue(123))))
 
     parseOrFail[Int]("#dicts.foo.value", withObjVar).evaluateSync[Int](withObjVar) should equal(123)
     parse[String]("#dicts.bar.value", withObjVar) shouldBe 'invalid

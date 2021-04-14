@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.process.typeinformation.internal.{FixedValueSe
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
+import scala.collection.immutable.ListMap
 import scala.reflect.ClassTag
 
 object TypingResultAwareTypeInformationDetection {
@@ -53,7 +54,11 @@ class TypingResultAwareTypeInformationDetection(customisation:
 
   def forContext(validationContext: ValidationContext): TypeInformation[Context] = {
     val id = TypeInformation.of(classOf[String])
-    val variables = forType(TypedObjectTypingResult(validationContext.localVariables, Typed.typedClass[Map[String, AnyRef]]))
+    // TODO : check if we don't need to keep variables order
+    val variables = forType(TypedObjectTypingResult(
+      fields = ListMap(validationContext.localVariables.toList: _*),
+      objType = Typed.typedClass[Map[String, AnyRef]])
+    )
     val parentCtx = new OptionTypeInfo[Context, Option[Context]](validationContext.parent.map(forContext).getOrElse(FixedValueSerializers.nullValueTypeInfo))
 
     val typeInfos = List(id, variables, parentCtx)

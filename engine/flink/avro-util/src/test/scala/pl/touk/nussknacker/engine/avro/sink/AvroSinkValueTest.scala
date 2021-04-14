@@ -8,13 +8,15 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.SinkValueParamName
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
+import scala.collection.immutable.ListMap
+
 
 class AvroSinkValueTest extends FunSuite with Matchers {
   private implicit val nodeId = NodeId("")
 
   test("sink params to AvroSinkRecordValue") {
     val typ = TypingUtils.typeMapDefinition(
-      Map(
+      ListMap(
         "a" -> "Long",
         "b" -> Map("c" -> "Long")
       ))

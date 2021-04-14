@@ -4,13 +4,15 @@ import org.scalatest.{FunSuite, Inside, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
 
+import scala.collection.immutable.ListMap
+
 class TypingResultSpec extends FunSuite with Matchers with OptionValues with Inside {
 
   private val commonSuperTypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Intersection, true)
 
   implicit val numberTypesPromotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ForMathOperation
 
-  private def typeMap(args: (String, TypingResult)*) = TypedObjectTypingResult(args.toMap)
+  private def typeMap(args: (String, TypingResult)*) = TypedObjectTypingResult(args.toList)
 
   private def list(arg: TypingResult) = Typed.genericTypeClass[java.util.List[_]](List(arg))
 
@@ -109,13 +111,13 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
     commonSuperTypeFinder.commonSupertype(Unknown, Typed[Long]) shouldEqual Unknown
 
     commonSuperTypeFinder.commonSupertype(
-      TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[Int], "baz" -> Typed[String])),
-      TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[Long], "baz2" -> Typed[String]))) shouldEqual
-      TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[java.lang.Long], "baz" -> Typed[String], "baz2" -> Typed[String]))
+      TypedObjectTypingResult(ListMap("foo" -> Typed[String], "bar" -> Typed[Int], "baz" -> Typed[String])),
+      TypedObjectTypingResult(ListMap("foo" -> Typed[String], "bar" -> Typed[Long], "baz2" -> Typed[String]))) shouldEqual
+      TypedObjectTypingResult(ListMap("foo" -> Typed[String], "bar" -> Typed[java.lang.Long], "baz" -> Typed[String], "baz2" -> Typed[String]))
 
     commonSuperTypeFinder.commonSupertype(
-      TypedObjectTypingResult(Map("foo" -> Typed[String])), TypedObjectTypingResult(Map("foo" -> Typed[Long]))) shouldEqual
-      TypedObjectTypingResult(Map.empty[String, TypingResult])
+      TypedObjectTypingResult(ListMap("foo" -> Typed[String])), TypedObjectTypingResult(ListMap("foo" -> Typed[Long]))) shouldEqual
+      TypedObjectTypingResult(ListMap.empty[String, TypingResult])
   }
 
   test("find common supertype for complex types with inheritance in classes hierarchy") {

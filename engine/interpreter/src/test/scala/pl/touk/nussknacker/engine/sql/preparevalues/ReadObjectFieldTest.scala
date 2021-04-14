@@ -4,6 +4,8 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.sql.preparevalues.ReadObjectField.ClassValueNotFound
 
+import scala.collection.immutable.ListMap
+
 class ReadObjectFieldTest extends FunSuite with Matchers {
 
   test("get field by name") {
@@ -22,11 +24,11 @@ class ReadObjectFieldTest extends FunSuite with Matchers {
     }
   }
   test("reads value from typed map") {
-    ReadObjectField.readField(TypedMap(Map("age" -> 5)), "age") shouldEqual 5
+    ReadObjectField.readField(TypedMap(ListMap("age" -> 5)), "age") shouldEqual 5
   }
   test("reads unexciting value from typed map") {
     assertThrows[ClassValueNotFound] {
-      ReadObjectField.readField(TypedMap(Map("age" -> 5)), "name")
+      ReadObjectField.readField(TypedMap(ListMap("age" -> 5)), "name")
     }
   }
 

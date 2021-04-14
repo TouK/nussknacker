@@ -10,12 +10,14 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SinkKeyParamName, SinkValueParamName}
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
+import scala.collection.immutable.ListMap
+
 class AvroSinkValueParameterTest extends FunSuite with Matchers {
   private implicit val nodeId: NodeId = NodeId("")
 
   test("typing result to AvroSinkRecordParameter") {
     val typ = TypingUtils.typeMapDefinition(
-      Map(
+      ListMap(
         "a" -> "String",
         "b" -> Map("c" -> "Long")
       ))
@@ -39,7 +41,7 @@ class AvroSinkValueParameterTest extends FunSuite with Matchers {
 
   test("typed object with restricted field names") {
     val typ = TypingUtils.typeMapDefinition(
-      Map(
+      ListMap(
         SinkKeyParamName -> "String",
         "b" -> "Long"
       ))

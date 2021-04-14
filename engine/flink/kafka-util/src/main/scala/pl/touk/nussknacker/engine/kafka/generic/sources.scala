@@ -20,6 +20,8 @@ import pl.touk.nussknacker.engine.kafka.{BasicFormatter, KafkaConfig, KafkaUtils
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
+import scala.collection.immutable.ListMap
+
 //TODO: Move it to source package
 object sources {
 
@@ -36,8 +38,10 @@ object sources {
       val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
       val deserializationSchema = new KafkaDeserializationSchemaWrapper(JsonTypedMapDeserialization)
       val preparedTopics = List(KafkaUtils.prepareKafkaTopic(topic, processObjectDependencies))
+      // TODO
+      import scala.collection.JavaConverters._
       new KafkaSource(preparedTopics, kafkaConfig, deserializationSchema, None, JsonRecordFormatter) with ReturningType {
-        override def returnType: typing.TypingResult = TypingUtils.typeMapDefinition(definition)
+        override def returnType: typing.TypingResult = TypingUtils.typeMapDefinition(ListMap(definition.asScala.toList: _*))
       }
     }
   }
@@ -70,7 +74,8 @@ object sources {
   object JsonMapDeserialization extends EspDeserializationSchema[java.util.Map[_, _]](deserializeToMap)
 
   //It is important that object returned by this schema is consistent with types from TypingUtils.typeMapDefinition, i.e. collections type must match etc.
-  object JsonTypedMapDeserialization extends EspDeserializationSchema[TypedMap](m => TypedMap(deserializeToMap(m).asScala.toMap))
+  // TODO
+  object JsonTypedMapDeserialization extends EspDeserializationSchema[TypedMap](m => TypedMap(ListMap(deserializeToMap(m).asScala.toList: _*)))
 
   //TOOD: better error handling?
   class JsonDecoderDeserialization[T:Decoder:TypeInformation] extends EspDeserializationSchema[T](ba => CirceUtil.decodeJsonUnsafe(ba))

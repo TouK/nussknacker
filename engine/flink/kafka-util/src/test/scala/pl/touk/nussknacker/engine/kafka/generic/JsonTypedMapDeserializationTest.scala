@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.engine.kafka.generic
 
 import java.nio.charset.StandardCharsets
-
 import com.google.common.collect.{ImmutableList, ImmutableMap}
 import io.circe.Json
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.kafka.generic.sources.JsonTypedMapDeserialization
+
+import scala.collection.immutable.ListMap
 
 class JsonTypedMapDeserializationTest extends FunSuite with Matchers {
 
@@ -26,7 +27,7 @@ class JsonTypedMapDeserializationTest extends FunSuite with Matchers {
       ))
     )).noSpaces.getBytes(StandardCharsets.UTF_8)
 
-    JsonTypedMapDeserialization.deserialize(json) shouldBe TypedMap(Map(
+    JsonTypedMapDeserialization.deserialize(json) shouldBe TypedMap(ListMap(
       "arrayF" -> ImmutableList.of(
         "one", true, 1.1, ImmutableMap.of("nest1", "str1")
       ),

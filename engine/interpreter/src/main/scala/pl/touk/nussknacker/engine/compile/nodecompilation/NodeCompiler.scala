@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTy
 import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType}
-import pl.touk.nussknacker.engine.api.{Context, VariableConstants, EagerService, MetaData, ServiceInvoker}
+import pl.touk.nussknacker.engine.api.{Context, EagerService, MetaData, ServiceInvoker, VariableConstants}
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo.DefaultExpressionId
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{ExpressionCompilation, NodeCompilationResult}
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeTypingInfo, NodeValidationExceptionHandler, ProcessObjectFactory}
@@ -173,7 +173,8 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     }.sequence
 
     val typedObject = compilationResult.map { fieldsComp =>
-      TypedObjectTypingResult(fieldsComp.map(f => (f.fieldName, f.typingResult)).toMap)
+      val fieldsTyping = fieldsComp.map(c => (c.fieldName, c.typingResult))
+      TypedObjectTypingResult(fieldsTyping)
     }.valueOr(_ => Unknown)
 
     val fieldsTypingInfo = compilationResult.map { compilations =>

@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.api
 
 import java.util.concurrent.TimeUnit
-
 import io.circe.generic.extras.ConfiguredJsonCodec
 import CirceUtil._
 import io.circe.{Decoder, Encoder}
@@ -9,21 +8,25 @@ import io.circe.generic.JsonCodec
 import io.circe.generic.semiauto._
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValue
 
+import scala.collection.immutable.ListMap
 import scala.concurrent.duration.Duration
 
 case class ProcessAdditionalFields(description: Option[String],
                                    groups: Set[Group],
-                                   properties: Map[String, String])
+                                   properties: ListMap[String, String])
 
 object ProcessAdditionalFields {
 
   //TODO: is this currently needed?
   private case class OptionalProcessAdditionalFields(description: Option[String],
                                      groups: Option[Set[Group]],
-                                     properties: Option[Map[String, String]])
+                                     properties: Option[ListMap[String, String]])
 
-  implicit val circeDecoder: Decoder[ProcessAdditionalFields]
-  = deriveDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.groups.getOrElse(Set()), opp.properties.getOrElse(Map())))
+  implicit val circeDecoder: Decoder[ProcessAdditionalFields] =
+    deriveDecoder[OptionalProcessAdditionalFields].map {
+      opp =>
+        ProcessAdditionalFields(opp.description, opp.groups.getOrElse(Set()), opp.properties.getOrElse(ListMap.empty))
+  }
 
   implicit val circeEncoder: Encoder[ProcessAdditionalFields] = deriveEncoder
 }

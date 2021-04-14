@@ -12,6 +12,8 @@ import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
+import scala.collection.immutable.ListMap
+
 object NewProcessPreparer {
 
   def apply(processTypes: ProcessingTypeDataProvider[ProcessingTypeData], additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig]]): NewProcessPreparer =
@@ -46,6 +48,10 @@ class NewProcessPreparer(definitions: ProcessingTypeDataProvider[ProcessDefiniti
       .map(properties => ProcessAdditionalFields(None, Set.empty, properties = properties))
   }
 
-  private def defaultProperties(processingType: ProcessingType): Map[String, String] = additionalFields.forTypeUnsafe(processingType)
-    .collect { case (name, parameterConfig) if parameterConfig.defaultValue.isDefined => name -> parameterConfig.defaultValue.get }
+  // TODO
+  private def defaultProperties(processingType: ProcessingType): ListMap[String, String] = {
+    val x = additionalFields.forTypeUnsafe(processingType)
+      .collect { case (name, parameterConfig) if parameterConfig.defaultValue.isDefined => name -> parameterConfig.defaultValue.get }
+    ListMap(x.toList: _*)
+  }
 }

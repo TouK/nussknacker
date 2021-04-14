@@ -3,6 +3,8 @@ package pl.touk.nussknacker.engine.api.typed.supertype
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.typing._
 
+import scala.collection.immutable.ListMap
+
 /**
   * This class finding common supertype of two types. It basically based on fact that TypingResults are
   * sets of possible supertypes with some additional restrictions (like TypedObjectTypingResult).
@@ -77,20 +79,20 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
     }
   }
 
+  // FIXME TODO
   private def unionOfFields(l: TypedObjectTypingResult, r: TypedObjectTypingResult)
-                           (implicit numberPromotionStrategy: NumberTypesPromotionStrategy) = {
-    (l.fields.toList ++ r.fields.toList).groupBy(_._1).mapValues(_.map(_._2)).flatMap {
-      case (fieldName, leftType :: rightType :: Nil) =>
-        val common = commonSupertype(leftType, rightType)
-        if (common == Typed.empty)
-          None // fields type collision - skipping this field
+                           (implicit numberPromotionStrategy: NumberTypesPromotionStrategy): ListMap[String, TypingResult] = {
+    val withCommonSupertypes = (l.fields.toList zip r.fields.toList).flatMap {
+      case ((fieldName, leftType), (_, rightType)) if leftType == rightType =>
+        (fieldName, leftType) :: Nil
+      case ((fieldName, leftType), (_, rightType)) =>
+        val leastUpperBound = commonSupertype(leftType, rightType)
+        if (leastUpperBound == Typed.empty)
+          Nil // fields type collision - skipping this field
         else
-          Some(fieldName -> common)
-      case (fieldName, singleType :: Nil) =>
-        Some(fieldName -> singleType)
-      case (_, longerList) =>
-        throw new IllegalArgumentException("Computing union of more than two fields: " + longerList) // shouldn't happen
+          (fieldName, leastUpperBound) :: Nil
     }
+    ListMap(withCommonSupertypes: _*)
   }
 
   // This implementation is because TypedObjectTypingResult has underlying TypedClass instead of TypingResult

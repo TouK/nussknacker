@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.integration
 
 import java.io.File
 import java.util.UUID
-
 import akka.http.javadsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, MediaTypes, StatusCodes}
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
@@ -36,6 +35,7 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils}
 import pl.touk.nussknacker.ui.validation.PrettyValidationErrors
 
+import scala.collection.immutable.ListMap
 import scala.concurrent.duration._
 import scala.util.Properties
 
@@ -254,7 +254,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
 
     def processWithService(params: (String, Expression)*): EspProcess = EspProcessBuilder
       .id("test")
-      .additionalFields(properties = Map("environment" -> "someNotEmptyString"))
+      .additionalFields(properties = ListMap("environment" -> "someNotEmptyString"))
       .exceptionHandlerNoParams()
       .source("start", "csv-source")
       .processorEnd("end", "dynamicService", params:_*)

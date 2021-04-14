@@ -7,6 +7,8 @@ import pl.touk.nussknacker.engine.management.periodic.CronSchedulePropertyExtrac
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
 
+import scala.collection.immutable.ListMap
+
 object PeriodicProcessGen {
   def apply(cronProperty: String = "0 0 * * * ?"): GraphProcess = {
     GraphProcess(
@@ -14,7 +16,7 @@ object PeriodicProcessGen {
         ProcessCanonizer.canonize(
           EspProcessBuilder
             .id("test")
-            .additionalFields(properties = Map(CronPropertyDefaultName -> cronProperty))
+            .additionalFields(properties = ListMap(CronPropertyDefaultName -> cronProperty))
             .exceptionHandler()
             .source("test", "test")
             .sink("test", asSpelExpression("test"), "test")

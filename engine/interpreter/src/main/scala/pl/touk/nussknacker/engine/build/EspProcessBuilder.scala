@@ -8,6 +8,8 @@ import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.{EspProcess, evaluatedparam}
 
+import scala.collection.immutable.ListMap
+
 class ProcessMetaDataBuilder private[build](metaData: MetaData) {
 
   //TODO: exception when non-streaming process?
@@ -23,7 +25,7 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
 
   def additionalFields(description: Option[String] = None,
                        groups: Set[Group] = Set.empty,
-                       properties: Map[String, String] = Map.empty) =
+                       properties: ListMap[String, String] = ListMap.empty) =
     new ProcessMetaDataBuilder(metaData.copy(
       additionalFields = Some(ProcessAdditionalFields(description, groups, properties)))
     )
