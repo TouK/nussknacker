@@ -25,8 +25,8 @@ export function saveProcess(comment: string): ThunkAction {
     // save changes before rename and force same processId everywhere
     await HttpService.saveProcess(processJson.id, processJson, comment)
 
-    const isRenamed = isProcessRenamed(state) && await doRenameProcess(processJson.id, processJson.newId)
-    const processId = isRenamed ? processJson.newId : processJson.id
+    const isRenamed = isProcessRenamed(state) && await doRenameProcess(processJson.id, processJson.unsavedNewName)
+    const processId = isRenamed ? processJson.unsavedNewName : processJson.id
 
     await dispatch(displayCurrentProcessVersion(processId))
     await dispatch(displayProcessActivity(processId))

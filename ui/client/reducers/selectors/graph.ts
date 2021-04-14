@@ -10,7 +10,8 @@ export const getGraph = (state: RootState): GraphState => state.graphReducer
 export const getFetchedProcessDetails = createSelector(getGraph, g => g.fetchedProcessDetails)
 export const getProcessToDisplay = createSelector(getGraph, g => g.processToDisplay || {} as Process)
 export const getProcessId = createSelector(getFetchedProcessDetails, d => d?.name)
-export const getProcessNewId = createSelector(getProcessToDisplay, getProcessId, (d, id) => d?.newId || id)
+export const getProcessName = getProcessId
+export const getProcessUnsavedNewName = createSelector(getProcessToDisplay, getProcessName, (d, id) => d?.unsavedNewName || id)
 export const getProcessVersionId = createSelector(getFetchedProcessDetails, d => d?.processVersionId)
 export const getProcessCategory = createSelector(getFetchedProcessDetails, d => d?.processCategory || "")
 export const getIsArchived = createSelector(getFetchedProcessDetails, d => d?.isArchived)
@@ -28,9 +29,9 @@ export const getGroupingState = createSelector(getGraph, g => g.groupingState)
 export const getHistory = createSelector(getGraph, g => g.history)
 
 export const isProcessRenamed = createSelector(
-  getProcessId,
-  getProcessNewId,
-  (currentId, nextId) => nextId !== currentId,
+  getProcessName,
+  getProcessUnsavedNewName,
+  (currentName, unsavedNewName) => unsavedNewName !== currentName,
 )
 
 export const getFetchedProcessState = createSelector(

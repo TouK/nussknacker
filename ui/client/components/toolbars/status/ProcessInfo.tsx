@@ -6,7 +6,7 @@ import {absoluteBePath} from "../../../common/UrlUtils"
 import {RootState} from "../../../reducers"
 import {
   getFetchedProcessDetails,
-  getProcessNewId,
+  getProcessUnsavedNewName,
   getProcessState,
   isProcessRenamed,
   isStateLoaded,
@@ -103,7 +103,7 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
   ]
 
   render() {
-    const {process, processState, isStateLoaded, iconHeight, iconWidth, processDefinitionData, isRenamePending, nextId} = this.props
+    const {process, processState, isStateLoaded, iconHeight, iconWidth, processDefinitionData, isRenamePending, unsavedNewName} = this.props
     const description = this.getDescription(process, processState, isStateLoaded)
     const icon = this.getIcon(process, processState, isStateLoaded, iconHeight, iconWidth, description)
     const transitionKey = this.getTransitionKey(process, processState)
@@ -130,7 +130,7 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
                 <div className={"process-info-text"}>
                   {isRenamePending ?
                     (
-                      <div className="process-name process-name-rename" title={process.name}>{nextId}*</div>
+                      <div className="process-name process-name-rename" title={process.name}>{unsavedNewName}*</div>
                     ) :
                     (
                       <div className="process-name">{process.name}</div>
@@ -153,7 +153,7 @@ const mapState = (state: RootState) => ({
   isStateLoaded: isStateLoaded(state),
   process: getFetchedProcessDetails(state),
   isRenamePending: isProcessRenamed(state),
-  nextId: getProcessNewId(state),
+  unsavedNewName: getProcessUnsavedNewName(state),
   capabilities: getCapabilities(state),
   processState: getProcessState(state),
   processDefinitionData: getProcessDefinitionData(state),
