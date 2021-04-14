@@ -1,7 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
 import {ToolbarsSide} from "../../reducers/toolbars"
 import {ButtonsVariant} from "../toolbarComponents/ToolbarButtons"
-import {BuiltinButtonTypes, CustomButtonTypes, ToolbarButton} from "./buttons"
+import {BuiltinButtonTypes, ToolbarButton} from "./buttons"
 
 export interface ToolbarConfig {
   id: string,

@@ -1,15 +1,14 @@
-import {LinkButtonProps} from "./LinkButton"
 import {ActionButtonProps} from "./ActionButton"
 import {BuiltinButtonTypes} from "./BuiltinButtonTypes"
 import {CustomButtonTypes} from "./CustomButtonTypes"
+import {LinkButtonProps} from "./LinkButton"
 
-type GenericButton<T> = {type: T}
+type GenericButton<T, P = unknown> = {type: T, name?: string} & P
 
 type Button =
   | GenericButton<BuiltinButtonTypes>
-  | GenericButton<CustomButtonTypes.customAction> & ActionButtonProps
-  | GenericButton<CustomButtonTypes.customLink> & LinkButtonProps
+  | GenericButton<CustomButtonTypes.customAction, ActionButtonProps>
+  | GenericButton<CustomButtonTypes.customLink, LinkButtonProps>
 
-export type ToolbarButtonSettings = Omit<Button, "type">
 export type ToolbarButtonTypes = Button["type"]
 export type ToolbarButton = Button

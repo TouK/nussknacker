@@ -4,7 +4,8 @@ import {ToolbarConfig} from "./defaultToolbarsConfig"
 import {TOOLBAR_COMPONENTS_MAP} from "./TOOLBAR_COMPONENTS_MAP"
 
 function buttonSelector(btn: ToolbarButton, i: number) {
-  const Component = TOOLBAR_BUTTONS_MAP[btn.type]
+  // this type have to be specified to avoid type errors
+  const Component: React.ComponentType<ToolbarButton> = TOOLBAR_BUTTONS_MAP[btn.type]
   return <Component key={i} {...btn}/>
 }
 

@@ -34,9 +34,13 @@ import {ZoomInButton} from "../../toolbars/view/buttons/ZoomInButton"
 import {ZoomOutButton} from "../../toolbars/view/buttons/ZoomOutButton"
 import {BuiltinButtonTypes} from "./BuiltinButtonTypes"
 import {CustomButtonTypes} from "./CustomButtonTypes"
-import {ToolbarButtonSettings, ToolbarButtonTypes} from "./types"
+import {ToolbarButton, ToolbarButtonTypes} from "./types"
 
-export const TOOLBAR_BUTTONS_MAP: Record<ToolbarButtonTypes, ComponentType<ToolbarButtonSettings>> = {
+type ToolbarButtonsMap = {
+  [T in ToolbarButtonTypes]: ComponentType<ToolbarButton & {type: T}>
+}
+
+export const TOOLBAR_BUTTONS_MAP: ToolbarButtonsMap = {
   [BuiltinButtonTypes.processSave]: SaveButton,
   [BuiltinButtonTypes.deploy]: DeployButton,
   [BuiltinButtonTypes.deployCanel]: CancelDeployButton,
