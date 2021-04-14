@@ -29,7 +29,7 @@ export function ProcessesList(props: BaseProcessesOwnProps): JSX.Element {
         getStatuses()
       }
     },
-    [withStatuses, processes],
+    [withStatuses, processes, getStatuses],
   )
 
   const filtered = useTextFilter(search, processes, filterable)

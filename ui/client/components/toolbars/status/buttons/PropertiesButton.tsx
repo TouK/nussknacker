@@ -5,7 +5,7 @@ import {displayModalNodeDetails} from "../../../../actions/nk"
 import {events} from "../../../../analytics/TrackingEvents"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/properties.svg"
 import ProcessUtils from "../../../../common/ProcessUtils"
-import {getProcessToDisplay, hasError} from "../../../../reducers/selectors/graph"
+import {getProcessUnsavedNewName, getProcessToDisplay, hasError} from "../../../../reducers/selectors/graph"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 
 function PropertiesButton(): JSX.Element {
@@ -13,18 +13,19 @@ function PropertiesButton(): JSX.Element {
   const dispatch = useDispatch()
 
   const processToDisplay = useSelector(getProcessToDisplay)
+  const name = useSelector(getProcessUnsavedNewName)
   const hasErrors = useSelector(hasError)
 
   const onClick = useCallback(
     () => {
-      const {properties, id} = processToDisplay
+      const {properties} = processToDisplay
       const eventInfo = {
         category: events.categories.rightPanel,
         name: t("panels.actions.edit-properties.dialog", "properties"),
       }
-      dispatch(displayModalNodeDetails({id, ...properties}, false, eventInfo))
+      dispatch(displayModalNodeDetails({id: name, ...properties}, false, eventInfo))
     },
-    [dispatch, processToDisplay, t],
+    [dispatch, name, processToDisplay, t],
   )
 
   return (
