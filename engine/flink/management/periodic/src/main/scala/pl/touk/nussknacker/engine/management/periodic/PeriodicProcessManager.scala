@@ -45,6 +45,7 @@ object PeriodicProcessManager {
     val jarManager = FlinkJarManager(flinkConfig, periodicBatchConfig, modelData, enrichDeploymentWithJarDataFactory(originalConfig))
     val service = new PeriodicProcessService(delegate, jarManager, scheduledProcessesRepository, listener, additionalDeploymentDataProvider, clock)
     system.actorOf(DeploymentActor.props(service, periodicBatchConfig.deployInterval))
+    system.actorOf(RescheduleFinishedActor.props(service, periodicBatchConfig.rescheduleCheckInterval))
 
     val toClose = () => {
       Await.ready(system.terminate(), 10 seconds)
