@@ -3,9 +3,9 @@ import React, {useMemo} from "react"
 import {useSelector} from "react-redux"
 import {ToolbarsSide} from "../../reducers/toolbars"
 import {Toolbar} from "../toolbarComponents/toolbar"
-import {ToolbarsConfig} from "./defaultToolbarsConfig"
+import {ToolbarsConfig} from "./types"
 import {ToolbarSelector} from "./ToolbarSelector"
-import {getToolbarsConfig} from "./selectors/toolbarsConfig"
+import {getToolbarsConfig} from "../../reducers/selectors/toolbars"
 
 const parseCollection = (collection: ToolbarsConfig): Toolbar[] => uniqBy<Toolbar>(
   flatMap(

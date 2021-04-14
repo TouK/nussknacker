@@ -1,15 +1,8 @@
 /* eslint-disable i18next/no-literal-string */
 import {ToolbarsSide} from "../../reducers/toolbars"
 import {ButtonsVariant} from "../toolbarComponents/ToolbarButtons"
-import {BuiltinButtonTypes, ToolbarButton} from "./buttons"
-
-export interface ToolbarConfig {
-  id: string,
-  buttons?: ToolbarButton[],
-  buttonsVariant?: ButtonsVariant,
-}
-
-export type ToolbarsConfig = Partial<Record<ToolbarsSide, ToolbarConfig[]>>
+import {BuiltinButtonTypes} from "./buttons"
+import {ToolbarsConfig} from "./types"
 
 export const defaultToolbarsConfig: ToolbarsConfig = {
   [ToolbarsSide.TopRight]: [
