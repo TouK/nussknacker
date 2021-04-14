@@ -3,18 +3,18 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.server.{Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
+import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, GlobalPermission, LoggedUser, Permission}
 
 import scala.concurrent.ExecutionContext
 
-class UserResources(typesForCategories: ProcessTypesForCategories)(implicit ec: ExecutionContext) extends Directives with FailFastCirceSupport with RouteWithUser {
+class UserResources(processCategoryService: ProcessCategoryService)(implicit ec: ExecutionContext) extends Directives with FailFastCirceSupport with RouteWithUser {
   def securedRoute(implicit user: LoggedUser): Route =
     path("user") {
       get {
         complete {
-          DisplayableUser(user, typesForCategories.getAllCategories)
+          DisplayableUser(user, processCategoryService.getAllCategories)
         }
       }
     }

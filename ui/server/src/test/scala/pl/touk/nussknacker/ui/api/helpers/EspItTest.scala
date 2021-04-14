@@ -57,7 +57,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   val actionRepository = newActionProcessRepository(db)
   val processActivityRepository = newProcessActivityRepository(db)
 
-  val typesForCategories = new ProcessTypesForCategories(testConfig)
+  val processCategoryService = new ConfigProcessCategoryService(testConfig)
 
   val existingProcessingType = "streaming"
 
@@ -108,7 +108,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   val authenticationConfig = DefaultAuthenticationConfiguration.create(testConfig)
   val analyticsConfig = AnalyticsConfig(testConfig)
 
-  val usersRoute = new UserResources(typesForCategories)
+  val usersRoute = new UserResources(processCategoryService)
   val settingsRoute = new SettingsResources(featureTogglesConfig, typeToConfig, authenticationConfig, analyticsConfig)
 
   val processesExportResources = new ProcessesExportResources(fetchingProcessRepository, processActivityRepository, processResolving)
@@ -118,7 +118,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     modelDataProvider = mapProcessingTypeDataProvider(existingProcessingType -> processingTypeConfig.toModelData),
     processingTypeDataProvider = mapProcessingTypeDataProvider(existingProcessingType -> ProcessingTypeData.createProcessingTypeData(processManagerProvider, processingTypeConfig)),
     subprocessRepository,
-    typesForCategories)
+    processCategoryService)
 
   val processesRouteWithAllPermissions: Route = withAllPermissions(processesRoute)
 
@@ -126,7 +126,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   protected def createDBProcessService(managerActor: ActorRef): DBProcessService =
     new DBProcessService(
-      managerActor, time.Duration.ofMinutes(1), newProcessPreparer, typesForCategories, processResolving,
+      managerActor, time.Duration.ofMinutes(1), newProcessPreparer, processCategoryService, processResolving,
       repositoryManager, fetchingProcessRepository, actionRepository, writeProcessRepository
     )
 

@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.Subproces
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.ui.definition.additionalproperty.{AdditionalPropertyValidatorDeterminerChain, UiAdditionalPropertyEditorDeterminer}
 import pl.touk.nussknacker.ui.definition.defaults.{DefaultValueDeterminerChain, ParamDefaultValueConfig}
-import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
+import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -35,7 +35,7 @@ object UIProcessObjectsFactory {
                               user: LoggedUser,
                               subprocessesDetails: Set[SubprocessDetails],
                               isSubprocess: Boolean,
-                              typesForCategories: ProcessTypesForCategories): UIProcessObjects = {
+                              processCategoryService: ProcessCategoryService): UIProcessObjects = {
     val processConfig = modelDataForType.processConfig
 
     val chosenProcessDefinition: ProcessDefinition[ObjectDefinition] = modelDataForType.processDefinition
@@ -73,7 +73,7 @@ object UIProcessObjectsFactory {
         defaultsStrategy = defaultParametersFactory,
         nodesConfig = finalNodesConfig,
         nodeCategoryMapping = nodeCategoryMapping,
-        typesForCategories = typesForCategories,
+        processCategoryService = processCategoryService,
         sinkAdditionalData = sinkAdditionalData,
         customTransformerAdditionalData = customTransformerAdditionalData
       ),

@@ -11,12 +11,12 @@ import pl.touk.nussknacker.restmodel.definition.{NodeEdges, NodeGroup, NodeTypeI
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType._
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions}
 import pl.touk.nussknacker.ui.definition.defaults.{DefaultValueDeterminerChain, ParamDefaultValueConfig}
-import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
+import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions {
 
-  private val processTypesForCategories = new ProcessTypesForCategories(ConfigWithScalaVersion.config)
+  private val processCategoryService = new ConfigProcessCategoryService(ConfigWithScalaVersion.config)
 
   test("return groups sorted in order: inputs, base, other, outputs and then sorted by name within group") {
 
@@ -134,7 +134,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
       defaultsStrategy = DefaultValueDeterminerChain(ParamDefaultValueConfig(Map())),
       nodesConfig = nodesConfig,
       nodeCategoryMapping = nodeCategoryMapping,
-      typesForCategories = processTypesForCategories,
+      processCategoryService = processCategoryService,
       sinkAdditionalData = processDefinition.sinkFactories.mapValues(_._2),
       customTransformerAdditionalData = processDefinition.customStreamTransformers.mapValues(_._2)
     )
@@ -152,7 +152,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
       defaultsStrategy = DefaultValueDeterminerChain(ParamDefaultValueConfig(Map())),
       nodesConfig = Map(),
       nodeCategoryMapping =  Map(),
-      typesForCategories = processTypesForCategories,
+      processCategoryService = processCategoryService,
       sinkAdditionalData = processDefinition.sinkFactories.mapValues(_._2),
       customTransformerAdditionalData = processDefinition.customStreamTransformers.mapValues(_._2)
     )

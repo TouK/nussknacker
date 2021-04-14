@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.MockProcessManager
-import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
+import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import scala.concurrent.Future
@@ -76,7 +76,7 @@ class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
       TestFactory.user("userId"),
       Set(),
       false,
-      new ProcessTypesForCategories(ConfigWithScalaVersion.config)
+      new ConfigProcessCategoryService(ConfigWithScalaVersion.config)
     )
 
     processObjects.processDefinition.services("enricher").parameters.map(p => (p.name, p.editor)).toMap shouldBe Map(
@@ -102,7 +102,7 @@ class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
 
     val processObjects =
       UIProcessObjectsFactory.prepareUIProcessObjects(model, mockProcessManager, TestFactory.user("userId"), Set(), false,
-        new ProcessTypesForCategories(ConfigWithScalaVersion.config))
+        new ConfigProcessCategoryService(ConfigWithScalaVersion.config))
 
     processObjects.nodesToAdd.filter(_.name == "hiddenCategory") shouldBe empty
   }
@@ -118,7 +118,7 @@ class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
 
     val processObjects =
       UIProcessObjectsFactory.prepareUIProcessObjects(model, mockProcessManager, TestFactory.user("userId"), Set(), false,
-        new ProcessTypesForCategories(ConfigWithScalaVersion.config))
+        new ConfigProcessCategoryService(ConfigWithScalaVersion.config))
 
     val nodeGroups = processObjects.nodesToAdd.filter(_.name == "someCategory")
     nodeGroups should not be empty

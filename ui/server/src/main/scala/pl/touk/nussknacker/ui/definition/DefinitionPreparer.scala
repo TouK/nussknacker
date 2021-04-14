@@ -16,7 +16,7 @@ import pl.touk.nussknacker.restmodel.definition.{NodeEdges, NodeGroup, NodeToAdd
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.{FilterFalse, FilterTrue}
 import pl.touk.nussknacker.ui.definition.defaults.{ParameterDefaultValueDeterminer, UINodeDefinition}
-import pl.touk.nussknacker.ui.process.ProcessTypesForCategories
+import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -33,12 +33,12 @@ object DefinitionPreparer {
                         defaultsStrategy: ParameterDefaultValueDeterminer,
                         nodesConfig: Map[String, SingleNodeConfig],
                         nodeCategoryMapping: Map[String, Option[String]],
-                        typesForCategories: ProcessTypesForCategories,
+                        processCategoryService: ProcessCategoryService,
                         sinkAdditionalData: Map[String, SinkAdditionalData],
                         customTransformerAdditionalData: Map[String, CustomTransformerAdditionalData]
                        ): List[NodeGroup] = {
     val evaluator = new EvaluatedParameterPreparer(defaultsStrategy)
-    val readCategories = typesForCategories.getAllCategories.filter(user.can(_, Read))
+    val readCategories = processCategoryService.getAllCategories.filter(user.can(_, Read))
 
     def filterCategories(objectDefinition: UIObjectDefinition): List[String] = readCategories.intersect(objectDefinition.categories)
 
