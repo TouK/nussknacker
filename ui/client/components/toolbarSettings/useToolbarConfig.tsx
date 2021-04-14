@@ -17,10 +17,11 @@ const parseCollection = (collection: ToolbarsConfig): Toolbar[] => uniqBy<Toolba
   config => config.id,
 )
 
-export function useToolbarConfig(): Toolbar[] {
-  const toolbarsCollection = useSelector(getToolbarsConfig)
-  return useMemo(
+export function useToolbarConfig(): [Toolbar[], string] {
+  const {id, ...toolbarsCollection} = useSelector(getToolbarsConfig)
+  const toolbars = useMemo(
     () => parseCollection(toolbarsCollection),
     [toolbarsCollection],
   )
+  return [toolbars, id]
 }

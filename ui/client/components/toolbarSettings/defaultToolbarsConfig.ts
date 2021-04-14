@@ -1,10 +1,12 @@
 /* eslint-disable i18next/no-literal-string */
 import {ToolbarsSide} from "../../reducers/toolbars"
+import {WithId} from "../../types/common"
 import {ButtonsVariant} from "../toolbarComponents/ToolbarButtons"
 import {BuiltinButtonTypes} from "./buttons"
 import {ToolbarsConfig} from "./types"
 
-export const defaultToolbarsConfig: ToolbarsConfig = {
+export const defaultToolbarsConfig: WithId<ToolbarsConfig> = {
+  id: "random-string",
   [ToolbarsSide.TopRight]: [
     {
       id: "PROCESS-INFO",

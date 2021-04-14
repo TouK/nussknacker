@@ -1,9 +1,11 @@
 import {defaultToolbarsConfig} from "../../components/toolbarSettings/defaultToolbarsConfig"
 import {RootState} from "../index"
-import {ToolbarsSide, ToolbarsState} from "../toolbars"
+import {ToolbarsSide, ToolbarsStates} from "../toolbars"
 import {createSelector} from "reselect"
 
-export const getToolbars = (state: RootState): ToolbarsState => state.toolbars
+const getToolbarsState = (state: RootState): ToolbarsStates => state.toolbars || {}
+export const getToolbars = createSelector(getToolbarsState, t => t[`#${t.currentConfigId}`] || {})
+export const getToolbarsInitData = createSelector(getToolbars, t => t.initData || [])
 export const getPositions = createSelector(getToolbars, t => t.positions || {})
 
 export const getNodeToolbox = createSelector(getToolbars, t => t.nodeToolbox)
