@@ -9,9 +9,11 @@ interface Props {
   deploy?: boolean,
 }
 
-export function CapabilitiesToolbarButton(props: ToolbarButtonProps & Props): JSX.Element | null {
+export function CapabilitiesToolbarButton({deploy, change, write, ...props}: ToolbarButtonProps & Props): JSX.Element | null {
   const capabilities = useSelector(getCapabilities)
-  if (Object.keys(capabilities).some(key => props[key] && !capabilities[key])) {
+  const checks = {deploy, change, write}
+
+  if (Object.keys(capabilities).some(key => checks[key] && !capabilities[key])) {
     return null
   }
 
