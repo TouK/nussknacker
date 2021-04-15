@@ -5,6 +5,8 @@ import sbt.{Def, _}
 import sbtassembly.AssemblyPlugin.autoImport.assembly
 import sbtassembly.MergeStrategy
 import ReleaseTransformations._
+import pl.project13.scala.sbt.JmhPlugin
+import pl.project13.scala.sbt.JmhPlugin._
 
 import scala.util.Try
 
@@ -612,7 +614,11 @@ lazy val benchmarks = (project in engine("benchmarks")).
         "org.apache.flink" %% "flink-streaming-scala" % flinkV,
         "org.apache.flink" %% "flink-runtime" % flinkV
       )
-    }
+    },
+    // To avoid Intellij message that jmh generated classes are shared between main and test
+    classDirectory in Jmh := (classDirectory in Test).value,
+    dependencyClasspath in Jmh := (dependencyClasspath in Test).value,
+    generateJmhSourcesAndResources in Jmh := (generateJmhSourcesAndResources in Jmh).dependsOn(compile in Test).value,
   ).dependsOn(interpreter, avroFlinkUtil, flinkModelUtil, process, testUtil % "test")
 
 
