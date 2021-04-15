@@ -173,7 +173,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     }.sequence
 
     val typedObject = compilationResult.map { fieldsComp =>
-      TypedObjectTypingResult(fieldsComp.map(f => (f.fieldName, f.typingResult)).toMap)
+      TypedObjectTypingResult(fieldsComp.map(f => (f.fieldName, f.typingResult)))
     }.valueOr(_ => Unknown)
 
     val fieldsTypingInfo = compilationResult.map { compilations =>

@@ -53,7 +53,7 @@ class TypingResultAwareTypeInformationDetection(customisation:
 
   def forContext(validationContext: ValidationContext): TypeInformation[Context] = {
     val id = TypeInformation.of(classOf[String])
-    val variables = forType(TypedObjectTypingResult(validationContext.localVariables, Typed.typedClass[Map[String, AnyRef]]))
+    val variables = forType(TypedObjectTypingResult(validationContext.localVariables.toList, Typed.typedClass[Map[String, AnyRef]]))
     val parentCtx = new OptionTypeInfo[Context, Option[Context]](validationContext.parent.map(forContext).getOrElse(FixedValueSerializers.nullValueTypeInfo))
 
     val typeInfos = List(id, variables, parentCtx)

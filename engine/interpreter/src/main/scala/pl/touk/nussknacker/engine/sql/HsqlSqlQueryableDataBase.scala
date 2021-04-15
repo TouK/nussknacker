@@ -168,7 +168,7 @@ private object HsqlSqlQueryableDataBase extends LazyLogging {
           Typed[Any]
       }
       name -> typ
-    }.toMap
+    }.toList
 
     TypedObjectDefinition(cols)
   }

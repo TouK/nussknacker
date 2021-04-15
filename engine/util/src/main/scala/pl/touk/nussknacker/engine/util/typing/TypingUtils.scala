@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.util.typing
 
 import java.util
-
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
@@ -16,7 +15,7 @@ object TypingUtils {
 
   def typeMapDefinition(definition: Map[String, _]): TypingResult = {
     //we force use of Map and not some implicit variants (MapLike) to avoid serialization problems...
-    TypedObjectTypingResult(Map(definition.mapValues(typedMapDefinitionFromParameters).toList: _*))
+    TypedObjectTypingResult(definition.mapValues(typedMapDefinitionFromParameters).toList)
   }
 
   private def typedMapDefinitionFromParameters(definition: Any): TypingResult = definition match {

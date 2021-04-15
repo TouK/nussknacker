@@ -78,20 +78,30 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
   }
 
   private def unionOfFields(l: TypedObjectTypingResult, r: TypedObjectTypingResult)
-                           (implicit numberPromotionStrategy: NumberTypesPromotionStrategy) = {
-    (l.fields.toList ++ r.fields.toList).groupBy(_._1).mapValues(_.map(_._2)).flatMap {
-      case (fieldName, leftType :: rightType :: Nil) =>
-        val common = commonSupertype(leftType, rightType)
-        if (common == Typed.empty)
-          None // fields type collision - skipping this field
-        else
-          Some(fieldName -> common)
-      case (fieldName, singleType :: Nil) =>
-        Some(fieldName -> singleType)
-      case (_, longerList) =>
-        throw new IllegalArgumentException("Computing union of more than two fields: " + longerList) // shouldn't happen
+                           (implicit numberPromotionStrategy: NumberTypesPromotionStrategy): List[(String, TypingResult)] = {
+    val leftFields = l.fields.toList
+    val rightFields = r.fields.toList
+    val leftFieldNames = leftFields.map(_._1)
+    val (rightIntersect, rightDoesNotIntersect) = rightFields.partition {
+      case (rightFieldName, _) => leftFieldNames.contains(rightFieldName)
     }
-  }
+
+    val leftFieldsWithRightCommonFields = leftFields.map { case (name, leftType) =>
+      name ->  (leftType :: rightIntersect.filter(name == _._1).map(_._2))
+    }.flatMap {
+      case (fieldName, leftType :: Nil) =>
+        fieldName -> leftType :: Nil
+      case (fieldName, leftType :: rightType :: Nil) if leftType == rightType =>
+        fieldName -> leftType :: Nil
+      case (fieldName, leftType :: rightType :: Nil) =>
+        val leastUpperBound = commonSupertype(leftType, rightType)
+        if (leastUpperBound == Typed.empty)
+          Nil // fields type collision - skipping this field
+        else
+          (fieldName, leastUpperBound) :: Nil
+    }
+    leftFieldsWithRightCommonFields ++ rightDoesNotIntersect
+}
 
   // This implementation is because TypedObjectTypingResult has underlying TypedClass instead of TypingResult
   private def klassCommonSupertypeReturningTypedClass(left: TypedClass, right: TypedClass)

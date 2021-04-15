@@ -22,10 +22,12 @@ case object UnionTransformer extends UnionTransformer(None) {
                                  (inputContexts: Map[String, ValidationContext])
                                  (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] = {
     ContextTransformation.findUniqueParentContext(inputContexts).map { parent =>
-      val newType = TypedObjectTypingResult(inputContexts.map {
-        case (branchId, _) =>
-          ContextTransformation.sanitizeBranchName(branchId) -> valueByBranchId(branchId).returnType
-      } + (UnionTransformer.KeyField -> Typed[String]))
+      val newType = TypedObjectTypingResult(
+        (UnionTransformer.KeyField -> Typed[String]) :: inputContexts.map {
+          case (branchId, _) =>
+            ContextTransformation.sanitizeBranchName(branchId) -> valueByBranchId(branchId).returnType
+        }.toList
+      )
       ValidationContext(Map(variableName -> newType), Map.empty, parent)
     }
   }
