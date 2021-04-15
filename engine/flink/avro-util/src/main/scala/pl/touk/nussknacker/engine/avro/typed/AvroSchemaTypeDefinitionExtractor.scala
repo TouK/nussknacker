@@ -31,7 +31,7 @@ class AvroSchemaTypeDefinitionExtractor(skipOptionalFields: Boolean) {
           //Field is marked as optional when field has default value
           .filterNot(field => skipOptionalFields && field.hasDefaultValue)
           .map(field => field.name() -> typeDefinition(field.schema(), possibleTypes))
-          .toMap
+          .toList
 
         Typed(possibleTypes.map(pt => TypedObjectTypingResult(fields, pt)))
       }

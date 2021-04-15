@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.typed.TypeEncoders.typeField
 import pl.touk.nussknacker.engine.api.typed.TypingType.{TypingType, decoder}
 import pl.touk.nussknacker.engine.api.typed.typing._
 
+import scala.collection.immutable.ListMap
 import scala.util.{Failure, Success, Try}
 
 //TODO: refactor way of encoding to easier handle decoding.
@@ -101,7 +102,7 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
 
   private def typedObjectTypingResult(obj: HCursor): Decoder.Result[TypingResult] = for {
     valueClass <- typedClass(obj).right
-    fields <- obj.downField("fields").as[Map[String, TypingResult]].right
+    fields <- obj.downField("fields").as[ListMap[String, TypingResult]].right
     additional <- obj.downField("additionalInfo").as[Option[Map[String, AdditionalDataValue]]].right.map(_.getOrElse(Map.empty)).right
   } yield TypedObjectTypingResult(fields, valueClass, additional)
 
