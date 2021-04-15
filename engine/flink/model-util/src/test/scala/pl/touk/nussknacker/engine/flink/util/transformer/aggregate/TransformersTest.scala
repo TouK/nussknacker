@@ -33,6 +33,7 @@ import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 import java.util.Arrays.asList
 import scala.collection.JavaConverters._
+import scala.collection.immutable.ListMap
 
 class TransformersTest extends FunSuite with FlinkSpec with Matchers {
 
@@ -45,7 +46,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers {
     validateOk("#AGG.set","#input.str",  Typed.fromDetailedType[java.util.Set[String]])
     validateOk("#AGG.map({f1: #AGG.sum, f2: #AGG.set})",
       "{f1: #input.eId, f2: #input.str}",
-      TypedObjectTypingResult(Map("f1" -> Typed[java.lang.Long], "f2" -> Typed.fromDetailedType[java.util.Set[String]])))
+      TypedObjectTypingResult(ListMap("f1" -> Typed[java.lang.Long], "f2" -> Typed.fromDetailedType[java.util.Set[String]])))
 
     validateError("#AGG.sum","#input.str", "Invalid aggregate type: String, should be: Number")
     validateError("#AGG.map({f1: #AGG.set, f2: #AGG.set})","{f1: #input.str}", "Fields do not match, aggregateBy: f1, aggregator: f1, f2")

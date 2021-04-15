@@ -23,6 +23,7 @@ import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.variables.MetaVariables
 
 import scala.collection.Set
+import scala.collection.immutable.ListMap
 
 
 class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues {
@@ -239,7 +240,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
       case Valid(_) =>
     }
     validationResult.variablesInNodes("stringService")("outPutVar") shouldBe TypedObjectTypingResult(
-      Map("branch2" -> Typed[Int], "branch1" -> Typed[String]))
+      ListMap("branch2" -> Typed[Int], "branch1" -> Typed[String]))
   }
 
   test("invalid process using context transformation api - union") {
@@ -280,7 +281,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
       ))
     val validationResult = validator.validate(process)
 
-    validationResult.variablesInNodes("stringService")("outPutVar") shouldBe TypedObjectTypingResult(Map("branch1" -> Typed[String]))
+    validationResult.variablesInNodes("stringService")("outPutVar") shouldBe TypedObjectTypingResult(ListMap("branch1" -> Typed[String]))
     val errors = validationResult.result.swap.toList.flatMap(_.toList).map(_.nodeIds)
     errors shouldBe List(Set("invalidFilter"))
 

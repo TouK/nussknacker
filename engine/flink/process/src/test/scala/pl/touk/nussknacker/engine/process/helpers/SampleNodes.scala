@@ -341,7 +341,7 @@ object SampleNodes {
       parameters
         .get("definition")
         .flatMap(_._2)
-        .map(definition => TypedObjectTypingResult(definition.asInstanceOf[java.util.List[String]].asScala.map(_ -> Typed[String]).toMap))
+        .map(definition => TypedObjectTypingResult(definition.asInstanceOf[java.util.List[String]].asScala.map(_ -> Typed[String]).toList))
         .map(param => Typed.genericTypeClass[java.util.List[_]](List(param)))
         .getOrElse(Unknown)
     }
@@ -545,7 +545,7 @@ object SampleNodes {
     private def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
       dependencies.collectFirst { case OutputVariableNameValue(name) => name } match {
         case Some(name) =>
-          val result = TypedObjectTypingResult(rest.toMap.mapValuesNow(_.returnType))
+          val result = TypedObjectTypingResult(rest.map { case (k, v) => k -> v.returnType })
           context.withVariable(OutputVar.customNode(name), result).fold(
             errors => FinalResults(context, errors.toList),
             FinalResults(_))

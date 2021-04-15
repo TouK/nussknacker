@@ -31,6 +31,7 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
+import scala.collection.immutable.ListMap
 import scala.reflect.ClassTag
 
 class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSourceSpecMixin {
@@ -136,7 +137,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
 
     result.errors shouldBe Nil
     result.outputContext shouldBe ValidationContext(Map(VariableConstants.InputVariableName -> TypedObjectTypingResult(
-      Map(
+      ListMap(
         "first" -> Typed[CharSequence],
         "middle" -> Typed[CharSequence],
         "last" -> Typed[CharSequence]
