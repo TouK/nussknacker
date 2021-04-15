@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 import scala.collection.JavaConverters._
+import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 
 object typing {
@@ -37,16 +38,21 @@ object typing {
   object TypedObjectTypingResult {
 
     def apply(definition: TypedObjectDefinition): TypedObjectTypingResult =
-    //we don't use mapValues here to avoid lazy evaluation that crashes during serialization...
       TypedObjectTypingResult(definition.fields.map { case (k, v) => (k, Typed(v))})
 
-    def apply(fields: Map[String, TypingResult]): TypedObjectTypingResult =
-      TypedObjectTypingResult(fields, TypedClass(classOf[java.util.Map[_, _]], List(Typed[String], Unknown)))
+    def apply(fields: List[(String, TypingResult)]): TypedObjectTypingResult =
+      TypedObjectTypingResult(ListMap(fields: _*))
 
+    def apply(fields: List[(String, TypingResult)], objType: TypedClass): TypedObjectTypingResult =
+      TypedObjectTypingResult(ListMap(fields: _*), objType)
+
+    def apply(fields: ListMap[String, TypingResult]): TypedObjectTypingResult =
+      TypedObjectTypingResult(fields, TypedClass(classOf[java.util.Map[_, _]], List(Typed[String], Unknown)))
   }
 
-  case class TypedObjectTypingResult(fields: Map[String, TypingResult],
-                                     objType: TypedClass, additionalInfo: Map[String, AdditionalDataValue] = Map.empty) extends SingleTypingResult {
+  case class TypedObjectTypingResult(fields: ListMap[String, TypingResult],
+                                     objType: TypedClass,
+                                     additionalInfo: Map[String, AdditionalDataValue] = Map.empty) extends SingleTypingResult {
 
     override def display: String = fields.map { case (name, typ) => s"$name: ${typ.display}"}.mkString("{", ", ", "}")
 
@@ -161,7 +167,7 @@ object typing {
         case typedMap: TypedMap =>
           val fieldTypes = typedMap.asScala.map {
             case (k, v) => k -> fromInstance(v)
-          }.toMap
+          }.toList
           TypedObjectTypingResult(fieldTypes)
         case list: List[_] =>
           TypedClass(obj.getClass, List(unionOfElementTypes(list)))
