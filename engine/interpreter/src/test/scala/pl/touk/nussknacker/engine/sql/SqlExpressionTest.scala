@@ -17,13 +17,13 @@ class SqlExpressionTest extends FunSuite with Matchers with PatientScalaFutures 
 
   private val validationContext = ValidationContext(Map[String, TypingResult](
     "var" -> Typed[String],
-    "var1" -> TypedList(Map(
+    "var1" -> TypedList(List(
         "field1" -> Typed[String],
         "field2" -> Typed[java.lang.Long],
         "getField3" -> Typed[String],
         "localDateTimeField" -> Typed[LocalDateTime]
       )),
-    "var12" -> TypedList(Map(
+    "var12" -> TypedList(List(
         "field3" -> Typed[String],
         "field4" -> Typed[java.lang.Long],
         "isField5" -> Typed[Boolean],

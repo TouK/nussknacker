@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.sql.{Column, ColumnModel}
 
 class TypedMapColumnModelTest extends FunSuite with Matchers {
   test("create column model") {
-    val typingResult = TypedObjectTypingResult(Map("number" -> Typed[Int], "string" -> Typed[String]))
+    val typingResult = TypedObjectTypingResult(List("number" -> Typed[Int], "string" -> Typed[String]))
     val excpected = ColumnModel(List(Column("number", Numeric),Column("string", Varchar)))
     TypedMapColumnModel.create(typingResult) shouldEqual excpected
   }

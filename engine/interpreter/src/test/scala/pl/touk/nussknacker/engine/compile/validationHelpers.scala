@@ -71,7 +71,7 @@ object validationHelpers {
         .definedBy { context =>
           val newType = TypedObjectTypingResult((1 to numberOfFields).map { i =>
             s"field$i" -> Typed[String]
-          }.toMap)
+          }.toList)
           context.withVariable(variableName, newType, paramName = None)
         }
         .implementedBy(null)
@@ -91,7 +91,7 @@ object validationHelpers {
           val newType = TypedObjectTypingResult(contexts.toSeq.map {
             case (branchId, _) =>
               branchId -> valueByBranchId(branchId).returnType
-          }.toMap)
+          }.toList)
           Valid(ValidationContext(Map(variableName -> newType)))
         }
         .implementedBy(null)
@@ -117,10 +117,10 @@ object validationHelpers {
           } else {
             val mainBranchContext = mainBranches.head._2
 
-            val newType = TypedObjectTypingResult(joinedBranches.toSeq.map {
+            val newType = TypedObjectTypingResult(joinedBranches.toList.map {
               case (branchId, _) =>
                 branchId -> valueByBranchId(branchId).returnType
-            }.toMap)
+            })
 
             mainBranchContext.withVariable(variableName, newType, paramName = None)
           }
@@ -287,7 +287,7 @@ object validationHelpers {
     protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults
 
     protected def finalResult(context: ValidationContext, rest: List[(String, BaseDefinedParameter)], name: String)(implicit nodeId: NodeId): this.FinalResults = {
-      val result = TypedObjectTypingResult(rest.toMap.mapValues(_.returnType))
+      val result = TypedObjectTypingResult(rest.map { case (k, v) => k -> v.returnType })
       context.withVariable(name, result, paramName = None).fold(
         errors => FinalResults(context, errors.toList),
         FinalResults(_))
