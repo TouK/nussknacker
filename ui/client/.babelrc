@@ -49,7 +49,12 @@
     "development": {
       "plugins": [
         "react-refresh/babel",
-        "istanbul"
+        [
+          "istanbul",
+          {
+            "useInlineSourceMaps": false
+          }
+        ]
       ]
     }
   }
