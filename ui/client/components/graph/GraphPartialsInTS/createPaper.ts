@@ -8,6 +8,7 @@ function getPaper(opts: dia.Paper.Options, canWrite: boolean) {
   const paper = new joint.dia.Paper({
     ...opts,
     gridSize: 1,
+    clickThreshold: 2,
     async: false,
     snapLinks: {radius: 75},
     interactive: (cellView: dia.CellView) => {
