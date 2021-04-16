@@ -2,11 +2,11 @@ const seed = "creator"
 
 describe("Creator toolbar", () => {
   before(() => {
-    cy.deleteAllTestProcesses(seed)
+    cy.deleteAllTestProcesses({filter: seed})
   })
 
   after(() => {
-    cy.deleteAllTestProcesses(seed)
+    cy.deleteAllTestProcesses({filter: seed})
   })
 
   beforeEach(() => {
