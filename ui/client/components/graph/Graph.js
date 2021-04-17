@@ -4,12 +4,13 @@ import "jointjs/dist/joint.css"
 import _, {cloneDeep, defer} from "lodash"
 import PropTypes from "prop-types"
 import React from "react"
-import svgPanZoom from "svg-pan-zoom"
+import {PanZoomPlugin} from "./PanZoomPlugin"
 import {getProcessCategory, getSelectionState} from "../../reducers/selectors/graph"
 import {getLoggedUser, getProcessDefinitionData} from "../../reducers/selectors/settings"
 import "../../stylesheets/graph.styl"
 import "./svg-export/export.styl"
 import * as GraphUtils from "./GraphUtils"
+import {Events} from "./joint-events"
 import * as JointJsGraphUtils from "./JointJsGraphUtils"
 import EdgeDetailsModal from "./node-modal/EdgeDetailsModal"
 import NodeDetailsModal from "./node-modal/NodeDetailsModal"
@@ -35,7 +36,7 @@ export class Graph extends React.Component {
     super(props)
 
     this.graph = new joint.dia.Graph()
-    this.graph.on("remove", (e, f) => {
+    this.graph.on(Events.REMOVE, (e, f) => {
       if (e.isLink() && !this.redrawing) {
         this.props.actions.nodesDisconnected(e.attributes.source.id, e.attributes.target.id)
       }
@@ -58,12 +59,11 @@ export class Graph extends React.Component {
     this._prepareContentForExport()
 
     // event handlers binding below. order sometimes matters
-    this.panAndZoom = this.enablePanZoom()
+    this.panAndZoom = new PanZoomPlugin(this.processGraphPaper)
     this.changeNodeDetailsOnClick()
     this.hooverHandling()
-    this.cursorBehaviour()
     this.highlightNodes(this.props.processToDisplay, this.props.nodeToDisplay)
-    this.fitSmallAndLargeGraphs()
+    this.panAndZoom.fitSmallAndLargeGraphs()
   }
 
   canAddNode(node) {
@@ -114,7 +114,7 @@ export class Graph extends React.Component {
 
   forceLayout = () => {
     this.directedLayout()
-    defer(this.fitSmallAndLargeGraphs)
+    defer(this.panAndZoom.fitSmallAndLargeGraphs)
   }
 
   zoomIn() {
@@ -204,7 +204,8 @@ export class Graph extends React.Component {
     const selectedNodeIds = selectionState || []
 
     invalidNodeIds.forEach(id => selectedNodeIds.includes(id) ?
-      this.highlightNode(id, "node-focused-with-validation-error") : this.highlightNode(id, "node-validation-error"));
+      this.highlightNode(id, "node-focused-with-validation-error") :
+      this.highlightNode(id, "node-validation-error"));
 
     (groupingState || []).forEach(id => this.highlightNode(id, "node-grouping"))
     selectedNodeIds.forEach(id => {
@@ -250,47 +251,8 @@ export class Graph extends React.Component {
     }
   }
 
-  enablePanZoom() {
-    const paper = this.processGraphPaper
-
-    const panAndZoom = svgPanZoom(paper.svg, {
-      viewportSelector: ".svg-pan-zoom_viewport",
-      fit: false,
-      contain: false,
-      zoomScaleSensitivity: 0.4,
-      controlIconsEnabled: false,
-      panEnabled: false,
-      dblClickZoomEnabled: false,
-      minZoom: 0.05,
-      maxZoom: 5,
-    })
-
-    paper.on("blank:pointerdown", () => {
-      panAndZoom.enablePan()
-    })
-
-    paper.on("cell:pointerup blank:pointerup", () => {
-      panAndZoom.disablePan()
-    })
-
-    return panAndZoom
-  }
-
-  fitSmallAndLargeGraphs = () => {
-    const {panAndZoom} = this
-    if (!panAndZoom) {
-      return
-    }
-    panAndZoom.updateBBox()
-    panAndZoom.fit()
-    const {realZoom} = panAndZoom.getSizes()
-    const toZoomBy = realZoom > 1.2 ? 1 / realZoom : 0.8 //the bigger zoom, the further we get
-    panAndZoom.zoomBy(toZoomBy)
-    panAndZoom.center()
-  }
-
   changeNodeDetailsOnClick() {
-    this.processGraphPaper.on("cell:pointerdblclick", (cellView) => {
+    this.processGraphPaper.on(Events.CELL_POINTERDBLCLICK, (cellView) => {
       if (this.props.groupingState) {
         return
       }
@@ -308,7 +270,7 @@ export class Graph extends React.Component {
     })
 
     if (this.props.singleClickNodeDetailsEnabled) {
-      this.processGraphPaper.on("cell:pointerclick", (cellView, evt) => {
+      this.processGraphPaper.on(Events.CELL_POINTERCLICK, (cellView, evt) => {
 
         const nodeDataId = cellView.model.attributes.nodeData?.id
         if (!nodeDataId) {
@@ -335,7 +297,7 @@ export class Graph extends React.Component {
       })
     }
 
-    this.processGraphPaper.on("blank:pointerdown", (event) => {
+    this.processGraphPaper.on(Events.BLANK_POINTERDOWN, (event) => {
       if (!event.isPropagationStopped()) {
         if (this.props.fetchedProcessDetails != null) {
           this.props.actions.displayNodeDetails(this.props.fetchedProcessDetails.json.properties)
@@ -346,12 +308,12 @@ export class Graph extends React.Component {
   }
 
   hooverHandling() {
-    this.processGraphPaper.on("cell:mouseover", (cellView) => {
+    this.processGraphPaper.on(Events.CELL_MOUSEOVER, (cellView) => {
       const model = cellView.model
       this.showLabelOnHover(model)
       this.showBackgroundIcon(model)
     })
-    this.processGraphPaper.on("blank:mouseover", () => {
+    this.processGraphPaper.on(Events.BLANK_MOUSEOVER, () => {
       this.hideBackgroundsIcons()
     })
   }
@@ -383,21 +345,6 @@ export class Graph extends React.Component {
       el.toggleClass("forced-hover", false)
     })
   }
-
-  cursorBehaviour() {
-    this.processGraphPaper.on("blank:pointerdown", () => {
-      if (this.getEspGraphRef()) {
-        this.getEspGraphRef().style.cursor = "move"
-      }
-    })
-
-    this.processGraphPaper.on("blank:pointerup", () => {
-      if (this.getEspGraphRef()) {
-        this.getEspGraphRef().style.cursor = "auto"
-      }
-    })
-  }
-
   moveSelectedNodesRelatively(element, position) {
     const movedNodeId = element.id
     const nodeIdsToBeMoved = _.without(this.props.selectionState, movedNodeId)
@@ -411,7 +358,7 @@ export class Graph extends React.Component {
   }
 
   nodesMoving() {
-    this.graph.on("change:position", (element, position) => {
+    this.graph.on(Events.CHANGE_POSITION, (element, position) => {
       if (!this.redrawing && (this.props.selectionState || []).includes(element.id)) {
         this.moveSelectedNodesRelatively(element, position)
       }
