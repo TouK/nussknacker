@@ -1,4 +1,4 @@
-import {concat, sortBy, isEqual, reject, zipObject, omit, uniq} from "lodash"
+import {concat, sortBy, isEqual, reject, zipObject, omit, uniq, without, xor} from "lodash"
 import * as GraphUtils from "../../components/graph/GraphUtils"
 import NodeUtils from "../../components/graph/NodeUtils"
 import * as LayoutUtils from "../layoutUtils"
@@ -182,11 +182,13 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         ...state,
         processToDisplay: {
           ...state.processToDisplay,
-          nodes: state.processToDisplay.nodes.map(n => action.toNode.id !== n.id ? n : enrichNodeWithProcessDependentData(
-            n,
-            action.processDefinitionData,
-            newEdges,
-          )),
+          nodes: state.processToDisplay.nodes.map(n => action.toNode.id !== n.id ?
+            n :
+            enrichNodeWithProcessDependentData(
+              n,
+              action.processDefinitionData,
+              newEdges,
+            )),
           edges: newEdges,
         },
       }
@@ -282,7 +284,8 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
           ...state,
           processToDisplay: NodeUtils.createGroup(state.processToDisplay, state.groupingState),
           layout: [],
-        } : state
+        } :
+        state
       return omit(withUpdatedGroups, STATE_PROPERTY_NAME)
     }
     case "CANCEL_GROUPING": {
@@ -318,14 +321,19 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
     case "EXPAND_SELECTION": {
       return {
         ...state,
-        selectionState: uniq([...state.selectionState, action.nodeId]),
+        selectionState: uniq([...state.selectionState, ...action.nodeIds]),
+      }
+    }
+    case "TOGGLE_SELECTION": {
+      return {
+        ...state,
+        selectionState: xor(state.selectionState, action.nodeIds),
       }
     }
     case "RESET_SELECTION": {
-      const selectionState = action.nodeId ? [action.nodeId] : []
       return {
         ...state,
-        selectionState,
+        selectionState: action.nodeIds ? action.nodeIds : [],
       }
     }
     case "BUSINESS_VIEW_CHANGED": {

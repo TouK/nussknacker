@@ -56,6 +56,8 @@ export class Graph extends React.Component {
     this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.processCounts, this.props.processDefinitionData, this.props.expandedGroups)
     this.processGraphPaper.unfreeze()
     this._prepareContentForExport()
+
+    // event handlers binding below. order sometimes matters
     this.panAndZoom = this.enablePanZoom()
     this.changeNodeDetailsOnClick()
     this.hooverHandling()
@@ -315,8 +317,8 @@ export class Graph extends React.Component {
 
         this.props.actions.displayNodeDetails(this.findNodeById(nodeDataId))
 
-        if (evt.ctrlKey || evt.metaKey) {
-          this.props.actions.expandSelection(nodeDataId)
+        if (evt.shiftKey || evt.ctrlKey || evt.metaKey) {
+          this.props.actions.toggleSelection(nodeDataId)
         } else {
           this.props.actions.resetSelection(nodeDataId)
         }
@@ -333,10 +335,12 @@ export class Graph extends React.Component {
       })
     }
 
-    this.processGraphPaper.on("blank:pointerdown", () => {
-      if (this.props.fetchedProcessDetails != null) {
-        this.props.actions.displayNodeDetails(this.props.fetchedProcessDetails.json.properties)
-        this.props.actions.resetSelection()
+    this.processGraphPaper.on("blank:pointerdown", (event) => {
+      if (!event.isPropagationStopped()) {
+        if (this.props.fetchedProcessDetails != null) {
+          this.props.actions.displayNodeDetails(this.props.fetchedProcessDetails.json.properties)
+          this.props.actions.resetSelection()
+        }
       }
     })
   }
