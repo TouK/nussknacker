@@ -36,7 +36,7 @@ export class Graph extends React.Component {
 
     this.graph = new joint.dia.Graph()
     this.graph.on("remove", (e, f) => {
-      if (e.isLink && !this.redrawing) {
+      if (e.isLink() && !this.redrawing) {
         this.props.actions.nodesDisconnected(e.attributes.source.id, e.attributes.target.id)
       }
     })
