@@ -50,6 +50,7 @@ object typing {
       TypedObjectTypingResult(fields, TypedClass(classOf[java.util.Map[_, _]], List(Typed[String], Unknown)))
   }
 
+  // Warning, fields are kept in list-like map: 1) order is important 2) lookup has O(n) complexity
   case class TypedObjectTypingResult(fields: ListMap[String, TypingResult],
                                      objType: TypedClass,
                                      additionalInfo: Map[String, AdditionalDataValue] = Map.empty) extends SingleTypingResult {
