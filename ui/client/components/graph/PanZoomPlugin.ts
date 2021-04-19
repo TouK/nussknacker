@@ -1,32 +1,10 @@
-import {css} from "emotion"
 import {dia} from "jointjs"
 import svgPanZoom from "svg-pan-zoom"
+import {CursorMask} from "./CursorMask"
 import {Events} from "./joint-events"
 
 type EventData = {panStart?: {x: number, y: number}}
 type Event = JQuery.TriggeredEvent<any, EventData>
-
-class CursorMask {
-  enable = () => document.body.appendChild(this.cursorMask)
-
-  disable = () => this.cursorMask.parentElement?.removeChild(this.cursorMask)
-
-  private init = (): HTMLElement => {
-    const cursorMask = document.createElement("DIV")
-    cursorMask.className = css({
-      cursor: "move",
-      position: "absolute",
-      zIndex: 100000,
-      top: 0,
-      bottom: 0,
-      left: 0,
-      right: 0,
-    })
-    return cursorMask
-  }
-
-  private cursorMask = this.init()
-}
 
 export class PanZoomPlugin {
   private cursorMask: CursorMask
