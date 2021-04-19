@@ -1,17 +1,16 @@
 import React from "react"
-import {RootState} from "../../../../reducers/index"
-import {connect} from "react-redux"
-import {finishGrouping} from "../../../../actions/nk/groups"
+import {useDispatch, useSelector} from "react-redux"
+import {finishGrouping, groupSelected} from "../../../../actions/nk/groups"
 import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
-import {getGroupingState} from "../../../../reducers/selectors/graph"
+import {getGraph, getGroupingState} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/group-finish.svg"
+import {canGroupSelection} from "../../../../reducers/graph/utils"
 
-type Props = StateProps
-
-function GroupFinishButton(props: Props) {
-  const {groupingState, finishGrouping} = props
+export function GroupFinishButton(): JSX.Element {
+  const groupingState = useSelector(getGroupingState)
   const {t} = useTranslation()
+  const dispatch = useDispatch()
 
   return (
     <CapabilitiesToolbarButton
@@ -19,19 +18,25 @@ function GroupFinishButton(props: Props) {
       name={t("panels.actions.group-finish.button", "finish")}
       icon={<Icon/>}
       disabled={(groupingState || []).length <= 1}
-      onClick={finishGrouping}
+      onClick={() => dispatch(finishGrouping())}
     />
   )
 }
 
-const mapState = (state: RootState) => ({
-  groupingState: getGroupingState(state),
-})
+export function GroupSelectedButton(): JSX.Element {
+  const graph = useSelector(getGraph)
+  const {t} = useTranslation()
+  const dispatch = useDispatch()
 
-const mapDispatch = {
-  finishGrouping,
+  return (
+    <CapabilitiesToolbarButton
+      write
+      name={t("panels.actions.group-selected.button", "group")}
+      icon={<Icon/>}
+      disabled={!canGroupSelection(graph)}
+      onClick={() => dispatch(groupSelected())}
+    />
+  )
 }
 
-type StateProps = typeof mapDispatch & ReturnType<typeof mapState>
-
-export default connect(mapState, mapDispatch)(GroupFinishButton)
+export default GroupFinishButton

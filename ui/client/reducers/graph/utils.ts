@@ -1,10 +1,10 @@
-import {ExpressionLang} from "../../components/graph/node-modal/editors/expression/types"
-import {GraphState} from "./types"
-import {NodeType, NodeId, Process, GroupType, Edge, EdgeType, ProcessDefinitionData} from "../../types"
-import NodeUtils from "../../components/graph/NodeUtils"
-import {map, zipWith, omit, cloneDeep, reject} from "lodash"
-import {Layout, NodesWithPositions, NodePosition} from "../../actions/nk"
+import {cloneDeep, isArray, map, omit, reject, without, zipWith} from "lodash"
+import {Layout, NodePosition, NodesWithPositions} from "../../actions/nk"
 import ProcessUtils from "../../common/ProcessUtils"
+import {ExpressionLang} from "../../components/graph/node-modal/editors/expression/types"
+import NodeUtils from "../../components/graph/NodeUtils"
+import {Edge, EdgeType, GroupType, NodeId, NodeType, Process, ProcessDefinitionData} from "../../types"
+import {GraphState} from "./types"
 
 function isBetween(id1: NodeId, id2: NodeId): (e: Edge) => boolean {
   return ({from, to}) => from == id1 && to == id2 || from == id2 && to == id1
@@ -14,6 +14,33 @@ function canGroup(state: GraphState, newNode: NodeType | GroupType): boolean {
   const {groupingState, processToDisplay: {edges}} = state
   const isGroup = NodeUtils.nodeIsGroup(newNode)
   return !isGroup && groupingState.length === 0 || !!groupingState.find(id => edges.find(isBetween(id, newNode.id)))
+}
+
+function isConnectedTo(idOrArray: NodeId | NodeId[]) {
+  return (edge: Edge) => isArray(idOrArray) ?
+    idOrArray.find(i => isConnectedTo(i)(edge)) :
+    edge.from === idOrArray || edge.to === idOrArray
+}
+
+function getSelectedNodes(state: GraphState): NodeType[] {
+  const {processToDisplay, selectionState = []} = state
+  return NodeUtils.nodesFromProcess(processToDisplay).filter(n => selectionState.includes(n.id))
+}
+
+export function getSelectedGroups(state: GraphState): GroupType[] {
+  return getSelectedNodes(state).filter(NodeUtils.nodeIsGroup)
+}
+
+export function canGroupSelection(state: GraphState): boolean {
+  const {processToDisplay: {edges}, selectionState = []} = state
+  return !getSelectedGroups(state).length && getSelectedNodes(state)
+    .filter(n => !NodeUtils.nodeIsGroup(n)) // no grouping on group
+    .map(({id}) => edges
+      .filter(isConnectedTo(id))
+      .filter(isConnectedTo(without(selectionState, id)))
+      .length) // count node connections
+    .filter(l => l < 2) // count side nodes
+    .length === 2 // only two side nodes for connected group
 }
 
 export function displayOrGroup(state: GraphState, node: NodeType, readonly = false): GraphState {

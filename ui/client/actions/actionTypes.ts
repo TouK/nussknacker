@@ -9,6 +9,8 @@ export type ActionTypes =
   | "START_GROUPING"
   | "CANCEL_GROUPING"
   | "FINISH_GROUPING"
+  | "GROUP_SELECTED"
+  | "UNGROUP_SELECTED"
   | "ADD_NODE_TO_GROUP"
   | "UNGROUP"
   | "EXPAND_GROUP"

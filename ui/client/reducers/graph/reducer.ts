@@ -15,6 +15,7 @@ import {
   updateAfterNodeIdChange,
   updateAfterNodeDelete,
   removeSubprocessVersionForLastSubprocess,
+  canGroupSelection,
   createEdge,
   adjustBranchParametersAfterDisconnect,
   enrichNodeWithProcessDependentData,
@@ -295,6 +296,16 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         } :
         state
       return omit(withUpdatedGroups, STATE_PROPERTY_NAME)
+    }
+    case "GROUP_SELECTED": {
+      return canGroupSelection(state) ?
+        {
+          ...state,
+          processToDisplay: NodeUtils.createGroup(state.processToDisplay, state.selectionState),
+          layout: [],
+          selectionState: [],
+        } :
+        state
     }
     case "CANCEL_GROUPING": {
       return omit(state, STATE_PROPERTY_NAME)
