@@ -27,6 +27,7 @@ export function boundingRect(nodes: joint.dia.Element[], layout: Layout, nodesWi
           height: boundingRect.height,
           fill: GROUP_COLOR,
           opacity: 0.1,
+          cursor: "auto",
         },
         ".collapseIcon": {
           xlinkHref: collapseIcon,

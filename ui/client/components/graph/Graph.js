@@ -230,6 +230,7 @@ export class Graph extends React.Component {
       this.highlightNode(id, "node-validation-error"));
 
     (groupingState || []).forEach(id => this.highlightNode(id, "node-grouping"))
+
     selectedNodeIds.forEach(id => {
       if (!invalidNodeIds.includes(id)) {
         this.highlightNode(id, "node-focused")
@@ -341,7 +342,7 @@ export class Graph extends React.Component {
   }
 
   findNodeById(nodeId) {
-    const nodes = NodeUtils.nodesFromProcess(this.props.processToDisplay, this.props.expandedGroups)
+    const nodes = NodeUtils.nodesFromProcess(this.props.processToDisplay)
     return nodes.find(n => n.id === nodeId)
   }
 
