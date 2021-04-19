@@ -269,10 +269,10 @@ class Visualization extends React.Component {
     }
 
     const paper = this.getGraphInstance()?.processGraphPaper
-    const viewportCenter = paper ? paper.clientToLocalPoint({x: window.innerWidth / 2, y: window.innerHeight / 3}) : {x: 300, y: 100}
+    const viewportCenter = paper?.model.getBBox()?.topRight() || {x: 300, y: 100}
 
     const positions = selection.nodes.map((node, ix) => {
-      return {x: viewportCenter.x, y: viewportCenter.y + ix * 100}
+      return {x: viewportCenter.x + 30, y: viewportCenter.y + ix * 100}
     })
     const nodesWithPositions = _.zipWith(selection.nodes, positions, (node, position) => {
       return {node, position}
