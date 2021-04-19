@@ -27,7 +27,7 @@ export class PanZoomPlugin {
     paper.on(Events.BLANK_POINTERDOWN, (event: Event, x, y) => {
       const isModified = event.shiftKey || event.ctrlKey || event.altKey || event.metaKey
       if (!isModified) {
-        this.cursorMask.enable()
+        this.cursorMask.enable("move")
         event.data = {...event.data, panStart: {x, y}}
       }
     })

@@ -1,4 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
+import {shapes} from "jointjs"
 import * as joint from "jointjs"
 import "jointjs/dist/joint.css"
 import _, {cloneDeep, defer} from "lodash"
@@ -18,6 +19,10 @@ import NodeUtils from "./NodeUtils"
 import {prepareSvg} from "./svg-export/prepareSvg"
 import {drawGraph, directedLayout, isBackgroundObject, createPaper} from "./GraphPartialsInTS"
 import {FocusableDiv} from "./focusable"
+import {RangeSelectPlugin, SelectionMode} from "./RangeSelectPlugin"
+
+const isModelElement = el => el instanceof shapes.devs.Model
+const isGroupElement = el => el instanceof shapes.basic.Rect && el.attributes.nodeData.type === "_group"
 
 export class Graph extends React.Component {
 
@@ -60,6 +65,18 @@ export class Graph extends React.Component {
 
     // event handlers binding below. order sometimes matters
     this.panAndZoom = new PanZoomPlugin(this.processGraphPaper)
+    new RangeSelectPlugin(this.processGraphPaper)
+    this.processGraphPaper.on("rangeSelect:selected", ({elements, mode}) => {
+      const nodes = elements
+        .filter(el => isModelElement(el) || isGroupElement(el))
+        .map(({id}) => id)
+      if (mode === SelectionMode.toggle) {
+        this.props.actions.toggleSelection(...nodes)
+      } else {
+        this.props.actions.resetSelection(...nodes)
+      }
+    })
+
     this.changeNodeDetailsOnClick()
     this.hooverHandling()
     this.highlightNodes(this.props.processToDisplay, this.props.nodeToDisplay)
