@@ -419,6 +419,15 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     ProcessJson(parser.decode[Json](response).right.get)
 }
 
+class ProcessVersionJson(ver: Long, user: String)
+
+object ProcessVersionJson {
+  def apply(version: Json): ProcessVersionJson = new ProcessVersionJson(
+    version.hcursor.downField("processVersionId").as[Long].right.get,
+    version.hcursor.downField("user").as[String].right.get
+  )
+}
+
 object ProcessJson{
   def apply(process: Json): ProcessJson = {
     val lastAction = process.hcursor.downField("lastAction").as[Option[Json]].right.get
@@ -434,7 +443,8 @@ object ProcessJson{
       process.hcursor.downField("state").downField("tooltip").as[Option[String]].right.get,
       process.hcursor.downField("state").downField("description").as[Option[String]].right.get,
       process.hcursor.downField("processCategory").as[String].right.get,
-      process.hcursor.downField("isArchived").as[Boolean].right.get
+      process.hcursor.downField("isArchived").as[Boolean].right.get,
+      process.hcursor.downField("history").as[List[Json]].right.get.map(ProcessVersionJson(_))
     )
   }
 }
@@ -449,7 +459,8 @@ final case class ProcessJson(id: String,
                              stateTooltip: Option[String],
                              stateDescription: Option[String],
                              processCategory: String,
-                             isArchived: Boolean) {
+                             isArchived: Boolean,
+                             history: List[ProcessVersionJson]) {
 
   def isDeployed: Boolean = lastActionType.contains(ProcessActionType.Deploy.toString)
 

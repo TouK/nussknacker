@@ -98,12 +98,18 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
       case CustomProcess(mainClass) => (None, Some(mainClass))
     }
 
+    def normalizeJsonString(jsonString: String) = jsonString.filterNot(_.isWhitespace)
+
+    //FIXME: In some reasons in lastVersion.json is string with whitespaces..
+    def isLastVersionContainsSameJson(lastVersion: ProcessVersionEntityData, maybeJson: Option[String]) =
+      lastVersion.json.map(normalizeJsonString) == maybeJson.map(normalizeJsonString)
+
     def versionToInsert(latestProcessVersion: Option[ProcessVersionEntityData], processesVersionCount: Int, processingType: ProcessingType): Option[ProcessVersionEntityData] = latestProcessVersion match {
-      case Some(version) if version.json == maybeJson && version.mainClass == maybeMainClass => None
-      case _ => Option(ProcessVersionEntityData(id = processesVersionCount + 1, processId = processId.value,
-        json = maybeJson, mainClass = maybeMainClass, createDate = DateUtils.toTimestamp(now),
-        user = loggedUser.username, modelVersion = modelVersion.forType(processingType)))
-    }
+        case Some(version) if isLastVersionContainsSameJson(version, maybeJson) && version.mainClass == maybeMainClass => None
+        case _ => Option(ProcessVersionEntityData(id = processesVersionCount + 1, processId = processId.value,
+          json = maybeJson.map(normalizeJsonString), mainClass = maybeMainClass, createDate = DateUtils.toTimestamp(now),
+          user = loggedUser.username, modelVersion = modelVersion.forType(processingType)))
+      }
 
     //TODO: why EitherT.right doesn't infere properly here?
     def rightT[T](value: DB[T]): EitherT[DB, EspError, T] = EitherT[DB, EspError, T](value.map(Right(_)))
