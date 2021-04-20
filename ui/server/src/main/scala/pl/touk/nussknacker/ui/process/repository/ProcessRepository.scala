@@ -55,6 +55,7 @@ trait ProcessRepository[F[_]] {
 class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTypeDataProvider[Int])
   extends ProcessRepository[DB] with EspTables with LazyLogging with CommentActions with ProcessDBQueryRepository[DB] {
 
+  import io.circe.parser._
   import profile.api._
 
   // FIXME: It's temporary way.. After merge and refactor process repositories we can remove it.
@@ -98,17 +99,31 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
       case CustomProcess(mainClass) => (None, Some(mainClass))
     }
 
-    def normalizeJsonString(jsonString: String) = jsonString.filterNot(_.isWhitespace)
+    //TODO: Move this normalization to DTO - GraphProcess
+    def normalizeJsonString(jsonString: String): Either[InvalidProcessJson, String] = parse(jsonString) match {
+      case Left(_) => Left(InvalidProcessJson(s"Invalid raw json string: $jsonString."))
+      case Right(json) => Right(json.noSpaces)
+    }
 
-    //FIXME: In some reasons in lastVersion.json is string with whitespaces..
+    def createProcessVersionEntityData(id: Int, processingType: ProcessingType, json: Option[String], maybeMainClass: Option[String]) = ProcessVersionEntityData(
+      id = id + 1, processId = processId.value, json =json, mainClass = maybeMainClass, createDate = DateUtils.toTimestamp(now),
+      user = loggedUser.username, modelVersion = modelVersion.forType(processingType)
+    )
+
+    //We compare Json representation to ignore formatting differences
     def isLastVersionContainsSameJson(lastVersion: ProcessVersionEntityData, maybeJson: Option[String]) =
       lastVersion.json.map(normalizeJsonString) == maybeJson.map(normalizeJsonString)
 
-    def versionToInsert(latestProcessVersion: Option[ProcessVersionEntityData], processesVersionCount: Int, processingType: ProcessingType): Option[ProcessVersionEntityData] = latestProcessVersion match {
-        case Some(version) if isLastVersionContainsSameJson(version, maybeJson) && version.mainClass == maybeMainClass => None
-        case _ => Option(ProcessVersionEntityData(id = processesVersionCount + 1, processId = processId.value,
-          json = maybeJson.map(normalizeJsonString), mainClass = maybeMainClass, createDate = DateUtils.toTimestamp(now),
-          user = loggedUser.username, modelVersion = modelVersion.forType(processingType)))
+    //TODO: after we move Json type to GraphProcess we should clean up this pattern matching
+    def versionToInsert(latestProcessVersion: Option[ProcessVersionEntityData], processesVersionCount: Int, processingType: ProcessingType) =
+      (latestProcessVersion, maybeJson) match {
+        case (Some(version), _) if isLastVersionContainsSameJson(version, maybeJson) && version.mainClass == maybeMainClass =>
+          Right(None)
+        case (_, Some(json)) =>
+          normalizeJsonString(json)
+            .map(j => Option(createProcessVersionEntityData(processesVersionCount, processingType, Some(j), None)))
+        case (_, None) =>
+          Right(Option(createProcessVersionEntityData(processesVersionCount, processingType, None, maybeMainClass)))
       }
 
     //TODO: why EitherT.right doesn't infere properly here?
@@ -121,7 +136,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
       _ <- EitherT.fromEither(Either.cond(process.processType == ProcessType.fromDeploymentData(processDeploymentData), (), InvalidProcessTypeError(processId.value.toString))) //FIXME: Move this condition to service..
       processesVersionCount <- rightT(processVersionsTableNoJson.filter(p => p.processId === processId.value).length.result)
       latestProcessVersion <- rightT(fetchProcessLatestVersionsQuery(processId)(ProcessShapeFetchStrategy.FetchDisplayable).result.headOption)
-      newProcessVersion <- EitherT.fromEither(Right(versionToInsert(latestProcessVersion, processesVersionCount, process.processingType)))
+      newProcessVersion <- EitherT.fromEither(versionToInsert(latestProcessVersion, processesVersionCount, process.processingType))
       _ <- EitherT.right[EspError](newProcessVersion.map(processVersionsTable += _).getOrElse(dbMonad.pure(0)))
     } yield newProcessVersion
     insertAction.value
