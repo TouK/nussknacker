@@ -314,7 +314,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
       return {
         ...state,
         processToDisplay: NodeUtils.ungroup(state.processToDisplay, action.groupToRemove),
-        layout: [],
         nodeToDisplay: state.processToDisplay.properties,
       }
     }

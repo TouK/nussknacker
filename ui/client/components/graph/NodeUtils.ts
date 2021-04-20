@@ -33,7 +33,7 @@ class NodeUtils {
   }
 
   isPlainNode = (node: UINodeType) => {
-    return !_.isEmpty(node) && !this.nodeIsProperties(node)
+    return !_.isEmpty(node) && !this.nodeIsProperties(node) && !this.nodeIsGroup(node)
   }
 
   nodeIsGroup = (node: UINodeType): node is GroupType => {

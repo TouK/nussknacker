@@ -34,8 +34,11 @@ export function ungroupSelected(): ThunkAction {
       name: "ungroup selected",
     }))
 
-    getSelectedGroups(getGraph(getState())).forEach(g => {
-      dispatch({type: "UNGROUP", groupToRemove: g.id})
+    getSelectedGroups(getGraph(getState())).forEach(({id}) => {
+      setTimeout(() => {
+        dispatch({type: "EXPAND_GROUP", id: id})
+        dispatch({type: "UNGROUP", groupToRemove: id})
+      })
     })
   }
 }
