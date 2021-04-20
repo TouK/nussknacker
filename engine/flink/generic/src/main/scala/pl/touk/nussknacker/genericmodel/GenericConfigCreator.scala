@@ -66,7 +66,8 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
         "GEO" -> defaultCategory(geo),
         "NUMERIC" -> defaultCategory(numeric),
         "CONV" -> defaultCategory(conversion),
-        "DATE" -> defaultCategory(date)
+        "DATE" -> defaultCategory(date),
+        "UTIL" -> defaultCategory(util)
       ),
       List()
     )
