@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.ui.api.helpers
 
 import java.time.LocalDateTime
-
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, Parameter}
 import pl.touk.nussknacker.engine.api.definition.{NotBlankParameter, Parameter}
+import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
@@ -31,6 +31,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Process
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails, ValidatedProcessDetails}
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider}
+import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository, SubprocessResolver}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
@@ -298,6 +299,25 @@ object ProcessTestData {
       ))
     ), Some(List()))
   }
+
+  def createEmptyUpdateProcessCommand(processName: ProcessName, comment: Option[String]): UpdateProcessCommand = {
+    val displayableProcess = DisplayableProcess(
+      id = processName.value,
+      properties = ProcessProperties(
+        StreamMetaData(),
+        ExceptionHandlerRef(List.empty),
+        isSubprocess = false,
+        None,
+        subprocessVersions = Map.empty
+      ),
+      nodes = List.empty,
+      edges = List.empty,
+      processingType = TestProcessingTypes.Streaming
+    )
+
+    UpdateProcessCommand(displayableProcess, comment.getOrElse(""))
+  }
+
 
   def validProcessWithSubprocess(processName: ProcessName, subprocess: CanonicalProcess=sampleSubprocessOneOut): ProcessUsingSubprocess = {
     ProcessUsingSubprocess(

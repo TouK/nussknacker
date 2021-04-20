@@ -26,6 +26,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -399,6 +400,20 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
       status shouldEqual StatusCodes.OK
       checkSampleProcessRootIdEquals(ProcessTestData.validProcess.roots.head.id)
       entityAs[ValidationResult].errors.invalidNodes.isEmpty shouldBe true
+    }
+  }
+
+  test("update process with the same json should not create new version") {
+    val command = ProcessTestData.createEmptyUpdateProcessCommand(processName, None)
+
+    createProcessRequest(processName) { code =>
+      Put(s"/processes/${processName.value}", TestFactory.posting.toRequest(command)) ~> processesRouteWithAllPermissions ~> check {
+        withProcess(processName) { process =>
+          process.history.map(_.size) shouldBe Some(1)
+        }
+      }
+
+      code shouldBe StatusCodes.Created
     }
   }
 
