@@ -7,6 +7,7 @@ import GenerateTestDataDialog from "./GenerateTestDataDialog"
 import InfoModal from "./InfoModal"
 import ProcessActionDialog from "./ProcessActionDialog"
 import SaveProcessDialog from "./SaveProcessDialog"
+import CustomActionDialog from "./CustomActionDialog"
 
 export function AllDialogs(): JSX.Element {
   return (
@@ -18,6 +19,7 @@ export function AllDialogs(): JSX.Element {
       <GenerateTestDataDialog/>
       <CalculateCountsDialog/>
       <CompareVersionsDialog/>
+      <CustomActionDialog/>
     </>
   )
 }

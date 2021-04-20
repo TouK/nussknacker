@@ -5,7 +5,7 @@ import NodeUtils from "../../components/graph/NodeUtils"
 import {DialogType} from "../../components/modals/DialogsTypes"
 import history from "../../history"
 import {ThunkAction} from "../reduxTypes"
-import {Edge, NodeType} from "../../types"
+import {CustomAction, Edge, NodeType} from "../../types"
 import {EventInfo, reportEvent} from "./reportEvent"
 
 export type DisplayModalNodeDetailsAction = {
@@ -25,6 +25,11 @@ export type ToggleInfoModalAction = {
   type: "TOGGLE_INFO_MODAL",
   openDialog: DialogType,
   text: string,
+}
+
+export type ToggleCustomActionAction = {
+  type: "TOGGLE_CUSTOM_ACTION",
+  customAction: CustomAction,
 }
 
 export function displayModalNodeDetails(node: NodeType, readonly: boolean, eventInfo: EventInfo): ThunkAction {
@@ -88,3 +93,11 @@ export function toggleInfoModal(openDialog: DialogType, text: string): ToggleInf
     text: text,
   }
 }
+
+export function toggleCustomAction(customAction: CustomAction): ToggleCustomActionAction {
+  return {
+    type: "TOGGLE_CUSTOM_ACTION",
+    customAction: customAction,
+  }
+}
+

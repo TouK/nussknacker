@@ -24,7 +24,7 @@ import JsonEditor from "./JsonEditor"
 import DualParameterEditor from "./DualParameterEditor"
 
 type ValuesType = Array<string>
-type EditorProps = $TodoType
+export type EditorProps = $TodoType
 
 export type SimpleEditor<P extends EditorProps = EditorProps> = Editor<P> & {
   switchableTo: (expressionObj: ExpressionObj, values?: ValuesType) => boolean,

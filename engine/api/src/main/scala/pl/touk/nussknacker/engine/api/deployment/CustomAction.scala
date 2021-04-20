@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.api.deployment
 
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterEditor}
 
 import java.net.URI
 
@@ -10,7 +11,6 @@ CustomActions purpose is to allow non standard process management actions (like 
 
 FIXME:
 1. Additional validations on action invoke, like checking if process definition is valid
-2. Handle CustomActionRequest#params
 
 Things to consider in future changes:
 1. Allowing for attaching comments to custom actions, similarly to stop/deploy comments.
@@ -20,7 +20,11 @@ Things to consider in future changes:
 case class CustomAction(name: String,
                         // We cannot use "engine.api.deployment.StateStatus" because it can be implemented as a class containing nonconstant attributes
                         allowedStateStatusNames: List[String],
+                        parameters: List[CustomActionParameter] = Nil,
                         icon: Option[URI] = None)
+
+//TODO: validators?
+case class CustomActionParameter(name: String, editor: ParameterEditor)
 
 case class CustomActionRequest(name: String,
                                processVersion: ProcessVersion,

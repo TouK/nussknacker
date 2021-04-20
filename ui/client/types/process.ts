@@ -1,6 +1,7 @@
 import {Edge} from "./edge"
 import {NodeType} from "./node"
 import {ValidationResult} from "./validation"
+import {EditorProps} from "../components/graph/node-modal/editors/expression/Editor"
 
 export type Process = {
   id: string,
@@ -31,6 +32,12 @@ export type CustomAction = {
   name: string,
   allowedStateStatusNames: Array<string>,
   icon: string | null,
+  parameters: Array<CustomActionParameter> | null,
+}
+
+export type CustomActionParameter = {
+  name: string,
+  editor: EditorProps,
 }
 
 export type ProcessDefinitionData = {

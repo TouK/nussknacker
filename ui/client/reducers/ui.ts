@@ -1,5 +1,5 @@
 import {DialogType, dialogTypesMap} from "../components/modals/DialogsTypes"
-import {ProcessId} from "../types"
+import {CustomAction, ProcessId} from "../types"
 import {Reducer} from "../actions/reduxTypes"
 import {mergeReducers} from "./mergeReducers"
 
@@ -21,6 +21,7 @@ export type UiState = {
     action: (processId: ProcessId, comment: string) => void,
     displayWarnings: boolean,
     text: string,
+    customAction: CustomAction,
   }>,
   allModalsClosed: boolean,
   isToolTipsHighlighted: boolean,
@@ -125,6 +126,15 @@ const uiReducer: Reducer<UiState> = (state = emptyUiState, action) => {
           message: action.message,
           action: action.action,
           displayWarnings: action.displayWarnings,
+        },
+      }
+    }
+    case "TOGGLE_CUSTOM_ACTION": {
+      return {
+        ...state,
+        modalDialog: {
+          openDialog: dialogTypesMap.customAction,
+          customAction: action.customAction,
         },
       }
     }
