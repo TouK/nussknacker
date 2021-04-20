@@ -54,7 +54,6 @@ To see biggest differences please consult the [changelog](Changelog.md).
   - ClassTag is provided in params in avro key-value deserialization schema factory: `KafkaAvroKeyValueDeserializationSchemaFactory`
   - `BaseKafkaAvroSourceFactory` is able to read both key and value schema determiner to build proper DeserializationSchema (support for keys is not fully introduced in this change)
 * [#1514](https://github.com/TouK/nussknacker/pull/1514) `ExecutionConfigPreparer` has different method parameter - `JobData`, which has more info than previous parameters
-* [#1528](https://github.com/TouK/nussknacker/pull/1528) Introduction to process category service. Renamed `ProcessTypesForCategories` to `ConfigProcessCategoryService`
 
 ## In version 0.3.0
 

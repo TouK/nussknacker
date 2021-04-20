@@ -37,7 +37,6 @@ Nussknacker versions
 * [#1510](https://github.com/TouK/nussknacker/pull/1510) `FlinkSource` API allows to create stream of `Context` (FlinkSource API and test support API refactoring).
 * [#1497](https://github.com/TouK/nussknacker/pull/1497) Initial support for multiple (named) schedules in `PeriodicProcessManager`
 * [#1499](https://github.com/TouK/nussknacker/pull/1499) ClassTag is provided in params in avro key-value deserialization schema factory: `KafkaAvroKeyValueDeserializationSchemaFactory`
-* [#1528](https://github.com/TouK/nussknacker/pull/1528) Introduction to process category service
 
 0.3.1 (not released yet) 
 ------------------------
