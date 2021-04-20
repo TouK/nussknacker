@@ -1,6 +1,6 @@
 import React from "react"
 import {TOOLBAR_BUTTONS_MAP, ToolbarButton} from "./buttons"
-import {ToolbarConfig} from "./defaultToolbarsConfig"
+import {ToolbarConfig} from "./types"
 import {TOOLBAR_COMPONENTS_MAP} from "./TOOLBAR_COMPONENTS_MAP"
 
 function buttonSelector(btn: ToolbarButton, i: number) {

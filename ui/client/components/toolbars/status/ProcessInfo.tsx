@@ -15,7 +15,7 @@ import {ProcessStateType, ProcessType} from "../../Process/types"
 import {CollapsibleToolbar} from "../../toolbarComponents/CollapsibleToolbar"
 import {DragHandle} from "../../toolbarComponents/DragHandle"
 import {ToolbarButtons} from "../../toolbarComponents/ToolbarButtons"
-import {DefaultToolbarPanel, ToolbarPanelProps} from "../../toolbarSettings/DefaultToolbarPanel"
+import {DefaultToolbarPanel, ToolbarPanelProps} from "../../toolbarComponents/DefaultToolbarPanel"
 import {ActionButton} from "../../toolbarSettings/buttons"
 
 type State = UnknownRecord

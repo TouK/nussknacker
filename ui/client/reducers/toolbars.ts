@@ -30,6 +30,9 @@ export type ToolbarsState = {
   nodeToolbox: NodeToolbox,
 }
 
+type Id = `#${string}`
+export type ToolbarsStates = {currentConfigId?: string} & { [id in Id]: ToolbarsState }
+
 const nodeToolbox: Reducer<NodeToolbox> = (state = {opened: {}}, action) => {
   switch (action.type) {
     case "TOGGLE_NODE_TOOLBOX_GROUP":
@@ -125,9 +128,20 @@ const combinedReducers = combineReducers<ToolbarsState>({
   collapsed, positions, nodeToolbox, initData,
 })
 
-const reducer: Reducer<ToolbarsState> = (state, action) => {
+const configReducer: Reducer<ToolbarsState> = (state, action) => {
   const withReset = resetReducer(state, action)
   return combinedReducers(withReset, action)
+}
+
+const configIdReducer: Reducer<string> = (state = "", action) => {
+  return action.type === "REGISTER_TOOLBARS" ? action.configId : state
+}
+
+const reducer: Reducer<ToolbarsStates> = (state = {}, action) => {
+  const currentConfigId = configIdReducer(state.currentConfigId, action)
+  return currentConfigId ?
+    {...state, currentConfigId, [`#${currentConfigId}`]: configReducer(state[`#${currentConfigId}`], action)} :
+    state
 }
 
 export const toolbars = persistReducer({key: `toolbars`, storage}, reducer)

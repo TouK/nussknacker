@@ -14,11 +14,11 @@ type Props = {
 function Toolbars(props: Props) {
   const {isReady} = props
   const fetchedProcessDetails = useSelector(getFetchedProcessDetails)
-  const toolbars = useToolbarConfig()
+  const [toolbars, toolbarsConfigId] = useToolbarConfig()
 
   return (
     <SpinnerWrapper isReady={isReady && !!fetchedProcessDetails}>
-      <ToolbarsLayer toolbars={toolbars}/>
+      <ToolbarsLayer toolbars={toolbars} configId={toolbarsConfigId}/>
     </SpinnerWrapper>
   )
 }
