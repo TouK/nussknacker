@@ -1,4 +1,4 @@
-import {cloneDeep, isArray, map, omit, reject, without, zipWith} from "lodash"
+import {cloneDeep, map, omit, reject, without, zipWith, curryRight} from "lodash"
 import {Layout, NodePosition, NodesWithPositions} from "../../actions/nk"
 import ProcessUtils from "../../common/ProcessUtils"
 import {ExpressionLang} from "../../components/graph/node-modal/editors/expression/types"
@@ -16,10 +16,10 @@ function canGroup(state: GraphState, newNode: NodeType | GroupType): boolean {
   return !isGroup && groupingState.length === 0 || !!groupingState.find(id => edges.find(isBetween(id, newNode.id)))
 }
 
-function isConnectedTo(idOrArray: NodeId | NodeId[]) {
-  return (edge: Edge) => isArray(idOrArray) ?
-    idOrArray.find(i => isConnectedTo(i)(edge)) :
-    edge.from === idOrArray || edge.to === idOrArray
+function isConnectedTo(...nodeIds: NodeId[]) {
+  return (edge: Edge) => {
+    return nodeIds.find(id => edge.from === id || edge.to === id)
+  }
 }
 
 function getSelectedNodes(state: GraphState): NodeType[] {
@@ -33,14 +33,26 @@ export function getSelectedGroups(state: GraphState): GroupType[] {
 
 export function canGroupSelection(state: GraphState): boolean {
   const {processToDisplay: {edges}, selectionState = []} = state
-  return !getSelectedGroups(state).length && getSelectedNodes(state)
-    .filter(n => !NodeUtils.nodeIsGroup(n)) // no grouping on group
+
+  if (selectionState.length < 2) {
+    return false
+  }
+
+  const containsGroup = getSelectedGroups(state).length
+  if (containsGroup) {
+    return false
+  }
+
+  const validConnections = getSelectedNodes(state)
     .map(({id}) => edges
       .filter(isConnectedTo(id))
-      .filter(isConnectedTo(without(selectionState, id)))
-      .length) // count node connections
-    .filter(l => l < 2) // count side nodes
-    .length === 2 // only two side nodes for connected group
+      .filter(isConnectedTo(...without(selectionState, id))))
+    .map(validEgdes => validEgdes.length)
+
+  const lonelyNodes = validConnections.filter(l => l === 0).length
+  const edgeNodes = validConnections.filter(l => l === 1).length
+
+  return !lonelyNodes && edgeNodes === 2
 }
 
 export function displayOrGroup(state: GraphState, node: NodeType, readonly = false): GraphState {
@@ -104,7 +116,7 @@ export function prepareNewNodesWithLayout(
   nodesWithPositions: NodesWithPositions,
   isCopy: boolean,
 ): { layout: NodePosition[], nodes: NodeType[], uniqueIds?: NodeId[] } {
-  const {layout, processToDisplay: {nodes}} = state
+  const {layout, processToDisplay: {nodes = []}} = state
 
   const alreadyUsedIds = nodes.map(node => node.id)
   const initialIds = nodesWithPositions.map(nodeWithPosition => nodeWithPosition.node.id)
