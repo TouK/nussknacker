@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.compile
 
 import java.util.Collections
-
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.instances.string._
@@ -37,6 +36,7 @@ import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.engine.variables.MetaVariables
 
 import scala.annotation.nowarn
+import scala.collection.immutable.ListMap
 import scala.concurrent.{ExecutionContext, Future}
 
 class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
@@ -130,9 +130,9 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       "sampleProcessor2" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass)),
       "bv1" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass), "out" -> Typed[SimpleRecord]),
       "id2" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass), "out" -> Typed[SimpleRecord],
-        "vars" -> TypedObjectTypingResult(Map(
+        "vars" -> TypedObjectTypingResult(ListMap(
           "v1" -> Typed[Integer],
-          "mapVariable" -> TypedObjectTypingResult(Map("Field1" -> Typed[String], "Field2" -> Typed[String], "Field3" -> Typed[BigDecimal])),
+          "mapVariable" -> TypedObjectTypingResult(ListMap("Field1" -> Typed[String], "Field2" -> Typed[String], "Field3" -> Typed[BigDecimal])),
           "spelVariable" ->  Typed[Boolean]
         ))
       )
@@ -848,7 +848,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       case Valid(_) =>
     }
     result.variablesInNodes("id2")("defined") shouldBe Typed.genericTypeClass[java.util.List[_]](
-      List(TypedObjectTypingResult(Map("param1" -> Typed[String], "param2" -> Typed[Integer]))))
+      List(TypedObjectTypingResult(ListMap("param1" -> Typed[String], "param2" -> Typed[Integer]))))
 
   }
 
@@ -870,7 +870,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       case Valid(_) =>
     }
     result.variablesInNodes("id2")("defined") shouldBe Typed.genericTypeClass[java.util.List[_]](
-      List(TypedObjectTypingResult(Map("param1" -> Typed[String], "param2" -> Typed[Integer]))))
+      List(TypedObjectTypingResult(ListMap("param1" -> Typed[String], "param2" -> Typed[Integer]))))
   }
 
   test("should be able to run custom validation using ServiceReturningType") {

@@ -26,13 +26,15 @@ trait PeriodicProcessDeploymentsTableFactory extends PeriodicProcessesTableFacto
 
     def runAt: Rep[LocalDateTime] = column[LocalDateTime]("run_at", NotNull)
 
+    def scheduleName: Rep[Option[String]] = column[Option[String]]("schedule_name")
+
     def deployedAt: Rep[Option[LocalDateTime]] = column[Option[LocalDateTime]]("deployed_at")
 
     def completedAt: Rep[Option[LocalDateTime]] = column[Option[LocalDateTime]]("completed_at")
 
     def status: Rep[PeriodicProcessDeploymentStatus] = column[PeriodicProcessDeploymentStatus]("status", NotNull)
 
-    override def * : ProvenShape[PeriodicProcessDeploymentEntity] = (id, periodicProcessId, createdAt, runAt, deployedAt, completedAt, status) <>
+    override def * : ProvenShape[PeriodicProcessDeploymentEntity] = (id, periodicProcessId, createdAt, runAt, scheduleName, deployedAt, completedAt, status) <>
       ((PeriodicProcessDeploymentEntity.apply _).tupled, PeriodicProcessDeploymentEntity.unapply)
   }
 
@@ -46,6 +48,7 @@ case class PeriodicProcessDeploymentEntity(id: PeriodicProcessDeploymentId,
                                            periodicProcessId: PeriodicProcessId,
                                            createdAt: LocalDateTime,
                                            runAt: LocalDateTime,
+                                           scheduleName: Option[String],
                                            deployedAt: Option[LocalDateTime],
                                            completedAt: Option[LocalDateTime],
                                            status: PeriodicProcessDeploymentStatus)

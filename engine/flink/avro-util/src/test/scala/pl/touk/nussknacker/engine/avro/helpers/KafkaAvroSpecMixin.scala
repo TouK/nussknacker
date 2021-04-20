@@ -7,8 +7,7 @@ import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
-import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer._
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.kryo.AvroSerializersRegistrar
@@ -45,7 +44,7 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
       ProcessSettingsPreparer(modelData),
       new UnoptimizedSerializationPreparer(modelData),
       new ExecutionConfigPreparer {
-        override def prepareExecutionConfig(config: ExecutionConfig)(metaData: MetaData, processVersion: ProcessVersion): Unit = {
+        override def prepareExecutionConfig(config: ExecutionConfig)(jobData: JobData): Unit = {
           AvroSerializersRegistrar.registerGenericRecordSchemaIdSerializationIfNeed(config, confluentClientFactory, kafkaConfig)
         }
       }
@@ -81,8 +80,10 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
     val baseSinkParams: List[(String, expression.Expression)] = List(
       TopicParamName -> s"'${sink.topic}'",
       SchemaVersionParamName -> formatVersionParam(sink.versionOption),
-      SinkKeyParamName -> sink.key,
-      SinkValidationModeParameterName -> validationModeParam(sink.validationMode))
+      SinkKeyParamName -> sink.key)
+
+    val validationParams: List[(String, expression.Expression)] =
+      sink.validationMode.map(validation => SinkValidationModeParameterName -> validationModeParam(validation)).toList
 
     val builder = EspProcessBuilder
       .id(s"avro-test")
@@ -101,7 +102,7 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
     filteredBuilder.emptySink(
       "end",
       sink.sinkId,
-      baseSinkParams ++ sink.valueParams: _*
+      baseSinkParams ++ validationParams ++ sink.valueParams: _*
     )
   }
 
@@ -160,13 +161,13 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
                            versionOption: SchemaVersionOption,
                            valueParams: List[(String, expression.Expression)],
                            key: String,
-                           validationMode: ValidationMode,
+                           validationMode: Option[ValidationMode],
                            sinkId: String)
 
   object SinkAvroParam {
     import spel.Implicits.asSpelExpression
 
-    def apply(topicConfig: TopicConfig, version: SchemaVersionOption, value: String, key: String = "", validationMode: ValidationMode = ValidationMode.strict): SinkAvroParam =
+    def apply(topicConfig: TopicConfig, version: SchemaVersionOption, value: String, key: String = "", validationMode: Option[ValidationMode] = Some(ValidationMode.strict)): SinkAvroParam =
       new SinkAvroParam(topicConfig.output, version, (SinkValueParamName -> asSpelExpression(value)) :: Nil, key, validationMode, "kafka-avro-raw")
   }
 }

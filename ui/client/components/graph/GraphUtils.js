@@ -2,7 +2,7 @@ import NodeUtils from "./NodeUtils"
 import _ from "lodash"
 
 export function mapProcessWithProperties(process, {id,...properties}) {
-  return {...process, id, properties}
+  return {...process, unsavedNewName: id, properties}
 }
 
 export function mapProcessWithNewNode(process, before, after) {

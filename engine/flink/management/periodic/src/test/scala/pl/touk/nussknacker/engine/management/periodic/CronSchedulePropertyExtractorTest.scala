@@ -7,11 +7,11 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
 
-class CronPropertyExtractorTest extends FunSuite
+class CronSchedulePropertyExtractorTest extends FunSuite
   with Matchers
   with Inside {
 
-  private val extractor = CronPropertyExtractor()
+  private val extractor = CronSchedulePropertyExtractor()
 
   test("should fail for custom process") {
     val result = extractor(CustomProcess("test"))
@@ -51,7 +51,7 @@ class CronPropertyExtractorTest extends FunSuite
 
   test("should extract cron property") {
     val result = extractor(PeriodicProcessGen())
-
-    inside(result) { case Right(CronPeriodicProperty(_)) => }
+    
+    inside(result) { case Right(CronScheduleProperty(_)) => }
   }
 }

@@ -7,12 +7,9 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNod
 import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerBranchParameter, DefinedEagerParameter, DefinedSingleParameter, FailedToDefineParameter, JoinGenericNodeTransformation, NodeDependencyValue, OutputVariableNameValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency}
-import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, Source, SourceFactory, TestDataGenerator, TestDataParserProvider}
+import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, Source, SourceFactory, TestDataGenerator, SourceTestSupport}
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
-import pl.touk.nussknacker.engine.compile.validationHelpers.GenericParametersSource.finalResult
-import pl.touk.nussknacker.engine.compile.validationHelpers.GenericParametersTransformer.finalResult
-import pl.touk.nussknacker.engine.definition.TestInfoProvider
 
 import scala.concurrent.Future
 
@@ -74,7 +71,7 @@ object validationHelpers {
         .definedBy { context =>
           val newType = TypedObjectTypingResult((1 to numberOfFields).map { i =>
             s"field$i" -> Typed[String]
-          }.toMap)
+          }.toList)
           context.withVariable(variableName, newType, paramName = None)
         }
         .implementedBy(null)
@@ -94,7 +91,7 @@ object validationHelpers {
           val newType = TypedObjectTypingResult(contexts.toSeq.map {
             case (branchId, _) =>
               branchId -> valueByBranchId(branchId).returnType
-          }.toMap)
+          }.toList)
           Valid(ValidationContext(Map(variableName -> newType)))
         }
         .implementedBy(null)
@@ -120,10 +117,10 @@ object validationHelpers {
           } else {
             val mainBranchContext = mainBranches.head._2
 
-            val newType = TypedObjectTypingResult(joinedBranches.toSeq.map {
+            val newType = TypedObjectTypingResult(joinedBranches.toList.map {
               case (branchId, _) =>
                 branchId -> valueByBranchId(branchId).returnType
-            }.toMap)
+            })
 
             mainBranchContext.withVariable(variableName, newType, paramName = None)
           }
@@ -201,7 +198,7 @@ object validationHelpers {
 
   }
 
-  object GenericParametersSource extends SourceFactory[String] with GenericParameters[Source[String]] {
+  class GenericParametersSource extends SourceFactory[String] with GenericParameters[Source[String]] {
     override def clazz: Class[_] = classOf[String]
 
     protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
@@ -211,8 +208,31 @@ object validationHelpers {
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[List[String]]): Source[String] = {
 
-      new Source[String] with TestDataGenerator {
+      new Source[String] with SourceTestSupport[String] with TestDataGenerator {
+
+        override def testDataParser: TestDataParser[String] = new NewLineSplittedTestDataParser[String] {
+          override def parseElement(testElement: String): String = testElement
+        }
+
         override def generateTestData(size: Int): Array[Byte] = Array(0)
+      }
+    }
+  }
+
+  class GenericParametersSourceNoTestSupport extends GenericParametersSource {
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[List[String]]): Source[String] = {
+      new Source[String] {
+        //no override
+      }
+    }
+  }
+
+  class GenericParametersSourceNoGenerate extends GenericParametersSource {
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[List[String]]): Source[String] = {
+      new Source[String] with SourceTestSupport[String] {
+        override def testDataParser: TestDataParser[String] = new NewLineSplittedTestDataParser[String] {
+          override def parseElement(testElement: String): String = testElement
+        }
       }
     }
   }
@@ -267,7 +287,7 @@ object validationHelpers {
     protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults
 
     protected def finalResult(context: ValidationContext, rest: List[(String, BaseDefinedParameter)], name: String)(implicit nodeId: NodeId): this.FinalResults = {
-      val result = TypedObjectTypingResult(rest.toMap.mapValues(_.returnType))
+      val result = TypedObjectTypingResult(rest.map { case (k, v) => k -> v.returnType })
       context.withVariable(name, result, paramName = None).fold(
         errors => FinalResults(context, errors.toList),
         FinalResults(_))

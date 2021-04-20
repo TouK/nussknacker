@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.management.periodic
 
 import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.exceptions.TestFailedException
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -10,7 +11,8 @@ import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDepl
 import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, DeployedEvent, FailedEvent, FinishedEvent, PeriodicProcessEvent, PeriodicProcessListener, ScheduledEvent}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
-import java.time.Clock
+import java.time.temporal.{ChronoField, ChronoUnit, TemporalField}
+import java.time.{Clock, Instant, LocalDate}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
@@ -80,7 +82,7 @@ class PeriodicProcessServiceTest extends FunSuite
   test("handle first schedule") {
     val f = new Fixture
 
-    f.periodicProcessService.schedule(CronPeriodicProperty("0 0 * * * ?"), ProcessVersion.empty, "{}").futureValue
+    f.periodicProcessService.schedule(CronScheduleProperty("0 0 * * * ?"), ProcessVersion.empty, "{}").futureValue
 
     val processEntity = f.repository.processEntities.loneElement
     processEntity.active shouldBe true
@@ -133,5 +135,20 @@ class PeriodicProcessServiceTest extends FunSuite
 
     val expectedDetails = createPeriodicProcessDeployment(f.repository.processEntities.loneElement, f.repository.deploymentEntities.loneElement)
     f.events.toList shouldBe List(FailedEvent(expectedDetails, None))
+  }
+
+  test("Schedule new scenario only if at least one date in the future") {
+    val f = new Fixture
+    val yearNow = LocalDate.now().get(ChronoField.YEAR)
+    val cronInFuture = CronScheduleProperty(s"0 0 6 6 9 ? ${yearNow + 1}")
+    val cronInPast = CronScheduleProperty(s"0 0 6 6 9 ? ${yearNow - 1}")
+
+    def tryToSchedule(schedule: ScheduleProperty): Unit = f.periodicProcessService.schedule(schedule, ProcessVersion.empty, "{}").futureValue
+
+    tryToSchedule(cronInFuture) shouldBe (())
+    tryToSchedule(MultipleScheduleProperty(Map("s1" -> cronInFuture, "s2" -> cronInPast))) shouldBe (())
+
+    intercept[TestFailedException](tryToSchedule(cronInPast)).getCause shouldBe a[PeriodicProcessException]
+    intercept[TestFailedException](tryToSchedule(MultipleScheduleProperty(Map("s1" -> cronInPast, "s2" -> cronInPast)))).getCause shouldBe a[PeriodicProcessException]
   }
 }

@@ -8,7 +8,7 @@ object TypedList {
   def apply[T: TypeTag]: TypingResult =
     Typed.fromDetailedType[List[T]]
 
-  def apply(fields: Map[String, TypingResult]): TypingResult =
+  def apply(fields: List[(String, TypingResult)]): TypingResult =
     Typed.genericTypeClass[java.util.List[_]](List(TypedObjectTypingResult(fields)))
 
 }

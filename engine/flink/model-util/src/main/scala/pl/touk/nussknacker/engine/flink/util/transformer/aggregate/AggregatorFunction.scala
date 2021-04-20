@@ -117,7 +117,7 @@ trait AggregatorFunctionMixin[MapT[K,V]] { self: StateHolder[MapT[Long, AnyRef]]
   protected def computeFoldedAggregatedValue(state: MapT[Long, aggregator.Aggregate], timestamp: Long): AnyRef = {
     val newStateTruncatedToTimestamp = stateForTimestampToRead(state, timestamp)
     val foldedState = if (newStateTruncatedToTimestamp.toScalaMapRO.isEmpty) {
-      aggregator.getResult(aggregator.createAccumulator())
+      aggregator.createAccumulator()
     } else {
       newStateTruncatedToTimestamp.toScalaMapRO.values.reduce(aggregator.merge)
     }

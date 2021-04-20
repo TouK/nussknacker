@@ -5,13 +5,14 @@ import java.nio.charset.StandardCharsets
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
-import pl.touk.nussknacker.engine.api.process.{TestDataGenerator, TestDataParserProvider}
+import pl.touk.nussknacker.engine.api.process.TestDataGenerator
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
-import pl.touk.nussknacker.engine.flink.api.process.BasicFlinkSource
+import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.management.sample.dto.CsvRecord
 import org.apache.flink.streaming.api.scala._
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 
-class CsvSource extends BasicFlinkSource[CsvRecord] with TestDataParserProvider[CsvRecord] with TestDataGenerator {
+class CsvSource extends BasicFlinkSource[CsvRecord] with FlinkSourceTestSupport[CsvRecord] with TestDataGenerator {
 
   override val typeInformation: TypeInformation[CsvRecord] = implicitly[TypeInformation[CsvRecord]]
 
@@ -28,4 +29,5 @@ class CsvSource extends BasicFlinkSource[CsvRecord] with TestDataParserProvider[
 
   override def timestampAssigner: Option[Nothing] = None
 
+  override def timestampAssignerForTest: Option[TimestampWatermarkHandler[CsvRecord]] = timestampAssigner
 }

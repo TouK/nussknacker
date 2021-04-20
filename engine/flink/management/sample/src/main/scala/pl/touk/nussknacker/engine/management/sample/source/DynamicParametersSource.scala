@@ -20,9 +20,11 @@ object DynamicParametersSource extends FlinkSourceFactory[AnyRef] with DynamicPa
 
   override protected def result(validationContext: ValidationContext,
                                 otherParams: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): FinalResults = {
-
-    validationContext.withVariable("input", TypedObjectTypingResult(
-      otherParams.toMap.mapValues(_.returnType)
-    ), paramName = None).fold(a => FinalResults(validationContext, a.toList), FinalResults(_))
+    val paramsTyping = otherParams.map { case (paramName, definedParam) => paramName -> definedParam.returnType }
+    validationContext.withVariable(
+      name = "input",
+      value = TypedObjectTypingResult(paramsTyping),
+      paramName = None
+    ).fold(a => FinalResults(validationContext, a.toList), FinalResults(_))
   }
 }

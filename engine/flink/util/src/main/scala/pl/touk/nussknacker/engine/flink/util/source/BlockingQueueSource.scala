@@ -10,8 +10,8 @@ import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, TimestampWatermarkHandler}
+import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkContextInitializer, FlinkCustomNodeContext, FlinkSource}
 import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunctuatedExtractor
 
 import scala.annotation.nowarn
@@ -19,17 +19,20 @@ import scala.collection.concurrent.TrieMap
 import scala.collection.JavaConverters._
 
 /**
- * This source allow to add elements after creation or decide when input stream is finished. It also emit watermark after each added element.
- */
+  * This source allow to add elements after creation or decide when input stream is finished. It also emit watermark after each added element.
+  */
 @silent("deprecated")
 @nowarn("cat=deprecation")
-class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPunctuatedWatermarks[T]) extends FlinkSource[T] with Serializable {
+class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPunctuatedWatermarks[T])
+  extends FlinkSource[T] with Serializable {
 
   private val id = UUID.randomUUID().toString
 
   def add(elements: T*) = BlockingQueueSource.getForId[T](id).addAll(elements.map(Some(_)).asJava)
 
   def finish() = BlockingQueueSource.getForId[T](id).add(None)
+
+  private val contextInitializer = new BasicFlinkContextInitializer[T]
 
   private def flinkSourceFunction: SourceFunction[T] = {
     // extracted for serialization purpose
@@ -62,18 +65,14 @@ class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPun
     }
   }
 
-  override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[T] = {
+  override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[Context] = {
+    val typeInformationFromNodeContext = flinkNodeContext.typeInformationDetection.forContext(flinkNodeContext.validationContext.left.get)
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
     env
       .addSource(flinkSourceFunction)
       .name(s"${flinkNodeContext.metaData.id}-${flinkNodeContext.nodeId}-source")
+      .map(contextInitializer.initContext(flinkNodeContext.metaData.id, flinkNodeContext.nodeId))(typeInformationFromNodeContext)
   }
-
-  override def typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
-
-  // we already extract timestamp and assign watermark in the source
-  override def timestampAssignerForTest: Option[TimestampWatermarkHandler[T]]
-    = Some(new LegacyTimestampWatermarkHandler[T](timestampAssigner))
 
 }
 
@@ -84,7 +83,7 @@ object BlockingQueueSource {
   private def getForId[T](id: String): BlockingQueue[Option[T]] =
     queueById.getOrElseUpdate(id, new LinkedBlockingQueue).asInstanceOf[BlockingQueue[Option[T]]]
 
-  def create[T:TypeInformation](extractTimestampFun: T => Long, maxOutOfOrderness: Duration): BlockingQueueSource[T] = {
+  def create[T: TypeInformation](extractTimestampFun: T => Long, maxOutOfOrderness: Duration): BlockingQueueSource[T] = {
     val assigner = new BoundedOutOfOrdernessPunctuatedExtractor[T](maxOutOfOrderness.toMillis) {
       override def extractTimestamp(element: T, recordTimestamp: Long): Long = extractTimestampFun(element)
     }

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.process.registrar
 
 import java.util.concurrent.TimeUnit
+
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.{LazyLogging, Logger}
 import org.apache.flink.api.common.functions.RuntimeContext
@@ -14,6 +15,7 @@ import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContex
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.testmode.{SinkInvocationCollector, TestRunId, TestServiceInvocationCollector}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
@@ -21,7 +23,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformati
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
 import pl.touk.nussknacker.engine.process.compiler.{FlinkProcessCompiler, FlinkProcessCompilerData}
-import pl.touk.nussknacker.engine.process.typeinformation.TypeInformationDetection
+import pl.touk.nussknacker.engine.process.typeinformation.TypeInformationDetectionUtils
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
 import pl.touk.nussknacker.engine.process.util.{MetaDataExtractor, UserClassLoader}
 import pl.touk.nussknacker.engine.process.{CheckpointConfig, ExecutionConfigPreparer, FlinkCompatibilityProvider}
@@ -56,7 +58,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
       val processWithDeps = processCompilation(userClassLoader)
 
       streamExecutionEnvPreparer.preRegistration(env, processWithDeps)
-      val typeInformationDetection = TypeInformationDetection.forExecutionConfig(env.getConfig, userClassLoader)
+      val typeInformationDetection = TypeInformationDetectionUtils.forExecutionConfig(env.getConfig, userClassLoader)
       register(env, processCompilation, processWithDeps, testRunId, typeInformationDetection)
       streamExecutionEnvPreparer.postRegistration(env, processWithDeps)
     }
@@ -122,7 +124,9 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
         lazyParameterHelper = new FlinkLazyParameterFunctionHelper(createInterpreter(compiledProcessWithDeps)),
         signalSenderProvider = processWithDeps.signalSenders,
         exceptionHandlerPreparer = runtimeContext => compiledProcessWithDeps(runtimeContext.getUserCodeClassLoader).prepareExceptionHandler(runtimeContext),
-        globalParameters = globalParameters, validationContext)
+        globalParameters = globalParameters,
+        validationContext,
+        typeInformationDetection)
     }
 
     val wrapAsync: (DataStream[Context], ProcessPart, String) => DataStream[Unit]
@@ -167,11 +171,12 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
       //TODO: get rid of cast (but how??)
       val source = part.obj.asInstanceOf[FlinkSource[Any]]
 
+      val contextTypeInformation = typeInformationDetection.forContext(part.validationContext)
+
       val start = source
         .sourceStream(env, nodeContext(part.id, Left(ValidationContext.empty)))
-        .process(new EventTimeDelayMeterFunction("eventtimedelay", part.id, eventTimeMetricDuration))(source.typeInformation)
-        .map(new RateMeterFunction[Any]("source", part.id))(source.typeInformation)
-        .map(InitContextFunction(metaData.id, part.id))(typeInformationDetection.forContext(part.validationContext))
+        .process(new EventTimeDelayMeterFunction[Context]("eventtimedelay", part.id, eventTimeMetricDuration))(contextTypeInformation)
+        .map(new RateMeterFunction[Context]("source", part.id))(contextTypeInformation)
 
       val asyncAssigned = wrapAsync(start, part, "interpretation")
 

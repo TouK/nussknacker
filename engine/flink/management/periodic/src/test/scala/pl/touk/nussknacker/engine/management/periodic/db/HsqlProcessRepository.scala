@@ -3,21 +3,30 @@ package pl.touk.nussknacker.engine.management.periodic.db
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import slick.jdbc
-import slick.jdbc.{JdbcBackend, JdbcProfile}
+import slick.jdbc.JdbcProfile
 
 import java.time.Clock
+import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits._
 
 object HsqlProcessRepository {
 
-  def prepare(clock: Clock): (SlickPeriodicProcessesRepository, JdbcBackend.DatabaseDef) = {
+  def prepare: HsqlProcessRepository = {
     val config = ConfigFactory.empty()
-      .withValue("url", fromAnyRef("jdbc:hsqldb:mem:periodic;sql.syntax_ora=true"))
-      .withValue("user", fromAnyRef(""))
+      .withValue("url", fromAnyRef(s"jdbc:hsqldb:mem:periodic-${UUID.randomUUID().toString};sql.syntax_ora=true"))
+      .withValue("user", fromAnyRef("SA"))
       .withValue("password", fromAnyRef(""))
 
     val (db: jdbc.JdbcBackend.DatabaseDef, dbProfile: JdbcProfile) = DbInitializer.init(config)
-    (new SlickPeriodicProcessesRepository(db, dbProfile, clock), db)
+    new HsqlProcessRepository(db, dbProfile)
   }
 
 }
+
+class HsqlProcessRepository(val db: jdbc.JdbcBackend.DatabaseDef, dbProfile: JdbcProfile) {
+
+  def forClock(clock: Clock) = new SlickPeriodicProcessesRepository(db, dbProfile, clock)
+
+}
+
+

@@ -8,6 +8,7 @@ import org.apache.flink.api.scala.typeutils.{CaseClassTypeInfo, OptionTypeInfo, 
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.api.{Context, InterpretationResult, PartReference, ValueWithContext}
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{TypedJavaMapTypeInformation, TypedMapTypeInformation, TypedScalaMapTypeInformation}
 import pl.touk.nussknacker.engine.process.typeinformation.internal.{FixedValueSerializers, InterpretationResultMapTypeInfo}
@@ -52,7 +53,7 @@ class TypingResultAwareTypeInformationDetection(customisation:
 
   def forContext(validationContext: ValidationContext): TypeInformation[Context] = {
     val id = TypeInformation.of(classOf[String])
-    val variables = forType(TypedObjectTypingResult(validationContext.localVariables, Typed.typedClass[Map[String, AnyRef]]))
+    val variables = forType(TypedObjectTypingResult(validationContext.localVariables.toList, Typed.typedClass[Map[String, AnyRef]]))
     val parentCtx = new OptionTypeInfo[Context, Option[Context]](validationContext.parent.map(forContext).getOrElse(FixedValueSerializers.nullValueTypeInfo))
 
     val typeInfos = List(id, variables, parentCtx)

@@ -15,7 +15,8 @@ object DefaultAdditionalDeploymentDataProvider extends AdditionalDeploymentDataP
   override def prepareAdditionalData(runDetails: PeriodicProcessDeployment): Map[String, String] = {
     Map(
       "deploymentId" -> runDetails.id.value.toString,
-      "runAt" -> runDetails.runAt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+      "runAt" -> runDetails.runAt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+      "scheduleName" -> runDetails.scheduleName.getOrElse("")
     )
   }
 

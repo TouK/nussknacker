@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory.NoParamSourceFactory
@@ -35,7 +35,10 @@ import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCo
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
+import java.util.Collections
+import java.util.Collections.{emptyList, singletonList}
 import scala.concurrent.duration.FiniteDuration
+import scala.jdk.CollectionConverters.mapAsScalaMapConverter
 
 class OuterJoinTransformerSpec extends FunSuite with FlinkSpec with Matchers with VeryPatientScalaFutures {
 
@@ -73,9 +76,9 @@ class OuterJoinTransformerSpec extends FunSuite with FlinkSpec with Matchers wit
               "key" -> "#input.key"
             )
           ),
-          "aggregator" -> s"T(${classOf[AggregateHelper].getName}).LAST",
+          "aggregator" -> s"#AGG.map({last: #AGG.last, list: #AGG.list, approxCardinality: #AGG.approxCardinality, sum: #AGG.sum})",
           "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT2H')",
-          "aggregateBy" -> "#input.value"
+          "aggregateBy" -> "{last: #input.value, list: #input.value, approxCardinality: #input.value, sum: #input.value } "
         )
         .sink(EndNodeId, s"#$OutVariableName", "end")
     ))
@@ -101,9 +104,12 @@ class OuterJoinTransformerSpec extends FunSuite with FlinkSpec with Matchers wit
 
     val outValues = collectingListener.results[Any].nodeResults(EndNodeId)
       .filter(_.variableTyped(KeyVariableName).contains(key))
-      .map(_.variableTyped[java.lang.Integer](OutVariableName).get)
+      .map(_.variableTyped[java.util.Map[String, AnyRef]](OutVariableName).get.asScala)
 
-    outValues shouldEqual List(null, 123)
+    outValues shouldEqual List(
+      Map("approxCardinality" -> 0, "last" -> null, "list" -> emptyList(), "sum" -> 0),
+      Map("approxCardinality" -> 1, "last" -> 123, "list" -> singletonList(123), "sum" -> 123)
+    )
   }
 
   private def runProcess(testProcess: EspProcess, input1: BlockingQueueSource[OneRecord], input2: List[OneRecord], collectingListener: ResultsCollectingListener) = {
@@ -155,6 +161,8 @@ object OuterJoinTransformerSpec {
     override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
       ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
 
+    override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig =
+      super.expressionConfig(processObjectDependencies).copy(globalProcessVariables = Map("AGG" -> WithCategories(new AggregateHelper)))
   }
 
   case class OneRecord(key: String, timeHours: Int, value: Int) {

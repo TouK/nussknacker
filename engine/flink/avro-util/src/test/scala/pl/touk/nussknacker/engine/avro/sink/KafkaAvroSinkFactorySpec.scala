@@ -3,14 +3,13 @@ package pl.touk.nussknacker.engine.avro.sink
 import com.typesafe.config.ConfigFactory
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.generic.GenericContainer
-import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.TypedNodeDependencyValue
 import pl.touk.nussknacker.engine.api.process.Sink
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException, typing}
-import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{VariableConstants, LazyParameter, MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer._
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2, GeneratedAvroClassWithLogicalTypes, PaymentV1}
@@ -42,7 +41,7 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
     implicit val meta: MetaData = MetaData("processId", StreamMetaData())
     implicit val nodeId: NodeId = NodeId("id")
     val paramsList = params.toList.map(p => Parameter(p._1, p._2))
-    validator.validateNode(avroSinkFactory, paramsList, Nil, Some(Interpreter.InputParamName))(ValidationContext()).toOption.get
+    validator.validateNode(avroSinkFactory, paramsList, Nil, Some(VariableConstants.InputVariableName))(ValidationContext()).toOption.get
   }
 
   protected def createSink(topic: String, versionOption: SchemaVersionOption, value: LazyParameter[GenericContainer], validationMode: ValidationMode): Sink = {
@@ -103,7 +102,7 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
       createSink(generatedAvroTopic, ExistingSchemaVersion(generatedNewSchemaVersion), valueParam, ValidationMode.strict)
     }
     ex.getMessage shouldEqual "Provided value does not match selected Avro schema - errors:\nNone of the following types:\n" +
-      " - {text: CharSequence, dateTime: Instant, decimal: BigDecimal, date: LocalDate, time: LocalTime}\n" +
+      " - {text: CharSequence, dateTime: Instant, date: LocalDate, time: LocalTime, decimal: BigDecimal}\n" +
       "can be a subclass of any of:\n" +
       " - {text2: CharSequence}"
   }
@@ -162,7 +161,7 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
       SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
 
     result.errors shouldBe CustomNodeError("id",
-      "Provided value does not match selected Avro schema - errors:\nNone of the following types:\n - String\ncan be a subclass of any of:\n - {vat: Integer, products: List[{id: CharSequence, name: CharSequence, price: Double} | {id: CharSequence, name: CharSequence, price: Double}], amount: Double, company: {name: CharSequence, address: {street: CharSequence, city: CharSequence} | {street: CharSequence, city: CharSequence}} | {name: CharSequence, address: {street: CharSequence, city: CharSequence} | {street: CharSequence, city: CharSequence}}, id: CharSequence, currency: EnumSymbol | CharSequence}",
+      "Provided value does not match selected Avro schema - errors:\nNone of the following types:\n - String\ncan be a subclass of any of:\n - {id: CharSequence, amount: Double, currency: EnumSymbol | CharSequence, company: {name: CharSequence, address: {street: CharSequence, city: CharSequence} | {street: CharSequence, city: CharSequence}} | {name: CharSequence, address: {street: CharSequence, city: CharSequence} | {street: CharSequence, city: CharSequence}}, products: List[{id: CharSequence, name: CharSequence, price: Double} | {id: CharSequence, name: CharSequence, price: Double}], vat: Integer}",
       Some(SinkValueParamName)) :: Nil
   }
 

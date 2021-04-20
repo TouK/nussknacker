@@ -19,6 +19,8 @@ import pl.touk.nussknacker.engine.standalone.utils.metrics.{MetricsProvider, NoO
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
+import scala.collection.immutable.ListMap
+
 class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryPatientScalaFutures {
 
   import spel.Implicits._
@@ -217,7 +219,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
 
 
     val interpreter2 = prepareInterpreter(process = process2)
-    interpreter2.sinkTypes shouldBe Map("endNodeIID" -> TypedObjectTypingResult(Map("str" -> Typed[String], "int" -> Typed[java.lang.Integer])))
+    interpreter2.sinkTypes shouldBe Map("endNodeIID" -> TypedObjectTypingResult(ListMap("str" -> Typed[String], "int" -> Typed[java.lang.Integer])))
 
   }
 

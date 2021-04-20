@@ -31,6 +31,8 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory.{SampleSubprocessRepositor
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 
+import scala.collection.immutable.ListMap
+
 class ProcessValidationSpec extends FunSuite with Matchers {
   import spel.Implicits._
   import ProcessValidationSpec._
@@ -330,7 +332,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     validationResult.errors.invalidNodes shouldBe 'empty
     validationResult.nodeResults("sink2").variableTypes("input") shouldBe typing.Unknown
     validationResult.nodeResults("sink2").variableTypes("var2") shouldBe Typed(classOf[String])
-    validationResult.nodeResults("sink2").variableTypes("subOut2") shouldBe TypedObjectTypingResult(Map(
+    validationResult.nodeResults("sink2").variableTypes("subOut2") shouldBe TypedObjectTypingResult(ListMap(
       "bar" -> Typed(classOf[String])
     ))
   }

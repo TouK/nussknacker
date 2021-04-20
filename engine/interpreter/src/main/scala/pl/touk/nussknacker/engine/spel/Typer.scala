@@ -149,7 +149,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         } else {
           values.map(typeNode(validationContext, _, current.withoutIntermediateResults)).sequence.andThen { typedValues =>
             withCombinedIntermediate(typedValues, current) { typedValues =>
-              val typ = TypedObjectTypingResult(literalKeys.zip(typedValues).toMap)
+              val typ = TypedObjectTypingResult(literalKeys.zip(typedValues))
               Valid(TypedNode(node, typ))
             }
           }

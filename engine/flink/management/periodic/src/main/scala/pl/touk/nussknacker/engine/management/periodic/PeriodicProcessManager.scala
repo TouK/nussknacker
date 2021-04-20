@@ -24,7 +24,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 
 object PeriodicProcessManager {
   def apply(delegate: ProcessManager,
-            periodicPropertyExtractor: PeriodicPropertyExtractor,
+            schedulePropertyExtractor: SchedulePropertyExtractor,
             enrichDeploymentWithJarDataFactory: EnrichDeploymentWithJarDataFactory,
             periodicBatchConfig: PeriodicBatchConfig,
             flinkConfig: FlinkConfig,
@@ -46,25 +46,29 @@ object PeriodicProcessManager {
     val service = new PeriodicProcessService(delegate, jarManager, scheduledProcessesRepository, listener, additionalDeploymentDataProvider, clock)
     system.actorOf(DeploymentActor.props(service, periodicBatchConfig.deployInterval))
     system.actorOf(RescheduleFinishedActor.props(service, periodicBatchConfig.rescheduleCheckInterval))
+
     val toClose = () => {
       Await.ready(system.terminate(), 10 seconds)
       db.close()
       Await.ready(backend.close(), 10 seconds)
       ()
     }
-    new PeriodicProcessManager(delegate, service, periodicPropertyExtractor, toClose)
+    new PeriodicProcessManager(delegate, service, schedulePropertyExtractor, toClose)
   }
 }
 
 class PeriodicProcessManager(val delegate: ProcessManager,
                              service: PeriodicProcessService,
-                             periodicPropertyExtractor: PeriodicPropertyExtractor,
+                             schedulePropertyExtractor: SchedulePropertyExtractor,
                              toClose: () => Unit)
                             (implicit val ec: ExecutionContext) extends ProcessManager with LazyLogging {
 
-  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
-    (processDeploymentData, periodicPropertyExtractor(processDeploymentData)) match {
-      case (GraphProcess(processJson), Right(periodicProperty)) =>
+  override def deploy(processVersion: ProcessVersion,
+                      deploymentData: DeploymentData,
+                      processDeploymentData: ProcessDeploymentData,
+                      savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
+    (processDeploymentData, schedulePropertyExtractor(processDeploymentData)) match {
+      case (GraphProcess(processJson), Right(scheduleProperty)) =>
         logger.info(s"About to (re)schedule ${processVersion.processName} in version ${processVersion.versionId}")
 
         // PeriodicProcessStateDefinitionManager do not allow to redeploy (so doesn't GUI),
@@ -72,7 +76,7 @@ class PeriodicProcessManager(val delegate: ProcessManager,
         cancelIfJobPresent(processVersion, deploymentData.user)
           .flatMap(_ => {
             logger.info(s"Scheduling ${processVersion.processName}, versionId: ${processVersion.versionId}")
-            service.schedule(periodicProperty, processVersion, processJson)
+            service.schedule(scheduleProperty, processVersion, processJson)
           }.map(_ => None))
       case (_: GraphProcess, Left(error)) =>
         Future.failed(new PeriodicProcessException(error))
@@ -110,7 +114,7 @@ class PeriodicProcessManager(val delegate: ProcessManager,
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
     def handleFailed(original: Option[ProcessState]): Future[Option[ProcessState]] = {
-      service.getScheduledRunDetails(name).map {
+      service.getNextScheduledDeployment(name).map {
         // this method returns only active schedules, so 'None' means this process has been already canceled
         case None => original.map(_.copy(status = SimpleStateStatus.Canceled))
         case _ => original
@@ -118,7 +122,7 @@ class PeriodicProcessManager(val delegate: ProcessManager,
     }
 
     def handleScheduled(original: Option[ProcessState]): Future[Option[ProcessState]] = {
-      service.getScheduledRunDetails(name).map { maybeProcessDeployment =>
+      service.getNextScheduledDeployment(name).map { maybeProcessDeployment =>
         maybeProcessDeployment.map { processDeployment =>
           processDeployment.state.status match {
             case PeriodicProcessDeploymentStatus.Scheduled => Some(ProcessState(

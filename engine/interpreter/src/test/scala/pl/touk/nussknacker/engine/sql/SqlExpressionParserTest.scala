@@ -10,9 +10,9 @@ class SqlExpressionParserTest extends FunSuite with Matchers {
 
 
   val validationCtx = ValidationContext(Map(
-    "table1" -> TypedList(Map("col1" -> Typed[String])),
-    "table1a" -> TypedList(Map("col1" -> Typed[Long])),
-    "table2" -> TypedList(Map("stringField" -> Typed[String], "longField" -> Typed[Long]))
+    "table1" -> TypedList(List("col1" -> Typed[String])),
+    "table1a" -> TypedList(List("col1" -> Typed[Long])),
+    "table2" -> TypedList(List("stringField" -> Typed[String], "longField" -> Typed[Long]))
   ))
 
   test("valid query") {

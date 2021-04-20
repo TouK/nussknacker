@@ -123,7 +123,7 @@ class Request1SourceFactory extends StandaloneSourceFactory[Request1] {
 
   @MethodToInvoke
   def create(): Source[Request1] = {
-    new StandalonePostSource[Request1] with StandaloneGetSource[Request1] with TestDataParserProvider[Request1] {
+    new StandalonePostSource[Request1] with StandaloneGetSource[Request1] with SourceTestSupport[Request1] {
 
       override def parse(data: Array[Byte]): Request1 = CirceUtil.decodeJsonUnsafe[Request1](data)
 

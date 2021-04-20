@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.variables
 
-import pl.touk.nussknacker.engine.Interpreter
-import pl.touk.nussknacker.engine.api.MetaData
+import pl.touk.nussknacker.engine.api.{VariableConstants, MetaData}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -16,7 +15,7 @@ class GlobalVariablesPreparer(globalVariablesWithMethodDef: Map[String, ObjectWi
     if (hideMetaVariable) {
       globalVariablesWithType
     } else {
-      globalVariablesWithType + (Interpreter.MetaParamName -> MetaVariables.withType(metaData))
+      globalVariablesWithType + (VariableConstants.MetaVariableName -> MetaVariables.withType(metaData))
     }
   }
 

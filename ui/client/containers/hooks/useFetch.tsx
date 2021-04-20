@@ -25,10 +25,12 @@ export function useFetch<T>(fetchAction: () => Promise<AxiosResponse<T>>, initVa
         }
       } catch (error) {
       } finally {
-        setIsLoading(false)
+        if (isMounted.current) {
+          setIsLoading(false)
+        }
       }
     },
-    [fetchAction],
+    [fetchAction, isMounted],
   )
 
   return [data, getData, isLoading]

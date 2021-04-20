@@ -10,6 +10,8 @@ import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionPa
 import pl.touk.nussknacker.engine.avro.sink.AvroSinkValueParameter.FieldName
 import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
 
+import scala.collection.immutable.ListMap
+
 
 case object AvroSinkValueParameter {
 
@@ -38,7 +40,9 @@ case object AvroSinkValueParameter {
           val concatName = paramName.map(pn => s"$pn.$fieldName").getOrElse(fieldName)
           (fieldName, toSinkValueParameter(typing, Some(concatName)))
         }.toList
-        sequence(listOfValidatedFieldParams).map(l => AvroSinkRecordParameter(l.toMap))
+        val validatedListOfFieldParams = sequence(listOfValidatedFieldParams)
+        validatedListOfFieldParams
+          .map(fields => AvroSinkRecordParameter(ListMap(fields: _*)))
 
       case _ =>
         val parameter = Parameter(paramName.getOrElse(SinkValueParamName), typing)
@@ -76,5 +80,5 @@ sealed trait AvroSinkValueParameter {
 case class AvroSinkPrimitiveValueParameter(value: Parameter)
   extends AvroSinkValueParameter
 
-case class AvroSinkRecordParameter(fields: Map[FieldName, AvroSinkValueParameter])
+case class AvroSinkRecordParameter(fields: ListMap[FieldName, AvroSinkValueParameter])
   extends AvroSinkValueParameter

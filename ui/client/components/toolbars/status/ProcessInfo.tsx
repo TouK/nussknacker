@@ -3,9 +3,8 @@ import React, {memo} from "react"
 import {connect} from "react-redux"
 import {SwitchTransition} from "react-transition-group"
 import {absoluteBePath} from "../../../common/UrlUtils"
-import {RootState} from "../../../reducers/index"
-import {getFetchedProcessDetails, getProcessState, isProcessStateLoaded} from "../../../reducers/selectors/graph"
-import {getCapabilities} from "../../../reducers/selectors/other"
+import {RootState} from "../../../reducers"
+import {getFetchedProcessDetails, getProcessState, isProcessStateLoaded, getProcessUnsavedNewName, isProcessRenamed} from "../../../reducers/selectors/graph"
 import {getCustomActions} from "../../../reducers/selectors/settings"
 import {UnknownRecord} from "../../../types/common"
 import {CssFade} from "../../CssFade"
@@ -79,7 +78,7 @@ class ProcessInfo extends React.Component<ToolbarPanelProps & StateProps, State>
     `${process.id}-${processState?.icon || process?.state?.icon || unknownIcon}`
 
   render() {
-    const {process, processState, isStateLoaded, customActions} = this.props
+    const {process, processState, isStateLoaded, customActions, isRenamePending, unsavedNewName} = this.props
     const description = this.getDescription(process, processState, isStateLoaded)
     const icon = this.getIcon(process, processState, isStateLoaded, description)
     const transitionKey = this.getTransitionKey(process, processState)
@@ -94,7 +93,13 @@ class ProcessInfo extends React.Component<ToolbarPanelProps & StateProps, State>
                   {icon}
                 </div>
                 <div className={"process-info-text"}>
-                  <div className={"process-name"}>{process.name}</div>
+                  {isRenamePending ?
+                    (
+                      <div className="process-name process-name-rename" title={process.name}>{unsavedNewName}*</div>
+                    ) :
+                    (
+                      <div className="process-name">{process.name}</div>
+                    )}
                   <div className={"process-info-description"}>{description}</div>
                 </div>
               </div>
@@ -116,7 +121,8 @@ class ProcessInfo extends React.Component<ToolbarPanelProps & StateProps, State>
 const mapState = (state: RootState) => ({
   isStateLoaded: isProcessStateLoaded(state),
   process: getFetchedProcessDetails(state),
-  capabilities: getCapabilities(state),
+  isRenamePending: isProcessRenamed(state),
+  unsavedNewName: getProcessUnsavedNewName(state),
   processState: getProcessState(state),
   customActions: getCustomActions(state),
 })

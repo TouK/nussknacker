@@ -2,16 +2,16 @@ package pl.touk.nussknacker.engine.management.periodic
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData}
-import pl.touk.nussknacker.engine.management.periodic.CronPropertyExtractor.CronPropertyDefaultName
+import pl.touk.nussknacker.engine.management.periodic.CronSchedulePropertyExtractor.CronPropertyDefaultName
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 import java.time.Clock
 
-trait PeriodicPropertyExtractor {
-  def apply(processDeploymentData: ProcessDeploymentData): Either[String, PeriodicProperty]
+trait SchedulePropertyExtractor {
+  def apply(processDeploymentData: ProcessDeploymentData): Either[String, ScheduleProperty]
 }
 
-object PeriodicPropertyExtractor {
+object SchedulePropertyExtractor {
 
   def extractProperty(processDeploymentData: ProcessDeploymentData, name: String): Either[String, String] = {
     processDeploymentData match {
@@ -26,19 +26,19 @@ object PeriodicPropertyExtractor {
 
 }
 
-object CronPropertyExtractor {
+object CronSchedulePropertyExtractor {
 
   val CronPropertyDefaultName = "cron"
 
 }
 
-case class CronPropertyExtractor(propertyName: String = CronPropertyDefaultName) extends PeriodicPropertyExtractor with LazyLogging {
+case class CronSchedulePropertyExtractor(propertyName: String = CronPropertyDefaultName) extends SchedulePropertyExtractor with LazyLogging {
 
-  override def apply(processDeploymentData: ProcessDeploymentData): Either[String, PeriodicProperty] =
+  override def apply(processDeploymentData: ProcessDeploymentData): Either[String, ScheduleProperty] =
     for {
-      cronProperty <- PeriodicPropertyExtractor.extractProperty(processDeploymentData, propertyName).right
-      cronPeriodicProperty <- Right(CronPeriodicProperty(cronProperty)).right
-      _ <- cronPeriodicProperty.nextRunAt(Clock.systemDefaultZone()).right
-    } yield cronPeriodicProperty
+      cronProperty <- SchedulePropertyExtractor.extractProperty(processDeploymentData, propertyName).right
+      cronScheduleProperty <- Right(CronScheduleProperty(cronProperty)).right
+      _ <- cronScheduleProperty.nextRunAt(Clock.systemDefaultZone()).right
+    } yield cronScheduleProperty
 
 }
