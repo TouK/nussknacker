@@ -1,38 +1,28 @@
+import i18next from "i18next"
 import React, {memo} from "react"
-import {UnknownRecord} from "../../../types/common"
-import {CssFade} from "../../CssFade"
-import {ProcessStateType, ProcessType} from "../../Process/types"
-import {descriptionProcessArchived, descriptionSubprocess, descriptionSubprocessArchived, unknownDescription} from "../../Process/messages"
+import {connect} from "react-redux"
 import {SwitchTransition} from "react-transition-group"
-import ProcessStateIcon, {unknownIcon} from "../../Process/ProcessStateIcon"
 import {absoluteBePath} from "../../../common/UrlUtils"
 import {RootState} from "../../../reducers/index"
-import {getFetchedProcessDetails, isProcessStateLoaded, getProcessState} from "../../../reducers/selectors/graph"
-import {connect} from "react-redux"
-import {DragHandle} from "../../toolbarComponents/DragHandle"
-import Deploy from "./buttons/DeployButton"
-import Cancel from "./buttons/CancelDeployButton"
-import Metrics from "./buttons/MetricsButton"
+import {getFetchedProcessDetails, getProcessState, isProcessStateLoaded} from "../../../reducers/selectors/graph"
 import {getCapabilities} from "../../../reducers/selectors/other"
-import SaveButton from "../process/buttons/SaveButton"
-import {ToolbarButtons} from "../../toolbarComponents/ToolbarButtons"
+import {getCustomActions} from "../../../reducers/selectors/settings"
+import {UnknownRecord} from "../../../types/common"
+import {CssFade} from "../../CssFade"
+import {descriptionProcessArchived, descriptionSubprocess, descriptionSubprocessArchived, unknownDescription} from "../../Process/messages"
+import ProcessStateIcon, {unknownIcon} from "../../Process/ProcessStateIcon"
+import {ProcessStateType, ProcessType} from "../../Process/types"
 import {CollapsibleToolbar} from "../../toolbarComponents/CollapsibleToolbar"
-import i18next from "i18next"
-import CustomActionButton from "./buttons/CustomActionButton"
-import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
+import {DragHandle} from "../../toolbarComponents/DragHandle"
+import {ToolbarButtons} from "../../toolbarComponents/ToolbarButtons"
+import {DefaultToolbarPanel, ToolbarPanelProps} from "../../toolbarComponents/DefaultToolbarPanel"
+import {ActionButton} from "../../toolbarSettings/buttons"
 
 type State = UnknownRecord
 
-type OwnProps = {
-  iconHeight: number,
-  iconWidth: number,
-}
-
-class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
+class ProcessInfo extends React.Component<ToolbarPanelProps & StateProps, State> {
   static defaultProps = {
     isStateLoaded: false,
-    iconHeight: 32,
-    iconWidth: 32,
   }
 
   static subprocessIcon = "/assets/process/subprocess.svg"
@@ -58,8 +48,6 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
     process: ProcessType,
     processState: ProcessStateType,
     isStateLoaded: boolean,
-    iconHeight: number,
-    iconWidth: number,
     description: string,
   ) => {
     if (process.isArchived || process.isSubprocess) {
@@ -69,6 +57,7 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
       )
     }
 
+    const size = 32
     return (
       <ProcessStateIcon
         popover={false}
@@ -76,8 +65,8 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
         process={process}
         processState={processState}
         isStateLoaded={isStateLoaded}
-        height={iconHeight}
-        width={iconWidth}
+        height={size}
+        width={size}
       />
     )
   }
@@ -89,31 +78,14 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
     `${process.id}` :
     `${process.id}-${processState?.icon || process?.state?.icon || unknownIcon}`
 
-  private buttons = [
-    <SaveButton key={0}/>,
-    <Deploy key={1}/>,
-    <Cancel key={2}/>,
-    <Metrics key={3}/>,
-  ]
-
   render() {
-    const {process, processState, isStateLoaded, iconHeight, iconWidth, processDefinitionData} = this.props
+    const {process, processState, isStateLoaded, customActions} = this.props
     const description = this.getDescription(process, processState, isStateLoaded)
-    const icon = this.getIcon(process, processState, isStateLoaded, iconHeight, iconWidth, description)
+    const icon = this.getIcon(process, processState, isStateLoaded, description)
     const transitionKey = this.getTransitionKey(process, processState)
-    const customActions = processDefinitionData.customActions || []
     // TODO: better styling of process info toolbar in case of many custom actions
-    const customButtons = customActions.map((a, ix) => (
-      <CustomActionButton
-        action={a}
-        processId={process.id}
-        processStatus={processState?.status}
-        key={ix + this.buttons.length}
-      />
-    ))
-
     return (
-      <CollapsibleToolbar title={i18next.t("panels.status.title", "Status")} id="PROCESS-INFO">
+      <CollapsibleToolbar title={i18next.t("panels.status.title", "Status")} id={this.props.id}>
         <DragHandle>
           <SwitchTransition>
             <CssFade key={transitionKey}>
@@ -128,8 +100,12 @@ class ProcessInfo extends React.Component<OwnProps & StateProps, State> {
               </div>
             </CssFade>
           </SwitchTransition>
-          <ToolbarButtons>
-            {[...this.buttons, ...customButtons]}
+          <ToolbarButtons variant={this.props.buttonsVariant}>
+            {this.props.children}
+            {
+              //TODO: to be replaced by toolbar config
+              customActions.map(action => (<ActionButton name={action.name} key={action.name}/>))
+            }
           </ToolbarButtons>
         </DragHandle>
       </CollapsibleToolbar>
@@ -142,10 +118,10 @@ const mapState = (state: RootState) => ({
   process: getFetchedProcessDetails(state),
   capabilities: getCapabilities(state),
   processState: getProcessState(state),
-  processDefinitionData: getProcessDefinitionData(state),
+  customActions: getCustomActions(state),
 })
 
 type StateProps = ReturnType<typeof mapState>
 
-export default connect(mapState)(memo(ProcessInfo))
+export default connect(mapState)(memo(ProcessInfo)) as typeof DefaultToolbarPanel
 

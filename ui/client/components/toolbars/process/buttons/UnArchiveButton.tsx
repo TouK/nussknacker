@@ -7,7 +7,7 @@ import history from "../../../../history"
 import {events} from "../../../../analytics/TrackingEvents"
 import {toggleConfirmDialog} from "../../../../actions/nk/ui/toggleConfirmDialog"
 import {bindActionCreators} from "redux"
-import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
+import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 import {isArchived, getProcessId, isSubprocess} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/unarchive.svg"
@@ -23,7 +23,8 @@ function UnArchiveButton(props: StateProps) {
   const {t} = useTranslation()
 
   return (
-    <ToolbarButton
+    <CapabilitiesToolbarButton
+      change
       name={t("panels.actions.process-unarchive.button", "unarchive")}
       icon={<Icon/>}
       disabled={!isArchived}

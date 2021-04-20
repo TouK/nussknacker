@@ -21,15 +21,15 @@ function useIdsEffect<T extends { id: string }>(effect: EffectCallback, array) {
 
 export const ToolbarDraggableType = "TOOLBAR"
 
-function ToolbarsLayer(props: { toolbars: Toolbar[] }): JSX.Element {
+function ToolbarsLayer(props: {toolbars: Toolbar[], configId: string}): JSX.Element {
   const dispatch = useDispatch()
-  const {toolbars} = props
+  const {toolbars, configId} = props
 
   const [isDragging, setIsDragging] = useState(false)
 
-  useIdsEffect(() => {
-    dispatch(registerToolbars(toolbars))
-  }, toolbars)
+  useEffect(() => {
+    dispatch(registerToolbars(toolbars, configId))
+  }, [dispatch, toolbars, configId])
 
   const onDragEnd = useCallback((result: DropResult) => {
     setIsDragging(false)

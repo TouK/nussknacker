@@ -1,40 +1,29 @@
 import React from "react"
-import {connect} from "react-redux"
+import {useDispatch} from "react-redux"
 import {events} from "../../../../analytics/TrackingEvents"
 import {pasteSelection} from "../../../../actions/nk/selection"
-import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
+import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 import {useTranslation} from "react-i18next"
-import {SelectionActions} from "../EditPanel"
+import {useSelectionActions} from "../../../graph/GraphContext"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/paste.svg"
 
-type OwnProps = {
-  selectionActions: SelectionActions,
-}
-
-type Props = OwnProps & StateProps
-
-function PasteButton(props: Props) {
-  const {selectionActions, pasteSelection} = props
+function PasteButton(): JSX.Element {
+  const dispatch = useDispatch()
   const {t} = useTranslation()
 
-  const {canPaste, paste} = selectionActions
+  const {canPaste, paste} = useSelectionActions()
   return (
-    <ToolbarButton
+    <CapabilitiesToolbarButton
+      write
       name={t("panels.actions.edit-paste.button", "paste")}
       icon={<Icon/>}
       disabled={!canPaste}
-      onClick={event => pasteSelection(
+      onClick={event => dispatch(pasteSelection(
         () => paste(event),
         {category: events.categories.rightPanel, action: events.actions.buttonClick},
-      )}
+      ))}
     />
   )
 }
 
-const mapDispatch = {
-  pasteSelection,
-}
-
-type StateProps = typeof mapDispatch
-
-export default connect(null, mapDispatch)(PasteButton)
+export default PasteButton

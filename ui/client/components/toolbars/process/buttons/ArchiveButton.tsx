@@ -8,7 +8,7 @@ import {ArchiveTabData} from "../../../../containers/Archive"
 import {events} from "../../../../analytics/TrackingEvents"
 import {toggleConfirmDialog} from "../../../../actions/nk/ui/toggleConfirmDialog"
 import {bindActionCreators} from "redux"
-import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
+import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 import {isArchivePossible, isSubprocess, getProcessId} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/archive.svg"
@@ -21,7 +21,8 @@ function ArchiveButton(props: StateProps) {
   const {t} = useTranslation()
 
   return (
-    <ToolbarButton
+    <CapabilitiesToolbarButton
+      change
       name={t("panels.actions.process-archive.button", "archive")}
       icon={<Icon/>}
       disabled={!canArchive}
