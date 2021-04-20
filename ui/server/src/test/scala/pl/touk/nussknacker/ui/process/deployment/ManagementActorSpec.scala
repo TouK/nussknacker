@@ -14,7 +14,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory.{MockProcessManager, mapPr
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessingTypes, WithHsqlDbTesting}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
-import pl.touk.nussknacker.ui.process.{DBProcessService, NewProcessPreparer, ProcessTypesForCategories}
+import pl.touk.nussknacker.ui.process.{DBProcessService, NewProcessPreparer, ConfigProcessCategoryService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
@@ -34,7 +34,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
   private val writeProcessRepository = newWriteProcessRepository(db)
   private val actionRepository = newActionProcessRepository(db)
   private val activityRepository = newProcessActivityRepository(db)
-  private val typesForCategories = new ProcessTypesForCategories(ConfigWithScalaVersion.config)
+  private val processCategoryService = new ConfigProcessCategoryService(ConfigWithScalaVersion.config)
 
   val newProcessPreparer = new NewProcessPreparer(
     mapProcessingTypeDataProvider("streaming" ->  ProcessTestData.processDefinition),
@@ -54,7 +54,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
   )
 
   private val processService = new DBProcessService(
-    managementActor, time.Duration.ofMinutes(1), newProcessPreparer, typesForCategories, processResolving,
+    managementActor, time.Duration.ofMinutes(1), newProcessPreparer, processCategoryService, processResolving,
     repositoryManager, fetchingProcessRepository, actionRepository, writeProcessRepository
   )
 

@@ -75,7 +75,7 @@ trait ProcessService {
 class DBProcessService(managerActor: ActorRef,
                        requestTimeLimit: time.Duration,
                        newProcessPreparer: NewProcessPreparer,
-                       typesForCategories: ProcessTypesForCategories,
+                       processCategoryService: ProcessCategoryService,
                        processResolving: UIProcessResolving,
                        repositoryManager: RepositoryManager[DB],
                        fetchingProcessRepository: FetchingProcessRepository[Future],
@@ -288,7 +288,7 @@ class DBProcessService(managerActor: ActorRef,
   }
 
   private def withProcessingType[T](category: String)(callback: ProcessingType => Future[Either[EspError, T]]): Future[Either[EspError, T]] =
-    typesForCategories.getTypeForCategory(category) match {
+    processCategoryService.getTypeForCategory(category) match {
       case Some(processingType) =>
         callback(processingType)
       case None =>

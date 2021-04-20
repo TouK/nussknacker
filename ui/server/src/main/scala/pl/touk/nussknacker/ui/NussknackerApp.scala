@@ -81,7 +81,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val modelData = typeToConfig.mapValues(_.modelData)
 
-    val typesForCategories = new ProcessTypesForCategories(config)
+    val processCategoryService = new ConfigProcessCategoryService(config)
 
     val managers = typeToConfig.mapValues(_.processManager)
 
@@ -102,7 +102,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val actionRepository = DbProcessActionRepository.create(dbConfig, modelData)
     val processActivityRepository = new ProcessActivityRepository(dbConfig)
 
-    val authenticator = AuthenticatorProvider(config, getClass.getClassLoader, typesForCategories.getAllCategories)
+    val authenticator = AuthenticatorProvider(config, getClass.getClassLoader, processCategoryService.getAllCategories)
 
     val counter = new ProcessCounter(subprocessRepository)
 
@@ -117,7 +117,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val systemRequestTimeout = system.settings.config.getDuration("akka.http.server.request-timeout")
     val managementActor = system.actorOf(ManagementActor.props(managers, processRepository, actionRepository, subprocessResolver, processChangeListener), "management")
-    val processService = new DBProcessService(managementActor, systemRequestTimeout, newProcessPreparer, typesForCategories, processResolving, dbRepositoryManager, processRepository, actionRepository, writeProcessRepository)
+    val processService = new DBProcessService(managementActor, systemRequestTimeout, newProcessPreparer, processCategoryService, processResolving, dbRepositoryManager, processRepository, actionRepository, writeProcessRepository)
 
     val processAuthorizer = new AuthorizeProcess(processRepository)
     val appResources = new AppResources(config, reload, modelData, processRepository, processValidation, processService)
@@ -140,9 +140,9 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         ManagementResources(counter, managementActor, testResultsMaxSizeInBytes,
           processAuthorizer, processRepository, featureTogglesConfig, processResolving, processService),
         new ValidationResources(processResolving),
-        new DefinitionResources(modelData, typeToConfig, subprocessRepository, typesForCategories),
+        new DefinitionResources(modelData, typeToConfig, subprocessRepository, processCategoryService),
         new SignalsResources(modelData, processRepository, processAuthorizer),
-        new UserResources(typesForCategories),
+        new UserResources(processCategoryService),
         new NotificationResources(managementActor, processRepository),
         appResources,
         TestInfoResources(modelData, processAuthorizer, processRepository),
