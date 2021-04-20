@@ -1,36 +1,25 @@
 import React from "react"
-import {RootState} from "../../../../reducers/index"
-import {connect} from "react-redux"
+import {useDispatch, useSelector} from "react-redux"
 import {cancelGrouping} from "../../../../actions/nk/groups"
-import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
+import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 import {getGroupingState} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/group-cancel.svg"
 
-type Props = StateProps
-
-function GroupFinishButton(props: Props) {
-  const {groupingState, cancelGrouping} = props
+function GroupFinishButton(): JSX.Element {
+  const groupingState = useSelector(getGroupingState)
   const {t} = useTranslation()
+  const dispatch = useDispatch()
 
   return (
-    <ToolbarButton
+    <CapabilitiesToolbarButton
+      write
       name={t("panels.actions.group-cancel.button", "cancel")}
       icon={<Icon/>}
       disabled={!groupingState}
-      onClick={cancelGrouping}
+      onClick={() => dispatch(cancelGrouping())}
     />
   )
 }
 
-const mapState = (state: RootState) => ({
-  groupingState: getGroupingState(state),
-})
-
-const mapDispatch = {
-  cancelGrouping,
-}
-
-type StateProps = typeof mapDispatch & ReturnType<typeof mapState>
-
-export default connect(mapState, mapDispatch)(GroupFinishButton)
+export default GroupFinishButton

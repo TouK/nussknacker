@@ -3,7 +3,7 @@ import {useTranslation} from "react-i18next"
 import {RootState} from "../../../../reducers/index"
 import {connect} from "react-redux"
 import {hideRunProcessDetails} from "../../../../actions/nk/process"
-import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
+import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 import {getShowRunProcessDetails} from "../../../../reducers/selectors/graph"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/hide.svg"
 
@@ -14,14 +14,12 @@ function HideButton(props: Props) {
   const {t} = useTranslation()
 
   return (
-    <>
-      <ToolbarButton
-        name={t("panels.actions.test-hide.button", "hide")}
-        icon={<Icon/>}
-        disabled={!showRunProcessDetails}
-        onClick={() => hideRunProcessDetails()}
-      />
-    </>
+    <CapabilitiesToolbarButton write
+      name={t("panels.actions.test-hide.button", "hide")}
+      icon={<Icon/>}
+      disabled={!showRunProcessDetails}
+      onClick={() => hideRunProcessDetails()}
+    />
   )
 }
 

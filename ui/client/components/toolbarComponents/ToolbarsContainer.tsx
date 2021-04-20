@@ -10,14 +10,13 @@ import {
   DraggableRubric,
   DraggableLocation,
 } from "react-beautiful-dnd"
-import React, {useCallback, CSSProperties} from "react"
+import React, {useCallback, CSSProperties, useMemo} from "react"
 import {useSelector} from "react-redux"
-import {RootState} from "../../reducers/index"
 import {ToolbarDraggableType} from "./ToolbarsLayer"
 import styles from "./ToolbarsLayer.styl"
 import cn from "classnames"
 import {DragHandlerContext} from "./DragHandle"
-import {getToolbars} from "../../reducers/selectors/toolbars"
+import {getOrderForPosition} from "../../reducers/selectors/toolbars"
 import {Toolbar} from "./toolbar"
 
 interface Rubric extends DraggableRubric {
@@ -37,9 +36,10 @@ type Props = {
   className?: string,
 }
 
-export function ToolbarsContainer(props: Props) {
+export function ToolbarsContainer(props: Props): JSX.Element {
   const {side, availableToolbars, className} = props
-  const order = useSelector<RootState, string[]>(s => getToolbars(s).positions[side] || [])
+  const selector = useMemo(() => getOrderForPosition(side), [side])
+  const order = useSelector(selector)
 
   const ordered = availableToolbars
     .filter(({id}) => order.includes(id))

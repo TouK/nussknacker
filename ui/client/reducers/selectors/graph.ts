@@ -15,7 +15,7 @@ export const getProcessUnsavedNewName = createSelector(getProcessToDisplay, getP
 export const getProcessVersionId = createSelector(getFetchedProcessDetails, d => d?.processVersionId)
 export const getProcessCategory = createSelector(getFetchedProcessDetails, d => d?.processCategory || "")
 export const getIsArchived = createSelector(getFetchedProcessDetails, d => d?.isArchived)
-export const isStateLoaded = createSelector(getGraph, d => d?.processStateLoaded)
+export const isProcessStateLoaded = createSelector(getGraph, d => !!d?.processStateLoaded)
 export const getProcessState = createSelector(getGraph, d => d?.processState)
 export const isLatestProcessVersion = createSelector(getFetchedProcessDetails, d => d?.isLatestVersion)
 export const isSubprocess = createSelector(getProcessToDisplay, p => p.properties?.isSubprocess)
@@ -36,7 +36,7 @@ export const isProcessRenamed = createSelector(
 
 export const getFetchedProcessState = createSelector(
   getFetchedProcessDetails,
-  isStateLoaded,
+  isProcessStateLoaded,
   getProcessState,
   (fetchedProcessDetails, isStateLoaded, processState) => isStateLoaded ? processState : fetchedProcessDetails?.state,
 )

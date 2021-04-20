@@ -1,37 +1,26 @@
 import React from "react"
-import {RootState} from "../../../../reducers/index"
-import {connect} from "react-redux"
+import {useDispatch, useSelector} from "react-redux"
 import NodeUtils from "../../../graph/NodeUtils"
 import {ungroup} from "../../../../actions/nk/groups"
-import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
+import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 import {getNodeToDisplay} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/ungroup.svg"
 
-type Props = StateProps
-
-function UngroupButton(props: Props) {
-  const {nodeToDisplay, ungroup} = props
+function UngroupButton(): JSX.Element {
+  const nodeToDisplay = useSelector(getNodeToDisplay)
   const {t} = useTranslation()
+  const dispatch = useDispatch()
 
   return (
-    <ToolbarButton
+    <CapabilitiesToolbarButton
+      write
       name={t("panels.actions.group-ungroup.button", "ungroup")}
       icon={<Icon/>}
       disabled={!NodeUtils.nodeIsGroup(nodeToDisplay)}
-      onClick={() => ungroup(nodeToDisplay)}
+      onClick={() => dispatch(ungroup(nodeToDisplay))}
     />
   )
 }
 
-const mapState = (state: RootState) => ({
-  nodeToDisplay: getNodeToDisplay(state),
-})
-
-const mapDispatch = {
-  ungroup,
-}
-
-type StateProps = typeof mapDispatch & ReturnType<typeof mapState>
-
-export default connect(mapState, mapDispatch)(UngroupButton)
+export default UngroupButton

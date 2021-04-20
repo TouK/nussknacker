@@ -4,9 +4,9 @@ import Dropzone, {DropEvent} from "react-dropzone"
 import {ButtonWithFocus, InputWithFocus} from "../withFocus"
 import styles from "./ToolbarButton.styl"
 import ToolbarButtonIcon from "./ToolbarButtonIcon"
-import {ToolbarButtonsContext} from "./ToolbarButtons"
+import {ButtonsVariant, ToolbarButtonsContext} from "./ToolbarButtons"
 
-interface Props {
+export interface ToolbarButtonProps {
   name: string,
   icon: JSX.Element | string,
   className?: string,
@@ -22,14 +22,14 @@ interface Props {
   isActive?: boolean,
 }
 
-function ToolbarButton({onDrop, title, className, iconClassName, labelClassName, disabled, name, icon, hasError, isActive, ...props}: Props) {
-  const {small} = useContext(ToolbarButtonsContext)
+function ToolbarButton({onDrop, title, className, iconClassName, labelClassName, disabled, name, icon, hasError, isActive, ...props}: ToolbarButtonProps) {
+  const {variant} = useContext(ToolbarButtonsContext)
   const classNames = cn(
     styles.button,
     hasError && styles.hasError,
     isActive && styles.isActive,
     disabled && styles.disabled,
-    small && styles.small,
+    variant === ButtonsVariant.small && styles.small,
     className,
   )
   const buttonProps = {

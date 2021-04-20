@@ -5,7 +5,7 @@ import {connect} from "react-redux"
 import {events} from "../../../../analytics/TrackingEvents"
 import {testProcessFromFile} from "../../../../actions/nk/process"
 import {reportEvent} from "../../../../actions/nk/reportEvent"
-import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
+import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 import {getTestCapabilities, getProcessId, getProcessToDisplay} from "../../../../reducers/selectors/graph"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/from-file.svg"
 
@@ -17,7 +17,7 @@ function FromFileButton(props: Props) {
   const {t} = useTranslation()
 
   return (
-    <ToolbarButton
+    <CapabilitiesToolbarButton write
       name={t("panels.actions.test-fromFile.button", "from file")}
       icon={<Icon/>}
       disabled={!testCapabilities.canBeTested}

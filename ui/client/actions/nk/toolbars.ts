@@ -1,3 +1,4 @@
+import {getToolbarsInitData} from "../../reducers/selectors/toolbars"
 import {ToolbarsSide} from "../../reducers/toolbars"
 import {ThunkAction} from "../reduxTypes"
 import {Toolbar} from "../../components/toolbarComponents/toolbar"
@@ -5,7 +6,7 @@ import {Toolbar} from "../../components/toolbarComponents/toolbar"
 export type ToolbarPosition = [ToolbarsSide | string, number]
 
 type ResetToolbarsAction = { type: "RESET_TOOLBARS", toolbars: Array<[string, ToolbarsSide]> }
-type RegisterToolbarsAction = { type: "REGISTER_TOOLBARS", toolbars: Array<[string, ToolbarsSide]> }
+type RegisterToolbarsAction = { type: "REGISTER_TOOLBARS", toolbars: Array<[string, ToolbarsSide]>, configId: string }
 type MoveToolbarAction = { type: "MOVE_TOOLBAR", from: ToolbarPosition, to: ToolbarPosition }
 type ToggleToolbarAction = { type: "TOGGLE_TOOLBAR", id: string, isCollapsed: boolean }
 type ToggleToolboxGroupAction = { type: "TOGGLE_NODE_TOOLBOX_GROUP", nodeGroup: string }
@@ -15,15 +16,16 @@ export const toggleAllToolbars = (isCollapsed: boolean): ToggleAllToolbarsAction
 
 export const resetToolbars = (): ThunkAction => {
   return (dispatch, getState) => {
-    const toolbars = getState().toolbars?.initData
+    const toolbars = getToolbarsInitData(getState())
     dispatch({type: "RESET_TOOLBARS", toolbars})
   }
 }
 
-export function registerToolbars(toolbars: Toolbar[]): RegisterToolbarsAction {
+export function registerToolbars(toolbars: Toolbar[], configId: string): RegisterToolbarsAction {
   return {
     type: "REGISTER_TOOLBARS",
     toolbars: toolbars.map(({id, defaultSide}) => [id, defaultSide]),
+    configId,
   }
 }
 

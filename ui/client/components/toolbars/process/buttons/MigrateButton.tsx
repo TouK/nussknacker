@@ -1,3 +1,4 @@
+import {isEmpty} from "lodash"
 import React from "react"
 import {RootState} from "../../../../reducers/index"
 import {connect} from "react-redux"
@@ -5,7 +6,7 @@ import * as DialogMessages from "../../../../common/DialogMessages"
 import HttpService from "../../../../http/HttpService"
 import {events} from "../../../../analytics/TrackingEvents"
 import {toggleConfirmDialog} from "../../../../actions/nk/ui/toggleConfirmDialog"
-import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
+import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 import {getFeatureSettings} from "../../../../reducers/selectors/settings"
 import {isMigrationPossible, getProcessVersionId, getProcessId} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
@@ -18,8 +19,13 @@ function MigrateButton(props: StateProps) {
   } = props
   const {t} = useTranslation()
 
+  if (isEmpty(featuresSettings?.remoteEnvironment)) {
+    return null
+  }
+
   return (
-    <ToolbarButton
+    <CapabilitiesToolbarButton
+      deploy
       name={t("panels.actions.process-migrate.button", "migrate")}
       icon={<Icon/>}
       disabled={!migrationPossible}
