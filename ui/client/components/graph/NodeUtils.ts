@@ -51,7 +51,7 @@ class NodeUtils {
       nodes = nodes.filter(node => !group.nodes.includes(node.id))
       nodes = nodes.concat([this.createGroupNode(process.nodes, group)])
     })
-    return nodes
+    return nodes || []
   }
 
   createGroupNode = (nodes: NodeType[], group: GroupType): GroupNodeType => {
@@ -76,7 +76,7 @@ class NodeUtils {
         to: _.includes(group.nodes, edge.to) ? id : edge.to,
       })).filter(a => !_.eq(a.from, a.to))
     })
-    return edges
+    return edges || []
   }
 
   getNodeById = (nodeId: NodeId, process: Process) => this.nodesFromProcess(process).find(n => n.id === nodeId)
