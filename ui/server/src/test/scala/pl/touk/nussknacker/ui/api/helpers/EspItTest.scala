@@ -442,7 +442,7 @@ object ProcessJson{
       process.hcursor.downField("state").downField("description").as[Option[String]].right.get,
       process.hcursor.downField("processCategory").as[String].right.get,
       process.hcursor.downField("isArchived").as[Boolean].right.get,
-      process.hcursor.downField("history").as[Option[List[Json]]].right.get.map(_.map(v => ProcessVersionJson(v))),
+      process.hcursor.downField("history").as[Option[List[Json]]].right.get.map(_.map(v => ProcessVersionJson(v)))
     )
   }
 }
