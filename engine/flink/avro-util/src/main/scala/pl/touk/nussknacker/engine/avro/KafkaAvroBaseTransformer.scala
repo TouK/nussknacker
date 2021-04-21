@@ -25,14 +25,17 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
 
   def schemaRegistryProvider: SchemaRegistryProvider
 
+
   def processObjectDependencies: ProcessObjectDependencies
 
   @transient protected lazy val schemaRegistryClient: SchemaRegistryClient = schemaRegistryProvider.createSchemaRegistryClient
 
+  protected def topicSelectionStrategy: TopicSelectionStrategy = new AllTopicsSelectionStrategy
+
   protected val kafkaConfig: KafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
 
   protected def getTopicParam(implicit nodeId: NodeId): WithError[Parameter] = {
-    val topics = schemaRegistryClient.getAllTopics
+    val topics = topicSelectionStrategy.getTopics(schemaRegistryClient)
 
     (topics match {
       case Valid(topics) => Writer[List[ProcessCompilationError], List[String]](Nil, topics)
