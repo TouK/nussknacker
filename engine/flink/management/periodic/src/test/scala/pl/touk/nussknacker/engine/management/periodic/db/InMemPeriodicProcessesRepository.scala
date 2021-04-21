@@ -81,7 +81,7 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
     PeriodicProcessesRepository.createPeriodicProcess(periodicProcess)
   }
 
-  override def getNextScheduledRunForSchedule(processName: ProcessName): List[PeriodicProcessDeployment] =
+  override def getLatestDeploymentForEachSchedule(processName: ProcessName): List[PeriodicProcessDeployment] =
     (for {
       process <- processEntities.filter(activeProcess(processName))
       deployment <- deploymentEntities
