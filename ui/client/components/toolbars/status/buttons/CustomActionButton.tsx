@@ -15,7 +15,7 @@ type Props = {
 
 export default function CustomActionButton(props: Props) {
 
-  const {action, processId, processStatus} = props
+  const {action, processStatus} = props
 
   const dispatch = useDispatch()
   const {t} = useTranslation()
