@@ -6,12 +6,12 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository
-import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.Deployed
+import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.{Deployed, PeriodicProcessDeploymentStatus}
 import pl.touk.nussknacker.engine.management.periodic.model.{DeploymentWithJarData, PeriodicProcessDeployment}
 import pl.touk.nussknacker.engine.management.periodic.service._
-
 import java.time.chrono.ChronoLocalDateTime
 import java.time.{Clock, LocalDateTime}
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
@@ -166,7 +166,7 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
 
   def deactivate(processName: ProcessName): Future[Unit] = for {
     status <- delegateProcessManager.findJobStatus(processName)
-    maybePeriodicDeployment <- getNextScheduledDeployment(processName)
+    maybePeriodicDeployment <- getLatestDeployment(processName)
     actionResult <- maybePeriodicDeployment match {
       case Some(periodicDeployment) => handleFinishedAction(periodicDeployment, status)
         .flatMap(_ => deactivateAction(processName))
@@ -188,10 +188,15 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
     } yield () => Future.sequence(processData.map(_.deploymentData.jarFileName).map(jarManager.deleteJar)).map(_ => ())
   }
 
-  def getNextScheduledDeployment(processName: ProcessName): Future[Option[PeriodicProcessDeployment]] = {
+  /**
+    * Returns latest deployment. It can be in any status (consult [[PeriodicProcessDeploymentStatus]]).
+    *
+    * For multiple schedules only the oldest one is returned.
+    */
+  def getLatestDeployment(processName: ProcessName): Future[Option[PeriodicProcessDeployment]] = {
     implicit val localDateOrdering: Ordering[LocalDateTime] = Ordering.by(identity[ChronoLocalDateTime[_]])
     //TODO: so far we return only one
-    scheduledProcessesRepository.getNextScheduledRunForSchedule(processName)
+    scheduledProcessesRepository.getLatestDeploymentForEachSchedule(processName)
       .map(_.sortBy(_.runAt).headOption).run
   }
 

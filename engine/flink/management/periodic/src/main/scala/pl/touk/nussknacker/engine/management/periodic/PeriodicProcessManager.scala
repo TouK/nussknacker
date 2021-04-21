@@ -114,7 +114,7 @@ class PeriodicProcessManager(val delegate: ProcessManager,
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
     def handleFailed(original: Option[ProcessState]): Future[Option[ProcessState]] = {
-      service.getNextScheduledDeployment(name).map {
+      service.getLatestDeployment(name).map {
         // this method returns only active schedules, so 'None' means this process has been already canceled
         case None => original.map(_.copy(status = SimpleStateStatus.Canceled))
         case _ => original
@@ -122,7 +122,7 @@ class PeriodicProcessManager(val delegate: ProcessManager,
     }
 
     def handleScheduled(original: Option[ProcessState]): Future[Option[ProcessState]] = {
-      service.getNextScheduledDeployment(name).map { maybeProcessDeployment =>
+      service.getLatestDeployment(name).map { maybeProcessDeployment =>
         maybeProcessDeployment.map { processDeployment =>
           processDeployment.state.status match {
             case PeriodicProcessDeploymentStatus.Scheduled => Some(ProcessState(
