@@ -27,4 +27,10 @@ class TopicSelectionStrategySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     strategy.getTopics(confluentClient).toList shouldBe List(List(RecordTopic))
   }
 
+  test("show how to override topic selection strategy") {
+    new KafkaAvroSourceFactory(schemaRegistryProvider, testProcessObjectDependencies, None) {
+      override def topicSelectionStrategy = new TopicPatternSelectionStrategy(Pattern.compile("test-.*"))
+    }
+  }
+
 }

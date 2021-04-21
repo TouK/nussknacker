@@ -30,7 +30,7 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
 
   @transient protected lazy val schemaRegistryClient: SchemaRegistryClient = schemaRegistryProvider.createSchemaRegistryClient
 
-  @transient protected val topicSelectionStrategy: TopicSelectionStrategy = new AllTopicsSelectionStrategy
+  protected def topicSelectionStrategy: TopicSelectionStrategy = new AllTopicsSelectionStrategy
 
   protected val kafkaConfig: KafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
 

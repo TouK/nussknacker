@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryClient, Sch
 
 import java.util.regex.Pattern
 
-trait TopicSelectionStrategy {
+trait TopicSelectionStrategy extends Serializable {
 
   def getTopics(schemaRegistryClient: SchemaRegistryClient): Validated[SchemaRegistryError, List[String]]
 
