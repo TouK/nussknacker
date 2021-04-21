@@ -33,7 +33,7 @@ class CanonicalProcessTest extends FunSuite with Matchers {
       MetaData("process1", StreamMetaData()),
       ExceptionHandlerRef(Nil),
       nodes = nodes,
-      additionalBranches = Some(List()))
+      additionalBranches = None)
 
   test("#withoutDisabledNodes when all nodes are enabled") {
     val withNodesEnabled = process(

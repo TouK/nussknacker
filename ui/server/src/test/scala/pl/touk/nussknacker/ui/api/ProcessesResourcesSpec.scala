@@ -402,6 +402,20 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     }
   }
 
+  test("update process with the same json should not create new version") {
+    val command = ProcessTestData.createEmptyUpdateProcessCommand(processName, None)
+
+    createProcessRequest(processName) { code =>
+      Put(s"/processes/${processName.value}", TestFactory.posting.toRequest(command)) ~> processesRouteWithAllPermissions ~> check {
+        withProcess(processName) { process =>
+          process.history.map(_.size) shouldBe Some(1)
+        }
+      }
+
+      code shouldBe StatusCodes.Created
+    }
+  }
+
   test("return details of process with empty expression") {
     saveProcess(processName, ProcessTestData.validProcessWithEmptyExpr) {
       Get(s"/processes/${processName.value}") ~> routeWithAllPermissions ~> check {

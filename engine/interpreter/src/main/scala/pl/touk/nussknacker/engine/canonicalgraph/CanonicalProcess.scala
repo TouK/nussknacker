@@ -79,7 +79,8 @@ case class CanonicalProcess(metaData: MetaData,
 
   def withNodes(nodes: NonEmptyList[List[CanonicalNode]]): CanonicalProcess = {
     val NonEmptyList(head, tail) = nodes
-    copy(nodes = head, additionalBranches = Some(tail))
+    val additionalBranches = if (tail.isEmpty) None else Some(tail)
+    copy(nodes = head, additionalBranches = additionalBranches)
   }
 
   lazy val withoutDisabledNodes: CanonicalProcess = mapAllNodes(withoutDisabled)

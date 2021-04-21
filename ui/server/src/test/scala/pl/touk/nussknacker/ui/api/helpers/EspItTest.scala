@@ -10,6 +10,7 @@ import cats.syntax.semigroup._
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.{Encoder, Json, Printer, parser}
+import org.scalatest.Matchers.convertToAnyShouldWrapper
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig, ProcessingTypeData}
@@ -144,15 +145,14 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   val processActivityRoute = new ProcessActivityResource(processActivityRepository, fetchingProcessRepository)
   val attachmentsRoute = new AttachmentResources(attachmentService, fetchingProcessRepository)
 
-  def createProcessAndAssertSuccess(processName: ProcessName, processCategory: String, isSubprocess: Boolean): Assertion = {
-    Post(s"/processes/${processName.value}/$processCategory?isSubprocess=$isSubprocess") ~> processesRouteWithAllPermissions ~> check {
-      status shouldBe StatusCodes.Created
+  def createProcessRequest(processName: ProcessName)(callback: StatusCode => Assertion): Assertion = {
+    Post(s"/processes/${processName.value}/$testCategoryName?isSubprocess=false") ~> processesRouteWithAllPermissions ~> check {
+      callback(status)
     }
   }
 
   def saveProcess(processName: ProcessName, process: EspProcess)(testCode: => Assertion): Assertion = {
-    Post(s"/processes/${processName.value}/$testCategoryName?isSubprocess=false") ~> processesRouteWithAllPermissions ~> check {
-      status shouldBe StatusCodes.Created
+    createProcessRequest(processName) { _ =>
       val json = parser.decode[Json](responseAs[String]).right.get
       val resp = CreateProcessResponse(json)
 
@@ -163,10 +163,15 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   }
 
   def saveProcess(process: DisplayableProcess)(testCode: => Assertion): Assertion = {
-    val processId = process.id
-    Post(s"/processes/$processId/$testCategoryName?isSubprocess=false") ~> processesRouteWithAllPermissions ~> check {
-      status shouldBe StatusCodes.Created
+    createProcessRequest(ProcessName(process.id)) { code =>
+      code shouldBe StatusCodes.Created
       updateProcess(process)(testCode)
+    }
+  }
+
+  def saveProcessAndAssertSuccess(processId: String, process: EspProcess): Assertion = {
+    saveProcess(ProcessName(processId), process) {
+      status shouldEqual StatusCodes.OK
     }
   }
 
@@ -195,12 +200,6 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   def updateProcess(processName: ProcessName, process: EspProcess)(testCode: => Assertion): Assertion = {
     Put(s"/processes/${processName.value}", TestFactory.posting.toEntityAsProcessToSave(process)) ~> processesRouteWithAllPermissions ~> check {
       testCode
-    }
-  }
-
-  def saveProcessAndAssertSuccess(processId: String, process: EspProcess): Assertion = {
-    saveProcess(ProcessName(processId), process) {
-      status shouldEqual StatusCodes.OK
     }
   }
 
@@ -419,6 +418,14 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     ProcessJson(parser.decode[Json](response).right.get)
 }
 
+final case class ProcessVersionJson(id: Long)
+
+object ProcessVersionJson {
+  def apply(process: Json): ProcessVersionJson = ProcessVersionJson(
+    process.hcursor.downField("processVersionId").as[Long].right.get
+  )
+}
+
 object ProcessJson{
   def apply(process: Json): ProcessJson = {
     val lastAction = process.hcursor.downField("lastAction").as[Option[Json]].right.get
@@ -434,7 +441,8 @@ object ProcessJson{
       process.hcursor.downField("state").downField("tooltip").as[Option[String]].right.get,
       process.hcursor.downField("state").downField("description").as[Option[String]].right.get,
       process.hcursor.downField("processCategory").as[String].right.get,
-      process.hcursor.downField("isArchived").as[Boolean].right.get
+      process.hcursor.downField("isArchived").as[Boolean].right.get,
+      process.hcursor.downField("history").as[Option[List[Json]]].right.get.map(_.map(v => ProcessVersionJson(v)))
     )
   }
 }
@@ -449,7 +457,9 @@ final case class ProcessJson(id: String,
                              stateTooltip: Option[String],
                              stateDescription: Option[String],
                              processCategory: String,
-                             isArchived: Boolean) {
+                             isArchived: Boolean,
+                             //Process on list doesn't contain history
+                             history: Option[List[ProcessVersionJson]]) {
 
   def isDeployed: Boolean = lastActionType.contains(ProcessActionType.Deploy.toString)
 
