@@ -7,22 +7,21 @@ import java.util.regex.Pattern
 
 trait TopicSelectionStrategy {
 
-  val schemaRegistryClient: SchemaRegistryClient
-
-  def getTopics: Validated[SchemaRegistryError, List[String]]
+  def getTopics(schemaRegistryClient: SchemaRegistryClient): Validated[SchemaRegistryError, List[String]]
 
 }
 
-class AllTopicsSelectionStrategy(val schemaRegistryClient: SchemaRegistryClient) extends TopicSelectionStrategy {
+class AllTopicsSelectionStrategy extends TopicSelectionStrategy {
 
-  override def getTopics: Validated[SchemaRegistryError, List[String]] = schemaRegistryClient.getAllTopics
+  override def getTopics(schemaRegistryClient: SchemaRegistryClient): Validated[SchemaRegistryError, List[String]] =
+    schemaRegistryClient.getAllTopics
 
 }
 
-class TopicPatternSelectionStrategy(val schemaRegistryClient: SchemaRegistryClient, val topicPattern: Pattern)
+class TopicPatternSelectionStrategy(val topicPattern: Pattern)
   extends TopicSelectionStrategy {
 
-  override def getTopics: Validated[SchemaRegistryError, List[String]] =
+  override def getTopics(schemaRegistryClient: SchemaRegistryClient): Validated[SchemaRegistryError, List[String]] =
     schemaRegistryClient.getAllTopics.map(_.filter(topicPattern.matcher(_).matches()))
 
 }

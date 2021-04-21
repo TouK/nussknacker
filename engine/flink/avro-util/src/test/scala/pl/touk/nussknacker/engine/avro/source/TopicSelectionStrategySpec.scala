@@ -18,13 +18,13 @@ class TopicSelectionStrategySpec extends KafkaAvroSpecMixin with KafkaAvroSource
   private lazy val confluentClient = schemaRegistryProvider.createSchemaRegistryClient
 
   test("all topic strategy test") {
-    val strategy = new AllTopicsSelectionStrategy(confluentClient)
-    strategy.getTopics.toList.map(_.toSet) shouldBe List(Set(RecordTopic, IntTopic, InvalidDefaultsTopic))
+    val strategy = new AllTopicsSelectionStrategy()
+    strategy.getTopics(confluentClient).toList.map(_.toSet) shouldBe List(Set(RecordTopic, IntTopic, InvalidDefaultsTopic))
   }
 
   test("topic filtering strategy test") {
-    val strategy = new TopicPatternSelectionStrategy(confluentClient, Pattern.compile(".*Record.*"))
-    strategy.getTopics.toList shouldBe List(List(RecordTopic))
+    val strategy = new TopicPatternSelectionStrategy(Pattern.compile(".*Record.*"))
+    strategy.getTopics(confluentClient).toList shouldBe List(List(RecordTopic))
   }
 
 }
