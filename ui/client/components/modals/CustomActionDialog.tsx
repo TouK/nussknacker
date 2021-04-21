@@ -23,9 +23,9 @@ function CustomActionDialog(): JSX.Element {
   const init = useCallback(() => setState({}), [])
 
   const confirm = useCallback(async () => {
-    await dispatch(HttpService
+    await HttpService
       .customAction(processId, action.name, mapState)
-      .finally(() => dispatch(loadProcessState(processId))))
+      .finally(() => dispatch(loadProcessState(processId)))
   }, [processId, action, mapState])
 
   const setParam = (name: string) => (value: any) =>  setState(current => ({...current, [name]: value}))

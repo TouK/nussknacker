@@ -10,7 +10,7 @@ export interface ActionButtonProps {
 
 export function ActionButton({name}: ActionButtonProps): JSX.Element {
   const processId = useSelector(getProcessId)
-  const {status} = useSelector(getProcessState)
+  const status = useSelector(getProcessState)?.status
   const customActions = useSelector(getCustomActions)
 
   const action = useMemo(
