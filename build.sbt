@@ -782,8 +782,10 @@ lazy val standaloneUtil = (project in engine("standalone/util")).
     name := "nussknacker-standalone-util",
     libraryDependencies ++= {
       Seq(
-
         "io.dropwizard.metrics5" % "metrics-core" % dropWizardV,
+        "io.dropwizard.metrics5" % "metrics-influxdb" % dropWizardV,
+        "com.softwaremill.sttp.client" %% "core" % sttpV,
+        "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV,
         //akka-http is only for StandaloneRequestResponseLogger
         "com.typesafe.akka" %% "akka-http" % akkaHttpV % "provided",
         "com.typesafe.akka" %% "akka-stream" % akkaV % "provided"

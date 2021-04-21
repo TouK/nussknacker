@@ -11,6 +11,7 @@ import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.standalone.deployment.DeploymentService
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
 import pl.touk.nussknacker.engine.standalone.utils.logging.StandaloneRequestResponseLogger
+import pl.touk.nussknacker.engine.standalone.utils.metrics.dropwizard.influxdb.StandaloneInfluxDbReporter
 import pl.touk.nussknacker.engine.standalone.utils.metrics.dropwizard.{DropwizardMetricsProvider, StandaloneMetricsReporter}
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
@@ -46,8 +47,6 @@ object StandaloneHttpApp extends Directives with FailFastCirceSupport with LazyL
     port = processesPort
   )
 
-
-
 }
 
 object StandaloneMetrics extends LazyLogging {
@@ -55,8 +54,12 @@ object StandaloneMetrics extends LazyLogging {
   def prepareRegistry(config: Config): MetricRegistry = {
     val metricRegistry = new MetricRegistry
     val metricReporters = loadMetricsReporters()
-    metricReporters.foreach { reporter =>
-      reporter.createAndRunReporter(metricRegistry, config)
+    if (metricReporters.nonEmpty) {
+      metricReporters.foreach { reporter =>
+        reporter.createAndRunReporter(metricRegistry, config)
+      }
+    } else {
+      StandaloneInfluxDbReporter.createAndRunReporterIfConfigured(metricRegistry, config)
     }
     metricRegistry
   }
