@@ -31,7 +31,7 @@ class AvroSinkValueParameterTest extends FunSuite with Matchers {
   }
 
   test("typing result to AvroSinkPrimitiveValueParameter") {
-    val result = AvroSinkValueParameter(typing.Typed[java.lang.Long]).valueOr(e => fail(e.toString)).asInstanceOf[AvroSinkPrimitiveValueParameter]
+    val result = AvroSinkValueParameter(typing.Typed[java.lang.Long]).valueOr(e => fail(e.toString)).asInstanceOf[AvroSinkSingleValueParameter]
     result.toParameters.toSet shouldBe Set(
       Parameter(name = SinkValueParamName, typ = typing.Typed[java.lang.Long]).copy(isLazyParameter = true)
     )

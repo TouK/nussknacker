@@ -49,7 +49,7 @@ case object AvroSinkValueParameter {
           .copy(
             isLazyParameter = true,
             editor = new ParameterTypeEditorDeterminer(typing).determine())
-        Valid(AvroSinkPrimitiveValueParameter(parameter))
+        Valid(AvroSinkSingleValueParameter(parameter))
     }
 
   private def containsRestrictedNames(obj: TypedObjectTypingResult): Boolean = {
@@ -72,12 +72,12 @@ case object AvroSinkValueParameter {
 sealed trait AvroSinkValueParameter {
 
   def toParameters: List[Parameter] = this match {
-    case AvroSinkPrimitiveValueParameter(value) => value :: Nil
+    case AvroSinkSingleValueParameter(value) => value :: Nil
     case AvroSinkRecordParameter(fields) => fields.toList.flatMap(_._2.toParameters)
   }
 }
 
-case class AvroSinkPrimitiveValueParameter(value: Parameter)
+case class AvroSinkSingleValueParameter(value: Parameter)
   extends AvroSinkValueParameter
 
 case class AvroSinkRecordParameter(fields: ListMap[FieldName, AvroSinkValueParameter])
