@@ -15,7 +15,7 @@ object AvroSinkValue {
       case AvroSinkRecordParameter(paramFields) =>
         val fields = paramFields.map { case (fieldName, sinkParam) =>
           (fieldName, applyUnsafe(sinkParam, parameterValues))
-        }
+        }.toMap
         AvroSinkRecordValue(fields)
     }
 

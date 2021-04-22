@@ -52,8 +52,7 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
         }
 
       validatedSchema.andThen { schema =>
-        val typing = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)
-        AvroSinkValueParameter(typing).map { valueParam =>
+        AvroSinkValueParameter(schema).map { valueParam =>
           val state = TransformationState(sinkValueParameter = valueParam)
           NextParameters(valueParam.toParameters, state = Some(state))
         }
