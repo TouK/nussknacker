@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.api.definition
 
 import java.util.ServiceLoader
 import java.util.regex.Pattern
-
 import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
 import io.circe.ParsingFailure
@@ -177,27 +176,28 @@ case object LiteralParameterValidator {
 
 }
 
-trait CustomParameterValidator extends Validator {
+trait CustomParameterValidatorFactory {
   def name: String
+  def load(config: Option[Map[String, String]]): Validator
 }
 
-case class CustomParameterValidatorDelegate(name: String) extends ParameterValidator {
+case class CustomParameterValidatorDelegate(name: String, config: Option[Map[String, String]]) extends ParameterValidator {
   import CustomParameterValidatorDelegate._
 
   override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId)
-  : Validated[PartSubGraphCompilationError, Unit] = getOrLoad(name).isValid(paramName, value, label)
+  : Validated[PartSubGraphCompilationError, Unit] = getOrLoad(name, config).isValid(paramName, value, label)
 }
 
 object CustomParameterValidatorDelegate {
   import scala.collection.JavaConverters._
 
-  private val cache: TrieMap[String, CustomParameterValidator] = TrieMap[String, CustomParameterValidator]()
+  private val cache: TrieMap[String, Validator] = TrieMap[String, Validator]()
 
-  private def getOrLoad(name: String): CustomParameterValidator = cache.getOrElseUpdate(name, load(name))
+  private def getOrLoad(name: String, config: Option[Map[String, String]]): Validator = cache.getOrElseUpdate(name, load(name, config))
 
-  private def load(name: String) = ServiceLoader.load(classOf[CustomParameterValidator])
+  private def load(name: String, config: Option[Map[String, String]]) = ServiceLoader.load(classOf[CustomParameterValidatorFactory])
     .iterator().asScala.filter(_.name == name).toList match {
-    case v :: Nil => v
+    case v :: Nil => v.load(config)
     case Nil => throw new RuntimeException(s"Cannot load custom validator: $name")
     case _ => throw new RuntimeException(s"Multiple custom validators with name: $name")
   }

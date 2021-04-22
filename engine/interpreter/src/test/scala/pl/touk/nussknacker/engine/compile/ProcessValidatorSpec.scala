@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile
 
 import java.util.Collections
-import cats.data.Validated.{Invalid, Valid}
+import cats.data.Validated.{Invalid, Valid, invalid, valid}
 import cats.data._
 import cats.instances.string._
 import com.github.ghik.silencer.silent
@@ -80,7 +80,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         Parameter[String]("jsonParam").copy(validators = List(JsonValidator))
       )), emptyQueryNamesData()),
       "withCustomValidatorParam" -> (ObjectDefinition.withParams(List(
-        Parameter[String]("param").copy(validators = List(CustomParameterValidatorDelegate("test_custom_validator")))
+        Parameter[String]("param").copy(validators = List(CustomParameterValidatorDelegate("test_custom_validator", Some(Map("prefix"-> "A")))))
       )), emptyQueryNamesData()),
       "withAdditionalVariable" -> (ObjectDefinition.withParams(List(
         Parameter[String]("param").copy(additionalVariables = Map("additional" -> Typed[Int]), isLazyParameter = true)
@@ -1274,13 +1274,17 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   }
 }
 
-class StartingWithACustomValidator extends CustomParameterValidator {
+class StartingWithPrefixCustomValidatorFactory extends CustomParameterValidatorFactory {
   override def name: String = "test_custom_validator"
-  import cats.data.Validated.{invalid, valid}
 
+  override def load(config: Option[Map[String, String]]): Validator = new StartingWithPrefixCustomValidator(
+    config.flatMap(_.get("prefix")).getOrElse(throw new IllegalArgumentException("missing 'prefix' config")))
+}
+
+class StartingWithPrefixCustomValidator(prefix: String) extends Validator {
   override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
-    if (value.stripPrefix("'").startsWith("A")) valid(Unit)
+    if (value.stripPrefix("'").startsWith(prefix)) valid(Unit)
     else invalid(
-      CustomParameterValidationError(s"Value $value does not starts with 'A'",
-        "Value does not starts with 'A'", paramName, nodeId.id))
+      CustomParameterValidationError(s"Value $value does not starts with prefix '$prefix'",
+        s"Value does not starts with '$prefix'", paramName, nodeId.id))
 }
