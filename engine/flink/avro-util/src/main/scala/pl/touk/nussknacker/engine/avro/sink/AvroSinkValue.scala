@@ -8,7 +8,7 @@ object AvroSinkValue {
 
   def applyUnsafe(sinkParameter: AvroSinkValueParameter, parameterValues: Map[String, Any]): AvroSinkValue =
     sinkParameter match {
-      case AvroSinkPrimitiveValueParameter(param) =>
+      case AvroSinkSingleValueParameter(param) =>
         val value = parameterValues(param.name)
         AvroSinkSingleValue(toLazyParameter(value, param.name))
 
