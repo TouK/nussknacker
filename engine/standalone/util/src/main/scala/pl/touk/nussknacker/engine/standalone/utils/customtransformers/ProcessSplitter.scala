@@ -1,14 +1,16 @@
 package pl.touk.nussknacker.engine.standalone.utils.customtransformers
 
 import cats.data.NonEmptyList
+import cats.data.Validated.Valid
 import cats.instances.either._
 import cats.instances.list._
 import cats.syntax.traverse._
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ContextTransformationDef, JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
-import pl.touk.nussknacker.engine.standalone.api.StandaloneCustomTransformer
+import pl.touk.nussknacker.engine.standalone.api.{JoinStandaloneCustomTransformer, StandaloneCustomTransformer}
 import pl.touk.nussknacker.engine.standalone.api.types.InterpreterType
 
 import scala.collection.JavaConverters._
@@ -27,16 +29,23 @@ class ProcessSplitter(parts: LazyParameter[java.util.Collection[Any]])
   extends StandaloneCustomTransformer with ReturningType {
 
   override def createTransformation(outputVariable: Option[String]): StandaloneCustomTransformation =
-    (continuation: InterpreterType, lpi: LazyParameterInterpreter) => (ctx, ec) => {
-      implicit val ecc: ExecutionContext = ec
-      lpi.createInterpreter(parts)(ec, ctx).flatMap { partsToInterpret =>
-        Future.sequence(partsToInterpret.asScala.toList.map { partToInterpret =>
-          val newCtx = ctx.withVariable(outputVariable.get, partToInterpret)
-          continuation(newCtx, ec)
-        })
-      }.map { results: List[Either[NonEmptyList[EspExceptionInfo[_ <: Throwable]], List[InterpretationResult]]] =>
-        results.sequence.right.map(_.flatten)
+    (continuation: InterpreterType, lpi: LazyParameterInterpreter) => {
+      val interpreter = lpi.createInterpreter(parts)
+      (ctxs, ec) => {
+        implicit val ecc: ExecutionContext = ec
+        val all = Future.sequence(ctxs.map { ctx =>
+          interpreter(ec, ctx).map { partsToRun =>
+            partsToRun.asScala.toList.map { partToRun =>
+              ctx.withVariable(outputVariable.get, partToRun)
+            }
+          }
+        }).map(_.flatten)
+
+        all.flatMap { partsToInterpret =>
+          continuation(partsToInterpret, ecc)
+        }
       }
+
     }
 
   override def returnType: typing.TypingResult = {

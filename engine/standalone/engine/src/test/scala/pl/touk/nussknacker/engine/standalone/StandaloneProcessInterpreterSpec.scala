@@ -7,9 +7,10 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
-import pl.touk.nussknacker.engine.api.{Context, JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{Context, JobData, MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.api.types.GenericListResultType
@@ -264,6 +265,22 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
 
     val result = runProcess(process, Request1("abc", "b"))
     result shouldBe Right(List(StandaloneLogInformation(false)))
+  }
+
+  test("should perform union") {
+    val process = EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+      GraphBuilder
+        .source("sourceId1", "request1-post-source")
+        .split("spl", 
+          GraphBuilder.buildSimpleVariable("v1", "v1", "'aa'").branchEnd("branch1", "join1"),
+          GraphBuilder.buildSimpleVariable("v1a", "v1", "'bb'").branchEnd("branch1a", "join1")),
+      GraphBuilder
+        .branch("join1", "union", None, Nil)
+        .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + ' ' + #v1")
+    ))
+
+    val result = runProcess(process, Request1("abc", "b"))
+    result shouldBe Right(List("abc aa withRandomString", "abc bb withRandomString"))
   }
 
   def runProcess(process: EspProcess,
