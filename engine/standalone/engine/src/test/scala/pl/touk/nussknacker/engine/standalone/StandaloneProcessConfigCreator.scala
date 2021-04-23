@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocatio
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.standalone.api.StandaloneCustomTransformer
 import pl.touk.nussknacker.engine.standalone.api.types.{EndResult, InterpreterType}
-import pl.touk.nussknacker.engine.standalone.utils.customtransformers.{ProcessSplitter, StandaloneUnion}
+import pl.touk.nussknacker.engine.standalone.utils.customtransformers.{ProcessSplitter, StandaloneSorter, StandaloneUnion}
 import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.standalone.utils.{JsonStandaloneSourceFactory, StandaloneSinkFactory, StandaloneSinkWithParameters}
 import pl.touk.nussknacker.engine.util.LoggingListener
@@ -39,6 +39,7 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
     "splitter" -> WithCategories(ProcessSplitter),
     "union" -> WithCategories(StandaloneUnion),
+    "sorter" -> WithCategories(StandaloneSorter),
     "extractor" -> WithCategories(StandaloneCustomExtractor),
     "filterWithLog" -> WithCategories(StandaloneFilterWithLog)
   )

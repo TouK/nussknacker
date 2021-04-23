@@ -20,7 +20,9 @@ import pl.touk.nussknacker.engine.standalone.utils.metrics.{MetricsProvider, NoO
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
+import java.util
 import scala.collection.immutable.ListMap
+import scala.jdk.CollectionConverters.asJavaIterableConverter
 
 class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryPatientScalaFutures {
 
@@ -281,6 +283,25 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
 
     val result = runProcess(process, Request1("abc", "b"))
     result shouldBe Right(List("abc aa withRandomString", "abc bb withRandomString"))
+  }
+
+  test("should sort split results") {
+
+    val process = EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
+      GraphBuilder
+        .source("sourceId1", "request1-post-source")
+        .split("spl",
+          (1 to 5).map(v => GraphBuilder.buildVariable(s"var$v", "v1", "value" -> s"'v$v'", "rank" -> v.toString)
+            .branchEnd(s"branch$v", "joinWithSort")): _*),
+      GraphBuilder
+        .branch("joinWithSort", "union", None, Nil)
+        .customNode("sorter", "sorted", "sorter",
+          "maxCount" -> "2", "rank" -> "#v1.rank", "output" -> "#v1.value")
+        .sink("endNodeIID", "#sorted", "response-sink")
+    ))
+
+    val result = runProcess(process, Request1("abc", "b"))
+    result shouldBe Right(List(util.Arrays.asList("v5", "v4")))
   }
 
   def runProcess(process: EspProcess,
