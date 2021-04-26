@@ -31,7 +31,6 @@ const emptyGraphState: GraphState = {
   edgeToDisplay: {},
   layout: [],
   testCapabilities: {},
-  groupingState: null,
   selectionState: [],
   processCounts: {},
   testResults: null,
@@ -44,8 +43,6 @@ const emptyGraphState: GraphState = {
   },
   unsavedNewName: null,
 }
-
-const STATE_PROPERTY_NAME = "groupingState"
 
 const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
   switch (action.type) {
@@ -280,24 +277,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         processCounts: null,
       }
     }
-    case "START_GROUPING": {
-      return {
-        ...state,
-        groupingState: [],
-        nodeToDisplay: state.processToDisplay.properties,
-      }
-    }
-    case "FINISH_GROUPING": {
-      const withUpdatedGroups = state.groupingState.length > 1 ?
-        {
-          ...state,
-          processToDisplay: NodeUtils.createGroup(state.processToDisplay, state.groupingState),
-          layout: [],
-        } :
-        state
-      return omit(withUpdatedGroups, STATE_PROPERTY_NAME)
-    }
-    case "GROUP_SELECTED": {
+    case "GROUP": {
       return canGroupSelection(state) ?
         {
           ...state,
@@ -306,9 +286,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
           selectionState: [],
         } :
         state
-    }
-    case "CANCEL_GROUPING": {
-      return omit(state, STATE_PROPERTY_NAME)
     }
     case "UNGROUP": {
       return {

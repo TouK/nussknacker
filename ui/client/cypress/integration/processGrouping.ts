@@ -18,8 +18,8 @@ describe("Process", () => {
     beforeEach(() => {
       cy.get("[title='toggle left panel']").click()
       cy.get("button[title=layout]").should("exist").as("layoutButton")
-      cy.get("button").contains(/^group selected$/i).parent().should("exist").as("groupButton")
-      cy.get("button").contains(/^ungroup selected$/i).parent().should("exist").as("ungroupButton")
+      cy.get("button").contains(/^group$/i).parent().should("exist").as("groupButton")
+      cy.get("button").contains(/^ungroup$/i).parent().should("exist").as("ungroupButton")
     })
 
     it("should only work for continous selection", () => {

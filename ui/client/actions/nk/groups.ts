@@ -19,19 +19,14 @@ function withReportEvent(name: string, action: Action): ThunkAction {
   }
 }
 
-export const startGrouping = () => withReportEvent("start", {type: "START_GROUPING"})
-export const cancelGrouping = () => withReportEvent("cancel", {type: "CANCEL_GROUPING"})
-export const finishGrouping = () => withReportEvent("finish", {type: "FINISH_GROUPING"})
-export const ungroup = (node: NodeType) => withReportEvent("ungroup", {type: "UNGROUP", groupToRemove: node.id})
-
-export const groupSelected = () => withReportEvent("group selected", {type: "GROUP_SELECTED"})
+export const groupSelected = () => withReportEvent("group", {type: "GROUP"})
 
 export function ungroupSelected(): ThunkAction {
   return (dispatch, getState) => {
     dispatch(reportEvent({
       category: events.categories.rightPanel,
       action: events.actions.buttonClick,
-      name: "ungroup selected",
+      name: "ungroup",
     }))
 
     getSelectedGroups(getGraph(getState())).forEach(({id}) => {
@@ -44,13 +39,7 @@ export function ungroupSelected(): ThunkAction {
   }
 }
 
-export type FinishGroupingAction = {type: "FINISH_GROUPING"}
-export type AddNodeToGroupAction = {type: "ADD_NODE_TO_GROUP", nodeId: NodeId}
 export type UnGroupAction = {type: "UNGROUP", groupToRemove: NodeId}
-
-export function addToGroup(nodeId: NodeId): AddNodeToGroupAction {
-  return {type: "ADD_NODE_TO_GROUP", nodeId: nodeId}
-}
 
 export type ToggleGroupAction = {
   type: "EXPAND_GROUP" | "COLLAPSE_GROUP",

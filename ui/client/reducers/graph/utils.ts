@@ -6,16 +6,6 @@ import NodeUtils from "../../components/graph/NodeUtils"
 import {Edge, EdgeType, GroupType, NodeId, NodeType, Process, ProcessDefinitionData} from "../../types"
 import {GraphState} from "./types"
 
-function isBetween(id1: NodeId, id2: NodeId): (e: Edge) => boolean {
-  return ({from, to}) => from == id1 && to == id2 || from == id2 && to == id1
-}
-
-function canGroup(state: GraphState, newNode: NodeType | GroupType): boolean {
-  const {groupingState, processToDisplay: {edges}} = state
-  const isGroup = NodeUtils.nodeIsGroup(newNode)
-  return !isGroup && groupingState.length === 0 || !!groupingState.find(id => edges.find(isBetween(id, newNode.id)))
-}
-
 function isConnectedTo(...nodeIds: NodeId[]) {
   return (edge: Edge) => {
     return nodeIds.find(id => edge.from === id || edge.to === id)
@@ -56,14 +46,6 @@ export function canGroupSelection(state: GraphState): boolean {
 }
 
 export function displayOrGroup(state: GraphState, node: NodeType, readonly = false): GraphState {
-  if (state.groupingState) {
-    return {
-      ...state,
-      groupingState: canGroup(state, node) ?
-        state.groupingState.concat(node.id) :
-        state.groupingState,
-    }
-  }
   return {
     ...state,
     nodeToDisplay: node,

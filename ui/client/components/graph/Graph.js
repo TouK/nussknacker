@@ -30,7 +30,6 @@ export class Graph extends React.Component {
 
   static propTypes = {
     processToDisplay: PropTypes.object.isRequired,
-    groupingState: PropTypes.array,
     loggedUser: PropTypes.object.isRequired,
     connectDropTarget: PropTypes.func,
     width: PropTypes.string,
@@ -105,7 +104,6 @@ export class Graph extends React.Component {
     const processChanged = !_.isEqual(this.props.processToDisplay, nextProps.processToDisplay) ||
       !_.isEqual(this.props.layout, nextProps.layout) ||
       !_.isEqual(this.props.processCounts, nextProps.processCounts) ||
-      !_.isEqual(this.props.groupingState, nextProps.groupingState) ||
       !_.isEqual(this.props.expandedGroups, nextProps.expandedGroups) ||
       !_.isEqual(this.props.processDefinitionData, nextProps.processDefinitionData)
     if (processChanged) {
@@ -116,7 +114,7 @@ export class Graph extends React.Component {
     const nodeToDisplayChanged = !_.isEqual(this.props.nodeToDisplay, nextProps.nodeToDisplay)
     const selectedNodesChanged = !_.isEqual(this.props.selectionState, nextProps.selectionState)
     if (processChanged || nodeToDisplayChanged || selectedNodesChanged) {
-      this.highlightNodes(nextProps.processToDisplay, nextProps.nodeToDisplay, nextProps.groupingState, nextProps.selectionState)
+      this.highlightNodes(nextProps.processToDisplay, nextProps.nodeToDisplay, nextProps.selectionState)
     }
   }
 
@@ -214,12 +212,11 @@ export class Graph extends React.Component {
     }
   }
 
-  highlightNodes = (data, nodeToDisplay, groupingState, selectionState) => {
+  highlightNodes = (data, nodeToDisplay, selectionState) => {
     this.graph.getCells().forEach(cell => {
       this.unhighlightCell(cell, "node-validation-error")
       this.unhighlightCell(cell, "node-focused")
       this.unhighlightCell(cell, "node-focused-with-validation-error")
-      this.unhighlightCell(cell, "node-grouping")
     })
 
     const invalidNodeIds = _.keys((data.validationResult && data.validationResult.errors || {}).invalidNodes)
@@ -227,9 +224,7 @@ export class Graph extends React.Component {
 
     invalidNodeIds.forEach(id => selectedNodeIds.includes(id) ?
       this.highlightNode(id, "node-focused-with-validation-error") :
-      this.highlightNode(id, "node-validation-error"));
-
-    (groupingState || []).forEach(id => this.highlightNode(id, "node-grouping"))
+      this.highlightNode(id, "node-validation-error"))
 
     selectedNodeIds.forEach(id => {
       if (!invalidNodeIds.includes(id)) {
@@ -276,10 +271,6 @@ export class Graph extends React.Component {
 
   changeNodeDetailsOnClick() {
     this.processGraphPaper.on(Events.CELL_POINTERDBLCLICK, (cellView) => {
-      if (this.props.groupingState) {
-        return
-      }
-
       const nodeDataId = cellView.model.attributes.nodeData?.id
       if (nodeDataId) {
         const nodeData = this.findNodeById(nodeDataId)

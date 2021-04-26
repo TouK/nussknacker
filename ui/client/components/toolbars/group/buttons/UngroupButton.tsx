@@ -1,26 +1,23 @@
 import React from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
-import {ungroup} from "../../../../actions/nk/groups"
+import {ungroupSelected} from "../../../../actions/nk"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/ungroup.svg"
-import {getNodeToDisplay} from "../../../../reducers/selectors/graph"
-import NodeUtils from "../../../graph/NodeUtils"
-import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
+import {getSelectedGroups} from "../../../../reducers/graph/utils"
+import {getGraph} from "../../../../reducers/selectors/graph"
+import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 
-function UngroupButton(): JSX.Element {
-  const nodeToDisplay = useSelector(getNodeToDisplay)
+export function UngroupButton(): JSX.Element {
+  const graph = useSelector(getGraph)
   const {t} = useTranslation()
   const dispatch = useDispatch()
 
   return (
-    <CapabilitiesToolbarButton
-      write
-      name={t("panels.actions.group-ungroup.button", "ungroup")}
+    <ToolbarButton
+      name={t("panels.actions.ungroup-selected.button", "ungroup")}
       icon={<Icon/>}
-      disabled={!NodeUtils.nodeIsGroup(nodeToDisplay)}
-      onClick={() => dispatch(ungroup(nodeToDisplay))}
+      disabled={!getSelectedGroups(graph).length}
+      onClick={() => dispatch(ungroupSelected())}
     />
   )
 }
-
-export default UngroupButton

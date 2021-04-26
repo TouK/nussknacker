@@ -7,14 +7,14 @@ import {canGroupSelection} from "../../../../reducers/graph/utils"
 import {getGraph} from "../../../../reducers/selectors/graph"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 
-export function GroupSelectedButton(): JSX.Element {
+export function GroupButton(): JSX.Element {
   const graph = useSelector(getGraph)
   const {t} = useTranslation()
   const dispatch = useDispatch()
 
   return (
     <ToolbarButton
-      name={t("panels.actions.group-selected.button", "group selected")}
+      name={t("panels.actions.group-selected.button", "group")}
       icon={<Icon/>}
       disabled={!canGroupSelection(graph)}
       onClick={() => dispatch(groupSelected())}

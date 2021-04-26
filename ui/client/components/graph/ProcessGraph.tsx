@@ -5,7 +5,6 @@ import ActionsUtils from "../../actions/ActionsUtils"
 import {
   getEdgeToDisplay,
   getFetchedProcessDetails,
-  getGroupingState,
   getLayout,
   getNodeToDisplay,
   getProcessCounts,
@@ -38,7 +37,6 @@ function mapState(state) {
     processToDisplay: getProcessToDisplay(state),
     fetchedProcessDetails: getFetchedProcessDetails(state),
     nodeToDisplay: getNodeToDisplay(state),
-    groupingState: getGroupingState(state),
     processCounts: getProcessCounts(state),
     edgeToDisplay: getEdgeToDisplay(state),
     layout: getLayout(state),

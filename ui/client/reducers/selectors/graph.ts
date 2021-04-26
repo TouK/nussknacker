@@ -25,7 +25,6 @@ export const isPristine = (state: RootState): boolean => ProcessUtils.nothingToS
 export const hasError = createSelector(getProcessToDisplay, p => !ProcessUtils.hasNoErrors(p))
 export const getNodeToDisplay = createSelector(getGraph, g => g.nodeToDisplay)
 export const getSelectionState = createSelector(getGraph, g => g.selectionState)
-export const getGroupingState = createSelector(getGraph, g => g.groupingState)
 export const getHistory = createSelector(getGraph, g => g.history)
 
 export const isProcessRenamed = createSelector(
