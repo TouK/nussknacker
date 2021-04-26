@@ -38,6 +38,7 @@ Nussknacker versions
 * [#1497](https://github.com/TouK/nussknacker/pull/1497) Initial support for multiple (named) schedules in `PeriodicProcessManager`
 * [#1499](https://github.com/TouK/nussknacker/pull/1499) ClassTag is provided in params in avro key-value deserialization schema factory: `KafkaAvroKeyValueDeserializationSchemaFactory`
 * [#1533](https://github.com/TouK/nussknacker/pull/1533) Fix: Update process with same json
+* [#1546](https://github.com/TouK/nussknacker/pull/1546) Unions (e.g after split) are possible in standalone mode. Also, it's possible to define transformers which operate on all results (e.g. for sorting recommendations)
 
 0.3.1 (not released yet) 
 ------------------------

@@ -19,7 +19,6 @@ object StandaloneUnion extends CustomStreamTransformer {
         override def createTransformation(outputVariable: Option[String]): StandaloneCustomTransformation = {
           (outputContinuation, _) =>
             (inputPartsMap: Map[String, List[Context]], ec) =>
-              println(inputPartsMap)
               val allContexts = inputPartsMap.flatMap(_._2).toList
               outputContinuation(allContexts, ec)
         }
