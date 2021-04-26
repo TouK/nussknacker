@@ -154,7 +154,7 @@ object node {
     def artificialNodeId: String = s"$$edge-$id-$joinId"
 
     //TODO: remove it and replace with sth more understandable
-    def joinReference: JoinReference = JoinReference(artificialNodeId, joinId)
+    def joinReference: JoinReference = JoinReference(artificialNodeId, id, joinId)
   }
   
   case class Sink(

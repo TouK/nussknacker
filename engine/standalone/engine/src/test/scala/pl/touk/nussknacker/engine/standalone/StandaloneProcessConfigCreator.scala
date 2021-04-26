@@ -246,7 +246,9 @@ class StandaloneFilterWithLog(filterExpression: LazyParameter[java.lang.Boolean]
         implicit val ecc: ExecutionContext = ec
         Future.sequence(ctxs.map(ctx => exprInterpreter(ec, ctx).map((_, ctx)))).flatMap { runInformations =>
           val (pass, skip) = runInformations.partition(_._1.filterExpression)
-          val skipped = skip.map(info => EndResult(InterpretationResult(DeadEndReference(nodeId.id), info._1, info._2)))
+          val skipped = skip.map {
+            case (output, ctx) => EndResult(InterpretationResult(DeadEndReference(nodeId.id), output, ctx))
+          }
           continuation(pass.map(_._2), ec).map(passed => passed.right.map(_ ++ skipped))
         }
       }

@@ -11,23 +11,20 @@ object types {
 
   type SuccessfulResultType = List[InterpretationResult]
 
-  type GenericResultType[T] = Either[NonEmptyList[EspExceptionInfo[_ <: Throwable]], T]
+  type ErrorType = NonEmptyList[EspExceptionInfo[_ <: Throwable]]
+
+  type GenericResultType[T] = Either[ErrorType, T]
 
   type GenericListResultType[T] = GenericResultType[List[T]]
-
-  type InternalInterpretationResultType = GenericListResultType[PartResultType]
 
   type InterpretationResultType = GenericListResultType[InterpretationResult]
 
   type InterpreterOutputType = Future[InterpretationResultType]
 
-  type InternalInterpreterOutputType = Future[InternalInterpretationResultType]
+  type InternalInterpreterOutputType = Future[GenericListResultType[PartResultType]]
 
   type InterpreterType = (List[Context], ExecutionContext) => InternalInterpreterOutputType
-
-
-  type JoinType = (Map[String, List[Context]], ExecutionContext) => InterpreterOutputType
-
+  
   sealed trait PartResultType
   case class EndResult(result: InterpretationResult) extends PartResultType
   case class JoinResult(reference: JoinReference, context: Context) extends PartResultType

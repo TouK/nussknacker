@@ -19,13 +19,14 @@ object StandaloneUnion extends CustomStreamTransformer {
         override def createTransformation(outputVariable: Option[String]): StandaloneCustomTransformation = {
           (outputContinuation, _) =>
             (inputPartsMap: Map[String, List[Context]], ec) =>
+              println(inputPartsMap)
               val allContexts = inputPartsMap.flatMap(_._2).toList
               outputContinuation(allContexts, ec)
         }
       })
   }
 
-  private def computeIntersection(contexts: Map[String, ValidationContext]) = {
+  private def computeIntersection(contexts: Map[String, ValidationContext]): ValidationContext = {
     contexts.values.toList match {
       case Nil => ValidationContext.empty
       case one :: rest =>
