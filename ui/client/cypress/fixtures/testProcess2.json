@@ -1,0 +1,287 @@
+{
+  "metaData" : {
+    "id" : "jwl-test",
+    "typeSpecificData" : {
+      "parallelism" : null,
+      "splitStateToDisk" : true,
+      "useAsyncInterpretation" : null,
+      "checkpointIntervalInSeconds" : null,
+      "type" : "StreamMetaData"
+    },
+    "isSubprocess" : false,
+    "additionalFields" : {
+      "description" : null,
+      "groups" : [
+      ],
+      "properties" : {
+        "numberOfThreads" : "1",
+        "environment" : "test"
+      }
+    },
+    "subprocessVersions" : {
+
+    }
+  },
+  "exceptionHandlerRef" : {
+    "parameters" : [
+    ]
+  },
+  "nodes" : [
+    {
+      "id" : "csv-source",
+      "ref" : {
+        "typ" : "csv-source",
+        "parameters" : [
+        ]
+      },
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 0
+        }
+      },
+      "type" : "Source"
+    },
+    {
+      "id" : "variable",
+      "varName" : "varName",
+      "value" : {
+        "language" : "spel",
+        "expression" : "'value'"
+      },
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 135
+        }
+      },
+      "type" : "Variable"
+    },
+    {
+      "id" : "mapVariable",
+      "varName" : "mapVarName",
+      "fields" : [
+        {
+          "name" : "varName",
+          "expression" : {
+            "language" : "spel",
+            "expression" : "'value'"
+          }
+        }
+      ],
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 270
+        }
+      },
+      "type" : "VariableBuilder"
+    },
+    {
+      "id" : "enricher",
+      "service" : {
+        "id" : "enricher",
+        "parameters" : [
+          {
+            "name" : "param",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'default value'"
+            }
+          },
+          {
+            "name" : "tariffType",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "T(pl.touk.nussknacker.engine.management.sample.TariffType).NORMAL"
+            }
+          }
+        ]
+      },
+      "output" : "output",
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 405
+        }
+      },
+      "type" : "Enricher"
+    },
+    {
+      "id" : "aggregate",
+      "outputVar" : "outputVar",
+      "nodeType" : "aggregate",
+      "parameters" : [
+        {
+          "name" : "keyBy",
+          "expression" : {
+            "language" : "spel",
+            "expression" : ""
+          }
+        },
+        {
+          "name" : "aggregator",
+          "expression" : {
+            "language" : "spel",
+            "expression" : "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).FIRST"
+          }
+        },
+        {
+          "name" : "aggregateBy",
+          "expression" : {
+            "language" : "spel",
+            "expression" : ""
+          }
+        },
+        {
+          "name" : "windowLength",
+          "expression" : {
+            "language" : "spel",
+            "expression" : ""
+          }
+        },
+        {
+          "name" : "emitWhenEventLeft",
+          "expression" : {
+            "language" : "spel",
+            "expression" : "true"
+          }
+        }
+      ],
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 540
+        }
+      },
+      "type" : "CustomNode"
+    },
+    {
+      "id" : "optionalTypesService",
+      "service" : {
+        "id" : "optionalTypesService",
+        "parameters" : [
+          {
+            "name" : "scalaOptionParam",
+            "expression" : {
+              "language" : "spel",
+              "expression" : ""
+            }
+          },
+          {
+            "name" : "javaOptionalParam",
+            "expression" : {
+              "language" : "spel",
+              "expression" : ""
+            }
+          },
+          {
+            "name" : "nullableParam",
+            "expression" : {
+              "language" : "spel",
+              "expression" : ""
+            }
+          },
+          {
+            "name" : "dateTimeParam",
+            "expression" : {
+              "language" : "spel",
+              "expression" : ""
+            }
+          },
+          {
+            "name" : "overriddenByDevConfigParam",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "''"
+            }
+          },
+          {
+            "name" : "overriddenByFileConfigParam",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "''"
+            }
+          }
+        ]
+      },
+      "isDisabled" : null,
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 675
+        }
+      },
+      "type" : "Processor"
+    },
+    {
+      "id" : "customFilter",
+      "outputVar" : null,
+      "nodeType" : "customFilter",
+      "parameters" : [
+        {
+          "name" : "expression",
+          "expression" : {
+            "language" : "spel",
+            "expression" : "true"
+          }
+        }
+      ],
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 810
+        }
+      },
+      "type" : "CustomNode"
+    },
+    {
+      "nextFalse" : [
+      ],
+      "id" : "filter",
+      "expression" : {
+        "language" : "spel",
+        "expression" : "true"
+      },
+      "isDisabled" : null,
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 945
+        }
+      },
+      "type" : "Filter"
+    },
+    {
+      "id" : "monitor",
+      "ref" : {
+        "typ" : "monitor",
+        "parameters" : [
+        ]
+      },
+      "endResult" : {
+        "language" : "spel",
+        "expression" : "#input"
+      },
+      "isDisabled" : null,
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 1080
+        }
+      },
+      "type" : "Sink"
+    }
+  ],
+  "additionalBranches" : [
+  ]
+}

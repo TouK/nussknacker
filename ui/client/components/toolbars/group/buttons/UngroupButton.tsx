@@ -32,7 +32,7 @@ export function UngroupSelectedButton() {
   return (
     <CapabilitiesToolbarButton
       write
-      name={t("panels.actions.ungroup-selected.button", "ungroup")}
+      name={t("panels.actions.ungroup-selected.button", "ungroup selected")}
       icon={<Icon/>}
       disabled={!getSelectedGroups(graph).length}
       onClick={() => dispatch(ungroupSelected())}

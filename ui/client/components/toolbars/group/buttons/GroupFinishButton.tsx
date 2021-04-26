@@ -31,7 +31,7 @@ export function GroupSelectedButton(): JSX.Element {
   return (
     <CapabilitiesToolbarButton
       write
-      name={t("panels.actions.group-selected.button", "group")}
+      name={t("panels.actions.group-selected.button", "group selected")}
       icon={<Icon/>}
       disabled={!canGroupSelection(graph)}
       onClick={() => dispatch(groupSelected())}
