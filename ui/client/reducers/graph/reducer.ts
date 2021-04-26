@@ -315,6 +315,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         ...state,
         processToDisplay: NodeUtils.ungroup(state.processToDisplay, action.groupToRemove),
         nodeToDisplay: state.processToDisplay.properties,
+        selectionState: [],
       }
     }
     case "EXPAND_GROUP":
