@@ -65,7 +65,7 @@ describe("Process", () => {
       cy.get("[title='toggle right panel']").click()
       cy.get("[model-id=dynamicService]")
         .should("be.visible")
-        .trigger("mousedown", {which: 1})
+        .trigger("mousedown")
         .trigger("mousemove", {clientX: 100, clientY: 100})
         .trigger("mouseup", {force: true})
       cy.get("#graphContainer").toMatchImageSnapshot()
