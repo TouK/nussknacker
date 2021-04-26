@@ -2,8 +2,9 @@
 import {dia, g, shapes} from "jointjs"
 import {CursorMask} from "./CursorMask"
 import {Events} from "./joint-events"
+import {pressedKeys} from "./KeysObserver"
 
-type EventData = {selectStart?: {x: number, y: number}, rect?: shapes.standard.Rectangle}
+type EventData = {selectStart?: {x: number, y: number}}
 type Event = JQuery.TriggeredEvent<any, EventData>
 
 export enum SelectionMode {
@@ -12,80 +13,95 @@ export enum SelectionMode {
 }
 
 export class RangeSelectPlugin {
-  private cursorMask: CursorMask
-  private model: dia.Graph
+  private readonly cursorMask = new CursorMask()
+  private readonly rectangle = new shapes.standard.Rectangle()
+  private readonly pressedKeys = pressedKeys.map(events => events.map(e => e.key))
+  private keys: string[]
 
   constructor(private paper: dia.Paper) {
-    this.model = paper.model
-    this.cursorMask = new CursorMask()
-
+    this.pressedKeys.onValue(this.onPressedKeysChange)
     paper.on(Events.BLANK_POINTERDOWN, this.onInit.bind(this))
     paper.on(Events.BLANK_POINTERMOVE, this.onChange.bind(this))
     paper.on(Events.BLANK_POINTERUP, this.onExit.bind(this))
+    paper.model.once("destroy", this.destroy.bind(this))
   }
 
-  private onSelect(elements: dia.Element[], mode: SelectionMode) {
-    this.paper.trigger("rangeSelect:selected", {elements, mode})
+  private get mode(): SelectionMode {
+    if (this.keys.includes("Shift")) {
+      return SelectionMode.toggle
+    }
+    return SelectionMode.replace
+
+  }
+
+  private onPressedKeysChange = (keys: string[]) => {
+    this.keys = keys
+    this.rectangle.attr({
+      body: this.mode === SelectionMode.toggle ?
+        {
+          fill: "rgba(0,255,85,0.15)",
+          stroke: "#009966",
+        } :
+        {
+          fill: "rgba(0,183,255,0.2)",
+          stroke: "#0066FF",
+        },
+    })
   }
 
   private onInit(event: Event, x, y) {
-    if (event.shiftKey || event.ctrlKey || event.metaKey) {
+    if (this.hasModifier(event)) {
       event.stopImmediatePropagation()
       this.cursorMask.enable("crosshair")
-      const rect = new shapes.standard.Rectangle()
-      rect.position(x, y)
-      rect.attr({
-        body: event.shiftKey ?
-          {
-            fill: "rgba(0,255,85,0.15)",
-            stroke: "#009966",
-          } :
-          {
-            fill: "rgba(0,183,255,0.2)",
-            stroke: "#0066FF",
-          },
-      })
-      rect.addTo(this.model)
-      event.data = {...event.data, rect, selectStart: {x, y}}
+      this.rectangle
+        .position(x, y)
+        .size(0, 0)
+        .addTo(this.paper.model)
+
+      event.data = {...event.data, selectStart: {x, y}}
     }
   }
 
+  private hasModifier(event: JQuery.TriggeredEvent<any, EventData>): boolean {
+    return event?.shiftKey || event?.ctrlKey || event?.metaKey
+  }
+
   private onChange(event: Event, x, y) {
-    const {selectStart, rect} = event.data
-    if ((event.shiftKey || event.ctrlKey || event.metaKey) && selectStart && rect) {
+    if (this.hasModifier(event) && event.data?.selectStart) {
+      const {selectStart} = event.data
       const dx = x - selectStart.x
       const dy = y - selectStart.y
+
       const bbox = new g.Rect(selectStart.x, selectStart.y, dx, dy)
-      bbox.normalize()
-      rect.set({
-        position: {x: bbox.x, y: bbox.y},
-        size: {width: Math.max(bbox.width, 1), height: Math.max(bbox.height, 1)},
-      })
-      rect.attr("body/strokeDasharray", dx < 0 ? "5 5" : null)
+        .normalize()
+
+      this.rectangle
+        .position(bbox.x, bbox.y)
+        .size(Math.max(bbox.width, 1), Math.max(bbox.height, 1))
+        .toFront()
+        .attr("body/strokeDasharray", dx < 0 ? "5 5" : null)
     } else {
       this.cleanup(event.data)
     }
   }
 
-  private onExit(event: Event) {
-    this.handleSelection(event)
-    this.cleanup(event.data)
+  private onExit({data}: Event): void {
+    if (data?.selectStart) {
+      const strict = !this.rectangle.attr("body/strokeDasharray")
+      const elements = this.paper.model.findModelsInArea(this.rectangle.getBBox(), {strict})
+      this.paper.trigger("rangeSelect:selected", {elements, mode: this.mode})
+    }
+    this.cleanup(data)
   }
 
-  private cleanup(data: EventData): void {
+  private cleanup(data?: EventData): void {
     this.cursorMask.disable()
-    if (data?.rect) {
-      data.rect.remove()
-      delete data.selectStart
-      delete data.rect
-    }
+    this.rectangle.remove()
+    delete data?.selectStart
   }
 
-  private handleSelection({data, shiftKey}: Event): void {
-    if (data?.rect && this.onSelect.bind(this)) {
-      const strict = !data.rect.attr("body/strokeDasharray")
-      const elements = this.model.findModelsInArea(data.rect.getBBox(), {strict})
-      this.onSelect(elements, shiftKey ? SelectionMode.toggle : SelectionMode.replace)
-    }
+  private destroy(): void {
+    this.cleanup()
+    this.pressedKeys.offValue(this.onPressedKeysChange)
   }
 }

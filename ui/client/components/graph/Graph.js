@@ -56,6 +56,11 @@ export class Graph extends React.Component {
     return this.espGraphRef.current
   }
 
+  componentWillUnmount() {
+    // force destroy event on model for plugins cleanup
+    this.processGraphPaper.model.destroy()
+  }
+
   componentDidMount() {
     this.processGraphPaper = this.createPaper()
     this.processGraphPaper.freeze()
