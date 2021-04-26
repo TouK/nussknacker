@@ -73,14 +73,13 @@ case class CanonicalProcess(metaData: MetaData,
                            ) extends CanonicalTreeNode {
   import CanonicalProcess._
 
-  def allStartNodes: NonEmptyList[List[CanonicalNode]] = NonEmptyList(nodes, additionalBranches.getOrElse(Nil))
+  def allStartNodes: NonEmptyList[List[CanonicalNode]] = NonEmptyList(nodes, additionalBranches.getOrElse(List()))
 
   def mapAllNodes(action: List[CanonicalNode] => List[CanonicalNode]): CanonicalProcess = withNodes(allStartNodes.map(action))
 
   def withNodes(nodes: NonEmptyList[List[CanonicalNode]]): CanonicalProcess = {
     val NonEmptyList(head, tail) = nodes
-    val additionalBranches = if (tail.isEmpty) None else Some(tail)
-    copy(nodes = head, additionalBranches = additionalBranches)
+    copy(nodes = head, additionalBranches = Some(tail))
   }
 
   lazy val withoutDisabledNodes: CanonicalProcess = mapAllNodes(withoutDisabled)
