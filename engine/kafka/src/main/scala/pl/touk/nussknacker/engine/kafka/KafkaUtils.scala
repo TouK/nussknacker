@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.kafka
 
 import java.util.concurrent.TimeUnit
 import java.util.{Collections, Properties}
-
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.KafkaClient
 import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
@@ -11,9 +10,9 @@ import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer}
 import pl.touk.nussknacker.engine.api.namespaces.{KafkaUsageKey, NamingContext}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.kafka.validator.{CachedTopicsExistenceValidator, CachedTopicsExistenceValidatorConfig}
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future, Promise}
@@ -30,6 +29,13 @@ object KafkaUtils extends LazyLogging {
 
   def setClientId(props: Properties, id: String): Unit = {
     props.setProperty("client.id", sanitizeClientId(id))
+  }
+
+  def validateTopicsExistence(topics: List[PreparedKafkaTopic], kafkaConfig: KafkaConfig): Unit = {
+    new CachedTopicsExistenceValidator(
+      kafkaConfig = kafkaConfig,
+      config = CachedTopicsExistenceValidatorConfig.DefaultConfig)
+      .validateTopics(topics.map(_.prepared)).valueOr(err => throw err)
   }
 
   def prepareKafkaTopic(topic :String, processObjectDependencies: ProcessObjectDependencies): PreparedKafkaTopic =
