@@ -69,18 +69,17 @@ case class CanonicalProcess(metaData: MetaData,
                             //separation of nodes and additionalBranches is just for compatibility of stored json
                             //DON'T use these fields, rely on allStartNodes or mapAllNodes instead.
                             nodes: List[CanonicalNode],
-                            additionalBranches: Option[List[List[CanonicalNode]]]
+                            additionalBranches: List[List[CanonicalNode]]
                            ) extends CanonicalTreeNode {
   import CanonicalProcess._
 
-  def allStartNodes: NonEmptyList[List[CanonicalNode]] = NonEmptyList(nodes, additionalBranches.getOrElse(Nil))
+  def allStartNodes: NonEmptyList[List[CanonicalNode]] = NonEmptyList(nodes, additionalBranches)
 
   def mapAllNodes(action: List[CanonicalNode] => List[CanonicalNode]): CanonicalProcess = withNodes(allStartNodes.map(action))
 
   def withNodes(nodes: NonEmptyList[List[CanonicalNode]]): CanonicalProcess = {
     val NonEmptyList(head, tail) = nodes
-    val additionalBranches = if (tail.isEmpty) None else Some(tail)
-    copy(nodes = head, additionalBranches = additionalBranches)
+    copy(nodes = head, additionalBranches = tail)
   }
 
   lazy val withoutDisabledNodes: CanonicalProcess = mapAllNodes(withoutDisabled)

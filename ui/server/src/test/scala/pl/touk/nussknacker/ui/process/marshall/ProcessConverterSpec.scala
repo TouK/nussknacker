@@ -58,7 +58,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
   }
 
   test("be able to convert empty process") {
-    val emptyProcess = CanonicalProcess(MetaData(id = "t1", StreamMetaData()), ExceptionHandlerRef(List()), List(), None)
+    val emptyProcess = CanonicalProcess(MetaData(id = "t1", StreamMetaData()), ExceptionHandlerRef(List()), List(), List.empty)
 
     canonicalDisplayable(emptyProcess) shouldBe emptyProcess
   }

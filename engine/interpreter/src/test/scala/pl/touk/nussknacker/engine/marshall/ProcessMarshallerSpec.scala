@@ -157,7 +157,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
   it should "detect bad branch" in {
 
     def checkOneInvalid(expectedBadNodeId: String, nodes: CanonicalNode*) = {
-      inside(ProcessCanonizer.uncanonize(CanonicalProcess(MetaData("1", StreamMetaData()), ExceptionHandlerRef(List()), nodes.toList, None))) {
+      inside(ProcessCanonizer.uncanonize(CanonicalProcess(MetaData("1", StreamMetaData()), ExceptionHandlerRef(List()), nodes.toList, List.empty))) {
         case Invalid(NonEmptyList(InvalidTailOfBranch(id), Nil)) => id shouldBe expectedBadNodeId
       }
     }

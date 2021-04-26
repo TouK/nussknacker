@@ -36,7 +36,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
     val subprocess =  CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
       List(
         FlatNode(SubprocessInputDefinition("start", suprocessParameters)),
-        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))) , None
+        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))) , List.empty
     )
 
     val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
@@ -67,13 +67,13 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
         List(FlatNode(Sink("deadEnd", SinkRef("sink1", List()), Some("'deadEnd'"))))
-      ), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), None)
+      ), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty)
 
     val nested =  CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
       List(
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.Subprocess(SubprocessInput("sub2",
-        SubprocessRef("subProcess2", List(Parameter("param", "#param")))), Map("output" -> List(FlatNode(SubprocessOutputDefinition("sub2Out", "output", List.empty)))))), None
+        SubprocessRef("subProcess2", List(Parameter("param", "#param")))), Map("output" -> List(FlatNode(SubprocessOutputDefinition("sub2Out", "output", List.empty)))))), List.empty
     )
 
     val resolvedValidated = SubprocessResolver(Set(subprocess, nested)).resolve(process)
@@ -103,7 +103,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
     val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
       List(
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
-        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), None
+        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty
     )
 
     val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
@@ -124,7 +124,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
       null,
       List(
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
-        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "badoutput", List.empty))), None
+        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "badoutput", List.empty))), List.empty
     )
 
     val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
@@ -155,7 +155,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
             List(FlatNode(SubprocessOutputDefinition("out2", "output", List.empty)))
           )
         )
-      ), None
+      ), List.empty
     )
 
     val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
@@ -177,7 +177,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
           SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "false"), List()),
         FlatNode(Sink("disabledSubprocessMockedSink", SinkRef("disabledSubprocessMockedSink", List()), Some("'result'")))
-      ), None
+      ), List.empty
     )
 
     val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
@@ -207,7 +207,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
         FlatNode(
           SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
         FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))
-      ), None
+      ), List.empty
     )
     val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData(), isSubprocess = true),
       null,
@@ -216,7 +216,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
           SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "false"), List()),
         FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))
-      ), None
+      ), List.empty
     )
     val resolver = SubprocessResolver(Set(subprocess, emptySubprocess))
     val pattern: PartialFunction[ValidatedNel[ProcessCompilationError, CanonicalProcess], _] = {
@@ -261,7 +261,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
     val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData()), null,
       List(
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
-        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(Sink("end", SinkRef("sink1", List())))) , None
+        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(Sink("end", SinkRef("sink1", List())))) , List.empty
     )
 
     val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
@@ -303,10 +303,10 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
             List(FlatNode(Filter("filter2b", "false")), FlatNode(BranchEndData(BranchEndDefinition("join2b", "join1"))))
           )
         )
-      ), Some(List(
+      ), List(
         FlatNode(Join("join1", None, "union", Nil, Nil, None)),
         FlatNode(SubprocessOutputDefinition("output", "output", Nil, None))
-      ):: Nil)
+      ):: Nil
     )
 
     val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process).toOption.get.allStartNodes

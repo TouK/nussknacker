@@ -555,7 +555,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val subprocess = CanonicalProcess(MetaData("subProcess1", StreamMetaData(), true), ExceptionHandlerRef(List()),
       List(
         canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
-        canonicalnode.FlatNode(Sink("deadEnd", SinkRef("sink", List()), Some("'deadEnd'")))), None)
+        canonicalnode.FlatNode(Sink("deadEnd", SinkRef("sink", List()), Some("'deadEnd'")))), List.empty)
 
     val definitionWithExceptionHandlerWithParams = baseDefinition.copy(exceptionHandlerFactory =
       ObjectDefinition.withParams(List(Parameter[String]("param1"))))
