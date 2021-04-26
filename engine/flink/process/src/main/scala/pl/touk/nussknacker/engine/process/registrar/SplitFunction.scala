@@ -22,7 +22,7 @@ class SplitFunction(nodeToValidationCtx: Map[String, ValidationContext], typeInf
     val (tagName, typeInfo) = interpretationResult.reference match {
       case NextPartReference(id) => (id, typeInfoMap(id))
       //TODO JOIN - this is a bit weird, probably refactoring of splitted process structures will help...
-      case JoinReference(id, _) => (id, typeInfoMap(id))
+      case JoinReference(id, _, _) => (id, typeInfoMap(id))
       case er: EndingReference => (EndId, typeInfoMap(er.nodeId))
     }
     ctx.output(OutputTag[InterpretationResult](tagName)(typeInfo), interpretationResult)

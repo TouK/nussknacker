@@ -55,6 +55,7 @@ To see biggest differences please consult the [changelog](Changelog.md).
   - `BaseKafkaAvroSourceFactory` is able to read both key and value schema determiner to build proper DeserializationSchema (support for keys is not fully introduced in this change)
 * [#1514](https://github.com/TouK/nussknacker/pull/1514) `ExecutionConfigPreparer` has different method parameter - `JobData`, which has more info than previous parameters
 * [#1532](https://github.com/TouK/nussknacker/pull/1532) `TypedObjectTypingResult#fields` uses now `scala.collection.immutable.ListMap` to keep fields order
+* [#1546](https://github.com/TouK/nussknacker/pull/1546) `StandaloneCustomTransformer` now takes a list of `Context` objects, to process them in one go                                               
 
 ## In version 0.3.0
 

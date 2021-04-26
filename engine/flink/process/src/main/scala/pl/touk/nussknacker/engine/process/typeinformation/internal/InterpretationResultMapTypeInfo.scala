@@ -45,7 +45,7 @@ case class InterpretationResultMapTypeSerializer(ctx: Map[String, TypeSerializer
   override def serialize(record: InterpretationResult, target: DataOutputView): Unit = {
     val id = record.reference match {
       case NextPartReference(id) => id
-      case JoinReference(id, _) => id
+      case JoinReference(id, _, _) => id
       case e: EndingReference => e.nodeId
     }
     target.writeUTF(id)

@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.standalone
 
 import java.util.concurrent.atomic.AtomicInteger
-
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker._
@@ -12,11 +11,10 @@ import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExcepti
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
-import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.standalone.api.StandaloneCustomTransformer
-import pl.touk.nussknacker.engine.standalone.api.types.InterpreterType
-import pl.touk.nussknacker.engine.standalone.utils.customtransformers.ProcessSplitter
+import pl.touk.nussknacker.engine.standalone.api.types.{EndResult, InterpreterType}
+import pl.touk.nussknacker.engine.standalone.utils.customtransformers.{ProcessSplitter, StandaloneSorter, StandaloneUnion}
 import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.standalone.utils.{JsonStandaloneSourceFactory, StandaloneSinkFactory, StandaloneSinkWithParameters}
 import pl.touk.nussknacker.engine.util.LoggingListener
@@ -40,6 +38,8 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
     "splitter" -> WithCategories(ProcessSplitter),
+    "union" -> WithCategories(StandaloneUnion),
+    "sorter" -> WithCategories(StandaloneSorter),
     "extractor" -> WithCategories(StandaloneCustomExtractor),
     "filterWithLog" -> WithCategories(StandaloneFilterWithLog)
   )
@@ -212,12 +212,12 @@ class StandaloneCustomExtractor(outputVariableName: String, expression: LazyPara
   override def createTransformation(outputVariable: Option[String]): StandaloneCustomTransformation =
     (continuation: InterpreterType, lpi: LazyParameterInterpreter) => {
       val exprInterpreter: (ExecutionContext, engine.api.Context) => Future[Any] = lpi.createInterpreter(expression)
-      (ctx: engine.api.Context, ec: ExecutionContext) => {
+      (ctxs: List[engine.api.Context], ec: ExecutionContext) => {
         implicit val ecc: ExecutionContext = ec
         for {
-          exprResult <- exprInterpreter(ec, ctx)
-          continuationResult <- continuation(ctx.withVariable(outputVariableName, exprResult), ec)
-        } yield continuationResult
+          exprResults <- Future.sequence(ctxs.map(ctx => exprInterpreter(ec, ctx).map(ctx.withVariable(outputVariableName, _))))
+          continuationResult <- continuation(exprResults, ec)
+        } yield continuationResult  
       }
     }
 
@@ -242,12 +242,15 @@ class StandaloneFilterWithLog(filterExpression: LazyParameter[java.lang.Boolean]
       implicit val implicitLpi: LazyParameterInterpreter = lpi
       val lazyLogInformation = filterExpression.map(StandaloneLogInformation(_))
       val exprInterpreter: (ExecutionContext, engine.api.Context) => Future[StandaloneLogInformation] = lpi.createInterpreter(lazyLogInformation)
-      (ctx: engine.api.Context, ec: ExecutionContext) => {
+      (ctxs: List[engine.api.Context], ec: ExecutionContext) => {
         implicit val ecc: ExecutionContext = ec
-        exprInterpreter(ec, ctx).flatMap(exprResult => {
-          if(exprResult.filterExpression) continuation(ctx, ec)
-          else Future(Right(List(InterpretationResult(DeadEndReference(nodeId.id), exprResult, ctx))))
-        })
+        Future.sequence(ctxs.map(ctx => exprInterpreter(ec, ctx).map((_, ctx)))).flatMap { runInformations =>
+          val (pass, skip) = runInformations.partition(_._1.filterExpression)
+          val skipped = skip.map {
+            case (output, ctx) => EndResult(InterpretationResult(DeadEndReference(nodeId.id), output, ctx))
+          }
+          continuation(pass.map(_._2), ec).map(passed => passed.right.map(_ ++ skipped))
+        }
       }
     }
 }

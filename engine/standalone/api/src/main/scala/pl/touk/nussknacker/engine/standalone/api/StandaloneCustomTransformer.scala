@@ -1,12 +1,26 @@
 package pl.touk.nussknacker.engine.standalone.api
 
-import pl.touk.nussknacker.engine.api.LazyParameterInterpreter
-import pl.touk.nussknacker.engine.standalone.api.types.InterpreterType
+import pl.touk.nussknacker.engine.api.{Context, LazyParameterInterpreter}
+import pl.touk.nussknacker.engine.standalone.api.types.{InternalInterpreterOutputType, InterpreterOutputType, InterpreterType}
 
-trait StandaloneCustomTransformer {
+import scala.concurrent.ExecutionContext
+
+sealed trait BaseStandaloneCustomTransformer {
+
+  type StandaloneCustomTransformation
+
+  def createTransformation(outputVariable: Option[String]) : StandaloneCustomTransformation
+
+}
+
+trait StandaloneCustomTransformer extends BaseStandaloneCustomTransformer {
 
   type StandaloneCustomTransformation = (InterpreterType, LazyParameterInterpreter) => InterpreterType
 
-  def createTransformation(outputVariable: Option[String]) : StandaloneCustomTransformation
-  
+}
+
+trait JoinStandaloneCustomTransformer extends BaseStandaloneCustomTransformer {
+
+  type StandaloneCustomTransformation = (InterpreterType, LazyParameterInterpreter) => (Map[String, List[Context]], ExecutionContext) => InternalInterpreterOutputType
+
 }

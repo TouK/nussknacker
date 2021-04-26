@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.engine.standalone
 
-import java.util.concurrent.atomic.AtomicLong
+import cats.Id
 
+import java.util.concurrent.atomic.AtomicLong
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, ValidatedNel, Writer}
+import cats.data.{EitherT, NonEmptyList, Validated, ValidatedNel, Writer, WriterT}
 import pl.touk.nussknacker.engine.Interpreter.{FutureShape, InterpreterShape}
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnsupportedPart
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, UnsupportedPart}
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
@@ -15,14 +16,14 @@ import pl.touk.nussknacker.engine.api.{process, _}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.{Node, Sink}
-import pl.touk.nussknacker.engine.compiledgraph.part._
+import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, _}
 import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, LazyInterpreterDependencies, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.split.{NodesCollector, ProcessSplitter}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.standalone.api.types._
-import pl.touk.nussknacker.engine.standalone.api.{StandaloneCustomTransformer, StandaloneSource, types}
+import pl.touk.nussknacker.engine.standalone.api.{JoinStandaloneCustomTransformer, StandaloneCustomTransformer, StandaloneSource, types}
 import pl.touk.nussknacker.engine.standalone.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.standalone.utils.{StandaloneContext, StandaloneContextLifecycle, StandaloneContextPreparer, StandaloneSinkWithParameters}
 import pl.touk.nussknacker.engine.{ModelData, compiledgraph}
@@ -31,18 +32,6 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 object StandaloneProcessInterpreter {
-
-
-  def foldResults[T, Error](results: List[GenericListResultType[T]]): GenericListResultType[T] = {
-    //Validated would be better here?
-    //TODO: can we replace it with sequenceU??
-    results.foldLeft[GenericListResultType[T]](Right(Nil)) {
-      case (Right(a), Right(b)) => Right(a ++ b)
-      case (Left(a), Right(_)) => Left(a)
-      case (Right(_), Left(a)) => Left(a)
-      case (Left(a), Left(b)) => Left(a ++ b.toList)
-    }
-  }
 
   def apply(process: EspProcess, contextPreparer: StandaloneContextPreparer, modelData: ModelData,
             additionalListeners: List[ProcessListener], resultCollector: ResultCollector)
@@ -58,7 +47,7 @@ object StandaloneProcessInterpreter {
       definitions,
       listeners,
       modelData.modelClassLoader.classLoader, resultCollector
-      // defaultAsyncValue is not important here because it doesn't used in standalone mode
+      // defaultAsyncValue is not important here because it isn't used in standalone mode
     )(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
 
     compilerData.compile().andThen { compiledProcess =>
@@ -118,14 +107,15 @@ object StandaloneProcessInterpreter {
         implicit val lazyInterpreter: CompilerLazyParameterInterpreter = lazyParameterInterpreter
         val responseLazyParam = sinkWithParams.prepareResponse
         val responseInterpreter = lazyParameterInterpreter.createInterpreter(responseLazyParam)
-        it.bimap(_.updated(compiledNode.id, responseLazyParam.returnType), (originalSink:InterpreterType) => (ctx: Context, ec:ExecutionContext) => {
+        it.bimap(_.updated(compiledNode.id, responseLazyParam.returnType), (originalSink:InterpreterType) => (ctxs: List[Context], ec:ExecutionContext) => {
           //we ignore result of original Sink (we currently don't support output in StandaloneSinkWithParameters)
           //but we invoke it because otherwise listeners wouldn't work properly
-          originalSink.apply(ctx, ec).flatMap { _ =>
-            responseInterpreter(ec, ctx).map(res => Right(List(InterpretationResult(EndReference(compiledNode.id), res, ctx))))(ec)
+          originalSink.apply(ctxs, ec).flatMap { _ =>
+            flatten((ctx, ec) => responseInterpreter(ec, ctx).map(res => {
+              Right(List(EndResult(InterpretationResult(EndReference(compiledNode.id), res, ctx)))) } )(ec))(ctxs, ec)
           }(ec).recover{
             case NonFatal(e) =>
-              Left(NonEmptyList.of(EspExceptionInfo(Some(compiledNode.id), e, ctx)))
+              Left(NonEmptyList.of(EspExceptionInfo(Some(compiledNode.id), e, ctxs.head)))
           }(ec)
         })
       case _ => it.mapWritten(_.updated(compiledNode.id, compiledNode.asInstanceOf[Sink].endResult.map(_._2).getOrElse(Unknown)))
@@ -139,44 +129,99 @@ object StandaloneProcessInterpreter {
       }
 
     private def partInvoker(node: compiledgraph.node.Node, parts: List[SubsequentPart]): CompilationResult[WithSinkTypes[InterpreterType]] = {
-
       compilePartInvokers(parts).map(_.map { partsInvokers =>
-        (ctx: Context, ec: ExecutionContext) => {
+        (ctx: List[Context], ec: ExecutionContext) => {
           implicit val iec: ExecutionContext = ec
-          //TODO: refactor StandaloneInterpreter to use IO
-          implicit val shape: InterpreterShape[Future] = new FutureShape
-          processCompilerData.interpreter.interpret[Future](node, processCompilerData.metaData, ctx).flatMap { maybeResult =>
-            maybeResult.fold[InterpreterOutputType](
-            ir => Future.sequence(ir.map(interpretationInvoke(partsInvokers))).map(foldResults),
-            a => Future.successful(Left(NonEmptyList.of(a))))
-          }
+          (for {
+            resultList <- EitherT(foldResults(ctx.map(invokeInterpreterOnContext(node))))
+            //we group results, to invoke specific part only once, with complete list of results
+            groupedResults <- EitherT(foldResults(resultList.groupBy(_.reference).map {
+                case (pr, ir) => interpretationInvoke(partsInvokers)(pr, ir)
+            }.toList))
+          } yield groupedResults).value
         }
       })
     }
 
-    private def interpretationInvoke(partInvokers: Map[String, InterpreterType])(ir: InterpretationResult)(implicit ec: ExecutionContext) = {
-      val results = ir.reference match {
+    private def invokeInterpreterOnContext(node: Node)(ctx: Context)(implicit ec: ExecutionContext) = {
+      //TODO: refactor StandaloneInterpreter to use IO
+      implicit val shape: InterpreterShape[Future] = new FutureShape
+      processCompilerData.interpreter.interpret[Future](node, processCompilerData.metaData, ctx).map(_.swap.leftMap(NonEmptyList.one))
+    }
+
+    private def interpretationInvoke(partInvokers: Map[String, InterpreterType])
+                                    (pr: PartReference, ir: List[InterpretationResult])(implicit ec: ExecutionContext): InternalInterpreterOutputType = {
+      val results = pr match {
         case _: EndReference =>
-          Future.successful(Right(List(ir)))
+          Future.successful(Right(ir.map(EndResult)))
         case _: DeadEndReference =>
           Future.successful(Right(Nil))
-        case _: JoinReference =>
-          Future.successful(Right(Nil))
+        case r: JoinReference =>
+          Future.successful(Right(ir.map(one => JoinResult(r, one.finalContext))))
         case NextPartReference(id) =>
-          partInvokers.getOrElse(id, throw new Exception("Unknown reference"))(ir.finalContext, ec)
+          partInvokers.getOrElse(id, throw new Exception("Unknown reference"))(ir.map(_.finalContext), ec)
       }
       results
     }
 
-    def compile: CompilationResult[WithSinkTypes[InterpreterType]]
-      = compiledPartInvoker(compiledProcess.sources.head)
+    def compile: CompilationResult[WithSinkTypes[InterpreterType]] = {
+      //here we rely on the fact that parts are sorted correctly (see ProcessCompiler.compileSources)
+      //this guarantess that SourcePart is first
+      val NonEmptyList(start, rest) = compiledProcess.sources
+      rest.foldLeft(compiledPartInvoker(start)) {
+        case (resultSoFar, e:CustomNodePart) =>
+          val compiledTransformer = compileJoinTransformer(e)
+          resultSoFar.product(compiledTransformer).map { case (WriterT((types, interpreter)), WriterT((types2, part))) =>
+            Writer(types ++ types2, nextPartInvocation(interpreter, part))
+          }
+        //thanks to sorting we know that one SourcePart was first on parts list
+        //Currently we do not allow > 1 Source for standalone
+        case (_, a:SourcePart) => Invalid(NonEmptyList.one(CustomNodeError(a.id, "This type of scenario can have only one source", None)))
+      }
+    }
 
+    //First we compute scenario parts compiled so far. Then we search for JoinResults and invoke joinPart
+    //We know that we'll find all results pointing to join, because we sorted the parts
+    private def nextPartInvocation(computedInterpreter: InterpreterType,
+                               joinPartToInvoke: (Map[String, List[Context]], ExecutionContext) => InternalInterpreterOutputType) = {
+      (ctxs: List[Context], ec: ExecutionContext) => {
+        implicit val vec: ExecutionContext = ec
+        (for {
+          results <- EitherT(computedInterpreter(ctxs, ec))
+          allResults <- EitherT({
+            val resultsPointingToJoin = results.collect { case e:JoinResult => e }.groupBy(_.reference.branchId).mapValues(_.map(_.context))
+            val endResults = results.collect { case e:EndResult => e }
+            joinPartToInvoke(resultsPointingToJoin, ec).map(_.map(_ ++ endResults))
+          })
+        } yield allResults).value
+      }
+    }
+
+    private def compileJoinTransformer(customNodePart: CustomNodePart): Validated[NonEmptyList[ProcessCompilationError], WriterT[Id, Map[String, TypingResult], (Map[String, List[Context]], ExecutionContext) => InternalInterpreterOutputType]] = {
+      val CustomNodePart(transformerObj, node, _, validationContext, parts, _) = customNodePart
+      val validatedTransformer = transformerObj match {
+        case t: JoinStandaloneCustomTransformer => Valid(t)
+        case JoinContextTransformation(_, t: JoinStandaloneCustomTransformer) => Valid(t)
+        case _ => Invalid(NonEmptyList.of(UnsupportedPart(node.id)))
+      }
+      validatedTransformer.andThen { transformer =>
+        val result = compileWithCompilationErrors(node, validationContext).andThen(partInvoker(_, parts))
+        result.map(rs => rs.map(transformer.createTransformation(node.data.outputVar)(_, lazyParameterInterpreter)))
+      }
+    }
+
+    private def foldResults[T, Error](resultsFuture: List[Future[GenericListResultType[T]]])
+                             (implicit ec: ExecutionContext): Future[GenericListResultType[T]] = {
+      //Validated would be better here?
+      resultsFuture.map(EitherT(_)).sequence.map(_.flatten).value
+    }
+
+    private def flatten(fun: (Context, ExecutionContext) => InternalInterpreterOutputType): InterpreterType = {
+      (ctxs, ec) => foldResults(ctxs.map(fun(_, ec)))(ec)
+    }
   }
 
 }
-
-
-
 
 case class StandaloneProcessInterpreter(source: StandaloneSource[Any],
                                         sinkTypes: Map[String, TypingResult],
@@ -197,7 +242,13 @@ case class StandaloneProcessInterpreter(source: StandaloneSource[Any],
     val contextId = contextIdOpt.getOrElse(s"${context.processId}-${counter.getAndIncrement()}")
     measureTime {
       val ctx = Context(contextId).withVariable(VariableConstants.InputVariableName, input)
-      invoker(ctx, ec)
+      invoker(ctx:: Nil, ec).map { result =>
+        result.right.map(_.map {
+          case EndResult(result) => result
+          case other => throw new IllegalArgumentException(s"Should not happen, $other left in results")
+        })
+
+      }
     }
   }
 
