@@ -58,7 +58,6 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
        |}
       """.stripMargin
 
-
   it should "unmarshall to displayable process properly" in {
     val displayableProcess = ProcessConverter.toDisplayableOrDie(processWithPartialAdditionalFields, TestProcessingTypes.Streaming)
 

@@ -1,14 +1,11 @@
 package pl.touk.nussknacker.engine.canonicalgraph
 
-import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.CanonicalNode
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
-import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
-import cats.instances.list._
 
 sealed trait CanonicalTreeNode
 
