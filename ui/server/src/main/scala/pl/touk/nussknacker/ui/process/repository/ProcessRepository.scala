@@ -102,7 +102,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
     //TODO: Move this normalization to DTO - GraphProcess
     def normalizeJsonString(jsonString: String): Either[InvalidProcessJson, String] = parse(jsonString) match {
       case Left(_) => Left(InvalidProcessJson(s"Invalid raw json string: $jsonString."))
-      case Right(json) => Right(json.noSpaces)
+      case Right(json) => Right(json.spaces2)
     }
 
     def createProcessVersionEntityData(id: Int, processingType: ProcessingType, json: Option[String], maybeMainClass: Option[String]) = ProcessVersionEntityData(

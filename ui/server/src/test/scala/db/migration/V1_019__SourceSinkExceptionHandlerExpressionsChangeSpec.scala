@@ -231,7 +231,6 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
 
   }
 
-
   private def sinkToVerify(id: String) = {
     Sink(id, SinkRef("sink", List(Parameter("param1", Expression("spel", "'string1'")))))
   }

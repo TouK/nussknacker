@@ -97,7 +97,7 @@ class SubprocessSpec extends FunSuite with Matchers with ProcessTestHelpers {
         canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
         List(canonicalnode.FlatNode(Sink("end1", SinkRef("monitor", List()), Some("'deadEnd'"))))
-      ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), None)
+      ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty)
 
     val subprocessWithSplit = CanonicalProcess(MetaData("splitSubprocess", StreamMetaData()), null,
       List(
@@ -106,14 +106,14 @@ class SubprocessSpec extends FunSuite with Matchers with ProcessTestHelpers {
           List(canonicalnode.FlatNode(Sink("end1", SinkRef("monitor", List())))),
           List(canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output", List.empty)))
         ))
-      ), None)
+      ), List.empty)
 
     val subprocessWithGlobalVar = CanonicalProcess(MetaData("subProcessGlobal", StreamMetaData()), null,
           List(
             canonicalnode.FlatNode(SubprocessInputDefinition("start", List())),
             canonicalnode.FilterNode(Filter("f1", "#processHelper.constant == 4"),
             List()
-          ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), None)
+          ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty)
 
     val diamondSubprocess = CanonicalProcess(MetaData("diamondSubprocess", StreamMetaData()), null,
       List(
@@ -124,13 +124,13 @@ class SubprocessSpec extends FunSuite with Matchers with ProcessTestHelpers {
             List(canonicalnode.FilterNode(Filter("filter2b", "true"), Nil), FlatNode(BranchEndData(BranchEndDefinition("end2", "join1"))))
           )
         )
-      ), Some(List(
+      ), List(
         FlatNode(Join("join1", Some("output"), "joinBranchExpression", Nil, List(
           BranchParameters("end1", List(Parameter("value", "#ala"))),
           BranchParameters("end2", List(Parameter("value", "#ala")))
         ), None)),
         FlatNode(SubprocessOutputDefinition("output22", "output33", Nil, None))
-      ):: Nil)
+      ):: Nil
     )
     
     val resolved = SubprocessResolver(Set(subprocessWithSplit, subprocess, subprocessWithGlobalVar, diamondSubprocess)).resolve(ProcessCanonizer.canonize(espProcess))

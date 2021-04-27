@@ -251,7 +251,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
         FlatNode(Variable(id = "subVar", varName = "subVar", value = "#nonExistingVar")),
         FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))
       ),
-      additionalBranches = None
+      additionalBranches = List.empty
     )
     val (processValidation, processWithSub) = mockProcessValidationAndProcess(process, invalidSubprocess)
 
@@ -284,7 +284,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
         FlatNode(Variable(id = "subVar", varName = "subVar", value = "#nonExistingVar")),
         FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))
       ),
-      additionalBranches = None
+      additionalBranches = List.empty
     )
     val (processValidation, processWithSub) = mockProcessValidationAndProcess(process, invalidSubprocess)
 
@@ -326,7 +326,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
           List(FlatNode(SubprocessOutputDefinition("subOut1", "subOut1", List(Field("foo", "42L"))))),
           List(FlatNode(SubprocessOutputDefinition("subOut2", "subOut2", List(Field("bar", "'42'")))))
         ))
-      ), additionalBranches = None)
+      ), additionalBranches = List.empty)
     val (processValidation, processWithSub) = mockProcessValidationAndProcess(process, subprocess)
     val validationResult = processValidation.validate(processWithSub)
     validationResult.errors.invalidNodes shouldBe 'empty

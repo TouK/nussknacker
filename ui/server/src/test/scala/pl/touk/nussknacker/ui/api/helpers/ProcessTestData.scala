@@ -268,14 +268,14 @@ object ProcessTestData {
   }
 
   val emptySubprocess = {
-    CanonicalProcess(MetaData("sub1", StreamMetaData(), isSubprocess = true, None, Map()), ExceptionHandlerRef(List()), List(), None)
+    CanonicalProcess(MetaData("sub1", StreamMetaData(), isSubprocess = true, None, Map()), ExceptionHandlerRef(List()), List(), List.empty)
   }
 
   val sampleSubprocessOneOut = {
     CanonicalProcess(MetaData("sub1", StreamMetaData(), isSubprocess = true), ExceptionHandlerRef(List()), List(
       FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("param1", SubprocessClazzRef[String])))),
       canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))
-    ), None)
+    ), List.empty)
   }
 
   val sampleSubprocess = {
@@ -285,7 +285,7 @@ object ProcessTestData {
         List(FlatNode(SubprocessOutputDefinition("out", "out1", List.empty))),
         List(FlatNode(SubprocessOutputDefinition("out2", "out2", List.empty)))
       ))
-    ), Some(List()))
+    ), List.empty)
   }
 
   val sampleSubprocess2 = {
@@ -296,7 +296,7 @@ object ProcessTestData {
         List(FlatNode(SubprocessOutputDefinition("out2", "out2", List.empty))),
         List(FlatNode(SubprocessOutputDefinition("out3", "out2", List.empty)))
       ))
-    ), Some(List()))
+    ), List.empty)
   }
 
   def createEmptyUpdateProcessCommand(processName: ProcessName, comment: Option[String]): UpdateProcessCommand = {

@@ -19,7 +19,7 @@ object ProcessCanonizer {
       process.metaData,
       process.exceptionHandlerRef,
       NodeCanonizer.canonize(process.roots.head),
-      Some(process.roots.tail.map(NodeCanonizer.canonize))
+      process.roots.tail.map(NodeCanonizer.canonize)
     )
   }
 
