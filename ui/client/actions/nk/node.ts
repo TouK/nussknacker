@@ -4,7 +4,7 @@ import {Action, ThunkAction} from "../reduxTypes"
 import {RootState} from "../../reducers"
 import {Position, layoutChanged} from "./ui/layout"
 import {EditEdgeAction} from "./editEdge"
-import {EditNodeAction} from "./editNode"
+import {EditNodeAction, RenameProcessAction} from "./editNode"
 import {getProcessDefinitionData} from "../../reducers/selectors/settings"
 
 //TODO: identify
@@ -150,3 +150,4 @@ export type NodeActions =
   | ValidationResultAction
   | EditNodeAction
   | EditEdgeAction
+  | RenameProcessAction

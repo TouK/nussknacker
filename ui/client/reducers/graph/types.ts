@@ -28,4 +28,5 @@ export type GraphState = {
   testResults: $TodoType,
   edgeToDisplay: $TodoType,
   processCounts: ProcessCounts,
+  unsavedNewName: string | null,
 }

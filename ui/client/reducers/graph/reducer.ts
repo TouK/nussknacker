@@ -1,4 +1,4 @@
-import {concat, sortBy, isEqual, reject, zipObject, omit, uniq, without, xor} from "lodash"
+import {concat, sortBy, isEqual, reject, zipObject, omit, uniq, xor} from "lodash"
 import * as GraphUtils from "../../components/graph/GraphUtils"
 import NodeUtils from "../../components/graph/NodeUtils"
 import * as LayoutUtils from "../layoutUtils"
@@ -41,6 +41,7 @@ const emptyGraphState: GraphState = {
     future: [],
     past: [],
   },
+  unsavedNewName: null,
 }
 
 const STATE_PROPERTY_NAME = "groupingState"
@@ -146,6 +147,12 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
           validationResult: action.validationResult,
         },
         nodeToDisplay: action.after,
+      }
+    }
+    case "PROCESS_RENAME": {
+      return {
+        ...state,
+        unsavedNewName: action.name,
       }
     }
     case "DELETE_NODES": {
