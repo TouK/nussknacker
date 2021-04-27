@@ -100,9 +100,10 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
     }
 
     //TODO: Move this normalization to DTO - GraphProcess
-    def normalizeJsonString(jsonString: String): Either[InvalidProcessJson, String] = parse(jsonString) match {
+    //Pretty is only for keeping old json formatting style..
+    def normalizeJsonString(jsonString: String, pretty: Boolean = false): Either[InvalidProcessJson, String] = parse(jsonString) match {
       case Left(_) => Left(InvalidProcessJson(s"Invalid raw json string: $jsonString."))
-      case Right(json) => Right(json.noSpaces)
+      case Right(json) => Right(if (pretty) json.spaces2 else json.noSpaces)
     }
 
     def createProcessVersionEntityData(id: Int, processingType: ProcessingType, json: Option[String], maybeMainClass: Option[String]) = ProcessVersionEntityData(
@@ -112,7 +113,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
 
     //We compare Json representation to ignore formatting differences
     def isLastVersionContainsSameJson(lastVersion: ProcessVersionEntityData, maybeJson: Option[String]) =
-      lastVersion.json.map(normalizeJsonString) == maybeJson.map(normalizeJsonString)
+      lastVersion.json.map(normalizeJsonString(_)) == maybeJson.map(normalizeJsonString(_))
 
     //TODO: after we move Json type to GraphProcess we should clean up this pattern matching
     def versionToInsert(latestProcessVersion: Option[ProcessVersionEntityData], processesVersionCount: Int, processingType: ProcessingType) =
@@ -120,7 +121,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
         case (Some(version), _) if isLastVersionContainsSameJson(version, maybeJson) && version.mainClass == maybeMainClass =>
           Right(None)
         case (_, Some(json)) =>
-          normalizeJsonString(json)
+          normalizeJsonString(json, pretty = true)
             .map(j => Option(createProcessVersionEntityData(processesVersionCount, processingType, Some(j), None)))
         case (_, None) =>
           Right(Option(createProcessVersionEntityData(processesVersionCount, processingType, None, maybeMainClass)))

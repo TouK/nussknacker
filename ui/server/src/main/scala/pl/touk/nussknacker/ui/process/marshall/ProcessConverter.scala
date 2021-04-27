@@ -26,7 +26,7 @@ object ProcessConverter {
     val displayable = ProcessConverter.toDisplayableOrDie(canonicalJson, processingType)
     val modified = f(displayable)
     val canonical = ProcessConverter.fromDisplayable(modified)
-    ProcessMarshaller.toJson(canonical).noSpaces
+    ProcessMarshaller.toJson(canonical).spaces2
   }
 
   //FIXME: without default param
@@ -131,8 +131,9 @@ object ProcessConverter {
     val nodesMap = process.nodes.groupBy(_.id).mapValues(_.head)
     val edgesFromMapStart = process.edges.groupBy(_.from)
     val rootsUnflattened = findRootNodes(process).map(headNode => unFlattenNode(nodesMap, None)(headNode, edgesFromMapStart))
-    val nodes = rootsUnflattened.headOption.getOrElse(List())
-    CanonicalProcess(process.metaData, process.properties.exceptionHandler, nodes, rootsUnflattened.tail)
+    val nodes = rootsUnflattened.headOption.getOrElse(List.empty)
+    val additionalBranches = if (rootsUnflattened.isEmpty) List.empty else rootsUnflattened.tail
+    CanonicalProcess(process.metaData, process.properties.exceptionHandler, nodes, additionalBranches)
   }
 
   private def findRootNodes(process: DisplayableProcess): List[NodeData] =
