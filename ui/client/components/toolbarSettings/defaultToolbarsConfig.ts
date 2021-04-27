@@ -68,10 +68,8 @@ export const defaultToolbarsConfig: WithId<ToolbarsConfig> = {
     {
       id: "GROUP-PANEL",
       buttons: [
-        {type: BuiltinButtonTypes.groupStart},
-        {type: BuiltinButtonTypes.groupFinish},
-        {type: BuiltinButtonTypes.groupCancel},
-        {type: BuiltinButtonTypes.groupUngroup},
+        {type: BuiltinButtonTypes.group},
+        {type: BuiltinButtonTypes.ungroup},
       ],
     },
     {id: "DETAILS-PANEL"},
