@@ -70,6 +70,7 @@ const uiReducer: Reducer<UiState> = (state = emptyUiState, action) => {
         isToolTipsHighlighted: action.isHighlighted,
       }
     }
+    case "CLEAR":
     case "CLOSE_MODALS": {
       return {
         ...state,

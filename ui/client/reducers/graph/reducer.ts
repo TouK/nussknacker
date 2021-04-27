@@ -104,6 +104,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         ...state,
         processToDisplay: null,
         fetchedProcessDetails: null,
+        nodeToDisplay: null,
         testResults: null,
       }
     }
