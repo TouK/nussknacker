@@ -3,11 +3,13 @@ import {dia} from "jointjs"
 import {isBackgroundObject} from "./isBackgroundObject"
 import {defaultLink} from "../EspNode/link"
 import {arrowMarker} from "../arrowMarker"
+import {Events} from "../joint-events"
 
 function getPaper(opts: dia.Paper.Options, canWrite: boolean) {
   const paper = new joint.dia.Paper({
     ...opts,
     gridSize: 1,
+    clickThreshold: 2,
     async: false,
     snapLinks: {radius: 75},
     interactive: (cellView: dia.CellView) => {
@@ -45,11 +47,11 @@ export function createPaper(): dia.Paper {
     canWrite,
   )
   return paper
-    .on("cell:pointerup", (cell) => {
+    .on(Events.CELL_POINTERUP, (cell) => {
       this.changeLayoutIfNeeded()
       this.handleInjectBetweenNodes(cell)
     })
-    .on("link:connect", (cell) => {
+    .on(Events.LINK_CONNECT, (cell) => {
       this.disconnectPreviousEdge(cell.model.id)
       this.props.actions.nodesConnected(
         cell.sourceView.model.attributes.nodeData,
