@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.api.process
 
 import pl.touk.nussknacker.engine.api.MethodToInvoke
+import pl.touk.nussknacker.engine.api.component.Component
 
 
 trait Sink {
@@ -17,7 +18,7 @@ trait Sink {
   * IMPORTANT lifecycle notice:
   * Implementations of this class *must not* allocate resources (connections, file handles etc.)
   */
-trait SinkFactory extends Serializable {
+trait SinkFactory extends Serializable with Component {
 
   def requiresOutput: Boolean = true
 

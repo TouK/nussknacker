@@ -1,14 +1,16 @@
 package pl.touk.nussknacker.engine.definition
 
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, QueryableStateNames}
+import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, QueryableStateNames, Service}
+import pl.touk.nussknacker.engine.component.ComponentExtractor
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
-import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
 import shapeless.syntax.typeable._
+
+import scala.reflect.ClassTag
                  
 object ProcessDefinitionExtractor {
 
@@ -23,18 +25,23 @@ object ProcessDefinitionExtractor {
   }
 
   import pl.touk.nussknacker.engine.util.Implicits._
-  //TODO: move it to ProcessConfigCreator??
+
   def extractObjectWithMethods(creator: ProcessConfigCreator,
                                processObjectDependencies: ProcessObjectDependencies) : ProcessDefinition[ObjectWithMethodDef] = {
 
-    val services = creator.services(processObjectDependencies)
-    val signals = creator.signals(processObjectDependencies)
-    val sourceFactories = creator.sourceFactories(processObjectDependencies)
-    val sinkFactories = creator.sinkFactories(processObjectDependencies)
-    val exceptionHandlerFactory = creator.exceptionHandlerFactory(processObjectDependencies)
-    val customStreamTransformers = creator.customStreamTransformers(processObjectDependencies)
-    val expressionConfig = creator.expressionConfig(processObjectDependencies)
+    val componentsFromProviders = extractFromComponentProviders(creator.getClass.getClassLoader, processObjectDependencies)
+    def forClass[T<:Component:ClassTag]: Map[String, WithCategories[T]] = componentsFromProviders.collect {
+      case (id, a@WithCategories(value: T, _, _)) => id -> a.copy(value = value)
+    }
+    val services = creator.services(processObjectDependencies) ++ forClass[Service]
+    val sourceFactories = creator.sourceFactories(processObjectDependencies) ++ forClass[SourceFactory[_]]
+    val sinkFactories = creator.sinkFactories(processObjectDependencies) ++ forClass[SinkFactory]
+    val customStreamTransformers = creator.customStreamTransformers(processObjectDependencies) ++ forClass[CustomStreamTransformer]
 
+    val signals = creator.signals(processObjectDependencies)
+
+    val exceptionHandlerFactory = creator.exceptionHandlerFactory(processObjectDependencies)
+    val expressionConfig = creator.expressionConfig(processObjectDependencies)
     val nodesConfig = extractNodesConfig(processObjectDependencies.config)
 
     val servicesDefs = ObjectWithMethodDef.forMap(services, ProcessObjectDefinitionExtractor.service, nodesConfig)
@@ -75,6 +82,10 @@ object ProcessDefinitionExtractor {
         expressionConfig.hideMetaVariable,
         expressionConfig.strictMethodsChecking
       ), settings)
+  }
+
+  def extractFromComponentProviders(classLoader: ClassLoader, processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Component]] = {
+    ComponentExtractor(classLoader).extract(processObjectDependencies)
   }
 
   def extractNodesConfig(processConfig: Config) : Map[String, SingleNodeConfig] = {

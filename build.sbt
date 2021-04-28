@@ -521,7 +521,8 @@ lazy val flinkManagementSample = (project in engine("flink/management/sample")).
     }
   ).
   // depends on interpreter because of SampleNodeAdditionalInfoProvider which takes NodeData as a parameter
-  dependsOn(kafkaFlinkUtil, flinkModelUtil, avroFlinkUtil, interpreter, process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test")
+  dependsOn(kafkaFlinkUtil, flinkModelUtil, avroFlinkUtil, interpreter,
+    process % "runtime,test", flinkTestUtil % "test", kafkaTestUtil % "test")
 
 lazy val managementJavaSample = (project in engine("flink/management/java_sample")).
   settings(commonSettings).
@@ -829,7 +830,8 @@ lazy val api = (project in engine("api")).
         "org.typelevel" %% "cats-core" % catsV,
         "org.typelevel" %% "cats-effect" % "1.1.0",
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
-        "com.typesafe" % "config" % configV
+        "com.typesafe" % "config" % configV,
+        "com.vdurmont" % "semver4j" % "3.1.0"
       )
     }
   ).dependsOn(testUtil % "test")
