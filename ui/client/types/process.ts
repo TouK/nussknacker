@@ -5,7 +5,6 @@ import {EditorProps} from "../components/graph/node-modal/editors/expression/Edi
 
 export type Process = {
   id: string,
-  unsavedNewName?: string,
   nodes: NodeType[],
   edges: Edge[],
   properties: NodeType,

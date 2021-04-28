@@ -11,7 +11,7 @@ export const getFetchedProcessDetails = createSelector(getGraph, g => g.fetchedP
 export const getProcessToDisplay = createSelector(getGraph, g => g.processToDisplay || {} as Process)
 export const getProcessId = createSelector(getFetchedProcessDetails, d => d?.name)
 export const getProcessName = getProcessId
-export const getProcessUnsavedNewName = createSelector(getProcessToDisplay, getProcessName, (d, id) => d?.unsavedNewName || id)
+export const getProcessUnsavedNewName = createSelector(getGraph, getProcessName, (g, id) => g?.unsavedNewName || id)
 export const getProcessVersionId = createSelector(getFetchedProcessDetails, d => d?.processVersionId)
 export const getProcessCategory = createSelector(getFetchedProcessDetails, d => d?.processCategory || "")
 export const getIsArchived = createSelector(getFetchedProcessDetails, d => d?.isArchived)
@@ -21,7 +21,7 @@ export const isLatestProcessVersion = createSelector(getFetchedProcessDetails, d
 export const isSubprocess = createSelector(getProcessToDisplay, p => p.properties?.isSubprocess)
 export const isArchived = createSelector(getFetchedProcessDetails, p => p.isArchived)
 export const isBusinessView = createSelector(getGraph, g => g.businessView)
-export const isPristine = (state: RootState): boolean => ProcessUtils.nothingToSave(state)
+export const isPristine = (state: RootState): boolean => ProcessUtils.nothingToSave(state) && !isProcessRenamed(state)
 export const hasError = createSelector(getProcessToDisplay, p => !ProcessUtils.hasNoErrors(p))
 export const getNodeToDisplay = createSelector(getGraph, g => g.nodeToDisplay)
 export const getSelectionState = createSelector(getGraph, g => g.selectionState)

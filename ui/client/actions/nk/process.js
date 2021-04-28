@@ -1,6 +1,6 @@
 import _ from "lodash"
 import {events} from "../../analytics/TrackingEvents"
-import {mapProcessWithNewNode, mapProcessWithProperties} from "../../components/graph/GraphUtils"
+import {mapProcessWithNewNode} from "../../components/graph/GraphUtils"
 import NodeUtils from "../../components/graph/NodeUtils"
 import * as SubprocessSchemaAligner from "../../components/graph/SubprocessSchemaAligner"
 import HttpService from "../../http/HttpService"
@@ -77,17 +77,23 @@ export function clearProcess() {
   }
 }
 
-export function calculateProcessAfterChange(process, before, after, dispatch) {
-  if (NodeUtils.nodeIsProperties(after)) {
-    const subprocessVersions = after.subprocessVersions || process.properties.subprocessVersions
-    return dispatch(
-      fetchProcessDefinition(process.processingType, process.properties.isSubprocess, subprocessVersions),
-    ).then((processDef) => {
-      const processWithNewSubprocessSchema = alignSubprocessesWithSchema(process, processDef.processDefinitionData)
-      return mapProcessWithProperties(processWithNewSubprocessSchema, after)
-    })
-  } else {
-    return Promise.resolve(mapProcessWithNewNode(process, before, after))
+export function calculateProcessAfterChange(process, before, after) {
+  return dispatch => {
+    if (NodeUtils.nodeIsProperties(after)) {
+      const subprocessVersions = after.subprocessVersions || process.properties.subprocessVersions
+      return dispatch(
+        fetchProcessDefinition(process.processingType, process.properties.isSubprocess, subprocessVersions),
+      ).then((processDef) => {
+        const processWithNewSubprocessSchema = alignSubprocessesWithSchema(process, processDef.processDefinitionData)
+        const {id, ...properties} = after
+        if (id && id !== before.id) {
+          dispatch({type: "PROCESS_RENAME", name: id})
+        }
+        return {...processWithNewSubprocessSchema, properties}
+      })
+    } else {
+      return Promise.resolve(mapProcessWithNewNode(process, before, after))
+    }
   }
 }
 

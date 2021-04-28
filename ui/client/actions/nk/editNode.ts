@@ -10,13 +10,16 @@ export type EditNodeAction = {
   validationResult: ValidationResult,
   processAfterChange: $TodoType,
 }
+export type RenameProcessAction = {
+  type: "PROCESS_RENAME",
+  name: string,
+}
 
 export function editNode(process: Process, before: NodeType, after: NodeType): ThunkAction {
   return (dispatch) => {
-    const processAfterChange = calculateProcessAfterChange(process, before, after, dispatch)
-    return processAfterChange.then((process) => {
+    return dispatch(calculateProcessAfterChange(process, before, after)).then((process) => {
       return HttpService.validateProcess(process).then((response) => {
-        dispatch({
+        return dispatch({
           type: "EDIT_NODE",
           before: before,
           after: after,

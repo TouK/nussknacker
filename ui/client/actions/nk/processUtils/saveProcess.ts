@@ -1,6 +1,6 @@
 import history from "../../../history"
 import HttpService from "../../../http/HttpService"
-import {getProcessToDisplay, isProcessRenamed} from "../../../reducers/selectors/graph"
+import {getProcessToDisplay, getProcessUnsavedNewName, isProcessRenamed} from "../../../reducers/selectors/graph"
 import {ThunkAction} from "../../reduxTypes"
 import * as UndoRedoActions from "../../undoRedoActions"
 import {displayProcessActivity} from "../displayProcessActivity"
@@ -25,8 +25,9 @@ export function saveProcess(comment: string): ThunkAction {
     // save changes before rename and force same processId everywhere
     await HttpService.saveProcess(processJson.id, processJson, comment)
 
-    const isRenamed = isProcessRenamed(state) && await doRenameProcess(processJson.id, processJson.unsavedNewName)
-    const processId = isRenamed ? processJson.unsavedNewName : processJson.id
+    const unsavedNewName = getProcessUnsavedNewName(state)
+    const isRenamed = isProcessRenamed(state) && await doRenameProcess(processJson.id, unsavedNewName)
+    const processId = isRenamed ? unsavedNewName : processJson.id
 
     await dispatch(displayCurrentProcessVersion(processId))
     await dispatch(displayProcessActivity(processId))
