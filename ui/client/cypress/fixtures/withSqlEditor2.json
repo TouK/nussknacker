@@ -1,0 +1,56 @@
+{
+  "metaData" : {
+    "id" : "jwl-test",
+    "typeSpecificData" : {
+      "parallelism" : null,
+      "splitStateToDisk" : true,
+      "useAsyncInterpretation" : null,
+      "checkpointIntervalInSeconds" : null,
+      "type" : "StreamMetaData"
+    },
+    "isSubprocess" : false,
+    "additionalFields" : {
+      "description" : null,
+      "groups" : [
+      ],
+      "properties" : {
+        "numberOfThreads" : "1",
+        "environment" : "test"
+      }
+    },
+    "subprocessVersions" : {
+      
+    }
+  },
+  "exceptionHandlerRef" : {
+    "parameters" : [
+    ]
+  },
+  "nodes" : [
+    {
+      "id" : "sql-source",
+      "ref" : {
+        "typ" : "sql-source",
+        "parameters" : [
+          {
+            "name" : "sql",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'SELECT DISTINCT TO_CHAR(SYSDATE,''YYYY-MM-DD'') AS CHAR_DATE, A.SUBSCRIPTION_ID, C.OS, CASE WHEN B.DL_TOTAL_30D IS NULL THEN 0 ELSE\n(ROUND(B.DL_TOTAL_30D / 1024 / 1024)) END AS DL_TOTAL_30D,\n\nFROM CM_CP.V_CAP_PROFILE as A\nLEFT JOIN CM_CP.V_CAP_USAGE_DATA as B ON A.MSISDN = B.MSISDN\nLEFT JOIN CM_CP.V_CAP_D_EQUIPMENT as C ON to_number(A.CURRENT_TAC) = C.TAC\n\nWHERE 1=1 AND ((A.COS_FAMILY_PL = ''Mass'') OR (A.COS_FAMILY_PL = ''Business'' AND A.CUST_VOLUME_SEGMENT = ''SOHO'')) AND A.SERVICE_ACTIVE_FLG = 1 AND A.SUBSCRIPTION_ID IS NOT NULL\n\nSELECT DISTINCT u.id, SELECT(\n    SELECT * FROM user_data WHERE id = 1\n) as data FROM user as u WHERE u.id = 1 LAST u.id'"
+            }
+          }
+        ]
+      },
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : -1
+        }
+      },
+      "type" : "Source"
+    }
+  ],
+  "additionalBranches" : [
+  ]
+}

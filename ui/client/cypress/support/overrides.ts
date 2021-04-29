@@ -1,6 +1,35 @@
 import {defaultsDeep} from "lodash"
 import UAParser from "ua-parser-js"
 
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Cypress {
+    interface Chainable<Subject = any> {
+      // fixed wrong original
+      toMatchImageSnapshot(options?: Partial<{
+        name: string,
+        imageConfig: Partial<{
+          createDiffImage: boolean,
+          threshold: number,
+          thresholdType: "percent" | "pixel",
+        }>,
+        screenshotConfig: Partial<ScreenshotDefaultsOptions>,
+      }>): Chainable<null>,
+
+      toMatchExactImageSnapshot(): Chainable<null>,
+    }
+  }
+}
+
+Cypress.Commands.add("toMatchExactImageSnapshot", {prevSubject: true}, (subject) => cy
+  .wrap(subject)
+  .should("be.visible")
+  .toMatchImageSnapshot({
+    imageConfig: {
+      threshold: 0.00001,
+    },
+  }))
+
 const getRequestOptions = (...args): Partial<Cypress.RequestOptions> => {
   const [first, second, third] = args
   return typeof first === "string" ?
