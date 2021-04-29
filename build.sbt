@@ -623,13 +623,17 @@ lazy val benchmarks = (project in engine("benchmarks")).
 
 
 lazy val kafka = (project in engine("kafka")).
+  configs(IntegrationTest).
   settings(commonSettings).
+  settings(Defaults.itSettings).
   settings(
     name := "nussknacker-kafka",
     libraryDependencies ++= {
       Seq(
         "javax.validation" % "validation-api" % javaxValidationApiV,
         "org.apache.kafka" % "kafka-clients" % kafkaV,
+        "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it",
+        "com.dimafeng" %% "testcontainers-scala-kafka" % testcontainersScalaV % "it",
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
