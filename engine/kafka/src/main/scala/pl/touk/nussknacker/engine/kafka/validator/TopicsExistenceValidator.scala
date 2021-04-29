@@ -50,18 +50,23 @@ class CachedTopicsExistenceValidator(kafkaConfig: KafkaConfig) extends TopicsExi
     if (!kafkaConfig.topicsExistenceValidationConfig.enabled || isAutoCreateEnabled) {
       Valid(topics)
     } else {
-      val existingTopics = topicListCache.getOrCreate {
-        usingAdminClient {
+      topicListCache.get().flatMap(existingTopics => {
+        if(topics.diff(existingTopics).isEmpty)
+          Some(Valid(topics))
+        else
+          None
+      }).getOrElse {
+        val existingTopics = usingAdminClient {
           _.listTopics(new ListTopicsOptions().timeoutMs(config.adminClientTimeout.toMillis.toInt))
             .names().get().asScala.toList
         }
+        topicListCache.put(existingTopics)
+        val notExistingTopics = topics.diff(existingTopics)
+        if (notExistingTopics.isEmpty)
+          Valid(topics)
+        else
+          Invalid(new TopicExistenceValidationException(notExistingTopics))
       }
-      val notExistingTopics = topics.diff(existingTopics)
-
-      if (notExistingTopics.isEmpty)
-        Valid(topics)
-      else
-        Invalid(new TopicExistenceValidationException(notExistingTopics))
     }
   }
 
