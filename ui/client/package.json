@@ -15,6 +15,7 @@
     "start:backend-docker": "start-server-and-test start-backend:docker http-get://localhost:8080/static/main.html start",
     "start:backend-staging": "BACKEND_DOMAIN=https://staging.nussknacker.io webpack serve",
     "start:backend-demo": "BACKEND_DOMAIN=https://demo.nussknacker.io webpack serve",
+    "prestart-backend:docker": "docker pull touk/nussknacker:staging-latest",
     "start-backend:docker": "docker run -i -p 8080:8080 -e CONFIG_FORCE_processTypes_streaming_engineConfig_type=stub -e NUSSKNACKER_CONFIG_FILE=/opt/nussknacker/conf/dev-application.conf -P touk/nussknacker:staging-latest",
     "pretest": "npm run check",
     "test": "npm run test:unit && npm run test:e2e:ci",
