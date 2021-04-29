@@ -1,5 +1,6 @@
+import classnames from "classnames/dedupe"
 import i18next from "i18next"
-import {flatMap, isEqual, uniq} from "lodash"
+import {debounce, flatMap, uniq} from "lodash"
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react"
 import ReactAce from "react-ace/lib/ace"
 import {SimpleEditor} from "./Editor"
@@ -12,8 +13,10 @@ interface Props extends RawEditorProps {
   formatter: Formatter,
 }
 
+const CLASSNAME = "tokenizer-working"
+
 function useAliasUsageHighlight(token = "alias") {
-  const [keywords, setKeywords] = useState<string[]>([])
+  const [keywords, setKeywords] = useState<string>("")
   const ref = useRef<ReactAce>()
   const editor = ref.current?.editor
   const session = useMemo(() => editor?.getSession(), [editor])
@@ -25,28 +28,33 @@ function useAliasUsageHighlight(token = "alias") {
     [session, token],
   )
 
+  const toggleClassname = useCallback(debounce((classname: string, enabled: boolean): void => {
+    const el = ref.current.refEditor
+    el.className = classnames(el.className, {[classname]: enabled})
+  }, 1000, {trailing: true, leading: true}), [])
+
+  useEffect(() => {
+    if (session?.getMode().$highlightRules.setAliases) {
+      // for cypress tests only, we need some "still working" state
+      toggleClassname(CLASSNAME, true)
+      session.bgTokenizer.stop()
+      session.getMode().$highlightRules.setAliases(keywords)
+      session.bgTokenizer.start(0)
+    }
+  }, [toggleClassname, session, keywords])
+
   useEffect(() => {
     const callback = () => {
-      const allLines = session?.bgTokenizer?.lines
-      const next = uniq(flatMap(allLines, getValuesForToken))
-      setKeywords(current => isEqual(next, current) ? current : next)
+      const allLines = session.bgTokenizer.lines
+      const next = uniq(flatMap(allLines, getValuesForToken)).join("|")
+      setKeywords(next)
+      toggleClassname(CLASSNAME, false)
     }
     session?.on(`tokenizerUpdate`, callback)
     return () => {
       session?.off(`tokenizerUpdate`, callback)
     }
-  }, [session, getValuesForToken])
-
-  const onKeywordsChanged = useCallback(keywords => {
-    const tokenizer = session?.bgTokenizer
-    tokenizer?.stop()
-    session?.getMode()?.$highlightRules.setAliases?.(keywords)
-    tokenizer?.start(0)
-  }, [session])
-
-  useEffect(() => {
-    onKeywordsChanged(keywords)
-  }, [onKeywordsChanged, keywords])
+  }, [toggleClassname, session, getValuesForToken])
 
   return ref
 }

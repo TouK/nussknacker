@@ -37,26 +37,32 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
 
   var SqlHighlightRules = function() {
 
-    var keywords = (
-      "select|insert|update|delete|from|where|and|or|group|by|order|limit|offset|having|as|case|" +
-      "when|else|end|type|left|right|join|on|outer|desc|asc|union|create|table|primary|key|if|" +
-      "foreign|not|references|default|null|inner|cross|natural|database|drop|grant|" +
-      "is|with|procedure"
-    );
+    var keywords = [
+      "select","insert","update","delete","from","where","and","or","group","by","order","limit","offset","having","as","case",
+      "when","else","end","type","left","right","join","on","outer","desc","asc","union","create","table","primary","key","if",
+      "foreign","not","references","default","inner","cross","natural","database","drop","grant",
+      "is","with","procedure",
+      "then","in","all","any",
+      "distinct","between",
+      "partition",
+      "full","apply","only","rows"
+    ].join('|');
 
-    var builtinConstants = (
-      "true|false"
-    );
+    var builtinConstants = [
+      "true","false","null"
+    ].join('|');
 
-    var builtinFunctions = (
-      "avg|count|first|last|max|min|sum|ucase|lcase|mid|len|round|rank|now|format|" +
-      "coalesce|ifnull|isnull|nvl|to_char"
-    );
+    var builtinFunctions = [
+      "avg","count","first","last","max","min","sum","ucase","lcase","mid","len","round","rank","now","format",
+      "coalesce","ifnull","isnull","nvl","to_char", "to_number","sysdate",
+      "rownum","interval","month",
+      "fetch"
+    ].join('|');
 
-    var dataTypes = (
-      "int|numeric|decimal|date|varchar|char|bigint|float|double|bit|binary|text|set|timestamp|" +
-      "money|real|number|integer"
-    );
+    var dataTypes = [
+      "int","numeric","decimal","date","varchar","char","bigint","float","double","bit","binary","text","set","timestamp",
+      "money","real","number","integer"
+    ].join('|');
 
     var keywordMapper = this.createKeywordMapper({
       "support.function": builtinFunctions,
@@ -76,12 +82,12 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
         "keyword": keywords,
         "constant.language": builtinConstants,
         "storage.type": dataTypes,
-        "alias.used": aliases.join("|"),
+        "alias.used": aliases,
       }, "identifier", true)
     }
 
     const reservedWords = `(${keywords}|${builtinFunctions}|${dataTypes})`
-    const fnStart = `\\s?\\w+\\(`
+    const fnStart = `\\s?(?!(${reservedWords}\\W))\\w+\\(`
     const builtInFnStart = `(${builtinFunctions})\\s*\\(`
     this.$rules = {
       "alias": [
@@ -95,7 +101,7 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
             {include: "alias"},
             {
               token: "alias",
-              regex: `\\w+(?=(\\W+(as|is)|#{))`,
+              regex: `\\w+(?=(\\W+(AS)|#{))`,
               caseInsensitive: true,
             },
             ...quotedStrings([`"`, `'`], popState(1)),
@@ -109,7 +115,7 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
         {
           // AS() | AS ()
           token: ["text", "keyword", "alias.paren.start"],
-          regex: /(^|\s+?)(IS|AS)(\s*?\()/,
+          regex: /(^|\s+?)(AS)(\s*?\()/,
           caseInsensitive: true,
           push: [
             {
@@ -123,7 +129,7 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
         {
           // AS xxx
           token: ["text", "keyword", "text"],
-          regex: /(^|\s?)(IS|AS)(?=(\s+|$))/,
+          regex: /(^|\s?)(AS)(?=(\s+|$))/,
           caseInsensitive: true,
           push: [
             {
@@ -156,23 +162,6 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
       } ],
       "functions": [
         {
-          // TO_CHAR ()
-          token: "support.function",
-          regex: `${builtinFunctions}\\s*$`,
-          push: [
-            {
-              token: "support.function.start",
-              regex: /\(/,
-            },
-            {
-              token: "support.function.end",
-              regex: /\)/,
-              next: "pop",
-            },
-            {include: "start"},
-          ],
-        },
-        {
           // TO_CHAR() | custom()
           token: "support.function.start",
           regex: `(${builtInFnStart}|${fnStart})`,
@@ -198,39 +187,29 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
           {include: "start"},
         ],
       }],
-      "start" : [ {
-        include: "spel"
-      }, {
-        include: "functions"
-      }, {
-        include: "parens"
-      }, {
-        include: "alias"
-      }, {
-        token : "comment",
-        regex : "--.*$"
-      },  {
-        token : "comment",
-        start : "/\\*",
-        end : "\\*/"
-      }, {
-        include: "string"
-      }, {
-        token : "constant.numeric", // float
-        regex : "[+-]?\\d+(?:(?:\\.\\d*)?(?:[eE][+-]?\\d+)?)?\\b"
-      }, keywordRule, {
-        token : "keyword.operator",
-        regex : "\\+|\\-|\\/|\\/\\/|%|<@>|@>|<@|&|\\^|~|<|>|<=|=>|==|!=|<>|="
-      }, {
-        token : "paren.lparen",
-        regex : "[\\(]"
-      }, {
-        token : "paren.rparen",
-        regex : "[\\)]"
-      }, {
-        token : "text",
-        regex : "\\s+"
-      } ]
+      "comments": [
+        {token: "comment", regex: "--.*$"},
+        {token: "comment", start: "/\\*", end: "\\*/"},
+      ],
+      "start" : [
+        {include: "spel"},
+        {include: "comments"},
+        {include: "functions"},
+        {include: "parens"},
+        {include: "alias"},
+        {include: "string"},
+        {
+          token: "constant.numeric", // float
+          regex: "[+-]?\\d+(?:(?:\\.\\d*)?(?:[eE][+-]?\\d+)?)?\\b",
+        },
+        keywordRule,
+        {
+          token: "keyword.operator",
+          regex: "\\+|\\-|\\/|\\/\\/|%|<@>|@>|<@|&|\\^|~|<|>|<=|=>|==|!=|<>|=",
+        },
+        {token: "paren.lparen", regex: "[\\(]"},
+        {token: "paren.rparen", regex: "[\\)]"},
+        {token: "text", regex: "\\s+"}]
     };
 
     this.embedRules(SpelHighlightRules, "spel-")
