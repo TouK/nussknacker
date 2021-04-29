@@ -1,6 +1,6 @@
 {
   "metaData" : {
-    "id" : "jwl-test",
+    "id" : "e2e-1619718559678-sql-test-process",
     "typeSpecificData" : {
       "parallelism" : null,
       "splitStateToDisk" : true,
@@ -44,13 +44,63 @@
       "additionalFields" : {
         "description" : null,
         "layoutData" : {
-          "x" : 0,
-          "y" : -1
+          "x" : 348,
+          "y" : -126
         }
       },
       "type" : "Source"
     }
   ],
   "additionalBranches" : [
+    [
+      {
+        "id" : "sql-source2",
+        "ref" : {
+          "typ" : "sql-source",
+          "parameters" : [
+            {
+              "name" : "sql",
+              "expression" : {
+                "language" : "spel",
+                "expression" : "'SELECT DISTINCT\nTO_CHAR(SYSDATE,''YYYY-MM-DD'') AS CHAR_DATE,\nA.SUBSCRIPTION_ID,\nA.SYSDATE_WE,\nA.SYSDATE,\nA.ROUND,\nA.SELECT,\nA.COS_ID,\nA.CHAR_DATE,\nA.AS,\nA.FROM,\nA.ON_CHAR_DATE,\nA.ON_NULL,\nA.NULL,\nA.1,\nA.INSERT,\nA.A,\nA.DATE,\nA.to_number,\nA.IF,\nA.ELSE,\nFROM TEST AS A\nLEFT JOIN TEST B ON A.ID = B.A_ID'"
+              }
+            }
+          ]
+        },
+        "additionalFields" : {
+          "description" : null,
+          "layoutData" : {
+            "x" : 350,
+            "y" : 0
+          }
+        },
+        "type" : "Source"
+      }
+    ],
+    [
+      {
+        "id" : "sql-source3",
+        "ref" : {
+          "typ" : "sql-source",
+          "parameters" : [
+            {
+              "name" : "sql",
+              "expression" : {
+                "language" : "spel",
+                "expression" : "'CASE WHEN B.DL_TOTAL_30D IS NULL THEN 0 ELSE\n(ROUND(B.DL_TOTAL_30D / 1024 / 1024)) END AS DL_TOTAL_30D,\nCASE WHEN B.UL_TOTAL_30D IS NULL THEN 0 ELSE\n(ROUND(B.UL_TOTAL_30D / 1024 / 1024)) END AS UL_TOTAL_30D,\nD.BL_FLAG'"
+              }
+            }
+          ]
+        },
+        "additionalFields" : {
+          "description" : null,
+          "layoutData" : {
+            "x" : 351,
+            "y" : 126
+          }
+        },
+        "type" : "Source"
+      }
+    ]
   ]
 }

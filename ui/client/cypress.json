@@ -13,7 +13,8 @@
       "screenshotConfig": {
         "scale": false
       },
-      "backgroundBlend": "overlay"
+      "backgroundBlend": "overlay",
+      "updateSnapshots": false
     }
   }
 }

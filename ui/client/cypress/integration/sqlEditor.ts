@@ -21,7 +21,12 @@ describe("Sql editor", () => {
   it("should display advanced colors", () => {
     cy.viewport("macbook-15")
     cy.visitNewProcess(seed, "withSqlEditor2")
-    cy.get("[model-id=sql-source]").should("be.visible").trigger("dblclick")
-    cy.get("#ace-editor").should("not.have.class", "tokenizer-working").parent().toMatchExactImageSnapshot()
+
+    cy.wrap(["sql-source", "sql-source2", "sql-source3"]).each(name => {
+      cy.get(`[model-id=${name}]`).should("be.visible").trigger("dblclick")
+      cy.get("#ace-editor").should("not.have.class", "tokenizer-working").parent()
+        .toMatchExactImageSnapshot()
+      cy.get("[data-testid=node-modal]").contains(/^cancel$/i).click()
+    })
   })
 })
