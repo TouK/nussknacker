@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.kafka
 
 import com.typesafe.config.Config
+import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.kafka.validator.CachedTopicsExistenceValidatorConfig
 
@@ -30,6 +31,7 @@ object KafkaConfig {
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
+  import TopicsExistenceValidationConfig._
 
   val defaultGlobalKafkaConfigPath = "kafka"
 
@@ -47,4 +49,18 @@ object KafkaConfig {
 
 case class TopicsExistenceValidationConfig(enabled: Boolean, validatorConfig: Option[CachedTopicsExistenceValidatorConfig] = None) {
   def getValidatorConfig = validatorConfig.getOrElse(CachedTopicsExistenceValidatorConfig.DefaultConfig)
+}
+
+object TopicsExistenceValidationConfig {
+  import net.ceedubs.ficus.Ficus._
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  // scala 2.11 needs it
+  implicit val valueReader: ValueReader[Option[TopicsExistenceValidationConfig]] = new ValueReader[Option[TopicsExistenceValidationConfig]] {
+    override def read(config: Config, path: String): Option[TopicsExistenceValidationConfig] = {
+      if(config.hasPath(path))
+        Some(config.getConfig(path).as[TopicsExistenceValidationConfig])
+      else
+        None
+    }
+  }
 }
