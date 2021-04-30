@@ -42,7 +42,7 @@ object CachedTopicsExistenceValidatorConfig {
 }
 
 class CachedTopicsExistenceValidator(kafkaConfig: KafkaConfig) extends TopicsExistenceValidator with LazyLogging {
-  private def config = kafkaConfig.topicsExistenceValidationConfig.getValidatorConfig
+  private def config = kafkaConfig.topicsExistenceValidationConfig.validatorConfig
   private lazy val autoCreateSettingCache = new SingleValueCache[Boolean](expireAfterAccess = None, expireAfterWrite = Some(config.autoCreateFlagFetchCacheTtl))
   private lazy val topicListCache = new SingleValueCache[List[String]](expireAfterAccess = None, expireAfterWrite = Some(config.topicsFetchCacheTtl))
 
