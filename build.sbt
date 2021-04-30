@@ -391,11 +391,15 @@ lazy val engineStandalone = (project in engine("standalone/engine")).
   settings(Defaults.itSettings).
   settings(
     name := "nussknacker-standalone-engine",
+    libraryDependencies ++= {
+      Seq(
+        "io.dropwizard.metrics5" % "metrics-core" % dropWizardV)
+    },
     Keys.test in IntegrationTest := (Keys.test in IntegrationTest).dependsOn(
       (assembly in Compile) in standaloneSample
     ).value,
   ).
-  dependsOn(interpreter % "provided", standaloneUtil, httpUtils % "provided", testUtil % "it,test")
+  dependsOn(interpreter % "provided", standaloneApi, httpUtils % "provided", testUtil % "it,test", standaloneUtil % "test")
 
 lazy val standaloneDockerSettings = {
   val workingDir = "/opt/nussknacker"

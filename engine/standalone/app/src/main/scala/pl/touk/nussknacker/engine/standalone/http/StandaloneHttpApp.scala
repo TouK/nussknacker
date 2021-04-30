@@ -10,9 +10,10 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.standalone.deployment.DeploymentService
 import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
-import pl.touk.nussknacker.engine.standalone.utils.logging.StandaloneRequestResponseLogger
-import pl.touk.nussknacker.engine.standalone.utils.metrics.dropwizard.influxdb.StandaloneInfluxDbReporter
-import pl.touk.nussknacker.engine.standalone.utils.metrics.dropwizard.{DropwizardMetricsProvider, StandaloneMetricsReporter}
+import pl.touk.nussknacker.engine.standalone.http.logging.StandaloneRequestResponseLogger
+import pl.touk.nussknacker.engine.standalone.http.metrics.dropwizard.influxdb.StandaloneInfluxDbReporter
+import pl.touk.nussknacker.engine.standalone.http.metrics.dropwizard.StandaloneMetricsReporter
+import pl.touk.nussknacker.engine.standalone.metrics.dropwizard.DropwizardMetricsProvider
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
 import scala.util.Try

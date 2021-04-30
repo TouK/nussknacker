@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.standalone.utils.metrics.dropwizard
+package pl.touk.nussknacker.engine.standalone.http.metrics.dropwizard
 
 import com.typesafe.config.Config
 import io.dropwizard.metrics5.MetricRegistry

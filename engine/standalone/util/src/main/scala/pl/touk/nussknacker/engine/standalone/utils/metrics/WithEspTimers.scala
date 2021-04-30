@@ -13,7 +13,3 @@ trait WithEspTimers {
   def espTimer(tags: Map[String, String], name: NonEmptyList[String]): EspTimer = context.espTimer(instantTimerWindowInSeconds, tags, name)
 
 }
-
-
-
-

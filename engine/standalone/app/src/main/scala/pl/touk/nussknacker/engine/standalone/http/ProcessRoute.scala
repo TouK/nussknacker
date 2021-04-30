@@ -10,8 +10,7 @@ import io.circe.generic.JsonCodec
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.standalone.deployment.ProcessInterpreters
-import pl.touk.nussknacker.engine.standalone.StandaloneRequestHandler
-import pl.touk.nussknacker.engine.standalone.utils.logging.StandaloneRequestResponseLogger
+import pl.touk.nussknacker.engine.standalone.http.logging.StandaloneRequestResponseLogger
 
 import scala.concurrent.ExecutionContext
 

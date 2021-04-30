@@ -2,16 +2,18 @@ package pl.touk.nussknacker.engine.standalone.metrics
 
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
-import pl.touk.nussknacker.engine.standalone.utils.metrics.WithEspTimers
+import pl.touk.nussknacker.engine.standalone.utils.StandaloneContext
 import pl.touk.nussknacker.engine.util.service.EspTimer
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
-trait InvocationMetrics extends WithEspTimers {
+trait InvocationMetrics {
 
-  override protected def instantTimerWindowInSeconds = 20
+  def context: StandaloneContext
+
+  protected val instantTimerWindowInSeconds = 20
 
   private val nodeErrorTimers : collection.concurrent.TrieMap[String, EspTimer] = collection.concurrent.TrieMap()
 
@@ -38,4 +40,7 @@ trait InvocationMetrics extends WithEspTimers {
     val id = nodeId.getOrElse("unknown")
     nodeErrorTimers.getOrElseUpdate(id, espTimer(Map("nodeId" -> id), NonEmptyList.of("invocation", "failure"))).update(startTime)
   }
+
+  private def espTimer(tags: Map[String, String], name: NonEmptyList[String]): EspTimer = context.espTimer(instantTimerWindowInSeconds, tags, name)
+
 }
