@@ -8,25 +8,25 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.kafka.source.{InputMeta, KafkaGenericNodeSourceFactory}
-import pl.touk.nussknacker.engine.kafka.util.KafkaGenericNodeMixin
-import pl.touk.nussknacker.engine.kafka.util.KafkaGenericNodeMixin.ObjToSerialize
+import pl.touk.nussknacker.engine.kafka.KafkaSourceFactoryMixin
+import pl.touk.nussknacker.engine.kafka.source.{InputMeta, KafkaSourceFactory}
+import pl.touk.nussknacker.engine.kafka.KafkaSourceFactoryMixin.ObjToSerialize
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForStrings
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
-import pl.touk.nussknacker.engine.process.source.KafkaGenericNodeProcessConfigCreator.{SinkForInputMeta, SinkForSampleValue, recordingExceptionHandler}
+import pl.touk.nussknacker.engine.process.source.KafkaSourceFactoryProcessConfigCreator.{SinkForInputMeta, SinkForSampleValue, recordingExceptionHandler}
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.NussknackerAssertions
 
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 
-trait KafkaGenericNodeProcessMixin extends FunSuite with Matchers with KafkaGenericNodeMixin with FlinkSpec with BeforeAndAfter with NussknackerAssertions {
+trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSourceFactoryMixin with FlinkSpec with BeforeAndAfter with NussknackerAssertions {
 
   protected var registrar: FlinkProcessRegistrar = _
 
-  private lazy val creator: KafkaGenericNodeProcessConfigCreator = new KafkaGenericNodeProcessConfigCreator
+  private lazy val creator: KafkaSourceFactoryProcessConfigCreator = new KafkaSourceFactoryProcessConfigCreator(kafkaConfig)
 
   protected override def beforeAll(): Unit = {
     super.beforeAll()
@@ -96,7 +96,7 @@ trait KafkaGenericNodeProcessMixin extends FunSuite with Matchers with KafkaGene
     val process = EspProcessBuilder
       .id(s"proc-${topic}")
       .exceptionHandler()
-      .source("procSource", sourceType.toString, KafkaGenericNodeSourceFactory.TopicParamName -> s"'${topic}'")
+      .source("procSource", sourceType.toString, KafkaSourceFactory.TopicParamName -> s"'${topic}'")
 
     val processWithVariables = checkAllVariables
       .foldRight(process.asInstanceOf[GraphBuilder[EspProcess]])( (variable, builder) =>

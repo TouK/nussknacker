@@ -17,6 +17,7 @@ import org.apache.flink.streaming.api.functions.co.RichCoMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.scala.{DataStream, _}
 import org.apache.flink.streaming.api.windowing.time.Time
+import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation._
@@ -36,6 +37,7 @@ import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.signal.KafkaSignalStreamConnector
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EspDeserializationSchema}
+import pl.touk.nussknacker.engine.kafka.generic.sources.EspValueDeserializaitionSchemaFactory
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.kafka.{BasicFormatter, KafkaConfig, KafkaUtils}
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
@@ -841,9 +843,9 @@ object SampleNodes {
 
   @JsonCodec case class KeyValue(key: String, value: Int, date: Long)
 
-  class KeyValueKafkaSourceFactory(processObjectDependencies: ProcessObjectDependencies) extends KafkaSourceFactory[KeyValue](
-              new EspDeserializationSchema[KeyValue](e => CirceUtil.decodeJsonUnsafe[KeyValue](e)),
-              Some(outOfOrdernessTimestampExtractor[KeyValue](_.date)),
+  class KeyValueKafkaSourceFactory(processObjectDependencies: ProcessObjectDependencies) extends KafkaSourceFactory[String, KeyValue](
+              new EspValueDeserializaitionSchemaFactory(new EspDeserializationSchema[KeyValue](e => CirceUtil.decodeJsonUnsafe[KeyValue](e))),
+              Some(outOfOrdernessTimestampExtractor[ConsumerRecord[String, KeyValue]](_.value().date)),
               BasicFormatter,
               processObjectDependencies)
 

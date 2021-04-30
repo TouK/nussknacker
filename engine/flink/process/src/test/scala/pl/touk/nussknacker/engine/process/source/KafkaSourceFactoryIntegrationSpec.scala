@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.process.source
 
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
-import pl.touk.nussknacker.engine.kafka.util.KafkaGenericNodeMixin.{ObjToSerialize, SampleKey, SampleValue}
-import pl.touk.nussknacker.engine.process.source.KafkaGenericNodeProcessConfigCreator.SinkForInputMeta
+import pl.touk.nussknacker.engine.kafka.KafkaSourceFactoryMixin.{ObjToSerialize, SampleKey, SampleValue}
+import pl.touk.nussknacker.engine.process.source.KafkaSourceFactoryProcessConfigCreator.SinkForInputMeta
 
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 
-class KafkaGenericNodeSourceIntegrationSpec extends KafkaGenericNodeProcessMixin  {
+class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin  {
 
   private val TestSampleValue = SampleValue("some id", "some field")
   private val TestSampleKey = SampleKey("some key", 123L)

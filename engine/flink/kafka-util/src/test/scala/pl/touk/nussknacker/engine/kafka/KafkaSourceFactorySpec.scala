@@ -1,71 +1,141 @@
 package pl.touk.nussknacker.engine.kafka
 
-import java.nio.charset.{Charset, StandardCharsets}
-
-import org.apache.flink.api.common.serialization.SimpleStringSchema
-import org.apache.flink.api.java.typeutils.GenericTypeInfo
-import org.scalatest.{FlatSpec, Matchers}
+import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
+import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.apache.kafka.common.record.TimestampType
+import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator}
-import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.kafka.source.{KafkaSource, KafkaSourceFactory}
-import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
-
-class KafkaSourceFactorySpec extends FlatSpec with KafkaSpec with Matchers {
-
-  private implicit val stringTypeInfo: GenericTypeInfo[String] = new GenericTypeInfo(classOf[String])
-
-  private val part0 = List("a", "c")
-  private val part1 = List("b", "d")
-
-  it should "read last messages to generate data" in {
-    val topic = "testTopic1"
-
-    kafkaClient.createTopic(topic, 2)
-    kafkaClient.sendMessage(topic, "", part0(0), Some(0))
-    kafkaClient.sendMessage(topic, "", part1(0), Some(1))
-    kafkaClient.sendMessage(topic, "", part0(1), Some(0))
-    kafkaClient.sendMessage(topic, "", part1(1), Some(1))
+import pl.touk.nussknacker.engine.api.context.transformation.TypedNodeDependencyValue
+import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.typed.ReturningType
+import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
+import pl.touk.nussknacker.engine.kafka.serialization.schemas.{JsonSerializationSchema, SimpleSerializationSchema}
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
+import pl.touk.nussknacker.engine.kafka.KafkaSourceFactoryMixin._
+import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
+import pl.touk.nussknacker.test.PatientScalaFutures
 
 
-    val source: Source[String] with TestDataGenerator = createSource(topic)
-    val dataFor3 = source.generateTestData(3)
-    val dataFor5 = source.generateTestData(5)
+class KafkaSourceFactorySpec extends FunSuite with Matchers with KafkaSpec with PatientScalaFutures with KafkaSourceFactoryMixin {
 
-    checkOutput(dataFor3, 3)
-    checkOutput(dataFor5, 4)
+  private lazy val metaData: MetaData = MetaData("mock-id", StreamMetaData())
 
+  private lazy val nodeId: NodeId = NodeId("mock-node-id")
+
+  private def readLastMessage(sourceFactory: KafkaSourceFactory[Any, Any], topic: String, numberOfMessages: Int = 1): List[AnyRef] = {
+    val source = createSource(sourceFactory, topic)
+    val bytes = source.generateTestData(numberOfMessages)
+    source.testDataParser.parseTestData(bytes)
   }
 
-  it should "parse test data correctly" in {
-    val topic = "testTopic1"
-    val testData = "first\nsecond".getBytes(StandardCharsets.UTF_8)
-
-    val source: KafkaSource[String] = createSource(topic)
-    source.testDataParser.parseTestData(testData) shouldBe List("first", "second")
+  private def createSource(sourceFactory: KafkaSourceFactory[Any, Any], topic: String): Source[AnyRef] with TestDataGenerator with FlinkSourceTestSupport[AnyRef] with ReturningType = {
+    val source = sourceFactory
+      .implementation(Map(KafkaSourceFactory.TopicParamName -> topic),
+        List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)), None)
+      .asInstanceOf[Source[AnyRef] with TestDataGenerator with FlinkSourceTestSupport[AnyRef] with ReturningType]
+    source
   }
 
-
-  private def createSource(topic: String): KafkaSource[String] = {
-    val sourceFactory = new KafkaSourceFactory[String](new SimpleStringSchema, None, BasicFormatter, ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader)))
-    sourceFactory.create(MetaData("", StreamMetaData()), topic)(NodeId(""))
+  test("read and deserialize from simple string source") {
+    val topic = createTopic("simpleString")
+    val givenObj = "sample text"
+    val expectedObj = new ConsumerRecord[String, String](
+      topic,
+      0,
+      0L,
+      constTimestamp,
+      TimestampType.NO_TIMESTAMP_TYPE,
+      ConsumerRecord.NULL_CHECKSUM.toLong,
+      ConsumerRecord.NULL_SIZE,
+      ConsumerRecord.NULL_SIZE,
+      null,
+      givenObj,
+      ConsumerRecordUtils.emptyHeaders
+    )
+    pushMessage(new SimpleSerializationSchema[Any](topic, String.valueOf), givenObj, topic, timestamp = constTimestamp)
+    val result = readLastMessage(StringSourceFactory, topic).head.asInstanceOf[ConsumerRecord[String, String]]
+    checkResult(result, expectedObj)
   }
 
-  //we want to check partitions are read sequentially, but we cannot/don't want to control which partition comes first...
-  private def checkOutput(bytes: Array[Byte], expSize: Int): Unit = {
-    val lines = new String(bytes, StandardCharsets.UTF_8).split("\n").toList
-    lines should have length expSize
-    lines.foreach { el =>
-      part0++part1 should contain (el)
-    }
-    checkPartitionDataInOrder(lines)
+  test("read and deserialize from simple json source") {
+    val topic = createTopic("simpleJson")
+    val givenObj = sampleValue
+    val expectedObj = SerializableConsumerRecord.createConsumerRecord[String, SampleValue](
+      topic,
+      0,
+      0L,
+      constTimestamp,
+      null,
+      givenObj,
+      ConsumerRecordUtils.emptyHeaders
+    )
+    pushMessage(new JsonSerializationSchema[SampleValue](topic).asInstanceOf[KafkaSerializationSchema[Any]], givenObj, topic, timestamp = constTimestamp)
+    val result = readLastMessage(SampleEventSourceFactory, topic).head.asInstanceOf[ConsumerRecord[String, SampleValue]]
+    checkResult(result, expectedObj)
   }
 
-  private def checkPartitionDataInOrder(lines: List[String]): Unit = {
-    List(part0, part1).foreach { partition =>
-      val fromPartition = lines.filter(partition.contains)
-      partition.take(fromPartition.size) shouldBe fromPartition
-    }
+  test("read and deserialize consumer record with value only") {
+    val topic = createTopic("consumerRecordNoKey")
+    val givenObj = sampleValue
+    val expectedObj = SerializableConsumerRecord.createConsumerRecord[String, SampleValue](
+      topic,
+      0,
+      0L,
+      constTimestamp,
+      null,
+      givenObj,
+      ConsumerRecordUtils.emptyHeaders
+    )
+    pushMessage(new JsonSerializationSchema[SampleValue](topic).asInstanceOf[KafkaSerializationSchema[Any]], givenObj, topic, timestamp = constTimestamp)
+    val result = readLastMessage(ConsumerRecordValueSourceFactory, topic).head.asInstanceOf[ConsumerRecord[String, SampleValue]]
+    checkResult(result, expectedObj)
   }
+
+  test("read and deserialize consumer record with key, value and headers") {
+    val topic = createTopic("consumerRecordKeyValueHeaders")
+    val givenObj = ObjToSerialize(sampleValue, sampleKey, sampleHeaders)
+    val expectedObj = SerializableConsumerRecord.createConsumerRecord[SampleKey, SampleValue](
+      topic,
+      0,
+      0L,
+      constTimestamp,
+      sampleKey,
+      sampleValue,
+      ConsumerRecordUtils.toHeaders(sampleHeaders)
+    )
+    pushMessage(objToSerializeSerializationSchema(topic), givenObj, topic, timestamp = constTimestamp)
+    val result = readLastMessage(ConsumerRecordKeyValueSourceFactory, topic).head.asInstanceOf[ConsumerRecord[SampleKey, SampleValue]]
+    checkResult(result, expectedObj)
+  }
+
+  test("read and deserialize consumer record with value only, multiple partitions and offsets") {
+    val topic = createTopic("consumerRecordNoKeyTwoPartitions", 2)
+    val givenObj = List(
+      SampleValue("first0", "last0"),
+      SampleValue("first1", "last1"),
+      SampleValue("first2", "last2"),
+      SampleValue("first3", "last3")
+    )
+    val serializationSchema = new JsonSerializationSchema[SampleValue](topic).asInstanceOf[KafkaSerializationSchema[Any]]
+
+    pushMessage(serializationSchema, givenObj(0), topic, partition = Some(0), timestamp = constTimestamp)
+    pushMessage(serializationSchema, givenObj(1), topic, partition = Some(0), timestamp = constTimestamp)
+    pushMessage(serializationSchema, givenObj(2), topic, partition = Some(1), timestamp = constTimestamp)
+    pushMessage(serializationSchema, givenObj(3), topic, partition = Some(1), timestamp = constTimestamp)
+
+    val result = readLastMessage(ConsumerRecordValueSourceFactory, topic, 4)
+    val valuePartitionOffsetToCheck = result.asInstanceOf[List[ConsumerRecord[SampleKey, SampleValue]]]
+      .map(record => (record.value, record.partition, record.offset))
+      .toSet
+
+    valuePartitionOffsetToCheck shouldBe Set(
+      (givenObj(0), 0, 0),
+      (givenObj(1), 0, 1),
+      (givenObj(2), 1, 0),
+      (givenObj(3), 1, 1)
+    )
+  }
+
 }
+

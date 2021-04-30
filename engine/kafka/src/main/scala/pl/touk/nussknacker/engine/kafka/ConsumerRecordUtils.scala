@@ -13,7 +13,7 @@ object ConsumerRecordUtils {
 
   def emptyHeaders: RecordHeaders = new RecordHeaders()
 
-  def toHeaders(map: Map[String, String]): RecordHeaders = {
+  def toHeaders(map: Map[String, String]): Headers = {
     val headers = new RecordHeaders()
     map.foreach { case (key, value) =>
       headers.add(key, Option(value).map(_.getBytes(cs)).orNull)

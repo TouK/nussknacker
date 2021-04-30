@@ -1,15 +1,15 @@
 package pl.touk.nussknacker.engine.kafka.consumerrecord
 
 import com.github.ghik.silencer.silent
-import org.apache.flink.api.common.serialization.DeserializationSchema
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchemaFactory
 
 import scala.annotation.nowarn
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.classTag
 
 /**
   * Produces deserialization schema that describes how to turn the Kafka raw [[org.apache.kafka.clients.consumer.ConsumerRecord]]
@@ -23,19 +23,24 @@ import scala.reflect.{ClassTag, classTag}
   */
 @silent("deprecated")
 @nowarn("cat=deprecation")
-class ConsumerRecordDeserializationSchemaFactory[K: ClassTag, V: ClassTag](keyDeserializationSchema: DeserializationSchema[K],
-                                                                           valueDeserializationSchema: DeserializationSchema[V])
-  extends KafkaDeserializationSchemaFactory[ConsumerRecord[K, V]] {
+abstract class ConsumerRecordDeserializationSchemaFactory[K, V] extends KafkaDeserializationSchemaFactory[ConsumerRecord[K, V]] with Serializable {
+
+  protected def createKeyDeserializer(kafkaConfig: KafkaConfig): Deserializer[K]
+
+  protected def createValueDeserializer(kafkaConfig: KafkaConfig): Deserializer[V]
 
   override def create(topics: List[String], kafkaConfig: KafkaConfig): KafkaDeserializationSchema[ConsumerRecord[K, V]] = {
 
-    val clazz = classTag[ConsumerRecord[K, V]].runtimeClass.asInstanceOf[Class[ConsumerRecord[K, V]]]
-
     new KafkaDeserializationSchema[ConsumerRecord[K, V]] {
 
+      @transient
+      private lazy val keyDeserializer = createKeyDeserializer(kafkaConfig)
+      @transient
+      private lazy val valueDeserializer = createValueDeserializer(kafkaConfig)
+
       override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): ConsumerRecord[K, V] = {
-        val key = keyDeserializationSchema.deserialize(record.key())
-        val value = valueDeserializationSchema.deserialize(record.value())
+        val key = keyDeserializer.deserialize(record.topic(), record.key())
+        val value = valueDeserializer.deserialize(record.topic(), record.value())
         new ConsumerRecord[K, V](
           record.topic(),
           record.partition(),
@@ -53,7 +58,10 @@ class ConsumerRecordDeserializationSchemaFactory[K: ClassTag, V: ClassTag](keyDe
 
       override def isEndOfStream(nextElement: ConsumerRecord[K, V]): Boolean = false
 
-      override def getProducedType: TypeInformation[ConsumerRecord[K, V]] = TypeInformation.of(clazz)
+      override def getProducedType: TypeInformation[ConsumerRecord[K, V]] = {
+        val clazz = classTag[ConsumerRecord[K, V]].runtimeClass.asInstanceOf[Class[ConsumerRecord[K, V]]]
+        TypeInformation.of(clazz)
+      }
     }
   }
 

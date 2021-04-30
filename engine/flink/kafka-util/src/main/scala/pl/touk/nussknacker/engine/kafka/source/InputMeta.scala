@@ -9,26 +9,19 @@ case class InputMeta[K](key: K, topic: String, partition: Int, offset: java.lang
 
 object InputMeta {
 
-  def withType[K: ClassTag]: typing.TypingResult = {
-    val keyTypingResult = Typed[K]
-    TypedObjectTypingResult(fields(keyTypingResult), objType(keyTypingResult))
-  }
-
+  // TODO: provide better type definition for InputMeta[AnyRef]
+  // objType should contain K type information
   def withType(keyTypingResult: typing.TypingResult): typing.TypingResult = {
-    TypedObjectTypingResult(fields(keyTypingResult), objType(keyTypingResult))
-  }
-
-  private def fields(keyTypingResult: typing.TypingResult): Map[String, TypingResult] = {
-    Map(
-      "key" -> keyTypingResult,
-      "topic" -> Typed[String],
-      "partition" -> Typed[Int],
-      "offset" -> Typed[java.lang.Long],
-      "timestamp" -> Typed[java.lang.Long],
-      "headers" -> Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Typed[String]))
+    TypedObjectTypingResult(
+      Map(
+        "key" -> keyTypingResult,
+        "topic" -> Typed[String],
+        "partition" -> Typed[Int],
+        "offset" -> Typed[java.lang.Long],
+        "timestamp" -> Typed[java.lang.Long],
+        "headers" -> Typed.typedClass[Map[String, String]]
+      ),
+      Typed.typedClass[InputMeta[AnyRef]]
     )
-  }
-  private def objType[K: ClassTag](keyTypingResult: typing.TypingResult): TypedClass = {
-    Typed.genericTypeClass[InputMeta[_]](List(keyTypingResult)).asInstanceOf[TypedClass]
   }
 }
