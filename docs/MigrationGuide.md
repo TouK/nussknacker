@@ -4,6 +4,9 @@ To see biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 0.4.0 (not released yet) 
 
+* [#1542](https://github.com/TouK/nussknacker/pull/1542)
+  `KafkaConfig` now has new parameter `topicsExistenceValidationConfig`. When `topicsExistenceValidationConfig.enabled = true` 
+  Kafka sources/sinks do not validate if provided topic does not exist and cluster is configured with `auto.create.topics.enable=false`
 * [#1416](https://github.com/TouK/nussknacker/pull/1416)
  `OAuth2Service` has changed. You can still use your old implementation by importing `OAuth2OldService` with an alias.
  `OAuth2ServiceFactory.create` method now accepts implicit parameters for an `ExecutionContext` and `sttp.HttpBackend`.

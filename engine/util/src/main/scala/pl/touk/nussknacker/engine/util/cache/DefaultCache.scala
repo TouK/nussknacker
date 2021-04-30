@@ -43,6 +43,10 @@ class DefaultCache[K, V](cacheConfig: CacheConfig[K, V], ticker: Ticker = Ticker
     import scala.compat.java8.FunctionConverters._
     underlying.get(key, asJavaFunction((_: K) => value))
   }
+
+  override def get(key: K): Option[V] = Option(underlying.getIfPresent(key))
+
+  override def put(key: K)(value: V): Unit = underlying.put(key, value)
 }
 
 class DefaultAsyncCache[K, V](cacheConfig: CacheConfig[K, V], ticker: Ticker = Ticker.systemTicker())(implicit ec: ExecutionContext) extends AsyncCache[K, V] {
@@ -73,4 +77,6 @@ class SingleValueCache[T](expireAfterAccess: Option[FiniteDuration], expireAfter
 
   def getOrCreate(value: => T): T = cache.getOrCreate(Unit)(value)
 
+  def get(): Option[T] = cache.get(Unit)
+  def put(value: T): Unit = cache.put(Unit)(value)
 }

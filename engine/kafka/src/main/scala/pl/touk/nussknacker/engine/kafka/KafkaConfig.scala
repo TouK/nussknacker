@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.kafka
 
 import com.typesafe.config.Config
+import net.ceedubs.ficus.readers.{OptionReader, ValueReader}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.kafka.validator.CachedTopicsExistenceValidatorConfig
 
 case class KafkaConfig(kafkaAddress: String,
                        kafkaProperties: Option[Map[String, String]],
@@ -9,7 +11,9 @@ case class KafkaConfig(kafkaAddress: String,
                        consumerGroupNamingStrategy: Option[ConsumerGroupNamingStrategy.Value] = None,
                        // Probably better place for this flag would be configParameters inside global parameters but
                        // for easier usage in AbstractConfluentKafkaAvroDeserializer and ConfluentKafkaAvroDeserializerFactory it is placed here
-                       avroKryoGenericRecordSchemaIdSerialization: Option[Boolean] = None) {
+                       avroKryoGenericRecordSchemaIdSerialization: Option[Boolean] = None,
+                       topicsExistenceValidationConfig: TopicsExistenceValidationConfig = TopicsExistenceValidationConfig(enabled = false)
+                      ) {
 
   def forceLatestRead: Option[Boolean] = kafkaEspProperties.flatMap(_.get("forceLatestRead")).map(_.toBoolean)
 
@@ -27,6 +31,7 @@ object KafkaConfig {
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
+  import TopicsExistenceValidationConfig._
 
   val defaultGlobalKafkaConfigPath = "kafka"
 
@@ -40,4 +45,15 @@ object KafkaConfig {
 
   def parseProcessObjectDependencies(processObjectDependencies: ProcessObjectDependencies): KafkaConfig =
     parseConfig(processObjectDependencies.config, defaultGlobalKafkaConfigPath)
+}
+
+case class TopicsExistenceValidationConfig(enabled: Boolean, validatorConfig: CachedTopicsExistenceValidatorConfig = CachedTopicsExistenceValidatorConfig.DefaultConfig)
+
+object TopicsExistenceValidationConfig {
+  import net.ceedubs.ficus.Ficus._
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  // scala 2.11 needs it
+  implicit val valueReader: ValueReader[Option[TopicsExistenceValidationConfig]] = new ValueReader[Option[TopicsExistenceValidationConfig]] {
+    override def read(config: Config, path: String): Option[TopicsExistenceValidationConfig] = OptionReader.optionValueReader[TopicsExistenceValidationConfig].read(config, path)
+  }
 }

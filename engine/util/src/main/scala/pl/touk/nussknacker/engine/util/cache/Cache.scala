@@ -6,6 +6,8 @@ import scala.concurrent.duration.{Deadline, Duration, FiniteDuration}
 
 trait Cache[K, V] {
   def getOrCreate(key: K)(value: => V): V
+  def get(key: K): Option[V]
+  def put(key: K)(value: V)
 }
 
 trait AsyncCache[K, V] {
