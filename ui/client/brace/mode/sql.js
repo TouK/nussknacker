@@ -64,19 +64,14 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
       "money","real","number","integer"
     ].join('|');
 
-    var keywordMapper = this.createKeywordMapper({
-      "support.function": builtinFunctions,
-      "keyword": keywords,
-      "constant.language": builtinConstants,
-      "storage.type": dataTypes
-    }, "identifier", true);
+    var keywordMapper;
 
     const keywordRule = {
       token : (value) => keywordMapper(value),
-      regex : "[a-zA-Z_$][a-zA-Z0-9_$]*\\b"
+      regex : "(\\.?[a-zA-Z_$][a-zA-Z0-9_$]*\\b)"
     }
 
-    this.setAliases = (aliases) => {
+    this.setAliases = (aliases = "") => {
       keywordMapper = this.createKeywordMapper({
         "support.function": builtinFunctions,
         "keyword": keywords,
@@ -85,6 +80,8 @@ ace.define("ace/mode/sql_highlight_rules",["require","exports","module","ace/lib
         "alias.used": aliases,
       }, "identifier", true)
     }
+
+    this.setAliases()
 
     const reservedWords = `(${keywords}|${builtinFunctions}|${dataTypes})`
     const fnStart = `\\s?(?!(${reservedWords}\\W))\\w+\\(`
