@@ -9,6 +9,8 @@ import pl.project13.scala.sbt.JmhPlugin
 import pl.project13.scala.sbt.JmhPlugin._
 
 import scala.util.Try
+import scala.xml.Elem
+import scala.xml.transform.{RewriteRule, RuleTransformer}
 
 val scala211 = "2.11.12"
 // Warning: Flink doesn't work correctly with 2.12.11
@@ -1017,6 +1019,34 @@ lazy val ui = (project in file("ui/server"))
     engineStandalone % "provided"
   )
 
+/*
+  We want to simplify dependency management in downstream projects using BOM pattern
+  (https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html#bill-of-materials-bom-poms)
+
+  Sbt does not support this pattern by default. For publishing we use idea for https://stackoverflow.com/a/59810834
+  To use BOM in sbt projects currently the easiest way is to use pomOnly() dependency and sbt-maven-resolver
+  (hopefully some day https://github.com/coursier/coursier/issues/1390 will be resolved...)
+ */
+lazy val bom = (project in file("bom"))
+  .settings(commonSettings)
+  .settings(
+    name := "nussknacker-bom",
+    //we have to transform result pom to have pom packaging and move dependencies to dependencyManagement section
+    pomPostProcess := { node: scala.xml.Node =>
+      val rule: RewriteRule = new RewriteRule {
+        override def transform(n: scala.xml.Node): scala.xml.NodeSeq = n match {
+          case e: Elem if e != null && e.label == "packaging" =>
+            <packaging>pom</packaging>
+          case e: Elem if e != null && e.label == "dependencies" =>
+            <dependencyManagement>{e}</dependencyManagement>
+          case _ => n
+        }
+      }
+      new RuleTransformer(rule).transform(node).head
+    },
+    //TODO: should we also include depdendencies from some modules?
+    libraryDependencies ++= dependencyOverrides.value
+  )
 
 lazy val root = (project in file("."))
   .aggregate(
@@ -1024,7 +1054,7 @@ lazy val root = (project in file("."))
     engineStandalone, standaloneApp, flinkProcessManager, flinkPeriodicProcessManager, standaloneSample, flinkManagementSample, managementJavaSample, demo, generic,
     process, interpreter, benchmarks, kafka, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
     flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils, queryableState,
-    restmodel, listenerApi, ui,
+    restmodel, listenerApi, ui, bom
   )
   .settings(commonSettings)
   .settings(
