@@ -47,7 +47,7 @@ class CachedTopicsExistenceValidator(kafkaConfig: KafkaConfig) extends TopicsExi
   private lazy val topicListCache = new SingleValueCache[List[String]](expireAfterAccess = None, expireAfterWrite = Some(config.topicsFetchCacheTtl))
 
   def validateTopics(topics: List[String]): Validated[TopicExistenceValidationException, List[String]] = {
-    if (!kafkaConfig.topicsExistenceValidationConfig.enabled || isAutoCreateEnabled) {
+    if (!kafkaConfig.topicsExistenceValidationConfig.enabled || isAutoCreateEnabled()) {
       Valid(topics)
     } else {
       topicListCache.get().flatMap(existingTopics => {
@@ -70,7 +70,7 @@ class CachedTopicsExistenceValidator(kafkaConfig: KafkaConfig) extends TopicsExi
     }
   }
 
-  private def isAutoCreateEnabled: Boolean = autoCreateSettingCache.getOrCreate {
+  private def isAutoCreateEnabled(): Boolean = autoCreateSettingCache.getOrCreate {
     val timeout = config.adminClientTimeout.toMillis.toInt
     val randomKafkaNodeId = usingAdminClient {
       _.describeCluster(new DescribeClusterOptions().timeoutMs(timeout)).nodes().get().asScala.head.id().toString
