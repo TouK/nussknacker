@@ -330,7 +330,7 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val modelData = LocalModelData(config, creator)
-    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), config, executionConfigPreparerChain(modelData))
+    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), executionConfigPreparerChain(modelData))
   }
 
   private def executionConfigPreparerChain(modelData: LocalModelData) = {

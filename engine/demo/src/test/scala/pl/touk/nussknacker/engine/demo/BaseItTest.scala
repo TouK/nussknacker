@@ -31,7 +31,7 @@ trait BaseITest extends FlinkSpec with KafkaSpec { self: Suite with Matchers =>
     super.beforeAll()
     val config = TestConfig(kafkaZookeeperServer)
     val modelData = LocalModelData(config, creator)
-    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData))
+    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
   }
 
 }

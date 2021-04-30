@@ -13,15 +13,14 @@ import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.flink.util.source.EmptySourceFunction
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Source
-import pl.touk.nussknacker.engine.modelconfig.{InputConfigDuringExecution, ModelConfigLoader}
+import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 import shapeless.syntax.typeable._
 
 abstract class StubbedFlinkProcessCompiler(process: EspProcess,
                                            creator: ProcessConfigCreator,
                                            inputConfigDuringExecution: InputConfigDuringExecution,
-                                           modelConfigLoader: ModelConfigLoader,
                                            objectNaming: ObjectNaming)
-  extends FlinkProcessCompiler(creator, inputConfigDuringExecution, modelConfigLoader, diskStateBackendSupport = false, objectNaming) {
+  extends FlinkProcessCompiler(creator, inputConfigDuringExecution, diskStateBackendSupport = false, objectNaming) {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 

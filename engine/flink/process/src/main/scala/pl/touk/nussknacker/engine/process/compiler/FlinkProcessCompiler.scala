@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
-import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
@@ -22,7 +21,7 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
-import pl.touk.nussknacker.engine.modelconfig.{InputConfigDuringExecution, ModelConfigLoader}
+import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 
 import scala.concurrent.duration.FiniteDuration
@@ -34,8 +33,7 @@ import scala.concurrent.duration.FiniteDuration
   and we have InputConfigDuringExecution with ModelConfigLoader and not whole config.
  */
 class FlinkProcessCompiler(creator: ProcessConfigCreator,
-                           inputConfigDuringExecution: InputConfigDuringExecution,
-                           modelConfigLoader: ModelConfigLoader,
+                           val inputConfig: InputConfigDuringExecution,
                            val diskStateBackendSupport: Boolean,
                            objectNaming: ObjectNaming) extends Serializable {
 
@@ -43,13 +41,13 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  def this(modelData: ModelData) = this(modelData.configCreator, modelData.inputConfigDuringExecution, modelData.modelConfigLoader, diskStateBackendSupport = true, modelData.objectNaming)
+  def this(modelData: ModelData) = this(modelData.configCreator, modelData.inputConfigDuringExecution, diskStateBackendSupport = true, modelData.objectNaming)
 
   def compileProcess(process: EspProcess,
                      processVersion: ProcessVersion,
                      deploymentData: DeploymentData,
                      resultCollector: ResultCollector)(userCodeClassLoader: ClassLoader): FlinkProcessCompilerData = {
-    val config = loadConfig(userCodeClassLoader)
+    val config = inputConfig.config
     val processObjectDependencies = ProcessObjectDependencies(config, objectNaming)
 
     //TODO: this should be somewhere else?
@@ -110,5 +108,4 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
     }
   }
 
-  private def loadConfig(userClassLoader: ClassLoader): Config = modelConfigLoader.resolveConfig(inputConfigDuringExecution, userClassLoader)
 }

@@ -18,11 +18,10 @@ import pl.touk.nussknacker.engine.testmode.ResultsCollectingListener
 
 class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
                                inputConfigDuringExecution: InputConfigDuringExecution,
-                               modelConfigLoader: ModelConfigLoader,
                                collectingListener: ResultsCollectingListener,
                                process: EspProcess,
                                testData: TestData, executionConfig: ExecutionConfig,
-                               objectNaming: ObjectNaming) extends StubbedFlinkProcessCompiler(process, creator, inputConfigDuringExecution, modelConfigLoader, objectNaming) {
+                               objectNaming: ObjectNaming) extends StubbedFlinkProcessCompiler(process, creator, inputConfigDuringExecution, objectNaming) {
 
 
   override protected def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =

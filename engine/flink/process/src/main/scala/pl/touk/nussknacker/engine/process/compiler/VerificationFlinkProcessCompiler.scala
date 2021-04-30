@@ -15,9 +15,8 @@ import pl.touk.nussknacker.engine.modelconfig.{InputConfigDuringExecution, Model
 class VerificationFlinkProcessCompiler(process: EspProcess,
                                        creator: ProcessConfigCreator,
                                        inputConfigDuringExecution: InputConfigDuringExecution,
-                                       modelConfigLoader: ModelConfigLoader,
                                        objectNaming: ObjectNaming)
-  extends StubbedFlinkProcessCompiler(process, creator, inputConfigDuringExecution, modelConfigLoader, objectNaming) {
+  extends StubbedFlinkProcessCompiler(process, creator, inputConfigDuringExecution, objectNaming) {
 
   override protected def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] = List()
 

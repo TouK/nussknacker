@@ -49,13 +49,11 @@ class FlinkTestMain(val modelData: ModelData,
     FlinkProcessRegistrar(new TestFlinkProcessCompiler(
       modelData.configCreator,
       modelData.inputConfigDuringExecution,
-      modelData.modelConfigLoader,
       collectingListener,
       process,
       testData,
       env.getConfig,
       modelData.objectNaming),
-      modelData.processConfig,
       ExecutionConfigPreparer.defaultChain(modelData))
   }
 }

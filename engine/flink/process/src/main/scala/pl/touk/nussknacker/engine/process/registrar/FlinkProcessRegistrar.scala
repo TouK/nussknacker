@@ -274,7 +274,8 @@ object FlinkProcessRegistrar {
   // We cannot use LazyLogging trait here because class already has LazyLogging and scala ends with cycle during resolution...
   private lazy val logger: Logger = Logger(LoggerFactory.getLogger(classOf[FlinkProcessRegistrar].getName))
 
-  def apply(compiler: FlinkProcessCompiler, config: Config, prepareExecutionConfig: ExecutionConfigPreparer): FlinkProcessRegistrar = {
+  def apply(compiler: FlinkProcessCompiler, prepareExecutionConfig: ExecutionConfigPreparer): FlinkProcessRegistrar = {
+    val config = compiler.inputConfig.config
     val eventTimeMetricDuration = config.getOrElse[FiniteDuration]("eventTimeMetricSlideDuration", 10.seconds)
 
     // TODO checkpointInterval is deprecated - remove it in future
