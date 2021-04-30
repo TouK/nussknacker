@@ -40,4 +40,6 @@ object StandaloneSorter extends CustomStreamTransformer {
       })
   }
 
+  override def canHaveManyInputs: Boolean = true
+
 }
