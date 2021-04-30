@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.standalone.utils
+package pl.touk.nussknacker.engine.standalone.http
 
 import cats.data.NonEmptyList
 import cats.instances.either._

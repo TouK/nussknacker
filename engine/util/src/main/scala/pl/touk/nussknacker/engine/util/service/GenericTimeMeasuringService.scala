@@ -45,20 +45,3 @@ trait GenericTimeMeasuringService {
   def espTimer(tags: Map[String, String], metricName: NonEmptyList[String]) : EspTimer
 
 }
-
-object EspTimer {
-
-  val histogramSuffix = "histogram"
-
-  val instantRateSuffix = "instantRate"
-
-}
-
-case class EspTimer(rateMeter: RateMeter, histogram: Long => Unit) {
-
-  def update(nanoTimeStart: Long): Unit = {
-    val delta = System.nanoTime() - nanoTimeStart
-    rateMeter.mark()
-    histogram.apply(delta)
-  }
-}

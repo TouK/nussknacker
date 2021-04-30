@@ -3,11 +3,6 @@ package pl.touk.nussknacker.engine.util.metrics
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.LongAdder
 
-trait RateMeter {
-  def mark(): Unit
-}
-
-
 //this is poor implementation, but should be ok for our needs
 trait GenericInstantRateMeter extends RateMeter {
 

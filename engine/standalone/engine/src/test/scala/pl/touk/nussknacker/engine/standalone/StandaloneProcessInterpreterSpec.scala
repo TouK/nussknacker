@@ -13,16 +13,16 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.standalone.api.StandaloneContextPreparer
 import pl.touk.nussknacker.engine.standalone.api.types.GenericListResultType
-import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
-import pl.touk.nussknacker.engine.standalone.utils.metrics.dropwizard.DropwizardMetricsProvider
-import pl.touk.nussknacker.engine.standalone.utils.metrics.{MetricsProvider, NoOpMetricsProvider}
+import pl.touk.nussknacker.engine.standalone.metrics.NoOpMetricsProvider
+import pl.touk.nussknacker.engine.standalone.metrics.dropwizard.DropwizardMetricsProvider
+import pl.touk.nussknacker.engine.standalone.api.metrics.MetricsProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import java.util
 import scala.collection.immutable.ListMap
-import scala.jdk.CollectionConverters.asJavaIterableConverter
 
 class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryPatientScalaFutures {
 

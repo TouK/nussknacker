@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.standalone.api
 
-import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory}
 
 //TODO: this is a bit clumsy, we should think about:
