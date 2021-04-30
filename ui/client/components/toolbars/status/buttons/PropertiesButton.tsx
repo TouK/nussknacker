@@ -4,8 +4,14 @@ import {useDispatch, useSelector} from "react-redux"
 import {displayModalNodeDetails} from "../../../../actions/nk"
 import {events} from "../../../../analytics/TrackingEvents"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/properties.svg"
-import ProcessUtils from "../../../../common/ProcessUtils"
-import {getProcessUnsavedNewName, getProcessToDisplay, hasError, isSubprocess} from "../../../../reducers/selectors/graph"
+import {
+  getProcessToDisplay,
+  getProcessUnsavedNewName,
+  hasError,
+  hasPropertiesErrors,
+  isSubprocess,
+} from "../../../../reducers/selectors/graph"
+import NodeUtils from "../../../graph/NodeUtils"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 
 function PropertiesButton(): JSX.Element {
@@ -14,16 +20,17 @@ function PropertiesButton(): JSX.Element {
 
   const processToDisplay = useSelector(getProcessToDisplay)
   const name = useSelector(getProcessUnsavedNewName)
-  const hasErrors = useSelector(hasError)
+  const propertiesErrors = useSelector(hasPropertiesErrors)
+  const errors = useSelector(hasError)
 
   const onClick = useCallback(
     () => {
-      const {properties} = processToDisplay
+      const processProperties = NodeUtils.getProcessProperties(processToDisplay, name)
       const eventInfo = {
         category: events.categories.rightPanel,
         name: t("panels.actions.edit-properties.dialog", "properties"),
       }
-      dispatch(displayModalNodeDetails({id: name, ...properties}, false, eventInfo))
+      dispatch(displayModalNodeDetails(processProperties, false, eventInfo))
     },
     [dispatch, name, processToDisplay, t],
   )
@@ -36,7 +43,7 @@ function PropertiesButton(): JSX.Element {
   return (
     <ToolbarButton
       name={t("panels.actions.edit-properties.button", "properties")}
-      hasError={hasErrors && !ProcessUtils.hasNoPropertiesErrors(processToDisplay)}
+      hasError={errors && propertiesErrors}
       icon={<Icon/>}
       onClick={onClick}
     />
