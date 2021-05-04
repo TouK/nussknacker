@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.compiler
 
+import com.typesafe.config.Config
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api.ProcessListener
@@ -14,10 +15,9 @@ import pl.touk.nussknacker.engine.modelconfig.{InputConfigDuringExecution, Model
 
 class VerificationFlinkProcessCompiler(process: EspProcess,
                                        creator: ProcessConfigCreator,
-                                       inputConfigDuringExecution: InputConfigDuringExecution,
-                                       modelConfigLoader: ModelConfigLoader,
+                                       processConfig: Config,
                                        objectNaming: ObjectNaming)
-  extends StubbedFlinkProcessCompiler(process, creator, inputConfigDuringExecution, modelConfigLoader, objectNaming) {
+  extends StubbedFlinkProcessCompiler(process, creator, processConfig, objectNaming) {
 
   override protected def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] = List()
 

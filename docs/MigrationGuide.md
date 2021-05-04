@@ -61,6 +61,7 @@ To see biggest differences please consult the [changelog](Changelog.md).
 * [#1546](https://github.com/TouK/nussknacker/pull/1546) `StandaloneCustomTransformer` now takes a list of `Context` objects, to process them in one go                                               
 * [#1557](https://github.com/TouK/nussknacker/pull/1556) Some classes from standalone engine were moved to standalone api to remove engine to (model) utils dependency:
   `StandaloneContext`, `StandaloneContextLifecycle`, `MetricsProvider`
+* [#1558](https://github.com/TouK/nussknacker/pull/1558) `FlinkProcessRegistrar` takes configuration directly from `FlinkProcessCompiler` (this can affect some tests setup) 
 
 ## In version 0.3.0
 

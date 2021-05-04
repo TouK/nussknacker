@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.compiler
 
+import com.typesafe.config.Config
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.nussknacker.engine.api.ProcessListener
@@ -17,12 +18,11 @@ import pl.touk.nussknacker.engine.modelconfig.{InputConfigDuringExecution, Model
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListener
 
 class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
-                               inputConfigDuringExecution: InputConfigDuringExecution,
-                               modelConfigLoader: ModelConfigLoader,
+                               inputConfigDuringExecution: Config,
                                collectingListener: ResultsCollectingListener,
                                process: EspProcess,
                                testData: TestData, executionConfig: ExecutionConfig,
-                               objectNaming: ObjectNaming) extends StubbedFlinkProcessCompiler(process, creator, inputConfigDuringExecution, modelConfigLoader, objectNaming) {
+                               objectNaming: ObjectNaming) extends StubbedFlinkProcessCompiler(process, creator, inputConfigDuringExecution, objectNaming) {
 
 
   override protected def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
