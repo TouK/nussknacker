@@ -1,12 +1,12 @@
-package pl.touk.nussknacker.engine.standalone
+package pl.touk.nussknacker.engine.standalone.http
 
 import akka.http.scaladsl.server.{Directive1, Directives}
 import cats.data.EitherT
 import cats.instances.future._
 import io.circe.Json
+import pl.touk.nussknacker.engine.standalone.{DefaultResponseEncoder, StandaloneProcessInterpreter}
 import pl.touk.nussknacker.engine.standalone.api.types.GenericResultType
 import pl.touk.nussknacker.engine.standalone.api.{StandaloneGetSource, StandalonePostSource}
-import pl.touk.nussknacker.engine.standalone.utils.DefaultResponseEncoder
 
 import scala.concurrent.{ExecutionContext, Future}
 

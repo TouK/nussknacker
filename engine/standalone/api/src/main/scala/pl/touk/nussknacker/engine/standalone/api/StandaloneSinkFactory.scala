@@ -1,7 +1,7 @@
-package pl.touk.nussknacker.engine.standalone.utils
+package pl.touk.nussknacker.engine.standalone.api
 
-import pl.touk.nussknacker.engine.api.{LazyParameter, LazyParameterInterpreter, MethodToInvoke}
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
+import pl.touk.nussknacker.engine.api.{LazyParameter, LazyParameterInterpreter, MethodToInvoke}
 
 class StandaloneSinkFactory extends SinkFactory {
 

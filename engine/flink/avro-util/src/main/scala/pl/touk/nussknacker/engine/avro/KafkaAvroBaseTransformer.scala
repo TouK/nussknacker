@@ -11,11 +11,12 @@ import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.TopicParamName
 import pl.touk.nussknacker.engine.avro.schemaregistry._
+import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, PreparedKafkaTopic}
 
 import scala.reflect.ClassTag
 
-trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T] {
+trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T] with WithCachedTopicsExistenceValidator {
 
   // Initially we don't want to select concrete topic by user so we add null topic on the beginning of select box.
   // TODO: add addNullOption feature flag to FixedValuesParameterEditor
@@ -106,7 +107,8 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
     case TransformationStep((TopicParamName, DefinedEagerParameter(topic: String, _)) :: Nil, _) =>
       val preparedTopic = prepareTopic(topic)
       val versionParam = getVersionParam(preparedTopic)
-      NextParameters(versionParam.value :: paramsDeterminedAfterSchema, errors = versionParam.written)
+      val topicValidationErrors = validateTopic(preparedTopic.prepared).swap.toList.map(_.toCustomNodeError(nodeId.id, Some(TopicParamName)))
+      NextParameters(versionParam.value :: paramsDeterminedAfterSchema, errors = versionParam.written ++ topicValidationErrors)
     case TransformationStep((TopicParamName, _) :: Nil, _) =>
       NextParameters(parameters = fallbackVersionOptionParam :: paramsDeterminedAfterSchema)
   }

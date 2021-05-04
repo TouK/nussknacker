@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.standalone.utils.metrics.dropwizard.influxdb
+package pl.touk.nussknacker.engine.standalone.http.metrics.dropwizard.influxdb
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
@@ -25,4 +25,3 @@ object StandaloneInfluxDbReporter extends LazyLogging {
   }
 
 }
-

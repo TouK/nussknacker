@@ -2,18 +2,18 @@ package pl.touk.nussknacker.engine.kafka
 
 import java.util.concurrent.TimeUnit
 import java.util.{Collections, Properties}
-
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.KafkaClient
+import org.apache.kafka.clients.admin.{Admin, AdminClient}
 import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer}
 import pl.touk.nussknacker.engine.api.namespaces.{KafkaUsageKey, NamingContext}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.kafka.validator.CachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future, Promise}
@@ -30,6 +30,23 @@ object KafkaUtils extends LazyLogging {
 
   def setClientId(props: Properties, id: String): Unit = {
     props.setProperty("client.id", sanitizeClientId(id))
+  }
+
+  def createKafkaAdminClient(kafkaConfig: KafkaConfig): Admin = {
+    val properties = new Properties()
+    properties.setProperty("bootstrap.servers", kafkaConfig.kafkaAddress)
+    AdminClient.create(properties)
+  }
+
+  def usingAdminClient[T](kafkaConfig: KafkaConfig)(adminClientOperation: Admin => T): T = {
+    val c = createKafkaAdminClient(kafkaConfig)
+    try adminClientOperation(c)
+    finally c.close()
+  }
+
+  def validateTopicsExistence(topics: List[PreparedKafkaTopic], kafkaConfig: KafkaConfig): Unit = {
+    new CachedTopicsExistenceValidator(kafkaConfig = kafkaConfig)
+      .validateTopics(topics.map(_.prepared)).valueOr(err => throw err)
   }
 
   def prepareKafkaTopic(topic :String, processObjectDependencies: ProcessObjectDependencies): PreparedKafkaTopic =

@@ -1,8 +1,8 @@
-package pl.touk.nussknacker.engine.standalone.utils
+package pl.touk.nussknacker.engine.standalone.api
 
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.standalone.utils.metrics.MetricsProvider
+import pl.touk.nussknacker.engine.standalone.api.metrics.MetricsProvider
 import pl.touk.nussknacker.engine.util.service.EspTimer
 
 case class StandaloneContext(processId: String, metricsProvider: MetricsProvider) extends LazyLogging {

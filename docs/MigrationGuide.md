@@ -4,6 +4,9 @@ To see biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 0.4.0 (not released yet) 
 
+* [#1542](https://github.com/TouK/nussknacker/pull/1542)
+  `KafkaConfig` now has new parameter `topicsExistenceValidationConfig`. When `topicsExistenceValidationConfig.enabled = true` 
+  Kafka sources/sinks do not validate if provided topic does not exist and cluster is configured with `auto.create.topics.enable=false`
 * [#1416](https://github.com/TouK/nussknacker/pull/1416)
  `OAuth2Service` has changed. You can still use your old implementation by importing `OAuth2OldService` with an alias.
  `OAuth2ServiceFactory.create` method now accepts implicit parameters for an `ExecutionContext` and `sttp.HttpBackend`.
@@ -56,6 +59,8 @@ To see biggest differences please consult the [changelog](Changelog.md).
 * [#1514](https://github.com/TouK/nussknacker/pull/1514) `ExecutionConfigPreparer` has different method parameter - `JobData`, which has more info than previous parameters
 * [#1532](https://github.com/TouK/nussknacker/pull/1532) `TypedObjectTypingResult#fields` uses now `scala.collection.immutable.ListMap` to keep fields order
 * [#1546](https://github.com/TouK/nussknacker/pull/1546) `StandaloneCustomTransformer` now takes a list of `Context` objects, to process them in one go                                               
+* [#1557](https://github.com/TouK/nussknacker/pull/1556) Some classes from standalone engine were moved to standalone api to remove engine to (model) utils dependency:
+  `StandaloneContext`, `StandaloneContextLifecycle`, `MetricsProvider`
 * [#1558](https://github.com/TouK/nussknacker/pull/1558) `FlinkProcessRegistrar` takes configuration directly from `FlinkProcessCompiler` (this can affect some tests setup) 
 
 ## In version 0.3.0

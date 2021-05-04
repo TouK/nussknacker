@@ -15,9 +15,8 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.marshall.{ProcessMarshaller, ProcessUnmarshallError}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
-import pl.touk.nussknacker.engine.standalone.api.StandaloneDeploymentData
+import pl.touk.nussknacker.engine.standalone.api.{StandaloneContextPreparer, StandaloneDeploymentData}
 import pl.touk.nussknacker.engine.standalone.management.StandaloneProcessManagerProvider
-import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
 
 import scala.concurrent.ExecutionContext
 

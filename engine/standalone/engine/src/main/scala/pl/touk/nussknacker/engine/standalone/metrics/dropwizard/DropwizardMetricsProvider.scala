@@ -1,12 +1,12 @@
-package pl.touk.nussknacker.engine.standalone.utils.metrics.dropwizard
-
-import java.util.concurrent.TimeUnit
+package pl.touk.nussknacker.engine.standalone.metrics.dropwizard
 
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.{Histogram, Metric, MetricFilter, MetricName, MetricRegistry, SlidingTimeWindowReservoir}
-import pl.touk.nussknacker.engine.standalone.utils.metrics.MetricsProvider
+import pl.touk.nussknacker.engine.standalone.api.metrics.MetricsProvider
 import pl.touk.nussknacker.engine.util.service.EspTimer
+
+import java.util.concurrent.TimeUnit
 import scala.collection.JavaConverters._
 
 class DropwizardMetricsProvider(metricRegistry: MetricRegistry) extends MetricsProvider with LazyLogging {
