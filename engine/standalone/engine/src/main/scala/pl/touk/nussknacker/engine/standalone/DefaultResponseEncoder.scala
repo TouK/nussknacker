@@ -1,9 +1,9 @@
-package pl.touk.nussknacker.engine.standalone.utils
+package pl.touk.nussknacker.engine.standalone
 
-import cats.data.NonEmptyList
-import cats.instances.either._
+import cats.Traverse.ops._
 import cats.instances.list._
-import cats.syntax.traverse._
+import cats.instances.either._
+import cats.data.NonEmptyList
 import io.circe.{Encoder, Json}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo

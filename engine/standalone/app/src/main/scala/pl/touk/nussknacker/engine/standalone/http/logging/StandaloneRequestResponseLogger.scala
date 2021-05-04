@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.standalone.utils.logging
+package pl.touk.nussknacker.engine.standalone.http.logging
 
 import akka.event.Logging
 import akka.http.scaladsl.server.Directive0

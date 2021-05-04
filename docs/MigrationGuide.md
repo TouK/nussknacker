@@ -59,6 +59,8 @@ To see biggest differences please consult the [changelog](Changelog.md).
 * [#1514](https://github.com/TouK/nussknacker/pull/1514) `ExecutionConfigPreparer` has different method parameter - `JobData`, which has more info than previous parameters
 * [#1532](https://github.com/TouK/nussknacker/pull/1532) `TypedObjectTypingResult#fields` uses now `scala.collection.immutable.ListMap` to keep fields order
 * [#1546](https://github.com/TouK/nussknacker/pull/1546) `StandaloneCustomTransformer` now takes a list of `Context` objects, to process them in one go                                               
+* [#1557](https://github.com/TouK/nussknacker/pull/1556) Some classes from standalone engine were moved to standalone api to remove engine to (model) utils dependency:
+  `StandaloneContext`, `StandaloneContextLifecycle`, `MetricsProvider`
 
 ## In version 0.3.0
 

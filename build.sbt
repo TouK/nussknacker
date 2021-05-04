@@ -391,11 +391,15 @@ lazy val engineStandalone = (project in engine("standalone/engine")).
   settings(Defaults.itSettings).
   settings(
     name := "nussknacker-standalone-engine",
+    libraryDependencies ++= {
+      Seq(
+        "io.dropwizard.metrics5" % "metrics-core" % dropWizardV)
+    },
     Keys.test in IntegrationTest := (Keys.test in IntegrationTest).dependsOn(
       (assembly in Compile) in standaloneSample
     ).value,
   ).
-  dependsOn(interpreter % "provided", standaloneUtil, httpUtils % "provided", testUtil % "it,test")
+  dependsOn(interpreter % "provided", standaloneApi, httpUtils % "provided", testUtil % "it,test", standaloneUtil % "test")
 
 lazy val standaloneDockerSettings = {
   val workingDir = "/opt/nussknacker"
@@ -431,12 +435,13 @@ lazy val standaloneApp = (project in engine("standalone/app")).
         "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test",
         "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
         "com.typesafe.akka" %% "akka-slf4j" % akkaV,
+        "io.dropwizard.metrics5" % "metrics-influxdb" % dropWizardV,
         "ch.qos.logback" % "logback-classic" % logbackV
       )
     }
   ).
   settings(standaloneDockerSettings).
-  dependsOn(engineStandalone, interpreter, httpUtils, testUtil % "test")
+  dependsOn(engineStandalone, interpreter, httpUtils, testUtil % "test", standaloneUtil % "test")
 
 
 lazy val flinkProcessManager = (project in engine("flink/management")).

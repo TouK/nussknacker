@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.standalone.management
 
 import java.util.concurrent.TimeUnit
-
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
@@ -23,10 +22,9 @@ import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.testmode.SinkInvocationCollector
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
-import pl.touk.nussknacker.engine.standalone.api.StandaloneDeploymentData
+import pl.touk.nussknacker.engine.standalone.api.{StandaloneContextPreparer, StandaloneDeploymentData}
 import pl.touk.nussknacker.engine.standalone.api.types._
-import pl.touk.nussknacker.engine.standalone.utils.StandaloneContextPreparer
-import pl.touk.nussknacker.engine.standalone.utils.metrics.NoOpMetricsProvider
+import pl.touk.nussknacker.engine.standalone.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestRunId, TestServiceInvocationCollector}
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.engine.{ModelData, _}

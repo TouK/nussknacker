@@ -12,11 +12,11 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.standalone.api.StandaloneCustomTransformer
+import pl.touk.nussknacker.engine.standalone.api.{StandaloneCustomTransformer, StandaloneSinkFactory, StandaloneSinkWithParameters}
 import pl.touk.nussknacker.engine.standalone.api.types.{EndResult, InterpreterType}
 import pl.touk.nussknacker.engine.standalone.utils.customtransformers.{ProcessSplitter, StandaloneSorter, StandaloneUnion}
 import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
-import pl.touk.nussknacker.engine.standalone.utils.{JsonStandaloneSourceFactory, StandaloneSinkFactory, StandaloneSinkWithParameters}
+import pl.touk.nussknacker.engine.standalone.utils.JsonStandaloneSourceFactory
 import pl.touk.nussknacker.engine.util.LoggingListener
 
 import scala.concurrent.{ExecutionContext, Future}
