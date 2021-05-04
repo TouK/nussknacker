@@ -37,7 +37,8 @@ describe("Process", () => {
       cy.get("@layoutButton").click()
       cy.get("@graph").toMatchImageSnapshot()
     })
-    it("should ungrout work for multiple", () => {
+
+    it("should ungroup work for multiple", () => {
       cy.get("@graph")
         .trigger("keydown", {key: "Meta"})
         .trigger("mousedown", 800, 10, {metaKey: true, force: true})
@@ -67,6 +68,23 @@ describe("Process", () => {
       cy.get("@ungroupButton").should("be.enabled").click()
       cy.get("@layoutButton").click()
       cy.get("@graph").toMatchImageSnapshot()
+    })
+
+    it("should open group details on collapsed and expanded group", () => {
+      cy.get("@graph")
+        .trigger("keydown", {key: "Meta"})
+        .trigger("mousedown", 800, 10, {metaKey: true, force: true})
+        .trigger("mousemove", 500, 600, {metaKey: true, force: true})
+        .trigger("mouseup", {force: true})
+      cy.get("@groupButton").should("be.enabled").click()
+
+      cy.get("[model-id*=source-variable]").dblclick()
+      cy.get("[data-testid=node-modal]").should("be.visible")
+        .contains(/^expand/i).should("be.enabled").click()
+
+      cy.get("[model-id*=source-variable].joint-type-basic-rect").dblclick("bottomRight")
+      cy.get("[data-testid=node-modal]").should("be.visible")
+        .contains(/^collapse/i).should("be.enabled").click()
     })
   })
 })

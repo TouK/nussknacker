@@ -273,7 +273,7 @@ export class Graph extends React.Component {
     this.processGraphPaper.on(Events.CELL_POINTERDBLCLICK, (cellView) => {
       const nodeDataId = cellView.model.attributes.nodeData?.id
       if (nodeDataId) {
-        const nodeData = this.findNodeById(nodeDataId)
+        const nodeData = this.getNodeData(cellView.model)
         const prefixedNodeId = this.props.nodeIdPrefixForSubprocessTests + nodeDataId
         this.props.actions.displayModalNodeDetails({...nodeData, id: prefixedNodeId}, this.props.readonly)
       }
@@ -291,7 +291,7 @@ export class Graph extends React.Component {
           return
         }
 
-        this.props.actions.displayNodeDetails(this.findNodeById(nodeDataId))
+        this.props.actions.displayNodeDetails(this.getNodeData(cellView.model))
 
         if (evt.shiftKey || evt.ctrlKey || evt.metaKey) {
           this.props.actions.toggleSelection(nodeDataId)
@@ -332,9 +332,11 @@ export class Graph extends React.Component {
     })
   }
 
-  findNodeById(nodeId) {
-    const nodes = NodeUtils.nodesFromProcess(this.props.processToDisplay)
-    return nodes.find(n => n.id === nodeId)
+  getNodeData(model) {
+    const {expandedGroups, processToDisplay} = this.props
+    return NodeUtils
+      .nodesFromProcess(processToDisplay, isGroupElement(model) ? [] : expandedGroups)
+      .find(({id}) => id === model.attributes.nodeData.id)
   }
 
   //needed for proper switch/filter label handling
@@ -363,17 +365,21 @@ export class Graph extends React.Component {
     const movedNodeId = element.id
     const nodeIdsToBeMoved = _.without(this.props.selectionState, movedNodeId)
     const cellsToBeMoved = nodeIdsToBeMoved.map(nodeId => this.graph.getCell(nodeId))
-    const originalPosition = _.find(this.props.layout, n => n.id === movedNodeId).position
+    const {position: originalPosition} = this.findNodeInLayout(movedNodeId)
     const offset = {x: position.x - originalPosition.x, y: position.y - originalPosition.y}
-    cellsToBeMoved.forEach(cell => {
-      const originalPosition = _.find(this.props.layout, n => n.id === cell.id).position
+    cellsToBeMoved.filter(isModelElement).forEach(cell => {
+      const {position: originalPosition} = this.findNodeInLayout(cell.id)
       cell.position(originalPosition.x + offset.x, originalPosition.y + offset.y)
     })
   }
 
+  findNodeInLayout(nodeId) {
+    return _.find(this.props.layout, n => n.id === nodeId)
+  }
+
   nodesMoving() {
     this.graph.on(Events.CHANGE_POSITION, (element, position) => {
-      if (!this.redrawing && (this.props.selectionState || []).includes(element.id)) {
+      if (!this.redrawing && (this.props.selectionState || []).includes(element.id) && isModelElement(element)) {
         this.moveSelectedNodesRelatively(element, position)
       }
     })
