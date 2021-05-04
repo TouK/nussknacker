@@ -275,7 +275,7 @@ object FlinkProcessRegistrar {
   private lazy val logger: Logger = Logger(LoggerFactory.getLogger(classOf[FlinkProcessRegistrar].getName))
 
   def apply(compiler: FlinkProcessCompiler, prepareExecutionConfig: ExecutionConfigPreparer): FlinkProcessRegistrar = {
-    val config = compiler.inputConfig.config
+    val config = compiler.processConfig
     val eventTimeMetricDuration = config.getOrElse[FiniteDuration]("eventTimeMetricSlideDuration", 10.seconds)
 
     // TODO checkpointInterval is deprecated - remove it in future
