@@ -10,7 +10,7 @@ describe("Process", () => {
   })
 
   beforeEach(() => {
-    cy.visitNewProcess(NAME, "testProcess2")
+    cy.visitNewProcess(NAME, "testProcess2", `Default`)
     cy.get("#esp-graph svg", {timeout: 20000}).as("graph")
   })
 
@@ -29,10 +29,10 @@ describe("Process", () => {
         .trigger("mousedown", 300, 100, {metaKey: true, force: true})
         .trigger("mousemove", 680, 550, {metaKey: true, force: true})
         .trigger("mouseup", {force: true})
-      cy.get("[model-id=aggregate]").click({shiftKey: true})
+      cy.get("[model-id='filter 3']").click({shiftKey: true})
       cy.get("@graph").toMatchImageSnapshot()
       cy.get("@groupButton").should("be.disabled")
-      cy.get("[model-id=aggregate]").click({shiftKey: true})
+      cy.get("[model-id='filter 3']").click({shiftKey: true})
       cy.get("@groupButton").should("be.enabled").click()
       cy.get("@layoutButton").click()
       cy.get("@graph").toMatchImageSnapshot()
@@ -78,11 +78,11 @@ describe("Process", () => {
         .trigger("mouseup", {force: true})
       cy.get("@groupButton").should("be.enabled").click()
 
-      cy.get("[model-id*=source-variable]").dblclick()
+      cy.get("[model-id*=source-filter]").dblclick()
       cy.get("[data-testid=node-modal]").should("be.visible")
         .contains(/^expand/i).should("be.enabled").click()
 
-      cy.get("[model-id*=source-variable].joint-type-basic-rect").dblclick("bottomRight")
+      cy.get("[model-id*=source-filter].joint-type-basic-rect").dblclick("bottomRight")
       cy.get("[data-testid=node-modal]").should("be.visible")
         .contains(/^collapse/i).should("be.enabled").click()
     })
