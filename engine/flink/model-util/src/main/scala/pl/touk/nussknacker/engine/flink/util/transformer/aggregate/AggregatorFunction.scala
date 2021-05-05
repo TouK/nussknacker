@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import java.util.concurrent.TimeUnit
-
 import cats.data.NonEmptyList
 import com.codahale.metrics.{Histogram, SlidingTimeWindowReservoir}
 import org.apache.flink.api.common.functions.RuntimeContext
@@ -17,11 +16,12 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{ValueWithContext, Context => NkContext}
 import pl.touk.nussknacker.engine.flink.api.state.{LatelyEvictableStateFunction, StateHolder}
-import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
+import pl.touk.nussknacker.engine.flink.util.keyed.{KeyedValue, StringKeyedValue}
 import pl.touk.nussknacker.engine.flink.util.metrics.MetricUtils
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap._
 
+import java.time.Duration
 import scala.language.higherKinds
 
 // This is the real SlidingWindow with slide = 1min - moving with time for each key. It reduce on each emit and store
@@ -42,6 +42,31 @@ class AggregatorFunction[MapT[K,V]](protected val aggregator: Aggregator, protec
     handleNewElementAdded(value, ctx.timestamp(), ctx.timerService(), out)
   }
 
+}
+
+object AggregatorFunctionWrapper {
+
+  type InTyp = ValueWithContext[KeyedValue[String, (Duration, AnyRef)]]
+  type FunTyp = KeyedProcessFunction[String, InTyp, ValueWithContext[AnyRef]]
+}
+
+import AggregatorFunctionWrapper.{InTyp, FunTyp}
+
+class AggregatorFunctionWrapper[MapT[K,V]](aggregator: Aggregator, nodeId: NodeId, aggregateElementType: TypingResult)
+                                   (implicit rangeMap: FlinkRangeMap[MapT]) extends FunTyp {
+
+  type FlinkCtx = FunTyp#Context
+
+  override def processElement(value: InTyp,
+                              ctx: FlinkCtx,
+                              out: Collector[ValueWithContext[AnyRef]]): Unit = {
+    new AggregatorFunction[MapT](
+      aggregator,
+      timeWindowLengthMillis = value.value.value._1.toMillis,
+      nodeId,
+      aggregateElementType
+    ).processElement(value = ???, ctx = ???, out = out)
+  }
 }
 
 trait AggregatorFunctionMixin[MapT[K,V]] { self: StateHolder[MapT[Long, AnyRef]] =>

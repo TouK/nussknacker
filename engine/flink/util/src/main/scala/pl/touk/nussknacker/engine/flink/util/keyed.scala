@@ -5,6 +5,8 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkLazyParameterFunctionHelper, LazyParameterInterpreterFunction}
+
+import java.time.Duration
 import scala.reflect.runtime.universe.TypeTag
 
 // Must be in object because of Java interop (problems with package object) and abstract type StringKeyedValue[V]
@@ -96,6 +98,36 @@ object keyed {
 
     override protected def interpret(ctx: Context): KeyedValue[String, T] = interpreter(ctx)
 
+  }
+
+  class StringKeyedValueWithWindowLengthMapper[T<:AnyRef:TypeTag](protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
+                                                                  key: LazyParameter[CharSequence],
+                                                                  windowLength: LazyParameter[Duration],
+                                                                  value: LazyParameterInterpreter => LazyParameter[T])
+    extends BaseKeyedValueMapper[String, (Duration, T)] {
+
+    def this(lazyParameterHelper: FlinkLazyParameterFunctionHelper,
+             key: LazyParameter[CharSequence],
+             windowLength: LazyParameter[java.time.Duration],
+             value: LazyParameter[T]) = this(lazyParameterHelper, key, windowLength, _ => value)
+
+    private lazy val interpreter = {
+      prepareInterpreterX(key.map(transformKey), windowLength, value(lazyParameterInterpreter))
+    }
+
+    protected def transformKey(keyValue: CharSequence): String = {
+      Option(keyValue).map(_.toString).getOrElse("")
+    }
+
+    override protected def interpret(ctx: Context): KeyedValue[String, (Duration, T)] = interpreter(ctx)
+
+    private def prepareInterpreterX(key: LazyParameter[String], windowLength: LazyParameter[Duration], value: LazyParameter[T]): Context => KeyedValue[String, (Duration, T)] = {
+      lazyParameterInterpreter.syncInterpretationFunction(
+        key.product(windowLength).product(value).map { case ((k, winLen), v) =>
+          KeyedValue(k, (winLen, v))
+        }
+      )
+    }
   }
 
   class StringKeyOnlyMapper(protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper, key: LazyParameter[CharSequence])
