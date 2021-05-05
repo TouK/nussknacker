@@ -5,7 +5,7 @@ import {ungroupSelected} from "../../../../actions/nk"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/ungroup.svg"
 import {getSelectedGroups} from "../../../../reducers/graph/utils"
 import {getGraph} from "../../../../reducers/selectors/graph"
-import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
+import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 
 export function UngroupButton(): JSX.Element {
   const graph = useSelector(getGraph)
@@ -13,7 +13,8 @@ export function UngroupButton(): JSX.Element {
   const dispatch = useDispatch()
 
   return (
-    <ToolbarButton
+    <CapabilitiesToolbarButton
+      write
       name={t("panels.actions.ungroup-selected.button", "ungroup")}
       icon={<Icon/>}
       disabled={!getSelectedGroups(graph).length}
