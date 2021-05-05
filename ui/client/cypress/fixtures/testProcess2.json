@@ -43,7 +43,7 @@
       "additionalFields" : {
         "description" : null,
         "layoutData" : {
-          "x" : 0,
+          "x" : 175,
           "y" : 0
         }
       },
@@ -61,7 +61,7 @@
       "additionalFields" : {
         "description" : null,
         "layoutData" : {
-          "x" : 0,
+          "x" : 175,
           "y" : 135
         }
       },
@@ -79,7 +79,7 @@
       "additionalFields" : {
         "description" : null,
         "layoutData" : {
-          "x" : 0,
+          "x" : 175,
           "y" : 270
         }
       },
@@ -97,7 +97,7 @@
       "additionalFields" : {
         "description" : null,
         "layoutData" : {
-          "x" : 0,
+          "x" : 175,
           "y" : 405
         }
       },
@@ -115,7 +115,7 @@
       "additionalFields" : {
         "description" : null,
         "layoutData" : {
-          "x" : 0,
+          "x" : 175,
           "y" : 540
         }
       },
@@ -133,75 +133,167 @@
       "additionalFields" : {
         "description" : null,
         "layoutData" : {
-          "x" : 0,
+          "x" : 175,
           "y" : 675
         }
       },
       "type" : "Filter"
     },
     {
-      "nextFalse" : [
+      "defaultNext" : [
+        {
+          "nextFalse" : [
+          ],
+          "id" : "filter 7",
+          "expression" : {
+            "language" : "spel",
+            "expression" : "true"
+          },
+          "isDisabled" : null,
+          "additionalFields" : {
+            "description" : null,
+            "layoutData" : {
+              "x" : 350,
+              "y" : 945
+            }
+          },
+          "type" : "Filter"
+        },
+        {
+          "nextFalse" : [
+          ],
+          "id" : "filter 8",
+          "expression" : {
+            "language" : "spel",
+            "expression" : "true"
+          },
+          "isDisabled" : null,
+          "additionalFields" : {
+            "description" : null,
+            "layoutData" : {
+              "x" : 350,
+              "y" : 1080
+            }
+          },
+          "type" : "Filter"
+        },
+        {
+          "id" : "kafka-json-sink (copy 1)",
+          "ref" : {
+            "typ" : "kafka-json",
+            "parameters" : [
+              {
+                "name" : "topic",
+                "expression" : {
+                  "language" : "spel",
+                  "expression" : "'bbbb'"
+                }
+              }
+            ]
+          },
+          "endResult" : {
+            "language" : "spel",
+            "expression" : "#input"
+          },
+          "isDisabled" : null,
+          "additionalFields" : {
+            "description" : null,
+            "layoutData" : {
+              "x" : 350,
+              "y" : 1215
+            }
+          },
+          "type" : "Sink"
+        }
       ],
-      "id" : "filter 5",
+      "nexts" : [
+        {
+          "expression" : {
+            "language" : "spel",
+            "expression" : "true"
+          },
+          "nodes" : [
+            {
+              "nextFalse" : [
+              ],
+              "id" : "filter 5",
+              "expression" : {
+                "language" : "spel",
+                "expression" : "true"
+              },
+              "isDisabled" : null,
+              "additionalFields" : {
+                "description" : null,
+                "layoutData" : {
+                  "x" : 0,
+                  "y" : 945
+                }
+              },
+              "type" : "Filter"
+            },
+            {
+              "nextFalse" : [
+              ],
+              "id" : "filter 6",
+              "expression" : {
+                "language" : "spel",
+                "expression" : "true"
+              },
+              "isDisabled" : null,
+              "additionalFields" : {
+                "description" : null,
+                "layoutData" : {
+                  "x" : 0,
+                  "y" : 1080
+                }
+              },
+              "type" : "Filter"
+            },
+            {
+              "id" : "kafka-json-sink",
+              "ref" : {
+                "typ" : "kafka-json",
+                "parameters" : [
+                  {
+                    "name" : "topic",
+                    "expression" : {
+                      "language" : "spel",
+                      "expression" : "'bbbb'"
+                    }
+                  }
+                ]
+              },
+              "endResult" : {
+                "language" : "spel",
+                "expression" : "#input"
+              },
+              "isDisabled" : null,
+              "additionalFields" : {
+                "description" : null,
+                "layoutData" : {
+                  "x" : 0,
+                  "y" : 1217
+                }
+              },
+              "type" : "Sink"
+            }
+          ]
+        }
+      ],
+      "id" : "switch",
       "expression" : {
         "language" : "spel",
         "expression" : "true"
       },
-      "isDisabled" : null,
+      "exprVal" : "output",
       "additionalFields" : {
         "description" : null,
         "layoutData" : {
-          "x" : 0,
+          "x" : 175,
           "y" : 810
         }
       },
-      "type" : "Filter"
-    },
-    {
-      "nextFalse" : [
-      ],
-      "id" : "filter 6",
-      "expression" : {
-        "language" : "spel",
-        "expression" : "true"
-      },
-      "isDisabled" : null,
-      "additionalFields" : {
-        "description" : null,
-        "layoutData" : {
-          "x" : 0,
-          "y" : 945
-        }
-      },
-      "type" : "Filter"
-    },
-    {
-      "id" : "kafka-json-sink",
-      "ref" : {
-        "typ" : "kafka-json",
-        "parameters" : [
-          {
-            "name" : "topic",
-            "expression" : {
-              "language" : "spel",
-              "expression" : "'bbbb'"
-            }
-          }
-        ]
-      },
-      "endResult" : {
-        "language" : "spel",
-        "expression" : "#input"
-      },
-      "isDisabled" : null,
-      "additionalFields" : {
-        "description" : null,
-        "layoutData" : {
-          "x" : 0,
-          "y" : 1080
-        }
-      },
-      "type" : "Sink"
+      "type" : "Switch"
     }
   ],
   "additionalBranches" : [

@@ -1,4 +1,4 @@
-import {cloneDeep, map, omit, reject, without, zipWith, curryRight} from "lodash"
+import {cloneDeep, map, omit, reject, without, zipWith} from "lodash"
 import {Layout, NodePosition, NodesWithPositions} from "../../actions/nk"
 import ProcessUtils from "../../common/ProcessUtils"
 import {ExpressionLang} from "../../components/graph/node-modal/editors/expression/types"
@@ -10,6 +10,33 @@ function isConnectedTo(...nodeIds: NodeId[]) {
   return (edge: Edge) => {
     return nodeIds.find(id => edge.from === id || edge.to === id)
   }
+}
+
+function graphDFS(edges: Record<NodeId, NodeId[]>) {
+  const [startNode] = Object.keys(edges)
+  const queue = [startNode]
+  const visited = [startNode]
+  while (queue.length) {
+    const current = queue.pop()
+    edges[current]
+      .filter(node => !visited.includes(node))
+      .forEach(node => {
+        visited.push(node)
+        queue.push(node)
+      })
+  }
+  return visited
+}
+
+function isGraphConnected(nodes: NodeId[], edges: Edge[]): boolean {
+  const connections = Object.fromEntries(nodes.map(nodeId => [
+    nodeId,
+    edges
+      .filter(isConnectedTo(nodeId))
+      .filter(isConnectedTo(...without(nodes, nodeId)))
+      .map(({from, to}) => nodeId === from ? to : from),
+  ]))
+  return graphDFS(connections).length === nodes.length
 }
 
 function getSelectedNodes(state: GraphState): NodeType[] {
@@ -33,16 +60,7 @@ export function canGroupSelection(state: GraphState): boolean {
     return false
   }
 
-  const validConnections = getSelectedNodes(state)
-    .map(({id}) => edges
-      .filter(isConnectedTo(id))
-      .filter(isConnectedTo(...without(selectionState, id))))
-    .map(validEgdes => validEgdes.length)
-
-  const lonelyNodes = validConnections.filter(l => l === 0).length
-  const edgeNodes = validConnections.filter(l => l === 1).length
-
-  return !lonelyNodes && edgeNodes === 2
+  return isGraphConnected(selectionState, edges)
 }
 
 export function displayOrGroup(state: GraphState, node: NodeType, readonly = false): GraphState {

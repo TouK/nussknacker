@@ -78,7 +78,7 @@ describe("Process", () => {
         .trigger("mouseup", {force: true})
       cy.get("@groupButton").should("be.enabled").click()
 
-      cy.get("[model-id*=source-filter]").dblclick()
+      cy.get("[model-id*=source-filter].joint-type-esp-group").dblclick()
       cy.get("[data-testid=node-modal]").should("be.visible")
         .contains(/^expand/i).should("be.enabled").click()
 
