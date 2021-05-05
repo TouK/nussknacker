@@ -48,6 +48,11 @@ export function getSelectedGroups(state: GraphState): GroupType[] {
   return getSelectedNodes(state).filter(NodeUtils.nodeIsGroup)
 }
 
+function nodeInGroup(state: GraphState) {
+  const groups = NodeUtils.getAllGroups(state.processToDisplay)
+  return node => !!groups.find(g => g.nodes.includes(node))
+}
+
 export function canGroupSelection(state: GraphState): boolean {
   const {processToDisplay: {edges}, selectionState = []} = state
 
@@ -56,7 +61,7 @@ export function canGroupSelection(state: GraphState): boolean {
   }
 
   const containsGroup = getSelectedGroups(state).length
-  if (containsGroup) {
+  if (containsGroup || selectionState.some(nodeInGroup(state))) {
     return false
   }
 
