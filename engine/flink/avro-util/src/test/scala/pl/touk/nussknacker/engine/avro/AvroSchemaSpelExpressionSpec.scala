@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Standard
 
+import java.time.{Instant, LocalDate, LocalTime, ZonedDateTime}
 import scala.reflect.runtime.universe._
 
 class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
@@ -184,6 +185,22 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
     parse[String]("#input.stringField", ctx) should be('valid)
     parse[String]("#input.enumField", ctx) should be('valid)
     parse[AnyRef]("#input.mapField", ctx).map(_.returnType) shouldBe Valid(Typed.fromDetailedType[java.util.Map[String, String]])
+
+  }
+
+  it("should recognize date types") {
+    val schema = wrapWithRecordSchema(
+      """[
+        |  { "name": "date", "type": { "type": "int", "logicalType": "date" } },
+        |  { "name": "timeMillis", "type": { "type": "int", "logicalType": "time-millis" } },
+        |  { "name": "timestampMillis", "type": { "type": "long", "logicalType": "timestamp-millis" } }
+        |]""".stripMargin)
+
+    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).toOption.get
+
+    parse[AnyRef]("#input.date", ctx).map(_.returnType) shouldBe Valid(Typed[LocalDate])
+    parse[AnyRef]("#input.timeMillis", ctx).map(_.returnType) shouldBe Valid(Typed[LocalTime])
+    parse[AnyRef]("#input.timestampMillis", ctx).map(_.returnType) shouldBe Valid(Typed[Instant])
 
   }
 
