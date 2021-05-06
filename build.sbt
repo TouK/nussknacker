@@ -718,18 +718,7 @@ lazy val util = (project in engine("util")).
         "org.apache.avro" % "avro" % avroV % Optional
       )
     }
-  ).
-  enablePlugins(BuildInfoPlugin).
-  settings(
-    buildInfoKeys := Seq[BuildInfoKey](name, version),
-    buildInfoKeys ++= Seq[BuildInfoKey](
-      "buildTime" -> java.time.LocalDateTime.now().toString,
-      "gitCommit" -> git.gitHeadCommit.value.getOrElse("")
-    ),
-    buildInfoPackage := "pl.touk.nussknacker.engine.version",
-    buildInfoOptions ++= Seq(BuildInfoOption.ToMap)
-  )
-  .dependsOn(api, testUtil % "test")
+  ).dependsOn(api, testUtil % "test")
 
 lazy val testUtil = (project in engine("test-util")).
   settings(commonSettings).
@@ -815,6 +804,16 @@ lazy val standaloneApi = (project in engine("standalone/api")).
 
 lazy val api = (project in engine("api")).
   settings(commonSettings).
+  enablePlugins(BuildInfoPlugin).
+  settings(
+    buildInfoKeys := Seq[BuildInfoKey](name, version),
+    buildInfoKeys ++= Seq[BuildInfoKey](
+      "buildTime" -> java.time.LocalDateTime.now().toString,
+      "gitCommit" -> git.gitHeadCommit.value.getOrElse("")
+    ),
+    buildInfoPackage := "pl.touk.nussknacker.engine.version",
+    buildInfoOptions ++= Seq(BuildInfoOption.ToMap)
+  ).
   settings(
     name := "nussknacker-api",
     libraryDependencies ++= {

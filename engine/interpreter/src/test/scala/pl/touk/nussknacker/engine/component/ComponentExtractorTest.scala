@@ -19,15 +19,15 @@ class ComponentExtractorTest extends FunSuite with Matchers {
   private val loader = new DefaultModelConfigLoader
 
   test("should discover services") {
-    val components = extractComponents[Service]("components.dynamicTest.config.valueCount" -> 7)
+    val components = extractComponents[Service]("components.dynamicTest.valueCount" -> 7)
     components shouldBe (1 to 7).map(i => s"component-v$i" -> WithCategories(DynamicService(s"v$i"))).toMap
   }
 
   test("should handle multiple providers") {
     val components = extractComponents[Service](
       "components" -> Map(
-        "dynamic1" -> Map("providerType" -> "dynamicTest", "config.valueCount" -> 2),
-        "dynamic2" -> Map("providerType" -> "dynamicTest", "componentPrefix" -> "t1-", "config.valueCount" -> 3)
+        "dynamic1" -> Map("providerType" -> "dynamicTest", "valueCount" -> 2),
+        "dynamic2" -> Map("providerType" -> "dynamicTest", "componentPrefix" -> "t1-", "valueCount" -> 3)
     ))
 
     components shouldBe ((1 to 2).map(i => s"component-v$i" -> WithCategories(DynamicService(s"v$i"))) ++
@@ -38,8 +38,8 @@ class ComponentExtractorTest extends FunSuite with Matchers {
     intercept[IllegalArgumentException] {
       extractComponents[Service](
         "components" -> Map(
-          "dynamic1" -> Map("providerType" -> "dynamicTest", "config.valueCount" -> 2),
-          "dynamic2" -> Map("providerType" -> "dynamicTest", "config.valueCount" -> 3)
+          "dynamic1" -> Map("providerType" -> "dynamicTest", "valueCount" -> 2),
+          "dynamic2" -> Map("providerType" -> "dynamicTest", "valueCount" -> 3)
         ))
     }.getMessage should include("component-v1, component-v2")
   }
@@ -48,14 +48,14 @@ class ComponentExtractorTest extends FunSuite with Matchers {
     val components = extractComponents[Service](
       "components" -> Map(
         "dynamic1" -> Map("providerType" -> "dynamicTest", "disabled" -> true),
-        "dynamic2" -> Map("providerType" -> "dynamicTest", "componentPrefix" -> "t1-", "config.valueCount" -> 1)
+        "dynamic2" -> Map("providerType" -> "dynamicTest", "componentPrefix" -> "t1-", "valueCount" -> 1)
     ))
     components shouldBe Map("t1-component-v1" -> WithCategories(DynamicService("v1")))
   }
 
   test("should skip incompatible providers") {
     intercept[IllegalArgumentException] {
-      extractComponents[Service](Map("components.dynamicTest.config.valueCount" -> 7),
+      extractComponents[Service](Map("components.dynamicTest.valueCount" -> 7),
         (cl:ClassLoader) => ComponentExtractor(cl, NussknackerVersion(new Semver("1.2.3"))))
     }.getMessage should include("is not compatible with NussknackerVersion(1.2.3)")
   }
