@@ -26,8 +26,7 @@ import ErrorHandler from "./ErrorHandler"
 import {ProcessTabs} from "./ProcessTabs"
 import {getFeatureSettings} from "../reducers/selectors/settings"
 import {CustomTab, CustomTabPath} from "./CustomTab"
-import {withTranslation} from "react-i18next"
-import {WithTranslation} from "react-i18next/src"
+import {WithTranslation, withTranslation} from "react-i18next"
 import {compose} from "redux"
 import {UnregisterCallback} from "history"
 import ProcessBackButton from "../components/Process/ProcessBackButton"
@@ -120,10 +119,10 @@ export class NussknackerApp extends React.Component<Props, State> {
                 <ErrorHandler>
                   <TransitionRouteSwitch>
                     <Route
-                path={[ProcessesTabData.path, SubProcessesTabData.path, ArchiveTabData.path]}
-                component={ProcessTabs}
-                exact
-              />
+                      path={[ProcessesTabData.path, SubProcessesTabData.path, ArchiveTabData.path]}
+                      component={ProcessTabs}
+                      exact
+                    />
                     <Route path={Visualization.path} component={Visualization} exact/>
                     <Route path={Metrics.path} component={Metrics} exact/>
                     <Route path={Signals.path} component={Signals} exact/>

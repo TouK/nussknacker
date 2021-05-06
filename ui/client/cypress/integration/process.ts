@@ -51,10 +51,14 @@ describe("Process", () => {
 
       cy.intercept("POST", "/api/processes/import/*").as("import")
       cy.fixture("testProcess").then(json => {
-        cy.get("@processName").then(id => cy.get("[title=import]")
+        cy.get("@processName").then(name => cy.get("[title=import]")
           .next("[type=file]")
           .should("exist")
-          .attachFile({fileContent: jsonToBlob({...json, metaData: {...json.metaData, id}})}))
+          .attachFile({
+            fileName: "process",
+            encoding: "utf-8",
+            fileContent: jsonToBlob({...json, metaData: {...json.metaData, id: name}}),
+          }))
       })
       cy.wait("@import").its("response.statusCode").should("eq", 200)
 

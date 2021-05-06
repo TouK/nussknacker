@@ -16,7 +16,9 @@ export function FillCheck({children, onChange}: PropsWithChildren<Props>): JSX.E
   const availableHeight = wrapper.height
   const currentHeight = child.height
 
-  const [callback] = useDebouncedCallback((freeSpace, currentHeight) => onChange(freeSpace, currentHeight), 25)
+  const [callback] = useDebouncedCallback<[freeSpace: number, currentHeight: number]>(
+    (freeSpace, currentHeight) => onChange(freeSpace, currentHeight), 25,
+  )
 
   useLayoutEffect(() => {
     if (availableHeight && currentHeight) {

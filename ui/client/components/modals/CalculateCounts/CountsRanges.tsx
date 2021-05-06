@@ -77,7 +77,7 @@ const rangesStyle: CSSProperties = {
 }
 
 export function CountsRanges({label, onChange}: RangesProps): JSX.Element {
-  const {t} = useTranslation()
+  const {t} = useTranslation<string>()
   const processId = useSelector(getProcessId)
   const deploys = useDeployHistory(processId)
   const ranges = useMemo(() => [...predefinedRanges(t), ...deploys], [t, deploys])

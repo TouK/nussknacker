@@ -5,7 +5,6 @@
     "node": true,
     "jasmine": true
   },
-  "parser": "babel-eslint",
   "extends": [
     "plugin:import/errors",
     "plugin:import/warnings",
@@ -20,12 +19,16 @@
     "_": "readonly"
     // TODO: remove lodash from global, fix imports
   },
+  "parser": "@babel/eslint-parser",
   "parserOptions": {
     "ecmaFeatures": {
       "jsx": true
     },
     "ecmaVersion": 2018,
-    "sourceType": "module"
+    "sourceType": "module",
+    "babelOptions": {
+      "configFile": "./.babelrc"
+    }
   },
   "plugins": [
     "@typescript-eslint",
