@@ -21,7 +21,6 @@ export type GraphState = {
   nodeToDisplay?: NodeType | GroupType,
   nodeToDisplayReadonly?: boolean,
   selectionState?: string[],
-  groupingState?: NodeId[],
   history: GraphHistory,
   layout: Layout,
   testCapabilities?: $TodoType,

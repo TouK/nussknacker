@@ -33,7 +33,7 @@ class NodeUtils {
   }
 
   isPlainNode = (node: UINodeType) => {
-    return !_.isEmpty(node) && !this.nodeIsProperties(node)
+    return !_.isEmpty(node) && !this.nodeIsProperties(node) && !this.nodeIsGroup(node)
   }
 
   nodeIsGroup = (node: UINodeType): node is GroupType => {
@@ -51,7 +51,7 @@ class NodeUtils {
       nodes = nodes.filter(node => !group.nodes.includes(node.id))
       nodes = nodes.concat([this.createGroupNode(process.nodes, group)])
     })
-    return nodes
+    return nodes || []
   }
 
   createGroupNode = (nodes: NodeType[], group: GroupType): GroupNodeType => {
@@ -76,8 +76,10 @@ class NodeUtils {
         to: _.includes(group.nodes, edge.to) ? id : edge.to,
       })).filter(a => !_.eq(a.from, a.to))
     })
-    return edges
+    return edges || []
   }
+
+  getProcessProperties = ({id, properties}: Process, name?: string) => ({id: name || id, ...properties})
 
   getNodeById = (nodeId: NodeId, process: Process) => this.nodesFromProcess(process).find(n => n.id === nodeId)
 

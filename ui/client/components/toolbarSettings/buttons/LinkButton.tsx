@@ -1,7 +1,7 @@
 import React, {PropsWithChildren, useEffect, useState} from "react"
 import {useDispatch, useSelector} from "react-redux"
 import {reportEvent} from "../../../actions/nk"
-import {ReactComponent as FallbackIcon} from "../../../assets/img/toolbarButtons/properties.svg"
+import {ReactComponent as FallbackIcon} from "../../../assets/img/toolbarButtons/link.svg"
 import * as LoaderUtils from "../../../common/LoaderUtils"
 import {absoluteBePath} from "../../../common/UrlUtils"
 import {PlainStyleLink} from "../../../containers/plainStyleLink"

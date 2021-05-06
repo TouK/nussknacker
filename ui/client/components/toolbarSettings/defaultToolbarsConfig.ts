@@ -25,6 +25,7 @@ export const defaultToolbarsConfig: WithId<ToolbarsConfig> = {
     },
     {
       id: "VIEW-PANEL",
+      title: "view",
       buttons: [
         {type: BuiltinButtonTypes.viewBussinesView},
         {type: BuiltinButtonTypes.viewZoomIn},
@@ -34,6 +35,7 @@ export const defaultToolbarsConfig: WithId<ToolbarsConfig> = {
     },
     {
       id: "EDIT-PANEL",
+      title: "edit",
       buttonsVariant: ButtonsVariant.small,
       buttons: [
         {type: BuiltinButtonTypes.editUndo},
@@ -46,6 +48,7 @@ export const defaultToolbarsConfig: WithId<ToolbarsConfig> = {
     },
     {
       id: "PROCESS-PANELS",
+      title: "process",
       buttons: [
         {type: BuiltinButtonTypes.editProperties},
         {type: BuiltinButtonTypes.processCompare},
@@ -58,6 +61,7 @@ export const defaultToolbarsConfig: WithId<ToolbarsConfig> = {
     },
     {
       id: "TEST-PANEL",
+      title: "test",
       buttons: [
         {type: BuiltinButtonTypes.testFromFile},
         {type: BuiltinButtonTypes.testGenerate},
@@ -67,11 +71,10 @@ export const defaultToolbarsConfig: WithId<ToolbarsConfig> = {
     },
     {
       id: "GROUP-PANEL",
+      title: "group",
       buttons: [
-        {type: BuiltinButtonTypes.groupStart},
-        {type: BuiltinButtonTypes.groupFinish},
-        {type: BuiltinButtonTypes.groupCancel},
-        {type: BuiltinButtonTypes.groupUngroup},
+        {type: BuiltinButtonTypes.group},
+        {type: BuiltinButtonTypes.ungroup},
       ],
     },
     {id: "DETAILS-PANEL"},

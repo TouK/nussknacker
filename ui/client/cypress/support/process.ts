@@ -21,17 +21,17 @@ function createTestProcessName(name?: string) {
   return cy.wrap(`${Cypress.env("processNamePrefix")}-${Date.now()}-${name}-test-process`)
 }
 
-function createTestProcess(name?: string, fixture?: string) {
+function createTestProcess(name?: string, fixture?: string, category = "Category1") {
   return cy.createTestProcessName(name).then(processName => {
-    const url = `/api/processes/${processName}/Category1`
+    const url = `/api/processes/${processName}/${category}`
     cy.request({method: "POST", url}).its("status").should("equal", 201)
     return fixture ? cy.importTestProcess(processName, fixture) : cy.wrap(processName)
   })
 }
 
-function visitNewProcess(name?: string, fixture?: string) {
+function visitNewProcess(name?: string, fixture?: string, category?: string) {
   cy.intercept("GET", "/api/processes/*").as("fetch")
-  return cy.createTestProcess(name, fixture).then(processName => {
+  return cy.createTestProcess(name, fixture, category).then(processName => {
     cy.visit(`/visualization/${processName}?businessView=false`)
     cy.wait("@fetch").its("response.statusCode").should("eq", 200)
     return cy.wrap(processName)

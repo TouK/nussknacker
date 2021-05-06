@@ -32,6 +32,18 @@ describe("Process", () => {
       cy.location("href").should("contain", "-renamed")
     })
 
+    it("should open properites from tips panel", () => {
+      cy.viewport("macbook-15")
+      cy.contains(/^properties/i).should("be.enabled").click()
+      cy.get("[data-testid=node-modal]").should("be.visible").find("input").within(inputs => {
+        cy.wrap(inputs).first().click().type("-renamed")
+        cy.wrap(inputs).eq(6).click().type("wrong data")
+      })
+      cy.contains(/^apply/i).should("be.enabled").click()
+      cy.contains(/^tips.*errors in/i).contains(/^properties/i).should("be.visible").click()
+      cy.get("[data-testid=node-modal]").toMatchImageSnapshot()
+    })
+
     it("should import JSON and save", () => {
       cy.intercept("PUT", "/api/processes/*").as("save")
       cy.contains(/is not deployed/i).should("be.visible")

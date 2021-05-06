@@ -4,6 +4,7 @@ import {ToolbarButton} from "./buttons"
 
 export interface ToolbarConfig {
   id: string,
+  title?: string,
   buttons?: ToolbarButton[],
   buttonsVariant?: ButtonsVariant,
 }

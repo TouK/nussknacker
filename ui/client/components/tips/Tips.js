@@ -16,7 +16,6 @@ export class Tips extends Component {
 
   static propTypes = {
     currentProcess: PropTypes.object,
-    grouping: PropTypes.bool.isRequired,
     isHighlighted: PropTypes.bool,
     testing: PropTypes.bool.isRequired,
   }
@@ -27,7 +26,7 @@ export class Tips extends Component {
   }
 
   render() {
-    const {currentProcess, grouping, testing} = this.props
+    const {currentProcess, testing} = this.props
     const errors = (currentProcess.validationResult || {}).errors
     const warnings = (currentProcess.validationResult || {}).warnings
 
@@ -40,7 +39,6 @@ export class Tips extends Component {
               hideTracksWhenNotNeeded={true}
             >
               {<ValidTips
-                grouping={grouping}
                 testing={testing}
                 hasNeitherErrorsNorWarnings={ProcessUtils.hasNeitherErrorsNorWarnings(currentProcess)}
               />}
@@ -69,7 +67,6 @@ export class Tips extends Component {
 function mapState(state) {
   return {
     currentProcess: state.graphReducer.processToDisplay || {},
-    grouping: state.graphReducer.groupingState != null,
     isHighlighted: state.ui.isToolTipsHighlighted,
     testing: !!state.graphReducer.testResults,
   }

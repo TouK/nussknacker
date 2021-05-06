@@ -150,22 +150,11 @@ describe("Reducer suite", () => {
   it("Should be able to add new group", () => {
     const result = reduceAll([
       {
-        type: "START_GROUPING",
+        type: "RESET_SELECTION",
+        nodeIds: ["paramService", "sendSms"]
       },
       {
-        type: "DISPLAY_NODE_DETAILS",
-        nodeToDisplay: {
-          id: "paramService",
-        },
-      },
-      {
-        type: "DISPLAY_NODE_DETAILS",
-        nodeToDisplay: {
-          id: "sendSms",
-        },
-      },
-      {
-        type: "FINISH_GROUPING",
+        type: "GROUP",
       },
     ])
 

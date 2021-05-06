@@ -15,6 +15,7 @@ import {
   updateAfterNodeIdChange,
   updateAfterNodeDelete,
   removeSubprocessVersionForLastSubprocess,
+  canGroupSelection,
   createEdge,
   adjustBranchParametersAfterDisconnect,
   enrichNodeWithProcessDependentData,
@@ -30,7 +31,6 @@ const emptyGraphState: GraphState = {
   edgeToDisplay: {},
   layout: [],
   testCapabilities: {},
-  groupingState: null,
   selectionState: [],
   processCounts: {},
   testResults: null,
@@ -43,8 +43,6 @@ const emptyGraphState: GraphState = {
   },
   unsavedNewName: null,
 }
-
-const STATE_PROPERTY_NAME = "groupingState"
 
 const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
   switch (action.type) {
@@ -279,32 +277,22 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         processCounts: null,
       }
     }
-    case "START_GROUPING": {
-      return {
-        ...state,
-        groupingState: [],
-        nodeToDisplay: state.processToDisplay.properties,
-      }
-    }
-    case "FINISH_GROUPING": {
-      const withUpdatedGroups = state.groupingState.length > 1 ?
+    case "GROUP": {
+      return canGroupSelection(state) ?
         {
           ...state,
-          processToDisplay: NodeUtils.createGroup(state.processToDisplay, state.groupingState),
+          processToDisplay: NodeUtils.createGroup(state.processToDisplay, state.selectionState),
           layout: [],
+          selectionState: [],
         } :
         state
-      return omit(withUpdatedGroups, STATE_PROPERTY_NAME)
-    }
-    case "CANCEL_GROUPING": {
-      return omit(state, STATE_PROPERTY_NAME)
     }
     case "UNGROUP": {
       return {
         ...state,
         processToDisplay: NodeUtils.ungroup(state.processToDisplay, action.groupToRemove),
-        layout: [],
         nodeToDisplay: state.processToDisplay.properties,
+        selectionState: [],
       }
     }
     case "EXPAND_GROUP":

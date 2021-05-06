@@ -1,4 +1,4 @@
-const NAME = "processNodes"
+const NAME = "processSelection"
 
 describe("Process", () => {
   before(() => {

@@ -1,13 +1,13 @@
 import React from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
-import {ungroupSelected} from "../../../../actions/nk"
-import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/ungroup.svg"
-import {getSelectedGroups} from "../../../../reducers/graph/utils"
+import {groupSelected} from "../../../../actions/nk"
+import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/group-finish.svg"
+import {canGroupSelection} from "../../../../reducers/graph/utils"
 import {getGraph} from "../../../../reducers/selectors/graph"
 import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 
-export function UngroupButton(): JSX.Element {
+export function GroupButton(): JSX.Element {
   const graph = useSelector(getGraph)
   const {t} = useTranslation()
   const dispatch = useDispatch()
@@ -15,10 +15,10 @@ export function UngroupButton(): JSX.Element {
   return (
     <CapabilitiesToolbarButton
       write
-      name={t("panels.actions.ungroup-selected.button", "ungroup")}
+      name={t("panels.actions.group-selected.button", "group")}
       icon={<Icon/>}
-      disabled={!getSelectedGroups(graph).length}
-      onClick={() => dispatch(ungroupSelected())}
+      disabled={!canGroupSelection(graph)}
+      onClick={() => dispatch(groupSelected())}
     />
   )
 }
