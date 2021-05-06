@@ -51,8 +51,6 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
       val collector = testRunId.map(new TestServiceInvocationCollector(_)).getOrElse(ProductionServiceInvocationCollector)
 
       val processCompilation = compileProcess(process, processVersion, deploymentData, collector)
-      val userClassLoader = UserClassLoader.get("root")
-      //here we are sure the classloader is ok
       val processWithDeps = processCompilation(userClassLoader)
       streamExecutionEnvPreparer.preRegistration(env, processWithDeps)
       val typeInformationDetection = TypeInformationDetectionUtils.forExecutionConfig(env.getConfig, userClassLoader)
