@@ -12,3 +12,4 @@ updates:
     labels:
       - "ui"
       - "dependencies"
+    open-pull-requests-limit: 20
