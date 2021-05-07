@@ -1,14 +1,13 @@
 package pl.touk.nussknacker.engine.avro.schema
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import org.apache.avro.generic.{GenericData, GenericDatumWriter, GenericRecord}
+import org.apache.avro.generic.{GenericDatumWriter, GenericRecord}
 import org.apache.avro.io.{DecoderFactory, EncoderFactory}
 import org.apache.avro.Schema
 import org.apache.avro.util.Utf8
 import org.apache.flink.formats.avro.typeutils.LogicalTypesGenericRecordBuilder
 import org.scalatest.{EitherValues, FunSpec, Matchers}
 import pl.touk.nussknacker.engine.avro.{AvroStringSettingsInTests, AvroUtils}
-
 
 class StringForcingDatumReaderSpec extends FunSpec with Matchers with EitherValues {
 
@@ -21,12 +20,12 @@ class StringForcingDatumReaderSpec extends FunSpec with Matchers with EitherValu
     builder.set("foo", "bar")
     val givenRecord = builder.build()
 
-    val readRecord = roundTripWriteRead(givenRecord)
-    readRecord.get("foo") shouldBe a[Utf8]
-
-    val readWhenStringForced = AvroStringSettingsInTests.whenEnabled {
-      roundTripWriteRead(readRecord)
+    val readRecordWithUtf = AvroStringSettingsInTests.withStringEnabled(setting = false) {
+      roundTripWriteRead(givenRecord)
     }
+    readRecordWithUtf.get("foo") shouldBe a[Utf8]
+
+    val readWhenStringForced = roundTripWriteRead(readRecordWithUtf)
     readWhenStringForced.get("foo") shouldBe a[String]
     readWhenStringForced shouldEqual givenRecord
   }
@@ -37,12 +36,12 @@ class StringForcingDatumReaderSpec extends FunSpec with Matchers with EitherValu
         |  { "name": "foo", "type": "string", "default": "bar" }
         |]""".stripMargin)
 
-    val record1 = AvroStringSettingsInTests.whenEnabled {
-      new LogicalTypesGenericRecordBuilder(schema).build()
-    }
+    val record1 = new LogicalTypesGenericRecordBuilder(schema).build()
     record1.get("foo") shouldBe a[String]
 
-    val record2 = new LogicalTypesGenericRecordBuilder(schema).build()
+    val record2 = AvroStringSettingsInTests.withStringEnabled(setting = false) {
+      new LogicalTypesGenericRecordBuilder(schema).build()
+    }
     record2.get("foo") shouldBe a[Utf8]
   }
 

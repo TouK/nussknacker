@@ -102,9 +102,9 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
       createSink(generatedAvroTopic, ExistingSchemaVersion(generatedNewSchemaVersion), valueParam, ValidationMode.strict)
     }
     ex.getMessage shouldEqual "Provided value does not match selected Avro schema - errors:\nNone of the following types:\n" +
-      " - {text: CharSequence, dateTime: Instant, date: LocalDate, time: LocalTime, decimal: BigDecimal}\n" +
+      " - {text: String, dateTime: Instant, date: LocalDate, time: LocalTime, decimal: BigDecimal}\n" +
       "can be a subclass of any of:\n" +
-      " - {text2: CharSequence}"
+      " - {text2: String}"
   }
 
   test("should validate specific version") {
@@ -161,7 +161,7 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
       SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
 
     result.errors shouldBe CustomNodeError("id",
-      "Provided value does not match selected Avro schema - errors:\nNone of the following types:\n - String\ncan be a subclass of any of:\n - {id: CharSequence, amount: Double, currency: EnumSymbol | CharSequence, company: {name: CharSequence, address: {street: CharSequence, city: CharSequence} | {street: CharSequence, city: CharSequence}} | {name: CharSequence, address: {street: CharSequence, city: CharSequence} | {street: CharSequence, city: CharSequence}}, products: List[{id: CharSequence, name: CharSequence, price: Double} | {id: CharSequence, name: CharSequence, price: Double}], vat: Integer}",
+      "Provided value does not match selected Avro schema - errors:\nNone of the following types:\n - String\ncan be a subclass of any of:\n - {id: String, amount: Double, currency: EnumSymbol | String, company: {name: String, address: {street: String, city: String} | {street: String, city: String}} | {name: String, address: {street: String, city: String} | {street: String, city: String}}, products: List[{id: String, name: String, price: Double} | {id: String, name: String, price: Double}], vat: Integer}",
       Some(SinkValueParamName)) :: Nil
   }
 

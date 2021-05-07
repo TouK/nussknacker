@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResu
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData, VariableConstants}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, TopicParamName}
 import pl.touk.nussknacker.engine.avro.helpers.KafkaAvroSpecMixin
-import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2}
+import pl.touk.nussknacker.engine.avro.schema.{AvroStringSettings, FullNameV1, FullNameV2}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client._
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.ConfluentAvroSerializationSchemaFactory
@@ -138,9 +138,9 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     result.errors shouldBe Nil
     result.outputContext shouldBe ValidationContext(Map(VariableConstants.InputVariableName -> TypedObjectTypingResult(
       ListMap(
-        "first" -> Typed[CharSequence],
-        "middle" -> Typed[CharSequence],
-        "last" -> Typed[CharSequence]
+        "first" -> AvroStringSettings.stringTypingResult,
+        "middle" -> AvroStringSettings.stringTypingResult,
+        "last" -> AvroStringSettings.stringTypingResult
       ), Typed.typedClass[GenericRecord]
     )))
   }

@@ -16,10 +16,10 @@ To see biggest differences please consult the [changelog](Changelog.md).
   providing better `TypeInformation` for aggregated values
 * [#1343](https://github.com/TouK/nussknacker/pull/1343) `FirstAggregator` changed serialized state, it is not compatible, 
   ```Aggregator``` trait has new method ```computeStoredType``` 
-* [#1352](https://github.com/TouK/nussknacker/pull/1352) AvroStringSettings class has been introduced, which allows control
+* [#1352](https://github.com/TouK/nussknacker/pull/1352) and [#1568](https://github.com/TouK/nussknacker/pull/1568) AvroStringSettings class has been introduced, which allows control
   whether Avro type ```string``` is represented by ```java.lang.String``` (also in runtime) or ```java.lang.CharSequence```
   (implemented in runtime by ```org.apache.avro.util.Utf8```). This setting is available through environment variable 
-  ```AVRO_USE_STRING_FOR_STRING_TYPE```. Please mind that this setting is global - it applies to all processes running on Flink
+  ```AVRO_USE_STRING_FOR_STRING_TYPE``` - default is `true`. Please mind that this setting is global - it applies to all processes running on Flink
   and also requires restarting TaskManager when changing the value.
 * [#1361](https://github.com/TouK/nussknacker/pull/1361) Lazy variables are removed, you should use standard enrichers for those cases.
   Their handling has been source of many problems and they made it harder to reason about the exeuction of process.   

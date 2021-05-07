@@ -171,16 +171,14 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
   }
 
   it("should recognize avro type string as String") {
-    AvroStringSettingsInTests.whenEnabled {
-      val schema = wrapWithRecordSchema(
-        """[
-          |  { "name": "stringField", "type": "string" }
-          |]""".stripMargin)
+    val schema = wrapWithRecordSchema(
+      """[
+        |  { "name": "stringField", "type": "string" }
+        |]""".stripMargin)
 
-      val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).toOption.get
+    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).toOption.get
 
-      parse[String]("#input.stringField", ctx) should be('valid)
-    }
+    parse[String]("#input.stringField", ctx) should be('valid)
   }
 
   private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, TypedExpression] = {
