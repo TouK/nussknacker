@@ -25,7 +25,8 @@
     "test:e2e:linux": "docker run -it -v $PWD:/client -w /client cypress/included:6.8.0 --config baseUrl=http://host.docker.internal:3000",
     "test:e2e:docker": "start-server-and-test start:backend-docker http-get://localhost:3000/static/main.html test:e2e:linux",
     "test:e2e:dev": "cypress open",
-    "coverage": "npx merge-cypress-jest-coverage"
+    "coverage": "npx merge-cypress-jest-coverage",
+    "commit": "lint-staged"
   },
   "dependencies": {
     "@babel/eslint-parser": "^7.13.14",
@@ -227,11 +228,6 @@
     "webpack": "^5.36.2",
     "webpack-cli": "^4.7.0",
     "webpack-dev-server": "^3.11.2"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
   },
   "@comment lint-staged": "We add svgo preprocessing as a pre-commit hook to avoid surprise that someone based on global style classes from svgo that won't be available anymore after preprocessing",
   "lint-staged": {
