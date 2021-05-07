@@ -177,7 +177,7 @@
     "cypress-file-upload": "^5.0.7",
     "cypress-plugin-snapshots": "^1.4.4",
     "emotion": "^10.0.27",
-    "emotion-theming": "^10.0.27",
+    "emotion-theming": "^11.0.0",
     "enzyme": "^3.9.0",
     "eslint": "^7.25.0",
     "eslint-plugin-i18next": "^5.1.1",
