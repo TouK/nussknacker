@@ -79,7 +79,7 @@
     "react-inspector": "^5.1.1",
     "react-json-tree": "^0.15.0",
     "react-ladda": "~6.0.0",
-    "react-markdown": "^5.0.3",
+    "react-markdown": "^6.0.2",
     "react-modal": "^3.13.1",
     "react-notification-system": "~0.4.0",
     "react-notification-system-redux": "^2.0.1",
