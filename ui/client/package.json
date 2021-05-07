@@ -157,7 +157,7 @@
     "@types/react-inspector": "^4.0.1",
     "@types/react-redux": "^7.1.16",
     "@types/react-router-dom": "^5.1.7",
-    "@types/react-select": "^3.1.2",
+    "@types/react-select": "^4.0.15",
     "@types/react-transition-group": "^4.4.1",
     "@types/reactable": "file:local-types/reactable",
     "@types/webpack-env": "^1.16.0",
