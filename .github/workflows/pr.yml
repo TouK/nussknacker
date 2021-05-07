@@ -180,7 +180,7 @@ jobs:
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
-          node-version: 14.11.0
+          node-version: 14
       - name: Test FE
         run: |
           cd ui/client
@@ -212,7 +212,7 @@ jobs:
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
-          node-version: 14.11.0
+          node-version: 14
       - name: Setup npm
         run: (cd ui/client; npm ci)
       - name: Cache ivy packages
@@ -264,7 +264,7 @@ jobs:
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
-          node-version: 14.11.0
+          node-version: 14
       - name: Setup npm
         run: (cd ui/client; npm ci)
       - name: Cache ivy packages
