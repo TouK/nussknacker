@@ -57,6 +57,7 @@ elif [[ $CODE == 400 ]]; then
   echo "Process has already exists in db."
 else
   echo "Process creation failed with $CODE"
+  docker logs nussknacker_app
   exit 1
 fi
 
@@ -65,6 +66,7 @@ if [[ $CODE == 200 ]]; then
   echo "Counts queried"
 else
   echo "Counts query failed with $CODE"
+  docker logs nussknacker_app
   exit 1
 fi
 

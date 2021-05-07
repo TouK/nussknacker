@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api
 
+import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -15,7 +16,7 @@ import scala.reflect.runtime.universe.TypeTag
 //TODO this could be scala-trait, but we leave it as abstract class for now for java compatibility
 //We should consider separate interfaces for java implementation, but right now we convert ProcessConfigCreator
 //from java to scala one and is seems difficult to convert java CustomStreamTransformer, Service etc. into scala ones
-abstract class CustomStreamTransformer {
+abstract class CustomStreamTransformer extends Component {
 
   /**
     * deprecated - use ContextTransformation.definedBy(Valid(_.clearVariables)) instead

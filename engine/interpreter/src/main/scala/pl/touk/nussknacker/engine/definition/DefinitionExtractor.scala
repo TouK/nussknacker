@@ -6,7 +6,7 @@ import java.lang.reflect.{InvocationTargetException, Method}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.MethodToInvoke
-import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransformation, OutputVariableNameValue, SingleInputGenericNodeTransformation, TypedNodeDependencyValue}
+import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransformation, OutputVariableNameValue, TypedNodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitMethodToInvoke}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
@@ -175,12 +175,13 @@ object DefinitionExtractor {
     import cats.syntax.semigroup._
 
     def forMap[T](objs: Map[String, WithCategories[_<:T]], methodExtractor: MethodDefinitionExtractor[T], externalConfig: Map[String, SingleNodeConfig]): Map[String, ObjectWithMethodDef] = {
-      objs.map {
-        case (id, obj) =>
-          val config = externalConfig.getOrElse(id, SingleNodeConfig.zero) |+| obj.nodeConfig
+      objs.map { case (id, obj) =>
+        val config = externalConfig.getOrElse(id, SingleNodeConfig.zero) |+| obj.nodeConfig
+        id -> (obj, config)
+      }.collect {
+        case (id, (obj, config)) if !config.disabled =>
           id -> new DefinitionExtractor(methodExtractor).extract(obj, config)
       }
-
     }
 
     def withEmptyConfig[T](obj: T, methodExtractor: MethodDefinitionExtractor[T]): ObjectWithMethodDef = {

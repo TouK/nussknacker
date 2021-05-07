@@ -278,7 +278,6 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
       val validator: Json = getParamValidator("optionalTypesService", "overriddenByFileConfigParam")
       val validatorForSimple: Json = getParamValidator("simpleTypesService", "booleanParam")
 
-      println(validatorForSimple)
       validator shouldBe Json.arr()
     }
   }

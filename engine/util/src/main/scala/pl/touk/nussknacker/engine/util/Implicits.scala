@@ -18,7 +18,7 @@ object Implicits {
 
   }
 
-  implicit class RichIterableMap[K,V](m: Map[K, Iterable[V]]) {
+  implicit class RichMapIterable[K,V](m: Map[K, Iterable[V]]) {
     def sequenceMap: Map[V, Iterable[K]] = {
       m.map { case (k, values) =>
         values.map(v => v -> k)
@@ -54,6 +54,16 @@ object Implicits {
   implicit class SafeString(s: String) {
     def safeValue: Option[String] = {
       if (s == null || s == "") None else Some(s)
+    }
+  }
+
+  implicit class RichIterableMap[T](list: Iterable[Map[String, T]]) {
+    def reduceUnique: Map[String, T] = list.foldLeft(Map.empty[String, T]) {
+      case (acc, element) =>
+        val duplicates = acc.keySet.intersect(element.keySet)
+        if (duplicates.isEmpty) {
+          acc ++ element
+        } else throw new IllegalArgumentException(s"Found duplicate keys: ${duplicates.mkString(", ")}, please correct configuration")
     }
   }
 

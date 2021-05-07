@@ -206,9 +206,39 @@ Configuration of processes has few common keys:
 If configuration does not contain `checkpointConfig`, `checkpointInterval` and process does not contain `checkpointInterval` in its properties then checkpoints are not enabled for process.
 
 The rest of model configuration depends on your needs - all the properties defined here will be passed to ```ProcessConfigCreator``` as explained in [API](API.md) documentation.
+                                                   
+###Configuration of component providers
 
-###Configuration of services
-In model configuration you can also define some attributes of services. These include:
+```
+  componentProviders {
+    sqlHsql {
+      providerType: sql
+      jdbcUrl: jdbc:hsql...//
+      admin/pass
+    }
+    sqlOracle {
+      providerType: sql
+      jdbcUrl: jdbc:oracle...//
+      admin/pass
+    }
+    prinzH20 {
+      providerType: prinzH20
+      h2oLocation:
+    }
+    prinzMlFlow {
+      //this is not needed, as configuration is named just as provider
+      //providerType: prinzMLFlow
+      mlFlowUrl:
+    }
+    //not needed in our domain
+    aggregation {
+      disabled: true
+    }
+  }
+```
+
+###Configuration of UI attributes of components
+In model configuration you can also define some UI attributes of components. These include:
 * default values of fields
 * icons
 

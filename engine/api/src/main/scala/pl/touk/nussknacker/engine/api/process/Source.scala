@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.process
 
+import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.test.TestDataParser
 
 /**
@@ -35,6 +36,6 @@ trait TestDataGenerator { self: Source[_] with SourceTestSupport[_] =>
   * IMPORTANT lifecycle notice:
   * Implementations of this class *must not* allocate resources (connections, file handles etc.)
   */
-trait SourceFactory[+T] extends Serializable {
+trait SourceFactory[+T] extends Serializable with Component {
   def clazz : Class[_]
 }

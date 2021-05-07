@@ -133,7 +133,8 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
           None,
           None,
           Some("types")
-        )
+        ),
+        "providedComponent-component-v1" -> SingleNodeConfig(None, None, Some("https://nussknacker.io/Configuration.html"), None)
       )
 
       val (relevant, other) = settings.partition { case (k, _) => underTest.keySet contains k }

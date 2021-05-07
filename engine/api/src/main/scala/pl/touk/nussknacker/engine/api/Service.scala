@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api
 
+import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
@@ -19,7 +20,7 @@ import scala.concurrent.{ExecutionContext, Future}
   * Implementations of this class *must not* allocate resources (connections, file handles etc.) unless open() *or* appropriate @MethodToInvoke
   *  is called
   */
-abstract class Service extends Lifecycle
+abstract class Service extends Lifecycle with Component
 
 
 /*

@@ -25,7 +25,7 @@ object WithCategories {
   * This contains not only urls or icons but also parameter restrictions, used in e.g. validation
   * TODO: maybe icon/docs/category should be somehow separated as they are UI related?
   */
-@JsonCodec case class SingleNodeConfig(params: Option[Map[String, ParameterConfig]], icon: Option[String], docsUrl: Option[String], category: Option[String]) {
+@JsonCodec case class SingleNodeConfig(params: Option[Map[String, ParameterConfig]], icon: Option[String], docsUrl: Option[String], category: Option[String], disabled: Boolean = false) {
   def paramConfig(name: String): ParameterConfig = params.flatMap(_.get(name)).getOrElse(ParameterConfig.empty)
 }
 
