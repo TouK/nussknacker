@@ -1,7 +1,6 @@
 import React from "react"
 import {SwitchTransition} from "react-transition-group"
-import {withTranslation} from "react-i18next"
-import {WithTranslation} from "react-i18next/src"
+import {WithTranslation, withTranslation} from "react-i18next"
 import {compose} from "redux"
 import {ProcessStateType, ProcessType} from "./types"
 import {absoluteBePath} from "../../common/UrlUtils"
@@ -68,14 +67,15 @@ class ProcessStateIcon extends React.Component<Props, State> {
     const overlay = (
       <Popover id="state-icon-popover" title={processName}>
         <strong>{tooltip}</strong>
-        { errors.length !== 0 ? (
-          <div>
-            <span>{t("stateIcon.errors", "Errors:")}</span>
-            <ul>
-              {errors.map((error, key) => <li key={key}>{error}</li>)}
-            </ul>
-          </div>
-        ) :
+        { errors.length !== 0 ?
+          (
+            <div>
+              <span>{t("stateIcon.errors", "Errors:")}</span>
+              <ul>
+                {errors.map((error, key) => <li key={key}>{error}</li>)}
+              </ul>
+            </div>
+          ) :
           null
         }
       </Popover>
@@ -113,13 +113,15 @@ class ProcessStateIcon extends React.Component<Props, State> {
       />
     )
 
-    return animation === true ? (
-      <SwitchTransition>
-        <CssFade key={transitionKey}>
-          { popover === true ? this.imageWithPopover(image, process.name, tooltip, errors) : image }
-        </CssFade>
-      </SwitchTransition>
-    ): image
+    return animation === true ?
+      (
+        <SwitchTransition>
+          <CssFade key={transitionKey}>
+            { popover === true ? this.imageWithPopover(image, process.name, tooltip, errors) : image }
+          </CssFade>
+        </SwitchTransition>
+      ) :
+      image
   }
 }
 

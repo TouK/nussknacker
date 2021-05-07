@@ -54,7 +54,7 @@ export function DatepickerEditor(props: DatepickerEditorProps) {
 
   const {expression} = expressionObj
   const [value, setValue] = useState<string | moment.Moment>(decode(expression) == null ? null : decode(expression))
-  const [onChange] = useDebouncedCallback(
+  const [onChange] = useDebouncedCallback<[value: string | moment.Moment]>(
     value => {
       const encoded = encode(value)
       onValueChange(encoded)
