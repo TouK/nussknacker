@@ -27,7 +27,7 @@ class AvroSinkValueParameterTest extends FunSuite with Matchers {
 
     val result =  AvroSinkValueParameter(recordSchema).valueOr(e => fail(e.toString)).asInstanceOf[AvroSinkRecordParameter]
     result.toParameters.toSet shouldBe Set(
-      Parameter(name = "a", typ = typing.Typed[CharSequence]).copy(isLazyParameter = true),
+      Parameter(name = "a", typ = typing.Typed[String]).copy(isLazyParameter = true, editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))),
       Parameter(name = "b.c", typ = typing.Typed[Long]).copy(isLazyParameter = true)
     )
   }

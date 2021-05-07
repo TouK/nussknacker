@@ -36,11 +36,11 @@ class AvroSchemaTypeDefinitionExtractor(skipOptionalFields: Boolean) {
         Typed(possibleTypes.map(pt => TypedObjectTypingResult(fields, pt)))
       }
       case Schema.Type.ENUM =>  //It's should by Union, because output can store map with string for ENUM
-        Typed(Set(Typed.typedClass[EnumSymbol], Typed.typedClass[CharSequence]))
+        Typed(Set(Typed.typedClass[EnumSymbol], AvroStringSettings.stringTypingResult))
       case Schema.Type.ARRAY =>
         Typed.genericTypeClass[java.util.List[_]](List(typeDefinition(schema.getElementType, possibleTypes)))
       case Schema.Type.MAP =>
-        Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[CharSequence], typeDefinition(schema.getValueType, possibleTypes)))
+        Typed.genericTypeClass[java.util.Map[_, _]](List(AvroStringSettings.stringTypingResult, typeDefinition(schema.getValueType, possibleTypes)))
       case Schema.Type.UNION =>
         val childTypeDefinitions = schema.getTypes.asScala.map(sch => typeDefinition(sch, possibleTypes)).toSet
         Typed(childTypeDefinitions)
@@ -51,10 +51,7 @@ class AvroSchemaTypeDefinitionExtractor(skipOptionalFields: Boolean) {
       case Schema.Type.BYTES | Schema.Type.FIXED if schema.getLogicalType != null && schema.getLogicalType.isInstanceOf[LogicalTypes.Decimal] =>
         Typed[java.math.BigDecimal]
       case Schema.Type.STRING =>
-        val baseType = {
-          if (AvroStringSettings.forceUsingStringForStringSchema) Typed.typedClass[String]
-          else Typed.typedClass[CharSequence]
-        }
+        val baseType = AvroStringSettings.stringTypingResult
         Option(schema.getProp(AvroSchemaTypeDefinitionExtractor.dictIdProperty)).map(Typed.taggedDictValue(baseType, _)).getOrElse(baseType)
       case Schema.Type.BYTES =>
         Typed[ByteBuffer]

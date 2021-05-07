@@ -363,15 +363,13 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
   }
 
   test("should represent avro string type as Java string") {
-    AvroStringSettingsInTests.whenEnabled {
-      val topicConfig = createAndRegisterTopicConfig("avro-string-type-test", paymentSchemas)
-      val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(2))
-      val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "#input", validationMode = Some(ValidationMode.allowRedundantAndOptional))
-      val filerParam = Some("#input.id.toLowerCase != 'we use here method that only String class has'")
-      val process = createAvroProcess(sourceParam, sinkParam, filerParam)
+    val topicConfig = createAndRegisterTopicConfig("avro-string-type-test", paymentSchemas)
+    val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(2))
+    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "#input", validationMode = Some(ValidationMode.allowRedundantAndOptional))
+    val filerParam = Some("#input.id.toLowerCase != 'we use here method that only String class has'")
+    val process = createAvroProcess(sourceParam, sinkParam, filerParam)
 
-      runAndVerifyResult(process, topicConfig, PaymentV1.record, PaymentV1.record)
-    }
+    runAndVerifyResult(process, topicConfig, PaymentV1.record, PaymentV1.record)
   }
 }
 

@@ -14,6 +14,7 @@ import org.apache.avro.generic.{GenericContainer, GenericData}
 import org.apache.avro.util.Utf8
 import org.apache.avro.{AvroRuntimeException, LogicalTypes, Schema}
 import org.apache.flink.formats.avro.typeutils.LogicalTypesGenericRecordBuilder
+import pl.touk.nussknacker.engine.avro.schema.AvroStringSettings.forceUsingStringForStringSchema
 import pl.touk.nussknacker.engine.avro.schema.{AvroSchemaEvolution, DefaultAvroSchemaEvolution}
 
 import scala.math.BigDecimal.RoundingMode
@@ -188,8 +189,8 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
 
   private def error(str: String): Invalid[NonEmptyList[String]] = Invalid(NonEmptyList.of(str))
 
-  private def encodeString(str: String): Utf8 = {
-    new Utf8(str)
+  private def encodeString(str: String): CharSequence = {
+    if (forceUsingStringForStringSchema) str else new Utf8(str)
   }
 
 }
