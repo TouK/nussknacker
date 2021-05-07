@@ -88,7 +88,7 @@
     "react-router": "~5.2.0",
     "react-router-dom": "~5.2.0",
     "react-select": "^3.2.0",
-    "react-switch": "^5.0.1",
+    "react-switch": "^6.0.0",
     "react-tabs": "^3.2.2",
     "react-textarea-autosize": "^7.1.2",
     "react-transition-group": "^4.4.1",
