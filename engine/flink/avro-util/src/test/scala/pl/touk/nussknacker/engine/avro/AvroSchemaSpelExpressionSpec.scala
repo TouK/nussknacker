@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.avro
 
+import cats.data.Validated.Valid
 import cats.data.ValidatedNel
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData.EnumSymbol
@@ -11,7 +12,7 @@ import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, TypedExpression}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedDict}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedDict}
 import pl.touk.nussknacker.engine.avro.schema.{PaymentV1, PaymentV2}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
@@ -173,12 +174,17 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
   it("should recognize avro type string as String") {
     val schema = wrapWithRecordSchema(
       """[
-        |  { "name": "stringField", "type": "string" }
+        |  { "name": "stringField", "type": "string" },
+        |  { "name": "mapField", "type": { "type": "map", "values": "string" } },
+        |  { "name": "enumField", "type": { "type": "enum", "name": "sampleEnum", "symbols": ["One", "Two"] } }
         |]""".stripMargin)
 
     val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).toOption.get
 
     parse[String]("#input.stringField", ctx) should be('valid)
+    parse[String]("#input.enumField", ctx) should be('valid)
+    parse[AnyRef]("#input.mapField", ctx).map(_.returnType) shouldBe Valid(Typed.fromDetailedType[java.util.Map[String, String]])
+
   }
 
   private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, TypedExpression] = {
