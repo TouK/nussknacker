@@ -31,7 +31,7 @@
   "dependencies": {
     "@babel/eslint-parser": "^7.13.14",
     "@juggle/resize-observer": "^3.3.1",
-    "@loadable/component": "^5.14.1",
+    "@loadable/component": "^5.15.0",
     "ajv": "^6.12.6",
     "axios": "^0.21.1",
     "bootstrap": "npm:bootstrap-styl@^5.0.9",
