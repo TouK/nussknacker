@@ -198,7 +198,7 @@
     "jest-mock": "^26.5.2",
     "less": "^4.1.1",
     "less-loader": "^8.1.1",
-    "lint-staged": "^10.5.4",
+    "lint-staged": "^11.0.0",
     "merge-cypress-jest-coverage": "^1.7.0",
     "moment-locales-webpack-plugin": "^1.2.0",
     "node-libs-browser": "^2.2.1",
