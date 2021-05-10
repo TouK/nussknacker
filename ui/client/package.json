@@ -218,7 +218,7 @@
     "stylus": "^0.54.8",
     "stylus-loader": "^5.0.0",
     "svg-transform-loader": "^2.0.13",
-    "svgo": "^1.3.2",
+    "svgo": "^2.3.0",
     "svgo-loader": "^3.0.0",
     "terser-webpack-plugin": "^5.1.1",
     "typescript": "^4.2.4",
