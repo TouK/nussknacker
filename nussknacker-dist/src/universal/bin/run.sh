@@ -48,11 +48,11 @@ cd $WORKING_DIR
 set -x
 if [[ "${RUN_IN_BACKGROUND}" == "true" ]]; then
   echo "Starting Nussknacker in background"
-  exec java $JDK_JAVA_OPTIONS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dconfig.file=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.ui.NussknackerApp >> $LOG_FILE 2>&1 &
+  exec java $JDK_JAVA_OPTIONS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dconfig.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.ui.NussknackerApp >> $LOG_FILE 2>&1 &
   echo $! > $PID_FILE
   echo "Nussknacker up and running"
 else
   echo "Starting Nussknacker"
-  exec java $JDK_JAVA_OPTIONS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dconfig.file=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.ui.NussknackerApp
+  exec java $JDK_JAVA_OPTIONS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dconfig.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.ui.NussknackerApp
 fi
 set +x

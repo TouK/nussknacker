@@ -14,6 +14,7 @@ import org.hsqldb.server.Server
 import pl.touk.nussknacker.engine.{ModelData, ProcessManagerProvider, ProcessingTypeData}
 import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
+import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
@@ -207,7 +208,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
   }
 }
 
-object NussknackerAppInitializer extends NussknackerAppInitializer(ConfigWithDefaults(ConfigFactory.load()))
+object NussknackerAppInitializer extends NussknackerAppInitializer(ConfigFactoryExt.load())
 
 class NussknackerAppInitializer(baseConfig: Config) extends LazyLogging {
 
@@ -310,5 +311,5 @@ class NussknackerAppInitializer(baseConfig: Config) extends LazyLogging {
 }
 
 object NussknackerApp extends App {
-  new NussknackerAppInitializer(ConfigFactory.load()).init(NusskanckerDefaultAppRouter)
+  new NussknackerAppInitializer(ConfigFactoryExt.load()).init(NusskanckerDefaultAppRouter)
 }

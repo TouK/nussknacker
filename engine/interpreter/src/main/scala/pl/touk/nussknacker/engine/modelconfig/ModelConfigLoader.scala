@@ -72,8 +72,8 @@ abstract class ModelConfigLoader extends Serializable {
     val configFallbackFromModel = ConfigFactory.parseResources(classLoader, modelConfigResource)
     inputConfig
       .withFallback(configFallbackFromModel)
-      //this is for reference.conf resources from model jar
-      .withFallback(ConfigFactory.load(classLoader))
+      //this is for reference.conf resources from model jar, we don't want to load application.conf etc.
+      .withFallback(ConfigFactory.load(classLoader, ConfigFactory.empty()))
       .resolve()
   }
 
