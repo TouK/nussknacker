@@ -165,6 +165,7 @@ object sampleTransformers {
   }
 
 
+  //Experimental component, API may change in the future
   object SessionWindowAggregateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
     @MethodToInvoke(returnType = classOf[AnyRef])

@@ -98,6 +98,7 @@ object transformers {
           }).setUid(ctx, explicitUidInStatefulOperators)
         }))
 
+  //Experimental component, API may change in the future
   def sessionWindowTransformer(keyBy: LazyParameter[CharSequence],
                                aggregateBy: LazyParameter[AnyRef],
                                aggregator: Aggregator,
