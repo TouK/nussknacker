@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
+import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetection, TypingResultAwareTypeInformationCustomisation, TypeInformationDetectionForTypingResult}
 import pl.touk.nussknacker.engine.api.{Context, InterpretationResult, ProcessVersion, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.{ConfigGlobalParameters, DefaultAdditionalInformationSerializer, NkGlobalParameters}
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.TypedScalaMapTypeInformation
@@ -70,7 +70,7 @@ class TypeInformationDetectionSpec extends FunSuite with Matchers {
 
 
 class CustomTypeInformationCustomisation extends TypingResultAwareTypeInformationCustomisation {
-  override def customise(originalDetection: TypingResultAwareTypeInformationDetection): PartialFunction[typing.TypingResult, TypeInformation[_]] = {
+  override def customise(originalDetection: TypeInformationDetectionForTypingResult): PartialFunction[typing.TypingResult, TypeInformation[_]] = {
     case Unknown => new NothingTypeInfo
   }
 }

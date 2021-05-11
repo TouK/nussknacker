@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.management.sample
 
 import java.time.LocalDateTime
+
 import com.typesafe.config.Config
 import io.circe.Encoder
 import org.apache.flink.api.common.serialization.SimpleStringSchema
@@ -20,7 +21,6 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransfo
 import pl.touk.nussknacker.engine.flink.util.transformer.outer.OuterJoinTransformer
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer, UnionWithMemoTransformer}
 import pl.touk.nussknacker.engine.kafka.{BasicFormatter, KafkaConfig}
-import pl.touk.nussknacker.engine.kafka.generic.sources.EspValueDeserializaitionSchemaFactory
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
@@ -34,6 +34,7 @@ import pl.touk.nussknacker.engine.management.sample.source._
 import pl.touk.nussknacker.engine.management.sample.transformer._
 import pl.touk.nussknacker.engine.util.LoggingListener
 import net.ceedubs.ficus.Ficus._
+import pl.touk.nussknacker.engine.kafka.consumerrecord.FixedValueDeserializaitionSchemaFactory
 
 object DevProcessConfigCreator {
   val oneElementValue = "One element"
@@ -75,7 +76,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
   override def listeners(processObjectDependencies: ProcessObjectDependencies) = List(LoggingListener)
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
-    "real-kafka" -> all(new KafkaSourceFactory[String, String](new EspValueDeserializaitionSchemaFactory(new SimpleStringSchema),
+    "real-kafka" -> all(new KafkaSourceFactory[String, String](new FixedValueDeserializaitionSchemaFactory(new SimpleStringSchema),
                                                         None,
                                                         BasicFormatter,
                                                         processObjectDependencies)),

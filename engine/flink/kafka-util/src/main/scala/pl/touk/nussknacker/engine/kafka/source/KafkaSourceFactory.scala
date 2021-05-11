@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, RecordFormatter}
 import org.apache.flink.types.Nothing
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition._
@@ -19,8 +20,9 @@ import scala.reflect.ClassTag
   * Base factory for Kafka sources with additional metadata variable.
   * It is based on [[pl.touk.nussknacker.engine.api.context.transformation.SingleInputGenericNodeTransformation]]
   * that allows custom ValidationContext and Context transformations, which are provided by [[pl.touk.nussknacker.engine.kafka.source.KafkaContextInitializer]]
- *
- * Wrapper for [[org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer]]
+  * Can be used for single- or multi- topic sources (as csv, see topicNameSeparator and extractTopics).
+  *
+  * Wrapper for [[org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer]]
   * Features:
   *   - fetch latest N records which can be later used to test process in UI
   * Fetching data is defined in [[pl.touk.nussknacker.engine.kafka.source.KafkaSource]] which
@@ -40,26 +42,39 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
                                                    processObjectDependencies: ProcessObjectDependencies)
   extends FlinkSourceFactory[ConsumerRecord[K, V]] with SingleInputGenericNodeTransformation[FlinkSource[ConsumerRecord[K, V]]] {
 
+  protected val topicNameSeparator = ","
+
   protected val customContextInitializer: KafkaContextInitializer[K, V, DefinedParameter, State] =
     new KafkaContextInitializer[K, V, DefinedParameter, State](Typed[K], Typed[V])
 
   override type State = Nothing
 
-  override def initialParameters: List[Parameter] = Parameter[String](KafkaSourceFactory.TopicParamName)
-    .copy(
-      editor = Some(DualParameterEditor(simpleEditor = StringParameterEditor, defaultMode = DualEditorMode.RAW)),
-      validators = List(MandatoryParameterValidator, NotBlankParameterValidator)
-    ) :: Nil
+  // initialParameters should not expose raised exceptions.
+  override def initialParameters: List[Parameter] =
+    try {
+      prepareInitialParameters
+    } catch {
+      case e: Exception => Nil
+    }
 
+  // contextTransformation should handle exceptions raised by prepareInitialParameters
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId)
   : NodeTransformationDefinition = {
-    case TransformationStep(Nil, _) => NextParameters(initialParameters)
+    case step@TransformationStep(Nil, _) => {
+      try {
+        NextParameters(prepareInitialParameters)
+      } catch {
+        case e: Exception =>
+          val finalErrors = List(CustomNodeError(e.getMessage, Some(KafkaSourceFactory.TopicParamName)))
+          FinalResults(customContextInitializer.validationContext(context, dependencies, step.parameters, step.state), finalErrors)
+      }
+    }
     case step@TransformationStep((KafkaSourceFactory.TopicParamName, _) :: Nil, None) =>
       FinalResults(customContextInitializer.validationContext(context, dependencies, step.parameters, step.state))
   }
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[Nothing]): FlinkSource[ConsumerRecord[K, V]] = {
-    val topics = List(params(KafkaSourceFactory.TopicParamName).asInstanceOf[String])
+    val topics = extractTopics(params)
     val preparedTopics = topics.map(KafkaUtils.prepareKafkaTopic(_, processObjectDependencies))
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
     KafkaUtils.validateTopicsExistence(preparedTopics, kafkaConfig)
@@ -67,6 +82,24 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
     new KafkaSource[ConsumerRecord[K, V]](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter) {
       override val contextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]] = customContextInitializer
     }
+  }
+
+  /**
+    * Basic implementation of definition of single topic parameter.
+    * In case of fetching topics from external repository: return list of topics or raise exception.
+    */
+  protected def prepareInitialParameters: List[Parameter] = Parameter[String](KafkaSourceFactory.TopicParamName)
+    .copy(
+      editor = Some(DualParameterEditor(simpleEditor = StringParameterEditor, defaultMode = DualEditorMode.RAW)),
+      validators = List(MandatoryParameterValidator, NotBlankParameterValidator)
+    ) :: Nil
+
+  /**
+    * Extracts topics from default topic parameter.
+    */
+  protected def extractTopics(params: Map[String, Any]): List[String] = {
+    val paramValue = params(KafkaSourceFactory.TopicParamName).asInstanceOf[String]
+    paramValue.split(topicNameSeparator).map(_.trim).toList
   }
 
   override def nodeDependencies: List[NodeDependency] = Nil

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.demo
 
 import java.time.Duration
+
 import com.typesafe.config.Config
 import io.circe.Json
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -19,7 +20,8 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestam
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer}
-import pl.touk.nussknacker.engine.kafka.generic.sources.{EspValueDeserializaitionSchemaFactory, JsonRecordFormatter}
+import pl.touk.nussknacker.engine.kafka.consumerrecord.FixedValueDeserializaitionSchemaFactory
+import pl.touk.nussknacker.engine.kafka.generic.sources.JsonRecordFormatter
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
@@ -71,7 +73,7 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
                                               timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[String, T]]],
                                               processObjectDependencies: ProcessObjectDependencies): FlinkSourceFactory[ConsumerRecord[String, T]] = {
     val schema = new EspDeserializationSchema[T](bytes => decode(bytes))
-    val schemaFactory = new EspValueDeserializaitionSchemaFactory(schema)
+    val schemaFactory = new FixedValueDeserializaitionSchemaFactory(schema)
     new KafkaSourceFactory[String, T](schemaFactory, timestampAssigner, JsonRecordFormatter, processObjectDependencies)(classTag[String], ClassTag(implicitly[TypeInformation[T]].getTypeClass))
   }
 

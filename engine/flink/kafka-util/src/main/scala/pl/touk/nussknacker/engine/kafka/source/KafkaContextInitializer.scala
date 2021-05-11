@@ -41,7 +41,7 @@ class KafkaContextInitializer[K, V, DefinedParameter <: BaseDefinedParameter, St
     new BasicContextInitializingFunction[ConsumerRecord[K, V]](processId, taskName) {
       override def map(input: ConsumerRecord[K, V]): Context = {
         val headers: java.util.Map[String, String] = ConsumerRecordUtils.toMap(input.headers).asJava
-        val inputMeta = InputMeta(input.key, input.topic, input.partition, input.offset, input.timestamp, headers)
+        val inputMeta = InputMeta(input.key, input.topic, input.partition, input.offset, input.timestamp, input.timestampType(), headers, input.leaderEpoch().orElse(null))
         newContext
           .withVariable(VariableConstants.InputVariableName, input.value)
           .withVariable(VariableConstants.InputMetaVariableName, inputMeta)

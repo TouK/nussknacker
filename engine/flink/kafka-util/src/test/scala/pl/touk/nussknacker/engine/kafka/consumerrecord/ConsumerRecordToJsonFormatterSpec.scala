@@ -1,12 +1,16 @@
 package pl.touk.nussknacker.engine.kafka.consumerrecord
 
+import java.util.Optional
+
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.apache.kafka.common.header.Headers
+import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{Assertion, BeforeAndAfterAll, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.SampleConsumerRecordSerializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactoryMixin._
 
-class ConsumerRecordToJsonFormatterSpec extends FunSuite with Matchers with KafkaSpec with BeforeAndAfterAll {
+class ConsumerRecordToJsonFormatterSpec extends FunSuite with Matchers with KafkaSpec with BeforeAndAfterAll  {
 
   private val topic = "dummyTopic"
   private lazy val kafkaConfig = KafkaConfig.parseConfig(config)
@@ -22,7 +26,7 @@ class ConsumerRecordToJsonFormatterSpec extends FunSuite with Matchers with Kafk
 
   private val sampleKey = SampleKey("one", 2)
   private val sampleValue = SampleValue("lorem", "ipsum")
-  private val sampleHeaders = ConsumerRecordUtils.toHeaders(Map("first" -> "not empty", "second" -> null))
+  private val sampleHeaders: Headers = ConsumerRecordUtils.toHeaders(Map("first" -> "not empty", "second" -> null))
 
   test("check sample serializer and deserializer") {
     val resultKeyBytes = sampleKeyJsonSerializer.serialize(topic, sampleKey)
@@ -36,7 +40,7 @@ class ConsumerRecordToJsonFormatterSpec extends FunSuite with Matchers with Kafk
   test("prepare and parse test data from ConsumerRecord with key, with headers") {
     val sampleKeyBytes = sampleKeyJsonSerializer.serialize(topic, sampleKey)
     val sampleValueBytes = sampleValueJsonSerializer.serialize(topic, sampleValue)
-    val givenObj = SerializableConsumerRecord.createConsumerRecord(topic, 11, 22L,100L, sampleKeyBytes, sampleValueBytes, sampleHeaders)
+    val givenObj = SerializableConsumerRecord.createConsumerRecord(topic, 11, 22L,100L, TimestampType.NO_TIMESTAMP_TYPE, sampleKeyBytes, sampleValueBytes, sampleHeaders, Optional.empty[Integer])
     val resultBytes = sampleKeyValueFormatter.prepareGeneratedTestData(List(givenObj))
     val resultObj = sampleKeyValueFormatter.parseDataForTest(topic, resultBytes).head
     checkResult(resultObj, givenObj)

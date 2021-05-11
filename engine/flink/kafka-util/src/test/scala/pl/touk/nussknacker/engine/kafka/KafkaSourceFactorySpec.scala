@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.kafka
 
+import java.util.Optional
+
 import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
@@ -45,13 +47,14 @@ class KafkaSourceFactorySpec extends FunSuite with Matchers with KafkaSpec with 
       0,
       0L,
       constTimestamp,
-      TimestampType.NO_TIMESTAMP_TYPE,
+      TimestampType.CREATE_TIME,
       ConsumerRecord.NULL_CHECKSUM.toLong,
       ConsumerRecord.NULL_SIZE,
       ConsumerRecord.NULL_SIZE,
       null,
       givenObj,
-      ConsumerRecordUtils.emptyHeaders
+      ConsumerRecordUtils.emptyHeaders,
+      Optional.of(0)
     )
     pushMessage(new SimpleSerializationSchema[Any](topic, String.valueOf), givenObj, topic, timestamp = constTimestamp)
     val result = readLastMessage(StringSourceFactory, topic).head.asInstanceOf[ConsumerRecord[String, String]]
@@ -66,9 +69,11 @@ class KafkaSourceFactorySpec extends FunSuite with Matchers with KafkaSpec with 
       0,
       0L,
       constTimestamp,
+      TimestampType.CREATE_TIME,
       null,
       givenObj,
-      ConsumerRecordUtils.emptyHeaders
+      ConsumerRecordUtils.emptyHeaders,
+      Optional.of(0)
     )
     pushMessage(new JsonSerializationSchema[SampleValue](topic).asInstanceOf[KafkaSerializationSchema[Any]], givenObj, topic, timestamp = constTimestamp)
     val result = readLastMessage(SampleEventSourceFactory, topic).head.asInstanceOf[ConsumerRecord[String, SampleValue]]
@@ -83,9 +88,11 @@ class KafkaSourceFactorySpec extends FunSuite with Matchers with KafkaSpec with 
       0,
       0L,
       constTimestamp,
+      TimestampType.CREATE_TIME,
       null,
       givenObj,
-      ConsumerRecordUtils.emptyHeaders
+      ConsumerRecordUtils.emptyHeaders,
+      Optional.of(0)
     )
     pushMessage(new JsonSerializationSchema[SampleValue](topic).asInstanceOf[KafkaSerializationSchema[Any]], givenObj, topic, timestamp = constTimestamp)
     val result = readLastMessage(ConsumerRecordValueSourceFactory, topic).head.asInstanceOf[ConsumerRecord[String, SampleValue]]
@@ -100,9 +107,11 @@ class KafkaSourceFactorySpec extends FunSuite with Matchers with KafkaSpec with 
       0,
       0L,
       constTimestamp,
+      TimestampType.CREATE_TIME,
       sampleKey,
       sampleValue,
-      ConsumerRecordUtils.toHeaders(sampleHeaders)
+      ConsumerRecordUtils.toHeaders(sampleHeaders),
+      Optional.of(0)
     )
     pushMessage(objToSerializeSerializationSchema(topic), givenObj, topic, timestamp = constTimestamp)
     val result = readLastMessage(ConsumerRecordKeyValueSourceFactory, topic).head.asInstanceOf[ConsumerRecord[SampleKey, SampleValue]]

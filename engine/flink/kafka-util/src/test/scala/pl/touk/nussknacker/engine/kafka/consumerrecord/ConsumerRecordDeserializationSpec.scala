@@ -5,7 +5,6 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.TypeSerializer
-import org.apache.flink.api.java.typeutils.MapTypeInfo
 import org.apache.flink.api.scala.typeutils.{CaseClassTypeInfo, ScalaCaseClassSerializer}
 import org.apache.flink.core.memory.{DataInputViewStreamWrapper, DataOutputViewStreamWrapper}
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -50,28 +49,15 @@ class ConsumerRecordDeserializationSpec extends FunSuite with Matchers with Kafk
       override def createSerializer(config: ExecutionConfig): TypeSerializer[SampleKey] =
         new ScalaCaseClassSerializer[SampleKey](classOf[SampleKey], sampleKeyFieldTypes.map(_.createSerializer(config)).toArray)
     }
-    val fieldNames = List("key", "topic", "partition", "offset", "timestamp", "headers")
-    val fieldTypes = List(
-      sampleKeyTypeInformation,
-      TypeInformation.of(classOf[String]),
-      TypeInformation.of(classOf[Integer]),
-      TypeInformation.of(classOf[java.lang.Long]),
-      TypeInformation.of(classOf[java.lang.Long]),
-      new MapTypeInfo(classOf[String], classOf[String])
-    )
-    val typeInfo3 = new CaseClassTypeInfo[InputMeta[SampleKey]](classOf[InputMeta[SampleKey]], Array.empty, fieldTypes, fieldNames){
-      override def createSerializer(config: ExecutionConfig): TypeSerializer[InputMeta[SampleKey]] =
-        new ScalaCaseClassSerializer[InputMeta[SampleKey]](classOf[InputMeta[SampleKey]], fieldTypes.map(_.createSerializer(config)).toArray)
-    }
 
-    val givenObj = InputMeta[SampleKey](SampleKey("one", 2), "dummy", 3, 4L, 5L, Map("one" -> "header value", "two" -> null).asJava)
+    val typeInformation = InputMeta.typeInformation[SampleKey](sampleKeyTypeInformation)
+    val givenObj = InputMeta[SampleKey](SampleKey("one", 2), "dummy", 3, 4L, 5L, TimestampType.CREATE_TIME, Map("one" -> "header value", "two" -> null).asJava, 6)
 
-    serializeRoundTrip(givenObj, typeInfo3, executionConfigWithoutKryo)()
-    serializeRoundTrip(givenObj, typeInfo3, executionConfigWithKryo)()
+    serializeRoundTrip(givenObj, typeInformation, executionConfigWithoutKryo)()
+    serializeRoundTrip(givenObj, typeInformation, executionConfigWithKryo)()
   }
 
-  private def serializeRoundTrip[T](record: T, typeInfo: TypeInformation[T], executionConfig: ExecutionConfig
-  = executionConfigWithoutKryo)(expected:T = record): T = {
+  private def serializeRoundTrip[T](record: T, typeInfo: TypeInformation[T], executionConfig: ExecutionConfig = executionConfigWithoutKryo)(expected:T = record): T = {
     val serializer = typeInfo.createSerializer(executionConfig)
     serializeRoundTripWithSerializers(record, serializer, serializer)(expected)
   }

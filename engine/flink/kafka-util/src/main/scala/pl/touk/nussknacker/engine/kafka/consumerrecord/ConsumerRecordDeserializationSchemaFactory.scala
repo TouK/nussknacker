@@ -52,12 +52,16 @@ abstract class ConsumerRecordDeserializationSchemaFactory[K, V] extends KafkaDes
           record.serializedValueSize(),
           key,
           value,
-          record.headers()
+          record.headers(),
+          record.leaderEpoch()
         )
       }
 
       override def isEndOfStream(nextElement: ConsumerRecord[K, V]): Boolean = false
 
+      // TODO: Provide better way to calculate TypeInformation. Here in case of serialization (of generic type) Kryo is used.
+      // It is assumed that while this ConsumerRecord[K, V] object lifespan is short, inside of source, this iplementation
+      // is sufficient.
       override def getProducedType: TypeInformation[ConsumerRecord[K, V]] = {
         val clazz = classTag[ConsumerRecord[K, V]].runtimeClass.asInstanceOf[Class[ConsumerRecord[K, V]]]
         TypeInformation.of(clazz)

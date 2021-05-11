@@ -63,12 +63,17 @@ To see biggest differences please consult the [changelog](Changelog.md).
   `StandaloneContext`, `StandaloneContextLifecycle`, `MetricsProvider`
 * [#1558](https://github.com/TouK/nussknacker/pull/1558) `FlinkProcessRegistrar` takes configuration directly from `FlinkProcessCompiler` (this can affect some tests setup)
 * [#1631](https://github.com/TouK/nussknacker/pull/1631) Introduction of `nussknacker.config.locations` property, drop use of standard `config.file` property. Model configuration no longer has direct access to root UI config.
-* [#1512](https://github.com/TouK/nussknacker/pull/1512) New kafka source `KafkaGenericNodeSourceFactory`, which is based on `GenericNodeTransformation`, gives access to setup of `ValidationContext` and `Context` initialization.
-  It uses `KafkaGenericContextInitializer` to initialize `Context` with additional variable with kafka event metadata. Factory requires proper deserialization to `ConsumerRecord` (see `ConsumerRecordDeserializationSchemaFactory`).
-  To replace basic `KafkaSourceFactory` with `KafkaGenericNodeSourceFactory`:
-  - use `ConsumerRecordDeserializationSchemaFactory` with current `DeserializationSchema` as a value deserializer, add key deserializer
+* [#1512](https://github.com/TouK/nussknacker/pull/1512) Replaced `KafkaSourceFactory` with source based on `GenericNodeTransformation`, which gives access to setup of `ValidationContext` and `Context` initialization.
+  It uses `KafkaContextInitializer` to initialize `Context` with additional variable containing kafka event metadata. Source factory requires deserialization to `ConsumerRecord` (see `ConsumerRecordDeserializationSchemaFactory`).
+  To migrate `KafkaSourceFactory`:
+  - provide deserializer factory:
+    - use `ConsumerRecordDeserializationSchemaFactory` with current `DeserializationSchema` as a value deserializer, add key deserializer
+    - or use `FixedValueDeserializaitionSchemaFactory` with simple key-as-string deserializer
   - current `RecordFormater` should be sufficient for value-only serialization, or use `ConsumerRecordToJsonFormatter` for metadata serialization
-  - implement timestampAssigner that is able to extract time from `ConsumerRecord[K, V]`
+  - provide timestampAssigner that is able to extract time from `ConsumerRecord[K, V]`
+  Also:
+  - removed `BaseKafkaSourceFactory` with multiple topics support: use `KafkaSourceFactory` instead, see test "source with two input topics"
+  - removed `SingleTopicKafkaSourceFactory`: use `KafkaSourceFactory` with custom `prepareInitialParameters`, `contextTransformation` and `extractTopics` to alter parameter list and provide constant topic value.
 
 ## In version 0.3.0
 

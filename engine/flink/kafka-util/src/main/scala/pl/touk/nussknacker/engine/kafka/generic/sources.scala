@@ -3,20 +3,19 @@ package pl.touk.nussknacker.engine.kafka.generic
 import java.nio.charset.StandardCharsets
 import java.util
 import java.util.Collections
+
 import io.circe.{Decoder, Json, JsonObject}
-import org.apache.flink.api.common.serialization.DeserializationSchema
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
 import org.apache.flink.streaming.connectors.kafka.internals.KafkaDeserializationSchemaWrapper
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import org.apache.kafka.common.serialization.{Deserializer, StringDeserializer}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.{CirceUtil, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
-import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordDeserializationSchemaFactory
+import pl.touk.nussknacker.engine.kafka.consumerrecord.FixedValueDeserializaitionSchemaFactory
 import pl.touk.nussknacker.engine.kafka.source.{KafkaSource, KafkaSourceFactory}
 import pl.touk.nussknacker.engine.kafka.{BasicFormatter, KafkaConfig, KafkaUtils}
 import pl.touk.nussknacker.engine.util.Implicits._
@@ -27,15 +26,8 @@ object sources {
 
   import collection.JavaConverters._
 
-  class EspValueDeserializaitionSchemaFactory[T](schema: DeserializationSchema[T]) extends ConsumerRecordDeserializationSchemaFactory[String, T]{
-    override protected def createKeyDeserializer(kafkaConfig: KafkaConfig): Deserializer[String] = new StringDeserializer
-    override protected def createValueDeserializer(kafkaConfig: KafkaConfig): Deserializer[T] = new Deserializer[T] {
-      override def deserialize(topic: String, data: Array[Byte]): T = schema.deserialize(data)
-    }
-  }
-
   class GenericJsonSourceFactory(processObjectDependencies: ProcessObjectDependencies) extends KafkaSourceFactory[String, java.util.Map[_, _]](
-    new EspValueDeserializaitionSchemaFactory(JsonMapDeserialization), None, JsonRecordFormatter, processObjectDependencies)
+    new FixedValueDeserializaitionSchemaFactory(JsonMapDeserialization), None, JsonRecordFormatter, processObjectDependencies)
 
   class GenericTypedJsonSourceFactory(processObjectDependencies: ProcessObjectDependencies)
     extends FlinkSourceFactory[TypedMap] with Serializable {

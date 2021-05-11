@@ -2,9 +2,9 @@ package pl.touk.nussknacker.engine.process.typeinformation
 
 import com.esotericsoftware.kryo.io.{Input, Output}
 import com.esotericsoftware.kryo.{Kryo, Serializer}
-
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.util.Collections
+
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.base.{IntSerializer, LongSerializer, StringSerializer}
@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
+import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypingResultAwareTypeInformationCustomisation, TypeInformationDetectionForTypingResult}
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{BaseJavaMapBasedSerializer, TypedObjectBasedSerializerSnapshot, TypedObjectBasedTypeInformation, TypedObjectBasedTypeSerializer, TypedScalaMapSerializer}
 import pl.touk.nussknacker.engine.process.typeinformation.testTypedObject.{CustomObjectTypeInformation, CustomTypedObject}
 import pl.touk.nussknacker.engine.util.Implicits._
@@ -28,7 +29,7 @@ import scala.collection.immutable.ListMap
 class TypingResultAwareTypeInformationDetectionSpec extends FunSuite with Matchers {
 
   private val informationDetection = new TypingResultAwareTypeInformationDetection(new TypingResultAwareTypeInformationCustomisation {
-    override def customise(originalDetection: TypingResultAwareTypeInformationDetection): PartialFunction[typing.TypingResult, TypeInformation[_]] = {
+    override def customise(originalDetection: TypeInformationDetectionForTypingResult): PartialFunction[typing.TypingResult, TypeInformation[_]] = {
       case e: TypedObjectTypingResult if e.objType == Typed.typedClass[CustomTypedObject] =>
         CustomObjectTypeInformation(e.fields.mapValuesNow(originalDetection.forType))
     }

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.process.source
 import io.circe.{Decoder, Encoder}
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.flink.api.process.BasicFlinkSink
@@ -24,7 +25,8 @@ class KafkaSourceFactoryProcessConfigCreator(kafkaConfig: KafkaConfig) extends E
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
     Map(
       "kafka-jsonKeyJsonValueWithMeta" -> defaultCategory(KafkaConsumerRecordSourceHelper.jsonKeyValueWithMeta[SampleKey, SampleValue](processObjectDependencies, kafkaConfig)),
-      "kafka-jsonValueWithMeta" -> defaultCategory(KafkaConsumerRecordSourceHelper.jsonValueWithMeta[SampleValue](processObjectDependencies, kafkaConfig))
+      "kafka-jsonValueWithMeta" -> defaultCategory(KafkaConsumerRecordSourceHelper.jsonValueWithMeta[SampleValue](processObjectDependencies, kafkaConfig)),
+      "kafka-jsonValueWithMeta-withException" -> defaultCategory(KafkaConsumerRecordSourceHelper.jsonValueWithMetaWithException[SampleValue](processObjectDependencies, kafkaConfig))
     )
   }
 
@@ -100,6 +102,27 @@ object KafkaSourceFactoryProcessConfigCreator {
         testDataRecordFormatter,
         processObjectDependencies
       )
+      kafkaSource.asInstanceOf[KafkaSourceFactory[Any, Any]]
+    }
+
+    // For scenario when prepareInitialParameters fetches list of available topics form some external repository and an exception occurs.
+    def jsonValueWithMetaWithException[V: ClassTag:Encoder:Decoder](processObjectDependencies: ProcessObjectDependencies, kafkaConfig: KafkaConfig): KafkaSourceFactory[Any, Any] = {
+      val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(new StringDeserializer with Serializable, createDeserializer[V])
+      val serializationSchemaFactory = new SampleConsumerRecordSerializationSchemaFactory(new StringSerializer with Serializable, createSerializer[V])
+      val testDataRecordFormatter = new ConsumerRecordToJsonFormatter(
+        deserializationSchemaFactory.create(List("dummyTopic"), kafkaConfig),
+        serializationSchemaFactory.create("dummyTopic", kafkaConfig)
+      )
+      val kafkaSource = new KafkaSourceFactory(
+        deserializationSchemaFactory,
+        None,
+        testDataRecordFormatter,
+        processObjectDependencies
+      ) {
+        override protected def prepareInitialParameters: List[Parameter] = {
+          throw new IllegalArgumentException("Checking scenario: fetch topics from external source")
+        }
+      }
       kafkaSource.asInstanceOf[KafkaSourceFactory[Any, Any]]
     }
   }

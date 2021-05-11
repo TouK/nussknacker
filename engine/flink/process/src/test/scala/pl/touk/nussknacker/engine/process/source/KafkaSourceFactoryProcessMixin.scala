@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process.source
 
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
+import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{BeforeAndAfter, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
@@ -31,7 +32,7 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
   protected override def beforeAll(): Unit = {
     super.beforeAll()
     val modelData = LocalModelData(config, creator)
-    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), config, ExecutionConfigPreparer.unOptimizedChain(modelData))
+    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
   }
 
   before {
@@ -68,7 +69,7 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
     pushMessage(objToSerializeSerializationSchema(topic), obj, topic, timestamp = constTimestamp)
     run(process) {
       eventually {
-        SinkForInputMeta.data shouldBe List(InputMeta(obj.key, topic, 0, 0L, constTimestamp, obj.headers.asJava))
+        SinkForInputMeta.data shouldBe List(InputMeta(obj.key, topic, 0, 0L, constTimestamp, TimestampType.CREATE_TIME, obj.headers.asJava, 0))
         SinkForSampleValue.data shouldBe List(obj.value)
         recordingExceptionHandler.data should have size 0
       }
@@ -80,15 +81,24 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
     type SourceType = Value
     val jsonKeyJsonValueWithMeta: SourceType.Value = Value("kafka-jsonKeyJsonValueWithMeta")
     val jsonValueWithMeta: SourceType.Value = Value("kafka-jsonValueWithMeta")
+    val jsonValueWithMetaWithException: SourceType.Value = Value("kafka-jsonValueWithMeta-withException")
   }
 
   protected def createProcess(topic: String, sourceType: SourceType.Value, customVariables: Map[String, String] = Map.empty): EspProcess = {
     //should check and recognize all variables based on #input and #inputMeta
     val inputVariables = Map("id" ->" #input.id", "field" -> "#input.field")
-    val metaVariables = Map("topic" -> "#inputMeta.topic", "partition" -> "#inputMeta.partition", "offset" -> "#inputMeta.offset", "timestamp" -> "#inputMeta.timestamp")
+    val metaVariables = Map(
+      "topic" -> "#inputMeta.topic",
+      "partition" -> "#inputMeta.partition",
+      "offset" -> "#inputMeta.offset",
+      "timestamp" -> "#inputMeta.timestamp",
+      "timestampType" -> "#inputMeta.timestampType.name",
+      "leaderEpoch" -> "#inputMeta.leaderEpoch"
+    )
     val keyVariables = sourceType match {
       case SourceType.jsonKeyJsonValueWithMeta => Map("key1" -> "#inputMeta.key.partOne", "key2" -> "#inputMeta.key.partTwo")
       case SourceType.jsonValueWithMeta => Map("key" -> "#inputMeta.key")
+      case _ => Map.empty[String, String]
     }
     val headerVariables = Map("headers" -> "#inputMeta.headers.toString()")
     val checkAllVariables = inputVariables ++ metaVariables ++ keyVariables ++ headerVariables ++ customVariables
