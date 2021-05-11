@@ -41,6 +41,7 @@ Nussknacker versions
 * [#1546](https://github.com/TouK/nussknacker/pull/1546) Unions (e.g after split) are possible in standalone mode. Also, it's possible to define transformers which operate on all results (e.g. for sorting recommendations)
 * [#1547](https://github.com/TouK/nussknacker/pull/1547) Publish first version of BOM including dependencyOverrides
 * [#1543](https://github.com/TouK/nussknacker/pull/1543) `ComponentProvider` API enables adding new extensions without changing e.g. `ProcessConfigCreator`
+* [#1471](https://github.com/TouK/nussknacker/pull/1471) Initial version of session window aggregate added (API may change in the future).
 
 0.3.1 (not released yet) 
 ------------------------

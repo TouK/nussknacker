@@ -46,4 +46,14 @@ object triggers {
     }
   }
 
+  case class ClosingEndEventTrigger[T, W <: Window](delegate: Trigger[_ >: T, W],
+                                               endFunction: T => Boolean) extends DelegatingTrigger[T, W](delegate) {
+    override def onElement(element: T, timestamp: Long, window: W, ctx: Trigger.TriggerContext): TriggerResult = {
+      if (endFunction(element)) {
+        TriggerResult.FIRE_AND_PURGE
+      } else super.onElement(element, timestamp, window, ctx)
+
+    }
+  }
+
 }
