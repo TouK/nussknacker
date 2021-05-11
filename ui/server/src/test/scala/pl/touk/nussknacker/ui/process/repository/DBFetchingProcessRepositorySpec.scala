@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.ui.process.repository
 
-import db.util.DBIOActionInstances.DB
-
 import java.time.LocalDateTime
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
@@ -11,16 +9,18 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestPermissions, TestProcessingTypes, WithHsqlDbTesting}
+import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.Comment
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 class DBFetchingProcessRepositorySpec
   extends FunSuite
@@ -40,6 +40,8 @@ class DBFetchingProcessRepositorySpec
   private var currentTime : LocalDateTime = LocalDateTime.now()
 
   private val fetching = DBFetchingProcessRepository.create(db)
+
+  private val activities = ProcessActivityRepository(db)
 
   private implicit val user: LoggedUser = TestFactory.adminUser()
 
@@ -106,6 +108,31 @@ class DBFetchingProcessRepositorySpec
     newAfter.toSet shouldBe Set(newName.value)
   }
 
+  test("should add comment when renamed") {
+    val oldName = ProcessName("oldName")
+    val newName = ProcessName("newName")
+
+    saveProcess(EspProcessBuilder
+      .id(oldName.value)
+      .subprocessVersions(Map("sub1" -> 3L))
+      .exceptionHandler()
+      .source("s", "")
+      .emptySink("s2", ""),
+      LocalDateTime.now()
+    )
+    processExists(newName) shouldBe false
+
+    renameProcess(oldName, newName.value) shouldBe 'right
+
+    val comments = fetching.fetchProcessId(newName)
+      .flatMap(v => activities.findActivity(ProcessIdWithName(v.get, newName)).map(_.comments))
+      .futureValue
+
+    atLeast(1, comments) should matchPattern {
+      case Comment(_, "newName", 1L, "Rename: [oldName] -> [newName]", user.username, _) =>
+    }
+  }
+
   test("should prevent rename to existing name") {
     val oldName = ProcessName("oldName")
     val existingName = ProcessName("existingName")
@@ -149,7 +176,7 @@ class DBFetchingProcessRepositorySpec
 
   private def renameProcess(processName: ProcessName, newName: String) = {
     val processId = fetching.fetchProcessId(processName).futureValue.get
-    repositoryManager.runInTransaction(writingRepo.renameProcess(processId, newName)).futureValue
+    repositoryManager.runInTransaction(writingRepo.renameProcess(ProcessIdWithName(processId, processName), newName)).futureValue
   }
 
   private def fetchMetaDataIdsForAllVersions(name: ProcessName) = {

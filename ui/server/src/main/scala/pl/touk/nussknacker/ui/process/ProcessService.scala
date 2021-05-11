@@ -160,7 +160,7 @@ class DBProcessService(managerActor: ActorRef,
       withNotRunningState(process, "Can't change name still running process.") { _ =>
         repositoryManager.runInTransaction(
           processRepository
-            .renameProcess(processIdWithName.id, name)
+            .renameProcess(processIdWithName, name)
             .map {
               case Right(_) => Right(UpdateProcessNameResponse.create(process.name, name))
               case Left(value) => Left(value)
