@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.restmodel.process.ProcessId
+import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository._
@@ -49,7 +49,7 @@ trait ProcessRepository[F[_]] {
 
   def deleteProcess(processId: ProcessId): F[XError[Unit]]
 
-  def renameProcess(processId: ProcessId, newName: String): F[XError[Unit]]
+  def renameProcess(processId: ProcessIdWithName, newName: String)(implicit loggedUser: LoggedUser): F[XError[Unit]]
 }
 
 class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTypeDataProvider[Int])
@@ -165,7 +165,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
       case 1 => Right(())
     }
 
-  def renameProcess(processId: ProcessId, newName: String): DB[XError[Unit]] = {
+  def renameProcess(process: ProcessIdWithName, newName: String)(implicit loggedUser: LoggedUser): DB[XError[Unit]] = {
     def updateNameInSingleProcessVersion(processVersion: ProcessVersionEntityData, process: ProcessEntityData) = {
       processVersion.json match {
         case Some(json) =>
@@ -178,7 +178,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
     }
 
     val updateNameInProcessJson =
-      processVersionsTable.filter(_.processId === processId.value)
+      processVersionsTable.filter(_.processId === process.id.value)
         .join(processesTable)
         .on { case (version, process) => version.processId === process.id }
         .result.flatMap { processVersions =>
@@ -186,14 +186,26 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
       }
 
     val updateNameInProcess =
-      processesTable.filter(_.id === processId.value).map(_.name).update(newName)
+      processesTable.filter(_.id === process.id.value).map(_.name).update(newName)
+
+    // Comment relates to specific version (in this case last version). Last version could be extracted in one of the
+    // above queries, but for sake of readability we perform separate query for this matter
+    // todo: remove this comment in favour of process-audit-log
+    val addCommentAction = processVersionsTable
+      .filter(_.processId === process.id.value)
+      .sortBy(_.id.desc)
+      .result.headOption.flatMap {
+      case Some(version) => newCommentAction(process.id, version.id, s"Rename: [${process.name.value}] -> [$newName]")
+      case None =>  DBIO.successful(())
+    }
 
     val action = processesTable.filter(_.name === newName).result.headOption.flatMap {
       case Some(_) => DBIO.successful(ProcessAlreadyExists(newName).asLeft)
       case None =>
         DBIO.seq[Effect.All](
           updateNameInProcess,
-          updateNameInProcessJson
+          updateNameInProcessJson,
+          addCommentAction
         ).map(_ => ().asRight).transactionally
     }
 
