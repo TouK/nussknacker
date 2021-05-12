@@ -3,7 +3,7 @@ import {Layout, NodePosition, NodesWithPositions} from "../../actions/nk"
 import ProcessUtils from "../../common/ProcessUtils"
 import {ExpressionLang} from "../../components/graph/node-modal/editors/expression/types"
 import NodeUtils from "../../components/graph/NodeUtils"
-import {Edge, EdgeType, GroupType, NodeId, NodeType, Process, ProcessDefinitionData} from "../../types"
+import {Edge, EdgeType, GroupNodeType, GroupType, NodeId, NodeType, Process, ProcessDefinitionData} from "../../types"
 import {GraphState} from "./types"
 
 function isConnectedTo(...nodeIds: NodeId[]) {
@@ -44,7 +44,7 @@ function getSelectedNodes(state: GraphState): NodeType[] {
   return NodeUtils.nodesWithGroups(processToDisplay).filter(n => selectionState.includes(n.id))
 }
 
-export function getSelectedGroups(state: GraphState): GroupType[] {
+export function getSelectedGroups(state: GraphState): GroupNodeType[] {
   return getSelectedNodes(state).filter(NodeUtils.nodeIsGroup)
 }
 

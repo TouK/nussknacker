@@ -379,13 +379,15 @@ class HttpService {
   compareProcesses(processId, thisVersion, otherVersion, remoteEnv) {
     const path = remoteEnv ? "remoteEnvironment" : "processes"
 
-    return api.get(`/${path}/${processId}/${thisVersion}/compare/${otherVersion}`)
-      .catch(error => this.addError(i18next.t("notification.error.cannotCompare", "Cannot compare scenarios"), error, true))
+    const promise = api.get(`/${path}/${processId}/${thisVersion}/compare/${otherVersion}`)
+    promise.catch(error => this.addError(i18next.t("notification.error.cannotCompare", "Cannot compare scenarios"), error, true))
+    return promise
   }
 
   fetchRemoteVersions(processId) {
-    return api.get(`/remoteEnvironment/${processId}/versions`)
-      .catch(error => this.addError(i18next.t("notification.error.failedToGetVersions", "Failed to get versions from second environment"), error))
+    const promise = api.get(`/remoteEnvironment/${processId}/versions`)
+    promise.catch(error => this.addError(i18next.t("notification.error.failedToGetVersions", "Failed to get versions from second environment"), error))
+    return promise
   }
 
   migrateProcess(processId, versionId) {

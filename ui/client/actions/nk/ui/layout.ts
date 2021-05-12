@@ -1,16 +1,16 @@
 import {events} from "../../../analytics/TrackingEvents"
 import * as VisualizationUrl from "../../../common/VisualizationUrl"
 import history from "../../../history"
-import {getLayout} from "../../../reducers/selectors/layout"
 import {NodeId} from "../../../types"
-import {ThunkAction} from "../../reduxTypes"
 import {reportEvent} from "../reportEvent"
+import {ThunkAction} from "../../reduxTypes"
+import {getLayout} from "../../../reducers/selectors/layout"
 
-export type Position = {x: number, y: number}
-export type NodePosition = {id: NodeId, position: Position}
+export type Position = {  x: number, y: number }
+export type NodePosition = { id: NodeId, position: Position }
 export type Layout = NodePosition[]
 export type GraphLayoutFunction = () => void
-export type LayoutChangedAction = {layout: Layout, type: "LAYOUT_CHANGED"}
+export type LayoutChangedAction = {layout: Layout, type: "LAYOUT_CHANGED" }
 export type TogglePanelAction = {type: "TOGGLE_LEFT_PANEL" | "TOGGLE_RIGHT_PANEL", configId: string}
 
 export function layoutChanged(layout?: Layout): ThunkAction {

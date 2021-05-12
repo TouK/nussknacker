@@ -15,10 +15,11 @@ import Toolbars from "../components/toolbars/Toolbars"
 import {getFetchedProcessDetails, getProcessToDisplay} from "../reducers/selectors/graph"
 import {getCapabilities} from "../reducers/selectors/other"
 import {getProcessDefinitionData} from "../reducers/selectors/settings"
+
 import {areAllModalsClosed} from "../reducers/selectors/ui"
 import "../stylesheets/visualization.styl"
-import {darkTheme} from "./darkTheme"
 import {BindKeyboardShortcuts} from "./BindKeyboardShortcuts"
+import {darkTheme} from "./darkTheme"
 import {NkThemeProvider} from "./theme"
 
 class Visualization extends React.Component {
@@ -40,7 +41,7 @@ class Visualization extends React.Component {
       this.props.actions.displayProcessActivity(this.props.match.params.processId)
       this.props.actions.fetchProcessDefinition(
         details.fetchedProcessDetails.processingType,
-        _.get(details, "fetchedProcessDetails.json.properties.isSubprocess")
+        _.get(details, "fetchedProcessDetails.json.properties.isSubprocess"),
       ).then(() => {
         this.setState({dataResolved: true})
         this.showModalDetailsIfNeeded(details.fetchedProcessDetails.json)
@@ -62,20 +63,25 @@ class Visualization extends React.Component {
 
   showModalDetailsIfNeeded(process) {
     const {nodeId, edgeId} = VisualizationUrl.extractVisualizationParams(this.props.location.search)
-    if (nodeId) {
-      const node = NodeUtils.getNodeById(nodeId, process)
+    if (nodeId.length) {
+      const nodes = nodeId.map(i => NodeUtils.getNodeById(i, process)).filter(Boolean)
 
-      if (node) {
-        this.props.actions.displayModalNodeDetails(node)
+      if (nodes.length) {
+        nodes.forEach(node => {
+          this.props.showModalNodeDetails(node)
+        })
       } else {
         this.props.history.replace({search: VisualizationUrl.setAndPreserveLocationParams({nodeId: null})})
       }
     }
 
-    if (edgeId) {
-      const edge = NodeUtils.getEdgeById(edgeId, process)
-      if (edge) {
-        this.props.actions.displayModalEdgeDetails(edge)
+    if (edgeId.length) {
+      const edges = edgeId.map(e => NodeUtils.getEdgeById(e, process)).filter(Boolean)
+
+      if (edges.length) {
+        edges.forEach(edge => {
+          this.props.showModalEdgeDetails(edge)
+        })
       } else {
         this.props.history.replace({search: VisualizationUrl.setAndPreserveLocationParams({edgeId: null})})
       }
@@ -128,7 +134,16 @@ class Visualization extends React.Component {
         </GraphProvider>
 
         <SpinnerWrapper isReady={!graphNotReady}>
-          {!isEmpty(this.props.processDefinitionData) ? <Graph ref={this.graphRef} capabilities={this.props.capabilities}/> : null}
+          {!isEmpty(this.props.processDefinitionData) ?
+            (
+              <Graph
+                ref={this.graphRef}
+                capabilities={this.props.capabilities}
+                showModalNodeDetails={this.props.showModalNodeDetails}
+                showModalEdgeDetails={this.props.showModalEdgeDetails}
+              />
+            ) :
+            null}
         </SpinnerWrapper>
       </div>
     )
@@ -145,6 +160,7 @@ function mapState(state) {
     processDefinitionData: getProcessDefinitionData(state),
     fetchedProcessDetails: getFetchedProcessDetails(state),
     graphLoading: state.graphReducer.graphLoading,
+    //TODO: add windowmanager check
     allModalsClosed: areAllModalsClosed(state),
     nothingToSave: ProcessUtils.nothingToSave(state),
     capabilities: getCapabilities(state),

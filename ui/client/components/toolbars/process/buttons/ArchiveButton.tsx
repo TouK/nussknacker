@@ -32,8 +32,7 @@ function ArchiveButton(props: Props) {
       name={t("panels.actions.process-archive.button", "archive")}
       icon={<Icon/>}
       disabled={!available}
-      onClick={() => toggleConfirmDialog(
-        true,
+      onClick={() => available && toggleConfirmDialog(
         DialogMessages.archiveProcess(processId),
         () => HttpService.archiveProcess(processId).then(() => history.push(ArchiveTabData.path)),
         t("panels.actions.process-archive.yes", "Yes"),

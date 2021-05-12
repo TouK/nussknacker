@@ -1,45 +1,58 @@
+/* eslint-disable i18next/no-literal-string */
+import {WindowContentProps} from "@touk/window-manager"
+import {css, cx} from "emotion"
 import _ from "lodash"
 import React from "react"
 import Scrollbars from "react-custom-scrollbars"
 import {connect} from "react-redux"
-import ActionsUtils from "../../actions/ActionsUtils"
 import {formatAbsolutely} from "../../common/DateUtils"
 import * as JsonUtils from "../../common/JsonUtils"
 import HttpService from "../../http/HttpService"
+import {getProcessId, getProcessVersionId, getVersions, isBusinessView} from "../../reducers/selectors/graph"
+import {getTargetEnvironmentId} from "../../reducers/selectors/settings"
 import "../../stylesheets/visualization.styl"
+import {WindowContent} from "../../windowManager"
 import EdgeDetailsContent from "../graph/node-modal/EdgeDetailsContent"
 import NodeDetailsContent from "../graph/node-modal/NodeDetailsContent"
+import {ProcessVersionType} from "../Process/types"
 import {SelectWithFocus} from "../withFocus"
-import Dialogs from "./Dialogs"
-import GenericModalDialog from "./GenericModalDialog"
+
+interface State {
+  currentDiffId: string,
+  otherVersion: string,
+  remoteVersions: ProcessVersionType[],
+  difference: unknown,
+}
 
 //TODO: handle displaying groups
 //TODO: handle different textarea heights
-class CompareVersionsDialog extends React.Component {
+class VersionsForm extends React.Component<Props, State> {
 
   //TODO: better way of detecting remote version? also: how to sort versions??
   remotePrefix = "remote-"
-
-  constructor(props) {
-    super(props)
-    this.initState = {
-      otherVersion: null,
-      currentDiffId: null,
-      difference: null,
-      remoteVersions: [],
-    }
-    this.state = this.initState
+  initState: State = {
+    otherVersion: null,
+    currentDiffId: null,
+    difference: null,
+    remoteVersions: [],
   }
 
-  componentWillReceiveProps(nextProps) {
+  state = this.initState
+
+  UNSAFE_componentWillReceiveProps(nextProps: Props) {
     if (nextProps.processId && nextProps.otherEnvironment) {
       HttpService.fetchRemoteVersions(nextProps.processId).then(response => this.setState({remoteVersions: response.data || []}))
     }
   }
 
-  loadVersion(versionId) {
+  loadVersion(versionId: string) {
     if (versionId) {
-      HttpService.compareProcesses(this.props.processId, this.props.version, this.versionToPass(versionId), this.isRemote(versionId)).then(
+      HttpService.compareProcesses(
+        this.props.processId,
+        this.props.version,
+        this.versionToPass(versionId),
+        this.isRemote(versionId),
+      ).then(
         (response) => this.setState({difference: response.data, otherVersion: versionId, currentDiffId: null}),
       )
     } else {
@@ -48,20 +61,20 @@ class CompareVersionsDialog extends React.Component {
 
   }
 
-  isRemote(versionId) {
+  isRemote(versionId: string) {
     return versionId.startsWith(this.remotePrefix)
   }
 
-  versionToPass(versionId) {
+  versionToPass(versionId: string) {
     return versionId.replace(this.remotePrefix, "")
   }
 
-  versionDisplayString(versionId) {
+  versionDisplayString(versionId: string) {
     return this.isRemote(versionId) ? `${this.versionToPass(versionId)} on ${this.props.otherEnvironment}` : versionId
   }
 
-  createVersionElement(version, versionPrefix) {
-    const versionId = (versionPrefix || "") + version.processVersionId
+  createVersionElement(version: ProcessVersionType, versionPrefix = "") {
+    const versionId = versionPrefix + version.processVersionId
     return (
       <option key={versionId} value={versionId}>
         {this.versionDisplayString(versionId)} - created by {version.user} &nbsp; {formatAbsolutely(version.createDate)}</option>
@@ -70,13 +83,7 @@ class CompareVersionsDialog extends React.Component {
 
   render() {
     return (
-      <GenericModalDialog
-        init={() => this.setState(this.initState)}
-        header="compare versions"
-        type={Dialogs.types.compareVersions}
-        style="compareModal"
-      >
-
+      <>
         <div className="esp-form-row">
           <p>Version to compare</p>
           <SelectWithFocus
@@ -87,8 +94,9 @@ class CompareVersionsDialog extends React.Component {
             onChange={(e) => this.loadVersion(e.target.value)}
           >
             <option key="" value=""/>
-            {this.props.versions.filter(version => this.props.version !== version.processVersionId).map((version, index) => this.createVersionElement(version))}
-            {this.state.remoteVersions.map((version, index) => this.createVersionElement(version, this.remotePrefix))}
+            {this.props.versions.filter(version => this.props.version !== version.processVersionId)
+              .map(version => this.createVersionElement(version))}
+            {this.state.remoteVersions.map(version => this.createVersionElement(version, this.remotePrefix))}
           </SelectWithFocus>
         </div>
         {
@@ -119,11 +127,13 @@ class CompareVersionsDialog extends React.Component {
                     >
                       {this.printDiff(this.state.currentDiffId)}
                     </Scrollbars>
-                  ) : null }
+                  ) :
+                  null}
               </div>
-            ) : null
+            ) :
+            null
         }
-      </GenericModalDialog>
+      </>
     )
   }
 
@@ -169,58 +179,73 @@ class CompareVersionsDialog extends React.Component {
   }
 
   printNode(node, pathsToMark) {
-    return node ? (
-      <NodeDetailsContent
-        isEditMode={false}
-        showValidation={false}
-        showSwitch={false}
-        node={node}
-        pathsToMark={pathsToMark}
-        onChange={() => {}}
-      />
-    ) :
+    return node ?
+      (
+        <NodeDetailsContent
+          isEditMode={false}
+          showValidation={false}
+          showSwitch={false}
+          node={node}
+          pathsToMark={pathsToMark}
+          onChange={() => {return}}
+        />
+      ) :
       (<div className="notPresent">Node not present</div>)
   }
 
   printEdge(edge, pathsToMark) {
-    return edge ? (
-      <EdgeDetailsContent
-        edge={edge}
-        readOnly={true}
-        showValidation={false}
-        showSwitch={false}
-        changeEdgeTypeValue={() => {}}
-        updateEdgeProp={() => {}}
-        pathsToMark={pathsToMark}
-        variableTypes={{}}
-      />
-    ) :
+    return edge ?
+      (
+        <EdgeDetailsContent
+          edge={edge}
+          readOnly={true}
+          showValidation={false}
+          showSwitch={false}
+          changeEdgeTypeValue={() => {return}}
+          updateEdgeProp={() => {return}}
+          pathsToMark={pathsToMark}
+          variableTypes={{}}
+        />
+      ) :
       (<div className="notPresent">Edge not present</div>)
   }
 
   printProperties(property, pathsToMark) {
-    return property ? (
-      <NodeDetailsContent
-        isEditMode={false}
-        showValidation={false}
-        showSwitch={false}
-        node={property}
-        pathsToMark={pathsToMark}
-        onChange={() => {}}
-      />
-    ) :
+    return property ?
+      (
+        <NodeDetailsContent
+          isEditMode={false}
+          showValidation={false}
+          showSwitch={false}
+          node={property}
+          pathsToMark={pathsToMark}
+          onChange={() => {return}}
+        />
+      ) :
       (<div className="notPresent">Properties not present</div>)
   }
 }
 
 function mapState(state) {
   return {
-    processId: _.get(state.graphReducer, "fetchedProcessDetails.id"),
-    version: _.get(state.graphReducer, "fetchedProcessDetails.processVersionId"),
-    processDefinitionData: state.settings.processDefinitionData,
-    otherEnvironment: _.get(state.settings, "featuresSettings.remoteEnvironment.targetEnvironmentId"),
-    versions: _.get(state.graphReducer, "fetchedProcessDetails.history", []),
+    processId: getProcessId(state),
+    version: getProcessVersionId(state),
+    otherEnvironment: getTargetEnvironmentId(state),
+    versions: getVersions(state),
   }
 }
 
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(CompareVersionsDialog)
+type Props = ReturnType<typeof mapState>
+
+//TODO: move to hooks
+const CompareVersionsForm = connect(mapState)(VersionsForm)
+
+export function CompareVersionsDialog(props: WindowContentProps): JSX.Element {
+  return (
+    <WindowContent {...props}>
+      <div className={cx("compareModal", "modalContentDark", css({minWidth: 980, padding: "1em"}))}>
+        <CompareVersionsForm/>
+      </div>
+    </WindowContent>
+  )
+}

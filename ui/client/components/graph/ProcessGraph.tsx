@@ -15,6 +15,7 @@ import {getExpandedGroups} from "../../reducers/selectors/groups"
 import {isNodeDetailsModalVisible} from "../../reducers/selectors/ui"
 import {setLinksHovered} from "./dragHelpers"
 import {commonState, Graph} from "./Graph"
+import GraphWrapped from "./GraphWrapped"
 
 const spec = {
   drop: (props, monitor, component: Graph) => {
@@ -57,4 +58,4 @@ export const ProcessGraph = compose(
   DropTarget("element", spec, (connect) => ({connectDropTarget: connect.dropTarget()})),
   //withRef is here so that parent can access methods in graph
   connect(mapState, ActionsUtils.mapDispatchWithEspActions, null, {forwardRef: true}),
-)(Graph)
+)(GraphWrapped)

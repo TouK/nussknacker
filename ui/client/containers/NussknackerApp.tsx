@@ -1,34 +1,32 @@
+import {DebugButtons} from "@touk/window-manager/esm/debug"
+import {UnregisterCallback} from "history"
+import _ from "lodash"
+import * as queryString from "query-string"
 import React from "react"
+import {WithTranslation, withTranslation} from "react-i18next"
+import {connect} from "react-redux"
 import {Redirect, Route, RouteComponentProps} from "react-router"
 import {matchPath, withRouter} from "react-router-dom"
-import _ from "lodash"
-import {urlChange} from "../actions/nk"
-import {MenuBar} from "../components/MenuBar"
-import {UnknownRecord} from "../types/common"
-import {ProcessesTabData} from "./Processes"
-import {SubProcessesTabData} from "./SubProcesses"
-import {ArchiveTabData} from "./Archive"
-import NotFound from "./errors/NotFound"
-import {TransitionRouteSwitch} from "./TransitionRouteSwitch"
-import Metrics from "./Metrics"
-import Signals from "./Signals"
-import {NkAdminPage, AdminPage} from "./AdminPage"
-import DragArea from "../components/DragArea"
-import {connect} from "react-redux"
-import Dialogs from "../components/modals/Dialogs"
-import Visualization from "./Visualization"
-
-import "../stylesheets/mainMenu.styl"
-import "../app.styl"
-import ErrorHandler from "./ErrorHandler"
-import {ProcessTabs} from "./ProcessTabs"
-import {getFeatureSettings} from "../reducers/selectors/settings"
-import {CustomTab, CustomTabPath} from "./CustomTab"
-import {WithTranslation, withTranslation} from "react-i18next"
 import {compose} from "redux"
-import {UnregisterCallback} from "history"
+import {urlChange} from "../actions/nk"
+import DragArea from "../components/DragArea"
+import {MenuBar} from "../components/MenuBar"
 import ProcessBackButton from "../components/Process/ProcessBackButton"
-import * as queryString from "query-string"
+import {getFeatureSettings} from "../reducers/selectors/settings"
+import {UnknownRecord} from "../types/common"
+import {AdminPage, NkAdminPage} from "./AdminPage"
+import {ArchiveTabData} from "./Archive"
+import {CustomTab, CustomTabPath} from "./CustomTab"
+import ErrorHandler from "./ErrorHandler"
+import NotFound from "./errors/NotFound"
+import Metrics from "./Metrics"
+import {ProcessesTabData} from "./Processes"
+import {ProcessTabs} from "./ProcessTabs"
+import Signals from "./Signals"
+import {SubProcessesTabData} from "./SubProcesses"
+import {TransitionRouteSwitch} from "./TransitionRouteSwitch"
+import Visualization from "./Visualization"
+import VisualizationWrapped from "./VisualizationWrapped"
 
 type OwnProps = UnknownRecord
 type State = UnknownRecord
@@ -40,30 +38,7 @@ type MetricParam = {
 }
 
 export class NussknackerApp extends React.Component<Props, State> {
-  private readonly path: string = `/`
-  private mountedHistory: UnregisterCallback
-
-  componentDidMount() {
-    this.mountedHistory = this.props.history.listen((location, action) => {
-      if (action === "PUSH") {
-        this.props.urlChange(location)
-      }
-    })
-  }
-
-  componentWillUnmount() {
-    if (this.mountedHistory) {
-      this.mountedHistory()
-    }
-  }
-
   getMetricsMatch = (): MetricParam => matchPath(this.props.location.pathname, {path: Metrics.path, exact: true, strict: false})
-
-  canGoToProcess() {
-    const match = this.getMetricsMatch()
-    return match?.params?.processId != null
-  }
-
   /**
    * In some cases (eg. docker demo) we serve Grafana and Kibana from nginx proxy, from root app url, and when service responds with error
    * then React app catches this and shows error page. To make it render only error, without app menu, we have mark iframe
@@ -85,6 +60,27 @@ export class NussknackerApp extends React.Component<Props, State> {
 
     return null
   }
+  private readonly path: string = `/`
+  private mountedHistory: UnregisterCallback
+
+  componentDidMount() {
+    this.mountedHistory = this.props.history.listen((location, action) => {
+      if (action === "PUSH") {
+        this.props.urlChange(location)
+      }
+    })
+  }
+
+  componentWillUnmount() {
+    if (this.mountedHistory) {
+      this.mountedHistory()
+    }
+  }
+
+  canGoToProcess() {
+    const match = this.getMetricsMatch()
+    return match?.params?.processId != null
+  }
 
   renderTopLeftButton() {
     const match = this.getMetricsMatch()
@@ -104,7 +100,6 @@ export class NussknackerApp extends React.Component<Props, State> {
   }
 
   render() {
-    const AllDialogs = Dialogs.AllDialogs
     return this.props.resolved ?
       (
         <div id="app-container">
@@ -112,15 +107,15 @@ export class NussknackerApp extends React.Component<Props, State> {
           {this.renderMenu()}
           <main>
             <DragArea>
-              <AllDialogs/>
               <ErrorHandler>
                 <TransitionRouteSwitch>
+                  <Route path={`/$debug`} component={DebugButtons} exact/>
                   <Route
                     path={[ProcessesTabData.path, SubProcessesTabData.path, ArchiveTabData.path]}
                     component={ProcessTabs}
                     exact
                   />
-                  <Route path={Visualization.path} component={Visualization} exact/>
+                  <Route path={Visualization.path} component={VisualizationWrapped} exact/>
                   <Route path={Metrics.path} component={Metrics} exact/>
                   <Route path={Signals.path} component={Signals} exact/>
                   <Route path={AdminPage.path} component={NkAdminPage} exact/>

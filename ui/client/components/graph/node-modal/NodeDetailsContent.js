@@ -8,25 +8,25 @@ import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
 import * as JsonUtils from "../../../common/JsonUtils"
 import ProcessUtils from "../../../common/ProcessUtils"
 import TestResultUtils from "../../../common/TestResultUtils"
-import {allValid, errorValidator, mandatoryValueValidator} from "./editors/Validators"
+import {getProcessCategory} from "../../../reducers/selectors/graph"
 import {InputWithFocus} from "../../withFocus"
 import NodeUtils from "../NodeUtils"
 import MapVariable from "./../node-modal/MapVariable"
-import Variable from "./Variable"
+import AdditionalProperty from "./AdditionalProperty"
 import BranchParameters, {branchErrorFieldName} from "./BranchParameters"
 import ExpressionField from "./editors/expression/ExpressionField"
 import Field from "./editors/field/Field"
+import {allValid, errorValidator, mandatoryValueValidator} from "./editors/Validators"
+import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox"
 import NodeErrors from "./NodeErrors"
 import ParameterList from "./ParameterList"
+import {adjustParameters} from "./ParametersUtils"
 import SubprocessInputDefinition from "./subprocess-input-definition/SubprocessInputDefinition"
+import SubprocessOutputDefinition from "./SubprocessOutputDefinition"
 import TestErrors from "./tests/TestErrors"
 import TestResults from "./tests/TestResults"
 import TestResultsSelect from "./tests/TestResultsSelect"
-import AdditionalProperty from "./AdditionalProperty"
-import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox"
-import SubprocessOutputDefinition from "./SubprocessOutputDefinition"
-import {adjustParameters} from "./ParametersUtils"
-import {getProcessCategory} from "../../../reducers/selectors/graph"
+import Variable from "./Variable"
 
 //move state to redux?
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
@@ -165,7 +165,6 @@ export class NodeDetailsContent extends React.Component {
             isMarked={this.isMarked}
             readOnly={!this.props.isEditMode}
             removeElement={this.removeElement}
-            toogleCloseOnEsc={this.props.toogleCloseOnEsc}
             showValidation={showValidation}
             errors={fieldErrors}
             renderFieldLabel={this.renderFieldLabel}

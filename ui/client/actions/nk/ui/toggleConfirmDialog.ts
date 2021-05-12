@@ -2,17 +2,15 @@ import {isEmpty} from "lodash"
 import {ThunkAction} from "../../reduxTypes"
 import {EventInfo, reportEvent} from "../reportEvent"
 
-export type ToggleConfirmDialogAction = {
-  type: "TOGGLE_CONFIRM_DIALOG",
-  isOpen: boolean,
+export interface ConfirmDialogData {
   text: string,
   confirmText: string,
   denyText: string,
+  //TODO: get rid of callbacks in store
   onConfirmCallback: () => void,
 }
 
 export function toggleConfirmDialog(
-  isOpen: boolean,
   text: string,
   action: () => void,
   confirmText = "Yes",
@@ -20,15 +18,20 @@ export function toggleConfirmDialog(
   event?: EventInfo,
 ): ThunkAction {
   return (dispatch) => {
-    !isEmpty(event) && dispatch(reportEvent(event))
+    if (!isEmpty(event)) {
+      dispatch(reportEvent(event))
+    }
 
-    return dispatch({
-      type: "TOGGLE_CONFIRM_DIALOG",
-      onConfirmCallback: action,
-      isOpen,
-      text,
-      confirmText,
-      denyText,
-    })
+    // dispatch(openWindow<ConfirmDialogData>({
+    //   title: text,
+    //   kind: WindowKind.confirm,
+    //   // TODO: get rid of meta
+    //   meta: {
+    //     onConfirmCallback: action,
+    //     text,
+    //     confirmText,
+    //     denyText,
+    //   },
+    // }))
   }
 }

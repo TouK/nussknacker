@@ -10,11 +10,7 @@ export function DeployIcon({processState, onDeploy, process}: {processState: any
   const dispatch = useDispatch()
   const onClick = useCallback(
     () => {
-      dispatch(toggleConfirmDialog(
-        true,
-        DialogMessages.deploy(process.name),
-        () => HttpService.deploy(process.name).finally(onDeploy),
-      ))
+      dispatch(toggleConfirmDialog(DialogMessages.deploy(process.name), () => HttpService.deploy(process.name).finally(onDeploy)))
     },
     [process, onDeploy],
   )

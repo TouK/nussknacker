@@ -1,3 +1,5 @@
+import {WindowManagerProvider} from "@touk/window-manager"
+import {defaultsDeep} from "lodash"
 import React, {Suspense} from "react"
 import ReactDOM from "react-dom"
 import Modal from "react-modal"
@@ -6,7 +8,7 @@ import {Router} from "react-router-dom"
 import {PersistGate} from "redux-persist/integration/react"
 import ErrorBoundary from "./components/common/ErrorBoundary"
 import LoaderSpinner from "./components/Spinner"
-
+import {darkTheme} from "./containers/darkTheme"
 import Notifications from "./containers/Notifications"
 import {NkApp} from "./containers/NussknackerApp"
 import NussknackerInitializer from "./containers/NussknackerInitializer"
@@ -15,6 +17,7 @@ import {NkThemeProvider} from "./containers/theme"
 import history from "./history"
 import "./i18n"
 import configureStore from "./store/configureStore"
+import {contentGetter} from "./windowManager"
 
 const {store, persistor} = configureStore()
 const rootContainer = document.createElement(`div`)
@@ -28,14 +31,18 @@ const Root = () => (
       <Provider store={store}>
         <PersistGate loading={null} persistor={persistor}>
           <Router history={history}>
-            <NkThemeProvider>
-              <SettingsProvider>
-                <NussknackerInitializer>
-                  <Notifications/>
-                  <NkApp/>
-                </NussknackerInitializer>
-              </SettingsProvider>
-            </NkThemeProvider>
+            <SettingsProvider>
+              <NussknackerInitializer>
+                <Notifications/>
+                <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
+                  <WindowManagerProvider theme={darkTheme} contentGetter={contentGetter}>
+                    <NkThemeProvider>
+                      <NkApp/>
+                    </NkThemeProvider>
+                  </WindowManagerProvider>
+                </NkThemeProvider>
+              </NussknackerInitializer>
+            </SettingsProvider>
           </Router>
         </PersistGate>
       </Provider>

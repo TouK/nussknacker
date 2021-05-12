@@ -10,11 +10,7 @@ export function CancelIcon({processState, onCancel, process}: {processState: any
   const dispatch = useDispatch()
   const cancel = useCallback(
     () => {
-      dispatch(toggleConfirmDialog(
-        true,
-        DialogMessages.stop(process.name),
-        () => HttpService.cancel(process.name).finally(onCancel),
-      ))
+      dispatch(toggleConfirmDialog(DialogMessages.stop(process.name), () => HttpService.cancel(process.name).finally(onCancel)))
     },
     [process.name, onCancel],
   )

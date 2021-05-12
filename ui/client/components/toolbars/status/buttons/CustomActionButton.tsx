@@ -1,11 +1,12 @@
 import React from "react"
-import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
-import {ReactComponent as DefaultIcon} from "../../../../assets/img/toolbarButtons/custom_action.svg"
-import {toggleCustomAction} from "../../../../actions/nk"
-import {useDispatch} from "react-redux"
-import {StatusType} from "../../../Process/types"
 import {useTranslation} from "react-i18next"
+import {useDispatch} from "react-redux"
+import {ReactComponent as DefaultIcon} from "../../../../assets/img/toolbarButtons/custom_action.svg"
 import {CustomAction} from "../../../../types"
+import {useWindows} from "../../../../windowManager"
+import {WindowKind} from "../../../../windowManager/WindowKind"
+import {StatusType} from "../../../Process/types"
+import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 import {ToolbarButtonProps} from "../../types"
 
 type CustomActionProps = {
@@ -32,13 +33,18 @@ export default function CustomActionButton(props: CustomActionProps) {
     t("panels.actions.custom-action.tooltips.disabled", "Disabled for {{statusName}} status.", {statusName}) :
     null
 
+  const {open} = useWindows()
   return (
     <ToolbarButton
       name={action.name}
       title={toolTip}
       disabled={!available}
       icon={icon}
-      onClick={() => dispatch(toggleCustomAction(action))}
+      onClick={() => open<CustomAction>({
+        title: action.name,
+        kind: WindowKind.customAction,
+        meta: action,
+      })}
     />
   )
 }

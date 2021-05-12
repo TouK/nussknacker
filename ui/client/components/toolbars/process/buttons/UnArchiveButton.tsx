@@ -34,8 +34,7 @@ function UnArchiveButton(props: Props) {
       name={t("panels.actions.process-unarchive.button", "unarchive")}
       icon={<Icon/>}
       disabled={!available}
-      onClick={() => toggleConfirmDialog(
-        true,
+      onClick={() => available && toggleConfirmDialog(
         DialogMessages.unArchiveProcess(processId),
         () => HttpService.unArchiveProcess(processId).then(() => history.push(redirectPath)),
         t("panels.actions.process-unarchive.yes", "Yes"),

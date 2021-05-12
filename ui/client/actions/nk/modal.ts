@@ -2,10 +2,9 @@ import _ from "lodash"
 import {events} from "../../analytics/TrackingEvents"
 import {isEdgeEditable} from "../../common/EdgeUtils"
 import * as VisualizationUrl from "../../common/VisualizationUrl"
-import NodeUtils from "../../components/graph/NodeUtils"
-import {DialogType} from "../../components/modals/DialogsTypes"
 import history from "../../history"
-import {CustomAction, Edge, NodeType} from "../../types"
+import {CustomAction, Edge, GroupNodeType, NodeType} from "../../types"
+import {WindowKind} from "../../windowManager/WindowKind"
 import {ThunkAction} from "../reduxTypes"
 import {EventInfo, reportEvent} from "./reportEvent"
 
@@ -17,15 +16,6 @@ export type DisplayModalNodeDetailsAction = {
 export type DisplayModalEdgeDetailsAction = {
   type: "DISPLAY_MODAL_EDGE_DETAILS",
   edgeToDisplay: Edge,
-}
-export type ToggleModalDialogAction = {
-  type: "TOGGLE_MODAL_DIALOG",
-  openDialog: DialogType,
-}
-export type ToggleInfoModalAction = {
-  type: "TOGGLE_INFO_MODAL",
-  openDialog: DialogType,
-  text: string,
 }
 
 export type ToggleCustomActionAction = {
@@ -58,15 +48,16 @@ export function displayModalNodeDetails(node: NodeType, readonly?: boolean, even
 }
 
 export function displayModalEdgeDetails(edge: Edge): ThunkAction {
-  return dispatch => {
+  return (dispatch, getState) => {
+    // const {edgeId = []} = getWindowsFromQuery(getState())
     if (isEdgeEditable(edge)) {
-      history.replace({
-        pathname: history.location.pathname,
-        search: VisualizationUrl.setAndPreserveLocationParams({
-          nodeId: null,
-          edgeId: NodeUtils.edgeId(edge),
-        }),
-      })
+      // history.replace({
+      //   pathname: history.location.pathname,
+      //   search: VisualizationUrl.setAndPreserveLocationParams({
+      //     // nodeId: null,
+      //     edgeId: [...edgeId, NodeUtils.edgeId(edge)],
+      //   }),
+      // })
       return dispatch({
         type: "DISPLAY_MODAL_EDGE_DETAILS",
         edgeToDisplay: edge,
@@ -74,34 +65,3 @@ export function displayModalEdgeDetails(edge: Edge): ThunkAction {
     }
   }
 }
-
-export function toggleModalDialog(openDialog: DialogType): ThunkAction {
-  return (dispatch) => {
-    openDialog != null && dispatch(reportEvent({
-      category: "right_panel",
-      action: "button_click",
-      name: openDialog.toLowerCase(),
-    }))
-
-    return dispatch({
-      type: "TOGGLE_MODAL_DIALOG",
-      openDialog: openDialog,
-    })
-  }
-}
-
-export function toggleInfoModal(openDialog: DialogType, text: string): ToggleInfoModalAction {
-  return {
-    type: "TOGGLE_INFO_MODAL",
-    openDialog: openDialog,
-    text: text,
-  }
-}
-
-export function toggleCustomAction(customAction: CustomAction): ToggleCustomActionAction {
-  return {
-    type: "TOGGLE_CUSTOM_ACTION",
-    customAction: customAction,
-  }
-}
-

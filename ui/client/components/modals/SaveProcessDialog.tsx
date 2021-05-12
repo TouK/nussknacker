@@ -1,44 +1,48 @@
-import React, {ChangeEvent, useCallback, useState} from "react"
+import {WindowButtonProps, WindowContentProps} from "@touk/window-manager"
+import {css, cx} from "emotion"
+import React, {useCallback, useMemo, useState} from "react"
 import {useTranslation} from "react-i18next"
-import {useDispatch, useSelector} from "react-redux"
+import {useDispatch} from "react-redux"
 import {saveProcess} from "../../actions/nk"
-import {getProcessName, getProcessUnsavedNewName, isProcessRenamed} from "../../reducers/selectors/graph"
-import "../../stylesheets/visualization.styl"
-import CommentInput from "../CommentInput"
-import Dialogs from "./Dialogs"
-import GenericModalDialog from "./GenericModalDialog"
+import {PromptContent} from "../../windowManager"
+import {CommentInput} from "../CommentInput"
 
-function SaveProcessDialog(): JSX.Element {
-  const {t} = useTranslation()
-  const [comment, setComment] = useState("")
-
+export function SaveProcessDialog(props: WindowContentProps): JSX.Element {
+  const [{comment}, setState] = useState({comment: ""})
   const dispatch = useDispatch()
-  const processName = useSelector(getProcessName)
-  const unsavedNewName = useSelector(getProcessUnsavedNewName)
-  const isRenamed = useSelector(isProcessRenamed)
 
-  const confirm = useCallback(
-    async () => {await dispatch(saveProcess(comment))},
-    [dispatch, comment],
+  const confirmAction = useCallback(
+    async () => {
+      await dispatch(saveProcess(comment))
+      props.close()
+    },
+    [comment, dispatch, props],
   )
 
-  const onInputChange = useCallback(
-    ({target}: ChangeEvent<HTMLTextAreaElement>) => setComment(target.value),
-    [],
+  const {t} = useTranslation()
+  const buttons: WindowButtonProps[] = useMemo(
+    () => [
+      {title: t("dialog.button.cancel", "Cancel"), action: () => props.close()},
+      {title: t("dialog.button.ok", "Ok"), action: () => confirmAction()},
+    ],
+    [confirmAction, props, t],
   )
-
-  const reset = useCallback(() => setComment(""), [])
 
   return (
-    <GenericModalDialog init={reset} confirm={confirm} type={Dialogs.types.saveProcess}>
-      <p>{isRenamed ?
-        t("saveProcess.renameTitle", "Save scenario and rename to {{name}}", {name: unsavedNewName}) :
-        t("saveProcess.title", "Save scenario {{name}}", {name: processName})
-      }</p>
-      <CommentInput onChange={onInputChange} value={comment}/>
-    </GenericModalDialog>
+    <PromptContent {...props} buttons={buttons}>
+      <div className={cx("modalContentDark", css({minWidth: 600}))}>
+        <h3>{props.data.title}</h3>
+        <CommentInput
+          onChange={e => setState({comment: e.target.value})}
+          value={comment}
+          className={css({
+            minWidth: 600,
+            minHeight: 80,
+          })}
+          autoFocus
+        />
+      </div>
+    </PromptContent>
   )
 }
-
-export default SaveProcessDialog
 

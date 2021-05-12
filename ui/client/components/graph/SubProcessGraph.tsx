@@ -2,9 +2,10 @@ import React from "react"
 import {connect} from "react-redux"
 import {compose} from "redux"
 import ActionsUtils from "../../actions/ActionsUtils"
+import * as LayoutUtils from "../../reducers/layoutUtils"
 import {getNodeId} from "../../reducers/selectors/graph"
 import {commonState, Graph, subprocessParent} from "./Graph"
-import * as LayoutUtils from "../../reducers/layoutUtils"
+import GraphWrapped from "./GraphWrapped"
 
 function mapSubprocessState(state, props) {
   return {
@@ -23,4 +24,4 @@ function mapSubprocessState(state, props) {
 
 export const SubProcessGraph = compose(
   connect(mapSubprocessState, ActionsUtils.mapDispatchWithEspActions),
-)(props => <Graph {...props}/>)
+)(GraphWrapped)

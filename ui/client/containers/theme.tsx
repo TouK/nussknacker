@@ -73,7 +73,7 @@ export function NkThemeProvider({theme = defaultAppTheme, ...props}: Partial<The
   return <ThemeProvider<NkTheme> theme={theme} {...props}/>
 }
 
-export const useNkTheme = () => {
+export const useNkTheme: () => {withFocus: string, theme: NkTheme} = () => {
   const theme = useTheme<NkTheme>()
 
   const withFocus = useMemo(() => css({

@@ -1,4 +1,4 @@
-import React from "react"
+import React, {useState} from "react"
 import {DragSource, DropTarget} from "react-dnd"
 import ReactDOM from "react-dom"
 import Select from "react-select"
@@ -8,78 +8,88 @@ import SvgDiv from "../../../SvgDiv"
 import {ButtonWithFocus, InputWithFocus} from "../../../withFocus"
 import {allValid} from "../editors/Validators"
 
-class RowSelect extends React.Component {
-  render() {
-    const {
-      changeName, changeValue, connectDragSource, connectDropTarget,
-      field, index, isDragging, isMarked, options, toogleCloseOnEsc,
-      showValidation, readOnly, remove, value, validators,
-    } = this.props
+function RowSelect(props) {
+  const {
+    changeName, changeValue, connectDragSource, connectDropTarget,
+    field, index, isDragging, isMarked, options,
+    showValidation, readOnly, remove, value, validators,
+  } = props
 
-    const markedClass = isMarked(index) ? " marked" : ""
-    const opacity = isDragging ? 0 : 1
+  const [captureEsc, setCaptureEsc] = useState(false)
 
-    return connectDropTarget(connectDragSource(
-      <div className="node-row movable-row" style={{opacity}}>
-        <div
-          className={`node-value fieldName${markedClass}`}
-          //to prevent dragging on specified elements, see https://stackoverflow.com/a/51911875
-          draggable={true}
-          onDragStart={this.preventDrag}
-        >
-          <InputWithFocus
-            className={!showValidation || allValid(validators, [field.name]) ? "node-input" : "node-input node-input-with-error"}
-            type="text"
-            value={field.name}
-            placeholder="Name"
-            readOnly={readOnly}
-            onChange={(e) => changeName(e.target.value)}
-          />
-          {showValidation && <ValidationLabels validators={validators} values={[field.name]}/>}
-        </div>
-        <div
-          className={`node-value field${markedClass}`}
-          draggable={true}
-          onDragStart={this.preventDrag}
-        >
-          <Select
-            className="node-value node-value-select node-value-type-select"
-            classNamePrefix={styles.nodeValueSelect}
-            isDisabled={readOnly}
-            maxMenuHeight={190}
-            onChange={(option) => changeValue(option.value)}
-            onMenuOpen={() => toogleCloseOnEsc()}
-            onMenuClose={() => toogleCloseOnEsc()}
-            options={options}
-            value={value}
-          />
-        </div>
-        {
-          readOnly ? null : (
-            <div
-              className="node-value fieldRemove"
-              draggable={true}
-              onDragStart={this.preventDrag}
-            >
-              <ButtonWithFocus
-                className="addRemoveButton"
-                title="Remove field"
-                onClick={() => {
-                  remove()
-                }}
-              >-
-              </ButtonWithFocus>
-            </div>
-          )}
-        <SvgDiv svgFile={"handlebars.svg"} className={"handle-bars"}/>
-      </div>,
-    ))
-  }
+  const markedClass = isMarked(index) ? " marked" : ""
+  const opacity = isDragging ? 0 : 1
 
-  preventDrag = (event) => {
-    event.preventDefault()
-    event.stopPropagation()
-  }
+  return connectDropTarget(connectDragSource(
+    <div className="node-row movable-row" style={{opacity}}>
+      <div
+        className={`node-value fieldName${markedClass}`}
+        //to prevent dragging on specified elements, see https://stackoverflow.com/a/51911875
+        draggable={true}
+        onDragStart={(event) => {
+          event.preventDefault()
+          event.stopPropagation()
+        }}
+      >
+        <InputWithFocus
+          className={!showValidation || allValid(validators, [field.name]) ? "node-input" : "node-input node-input-with-error"}
+          type="text"
+          value={field.name}
+          placeholder="Name"
+          readOnly={readOnly}
+          onChange={(e) => changeName(e.target.value)}
+        />
+        {showValidation && <ValidationLabels validators={validators} values={[field.name]}/>}
+      </div>
+      <div
+        className={`node-value field${markedClass}`}
+        draggable={true}
+        onDragStart={(event) => {
+          event.preventDefault()
+          event.stopPropagation()
+        }}
+        onKeyDown={e => {
+          //prevent modal close by esc
+          if (captureEsc && e.key === "Escape") {
+            e.stopPropagation()
+          }
+        }}
+      >
+        <Select
+          className="node-value node-value-select node-value-type-select"
+          classNamePrefix={styles.nodeValueSelect}
+          isDisabled={readOnly}
+          maxMenuHeight={190}
+          onChange={(option) => changeValue(option.value)}
+          onMenuOpen={() => setCaptureEsc(true)}
+          onMenuClose={() => setCaptureEsc(false)}
+          options={options}
+          value={value}
+        />
+      </div>
+      {
+        readOnly ? null : (
+          <div
+            className="node-value fieldRemove"
+            draggable={true}
+            onDragStart={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+            }}
+          >
+            <ButtonWithFocus
+              className="addRemoveButton"
+              title="Remove field"
+              onClick={() => {
+                remove()
+              }}
+            >-
+            </ButtonWithFocus>
+          </div>
+        )}
+      <SvgDiv svgFile={"handlebars.svg"} className={"handle-bars"}/>
+    </div>,
+  ))
 }
 
 const MovableRow =

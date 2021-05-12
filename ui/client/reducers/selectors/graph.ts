@@ -25,6 +25,7 @@ export const isSubprocess = createSelector(getProcessToDisplay, p => p.propertie
 export const isArchived = createSelector(getFetchedProcessDetails, p => p?.isArchived)
 export const isPristine = (state: RootState): boolean => ProcessUtils.nothingToSave(state) && !isProcessRenamed(state)
 export const hasError = createSelector(getProcessToDisplay, p => !ProcessUtils.hasNoErrors(p))
+export const hasWarnings = createSelector(getProcessToDisplay, p => !ProcessUtils.hasNoWarnings(p))
 export const hasPropertiesErrors = createSelector(getProcessToDisplay, p => !ProcessUtils.hasNoPropertiesErrors(p))
 export const getNodeToDisplay = createSelector(getGraph, g => g.nodeToDisplay)
 export const getSelectionState = createSelector(getGraph, g => g.selectionState)
@@ -70,7 +71,8 @@ export const getShowRunProcessDetails = createSelector(
   (testResults, processCounts) => testResults || processCounts,
 )
 
-export const hasOneVersion = createSelector(getFetchedProcessDetails, details => (details?.history || []).length <= 1)
+export const getVersions = createSelector(getFetchedProcessDetails, details => details?.history || [])
+export const hasOneVersion = createSelector(getVersions, h => h.length <= 1)
 export const getAdditionalFields = createSelector(getProcessToDisplay, p => p.properties?.additionalFields)
 
 export const getEdgeToDisplay = createSelector(getGraph, state => state.edgeToDisplay)

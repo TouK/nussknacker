@@ -1,5 +1,6 @@
+import {ProcessType} from "../../components/Process/types"
 import HttpService from "../../http/HttpService"
-import {NodeType, NodeId, ProcessDefinitionData, ValidationResult} from "../../types"
+import {NodeType, NodeId, ProcessDefinitionData, ValidationResult, Process} from "../../types"
 import {Action, ThunkAction} from "../reduxTypes"
 import {RootState} from "../../reducers"
 import {Position, layoutChanged} from "./ui/layout"
@@ -37,6 +38,11 @@ type NodesWithEdgesAddedAction = {
   nodesWithPositions: NodesWithPositions,
   edges: Edges,
   processDefinitionData: ProcessDefinitionData,
+}
+
+type ValidationStartedAction = {
+  type: "VALIDATION_STARTED",
+  process: Process,
 }
 
 type ValidationResultAction = {

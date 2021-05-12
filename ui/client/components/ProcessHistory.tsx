@@ -25,7 +25,7 @@ export function ProcessHistoryComponent(props: {isReadOnly?: boolean}): JSX.Elem
   const changeVersion = useCallback(
     (version: ProcessVersionType) => props.isReadOnly || nothingToSave ?
       doChangeVersion(version) :
-      dispatch(toggleConfirmDialog(true, unsavedProcessChanges(), () => doChangeVersion(version), "DISCARD", "NO", null)),
+      dispatch(toggleConfirmDialog(unsavedProcessChanges(), () => doChangeVersion(version), "DISCARD", "NO", null)),
     [dispatch, doChangeVersion, nothingToSave, props.isReadOnly],
   )
 

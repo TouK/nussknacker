@@ -120,12 +120,19 @@ espCheckbox(checkboxWidth)
     button:nth-child(2)
       margin-left 20px
 
+.espModal2
+  position fixed
+  width modalMaxWidth
+  background modalBkgColor
+  border: 2px solid modalBorder
+  box-shadow: 0 5px 25px 0 rgba(0,0,0,0.75)
+
 .draggable-container
   position absolute
-  top 10px
-  bottom 10px
-  left 10px
-  right 10px
+  top 0
+  bottom 0
+  left 0
+  right 0
   display flex
   justify-content center
 
@@ -241,7 +248,7 @@ espCheckbox(checkboxWidth)
 
 modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modalInputTextColor,processesHoverColor,hrColor,modalInputBkgColor)
   overflow auto
-  background-color: modalBkgColor
+  //background-color: modalBkgColor
   clear both
   labelWidth = 20%
   .warning
@@ -479,7 +486,7 @@ espPanelButton()
   :nth-of-type(2)
     color: errorColor
 
-.modalButton
+body .modalButton
   espButtonBase()
   width: 120px;
   height 30px
@@ -489,10 +496,6 @@ espPanelButton()
   margin-left 10px
   &:disabled
     background: labelBkgColor
-
-.ladda-button
-  padding 0
-  outline: none
 
 .error
   background-color: #FBB03B

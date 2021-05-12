@@ -34,7 +34,6 @@ function MigrateButton(props: Props) {
       icon={<Icon/>}
       disabled={!available}
       onClick={() => toggleConfirmDialog(
-        true,
         DialogMessages.migrate(processId, featuresSettings.remoteEnvironment.targetEnvironmentId),
         () => HttpService.migrateProcess(processId, versionId),
         t("panels.actions.process-migrate.yes", "Yes"),

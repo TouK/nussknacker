@@ -1,16 +1,18 @@
+/* eslint-disable i18next/no-literal-string */
+import {WindowButtonProps, WindowContentProps} from "@touk/window-manager"
 import moment from "moment"
-import React, {useCallback, useState} from "react"
+import React, {PropsWithChildren, useCallback, useEffect, useMemo, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
 import {fetchAndDisplayProcessCounts} from "../../../actions/nk"
 import {getProcessId} from "../../../reducers/selectors/graph"
 import "../../../stylesheets/visualization.styl"
-import Dialogs from "../Dialogs"
-import GenericModalDialog from "../GenericModalDialog"
-import {Picker, PickerInput} from "./Picker"
+import {WindowContent} from "../../../windowManager"
+import {ChangeableValue} from "../../ChangeableValue"
 import {CountsRanges} from "./CountsRanges"
+import {Picker, PickerInput} from "./Picker"
 
-interface State {
+type State = {
   from: PickerInput,
   to: PickerInput,
 }
@@ -22,40 +24,32 @@ const initState = (): State => {
   }
 }
 
-function CalculateCountsDialog(): JSX.Element {
+export function CalculateCountsForm(props: ChangeableValue<State>): JSX.Element {
   const {t} = useTranslation()
-  const [{from, to}, setState] = useState(initState)
-  const processId = useSelector(getProcessId)
-  const dispatch = useDispatch()
-
-  const init = useCallback(() => setState(initState), [])
-
-  const confirm = useCallback(async () => {
-    await dispatch(fetchAndDisplayProcessCounts(processId, moment(from), moment(to)))
-  }, [processId, from, to])
+  const [state, setState] = useState(props.value)
+  const {from, to} = state
 
   const setFrom = useCallback((from: PickerInput) => {
     setState(current => ({...current, from}))
-  }, [])
+  }, [setState])
 
   const setTo = useCallback((to: PickerInput) => {
     setState(current => ({...current, to}))
-  }, [])
+  }, [setState])
 
   const setRange = useCallback((value: [PickerInput, PickerInput]) => {
     const [from, to] = value
     setState(current => ({...current, from, to}))
-  }, [])
+  }, [setState])
+
+  useEffect(
+    () => props.onChange(state),
+    [props, state],
+  )
 
   const isValid = (input: PickerInput) => moment(input).isValid()
   return (
-    <GenericModalDialog
-      init={init}
-      confirm={confirm}
-      type={Dialogs.types.calculateCounts}
-      okBtnConfig={{disabled: !(isValid(from) && isValid(to)) }}
-      header={t("calculateCounts.title", "counts")}
-    >
+    <>
       <Picker
         label={t("calculateCounts.processCountsFrom", "Scenario counts from")}
         onChange={setFrom}
@@ -70,8 +64,49 @@ function CalculateCountsDialog(): JSX.Element {
         label={t("calculateCounts.quickRanges", "Quick ranges")}
         onChange={setRange}
       />
-    </GenericModalDialog>
+    </>
   )
 }
 
-export default CalculateCountsDialog
+export function CountsDialog({children, ...props}: PropsWithChildren<WindowContentProps>): JSX.Element {
+  const {t} = useTranslation()
+  const [state, setState] = useState(initState)
+  const processId = useSelector(getProcessId)
+  const dispatch = useDispatch()
+
+  const confirm = useCallback(async () => {
+    await dispatch(fetchAndDisplayProcessCounts(processId, moment(state.from), moment(state.to)))
+  }, [dispatch, processId, state])
+
+  const buttons: WindowButtonProps[] = useMemo(
+    () => [
+      {
+        title: t("dialog.button.cancel", "Cancel"),
+        action: () => {
+          props.close()
+        },
+      },
+      {
+        title: t("dialog.button.ok", "Ok"),
+        action: async () => {
+          await confirm()
+          props.close()
+        },
+      },
+    ],
+    [confirm, props, t],
+  )
+
+  return (
+    <WindowContent
+      buttons={buttons}
+      title={t("calculateCounts.title", "counts")}
+      classnames={{
+        content: "modalContentDark confirmationModal",
+      }}
+      {...props}
+    >
+      <CalculateCountsForm value={state} onChange={setState}/>
+    </WindowContent>
+  )
+}

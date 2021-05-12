@@ -1,3 +1,4 @@
+import {ActionCreator} from "redux"
 import HttpService from "../../http/HttpService"
 import {calculateProcessAfterChange} from "./process"
 import {NodeType, Process, ValidationResult} from "../../types"
@@ -16,7 +17,7 @@ export type RenameProcessAction = {
 }
 
 export function editNode(process: Process, before: NodeType, after: NodeType): ThunkAction {
-  return (dispatch) => {
+  return async (dispatch) => {
     return dispatch(calculateProcessAfterChange(process, before, after)).then((process) => {
       return HttpService.validateProcess(process).then((response) => {
         return dispatch({

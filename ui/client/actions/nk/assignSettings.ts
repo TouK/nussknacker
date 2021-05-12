@@ -1,4 +1,5 @@
 import {DynamicTabData} from "../../containers/DynamicTab"
+import {DynamicTabData} from "../../containers/DynamicTab"
 import {AuthenticationSettings} from "../../reducers/settings"
 import {UnknownRecord} from "../../types/common"
 

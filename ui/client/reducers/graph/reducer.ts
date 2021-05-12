@@ -299,7 +299,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         ...state,
         processToDisplay: {
           ...NodeUtils.editGroup(state.processToDisplay, action.oldGroupId, action.newGroup),
-          validationResult: action.validationResult,
         },
         nodeToDisplay: action.newGroup,
         layout: updateLayoutAfterNodeIdChange(state.layout, action.oldGroupId, action.newGroup.id),

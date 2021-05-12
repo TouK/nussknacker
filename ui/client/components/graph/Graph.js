@@ -332,11 +332,11 @@ export class Graph extends React.Component {
       if (nodeDataId) {
         const nodeData = this.getNodeData(cellView.model)
         const prefixedNodeId = this.props.nodeIdPrefixForSubprocessTests + nodeDataId
-        this.props.actions.displayModalNodeDetails({...nodeData, id: prefixedNodeId}, this.props.readonly)
+        this.props.showModalNodeDetails({...nodeData, id: prefixedNodeId}, this.props.readonly)
       }
 
       if (cellView.model.attributes.edgeData) {
-        this.props.actions.displayModalEdgeDetails(cellView.model.attributes.edgeData)
+        this.props.showModalEdgeDetails(cellView.model.attributes.edgeData)
       }
     })
 

@@ -1,4 +1,4 @@
-import {MutableRefObject} from "react"
+import {MutableRefObject, useCallback, useMemo} from "react"
 import useDimensions, {Options} from "react-cool-dimensions"
 
 (async () => {
@@ -14,18 +14,21 @@ export const useSize: typeof useDimensions = options => {
 }
 
 export function useSizeWithRef<T extends HTMLElement | null = HTMLElement>(
-  ref?: MutableRefObject<T>,
+  ref: MutableRefObject<T>,
   options?: Options<T>,
 ): ReturnType<typeof useSize> {
   const dimensions = useSize<T>(options)
-  return ref ?
-    {
-      ...dimensions,
-      observe: (el: T) => {
-        dimensions.observe(el)
-        ref.current = el
-      },
-    } :
-    dimensions
+  const {observe} = dimensions
+  const observeWithRef = useCallback(
+    (el: T) => {
+      observe(el)
+      ref.current = el
+    },
+    [observe, ref],
+  )
+  return useMemo(
+    () => ({...dimensions, observe: observeWithRef}),
+    [dimensions, observeWithRef],
+  )
 
 }
