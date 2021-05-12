@@ -190,6 +190,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
 
     // Comment relates to specific version (in this case last version). Last version could be extracted in one of the
     // above queries, but for sake of readability we perform separate query for this matter
+    // todo: remove this comment in favour of process-audit-log
     val addCommentAction = processVersionsTable
       .filter(_.processId === process.id.value)
       .sortBy(_.id.desc)
