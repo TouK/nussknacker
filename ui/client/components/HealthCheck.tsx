@@ -1,11 +1,11 @@
 import {css} from "emotion"
-import React, {PropsWithChildren, useCallback, useEffect, useState} from "react"
+import React, {PropsWithChildren, useCallback, useEffect, useRef, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"
 import {Transition} from "react-transition-group"
 import {ReactComponent as TipsWarningIcon} from "../assets/icons/tipsWarning.svg"
 import {ReactComponent as CollapseIcon} from "../assets/img/arrows/panel-hide-arrow.svg"
-import {useSize} from "../containers/hooks/useSize"
+import {useSizeWithRef} from "../containers/hooks/useSize"
 import {useInterval} from "../containers/Interval"
 import {ProcessLink} from "../containers/processLink"
 import {NkTheme, useNkTheme} from "../containers/theme"
@@ -55,7 +55,8 @@ function Collipsable({iconSize, children}: PropsWithChildren<{iconSize: number}>
     },
     [expanded],
   )
-  const {ref} = useSize<HTMLDivElement>()
+  const ref = useRef<HTMLDivElement>()
+  const {observe} = useSizeWithRef<HTMLDivElement>(ref)
   const isOverflow = expanded || ref.current?.offsetWidth < ref.current?.scrollWidth
   const {t} = useTranslation()
   const {theme} = useNkTheme()
@@ -78,7 +79,7 @@ function Collipsable({iconSize, children}: PropsWithChildren<{iconSize: number}>
             })}
           >
             <div
-              ref={ref}
+              ref={observe}
               className={css({
                 overflow: "hidden",
                 textOverflow: "ellipsis",
