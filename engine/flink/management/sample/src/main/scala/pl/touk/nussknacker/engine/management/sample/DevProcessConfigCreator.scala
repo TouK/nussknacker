@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.sample
 
+import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 
 import com.typesafe.config.Config
@@ -20,7 +21,7 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelp
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.SlidingAggregateTransformerV2
 import pl.touk.nussknacker.engine.flink.util.transformer.outer.OuterJoinTransformer
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer, UnionWithMemoTransformer}
-import pl.touk.nussknacker.engine.kafka.{BasicFormatter, KafkaConfig}
+import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
@@ -34,7 +35,7 @@ import pl.touk.nussknacker.engine.management.sample.source._
 import pl.touk.nussknacker.engine.management.sample.transformer._
 import pl.touk.nussknacker.engine.util.LoggingListener
 import net.ceedubs.ficus.Ficus._
-import pl.touk.nussknacker.engine.kafka.consumerrecord.FixedValueDeserializaitionSchemaFactory
+import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordToJsonFormatter, FixedValueDeserializaitionSchemaFactory}
 
 object DevProcessConfigCreator {
   val oneElementValue = "One element"
@@ -76,10 +77,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
   override def listeners(processObjectDependencies: ProcessObjectDependencies) = List(LoggingListener)
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
-    "real-kafka" -> all(new KafkaSourceFactory[String, String](new FixedValueDeserializaitionSchemaFactory(new SimpleStringSchema),
-                                                        None,
-                                                        BasicFormatter,
-                                                        processObjectDependencies)),
+    "real-kafka" -> all(simpleStringValueKafkaSource(processObjectDependencies)),
     "kafka-transaction" -> all(FlinkSourceFactory.noParam(new NoEndingSource)),
     "boundedSource" -> categories(BoundedSource),
     "oneSource" -> categories(FlinkSourceFactory.noParam(new OneSource)),
@@ -189,5 +187,19 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "engine-version" -> "0.1",
       "generation-time" -> LocalDateTime.now().toString
     )
+  }
+
+  private def simpleStringValueKafkaSource(processObjectDependencies: ProcessObjectDependencies): KafkaSourceFactory[Any, Any] = {
+    val schemaFactory = new FixedValueDeserializaitionSchemaFactory(new SimpleStringSchema)
+    val recordFormatter = new ConsumerRecordToJsonFormatter(
+      schemaFactory.create(Nil, kafkaConfig(processObjectDependencies.config)),
+      (key: Option[String], value: String) => (key.map(_.getBytes(StandardCharsets.UTF_8)).orNull, value.getBytes(StandardCharsets.UTF_8))
+    )
+    val sourceFactory = new KafkaSourceFactory[String, String](
+      schemaFactory,
+      None,
+      recordFormatter,
+      processObjectDependencies)
+    sourceFactory.asInstanceOf[KafkaSourceFactory[Any, Any]]
   }
 }

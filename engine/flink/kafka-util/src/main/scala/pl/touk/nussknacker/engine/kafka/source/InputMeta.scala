@@ -46,10 +46,30 @@ object InputMeta {
     * See also [[InputMetaAwareTypeInformationCustomisation]]
     */
   def withType(keyTypingResult: typing.TypingResult): typing.TypingResult =
-    TypedObjectTypingResult(ListMap(keyParameterName -> keyTypingResult), Typed.typedClass[BaseInputMeta])
+    TypedObjectTypingResult(
+      ListMap(
+        keyParameterName -> keyTypingResult,
+        "topic" -> Typed[String],
+        "partition" -> Typed[Integer],
+        "offset" -> Typed[java.lang.Long],
+        "timestamp" -> Typed[java.lang.Long],
+        "timestampType" -> Typed[TimestampType],
+        "headers" -> Typed[java.util.Map[String, String]],
+        "leaderEpoch" -> Typed[Integer]
+      ),
+      Typed.typedClass[BaseInputMeta])
 
   def typeInformation[K](keyTypeInformation: TypeInformation[K]): CaseClassTypeInfo[InputMeta[K]] = {
-    val fieldNames = List(keyParameterName, "topic", "partition", "offset", "timestamp", "timestampType", "headers", "leaderEpoch")
+    val fieldNames = List(
+      keyParameterName,
+      "topic",
+      "partition",
+      "offset",
+      "timestamp",
+      "timestampType",
+      "headers",
+      "leaderEpoch"
+    )
     val fieldTypes = List(
       keyTypeInformation,
       TypeInformation.of(classOf[String]),
