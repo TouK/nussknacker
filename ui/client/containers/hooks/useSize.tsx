@@ -1,4 +1,5 @@
-import useDimensions from "react-cool-dimensions"
+import {MutableRefObject} from "react"
+import useDimensions, {Options} from "react-cool-dimensions"
 
 (async () => {
   if (!("ResizeObserver" in window)) {
@@ -10,4 +11,21 @@ import useDimensions from "react-cool-dimensions"
 
 export const useSize: typeof useDimensions = options => {
   return useDimensions(options)
+}
+
+export function useSizeWithRef<T extends HTMLElement | null = HTMLElement>(
+  ref?: MutableRefObject<T>,
+  options?: Options<T>,
+): ReturnType<typeof useSize> {
+  const dimensions = useSize<T>(options)
+  return ref ?
+    {
+      ...dimensions,
+      observe: (el: T) => {
+        dimensions.observe(el)
+        ref.current = el
+      },
+    } :
+    dimensions
+
 }

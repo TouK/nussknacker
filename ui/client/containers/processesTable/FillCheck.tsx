@@ -1,5 +1,5 @@
 import {css} from "emotion"
-import React, {PropsWithChildren, useLayoutEffect, useRef} from "react"
+import React, {PropsWithChildren, useLayoutEffect} from "react"
 import {useDebouncedCallback} from "use-debounce"
 import {useSize} from "../hooks/useSize"
 
@@ -8,13 +8,8 @@ type Props = {
 }
 
 export function FillCheck({children, onChange}: PropsWithChildren<Props>): JSX.Element {
-  const wrapperRef = useRef()
-  const childRef = useRef()
-  const wrapper = useSize({ref: wrapperRef})
-  const child = useSize({ref: childRef})
-
-  const availableHeight = wrapper.height
-  const currentHeight = child.height
+  const {observe: wrapperObserve, height: availableHeight} = useSize()
+  const {observe: childObserve, height: currentHeight} = useSize()
 
   const [callback] = useDebouncedCallback<[freeSpace: number, currentHeight: number]>(
     (freeSpace, currentHeight) => onChange(freeSpace, currentHeight), 25,
@@ -36,8 +31,8 @@ export function FillCheck({children, onChange}: PropsWithChildren<Props>): JSX.E
   })
 
   return (
-    <div ref={wrapperRef} className={wrapperStyles}>
-      <div ref={childRef}>{children}</div>
+    <div ref={wrapperObserve} className={wrapperStyles}>
+      <div ref={childObserve}>{children}</div>
     </div>
   )
 }
