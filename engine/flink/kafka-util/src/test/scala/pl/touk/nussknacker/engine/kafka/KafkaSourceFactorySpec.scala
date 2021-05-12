@@ -15,7 +15,6 @@ import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.{JsonSerializationSchema, SimpleSerializationSchema}
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactoryMixin._
-import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 
@@ -64,7 +63,7 @@ class KafkaSourceFactorySpec extends FunSuite with Matchers with KafkaSpec with 
   test("read and deserialize from simple json source") {
     val topic = createTopic("simpleJson")
     val givenObj = sampleValue
-    val expectedObj = SerializableConsumerRecord.createConsumerRecord[String, SampleValue](
+    val expectedObj = createConsumerRecord[String, SampleValue](
       topic,
       0,
       0L,
@@ -83,7 +82,7 @@ class KafkaSourceFactorySpec extends FunSuite with Matchers with KafkaSpec with 
   test("read and deserialize consumer record with value only") {
     val topic = createTopic("consumerRecordNoKey")
     val givenObj = sampleValue
-    val expectedObj = SerializableConsumerRecord.createConsumerRecord[String, SampleValue](
+    val expectedObj = createConsumerRecord[String, SampleValue](
       topic,
       0,
       0L,
@@ -101,8 +100,8 @@ class KafkaSourceFactorySpec extends FunSuite with Matchers with KafkaSpec with 
 
   test("read and deserialize consumer record with key, value and headers") {
     val topic = createTopic("consumerRecordKeyValueHeaders")
-    val givenObj = ObjToSerialize(sampleValue, sampleKey, sampleHeaders)
-    val expectedObj = SerializableConsumerRecord.createConsumerRecord[SampleKey, SampleValue](
+    val givenObj = ObjToSerialize(sampleValue, sampleKey, sampleHeadersMap)
+    val expectedObj = createConsumerRecord[SampleKey, SampleValue](
       topic,
       0,
       0L,
@@ -110,7 +109,7 @@ class KafkaSourceFactorySpec extends FunSuite with Matchers with KafkaSpec with 
       TimestampType.CREATE_TIME,
       sampleKey,
       sampleValue,
-      ConsumerRecordUtils.toHeaders(sampleHeaders),
+      ConsumerRecordUtils.toHeaders(sampleHeadersMap),
       Optional.of(0)
     )
     pushMessage(objToSerializeSerializationSchema(topic), givenObj, topic, timestamp = constTimestamp)

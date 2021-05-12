@@ -33,7 +33,7 @@ class ConsumerRecordDeserializationSpec extends FunSuite with Matchers with Kafk
     val processObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
 
-    val givenObj = new ConsumerRecord[SampleKey, SampleValue]("loremIpsum", 11, 22L, constTimestamp, TimestampType.CREATE_TIME, 33L, 44, 55, sampleKey, sampleValue, ConsumerRecordUtils.toHeaders(sampleHeaders))
+    val givenObj = new ConsumerRecord[SampleKey, SampleValue]("loremIpsum", 11, 22L, constTimestamp, TimestampType.CREATE_TIME, 33L, 44, 55, sampleKey, sampleValue, sampleHeaders)
 
     val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(sampleKeyJsonDeserializer, sampleValueJsonDeserializer)
     val typeInformation = deserializationSchemaFactory.create(List("dummyTopic"), kafkaConfig).getProducedType

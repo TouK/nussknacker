@@ -2,16 +2,16 @@ package pl.touk.nussknacker.engine.process.source
 
 import io.circe.{Decoder, Encoder}
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
-import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
+import org.apache.kafka.common.serialization.StringDeserializer
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.flink.api.process.BasicFlinkSink
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, SampleConsumerRecordDeserializationSchemaFactory, SampleConsumerRecordSerializationSchemaFactory}
+import pl.touk.nussknacker.engine.kafka.KafkaSourceFactoryMixin.{SampleKey, SampleValue, createDeserializer, serializeKeyValue}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, SampleConsumerRecordDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordToJsonFormatter
 import pl.touk.nussknacker.engine.kafka.source.{InputMeta, KafkaSourceFactory}
-import pl.touk.nussknacker.engine.kafka.KafkaSourceFactoryMixin._
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForStrings
 import pl.touk.nussknacker.engine.process.source.KafkaSourceFactoryProcessConfigCreator._
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
@@ -74,10 +74,9 @@ object KafkaSourceFactoryProcessConfigCreator {
     : KafkaSourceFactory[Any, Any] = {
 
       val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(createDeserializer[K], createDeserializer[V])
-      val serializationSchemaFactory = new SampleConsumerRecordSerializationSchemaFactory(createSerializer[K], createSerializer[V])
       val testDataRecordFormatter = new ConsumerRecordToJsonFormatter(
         deserializationSchemaFactory.create(List("dummyTopic"), kafkaConfig),
-        serializationSchemaFactory.create("dummyTopic", kafkaConfig)
+        serializeKeyValue[K, V]
       )
       val kafkaSource = new KafkaSourceFactory(
         deserializationSchemaFactory,
@@ -91,10 +90,9 @@ object KafkaSourceFactoryProcessConfigCreator {
     def jsonValueWithMeta[V: ClassTag:Encoder:Decoder](processObjectDependencies: ProcessObjectDependencies, kafkaConfig: KafkaConfig): KafkaSourceFactory[Any, Any] = {
 
       val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(new StringDeserializer with Serializable, createDeserializer[V])
-      val serializationSchemaFactory = new SampleConsumerRecordSerializationSchemaFactory(new StringSerializer with Serializable, createSerializer[V])
       val testDataRecordFormatter = new ConsumerRecordToJsonFormatter(
         deserializationSchemaFactory.create(List("dummyTopic"), kafkaConfig),
-        serializationSchemaFactory.create("dummyTopic", kafkaConfig)
+        serializeKeyValue[V]
       )
       val kafkaSource = new KafkaSourceFactory(
         deserializationSchemaFactory,
@@ -108,10 +106,9 @@ object KafkaSourceFactoryProcessConfigCreator {
     // For scenario when prepareInitialParameters fetches list of available topics form some external repository and an exception occurs.
     def jsonValueWithMetaWithException[V: ClassTag:Encoder:Decoder](processObjectDependencies: ProcessObjectDependencies, kafkaConfig: KafkaConfig): KafkaSourceFactory[Any, Any] = {
       val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(new StringDeserializer with Serializable, createDeserializer[V])
-      val serializationSchemaFactory = new SampleConsumerRecordSerializationSchemaFactory(new StringSerializer with Serializable, createSerializer[V])
       val testDataRecordFormatter = new ConsumerRecordToJsonFormatter(
         deserializationSchemaFactory.create(List("dummyTopic"), kafkaConfig),
-        serializationSchemaFactory.create("dummyTopic", kafkaConfig)
+        serializeKeyValue[V]
       )
       val kafkaSource = new KafkaSourceFactory(
         deserializationSchemaFactory,
