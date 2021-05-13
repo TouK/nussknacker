@@ -42,4 +42,11 @@ class DefaultModelConfigLoaderTest extends FunSuite with Matchers {
     config.hasPath("testProperty") shouldBe false
     config.hasPath("otherProperty") shouldBe false
   }
+
+  test("should not load application.conf") {
+    val config = LocalModelData(inputConfig, new EmptyProcessConfigCreator).processConfig
+
+    config.hasPath("shouldNotLoad") shouldBe false
+
+  }
 }
