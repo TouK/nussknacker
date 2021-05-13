@@ -189,17 +189,12 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     )
   }
 
-  private def simpleStringValueKafkaSource(processObjectDependencies: ProcessObjectDependencies): KafkaSourceFactory[Any, Any] = {
+  private def simpleStringValueKafkaSource(processObjectDependencies: ProcessObjectDependencies): KafkaSourceFactory[String, String] = {
     val schemaFactory = new FixedValueDeserializaitionSchemaFactory(new SimpleStringSchema)
     val recordFormatter = new ConsumerRecordToJsonFormatter(
       schemaFactory.create(Nil, kafkaConfig(processObjectDependencies.config)),
       (key: Option[String], value: String) => (key.map(_.getBytes(StandardCharsets.UTF_8)).orNull, value.getBytes(StandardCharsets.UTF_8))
     )
-    val sourceFactory = new KafkaSourceFactory[String, String](
-      schemaFactory,
-      None,
-      recordFormatter,
-      processObjectDependencies)
-    sourceFactory.asInstanceOf[KafkaSourceFactory[Any, Any]]
+    new KafkaSourceFactory[String, String](schemaFactory, None, recordFormatter, processObjectDependencies)
   }
 }

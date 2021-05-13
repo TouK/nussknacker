@@ -100,7 +100,7 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
       case SourceType.jsonValueWithMeta => Map("key" -> "#inputMeta.key")
       case _ => Map.empty[String, String]
     }
-    val headerVariables = Map("headers" -> "#inputMeta.headers.toString()")
+    val headerVariables = Map("headers" -> """#inputMeta.headers.get("headerOne")""")
     val checkAllVariables = inputVariables ++ metaVariables ++ keyVariables ++ headerVariables ++ customVariables
 
     val process = EspProcessBuilder

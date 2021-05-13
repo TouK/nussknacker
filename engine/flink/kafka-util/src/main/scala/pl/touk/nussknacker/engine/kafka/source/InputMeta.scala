@@ -7,7 +7,7 @@ import org.apache.flink.api.java.typeutils.MapTypeInfo
 import org.apache.flink.api.scala.typeutils.{CaseClassTypeInfo, ScalaCaseClassSerializer}
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetectionForTypingResult, TypingResultAwareTypeInformationCustomisation}
 
 import scala.collection.immutable.ListMap
@@ -54,7 +54,7 @@ object InputMeta {
         "offset" -> Typed[java.lang.Long],
         "timestamp" -> Typed[java.lang.Long],
         "timestampType" -> Typed[TimestampType],
-        "headers" -> Typed[java.util.Map[String, String]],
+        "headers" -> TypedClass(classOf[java.util.Map[_, _]], List(Typed[String], Typed[String])),
         "leaderEpoch" -> Typed[Integer]
       ),
       Typed.typedClass[BaseInputMeta])
