@@ -26,5 +26,5 @@ echo "Nussknacker up and running with" \
      "GROUP: $GROUP."
 
 exec java $JDK_JAVA_OPTIONS -Dlogback.configurationFile="$LOG_FILE" \
-          -Dconfig.locations="$CONFIG_FILE" -Dconfig.override_with_env_vars=true \
+          -Dnussknacker.config.locations="$CONFIG_FILE" -Dconfig.override_with_env_vars=true \
           -cp "$LIB_DIR/*:$MANAGERS_DIR/*" "$APPLICATION_APP"

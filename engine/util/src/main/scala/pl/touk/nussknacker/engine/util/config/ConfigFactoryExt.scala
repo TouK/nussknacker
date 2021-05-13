@@ -8,7 +8,7 @@ import scala.util.Try
 
 object ConfigFactoryExt {
 
-  private val configLocationProperty = "config.locations"
+  val configLocationProperty: String = "nussknacker.config.locations"
 
   def parseUri(uri: URI): Config = {
     uri.getScheme match {

@@ -62,6 +62,7 @@ To see biggest differences please consult the [changelog](Changelog.md).
 * [#1557](https://github.com/TouK/nussknacker/pull/1556) Some classes from standalone engine were moved to standalone api to remove engine to (model) utils dependency:
   `StandaloneContext`, `StandaloneContextLifecycle`, `MetricsProvider`
 * [#1558](https://github.com/TouK/nussknacker/pull/1558) `FlinkProcessRegistrar` takes configuration directly from `FlinkProcessCompiler` (this can affect some tests setup) 
+* [#1631](https://github.com/TouK/nussknacker/pull/1631) Introduction of `nussknacker.config.locations` property, drop use of standard `config.file` property. Model configuration no longer has direct access to root UI config.
 
 ## In version 0.3.0
 
