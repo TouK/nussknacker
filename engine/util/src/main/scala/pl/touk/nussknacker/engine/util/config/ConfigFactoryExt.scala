@@ -29,7 +29,7 @@ object ConfigFactoryExt {
   }
 
   def load(resources: List[URI]): Config = {
-    resources.map(ConfigFactoryExt.parseUri).foldLeft(ConfigFactory.empty())(_.withFallback(_)).resolve()
+    resources.map(ConfigFactoryExt.parseUri).reverse.foldLeft(ConfigFactory.empty())(_.withFallback(_))
   }
 
 }

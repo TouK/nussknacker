@@ -210,12 +210,12 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
 object NussknackerAppInitializer extends NussknackerAppInitializer(ConfigFactoryExt.load())
 
-class NussknackerAppInitializer(baseConfig: Config) extends LazyLogging {
+class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLogging {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
-  protected val config: Config = ConfigWithDefaults(baseConfig)
+  protected val config: Config = ConfigWithDefaults(baseUnresolvedConfig)
 
   protected implicit val system: ActorSystem = ActorSystem("nussknacker-ui", config)
   protected implicit val materializer: ActorMaterializer = ActorMaterializer()
