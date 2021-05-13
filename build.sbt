@@ -258,7 +258,7 @@ val slickV = "3.3.3"
 val hsqldbV = "2.5.1"
 val postgresV = "42.2.19"
 val flywayV = "6.3.3"
-val confluentV = "5.5.0"
+val confluentV = "5.5.4"
 val jbcryptV = "0.4"
 val cronParserV = "9.1.3"
 val javaxValidationApiV = "2.0.1.Final"
@@ -770,7 +770,10 @@ lazy val flinkTestUtil = (project in engine("flink/test-util")).
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         //intellij has some problems with provided...
         "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV,
-        "org.apache.flink" %% "flink-test-utils" % flinkV,
+        "org.apache.flink" %% "flink-test-utils" % flinkV  excludeAll (
+          //we use logback in NK
+          ExclusionRule("org.apache.logging.log4j", "log4j-slf4j-impl")
+        ),
         "org.apache.flink" %% "flink-runtime" % flinkV % "compile" classifier "tests",
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV
       )
