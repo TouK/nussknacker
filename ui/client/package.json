@@ -117,7 +117,7 @@
     "@babel/plugin-proposal-json-strings": "^7.14.2",
     "@babel/plugin-proposal-logical-assignment-operators": "^7.13.8",
     "@babel/plugin-proposal-nullish-coalescing-operator": "^7.14.2",
-    "@babel/plugin-proposal-numeric-separator": "^7.12.13",
+    "@babel/plugin-proposal-numeric-separator": "^7.14.2",
     "@babel/plugin-proposal-object-rest-spread": "^7.13.8",
     "@babel/plugin-proposal-optional-chaining": "^7.14.2",
     "@babel/plugin-proposal-pipeline-operator": "^7.12.13",
