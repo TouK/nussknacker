@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 import pl.touk.nussknacker.engine.types.EspTypeUtils.clazzDefinition
 import pl.touk.nussknacker.engine.util.logging.ExecutionTimeMeasuring
-import pl.touk.nussknacker.engine.variables.{BaseInputMetaVariables, MetaVariables}
+import pl.touk.nussknacker.engine.variables.{BaseKafkaInputMetaVariables, MetaVariables}
 
 import scala.collection.mutable
 
@@ -27,6 +27,8 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
 
   // We have some types that can't be discovered based on model but can by provided using e.g. literals
   //TODO: what else should be here?
+  //TODO: Here, this static list of mandatory classes, should be replaced by mechanizm that allows
+  // to plug in mandatory classes from other modules, e.g. BaseKafkaInputMetaVariables from kafka-util
   private val mandatoryClasses = (Set(
     classOf[java.util.List[_]],
     classOf[java.util.Map[_, _]],
@@ -34,7 +36,7 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
     classOf[Number],
     classOf[String],
     classOf[MetaVariables],
-    classOf[BaseInputMetaVariables]
+    classOf[BaseKafkaInputMetaVariables]
   ) ++
     // Literals for primitive types are wrapped to boxed representations
     primitiveTypes.map(ClassUtils.primitiveToWrapper)).map(Typed(_))

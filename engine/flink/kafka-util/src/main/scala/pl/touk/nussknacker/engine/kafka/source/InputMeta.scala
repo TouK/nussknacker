@@ -9,7 +9,7 @@ import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetectionForTypingResult, TypingResultAwareTypeInformationCustomisation}
-import pl.touk.nussknacker.engine.variables.BaseInputMetaVariables
+import pl.touk.nussknacker.engine.variables.BaseKafkaInputMetaVariables
 
 import scala.collection.immutable.ListMap
 
@@ -36,7 +36,7 @@ case class InputMeta[K](key: K,
                         headers: java.util.Map[String, String],
                         leaderEpoch: Integer
                        )
-  extends BaseInputMetaVariables
+  extends BaseKafkaInputMetaVariables
 
 object InputMeta {
 
@@ -48,12 +48,14 @@ object InputMeta {
     * See also [[InputMetaAwareTypeInformationCustomisation]]
     */
   def withType(keyTypingResult: typing.TypingResult): typing.TypingResult =
-    TypedObjectTypingResult(
+    new TypedObjectTypingResult(
       ListMap(
         keyParameterName -> keyTypingResult
       ),
-      Typed.typedClass[BaseInputMetaVariables]
-    )
+      Typed.typedClass[BaseKafkaInputMetaVariables]
+    ) {
+      override def display: String = Typed.genericTypeClass(classOf[InputMeta[_]], List(keyTypingResult)).display
+    }
 
   def typeInformation[K](keyTypeInformation: TypeInformation[K]): CaseClassTypeInfo[InputMeta[K]] = {
     val fieldNames = List(
@@ -83,22 +85,12 @@ object InputMeta {
   }
 }
 
-trait BaseInputMeta {
-  def topic: String
-  def partition: Integer
-  def offset: java.lang.Long
-  def timestamp: java.lang.Long
-  def timestampType: TimestampType
-  def headers: java.util.Map[String, String]
-  def leaderEpoch: Integer
-}
-
 /**
   * Customisation for TypeInformationDetection that provides type information for BaseInputMeta.
   */
 class InputMetaAwareTypeInformationCustomisation extends TypingResultAwareTypeInformationCustomisation {
   override def customise(originalDetection: TypeInformationDetectionForTypingResult): PartialFunction[typing.TypingResult, TypeInformation[_]] = {
-    case a:TypedObjectTypingResult if a.objType.klass == classOf[BaseInputMetaVariables] =>
+    case a:TypedObjectTypingResult if a.objType.klass == classOf[BaseKafkaInputMetaVariables] =>
       InputMeta.typeInformation(originalDetection.forType(a.fields(InputMeta.keyParameterName)))
   }
 

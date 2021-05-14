@@ -4,8 +4,9 @@ import org.apache.kafka.common.record.TimestampType
 
 /**
   * BaseInputMetaVariables keeps definition of kafka event metadata fields.
+  * Required by [[pl.touk.nussknacker.engine.types.TypesInformationExtractor]] to extract methods to suggest in FE component.
   */
-trait BaseInputMetaVariables {
+trait BaseKafkaInputMetaVariables {
   def topic: String
   def partition: Integer
   def offset: java.lang.Long
