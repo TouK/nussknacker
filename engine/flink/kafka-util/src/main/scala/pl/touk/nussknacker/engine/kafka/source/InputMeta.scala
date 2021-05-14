@@ -7,8 +7,9 @@ import org.apache.flink.api.java.typeutils.MapTypeInfo
 import org.apache.flink.api.scala.typeutils.{CaseClassTypeInfo, ScalaCaseClassSerializer}
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetectionForTypingResult, TypingResultAwareTypeInformationCustomisation}
+import pl.touk.nussknacker.engine.variables.BaseInputMetaVariables
 
 import scala.collection.immutable.ListMap
 
@@ -34,7 +35,8 @@ case class InputMeta[K](key: K,
                         timestampType: TimestampType,
                         headers: java.util.Map[String, String],
                         leaderEpoch: Integer
-                       ) extends BaseInputMeta
+                       )
+  extends BaseInputMetaVariables
 
 object InputMeta {
 
@@ -48,16 +50,10 @@ object InputMeta {
   def withType(keyTypingResult: typing.TypingResult): typing.TypingResult =
     TypedObjectTypingResult(
       ListMap(
-        keyParameterName -> keyTypingResult,
-        "topic" -> Typed[String],
-        "partition" -> Typed[Integer],
-        "offset" -> Typed[java.lang.Long],
-        "timestamp" -> Typed[java.lang.Long],
-        "timestampType" -> Typed[TimestampType],
-        "headers" -> TypedClass(classOf[java.util.Map[_, _]], List(Typed[String], Typed[String])),
-        "leaderEpoch" -> Typed[Integer]
+        keyParameterName -> keyTypingResult
       ),
-      Typed.typedClass[BaseInputMeta])
+      Typed.typedClass[BaseInputMetaVariables]
+    )
 
   def typeInformation[K](keyTypeInformation: TypeInformation[K]): CaseClassTypeInfo[InputMeta[K]] = {
     val fieldNames = List(
@@ -87,9 +83,6 @@ object InputMeta {
   }
 }
 
-/**
-  * BaseInputMeta keeps definition of metadata fields to extract TypingResult.
-  */
 trait BaseInputMeta {
   def topic: String
   def partition: Integer
@@ -105,7 +98,7 @@ trait BaseInputMeta {
   */
 class InputMetaAwareTypeInformationCustomisation extends TypingResultAwareTypeInformationCustomisation {
   override def customise(originalDetection: TypeInformationDetectionForTypingResult): PartialFunction[typing.TypingResult, TypeInformation[_]] = {
-    case a:TypedObjectTypingResult if a.objType.klass == classOf[BaseInputMeta] =>
+    case a:TypedObjectTypingResult if a.objType.klass == classOf[BaseInputMetaVariables] =>
       InputMeta.typeInformation(originalDetection.forType(a.fields(InputMeta.keyParameterName)))
   }
 

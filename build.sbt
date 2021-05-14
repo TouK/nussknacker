@@ -605,6 +605,7 @@ lazy val interpreter = (project in engine("interpreter")).
         "org.hsqldb" % "hsqldb" % hsqldbV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "org.apache.avro" % "avro" % avroV % "test",
+        "org.apache.kafka" %% "kafka" % kafkaV,
         "org.scalacheck" %% "scalacheck" % scalaCheckV % "test",
         "com.cronutils" % "cron-utils" % cronParserV % "test"
       )
@@ -672,7 +673,7 @@ lazy val avroFlinkUtil = (project in engine("flink/avro-util")).
       )
     }
   )
-  .dependsOn(kafkaFlinkUtil, interpreter, kafkaTestUtil % "test", flinkTestUtil % "test", process % "test")
+  .dependsOn(kafkaFlinkUtil, kafkaTestUtil % "test", flinkTestUtil % "test", process % "test")
 
 lazy val kafkaFlinkUtil = (project in engine("flink/kafka-util")).
   settings(commonSettings).
@@ -686,7 +687,7 @@ lazy val kafkaFlinkUtil = (project in engine("flink/kafka-util")).
       )
     }
   ).
-  dependsOn(kafka, flinkUtil, kafkaTestUtil % "test", flinkTestUtil % "test")
+  dependsOn(interpreter, kafka, flinkUtil, kafkaTestUtil % "test", flinkTestUtil % "test")
 
 lazy val kafkaTestUtil = (project in engine("kafka-test-util")).
   settings(commonSettings).

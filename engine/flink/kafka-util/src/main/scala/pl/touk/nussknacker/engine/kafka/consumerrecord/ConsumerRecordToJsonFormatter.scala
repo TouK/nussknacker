@@ -29,17 +29,7 @@ class ConsumerRecordToJsonFormatter[K: Encoder:Decoder, V: Encoder:Decoder](dese
 
   override protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): Array[Byte] = {
     val deserializedRecord = deserializationSchema.deserialize(record)
-    val serializableRecord = SerializableConsumerRecord(
-      Option(deserializedRecord.key()),
-      deserializedRecord.value(),
-      Option(deserializedRecord.topic()),
-      Option(deserializedRecord.partition()),
-      Option(deserializedRecord.offset()),
-      Option(deserializedRecord.timestamp()),
-      Option(deserializedRecord.timestampType().name),
-      Option(ConsumerRecordUtils.toMap(deserializedRecord.headers()).mapValues(s => Option(s))),
-      Option(deserializedRecord.leaderEpoch().orElse(null)).map(_.intValue()) //avoids covert null -> 0 conversion
-    )
+    val serializableRecord = SerializableConsumerRecord(deserializedRecord)
     consumerRecordEncoder(serializableRecord).noSpaces.getBytes(StandardCharsets.UTF_8)
   }
 
@@ -86,6 +76,22 @@ case class SerializableConsumerRecord[K, V](key: Option[K],
       valueBytes,
       ConsumerRecordUtils.toHeaders(headers.map(_.mapValues(_.orNull)).getOrElse(Map.empty)),
       Optional.ofNullable(leaderEpoch.map(Integer.valueOf).orNull) //avoids covert null -> 0 conversion
+    )
+  }
+}
+
+object SerializableConsumerRecord {
+  def apply[K, V](deserializedRecord: ConsumerRecord[K, V]): SerializableConsumerRecord[K, V] = {
+    SerializableConsumerRecord(
+      Option(deserializedRecord.key()),
+      deserializedRecord.value(),
+      Option(deserializedRecord.topic()),
+      Option(deserializedRecord.partition()),
+      Option(deserializedRecord.offset()),
+      Option(deserializedRecord.timestamp()),
+      Option(deserializedRecord.timestampType().name),
+      Option(ConsumerRecordUtils.toMap(deserializedRecord.headers()).mapValues(s => Option(s))),
+      Option(deserializedRecord.leaderEpoch().orElse(null)).map(_.intValue()) //avoids covert null -> 0 conversion
     )
   }
 }

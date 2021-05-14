@@ -31,7 +31,8 @@ class KafkaContextInitializer[K, V, DefinedParameter <: BaseDefinedParameter, St
   override def validationContext(context: ValidationContext, dependencies: List[NodeDependencyValue], parameters: List[(String, DefinedParameter)], state: Option[State])
                                 (implicit nodeId: NodeId): ValidationContext = {
     val contextWithInput = super.validationContext(context, dependencies, parameters, state)
-    contextWithInput.withVariable(VariableConstants.InputMetaVariableName, InputMeta.withType(keyTypingResult), None).getOrElse(contextWithInput)
+    val inputMetaTypingResult = InputMeta.withType(keyTypingResult)
+    contextWithInput.withVariable(VariableConstants.InputMetaVariableName, inputMetaTypingResult, None).getOrElse(contextWithInput)
   }
 
   override protected def outputVariableType(context: ValidationContext, dependencies: List[NodeDependencyValue], parameters: List[(String, DefinedParameter)], state: Option[State])
