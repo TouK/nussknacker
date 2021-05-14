@@ -7,9 +7,8 @@ import org.apache.flink.api.java.typeutils.MapTypeInfo
 import org.apache.flink.api.scala.typeutils.{CaseClassTypeInfo, ScalaCaseClassSerializer}
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetectionForTypingResult, TypingResultAwareTypeInformationCustomisation}
-import pl.touk.nussknacker.engine.variables.BaseKafkaInputMetaVariables
 
 import scala.collection.immutable.ListMap
 
@@ -34,9 +33,7 @@ case class InputMeta[K](key: K,
                         timestamp: java.lang.Long,
                         timestampType: TimestampType,
                         headers: java.util.Map[String, String],
-                        leaderEpoch: Integer
-                       )
-  extends BaseKafkaInputMetaVariables
+                        leaderEpoch: Integer)
 
 object InputMeta {
 
@@ -44,18 +41,26 @@ object InputMeta {
 
   /**
     * Provides definition of whole metadata object, with given key type definition (keyTypingResult).
-    * Here "BaseInputMeta" is used to allow proper type information detection when type erasing occurs.
     * See also [[InputMetaAwareTypeInformationCustomisation]]
     */
-  def withType(keyTypingResult: typing.TypingResult): typing.TypingResult =
+  def withType(keyTypingResult: typing.TypingResult): typing.TypingResult = {
+    // TODO: exclude non-key parameters to trait BaseKafkaInputMetaVariables and use it in TypesInformationExtractor.mandatoryClasses
     new TypedObjectTypingResult(
       ListMap(
-        keyParameterName -> keyTypingResult
+        keyParameterName -> keyTypingResult,
+        "topic" -> Typed[String],
+        "partition" -> Typed[Integer],
+        "offset" -> Typed[java.lang.Long],
+        "timestamp" -> Typed[java.lang.Long],
+        "timestampType" -> Typed[TimestampType],
+        "headers" -> TypedClass(classOf[java.util.Map[_, _]], List(Typed[String], Typed[String])),
+        "leaderEpoch" -> Typed[Integer]
       ),
-      Typed.typedClass[BaseKafkaInputMetaVariables]
+      Typed.typedClass[InputMeta[AnyRef]]
     ) {
       override def display: String = Typed.genericTypeClass(classOf[InputMeta[_]], List(keyTypingResult)).display
     }
+  }
 
   def typeInformation[K](keyTypeInformation: TypeInformation[K]): CaseClassTypeInfo[InputMeta[K]] = {
     val fieldNames = List(
@@ -90,7 +95,7 @@ object InputMeta {
   */
 class InputMetaAwareTypeInformationCustomisation extends TypingResultAwareTypeInformationCustomisation {
   override def customise(originalDetection: TypeInformationDetectionForTypingResult): PartialFunction[typing.TypingResult, TypeInformation[_]] = {
-    case a:TypedObjectTypingResult if a.objType.klass == classOf[BaseKafkaInputMetaVariables] =>
+    case a:TypedObjectTypingResult if a.objType.klass == classOf[InputMeta[_]] =>
       InputMeta.typeInformation(originalDetection.forType(a.fields(InputMeta.keyParameterName)))
   }
 

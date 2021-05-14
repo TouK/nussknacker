@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 import pl.touk.nussknacker.engine.types.EspTypeUtils.clazzDefinition
 import pl.touk.nussknacker.engine.util.logging.ExecutionTimeMeasuring
-import pl.touk.nussknacker.engine.variables.{BaseKafkaInputMetaVariables, MetaVariables}
+import pl.touk.nussknacker.engine.variables.MetaVariables
 
 import scala.collection.mutable
 
@@ -35,8 +35,7 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
     classOf[java.math.BigDecimal],
     classOf[Number],
     classOf[String],
-    classOf[MetaVariables],
-    classOf[BaseKafkaInputMetaVariables]
+    classOf[MetaVariables]
   ) ++
     // Literals for primitive types are wrapped to boxed representations
     primitiveTypes.map(ClassUtils.primitiveToWrapper)).map(Typed(_))
