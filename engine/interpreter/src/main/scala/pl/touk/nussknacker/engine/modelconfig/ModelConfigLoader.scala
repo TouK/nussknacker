@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.modelconfig
 
 import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.modelconfig.ModelConfigLoader.defaultModelConfigResource
+import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 
 object ModelConfigLoader {
 
@@ -73,7 +74,7 @@ abstract class ModelConfigLoader extends Serializable {
     inputConfig
       .withFallback(configFallbackFromModel)
       //this is for reference.conf resources from model jar, we don't want to load application.conf etc.
-      .withFallback(ConfigFactory.load(classLoader, ConfigFactory.empty()))
+      .withFallback(ConfigFactoryExt.loadEmptyConfigWithOverrides(classLoader))
       .resolve()
   }
 
