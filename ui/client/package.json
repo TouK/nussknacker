@@ -185,7 +185,7 @@
     "expect": "^26.5.3",
     "expose-loader": "^2.0.0",
     "file-loader": "^6.1.1",
-    "fork-ts-checker-webpack-plugin": "^6.2.7",
+    "fork-ts-checker-webpack-plugin": "^6.2.9",
     "html-loader": "^2.1.2",
     "html-webpack-harddisk-plugin": "^2.0.0",
     "html-webpack-plugin": "^5.3.1",
