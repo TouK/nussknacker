@@ -8,7 +8,7 @@ export function EditItem({process}: {process: ProcessType}) {
   const {t} = useTranslation()
   return (
     <ProcessLink processId={process.name}>
-      <TableRowIcon glyph="edit" title={t("tableRowIcon-edit", "Edit process")}/>
+      <TableRowIcon glyph="edit" title={t("tableRowIcon-edit", "Edit scenario")}/>
     </ProcessLink>
   )
 }
@@ -17,8 +17,8 @@ export function ShowItem({process}: {process: ProcessType}) {
   const {t} = useTranslation()
 
   const title = process.isSubprocess ?
-    t("tableRowIcon-show-subprocess", "Show subprocess") :
-    t("tableRowIcon-show", "Show process")
+    t("tableRowIcon-show-subprocess", "Show subscenario") :
+    t("tableRowIcon-show", "Show scenario")
 
   return (
     <ProcessLink processId={process.name}>

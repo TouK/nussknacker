@@ -22,5 +22,5 @@ export function DeployIcon({processState, onDeploy, process}: {processState: any
   if (!ProcessStateUtils.canDeploy(processState)) {
     return null
   }
-  return <Glyphicon glyph="play" title="Deploy process" onClick={onClick}/>
+  return <Glyphicon glyph="play" title="Deploy scenario" onClick={onClick}/>
 }

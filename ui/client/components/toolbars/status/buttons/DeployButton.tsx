@@ -20,7 +20,7 @@ export default function DeployButton() {
 
   const {t} = useTranslation()
   const deployToolTip = !capabilities.deploy ?
-    t("panels.actions.deploy.tooltips.forbidden", "Deploy forbidden for current process.") :
+    t("panels.actions.deploy.tooltips.forbidden", "Deploy forbidden for current scenario.") :
     hasErrors ?
       t("panels.actions.deploy.tooltips.error", "Cannot deploy due to errors. Please look at the left panel for more details.") :
       !saveDisabled ?
@@ -36,7 +36,7 @@ export default function DeployButton() {
       icon={<Icon/>}
       title={deployToolTip}
       onClick={() => dispatch(toggleProcessActionDialog(
-        t("panels.actions.deploy.dialog", "Deploy process"),
+        t("panels.actions.deploy.dialog", "Deploy scenario"),
         (p, c) => HttpService.deploy(p, c).finally(() => dispatch(loadProcessState(processId))),
         true,
       ))}

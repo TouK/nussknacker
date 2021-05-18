@@ -22,5 +22,5 @@ export function CancelIcon({processState, onCancel, process}: {processState: any
   if (!ProcessStateUtils.canCancel(processState)) {
     return null
   }
-  return <Glyphicon glyph="stop" title="Cancel process" onClick={cancel}/>
+  return <Glyphicon glyph="stop" title="Cancel scenario" onClick={cancel}/>
 }
