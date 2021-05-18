@@ -207,9 +207,31 @@ export default class ExpressionSuggester {
       const properties = this._alreadyTypedProperties(currentProjectionOrSelection)
       //TODO: currently we don't assume nested selections/projections
       const focusedClazz = this._findRootClazz(properties, this._variables)
-      return (focusedClazz || {}).params ? focusedClazz.params[0] : null
+      return this._getFirstParameterType(focusedClazz)
     } else {
       return null
+    }
+  }
+
+  _getFirstParameterType = (typ) => {
+    if ((typ || {}).union != null) {
+      const listOfFirstParams = _.filter(_.map(typ.union, element => {
+        return this._getFirstParameterType(element)
+      }), i => i != null)
+      if (_.isEmpty(listOfFirstParams)) {
+        return null
+      } else if (listOfFirstParams.length === 1) {
+        return listOfFirstParams[0]
+      } else {
+        // TODO: displayed type
+        return {
+          display: "Union",
+          type: "TypedUnion",
+          union: listOfFirstParams
+        }
+      }
+    } else {
+      return (typ || {}).params ? typ.params[0] : null
     }
   }
 
