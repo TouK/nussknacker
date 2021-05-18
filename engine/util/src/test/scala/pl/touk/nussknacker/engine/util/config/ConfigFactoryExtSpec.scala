@@ -14,7 +14,7 @@ class ConfigFactoryExtSpec extends FunSuite with Matchers {
     val conf1 = writeToTemp(Map("f1" -> "default", "f2" ->"not so default"))
     val conf2 = writeToTemp(Map("f1" -> "I win!"))
 
-    val result = ConfigFactoryExt.load(List(conf1, conf2, "classpath:someConfig.conf").mkString(", "))
+    val result = ConfigFactoryExt.load(List(conf1, conf2, "classpath:someConfig.conf").mkString(", "), getClass.getClassLoader)
 
     result.getString("f1") shouldBe "I win!"
     result.getString("f2") shouldBe "not so default"

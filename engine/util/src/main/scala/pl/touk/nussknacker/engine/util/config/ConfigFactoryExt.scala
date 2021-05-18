@@ -19,7 +19,7 @@ object ConfigFactoryExt {
     }
   }
 
-  def load(locationString: String = System.getProperty(configLocationProperty), classLoader: ClassLoader = getClass.getClassLoader): Config = {
+  def load(locationString: String = System.getProperty(configLocationProperty), classLoader: ClassLoader): Config = {
     val locations = for {
       property <- Option(locationString).toList
       singleElement <- property.split(",")

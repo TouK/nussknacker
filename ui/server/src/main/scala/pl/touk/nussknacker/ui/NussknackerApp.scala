@@ -43,7 +43,7 @@ import sttp.client.{NothingT, SttpBackend}
 import sttp.client.akkahttp.AkkaHttpBackend
 
 import java.nio.file.Files
-import scala.collection.JavaConverters._
+import scala.collection.JavaConverters.{getClass, _}
 import scala.concurrent.Future
 
 trait NusskanckerAppRouter extends Directives with LazyLogging {
@@ -208,7 +208,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
   }
 }
 
-object NussknackerAppInitializer extends NussknackerAppInitializer(ConfigFactoryExt.load())
+object NussknackerAppInitializer extends NussknackerAppInitializer(ConfigFactoryExt.load(classLoader = getClass.getClassLoader))
 
 class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLogging {
 
@@ -311,5 +311,5 @@ class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLoggin
 }
 
 object NussknackerApp extends App {
-  new NussknackerAppInitializer(ConfigFactoryExt.load()).init(NusskanckerDefaultAppRouter)
+  new NussknackerAppInitializer(ConfigFactoryExt.load(classLoader = getClass.getClassLoader)).init(NusskanckerDefaultAppRouter)
 }
