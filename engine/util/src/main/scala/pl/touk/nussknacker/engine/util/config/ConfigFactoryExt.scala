@@ -19,17 +19,19 @@ object ConfigFactoryExt {
     }
   }
 
-  def load(locationString: String = System.getProperty(configLocationProperty)): Config = {
+  def load(locationString: String = System.getProperty(configLocationProperty), classLoader: ClassLoader): Config = {
     val locations = for {
       property <- Option(locationString).toList
       singleElement <- property.split(",")
       trimmed = singleElement.trim
     } yield Try(URI.create(trimmed)).filter(_.getScheme.nonEmpty).getOrElse(new File(trimmed).toURI)
-    load(locations)
+    load(locations, classLoader)
   }
 
-  def load(resources: List[URI]): Config = {
-    resources.map(ConfigFactoryExt.parseUri).reverse.foldLeft(ConfigFactory.empty())(_.withFallback(_))
+  def loadEmptyConfigWithOverrides(classLoader: ClassLoader): Config = ConfigFactory.load(classLoader, ConfigFactory.empty())
+
+  def load(resources: List[URI], classLoader: ClassLoader): Config = {
+    resources.map(ConfigFactoryExt.parseUri).reverse.foldLeft(loadEmptyConfigWithOverrides(classLoader))(_.withFallback(_))
   }
 
 }
