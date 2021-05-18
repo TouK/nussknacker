@@ -9,6 +9,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
  */
 trait TypingResultAwareTypeInformationCustomisation {
 
-  def customise(originalDetection: TypeInformationDetectionForTypingResult): PartialFunction[TypingResult, TypeInformation[_]]
+  def customise(originalDetection: TypeInformationDetection): PartialFunction[TypingResult, TypeInformation[_]]
 
 }

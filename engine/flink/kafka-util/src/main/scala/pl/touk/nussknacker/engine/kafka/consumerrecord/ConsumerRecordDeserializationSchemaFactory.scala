@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.kafka.consumerrecord
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -8,7 +7,6 @@ import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchemaFactory
 
-import scala.annotation.nowarn
 import scala.reflect.classTag
 
 /**
@@ -16,13 +14,9 @@ import scala.reflect.classTag
   * (with raw key-value of type Array[Byte]) into deserialized ConsumerRecord[K, V] (with proper key-value types).
   * It allows the source to provide event value AND event metadata to the stream.
   *
-  * Deprecated annotations for checksum field mapping, to fulfill constructor requirements.
-  *
   * @tparam K - type of key of deserialized ConsumerRecord
   * @tparam V - type of value of deserialized ConsumerRecord
   */
-@silent("deprecated")
-@nowarn("cat=deprecation")
 abstract class ConsumerRecordDeserializationSchemaFactory[K, V] extends KafkaDeserializationSchemaFactory[ConsumerRecord[K, V]] with Serializable {
 
   protected def createKeyDeserializer(kafkaConfig: KafkaConfig): Deserializer[K]
@@ -47,7 +41,7 @@ abstract class ConsumerRecordDeserializationSchemaFactory[K, V] extends KafkaDes
           record.offset(),
           record.timestamp(),
           record.timestampType(),
-          record.checksum(),
+          ConsumerRecord.NULL_CHECKSUM.toLong, // ignore deprecated checksum
           record.serializedKeySize(),
           record.serializedValueSize(),
           key,
