@@ -42,7 +42,8 @@ object TypingResultAwareTypeInformationDetection {
 class TypingResultAwareTypeInformationDetection(customisation:
                                                 TypingResultAwareTypeInformationCustomisation) extends TypeInformationDetection {
 
-  private val additionalTypeInfoDeterminer = customisation.customise(this)
+  //we have def here, as Scala 2.11 has problems with serialization of PartialFunctions...
+  private def additionalTypeInfoDeterminer = customisation.customise(this)
 
   private val registeredTypeInfos: Set[TypeInformation[_]] = {
     import org.apache.flink.api.scala._
