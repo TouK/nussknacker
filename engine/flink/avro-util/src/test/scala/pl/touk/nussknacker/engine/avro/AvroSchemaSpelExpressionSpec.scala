@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Standard
 
 import java.time.{Instant, LocalDate, LocalTime, ZonedDateTime}
+import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
 class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
@@ -193,15 +194,26 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
       """[
         |  { "name": "date", "type": { "type": "int", "logicalType": "date" } },
         |  { "name": "timeMillis", "type": { "type": "int", "logicalType": "time-millis" } },
-        |  { "name": "timestampMillis", "type": { "type": "long", "logicalType": "timestamp-millis" } }
+        |  { "name": "timeMicros", "type": { "type": "int", "logicalType": "time-micros" } },
+        |  { "name": "localTimestampMillis", "type": { "type": "long", "logicalType": "local-timestamp-millis" } },
+        |  { "name": "localTimestampMicros", "type": { "type": "long", "logicalType": "local-timestamp-micros" } },
+        |  { "name": "timestampMillis", "type": { "type": "long", "logicalType": "timestamp-millis" } },
+        |  { "name": "timestampMicros", "type": { "type": "long", "logicalType": "timestamp-micros" } }
         |]""".stripMargin)
 
     val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).toOption.get
 
-    parse[AnyRef]("#input.date", ctx).map(_.returnType) shouldBe Valid(Typed[LocalDate])
-    parse[AnyRef]("#input.timeMillis", ctx).map(_.returnType) shouldBe Valid(Typed[LocalTime])
-    parse[AnyRef]("#input.timestampMillis", ctx).map(_.returnType) shouldBe Valid(Typed[Instant])
+    def checkTypeForExpr[Type:ClassTag](expr: String) = {
+      parse[AnyRef](expr, ctx).map(_.returnType) shouldBe Valid(Typed[Type])
+    }
 
+    checkTypeForExpr[LocalDate]("'mojsdfasdf'.length()")
+    checkTypeForExpr[LocalTime]("#input.timeMillis")
+    checkTypeForExpr[Int]("#input.timeMicros")
+    checkTypeForExpr[Long]("#input.localTimestampMillis")
+    checkTypeForExpr[Long]("#input.localTimestampMicros")
+    checkTypeForExpr[Instant]("#input.timestampMillis")
+    checkTypeForExpr[Instant]("#input.timestampMicros")
   }
 
   private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, TypedExpression] = {
