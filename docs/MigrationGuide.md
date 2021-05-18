@@ -78,6 +78,7 @@ To see biggest differences please consult the [changelog](Changelog.md).
   - Removed `SingleTopicKafkaSourceFactory`:
     use `KafkaSourceFactory` with custom `prepareInitialParameters`, `contextTransformation` and `extractTopics` to alter parameter list and provide constant topic value.
   - `TypingResultAwareTypeInformationCustomisation` is moved to package pl.touk.nussknacker.engine.flink.api.typeinformation
+* [#1651](https://github.com/TouK/nussknacker/pull/1651) TBD
 
   Example of source with value-only deserialization and custom timestampAssigner:
   ```

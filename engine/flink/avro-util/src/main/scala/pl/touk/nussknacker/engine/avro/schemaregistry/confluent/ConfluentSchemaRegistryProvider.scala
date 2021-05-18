@@ -5,8 +5,8 @@ import cats.data.{NonEmptyList, ValidatedNel}
 import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.ConfluentAvroToJsonFormatterFactory
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.jsonpayload.{ConfluentJsonPayloadDeserializerFactory, ConfluentJsonPayloadSerializerFactory}
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentAvroSerializationSchemaFactory, ConfluentKafkaAvroDeserializationSchemaFactory}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.jsonpayload.{ConfluentJsonPayloadSerializerFactory, ConfluentKeyValueKafkaJsonDeserializerFactory}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentAvroSerializationSchemaFactory, ConfluentKeyValueKafkaAvroDeserializationFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryError, SchemaRegistryProvider, SchemaRegistryUnsupportedTypeError}
 import pl.touk.nussknacker.engine.avro.serialization.{KafkaAvroDeserializationSchemaFactory, KafkaAvroSerializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.RecordFormatterFactory
@@ -37,7 +37,7 @@ object ConfluentSchemaRegistryProvider extends Serializable {
   def apply(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory): ConfluentSchemaRegistryProvider =
     avroPayload(
       schemaRegistryClientFactory,
-      formatKey = false
+      formatKey = true
     )
 
   def avroPayload(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
@@ -45,7 +45,7 @@ object ConfluentSchemaRegistryProvider extends Serializable {
     ConfluentSchemaRegistryProvider(
       schemaRegistryClientFactory,
       new ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory),
-      new ConfluentKafkaAvroDeserializationSchemaFactory(schemaRegistryClientFactory),
+      new ConfluentKeyValueKafkaAvroDeserializationFactory(schemaRegistryClientFactory),
       formatKey)
   }
 
@@ -63,7 +63,7 @@ object ConfluentSchemaRegistryProvider extends Serializable {
   def jsonPayload(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
                   formatKey: Boolean): ConfluentSchemaRegistryProvider = ConfluentSchemaRegistryProvider(schemaRegistryClientFactory,
     new ConfluentJsonPayloadSerializerFactory(schemaRegistryClientFactory),
-    new ConfluentJsonPayloadDeserializerFactory(schemaRegistryClientFactory),
+    new ConfluentKeyValueKafkaJsonDeserializerFactory(schemaRegistryClientFactory),
     formatKey)
 
 }

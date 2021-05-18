@@ -51,7 +51,7 @@ class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin with OptionValues
       FixedExpressionValue(s"'output_payment'", "output_payment")
     )
 
-    avroSourceFactory.initialParameters.find(_.name == KafkaAvroBaseTransformer.TopicParamName).head.editor.value should matchPattern {
+    avroSourceFactory(useStringForKey = true).initialParameters.find(_.name == KafkaAvroBaseTransformer.TopicParamName).head.editor.value should matchPattern {
       case FixedValuesParameterEditor(possibleValues) if possibleValues.drop(1) == topicOptions => // drop null editor
     }
   }

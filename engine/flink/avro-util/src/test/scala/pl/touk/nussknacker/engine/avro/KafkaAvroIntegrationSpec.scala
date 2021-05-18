@@ -6,7 +6,7 @@ import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.kafka.common.record.TimestampType
-import org.scalatest.BeforeAndAfter
+import org.scalatest.{Assertion, BeforeAndAfter}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
@@ -17,9 +17,12 @@ import pl.touk.nussknacker.engine.avro.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.avro.schema._
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
-import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaRegistryProvider, SchemaVersionOption}
+import pl.touk.nussknacker.engine.avro.schemaregistry._
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForInputMeta
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -29,6 +32,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
   import KafkaAvroIntegrationMockSchemaRegistry._
   import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils._
   import spel.Implicits._
+  import scala.collection.JavaConverters._
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
     override protected def createSchemaRegistryProvider: SchemaRegistryProvider =
@@ -48,6 +52,10 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
     registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), executionConfigPreparerChain(modelData))
   }
 
+  before {
+    SinkForInputMeta.clear()
+  }
+
   after {
     recordingExceptionHandler.clear()
   }
@@ -59,6 +67,9 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, PaymentV1.record, PaymentV1.record)
+
+    // Here process uses value-only source with metadata, the content of event's key is treated as a string.
+    verifyInputMeta("", topicConfig.input, 0, 0L)
   }
 
   test("should read primitive event and save it in the same format") {
@@ -370,6 +381,59 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
     val process = createAvroProcess(sourceParam, sinkParam, filterParam)
 
     runAndVerifyResult(process, topicConfig, PaymentV1.record, PaymentV1.record)
+  }
+
+  test("should treat key as string when source has string-as-key deserialization") {
+    val topicConfig = createAndRegisterTopicConfig("kafka-generic-source-without-key-schema", Product.schema)
+    val sourceParam = SourceAvroParam.forGeneric(topicConfig, LatestSchemaVersion)
+    val sinkParam = SinkAvroParam(topicConfig, LatestSchemaVersion, value = "#input")
+    val process = createAvroProcess(sourceParam, sinkParam, None)
+
+    kafkaClient.createTopic(topicConfig.input, partitions = 1)
+    kafkaClient.createTopic(topicConfig.output, partitions = 1)
+
+    import io.circe.syntax._
+    val serializedKey = SampleNodes.SimpleJsonRecord("lorem", "ipsum").asJson.noSpaces.getBytes(StandardCharsets.UTF_8)
+    val serializedValue = valueSerializer.serialize(topicConfig.input, Product.record)
+    kafkaClient.sendRawMessage(topicConfig.input, serializedKey, serializedValue).futureValue
+
+    run(process) {
+      consumeAndVerifyMessages(topicConfig.output, List(Product.record))
+    }
+
+    verifyInputMeta("""{"id":"lorem","field":"ipsum"}""", topicConfig.input, 0, 0L)
+  }
+
+  test("should read key and value when source has key-value deserialization") {
+    // register the same value schema for input and output topic
+    val topicConfig = createAndRegisterTopicConfig("kafka-generic-source-with-key-schema", Product.schema)
+    // register key schema for input topic
+    registerSchema(topicConfig.input, FullNameV1.schema, isKey = true)
+
+    // create process
+    val sourceParam = SourceAvroParam.forGenericWithKeySchemaSupport(topicConfig, LatestSchemaVersion)
+    val sinkParam = SinkAvroParam(topicConfig, LatestSchemaVersion, value = "#input")
+    val filterParam = Some(s"#inputMeta.key.first == '${FullNameV1.BaseFirst}'")
+    val process = createAvroProcess(sourceParam, sinkParam, filterParam)
+
+    kafkaClient.createTopic(topicConfig.input, partitions = 1)
+    pushMessageWithKey(FullNameV1.record, Product.record, topicConfig.input)
+    kafkaClient.createTopic(topicConfig.output, partitions = 1)
+
+    run(process) {
+      consumeAndVerifyMessages(topicConfig.output, List(Product.record))
+    }
+
+    // Here process uses key-and-value deserialization in a source with metadata.
+    // The content of event's key is interpreted according to defined key schema.
+    verifyInputMeta(FullNameV1.record, topicConfig.input, 0, 0L)
+  }
+
+  private def verifyInputMeta[T](key: T, topic: String, partition: Int, offset: Long): Assertion = {
+    val expectedInputMeta = InputMeta[T](key, topic, partition, offset, 0L, TimestampType.CREATE_TIME, Map.empty[String,String].asJava, 0)
+    SinkForInputMeta.data should not be empty
+    val results = SinkForInputMeta.data.map(_.asInstanceOf[InputMeta[T]].copy(timestamp = 0L))
+    results should contain (expectedInputMeta)
   }
 }
 

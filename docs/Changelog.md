@@ -46,6 +46,7 @@ Nussknacker versions
 * [#1512](https://github.com/TouK/nussknacker/pull/1512) `KafkaSourceFactory` is replaced with source that provides additional #inputMeta variable with event's metadata.
 * [#1663](https://github.com/TouK/nussknacker/pull/1663) Flink restart strategies and exception consumers can now be configured.
 * [#1728](https://github.com/TouK/nussknacker/pull/1728) Replace schemaRegistryClient and recordFormatter in `SchemaRegistryProvider` with their factories.
+* [#1651](https://github.com/TouK/nussknacker/pull/1651) `KafkaAvroSourceFactory` provides additional #inputMeta variable with event's metadata.
 
 0.3.1 (not released yet) 
 ------------------------

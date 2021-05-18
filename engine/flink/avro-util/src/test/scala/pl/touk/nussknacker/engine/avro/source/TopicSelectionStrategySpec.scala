@@ -19,12 +19,12 @@ class TopicSelectionStrategySpec extends KafkaAvroSpecMixin with KafkaAvroSource
 
   test("all topic strategy test") {
     val strategy = new AllTopicsSelectionStrategy()
-    strategy.getTopics(confluentClient).toList.map(_.toSet) shouldBe List(Set(RecordTopic, IntTopic, InvalidDefaultsTopic))
+    strategy.getTopics(confluentClient).toList.map(_.toSet) shouldBe List(Set(RecordTopic, RecordTopicWithKey, IntTopicNoKey, IntTopicWithKey, InvalidDefaultsTopic))
   }
 
   test("topic filtering strategy test") {
     val strategy = new TopicPatternSelectionStrategy(Pattern.compile(".*Record.*"))
-    strategy.getTopics(confluentClient).toList shouldBe List(List(RecordTopic))
+    strategy.getTopics(confluentClient).toList shouldBe List(List(RecordTopic, RecordTopicWithKey))
   }
 
   test("show how to override topic selection strategy") {

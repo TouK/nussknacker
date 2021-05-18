@@ -54,15 +54,27 @@ private[confluent] class ConfluentAvroMessageReader(schemaRegistryClient: Schema
         } else {
           val keyString = str.substring(0, keyIndex)
           val valueString = if (keyIndex + 1 > str.length) "" else str.substring(keyIndex + 1)
-          val serializedKey = if (useStringForKey) {
-            keyString.getBytes(StandardCharsets.UTF_8)
-          } else {
-            val key = jsonToAvro(keyString, keySchema)
-            serializeImpl(keySubject, key, new AvroSchema(keySchema))
+          if (keySchema != null && keyString.length == 0) {
+            // key schema is provided but there is no content
+            throw new SerializationException("No key content found in line " + str)
+          } else if (keySchema == null) {
+            // handle empty key when key parsing is enabled
+            val value = jsonToAvro(valueString, valueSchema)
+            val serializedValue = serializeImpl(valueSubject, value, new AvroSchema(valueSchema))
+            new ConsumerRecord(topic, 0, 0L, Array[Byte](), serializedValue)
           }
-          val value = jsonToAvro(valueString, valueSchema)
-          val serializedValue = serializeImpl(valueSubject, value, new AvroSchema(valueSchema))
-          new ConsumerRecord(topic, 0, 0L, serializedKey, serializedValue)
+          else {
+            // default scenario when key and value is provided
+            val serializedKey = if (useStringForKey) {
+              keyString.getBytes(StandardCharsets.UTF_8)
+            } else {
+              val key = jsonToAvro(keyString, keySchema)
+              serializeImpl(keySubject, key, new AvroSchema(keySchema))
+            }
+            val value = jsonToAvro(valueString, valueSchema)
+            val serializedValue = serializeImpl(valueSubject, value, new AvroSchema(valueSchema))
+            new ConsumerRecord(topic, 0, 0L, serializedKey, serializedValue)
+          }
         }
       }
     } catch {
