@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.process.typeinformation
+package pl.touk.nussknacker.engine.flink.api.typeinformation
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -9,6 +9,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
  */
 trait TypingResultAwareTypeInformationCustomisation {
 
-  def customise(originalDetection: TypingResultAwareTypeInformationDetection): PartialFunction[TypingResult, TypeInformation[_]]
+  def customise(originalDetection: TypeInformationDetection): PartialFunction[TypingResult, TypeInformation[_]]
 
 }

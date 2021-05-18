@@ -19,4 +19,6 @@ trait TypeInformationDetection extends Serializable {
 
   def forValueWithContext[T](validationContext: ValidationContext, value: TypingResult): TypeInformation[ValueWithContext[T]]
 
+  def forType(typingResult: TypingResult): TypeInformation[Any]
+
 }
