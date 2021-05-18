@@ -4,7 +4,7 @@ import {ProcessId} from "../types"
 export const unsavedProcessChanges = () => {
   return i18next.t(
     "dialogMessages.unsavedProcessChanges",
-    "There are some unsaved process changes. Do you want to discard unsaved changes?",
+    "There are some unsaved scenario changes. Do you want to discard unsaved changes?",
   )
 }
 
@@ -39,7 +39,7 @@ export const deleteComment = () => {
 export const cantArchiveRunningProcess = () => {
   return i18next.t(
     "dialogMessages.cantArchiveRunningProcess",
-    "You can't archive running process! Stop it first and then click 'archive' button again.",
+    "You can't archive running scenario! Stop it first and then click 'archive' button again.",
   )
 }
 

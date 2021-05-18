@@ -25,7 +25,7 @@ export default function CancelDeployButton(props: ToolbarButtonProps) {
       disabled={!available}
       icon={<Icon/>}
       onClick={() => dispatch(toggleProcessActionDialog(
-        t("panels.actions.deploy-canel.dialog", "Cancel process"),
+        t("panels.actions.deploy-canel.dialog", "Cancel scenario"),
         (p, c) => HttpService.cancel(p, c).finally(() => dispatch(loadProcessState(processId))),
         false,
       ))}

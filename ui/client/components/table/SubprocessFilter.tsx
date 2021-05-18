@@ -4,9 +4,9 @@ import TableSelect, {OptionType} from "./TableSelect"
 import {useParseValue} from "./useParseValue"
 
 const options: OptionType<boolean>[] = [
-  {label: "Show all types processes"},
-  {label: "Show only processes", value: false},
-  {label: "Show only subprocesses", value: true},
+  {label: "Show all types scenarios"},
+  {label: "Show only scenarios", value: false},
+  {label: "Show only subscenarios", value: true},
 ]
 
 export function SubprocessFilter(props: ValueFieldProps<boolean>): JSX.Element {
