@@ -182,11 +182,10 @@ jobs:
         with:
           node-version: 14
       - name: Test FE
-        #FIXME: return to npm test after build fix...
         run: |
           cd ui/client
           npm ci
-          npm run test:unit
+          npm test
           npm run build
       - name: Store test results
         if: always()
