@@ -86,6 +86,7 @@ class ProcessValidation(validators: ProcessingTypeDataProvider[ProcessValidator]
         subprocessResolver.resolveSubprocesses(canonical.withoutDisabledNodes) match {
           case Valid(process) =>
             val validated = processValidator.validate(process)
+            //FIXME: Validation errors for subprocess nodes are not properly handled by FE
             validated.result.fold(formatErrors, _ => ValidationResult.success)
               .withNodeResults(validated.typing.mapValues(nodeInfoToResult))
           case Invalid(e) => formatErrors(e)
