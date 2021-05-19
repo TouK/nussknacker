@@ -976,7 +976,7 @@ lazy val ui = (project in file("ui/server"))
   .settings(
     name := "nussknacker-ui",
     buildUi :=  {
-      //runNpm("run build", "Client build failed", (crossTarget in compile).value)
+      runNpm("run build", "Client build failed", (crossTarget in compile).value)
     },
     parallelExecution in ThisBuild := false,
     Keys.test in SlowTests := (Keys.test in SlowTests).dependsOn(
