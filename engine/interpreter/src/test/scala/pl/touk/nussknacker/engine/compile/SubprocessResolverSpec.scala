@@ -129,7 +129,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
 
     val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
 
-    resolvedValidated shouldBe Invalid(NonEmptyList.of(UnknownSubprocessOutput("badoutput", "sub-out1")))
+    resolvedValidated shouldBe Invalid(NonEmptyList.of(UnknownSubprocessOutput("badoutput", Set("sub-out1", "sub"))))
 
   }
 

@@ -77,12 +77,12 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
 
           //we replace subprocess outputs with following nodes from parent process
           val nexts = (nextResolvedV, subResolvedV, additionalResolved)
-            .mapN { (nodeResolved, nextResolved, additionalResolved) => (replaceCanonicalList(nodeResolved), nextResolved, additionalResolved) }
+            .mapN { (nodeResolved, nextResolved, additionalResolved) => (replaceCanonicalList(nodeResolved, subprocessInput.id), nextResolved, additionalResolved) }
             .andThen { case (replacement, nextResolved, additionalResolved) =>
-            additionalResolved.map(replacement).sequence.andThen { resolvedAdditional =>
-              replacement(nextResolved).mapWritten(_ ++ resolvedAdditional)
+              additionalResolved.map(replacement).sequence.andThen { resolvedAdditional =>
+                replacement(nextResolved).mapWritten(_ ++ resolvedAdditional)
+              }
             }
-          }
           //now, this is a bit dirty trick - we pass subprocess parameter types to subprocessInput node to enable proper validation etc.
           nexts.map(replaced => FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(subprocessInput.copy(subprocessParams = Some(parameters)))) :: replaced)
         }
@@ -112,11 +112,11 @@ case class SubprocessResolver(subprocesses: Map[String, CanonicalProcess]) {
   }
 
   //we replace outputs in subprocess with part of parent process
-  private def replaceCanonicalList(replacement: Map[String, CanonicalBranch]): CanonicalBranch => ValidatedWithBranches[CanonicalBranch] = {
+  private def replaceCanonicalList(replacement: Map[String, CanonicalBranch], parentId: String): CanonicalBranch => ValidatedWithBranches[CanonicalBranch] = {
     iterateOverCanonicals({
       case FlatNode(SubprocessOutputDefinition(id, name, fields, add)) => replacement.get(name) match {
         case Some(nodes) => validBranches(FlatNode(SubprocessOutput(id, name, fields, add)) :: nodes)
-        case None => invalidBranches(UnknownSubprocessOutput(name, id))
+        case None => invalidBranches(UnknownSubprocessOutput(name, Set(id, parentId)))
       }
     }, NodeDataFun.id)
   }
