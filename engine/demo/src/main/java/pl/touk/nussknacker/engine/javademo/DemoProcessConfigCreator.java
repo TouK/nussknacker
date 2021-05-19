@@ -12,6 +12,7 @@ import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer;
 import pl.touk.nussknacker.engine.api.ProcessListener;
 import pl.touk.nussknacker.engine.api.Service;
@@ -22,12 +23,12 @@ import pl.touk.nussknacker.engine.api.process.SinkFactory;
 import pl.touk.nussknacker.engine.api.process.SourceFactory;
 import pl.touk.nussknacker.engine.api.process.WithCategories;
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender;
-import pl.touk.nussknacker.engine.api.test.TestParsingUtils;
 import pl.touk.nussknacker.engine.demo.LoggingExceptionHandlerFactory;
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler;
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler;
 import pl.touk.nussknacker.engine.javaapi.process.ExpressionConfig;
 import pl.touk.nussknacker.engine.javaapi.process.ProcessConfigCreator;
+import pl.touk.nussknacker.engine.kafka.consumerrecord.FixedValueDeserializaitionSchemaFactory;
 import pl.touk.nussknacker.engine.kafka.generic.sources;
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchemaFactory;
 import pl.touk.nussknacker.engine.kafka.serialization.schemas;
@@ -58,16 +59,16 @@ public class DemoProcessConfigCreator implements ProcessConfigCreator {
 
     @Override
     public Map<String, WithCategories<SourceFactory<?>>> sourceFactories(ProcessObjectDependencies processObjectDependencies) {
-        KafkaSourceFactory<Transaction> sourceFactory = getTransactionKafkaSourceFactory(processObjectDependencies);
+        KafkaSourceFactory<String, Transaction> sourceFactory = getTransactionKafkaSourceFactory(processObjectDependencies);
         Map<String, WithCategories<SourceFactory<?>>> m = new HashMap<>();
         m.put("kafka-transaction", all(sourceFactory));
         return m;
     }
 
-    private KafkaSourceFactory<Transaction> getTransactionKafkaSourceFactory(ProcessObjectDependencies processObjectDependencies) {
-        TimestampWatermarkHandler<Transaction> extractor = new StandardTimestampWatermarkHandler<>(WatermarkStrategy
-            .<Transaction>forBoundedOutOfOrderness(Duration.ofMinutes(10))
-            .withTimestampAssigner((SerializableTimestampAssigner<Transaction>) (element, recordTimestamp) -> element.eventDate));
+    private KafkaSourceFactory<String, Transaction> getTransactionKafkaSourceFactory(ProcessObjectDependencies processObjectDependencies) {
+        TimestampWatermarkHandler<ConsumerRecord<String, Transaction>> extractor = new StandardTimestampWatermarkHandler<>(WatermarkStrategy
+            .<ConsumerRecord<String, Transaction>>forBoundedOutOfOrderness(Duration.ofMinutes(10))
+            .withTimestampAssigner((SerializableTimestampAssigner<ConsumerRecord<String, Transaction>>) (element, recordTimestamp) -> element.value().eventDate));
 
         DeserializationSchema<Transaction> schema = new DeserializationSchema<Transaction>() {
             @Override
@@ -86,10 +87,11 @@ public class DemoProcessConfigCreator implements ProcessConfigCreator {
             }
         };
         return new KafkaSourceFactory<>(
-                schema,
+                new FixedValueDeserializaitionSchemaFactory<>(schema),
                 Option.apply(extractor),
                 sources.JsonRecordFormatter$.MODULE$,
                 processObjectDependencies,
+                ClassTag$.MODULE$.apply(String.class),
                 ClassTag$.MODULE$.apply(Transaction.class)
         );
     }

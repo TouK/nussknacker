@@ -93,20 +93,28 @@ lazy val publishSettings = Seq(
   ).toSeq
 )
 
-/**
-  * TODO: figure how how to handle JDK modules
-  */
-def nussknackerMergeStrategy: String => MergeStrategy = {
-  case PathList(ps@_*) if ps.last == "module-info.class" => MergeStrategy.first //after confluent bump up to 5.5
-  case PathList(ps@_*) if ps.last == "NumberUtils.class" => MergeStrategy.first
-  case PathList(ps@_*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first
-  case PathList(ps@_*) if ps.last == "libnetty_transport_native_kqueue_x86_64.jnilib" => MergeStrategy.first
-  case PathList("com", "sun", "el", xs @ _*) => MergeStrategy.first
-  case PathList("org", "w3c", "dom", "events", xs @ _*) => MergeStrategy.first
-  case PathList("org", "apache", "commons", "logging", xs @ _*) => MergeStrategy.first
-  case PathList("javax", "validation", xs @ _*) => MergeStrategy.first //after confluent bump up to 5.5
-  case PathList("javax", "el", xs @ _*) => MergeStrategy.first //after confluent bump up to 5.5
-  case PathList("akka", xs @ _*) => MergeStrategy.last
+
+def modelMergeStrategy: String => MergeStrategy = {
+  case PathList(ps@_*) if ps.last == "module-info.class" => MergeStrategy.discard //TODO: we don't handle JDK9 modules well
+  case PathList(ps@_*) if ps.last == "NumberUtils.class" => MergeStrategy.first //TODO: shade Spring EL?
+  case PathList("org", "apache", "commons", "logging", _ @ _*) => MergeStrategy.first //TODO: shade Spring EL?
+  case PathList(ps@_*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first //Netty has buildTime here, which is different for different modules :/
+  case x => MergeStrategy.defaultMergeStrategy(x)
+}
+
+def uiMergeStrategy: String => MergeStrategy = {
+  case PathList(ps@_*) if ps.last == "NumberUtils.class" => MergeStrategy.first //TODO: shade Spring EL?
+  case PathList("org", "apache", "commons", "logging", _ @ _*) => MergeStrategy.first //TODO: shade Spring EL?
+  case PathList(ps@_*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first //Netty has buildTime here, which is different for different modules :/
+  case PathList("com", "sun", "el", _ @ _*) => MergeStrategy.first //Some legacy batik stuff
+  case PathList("org", "w3c", "dom", "events", _ @ _*) => MergeStrategy.first //Some legacy batik stuff
+  case x => MergeStrategy.defaultMergeStrategy(x)
+}
+
+def standaloneMergeStrategy: String => MergeStrategy = {
+  case PathList(ps@_*) if ps.last == "NumberUtils.class" => MergeStrategy.first //TODO: shade Spring EL?
+  case PathList("org", "apache", "commons", "logging", _ @ _*) => MergeStrategy.first //TODO: shade Spring EL?
+  case PathList(ps@_*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first //Netty has buildTime here, which is different for different modules :/
   case x => MergeStrategy.defaultMergeStrategy(x)
 }
 
@@ -168,7 +176,6 @@ lazy val commonSettings =
         //we use it e.g. to provide consistent behaviour wrt extracting parameter names from scala and java
         "-parameters"
       ),
-      assemblyMergeStrategy in assembly := nussknackerMergeStrategy,
       coverageMinimum := 60,
       coverageFailOnMinimum := false,
       //problem with scaladoc of api: https://github.com/scala/bug/issues/10134
@@ -204,7 +211,7 @@ lazy val commonSettings =
 
         //Our main kafka dependencies are Confluent (for avro) and Flink (Kafka connector)
         "org.apache.kafka" % "kafka-clients" % kafkaV,
-        "org.apache.kafka" %% "kafka" % kafkaV
+        "org.apache.kafka" %% "kafka" % kafkaV,
       )
     )
 
@@ -324,6 +331,7 @@ val publishAssemblySettings = List(
 def assemblySettings(assemblyName: String, includeScala: Boolean): List[Def.SettingsDefinition] = List(
   assemblyJarName in assembly := assemblyName,
   assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = includeScala, level = Level.Info),
+  assemblyMergeStrategy in assembly := modelMergeStrategy,
   test in assembly := {}
 )
 
@@ -427,6 +435,7 @@ lazy val standaloneApp = (project in engine("standalone/app")).
   settings(
     name := "nussknacker-standalone-app",
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = true, level = Level.Info),
+    assemblyMergeStrategy in assembly := standaloneMergeStrategy,
     libraryDependencies ++= {
       Seq(
         "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
@@ -586,7 +595,7 @@ lazy val process = (project in engine("flink/process")).
         "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
       )
     }
-  ).dependsOn(flinkUtil, interpreter, kafka % "test", kafkaTestUtil % "test", kafkaFlinkUtil % "test", flinkTestUtil % "test")
+  ).dependsOn(flinkUtil, interpreter, kafka % "test", kafkaTestUtil % "test", kafkaFlinkUtil % "test->test", flinkTestUtil % "test")
 
 lazy val interpreter = (project in engine("interpreter")).
   settings(commonSettings).
@@ -967,7 +976,7 @@ lazy val ui = (project in file("ui/server"))
   .settings(
     name := "nussknacker-ui",
     buildUi :=  {
-      runNpm("run build", "Client build failed", (crossTarget in compile).value)
+      //runNpm("run build", "Client build failed", (crossTarget in compile).value)
     },
     parallelExecution in ThisBuild := false,
     Keys.test in SlowTests := (Keys.test in SlowTests).dependsOn(
@@ -990,6 +999,7 @@ lazy val ui = (project in file("ui/server"))
     assembly in ThisScope := (assembly in ThisScope).dependsOn(
       buildUi
     ).value,
+    assemblyMergeStrategy in assembly := uiMergeStrategy,
     libraryDependencies ++= {
       Seq(
         "com.typesafe.akka" %% "akka-http" % akkaHttpV,

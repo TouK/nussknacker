@@ -182,10 +182,11 @@ jobs:
         with:
           node-version: 14
       - name: Test FE
+        #FIXME: return to npm test after build fix...
         run: |
           cd ui/client
           npm ci
-          npm test
+          npm run test:unit
           npm run build
       - name: Store test results
         if: always()
@@ -240,7 +241,7 @@ jobs:
       - name: Prepare docker
         shell: bash
         #Doc generation is rather costly, we don't want it in test image creation
-        run: echo "version in ThisBuild := \"${{ env.NUSSKNACKER_VERSION }}\"" > version.sbt && sbt "set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" dist/docker:publishLocal
+        run: echo "version in ThisBuild := \"${{ env.NUSSKNACKER_VERSION }}\"" > version.sbt && sbt "set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" standaloneApp/docker:publishLocal dist/docker:publishLocal
       - name: Test docker
         shell: bash
         env:

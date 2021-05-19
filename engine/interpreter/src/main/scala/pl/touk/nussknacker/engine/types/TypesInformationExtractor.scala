@@ -27,6 +27,8 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
 
   // We have some types that can't be discovered based on model but can by provided using e.g. literals
   //TODO: what else should be here?
+  //TODO: Here, this static list of mandatory classes, should be replaced by mechanizm that allows
+  // to plug in mandatory classes from other modules, e.g. BaseKafkaInputMetaVariables from kafka-util
   private val mandatoryClasses = (Set(
     classOf[java.util.List[_]],
     classOf[java.util.Map[_, _]],

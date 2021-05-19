@@ -29,7 +29,7 @@ trait KafkaAvroDeserializationSchemaFactory extends Serializable {
     * @return KafkaDeserializationSchema
     */
   def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig,
-                                       keySchemaDataOpt: Option[RuntimeSchemaData] = None,
+                                       keySchemaDataOpt: Option[RuntimeSchemaData],
                                        valueSchemaDataOpt: Option[RuntimeSchemaData]
                                       ): KafkaDeserializationSchema[Any]
 
@@ -47,7 +47,7 @@ abstract class KafkaAvroValueDeserializationSchemaFactory
   protected def createValueTypeInfo[T: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): TypeInformation[T]
 
   override def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig,
-                                                keySchemaDataOpt: Option[RuntimeSchemaData] = None,
+                                                keySchemaDataOpt: Option[RuntimeSchemaData],
                                                 valueSchemaDataOpt: Option[RuntimeSchemaData]
                                                ): KafkaDeserializationSchema[Any] = {
     new KafkaDeserializationSchema[V] {
@@ -91,7 +91,7 @@ abstract class KafkaAvroKeyValueDeserializationSchemaFactory
   protected def createObjectTypeInformation[K: ClassTag, V: ClassTag](keyTypeInformation: TypeInformation[K], valueTypeInformation: TypeInformation[V]): TypeInformation[O]
 
   override def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig,
-                                                keySchemaDataOpt: Option[RuntimeSchemaData] = None,
+                                                keySchemaDataOpt: Option[RuntimeSchemaData],
                                                 valueSchemaDataOpt: Option[RuntimeSchemaData]
                                                ): KafkaDeserializationSchema[Any] = {
 

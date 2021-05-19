@@ -2,22 +2,22 @@ package pl.touk.nussknacker.engine.process.typeinformation
 
 import com.esotericsoftware.kryo.io.{Input, Output}
 import com.esotericsoftware.kryo.{Kryo, Serializer}
-
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.util.Collections
+
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.base.{IntSerializer, LongSerializer, StringSerializer}
 import org.apache.flink.api.common.typeutils.{TypeSerializer, TypeSerializerSnapshot}
 import org.apache.flink.api.java.typeutils.runtime.kryo.KryoSerializer
 import org.apache.flink.api.scala.typeutils.ScalaCaseClassSerializer
-import org.apache.flink.core.memory.{DataInputViewStreamWrapper, DataOutputViewStreamWrapper}
 import org.scalatest.Inside.inside
 import org.scalatest.{Assertion, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
+import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetection, TypingResultAwareTypeInformationCustomisation}
+import pl.touk.nussknacker.engine.kafka.serialization.FlinkTypeInformationSerializationMixin
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{BaseJavaMapBasedSerializer, TypedObjectBasedSerializerSnapshot, TypedObjectBasedTypeInformation, TypedObjectBasedTypeSerializer, TypedScalaMapSerializer}
 import pl.touk.nussknacker.engine.process.typeinformation.testTypedObject.{CustomObjectTypeInformation, CustomTypedObject}
 import pl.touk.nussknacker.engine.util.Implicits._
@@ -25,22 +25,14 @@ import pl.touk.nussknacker.engine.util.Implicits._
 import scala.collection.JavaConverters._
 import scala.collection.immutable.ListMap
 
-class TypingResultAwareTypeInformationDetectionSpec extends FunSuite with Matchers {
+class TypingResultAwareTypeInformationDetectionSpec extends FunSuite with Matchers with FlinkTypeInformationSerializationMixin {
 
   private val informationDetection = new TypingResultAwareTypeInformationDetection(new TypingResultAwareTypeInformationCustomisation {
-    override def customise(originalDetection: TypingResultAwareTypeInformationDetection): PartialFunction[typing.TypingResult, TypeInformation[_]] = {
+    override def customise(originalDetection: TypeInformationDetection): PartialFunction[typing.TypingResult, TypeInformation[_]] = {
       case e: TypedObjectTypingResult if e.objType == Typed.typedClass[CustomTypedObject] =>
         CustomObjectTypeInformation(e.fields.mapValuesNow(originalDetection.forType))
     }
   })
-
-  private val executionConfigWithoutKryo = new ExecutionConfig {
-    disableGenericTypes()
-  }
-
-  private val executionConfigWithKryo = new ExecutionConfig {
-    enableGenericTypes()
-  }
 
   test("test map serialization") {
     val map = Map("intF" -> 11, "strF" -> "sdfasf", "longF" -> 111L)
@@ -163,22 +155,6 @@ class TypingResultAwareTypeInformationDetectionSpec extends FunSuite with Matche
     oldSerializerSnapshot.resolveSchemaCompatibility(oldSerializer).isCompatibleAsIs shouldBe true
     oldSerializerSnapshot.resolveSchemaCompatibility(addFieldSerializer).isIncompatible shouldBe true
     oldSerializerSnapshot.resolveSchemaCompatibility(removeFieldSerializer).isIncompatible shouldBe true
-  }
-
-  private def serializeRoundTrip[T](record: T, typeInfo: TypeInformation[T], executionConfig: ExecutionConfig
-      = executionConfigWithoutKryo)(expected:T = record): Assertion = {
-    val serializer = typeInfo.createSerializer(executionConfig)
-    serializeRoundTripWithSerializers(record, serializer, serializer)(expected)
-  }
-
-  private def serializeRoundTripWithSerializers[T](record: T,
-                                    toSerialize: TypeSerializer[T],
-                                    toDeserialize: TypeSerializer[T])(expected:T = record): Assertion = {
-    val data = new ByteArrayOutputStream(10 * 1024)
-    toSerialize.serialize(record, new DataOutputViewStreamWrapper(data))
-    val input = data.toByteArray
-    val out = toDeserialize.deserialize(new DataInputViewStreamWrapper(new ByteArrayInputStream(input)))
-    out shouldBe expected
   }
 
   private def assertSerializersInContext(serializer: TypeSerializer[_], nested: (String, TypeSerializer[_] => Assertion)*): Unit = {

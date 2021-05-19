@@ -8,7 +8,7 @@ import org.apache.flink.api.scala.typeutils.{CaseClassTypeInfo, OptionTypeInfo, 
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
+import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypingResultAwareTypeInformationCustomisation, TypeInformationDetection}
 import pl.touk.nussknacker.engine.api.{Context, InterpretationResult, PartReference, ValueWithContext}
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{TypedJavaMapTypeInformation, TypedMapTypeInformation, TypedScalaMapTypeInformation}
 import pl.touk.nussknacker.engine.process.typeinformation.internal.{FixedValueSerializers, InterpretationResultMapTypeInfo}
@@ -25,7 +25,7 @@ object TypingResultAwareTypeInformationDetection {
   }
 
   class CompositeCustomisation(customisations: List[TypingResultAwareTypeInformationCustomisation]) extends TypingResultAwareTypeInformationCustomisation {
-    override def customise(originalDetection: TypingResultAwareTypeInformationDetection): PartialFunction[TypingResult, TypeInformation[_]] =
+    override def customise(originalDetection: TypeInformationDetection): PartialFunction[TypingResult, TypeInformation[_]] =
       customisations.map(_.customise(originalDetection)).reduceOption(_.orElse(_)).getOrElse(Map.empty)
   }
 
@@ -42,7 +42,8 @@ object TypingResultAwareTypeInformationDetection {
 class TypingResultAwareTypeInformationDetection(customisation:
                                                 TypingResultAwareTypeInformationCustomisation) extends TypeInformationDetection {
 
-  private val additionalTypeInfoDeterminer = customisation.customise(this)
+  //we have def here, as Scala 2.11 has problems with serialization of PartialFunctions...
+  private def additionalTypeInfoDeterminer = customisation.customise(this)
 
   private val registeredTypeInfos: Set[TypeInformation[_]] = {
     import org.apache.flink.api.scala._

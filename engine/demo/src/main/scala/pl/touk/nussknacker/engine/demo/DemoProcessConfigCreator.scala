@@ -1,30 +1,33 @@
 package pl.touk.nussknacker.engine.demo
 
 import java.time.Duration
+
 import com.typesafe.config.Config
 import io.circe.Json
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
 import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
+import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
-import pl.touk.nussknacker.engine.api.test.TestParsingUtils
 import pl.touk.nussknacker.engine.demo.custom.{EventsCounter, TransactionAmountAggregator}
 import pl.touk.nussknacker.engine.demo.service.{AlertService, ClientService}
+import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer}
+import pl.touk.nussknacker.engine.kafka.consumerrecord.FixedValueDeserializaitionSchemaFactory
 import pl.touk.nussknacker.engine.kafka.generic.sources.JsonRecordFormatter
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.util.LoggingListener
 
-import scala.reflect.ClassTag
+import scala.reflect.{ClassTag, classTag}
 
 class DemoProcessConfigCreator extends ProcessConfigCreator {
 
@@ -58,7 +61,7 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
   }
 
   private def createTransactionSource(processObjectDependencies: ProcessObjectDependencies) = {
-    val transactionTimestampExtractor = StandardTimestampWatermarkHandler.boundedOutOfOrderness[Transaction](_.eventDate, Duration.ofMinutes(10))
+    val transactionTimestampExtractor = StandardTimestampWatermarkHandler.boundedOutOfOrderness[ConsumerRecord[String, Transaction]](_.value().eventDate, Duration.ofMinutes(10))
     kafkaSource[Transaction](decodeJsonUnsafe[Transaction](_), Some(transactionTimestampExtractor), processObjectDependencies)
   }
 
@@ -67,10 +70,11 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
   }
 
   private def kafkaSource[T: TypeInformation](decode: Array[Byte] => T,
-                                              timestampAssigner: Option[TimestampWatermarkHandler[T]],
-                                              processObjectDependencies: ProcessObjectDependencies): SourceFactory[T] = {
+                                              timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[String, T]]],
+                                              processObjectDependencies: ProcessObjectDependencies): FlinkSourceFactory[ConsumerRecord[String, T]] = {
     val schema = new EspDeserializationSchema[T](bytes => decode(bytes))
-    new KafkaSourceFactory[T](schema, timestampAssigner, JsonRecordFormatter, processObjectDependencies)(ClassTag(implicitly[TypeInformation[T]].getTypeClass))
+    val schemaFactory = new FixedValueDeserializaitionSchemaFactory(schema)
+    new KafkaSourceFactory[String, T](schemaFactory, timestampAssigner, JsonRecordFormatter, processObjectDependencies)(classTag[String], ClassTag(implicitly[TypeInformation[T]].getTypeClass))
   }
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
