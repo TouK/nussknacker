@@ -111,6 +111,12 @@ def uiMergeStrategy: String => MergeStrategy = {
   case x => MergeStrategy.defaultMergeStrategy(x)
 }
 
+def standaloneMergeStrategy: String => MergeStrategy = {
+  case PathList(ps@_*) if ps.last == "NumberUtils.class" => MergeStrategy.first //TODO: shade Spring EL?
+  case PathList("org", "apache", "commons", "logging", _ @ _*) => MergeStrategy.first //TODO: shade Spring EL?
+  case PathList(ps@_*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first //Netty has buildTime here, which is different for different modules :/
+  case x => MergeStrategy.defaultMergeStrategy(x)
+}
 
 lazy val SlowTests = config("slow") extend Test
 
@@ -429,6 +435,7 @@ lazy val standaloneApp = (project in engine("standalone/app")).
   settings(
     name := "nussknacker-standalone-app",
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = true, level = Level.Info),
+    assemblyMergeStrategy in assembly := standaloneMergeStrategy,
     libraryDependencies ++= {
       Seq(
         "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
