@@ -99,7 +99,7 @@ const groupElements: dia.MarkupNodeJSON = {
   },
 }
 
-const portSize = 5
+const portSize = iconSize / 3
 const portMarkup: dia.MarkupNodeJSON = {
   selector: "port",
   tagName: "circle",
@@ -108,7 +108,7 @@ const portMarkup: dia.MarkupNodeJSON = {
     r: portSize,
     fill: PORT_COLOR,
     stroke: BORDER_COLOR,
-    "stroke-width": 1,
+    "stroke-width": 5,
   },
 }
 
@@ -168,14 +168,14 @@ const defaults = util.defaultsDeep(
     ports: {
       groups: {
         in: {
-          position: `top`,
+          position: {name: `top`, args: {dx: 90}},
           attrs: {
             magnet: "passive",
             type: "input",
           },
         },
         out: {
-          position: `bottom`,
+          position: {name: `bottom`, args: {dx: 90}},
           attrs: {
             type: "output",
           },

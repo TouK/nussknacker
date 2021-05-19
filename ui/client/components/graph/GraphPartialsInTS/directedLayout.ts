@@ -13,9 +13,9 @@ export function directedLayout() {
   joint.layout.DirectedGraph.layout(cells, {
     graphlib: dagre.graphlib,
     dagre: dagre,
-    nodeSep: 0,
+    nodeSep: 60,
     edgeSep: 0,
-    rankSep: 75,
+    rankSep: 120,
     rankDir: "TB",
   })
   this.changeLayoutIfNeeded()

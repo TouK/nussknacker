@@ -30,6 +30,22 @@ function getPaper(opts: dia.Paper.Options, canWrite: boolean) {
     defaultLink: defaultLink,
   })
   joint.V(paper.defs).append(arrowMarker)
+  paper.options.defaultRouter = {
+    name: `manhattan`,
+    args: {
+      startDirections: [`bottom`],
+      endDirections: [`top`],
+      excludeTypes: [`basic.Rect`],
+      step: 10,
+      padding: 20,
+    },
+  }
+  paper.options.defaultConnector = {
+    name: `rounded`,
+    args: {
+      radius: 60,
+    },
+  }
   return paper
 }
 

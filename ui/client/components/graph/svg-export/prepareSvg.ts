@@ -88,7 +88,7 @@ function createPaper(placeholder: HTMLDivElement, maxSize: number, {options, def
     height: maxSize,
   })
   paper.defs.replaceWith(defs)
-  paper.fitToContent({allowNewOrigin: "any"})
+  paper.fitToContent({allowNewOrigin: "any", padding: 10})
 
   const {svg} = paper
   const {width, height} = paper.getComputedSize()

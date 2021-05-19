@@ -7,7 +7,7 @@ import {arrowMarker} from "../arrowMarker"
 const LINK_TEXT_COLOR = "#686868"
 const LINK_COLOR = "#F5F5F5"
 
-function makeLabels(label = "") {
+function makeLabels(label = ""): joint.dia.Link.Label[] {
   return label.length === 0 ? [] : [{
     position: 0.5,
     attrs: {
@@ -48,15 +48,24 @@ export const defaultLink = new joint.dia.Link({
   },
 })
 
-export const makeLink = (edge: Edge) => {
+export const makeLink = (edge: Edge): joint.dia.Link => {
   const edgeLabel = NodeUtils.edgeLabel(edge)
   const labels = makeLabels(edgeLabel)
-  return defaultLink.clone()
+  const link = defaultLink.clone() as joint.dia.Link
+  return link
     //TODO: some different way to create id? Must be deterministic and unique
     .prop("id", `${edge.from}-${edge.to}-${edgeLabel}`)
-    .prop("source", {id: edge.from, port: "Out"})
-    .prop("target", {id: edge.to, port: "In"})
-    .prop("labels", labels)
+    .source({
+      id: edge.from, port: "Out",
+      anchor: {name: "bottom", args: {dy: -4}},
+      connectionPoint: {name: "boundary", args: {offset: 2, sticky: true}},
+    })
+    .target({
+      id: edge.to, port: "In",
+      anchor: {name: "top", args: {dy: 4}},
+      connectionPoint: {name: "boundary", args: {offset: 5, sticky: true}},
+    })
+    .labels(labels)
     .prop("edgeData", edge)
     .prop("definitionToCompare", {edge})
 }
