@@ -5,23 +5,21 @@ SpEL is based on Java ([reference documentation](https://docs.spring.io/spring-f
 no prior Java knowledge is needed to use it. 
 
 The easiest way to learn SpEL is looking at examples which are further down this page. Some attention should be paid to data types, described in more detail 
-in next section, as they are used to describe data from different sources and can provide help in writing and validating expressions.
+in the next section, as depending on the context in which data are processed or displayed, different data type schemes are in use.
 
 ## Data types and structures
 
 The data types are used primarily for:                            
- - validation - e.g. detecting using number field instead of string one, or checking if field used in expression exists at all.
+ - validation - e.g. to detect attempt to use incorrect data type, for example numeric field instead of a string, or checking if field used in expression exists at all.
  - code completion - suggestions appearing in UI when editing expressions.
                          
-Types of input events or data returned by enrichers are often discovered from e.g. schema registry, 
- schema of SQL table or description of REST API. Nussknacker can also infer types of variables defined by user.
+Types of events in the Kafka streams or data returned by enrichers can be often discovered from some sort of schema registry, for example Confluent Schema Registry, SQL table schema or description of REST API. Nussknacker can also infer types of variables defined by user.
 
-The types used in execution engine and in SpEL expressions and data structures are Java based. 
-These are also the type names that appear in code completion. 
-In most cases Nussknacker can automatically convert between Java data and JSON and AVRO formats. JSON will be used e.g. for REST API enrichers, while AVRO should be first choice
-for format of Kafka messages.
+The data types used in the execution engine, SpEL expressions and data structures are Java based. 
+These are also the data type names that appear in code completion hints. 
+In most cases Nussknacker can automatically convert between Java data types and JSON and AVRO formats. JSON will be used for REST API enrichers, while AVRO should be first choice for format of Kafka messages.
 
-Below you can find list of the most common data types, with their JSON and Avro counterparts. 
+Below is the list of the most common data types, with their JSON and Avro counterparts. 
 In Java types column package names are omitted for brevity, 
 they are usually `java.lang` (primitives), `java.util` (List, Map) and `java.time`
 
@@ -40,7 +38,7 @@ they are usually `java.lang` (primitives), `java.util` (List, Map) and `java.tim
 
 ### Records/objects
          
-There are common traits for following types of data:
+In Nussknacker, the following data types share common processing characteristics:
 - `object` in JSON
 - `record` or `map` in Avro
 - `Map` and [POJO](https://en.wikipedia.org/wiki/Plain_old_Java_object) in Java
@@ -61,11 +59,9 @@ Nussknacker usually infers structure of record from external source (e.g. AVRO s
 
 ### Arrays/lists
 
-They represent JSON/Avro arrays. 
-In Nussknacker (e.g. in code completion) they are described as `List`, 
+In Nussknacker (e.g. in code completion) JSON / Avro arrays are refered to as `Lists`; 
 also in some context `Collection` can be met (it's Java API for handling lists, sets etc.).
-Please note that in many cases (e.g. Avro schema discovery or literals) Nussknacker knows type of elements, 
-which can be used for validation or in code completion. 
+
 
 ### Handling date/time.
 
@@ -101,7 +97,7 @@ mapping of AVRO types (`int + date` means `int` type with `date` logical type):
 
 ## Literals
                                   
-Most of the literals are similar to JSON ones, in fact in many case JSON structure is valid SpEL. 
+Most of the literals are similar to JSON ones, in fact in many cases JSON structure is valid SpEL. 
 There are a few notable exceptions:
 - Lists are written using curly braces: `{"firstElement", "secondElement"}`, as `[]` is used to access elements in array 
 - Empty record is `{:}`, to distinguish it from empty list: `{}`
@@ -139,7 +135,7 @@ There are a few notable exceptions:
 
 As Nussknacker uses Java types, some objects are more than data containers - there are additional methods 
 that can be invoked on them. Method parameters are passed in parentheses, usually parameter details 
-are shown in code completion on FE.
+are shown in code completion hints.
 
 | Expression                 | Result     | Type |
 | -------------------------- | ---------- | ---- |
