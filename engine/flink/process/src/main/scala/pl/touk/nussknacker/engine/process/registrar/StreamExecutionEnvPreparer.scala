@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.process.registrar
 
 import java.util.function.Consumer
-
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.java.tuple
@@ -13,8 +12,9 @@ import org.apache.flink.streaming.runtime.operators.windowing.WindowOperator
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
-import pl.touk.nussknacker.engine.process.util.{MetaDataExtractor, StateConfiguration}
+import pl.touk.nussknacker.engine.process.util.StateConfiguration
 import pl.touk.nussknacker.engine.process.{CheckpointConfig, ExecutionConfigPreparer}
+import pl.touk.nussknacker.engine.util.MetaDataExtractor
 
 import scala.collection.JavaConverters._
 

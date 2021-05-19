@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.process.util
 
 import java.time._
-
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.util.MetaDataExtractor
 
 class MetaDataExtractorTest extends FunSuite with Matchers {
 

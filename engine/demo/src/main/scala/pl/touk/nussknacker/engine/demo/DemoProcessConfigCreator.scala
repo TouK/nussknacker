@@ -1,8 +1,5 @@
 package pl.touk.nussknacker.engine.demo
 
-import java.time.Duration
-
-import com.typesafe.config.Config
 import io.circe.Json
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
@@ -10,14 +7,14 @@ import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
+import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.demo.custom.{EventsCounter, TransactionAmountAggregator}
 import pl.touk.nussknacker.engine.demo.service.{AlertService, ClientService}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
-import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
+import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer}
 import pl.touk.nussknacker.engine.kafka.consumerrecord.FixedValueDeserializationSchemaFactory
@@ -27,6 +24,7 @@ import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.util.LoggingListener
 
+import java.time.Duration
 import scala.reflect.{ClassTag, classTag}
 
 class DemoProcessConfigCreator extends ProcessConfigCreator {
@@ -97,7 +95,7 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
   }
 
   override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
-    new LoggingExceptionHandlerFactory(processObjectDependencies.config)
+    ConfigurableExceptionHandlerFactory(processObjectDependencies)
 
   override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
     val globalProcessVariables = Map(
@@ -117,12 +115,4 @@ class DemoProcessConfigCreator extends ProcessConfigCreator {
   override def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[ProcessSignalSender]] = {
     Map.empty //TODO
   }
-}
-
-class LoggingExceptionHandlerFactory(config: Config) extends ExceptionHandlerFactory {
-
-  @MethodToInvoke
-  def create(metaData: MetaData): EspExceptionHandler =
-    BrieflyLoggingExceptionHandler(metaData)
-
 }

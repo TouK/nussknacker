@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.management.sample
 
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
-
 import com.typesafe.config.Config
 import io.circe.Encoder
 import org.apache.flink.api.common.serialization.SimpleStringSchema
@@ -15,7 +14,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaR
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactoryWithEditor
 import pl.touk.nussknacker.engine.flink.api.process._
-import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
+import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.SlidingAggregateTransformerV2
@@ -157,7 +156,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
   )
 
   override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
-    ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
+    ConfigurableExceptionHandlerFactory(processObjectDependencies)
 
   override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
     val globalProcessVariables = Map(

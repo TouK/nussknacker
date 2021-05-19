@@ -1,12 +1,11 @@
-package pl.touk.nussknacker.engine.process.util
-
-import java.time.format.DateTimeFormatter
-import java.time.{Duration, LocalDate, LocalDateTime, LocalTime, Period}
+package pl.touk.nussknacker.engine.util
 
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.WrongProcessType
 import pl.touk.nussknacker.engine.api.{MetaData, TypeSpecificData}
 
+import java.time.format.DateTimeFormatter
+import java.time._
 import scala.reflect.ClassTag
 
 object MetaDataExtractor {
@@ -17,7 +16,7 @@ object MetaDataExtractor {
   }
 
   def extractTypeSpecificDataOrFail[T <: TypeSpecificData](metaData: MetaData)(implicit classTag: ClassTag[T]): T
-    = extractTypeSpecificData(metaData).fold(_ => throw new IllegalArgumentException("Wrong process type"), identity)
+  = extractTypeSpecificData(metaData).fold(_ => throw new IllegalArgumentException("Wrong process type"), identity)
 
   def extractProperty(metaData: MetaData, property: String): Option[String] =
     metaData
@@ -57,4 +56,3 @@ object MetaDataExtractor {
   def extractPeriodProperty(metaData: MetaData, property: String, default: Period): Period =
     extractProperty(metaData, property).map(Period.parse(_)).getOrElse(default)
 }
-

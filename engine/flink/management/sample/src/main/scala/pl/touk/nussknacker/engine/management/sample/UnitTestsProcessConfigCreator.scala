@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.management.sample
 
 import java.nio.charset.StandardCharsets
 import java.time.{Duration, LocalDateTime, ZoneOffset}
-
 import io.circe.Json
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -15,7 +14,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSourceFactory, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
-import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
+import pl.touk.nussknacker.engine.flink.util.exception.{BrieflyLoggingExceptionHandler, ConfigurableExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.management.sample.UnitTestsProcessConfigCreator._
@@ -113,7 +112,7 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
 
   override def listeners(processObjectDependencies: ProcessObjectDependencies) = List()
 
-  override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies) = new TopicHandlerFactory
+  override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies) = ConfigurableExceptionHandlerFactory(processObjectDependencies)
 
   override def expressionConfig(processObjectDependencies: ProcessObjectDependencies) = {
     val globalProcessVariables = Map(
@@ -128,13 +127,6 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
     "process-version" -> "0.1",
     "engine-version" -> "0.1"
   )
-
-  class TopicHandlerFactory extends ExceptionHandlerFactory {
-
-    @MethodToInvoke
-    def create(@ParamName("topic") topic: String, metaData: MetaData) = BrieflyLoggingExceptionHandler(metaData)
-
-  }
 
   class RunningSourceFactory[T <: WithFields :TypeInformation](generate: Int => T, timestamp: T => Long, parser: List[String] => T) extends FlinkSourceFactory[T]()(ClassTag[T](implicitly[TypeInformation[T]].getTypeClass)) {
 
