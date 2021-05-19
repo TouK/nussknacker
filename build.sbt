@@ -1060,18 +1060,28 @@ lazy val bom = (project in file("bom"))
       }
       new RuleTransformer(rule).transform(node).head
     },
-    //TODO: should we also include depdendencies from some modules?
-    libraryDependencies ++= dependencyOverrides.value
-  )
+    /*
+      TODO: do we want to include other dependencies (especially with 'provided' scope)?
+      Maybe we need other BOM for ComponentProvider dependencies, which have more 'provided' dependencies
+     */
+    libraryDependencies ++= (dependencyOverrides.value ++ Seq(
+      "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+      "org.apache.flink" %% "flink-streaming-java" % flinkV % "provided",
+      "org.apache.flink" %% "flink-runtime" % flinkV % "provided",
+      "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
+    ))
+  ).dependsOn(modules.map(k => k:ClasspathDep[ProjectReference]):_*)
+
+lazy val modules = List[ProjectReference](
+  engineStandalone, standaloneApp, flinkProcessManager, flinkPeriodicProcessManager, standaloneSample, flinkManagementSample, managementJavaSample, demo, generic,
+  process, interpreter, benchmarks, kafka, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
+  flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils, queryableState,
+  restmodel, listenerApi, ui
+)
+lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 
 lazy val root = (project in file("."))
-  .aggregate(
-    // TODO: get rid of this duplication
-    engineStandalone, standaloneApp, flinkProcessManager, flinkPeriodicProcessManager, standaloneSample, flinkManagementSample, managementJavaSample, demo, generic,
-    process, interpreter, benchmarks, kafka, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
-    flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils, queryableState,
-    restmodel, listenerApi, ui, bom
-  )
+  .aggregate(modulesWithBom: _*)
   .settings(commonSettings)
   .settings(
     // crossScalaVersions must be set to Nil on the aggregating project
