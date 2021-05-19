@@ -207,7 +207,7 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
       parse[AnyRef](expr, ctx).map(_.returnType) shouldBe Valid(Typed[Type])
     }
 
-    checkTypeForExpr[LocalDate]("'mojsdfasdf'.length()")
+    checkTypeForExpr[LocalDate]("#input.date")
     checkTypeForExpr[LocalTime]("#input.timeMillis")
     checkTypeForExpr[Int]("#input.timeMicros")
     checkTypeForExpr[Long]("#input.localTimestampMillis")
