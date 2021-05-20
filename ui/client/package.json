@@ -62,7 +62,7 @@
     "react-addons-pure-render-mixin": "^15.6.3",
     "react-beautiful-dnd": "^13.1.0",
     "react-bootstrap": "~0.33.1",
-    "react-cool-dimensions": "^2.0.4",
+    "react-cool-dimensions": "^2.0.6",
     "react-cron-generator": "^1.2.12",
     "react-custom-scrollbars": "~4.2.1",
     "react-datetime": "^2.16.3",
