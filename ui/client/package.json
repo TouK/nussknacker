@@ -29,7 +29,7 @@
     "commit": "lint-staged"
   },
   "dependencies": {
-    "@babel/eslint-parser": "^7.14.2",
+    "@babel/eslint-parser": "^7.14.3",
     "@juggle/resize-observer": "^3.3.1",
     "@loadable/component": "^5.15.0",
     "ajv": "^6.12.6",
@@ -105,8 +105,8 @@
     "uuid": "^8.3.2"
   },
   "devDependencies": {
-    "@babel/cli": "^7.13.16",
-    "@babel/core": "^7.14.2",
+    "@babel/cli": "^7.14.3",
+    "@babel/core": "^7.14.3",
     "@babel/plugin-proposal-class-properties": "^7.13.0",
     "@babel/plugin-proposal-decorators": "^7.14.2",
     "@babel/plugin-proposal-do-expressions": "^7.14.0",
@@ -125,7 +125,7 @@
     "@babel/plugin-syntax-dynamic-import": "^7.8.3",
     "@babel/plugin-syntax-import-meta": "^7.10.4",
     "@babel/plugin-transform-dotall-regex": "^7.12.13",
-    "@babel/plugin-transform-runtime": "^7.14.2",
+    "@babel/plugin-transform-runtime": "^7.14.3",
     "@babel/preset-env": "^7.14.2",
     "@babel/preset-react": "^7.13.13",
     "@babel/preset-typescript": "^7.13.0",
