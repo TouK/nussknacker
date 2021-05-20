@@ -3,13 +3,12 @@ package pl.touk.nussknacker.ui.security.oauth2
 import java.net.URI
 import java.nio.charset.{Charset, StandardCharsets}
 import java.security.PublicKey
-
 import com.typesafe.config.Config
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
 import pl.touk.nussknacker.ui.security.api.AuthenticationMethod.AuthenticationMethod
 import pl.touk.nussknacker.ui.security.oauth2.ProfileFormat.ProfileFormat
-import sttp.model.{Header, HeaderNames, MediaType}
+import sttp.model.{HeaderNames, MediaType, Uri}
 
 import scala.concurrent.duration.{FiniteDuration, HOURS}
 import scala.io.Source
@@ -33,21 +32,18 @@ case class OAuth2Configuration(method: AuthenticationMethod,
                                defaultTokenExpirationTime: FiniteDuration = FiniteDuration(1, HOURS)
                               ) extends AuthenticationConfiguration {
 
-  override def authorizeUrl: Option[URI] = Option({
-    new URI(dispatch.url(authorizeUri.toString)
-      .setQueryParameters((Map(
-        "client_id" -> clientId,
-        "redirect_uri" -> redirectUrl
-      ) ++ authorizeParams).mapValues(v => Seq(v)))
-      .url)
-  })
-
-  def idTokenNonceVerificationRequired: Boolean = jwt.exists(_.idTokenNonceVerificationRequired)
+  override def authorizeUrl: Option[URI] = Option(Uri(authorizeUri).params(Map(
+    "client_id" -> clientId,
+    "redirect_uri" -> redirectUrl
+  ) ++ authorizeParams).toJavaUri)
 
   def redirectUrl: String = redirectUri.toString
+
+  def idTokenNonceVerificationRequired: Boolean = jwt.exists(_.idTokenNonceVerificationRequired)
 }
 
 object OAuth2Configuration {
+
   import AuthenticationConfiguration._
   import JwtConfiguration.jwtConfigurationVR
   import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
@@ -65,12 +61,16 @@ object ProfileFormat extends Enumeration {
 
 trait JwtConfiguration {
   def accessTokenIsJwt: Boolean
+
   def userinfoFromIdToken: Boolean
+
   def authServerPublicKey: PublicKey
+
   def idTokenNonceVerificationRequired: Boolean
 }
 
 object JwtConfiguration {
+
   import net.ceedubs.ficus.readers.ValueReader
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
