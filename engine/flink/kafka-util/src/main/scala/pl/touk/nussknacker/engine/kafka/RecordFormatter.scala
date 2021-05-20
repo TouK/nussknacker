@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
   * stored on topic aren't in human readable format and you need to add extra step in generation of test data
   * and in reading of these data.
   */
-trait RecordFormatter {
+trait RecordFormatter extends Serializable {
 
   protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): Array[Byte]
 
@@ -28,14 +28,16 @@ trait RecordFormatter {
 
 }
 
-object BasicFormatter extends BasicFormatter
-
-trait BasicFormatter extends RecordFormatter {
+case class BasicRecordFormatter(override val testDataSplit: TestDataSplit) extends RecordFormatter {
 
   override def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): Array[Byte] = record.value()
 
   override def parseRecord(topic: String, bytes: Array[Byte]): ConsumerRecord[Array[Byte], Array[Byte]] =
     new ConsumerRecord[Array[Byte], Array[Byte]](topic, 0, 0L, Array[Byte](), bytes)
 
-  override def testDataSplit: TestDataSplit = TestParsingUtils.newLineSplit
+}
+
+object BasicRecordFormatter {
+  def apply(): BasicRecordFormatter =
+    BasicRecordFormatter(TestParsingUtils.newLineSplit)
 }

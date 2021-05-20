@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.kafka.generic
 import java.nio.charset.StandardCharsets
 import java.util
 import java.util.Collections
-
 import io.circe.{Decoder, Json, JsonObject}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
@@ -17,7 +16,7 @@ import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.consumerrecord.FixedValueDeserializaitionSchemaFactory
 import pl.touk.nussknacker.engine.kafka.source.{KafkaSource, KafkaSourceFactory}
-import pl.touk.nussknacker.engine.kafka.{BasicFormatter, KafkaConfig, KafkaUtils}
+import pl.touk.nussknacker.engine.kafka.{BasicRecordFormatter, KafkaConfig, KafkaUtils, RecordFormatter}
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
@@ -77,13 +76,18 @@ object sources {
   class JsonDecoderDeserialization[T:Decoder:TypeInformation] extends EspDeserializationSchema[T](ba => CirceUtil.decodeJsonUnsafe(ba))
 
   //We format before returning to user, to avoid problems with empty lines etc.
-  object JsonRecordFormatter extends BasicFormatter {
+  object JsonRecordFormatter extends RecordFormatter {
 
-    override def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): Array[Byte] = {
+    private val basicRecordFormatter = BasicRecordFormatter(TestParsingUtils.emptyLineSplit)
+
+    override def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): Array[Byte] =
       toJson(record.value()).spaces2.getBytes(StandardCharsets.UTF_8)
-    }
 
-    override def testDataSplit: TestDataSplit = TestParsingUtils.emptyLineSplit
+    override protected def parseRecord(topic: String, bytes: Array[Byte]): ConsumerRecord[Array[Byte], Array[Byte]] =
+      basicRecordFormatter.parseRecord(topic, bytes)
+
+    override def testDataSplit: TestDataSplit =
+      basicRecordFormatter.testDataSplit
   }
 
 }
