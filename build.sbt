@@ -244,7 +244,6 @@ val jwtCirceV = "4.0.0"
 val jacksonV = "2.9.2"
 val catsV = "1.5.0"
 val scalaParsersV = "1.0.4"
-val dispatchV = "1.0.1"
 val slf4jV = "1.7.30"
 val scalaLoggingV = "3.9.2"
 val scalaCompatV = "0.9.1"
@@ -911,7 +910,6 @@ lazy val httpUtils = (project in engine("httpUtils")).
       Seq(
         "io.circe" %% "circe-core" % circeV,
         "io.circe" %% "circe-parser" % circeV,
-        "org.dispatchhttp" %% "dispatch-core" % dispatchV,
         "org.scala-lang.modules" %% "scala-parser-combinators" % scalaParsersV, // scalaxb deps
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "com.softwaremill.sttp.client" %% "core" % sttpV,
