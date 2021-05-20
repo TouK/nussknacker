@@ -18,7 +18,7 @@ class ConsumerRecordToJsonFormatterSpec extends FunSuite with Matchers with Kafk
     serializeKeyValue[SampleKey, SampleValue]
   )
 
-  private lazy val basicRecordFormatter = BasicFormatter
+  private lazy val basicRecordFormatter = BasicRecordFormatter()
 
   test("check sample serializer and deserializer") {
     val (sampleKeyBytes, sampleValueBytes) = serializeKeyValue(Some(sampleKey), sampleValue)
