@@ -47,6 +47,10 @@ const variables = {
       {refClazzName: "org.A"},
       {refClazzName: "org.B"},
       {refClazzName: "org.AA"}]},
+  "unionOfLists": {union: [
+      {"refClazz": "java.util.List", params: [{refClazzName: "org.A"}]},
+      {"refClazz": "java.util.List", params: [{refClazzName: "org.B"}]}
+    ]},
   "dict": {dict: {
     id: "fooDict",
     valueType: {refClazzName: "org.A"}
@@ -84,6 +88,9 @@ describe("expression suggester", () => {
               { refClazzName: 'org.A' },
               { refClazzName: 'org.B' },
               { refClazzName: 'org.AA' } ] } },
+        { methodName: "#unionOfLists", refClazz: { union: [
+              { refClazz: "java.util.List", params: [{refClazzName: "org.A"}]},
+              { refClazz: "java.util.List", params: [{refClazzName: "org.B"}]}] } },
         { methodName: "#dict", refClazz: { dict: {
           id: "fooDict",
           valueType: { refClazzName: "org.A" }
@@ -317,6 +324,12 @@ describe("expression suggester", () => {
 
   it("should suggest #this fields in simple projection", (done) => {
     suggestionsFor("#listVar.listField.![#this.f]", {row: 0, column: "#listVar.listField.![#this.f".length }).then(suggestions => {
+      expect(suggestions).toEqual([{methodName: "fooString", refClazz: {refClazzName: "java.lang.String"}}])
+    }).then(done)
+  })
+
+  it("should suggest #this fields in projection on union of lists", (done) => {
+    suggestionsFor("#unionOfLists.![#this.f]", {row: 0, column: "#unionOfLists.![#this.f".length }).then(suggestions => {
       expect(suggestions).toEqual([{methodName: "fooString", refClazz: {refClazzName: "java.lang.String"}}])
     }).then(done)
   })
