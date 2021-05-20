@@ -6,26 +6,19 @@ import org.scalatest.{FlatSpec, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{ServiceInvocationCollector, ToCollect}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class ServiceInvokerTest extends FlatSpec with PatientScalaFutures with OptionValues with Matchers {
-
+  import scala.concurrent.ExecutionContext.Implicits.global
+  import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
   private implicit val metadata: MetaData = MetaData("proc1", StreamMetaData())
+  private implicit val ctxId: ContextId = ContextId("")
+
   private val nodeId = NodeId("id")
   private val jobData: JobData = JobData(metadata, ProcessVersion.empty, DeploymentData.empty)
-  private implicit val ctxId: ContextId = ContextId("")
-  private implicit val collector: ServiceInvocationCollector = new ServiceInvocationCollector {
-    override def collectWithResponse[A](request: => ToCollect, mockValue: Option[A])
-                                       (action: => Future[InvocationCollectors.CollectableAction[A]], names: InvocationCollectors.TransmissionNames)
-                                       (implicit ec: ExecutionContext): Future[A] = action.map(_.result)
-  }
-
-  import scala.concurrent.ExecutionContext.Implicits.global
 
   it should "invoke service method with declared parameters as scala params" in {
     val mock = new MockService(jobData)
