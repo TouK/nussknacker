@@ -3,11 +3,40 @@ linkColor = white
 .arrow-marker path
     fill linkColor
 
-.joint-theme-default
+.joint-theme-default.joint-link
+    .marker-arrowhead
+        // small element with big stroke allows arrow to overflow link path
+        transform scale(.1)
+        stroke-width 140
+        fill #33a369
+        stroke @fill
+        transition all .25s ease-in-out
+        &:hover
+            fill #7edb0d
+            stroke @fill
+
+    .connection-wrap
+        cursor pointer
+        stroke #33a369
+    &:hover .connection-wrap
+        opacity .5
+        stroke-opacity .5
 
     .connection
         stroke linkColor
         stroke-width 2
+
+    &[style*="pointer"] //simple method to get dragging state
+        .connection
+            stroke-width 3
+            stroke-dasharray 3 0 3
+
+    .link-tool .tool-remove
+        cursor default
+        filter saturate(.75)
+        transition all .25s ease-in-out
+        &:hover
+            filter saturate(2)
 
 .joint-type-esp-model
     .body

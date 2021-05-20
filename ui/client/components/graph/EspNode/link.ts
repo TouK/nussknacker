@@ -28,7 +28,7 @@ function makeLabels(label = ""): joint.dia.Link.Label[] {
       },
       text: {
         text: label,
-        fontWeight: 300,
+        fontWeight: 600,
         fontSize: 10,
         fill: LINK_TEXT_COLOR,
       },

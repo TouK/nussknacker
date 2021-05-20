@@ -1,6 +1,7 @@
 import * as joint from "jointjs"
 import {dia} from "jointjs"
 import {isBackgroundObject} from "./isBackgroundObject"
+import {defaults} from "lodash"
 import {defaultLink} from "../EspNode/link"
 import {arrowMarker} from "../arrowMarker"
 import {Events} from "../joint-events"
@@ -28,6 +29,15 @@ function getPaper(opts: dia.Paper.Options, canWrite: boolean) {
     },
     linkPinning: false,
     defaultLink: defaultLink,
+    linkView: joint.dia.LinkView.extend({
+      options: defaults<joint.dia.LinkView.Options, joint.dia.LinkView.Options>({
+        shortLinkLength: 60,
+        longLinkLength: 180,
+        linkToolsOffset: 20,
+        doubleLinkToolsOffset: 20,
+        doubleLinkTools: true,
+      }, joint.dia.LinkView.prototype.options),
+    }),
   })
   joint.V(paper.defs).append(arrowMarker)
   paper.options.defaultRouter = {
