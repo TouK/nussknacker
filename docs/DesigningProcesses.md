@@ -15,7 +15,8 @@ In the beginning there is only one variable - `input`, contains single record fo
 
 ###Expressions
 Currently expressions in Nussknacker can be written using Spring Expression Language.
- You can find extensive documentation [here](https://docs.spring.io/spring/docs/current/spring-framework-reference/html/expressions.html). Autocomplete function (Ctrl-Space) is available in expression input boxes.
+ You can find extensive documentation [here](https://docs.spring.io/spring/docs/current/spring-framework-reference/html/expressions.html). Autocomplete function (Ctrl-Space) is available in expression input boxes. 
+See [more detailed documentation](Spel.md)
 
 #Basic nodes
 Node works with a data stream. It can produce, fetch, send, collect data or organize data flow.

@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.engine.util.functions
 
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDateTime, ZoneId}
-
+import java.time.{Instant, LocalDate, LocalDateTime, ZoneId, ZonedDateTime}
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 
 object date {
@@ -21,6 +20,15 @@ object date {
 
   @Documentation(description = "Parse date in ISO format (e.g. '2018-11-12T11:22:33') to date object")
   def parseToLocalDate(@ParamName("dateString") dateString: String): LocalDateTime = LocalDateTime.parse(dateString, format)
+
+  @Documentation(description = "Parse date in ISO format (e.g. '2018-11-12T11:22:33+02[Europe/Warsaw]') to date object")
+  def parseToZonedDate(@ParamName("dateString") dateString: String): ZonedDateTime = ZonedDateTime.parse(dateString, format)
+
+  @Documentation(description = "Convert to Instant object")
+  def toInstant(@ParamName("timestamp") timestamp: Long): Instant = Instant.ofEpochMilli(timestamp)
+
+  @Documentation(description = "Parse time zone identifier (e.g. UTC, GMT, Europe/Warsaw")
+  def zone(@ParamName("zoneId") zoneId: String): ZoneId = ZoneId.of(zoneId)
 
   private def localDateTimeToEpochMillis(d: LocalDateTime): Long = {
     d.atZone(ZoneId.systemDefault()).toInstant.toEpochMilli

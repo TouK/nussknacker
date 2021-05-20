@@ -7,6 +7,7 @@
   * [Basic nodes](designingProcesses/BasicNodes.md)
   * [Subprocesses](designingProcesses/Subprocesses.md)
   * [Flink custom transformers](designingProcesses/FlinkCustomTransformers.md)
+  * [SpEL](designingProcesses/Spel.md)  
 * [Configuration](Configuration.md)
 * [Security](Security.md)
 
