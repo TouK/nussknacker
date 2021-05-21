@@ -4,8 +4,6 @@ import {Reducer} from "../actions/reduxTypes"
 import {mergeReducers} from "./mergeReducers"
 
 export type UiState = {
-  leftPanelIsOpened: boolean,
-  rightPanelIsOpened: boolean,
   showNodeDetailsModal: boolean,
   showEdgeDetailsModal: boolean,
   confirmDialog: Partial<{
@@ -29,8 +27,6 @@ export type UiState = {
 
 const emptyUiState: UiState = {
   allModalsClosed: true,
-  leftPanelIsOpened: true,
-  rightPanelIsOpened: true,
   showNodeDetailsModal: false,
   showEdgeDetailsModal: false,
   isToolTipsHighlighted: false,
@@ -45,25 +41,6 @@ function withAllModalsClosed(newState: UiState): UiState {
 
 const uiReducer: Reducer<UiState> = (state = emptyUiState, action) => {
   switch (action.type) {
-    case "TOGGLE_LEFT_PANEL": {
-      return {
-        ...state,
-        leftPanelIsOpened: !state.leftPanelIsOpened,
-      }
-    }
-    case "TOGGLE_RIGHT_PANEL": {
-      return {
-        ...state,
-        rightPanelIsOpened: !state.rightPanelIsOpened,
-      }
-    }
-    case "RESET_TOOLBARS": {
-      return {
-        ...state,
-        leftPanelIsOpened: true,
-        rightPanelIsOpened: true,
-      }
-    }
     case "SWITCH_TOOL_TIPS_HIGHLIGHT": {
       return {
         ...state,

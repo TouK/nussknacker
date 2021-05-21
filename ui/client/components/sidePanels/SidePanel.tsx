@@ -5,7 +5,7 @@ import panelStyles from "./SidePanel.styl"
 import {ScrollbarsExtended} from "./ScrollbarsExtended"
 import TogglePanel from "../TogglePanel"
 import {useDispatch, useSelector} from "react-redux"
-import {isRightPanelOpened, isLeftPanelOpened} from "../../reducers/selectors/ui"
+import {isRightPanelOpened, isLeftPanelOpened} from "../../reducers/selectors/toolbars"
 import {toggleRightPanel, toggleLeftPanel} from "../../actions/nk/ui/layout"
 
 export function useSidePanelToggle(side: "LEFT" | "RIGHT") {

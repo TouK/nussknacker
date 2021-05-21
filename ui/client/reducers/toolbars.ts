@@ -23,11 +23,17 @@ type Positions = {
 
 type Collapsed = Record<string, boolean>
 
+interface Panels {
+  left?: boolean,
+  right?: boolean,
+}
+
 export type ToolbarsState = {
   positions: Positions,
   initData: InitData,
   collapsed: Collapsed,
   nodeToolbox: NodeToolbox,
+  panels: Panels,
 }
 
 type Id = `#${string}`
@@ -116,6 +122,29 @@ const collapsed: Reducer<Collapsed> = (state = {}, action) => {
   }
 }
 
+const panels: Reducer<Panels> = (state = {left: true, right: true}, action) => {
+  switch (action.type) {
+    case "TOGGLE_LEFT_PANEL": {
+      return {
+        ...state,
+        left: !state.left,
+      }
+    }
+    case "TOGGLE_RIGHT_PANEL": {
+      return {
+        ...state,
+        right: !state.right,
+      }
+    }
+    case "RESET_TOOLBARS": {
+      return {left: true, right: true}
+    }
+
+    default:
+      return state
+  }
+}
+
 const initData: Reducer<InitData> = (state = [], action) => {
   return action.type === "REGISTER_TOOLBARS" ? action.toolbars : state
 }
@@ -125,7 +154,7 @@ const resetReducer: Reducer<ToolbarsState> = (state, action) => {
 }
 
 const combinedReducers = combineReducers<ToolbarsState>({
-  collapsed, positions, nodeToolbox, initData,
+  collapsed, positions, nodeToolbox, initData, panels,
 })
 
 const configReducer: Reducer<ToolbarsState> = (state, action) => {
