@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.flink.api.state.EvictableStateFunction
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.flink.util.source.StaticSource
 import pl.touk.nussknacker.engine.flink.util.source.StaticSource.{Data, Watermark}
+import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -33,7 +34,10 @@ class EvictableStateTest extends FlatSpec with Matchers with BeforeAndAfter with
       .addSink(_ => ())
 
     futureResult = Future {
-      env.execute()
+      //We need to set context loader to avoid forking in sbt
+      ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
+        env.execute()
+      }
     }
   }
 
