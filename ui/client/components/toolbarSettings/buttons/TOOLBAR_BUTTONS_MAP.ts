@@ -41,9 +41,9 @@ type ToolbarButtonsMap = {
 export const TOOLBAR_BUTTONS_MAP: ToolbarButtonsMap = {
   [BuiltinButtonTypes.processSave]: SaveButton,
   [BuiltinButtonTypes.deploy]: DeployButton,
-  [BuiltinButtonTypes.deployCanel]: CancelDeployButton,
+  [BuiltinButtonTypes.deployCancel]: CancelDeployButton,
   [BuiltinButtonTypes.deployMetrics]: MetricsButton, // like "custom-link" but disabled for subprocess
-  [BuiltinButtonTypes.viewBussinesView]: BussinesViewSwitch,
+  [BuiltinButtonTypes.viewBusinessView]: BussinesViewSwitch,
   [BuiltinButtonTypes.viewZoomIn]: ZoomInButton,
   [BuiltinButtonTypes.viewZoomOut]: ZoomOutButton,
   [BuiltinButtonTypes.viewReset]: ResetViewButton,

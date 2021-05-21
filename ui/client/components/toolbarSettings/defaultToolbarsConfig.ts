@@ -13,7 +13,7 @@ export const defaultToolbarsConfig: WithId<ToolbarsConfig> = {
       buttons: [
         {type: BuiltinButtonTypes.processSave},
         {type: BuiltinButtonTypes.deploy},
-        {type: BuiltinButtonTypes.deployCanel},
+        {type: BuiltinButtonTypes.deployCancel},
         {type: BuiltinButtonTypes.deployMetrics},
         // {
         //   type: CustomButtonTypes.customLink,
@@ -27,7 +27,7 @@ export const defaultToolbarsConfig: WithId<ToolbarsConfig> = {
       id: "VIEW-PANEL",
       title: "view",
       buttons: [
-        {type: BuiltinButtonTypes.viewBussinesView},
+        {type: BuiltinButtonTypes.viewBusinessView},
         {type: BuiltinButtonTypes.viewZoomIn},
         {type: BuiltinButtonTypes.viewZoomOut},
         {type: BuiltinButtonTypes.viewReset},

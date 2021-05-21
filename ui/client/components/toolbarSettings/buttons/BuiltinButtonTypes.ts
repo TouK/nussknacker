@@ -1,7 +1,7 @@
 export enum BuiltinButtonTypes {
   processSave = "process-save",
   deploy = "deploy",
-  deployCanel = "deploy-canel",
+  deployCancel = "deploy-cancel",
   deployMetrics = "deploy-metrics",
   editUndo = "edit-undo",
   editRedo = "edit-redo",
@@ -24,7 +24,7 @@ export enum BuiltinButtonTypes {
   testGenerate = "test-generate",
   testCounts = "test-counts",
   testHide = "test-hide",
-  viewBussinesView = "view-bussinesView",
+  viewBusinessView = "view-businessView",
   viewZoomIn = "view-zoomIn",
   viewZoomOut = "view-zoomOut",
   viewReset = "view-reset"
