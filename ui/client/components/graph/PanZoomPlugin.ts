@@ -3,8 +3,8 @@ import svgPanZoom from "svg-pan-zoom"
 import {CursorMask} from "./CursorMask"
 import {Events} from "./joint-events"
 
-type EventData = {panStart?: {x: number, y: number}}
-type Event = JQuery.TriggeredEvent<any, EventData>
+type EventData = { panStart?: { x: number, y: number } }
+type Event = JQuery.MouseEventBase<any, EventData>
 
 export class PanZoomPlugin {
   private cursorMask: CursorMask
@@ -32,14 +32,15 @@ export class PanZoomPlugin {
       }
     })
 
-    paper.on(Events.BLANK_POINTERMOVE, (event: Event, x, y) => {
+    paper.on(Events.BLANK_POINTERMOVE, (event: Event, eventX, eventY) => {
       const isModified = event.shiftKey || event.ctrlKey || event.altKey || event.metaKey
       const panStart = event.data?.panStart
       if (!isModified && panStart) {
-        const dx = x - panStart.x
-        const dy = y - panStart.y
         const zoom = this.instance.getZoom()
-        this.instance.panBy({x: dx * zoom, y: dy * zoom})
+        const dx = (eventX - panStart.x) * zoom
+        const dy = (eventY - panStart.y) * zoom
+        const {movementX: x = dx, movementY: y = dy} = event.originalEvent
+        this.instance.panBy({x, y})
       } else {
         this.cleanup(event)
       }

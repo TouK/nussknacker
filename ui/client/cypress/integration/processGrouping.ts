@@ -82,7 +82,7 @@ describe("Process", () => {
       cy.get("[data-testid=node-modal]").should("be.visible")
         .contains(/^expand/i).should("be.enabled").click()
 
-      cy.get("[model-id*=source-filter].joint-type-basic-rect").dblclick("bottomRight")
+      cy.get("[model-id*=source-filter].joint-type-basic-rect").dblclick("top")
       cy.get("[data-testid=node-modal]").should("be.visible")
         .contains(/^collapse/i).should("be.enabled").click()
     })
