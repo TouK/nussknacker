@@ -17,6 +17,7 @@ import {getProcessCategory} from "../reducers/selectors/graph"
 import {getCapabilities} from "../reducers/selectors/other"
 import {getLoggedUser} from "../reducers/selectors/settings"
 import "../stylesheets/visualization.styl"
+import {areAllModalsClosed} from "../reducers/selectors/ui"
 import {darkTheme} from "./darkTheme"
 import {NkThemeProvider} from "./theme"
 
@@ -322,9 +323,10 @@ Visualization.path = VisualizationUrl.visualizationPath
 Visualization.header = "Visualization"
 
 function mapState(state) {
+  const allModalsClosed = areAllModalsClosed(state)
   const processCategory = getProcessCategory(state)
   const loggedUser = getLoggedUser(state)
-  const canDelete = state.ui.allModalsClosed &&
+  const canDelete = allModalsClosed &&
     !NodeUtils.nodeIsGroup(state.graphReducer.nodeToDisplay) &&
     loggedUser.canWrite(processCategory)
   return {
@@ -338,8 +340,8 @@ function mapState(state) {
     currentNodeId: (state.graphReducer.nodeToDisplay || {}).id,
     graphLoading: state.graphReducer.graphLoading,
     leftPanelIsOpened: state.ui.leftPanelIsOpened,
-    undoRedoAvailable: state.ui.allModalsClosed,
-    allModalsClosed: state.ui.allModalsClosed,
+    undoRedoAvailable: allModalsClosed,
+    allModalsClosed,
     nothingToSave: ProcessUtils.nothingToSave(state),
     capabilities: getCapabilities(state),
   }

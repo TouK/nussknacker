@@ -11,7 +11,7 @@ import {
   getProcessToDisplay,
   isBusinessView,
 } from "../../reducers/selectors/graph"
-import {getShowNodeDetailsModal} from "../../reducers/selectors/ui"
+import {isNodeDetailsModalVisible} from "../../reducers/selectors/ui"
 import {getExpandedGroups} from "../../reducers/selectors/groups"
 import {commonState, Graph} from "./Graph"
 
@@ -41,7 +41,7 @@ function mapState(state) {
     edgeToDisplay: getEdgeToDisplay(state),
     layout: getLayout(state),
     expandedGroups: getExpandedGroups(state),
-    showNodeDetailsModal: getShowNodeDetailsModal(state),
+    showNodeDetailsModal: isNodeDetailsModalVisible(state),
   }
 }
 

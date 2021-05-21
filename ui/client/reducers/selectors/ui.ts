@@ -4,8 +4,17 @@ import {UiState} from "../ui"
 
 export const getUi = (state: RootState): UiState => state.ui
 
-export const areAllModalsClosed = createSelector(getUi, ui => ui.allModalsClosed)
+export const isEdgeDetailsModalVisible = createSelector(getUi, ui => !!ui.showEdgeDetailsModal)
+export const isNodeDetailsModalVisible = createSelector(getUi, ui => !!ui.showNodeDetailsModal)
 export const getModalDialog = createSelector(getUi, ui => ui.modalDialog || {})
 export const getOpenDialog = createSelector(getModalDialog, m => m.openDialog)
 
-export const getShowNodeDetailsModal = createSelector(getUi, ui => ui.showNodeDetailsModal)
+export const areAllModalsClosed = createSelector(getUi, isNodeDetailsModalVisible, isEdgeDetailsModalVisible, (ui, node, edge) => {
+  return (
+    !ui.modalDialog.openDialog &&
+    !node &&
+    !edge &&
+    !ui.confirmDialog.isOpen
+  )
+})
+

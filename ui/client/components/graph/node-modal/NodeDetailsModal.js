@@ -13,6 +13,7 @@ import TestResultUtils from "../../../common/TestResultUtils"
 import HttpService from "../../../http/HttpService"
 import {getProcessCounts, isBusinessView} from "../../../reducers/selectors/graph"
 import {getExpandedGroups} from "../../../reducers/selectors/groups"
+import {isNodeDetailsModalVisible} from "../../../reducers/selectors/ui"
 import cssVariables from "../../../stylesheets/_variables.styl"
 import ErrorBoundary from "../../common/ErrorBoundary"
 import {ButtonWithFocus} from "../../withFocus"
@@ -252,7 +253,7 @@ function mapState(state) {
       state.graphReducer.nodeToDisplayReadonly ||
       _.get(state, "graphReducer.fetchedProcessDetails.isArchived") ||
       false,
-    showNodeDetailsModal: state.ui.showNodeDetailsModal,
+    showNodeDetailsModal: isNodeDetailsModalVisible(state),
     testResults: state.graphReducer.testResults,
     processDefinitionData: processDefinitionData,
     expandedGroups: getExpandedGroups(state),

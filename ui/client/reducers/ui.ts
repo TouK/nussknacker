@@ -21,22 +21,15 @@ export type UiState = {
     text: string,
     customAction: CustomAction,
   }>,
-  allModalsClosed: boolean,
   isToolTipsHighlighted: boolean,
 }
 
 const emptyUiState: UiState = {
-  allModalsClosed: true,
   showNodeDetailsModal: false,
   showEdgeDetailsModal: false,
   isToolTipsHighlighted: false,
   confirmDialog: {},
   modalDialog: {},
-}
-
-function withAllModalsClosed(newState: UiState): UiState {
-  const allModalsClosed = !(newState.modalDialog.openDialog || newState.showNodeDetailsModal || newState.showEdgeDetailsModal || newState.confirmDialog.isOpen)
-  return {...newState, allModalsClosed}
 }
 
 const uiReducer: Reducer<UiState> = (state = emptyUiState, action) => {
@@ -124,5 +117,4 @@ const uiReducer: Reducer<UiState> = (state = emptyUiState, action) => {
 
 export const reducer = mergeReducers<UiState>(
   uiReducer,
-  withAllModalsClosed,
 )
