@@ -1,4 +1,4 @@
-import {concat, sortBy, isEqual, reject, zipObject, omit, uniq, xor} from "lodash"
+import {concat, isEqual, pick, reject, sortBy, uniq, xor, zipObject} from "lodash"
 import * as GraphUtils from "../../components/graph/GraphUtils"
 import NodeUtils from "../../components/graph/NodeUtils"
 import * as LayoutUtils from "../layoutUtils"
@@ -6,6 +6,7 @@ import {nodes} from "../layoutUtils"
 import {mergeReducers} from "../mergeReducers"
 import {reducer as groups} from "../groups"
 import {Reducer} from "../../actions/reduxTypes"
+import undoable, {combineFilters, excludeAction} from "redux-undo"
 import {GraphState} from "./types"
 import {
   displayOrGroup,
@@ -37,10 +38,6 @@ const emptyGraphState: GraphState = {
   businessView: false,
   processState: null,
   processStateLoaded: false,
-  history: {
-    future: [],
-    past: [],
-  },
   unsavedNewName: null,
 }
 
@@ -78,15 +75,16 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
       }
     }
     case "DISPLAY_PROCESS": {
-      const {fetchedProcessDetails} = action
+      const {fetchedProcessDetails, businessView} = action
       const processToDisplay = fetchedProcessDetails.json
       return {
         ...state,
         processToDisplay,
         fetchedProcessDetails,
+        businessView,
         graphLoading: false,
         nodeToDisplay: processToDisplay.properties,
-        layout: !state.businessView ?
+        layout: !businessView ?
           LayoutUtils.fromMeta(processToDisplay):
           [],
       }
@@ -332,18 +330,12 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         selectionState: action.nodeIds ? action.nodeIds : [],
       }
     }
-    case "BUSINESS_VIEW_CHANGED": {
-      return {
-        ...state,
-        businessView: action.businessView,
-      }
-    }
     default:
       return state
   }
 }
 
-export const reducer = mergeReducers(
+const reducer = mergeReducers(
   graphReducer,
   {
     processToDisplay: {
@@ -354,3 +346,36 @@ export const reducer = mergeReducers(
     },
   },
 )
+
+const undoableReducer = undoable(reducer, {
+  ignoreInitialState: true,
+  undoType: "UNDO",
+  redoType: "REDO",
+  clearHistoryType: ["BUSINESS_VIEW_CHANGED", "CLEAR"],
+  filter: combineFilters(
+    excludeAction([
+      "USER_TRACKING",
+      //this actions triggers "LAYOUT_CHANGED" which is stored in history
+      "GROUP", "EXPAND_GROUP", "COLLAPSE_GROUP",
+    ]),
+    (action, nextState, prevState) => {
+      const keys = [
+        "fetchedProcessDetails",
+        "processToDisplay",
+        "unsavedNewName",
+        "layout",
+        "selectionState",
+      ]
+      return !isEqual(
+        pick(nextState, keys),
+        pick(prevState._latestUnfiltered, keys),
+      )
+    },
+  ),
+})
+
+//TODO: replace this with use of selectors everywhere
+export function reducerWithUndo(state, action) {
+  const history = undoableReducer(state?.history, action)
+  return {...history.present, history}
+}

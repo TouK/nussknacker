@@ -97,6 +97,7 @@
     "redux-devtools-extension": "^2.13.9",
     "redux-persist": "^6.0.0",
     "redux-thunk": "~2.3.0",
+    "redux-undo": "^1.0.1",
     "reselect": "^4.0.0",
     "svg-pan-zoom": "~3.6.0",
     "url-join": "^4.0.1",

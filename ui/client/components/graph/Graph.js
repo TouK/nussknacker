@@ -20,6 +20,7 @@ import {prepareSvg} from "./svg-export/prepareSvg"
 import {drawGraph, directedLayout, isBackgroundObject, createPaper} from "./GraphPartialsInTS"
 import {FocusableDiv} from "./focusable"
 import {RangeSelectPlugin, SelectionMode} from "./RangeSelectPlugin"
+import {sortBy} from "lodash"
 
 const isModelElement = el => el instanceof shapes.devs.Model
 const isGroupElement = el => el instanceof shapes.basic.Rect && el.attributes.nodeData.type === "_group"
@@ -259,11 +260,10 @@ export class Graph extends React.Component {
   }
 
   changeLayoutIfNeeded = () => {
-    let newLayout = this.graph.getElements().filter(el => !isBackgroundObject(el)).map(el => {
+    let newLayout = sortBy(this.graph.getElements().filter(el => !isBackgroundObject(el)).map(el => {
       const pos = el.get("position")
       return {id: el.id, position: pos}
-    })
-
+    }), "id")
     if (!_.isEqual(this.props.layout, newLayout)) {
       this.props.actions && this.props.actions.layoutChanged(newLayout)
     }

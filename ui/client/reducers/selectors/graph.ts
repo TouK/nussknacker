@@ -2,10 +2,10 @@ import {createSelector} from "reselect"
 import ProcessUtils from "../../common/ProcessUtils"
 import ProcessStateUtils from "../../components/Process/ProcessStateUtils"
 import {Process} from "../../types"
-import {GraphState, ProcessCounts} from "../graph"
+import {ProcessCounts} from "../graph"
 import {RootState} from "../index"
 
-export const getGraph = (state: RootState): GraphState => state.graphReducer
+export const getGraph = (state: RootState): RootState["graphReducer"] => state.graphReducer
 
 export const getFetchedProcessDetails = createSelector(getGraph, g => g.fetchedProcessDetails)
 export const getProcessToDisplay = createSelector(getGraph, g => g.processToDisplay || {} as Process)

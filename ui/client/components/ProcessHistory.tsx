@@ -1,4 +1,4 @@
-import React, {useCallback, useState} from "react"
+import React, {useCallback, useMemo, useState} from "react"
 import {Scrollbars} from "react-custom-scrollbars"
 import {useDispatch, useSelector} from "react-redux"
 import {fetchProcessToDisplay, toggleConfirmDialog} from "../actions/nk"
@@ -9,23 +9,25 @@ import {HistoryItem, VersionType} from "./HistoryItem"
 import {ProcessVersionType} from "./Process/types"
 
 export function ProcessHistoryComponent(props: {isReadOnly?: boolean}): JSX.Element {
-  const process = useSelector(getFetchedProcessDetails)
+  const {history = [], lastDeployedAction, name, processVersionId} = useSelector(getFetchedProcessDetails)
   const nothingToSave = useSelector(isSaveDisabled)
   const businessView = useSelector(isBusinessView)
-  const [selectedVersion, selectVersion] = useState<ProcessVersionType>()
-  const {history = [], lastDeployedAction} = process
+  const selectedVersion = useMemo(
+    () => history.find(v => v.processVersionId === processVersionId),
+    [history, processVersionId],
+  )
+
   const dispatch = useDispatch()
 
   const doChangeVersion = useCallback((version: ProcessVersionType) => {
-    dispatch(fetchProcessToDisplay(process.name, version.processVersionId, businessView))
-    selectVersion(version)
-  }, [process, businessView])
+    dispatch(fetchProcessToDisplay(name, version.processVersionId, businessView))
+  }, [dispatch, name, businessView])
 
   const changeVersion = useCallback(
     (version: ProcessVersionType) => props.isReadOnly || nothingToSave ?
       doChangeVersion(version) :
       dispatch(toggleConfirmDialog(true, unsavedProcessChanges(), () => doChangeVersion(version), "DISCARD", "NO", null)),
-    [doChangeVersion, nothingToSave],
+    [dispatch, doChangeVersion, nothingToSave, props.isReadOnly],
   )
 
   return (

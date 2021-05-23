@@ -16,7 +16,7 @@ export function fromMeta(process: Process): Layout {
 export const nodes: Reducer<NodeType[]> = (nodes, action) => {
   switch (action.type) {
     case "LAYOUT_CHANGED":
-      return nodes.map(node => {
+      return nodes?.map(node => {
         const layoutData = action.layout.find(({id}) => id === node.id)?.position || null
         return defaultsDeep({additionalFields: {layoutData}}, node)
       })

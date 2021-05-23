@@ -1,13 +1,6 @@
 import {Layout} from "../../actions/nk"
 import {ProcessStateType, ProcessType} from "../../components/Process/types"
-import {NodeType, Process, GroupType, NodeId, Edge} from "../../types"
-
-type GraphHistoryAction = $TodoType
-
-type GraphHistory = {
-  past: GraphHistoryAction[],
-  future: GraphHistoryAction[],
-}
+import {NodeType, Process, GroupType, Edge} from "../../types"
 
 export type ProcessCounts = $TodoType
 
@@ -21,7 +14,6 @@ export type GraphState = {
   nodeToDisplay?: NodeType | GroupType,
   nodeToDisplayReadonly?: boolean,
   selectionState?: string[],
-  history: GraphHistory,
   layout: Layout,
   testCapabilities?: $TodoType,
   testResults: $TodoType,

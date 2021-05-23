@@ -13,7 +13,7 @@ import {ProcessGraph as Graph} from "../components/graph/ProcessGraph"
 import RouteLeavingGuard from "../components/RouteLeavingGuard"
 import SpinnerWrapper from "../components/SpinnerWrapper"
 import Toolbars from "../components/toolbars/Toolbars"
-import {getProcessCategory} from "../reducers/selectors/graph"
+import {getProcessCategory, isBusinessView} from "../reducers/selectors/graph"
 import {getCapabilities} from "../reducers/selectors/other"
 import {getLoggedUser} from "../reducers/selectors/settings"
 import "../stylesheets/visualization.styl"
@@ -74,6 +74,12 @@ class Visualization extends React.Component {
       () => this.cutSelection(event),
       {category: events.categories.keyboard, action: events.actions.keyboard.cut},
     )
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.businessView !== this.props.businessView) {
+      this.setBusinessView(this.props.businessView)
+    }
   }
 
   componentDidMount() {
@@ -169,7 +175,7 @@ class Visualization extends React.Component {
 
   fetchProcessDetails = (businessView) => this.props.actions.fetchProcessToDisplay(this.props.match.params.processId, undefined, businessView)
 
-  fetchProcessState = () => this.props.actions.loadProcessState(this.props.fetchedProcessDetails.id)
+  fetchProcessState = () => this.props.actions.loadProcessState(this.props.fetchedProcessDetails?.id)
 
   undo() {
     //this `if` should be closer to reducer?
@@ -344,6 +350,7 @@ function mapState(state) {
     allModalsClosed,
     nothingToSave: ProcessUtils.nothingToSave(state),
     capabilities: getCapabilities(state),
+    businessView: isBusinessView(state),
   }
 }
 

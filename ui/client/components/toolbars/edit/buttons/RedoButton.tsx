@@ -17,7 +17,7 @@ function RedoButton(): JSX.Element {
     <CapabilitiesToolbarButton
       write
       name={t("panels.actions.edit-redo.button", "redo")}
-      disabled={history.future.length === 0}
+      disabled={!history.future.length}
       icon={<Icon/>}
       onClick={() => keyActionsAvailable && dispatch(redo({
         category: events.categories.rightPanel,
