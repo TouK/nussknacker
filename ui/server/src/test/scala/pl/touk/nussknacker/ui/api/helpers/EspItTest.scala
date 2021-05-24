@@ -27,6 +27,7 @@ import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.deployment.CustomActionRequest
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
+import pl.touk.nussknacker.ui.config.processtoolbars.{ProcessAndSubprocessToolbarsConfig, ToolbarsConfigProvider}
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
@@ -109,8 +110,17 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   val authenticationConfig = DefaultAuthenticationConfiguration.create(testConfig)
   val analyticsConfig = AnalyticsConfig(testConfig)
 
+  val processAndSubprocessToolbarsConfig = ProcessAndSubprocessToolbarsConfig.create(config)
+  val toolbarsConfigProvider = new ToolbarsConfigProvider(processAndSubprocessToolbarsConfig)
+
   val usersRoute = new UserResources(processCategoryService)
-  val settingsRoute = new SettingsResources(featureTogglesConfig, typeToConfig, authenticationConfig, analyticsConfig)
+  val settingsRoute = new SettingsResources(
+      processRepository = fetchingProcessRepository,
+      featureTogglesConfig = featureTogglesConfig,
+      typeToConfig = typeToConfig,
+      authenticationConfig = authenticationConfig,
+      analyticsConfig = analyticsConfig,
+      toolbarsConfigProvider = toolbarsConfigProvider)
 
   val processesExportResources = new ProcessesExportResources(fetchingProcessRepository, processActivityRepository, processResolving)
 

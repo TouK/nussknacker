@@ -21,6 +21,7 @@ import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.ui.api._
+import pl.touk.nussknacker.ui.config.processtoolbars.{ProcessAndSubprocessToolbarsConfig, ToolbarsConfigProvider}
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, ConfigWithDefaults, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import pl.touk.nussknacker.ui.initialization.Initialization
@@ -74,6 +75,9 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val environment = config.getString("environment")
     val featureTogglesConfig = FeatureTogglesConfig.create(config)
     logger.info(s"Ui config loaded: \nfeatureTogglesConfig: $featureTogglesConfig")
+
+    val processAndSubprocessToolbarsConfig = ProcessAndSubprocessToolbarsConfig.create(config)
+    val toolbarsConfigProvider = new ToolbarsConfigProvider(processAndSubprocessToolbarsConfig)
 
     val (typeToConfig, reload) = prepareProcessingTypeData(config)
 

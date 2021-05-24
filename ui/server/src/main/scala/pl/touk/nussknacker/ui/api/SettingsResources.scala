@@ -1,38 +1,45 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.server.{Directives, Route}
+import cats.data.OptionT
+import cats.implicits.catsStdInstancesForFuture
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
+import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.ui.config.processtoolbars.ToolbarsConfigProvider
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
-class SettingsResources(config: FeatureTogglesConfig,
+class SettingsResources(val processRepository: FetchingProcessRepository[Future],
+                        featureTogglesConfig: FeatureTogglesConfig,
                         typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData],
                         authenticationConfig: AuthenticationConfiguration,
-                        analyticsConfig: Option[AnalyticsConfig])(implicit ec: ExecutionContext)
-  extends Directives with FailFastCirceSupport with RouteWithoutUser {
+                        analyticsConfig: Option[AnalyticsConfig],
+                        toolbarsConfigProvider: ToolbarsConfigProvider)(implicit ec: ExecutionContext)
+  extends Directives with FailFastCirceSupport with RouteWithoutUser with ProcessDirectives {
 
   def publicRoute(): Route =
     pathPrefix("settings") {
       get {
         complete {
           val toggleOptions = ToggleFeaturesOptions(
-            counts = config.counts.isDefined,
-            metrics = config.metrics,
-            remoteEnvironment = config.remoteEnvironment.map(c => RemoteEnvironmentConfig(c.targetEnvironmentId)),
-            environmentAlert = config.environmentAlert,
-            commentSettings = config.commentSettings,
-            deploySettings = config.deploySettings,
-            customTabs = config.customTabs,
-            intervalTimeSettings = config.intervalTimeSettings,
+            counts = featureTogglesConfig.counts.isDefined,
+            metrics = featureTogglesConfig.metrics,
+            remoteEnvironment = featureTogglesConfig.remoteEnvironment.map(c => RemoteEnvironmentConfig(c.targetEnvironmentId)),
+            environmentAlert = featureTogglesConfig.environmentAlert,
+            commentSettings = featureTogglesConfig.commentSettings,
+            deploySettings = featureTogglesConfig.deploySettings,
+            customTabs = featureTogglesConfig.customTabs,
+            intervalTimeSettings = featureTogglesConfig.intervalTimeSettings,
             signals = signalsSupported,
-            attachments = config.attachments.isDefined
+            attachments = featureTogglesConfig.attachments.isDefined
           )
 
           val authenticationSettings = AuthenticationSettings(
@@ -45,6 +52,16 @@ class SettingsResources(config: FeatureTogglesConfig,
 
           val analyticsSettings = analyticsConfig.map(a => AnalyticsSettings(a.engine.toString, a.url.toString, a.siteId))
           UISettings(toggleOptions, authenticationSettings, analyticsSettings)
+        }
+      }
+    } ~ path("process" / Segment / "settings" / "toolbars") { processName =>
+      get {
+        complete {
+          val config = for {
+            processDetails <- OptionT(processRepository.fetchProcessDetails(ProcessName(processName)))
+          } yield toolbarsConfigProvider.configForCategory(processDetails.processCategory, processDetails.isSubprocess)
+
+          config.value
         }
       }
     }
