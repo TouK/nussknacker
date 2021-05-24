@@ -16,7 +16,7 @@ case class CategoriesProcessToolbarsConfig(defaultConfig: ProcessToolbarsConfig,
 @JsonCodec
 case class ProcessToolbarsConfig(topRight: Option[List[ProcessToolbars]],
                                  bottomRight: Option[List[ProcessToolbars]],
-                                 opLeft: Option[List[ProcessToolbars]],
+                                 topLeft: Option[List[ProcessToolbars]],
                                  bottomLeft: Option[List[ProcessToolbars]],
                                  hidden: Option[List[ProcessToolbars]])
 
