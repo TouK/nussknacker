@@ -123,7 +123,7 @@ class SimpleKafkaAvroDeserializer(schemaRegistryClient: CSchemaRegistryClient, _
   override protected val schemaIdSerializationEnabled: Boolean = true
 
   def deserialize(topic: String, record: Array[Byte]): Any = {
-    deserialize(topic, isKey = false, record, null)
+    deserialize(topic, isKey = false, record, None)
   }
 }
 

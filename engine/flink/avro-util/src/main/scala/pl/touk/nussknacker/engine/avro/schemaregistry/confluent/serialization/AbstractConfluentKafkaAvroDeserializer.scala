@@ -18,19 +18,19 @@ abstract class AbstractConfluentKafkaAvroDeserializer extends AbstractKafkaAvroD
 
   override protected lazy val decoderFactory: DecoderFactory = DecoderFactory.get()
 
-  protected def deserialize(topic: String, isKey: java.lang.Boolean, payload: Array[Byte], readerSchema: RuntimeSchemaData): AnyRef = {
+  protected def deserialize(topic: String, isKey: java.lang.Boolean, payload: Array[Byte], readerSchema: Option[RuntimeSchemaData]): AnyRef = {
     val buffer = ConfluentUtils.parsePayloadToByteBuffer(payload).valueOr(ex => throw ex)
     read(buffer, readerSchema)
   }
 
-  protected def read(buffer: ByteBuffer, expectedSchemaData: RuntimeSchemaData): AnyRef = {
+  protected def read(buffer: ByteBuffer, expectedSchemaData: Option[RuntimeSchemaData]): AnyRef = {
     var schemaId = -1
 
     try {
       schemaId = buffer.getInt
       val parsedSchema = schemaRegistry.getSchemaById(schemaId)
       val writerSchemaData = RuntimeSchemaData(ConfluentUtils.extractSchema(parsedSchema), Some(schemaId))
-      val readerSchemaData = if (expectedSchemaData == null) writerSchemaData else expectedSchemaData
+      val readerSchemaData = expectedSchemaData.getOrElse(writerSchemaData)
       // HERE we create our DatumReader
       val reader = createDatumReader(writerSchemaData.schema, readerSchemaData.schema, useSchemaReflection, useSpecificAvroReader)
       val bufferDataStart = 1 + AbstractKafkaSchemaSerDe.idSize
