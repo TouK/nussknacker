@@ -345,7 +345,6 @@ function mapState(state) {
     subprocessVersions: _.get(state.graphReducer.processToDisplay, "properties.subprocessVersions"),
     currentNodeId: (state.graphReducer.nodeToDisplay || {}).id,
     graphLoading: state.graphReducer.graphLoading,
-    leftPanelIsOpened: state.ui.leftPanelIsOpened,
     undoRedoAvailable: allModalsClosed,
     allModalsClosed,
     nothingToSave: ProcessUtils.nothingToSave(state),

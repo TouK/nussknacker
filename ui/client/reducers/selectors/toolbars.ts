@@ -20,5 +20,5 @@ export const getOrderForPosition = (side: ToolbarsSide) => (state: RootState) =>
 
 export const getToolbarsConfig = () => defaultToolbarsConfig
 
-export const isLeftPanelOpened = createSelector(getToolbars, ({panels}) => panels.left)
-export const isRightPanelOpened = createSelector(getToolbars, ({panels}) => panels.right)
+export const isLeftPanelOpened = createSelector(getToolbars, ({panels}) => panels?.left)
+export const isRightPanelOpened = createSelector(getToolbars, ({panels}) => panels?.right)
