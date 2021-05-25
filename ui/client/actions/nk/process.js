@@ -8,6 +8,7 @@ import * as UndoRedoActions from "../undoRedoActions"
 import {displayProcessActivity} from "./displayProcessActivity"
 import {fetchProcessDefinition} from "./processDefinitionData"
 import {reportEvent} from "./reportEvent"
+import {businessViewChanged} from "./ui/layout"
 
 export function fetchProcessToDisplay(processId, versionId, businessView) {
   return (dispatch) => {
@@ -17,7 +18,7 @@ export function fetchProcessToDisplay(processId, versionId, businessView) {
 
     return HttpService.fetchProcessDetails(processId, versionId, businessView).then((response) => {
       displayTestCapabilites(response.data.json, response.data.processingType)(dispatch)
-      return dispatch(displayProcess(response.data))
+      return dispatch(displayProcess(response.data, businessView))
     })
   }
 }
@@ -38,10 +39,14 @@ function displayTestCapabilites(processDetails) {
   }
 }
 
-function displayProcess(processDetails) {
-  return {
-    type: "DISPLAY_PROCESS",
-    fetchedProcessDetails: processDetails,
+function displayProcess(processDetails, businessView) {
+  return dispatch => {
+    dispatch(businessViewChanged(businessView))
+    return dispatch({
+      type: "DISPLAY_PROCESS",
+      fetchedProcessDetails: processDetails,
+      businessView,
+    })
   }
 }
 

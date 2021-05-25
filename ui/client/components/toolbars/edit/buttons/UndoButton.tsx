@@ -18,7 +18,7 @@ function UndoButton(): JSX.Element {
     <CapabilitiesToolbarButton
       write
       name={t("panels.actions.edit-undo.button", "undo")}
-      disabled={history.past.length === 0}
+      disabled={!history.past.length}
       icon={<Icon/>}
       onClick={() => keyActionsAvailable && dispatch(undo({
         category: events.categories.rightPanel,

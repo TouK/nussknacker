@@ -114,10 +114,13 @@ const baseProcessState = {
       },
     },
   },
-  "history": [],
 }
 
-const baseStateWithProcess = reducer({}, {
+const baseState = reducer({}, {
+  type: "@@INIT",
+})
+
+const baseStateWithProcess = reducer(baseState, {
   type: "DISPLAY_PROCESS",
   fetchedProcessDetails: baseProcessState,
 })

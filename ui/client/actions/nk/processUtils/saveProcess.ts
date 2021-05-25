@@ -29,8 +29,8 @@ export function saveProcess(comment: string): ThunkAction {
     const isRenamed = isProcessRenamed(state) && await doRenameProcess(processJson.id, unsavedNewName)
     const processId = isRenamed ? unsavedNewName : processJson.id
 
+    await dispatch(UndoRedoActions.clear())
     await dispatch(displayCurrentProcessVersion(processId))
     await dispatch(displayProcessActivity(processId))
-    await dispatch(UndoRedoActions.clear())
   }
 }

@@ -13,10 +13,11 @@ import {ProcessGraph as Graph} from "../components/graph/ProcessGraph"
 import RouteLeavingGuard from "../components/RouteLeavingGuard"
 import SpinnerWrapper from "../components/SpinnerWrapper"
 import Toolbars from "../components/toolbars/Toolbars"
-import {getProcessCategory} from "../reducers/selectors/graph"
+import {getProcessCategory, isBusinessView} from "../reducers/selectors/graph"
 import {getCapabilities} from "../reducers/selectors/other"
 import {getLoggedUser} from "../reducers/selectors/settings"
 import "../stylesheets/visualization.styl"
+import {areAllModalsClosed} from "../reducers/selectors/ui"
 import {darkTheme} from "./darkTheme"
 import {NkThemeProvider} from "./theme"
 
@@ -73,6 +74,12 @@ class Visualization extends React.Component {
       () => this.cutSelection(event),
       {category: events.categories.keyboard, action: events.actions.keyboard.cut},
     )
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.businessView !== this.props.businessView) {
+      this.setBusinessView(this.props.businessView)
+    }
   }
 
   componentDidMount() {
@@ -168,7 +175,7 @@ class Visualization extends React.Component {
 
   fetchProcessDetails = (businessView) => this.props.actions.fetchProcessToDisplay(this.props.match.params.processId, undefined, businessView)
 
-  fetchProcessState = () => this.props.actions.loadProcessState(this.props.fetchedProcessDetails.id)
+  fetchProcessState = () => this.props.actions.loadProcessState(this.props.fetchedProcessDetails?.id)
 
   undo() {
     //this `if` should be closer to reducer?
@@ -322,9 +329,10 @@ Visualization.path = VisualizationUrl.visualizationPath
 Visualization.header = "Visualization"
 
 function mapState(state) {
+  const allModalsClosed = areAllModalsClosed(state)
   const processCategory = getProcessCategory(state)
   const loggedUser = getLoggedUser(state)
-  const canDelete = state.ui.allModalsClosed &&
+  const canDelete = allModalsClosed &&
     !NodeUtils.nodeIsGroup(state.graphReducer.nodeToDisplay) &&
     loggedUser.canWrite(processCategory)
   return {
@@ -337,11 +345,11 @@ function mapState(state) {
     subprocessVersions: _.get(state.graphReducer.processToDisplay, "properties.subprocessVersions"),
     currentNodeId: (state.graphReducer.nodeToDisplay || {}).id,
     graphLoading: state.graphReducer.graphLoading,
-    leftPanelIsOpened: state.ui.leftPanelIsOpened,
-    undoRedoAvailable: state.ui.allModalsClosed,
-    allModalsClosed: state.ui.allModalsClosed,
+    undoRedoAvailable: allModalsClosed,
+    allModalsClosed,
     nothingToSave: ProcessUtils.nothingToSave(state),
     capabilities: getCapabilities(state),
+    businessView: isBusinessView(state),
   }
 }
 

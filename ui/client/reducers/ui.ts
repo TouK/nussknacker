@@ -4,8 +4,6 @@ import {Reducer} from "../actions/reduxTypes"
 import {mergeReducers} from "./mergeReducers"
 
 export type UiState = {
-  leftPanelIsOpened: boolean,
-  rightPanelIsOpened: boolean,
   showNodeDetailsModal: boolean,
   showEdgeDetailsModal: boolean,
   confirmDialog: Partial<{
@@ -23,14 +21,10 @@ export type UiState = {
     text: string,
     customAction: CustomAction,
   }>,
-  allModalsClosed: boolean,
   isToolTipsHighlighted: boolean,
 }
 
 const emptyUiState: UiState = {
-  allModalsClosed: true,
-  leftPanelIsOpened: true,
-  rightPanelIsOpened: true,
   showNodeDetailsModal: false,
   showEdgeDetailsModal: false,
   isToolTipsHighlighted: false,
@@ -38,32 +32,8 @@ const emptyUiState: UiState = {
   modalDialog: {},
 }
 
-function withAllModalsClosed(newState: UiState): UiState {
-  const allModalsClosed = !(newState.modalDialog.openDialog || newState.showNodeDetailsModal || newState.showEdgeDetailsModal || newState.confirmDialog.isOpen)
-  return {...newState, allModalsClosed}
-}
-
 const uiReducer: Reducer<UiState> = (state = emptyUiState, action) => {
   switch (action.type) {
-    case "TOGGLE_LEFT_PANEL": {
-      return {
-        ...state,
-        leftPanelIsOpened: !state.leftPanelIsOpened,
-      }
-    }
-    case "TOGGLE_RIGHT_PANEL": {
-      return {
-        ...state,
-        rightPanelIsOpened: !state.rightPanelIsOpened,
-      }
-    }
-    case "RESET_TOOLBARS": {
-      return {
-        ...state,
-        leftPanelIsOpened: true,
-        rightPanelIsOpened: true,
-      }
-    }
     case "SWITCH_TOOL_TIPS_HIGHLIGHT": {
       return {
         ...state,
@@ -147,5 +117,4 @@ const uiReducer: Reducer<UiState> = (state = emptyUiState, action) => {
 
 export const reducer = mergeReducers<UiState>(
   uiReducer,
-  withAllModalsClosed,
 )

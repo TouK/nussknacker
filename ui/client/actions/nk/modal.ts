@@ -1,11 +1,12 @@
 import _ from "lodash"
 import {events} from "../../analytics/TrackingEvents"
+import {isEdgeEditable} from "../../common/EdgeUtils"
 import * as VisualizationUrl from "../../common/VisualizationUrl"
 import NodeUtils from "../../components/graph/NodeUtils"
 import {DialogType} from "../../components/modals/DialogsTypes"
 import history from "../../history"
-import {ThunkAction} from "../reduxTypes"
 import {CustomAction, Edge, NodeType} from "../../types"
+import {ThunkAction} from "../reduxTypes"
 import {EventInfo, reportEvent} from "./reportEvent"
 
 export type DisplayModalNodeDetailsAction = {
@@ -56,18 +57,21 @@ export function displayModalNodeDetails(node: NodeType, readonly: boolean, event
   }
 }
 
-export function displayModalEdgeDetails(edge: Edge): DisplayModalEdgeDetailsAction {
-  history.replace({
-    pathname: window.location.pathname,
-    search: VisualizationUrl.setAndPreserveLocationParams({
-      nodeId: null,
-      edgeId: NodeUtils.edgeId(edge),
-    }),
-  })
-
-  return {
-    type: "DISPLAY_MODAL_EDGE_DETAILS",
-    edgeToDisplay: edge,
+export function displayModalEdgeDetails(edge: Edge): ThunkAction {
+  return dispatch => {
+    if (isEdgeEditable(edge)) {
+      history.replace({
+        pathname: window.location.pathname,
+        search: VisualizationUrl.setAndPreserveLocationParams({
+          nodeId: null,
+          edgeId: NodeUtils.edgeId(edge),
+        }),
+      })
+      return dispatch({
+        type: "DISPLAY_MODAL_EDGE_DETAILS",
+        edgeToDisplay: edge,
+      })
+    }
   }
 }
 

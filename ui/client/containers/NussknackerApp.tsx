@@ -115,7 +115,7 @@ export class NussknackerApp extends React.Component<Props, State> {
           <main>
             <DragArea>
               <AllDialogs/>
-              <div id="working-area" className={this.props.leftPanelIsOpened ? "is-opened" : null}>
+              <div id="working-area">
                 <ErrorHandler>
                   <TransitionRouteSwitch>
                     <Route
@@ -144,7 +144,6 @@ export class NussknackerApp extends React.Component<Props, State> {
 function mapState(state) {
   const loggedUser = state.settings.loggedUser
   return {
-    leftPanelIsOpened: state.ui.leftPanelIsOpened,
     featuresSettings: getFeatureSettings(state),
     loggedUser: loggedUser,
     resolved: !_.isEmpty(loggedUser),

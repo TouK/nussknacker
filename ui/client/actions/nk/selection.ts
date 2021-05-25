@@ -64,13 +64,12 @@ export function pasteSelection(pasteFunction: Callback, event: Event): ThunkActi
 
 export function deleteSelection(selectionState: string[], event: Event): ThunkAction {
   return (dispatch) => {
-    dispatch(deleteNodes(selectionState))
-
     dispatch(reportEvent({
       category: event.category,
       action: event.action,
       name: "delete",
     }))
+    dispatch(deleteNodes(selectionState))
 
     return dispatch({
       type: "DELETE_SELECTION",

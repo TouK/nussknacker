@@ -7,7 +7,10 @@ import _ from "lodash"
 import LaddaButton from "react-ladda"
 import Draggable from "react-draggable"
 import ActionsUtils from "../../../actions/ActionsUtils"
+import {isEdgeEditable} from "../../../common/EdgeUtils"
 import NkModalStyles from "../../../common/NkModalStyles"
+import {getEdgeToDisplay} from "../../../reducers/selectors/graph"
+import {isEdgeDetailsModalVisible} from "../../../reducers/selectors/ui"
 import {ButtonWithFocus} from "../../withFocus"
 import NodeUtils from "../NodeUtils"
 import EdgeDetailsContent from "./EdgeDetailsContent"
@@ -17,26 +20,27 @@ import ProcessUtils from "../../../common/ProcessUtils"
 class EdgeDetailsModal extends React.Component {
 
   static propTypes = {
-    edgeToDisplay: PropTypes.object.isRequired,
+    edge: PropTypes.object.isRequired,
   }
 
   constructor(props) {
     super(props)
     this.state = {
       pendingRequest: false,
-      editedEdge: props.edgeToDisplay,
+      editedEdge: props.edge,
     }
   }
 
   componentWillReceiveProps(props) {
     this.setState({
-      editedEdge: props.edgeToDisplay,
+      editedEdge: props.edge,
     })
   }
 
-  componentDidUpdate(prevProps, prevState){
-    if (!_.isEqual(prevProps.edgeToDisplay, this.props.edgeToDisplay)) {
-      this.setState({editedEdge: this.props.edgeToDisplay})
+  componentDidUpdate(prevProps) {
+    const {edge} = this.props
+    if (!_.isEqual(prevProps.edge, edge)) {
+      this.setState({editedEdge: edge})
     }
   }
 
@@ -46,7 +50,7 @@ class EdgeDetailsModal extends React.Component {
 
   performEdgeEdit = () => {
     this.setState({pendingRequest: true})
-    this.props.actions.editEdge(this.props.processToDisplay, this.props.edgeToDisplay, this.state.editedEdge).then (() => {
+    this.props.actions.editEdge(this.props.processToDisplay, this.props.edge, this.state.editedEdge).then(() => {
       this.setState({pendingRequest: false})
       this.closeModal()
     })
@@ -79,7 +83,7 @@ class EdgeDetailsModal extends React.Component {
   }
 
   changeEdgeTypeValue = (edgeTypeValue) => {
-    const fromNode = NodeUtils.getNodeById(this.props.edgeToDisplay.from, this.props.processToDisplay)
+    const fromNode = NodeUtils.getNodeById(this.props.edge.from, this.props.processToDisplay)
     const defaultEdgeType = NodeUtils
       .edgesForNode(fromNode, this.props.processDefinitionData).edges.find(e => e.type === edgeTypeValue)
     const newEdge = {
@@ -89,15 +93,10 @@ class EdgeDetailsModal extends React.Component {
     this.setState({editedEdge: newEdge})
   }
 
-  edgeIsEditable = () => {
-    const editableEdges = ["NextSwitch", "SwitchDefault"]
-    return this.props.edgeToDisplay.edgeType != null && _.includes(editableEdges, this.props.edgeToDisplay.edgeType.type)
-  }
-
   render() {
-    const isOpen = !_.isEmpty(this.props.edgeToDisplay) && this.props.showEdgeDetailsModal && this.edgeIsEditable()
-    const titleStyles = NkModalStyles.headerStyles("#2d8e54", "white")
-    const {readOnly} = this.props
+    const {edge, showModal, readOnly} = this.props
+    const isOpen = isEdgeEditable(edge) && showModal
+    const titleStyles = NkModalStyles.headerStyles("#2D8E54", "white")
     return (
       <div className="objectModal">
         <Modal
@@ -139,20 +138,21 @@ class EdgeDetailsModal extends React.Component {
 }
 
 function mapState(state) {
-  const nodeId = state.graphReducer.edgeToDisplay.from
+  const edge = getEdgeToDisplay(state)
+  const nodeId = edge.from
   const errors = _.get(state.graphReducer.processToDisplay, `validationResult.errors.invalidNodes[${nodeId}]`, [])
   const processCategory = state.graphReducer.fetchedProcessDetails.processCategory
   const variableTypes = ProcessUtils.findAvailableVariables(state.settings.processDefinitionData,
     processCategory,
     state.graphReducer.processToDisplay)(nodeId)
   return {
-    edgeToDisplay: state.graphReducer.edgeToDisplay,
+    edge,
     processToDisplay: state.graphReducer.processToDisplay,
     edgeErrors: errors,
     readOnly: !state.settings.loggedUser.canWrite(processCategory) ||
       _.get(state, "graphReducer.fetchedProcessDetails.isArchived"),
     processDefinitionData: state.settings.processDefinitionData,
-    showEdgeDetailsModal: state.ui.showEdgeDetailsModal,
+    showModal: isEdgeDetailsModalVisible(state),
     variableTypes: variableTypes,
   }
 }
