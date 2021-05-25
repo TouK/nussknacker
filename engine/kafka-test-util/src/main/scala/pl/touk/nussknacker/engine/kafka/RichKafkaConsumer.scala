@@ -2,9 +2,9 @@ package pl.touk.nussknacker.engine.kafka
 
 import java.time.Duration
 import java.util.concurrent.TimeoutException
-
 import org.apache.kafka.clients.consumer.{Consumer, ConsumerRecord, ConsumerRecords}
 import org.apache.kafka.common.TopicPartition
+import org.apache.kafka.common.header.Headers
 import org.scalatest.concurrent.Eventually.{eventually, _}
 import org.scalatest.time.{Millis, Seconds, Span}
 
@@ -12,9 +12,17 @@ class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) {
 
   import scala.collection.JavaConverters._
 
-  def consume(topic: String, secondsToWait: Int = 20): Stream[KeyMessage[K, M]] =
+  def consume(topic: String, secondsToWait: Int = 20): Stream[KafkaMessage[K, M]] =
     consumeWithConsumerRecord(topic, secondsToWait)
-      .map(record => KeyMessage(record.key(), record.value()))
+      .map(record =>
+        KafkaMessage(
+          record.key(),
+          record.value(),
+          record.headers(),
+          record.offset(),
+          record.partition(),
+          record.timestamp()
+      ))
 
   def consumeWithConsumerRecord(topic: String, secondsToWait: Int = 20): Stream[ConsumerRecord[K, M]] = {
     implicit val patienceConfig: PatienceConfig = PatienceConfig(Span(secondsToWait, Seconds), Span(100, Millis))
@@ -53,7 +61,7 @@ class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) {
   }
 }
 
-case class KeyMessage[K, V](k: K, msg: V) {
+case class KafkaMessage[K, V](k: K, msg: V, Headers: Headers, offset: Long, partition: Int, timestamp: Long) {
   def message(): V = msg
   def key(): K = k
 }
