@@ -77,6 +77,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     logger.info(s"Ui config loaded: \nfeatureTogglesConfig: $featureTogglesConfig")
 
     val processAndSubprocessToolbarsConfig = ProcessAndSubprocessToolbarsConfig.create(config)
+    logger.info(s"Process and subprocess toolbars config loaded: \nprocessAndSubprocessToolbarsConfig: $processAndSubprocessToolbarsConfig")
     val toolbarsConfigProvider = new ToolbarsConfigProvider(processAndSubprocessToolbarsConfig)
 
     val (typeToConfig, reload) = prepareProcessingTypeData(config)
