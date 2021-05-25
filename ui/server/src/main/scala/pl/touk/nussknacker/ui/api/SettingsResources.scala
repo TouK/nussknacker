@@ -22,7 +22,7 @@ class SettingsResources(val processRepository: FetchingProcessRepository[Future]
                         typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData],
                         authenticationConfig: AuthenticationConfiguration,
                         analyticsConfig: Option[AnalyticsConfig],
-                        toolbarsConfigProvider: ToolbarsConfigProvider)(implicit ec: ExecutionContext)
+                        toolbarsConfigProvider: ToolbarsConfigProvider)(implicit val ec: ExecutionContext)
   extends Directives with FailFastCirceSupport with RouteWithoutUser with ProcessDirectives {
 
   def publicRoute(): Route =
