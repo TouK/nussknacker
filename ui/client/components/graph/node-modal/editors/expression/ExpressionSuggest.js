@@ -76,11 +76,15 @@ class ExpressionSuggest extends React.Component {
             return {
               name: methodName,
               value: methodName,
-              score: 1,
+              score: s.fromClass ? 1 : 1000,
               meta: returnType,
               description: s.description,
               parameters: s.parameters,
               returnType: returnType,
+              className: `${s.fromClass ? `class` : `default`}Method ace_`,
+              // force ignore ace internal exactMatch setting based on penalty
+              get exactMatch() {return 0},
+              set exactMatch(value) {},
             }
           }))
         } finally {
