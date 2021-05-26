@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
   * @param valueSchema - value deserialization schema (e.g. EspDeserializationSchema)
   * @tparam V - type of value of deserialized ConsumerRecord
   */
-class FixedValueDeserializaitionSchemaFactory[V](valueSchema: DeserializationSchema[V]) extends ConsumerRecordDeserializationSchemaFactory[String, V]{
+class FixedValueDeserializationSchemaFactory[V](valueSchema: DeserializationSchema[V]) extends ConsumerRecordDeserializationSchemaFactory[String, V]{
   override protected def createKeyDeserializer(kafkaConfig: KafkaConfig): Deserializer[String] = new StringDeserializer
   override protected def createValueDeserializer(kafkaConfig: KafkaConfig): Deserializer[V] = new Deserializer[V] {
     override def deserialize(topic: String, data: Array[Byte]): V = valueSchema.deserialize(data)

@@ -6,6 +6,7 @@ import java.util.Collections
 import io.circe.{Decoder, Json, JsonObject}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
+import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
 import org.apache.flink.streaming.connectors.kafka.internals.KafkaDeserializationSchemaWrapper
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator}
@@ -14,9 +15,9 @@ import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.{CirceUtil, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
-import pl.touk.nussknacker.engine.kafka.consumerrecord.FixedValueDeserializaitionSchemaFactory
+import pl.touk.nussknacker.engine.kafka.consumerrecord.FixedValueDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.source.{KafkaSource, KafkaSourceFactory}
-import pl.touk.nussknacker.engine.kafka.{BasicRecordFormatter, KafkaConfig, KafkaUtils, RecordFormatter}
+import pl.touk.nussknacker.engine.kafka.{BasicRecordFormatter, KafkaConfig, KafkaUtils, RecordFormatter, RecordFormatterFactory}
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
@@ -26,7 +27,7 @@ object sources {
   import collection.JavaConverters._
 
   class GenericJsonSourceFactory(processObjectDependencies: ProcessObjectDependencies) extends KafkaSourceFactory[String, java.util.Map[_, _]](
-    new FixedValueDeserializaitionSchemaFactory(JsonMapDeserialization), None, JsonRecordFormatter, processObjectDependencies)
+    new FixedValueDeserializationSchemaFactory(JsonMapDeserialization), None, FixedRecordFormatterFactoryWrapper(JsonRecordFormatter), processObjectDependencies)
 
   class GenericTypedJsonSourceFactory(processObjectDependencies: ProcessObjectDependencies)
     extends FlinkSourceFactory[TypedMap] with Serializable {
@@ -88,6 +89,12 @@ object sources {
 
     override def testDataSplit: TestDataSplit =
       basicRecordFormatter.testDataSplit
+  }
+
+  object FixedRecordFormatterFactoryWrapper {
+    def apply(formatter: RecordFormatter): RecordFormatterFactory = new RecordFormatterFactory {
+      override def create(deserializationSchema: KafkaDeserializationSchema[Any]): RecordFormatter = formatter
+    }
   }
 
 }

@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelp
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.SlidingAggregateTransformerV2
 import pl.touk.nussknacker.engine.flink.util.transformer.outer.OuterJoinTransformer
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer, UnionWithMemoTransformer}
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
@@ -35,7 +35,8 @@ import pl.touk.nussknacker.engine.management.sample.source._
 import pl.touk.nussknacker.engine.management.sample.transformer._
 import pl.touk.nussknacker.engine.util.LoggingListener
 import net.ceedubs.ficus.Ficus._
-import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordToJsonFormatter, FixedValueDeserializaitionSchemaFactory}
+import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
+import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordToJsonFormatter, ConsumerRecordToJsonFormatterFactory, FixedValueDeserializationSchemaFactory}
 
 object DevProcessConfigCreator {
   val oneElementValue = "One element"
@@ -190,11 +191,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
   }
 
   private def simpleStringValueKafkaSource(processObjectDependencies: ProcessObjectDependencies): KafkaSourceFactory[String, String] = {
-    val schemaFactory = new FixedValueDeserializaitionSchemaFactory(new SimpleStringSchema)
-    val recordFormatter = new ConsumerRecordToJsonFormatter(
-      schemaFactory.create(Nil, kafkaConfig(processObjectDependencies.config)),
-      (key: Option[String], value: String) => (key.map(_.getBytes(StandardCharsets.UTF_8)).orNull, value.getBytes(StandardCharsets.UTF_8))
-    )
-    new KafkaSourceFactory[String, String](schemaFactory, None, recordFormatter, processObjectDependencies)
+    val schemaFactory = new FixedValueDeserializationSchemaFactory(new SimpleStringSchema)
+    val formatterFactory = new ConsumerRecordToJsonFormatterFactory[String, String]
+    new KafkaSourceFactory[String, String](schemaFactory, None, formatterFactory, processObjectDependencies)
   }
 }

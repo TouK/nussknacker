@@ -68,8 +68,10 @@ To see biggest differences please consult the [changelog](Changelog.md).
     To migrate `KafkaSourceFactory`:
     - provide deserializer factory (source factory requires deserialization to `ConsumerRecord`):
       - use `ConsumerRecordDeserializationSchemaFactory` with current `DeserializationSchema` as a value deserializer, add key deserializer (e.g. org.apache.kafka.common.serialization.StringDeserializer)
-      - or use `FixedValueDeserializaitionSchemaFactory` with simple key-as-string deserializer
-    - current `RecordFormater` should be sufficient for value-only serialization, or use `ConsumerRecordToJsonFormatter` for whole key-value-and-metadata serialization
+      - or use `FixedValueDeserializationSchemaFactory` with simple key-as-string deserializer
+    - provide RecordFormatterFactory
+      - use `ConsumerRecordToJsonFormatterFactory` for whole key-value-and-metadata serialization
+      - or, for value-only-and-without-metadata scenario, you can use current `RecordFormater` wrapped in `FixedRecordFormatterFactoryWrapper`
     - provide timestampAssigner that is able to extract time from `ConsumerRecord[K, V]`
   - Removed `BaseKafkaSourceFactory` with multiple topics support:
     use `KafkaSourceFactory` instead, see "source with two input topics" test case
@@ -77,6 +79,24 @@ To see biggest differences please consult the [changelog](Changelog.md).
     use `KafkaSourceFactory` with custom `prepareInitialParameters`, `contextTransformation` and `extractTopics` to alter parameter list and provide constant topic value.
   - `TypingResultAwareTypeInformationCustomisation` is moved to package pl.touk.nussknacker.engine.flink.api.typeinformation
 
+  Example of source with value-only deserialization and custom timestampAssigner:
+  ```
+  // provide new deserializer factory with old schema definition for event's value
+  val oldSchema = new EspDeserializationSchema[SampleValue](bytes => io.circe.parser.decode[SampleValue](new String(bytes)).right.get)
+  val schemaFactory: KafkaDeserializationSchemaFactory[ConsumerRecord[String, SampleValue]] = new FixedValueDeserializationSchemaFactory(oldSchema)
+
+  // ... provide timestampAssigner that extracts timestamp from SampleValue.customTimestampField
+  // ... or use event's metadata: record.timestamp()
+  def timestampExtractor(record: ConsumerRecord[String, SampleValue]): Long = record.value().customTimestampField
+  val watermarkHandler = StandardTimestampWatermarkHandler.boundedOutOfOrderness[ConsumerRecord[String, SampleValue]](timestampExtractor, java.time.Duration.ofMinutes(10L))
+  val timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[String, SampleValue]]] = Some(watermarkHandler)
+
+  // ... provide RecordFormatterFactory that allows to generate and parse test data with key, headers and other metadata
+  val formatterFactory: RecordFormatterFactory = new ConsumerRecordToJsonFormatterFactory[String, SampleValue]
+
+  // ... and finally
+  val sourceFactory = new KafkaSourceFactory[String, SampleValue](schemaFactory, timestampAssigner, formatterFactory, dummyProcessObjectDependencies)
+  ```
 ## In version 0.3.0
 
 * [#1313](https://github.com/TouK/nussknacker/pull/1313) Kafka Avro API passes `KafkaConfig` during `TypeInformation` determining

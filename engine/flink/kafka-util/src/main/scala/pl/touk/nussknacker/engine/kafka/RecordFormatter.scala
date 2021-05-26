@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.kafka
 
+import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
 
@@ -40,4 +41,10 @@ case class BasicRecordFormatter(override val testDataSplit: TestDataSplit) exten
 object BasicRecordFormatter {
   def apply(): BasicRecordFormatter =
     BasicRecordFormatter(TestParsingUtils.newLineSplit)
+}
+
+trait RecordFormatterFactory {
+
+  def create(deserializationSchema: KafkaDeserializationSchema[Any]): RecordFormatter
+
 }

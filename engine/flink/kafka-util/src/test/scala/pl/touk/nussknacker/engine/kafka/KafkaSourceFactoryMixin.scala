@@ -16,7 +16,7 @@ import org.scalatest.{Assertion, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactoryMixin._
-import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordDeserializationSchemaFactory, ConsumerRecordToJsonFormatter}
+import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordDeserializationSchemaFactory, ConsumerRecordToJsonFormatterFactory}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.BaseSimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
@@ -71,11 +71,11 @@ trait KafkaSourceFactoryMixin extends FunSuite with Matchers with KafkaSpec with
   protected lazy val StringSourceFactory: KafkaSourceFactory[Any, Any] = {
     val processObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
     val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(new StringDeserializer with Serializable, new StringDeserializer with Serializable)
-    val testDataRecordFormatter = new ConsumerRecordToJsonFormatter(deserializationSchemaFactory.create(List(sampleTopic), kafkaConfig), serializeKeyValue)
+    val formatterFactory = new ConsumerRecordToJsonFormatterFactory[String, String]
     val sourceFactory = new KafkaSourceFactory(
       deserializationSchemaFactory,
       None,
-      testDataRecordFormatter,
+      formatterFactory,
       processObjectDependencies
     )
     sourceFactory.asInstanceOf[KafkaSourceFactory[Any, Any]]
@@ -84,11 +84,11 @@ trait KafkaSourceFactoryMixin extends FunSuite with Matchers with KafkaSpec with
   protected lazy val SampleEventSourceFactory: KafkaSourceFactory[Any, Any] = {
     val processObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
     val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(new StringDeserializer with Serializable, sampleValueJsonDeserializer)
-    val testDataRecordFormatter = new ConsumerRecordToJsonFormatter(deserializationSchemaFactory.create(List(sampleTopic), kafkaConfig), serializeKeyValue[SampleValue])
+    val formatterFactory = new ConsumerRecordToJsonFormatterFactory[String, SampleValue]
     val sourceFactory = new KafkaSourceFactory(
       deserializationSchemaFactory,
       None,
-      testDataRecordFormatter,
+      formatterFactory,
       processObjectDependencies
     )
     sourceFactory.asInstanceOf[KafkaSourceFactory[Any, Any]]
@@ -97,11 +97,11 @@ trait KafkaSourceFactoryMixin extends FunSuite with Matchers with KafkaSpec with
   protected lazy val ConsumerRecordValueSourceFactory: KafkaSourceFactory[Any, Any] = {
     val processObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
     val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(new StringDeserializer with Serializable, sampleValueJsonDeserializer)
-    val testDataRecordFormatter = new ConsumerRecordToJsonFormatter(deserializationSchemaFactory.create(List(sampleTopic), kafkaConfig), serializeKeyValue[SampleValue])
+    val formatterFactory = new ConsumerRecordToJsonFormatterFactory[String, SampleValue]
     val sourceFactory = new KafkaSourceFactory(
       deserializationSchemaFactory,
       None,
-      testDataRecordFormatter,
+      formatterFactory,
       processObjectDependencies
     )
     sourceFactory.asInstanceOf[KafkaSourceFactory[Any, Any]]
@@ -110,11 +110,11 @@ trait KafkaSourceFactoryMixin extends FunSuite with Matchers with KafkaSpec with
   protected lazy val ConsumerRecordKeyValueSourceFactory: KafkaSourceFactory[Any, Any] = {
     val processObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
     val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(sampleKeyJsonDeserializer, sampleValueJsonDeserializer)
-    val testDataRecordFormatter = new ConsumerRecordToJsonFormatter(deserializationSchemaFactory.create(List(sampleTopic), kafkaConfig), serializeKeyValue[SampleKey, SampleValue])
+    val formatterFactory = new ConsumerRecordToJsonFormatterFactory[SampleKey, SampleValue]
     val sourceFactory = new KafkaSourceFactory(
       deserializationSchemaFactory,
       None,
-      testDataRecordFormatter,
+      formatterFactory,
       processObjectDependencies
     )
     sourceFactory.asInstanceOf[KafkaSourceFactory[Any, Any]]
