@@ -23,7 +23,6 @@ declare global {
 
 Cypress.Commands.add("toMatchExactImageSnapshot", {prevSubject: true}, (subject) => cy
   .wrap(subject)
-  .should("be.visible")
   .toMatchImageSnapshot({
     imageConfig: {
       threshold: 0.00001,

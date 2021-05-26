@@ -71,60 +71,37 @@ const suggestionsFor = (inputValue, caretPosition2d, stubbedDictSuggestions) => 
 describe("expression suggester", () => {
   it("should not suggest anything for empty input", () => {
     suggestionsFor("").then(suggestions => {
-      expect(suggestions).toEqual([])
+      expect(suggestions).toMatchSnapshot()
     })
   })
 
   it("should suggest all global variables if # specified", (done) => {
     suggestionsFor("#").then(suggestions => {
-      expect(suggestions).toEqual([
-        { methodName: "#input", refClazz: { refClazzName: 'org.A'} },
-        { methodName: "#other", refClazz: { refClazzName: 'org.C'} },
-        { methodName: "#ANOTHER", refClazz: { refClazzName: 'org.A'} },
-        { methodName: "#dynamicMap", refClazz: {refClazzName: "java.util.Map", fields: {'intField': {refClazzName: 'java.lang.Integer'}, 'aField': {refClazzName: "org.A"}}} },
-        { methodName: "#listVar", refClazz: { refClazzName: "org.WithList" } },
-        { methodName: "#util", refClazz: { refClazzName: "org.Util" } },
-        { methodName: "#union", refClazz: { union: [
-              { refClazzName: 'org.A' },
-              { refClazzName: 'org.B' },
-              { refClazzName: 'org.AA' } ] } },
-        { methodName: "#unionOfLists", refClazz: { union: [
-              { refClazz: "java.util.List", params: [{refClazzName: "org.A"}]},
-              { refClazz: "java.util.List", params: [{refClazzName: "org.B"}]}] } },
-        { methodName: "#dict", refClazz: { dict: {
-          id: "fooDict",
-          valueType: { refClazzName: "org.A" }
-        }}}
-      ])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should filter global variables suggestions", (done) => {
     suggestionsFor("#ot").then(suggestions => {
-      expect(suggestions).toEqual([{methodName: "#other", refClazz: {refClazzName: 'org.C'}}])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should filter uppercase global variables suggestions", (done) => {
     suggestionsFor("#ANO").then(suggestions => {
-      expect(suggestions).toEqual([{methodName: "#ANOTHER", refClazz: {refClazzName: 'org.A'}}])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should suggest global variable", (done) => {
     suggestionsFor("#inpu").then(suggestions => {
-      expect(suggestions).toEqual([
-        { methodName: "#input", refClazz: { refClazzName: 'org.A' } }
-      ])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should suggest global variable methods", (done) => {
     suggestionsFor("#input.").then(suggestions => {
-      expect(suggestions).toEqual([
-        { methodName: 'fooString', refClazz: { refClazzName: 'java.lang.String' } },
-        { methodName: 'barB', refClazz: { refClazzName: 'org.B' } }
-      ])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
@@ -134,10 +111,7 @@ describe("expression suggester", () => {
       { key: "two", label: "Two" }
     ]
     suggestionsFor("#dict.", null, stubbedDictSuggestions).then(suggestions => {
-      expect(suggestions).toEqual([
-        { methodName: 'One', refClazz: { refClazzName: 'org.A'} },
-        { methodName: 'Two', refClazz: { refClazzName: 'org.A' } }
-      ])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
@@ -149,212 +123,171 @@ describe("expression suggester", () => {
     const correctInputs = ["#dict['", "#dict['S", "#dict['Sentence w", "#dict['Sentence with spaces and . dots"]
     map(correctInputs, inputValue => {
       suggestionsFor(inputValue, null, stubbedDictSuggestions).then(suggestions => {
-        expect(suggestions).toEqual([
-          { methodName: 'Sentence with spaces and . dots', refClazz: { refClazzName: 'org.A'} }
-        ])
+        expect(suggestions).toMatchSnapshot()
       })
     })
   })
 
   it("should suggest filtered global variable methods", (done) => {
     suggestionsFor("#input.fo").then(suggestions => {
-      expect(suggestions).toEqual([
-        { methodName: 'fooString', refClazz: { refClazzName: 'java.lang.String' } }
-      ])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should suggest filtered global variable methods based not on beginning of the method", (done) => {
     suggestionsFor("#input.string").then(suggestions => {
-      expect(suggestions).toEqual([
-        { methodName: 'fooString', refClazz: { refClazzName: 'java.lang.String' } }
-      ])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should suggest methods for object returned from method", (done) => {
     suggestionsFor("#input.barB.bazC.").then(suggestions => {
-      expect(suggestions).toEqual([
-        { methodName: 'quaxString', refClazz: { refClazzName: 'java.lang.String' } }
-      ])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should suggest methods for union objects", (done) => {
     suggestionsFor("#union.").then(suggestions => {
-      expect(suggestions).toEqual([
-        { methodName: 'fooString', refClazz: { refClazzName: 'java.lang.String' } },
-        { methodName: 'barB', refClazz: { refClazzName: 'org.B' } },
-        { methodName: 'bazC', refClazz: { refClazzName: 'org.C' } },
-        { methodName: 'barB', refClazz: { refClazzName: 'org.C' } }
-      ])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should suggest methods for object returned from method from union objects", (done) => {
     suggestionsFor("#union.bazC.").then(suggestions => {
-      expect(suggestions).toEqual([
-        { methodName: 'quaxString', refClazz: { refClazzName: 'java.lang.String'} }
-      ])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should suggest in complex expression #1", (done) => {
     suggestionsFor("#input.foo + #input.barB.bazC.quax", {row: 0, column: "#input.foo".length }).then(suggestions => {
-      expect(suggestions).toEqual([
-        { methodName: 'fooString', refClazz: { refClazzName: 'java.lang.String'} }
-      ])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should suggest in complex expression #2", (done) => {
     suggestionsFor("#input.foo + #input.barB.bazC.quax").then(suggestions => {
-      expect(suggestions).toEqual([
-        { methodName: 'quaxString', refClazz: { refClazzName: 'java.lang.String'} }
-      ])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should suggest in complex expression #3", (done) => {
     suggestionsFor("#input.barB.bazC.quaxString.toUp").then(suggestions => {
-      expect(suggestions).toEqual([
-        { methodName: 'toUpperCase', refClazz: { refClazzName: 'java.lang.String'} }
-      ])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
 
   it("should not suggest anything if suggestion already applied with space at the end", (done) => {
     suggestionsFor("#input.fooString ").then(suggestions => {
-      expect(suggestions).toEqual([])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should suggest for invocations with method parameters #1", (done) => {
     suggestionsFor("#input.foo + #input.barB.bazC('1').quax").then(suggestions => {
-      expect(suggestions).toEqual([
-        { methodName: 'quaxString', refClazz: { refClazzName: 'java.lang.String'} }
-      ])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should suggest for invocations with method parameters #2", (done) => {
     suggestionsFor("#input.foo + #input.barB.bazC('1', #input.foo, 2).quax").then(suggestions => {
-      expect(suggestions).toEqual([
-        { methodName: 'quaxString', refClazz: { refClazzName: 'java.lang.String'} }
-      ])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should suggest for multiline code #1", (done) => {
     suggestionsFor("#input\n.fo", {row: 1, column: ".fo".length }).then(suggestions => {
-      expect(suggestions).toEqual([
-        { methodName: 'fooString', refClazz: { refClazzName: 'java.lang.String'} }
-      ])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should suggest for multiline code #2", (done) => {
     suggestionsFor("#input\n.barB\n.", {row: 2, column: ".".length }).then(suggestions => {
-      expect(suggestions).toEqual([
-        { methodName: 'bazC', refClazz: { refClazzName: 'org.C'} }
-      ])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should suggest for multiline code #3", (done) => {
     suggestionsFor("#input\n.ba\n.barC", {row: 1, column: ".ba".length }).then(suggestions => {
-      expect(suggestions).toEqual([
-        { methodName: 'barB', refClazz: { refClazzName: 'org.B'} }
-      ])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should omit whitespace formatting in suggest for multiline code #1", (done) => {
     suggestionsFor("#input\n  .ba", {row: 1, column: "  .ba".length }).then(suggestions => {
-      expect(suggestions).toEqual([
-        { methodName: 'barB', refClazz: { refClazzName: 'org.B'} }
-      ])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should omit whitespace formatting in suggest for multiline code #2", (done) => {
     suggestionsFor("#input\n  .barB\n  .ba", {row: 2, column: "  .ba".length }).then(suggestions => {
-      expect(suggestions).toEqual([
-        { methodName: 'bazC', refClazz: { refClazzName: 'org.C'} }
-      ])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should omit whitespace formatting in suggest for multiline code #3", (done) => {
     suggestionsFor("#input\n  .ba\n  .bazC", {row: 1, column: "  .ba".length }).then(suggestions => {
-      expect(suggestions).toEqual([
-        { methodName: 'barB', refClazz: { refClazzName: 'org.B'} }
-      ])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should omit whitespace formatting in suggest for multiline code #4", (done) => {
     suggestionsFor("#input\n  .barB.ba", {row: 1, column: "  .barB.ba".length }).then(suggestions => {
-      expect(suggestions).toEqual([
-        { methodName: 'bazC', refClazz: { refClazzName: 'org.C'} }
-      ])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should omit whitespace formatting in suggest for multiline code #5", (done) => {
     suggestionsFor("#input\n  .barB.bazC\n  .quaxString.", {row: 2, column: "  .quaxString.".length }).then(suggestions => {
-      expect(suggestions).toEqual([
-        { methodName: 'toUpperCase', refClazz: { refClazzName: 'java.lang.String'} }
-      ])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should suggest field in typed map", (done) => {
     suggestionsFor("#dynamicMap.int").then(suggestions => {
-      expect(suggestions).toEqual([{methodName: "intField", refClazz: {refClazzName: 'java.lang.Integer'}}])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should suggest embedded field in typed map", (done) => {
     suggestionsFor("#dynamicMap.aField.f").then(suggestions => {
-      expect(suggestions).toEqual([{methodName: "fooString", refClazz: {refClazzName: "java.lang.String"}}])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should suggest #this fields in simple projection", (done) => {
     suggestionsFor("#listVar.listField.![#this.f]", {row: 0, column: "#listVar.listField.![#this.f".length }).then(suggestions => {
-      expect(suggestions).toEqual([{methodName: "fooString", refClazz: {refClazzName: "java.lang.String"}}])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should suggest #this fields in projection on union of lists", (done) => {
     suggestionsFor("#unionOfLists.![#this.f]", {row: 0, column: "#unionOfLists.![#this.f".length }).then(suggestions => {
-      expect(suggestions).toEqual([{methodName: "fooString", refClazz: {refClazzName: "java.lang.String"}}])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should suggest #this fields in projection after selection", (done) => {
     suggestionsFor("#listVar.listField.?[#this == 'value'].![#this.f]", {row: 0, column: "#listVar.listField.?[#this == 'value'].![#this.f".length }).then(suggestions => {
-      expect(suggestions).toEqual([{methodName: "fooString", refClazz: {refClazzName: "java.lang.String"}}])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("handles negated parameters with projections and selections", (done) => {
     suggestionsFor("!#listVar.listField.?[#this == 'value'].![#this.f]", {row: 0, column: "!#listVar.listField.?[#this == 'value'].![#this.f".length }).then(suggestions => {
-      expect(suggestions).toEqual([{methodName: "fooString", refClazz: {refClazzName: "java.lang.String"}}])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should support nested method invocations", (done) => {
     suggestionsFor("#util.now(#other.quaxString.toUpperCase().)", {row: 0, column: "#util.now(#other.quaxString.toUpperCase().".length }).then(suggestions => {
-      expect(suggestions).toEqual([{methodName: "toUpperCase", refClazz: {refClazzName: "java.lang.String"}}])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 
   it("should support safe navigation", (done) => {
     suggestionsFor("#input?.barB.bazC?.").then(suggestions => {
-      expect(suggestions).toEqual([{methodName: "quaxString", refClazz: {refClazzName: "java.lang.String"}}])
+      expect(suggestions).toMatchSnapshot()
     }).then(done)
   })
 })

@@ -122,9 +122,9 @@ export default class ExpressionSuggester {
   }
 
   _getTypeInfoFromClass = (clazz) => {
-    const methodsFromInfo = this._getMethodsFromGlobalTypeInfo(clazz)
+    const methodsFromClass = _.mapValues(this._getMethodsFromGlobalTypeInfo(clazz), (m => ({...m, fromClass: !!clazz.fields})))
     const methodsFromFields = _.mapValues(clazz.fields || [], (field) => ({refClazz: field}))
-    const allMethods = _.merge(methodsFromFields, methodsFromInfo)
+    const allMethods = _.merge(methodsFromFields, methodsFromClass)
 
     return {
       ...clazz,

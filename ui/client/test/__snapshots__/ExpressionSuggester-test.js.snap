@@ -1,0 +1,549 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`expression suggester handles negated parameters with projections and selections 1`] = `
+Array [
+  Object {
+    "fromClass": false,
+    "methodName": "fooString",
+    "refClazz": Object {
+      "refClazzName": "java.lang.String",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should filter global variables suggestions 1`] = `
+Array [
+  Object {
+    "methodName": "#other",
+    "refClazz": Object {
+      "refClazzName": "org.C",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should filter uppercase global variables suggestions 1`] = `
+Array [
+  Object {
+    "methodName": "#ANOTHER",
+    "refClazz": Object {
+      "refClazzName": "org.A",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should not suggest anything for empty input 1`] = `Array []`;
+
+exports[`expression suggester should not suggest anything if suggestion already applied with space at the end 1`] = `Array []`;
+
+exports[`expression suggester should omit whitespace formatting in suggest for multiline code #1 1`] = `
+Array [
+  Object {
+    "fromClass": false,
+    "methodName": "barB",
+    "refClazz": Object {
+      "refClazzName": "org.B",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should omit whitespace formatting in suggest for multiline code #2 1`] = `
+Array [
+  Object {
+    "fromClass": false,
+    "methodName": "bazC",
+    "refClazz": Object {
+      "refClazzName": "org.C",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should omit whitespace formatting in suggest for multiline code #3 1`] = `
+Array [
+  Object {
+    "fromClass": false,
+    "methodName": "barB",
+    "refClazz": Object {
+      "refClazzName": "org.B",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should omit whitespace formatting in suggest for multiline code #4 1`] = `
+Array [
+  Object {
+    "fromClass": false,
+    "methodName": "bazC",
+    "refClazz": Object {
+      "refClazzName": "org.C",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should omit whitespace formatting in suggest for multiline code #5 1`] = `
+Array [
+  Object {
+    "fromClass": false,
+    "methodName": "toUpperCase",
+    "refClazz": Object {
+      "refClazzName": "java.lang.String",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should suggest #this fields in projection after selection 1`] = `
+Array [
+  Object {
+    "fromClass": false,
+    "methodName": "fooString",
+    "refClazz": Object {
+      "refClazzName": "java.lang.String",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should suggest #this fields in projection on union of lists 1`] = `
+Array [
+  Object {
+    "fromClass": false,
+    "methodName": "fooString",
+    "refClazz": Object {
+      "refClazzName": "java.lang.String",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should suggest #this fields in simple projection 1`] = `
+Array [
+  Object {
+    "fromClass": false,
+    "methodName": "fooString",
+    "refClazz": Object {
+      "refClazzName": "java.lang.String",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should suggest all global variables if # specified 1`] = `
+Array [
+  Object {
+    "methodName": "#input",
+    "refClazz": Object {
+      "refClazzName": "org.A",
+    },
+  },
+  Object {
+    "methodName": "#other",
+    "refClazz": Object {
+      "refClazzName": "org.C",
+    },
+  },
+  Object {
+    "methodName": "#ANOTHER",
+    "refClazz": Object {
+      "refClazzName": "org.A",
+    },
+  },
+  Object {
+    "methodName": "#dynamicMap",
+    "refClazz": Object {
+      "fields": Object {
+        "aField": Object {
+          "refClazzName": "org.A",
+        },
+        "intField": Object {
+          "refClazzName": "java.lang.Integer",
+        },
+      },
+      "refClazzName": "java.util.Map",
+    },
+  },
+  Object {
+    "methodName": "#listVar",
+    "refClazz": Object {
+      "refClazzName": "org.WithList",
+    },
+  },
+  Object {
+    "methodName": "#util",
+    "refClazz": Object {
+      "refClazzName": "org.Util",
+    },
+  },
+  Object {
+    "methodName": "#union",
+    "refClazz": Object {
+      "union": Array [
+        Object {
+          "refClazzName": "org.A",
+        },
+        Object {
+          "refClazzName": "org.B",
+        },
+        Object {
+          "refClazzName": "org.AA",
+        },
+      ],
+    },
+  },
+  Object {
+    "methodName": "#unionOfLists",
+    "refClazz": Object {
+      "union": Array [
+        Object {
+          "params": Array [
+            Object {
+              "refClazzName": "org.A",
+            },
+          ],
+          "refClazz": "java.util.List",
+        },
+        Object {
+          "params": Array [
+            Object {
+              "refClazzName": "org.B",
+            },
+          ],
+          "refClazz": "java.util.List",
+        },
+      ],
+    },
+  },
+  Object {
+    "methodName": "#dict",
+    "refClazz": Object {
+      "dict": Object {
+        "id": "fooDict",
+        "valueType": Object {
+          "refClazzName": "org.A",
+        },
+      },
+    },
+  },
+]
+`;
+
+exports[`expression suggester should suggest dict variable methods 1`] = `
+Array [
+  Object {
+    "methodName": "One",
+    "refClazz": Object {
+      "refClazzName": "org.A",
+    },
+  },
+  Object {
+    "methodName": "Two",
+    "refClazz": Object {
+      "refClazzName": "org.A",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should suggest dict variable methods using indexer syntax 1`] = `
+Array [
+  Object {
+    "methodName": "Sentence with spaces and . dots",
+    "refClazz": Object {
+      "refClazzName": "org.A",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should suggest dict variable methods using indexer syntax 2`] = `
+Array [
+  Object {
+    "methodName": "Sentence with spaces and . dots",
+    "refClazz": Object {
+      "refClazzName": "org.A",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should suggest dict variable methods using indexer syntax 3`] = `
+Array [
+  Object {
+    "methodName": "Sentence with spaces and . dots",
+    "refClazz": Object {
+      "refClazzName": "org.A",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should suggest dict variable methods using indexer syntax 4`] = `
+Array [
+  Object {
+    "methodName": "Sentence with spaces and . dots",
+    "refClazz": Object {
+      "refClazzName": "org.A",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should suggest embedded field in typed map 1`] = `
+Array [
+  Object {
+    "fromClass": false,
+    "methodName": "fooString",
+    "refClazz": Object {
+      "refClazzName": "java.lang.String",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should suggest field in typed map 1`] = `
+Array [
+  Object {
+    "methodName": "intField",
+    "refClazz": Object {
+      "refClazzName": "java.lang.Integer",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should suggest filtered global variable methods 1`] = `
+Array [
+  Object {
+    "fromClass": false,
+    "methodName": "fooString",
+    "refClazz": Object {
+      "refClazzName": "java.lang.String",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should suggest filtered global variable methods based not on beginning of the method 1`] = `
+Array [
+  Object {
+    "fromClass": false,
+    "methodName": "fooString",
+    "refClazz": Object {
+      "refClazzName": "java.lang.String",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should suggest for invocations with method parameters #1 1`] = `
+Array [
+  Object {
+    "fromClass": false,
+    "methodName": "quaxString",
+    "refClazz": Object {
+      "refClazzName": "java.lang.String",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should suggest for invocations with method parameters #2 1`] = `
+Array [
+  Object {
+    "fromClass": false,
+    "methodName": "quaxString",
+    "refClazz": Object {
+      "refClazzName": "java.lang.String",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should suggest for multiline code #1 1`] = `
+Array [
+  Object {
+    "fromClass": false,
+    "methodName": "fooString",
+    "refClazz": Object {
+      "refClazzName": "java.lang.String",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should suggest for multiline code #2 1`] = `
+Array [
+  Object {
+    "fromClass": false,
+    "methodName": "bazC",
+    "refClazz": Object {
+      "refClazzName": "org.C",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should suggest for multiline code #3 1`] = `
+Array [
+  Object {
+    "fromClass": false,
+    "methodName": "barB",
+    "refClazz": Object {
+      "refClazzName": "org.B",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should suggest global variable 1`] = `
+Array [
+  Object {
+    "methodName": "#input",
+    "refClazz": Object {
+      "refClazzName": "org.A",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should suggest global variable methods 1`] = `
+Array [
+  Object {
+    "fromClass": false,
+    "methodName": "fooString",
+    "refClazz": Object {
+      "refClazzName": "java.lang.String",
+    },
+  },
+  Object {
+    "fromClass": false,
+    "methodName": "barB",
+    "refClazz": Object {
+      "refClazzName": "org.B",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should suggest in complex expression #1 1`] = `
+Array [
+  Object {
+    "fromClass": false,
+    "methodName": "fooString",
+    "refClazz": Object {
+      "refClazzName": "java.lang.String",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should suggest in complex expression #2 1`] = `
+Array [
+  Object {
+    "fromClass": false,
+    "methodName": "quaxString",
+    "refClazz": Object {
+      "refClazzName": "java.lang.String",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should suggest in complex expression #3 1`] = `
+Array [
+  Object {
+    "fromClass": false,
+    "methodName": "toUpperCase",
+    "refClazz": Object {
+      "refClazzName": "java.lang.String",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should suggest methods for object returned from method 1`] = `
+Array [
+  Object {
+    "fromClass": false,
+    "methodName": "quaxString",
+    "refClazz": Object {
+      "refClazzName": "java.lang.String",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should suggest methods for object returned from method from union objects 1`] = `
+Array [
+  Object {
+    "fromClass": false,
+    "methodName": "quaxString",
+    "refClazz": Object {
+      "refClazzName": "java.lang.String",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should suggest methods for union objects 1`] = `
+Array [
+  Object {
+    "fromClass": false,
+    "methodName": "fooString",
+    "refClazz": Object {
+      "refClazzName": "java.lang.String",
+    },
+  },
+  Object {
+    "fromClass": false,
+    "methodName": "barB",
+    "refClazz": Object {
+      "refClazzName": "org.B",
+    },
+  },
+  Object {
+    "fromClass": false,
+    "methodName": "bazC",
+    "refClazz": Object {
+      "refClazzName": "org.C",
+    },
+  },
+  Object {
+    "fromClass": false,
+    "methodName": "barB",
+    "refClazz": Object {
+      "refClazzName": "org.C",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should support nested method invocations 1`] = `
+Array [
+  Object {
+    "fromClass": false,
+    "methodName": "toUpperCase",
+    "refClazz": Object {
+      "refClazzName": "java.lang.String",
+    },
+  },
+]
+`;
+
+exports[`expression suggester should support safe navigation 1`] = `
+Array [
+  Object {
+    "fromClass": false,
+    "methodName": "quaxString",
+    "refClazz": Object {
+      "refClazzName": "java.lang.String",
+    },
+  },
+]
+`;
