@@ -31,9 +31,9 @@ trait FlinkMiniClusterHolder {
 
   def stop(): Unit
 
-  private[test] def cancelJob(jobID: JobID): Unit
+  def cancelJob(jobID: JobID): Unit
 
-  private[test] def submitJob(jobGraph: JobGraph): JobID
+  def submitJob(jobGraph: JobGraph): JobID
 
   def runningJobs(): Iterable[JobID]
 
@@ -65,10 +65,10 @@ class FlinkMiniClusterHolderImpl(flinkMiniCluster: MiniClusterWithClientResource
     flinkMiniCluster.after()
   }
 
-  override private[test] def cancelJob(jobID: JobID): Unit =
+  override def cancelJob(jobID: JobID): Unit =
     flinkMiniCluster.getClusterClient.cancel(jobID)
 
-  override private[test] def submitJob(jobGraph: JobGraph): JobID =
+  override def submitJob(jobGraph: JobGraph): JobID =
     flinkMiniCluster.getClusterClient.submitJob(jobGraph).get()
 
   override def listJobs(): List[JobStatusMessage] =
