@@ -1,0 +1,26 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="NussknackerApp" type="Application" factoryName="Application">
+    <option name="ALTERNATIVE_JRE_PATH" value="1.8" />
+    <envs>
+      <env name="AUTHENTICATION_USERS_FILE" value="../../../nussknacker-dist/src/universal/conf/users.conf" />
+      <env name="MANAGEMENT_MODEL_DIR" value="../../../engine/flink/management/sample/target/scala-2.12" />
+      <env name="GENERIC_MODEL_DIR" value="../../../engine/flink/generic/target/scala-2.12" />
+      <env name="DEMO_MODEL_DIR" value="../../../engine/demo/target/scala-2.12" />
+      <env name="STANDALONE_MODEL_DIR" value="../../../engine/standalone/engine/sample/target/scala-2.12" />
+    </envs>
+    <option name="INCLUDE_PROVIDED_SCOPE" value="true" />
+    <option name="MAIN_CLASS_NAME" value="pl.touk.nussknacker.ui.NussknackerApp" />
+    <module name="nussknacker-ui" />
+    <option name="VM_PARAMETERS" value="-Dnussknacker.config.locations=../../../nussknacker-dist/src/universal/conf/dev-application.conf -Dlogback.configurationFile=../logback-dev.xml" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/ui/server/work" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="pl.touk.nussknacker.ui.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
