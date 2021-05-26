@@ -1,6 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
 
 module.exports = {
+  testEnvironment: "jsdom",
   clearMocks: true,
   collectCoverage: true,
   coverageDirectory: "jest-coverage",
