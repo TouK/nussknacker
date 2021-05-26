@@ -193,7 +193,7 @@
     "https-browserify": "^1.0.0",
     "husky": "^6.0.0",
     "jasmine-core": "^3.7.1",
-    "jest": "^26.5.3",
+    "jest": "^27.0.1",
     "jest-css-modules": "^2.1.0",
     "jest-mock": "^26.5.2",
     "less": "^4.1.1",
