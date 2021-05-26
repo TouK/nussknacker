@@ -1,6 +1,6 @@
 import ace from "ace-builds/src-noconflict/ace"
 import cn from "classnames"
-import {isEmpty, isEqual, map, overEvery} from "lodash"
+import {isEmpty, isEqual, map, overSome} from "lodash"
 import PropTypes from "prop-types"
 import React from "react"
 import ReactDOMServer from "react-dom/server"
@@ -32,15 +32,12 @@ function isSqlTokenAllowed(iterator, modeId) {
     }
     return token?.type === "spel.start"
   }
-  return true
+  return false
 }
 
 function isSpelTokenAllowed(iterator, modeId) {
-  if (modeId === "ace/mode/spel") {
-    const token = iterator.getCurrentToken()
-    return token?.type !== "string"
-  }
-  return true
+  // We need to handle #dict['Label'], where Label is a string token
+  return modeId === "ace/mode/spel";
 }
 
 class ExpressionSuggest extends React.Component {
@@ -56,7 +53,7 @@ class ExpressionSuggest extends React.Component {
   }
 
   customAceEditorCompleter = {
-    isTokenAllowed: overEvery([isSqlTokenAllowed, isSpelTokenAllowed]),
+    isTokenAllowed: overSome([isSqlTokenAllowed, isSpelTokenAllowed]),
     getCompletions: (editor, session, caretPosition2d, prefix, callback) => {
       const iterator = new TokenIterator(session, caretPosition2d.row, caretPosition2d.column)
       if (!this.customAceEditorCompleter.isTokenAllowed(iterator, session.$modeId)) {
