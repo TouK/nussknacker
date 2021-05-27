@@ -11,9 +11,10 @@ import org.apache.flink.types.Nothing
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 
 import scala.reflect.ClassTag
 
@@ -41,7 +42,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
                                                    timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
                                                    formatterFactory: RecordFormatterFactory,
                                                    processObjectDependencies: ProcessObjectDependencies)
-  extends FlinkSourceFactory[ConsumerRecord[K, V]] with SingleInputGenericNodeTransformation[FlinkSource[ConsumerRecord[K, V]]] {
+  extends FlinkSourceFactory[ConsumerRecord[K, V]] with SingleInputGenericNodeTransformation[FlinkSource[ConsumerRecord[K, V]]] with WithCachedTopicsExistenceValidator {
 
   protected val topicNameSeparator = ","
 
@@ -65,9 +66,15 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
       NextParameters(prepareInitialParameters)
   }
 
-  protected def nextsSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
-    case step@TransformationStep((KafkaSourceFactory.TopicParamName, _) :: tailParams, None) =>
-      FinalResults(contextInitializer.validationContext(context, dependencies, step.parameters, step.state))
+  protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
+    case step@TransformationStep((KafkaSourceFactory.TopicParamName, DefinedEagerParameter(topic: String, _)) :: tailParams, None) => {
+      val topics = topic.split(topicNameSeparator).map(_.trim).toList
+      val preparedTopics = topics.map(KafkaUtils.prepareKafkaTopic(_, processObjectDependencies)).map(_.prepared)
+      val topicValidationErrors = validateTopics(preparedTopics).swap.toList.map(_.toCustomNodeError(nodeId.id, Some(KafkaSourceFactory.TopicParamName)))
+      FinalResults(
+        finalContext = contextInitializer.validationContext(context, dependencies, step.parameters, step.state),
+        errors = topicValidationErrors)
+    }
   }
 
   /**
@@ -76,7 +83,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId)
   : NodeTransformationDefinition =
     initialStep(context, dependencies) orElse
-      nextsSteps(context ,dependencies)
+      nextSteps(context ,dependencies)
 
   /**
     * Common set of operations required to create basic KafkaSource.
@@ -84,8 +91,6 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[Nothing]): FlinkSource[ConsumerRecord[K, V]] = {
     val topics = extractTopics(params)
     val preparedTopics = topics.map(KafkaUtils.prepareKafkaTopic(_, processObjectDependencies))
-    val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
-    KafkaUtils.validateTopicsExistence(preparedTopics, kafkaConfig)
     val deserializationSchema = deserializationSchemaFactory.create(topics, kafkaConfig)
     val formatter = formatterFactory.create(deserializationSchema)
     createSource(params, dependencies, finalState, preparedTopics, kafkaConfig, deserializationSchema, formatter)
@@ -127,6 +132,8 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
   }
 
   override def nodeDependencies: List[NodeDependency] = Nil
+
+  override protected val kafkaConfig: KafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
 }
 
 object KafkaSourceFactory {
