@@ -45,6 +45,6 @@ object BasicRecordFormatter {
 
 trait RecordFormatterFactory {
 
-  def create(deserializationSchema: KafkaDeserializationSchema[Any]): RecordFormatter
+  def create[K, V](deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]]): RecordFormatter
 
 }

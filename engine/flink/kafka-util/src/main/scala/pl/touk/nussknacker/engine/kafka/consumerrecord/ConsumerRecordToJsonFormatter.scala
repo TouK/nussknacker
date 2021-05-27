@@ -44,7 +44,7 @@ class ConsumerRecordToJsonFormatter[K: Encoder:Decoder, V: Encoder:Decoder](dese
 
 class ConsumerRecordToJsonFormatterFactory[K:Encoder:Decoder, V:Encoder:Decoder] extends RecordFormatterFactory {
 
-  override def create(deserializationSchema: KafkaDeserializationSchema[Any]): RecordFormatter = {
+  override def create[KK, VV](deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[KK, VV]]): RecordFormatter = {
     new ConsumerRecordToJsonFormatter[K, V](deserializationSchema.asInstanceOf[KafkaDeserializationSchema[ConsumerRecord[K, V]]], serializeKeyValue)
   }
 
@@ -53,11 +53,14 @@ class ConsumerRecordToJsonFormatterFactory[K:Encoder:Decoder, V:Encoder:Decoder]
   protected def serializeKey(keyOpt: Option[K]): Array[Byte] = keyOpt.map(serialize[K]).orNull
   protected def serializeValue(value: V): Array[Byte] = serialize[V](value)
 
-  private def serialize[T: Encoder](data: T): Array[Byte] = data match {
-    case str: String => str.getBytes(StandardCharsets.UTF_8)
-    case _ => Encoder[T].apply(data).noSpaces.getBytes(StandardCharsets.UTF_8)
+  private def serialize[T: Encoder](data: T): Array[Byte] = {
+    val json = Encoder[T].apply(data)
+    json match {
+      // we handle strings this way because we want to keep result value compact and JString is formatted in quotes
+      case j if j.isString => j.asString.get.getBytes(StandardCharsets.UTF_8)
+      case other => other.noSpaces.getBytes(StandardCharsets.UTF_8)
+    }
   }
-
 
 }
 
