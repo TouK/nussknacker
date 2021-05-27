@@ -11,39 +11,37 @@ case class ProcessToolbarsConfigWithId(id: String,
                                        hidden: Option[List[ProcessToolbars]])
 
 object ProcessToolbarsConfigWithId {
-  def apply(processId: String,
+  def apply(processName: String,
             category: String,
             isSubprocess: Boolean,
-            topRight: Option[List[ProcessToolbars]],
-            bottomRight: Option[List[ProcessToolbars]],
-            topLeft: Option[List[ProcessToolbars]],
-            bottomLeft: Option[List[ProcessToolbars]],
-            hidden: Option[List[ProcessToolbars]]): ProcessToolbarsConfigWithId = {
+            config: ProcessToolbarsConfig): ProcessToolbarsConfigWithId = {
     ProcessToolbarsConfigWithId(
-      id = generateId(processId, category, isSubprocess),
-      topRight = topRight,
-      bottomRight = bottomRight,
-      topLeft = topLeft,
-      bottomLeft = bottomLeft,
-      hidden = hidden
+      id = generateId(processName, category, isSubprocess),
+      topRight = config.topRight,
+      bottomRight = config.bottomRight,
+      topLeft = config.topLeft,
+      bottomLeft = config.bottomLeft,
+      hidden = config.hidden
     )
   }
 
-  private def generateId(processId: String,
+  private def generateId(processName: String,
                          category: String,
                          isSubprocess: Boolean): String =
-    s"$processId-$category-$isSubprocess"
+    s"$processName-$category-$isSubprocess"
 }
 
 class ToolbarsConfigProvider(config: ProcessAndSubprocessToolbarsConfig) {
 
-  def configForCategory(category: String, isSubprocess: Boolean = false): ProcessToolbarsConfig = {
+  def configForCategory(processName: String, category: String, isSubprocess: Boolean = false): ProcessToolbarsConfigWithId = {
     val currentConfig = if (isSubprocess) config.subprocessConfig else config.processConfig
 
     val defaultConfig = currentConfig.defaultConfig
-    currentConfig.categoriesConfigs.get(category)
+    val mergedConfig = currentConfig.categoriesConfigs.get(category)
       .map(addDefaultToolbars(_, defaultConfig))
       .getOrElse(defaultConfig)
+
+    ProcessToolbarsConfigWithId(processName, category, isSubprocess, mergedConfig)
   }
 
   private def addDefaultToolbars(config: ProcessToolbarsConfig, defaultConfig: ProcessToolbarsConfig): ProcessToolbarsConfig = {
