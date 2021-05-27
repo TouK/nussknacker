@@ -10,7 +10,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
-import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, RecordFormatter}
+import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, RecordFormatter, RecordFormatterFactory}
 
 /**
   * RecordFormatter used to encode and decode whole raw kafka event (ConsumerRecord) in json format.
@@ -39,6 +39,28 @@ class ConsumerRecordToJsonFormatter[K: Encoder:Decoder, V: Encoder:Decoder](dese
   }
 
   override protected def testDataSplit: TestDataSplit = TestParsingUtils.newLineSplit
+
+}
+
+class ConsumerRecordToJsonFormatterFactory[K:Encoder:Decoder, V:Encoder:Decoder] extends RecordFormatterFactory {
+
+  override def create[KK, VV](deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[KK, VV]]): RecordFormatter = {
+    new ConsumerRecordToJsonFormatter[K, V](deserializationSchema.asInstanceOf[KafkaDeserializationSchema[ConsumerRecord[K, V]]], serializeKeyValue)
+  }
+
+  protected def serializeKeyValue(keyOpt: Option[K], value: V): (Array[Byte], Array[Byte]) = (serializeKey(keyOpt), serializeValue(value))
+
+  protected def serializeKey(keyOpt: Option[K]): Array[Byte] = keyOpt.map(serialize[K]).orNull
+  protected def serializeValue(value: V): Array[Byte] = serialize[V](value)
+
+  private def serialize[T: Encoder](data: T): Array[Byte] = {
+    val json = Encoder[T].apply(data)
+    json match {
+      // we handle strings this way because we want to keep result value compact and JString is formatted in quotes
+      case j if j.isString => j.asString.get.getBytes(StandardCharsets.UTF_8)
+      case other => other.noSpaces.getBytes(StandardCharsets.UTF_8)
+    }
+  }
 
 }
 

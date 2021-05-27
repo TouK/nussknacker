@@ -37,7 +37,8 @@ import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.signal.KafkaSignalStreamConnector
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EspDeserializationSchema}
-import pl.touk.nussknacker.engine.kafka.consumerrecord.FixedValueDeserializaitionSchemaFactory
+import pl.touk.nussknacker.engine.kafka.consumerrecord.FixedValueDeserializationSchemaFactory
+import pl.touk.nussknacker.engine.kafka.generic.sources.FixedRecordFormatterFactoryWrapper
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.kafka.{BasicRecordFormatter, KafkaConfig, KafkaUtils}
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
@@ -844,9 +845,9 @@ object SampleNodes {
   @JsonCodec case class KeyValue(key: String, value: Int, date: Long)
 
   class KeyValueKafkaSourceFactory(processObjectDependencies: ProcessObjectDependencies) extends KafkaSourceFactory[String, KeyValue](
-              new FixedValueDeserializaitionSchemaFactory(new EspDeserializationSchema[KeyValue](e => CirceUtil.decodeJsonUnsafe[KeyValue](e))),
+              new FixedValueDeserializationSchemaFactory(new EspDeserializationSchema[KeyValue](e => CirceUtil.decodeJsonUnsafe[KeyValue](e))),
               Some(outOfOrdernessTimestampExtractor[ConsumerRecord[String, KeyValue]](_.value().date)),
-              BasicRecordFormatter(),
+              FixedRecordFormatterFactoryWrapper(BasicRecordFormatter()),
               processObjectDependencies)
 
 }

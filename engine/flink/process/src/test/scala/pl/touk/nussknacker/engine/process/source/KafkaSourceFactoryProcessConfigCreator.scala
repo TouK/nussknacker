@@ -8,9 +8,9 @@ import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.flink.api.process.BasicFlinkSink
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
-import pl.touk.nussknacker.engine.kafka.KafkaSourceFactoryMixin.{SampleKey, SampleValue, createDeserializer, serializeKeyValue}
+import pl.touk.nussknacker.engine.kafka.KafkaSourceFactoryMixin.{SampleKey, SampleValue, createDeserializer}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, SampleConsumerRecordDeserializationSchemaFactory}
-import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordToJsonFormatter
+import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordToJsonFormatterFactory
 import pl.touk.nussknacker.engine.kafka.source.{InputMeta, KafkaSourceFactory}
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForStrings
 import pl.touk.nussknacker.engine.process.source.KafkaSourceFactoryProcessConfigCreator._
@@ -74,14 +74,11 @@ object KafkaSourceFactoryProcessConfigCreator {
     : KafkaSourceFactory[Any, Any] = {
 
       val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(createDeserializer[K], createDeserializer[V])
-      val testDataRecordFormatter = new ConsumerRecordToJsonFormatter(
-        deserializationSchemaFactory.create(List("dummyTopic"), kafkaConfig),
-        serializeKeyValue[K, V]
-      )
+      val formatterFactory = new ConsumerRecordToJsonFormatterFactory[K, V]
       val kafkaSource = new KafkaSourceFactory(
         deserializationSchemaFactory,
         None,
-        testDataRecordFormatter,
+        formatterFactory,
         processObjectDependencies
       )
       kafkaSource.asInstanceOf[KafkaSourceFactory[Any, Any]]
@@ -90,14 +87,11 @@ object KafkaSourceFactoryProcessConfigCreator {
     def jsonValueWithMeta[V: ClassTag:Encoder:Decoder](processObjectDependencies: ProcessObjectDependencies, kafkaConfig: KafkaConfig): KafkaSourceFactory[Any, Any] = {
 
       val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(new StringDeserializer with Serializable, createDeserializer[V])
-      val testDataRecordFormatter = new ConsumerRecordToJsonFormatter(
-        deserializationSchemaFactory.create(List("dummyTopic"), kafkaConfig),
-        serializeKeyValue[V]
-      )
+      val formatterFactory = new ConsumerRecordToJsonFormatterFactory[String, V]
       val kafkaSource = new KafkaSourceFactory(
         deserializationSchemaFactory,
         None,
-        testDataRecordFormatter,
+        formatterFactory,
         processObjectDependencies
       )
       kafkaSource.asInstanceOf[KafkaSourceFactory[Any, Any]]
@@ -106,14 +100,11 @@ object KafkaSourceFactoryProcessConfigCreator {
     // For scenario when prepareInitialParameters fetches list of available topics form some external repository and an exception occurs.
     def jsonValueWithMetaWithException[V: ClassTag:Encoder:Decoder](processObjectDependencies: ProcessObjectDependencies, kafkaConfig: KafkaConfig): KafkaSourceFactory[Any, Any] = {
       val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(new StringDeserializer with Serializable, createDeserializer[V])
-      val testDataRecordFormatter = new ConsumerRecordToJsonFormatter(
-        deserializationSchemaFactory.create(List("dummyTopic"), kafkaConfig),
-        serializeKeyValue[V]
-      )
+      val formatterFactory = new ConsumerRecordToJsonFormatterFactory[String, V]
       val kafkaSource = new KafkaSourceFactory(
         deserializationSchemaFactory,
         None,
-        testDataRecordFormatter,
+        formatterFactory,
         processObjectDependencies
       ) {
         override protected def prepareInitialParameters: List[Parameter] = {
