@@ -6,6 +6,7 @@ export enum AuthBackends {
   BASIC = "BasicAuth",
   OAUTH2 = "OAuth2",
   REMOTE = "Remote",
+  OTHER = "Other",
 }
 
 export type SettingsState = {
