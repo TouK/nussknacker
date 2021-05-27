@@ -110,7 +110,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   val authenticationConfig = DefaultAuthenticationConfiguration.create(testConfig)
   val analyticsConfig = AnalyticsConfig(testConfig)
 
-  val processAndSubprocessToolbarsConfig = ProcessAndSubprocessToolbarsConfig.create(config)
+  val processAndSubprocessToolbarsConfig = ProcessAndSubprocessToolbarsConfig.create(testConfig)
   val toolbarsConfigProvider = new ToolbarsConfigProvider(processAndSubprocessToolbarsConfig)
 
   val usersRoute = new UserResources(processCategoryService)
@@ -323,6 +323,10 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   def getSettings: RouteTestResult = {
     Get(s"/settings") ~> settingsRouteWithoutPermissions
+  }
+
+  def getProcessSettingsToolbars(processName: String): RouteTestResult = {
+    Get(s"/process/$processName/settings/toolbars") ~> settingsRouteWithoutPermissions
   }
 
   def getUser(isAdmin: Boolean): RouteTestResult = {
