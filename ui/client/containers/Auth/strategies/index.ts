@@ -8,4 +8,5 @@ export const STRATEGIES: Partial<Record<AuthBackends, StrategyConstructor>> = {
   [AuthBackends.OAUTH2]: OAuth2Strategy,
   [AuthBackends.REMOTE]: RemoteAuthStrategy,
   [AuthBackends.BASIC]: BasicAuthStrategy,
+  [AuthBackends.OTHER]: BasicAuthStrategy,
 }
