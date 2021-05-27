@@ -66,7 +66,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
       NextParameters(prepareInitialParameters)
   }
 
-  protected def nextsSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
+  protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
     case step@TransformationStep((KafkaSourceFactory.TopicParamName, DefinedEagerParameter(topic: String, _)) :: tailParams, None) => {
       val topics = topic.split(topicNameSeparator).map(_.trim).toList
       val preparedTopics = topics.map(KafkaUtils.prepareKafkaTopic(_, processObjectDependencies)).map(_.prepared)
@@ -83,7 +83,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId)
   : NodeTransformationDefinition =
     initialStep(context, dependencies) orElse
-      nextsSteps(context ,dependencies)
+      nextSteps(context ,dependencies)
 
   /**
     * Common set of operations required to create basic KafkaSource.
