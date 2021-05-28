@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.avro.source
 
+import cats.data.Validated.Valid
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue, OutputVariableNameValue}
@@ -8,11 +9,11 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
-import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, TopicParamName}
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory.KafkaAvroSourceFactoryState
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
+import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, KafkaAvroBaseTransformer, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSource
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 
@@ -34,28 +35,29 @@ class KafkaAvroSourceFactory[T:ClassTag](val schemaRegistryProvider: SchemaRegis
       val preparedTopic = prepareTopic(topic)
       val versionOption = parseVersionOption(version)
 
-      // key schema
       // TODO: add key schema versioning
-      val keySchemaDeterminer = prepareKeySchemaDeterminer(preparedTopic)
-      val keyValidType = keySchemaDeterminer.determineSchemaUsedInTyping.map(schemaData => AvroSchemaTypeDefinitionExtractor.typeDefinition(schemaData.schema))
-      val keyErrors = keyValidType.swap.map(error => CustomNodeError(error.getMessage, Some(SchemaVersionParamName))).toList
-      val keySchemaDataUsedInRuntime = keySchemaDeterminer.determineSchemaUsedInTyping.toOption.flatMap(keySchemaDeterminer.toRuntimeSchema)
+      val (keyValidationResult, keyErrors) = determineSchemaAndType(prepareKeySchemaDeterminer(preparedTopic), Some(TopicParamName))
+      val (valueValidationResult, valueErrors) = determineSchemaAndType(prepareValueSchemaDeterminer(preparedTopic, versionOption), Some(SchemaVersionParamName))
 
-      // value schema
-      val valueSchemaDeterminer = prepareValueSchemaDeterminer(preparedTopic, versionOption)
-      val valueValidType = valueSchemaDeterminer.determineSchemaUsedInTyping.map(schemaData => AvroSchemaTypeDefinitionExtractor.typeDefinition(schemaData.schema))
-      val valueErrors = valueValidType.swap.map(error => CustomNodeError(error.getMessage, Some(SchemaVersionParamName))).toList
-      val valueSchemaUsedInRuntime = valueSchemaDeterminer.determineSchemaUsedInTyping.toOption.flatMap(valueSchemaDeterminer.toRuntimeSchema)
-
-      val finalCtxValue = finalCtx(context, dependencies, keyValidType.getOrElse(Unknown), valueValidType.getOrElse(Unknown))
-      val finalErrors = valueErrors // TODO: add key schema errors validation
-      val finalState = KafkaAvroSourceFactoryState(keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime)
-
-      FinalResults(finalCtxValue, finalErrors, Some(finalState))
+      (keyValidationResult, valueValidationResult) match {
+        case (Valid((keyRuntimeSchema, keyType)), Valid((valueRuntimeSchema, valueType))) =>
+          val finalState = KafkaAvroSourceFactoryState(keyRuntimeSchema, valueRuntimeSchema)
+          FinalResults(finalCtx(context, dependencies, keyType, valueType), state = Some(finalState))
+        case _ =>
+          FinalResults(finalCtx(context, dependencies, Unknown, Unknown), keyErrors ++ valueErrors, None)
+      }
     //edge case - for some reason Topic/Version is not defined
     case TransformationStep((TopicParamName, _) ::
       (SchemaVersionParamName, _) ::Nil, _) =>
       FinalResults(finalCtx(context, dependencies, Unknown, Unknown), Nil, Some(KafkaAvroSourceFactoryState(None, None)))
+  }
+
+  private def determineSchemaAndType(keySchemaDeterminer: AvroSchemaDeterminer, paramName: Option[String])(implicit nodeId: NodeId) = {
+    val validationResult = keySchemaDeterminer.determineSchemaUsedInTyping.map { schemaData =>
+      (keySchemaDeterminer.toRuntimeSchema(schemaData), AvroSchemaTypeDefinitionExtractor.typeDefinition(schemaData.schema))
+    }
+    val errors = validationResult.swap.map(error => CustomNodeError(error.getMessage, paramName)).toList
+    (validationResult, errors)
   }
 
   override def paramsDeterminedAfterSchema: List[Parameter] = Nil
