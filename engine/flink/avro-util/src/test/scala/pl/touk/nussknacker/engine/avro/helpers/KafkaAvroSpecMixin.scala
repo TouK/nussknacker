@@ -61,7 +61,7 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
   }
 
   protected lazy val avroSourceFactory: KafkaAvroSourceFactory[Any] = {
-    new KafkaAvroSourceFactory(schemaRegistryProvider, testProcessObjectDependencies, None)
+    new KafkaAvroSourceFactory[Any](schemaRegistryProvider, testProcessObjectDependencies, None)
   }
 
   protected lazy val avroSinkFactory: KafkaAvroSinkFactory = {
