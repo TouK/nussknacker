@@ -7,15 +7,15 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.ConfluentKafkaAvroDeserializer
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroValueDeserializationSchemaFactory
-import pl.touk.nussknacker.engine.avro.{AvroUtils, RuntimeSchemaData}
+import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import tech.allegro.schema.json2avro.converter.JsonAvroConverter
 
 import java.lang
 import scala.reflect.ClassTag
 
-class ConfluentJsonPayloadDeserializerFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, _useStringAsKey: Boolean)
-  extends KafkaAvroValueDeserializationSchemaFactory(_useStringAsKey) {
+class ConfluentJsonPayloadDeserializerFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, useStringAsKey: Boolean)
+  extends KafkaAvroValueDeserializationSchemaFactory(useStringAsKey) {
 
   override protected def createValueDeserializer[T: ClassTag](schemaDataOpt: Option[RuntimeSchemaData],
                                                               kafkaConfig: KafkaConfig): Deserializer[T] = {

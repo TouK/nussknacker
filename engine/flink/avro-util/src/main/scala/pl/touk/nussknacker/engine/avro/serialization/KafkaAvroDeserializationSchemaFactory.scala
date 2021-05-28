@@ -37,8 +37,8 @@ trait KafkaAvroDeserializationSchemaFactory extends Serializable {
   * Abstract base implementation of [[KafkaAvroDeserializationSchemaFactory]]
   * which uses Kafka's Deserializer in returned Flink's KeyedDeserializationSchema. It deserializes only value.
   */
-// TODO: remove class and use only KeyValue deserialization with "_useStringAsKey" flag.
-abstract class KafkaAvroValueDeserializationSchemaFactory(_useStringAsKey: Boolean)
+// TODO: remove class and use only KeyValue deserialization with "useStringAsKey" flag.
+abstract class KafkaAvroValueDeserializationSchemaFactory(useStringAsKey: Boolean)
   extends KafkaAvroDeserializationSchemaFactory {
 
   protected def createValueDeserializer[T: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[T]
