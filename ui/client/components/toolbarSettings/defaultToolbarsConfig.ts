@@ -56,7 +56,7 @@ export const defaultToolbarsConfig: WithId<ToolbarsConfig> = {
         {type: BuiltinButtonTypes.processImport},
         {type: BuiltinButtonTypes.processJSON},
         {type: BuiltinButtonTypes.processPDF},
-        {type: BuiltinButtonTypes.processArchive},
+        {type: BuiltinButtonTypes.processArchiveToggle},
       ],
     },
     {
