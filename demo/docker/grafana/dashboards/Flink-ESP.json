@@ -1466,7 +1466,7 @@
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
@@ -1484,12 +1484,6 @@
                 "process"
               ],
               "type": "tag"
-            },
-            {
-              "params": [
-                "previous"
-              ],
-              "type": "fill"
             }
           ],
           "measurement": "records-lag-max",
