@@ -23,22 +23,3 @@ class BasedOnVersionAvroSchemaDeterminer(schemaRegistryClient: SchemaRegistryCli
 
 }
 
-class BasedOnVersionWithFallbackAvroSchemaDeterminer(schemaRegistryClient: SchemaRegistryClient,
-                                                     topic: String,
-                                                     versionOption: SchemaVersionOption,
-                                                     isKey: Boolean,
-                                                     schema: Schema
-                                                    ) extends AvroSchemaDeterminer {
-
-  override def determineSchemaUsedInTyping: Validated[SchemaDeterminerError, RuntimeSchemaData] = {
-    val version = versionOption match {
-      case ExistingSchemaVersion(v) => Some(v)
-      case LatestSchemaVersion => None
-    }
-    schemaRegistryClient
-      .getFreshSchema(topic, version, isKey = isKey)
-      .map(withMetadata => RuntimeSchemaData(withMetadata.schema, Some(withMetadata.id)))
-      .orElse(Valid(RuntimeSchemaData(schema, None)))
-  }
-
-}

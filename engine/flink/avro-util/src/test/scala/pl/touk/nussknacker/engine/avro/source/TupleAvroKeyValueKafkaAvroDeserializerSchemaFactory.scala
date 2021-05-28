@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.Co
 import scala.reflect._
 
 class TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory[Key: ClassTag, Value: ClassTag](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
-  extends ConfluentKeyValueKafkaAvroDeserializationFactory(schemaRegistryClientFactory) {
+  extends ConfluentKeyValueKafkaAvroDeserializationFactory(schemaRegistryClientFactory, false) {
 
   override protected type O = (Key, Value)
 

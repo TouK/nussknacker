@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.engine.avro.serialization
 
-import java.nio.charset.StandardCharsets
-
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import org.apache.kafka.common.serialization.Deserializer
+import org.apache.kafka.common.serialization.{Deserializer, StringDeserializer}
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
@@ -39,7 +37,8 @@ trait KafkaAvroDeserializationSchemaFactory extends Serializable {
   * Abstract base implementation of [[KafkaAvroDeserializationSchemaFactory]]
   * which uses Kafka's Deserializer in returned Flink's KeyedDeserializationSchema. It deserializes only value.
   */
-abstract class KafkaAvroValueDeserializationSchemaFactory
+// TODO: remove class and use only KeyValue deserialization with "useStringAsKey" flag.
+abstract class KafkaAvroValueDeserializationSchemaFactory(useStringAsKey: Boolean)
   extends KafkaAvroDeserializationSchemaFactory {
 
   protected def createValueDeserializer[T: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[T]
@@ -73,7 +72,7 @@ abstract class KafkaAvroValueDeserializationSchemaFactory
   * which uses Kafka's Deserializer in returned Flink's KeyedDeserializationSchema. It deserializes both key and value
   * and wrap it in object
   */
-abstract class KafkaAvroKeyValueDeserializationSchemaFactory
+abstract class KafkaAvroKeyValueDeserializationSchemaFactory(_useStringAsKey: Boolean)
   extends KafkaAvroDeserializationSchemaFactory {
 
   protected type O
@@ -97,7 +96,11 @@ abstract class KafkaAvroKeyValueDeserializationSchemaFactory
 
     new KafkaDeserializationSchema[O] {
       @transient
-      private lazy val keyDeserializer = createKeyDeserializer[K](keySchemaDataOpt, kafkaConfig)
+      private lazy val keyDeserializer = if (_useStringAsKey) {
+        {new StringDeserializer}.asInstanceOf[Deserializer[K]]
+      } else {
+        createKeyDeserializer[K](keySchemaDataOpt, kafkaConfig)
+      }
       @transient
       private lazy val valueDeserializer = createValueDeserializer[V](valueSchemaDataOpt, kafkaConfig)
 
@@ -112,7 +115,11 @@ abstract class KafkaAvroKeyValueDeserializationSchemaFactory
 
       override def getProducedType: TypeInformation[O] =
         createObjectTypeInformation[K, V](
-          createKeyTypeInfo[K](keySchemaDataOpt, kafkaConfig),
+          if (_useStringAsKey) {
+            TypeInformation.of(classOf[String]).asInstanceOf[TypeInformation[K]]
+          } else {
+            createKeyTypeInfo[K](keySchemaDataOpt, kafkaConfig)
+          },
           createValueTypeInfo[V](valueSchemaDataOpt, kafkaConfig)
         )
     }

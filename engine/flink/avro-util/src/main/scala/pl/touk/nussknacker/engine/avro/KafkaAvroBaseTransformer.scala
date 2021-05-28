@@ -93,8 +93,7 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
 
   //TODO: add schema versioning for key schemas
   protected def prepareKeySchemaDeterminer(preparedTopic: PreparedKafkaTopic): AvroSchemaDeterminer = {
-    val fallbackSchema = Schema.create(Schema.Type.STRING) //TODO: in case of no key schema scenario and default to-string deserialization we should not use misleading avro STRING schema
-    new BasedOnVersionWithFallbackAvroSchemaDeterminer(schemaRegistryClient, preparedTopic.prepared, LatestSchemaVersion, isKey = true, fallbackSchema)
+    new BasedOnVersionAvroSchemaDeterminer(schemaRegistryClient, preparedTopic.prepared, LatestSchemaVersion, isKey = true)
   }
 
   protected def topicParamStep(implicit nodeId: NodeId): NodeTransformationDefinition = {

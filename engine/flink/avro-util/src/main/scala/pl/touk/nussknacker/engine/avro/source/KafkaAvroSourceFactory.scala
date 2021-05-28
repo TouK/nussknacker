@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, Validati
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.Unknown
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, TopicParamName}
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory.KafkaAvroSourceFactoryState
@@ -22,7 +22,8 @@ import scala.reflect.ClassTag
 //TODO: add key-value as default deserailization scenario
 class KafkaAvroSourceFactory[T:ClassTag](val schemaRegistryProvider: SchemaRegistryProvider,
                                          val processObjectDependencies: ProcessObjectDependencies,
-                                         timestampAssigner: Option[TimestampWatermarkHandler[T]])
+                                         timestampAssigner: Option[TimestampWatermarkHandler[T]],
+                                         useStringAsKey: Boolean)
   extends BaseKafkaAvroSourceFactory[T](timestampAssigner) with KafkaAvroBaseTransformer[FlinkSource[T]]{
 
   override type State = KafkaAvroSourceFactoryState
@@ -35,8 +36,12 @@ class KafkaAvroSourceFactory[T:ClassTag](val schemaRegistryProvider: SchemaRegis
       val preparedTopic = prepareTopic(topic)
       val versionOption = parseVersionOption(version)
 
-      // TODO: add key schema versioning
-      val (keyValidationResult, keyErrors) = determineSchemaAndType(prepareKeySchemaDeterminer(preparedTopic), Some(TopicParamName))
+      val (keyValidationResult, keyErrors) = if (useStringAsKey) {
+        (Valid((None, Typed[String])), Nil)
+      } else {
+        // TODO: add key schema versioning
+        determineSchemaAndType(prepareKeySchemaDeterminer(preparedTopic), Some(TopicParamName))
+      }
       val (valueValidationResult, valueErrors) = determineSchemaAndType(prepareValueSchemaDeterminer(preparedTopic, versionOption), Some(SchemaVersionParamName))
 
       (keyValidationResult, valueValidationResult) match {
@@ -79,7 +84,7 @@ class KafkaAvroSourceFactory[T:ClassTag](val schemaRegistryProvider: SchemaRegis
     createSource(
       preparedTopic,
       kafkaConfig,
-      schemaRegistryProvider.deserializationSchemaFactory,
+      schemaRegistryProvider.deserializationSchemaFactory(useStringAsKey),
       schemaRegistryProvider.recordFormatter,
       keySchemaDataUsedInRuntime,
       valueSchemaUsedInRuntime
