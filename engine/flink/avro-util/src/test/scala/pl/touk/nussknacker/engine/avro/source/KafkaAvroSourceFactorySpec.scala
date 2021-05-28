@@ -63,13 +63,17 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
   test("should return validation errors when schema doesn't exist") {
     val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
 
-    readLastMessageAndVerify(avroSourceFactory, "fake-topic", ExistingSchemaVersion(1), givenObj, FullNameV2.schema) should matchPattern { case Invalid(_) => () }
+    readLastMessageAndVerify(avroSourceFactory, "fake-topic", ExistingSchemaVersion(1), givenObj, FullNameV2.schema) should matchPattern {
+      case Invalid(NonEmptyList(CustomNodeError(_, "Fetching schema error for topic: fake-topic, version: ExistingSchemaVersion(1)", _), _)) => ()
+    }
   }
 
   test("should return validation errors when schema version doesn't exist") {
     val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
 
-    readLastMessageAndVerify(avroSourceFactory, RecordTopic, ExistingSchemaVersion(3), givenObj, FullNameV2.schema) should matchPattern { case Invalid(_) => () }
+    readLastMessageAndVerify(avroSourceFactory, RecordTopic, ExistingSchemaVersion(3), givenObj, FullNameV2.schema) should matchPattern {
+      case Invalid(NonEmptyList(CustomNodeError(_, "Fetching schema error for topic: testAvroRecordTopic1, version: ExistingSchemaVersion(3)", _), _)) => ()
+    }
   }
 
   test("should read last generated simple object") {
