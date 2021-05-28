@@ -159,14 +159,14 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
   }
 
   private def createKeyValueAvroSourceFactory[K: ClassTag, V: ClassTag]: KafkaAvroSourceFactory[Any] = {
-    val deserializerFactory = new TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory[K, V](factory)
+    val deserializerFactory = (useStringAsKey: Boolean) => new TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory[K, V](factory)
     val provider = new ConfluentSchemaRegistryProvider(
       factory,
       new ConfluentAvroSerializationSchemaFactory(factory),
       deserializerFactory,
       kafkaConfig,
       formatKey = true)
-    new KafkaAvroSourceFactory(provider, testProcessObjectDependencies, None)
+    new KafkaAvroSourceFactory(provider, testProcessObjectDependencies, None, useStringAsKey = true)
   }
 
   private def roundTripSingleObject(sourceFactory: KafkaAvroSourceFactory[Any], topic: String, versionOption: SchemaVersionOption, givenObj: Any, expectedSchema: Schema) = {

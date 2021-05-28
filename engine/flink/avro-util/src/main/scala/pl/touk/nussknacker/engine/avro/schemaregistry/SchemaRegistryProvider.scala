@@ -9,7 +9,7 @@ trait SchemaRegistryProvider extends Serializable {
 
   def createSchemaRegistryClient: SchemaRegistryClient
 
-  def deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory
+  def deserializationSchemaFactory(useStringAsKey: Boolean): KafkaAvroDeserializationSchemaFactory
 
   def serializationSchemaFactory: KafkaAvroSerializationSchemaFactory
 

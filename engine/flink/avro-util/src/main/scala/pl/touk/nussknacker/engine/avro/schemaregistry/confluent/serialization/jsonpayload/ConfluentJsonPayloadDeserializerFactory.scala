@@ -14,8 +14,8 @@ import tech.allegro.schema.json2avro.converter.JsonAvroConverter
 import java.lang
 import scala.reflect.ClassTag
 
-class ConfluentJsonPayloadDeserializerFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
-  extends KafkaAvroValueDeserializationSchemaFactory {
+class ConfluentJsonPayloadDeserializerFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, _useStringAsKey: Boolean)
+  extends KafkaAvroValueDeserializationSchemaFactory(_useStringAsKey) {
 
   override protected def createValueDeserializer[T: ClassTag](schemaDataOpt: Option[RuntimeSchemaData],
                                                               kafkaConfig: KafkaConfig): Deserializer[T] = {
