@@ -51,7 +51,7 @@
       "lines": true,
       "linewidth": 2,
       "links": [],
-      "nullPointMode": "connected",
+      "nullPointMode": "null",
       "options": {
         "dataLinks": []
       },
@@ -197,7 +197,7 @@
       "lines": true,
       "linewidth": 2,
       "links": [],
-      "nullPointMode": "connected",
+      "nullPointMode": "null",
       "options": {
         "dataLinks": []
       },
@@ -350,7 +350,7 @@
       "lines": true,
       "linewidth": 2,
       "links": [],
-      "nullPointMode": "connected",
+      "nullPointMode": "null",
       "options": {
         "dataLinks": []
       },
@@ -501,7 +501,7 @@
       "lines": true,
       "linewidth": 1,
       "links": [],
-      "nullPointMode": "connected",
+      "nullPointMode": "null",
       "options": {
         "dataLinks": []
       },
@@ -627,7 +627,7 @@
       "lines": true,
       "linewidth": 1,
       "links": [],
-      "nullPointMode": "connected",
+      "nullPointMode": "null",
       "options": {
         "dataLinks": []
       },
@@ -753,7 +753,7 @@
       "lines": true,
       "linewidth": 1,
       "links": [],
-      "nullPointMode": "connected",
+      "nullPointMode": "null",
       "options": {
         "dataLinks": []
       },
@@ -904,7 +904,7 @@
       "lines": true,
       "linewidth": 1,
       "links": [],
-      "nullPointMode": "connected",
+      "nullPointMode": "null",
       "options": {
         "dataLinks": []
       },
@@ -1030,7 +1030,7 @@
       "lines": true,
       "linewidth": 1,
       "links": [],
-      "nullPointMode": "connected",
+      "nullPointMode": "null",
       "options": {
         "dataLinks": []
       },
@@ -1156,7 +1156,7 @@
       "lines": true,
       "linewidth": 1,
       "links": [],
-      "nullPointMode": "connected",
+      "nullPointMode": "null",
       "options": {
         "dataLinks": []
       },
@@ -1311,7 +1311,7 @@
       "lines": true,
       "linewidth": 2,
       "links": [],
-      "nullPointMode": "connected",
+      "nullPointMode": "null",
       "options": {
         "dataLinks": []
       },
@@ -1429,6 +1429,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "influx",
+      "description": "IMPORTANT. \nThis metrics does NOT show the overall lag on Kafka source; a largest lag among all the source partitions is shown. ",
       "editable": true,
       "error": false,
       "fill": 1,
@@ -1455,7 +1456,7 @@
       "lines": true,
       "linewidth": 2,
       "links": [],
-      "nullPointMode": "connected",
+      "nullPointMode": "null",
       "options": {
         "dataLinks": []
       },
@@ -1469,7 +1470,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "alias": "$tag_process [$tag_slot]",
+          "alias": "$tag_process",
           "dsType": "influxdb",
           "groupBy": [
             {
@@ -1481,12 +1482,6 @@
             {
               "params": [
                 "process"
-              ],
-              "type": "tag"
-            },
-            {
-              "params": [
-                "slot"
               ],
               "type": "tag"
             },
@@ -1536,7 +1531,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Lag on Kafka source (events)",
+      "title": "Max lag among Kafka source partitions (events)",
       "tooltip": {
         "msResolution": false,
         "shared": true,
@@ -1604,7 +1599,7 @@
       "lines": true,
       "linewidth": 2,
       "links": [],
-      "nullPointMode": "connected",
+      "nullPointMode": "null",
       "options": {
         "dataLinks": []
       },
@@ -1747,7 +1742,7 @@
       "lines": true,
       "linewidth": 2,
       "links": [],
-      "nullPointMode": "connected",
+      "nullPointMode": "null",
       "options": {
         "dataLinks": []
       },
@@ -1890,7 +1885,7 @@
       "lines": true,
       "linewidth": 2,
       "links": [],
-      "nullPointMode": "connected",
+      "nullPointMode": "null",
       "options": {
         "dataLinks": []
       },
@@ -2033,7 +2028,7 @@
       "lines": true,
       "linewidth": 2,
       "links": [],
-      "nullPointMode": "connected",
+      "nullPointMode": "null",
       "options": {
         "dataLinks": []
       },
