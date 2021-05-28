@@ -65,7 +65,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       "clearingContextTransformer" -> (ObjectDefinition(List.empty, Typed[SimpleRecord], List()), emptyQueryNamesData(true)),
       "withManyParameters" -> (ObjectDefinition(List(
         Parameter[String]("lazyString").copy(isLazyParameter = true), Parameter[Integer]("lazyInt").copy(isLazyParameter = true),
-        Parameter[Long]("long"))
+        Parameter[Long]("long").copy(validators = List(MinimalNumberValidator(0))))
       , Typed[SimpleRecord], List()), emptyQueryNamesData(true)),
       "withoutReturnType" -> (ObjectDefinition(List(Parameter[String]("par1")), Typed[Void], List()), emptyQueryNamesData()),
       "withMandatoryParams" -> (ObjectDefinition.withParams(List(Parameter[String]("mandatoryParam"))), emptyQueryNamesData()),
@@ -801,7 +801,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .exceptionHandler()
         .source("id1", "source")
         .customNode("custom", "outVar", "withManyParameters",
-          "long" -> "123L", "lazyString" -> "'44'", "lazyInt" -> "43" )
+          "long" -> "123123123133L", "lazyString" -> "'44'", "lazyInt" -> "43" )
         .sink("id2", "''", "sink")
 
     validate(process, baseDefinition).result should matchPattern {
