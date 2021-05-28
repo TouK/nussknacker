@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.source
 
 import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializer, FlinkSource, FlinkSourceFactory}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
@@ -9,7 +8,6 @@ import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka._
 import org.apache.flink.types.Nothing
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition._
@@ -46,7 +44,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
 
   protected val topicNameSeparator = ","
 
-  protected val contextInitializer: KafkaContextInitializer[K, V, DefinedParameter, State] =
+  protected val kafkaContextInitializer: KafkaContextInitializer[K, V, DefinedParameter, State] =
     new KafkaContextInitializer[K, V, DefinedParameter, State](Typed[K], Typed[V])
 
   override type State = Nothing
@@ -72,7 +70,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
       val preparedTopics = topics.map(KafkaUtils.prepareKafkaTopic(_, processObjectDependencies)).map(_.prepared)
       val topicValidationErrors = validateTopics(preparedTopics).swap.toList.map(_.toCustomNodeError(nodeId.id, Some(KafkaSourceFactory.TopicParamName)))
       FinalResults(
-        finalContext = contextInitializer.validationContext(context, dependencies, step.parameters, step.state),
+        finalContext = kafkaContextInitializer.validationContext(context, dependencies, step.parameters, step.state),
         errors = topicValidationErrors)
     }
   }
@@ -107,7 +105,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
                              deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
                              formatter: RecordFormatter): FlinkSource[ConsumerRecord[K, V]] = {
     new KafkaSource[ConsumerRecord[K, V]](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter) {
-      override val contextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]] = KafkaSourceFactory.this.contextInitializer
+      override val contextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]] = kafkaContextInitializer
     }
   }
 

@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, SchemaDeterminerErrorHandler}
+import pl.touk.nussknacker.engine.avro.{AvroUtils, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrderPreviousElementAssigner
@@ -24,35 +24,16 @@ abstract class BaseKafkaAvroSourceFactory[T: ClassTag](timestampAssigner: Option
                    kafkaConfig: KafkaConfig,
                    deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory,
                    createRecordFormatter: RecordFormatter,
-                   keySchemaDeterminer: AvroSchemaDeterminer,
-                   valueSchemaDeterminer: AvroSchemaDeterminer,
-                   returnGenericAvroType: Boolean)
+                   keySchemaDataUsedInRuntime: Option[RuntimeSchemaData],
+                   valueSchemaUsedInRuntime: Option[RuntimeSchemaData])
                   (implicit processMetaData: MetaData,
                    nodeId: NodeId): KafkaSource[T] = {
-
-    // key schema
-    val keySchemaData = keySchemaDeterminer.determineSchemaUsedInTyping.valueOr(SchemaDeterminerErrorHandler.handleSchemaRegistryErrorAndThrowException)
-    val keySchemaDataUsedInRuntime = keySchemaDeterminer.toRuntimeSchema(keySchemaData)
-
-    // value schema
-    val valueSchemaData = valueSchemaDeterminer.determineSchemaUsedInTyping.valueOr(SchemaDeterminerErrorHandler.handleSchemaRegistryErrorAndThrowException)
-    val valueSchemaUsedInRuntime = valueSchemaDeterminer.toRuntimeSchema(valueSchemaData)
 
     // prepare KafkaDeserializationSchema based on key and value schema
     // TODO: add key-value deserialization as default scenario: create[K, V]
     val deserializationSchema = deserializationSchemaFactory.create[Any, T](kafkaConfig, keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime).asInstanceOf[KafkaDeserializationSchema[T]]
 
-    if (returnGenericAvroType) {
-      new KafkaSource(
-        List(preparedTopic),
-        kafkaConfig,
-        deserializationSchema,
-        assignerToUse(kafkaConfig),
-        createRecordFormatter
-      ) with ReturningType {
-        override def returnType: typing.TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(valueSchemaData.schema)
-      }
-    } else {
+    if (AvroUtils.isSpecificRecord[T]) {
       new KafkaSource(
         List(preparedTopic),
         kafkaConfig,
@@ -60,6 +41,16 @@ abstract class BaseKafkaAvroSourceFactory[T: ClassTag](timestampAssigner: Option
         assignerToUse(kafkaConfig),
         createRecordFormatter
       )
+    } else {
+      new KafkaSource(
+        List(preparedTopic),
+        kafkaConfig,
+        deserializationSchema,
+        assignerToUse(kafkaConfig),
+        createRecordFormatter
+      ) with ReturningType {
+        override def returnType: typing.TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(valueSchemaUsedInRuntime.get.schema)
+      }
     }
   }
 
