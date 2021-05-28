@@ -15,7 +15,7 @@ import scala.collection.JavaConverters._
 /**
   * This is Kafka Avro Deserialization class. All events will be deserialized to provided schema.
   */
-class ConfluentKafkaAvroDeserializer[T](kafkaConfig: KafkaConfig, schemaData: RuntimeSchemaData, confluentSchemaRegistryClient: ConfluentSchemaRegistryClient,
+class ConfluentKafkaAvroDeserializer[T](kafkaConfig: KafkaConfig, schemaData: Option[RuntimeSchemaData], confluentSchemaRegistryClient: ConfluentSchemaRegistryClient,
                                         var isKey: Boolean, _useSpecificAvroReader: Boolean)
   extends AbstractConfluentKafkaAvroDeserializer with Deserializer[T] {
 

@@ -27,13 +27,13 @@ class ConfluentJsonPayloadDeserializerFactory(schemaRegistryClientFactory: Confl
       if (classOf[SpecificRecordBase].isAssignableFrom(clazz)) Some(clazz.asInstanceOf[Class[SpecificRecordBase]]) else None
     }
 
-    new ConfluentKafkaAvroDeserializer[T](kafkaConfig, schemaDataOpt.orNull,
+    new ConfluentKafkaAvroDeserializer[T](kafkaConfig, schemaDataOpt,
       schemaRegistryClient, isKey = false, specificClass.isDefined) {
 
       private val converter = new JsonAvroConverter();
 
-      override protected def deserialize(topic: String, isKey: lang.Boolean, payload: Array[Byte], readerSchema: RuntimeSchemaData): AnyRef = {
-        val schema = readerSchema.schema
+      override protected def deserialize(topic: String, isKey: lang.Boolean, payload: Array[Byte], readerSchema: Option[RuntimeSchemaData]): AnyRef = {
+        val schema = readerSchema.get.schema
         specificClass match {
           case Some(kl) => converter.convertToSpecificRecord(payload, kl, schema)
           case None => converter.convertToGenericDataRecord(payload, schema)
