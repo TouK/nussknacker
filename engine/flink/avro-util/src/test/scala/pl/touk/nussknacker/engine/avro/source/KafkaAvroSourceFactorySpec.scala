@@ -1,18 +1,20 @@
 package pl.touk.nussknacker.engine.avro.source
 
 import java.nio.charset.StandardCharsets
+
+import cats.data.Validated.{Invalid, Valid}
+import cats.data.{NonEmptyList, Validated}
 import com.typesafe.config.ConfigFactory
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.Schema
 import org.apache.avro.generic.{GenericData, GenericRecord}
-import org.scalatest.Assertion
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
-import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.TypedNodeDependencyValue
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, OutputVariableNameValue, TypedNodeDependencyValue}
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator}
-import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData, VariableConstants}
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, TopicParamName}
 import pl.touk.nussknacker.engine.avro.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.avro.schema.{AvroStringSettings, FullNameV1, FullNameV2}
@@ -20,8 +22,6 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaR
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client._
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.ConfluentAvroSerializationSchemaFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaVersionOption}
-import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, SchemaDeterminerError}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.{GenericNodeTransformationValidator, TransformationResult}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
@@ -60,19 +60,19 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     roundTripSingleObject(avroSourceFactory, RecordTopic, LatestSchemaVersion, givenObj, FullNameV2.schema)
   }
 
-  test("should throw exception when schema doesn't exist") {
+  test("should return validation errors when schema doesn't exist") {
     val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
 
-    assertThrowsWithParent[SchemaDeterminerError] {
-      readLastMessageAndVerify(avroSourceFactory, "fake-topic", ExistingSchemaVersion(1), givenObj, FullNameV2.schema)
+    readLastMessageAndVerify(avroSourceFactory, "fake-topic", ExistingSchemaVersion(1), givenObj, FullNameV2.schema) should matchPattern {
+      case Invalid(NonEmptyList(CustomNodeError(_, "Fetching schema error for topic: fake-topic, version: ExistingSchemaVersion(1)", _), _)) => ()
     }
   }
 
-  test("should throw exception when schema version doesn't exist") {
+  test("should return validation errors when schema version doesn't exist") {
     val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
 
-    assertThrowsWithParent[SchemaDeterminerError] {
-      readLastMessageAndVerify(avroSourceFactory, RecordTopic, ExistingSchemaVersion(3), givenObj, FullNameV2.schema)
+    readLastMessageAndVerify(avroSourceFactory, RecordTopic, ExistingSchemaVersion(3), givenObj, FullNameV2.schema) should matchPattern {
+      case Invalid(NonEmptyList(CustomNodeError(_, "Fetching schema error for topic: testAvroRecordTopic1, version: ExistingSchemaVersion(3)", _), _)) => ()
     }
   }
 
@@ -174,28 +174,48 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
     readLastMessageAndVerify(sourceFactory, topic, versionOption, givenObj, expectedSchema)
   }
 
-  private def readLastMessageAndVerify(sourceFactory: KafkaAvroSourceFactory[Any], topic: String, versionOption: SchemaVersionOption, givenObj: Any, expectedSchema: Schema): Assertion = {
-    val source = createAndVerifySource(sourceFactory, topic, versionOption, expectedSchema)
+  private def readLastMessageAndVerify(sourceFactory: KafkaAvroSourceFactory[Any], topic: String, versionOption: SchemaVersionOption, givenObj: Any, expectedSchema: Schema) = {
+    createAndVerifySource(sourceFactory, topic, versionOption, expectedSchema)
+      .map(source => {
+        val bytes = source.generateTestData(1)
+        info("test object: " + new String(bytes, StandardCharsets.UTF_8))
+        val deserializedObj = source.testDataParser.parseTestData(bytes)
 
-    val bytes = source.generateTestData(1)
-    info("test object: " + new String(bytes, StandardCharsets.UTF_8))
-    val deserializedObj = source.testDataParser.parseTestData(bytes)
-
-    deserializedObj shouldEqual List(givenObj)
+        deserializedObj shouldEqual List(givenObj)
+      })
   }
 
-  private def createAndVerifySource(sourceFactory: KafkaAvroSourceFactory[Any], topic: String, versionOption: SchemaVersionOption, expectedSchema: Schema): Source[AnyRef] with FlinkSourceTestSupport[AnyRef] with TestDataGenerator with ReturningType = {
+  private def createAndVerifySource(sourceFactory: KafkaAvroSourceFactory[Any], topic: String, versionOption: SchemaVersionOption, expectedSchema: Schema) = {
     val version = versionOption match {
       case LatestSchemaVersion => SchemaVersionOption.LatestOptionName
       case ExistingSchemaVersion(version) => version.toString
     }
-    val source = sourceFactory
-      .implementation(Map(KafkaAvroBaseTransformer.TopicParamName -> topic, KafkaAvroBaseTransformer.SchemaVersionParamName -> version),
-        List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)), None)
-      .asInstanceOf[Source[AnyRef] with TestDataGenerator with FlinkSourceTestSupport[AnyRef] with ReturningType]
+    val validatedState = validateParamsAndInitializeState(sourceFactory, topic, version)
+    validatedState.map(state => {
+      val source = sourceFactory
+        .implementation(
+          Map(KafkaAvroBaseTransformer.TopicParamName -> topic, KafkaAvroBaseTransformer.SchemaVersionParamName -> version),
+          List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)),
+          state)
+        .asInstanceOf[Source[AnyRef] with TestDataGenerator with FlinkSourceTestSupport[AnyRef]]
 
-    source.returnType shouldEqual AvroSchemaTypeDefinitionExtractor.typeDefinition(expectedSchema)
+      source
+    })
+  }
 
-    source
+  // Use final contextTransformation to 1) validate parameters and 2) to calculate the final state.
+  // This transformation can return
+  // - the state that contains information on runtime key-value schemas, which is required in createSource.
+  // - validation errors
+  private def validateParamsAndInitializeState(sourceFactory: KafkaAvroSourceFactory[Any], topic: String, version: String): Validated[NonEmptyList[ProcessCompilationError], Option[KafkaAvroSourceFactory.KafkaAvroSourceFactoryState]] = {
+    implicit val nodeId: NodeId = NodeId("dummy")
+    val parameters = (TopicParamName, DefinedEagerParameter(topic, null)) :: (SchemaVersionParamName, DefinedEagerParameter(version, null)) :: Nil
+    val definition = sourceFactory.contextTransformation(ValidationContext(), List(OutputVariableNameValue("dummy")))
+    val stepResult = definition(sourceFactory.TransformationStep(parameters, None))
+    stepResult match {
+      case result: sourceFactory.FinalResults if result.errors.isEmpty => Valid(result.state)
+      case result: sourceFactory.FinalResults => Invalid(NonEmptyList.fromListUnsafe(result.errors))
+      case _ => Invalid(NonEmptyList(CustomNodeError("Unexpected result of contextTransformation", None), Nil))
+    }
   }
 }

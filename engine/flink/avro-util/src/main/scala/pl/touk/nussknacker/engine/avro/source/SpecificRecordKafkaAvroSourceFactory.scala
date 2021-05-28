@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.editor.{SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.{MetaData, MethodToInvoke, ParamName}
-import pl.touk.nussknacker.engine.avro.FixedStringSchemaDeterminer
+import pl.touk.nussknacker.engine.avro.SchemaDeterminerErrorHandler
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.TopicParamName
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryProvider, SpecificRecordEmbeddedSchemaDeterminer}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
@@ -28,16 +28,18 @@ class SpecificRecordKafkaAvroSourceFactory[T <: SpecificRecord: ClassTag](schema
                   (implicit processMetaData: MetaData, nodeId: NodeId): KafkaSource[T] = {
     val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
     val preparedTopic = KafkaUtils.prepareKafkaTopic(topic, processObjectDependencies)
+
     val valueSchemaDeterminer = new SpecificRecordEmbeddedSchemaDeterminer(classTag[T].runtimeClass.asInstanceOf[Class[_ <: SpecificRecord]])
-    val keySchemaDeterminer = FixedStringSchemaDeterminer
+    val valueSchemaData = valueSchemaDeterminer.determineSchemaUsedInTyping.valueOr(SchemaDeterminerErrorHandler.handleSchemaRegistryErrorAndThrowException)
+    val valueSchemaUsedInRuntime = valueSchemaDeterminer.toRuntimeSchema(valueSchemaData)
+
     createSource(
       preparedTopic,
       kafkaConfig,
       schemaRegistryProvider.deserializationSchemaFactory,
       schemaRegistryProvider.recordFormatter,
-      keySchemaDeterminer,
-      valueSchemaDeterminer,
-      returnGenericAvroType = false
+      None,
+      valueSchemaUsedInRuntime
     )
   }
 
