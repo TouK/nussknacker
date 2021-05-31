@@ -191,12 +191,11 @@ In this section you can put all configuration values for Flink client. We are us
 required parameter is `restUrl` - which defines location of Flink JobManager
 * `jobManagerTimeout` (e.g. 1m) - timeout used in communication with Flink cluster
 
-###Process  {#model}
+### Process configuration
 
 Configuration of processes has few common keys:
 *  `classPath` - list of files/URLs with jars with model for processes
 *  `timeout` (e.g. 10s)- for synchronous services
-*  `checkpointInterval` - deprecated (use `checkpointConfig.checkpointInterval` instead), e.g. 10m
 *  `checkpointConfig` (more about checkpoint configuration you can find in [Flink Documentation](https://ci.apache.org/projects/flink/flink-docs-release-{{book.flinkMajorVersion}}/api/java/org/apache/flink/streaming/api/environment/CheckpointConfig.html) - only some options are available)
     * `checkpointInterval` - e.g. 10m
     * `minPauseBetweenCheckpoints` - optional, default to half of `checkpointInterval`, e.g. 5m
@@ -206,8 +205,54 @@ Configuration of processes has few common keys:
 If configuration does not contain `checkpointConfig`, `checkpointInterval` and process does not contain `checkpointInterval` in its properties then checkpoints are not enabled for process.
 
 The rest of model configuration depends on your needs - all the properties defined here will be passed to ```ProcessConfigCreator``` as explained in [API](API.md) documentation.
-                                                   
-###Configuration of component providers
+                      
+#### Configuring exception handling (Flink only)
+
+Exception handling can be customized using provided `EspExceptionConsumer`. By default, there are two available:
+- `BrieflyLogging`
+- `VerboselyLogging`
+More of them can be added with custom extensions. By default, basic error metrics are collected. If for some reason
+  it's not desirable, metrics collector can be turned off with `withRateMeter: false` setting.
+
+Some handlers can have additional properties, e.g. built in logging handlers can add custom parameters to log. See example below. 
+
+```
+exceptionHandler {
+  type: BrieflyLogging
+  withRateMeter: false
+  params: {
+    additional: "value1"
+  }
+}    
+```
+
+#### Configuring restart strategies (Flink only)
+         
+We rely on Flink restart strategies described [in documentation](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/execution/task_failure_recovery/).
+It's also possible to configure restart strategies per scenario, using additional properties.           
+
+```
+    restartStrategy {
+      //if scenarioProperty is configured, strategy name will be used from this category: restartType = for-important, etc.
+      //probably scenarioProperty should be configured with FixedValuesEditor
+      //scenarioProperty: restartType. For simple cases one needs to configure only default strategy
+      default: {
+        strategy: fixed-delay
+        attempts: 10
+        delay: 10s
+      }
+      for-important {
+        strategy: fixed-delay
+        attempts: 30
+      }
+      for-very-important {
+        strategy: fixed-delay
+        attempts: 50
+      }
+    }
+```
+                             
+### Configuration of component providers
 
 ```
   componentProviders {
