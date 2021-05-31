@@ -106,9 +106,11 @@ case object LiteralIntegerValidator extends ParameterValidator {
 
 case class MinimalNumberValidator(minimalNumber: BigDecimal) extends ParameterValidator {
 
+  import NumberValidatorHelper._
+
   //Blank value should be not validate - we want to chain validators
   override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
-    if (StringUtils.isBlank(value) || Try(BigDecimal(value)).filter(_ >= minimalNumber).isSuccess)
+    if (StringUtils.isBlank(value) || Try(BigDecimal(normalizeStringToNumber(value))).filter(_ >= minimalNumber).isSuccess)
       valid(Unit)
     else
       invalid(error(paramName, nodeId.id))
@@ -123,9 +125,11 @@ case class MinimalNumberValidator(minimalNumber: BigDecimal) extends ParameterVa
 
 case class MaximalNumberValidator(maximalNumber: BigDecimal) extends ParameterValidator {
 
+  import NumberValidatorHelper._
+
   //Blank value should be not validate - we want to chain validators
   override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
-    if (StringUtils.isBlank(value) || Try(BigDecimal(value)).filter(_ <= maximalNumber).isSuccess)
+    if (StringUtils.isBlank(value) || Try(BigDecimal(normalizeStringToNumber(value))).filter(_ <= maximalNumber).isSuccess)
       valid(Unit)
     else
       invalid(error(paramName, nodeId.id))
@@ -201,4 +205,15 @@ object CustomParameterValidatorDelegate {
     case Nil => throw new RuntimeException(s"Cannot load custom validator: $name")
     case _ => throw new RuntimeException(s"Multiple custom validators with name: $name")
   }
+}
+
+
+object NumberValidatorHelper {
+
+  private val numberRegexp = "[^\\d.]".r
+
+  //It's kind of hack.. Because from SPeL we get string with "L" or others number's mark.
+  //We can't properly cast that kind of string to number, so we have to remove all not digits chars.
+  def normalizeStringToNumber(value: String): String =
+    numberRegexp.replaceAllIn(value, "")
 }

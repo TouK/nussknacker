@@ -41,7 +41,7 @@ export default class JsonEditor extends React.Component<Props, {value: string}> 
       <React.Fragment>
         <AceEditor
           mode={"json"}
-          width={"75%"}
+          width={"70%"}
           minLines={5}
           maxLines={50}
           theme={THEME}
@@ -54,7 +54,7 @@ export default class JsonEditor extends React.Component<Props, {value: string}> 
           wrapEnabled={true}
           setOptions={{
             indentedSoftWrap: false, //removes weird spaces for multiline strings when wrapEnabled=true
-            enableLiveAutocompletion: true,
+            enableLiveAutocompletion: false,
             enableSnippets: false,
             showLineNumbers: true,
             fontSize: 16,
