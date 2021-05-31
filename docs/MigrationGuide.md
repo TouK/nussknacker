@@ -126,6 +126,7 @@ that will be hidden before parameter's evaluation
     - Removed: `getClusterClient` from `FlinkMiniClusterHolder` interface, because of flink compatibility at Flink 1.9 
     - Renamed: `FlinkStreamingProcessRegistrar` to `FlinkProcessManager` 
 * [#1303](https://github.com/TouK/nussknacker/pull/1303) TypedObjectTypingResult has a new field: additionalInfo
+* [#1663](https://github.com/TouK/nussknacker/pull/1663) Default `FlinkExceptionHandler` implementations are deprecated, use `ConfigurableExceptionHandler` instead.
 
 ## In version 0.2.0
 

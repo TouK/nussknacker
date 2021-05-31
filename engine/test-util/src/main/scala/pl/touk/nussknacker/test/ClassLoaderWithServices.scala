@@ -10,7 +10,7 @@ object ClassLoaderWithServices {
     Sometimes we want to test ServiceLoader mechanisms, adding definitions to test classpath can by tricky as it's global for all tests
     This method takes list of pairs (interface, implementation) and creates classloader with appropriate service definitions
    */
-  def withCustomServices[T](services: List[(Class[_], Class[_])], parent: ClassLoader)(action: ClassLoader => T): T = {
+  def withCustomServices[T](services: List[(Class[_], Class[_])], parent: ClassLoader = Thread.currentThread().getContextClassLoader)(action: ClassLoader => T): T = {
 
     val tempDir = Files.createTempDirectory("classLoaderServices")
     val loader = new URLClassLoader(Array(tempDir.toUri.toURL), parent)

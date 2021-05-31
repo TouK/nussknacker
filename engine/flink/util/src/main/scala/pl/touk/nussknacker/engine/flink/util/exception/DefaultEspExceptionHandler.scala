@@ -61,21 +61,6 @@ case class VerboselyLoggingRestartingExceptionHandler(processMetaData: MetaData,
   override protected val consumer = VerboselyLoggingExceptionConsumer(processMetaData, params)
 }
 
-case class VerboselyLoggingExceptionConsumer(processMetaData: MetaData, params: Map[String, String] = Map.empty)
-  extends FlinkEspExceptionConsumer
-    with LazyLogging {
-  override def consume(e: EspExceptionInfo[NonTransientException]): Unit = {
-    logger.error(s"${processMetaData.id}: Exception during processing job, params: $params, context: ${e.context}", e.throwable)
-  }
-}
-
-case class BrieflyLoggingExceptionConsumer(processMetaData: MetaData, params: Map[String, String] = Map.empty)
-  extends FlinkEspExceptionConsumer
-    with LazyLoggingWithTraces {
-  override def consume(e: EspExceptionInfo[NonTransientException]): Unit = {
-    warnWithDebugStack(s"${processMetaData.id}: Exception: ${e.throwable.getMessage} (${e.throwable.getClass.getName}), params: $params", e.throwable)
-  }
-}
 
 trait ConsumingNonTransientExceptions extends LazyLoggingWithTraces {
   self: FlinkEspExceptionHandler =>

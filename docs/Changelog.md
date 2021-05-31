@@ -44,6 +44,7 @@ Nussknacker versions
 * [#1471](https://github.com/TouK/nussknacker/pull/1471) Initial version of session window aggregate added (API may change in the future).
 * [#1631](https://github.com/TouK/nussknacker/pull/1631) Ability to use multiple config files with `nussknacker.config.location` system property
 * [#1512](https://github.com/TouK/nussknacker/pull/1512) `KafkaSourceFactory` is replaced with source that provides additional #inputMeta variable with event's metadata.
+* [#1663](https://github.com/TouK/nussknacker/pull/1663) Flink restart strategies and exception consumers can now be configured.
 
 0.3.1 (not released yet) 
 ------------------------

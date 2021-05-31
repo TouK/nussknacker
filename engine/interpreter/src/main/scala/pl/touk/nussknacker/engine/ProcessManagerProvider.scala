@@ -1,21 +1,19 @@
 package pl.touk.nussknacker.engine
 
 import java.net.URL
-
 import com.typesafe.config.Config
 import net.ceedubs.ficus.readers.ValueReader
-import pl.touk.nussknacker.engine.api.TypeSpecificData
+import pl.touk.nussknacker.engine.api.{NamedServiceProvider, TypeSpecificData}
 import pl.touk.nussknacker.engine.api.deployment.ProcessManager
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
 
-trait ProcessManagerProvider {
+trait ProcessManagerProvider extends NamedServiceProvider {
+
   def createProcessManager(modelData: ModelData, config: Config): ProcessManager
 
   def createQueryableClient(config: Config): Option[QueryableClient]
-
-  def name: String
 
   def emptyProcessMetadata(isSubprocess: Boolean): TypeSpecificData
 
