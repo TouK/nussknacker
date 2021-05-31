@@ -195,7 +195,7 @@
     "jasmine-core": "^3.7.1",
     "jest": "^27.0.1",
     "jest-css-modules": "^2.1.0",
-    "jest-mock": "^27.0.1",
+    "jest-mock": "^27.0.3",
     "less": "^4.1.1",
     "less-loader": "^8.1.1",
     "lint-staged": "^11.0.0",
