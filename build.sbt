@@ -215,17 +215,6 @@ lazy val commonSettings =
       )
     )
 
-val forkSettings = Seq(
-  fork := true,
-  javaOptions := Seq(
-    "-Xmx512M",
-    "-XX:ReservedCodeCacheSize=128M",
-    "-Xss4M",
-    // to prevent travis OOM from killing java
-    "-XX:MaxMetaspaceSize=515G"
-  )
-)
-
 val akkaV = "2.5.21" //same version as in Flink
 val flinkV = "1.11.2"
 val avroV = "1.9.2" // for java time logical types conversions purpose
@@ -547,7 +536,6 @@ lazy val managementJavaSample = (project in engine("flink/management/java_sample
 
 lazy val demo = (project in engine("demo")).
   settings(commonSettings).
-  settings(forkSettings). // without this there are some classloading issues
   settings(assemblySampleSettings("demoModel.jar"): _*).
   settings(publishAssemblySettings: _*).
   settings(
@@ -584,7 +572,6 @@ lazy val generic = (project in engine("flink/generic")).
 
 lazy val process = (project in engine("flink/process")).
   settings(commonSettings).
-  settings(forkSettings). // without this there are some classloading issues
   settings(
     name := "nussknacker-process",
     libraryDependencies ++= {
