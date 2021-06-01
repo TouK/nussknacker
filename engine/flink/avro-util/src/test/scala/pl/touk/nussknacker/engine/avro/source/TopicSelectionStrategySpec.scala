@@ -15,7 +15,7 @@ class TopicSelectionStrategySpec extends KafkaAvroSpecMixin with KafkaAvroSource
 
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
 
-  private lazy val confluentClient = schemaRegistryProvider.createSchemaRegistryClient
+  private lazy val confluentClient = schemaRegistryProvider.schemaRegistryClientFactory.create(kafkaConfig)
 
   test("all topic strategy test") {
     val strategy = new AllTopicsSelectionStrategy()

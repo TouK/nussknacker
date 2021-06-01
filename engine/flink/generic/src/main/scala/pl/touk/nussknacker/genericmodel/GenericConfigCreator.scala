@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 class GenericConfigCreator extends EmptyProcessConfigCreator {
 
   protected def defaultCategory[T](obj: T): WithCategories[T] = WithCategories(obj, "Default")
+  protected val schemaRegistryProvider: SchemaRegistryProvider = createSchemaRegistryProvider
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
     "previousValue" -> defaultCategory(PreviousValueTransformer),
@@ -32,7 +33,6 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
   )
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
-    val schemaRegistryProvider = createSchemaProvider(processObjectDependencies)
     val avroSourceFactory = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
 
     Map(
@@ -44,7 +44,6 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
   }
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
-    val schemaRegistryProvider = createSchemaProvider(processObjectDependencies)
     val kafkaAvroSinkFactory = new KafkaAvroSinkFactory(schemaRegistryProvider, processObjectDependencies)
     val kafkaAvroSinkFactoryWithEditor = new KafkaAvroSinkFactoryWithEditor(schemaRegistryProvider, processObjectDependencies)
 
@@ -78,7 +77,6 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
     pl.touk.nussknacker.engine.version.BuildInfo.toMap.map { case (k, v) => k -> v.toString } + ("name" -> "generic")
   }
 
-  protected def createSchemaProvider(processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider =
-    ConfluentSchemaRegistryProvider(processObjectDependencies)
+  protected def createSchemaRegistryProvider: SchemaRegistryProvider = ConfluentSchemaRegistryProvider()
 
 }

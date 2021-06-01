@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.management.sample
 
-import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import com.typesafe.config.Config
 import io.circe.Encoder
+import net.ceedubs.ficus.Ficus._
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api._
@@ -20,7 +20,8 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelp
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.SlidingAggregateTransformerV2
 import pl.touk.nussknacker.engine.flink.util.transformer.outer.OuterJoinTransformer
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer, UnionWithMemoTransformer}
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter}
+import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordToJsonFormatterFactory, FixedValueDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
@@ -33,9 +34,6 @@ import pl.touk.nussknacker.engine.management.sample.signal.{RemoveLockProcessSig
 import pl.touk.nussknacker.engine.management.sample.source._
 import pl.touk.nussknacker.engine.management.sample.transformer._
 import pl.touk.nussknacker.engine.util.LoggingListener
-import net.ceedubs.ficus.Ficus._
-import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
-import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordToJsonFormatter, ConsumerRecordToJsonFormatterFactory, FixedValueDeserializationSchemaFactory}
 
 object DevProcessConfigCreator {
   val oneElementValue = "One element"
@@ -70,7 +68,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "monitor" -> categories(SinkFactory.noParam(EmptySink)),
       "communicationSink" -> categories(DynamicParametersSink),
       "kafka-string" -> all(new KafkaSinkFactory(new SimpleSerializationSchema[Any](_, String.valueOf), processObjectDependencies)),
-      "kafka-avro" -> all(new KafkaAvroSinkFactoryWithEditor(ConfluentSchemaRegistryProvider(confluentFactory, processObjectDependencies), processObjectDependencies))
+      "kafka-avro" -> all(new KafkaAvroSinkFactoryWithEditor(ConfluentSchemaRegistryProvider(confluentFactory), processObjectDependencies))
     )
   }
 

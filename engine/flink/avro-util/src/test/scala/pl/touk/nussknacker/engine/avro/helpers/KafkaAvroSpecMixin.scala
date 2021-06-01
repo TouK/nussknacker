@@ -37,7 +37,7 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
   protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory
 
   protected lazy val schemaRegistryProvider: ConfluentSchemaRegistryProvider =
-    ConfluentSchemaRegistryProvider(confluentClientFactory, testProcessObjectDependencies)
+    ConfluentSchemaRegistryProvider(confluentClientFactory)
 
   protected def executionConfigPreparerChain(modelData: LocalModelData): ExecutionConfigPreparer =
     ExecutionConfigPreparer.chain(

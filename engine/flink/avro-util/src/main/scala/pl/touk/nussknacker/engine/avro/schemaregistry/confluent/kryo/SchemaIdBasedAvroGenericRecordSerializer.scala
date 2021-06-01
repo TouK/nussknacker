@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
 class SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, kafkaConfig: KafkaConfig)
   extends SerializerWithSpecifiedClass[GenericRecordWithSchemaId](false, false) with DatumReaderWriterMixin {
 
-  @transient private lazy val schemaRegistry = schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig).client
+  @transient private lazy val schemaRegistry = schemaRegistryClientFactory.create(kafkaConfig).client
 
   @transient protected lazy val encoderFactory: EncoderFactory = EncoderFactory.get
 

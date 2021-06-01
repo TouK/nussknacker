@@ -319,8 +319,8 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
   }
 
   private lazy val creator: GenericConfigCreator = new GenericConfigCreator {
-    override protected def createSchemaProvider(processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider =
-      ConfluentSchemaRegistryProvider(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient), processObjectDependencies)
+    override protected def createSchemaRegistryProvider: SchemaRegistryProvider =
+      ConfluentSchemaRegistryProvider(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
   }
 
   private var registrar: FlinkProcessRegistrar = _

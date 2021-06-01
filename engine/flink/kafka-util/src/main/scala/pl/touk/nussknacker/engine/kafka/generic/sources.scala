@@ -93,7 +93,7 @@ object sources {
 
   object FixedRecordFormatterFactoryWrapper {
     def apply(formatter: RecordFormatter): RecordFormatterFactory = new RecordFormatterFactory {
-      override def create[K, V](deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]]): RecordFormatter = formatter
+      override def create[T](kafkaConfig: KafkaConfig, deserializationSchema: KafkaDeserializationSchema[T]): RecordFormatter = formatter
     }
   }
 

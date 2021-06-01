@@ -10,7 +10,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
-import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, RecordFormatter, RecordFormatterFactory}
+import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, KafkaConfig, RecordFormatter, RecordFormatterFactory}
 
 /**
   * RecordFormatter used to encode and decode whole raw kafka event (ConsumerRecord) in json format.
@@ -44,7 +44,7 @@ class ConsumerRecordToJsonFormatter[K: Encoder:Decoder, V: Encoder:Decoder](dese
 
 class ConsumerRecordToJsonFormatterFactory[K:Encoder:Decoder, V:Encoder:Decoder] extends RecordFormatterFactory {
 
-  override def create[KK, VV](deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[KK, VV]]): RecordFormatter = {
+  override def create[T](kafkaConfig: KafkaConfig, deserializationSchema: KafkaDeserializationSchema[T]): RecordFormatter = {
     new ConsumerRecordToJsonFormatter[K, V](deserializationSchema.asInstanceOf[KafkaDeserializationSchema[ConsumerRecord[K, V]]], serializeKeyValue)
   }
 

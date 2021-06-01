@@ -19,7 +19,7 @@ class ConfluentJsonPayloadDeserializerFactory(schemaRegistryClientFactory: Confl
 
   override protected def createValueDeserializer[T: ClassTag](schemaDataOpt: Option[RuntimeSchemaData],
                                                               kafkaConfig: KafkaConfig): Deserializer[T] = {
-    val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
+    val schemaRegistryClient = schemaRegistryClientFactory.create(kafkaConfig)
 
     val specificClass = {
       val clazz = implicitly[ClassTag[T]].runtimeClass

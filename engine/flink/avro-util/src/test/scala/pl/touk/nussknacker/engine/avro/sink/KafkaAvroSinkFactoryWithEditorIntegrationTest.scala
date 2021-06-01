@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.avro.sink
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.{AvroRuntimeException, Schema}
 import org.scalatest.BeforeAndAfter
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.avro.KafkaAvroTestProcessConfigCreator.recordingExceptionHandler
 import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
@@ -92,8 +91,8 @@ class KafkaAvroSinkFactoryWithEditorIntegrationTest extends KafkaAvroSpecMixin w
   private var topicConfigs: Map[String, TopicConfig] = Map.empty
 
   private lazy val processConfigCreator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def createSchemaRegistryProvider(processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider =
-      ConfluentSchemaRegistryProvider(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient), processObjectDependencies)
+    override protected def createSchemaRegistryProvider: SchemaRegistryProvider =
+      ConfluentSchemaRegistryProvider(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
   }
 
   override protected def schemaRegistryClient: SchemaRegistryClient = schemaRegistryMockClient

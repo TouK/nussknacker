@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.avro
 import org.apache.avro.Schema
 import org.apache.kafka.common.serialization.Deserializer
 import org.scalatest.{BeforeAndAfter, FunSuite}
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.KafkaAvroTestProcessConfigCreator.recordingExceptionHandler
 import pl.touk.nussknacker.engine.avro.helpers.{KafkaAvroSpecMixin, SimpleKafkaJsonDeserializer, SimpleKafkaJsonSerializer}
 import pl.touk.nussknacker.engine.avro.schema.PaymentV1
@@ -19,9 +18,9 @@ class KafkaJsonPayloadSpec extends FunSuite with KafkaAvroSpecMixin with BeforeA
   import KafkaAvroIntegrationMockSchemaRegistry._
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def createSchemaRegistryProvider(processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider = {
+    override protected def createSchemaRegistryProvider: SchemaRegistryProvider = {
       val clientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
-      ConfluentSchemaRegistryProvider.jsonPayload(clientFactory, processObjectDependencies, formatKey = false)
+      ConfluentSchemaRegistryProvider.jsonPayload(clientFactory, formatKey = false)
     }
   }
   

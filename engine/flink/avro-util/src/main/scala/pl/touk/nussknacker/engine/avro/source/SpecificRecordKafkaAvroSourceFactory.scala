@@ -37,7 +37,7 @@ class SpecificRecordKafkaAvroSourceFactory[T <: SpecificRecord: ClassTag](schema
       preparedTopic,
       kafkaConfig,
       schemaRegistryProvider.deserializationSchemaFactory,
-      schemaRegistryProvider.recordFormatter,
+      schemaRegistryProvider.recordFormatterFactory,
       None,
       valueSchemaUsedInRuntime
     )

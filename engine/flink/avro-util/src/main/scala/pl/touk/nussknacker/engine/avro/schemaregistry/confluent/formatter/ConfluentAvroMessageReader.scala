@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter
 
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
-
 import java.io.IOException
+import java.nio.charset.StandardCharsets
+
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.serializers.AbstractKafkaAvroSerializer
 import org.apache.avro.Schema.Type
@@ -14,6 +15,7 @@ import org.apache.kafka.common.errors.SerializationException
 import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.schema.StringForcingDatumReaderProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
+import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 /**
   * This class is mainly copy-paste of Confluent's AvroMessageReader but with better constructor handling
@@ -24,7 +26,8 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
   * @param parseKey if key should be parsed
   * @param keySeparator key separator
   */
-private[confluent] class ConfluentAvroMessageReader(schemaRegistryClient: SchemaRegistryClient,
+private[confluent] class ConfluentAvroMessageReader(kafkaConfig: KafkaConfig,
+                                                    schemaRegistryClient: SchemaRegistryClient,
                                                     topic: String,
                                                     parseKey: Boolean,
                                                     keySeparator: String)
@@ -52,8 +55,12 @@ private[confluent] class ConfluentAvroMessageReader(schemaRegistryClient: Schema
         } else {
           val keyString = str.substring(0, keyIndex)
           val valueString = if (keyIndex + 1 > str.length) "" else str.substring(keyIndex + 1)
-          val key = jsonToAvro(keyString, keySchema)
-          val serializedKey = serializeImpl(keySubject, key, new AvroSchema(keySchema))
+          val serializedKey = if (kafkaConfig.useStringForKey) {
+            keyString.getBytes(StandardCharsets.UTF_8)
+          } else {
+            val key = jsonToAvro(keyString, keySchema)
+            serializeImpl(keySubject, key, new AvroSchema(keySchema))
+          }
           val value = jsonToAvro(valueString, valueSchema)
           val serializedValue = serializeImpl(valueSubject, value, new AvroSchema(valueSchema))
           new ConsumerRecord(topic, 0, 0L, serializedKey, serializedValue)

@@ -84,7 +84,7 @@ class KafkaAvroSourceFactory[T:ClassTag](val schemaRegistryProvider: SchemaRegis
       preparedTopic,
       kafkaConfig,
       schemaRegistryProvider.deserializationSchemaFactory,
-      schemaRegistryProvider.recordFormatter,
+      schemaRegistryProvider.recordFormatterFactory,
       keySchemaDataUsedInRuntime,
       valueSchemaUsedInRuntime
     )(typedDependency[MetaData](dependencies), typedDependency[NodeId](dependencies))

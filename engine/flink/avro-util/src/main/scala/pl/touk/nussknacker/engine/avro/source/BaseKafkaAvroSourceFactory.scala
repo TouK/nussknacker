@@ -21,7 +21,7 @@ abstract class BaseKafkaAvroSourceFactory[T: ClassTag](timestampAssigner: Option
   def createSource(preparedTopic: PreparedKafkaTopic,
                    kafkaConfig: KafkaConfig,
                    deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory,
-                   createRecordFormatter: RecordFormatter,
+                   recordFormatterFactory: RecordFormatterFactory,
                    keySchemaDataUsedInRuntime: Option[RuntimeSchemaData],
                    valueSchemaUsedInRuntime: Option[RuntimeSchemaData])
                   (implicit processMetaData: MetaData,
@@ -30,13 +30,14 @@ abstract class BaseKafkaAvroSourceFactory[T: ClassTag](timestampAssigner: Option
     // prepare KafkaDeserializationSchema based on key and value schema
     // TODO: add key-value deserialization as default scenario: create[K, V]
     val deserializationSchema = deserializationSchemaFactory.create[Any, T](kafkaConfig, keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime).asInstanceOf[KafkaDeserializationSchema[T]]
+    val recordFormatter = recordFormatterFactory.create[T](kafkaConfig, deserializationSchema)
 
     new KafkaSource(
       List(preparedTopic),
       kafkaConfig,
       deserializationSchema,
       assignerToUse(kafkaConfig),
-      createRecordFormatter
+      recordFormatter
     )
   }
 

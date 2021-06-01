@@ -22,8 +22,9 @@ object KafkaAvroTestProcessConfigCreator {
 
 class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
 
+  protected val schemaRegistryProvider: SchemaRegistryProvider = createSchemaRegistryProvider
+
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
-    val schemaRegistryProvider = createSchemaRegistryProvider(processObjectDependencies)
     val avroSourceFactory = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
     val avroSpecificSourceFactory = new SpecificRecordKafkaAvroSourceFactory[GeneratedAvroClassWithLogicalTypes](schemaRegistryProvider, processObjectDependencies, None)
 
@@ -39,8 +40,6 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
   }
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
-    val schemaRegistryProvider = createSchemaRegistryProvider(processObjectDependencies)
-
     Map(
       "kafka-avro-raw" -> defaultCategory(new KafkaAvroSinkFactory(schemaRegistryProvider, processObjectDependencies)),
       "kafka-avro" -> defaultCategory(new KafkaAvroSinkFactoryWithEditor(schemaRegistryProvider, processObjectDependencies))
@@ -52,9 +51,7 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
 
   protected def defaultCategory[T](obj: T): WithCategories[T] = WithCategories(obj, "TestAvro")
 
-  protected def createSchemaRegistryProvider(processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider =
-    ConfluentSchemaRegistryProvider(processObjectDependencies)
-
+  protected def createSchemaRegistryProvider: SchemaRegistryProvider = ConfluentSchemaRegistryProvider()
 
 }
 

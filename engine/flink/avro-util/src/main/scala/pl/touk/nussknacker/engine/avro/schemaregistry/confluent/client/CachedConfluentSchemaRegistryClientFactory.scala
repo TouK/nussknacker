@@ -15,7 +15,7 @@ class CachedConfluentSchemaRegistryClientFactory(maximumSize: Long, latestSchema
   //Cache engines are shared by many of CachedConfluentSchemaRegistryClient
   @transient private lazy val caches = new SchemaRegistryCaches(maximumSize, latestSchemaExpirationTime, schemaExpirationTime, versionsCacheExpirationTime)
 
-  override def createSchemaRegistryClient(kafkaConfig: KafkaConfig): ConfluentSchemaRegistryClient = {
+  override def create(kafkaConfig: KafkaConfig): ConfluentSchemaRegistryClient = {
     val client = confluentClient(kafkaConfig)
     new CachedConfluentSchemaRegistryClient(client, caches)
   }

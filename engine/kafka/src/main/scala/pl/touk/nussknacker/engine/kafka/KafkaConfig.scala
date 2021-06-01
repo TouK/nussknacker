@@ -15,7 +15,7 @@ case class KafkaConfig(kafkaAddress: String,
                        topicsExistenceValidationConfig: TopicsExistenceValidationConfig = TopicsExistenceValidationConfig(enabled = false),
                        // By default we want to handle keys as ordinary String. For specific scenario,
                        // when complex key with its own schema is provided, this flag is false
-                       // and all topics related to thic config require both key and value schema definitions.
+                       // and all topics related to this config require both key and value schema definitions.
                        useStringForKey: Boolean = true
                       ) {
 

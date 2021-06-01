@@ -90,7 +90,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
     val topics = extractTopics(params)
     val preparedTopics = topics.map(KafkaUtils.prepareKafkaTopic(_, processObjectDependencies))
     val deserializationSchema = deserializationSchemaFactory.create(topics, kafkaConfig)
-    val formatter = formatterFactory.create(deserializationSchema)
+    val formatter = formatterFactory.create(kafkaConfig, deserializationSchema)
     createSource(params, dependencies, finalState, preparedTopics, kafkaConfig, deserializationSchema, formatter)
   }
 
