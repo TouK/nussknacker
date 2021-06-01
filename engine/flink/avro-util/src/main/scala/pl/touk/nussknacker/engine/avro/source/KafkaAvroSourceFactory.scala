@@ -22,8 +22,7 @@ import scala.reflect.ClassTag
 //TODO: add key-value as default deserailization scenario
 class KafkaAvroSourceFactory[T:ClassTag](val schemaRegistryProvider: SchemaRegistryProvider,
                                          val processObjectDependencies: ProcessObjectDependencies,
-                                         timestampAssigner: Option[TimestampWatermarkHandler[T]],
-                                         useStringAsKey: Boolean)
+                                         timestampAssigner: Option[TimestampWatermarkHandler[T]])
   extends BaseKafkaAvroSourceFactory[T](timestampAssigner) with KafkaAvroBaseTransformer[FlinkSource[T]]{
 
   override type State = KafkaAvroSourceFactoryState
@@ -36,7 +35,7 @@ class KafkaAvroSourceFactory[T:ClassTag](val schemaRegistryProvider: SchemaRegis
       val preparedTopic = prepareTopic(topic)
       val versionOption = parseVersionOption(version)
 
-      val (keyValidationResult, keyErrors) = if (useStringAsKey) {
+      val (keyValidationResult, keyErrors) = if (kafkaConfig.useStringForKey) {
         (Valid((None, Typed[String])), Nil)
       } else {
         // TODO: add key schema versioning
@@ -84,7 +83,7 @@ class KafkaAvroSourceFactory[T:ClassTag](val schemaRegistryProvider: SchemaRegis
     createSource(
       preparedTopic,
       kafkaConfig,
-      schemaRegistryProvider.deserializationSchemaFactory(useStringAsKey),
+      schemaRegistryProvider.deserializationSchemaFactory,
       schemaRegistryProvider.recordFormatter,
       keySchemaDataUsedInRuntime,
       valueSchemaUsedInRuntime

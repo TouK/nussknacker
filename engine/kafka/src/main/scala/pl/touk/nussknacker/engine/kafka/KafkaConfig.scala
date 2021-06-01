@@ -12,7 +12,11 @@ case class KafkaConfig(kafkaAddress: String,
                        // Probably better place for this flag would be configParameters inside global parameters but
                        // for easier usage in AbstractConfluentKafkaAvroDeserializer and ConfluentKafkaAvroDeserializerFactory it is placed here
                        avroKryoGenericRecordSchemaIdSerialization: Option[Boolean] = None,
-                       topicsExistenceValidationConfig: TopicsExistenceValidationConfig = TopicsExistenceValidationConfig(enabled = false)
+                       topicsExistenceValidationConfig: TopicsExistenceValidationConfig = TopicsExistenceValidationConfig(enabled = false),
+                       // By default we want to handle keys as ordinary String. For specific scenario,
+                       // when complex key with its own schema is provided, this flag is false
+                       // and all topics related to thic config require both key and value schema definitions.
+                       useStringForKey: Boolean = true
                       ) {
 
   def forceLatestRead: Option[Boolean] = kafkaEspProperties.flatMap(_.get("forceLatestRead")).map(_.toBoolean)

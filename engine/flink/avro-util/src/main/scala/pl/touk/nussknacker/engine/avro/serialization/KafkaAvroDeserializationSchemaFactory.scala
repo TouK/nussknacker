@@ -37,8 +37,7 @@ trait KafkaAvroDeserializationSchemaFactory extends Serializable {
   * Abstract base implementation of [[KafkaAvroDeserializationSchemaFactory]]
   * which uses Kafka's Deserializer in returned Flink's KeyedDeserializationSchema. It deserializes only value.
   */
-// TODO: remove class and use only KeyValue deserialization with "useStringAsKey" flag.
-abstract class KafkaAvroValueDeserializationSchemaFactory(useStringAsKey: Boolean)
+abstract class KafkaAvroValueDeserializationSchemaFactory
   extends KafkaAvroDeserializationSchemaFactory {
 
   protected def createValueDeserializer[T: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[T]
@@ -72,7 +71,7 @@ abstract class KafkaAvroValueDeserializationSchemaFactory(useStringAsKey: Boolea
   * which uses Kafka's Deserializer in returned Flink's KeyedDeserializationSchema. It deserializes both key and value
   * and wrap it in object
   */
-abstract class KafkaAvroKeyValueDeserializationSchemaFactory(_useStringAsKey: Boolean)
+abstract class KafkaAvroKeyValueDeserializationSchemaFactory
   extends KafkaAvroDeserializationSchemaFactory {
 
   protected type O
@@ -96,7 +95,7 @@ abstract class KafkaAvroKeyValueDeserializationSchemaFactory(_useStringAsKey: Bo
 
     new KafkaDeserializationSchema[O] {
       @transient
-      private lazy val keyDeserializer = if (_useStringAsKey) {
+      private lazy val keyDeserializer = if (kafkaConfig.useStringForKey) {
         {new StringDeserializer}.asInstanceOf[Deserializer[K]]
       } else {
         createKeyDeserializer[K](keySchemaDataOpt, kafkaConfig)
@@ -115,7 +114,7 @@ abstract class KafkaAvroKeyValueDeserializationSchemaFactory(_useStringAsKey: Bo
 
       override def getProducedType: TypeInformation[O] =
         createObjectTypeInformation[K, V](
-          if (_useStringAsKey) {
+          if (kafkaConfig.useStringForKey) {
             TypeInformation.of(classOf[String]).asInstanceOf[TypeInformation[K]]
           } else {
             createKeyTypeInfo[K](keySchemaDataOpt, kafkaConfig)

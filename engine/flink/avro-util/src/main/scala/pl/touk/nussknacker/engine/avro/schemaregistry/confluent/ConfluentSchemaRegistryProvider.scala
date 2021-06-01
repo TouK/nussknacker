@@ -14,11 +14,10 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter}
 
 class ConfluentSchemaRegistryProvider(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
                                       val serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
-                                      _deserializationSchemaFactory: Boolean => KafkaAvroDeserializationSchemaFactory,
+                                      val deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory,
                                       kafkaConfig: KafkaConfig,
                                       formatKey: Boolean) extends SchemaRegistryProvider {
 
-  override def deserializationSchemaFactory(useStringAsKey: Boolean): KafkaAvroDeserializationSchemaFactory = _deserializationSchemaFactory(useStringAsKey)
 
   override def recordFormatter: RecordFormatter =
     ConfluentAvroToJsonFormatter(schemaRegistryClientFactory, kafkaConfig, formatKey)
@@ -54,14 +53,14 @@ object ConfluentSchemaRegistryProvider extends Serializable {
     ConfluentSchemaRegistryProvider(
       schemaRegistryClientFactory,
       new ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory),
-      (useStringAsKey: Boolean) => new ConfluentKafkaAvroDeserializationSchemaFactory(schemaRegistryClientFactory, useStringAsKey),
+      new ConfluentKafkaAvroDeserializationSchemaFactory(schemaRegistryClientFactory),
       processObjectDependencies,
       formatKey)
   }
 
   def apply(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
             serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
-            deserializationSchemaFactory: Boolean => KafkaAvroDeserializationSchemaFactory,
+            deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory,
             processObjectDependencies: ProcessObjectDependencies,
             formatKey: Boolean): ConfluentSchemaRegistryProvider = {
     val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config)
@@ -77,7 +76,7 @@ object ConfluentSchemaRegistryProvider extends Serializable {
                   processObjectDependencies: ProcessObjectDependencies,
                   formatKey: Boolean): ConfluentSchemaRegistryProvider = ConfluentSchemaRegistryProvider(schemaRegistryClientFactory,
     new ConfluentJsonPayloadSerializerFactory(schemaRegistryClientFactory),
-    (useStringAsKey: Boolean) => new ConfluentJsonPayloadDeserializerFactory(schemaRegistryClientFactory, useStringAsKey),
+    new ConfluentJsonPayloadDeserializerFactory(schemaRegistryClientFactory),
     processObjectDependencies,
     formatKey)
 
