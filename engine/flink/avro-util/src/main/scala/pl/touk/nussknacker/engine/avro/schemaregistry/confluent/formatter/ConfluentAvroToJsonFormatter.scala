@@ -90,7 +90,7 @@ class ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory: Confluent
       schemaRegistryClientFactory,
       kafkaConfig,
       schemaRegistryClient => new ConfluentAvroMessageFormatter(schemaRegistryClient.client),
-      schemaRegistryClient => topic => new ConfluentAvroMessageReader(kafkaConfig, schemaRegistryClient.client, topic, formatKey, Separator),
+      schemaRegistryClient => topic => new ConfluentAvroMessageReader(schemaRegistryClient.client, topic, kafkaConfig.useStringForKey, formatKey, Separator),
       formatKey
     )
   }

@@ -15,7 +15,6 @@ import org.apache.kafka.common.errors.SerializationException
 import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.schema.StringForcingDatumReaderProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 /**
   * This class is mainly copy-paste of Confluent's AvroMessageReader but with better constructor handling
@@ -26,9 +25,9 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
   * @param parseKey if key should be parsed
   * @param keySeparator key separator
   */
-private[confluent] class ConfluentAvroMessageReader(kafkaConfig: KafkaConfig,
-                                                    schemaRegistryClient: SchemaRegistryClient,
+private[confluent] class ConfluentAvroMessageReader(schemaRegistryClient: SchemaRegistryClient,
                                                     topic: String,
+                                                    useStringForKey: Boolean,
                                                     parseKey: Boolean,
                                                     keySeparator: String)
   extends AbstractKafkaAvroSerializer {
@@ -55,7 +54,7 @@ private[confluent] class ConfluentAvroMessageReader(kafkaConfig: KafkaConfig,
         } else {
           val keyString = str.substring(0, keyIndex)
           val valueString = if (keyIndex + 1 > str.length) "" else str.substring(keyIndex + 1)
-          val serializedKey = if (kafkaConfig.useStringForKey) {
+          val serializedKey = if (useStringForKey) {
             keyString.getBytes(StandardCharsets.UTF_8)
           } else {
             val key = jsonToAvro(keyString, keySchema)
