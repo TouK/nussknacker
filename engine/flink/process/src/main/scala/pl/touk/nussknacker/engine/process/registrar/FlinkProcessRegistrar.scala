@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.process.registrar
 
 import java.util.concurrent.TimeUnit
-
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.{LazyLogging, Logger}
 import org.apache.flink.api.common.functions.RuntimeContext
@@ -25,11 +24,11 @@ import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
 import pl.touk.nussknacker.engine.process.compiler.{FlinkProcessCompiler, FlinkProcessCompilerData}
 import pl.touk.nussknacker.engine.process.typeinformation.TypeInformationDetectionUtils
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
-import pl.touk.nussknacker.engine.process.util.{MetaDataExtractor, UserClassLoader}
+import pl.touk.nussknacker.engine.process.util.UserClassLoader
 import pl.touk.nussknacker.engine.process.{CheckpointConfig, ExecutionConfigPreparer, FlinkCompatibilityProvider}
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.splittedgraph.end.BranchEnd
-import pl.touk.nussknacker.engine.util.ThreadUtils
+import pl.touk.nussknacker.engine.util.{MetaDataExtractor, ThreadUtils}
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
 import scala.concurrent.duration._

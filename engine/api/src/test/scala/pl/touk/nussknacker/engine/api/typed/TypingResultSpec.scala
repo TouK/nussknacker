@@ -6,8 +6,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObje
 
 import scala.collection.immutable.ListMap
 
-// TODO
-@Ignore
 class TypingResultSpec extends FunSuite with Matchers with OptionValues with Inside {
 
   private val commonSuperTypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Intersection, true)

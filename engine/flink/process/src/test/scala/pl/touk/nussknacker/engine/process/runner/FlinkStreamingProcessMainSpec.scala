@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
-import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
+import pl.touk.nussknacker.engine.flink.util.exception.{BrieflyLoggingExceptionHandler, ConfigurableExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
@@ -73,7 +73,7 @@ class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
 
 
   override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
-    ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
+    ConfigurableExceptionHandlerFactory(processObjectDependencies)
 
 }
 

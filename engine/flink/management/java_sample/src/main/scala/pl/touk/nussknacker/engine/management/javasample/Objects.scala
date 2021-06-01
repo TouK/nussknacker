@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSourceFactory}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
-import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
+import pl.touk.nussknacker.engine.flink.util.exception.{BrieflyLoggingExceptionHandler, ConfigurableExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 
 class Objects extends Serializable {
@@ -31,7 +31,5 @@ class Objects extends Serializable {
   }))
 
   def sink = WithCategories(SinkFactory.noParam(EmptySink))
-
-  def exceptionHandler: ExceptionHandlerFactory = ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
 
 }

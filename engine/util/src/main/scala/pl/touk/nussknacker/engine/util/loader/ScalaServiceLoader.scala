@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.util.loader
 
-import java.util.ServiceLoader
+import pl.touk.nussknacker.engine.api.NamedServiceProvider
 
-import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Multiplicity, One}
+import java.util.ServiceLoader
+import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 
 import scala.reflect.ClassTag
 
@@ -32,5 +33,16 @@ object ScalaServiceLoader {
       case _ => throw new IllegalArgumentException(s"Error at loading class - default: $createDefault, loaded: $loaded")
     }
   }
-}
 
+  def loadNamed[T<:NamedServiceProvider:ClassTag](name: String, classLoader: ClassLoader = Thread.currentThread().getContextClassLoader): T = {
+    val available = load[T](classLoader)
+    val className = implicitly[ClassTag[T]].runtimeClass.getName
+    Multiplicity(available.filter(_.name == name)) match {
+      case Empty() =>
+        throw new IllegalArgumentException(s"Failed to find $className with name '$name', available names: ${available.map(_.name).mkString(", ")}")
+      case One(instance) => instance
+      case Many(more) =>
+        throw new IllegalArgumentException(s"More than one $className with name '$name' found: ${more.map(_.getClass).mkString(", ")}")
+    }
+  }
+}

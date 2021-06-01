@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.compile.{CompilationResult, ProcessValidator}
 import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory.NoParamSourceFactory
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
+import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SessionWindowAggregateTransformer, SlidingAggregateTransformerV2, TumblingAggregateTransformer}
@@ -405,7 +405,7 @@ class Creator(input: List[TestRecord]) extends EmptyProcessConfigCreator {
     = super.expressionConfig(processObjectDependencies).copy(globalProcessVariables = Map("AGG"-> WithCategories(new AggregateHelper)))
 
   override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory
-    = ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
+    = ConfigurableExceptionHandlerFactory(processObjectDependencies)
 }
 
 case class AggregateData(aggregatingNode: String,

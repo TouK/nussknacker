@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.process.SinkFactory;
 import pl.touk.nussknacker.engine.api.process.SourceFactory;
 import pl.touk.nussknacker.engine.api.process.WithCategories;
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender;
+import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory;
 import pl.touk.nussknacker.engine.javaapi.process.ExpressionConfig;
 import pl.touk.nussknacker.engine.javaapi.process.ProcessConfigCreator;
 
@@ -52,7 +53,7 @@ public class TestProcessConfigCreator implements ProcessConfigCreator {
 
     @Override
     public ExceptionHandlerFactory exceptionHandlerFactory(ProcessObjectDependencies processObjectDependencies) {
-        return objects.exceptionHandler();
+        return ConfigurableExceptionHandlerFactory.apply(processObjectDependencies);
     }
 
     @Override

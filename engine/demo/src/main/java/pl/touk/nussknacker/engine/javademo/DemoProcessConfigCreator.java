@@ -23,9 +23,9 @@ import pl.touk.nussknacker.engine.api.process.SinkFactory;
 import pl.touk.nussknacker.engine.api.process.SourceFactory;
 import pl.touk.nussknacker.engine.api.process.WithCategories;
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender;
-import pl.touk.nussknacker.engine.demo.LoggingExceptionHandlerFactory;
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler;
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler;
+import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory;
 import pl.touk.nussknacker.engine.javaapi.process.ExpressionConfig;
 import pl.touk.nussknacker.engine.javaapi.process.ProcessConfigCreator;
 import pl.touk.nussknacker.engine.kafka.consumerrecord.FixedValueDeserializationSchemaFactory;
@@ -133,7 +133,7 @@ public class DemoProcessConfigCreator implements ProcessConfigCreator {
 
     @Override
     public ExceptionHandlerFactory exceptionHandlerFactory(ProcessObjectDependencies processObjectDependencies) {
-        return new LoggingExceptionHandlerFactory(processObjectDependencies.config());
+        return ConfigurableExceptionHandlerFactory.apply(processObjectDependencies);
     }
 
     @Override

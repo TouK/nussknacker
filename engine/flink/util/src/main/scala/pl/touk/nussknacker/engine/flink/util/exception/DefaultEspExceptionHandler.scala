@@ -16,11 +16,6 @@ import pl.touk.nussknacker.engine.util.logging.LazyLoggingWithTraces
 
 import scala.concurrent.duration._
 
-trait DefaultEspExceptionHandler
-  extends FlinkEspExceptionHandler
-    with ConsumingNonTransientExceptions
-    with RestartingProcessAfterDelay
-
 object DefaultEspExceptionHandler {
 
   object DefaultTransientExceptionExtractor
@@ -31,6 +26,7 @@ object DefaultEspExceptionHandler {
 
 }
 
+@deprecated("use ConfigurableExceptionHandlerFactory", "0.4.0")
 case class BrieflyLoggingExceptionHandler(processMetaData: MetaData, params: Map[String, String] = Map.empty)
   extends FlinkEspExceptionHandler
     with ConsumingNonTransientExceptions
@@ -39,7 +35,7 @@ case class BrieflyLoggingExceptionHandler(processMetaData: MetaData, params: Map
   override protected val consumer = new RateMeterExceptionConsumer(BrieflyLoggingExceptionConsumer(processMetaData, params))
 
 }
-
+@deprecated("use ConfigurableExceptionHandlerFactory", "0.4.0")
 case class BrieflyLoggingRestartingExceptionHandler(processMetaData: MetaData, config: Config, params: Map[String, String] = Map.empty)
   extends FlinkEspExceptionHandler
     with ConsumingNonTransientExceptions
@@ -49,6 +45,7 @@ case class BrieflyLoggingRestartingExceptionHandler(processMetaData: MetaData, c
 
 }
 
+@deprecated("use ConfigurableExceptionHandlerFactory", "0.4.0")
 case class VerboselyLoggingExceptionHandler(processMetaData: MetaData, params: Map[String, String] = Map.empty)
   extends FlinkEspExceptionHandler
     with ConsumingNonTransientExceptions
@@ -56,6 +53,7 @@ case class VerboselyLoggingExceptionHandler(processMetaData: MetaData, params: M
   override protected val consumer = new RateMeterExceptionConsumer(VerboselyLoggingExceptionConsumer(processMetaData, params))
 }
 
+@deprecated("use ConfigurableExceptionHandlerFactory", "0.4.0")
 case class VerboselyLoggingRestartingExceptionHandler(processMetaData: MetaData, config: Config, params: Map[String, String] = Map.empty)
   extends FlinkEspExceptionHandler
     with RestartingProcessAfterDelay
@@ -63,21 +61,6 @@ case class VerboselyLoggingRestartingExceptionHandler(processMetaData: MetaData,
   override protected val consumer = VerboselyLoggingExceptionConsumer(processMetaData, params)
 }
 
-case class VerboselyLoggingExceptionConsumer(processMetaData: MetaData, params: Map[String, String] = Map.empty)
-  extends FlinkEspExceptionConsumer
-    with LazyLogging {
-  override def consume(e: EspExceptionInfo[NonTransientException]): Unit = {
-    logger.error(s"${processMetaData.id}: Exception during processing job, params: $params, context: ${e.context}", e.throwable)
-  }
-}
-
-case class BrieflyLoggingExceptionConsumer(processMetaData: MetaData, params: Map[String, String] = Map.empty)
-  extends FlinkEspExceptionConsumer
-    with LazyLoggingWithTraces {
-  override def consume(e: EspExceptionInfo[NonTransientException]): Unit = {
-    warnWithDebugStack(s"${processMetaData.id}: Exception: ${e.throwable.getMessage} (${e.throwable.getClass.getName}), params: $params", e.throwable)
-  }
-}
 
 trait ConsumingNonTransientExceptions extends LazyLoggingWithTraces {
   self: FlinkEspExceptionHandler =>
@@ -87,7 +70,7 @@ trait ConsumingNonTransientExceptions extends LazyLoggingWithTraces {
   protected val nonTransientExceptionExtractor: ExceptionExtractor[NonTransientException] =
     DefaultNonTransientExceptionExtractor
 
-  override def open(runtimeContext: RuntimeContext) = {
+  override def open(runtimeContext: RuntimeContext): Unit = {
     consumer.open(runtimeContext)
   }
 
@@ -95,7 +78,7 @@ trait ConsumingNonTransientExceptions extends LazyLoggingWithTraces {
     defaultHandleException(exceptionInfo)
   }
 
-  final protected def defaultHandleException(exceptionInfo: EspExceptionInfo[_ <: Throwable]) = {
+  final protected def defaultHandleException(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {
     exceptionInfo.throwable match {
       case transientExceptionExtractor(_) =>
         throw exceptionInfo.throwable
@@ -109,7 +92,7 @@ trait ConsumingNonTransientExceptions extends LazyLoggingWithTraces {
     }
   }
 
-  override def close() = {
+  override def close(): Unit = {
     consumer.close()
   }
 
@@ -117,6 +100,7 @@ trait ConsumingNonTransientExceptions extends LazyLoggingWithTraces {
 
 }
 
+@deprecated("use ConfigurableExceptionHandlerFactory", "0.4.0")
 trait RestartingProcessAfterDelay {
   self: FlinkEspExceptionHandler =>
 
@@ -131,6 +115,7 @@ trait RestartingProcessAfterDelay {
   protected def config: Config
 }
 
+@deprecated("use ConfigurableExceptionHandlerFactory", "0.4.0")
 trait NotRestartingProcesses {
   self: FlinkEspExceptionHandler =>
 

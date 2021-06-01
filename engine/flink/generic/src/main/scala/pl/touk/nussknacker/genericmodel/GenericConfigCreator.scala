@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
-import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
+import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SessionWindowAggregateTransformer, SlidingAggregateTransformerV2, TumblingAggregateTransformer}
 import pl.touk.nussknacker.engine.flink.util.transformer.outer.OuterJoinTransformer
@@ -57,7 +57,7 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
   }
 
   override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
-    ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
+    ConfigurableExceptionHandlerFactory(processObjectDependencies)
 
   import pl.touk.nussknacker.engine.util.functions._
 

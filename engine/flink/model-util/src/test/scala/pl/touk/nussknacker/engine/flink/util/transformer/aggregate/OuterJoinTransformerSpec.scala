@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory.NoParamSourceFactory
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.flink.util.exception.BrieflyLoggingExceptionHandler
+import pl.touk.nussknacker.engine.flink.util.exception.{BrieflyLoggingExceptionHandler, ConfigurableExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.flink.util.function.CoProcessFunctionInterceptor
 import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
@@ -159,7 +159,7 @@ object OuterJoinTransformerSpec {
       Map("end" -> WithCategories(SinkFactory.noParam(EmptySink)))
 
     override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
-      ExceptionHandlerFactory.noParams(BrieflyLoggingExceptionHandler(_))
+      ConfigurableExceptionHandlerFactory(processObjectDependencies)
 
     override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig =
       super.expressionConfig(processObjectDependencies).copy(globalProcessVariables = Map("AGG" -> WithCategories(new AggregateHelper)))
