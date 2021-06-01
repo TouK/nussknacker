@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.typed
 
+import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FunSuite, LoneElement, Matchers}
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
@@ -7,7 +8,7 @@ import pl.touk.nussknacker.engine.api.typed.typing._
 
 import scala.collection.immutable.ListMap
 
-class TypedFromInstanceTest extends FunSuite with Matchers with LoneElement {
+class TypedFromInstanceTest extends FunSuite with Matchers with LoneElement with TableDrivenPropertyChecks {
 
   import scala.collection.JavaConverters._
 
@@ -21,10 +22,18 @@ class TypedFromInstanceTest extends FunSuite with Matchers with LoneElement {
     Typed.fromInstance(dict) shouldBe TypedDict(dictId = "id", valueType = TypedTaggedValue(underlying = Typed(classOf[String]).asInstanceOf[SingleTypingResult], tag = "dictValue:id"))
   }
 
-  test("should type typed map") {
-    val typedMap = TypedMap(Map("a" -> 1, "b" -> "string"))
+  test("should type map types") {
+    val fieldTypes = ListMap("a" -> Typed(classOf[java.lang.Integer]), "b" -> Typed(classOf[java.lang.String]))
 
-    Typed.fromInstance(typedMap) shouldBe TypedObjectTypingResult(ListMap("a" -> Typed(classOf[java.lang.Integer]), "b" -> Typed(classOf[java.lang.String])))
+    val data: List[(Object, TypedObjectTypingResult)] = List(
+      (Map("a" -> 1, "b" -> "string"), TypedObjectTypingResult(fieldTypes, TypedClass(classOf[Map[_, _]], List(Typed[String], Unknown)))),
+      (Map("a" -> 1, "b" -> "string").asJava, TypedObjectTypingResult(fieldTypes)),
+      (TypedMap(Map("a" -> 1, "b" -> "string")), TypedObjectTypingResult(fieldTypes))
+    )
+
+    forEvery(Table(("map", "excepted"), data: _*)) { (map, excepted) =>
+      Typed.fromInstance(map) shouldBe excepted
+    }
   }
 
   test("should type empty list") {

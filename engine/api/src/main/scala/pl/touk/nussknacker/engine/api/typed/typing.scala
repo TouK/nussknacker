@@ -165,10 +165,11 @@ object typing {
       obj match {
         case null =>
           Typed.empty
-        case typedMap: TypedMap =>
-          val fieldTypes = typedMap.asScala.map {
-            case (k, v) => k -> fromInstance(v)
-          }.toList
+        case map: Map[String@unchecked, _]  =>
+          val fieldTypes = typeMapFields(map)
+          TypedObjectTypingResult(fieldTypes, TypedClass(classOf[Map[_, _]], List(Typed[String], Unknown)))
+        case javaMap: java.util.Map[String@unchecked, _] =>
+          val fieldTypes = typeMapFields(javaMap.asScala.toMap)
           TypedObjectTypingResult(fieldTypes)
         case list: List[_] =>
           TypedClass(obj.getClass, List(unionOfElementTypes(list)))
@@ -180,6 +181,10 @@ object typing {
           Typed(other.getClass)
       }
     }
+
+    private def typeMapFields(map: Map[String, _]) = map.map {
+        case (k, v) => k -> fromInstance(v)
+      }.toList
 
     private def unionOfElementTypes(list: List[_]): TypingResult = {
       apply(list.map(fromInstance).toSet)
