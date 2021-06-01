@@ -69,7 +69,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
   override def create(config: Config, dbConfig: DbConfig)(implicit system: ActorSystem, materializer: Materializer): (Route, Iterable[AutoCloseable]) = {
     import system.dispatcher
 
-    implicit val sttpBackend: SttpBackend[Future, Nothing, NothingT] = AkkaHttpBackend()
+    implicit val sttpBackend: SttpBackend[Future, Nothing, NothingT] = AkkaHttpBackend.usingActorSystem(system)
 
     val testResultsMaxSizeInBytes = config.getOrElse[Int]("testResultsMaxSizeInBytes", 500 * 1024 * 1000)
     val environment = config.getString("environment")
