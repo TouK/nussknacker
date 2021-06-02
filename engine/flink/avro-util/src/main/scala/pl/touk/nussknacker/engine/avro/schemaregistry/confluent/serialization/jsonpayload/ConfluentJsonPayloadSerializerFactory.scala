@@ -19,7 +19,7 @@ class ConfluentJsonPayloadSerializerFactory(schemaRegistryClientFactory: Conflue
 
   override protected def createValueSerializer(schemaOpt: Option[Schema], version: Option[Int], kafkaConfig: KafkaConfig): Serializer[Any] = {
 
-    val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
+    val schemaRegistryClient = schemaRegistryClientFactory.create(kafkaConfig)
     val avroSchemaOpt = schemaOpt.map(ConfluentUtils.convertToAvroSchema(_, version))
 
     new JsonPayloadKafkaSerializer(kafkaConfig, schemaRegistryClient, new DefaultAvroSchemaEvolution, avroSchemaOpt, isKey = false)

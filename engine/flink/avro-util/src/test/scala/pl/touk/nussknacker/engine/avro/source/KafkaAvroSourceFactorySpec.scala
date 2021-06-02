@@ -27,6 +27,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.{GenericNodeTransforma
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
@@ -159,14 +160,15 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
   }
 
   private def createKeyValueAvroSourceFactory[K: ClassTag, V: ClassTag]: KafkaAvroSourceFactory[Any] = {
-    val deserializerFactory = (useStringAsKey: Boolean) => new TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory[K, V](factory)
+    val deserializerFactory = new TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory[K, V](factory)
     val provider = new ConfluentSchemaRegistryProvider(
       factory,
       new ConfluentAvroSerializationSchemaFactory(factory),
       deserializerFactory,
-      kafkaConfig,
       formatKey = true)
-    new KafkaAvroSourceFactory(provider, testProcessObjectDependencies, None, useStringAsKey = true)
+    new KafkaAvroSourceFactory[Any](provider, testProcessObjectDependencies, None) {
+      override protected def prepareKafkaConfig: KafkaConfig = super.prepareKafkaConfig.copy(useStringForKey = false)
+    }
   }
 
   private def roundTripSingleObject(sourceFactory: KafkaAvroSourceFactory[Any], topic: String, versionOption: SchemaVersionOption, givenObj: Any, expectedSchema: Schema) = {

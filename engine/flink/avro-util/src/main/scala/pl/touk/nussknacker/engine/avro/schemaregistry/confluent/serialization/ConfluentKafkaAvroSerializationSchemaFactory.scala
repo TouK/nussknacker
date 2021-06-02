@@ -14,7 +14,7 @@ trait ConfluentAvroSerializerFactory {
                                     schemaOpt: Option[Schema],
                                     version: Option[Int],
                                     isKey: Boolean): Serializer[T] = {
-    val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
+    val schemaRegistryClient = schemaRegistryClientFactory.create(kafkaConfig)
 
     val avroSchemaOpt = schemaOpt.map(ConfluentUtils.convertToAvroSchema(_, version))
 

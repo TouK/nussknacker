@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.avro
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.Writer
-import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue, SingleInputGenericNodeTransformation, TypedNodeDependencyValue}
@@ -29,11 +28,16 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
 
   def processObjectDependencies: ProcessObjectDependencies
 
-  @transient protected lazy val schemaRegistryClient: SchemaRegistryClient = schemaRegistryProvider.createSchemaRegistryClient
+  @transient protected lazy val schemaRegistryClient: SchemaRegistryClient =
+    schemaRegistryProvider.schemaRegistryClientFactory.create(kafkaConfig)
 
   protected def topicSelectionStrategy: TopicSelectionStrategy = new AllTopicsSelectionStrategy
 
-  protected val kafkaConfig: KafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
+  protected val kafkaConfig: KafkaConfig = prepareKafkaConfig
+
+  protected def prepareKafkaConfig: KafkaConfig = {
+    KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
+  }
 
   protected def getTopicParam(implicit nodeId: NodeId): WithError[Parameter] = {
     val topics = topicSelectionStrategy.getTopics(schemaRegistryClient)

@@ -97,6 +97,12 @@ To see biggest differences please consult the [changelog](Changelog.md).
   // ... and finally
   val sourceFactory = new KafkaSourceFactory[String, SampleValue](schemaFactory, timestampAssigner, formatterFactory, dummyProcessObjectDependencies)
   ```
+* [#1728](https://github.com/TouK/nussknacker/pull/1728)
+  - New flag in `KafkaConfig`: `useStringForKey` determines if event's key should be intepreted as ordinary String (which is default scenario). It is used in deserialization and for generating/parsing test data.
+  - `SchemaRegistryProvider` now provides factories to produce SchemaRegistryClient and RecordFormatter.
+  - For `ConfluentSchemaRegistryProvider` KafkaConfig and ProcessObjectDependencies (that contains KafkaConfig data) are no longer required. That configuration is required by factories in the moment the creation of requested objects
+    that happens in `KafkaAvroSourceFactory` (and that makes that all objects within `KafkaAvroSourceFactory` see the same kafka configuration).
+
 ## In version 0.3.0
 
 * [#1313](https://github.com/TouK/nussknacker/pull/1313) Kafka Avro API passes `KafkaConfig` during `TypeInformation` determining

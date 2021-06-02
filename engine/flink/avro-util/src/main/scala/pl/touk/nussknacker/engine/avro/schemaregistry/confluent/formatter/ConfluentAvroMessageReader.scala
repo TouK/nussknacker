@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter
 
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
-
 import java.io.IOException
+import java.nio.charset.StandardCharsets
+
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.serializers.AbstractKafkaAvroSerializer
 import org.apache.avro.Schema.Type
@@ -26,6 +27,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
   */
 private[confluent] class ConfluentAvroMessageReader(schemaRegistryClient: SchemaRegistryClient,
                                                     topic: String,
+                                                    useStringForKey: Boolean,
                                                     parseKey: Boolean,
                                                     keySeparator: String)
   extends AbstractKafkaAvroSerializer {
@@ -52,8 +54,12 @@ private[confluent] class ConfluentAvroMessageReader(schemaRegistryClient: Schema
         } else {
           val keyString = str.substring(0, keyIndex)
           val valueString = if (keyIndex + 1 > str.length) "" else str.substring(keyIndex + 1)
-          val key = jsonToAvro(keyString, keySchema)
-          val serializedKey = serializeImpl(keySubject, key, new AvroSchema(keySchema))
+          val serializedKey = if (useStringForKey) {
+            keyString.getBytes(StandardCharsets.UTF_8)
+          } else {
+            val key = jsonToAvro(keyString, keySchema)
+            serializeImpl(keySubject, key, new AvroSchema(keySchema))
+          }
           val value = jsonToAvro(valueString, valueSchema)
           val serializedValue = serializeImpl(valueSubject, value, new AvroSchema(valueSchema))
           new ConsumerRecord(topic, 0, 0L, serializedKey, serializedValue)

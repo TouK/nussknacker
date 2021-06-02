@@ -18,7 +18,7 @@ trait ConfluentKafkaAvroDeserializerFactory extends LazyLogging {
                                                 kafkaConfig: KafkaConfig,
                                                 schemaDataOpt: Option[RuntimeSchemaData],
                                                 isKey: Boolean): Deserializer[T] = {
-    val schemaRegistryClient = schemaRegistryClientFactory.createSchemaRegistryClient(kafkaConfig)
+    val schemaRegistryClient = schemaRegistryClientFactory.create(kafkaConfig)
     new ConfluentKafkaAvroDeserializer[T](kafkaConfig, schemaDataOpt, schemaRegistryClient, isKey = isKey, AvroUtils.isSpecificRecord[T])
   }
 
@@ -34,8 +34,8 @@ trait ConfluentKafkaAvroDeserializerFactory extends LazyLogging {
   }
 }
 
-class ConfluentKafkaAvroDeserializationSchemaFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, useStringAsKey: Boolean)
-  extends KafkaAvroValueDeserializationSchemaFactory(useStringAsKey) with ConfluentKafkaAvroDeserializerFactory {
+class ConfluentKafkaAvroDeserializationSchemaFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
+  extends KafkaAvroValueDeserializationSchemaFactory with ConfluentKafkaAvroDeserializerFactory {
 
   override protected def createValueDeserializer[T: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[T]  =
     createDeserializer[T](schemaRegistryClientFactory, kafkaConfig, schemaDataOpt, isKey = false)
@@ -45,8 +45,8 @@ class ConfluentKafkaAvroDeserializationSchemaFactory(schemaRegistryClientFactory
 
 }
 
-abstract class ConfluentKeyValueKafkaAvroDeserializationFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, useStringAsKey: Boolean)
-  extends KafkaAvroKeyValueDeserializationSchemaFactory(useStringAsKey) with ConfluentKafkaAvroDeserializerFactory {
+abstract class ConfluentKeyValueKafkaAvroDeserializationFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
+  extends KafkaAvroKeyValueDeserializationSchemaFactory with ConfluentKafkaAvroDeserializerFactory {
 
   override protected def createKeyDeserializer[K: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[K] =
     createDeserializer[K](schemaRegistryClientFactory, kafkaConfig, schemaDataOpt, isKey = true)
