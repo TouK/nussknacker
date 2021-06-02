@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSink
 import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForInputMeta
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 object KafkaAvroTestProcessConfigCreator {
@@ -34,7 +35,6 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
     )
   }
 
-
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = {
     Map("extractAndTransformTimestmp" -> defaultCategory(ExtractAndTransformTimestamp))
   }
@@ -42,7 +42,8 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
     Map(
       "kafka-avro-raw" -> defaultCategory(new KafkaAvroSinkFactory(schemaRegistryProvider, processObjectDependencies)),
-      "kafka-avro" -> defaultCategory(new KafkaAvroSinkFactoryWithEditor(schemaRegistryProvider, processObjectDependencies))
+      "kafka-avro" -> defaultCategory(new KafkaAvroSinkFactoryWithEditor(schemaRegistryProvider, processObjectDependencies)),
+      "sinkForInputMeta" -> defaultCategory(SinkFactory.noParam(SinkForInputMeta))
     )
   }
 

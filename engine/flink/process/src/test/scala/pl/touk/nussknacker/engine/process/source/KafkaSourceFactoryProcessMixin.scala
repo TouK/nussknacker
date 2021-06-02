@@ -14,9 +14,9 @@ import pl.touk.nussknacker.engine.kafka.source.{InputMeta, KafkaSourceFactory}
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactoryMixin.ObjToSerialize
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
-import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForStrings
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{SinkForInputMeta, SinkForStrings}
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
-import pl.touk.nussknacker.engine.process.source.KafkaSourceFactoryProcessConfigCreator.{SinkForInputMeta, SinkForSampleValue, recordingExceptionHandler}
+import pl.touk.nussknacker.engine.process.source.KafkaSourceFactoryProcessConfigCreator.{SinkForSampleValue, recordingExceptionHandler}
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.NussknackerAssertions

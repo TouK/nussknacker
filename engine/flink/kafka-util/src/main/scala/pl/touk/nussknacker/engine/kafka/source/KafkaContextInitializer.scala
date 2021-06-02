@@ -5,12 +5,10 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{Context, VariableConstants}
 import pl.touk.nussknacker.engine.flink.api.process.{BasicContextInitializingFunction, BasicFlinkGenericContextInitializer}
 import pl.touk.nussknacker.engine.kafka.ConsumerRecordUtils
-
-import scala.reflect.ClassTag
 
 /**
   * KafkaContextInitializer initializes Context variables with data provided in raw kafka event (see [[org.apache.kafka.clients.consumer.ConsumerRecord]]).
@@ -24,7 +22,8 @@ import scala.reflect.ClassTag
   * @tparam K - type of key of deserialized ConsumerRecord
   * @tparam V - type of value of deserialized ConsumerRecord
   */
-class KafkaContextInitializer[K, V, DefinedParameter <: BaseDefinedParameter, State](keyTypingResult: TypingResult, valueTypingResult: TypingResult) extends BasicFlinkGenericContextInitializer[ConsumerRecord[K, V], DefinedParameter, State] {
+class KafkaContextInitializer[K, V, DefinedParameter <: BaseDefinedParameter, State](keyTypingResult: TypingResult, valueTypingResult: TypingResult)
+  extends BasicFlinkGenericContextInitializer[ConsumerRecord[K, V], DefinedParameter, State] {
 
   import scala.collection.JavaConverters._
 
@@ -51,5 +50,3 @@ class KafkaContextInitializer[K, V, DefinedParameter <: BaseDefinedParameter, St
   }
 
 }
-
-

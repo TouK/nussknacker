@@ -119,8 +119,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
     val topicConfig = createAndRegisterTopicConfig("older-newer-filter-older", paymentSchemas)
     val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(2))
     val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "#input", validationMode = Some(ValidationMode.allowRedundantAndOptional))
-    val filerParam = Some("#input.cnt == 0")
-    val process = createAvroProcess(sourceParam, sinkParam, filerParam)
+    val filterParam = Some("#input.cnt == 0")
+    val process = createAvroProcess(sourceParam, sinkParam, filterParam)
 
     runAndVerifyResult(process, topicConfig, PaymentV1.record, PaymentV1.record)
   }
@@ -129,8 +129,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
     val topicConfig = createAndRegisterTopicConfig("two-source-filter-one", paymentSchemas)
     val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(2))
     val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(2), "#input")
-    val filerParam = Some("#input.cnt == 1")
-    val process = createAvroProcess(sourceParam, sinkParam, filerParam)
+    val filterParam = Some("#input.cnt == 1")
+    val process = createAvroProcess(sourceParam, sinkParam, filterParam)
     val events = List(PaymentV1.record, PaymentV2.recordWithData)
 
     runAndVerifyResult(process, topicConfig, events, PaymentV2.recordWithData)
@@ -366,8 +366,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
     val topicConfig = createAndRegisterTopicConfig("avro-string-type-test", paymentSchemas)
     val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(2))
     val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "#input", validationMode = Some(ValidationMode.allowRedundantAndOptional))
-    val filerParam = Some("#input.id.toLowerCase != 'we use here method that only String class has'")
-    val process = createAvroProcess(sourceParam, sinkParam, filerParam)
+    val filterParam = Some("#input.id.toLowerCase != 'we use here method that only String class has'")
+    val process = createAvroProcess(sourceParam, sinkParam, filterParam)
 
     runAndVerifyResult(process, topicConfig, PaymentV1.record, PaymentV1.record)
   }

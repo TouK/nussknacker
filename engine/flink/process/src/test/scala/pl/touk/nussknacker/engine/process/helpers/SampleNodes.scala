@@ -39,7 +39,7 @@ import pl.touk.nussknacker.engine.flink.util.signal.KafkaSignalStreamConnector
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EspDeserializationSchema}
 import pl.touk.nussknacker.engine.kafka.consumerrecord.FixedValueDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.generic.sources.FixedRecordFormatterFactoryWrapper
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
+import pl.touk.nussknacker.engine.kafka.source.{InputMeta, KafkaSourceFactory}
 import pl.touk.nussknacker.engine.kafka.{BasicRecordFormatter, KafkaConfig, KafkaUtils}
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import pl.touk.nussknacker.engine.util.Implicits._
@@ -519,6 +519,16 @@ object SampleNodes {
     override def toFlinkFunction: SinkFunction[Any] = new SinkFunction[Any] {
       override def invoke(value: Any): Unit = {
         add(value.toString)
+      }
+    }
+
+    override def testDataOutput: Option[Any => String] = None
+  }
+
+  case object SinkForInputMeta extends BasicFlinkSink with WithDataList[InputMeta[Any]] {
+    override def toFlinkFunction: SinkFunction[Any] = new SinkFunction[Any] {
+      override def invoke(value: Any): Unit = {
+        add(value.asInstanceOf[InputMeta[Any]])
       }
     }
 

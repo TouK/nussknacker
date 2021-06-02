@@ -6,8 +6,7 @@ import org.apache.flink.api.common.typeutils.TypeSerializer
 import org.apache.flink.api.java.typeutils.MapTypeInfo
 import org.apache.flink.api.scala.typeutils.{CaseClassTypeInfo, ScalaCaseClassSerializer}
 import org.apache.kafka.common.record.TimestampType
-import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetection, TypingResultAwareTypeInformationCustomisation}
 
 import scala.collection.immutable.ListMap
@@ -43,7 +42,7 @@ object InputMeta {
     * Provides definition of whole metadata object, with given key type definition (keyTypingResult).
     * See also [[InputMetaTypeInformationCustomisation]]
     */
-  def withType(keyTypingResult: typing.TypingResult): typing.TypingResult = {
+  def withType(keyTypingResult: TypingResult): TypingResult = {
     // TODO: exclude non-key parameters to trait BaseKafkaInputMetaVariables and use it in TypesInformationExtractor.mandatoryClasses
     new TypedObjectTypingResult(
       ListMap(
@@ -94,7 +93,7 @@ object InputMeta {
   * Implementation of customisation for TypeInformationDetection that provides type information for InputMeta.
   */
 class InputMetaTypeInformationCustomisation extends TypingResultAwareTypeInformationCustomisation {
-  override def customise(originalDetection: TypeInformationDetection): PartialFunction[typing.TypingResult, TypeInformation[_]] = {
+  override def customise(originalDetection: TypeInformationDetection): PartialFunction[TypingResult, TypeInformation[_]] = {
     case a:TypedObjectTypingResult if a.objType.klass == classOf[InputMeta[_]] =>
       InputMeta.typeInformation(originalDetection.forType(a.fields(InputMeta.keyParameterName)))
   }
