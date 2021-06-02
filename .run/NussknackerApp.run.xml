@@ -7,6 +7,10 @@
       <env name="GENERIC_MODEL_DIR" value="../../../engine/flink/generic/target/scala-2.12" />
       <env name="DEMO_MODEL_DIR" value="../../../engine/demo/target/scala-2.12" />
       <env name="STANDALONE_MODEL_DIR" value="../../../engine/standalone/engine/sample/target/scala-2.12" />
+      <env name="DEVELOPMENT_MODE" value="true" />
+      <env name="GRAFANA_URL" value="http://localhost:8081/grafana" />
+      <env name="FLINK_REST_URL" value="http://localhost:3031" />
+      <env name="FLINK_QUERYABLE_STATE_PROXY" value="localhost:3063" />
     </envs>
     <option name="INCLUDE_PROVIDED_SCOPE" value="true" />
     <option name="MAIN_CLASS_NAME" value="pl.touk.nussknacker.ui.NussknackerApp" />
