@@ -119,6 +119,7 @@ To see biggest differences please consult the [changelog](Changelog.md).
     - provide your own `SchemaRegistryProvider` (or use `ConfluentSchemaRegistryProvider`)
     - custom RecordFormatter can be wrapped in `FixedRecordFormatterFactoryWrapper` (or keep `ConfluentAvroToJsonFormatterFactory`)
     - provide timestampAssigner that is able to extract time from `ConsumerRecord[K, V]` (see example above)
+* [#1741](https://github.com/TouK/nussknacker/pull/1741) Minor changes in `KafkaUtils`, `NonTransientException` uses `Instant` instead of `LocalDateTime`
 
 ## In version 0.3.0
 

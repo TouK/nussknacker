@@ -49,6 +49,7 @@ Nussknacker versions
 * [#1651](https://github.com/TouK/nussknacker/pull/1651) `KafkaAvroSourceFactory` provides additional #inputMeta variable with event's metadata.
 * [#1756](https://github.com/TouK/nussknacker/pull/1756) `TypingResultAwareTypeInformationDetection` can be used to serialize aggregates more efficiently
 * [#1772](https://github.com/TouK/nussknacker/pull/1772) Fix for Spel validation when we try use not existing method reference
+* [#1741](https://github.com/TouK/nussknacker/pull/1741) KafkaExceptionConsumer can be configured to send errors to Kafka
 
 0.3.1 (not released yet) 
 ------------------------
