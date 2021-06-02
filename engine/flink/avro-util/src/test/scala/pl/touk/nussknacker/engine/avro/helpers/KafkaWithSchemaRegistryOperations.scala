@@ -21,13 +21,13 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with PatientScalaFuture
   import KafkaZookeeperUtils._
 
   def pushMessage(obj: Any, objectTopic: String, topic: Option[String] = None, timestamp: java.lang.Long = null): RecordMetadata = {
-    val serializedObj = serialize(objectTopic, obj)
+    val serializedObj = valueSerializer.serialize(objectTopic, obj)
     kafkaClient.sendRawMessage(topic.getOrElse(objectTopic), Array.empty, serializedObj, None, timestamp).futureValue
   }
 
-  protected def serialize(objectTopic: String, obj: Any): Array[Byte] = valueSerializer.serialize(objectTopic, obj)
+  protected def keySerializer: Serializer[Any] = new SimpleKafkaAvroSerializer(schemaRegistryClient, isKey = true)
 
-  protected def valueSerializer: Serializer[Any] = new SimpleKafkaAvroSerializer(schemaRegistryClient)
+  protected def valueSerializer: Serializer[Any] = new SimpleKafkaAvroSerializer(schemaRegistryClient, isKey = false)
 
   def pushMessage(kafkaSerializer: KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]], obj: AnyRef, topic: String): RecordMetadata = {
     val record = kafkaSerializer.serialize(StringKeyedValue(null, obj), null)
@@ -79,21 +79,24 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with PatientScalaFuture
     createAndRegisterTopicConfig(name, List(schema))
 
   /**
-   * We should register difference input topic and output topic for each tests, because kafka topics are not cleaned up after test,
-   * and we can have wrong results of tests..
+   * We should register different input topic and output topic for each tests, because kafka topics are not cleaned up after test,
+   * and we can have wrong results of tests.
    */
   protected def createAndRegisterTopicConfig(name: String, schemas: List[Schema]): TopicConfig = {
     val topicConfig = TopicConfig(name, schemas)
 
     schemas.foreach(schema => {
-      val inputSubject = ConfluentUtils.topicSubject(topicConfig.input, topicConfig.isKey)
-      val outputSubject = ConfluentUtils.topicSubject(topicConfig.output, topicConfig.isKey)
-      val parsedSchema = ConfluentUtils.convertToAvroSchema(schema)
-      schemaRegistryClient.register(inputSubject, parsedSchema)
-      schemaRegistryClient.register(outputSubject, parsedSchema)
+      registerSchema(topicConfig.input, schema, topicConfig.isKey)
+      registerSchema(topicConfig.output, schema, topicConfig.isKey)
     })
 
     topicConfig
+  }
+
+  protected def registerSchema(name: String, schema: Schema, isKey: Boolean): Int = {
+    val subject = ConfluentUtils.topicSubject(name, isKey)
+    val parsedSchema = ConfluentUtils.convertToAvroSchema(schema)
+    schemaRegistryClient.register(subject, parsedSchema)
   }
 
   case class TopicConfig(input: String, output: String, schemas: List[Schema], isKey: Boolean)
@@ -127,11 +130,11 @@ class SimpleKafkaAvroDeserializer(schemaRegistryClient: CSchemaRegistryClient, _
   }
 }
 
-class SimpleKafkaAvroSerializer(schemaRegistryVal: CSchemaRegistryClient) extends AbstractConfluentKafkaAvroSerializer(new DefaultAvroSchemaEvolution) with Serializer[Any] {
+class SimpleKafkaAvroSerializer(schemaRegistryVal: CSchemaRegistryClient, isKey: Boolean) extends AbstractConfluentKafkaAvroSerializer(new DefaultAvroSchemaEvolution) with Serializer[Any] {
 
   this.schemaRegistry = schemaRegistryVal
 
-  override def serialize(topic: String, data: Any): Array[Byte] = serialize(None, topic, data, isKey = false)
+  override def serialize(topic: String, data: Any): Array[Byte] = serialize(None, topic, data, isKey)
 }
 
 object SimpleKafkaJsonDeserializer extends Deserializer[Any] {

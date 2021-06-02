@@ -54,12 +54,6 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
 
   protected lazy val nodeId: NodeId = NodeId("mock-node-id")
 
-  protected lazy val keySerializer: KafkaAvroSerializer = {
-    val serializer = new KafkaAvroSerializer(schemaRegistryClient)
-    serializer.configure(Map[String, AnyRef]("schema.registry.url" -> "not_used").asJava, true)
-    serializer
-  }
-
   protected lazy val avroSourceFactory: KafkaAvroSourceFactory[Any] = {
     new KafkaAvroSourceFactory[Any](schemaRegistryProvider, testProcessObjectDependencies, None)
   }

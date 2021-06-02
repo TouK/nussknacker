@@ -11,8 +11,8 @@ import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactoryMixin.{SampleKey, SampleValue, createDeserializer}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, SampleConsumerRecordDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordToJsonFormatterFactory
-import pl.touk.nussknacker.engine.kafka.source.{InputMeta, KafkaSourceFactory}
-import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForStrings
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{SinkForInputMeta, SinkForStrings}
 import pl.touk.nussknacker.engine.process.source.KafkaSourceFactoryProcessConfigCreator._
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.test.WithDataList
@@ -52,16 +52,6 @@ object KafkaSourceFactoryProcessConfigCreator {
     override def toFlinkFunction: SinkFunction[Any] = new SinkFunction[Any] {
       override def invoke(value: Any): Unit = {
         add(value.asInstanceOf[SampleValue])
-      }
-    }
-
-    override def testDataOutput: Option[Any => String] = None
-  }
-
-  case object SinkForInputMeta extends BasicFlinkSink with WithDataList[InputMeta[Any]] {
-    override def toFlinkFunction: SinkFunction[Any] = new SinkFunction[Any] {
-      override def invoke(value: Any): Unit = {
-        add(value.asInstanceOf[InputMeta[Any]])
       }
     }
 

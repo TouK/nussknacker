@@ -177,7 +177,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
   }
 
   private def readLastMessageAndVerify(sourceFactory: KafkaAvroSourceFactory[Any], topic: String, versionOption: SchemaVersionOption, givenObj: Any, expectedSchema: Schema) = {
-    createAndVerifySource(sourceFactory, topic, versionOption, expectedSchema)
+    createValidatedSource(sourceFactory, topic, versionOption, expectedSchema)
       .map(source => {
         val bytes = source.generateTestData(1)
         info("test object: " + new String(bytes, StandardCharsets.UTF_8))
@@ -187,21 +187,19 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
       })
   }
 
-  private def createAndVerifySource(sourceFactory: KafkaAvroSourceFactory[Any], topic: String, versionOption: SchemaVersionOption, expectedSchema: Schema) = {
+  private def createValidatedSource(sourceFactory: KafkaAvroSourceFactory[Any], topic: String, versionOption: SchemaVersionOption, expectedSchema: Schema) = {
     val version = versionOption match {
       case LatestSchemaVersion => SchemaVersionOption.LatestOptionName
-      case ExistingSchemaVersion(version) => version.toString
+      case ExistingSchemaVersion(v) => v.toString
     }
     val validatedState = validateParamsAndInitializeState(sourceFactory, topic, version)
     validatedState.map(state => {
-      val source = sourceFactory
+      sourceFactory
         .implementation(
           Map(KafkaAvroBaseTransformer.TopicParamName -> topic, KafkaAvroBaseTransformer.SchemaVersionParamName -> version),
           List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)),
           state)
         .asInstanceOf[Source[AnyRef] with TestDataGenerator with FlinkSourceTestSupport[AnyRef]]
-
-      source
     })
   }
 
