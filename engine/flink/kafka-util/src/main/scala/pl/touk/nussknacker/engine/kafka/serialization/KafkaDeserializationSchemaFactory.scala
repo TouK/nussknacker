@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.kafka.serialization
 
 import org.apache.flink.api.common.serialization.DeserializationSchema
 import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
-import org.apache.flink.streaming.connectors.kafka.internals.KafkaDeserializationSchemaWrapper
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 /**
@@ -31,5 +30,5 @@ case class FixedKafkaDeserializationSchemaFactory[T](deserializationSchema: Kafk
 
 object FixedKafkaDeserializationSchemaFactory {
   def apply[T](deserializationSchema: DeserializationSchema[T]): FixedKafkaDeserializationSchemaFactory[T] =
-    new FixedKafkaDeserializationSchemaFactory(new KafkaDeserializationSchemaWrapper(deserializationSchema))
+    new FixedKafkaDeserializationSchemaFactory(new NKKafkaDeserializationSchemaWrapper(deserializationSchema))
 }
