@@ -47,26 +47,26 @@ private[confluent] class ConfluentAvroMessageReader(schemaRegistryClient: Schema
       } else {
         val keyString = str.substring(0, keyIndex)
         val valueString = if (keyIndex + 1 > str.length) "" else str.substring(keyIndex + 1)
-        if (keySchema.isDefined && keyString.length == 0) {
-          // key schema is provided but there is no content
-          throw new SerializationException("No key content found in line " + str)
-        } else if (keySchema.isEmpty) {
-          // handle empty key when key parsing is enabled
-          val value = jsonToAvro(valueString, valueSchema.get)
-          val serializedValue = serializeImpl(valueSubject, value, new AvroSchema(valueSchema.get))
-          new ConsumerRecord(topic, 0, 0L, Array[Byte](), serializedValue)
-        }
-        else {
-          // default scenario when key and value is provided
-          val serializedKey = if (useStringForKey) {
-            keyString.getBytes(StandardCharsets.UTF_8)
-          } else {
-            val key = jsonToAvro(keyString, keySchema.get)
-            serializeImpl(keySubject, key, new AvroSchema(keySchema.get))
-          }
-          val value = jsonToAvro(valueString, valueSchema.get)
-          val serializedValue = serializeImpl(valueSubject, value, new AvroSchema(valueSchema.get))
-          new ConsumerRecord(topic, 0, 0L, serializedKey, serializedValue)
+        keySchema match {
+          case None =>
+            val value = jsonToAvro(valueString, valueSchema.get)
+            val serializedValue = serializeImpl(valueSubject, value, new AvroSchema(valueSchema.get))
+            new ConsumerRecord(topic, 0, 0L, Array[Byte](), serializedValue)
+          case Some(_) =>
+            // default scenario when key and value is provided
+            if (keyString.length == 0) {
+              // key schema is provided but there is no content
+              throw new SerializationException("No key content found in line " + str)
+            }
+            val serializedKey = if (useStringForKey) {
+              keyString.getBytes(StandardCharsets.UTF_8)
+            } else {
+              val key = jsonToAvro(keyString, keySchema.get)
+              serializeImpl(keySubject, key, new AvroSchema(keySchema.get))
+            }
+            val value = jsonToAvro(valueString, valueSchema.get)
+            val serializedValue = serializeImpl(valueSubject, value, new AvroSchema(valueSchema.get))
+            new ConsumerRecord(topic, 0, 0L, serializedKey, serializedValue)
         }
       }
     } catch {
