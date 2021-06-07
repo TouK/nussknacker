@@ -73,8 +73,8 @@ class KafkaAvroSourceFactory[K:ClassTag, V:ClassTag](val schemaRegistryProvider:
     (keyValidationResult, valueValidationResult) match {
       case (Valid((keyRuntimeSchema, keyType)), Valid((valueRuntimeSchema, valueType))) =>
         val finalInitializer = new KafkaContextInitializer[K, V, DefinedParameter](keyType, valueType)
-        val finalState = KafkaAvroSourceFactoryState[K, V, DefinedParameter](keyRuntimeSchema, valueRuntimeSchema, finalInitializer)
-        FinalResults(finalInitializer.validationContext(context, dependencies, parameters), state = Some(finalState.asInstanceOf[State]))
+        val finalState = KafkaAvroSourceFactoryState(keyRuntimeSchema, valueRuntimeSchema, finalInitializer)
+        FinalResults(finalInitializer.validationContext(context, dependencies, parameters), state = Some(finalState))
       case _ =>
         prepareSourceFinalErrors(context, dependencies, parameters, keyErrors ++ valueErrors)
     }
@@ -91,15 +91,8 @@ class KafkaAvroSourceFactory[K:ClassTag, V:ClassTag](val schemaRegistryProvider:
 
   override def paramsDeterminedAfterSchema: List[Parameter] = Nil
 
-  private def variableName(dependencies: List[NodeDependencyValue]): String = {
-    dependencies.collectFirst {
-      case OutputVariableNameValue(name) => name
-    }.get
-  }
-
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkSource[ConsumerRecord[K, V]] = {
     val preparedTopic = extractPreparedTopic(params)
-    val version = extractVersionOption(params)
     val KafkaAvroSourceFactoryState(keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime, kafkaContextInitializer) = finalState.get
     createSource(
       preparedTopic,
