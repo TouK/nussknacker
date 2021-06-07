@@ -1,26 +1,21 @@
 package pl.touk.nussknacker.engine.kafka
 
 import java.util.Optional
-
-import com.typesafe.config.ConfigFactory
 import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.api.context.transformation.TypedNodeDependencyValue
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedSingleParameter, TypedNodeDependencyValue}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.ReturningType
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
-import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.{JsonSerializationSchema, SimpleSerializationSchema}
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
+import pl.touk.nussknacker.engine.kafka.source.{KafkaContextInitializer, KafkaSourceFactory}
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactoryMixin._
-import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordToJsonFormatterFactory, FixedValueDeserializationSchemaFactory}
-import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchemaFactory
-import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceFactoryState
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 
@@ -37,9 +32,10 @@ class KafkaSourceFactorySpec extends FunSuite with Matchers with KafkaSpec with 
   }
 
   private def createSource(sourceFactory: KafkaSourceFactory[Any, Any], topic: String): Source[AnyRef] with TestDataGenerator with FlinkSourceTestSupport[AnyRef] with ReturningType = {
+    val finalState = KafkaSourceFactoryState(new KafkaContextInitializer[Any, Any, DefinedSingleParameter](Typed[Any], Typed[Any]))
     val source = sourceFactory
       .implementation(Map(KafkaSourceFactory.TopicParamName -> topic),
-        List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)), None)
+        List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)), Some(finalState))
       .asInstanceOf[Source[AnyRef] with TestDataGenerator with FlinkSourceTestSupport[AnyRef] with ReturningType]
     source
   }

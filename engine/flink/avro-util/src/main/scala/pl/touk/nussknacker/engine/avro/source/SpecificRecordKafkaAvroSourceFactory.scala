@@ -33,16 +33,11 @@ class SpecificRecordKafkaAvroSourceFactory[V <: SpecificRecord: ClassTag](schema
       case step@TransformationStep((TopicParamName, DefinedEagerParameter(topic:String, _)) :: Nil, _) =>
         val preparedTopic = prepareTopic(topic)
 
-        val (keyValidationResult, keyErrors) = if (kafkaConfig.useStringForKey) {
-          (Valid((None, Typed[String])), Nil)
-        } else {
-          determineSchemaAndType(prepareKeySchemaDeterminer(preparedTopic), Some(TopicParamName))
-        }
         // Here do not use prepareValueSchemaDeterminer because we don't want to provide schema version (we want to use the exact schema related to SpecificRecord)
         val valueSchemaDeterminer = new SpecificRecordEmbeddedSchemaDeterminer(classTag[V].runtimeClass.asInstanceOf[Class[_ <: SpecificRecord]])
-        val (valueValidationResult, valueErrors) = determineSchemaAndType(valueSchemaDeterminer, Some(SchemaVersionParamName))
+        val valueValidationResult = determineSchemaAndType(valueSchemaDeterminer, Some(SchemaVersionParamName))
 
-        prepareSourceFinalResults(context, dependencies, step.parameters, keyValidationResult, keyErrors, valueValidationResult, valueErrors)
+        prepareSourceFinalResults(preparedTopic, valueValidationResult, context, dependencies, step.parameters)
 
       case step@TransformationStep((TopicParamName, _) :: Nil, _) =>
         prepareSourceFinalErrors(context, dependencies, step.parameters, List(CustomNodeError("Topic/Version is not defined", Some(TopicParamName))))
