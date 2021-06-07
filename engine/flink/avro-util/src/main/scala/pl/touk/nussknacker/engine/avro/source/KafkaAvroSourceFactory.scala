@@ -5,7 +5,7 @@ import cats.data.Validated.Valid
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue, OutputVariableNameValue}
+import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerParameter, NodeDependencyValue, OutputVariableNameValue}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
@@ -32,26 +32,26 @@ class KafkaAvroSourceFactory[K:ClassTag, V:ClassTag](val schemaRegistryProvider:
                                     (implicit nodeId: NodeId): NodeTransformationDefinition =
     topicParamStep orElse
       schemaParamStep orElse
-      finalStep(context, dependencies) orElse
-      //edge case - for some reason Topic/Version is not defined
-      finalStepForUndefinedParams(context, dependencies)
+      {
+        case step@TransformationStep((TopicParamName, DefinedEagerParameter(topic:String, _)) ::
+          (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::Nil, _) =>
+          //we do casting here and not in case, as version can be null...
+          val preparedTopic = prepareTopic(topic)
+          val versionOption = parseVersionOption(version)
 
-  protected def finalStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
-    case step@TransformationStep((TopicParamName, DefinedEagerParameter(topic:String, _)) ::
-      (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::Nil, _) =>
-      //we do casting here and not in case, as version can be null...
-      val preparedTopic = prepareTopic(topic)
-      val versionOption = parseVersionOption(version)
+          val (keyValidationResult, keyErrors) = if (kafkaConfig.useStringForKey) {
+            (Valid((None, Typed[String])), Nil)
+          } else {
+            determineSchemaAndType(prepareKeySchemaDeterminer(preparedTopic), Some(TopicParamName))
+          }
+          val (valueValidationResult, valueErrors) = determineSchemaAndType(prepareValueSchemaDeterminer(preparedTopic, versionOption), Some(SchemaVersionParamName))
 
-      val (keyValidationResult, keyErrors) = if (kafkaConfig.useStringForKey) {
-        (Valid((None, Typed[String])), Nil)
-      } else {
-        determineSchemaAndType(prepareKeySchemaDeterminer(preparedTopic), Some(TopicParamName))
+          prepareSourceFinalResults(context, dependencies, step.parameters, keyValidationResult, keyErrors, valueValidationResult, valueErrors)
+
+        //edge case - for some reason Topic/Version is not defined
+        case step@TransformationStep((TopicParamName, _) :: (SchemaVersionParamName, _) ::Nil, _) =>
+          prepareSourceFinalErrors(context, dependencies, step.parameters, List(CustomNodeError("Topic/Version is not defined", Some(TopicParamName))))
       }
-      val (valueValidationResult, valueErrors) = determineSchemaAndType(prepareValueSchemaDeterminer(preparedTopic, versionOption), Some(SchemaVersionParamName))
-
-      prepareSourceFinalResults(context, dependencies, step, keyValidationResult, keyErrors, valueValidationResult, valueErrors)
-  }
 
   protected def determineSchemaAndType(keySchemaDeterminer: AvroSchemaDeterminer, paramName: Option[String])(implicit nodeId: NodeId):
   (Validated[SchemaDeterminerError, (Option[RuntimeSchemaData], TypingResult)], List[CustomNodeError]) = {
@@ -62,9 +62,10 @@ class KafkaAvroSourceFactory[K:ClassTag, V:ClassTag](val schemaRegistryProvider:
     (validationResult, errors)
   }
 
+  // Source specific FinalResults
   protected def prepareSourceFinalResults(context: ValidationContext,
                                           dependencies: List[NodeDependencyValue],
-                                          step: TransformationStep,
+                                          parameters: List[(String, DefinedParameter)],
                                           keyValidationResult: Validated[SchemaDeterminerError, (Option[RuntimeSchemaData], TypingResult)],
                                           keyErrors: List[CustomNodeError],
                                           valueValidationResult: Validated[SchemaDeterminerError, (Option[RuntimeSchemaData], TypingResult)],
@@ -73,18 +74,19 @@ class KafkaAvroSourceFactory[K:ClassTag, V:ClassTag](val schemaRegistryProvider:
       case (Valid((keyRuntimeSchema, keyType)), Valid((valueRuntimeSchema, valueType))) =>
         val finalInitializer = new KafkaContextInitializer[K, V, DefinedParameter](keyType, valueType)
         val finalState = KafkaAvroSourceFactoryState[K, V, DefinedParameter](keyRuntimeSchema, valueRuntimeSchema, finalInitializer)
-        FinalResults(finalInitializer.validationContext(context, dependencies, step.parameters), state = Some(finalState.asInstanceOf[State]))
+        FinalResults(finalInitializer.validationContext(context, dependencies, parameters), state = Some(finalState.asInstanceOf[State]))
       case _ =>
-        val initializerWithUnknown = new KafkaContextInitializer[K, V, DefinedParameter](Unknown, Unknown)
-        FinalResults(initializerWithUnknown.validationContext(context, dependencies, step.parameters), keyErrors ++ valueErrors, None)
+        prepareSourceFinalErrors(context, dependencies, parameters, keyErrors ++ valueErrors)
     }
   }
 
-  protected def finalStepForUndefinedParams(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
-    case step@TransformationStep((TopicParamName, _) :: (SchemaVersionParamName, _) ::Nil, _) =>
-      val errors = List(CustomNodeError("Topic/Version is not defined", Some(TopicParamName)))
-      val initializerWithUnknown = new KafkaContextInitializer[K, V, DefinedParameter](Unknown, Unknown)
-      FinalResults(initializerWithUnknown.validationContext(context, dependencies, step.parameters), errors, None)
+  // Source specific FinalResults with errors
+  protected def prepareSourceFinalErrors(context: ValidationContext,
+                                         dependencies: List[NodeDependencyValue],
+                                         parameters: List[(String, DefinedParameter)],
+                                         errors: List[CustomNodeError])(implicit nodeId: NodeId): FinalResults = {
+    val initializerWithUnknown = new KafkaContextInitializer[K, V, DefinedParameter](Unknown, Unknown)
+    FinalResults(initializerWithUnknown.validationContext(context, dependencies, parameters), errors, None)
   }
 
   override def paramsDeterminedAfterSchema: List[Parameter] = Nil
