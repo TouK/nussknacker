@@ -10,6 +10,7 @@ services:
       NUSSKNACKER_CONFIG_FILE: ${NUSSKNACKER_CONFIG_FILE:-/opt/nussknacker/conf/demo-application.conf}
       COUNTS_URL: http://influxdb:8086/query
       JDK_JAVA_OPTIONS: -Xmx256M
+      FLINK_ROCKSDB_CHECKPOINT_DATA_URI: file:///opt/flink/data/rocksdb-checkpoints
     volumes:
       - nussknacker_storage_app:/opt/nussknacker/storage
 
