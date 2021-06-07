@@ -35,6 +35,6 @@ object StateConfiguration {
   case class RocksDBStateBackendConfig(checkpointDataUri: String,
                                        dbStoragePath: Option[String],
                                        increaseParallelism: Option[Int],
-                                       maxOpenFiles: Option[Int], incrementalCheckpoints: Boolean = false)
+                                       maxOpenFiles: Option[Int], incrementalCheckpoints: Boolean = true)
 
 }

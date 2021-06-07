@@ -133,6 +133,7 @@ that will be hidden before parameter's evaluation
     - Renamed: `FlinkStreamingProcessRegistrar` to `FlinkProcessManager` 
 * [#1303](https://github.com/TouK/nussknacker/pull/1303) TypedObjectTypingResult has a new field: additionalInfo
 * [#1663](https://github.com/TouK/nussknacker/pull/1663) Default `FlinkExceptionHandler` implementations are deprecated, use `ConfigurableExceptionHandler` instead.
+* [#1731](https://github.com/TouK/nussknacker/pull/1731) RockDB config's flag `incrementalCheckpoints` is turned on by default.
 
 ## In version 0.2.0
 
