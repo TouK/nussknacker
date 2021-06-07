@@ -44,8 +44,8 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
 
   protected val topicNameSeparator = ","
 
-  protected val kafkaContextInitializer: KafkaContextInitializer[K, V, DefinedParameter, State] =
-    new KafkaContextInitializer[K, V, DefinedParameter, State](Typed[K], Typed[V])
+  protected val kafkaContextInitializer: KafkaContextInitializer[K, V, DefinedParameter] =
+    new KafkaContextInitializer[K, V, DefinedParameter](Typed[K], Typed[V])
 
   override type State = Nothing
 
@@ -70,7 +70,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
       val preparedTopics = topics.map(KafkaUtils.prepareKafkaTopic(_, processObjectDependencies)).map(_.prepared)
       val topicValidationErrors = validateTopics(preparedTopics).swap.toList.map(_.toCustomNodeError(nodeId.id, Some(KafkaSourceFactory.TopicParamName)))
       FinalResults(
-        finalContext = kafkaContextInitializer.validationContext(context, dependencies, step.parameters, step.state),
+        finalContext = kafkaContextInitializer.validationContext(context, dependencies, step.parameters),
         errors = topicValidationErrors)
     }
   }

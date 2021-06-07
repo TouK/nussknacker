@@ -9,7 +9,7 @@ import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchema
 import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, OutputVariableNameValue, TypedNodeDependencyValue}
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedSingleParameter, OutputVariableNameValue, TypedNodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
@@ -231,7 +231,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
   // This transformation can return
   // - the state that contains information on runtime key-value schemas, which is required in createSource.
   // - validation errors
-  private def validateParamsAndInitializeState(sourceFactory: KafkaAvroSourceFactory[Any, Any], topic: String, version: String): Validated[NonEmptyList[ProcessCompilationError], Option[KafkaAvroSourceFactory.KafkaAvroSourceFactoryState]] = {
+  private def validateParamsAndInitializeState(sourceFactory: KafkaAvroSourceFactory[Any, Any], topic: String, version: String): Validated[NonEmptyList[ProcessCompilationError], Option[KafkaAvroSourceFactory.KafkaAvroSourceFactoryState[Any, Any, DefinedSingleParameter]]] = {
     implicit val nodeId: NodeId = NodeId("dummy")
     val parameters = (TopicParamName, DefinedEagerParameter(topic, null)) :: (SchemaVersionParamName, DefinedEagerParameter(version, null)) :: Nil
     val definition = sourceFactory.contextTransformation(ValidationContext(), List(OutputVariableNameValue("dummy")))

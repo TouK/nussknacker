@@ -86,14 +86,11 @@ abstract class KafkaAvroKeyValueDeserializationSchemaFactory
 
       override def isEndOfStream(nextElement: ConsumerRecord[K, V]): Boolean = false
 
+      // TODO: it would be nice to build TypeInformation for ConsumerRecord using createKeyTypeInfo and createValueTypeInfo
+      //  and take kafkaConfig.useStringForKey into consideration.
+      //  Now this class object is always the same because of generic type erasure
       override def getProducedType: TypeInformation[ConsumerRecord[K, V]] = {
-        if (kafkaConfig.useStringForKey) {
-          val clazz = classTag[ConsumerRecord[String, V]].runtimeClass.asInstanceOf[Class[ConsumerRecord[K, V]]]
-          TypeInformation.of(clazz)
-        } else {
-          val clazz = classTag[ConsumerRecord[K, V]].runtimeClass.asInstanceOf[Class[ConsumerRecord[K, V]]]
-          TypeInformation.of(clazz)
-        }
+        TypeInformation.of(classOf[ConsumerRecord[K, V]])
       }
 
     }

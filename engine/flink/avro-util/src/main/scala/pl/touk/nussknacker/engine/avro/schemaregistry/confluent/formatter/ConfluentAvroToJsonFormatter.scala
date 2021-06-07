@@ -15,8 +15,7 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFor
 private[confluent] class ConfluentAvroToJsonFormatter(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
                                                       kafkaConfig: KafkaConfig,
                                                       createFormatter: ConfluentSchemaRegistryClient => ConfluentAvroMessageFormatter,
-                                                      createReader: ConfluentSchemaRegistryClient => String => ConfluentAvroMessageReader,
-                                                      formatKey: Boolean) extends RecordFormatter {
+                                                      createReader: ConfluentSchemaRegistryClient => String => ConfluentAvroMessageReader) extends RecordFormatter {
 
   // it should be created lazy because RecordFormatter is created eager during every process validation
   private lazy val schemaRegistryClient = schemaRegistryClientFactory.create(kafkaConfig)
@@ -28,21 +27,17 @@ private[confluent] class ConfluentAvroToJsonFormatter(schemaRegistryClientFactor
   override def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): Array[Byte] = {
     val bos = new ByteArrayOutputStream()
     val printStream = new PrintStream(bos, true, StandardCharsets.UTF_8.toString)
-    if (formatKey) {
-      printId(record.key(), printStream)
-    }
+    printId(record.key(), printStream)
     printId(record.value(), printStream)
-    if (formatKey) {
-      if (record.key().isEmpty) {
-        printStream.print(Separator)
+    if (record.key().isEmpty) {
+      printStream.print(Separator)
+    } else {
+      if (kafkaConfig.useStringForKey) {
+        printStream.print(new String(record.key(), StandardCharsets.UTF_8))
       } else {
-        if (kafkaConfig.useStringForKey) {
-          printStream.print(new String(record.key(), StandardCharsets.UTF_8))
-        } else {
-          formatter.writeTo(record.key(), printStream)
-        }
-        printStream.print(Separator)
+        formatter.writeTo(record.key(), printStream)
       }
+      printStream.print(Separator)
     }
     formatter.writeTo(record.value(), printStream)
     bos.toByteArray
@@ -60,18 +55,12 @@ private[confluent] class ConfluentAvroToJsonFormatter(schemaRegistryClientFactor
 
   override def parseRecord(topic: String, formatted: Array[Byte]): ConsumerRecord[Array[Byte], Array[Byte]] = {
     val str = new String(formatted, StandardCharsets.UTF_8)
-    val (keySchema, valueSchema, remainingString) = if (formatKey) {
-      val (ks, valueSchemaIdAndRest) = readSchemaId(str)
-      val (vs, rs) = readSchemaId(valueSchemaIdAndRest)
-      (ks, vs, rs)
-    } else {
-      val (vs, rs) = readSchemaId(str)
-      (null, vs, rs)
-    }
+    val (keySchema, valueSchemaIdAndRest) = readSchemaId(str)
+    val (valueSchema, remainingString) = readSchemaId(valueSchemaIdAndRest)
     reader(topic).readMessage(remainingString, keySchema, valueSchema)
   }
 
-  private def readSchemaId(str: String): (Schema, String) = {
+  private def readSchemaId(str: String): (Option[Schema], String) = {
     val separatorIndx = str.indexOf(Separator)
     if (separatorIndx < 0)
       throw new IllegalStateException(s"Cannot find schema id separtor: $Separator in text: $str")
@@ -81,9 +70,9 @@ private[confluent] class ConfluentAvroToJsonFormatter(schemaRegistryClientFactor
       val id = Integer.parseInt(idStr)
       val parsedSchema = schemaRegistryClient.client.getSchemaById(id)
       val schema = ConfluentUtils.extractSchema(parsedSchema)
-      (schema, remaining)
+      (Some(schema), remaining)
     } else {
-      (null, remaining)
+      (None, remaining)
     }
   }
 
@@ -96,15 +85,14 @@ object ConfluentAvroToJsonFormatter {
 
 }
 
-class ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, formatKey: Boolean) extends RecordFormatterFactory {
+class ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory) extends RecordFormatterFactory {
 
   override def create[T](kafkaConfig: KafkaConfig, deserializationSchema: KafkaDeserializationSchema[T]): RecordFormatter = {
     new ConfluentAvroToJsonFormatter(
       schemaRegistryClientFactory,
       kafkaConfig,
       schemaRegistryClient => new ConfluentAvroMessageFormatter(schemaRegistryClient.client),
-      schemaRegistryClient => topic => new ConfluentAvroMessageReader(schemaRegistryClient.client, topic, kafkaConfig.useStringForKey, formatKey, Separator),
-      formatKey
+      schemaRegistryClient => topic => new ConfluentAvroMessageReader(schemaRegistryClient.client, topic, kafkaConfig.useStringForKey, Separator)
     )
   }
 }
