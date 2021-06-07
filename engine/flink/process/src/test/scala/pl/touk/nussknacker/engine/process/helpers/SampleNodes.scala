@@ -661,11 +661,11 @@ object SampleNodes {
 
   object GenericSourceWithCustomVariables extends FlinkSourceFactory[String] with SingleInputGenericNodeTransformation[Source[String]] {
 
-    private class CustomFlinkContextInitializer extends BasicFlinkGenericContextInitializer[String, DefinedParameter, State] {
+    private class CustomFlinkContextInitializer extends BasicFlinkGenericContextInitializer[String, DefinedParameter] {
 
-      override def validationContext(context: ValidationContext, dependencies: List[NodeDependencyValue], parameters: List[(String, DefinedParameter)], state: Option[State])(implicit nodeId: NodeId): ValidationContext = {
+      override def validationContext(context: ValidationContext, dependencies: List[NodeDependencyValue], parameters: List[(String, DefinedParameter)])(implicit nodeId: NodeId): ValidationContext = {
         //Append variable "input"
-        val contextWithInput = super.validationContext(context, dependencies, parameters, state)
+        val contextWithInput = super.validationContext(context, dependencies, parameters)
 
         //Specify additional variables
         val additionalVariables = Map(
@@ -680,7 +680,7 @@ object SampleNodes {
       }
 
       override protected def outputVariableType(context: ValidationContext, dependencies: List[NodeDependencyValue],
-                                                parameters: List[(String, DefinedSingleParameter)], state: Option[Nothing])
+                                                parameters: List[(String, DefinedSingleParameter)])
                                                (implicit nodeId: NodeId): typing.TypingResult = Typed[String]
 
       override def initContext(processId: String, taskName: String): MapFunction[String, Context] = {
@@ -704,14 +704,14 @@ object SampleNodes {
     //There is only one parameter in this source
     private val elementsParamName = "elements"
 
-    private val customContextInitializer: BasicFlinkGenericContextInitializer[String, DefinedParameter, State] = new CustomFlinkContextInitializer
+    private val customContextInitializer: BasicFlinkGenericContextInitializer[String, DefinedParameter] = new CustomFlinkContextInitializer
 
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId)
     : GenericSourceWithCustomVariables.NodeTransformationDefinition = {
       //Component has simple parameters based only on initialParameters.
       case TransformationStep(Nil, _) => NextParameters(initialParameters)
       case step@TransformationStep((`elementsParamName`, _) :: Nil, None) =>
-        FinalResults(customContextInitializer.validationContext(context, dependencies, step.parameters, step.state))
+        FinalResults(customContextInitializer.validationContext(context, dependencies, step.parameters))
     }
 
     override def initialParameters: List[Parameter] = Parameter[java.util.List[String]](`elementsParamName`) :: Nil

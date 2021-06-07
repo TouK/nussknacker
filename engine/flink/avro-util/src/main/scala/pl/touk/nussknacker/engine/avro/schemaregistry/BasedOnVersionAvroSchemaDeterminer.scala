@@ -1,8 +1,6 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry
 
 import cats.data.Validated
-import cats.data.Validated.Valid
-import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, RuntimeSchemaData, SchemaDeterminerError}
 
 class BasedOnVersionAvroSchemaDeterminer(schemaRegistryClient: SchemaRegistryClient,

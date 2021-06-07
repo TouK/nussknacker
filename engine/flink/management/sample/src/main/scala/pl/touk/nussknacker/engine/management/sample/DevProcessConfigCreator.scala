@@ -10,9 +10,11 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactoryWithEditor
+import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
@@ -58,32 +60,45 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
   private def kafkaConfig(config: Config) = KafkaConfig.parseConfig(config)
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
-    val mockConfluent = processObjectDependencies.config.getAs[Boolean](DevProcessConfigCreator.emptyMockedSchemaRegistryProperty).contains(true)
-    val confluentFactory: ConfluentSchemaRegistryClientFactory = if (mockConfluent) {
-      new MockConfluentSchemaRegistryClientFactory(new MockSchemaRegistryClient)
-    } else CachedConfluentSchemaRegistryClientFactory()
-
+    val schemaRegistryProvider = createSchemaRegistryProvider(processObjectDependencies)
     Map(
       "sendSms" -> all(SinkFactory.noParam(EmptySink)),
       "monitor" -> categories(SinkFactory.noParam(EmptySink)),
       "communicationSink" -> categories(DynamicParametersSink),
       "kafka-string" -> all(new KafkaSinkFactory(new SimpleSerializationSchema[Any](_, String.valueOf), processObjectDependencies)),
-      "kafka-avro" -> all(new KafkaAvroSinkFactoryWithEditor(ConfluentSchemaRegistryProvider(confluentFactory), processObjectDependencies))
+      "kafka-avro" -> all(new KafkaAvroSinkFactoryWithEditor(schemaRegistryProvider, processObjectDependencies))
     )
   }
 
   override def listeners(processObjectDependencies: ProcessObjectDependencies) = List(LoggingListener)
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
-    "real-kafka" -> all(simpleStringValueKafkaSource(processObjectDependencies)),
-    "kafka-transaction" -> all(FlinkSourceFactory.noParam(new NoEndingSource)),
-    "boundedSource" -> categories(BoundedSource),
-    "oneSource" -> categories(FlinkSourceFactory.noParam(new OneSource)),
-    "communicationSource" -> categories(DynamicParametersSource),
-    "csv-source" -> categories(FlinkSourceFactory.noParam(new CsvSource)),
-    "genericSourceWithCustomVariables" -> categories(GenericSourceWithCustomVariablesSample),
-    "sql-source" -> categories(SqlSource)
-  )
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
+    val schemaRegistryProvider = createSchemaRegistryProvider(processObjectDependencies)
+    val avroSourceFactory = new KafkaAvroSourceFactory[Any, Any](schemaRegistryProvider, processObjectDependencies, None)
+    Map(
+      "real-kafka" -> all(simpleStringValueKafkaSource(processObjectDependencies)),
+      "real-kafka-avro" -> all(avroSourceFactory),
+      "kafka-transaction" -> all(FlinkSourceFactory.noParam(new NoEndingSource)),
+      "boundedSource" -> categories(BoundedSource),
+      "oneSource" -> categories(FlinkSourceFactory.noParam(new OneSource)),
+      "communicationSource" -> categories(DynamicParametersSource),
+      "csv-source" -> categories(FlinkSourceFactory.noParam(new CsvSource)),
+      "genericSourceWithCustomVariables" -> categories(GenericSourceWithCustomVariablesSample),
+      "sql-source" -> categories(SqlSource)
+    )
+  }
+
+  private def createSchemaRegistryProvider(processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider = {
+    val mockConfluent = processObjectDependencies.config.getAs[Boolean](DevProcessConfigCreator.emptyMockedSchemaRegistryProperty).contains(true)
+    val confluentFactory: ConfluentSchemaRegistryClientFactory =
+      if (mockConfluent) {
+        new MockConfluentSchemaRegistryClientFactory(new MockSchemaRegistryClient)
+      } else {
+        CachedConfluentSchemaRegistryClientFactory()
+      }
+
+    ConfluentSchemaRegistryProvider(confluentFactory)
+  }
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
     "accountService" -> categories(EmptyService).withNodeConfig(SingleNodeConfig.zero.copy(docsUrl = Some("accountServiceDocs"))),

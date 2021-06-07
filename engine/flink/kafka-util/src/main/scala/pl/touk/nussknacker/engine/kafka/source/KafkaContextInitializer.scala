@@ -22,19 +22,19 @@ import pl.touk.nussknacker.engine.kafka.ConsumerRecordUtils
   * @tparam K - type of key of deserialized ConsumerRecord
   * @tparam V - type of value of deserialized ConsumerRecord
   */
-class KafkaContextInitializer[K, V, DefinedParameter <: BaseDefinedParameter, State](keyTypingResult: TypingResult, valueTypingResult: TypingResult)
-  extends BasicFlinkGenericContextInitializer[ConsumerRecord[K, V], DefinedParameter, State] {
+class KafkaContextInitializer[K, V, DefinedParameter <: BaseDefinedParameter](keyTypingResult: TypingResult, valueTypingResult: TypingResult)
+  extends BasicFlinkGenericContextInitializer[ConsumerRecord[K, V], DefinedParameter] {
 
   import scala.collection.JavaConverters._
 
-  override def validationContext(context: ValidationContext, dependencies: List[NodeDependencyValue], parameters: List[(String, DefinedParameter)], state: Option[State])
+  override def validationContext(context: ValidationContext, dependencies: List[NodeDependencyValue], parameters: List[(String, DefinedParameter)])
                                 (implicit nodeId: NodeId): ValidationContext = {
-    val contextWithInput = super.validationContext(context, dependencies, parameters, state)
+    val contextWithInput = super.validationContext(context, dependencies, parameters)
     val inputMetaTypingResult = InputMeta.withType(keyTypingResult)
     contextWithInput.withVariable(VariableConstants.InputMetaVariableName, inputMetaTypingResult, None).getOrElse(contextWithInput)
   }
 
-  override protected def outputVariableType(context: ValidationContext, dependencies: List[NodeDependencyValue], parameters: List[(String, DefinedParameter)], state: Option[State])
+  override protected def outputVariableType(context: ValidationContext, dependencies: List[NodeDependencyValue], parameters: List[(String, DefinedParameter)])
                                            (implicit nodeId: NodeId): TypingResult = valueTypingResult
 
   override def initContext(processId: String, taskName: String): MapFunction[ConsumerRecord[K, V], Context] = {

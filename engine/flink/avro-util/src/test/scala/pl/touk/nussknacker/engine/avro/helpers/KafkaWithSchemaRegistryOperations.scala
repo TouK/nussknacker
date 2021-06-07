@@ -1,8 +1,11 @@
 package pl.touk.nussknacker.engine.avro.helpers
 
+import java.nio.charset.StandardCharsets
+
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.Schema
 import org.apache.flink.streaming.connectors.kafka.{KafkaDeserializationSchema, KafkaSerializationSchema}
+import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
 import org.scalatest.{Assertion, Matchers}
@@ -14,28 +17,32 @@ import pl.touk.nussknacker.engine.kafka.{KafkaClient, KafkaZookeeperUtils}
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.test.PatientScalaFutures
 
-import java.nio.charset.StandardCharsets
-
 trait KafkaWithSchemaRegistryOperations extends Matchers with PatientScalaFutures {
 
   import KafkaZookeeperUtils._
 
-  def pushMessage(obj: Any, objectTopic: String, topic: Option[String] = None, timestamp: java.lang.Long = null): RecordMetadata = {
-    val serializedObj = valueSerializer.serialize(objectTopic, obj)
-    kafkaClient.sendRawMessage(topic.getOrElse(objectTopic), Array.empty, serializedObj, None, timestamp).futureValue
+  def pushMessage(obj: Any, topicToSerialize: String, topicToSend: Option[String] = None, timestamp: java.lang.Long = null): RecordMetadata = {
+    val serializedObj = valueSerializer.serialize(topicToSerialize, obj)
+    kafkaClient.sendRawMessage(topicToSend.getOrElse(topicToSerialize), Array.emptyByteArray, serializedObj, None, timestamp).futureValue
   }
-
-  protected def keySerializer: Serializer[Any] = new SimpleKafkaAvroSerializer(schemaRegistryClient, isKey = true)
-
-  protected def valueSerializer: Serializer[Any] = new SimpleKafkaAvroSerializer(schemaRegistryClient, isKey = false)
 
   def pushMessage(kafkaSerializer: KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]], obj: AnyRef, topic: String): RecordMetadata = {
     val record = kafkaSerializer.serialize(StringKeyedValue(null, obj), null)
     kafkaClient.sendRawMessage(topic, record.key(), record.value()).futureValue
   }
 
+  def pushMessageWithKey(key: Any, value: Any, topicToSerialize: String, topicToSend: Option[String] = None, timestamp: java.lang.Long = null): RecordMetadata = {
+    val serializedKey = keySerializer.serialize(topicToSerialize, key)
+    val serializedValue = valueSerializer.serialize(topicToSerialize, value)
+    kafkaClient.sendRawMessage(topicToSend.getOrElse(topicToSerialize), serializedKey, serializedValue, None, timestamp).futureValue
+  }
+
+  protected def keySerializer: Serializer[Any] = new SimpleKafkaAvroSerializer(schemaRegistryClient, isKey = true)
+
+  protected def valueSerializer: Serializer[Any] = new SimpleKafkaAvroSerializer(schemaRegistryClient, isKey = false)
+
   def consumeAndVerifyMessages(kafkaDeserializer: KafkaDeserializationSchema[_], topic: String, expected: List[Any]): Assertion = {
-    val result = consumeMessages(kafkaDeserializer, topic, expected.length)
+    val result = consumeMessages(kafkaDeserializer, topic, expected.length).map(_.asInstanceOf[ConsumerRecord[Any, Any]].value())
     result shouldBe expected
   }
 

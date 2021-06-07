@@ -97,11 +97,26 @@ To see biggest differences please consult the [changelog](Changelog.md).
   // ... and finally
   val sourceFactory = new KafkaSourceFactory[String, SampleValue](schemaFactory, timestampAssigner, formatterFactory, dummyProcessObjectDependencies)
   ```
-* [#1728](https://github.com/TouK/nussknacker/pull/1728)
+* [#1651](https://github.com/TouK/nussknacker/pull/1651) `KafkaAvroSourceFactory` provides additional #inputMeta variable with event's metadata.
+  - That source now has key and value type parameters. That parameters are relevant for sources handling `SpecificRecord`s. For `GenericRecords` use explicitly `KafkaAvroSourceFactory[Any, Any]`.
+  - `SpecificRecordKafkaAvroSourceFactory` extends whole `KafkaAvroSourceFactory` with context validation and initialization
   - New flag in `KafkaConfig`: `useStringForKey` determines if event's key should be intepreted as ordinary String (which is default scenario). It is used in deserialization and for generating/parsing test data.
   - `SchemaRegistryProvider` now provides factories to produce SchemaRegistryClient and RecordFormatter.
   - For `ConfluentSchemaRegistryProvider` KafkaConfig and ProcessObjectDependencies (that contains KafkaConfig data) are no longer required. That configuration is required by factories in the moment the creation of requested objects
     that happens in `KafkaAvroSourceFactory` (and that makes that all objects within `KafkaAvroSourceFactory` see the same kafka configuration).
+  - Removed:
+    - `with ReturningType` for generic types (this is defined by ValidationContext, see also `KafkaContextInitializer` that allows to return more than one variable)
+    - `KafkaAvroValueDeserializationSchemaFactory` (source requires deserialization to `ConsumerRecord[K, V]`, there are only deserializers based on `KafkaAvroKeyValueDeserializationSchemaFactory`)
+    - `TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory`
+
+  To migrate `KafkaAvroSourceFactory`:
+    - Provide `KafkaConfig` with correct `useStringForKey` flag value. By default we want to handle keys as ordinary String and all topics related to such config require only value schema definitions (key schemas are ignored).
+      For specific scenario, when complex key with its own schema is provided, this flag is false and all topics related to this config require both key and value schema definitions.
+      Example of default KafkaConfig override:
+      `override protected def prepareKafkaConfig: KafkaConfig = super.prepareKafkaConfig.copy(useStringForKey = false)`
+    - provide your own `SchemaRegistryProvider` (or use `ConfluentSchemaRegistryProvider`)
+    - custom RecordFormatter can be wrapped in `FixedRecordFormatterFactoryWrapper` (or keep `ConfluentAvroToJsonFormatterFactory`)
+    - provide timestampAssigner that is able to extract time from `ConsumerRecord[K, V]` (see example above)
 
 ## In version 0.3.0
 
