@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.kafka.validator.CachedTopicsExistenceValidator
 
 import scala.collection.JavaConverters._
 
-trait TopicsExistenceValidator {
+trait TopicsExistenceValidator extends Serializable  {
 
   final def validateTopic(topic: String): Validated[TopicExistenceValidationException, String] = validateTopics(List(topic)).map(_.head)
 
@@ -36,7 +36,7 @@ object CachedTopicsExistenceValidatorConfig {
   val AutoCreateTopicPropertyName = "auto.create.topics.enable"
   val TopicExistenceValidationEnabledPropertyName = "topic.existence.validation.enabled"
   val ValidationEnabledDefault = false
-  val DefaultConfig = CachedTopicsExistenceValidatorConfig(
+  val DefaultConfig: CachedTopicsExistenceValidatorConfig = CachedTopicsExistenceValidatorConfig(
     autoCreateFlagFetchCacheTtl = 5 minutes, topicsFetchCacheTtl = 30 seconds, adminClientTimeout = 500 millis
   )
 }

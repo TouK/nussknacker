@@ -43,8 +43,6 @@ object BasicRecordFormatter {
     BasicRecordFormatter(TestParsingUtils.newLineSplit)
 }
 
-trait RecordFormatterFactory {
-
+trait RecordFormatterFactory extends Serializable {
   def create[T](kafkaConfig: KafkaConfig, deserializationSchema: KafkaDeserializationSchema[T]): RecordFormatter
-
 }
