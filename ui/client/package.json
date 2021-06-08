@@ -160,7 +160,7 @@
     "@types/react-transition-group": "^4.4.1",
     "@types/reactable": "file:local-types/reactable",
     "@types/webpack-env": "^1.16.0",
-    "@typescript-eslint/eslint-plugin": "^4.25.0",
+    "@typescript-eslint/eslint-plugin": "^4.26.1",
     "@typescript-eslint/parser": "^4.25.0",
     "@vue/preload-webpack-plugin": "^2.0.0",
     "@wojtekmaj/enzyme-adapter-react-17": "^0.6.1",
