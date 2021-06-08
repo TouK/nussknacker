@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermar
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka._
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.EmptyMandatoryParameter
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerParameter, DefinedSingleParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition._
@@ -61,6 +62,27 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
       NextParameters(prepareInitialParameters)
   }
 
+  /**
+    * This is kind of hack.. Because checking mandatory is lunched after transformation..
+    * TODO: Remove it after fix in validation
+    */
+  private def topicNullSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
+    case step@TransformationStep((KafkaSourceFactory.TopicParamName, DefinedEagerParameter(null, _)) :: tail, _) =>
+      val kafkaContextInitializer = prepareContextInitializer(step.parameters)
+      val mandatoryError = EmptyMandatoryParameter(
+        "This field is mandatory and can not be empty",
+        "Please fill field for this parameter",
+        KafkaSourceFactory.TopicParamName,
+        nodeId.id
+      )
+
+      FinalResults(
+        finalContext = kafkaContextInitializer.validationContext(context, dependencies, step.parameters),
+        errors = List(mandatoryError),
+        state = Some(KafkaSourceFactoryState(kafkaContextInitializer))
+      )
+  }
+
   protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
     case step@TransformationStep((KafkaSourceFactory.TopicParamName, DefinedEagerParameter(topic: String, _)) :: tailParams, None) =>
       val topics = topic.split(topicNameSeparator).map(_.trim).toList
@@ -83,6 +105,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId)
   : NodeTransformationDefinition =
     initialStep(context, dependencies) orElse
+      topicNullSteps(context, dependencies) orElse
       nextSteps(context ,dependencies)
 
   /**
