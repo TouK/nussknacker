@@ -71,7 +71,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
 
   protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
     case step@TransformationStep((KafkaSourceFactory.TopicParamName, DefinedEagerParameter(topic: String, _)) :: _, None) =>
-      prepareSourceFinalResults(topicsValidationErrors(topic), context, dependencies, step.parameters)
+      prepareSourceFinalResults(context, dependencies, step.parameters, topicsValidationErrors(topic))
     case step@TransformationStep((KafkaSourceFactory.TopicParamName, _) :: _, None) =>
       // Edge case - for some reason Topic is not defined, e.g. when topic does not match DefinedEagerParameter(String, _):
       // 1. FailedToDefineParameter
@@ -80,10 +80,10 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
       prepareSourceFinalErrors(context, dependencies, step.parameters, errors = Nil)
   }
 
-  protected def prepareSourceFinalResults(errors: List[ProcessCompilationError],
-                                          context: ValidationContext,
+  protected def prepareSourceFinalResults(context: ValidationContext,
                                           dependencies: List[NodeDependencyValue],
                                           parameters: List[(String, DefinedParameter)],
+                                          errors: List[ProcessCompilationError],
                                           contextInitializer: Option[KafkaContextInitializer[K, V, DefinedParameter]] = None
                                          )(implicit nodeId: NodeId): FinalResults = {
     val kafkaContextInitializer = contextInitializer.getOrElse(prepareContextInitializer(parameters))

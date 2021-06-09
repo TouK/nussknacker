@@ -42,19 +42,4 @@ class SpecificRecordKafkaAvroSourceFactory[V <: SpecificRecord: ClassTag](schema
       case step@TransformationStep((TopicParamName, _) :: Nil, _) =>
         prepareSourceFinalErrors(context, dependencies, step.parameters, List(CustomNodeError("Topic/Version is not defined", Some(TopicParamName))))
     }
-
-  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkSource[ConsumerRecord[Any, V]] = {
-    val preparedTopic = extractPreparedTopic(params)
-    val KafkaAvroSourceFactoryState(keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime, kafkaContextInitializer) = finalState.get
-    createSource(
-      preparedTopic,
-      kafkaConfig,
-      schemaRegistryProvider.deserializationSchemaFactory,
-      schemaRegistryProvider.recordFormatterFactory,
-      keySchemaDataUsedInRuntime,
-      valueSchemaUsedInRuntime,
-      kafkaContextInitializer
-    )(typedDependency[MetaData](dependencies), typedDependency[NodeId](dependencies))
-  }
-
 }
