@@ -84,7 +84,11 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
     val jsonValueWithMetaWithException: SourceType.Value = Value("kafka-jsonValueWithMeta-withException")
   }
 
-  protected def createProcess(topic: String, sourceType: SourceType.Value, customVariables: Map[String, String] = Map.empty): EspProcess = {
+  protected def createProcess(topic: String,
+                              sourceType: SourceType.Value,
+                              customVariables: Map[String, String] = Map.empty,
+                              topicParamValue: String => String = topic => s"'${topic}'"
+                             ): EspProcess = {
     //should check and recognize all variables based on #input and #inputMeta
     val inputVariables = Map("id" ->" #input.id", "field" -> "#input.field")
     val metaVariables = Map(
@@ -106,7 +110,7 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
     val process = EspProcessBuilder
       .id(s"proc-${topic}")
       .exceptionHandler()
-      .source("procSource", sourceType.toString, KafkaSourceFactory.TopicParamName -> s"'${topic}'")
+      .source("procSource", sourceType.toString, KafkaSourceFactory.TopicParamName -> topicParamValue(topic))
 
     val processWithVariables = checkAllVariables
       .foldRight(process.asInstanceOf[GraphBuilder[EspProcess]])( (variable, builder) =>

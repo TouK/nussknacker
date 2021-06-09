@@ -73,6 +73,10 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
     case step@TransformationStep((KafkaSourceFactory.TopicParamName, DefinedEagerParameter(topic: String, _)) :: _, None) =>
       prepareSourceFinalResults(topicsValidationErrors(topic), context, dependencies, step.parameters)
     case step@TransformationStep((KafkaSourceFactory.TopicParamName, _) :: _, None) =>
+      // Edge case - for some reason Topic is not defined, e.g. when topic does not match DefinedEagerParameter(String, _):
+      // 1. FailedToDefineParameter
+      // 2. not resolved as a valid String
+      // Those errors are identified by parameter validation and handled elsewhere, hence empty list of errors.
       prepareSourceFinalErrors(context, dependencies, step.parameters, errors = Nil)
   }
 
@@ -93,7 +97,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
   protected def prepareSourceFinalErrors(context: ValidationContext,
                                          dependencies: List[NodeDependencyValue],
                                          parameters: List[(String, DefinedParameter)],
-                                         errors: List[CustomNodeError] = Nil)(implicit nodeId: NodeId): FinalResults = {
+                                         errors: List[CustomNodeError])(implicit nodeId: NodeId): FinalResults = {
     val initializerWithUnknown = KafkaContextInitializer.initializerWithUnknown[K, V, DefinedParameter]
     FinalResults(initializerWithUnknown.validationContext(context, dependencies, parameters), errors, None)
   }

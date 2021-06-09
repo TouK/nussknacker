@@ -81,6 +81,28 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
     runAndVerifyResult(process, topicConfig, "fooBar", "fooBar")
   }
 
+  test("should handle invalid expression type for topic") {
+    val topicConfig = createAndRegisterTopicConfig("simple.bad-expression-type", Schema.create(Schema.Type.STRING))
+    val sourceParam = SourceAvroParam.forGeneric(topicConfig, LatestSchemaVersion)
+    val sinkParam = SinkAvroParam(topicConfig, LatestSchemaVersion, "#input")
+    val process = createAvroProcess(sourceParam, sinkParam, sourceTopicParamValue = _ => s"123L")
+
+    intercept[Exception] {
+      runAndVerifyResult(process, topicConfig, "fooBar", "fooBar")
+    }.getMessage should include ("Bad expression type, expected: String, found: Long")
+  }
+
+  test("should handle null value for mandatory parameter") {
+    val topicConfig = createAndRegisterTopicConfig("simple.empty-mandatory-field", Schema.create(Schema.Type.STRING))
+    val sourceParam = SourceAvroParam.forGeneric(topicConfig, LatestSchemaVersion)
+    val sinkParam = SinkAvroParam(topicConfig, LatestSchemaVersion, "#input")
+    val process = createAvroProcess(sourceParam, sinkParam, sourceTopicParamValue = _ => s"")
+
+    intercept[Exception] {
+      runAndVerifyResult(process, topicConfig, "fooBar", "fooBar")
+    }.getMessage should include ("EmptyMandatoryParameter(This field is mandatory and can not be empty")
+  }
+
   test("should read newer compatible event then source requires and save it in older compatible version") {
     val topicConfig = createAndRegisterTopicConfig("newer-older-older", paymentSchemas)
     val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
