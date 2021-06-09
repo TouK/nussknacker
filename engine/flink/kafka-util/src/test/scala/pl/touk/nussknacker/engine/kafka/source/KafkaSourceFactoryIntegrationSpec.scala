@@ -1,9 +1,7 @@
-package pl.touk.nussknacker.engine.process.source
+package pl.touk.nussknacker.engine.kafka.source
 
 import org.apache.kafka.common.record.TimestampType
-import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactoryMixin.{ObjToSerialize, SampleKey, SampleValue}
-import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForInputMeta
 
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 

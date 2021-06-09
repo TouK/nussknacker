@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.process.source
+package pl.touk.nussknacker.engine.kafka.source
 
 import io.circe.{Decoder, Encoder}
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
@@ -9,11 +9,11 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFa
 import pl.touk.nussknacker.engine.flink.api.process.BasicFlinkSink
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactoryMixin.{SampleKey, SampleValue, createDeserializer}
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, SampleConsumerRecordDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordToJsonFormatterFactory
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
-import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{SinkForInputMeta, SinkForStrings}
-import pl.touk.nussknacker.engine.process.source.KafkaSourceFactoryProcessConfigCreator._
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryProcessConfigCreator._
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, SampleConsumerRecordDeserializationSchemaFactory}
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForStrings
+import pl.touk.nussknacker.engine.process.helpers.SinkForType
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.test.WithDataList
 
@@ -48,15 +48,7 @@ class KafkaSourceFactoryProcessConfigCreator(kafkaConfig: KafkaConfig) extends E
 object KafkaSourceFactoryProcessConfigCreator {
   val recordingExceptionHandler = new RecordingExceptionHandler
 
-  case object SinkForSampleValue extends BasicFlinkSink with WithDataList[SampleValue] {
-    override def toFlinkFunction: SinkFunction[Any] = new SinkFunction[Any] {
-      override def invoke(value: Any): Unit = {
-        add(value.asInstanceOf[SampleValue])
-      }
-    }
-
-    override def testDataOutput: Option[Any => String] = None
-  }
+  case object SinkForSampleValue extends SinkForType[SampleValue]
 
   object KafkaConsumerRecordSourceHelper {
 
@@ -105,3 +97,5 @@ object KafkaSourceFactoryProcessConfigCreator {
     }
   }
 }
+
+case object SinkForInputMeta extends SinkForType[InputMeta[Any]]

@@ -1,14 +1,9 @@
 package pl.touk.nussknacker.engine.process.helpers
 
-import java.nio.charset.StandardCharsets
-import java.time.Duration
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.{Date, Optional, UUID}
 
 import cats.data.Validated.Valid
 import com.github.ghik.silencer.silent
 import io.circe.generic.JsonCodec
-import javax.annotation.Nullable
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.{FilterFunction, MapFunction}
@@ -17,35 +12,30 @@ import org.apache.flink.streaming.api.functions.co.RichCoMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.scala.{DataStream, _}
 import org.apache.flink.streaming.api.windowing.time.Time
-import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation._
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, OutputVar, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType, TypedMap, typing}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{BasicContextInitializingFunction, _}
-import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
-import pl.touk.nussknacker.engine.flink.util.signal.KafkaSignalStreamConnector
-import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EspDeserializationSchema}
-import pl.touk.nussknacker.engine.kafka.consumerrecord.FixedValueDeserializationSchemaFactory
-import pl.touk.nussknacker.engine.kafka.generic.sources.FixedRecordFormatterFactoryWrapper
-import pl.touk.nussknacker.engine.kafka.source.{InputMeta, KafkaSourceFactory}
-import pl.touk.nussknacker.engine.kafka.{BasicRecordFormatter, KafkaConfig, KafkaUtils}
+import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
-import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.test.WithDataList
 
+import java.time.Duration
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.{Date, Optional, UUID}
+import javax.annotation.Nullable
 import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
@@ -376,25 +366,10 @@ object SampleNodes {
     }
   }
 
-
-  object CustomSignalReader extends CustomStreamTransformer {
-
-    @SignalTransformer(signalClass = classOf[TestProcessSignalFactory])
-    @MethodToInvoke(returnType = classOf[Void])
-    def execute() =
-      FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
-        context.signalSenderProvider.get[TestProcessSignalFactory]
-          .connectWithSignals(start, context.metaData.id, context.nodeId, new EspDeserializationSchema(identity))
-          .map((a:Context) => ValueWithContext("", a),
-                (_:Array[Byte]) => ValueWithContext[AnyRef]("", Context("id")))
-    })
-  }
-
   object TransformerWithTime extends CustomStreamTransformer {
 
     override def clearsContext = true
 
-    @SignalTransformer(signalClass = classOf[TestProcessSignalFactory])
     @MethodToInvoke(returnType = classOf[java.lang.Integer])
     def execute(@ParamName("seconds") seconds: Int) =
       FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
@@ -417,7 +392,7 @@ object SampleNodes {
   }
 
   object OptionalEndingCustom extends CustomStreamTransformer {
-    
+
     override def canBeEnding: Boolean = true
 
     @MethodToInvoke
@@ -427,16 +402,6 @@ object SampleNodes {
         afterMap.addSink(element => MockService.add(element.value))
         afterMap
       })
-
-  }
-  
-  class TestProcessSignalFactory(val kafkaConfig: KafkaConfig, val signalsTopic: String)
-    extends FlinkProcessSignalSender with KafkaSignalStreamConnector {
-
-    @MethodToInvoke
-    def sendSignal()(processId: String): Unit = {
-      KafkaUtils.sendToKafkaWithTempProducer(signalsTopic, Array.empty[Byte], "".getBytes(StandardCharsets.UTF_8))(kafkaConfig)
-    }
 
   }
 
@@ -503,37 +468,12 @@ object SampleNodes {
     }
   }
 
-  case object SinkForInts extends BasicFlinkSink with WithDataList[Int] {
-
-    override def toFlinkFunction: SinkFunction[Any] = new SinkFunction[Any] {
-      override def invoke(value: Any): Unit = {
-        add(value.toString.toInt)
-      }
-    }
-
-    //stupid but have to make an error :|
+  case object SinkForInts extends SinkForType[Int] {
+    //stupid but have to make an error in tests :|
     override def testDataOutput: Option[Any => String] = Some(_.toString.toInt.toString)
   }
 
-  case object SinkForStrings extends BasicFlinkSink with WithDataList[String] {
-    override def toFlinkFunction: SinkFunction[Any] = new SinkFunction[Any] {
-      override def invoke(value: Any): Unit = {
-        add(value.toString)
-      }
-    }
-
-    override def testDataOutput: Option[Any => String] = None
-  }
-
-  case object SinkForInputMeta extends BasicFlinkSink with WithDataList[InputMeta[Any]] {
-    override def toFlinkFunction: SinkFunction[Any] = new SinkFunction[Any] {
-      override def invoke(value: Any): Unit = {
-        add(value.asInstanceOf[InputMeta[Any]])
-      }
-    }
-
-    override def testDataOutput: Option[Any => String] = None
-  }
+  case object SinkForStrings extends SinkForType[String]
 
   object EmptyService extends Service {
     def invoke(): Future[Unit.type] = Future.successful(Unit)
@@ -853,11 +793,5 @@ object SampleNodes {
   }
 
   @JsonCodec case class KeyValue(key: String, value: Int, date: Long)
-
-  class KeyValueKafkaSourceFactory(processObjectDependencies: ProcessObjectDependencies) extends KafkaSourceFactory[String, KeyValue](
-              new FixedValueDeserializationSchemaFactory(new EspDeserializationSchema[KeyValue](e => CirceUtil.decodeJsonUnsafe[KeyValue](e))),
-              Some(outOfOrdernessTimestampExtractor[ConsumerRecord[String, KeyValue]](_.value().date)),
-              FixedRecordFormatterFactoryWrapper(BasicRecordFormatter()),
-              processObjectDependencies)
 
 }

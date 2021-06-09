@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.avro
 
-import java.nio.charset.StandardCharsets
+import io.circe.generic.JsonCodec
 
+import java.nio.charset.StandardCharsets
 import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
@@ -21,8 +22,6 @@ import pl.touk.nussknacker.engine.avro.schemaregistry._
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
-import pl.touk.nussknacker.engine.process.helpers.SampleNodes
-import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForInputMeta
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -415,7 +414,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
     kafkaClient.createTopic(topicConfig.output, partitions = 1)
 
     import io.circe.syntax._
-    val serializedKey = SampleNodes.SimpleJsonRecord("lorem", "ipsum").asJson.noSpaces.getBytes(StandardCharsets.UTF_8)
+    val serializedKey = SimpleJsonRecord("lorem", "ipsum").asJson.noSpaces.getBytes(StandardCharsets.UTF_8)
     val serializedValue = valueSerializer.serialize(topicConfig.input, Product.record)
     kafkaClient.sendRawMessage(topicConfig.input, serializedKey, serializedValue).futureValue
 
@@ -458,6 +457,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
     results should contain (expectedInputMeta)
   }
 }
+
+@JsonCodec case class SimpleJsonRecord(id: String, field: String)
 
 object KafkaAvroIntegrationMockSchemaRegistry {
 

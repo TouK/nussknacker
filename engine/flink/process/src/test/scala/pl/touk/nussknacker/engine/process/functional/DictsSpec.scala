@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.process.functional
 
 import java.util.Date
-
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum

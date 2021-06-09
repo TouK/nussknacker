@@ -4,9 +4,9 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.flink.serialization.FlinkTypeInformationSerializationMixin
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSourceFactoryMixin, KafkaSpec, SampleConsumerRecordDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactoryMixin.{SampleKey, SampleValue, sampleKeyJsonDeserializer, sampleValueJsonDeserializer}
-import pl.touk.nussknacker.engine.kafka.serialization.FlinkTypeInformationSerializationMixin
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 
 class ConsumerRecordDeserializationSpec extends FunSuite with Matchers with KafkaSpec with KafkaSourceFactoryMixin with FlinkTypeInformationSerializationMixin {

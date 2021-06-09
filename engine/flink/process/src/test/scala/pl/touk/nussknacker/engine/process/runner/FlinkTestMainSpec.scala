@@ -309,7 +309,8 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     SinkForInts.data should have length 0
   }
 
-  test("be able to test process with signals") {
+  //TODO: remove it
+  ignore("be able to test process with signals") {
     val process =
       EspProcessBuilder
         .id("proc1")
@@ -319,7 +320,6 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
         .sink("out", "#input.value1", "monitor")
 
     val input = SimpleRecord("0", 1, "2", new Date(3), Some(4), 5, "6")
-
 
     val results = runFlinkTest(process, TestData(List("0|1|2|3|4|5|6").mkString("\n")))
 

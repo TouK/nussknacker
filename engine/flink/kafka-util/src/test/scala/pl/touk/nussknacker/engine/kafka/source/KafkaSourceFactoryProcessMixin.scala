@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.process.source
+package pl.touk.nussknacker.engine.kafka.source
 
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
@@ -10,13 +10,12 @@ import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactoryMixin
-import pl.touk.nussknacker.engine.kafka.source.{InputMeta, KafkaSourceFactory}
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactoryMixin.ObjToSerialize
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryProcessConfigCreator.{SinkForSampleValue, recordingExceptionHandler}
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
-import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{SinkForInputMeta, SinkForStrings}
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForStrings
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
-import pl.touk.nussknacker.engine.process.source.KafkaSourceFactoryProcessConfigCreator.{SinkForSampleValue, recordingExceptionHandler}
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.NussknackerAssertions
