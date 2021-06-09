@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
 import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeployment, PeriodicProcessDeploymentStatus}
-import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, PeriodicProcessListener}
+import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, PeriodicProcessListener, PeriodicProcessListenerFactory}
 import slick.jdbc
 import slick.jdbc.JdbcProfile
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
@@ -30,7 +30,7 @@ object PeriodicProcessManager {
             flinkConfig: FlinkConfig,
             originalConfig: Config,
             modelData: ModelData,
-            listener: PeriodicProcessListener,
+            listenerFactory: PeriodicProcessListenerFactory,
             additionalDeploymentDataProvider: AdditionalDeploymentDataProvider): PeriodicProcessManager = {
     implicit val system: ActorSystem = ActorSystem("periodic-process-manager-provider")
     implicit val ec: ExecutionContext = ExecutionContext.global
@@ -43,7 +43,7 @@ object PeriodicProcessManager {
     val (db: jdbc.JdbcBackend.DatabaseDef, dbProfile: JdbcProfile) = DbInitializer.init(periodicBatchConfig.db)
     val scheduledProcessesRepository = new SlickPeriodicProcessesRepository(db, dbProfile, clock)
     val jarManager = FlinkJarManager(flinkConfig, periodicBatchConfig, modelData, enrichDeploymentWithJarDataFactory(originalConfig))
-    val service = new PeriodicProcessService(delegate, jarManager, scheduledProcessesRepository, listener, additionalDeploymentDataProvider, clock)
+    val service = new PeriodicProcessService(delegate, jarManager, scheduledProcessesRepository, listenerFactory.create(originalConfig), additionalDeploymentDataProvider, clock)
     system.actorOf(DeploymentActor.props(service, periodicBatchConfig.deployInterval))
     system.actorOf(RescheduleFinishedActor.props(service, periodicBatchConfig.rescheduleCheckInterval))
 
