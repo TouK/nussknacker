@@ -115,15 +115,15 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
       lastVersion.json.map(normalizeJsonString) == maybeJson.map(normalizeJsonString)
 
     //TODO: after we move Json type to GraphProcess we should clean up this pattern matching
-    def versionToInsert(latestProcessVersion: Option[ProcessVersionEntityData], processesVersionCount: Int, processingType: ProcessingType) =
+    def versionToInsert(latestProcessVersion: Option[ProcessVersionEntityData], processingType: ProcessingType) =
       (latestProcessVersion, maybeJson) match {
         case (Some(version), _) if isLastVersionContainsSameJson(version, maybeJson) && version.mainClass == maybeMainClass =>
           Right(None)
         case (versionOpt, Some(json)) =>
           normalizeJsonString(json)
-            .map(j => Option(createProcessVersionEntityData(versionOpt.map(_.id).getOrElse(processesVersionCount), processingType, Some(j), None)))
+            .map(j => Option(createProcessVersionEntityData(versionOpt.map(_.id).getOrElse(0), processingType, Some(j), None)))
         case (versionOpt, None) =>
-          Right(Option(createProcessVersionEntityData(versionOpt.map(_.id).getOrElse(processesVersionCount), processingType, None, maybeMainClass)))
+          Right(Option(createProcessVersionEntityData(versionOpt.map(_.id).getOrElse(0), processingType, None, maybeMainClass)))
       }
 
     //TODO: why EitherT.right doesn't infere properly here?
@@ -134,9 +134,8 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
       maybeProcess <- rightT(processTableFilteredByUser.filter(_.id === processId.value).result.headOption)
       process <- EitherT.fromEither[DB](Either.fromOption(maybeProcess, ProcessNotFoundError(processId.value.toString)))
       _ <- EitherT.fromEither(Either.cond(process.processType == ProcessType.fromDeploymentData(processDeploymentData), (), InvalidProcessTypeError(processId.value.toString))) //FIXME: Move this condition to service..
-      processesVersionCount <- rightT(processVersionsTableNoJson.filter(p => p.processId === processId.value).length.result)
       latestProcessVersion <- rightT(fetchProcessLatestVersionsQuery(processId)(ProcessShapeFetchStrategy.FetchDisplayable).result.headOption)
-      newProcessVersion <- EitherT.fromEither(versionToInsert(latestProcessVersion, processesVersionCount, process.processingType))
+      newProcessVersion <- EitherT.fromEither(versionToInsert(latestProcessVersion, process.processingType))
       _ <- EitherT.right[EspError](newProcessVersion.map(processVersionsTable += _).getOrElse(dbMonad.pure(0)))
     } yield newProcessVersion
     insertAction.value

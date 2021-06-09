@@ -30,7 +30,7 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with EspTables {
   protected def fetchProcessLatestVersionsQuery(processId: ProcessId)(implicit fetchShape: ProcessShapeFetchStrategy[_]): Query[ProcessVersionEntityFactory#BaseProcessVersionEntity, ProcessVersionEntityData, Seq] =
     processVersionsTableQuery
       .filter(_.processId === processId.value)
-      .sortBy(_.createDate.desc)
+      .sortBy(_.id.desc)
 
   protected def fetchLastDeployedActionPerProcessQuery: Query[(api.Rep[Long], (ProcessActionEntityFactory#ProcessActionEntity, api.Rep[Option[CommentEntityFactory#CommentEntity]])), (Long, (ProcessActionEntityData, Option[CommentEntityData])), Seq] =
     fetchLastActionPerProcessQuery
