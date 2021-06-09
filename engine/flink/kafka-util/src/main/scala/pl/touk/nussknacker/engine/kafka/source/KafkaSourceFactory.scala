@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermar
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka._
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerParameter, DefinedSingleParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition._
@@ -66,11 +67,20 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
       val topics = topic.split(topicNameSeparator).map(_.trim).toList
       val preparedTopics = topics.map(KafkaUtils.prepareKafkaTopic(_, processObjectDependencies)).map(_.prepared)
       val topicValidationErrors = validateTopics(preparedTopics).swap.toList.map(_.toCustomNodeError(nodeId.id, Some(KafkaSourceFactory.TopicParamName)))
-      val kafkaContextInitializer = prepareContextInitializer(step.parameters)
-      FinalResults(
-        finalContext = kafkaContextInitializer.validationContext(context, dependencies, step.parameters),
-        errors = topicValidationErrors,
-        state = Some(KafkaSourceFactoryState(kafkaContextInitializer)))
+      prepareSourceFinalResults(topicValidationErrors, context, dependencies, step.parameters)
+    case step@TransformationStep((KafkaSourceFactory.TopicParamName, _) :: tailParams, None) =>
+      prepareSourceFinalResults(errors = Nil, context, dependencies, step.parameters)
+  }
+
+  protected def prepareSourceFinalResults(errors: List[ProcessCompilationError.CustomNodeError],
+                                          context: ValidationContext,
+                                          dependencies: List[NodeDependencyValue],
+                                          parameters: List[(String, DefinedParameter)])(implicit nodeId: NodeId): FinalResults = {
+    val kafkaContextInitializer = prepareContextInitializer(parameters)
+    FinalResults(
+      finalContext = kafkaContextInitializer.validationContext(context, dependencies, parameters),
+      errors = errors,
+      state = Some(KafkaSourceFactoryState(kafkaContextInitializer)))
   }
 
   // Overwrite this for dynamic type definitions.
