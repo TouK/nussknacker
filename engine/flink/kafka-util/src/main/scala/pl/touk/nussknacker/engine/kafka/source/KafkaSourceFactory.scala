@@ -80,7 +80,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
       prepareSourceFinalErrors(context, dependencies, step.parameters, errors = Nil)
   }
 
-  protected def prepareSourceFinalResults(errors: List[ProcessCompilationError.CustomNodeError],
+  protected def prepareSourceFinalResults(errors: List[ProcessCompilationError],
                                           context: ValidationContext,
                                           dependencies: List[NodeDependencyValue],
                                           parameters: List[(String, DefinedParameter)],
@@ -97,7 +97,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
   protected def prepareSourceFinalErrors(context: ValidationContext,
                                          dependencies: List[NodeDependencyValue],
                                          parameters: List[(String, DefinedParameter)],
-                                         errors: List[CustomNodeError])(implicit nodeId: NodeId): FinalResults = {
+                                         errors: List[ProcessCompilationError])(implicit nodeId: NodeId): FinalResults = {
     val initializerWithUnknown = KafkaContextInitializer.initializerWithUnknown[K, V, DefinedParameter]
     FinalResults(initializerWithUnknown.validationContext(context, dependencies, parameters), errors, None)
   }
