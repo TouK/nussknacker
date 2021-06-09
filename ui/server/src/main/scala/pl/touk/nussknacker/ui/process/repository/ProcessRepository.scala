@@ -105,7 +105,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
       case Right(json) => Right(json.spaces2)
     }
 
-    def createProcessVersionEntityData(id: Int, processingType: ProcessingType, json: Option[String], maybeMainClass: Option[String]) = ProcessVersionEntityData(
+    def createProcessVersionEntityData(id: Long, processingType: ProcessingType, json: Option[String], maybeMainClass: Option[String]) = ProcessVersionEntityData(
       id = id + 1, processId = processId.value, json =json, mainClass = maybeMainClass, createDate = DateUtils.toTimestamp(now),
       user = loggedUser.username, modelVersion = modelVersion.forType(processingType)
     )
@@ -119,11 +119,11 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
       (latestProcessVersion, maybeJson) match {
         case (Some(version), _) if isLastVersionContainsSameJson(version, maybeJson) && version.mainClass == maybeMainClass =>
           Right(None)
-        case (_, Some(json)) =>
+        case (versionOpt, Some(json)) =>
           normalizeJsonString(json)
-            .map(j => Option(createProcessVersionEntityData(processesVersionCount, processingType, Some(j), None)))
-        case (_, None) =>
-          Right(Option(createProcessVersionEntityData(processesVersionCount, processingType, None, maybeMainClass)))
+            .map(j => Option(createProcessVersionEntityData(versionOpt.map(_.id).getOrElse(processesVersionCount), processingType, Some(j), None)))
+        case (versionOpt, None) =>
+          Right(Option(createProcessVersionEntityData(versionOpt.map(_.id).getOrElse(processesVersionCount), processingType, None, maybeMainClass)))
       }
 
     //TODO: why EitherT.right doesn't infere properly here?
