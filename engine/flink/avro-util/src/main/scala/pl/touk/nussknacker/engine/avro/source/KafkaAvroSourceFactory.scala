@@ -41,9 +41,12 @@ class KafkaAvroSourceFactory[K:ClassTag, V:ClassTag](val schemaRegistryProvider:
           val valueValidationResult = determineSchemaAndType(prepareValueSchemaDeterminer(preparedTopic, versionOption), Some(SchemaVersionParamName))
 
           prepareSourceFinalResults(preparedTopic, valueValidationResult, context, dependencies, step.parameters)
-        //edge case - for some reason Topic/Version is not defined
         case step@TransformationStep((TopicParamName, _) :: (SchemaVersionParamName, _) ::Nil, _) =>
-          prepareSourceFinalErrors(context, dependencies, step.parameters, List(CustomNodeError("Topic/Version is not defined", Some(TopicParamName))))
+          // Edge case - for some reason Topic/Version is not defined, e.g. when topic or version does not match DefinedEagerParameter(String, _):
+          // 1. FailedToDefineParameter
+          // 2. not resolved as a valid String
+          // Those errors are identified by parameter validation and handled elsewhere, hence empty list of errors.
+          prepareSourceFinalErrors(context, dependencies, step.parameters, errors = Nil)
       }
 
   protected def determineSchemaAndType(keySchemaDeterminer: AvroSchemaDeterminer, paramName: Option[String])(implicit nodeId: NodeId):
@@ -80,7 +83,7 @@ class KafkaAvroSourceFactory[K:ClassTag, V:ClassTag](val schemaRegistryProvider:
                                          dependencies: List[NodeDependencyValue],
                                          parameters: List[(String, DefinedParameter)],
                                          errors: List[CustomNodeError])(implicit nodeId: NodeId): FinalResults = {
-    val initializerWithUnknown = new KafkaContextInitializer[K, V, DefinedParameter](Unknown, Unknown)
+    val initializerWithUnknown = KafkaContextInitializer.initializerWithUnknown[K, V, DefinedParameter]
     FinalResults(initializerWithUnknown.validationContext(context, dependencies, parameters), errors, None)
   }
 

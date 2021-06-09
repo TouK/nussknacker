@@ -21,6 +21,24 @@ class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin  
     runAndVerifyResult(topic, process, givenObj)
   }
 
+  test("should handle invalid expression type for topic") {
+    val topic = "kafka-bad-expression-type"
+    val givenObj = ObjToSerialize(TestSampleValue, TestSampleKey, TestSampleHeaders)
+    val process = createProcess(topic, SourceType.jsonKeyJsonValueWithMeta, topicParamValue = _ => s"123L" )
+    intercept[Exception] {
+      runAndVerifyResult(topic, process, givenObj)
+    }.getMessage should include ("Bad expression type, expected: String, found: Long")
+  }
+
+  test("should handle null value for mandatory parameter") {
+    val topic = "kafka-empty-mandatory-field"
+    val givenObj = ObjToSerialize(TestSampleValue, TestSampleKey, TestSampleHeaders)
+    val process = createProcess(topic, SourceType.jsonKeyJsonValueWithMeta, topicParamValue = _ => s"" )
+    intercept[Exception] {
+      runAndVerifyResult(topic, process, givenObj)
+    }.getMessage should include ("EmptyMandatoryParameter(This field is mandatory and can not be empty")
+  }
+
   test("should raise exception when we provide wrong input variable") {
     val topic = "kafka-key-value-wrong-input-variable"
     val givenObj = ObjToSerialize(TestSampleValue, TestSampleKey, TestSampleHeaders)
