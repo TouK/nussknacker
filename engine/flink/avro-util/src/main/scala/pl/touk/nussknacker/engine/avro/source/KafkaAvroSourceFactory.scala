@@ -80,7 +80,7 @@ class KafkaAvroSourceFactory[K:ClassTag, V:ClassTag](val schemaRegistryProvider:
                                          dependencies: List[NodeDependencyValue],
                                          parameters: List[(String, DefinedParameter)],
                                          errors: List[CustomNodeError])(implicit nodeId: NodeId): FinalResults = {
-    val initializerWithUnknown = new KafkaContextInitializer[K, V, DefinedParameter](Unknown, Unknown)
+    val initializerWithUnknown = KafkaContextInitializer.initializerWithUnknown[K, V, DefinedParameter]
     FinalResults(initializerWithUnknown.validationContext(context, dependencies, parameters), errors, None)
   }
 

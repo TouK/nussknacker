@@ -7,10 +7,11 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermar
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka._
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerParameter, DefinedSingleParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceFactoryState
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
@@ -62,25 +63,39 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
       NextParameters(prepareInitialParameters)
   }
 
-  protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
-    case step@TransformationStep((KafkaSourceFactory.TopicParamName, DefinedEagerParameter(topic: String, _)) :: tailParams, None) =>
+  protected def topicsValidationErrors(topic: String)(implicit nodeId: ProcessCompilationError.NodeId): List[ProcessCompilationError.CustomNodeError] = {
       val topics = topic.split(topicNameSeparator).map(_.trim).toList
       val preparedTopics = topics.map(KafkaUtils.prepareKafkaTopic(_, processObjectDependencies)).map(_.prepared)
-      val topicValidationErrors = validateTopics(preparedTopics).swap.toList.map(_.toCustomNodeError(nodeId.id, Some(KafkaSourceFactory.TopicParamName)))
-      prepareSourceFinalResults(topicValidationErrors, context, dependencies, step.parameters)
-    case step@TransformationStep((KafkaSourceFactory.TopicParamName, _) :: tailParams, None) =>
-      prepareSourceFinalResults(errors = Nil, context, dependencies, step.parameters)
+      validateTopics(preparedTopics).swap.toList.map(_.toCustomNodeError(nodeId.id, Some(KafkaSourceFactory.TopicParamName)))
+  }
+
+  protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
+    case step@TransformationStep((KafkaSourceFactory.TopicParamName, DefinedEagerParameter(topic: String, _)) :: _, None) =>
+      prepareSourceFinalResults(topicsValidationErrors(topic), context, dependencies, step.parameters)
+    case step@TransformationStep((KafkaSourceFactory.TopicParamName, _) :: _, None) =>
+      prepareSourceFinalErrors(context, dependencies, step.parameters, errors = Nil)
   }
 
   protected def prepareSourceFinalResults(errors: List[ProcessCompilationError.CustomNodeError],
                                           context: ValidationContext,
                                           dependencies: List[NodeDependencyValue],
-                                          parameters: List[(String, DefinedParameter)])(implicit nodeId: NodeId): FinalResults = {
-    val kafkaContextInitializer = prepareContextInitializer(parameters)
+                                          parameters: List[(String, DefinedParameter)],
+                                          contextInitializer: Option[KafkaContextInitializer[K, V, DefinedParameter]] = None
+                                         )(implicit nodeId: NodeId): FinalResults = {
+    val kafkaContextInitializer = contextInitializer.getOrElse(prepareContextInitializer(parameters))
     FinalResults(
       finalContext = kafkaContextInitializer.validationContext(context, dependencies, parameters),
       errors = errors,
       state = Some(KafkaSourceFactoryState(kafkaContextInitializer)))
+  }
+
+  // Source specific FinalResults with errors
+  protected def prepareSourceFinalErrors(context: ValidationContext,
+                                         dependencies: List[NodeDependencyValue],
+                                         parameters: List[(String, DefinedParameter)],
+                                         errors: List[CustomNodeError] = Nil)(implicit nodeId: NodeId): FinalResults = {
+    val initializerWithUnknown = KafkaContextInitializer.initializerWithUnknown[K, V, DefinedParameter]
+    FinalResults(initializerWithUnknown.validationContext(context, dependencies, parameters), errors, None)
   }
 
   // Overwrite this for dynamic type definitions.

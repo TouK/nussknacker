@@ -5,7 +5,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Context, VariableConstants}
 import pl.touk.nussknacker.engine.flink.api.process.{BasicContextInitializingFunction, BasicFlinkGenericContextInitializer}
 import pl.touk.nussknacker.engine.kafka.ConsumerRecordUtils
@@ -48,5 +48,9 @@ class KafkaContextInitializer[K, V, DefinedParameter <: BaseDefinedParameter](ke
       }
     }
   }
+}
 
+object KafkaContextInitializer {
+  def initializerWithUnknown[K, V, DefinedParameter <: BaseDefinedParameter]: KafkaContextInitializer[K, V, DefinedParameter] =
+    new KafkaContextInitializer[K, V, DefinedParameter](Unknown, Unknown)
 }
