@@ -64,7 +64,7 @@
 }
 .ace-nussknacker .ace_support.ace_constant,
 .ace-nussknacker .ace_support.ace_function {
-    color: #66D9EF
+    color: #f3b560
 }
 .ace-nussknacker .ace_fold {
     background-color: #A6E22E;
@@ -74,7 +74,7 @@
 .ace-nussknacker .ace_support.ace_class,
 .ace-nussknacker .ace_support.ace_type {
     font-style: italic;
-    color: #66D9EF
+    color: #f3b560
 }
 .ace-nussknacker .ace_entity.ace_name.ace_function,
 .ace-nussknacker .ace_entity.ace_other,
