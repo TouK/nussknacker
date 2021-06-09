@@ -105,9 +105,11 @@ To see biggest differences please consult the [changelog](Changelog.md).
   - For `ConfluentSchemaRegistryProvider` KafkaConfig and ProcessObjectDependencies (that contains KafkaConfig data) are no longer required. That configuration is required by factories in the moment the creation of requested objects
     that happens in `KafkaAvroSourceFactory` (and that makes that all objects within `KafkaAvroSourceFactory` see the same kafka configuration).
   - Removed:
+    - `BaseKafkaAvroSourceFactory`, the class is incorporated into `KafkaAvroSourceFactory` to provide elastic approach to create KafkaSource
     - `with ReturningType` for generic types (this is defined by ValidationContext, see also `KafkaContextInitializer` that allows to return more than one variable)
     - `KafkaAvroValueDeserializationSchemaFactory` (source requires deserialization to `ConsumerRecord[K, V]`, there are only deserializers based on `KafkaAvroKeyValueDeserializationSchemaFactory`)
-    - `TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory`
+    - `ConfluentKafkaAvroDeserializationSchemaFactory`, use `ConfluentKeyValueKafkaAvroDeserializationFactory`
+    - `TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory`, this approach is deprecated due to #inputMeta variable that contains key data
 
   To migrate `KafkaAvroSourceFactory`:
     - Provide `KafkaConfig` with correct `useStringForKey` flag value. By default we want to handle keys as ordinary String and all topics related to such config require only value schema definitions (key schemas are ignored).
