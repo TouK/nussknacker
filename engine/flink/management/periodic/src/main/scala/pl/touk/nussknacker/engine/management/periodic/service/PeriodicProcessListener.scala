@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.periodic.service
 
+import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.deployment.{ExternalDeploymentId, ProcessState}
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeployment
 
@@ -11,6 +12,10 @@ trait PeriodicProcessListener {
 
   def onPeriodicProcessEvent: PartialFunction[PeriodicProcessEvent, Unit]
 
+}
+
+trait PeriodicProcessListenerFactory {
+  def create(config: Config): PeriodicProcessListener
 }
 
 sealed trait PeriodicProcessEvent
@@ -30,4 +35,8 @@ trait EmptyListener extends PeriodicProcessListener {
 
   override def onPeriodicProcessEvent: PartialFunction[PeriodicProcessEvent, Unit] = Map.empty
 
+}
+
+object EmptyPeriodicProcessListenerFactory extends PeriodicProcessListenerFactory {
+  override def create(config: Config): PeriodicProcessListener = EmptyListener
 }
