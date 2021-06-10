@@ -5,14 +5,16 @@ import cats.data.NonEmptyList
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.Json
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
 import org.apache.flink.api.common.ExecutionConfig
 import org.scalatest.{EitherValues, FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{CirceUtil, JobData, MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
 import pl.touk.nussknacker.engine.avro.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
@@ -31,6 +33,9 @@ import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
+
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec with EitherValues with LazyLogging {
 
@@ -162,9 +167,11 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
       case ExistingSchemaVersion(version) => s"'$version'"
     }
 
-  test("should read json object from kafka, filter and save it to kafka") {
-    kafkaClient.sendMessage(JsonInTopic, givenNotMatchingJsonObj)
-    kafkaClient.sendMessage(JsonInTopic, givenMatchingJsonObj)
+  test("should read json object from kafka, filter and save it to kafka, passing timestamp") {
+    val timeAgo = Instant.now().minus(10, ChronoUnit.DAYS).toEpochMilli
+
+    kafkaClient.sendRawMessage(JsonInTopic, Array(), givenNotMatchingJsonObj.getBytes(StandardCharsets.UTF_8), timestamp = timeAgo)
+    kafkaClient.sendRawMessage(JsonInTopic, Array(), givenMatchingJsonObj.getBytes(StandardCharsets.UTF_8), timestamp = timeAgo)
 
     assertThrows[Exception] {
       run(jsonProcess("#input.nestMap.notExist == ''")) {}
@@ -180,20 +187,25 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
       "#input.list2[0] != 15")
     run(validJsonProcess) {
       val consumer = kafkaClient.createConsumer()
-      val processed = consumer.consume(JsonOutTopic, secondsToWaitForAvro).map(_.message()).map(new String(_, StandardCharsets.UTF_8)).take(1).toList
-      processed.map(parseJson) shouldEqual List(parseJson(givenMatchingJsonObj))
+      val processedMessage = consumer.consume(JsonOutTopic, secondsToWaitForAvro).head
+
+      processedMessage.timestamp shouldBe timeAgo
+      decodeJsonUnsafe[Json](processedMessage.message()) shouldEqual parseJson(givenMatchingJsonObj)
     }
   }
 
-  test("should read avro object from kafka, filter and save it to kafka") {
+  test("should read avro object from kafka, filter and save it to kafka, passing timestamp") {
+    val timeAgo = Instant.now().minus(10, ChronoUnit.DAYS).toEpochMilli
+
     val topicConfig = createAndRegisterTopicConfig("read-filter-save", RecordSchemas)
 
     send(givenNotMatchingAvroObj, topicConfig.input)
-    send(givenMatchingAvroObj, topicConfig.input)
+    send(givenMatchingAvroObj, topicConfig.input, timestamp = timeAgo)
 
     run(avroProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.allowOptional)) {
-      val processed = consumeOneAvroMessage(topicConfig.output)
-      processed shouldEqual List(givenMatchingAvroObjConvertedToV2)
+      val processed = consumeOneRawAvroMessage(topicConfig.output)
+      processed.timestamp shouldBe timeAgo
+      valueDeserializer.deserialize(topicConfig.output, processed.message()) shouldEqual givenMatchingAvroObjConvertedToV2
     }
   }
 
@@ -203,7 +215,7 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
 
     run(avroFromScratchProcess(topicConfig, ExistingSchemaVersion(1))) {
       val processed = consumeOneAvroMessage(topicConfig.output)
-      processed shouldEqual List(givenMatchingAvroObj)
+      processed shouldEqual givenMatchingAvroObj
     }
   }
 
@@ -277,7 +289,7 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
 
     run(avroProcess(topicConfig, ExistingSchemaVersion(2))) {
       val processed = consumeOneAvroMessage(topicConfig.output)
-      processed shouldEqual List(result)
+      processed shouldEqual result
     }
   }
 
@@ -290,7 +302,7 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
 
     run(avroProcess(topicConfig,ExistingSchemaVersion(1), validationMode = ValidationMode.allowOptional)) {
       val processed = consumeOneAvroMessage(topicConfig.output)
-      processed shouldEqual List(converted)
+      processed shouldEqual converted
     }
   }
 
@@ -304,19 +316,19 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
     assertThrows[Exception] {
       run(avroProcess(topicConfig,ExistingSchemaVersion(1))) {
         val processed = consumeOneAvroMessage(topicConfig.output)
-        processed shouldEqual List(givenSecondMatchingAvroObj)
+        processed shouldEqual givenSecondMatchingAvroObj
       }
     }
   }
 
   private def parseJson(str: String) = io.circe.parser.parse(str).right.get
 
-  private def consumeOneAvroMessage(topic: String) = {
+  private def consumeOneRawAvroMessage(topic: String) = {
     val consumer = kafkaClient.createConsumer()
-    consumer.consume(topic, secondsToWaitForAvro).map { record =>
-      valueDeserializer.deserialize(topic, record.message())
-    }.take(1).toList
+    consumer.consume(topic, secondsToWaitForAvro).head
   }
+
+  private def consumeOneAvroMessage(topic: String) = valueDeserializer.deserialize(topic, consumeOneRawAvroMessage(topic).message())
 
   private lazy val creator: GenericConfigCreator = new GenericConfigCreator {
     override protected def createSchemaRegistryProvider: SchemaRegistryProvider =
@@ -351,9 +363,9 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
     env.withJobRunning(process.id)(action)
   }
 
-  private def send(obj: Any, topic: String) = {
+  private def send(obj: Any, topic: String, timestamp: java.lang.Long = null) = {
     val serializedObj = valueSerializer.serialize(topic, obj)
-    kafkaClient.sendRawMessage(topic, Array.empty, serializedObj)
+    kafkaClient.sendRawMessage(topic, Array.empty, serializedObj, timestamp = timestamp)
   }
 
   /**

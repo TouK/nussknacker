@@ -17,8 +17,7 @@ import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory.KafkaAvroSo
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, KafkaAvroBaseTransformer, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializer, FlinkSource, FlinkSourceFactory}
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, TimestampWatermarkHandler}
-import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrderPreviousElementAssigner
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.kafka.source.{KafkaContextInitializer, KafkaSource}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, RecordFormatter}
 
@@ -28,8 +27,6 @@ class KafkaAvroSourceFactory[K:ClassTag, V:ClassTag](val schemaRegistryProvider:
                                                      val processObjectDependencies: ProcessObjectDependencies,
                                                      timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]])
   extends FlinkSourceFactory[ConsumerRecord[K, V]] with KafkaAvroBaseTransformer[FlinkSource[ConsumerRecord[K, V]]] with Serializable {
-
-  private val defaultMaxOutOfOrdernessMillis = 60000
 
   override type State = KafkaAvroSourceFactoryState[K, V, DefinedParameter]
 
@@ -129,7 +126,7 @@ class KafkaAvroSourceFactory[K:ClassTag, V:ClassTag](val schemaRegistryProvider:
       preparedTopics,
       kafkaConfig,
       deserializationSchema,
-      assignerToUse(kafkaConfig),
+      timestampAssigner,
       formatter
     ) {
       override val contextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]] = flinkContextInitializer
@@ -139,17 +136,6 @@ class KafkaAvroSourceFactory[K:ClassTag, V:ClassTag](val schemaRegistryProvider:
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]),
     TypedNodeDependency(classOf[NodeId]), OutputVariableNameDependency)
 
-  protected def assignerToUse(kafkaConfig: KafkaConfig): Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]] = {
-    Some(
-      timestampAssigner.getOrElse(
-        new LegacyTimestampWatermarkHandler[ConsumerRecord[K, V]](
-          new BoundedOutOfOrderPreviousElementAssigner[ConsumerRecord[K, V]](
-            kafkaConfig.defaultMaxOutOfOrdernessMillis.getOrElse(defaultMaxOutOfOrdernessMillis)
-          )
-        )
-      )
-    )
-  }
 }
 
 object KafkaAvroSourceFactory {

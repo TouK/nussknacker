@@ -14,7 +14,7 @@ class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) {
 
   def consume(topic: String, secondsToWait: Int = 20): Stream[KeyMessage[K, M]] =
     consumeWithConsumerRecord(topic, secondsToWait)
-      .map(record => KeyMessage(record.key(), record.value()))
+      .map(record => KeyMessage(record.key(), record.value(), record.timestamp()))
 
   def consumeWithConsumerRecord(topic: String, secondsToWait: Int = 20): Stream[ConsumerRecord[K, M]] = {
     implicit val patienceConfig: PatienceConfig = PatienceConfig(Span(secondsToWait, Seconds), Span(100, Millis))
@@ -53,7 +53,7 @@ class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) {
   }
 }
 
-case class KeyMessage[K, V](k: K, msg: V) {
+case class KeyMessage[K, V](k: K, msg: V, timestamp: Long) {
   def message(): V = msg
   def key(): K = k
 }
