@@ -109,7 +109,7 @@ export const literalIntegerValueValidator: Validator = {
 //It's kind of hack.. Because from SPeL we get string with "L" or others number's mark.
 //We can't properly cast that kind of string to number, so we have to remove all not digits chars.
 const normalizeStringToNumber = (value: string): string => {
-  return value.replace(/[^\d.]/g, "")
+  return value.replace(/[^-?\d.]/g, "")
 }
 
 export const minimalNumberValidator = (minimalNumber: number): Validator => ({
