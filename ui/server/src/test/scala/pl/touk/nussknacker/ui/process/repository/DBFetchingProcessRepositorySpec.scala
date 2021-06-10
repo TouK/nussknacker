@@ -9,14 +9,15 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
+import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestPermissions, TestProcessingTypes, WithHsqlDbTesting}
+import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.Comment
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, UpdateProcessAction}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -44,6 +45,8 @@ class DBFetchingProcessRepositorySpec
   private val activities = ProcessActivityRepository(db)
 
   private implicit val user: LoggedUser = TestFactory.adminUser()
+
+  import dbProfile.api._
 
   test("fetch processes for category") {
 
@@ -161,10 +164,50 @@ class DBFetchingProcessRepositorySpec
     renameProcess(oldName, existingName.value) shouldBe ProcessAlreadyExists(existingName.value).asLeft
   }
 
+  test("should generate new process version id based on latest version id") {
+
+    val processName = ProcessName("processName")
+    val latestVersionId = 4
+    val now = LocalDateTime.now()
+    val espProcess = EspProcessBuilder
+      .id(processName.value)
+      .exceptionHandler()
+      .source("s", "")
+      .emptySink("s2", "")
+
+    saveProcess(espProcess, now)
+
+    val firstProcessVersion = fetchLatestProcessVersion(processName)
+    firstProcessVersion.id shouldBe 1
+
+    //change of id for version imitates situation where versionId is different from number of all process versions (ex. after manual JSON removal from DB)
+    repositoryManager.runInTransaction(writingRepo.processVersionsTableNoJson
+      .filter(v => v.id === firstProcessVersion.id && v.processId === firstProcessVersion.processId)
+      .map(_.id).update(latestVersionId))
+
+    val latestProcessVersion = fetchLatestProcessVersion(processName)
+    latestProcessVersion.id shouldBe latestVersionId
+
+    val newVersionInfoOpt = updateProcess(latestProcessVersion.copy(json = Some("{}")))
+    newVersionInfoOpt shouldBe 'defined
+    newVersionInfoOpt.get.id shouldBe (latestVersionId + 1)
+
+  }
+
   private def processExists(processName: ProcessName): Boolean = {
     fetching.fetchProcessId(processName).futureValue.flatMap(
       fetching.fetchLatestProcessVersion[Unit](_).futureValue
     ).nonEmpty
+  }
+
+  private def updateProcess(processVersion: ProcessVersionEntityData): Option[ProcessVersionEntityData] = {
+    processVersion.json shouldBe 'defined
+    val json = processVersion.json.get
+    val action = UpdateProcessAction(ProcessId(processVersion.processId), GraphProcess(json), "")
+
+    val processVersionED = repositoryManager.runInTransaction(writingRepo.updateProcess(action)).futureValue
+    processVersionED shouldBe 'right
+    processVersionED.right.get
   }
 
   private def saveProcess(espProcess: EspProcess, now: LocalDateTime, category: String = "") = {
@@ -187,5 +230,13 @@ class DBFetchingProcessRepositorySpec
         .flatMap(_.json.toSeq)
         .map(_.metaData.id)
     }
+  }
+
+  private def fetchLatestProcessVersion(name: ProcessName): ProcessVersionEntityData = {
+    val fetchedProcess = fetching.fetchProcessId(name).futureValue.flatMap(
+      fetching.fetchLatestProcessVersion[Unit](_).futureValue
+    )
+    fetchedProcess shouldBe 'defined
+    fetchedProcess.get
   }
 }
