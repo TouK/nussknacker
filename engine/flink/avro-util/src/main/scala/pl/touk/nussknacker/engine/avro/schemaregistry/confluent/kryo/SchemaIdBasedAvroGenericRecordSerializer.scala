@@ -1,17 +1,18 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.kryo
 
-import java.io.ByteArrayOutputStream
-
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.{Input, Output}
 import org.apache.avro.generic.GenericData
 import org.apache.avro.io.{DecoderFactory, EncoderFactory}
+import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.schema.DatumReaderWriterMixin
 import pl.touk.nussknacker.engine.avro.schemaregistry.GenericRecordWithSchemaId
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.flink.api.serialization.SerializerWithSpecifiedClass
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
+
+import java.io.ByteArrayOutputStream
 
 class SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, kafkaConfig: KafkaConfig)
   extends SerializerWithSpecifiedClass[GenericRecordWithSchemaId](false, false) with DatumReaderWriterMixin {
@@ -36,7 +37,7 @@ class SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory: Conf
   }
 
   private def writeDataBytes(record: GenericRecordWithSchemaId, bos: ByteArrayOutputStream): Unit = {
-    val writer = createDatumWriter(record, record.getSchema, useSchemaReflection = false)
+    val writer = createDatumWriter(record.getSchema, useSchemaReflection = false, useSpecificAvroReader = AvroUtils.isSpecificRecord(record))
     val encoder = this.encoderFactory.directBinaryEncoder(bos, null)
     writer.write(record, encoder)
   }
@@ -53,7 +54,7 @@ class SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory: Conf
   private def readRecord(lengthOfData: Int, schemaId: Int, dataBuffer: Array[Byte]) = {
     val parsedSchema = schemaRegistry.getSchemaById(schemaId)
     val writerSchema = ConfluentUtils.extractSchema(parsedSchema)
-    val reader = createDatumReader(writerSchema, writerSchema, useSchemaReflection = false, useSpecificAvroReader = false)
+    val reader = createDatumReader(writerSchema, writerSchema, useSchemaReflection = false, useSpecificAvroWriter = false)
     val binaryDecoder = decoderFactory.binaryDecoder(dataBuffer, 0, lengthOfData, null)
     reader.read(null, binaryDecoder).asInstanceOf[GenericData.Record]
   }

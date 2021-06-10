@@ -13,15 +13,13 @@ import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-class KafkaJsonPayloadSpec extends FunSuite with KafkaAvroSpecMixin with BeforeAndAfter {
+class KafkaJsonPayloadIntegrationSpec extends FunSuite with KafkaAvroSpecMixin with BeforeAndAfter {
 
   import KafkaAvroIntegrationMockSchemaRegistry._
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def createSchemaRegistryProvider: SchemaRegistryProvider = {
-      val clientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
-      ConfluentSchemaRegistryProvider.jsonPayload(clientFactory, formatKey = false)
-    }
+    override protected def createSchemaRegistryProvider: SchemaRegistryProvider =
+      ConfluentSchemaRegistryProvider.jsonPayload(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
   }
   
   protected val paymentSchemas: List[Schema] = List(PaymentV1.schema)
@@ -29,6 +27,8 @@ class KafkaJsonPayloadSpec extends FunSuite with KafkaAvroSpecMixin with BeforeA
   override def schemaRegistryClient: MockSchemaRegistryClient = schemaRegistryMockClient
 
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
+
+  override protected val schemaRegistryProvider: ConfluentSchemaRegistryProvider = ConfluentSchemaRegistryProvider.jsonPayload(confluentClientFactory)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()

@@ -1,13 +1,12 @@
 package pl.touk.nussknacker.engine.avro.schema
 
-import java.io.{ByteArrayOutputStream, IOException}
-import java.nio.ByteBuffer
-
 import org.apache.avro.Schema
 import org.apache.avro.generic._
 import org.apache.avro.io.{DatumReader, DecoderFactory, EncoderFactory}
 import pl.touk.nussknacker.engine.avro.{AvroUtils, RuntimeSchemaData}
 
+import java.io.{ByteArrayOutputStream, IOException}
+import java.nio.ByteBuffer
 import scala.util.Try
 
 /**
@@ -79,7 +78,7 @@ class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWri
     try {
       val out = new ByteArrayOutputStream
       val encoder = encoderFactory.directBinaryEncoder(out, null)
-      val writer = createDatumWriter(record, record.getSchema, useSchemaReflection = useSchemaReflection)
+      val writer = createDatumWriter(record.getSchema, useSchemaReflection = useSchemaReflection, AvroUtils.isSpecificRecord(record))
       writer.write(record, encoder)
       encoder.flush()
       val bytes = out.toByteArray

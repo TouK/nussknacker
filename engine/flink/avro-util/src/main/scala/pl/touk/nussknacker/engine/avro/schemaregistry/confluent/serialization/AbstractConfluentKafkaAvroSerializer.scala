@@ -9,6 +9,7 @@ import org.apache.avro.Schema
 import org.apache.avro.generic.GenericContainer
 import org.apache.avro.io.{Encoder, EncoderFactory}
 import org.apache.kafka.common.errors.SerializationException
+import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.schema.{AvroSchemaEvolution, DatumReaderWriterMixin}
 
 /**
@@ -66,7 +67,7 @@ class AbstractConfluentKafkaAvroSerializer(avroSchemaEvolution: AvroSchemaEvolut
       case array: Array[Byte] => out.write(array)
       case _ =>
         val encoder = encoderToUse(avroSchema, out)
-        val writer = createDatumWriter(data, avroSchema, useSchemaReflection = useSchemaReflection)
+        val writer = createDatumWriter(avroSchema, useSchemaReflection = useSchemaReflection, useSpecificAvroReader = AvroUtils.isSpecificRecord(data))
         writer.write(data, encoder)
         encoder.flush()
     }

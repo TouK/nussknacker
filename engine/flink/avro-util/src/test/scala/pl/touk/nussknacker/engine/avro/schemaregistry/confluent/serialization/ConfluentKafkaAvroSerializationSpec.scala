@@ -8,6 +8,7 @@ import org.scalatest.Assertion
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor5}
 import pl.touk.nussknacker.engine.avro.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.avro.schema.{AvroSchemaEvolutionException, FullNameV1, PaymentV1, PaymentV2}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
@@ -18,6 +19,8 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableD
   override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
 
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
+
+  override protected val schemaRegistryProvider: ConfluentSchemaRegistryProvider = ConfluentSchemaRegistryProvider.avroPayload(confluentClientFactory)
 
   private val encode = BestEffortJsonEncoder(failOnUnkown = false).encode _
   

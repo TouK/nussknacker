@@ -42,7 +42,8 @@ object ConfluentSchemaRegistryProvider extends Serializable {
     ConfluentSchemaRegistryProvider(
       schemaRegistryClientFactory,
       new ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory),
-      new ConfluentKeyValueKafkaAvroDeserializationFactory(schemaRegistryClientFactory))
+      new ConfluentKeyValueKafkaAvroDeserializationFactory(schemaRegistryClientFactory)
+    )
   }
 
   def apply(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
@@ -55,8 +56,7 @@ object ConfluentSchemaRegistryProvider extends Serializable {
     )
   }
 
-  def jsonPayload(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
-                  formatKey: Boolean): ConfluentSchemaRegistryProvider = {
+  def jsonPayload(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory): ConfluentSchemaRegistryProvider = {
     ConfluentSchemaRegistryProvider(
       schemaRegistryClientFactory,
       new ConfluentJsonPayloadSerializerFactory(schemaRegistryClientFactory),

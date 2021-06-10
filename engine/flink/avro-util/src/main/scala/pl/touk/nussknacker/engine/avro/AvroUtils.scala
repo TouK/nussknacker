@@ -23,6 +23,11 @@ object AvroUtils {
     classOf[SpecificRecord].isAssignableFrom(clazz)
   }
 
+  def isSpecificRecord(data: Any): Boolean = data match {
+    case _ : SpecificRecord => true
+    case _ => false
+  }
+
   def genericData: GenericData = addLogicalTypeConversions(new GenericData(_) {
     override def deepCopy[T](schema: Schema, value: T): T = {
       val copiedRecord = super.deepCopy(schema, value)
