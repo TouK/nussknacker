@@ -4,11 +4,11 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.TypeSerializer
 import org.apache.flink.api.java.typeutils.{ListTypeInfo, MapTypeInfo}
-import org.apache.flink.api.scala.typeutils.{CaseClassTypeInfo, OptionTypeInfo, ScalaCaseClassSerializer}
+import org.apache.flink.api.scala.typeutils.{CaseClassTypeInfo, OptionTypeInfo, ScalaCaseClassSerializer, TraversableSerializer, TraversableTypeInfo}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypingResultAwareTypeInformationCustomisation, TypeInformationDetection}
+import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetection, TypingResultAwareTypeInformationCustomisation}
 import pl.touk.nussknacker.engine.api.{Context, InterpretationResult, PartReference, ValueWithContext}
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{TypedJavaMapTypeInformation, TypedMapTypeInformation, TypedScalaMapTypeInformation}
 import pl.touk.nussknacker.engine.process.typeinformation.internal.{FixedValueSerializers, InterpretationResultMapTypeInfo}
@@ -42,9 +42,6 @@ object TypingResultAwareTypeInformationDetection {
 class TypingResultAwareTypeInformationDetection(customisation:
                                                 TypingResultAwareTypeInformationCustomisation) extends TypeInformationDetection {
 
-  //we have def here, as Scala 2.11 has problems with serialization of PartialFunctions...
-  private def additionalTypeInfoDeterminer = customisation.customise(this)
-
   private val registeredTypeInfos: Set[TypeInformation[_]] = {
     import org.apache.flink.api.scala._
     Set(
@@ -66,30 +63,44 @@ class TypingResultAwareTypeInformationDetection(customisation:
     }
   }
 
-  def forType(typingResult: TypingResult): TypeInformation[Any] = {
+  //This is based on TypeInformationGen macro
+  def generateTraversable(traversableClass: Class[_], elementTpi: TypeInformation[AnyRef]): TypeInformation[_] = {
+    new TraversableTypeInfo[TraversableOnce[AnyRef], AnyRef](traversableClass.asInstanceOf[Class[TraversableOnce[AnyRef]]], elementTpi) {
+      override def createSerializer(executionConfig: ExecutionConfig): TypeSerializer[TraversableOnce[AnyRef]] = {
+        val traversableClassName = s"${traversableClass.getName}[AnyRef]"
+        new TraversableSerializer[TraversableOnce[AnyRef], AnyRef](elementTpi.createSerializer(executionConfig),
+          s"implicitly[scala.collection.generic.CanBuildFrom[$traversableClassName, AnyRef, $traversableClassName]]")
+      }
+    }
+  }
+
+  def forType(typingResult: TypingResult): TypeInformation[AnyRef] = {
     (typingResult match {
       case a if additionalTypeInfoDeterminer.isDefinedAt(a) =>
         additionalTypeInfoDeterminer.apply(a)
-      case a:TypedTaggedValue => forType(a.underlying)
-      case a:TypedDict => forType(a.objType)
-      case a:TypedClass if a.params.isEmpty =>
+      case a: TypedTaggedValue => forType(a.underlying)
+      case a: TypedDict => forType(a.objType)
+      case a: TypedClass if a.params.isEmpty =>
         //TODO: scala case classes are not handled nicely here... CaseClassTypeInfo is created only via macro, here Kryo is used
         registeredTypeInfos.find(_.getTypeClass == a.klass).getOrElse(TypeInformation.of(a.klass))
 
-      case a:TypedClass if a.klass == classOf[java.util.List[_]] => new ListTypeInfo[Any](forType(a.params.head))
-      case a:TypedClass if a.klass == classOf[java.util.Map[_, _]] => new MapTypeInfo[Any, Any](forType(a.params.head), forType(a.params.last))
+      case a: TypedClass if a.klass == classOf[java.util.List[_]] => new ListTypeInfo[AnyRef](forType(a.params.head))
 
-      case a:TypedObjectTypingResult if a.objType.klass == classOf[Map[String, _]] =>
+      case TraversableType(traversableClass, elementType) => generateTraversable(traversableClass, forType(elementType))
+
+      case a: TypedClass if a.klass == classOf[java.util.Map[_, _]] => new MapTypeInfo[AnyRef, AnyRef](forType(a.params.head), forType(a.params.last))
+
+      case a: TypedObjectTypingResult if a.objType.klass == classOf[Map[String, _]] =>
         TypedScalaMapTypeInformation(a.fields.mapValuesNow(forType))
-      case a:TypedObjectTypingResult if a.objType.klass == classOf[TypedMap] =>
+      case a: TypedObjectTypingResult if a.objType.klass == classOf[TypedMap] =>
         TypedMapTypeInformation(a.fields.mapValuesNow(forType))
       //TODO: better handle specific map implementations - other than HashMap?
-      case a:TypedObjectTypingResult if classOf[java.util.Map[String, _]].isAssignableFrom(a.objType.klass) =>
+      case a: TypedObjectTypingResult if classOf[java.util.Map[String, _]].isAssignableFrom(a.objType.klass) =>
         TypedJavaMapTypeInformation(a.fields.mapValuesNow(forType))
       //TODO: how can we handle union - at least of some types?
       case _ =>
         fallback[Any]
-    }).asInstanceOf[TypeInformation[Any]]
+    }).asInstanceOf[TypeInformation[AnyRef]]
   }
 
   def forInterpretationResult(validationContext: ValidationContext, outputRes: Option[TypingResult]): TypeInformation[InterpretationResult] = {
@@ -124,9 +135,24 @@ class TypingResultAwareTypeInformationDetection(customisation:
     }
   }
 
-  private def fallback[T:ClassTag]: TypeInformation[T] = fallback(implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]])
+  //we have def here, as Scala 2.11 has problems with serialization of PartialFunctions...
+  private def additionalTypeInfoDeterminer = customisation.customise(this)
+
+  private def fallback[T: ClassTag]: TypeInformation[T] = fallback(implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]])
 
   private def fallback[T](kl: Class[T]): TypeInformation[T] = TypeInformation.of(kl)
+
+}
+
+private object TraversableType {
+
+  //we have to pick exact types, to avoid problems with "::" classes etc.
+  private val handledTypes = List(classOf[List[_]], classOf[Seq[_]])
+
+  def unapply(typedClass: TypingResult): Option[(Class[_], TypingResult)] = typedClass match {
+    case TypedClass(klass, param :: Nil) => handledTypes.find(_.isAssignableFrom(klass)).map((_, param))
+    case _ => None
+  }
 
 }
 

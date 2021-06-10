@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.TimerService
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
@@ -18,7 +19,8 @@ import scala.language.higherKinds
  * It behaves the same as AggregatorFunction with one difference that also publish events when some event will left the slide.
  */
 class EmitWhenEventLeftAggregatorFunction[MapT[K,V]](protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long,
-                                                     override val nodeId: NodeId, protected val aggregateElementType: TypingResult)
+                                                     override val nodeId: NodeId, protected val aggregateElementType: TypingResult,
+                                                     override protected val aggregateTypeInformation: TypeInformation[AnyRef])
                                                     (implicit override val rangeMap: FlinkRangeMap[MapT])
   extends LatelyEvictableStateFunction[ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef], MapT[Long, AnyRef]]
     with AggregatorFunctionMixin[MapT] with AddedElementContextStateHolder[MapT] {

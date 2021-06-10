@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer.outer
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
@@ -74,7 +75,8 @@ class OuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandler[T
         val keyedJoinedStream = inputs(joinedId(branchTypeByBranchId).get)
           .map(new StringKeyedValueMapper(context.lazyParameterHelper, keyByBranchId(joinedId(branchTypeByBranchId).get), aggregateBy))
 
-        val aggregatorFunction = prepareAggregatorFunction(aggregator, FiniteDuration(window.toMillis, TimeUnit.MILLISECONDS), aggregateBy.returnType)(NodeId(context.nodeId))
+        val storedTypeInfo = context.typeInformationDetection.forType(aggregator.computeStoredTypeUnsafe(aggregateBy.returnType))
+        val aggregatorFunction = prepareAggregatorFunction(aggregator, FiniteDuration(window.toMillis, TimeUnit.MILLISECONDS), aggregateBy.returnType, storedTypeInfo)(NodeId(context.nodeId))
         val statefulStream = keyedMainBranchStream
           .connect(keyedJoinedStream)
           .keyBy(v => v.value, v => v.value.key)
@@ -96,10 +98,10 @@ class OuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandler[T
     branchTypeByBranchId.find(_._2 == BranchType.JOINED).map(_._1)
   }
 
-  protected def prepareAggregatorFunction(aggregator: Aggregator, stateTimeout: FiniteDuration, aggregateElementType: TypingResult)
+  protected def prepareAggregatorFunction(aggregator: Aggregator, stateTimeout: FiniteDuration, aggregateElementType: TypingResult, storedTypeInfo: TypeInformation[AnyRef] )
                                          (implicit nodeId: NodeId):
   CoProcessFunction[ValueWithContext[String], ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]] =
-    new OuterJoinAggregatorFunction[SortedMap](aggregator, stateTimeout.toMillis, nodeId, aggregateElementType)
+    new OuterJoinAggregatorFunction[SortedMap](aggregator, stateTimeout.toMillis, nodeId, aggregateElementType, storedTypeInfo)
 
 }
 

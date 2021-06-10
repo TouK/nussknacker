@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.process.typeinformation
 
 import com.esotericsoftware.kryo.io.{Input, Output}
 import com.esotericsoftware.kryo.{Kryo, Serializer}
-import java.util.Collections
 
+import java.util.Collections
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.base.{IntSerializer, LongSerializer, StringSerializer}
@@ -14,7 +14,8 @@ import org.scalatest.Inside.inside
 import org.scalatest.{Assertion, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed.fromInstance
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetection, TypingResultAwareTypeInformationCustomisation}
 import pl.touk.nussknacker.engine.kafka.serialization.FlinkTypeInformationSerializationMixin
@@ -22,6 +23,7 @@ import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{
 import pl.touk.nussknacker.engine.process.typeinformation.testTypedObject.{CustomObjectTypeInformation, CustomTypedObject}
 import pl.touk.nussknacker.engine.util.Implicits._
 
+import java.util
 import scala.collection.JavaConverters._
 import scala.collection.immutable.ListMap
 
@@ -50,6 +52,16 @@ class TypingResultAwareTypeInformationDetectionSpec extends FunSuite with Matche
       ("longF", new LongSerializer),
       ("strF", new StringSerializer)
     )
+  }
+
+  test("test Traversable serialization") {
+
+    List[(Traversable[String], TypingResult)](
+      (List("a", "b", "c", "d"), Typed.fromDetailedType[List[String]])
+    ).foreach { case (traversable, typ) =>
+      val typeInfo = informationDetection.forType(typ)
+      serializeRoundTrip[AnyRef](traversable, typeInfo)(traversable)
+    }
   }
 
   test("map serialization fallbacks to Kryo when available") {
