@@ -24,12 +24,12 @@ trait ConfluentKafkaAvroSeDeSpecMixin extends SchemaRegistryMixin with TableDriv
   }
 
   lazy val avroSetup: SchemaRegistryProviderSetup = SchemaRegistryProviderSetup(SchemaRegistryProviderSetupType.avro,
-        ConfluentSchemaRegistryProvider(MockSchemaRegistry.factory),
+        ConfluentSchemaRegistryProvider.avroPayload(MockSchemaRegistry.factory),
         new SimpleKafkaAvroSerializer(MockSchemaRegistry.schemaRegistryMockClient, isKey = false),
         new SimpleKafkaAvroDeserializer(MockSchemaRegistry.schemaRegistryMockClient, _useSpecificAvroReader = false))
 
   lazy val jsonSetup: SchemaRegistryProviderSetup = SchemaRegistryProviderSetup(SchemaRegistryProviderSetupType.json,
-        ConfluentSchemaRegistryProvider.jsonPayload(MockSchemaRegistry.factory, formatKey = false),
+        ConfluentSchemaRegistryProvider.jsonPayload(MockSchemaRegistry.factory),
         SimpleKafkaJsonSerializer,
         SimpleKafkaJsonDeserializer)
 

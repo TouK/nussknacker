@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.TypedNodeDependency
 import pl.touk.nussknacker.engine.api.process.Sink
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException, typing}
-import pl.touk.nussknacker.engine.api.{VariableConstants, LazyParameter, MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, StreamMetaData, VariableConstants}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer._
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2, GeneratedAvroClassWithLogicalTypes, PaymentV1}
@@ -29,7 +29,7 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
 
   import KafkaAvroSinkMockSchemaRegistry._
 
-  override def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
+  override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
 
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
 

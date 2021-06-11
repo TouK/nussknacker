@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.kafka
 
 import java.nio.charset.StandardCharsets
 import java.util.Optional
-
 import io.circe.generic.JsonCodec
 import io.circe.{Decoder, Encoder}
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -26,15 +25,15 @@ import scala.reflect.ClassTag
 
 trait KafkaSourceFactoryMixin extends FunSuite with Matchers with KafkaSpec with PatientScalaFutures {
 
-  val sampleValue = SampleValue("first", "last")
-  val sampleKey = SampleKey("one", 2L)
+  val sampleValue: SampleValue = SampleValue("first", "last")
+  val sampleKey: SampleKey = SampleKey("one", 2L)
   val sampleHeadersMap: Map[String, String] = Map("headerOne" -> "valueOfHeaderOne", "headerTwo" -> null)
   val sampleHeaders: Headers = ConsumerRecordUtils.toHeaders(sampleHeadersMap)
 
 
   val sampleTopic = "topic"
   val constTimestamp: Long = 123L
-  lazy val kafkaConfig = KafkaConfig.parseConfig(config)
+  lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config)
 
   protected def objToSerializeSerializationSchema(topic: String): KafkaSerializationSchema[Any] = new BaseSimpleSerializationSchema[ObjToSerialize](
     topic,

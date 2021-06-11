@@ -2,10 +2,10 @@ package pl.touk.nussknacker.engine.avro.schema
 
 import io.confluent.kafka.schemaregistry.avro.AvroSchemaUtils
 import org.apache.avro.Schema
-import org.apache.avro.generic.{GenericDatumReader, GenericDatumWriter}
+import org.apache.avro.generic.GenericDatumWriter
 import org.apache.avro.io.DatumReader
-import org.apache.avro.reflect.{ReflectDatumReader, ReflectDatumWriter}
-import org.apache.avro.specific.{SpecificDatumReader, SpecificDatumWriter, SpecificRecord}
+import org.apache.avro.reflect.ReflectDatumWriter
+import org.apache.avro.specific.{SpecificDatumWriter, SpecificRecord}
 import pl.touk.nussknacker.engine.avro.AvroUtils
 
 import scala.collection.JavaConverters._
@@ -20,7 +20,6 @@ trait DatumReaderWriterMixin {
     * We use it on checking writerSchema is primitive - on creating DatumReader (createDatumReader).
     */
   protected val primitives: mutable.Map[String, Schema] = AvroSchemaUtils.getPrimitiveSchemas.asScala
-
 
   def createDatumWriter(record: Any, schema: Schema, useSchemaReflection: Boolean): GenericDatumWriter[Any] = record match {
     case _: SpecificRecord => new SpecificDatumWriter[Any](schema, AvroUtils.specificData)

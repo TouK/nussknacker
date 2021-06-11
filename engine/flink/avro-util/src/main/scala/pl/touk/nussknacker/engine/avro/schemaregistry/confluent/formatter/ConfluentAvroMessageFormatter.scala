@@ -2,14 +2,13 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter
 
 import java.io.PrintStream
 import java.nio.ByteBuffer
-
 import io.confluent.kafka.schemaregistry.avro.AvroSchemaUtils
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
-import io.confluent.kafka.serializers.{AbstractKafkaAvroDeserializer}
+import io.confluent.kafka.serializers.AbstractKafkaAvroDeserializer
 import org.apache.avro.AvroRuntimeException
-import org.apache.avro.generic.GenericDatumWriter
 import org.apache.avro.io.EncoderFactory
 import org.apache.kafka.common.errors.SerializationException
+import pl.touk.nussknacker.engine.avro.schema.DatumReaderWriterMixin
 
 /**
   * This class is mainly copy-paste of Confluent's AvroMessageFormatter but with access to writeTo method
@@ -17,7 +16,7 @@ import org.apache.kafka.common.errors.SerializationException
   *
   * @param schemaRegistryClient schema registry client
   */
-private[confluent] class ConfluentAvroMessageFormatter(schemaRegistryClient: SchemaRegistryClient) extends AbstractKafkaAvroDeserializer {
+private[confluent] class ConfluentAvroMessageFormatter(schemaRegistryClient: SchemaRegistryClient) extends AbstractKafkaAvroDeserializer with DatumReaderWriterMixin {
 
   private val encoderFactory = EncoderFactory.get
 
@@ -30,13 +29,12 @@ private[confluent] class ConfluentAvroMessageFormatter(schemaRegistryClient: Sch
     try {
       //pretty = false is important, as we rely on the fact that there are no new lines in message parsing
       val encoder = encoderFactory.jsonEncoder(schema, output, false)
-      val writer = new GenericDatumWriter[AnyRef](schema)
-      obj match {
-        case bytes: Array[Byte] =>
-          writer.write(ByteBuffer.wrap(bytes.asInstanceOf[Array[Byte]]), encoder)
-        case _ =>
-          writer.write(obj, encoder)
+      val record = obj match {
+        case bytes: Array[Byte] => ByteBuffer.wrap(bytes)
+        case other => other
       }
+      val writer = createDatumWriter(record, schema, useSchemaReflection = false)
+      writer.write(record, encoder)
       encoder.flush()
     } catch {
       case ex: AvroRuntimeException =>
