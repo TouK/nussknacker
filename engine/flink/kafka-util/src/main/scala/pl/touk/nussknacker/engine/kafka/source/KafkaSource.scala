@@ -10,7 +10,8 @@ import pl.touk.nussknacker.engine.api.process.TestDataGenerator
 import pl.touk.nussknacker.engine.api.test.TestDataParser
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkIntermediateRawSource, FlinkSource, FlinkSourceTestSupport}
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, TimestampWatermarkHandler}
+import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrderPreviousElementAssigner
 import pl.touk.nussknacker.engine.kafka._
 
 import scala.collection.JavaConverters._
@@ -18,7 +19,7 @@ import scala.collection.JavaConverters._
 class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
                      kafkaConfig: KafkaConfig,
                      deserializationSchema: KafkaDeserializationSchema[T],
-                     override val timestampAssigner: Option[TimestampWatermarkHandler[T]],
+                     passedAssigner: Option[TimestampWatermarkHandler[T]],
                      recordFormatter: RecordFormatter,
                      overriddenConsumerGroup: Option[String] = None)
   extends FlinkSource[T]
@@ -29,6 +30,8 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
     with ExplicitUidInOperatorsSupport {
 
   private lazy val topics: List[String] = preparedTopics.map(_.prepared)
+
+  private val defaultMaxOutOfOrdernessMillis = 60000
 
   override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[Context] = {
     val consumerGroupId = overriddenConsumerGroup.getOrElse(ConsumerGroupDeterminer(kafkaConfig).consumerGroup(flinkNodeContext))
@@ -62,6 +65,16 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
   }
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[T]] = timestampAssigner
+
+  override def timestampAssigner: Option[TimestampWatermarkHandler[T]] = Some(
+    passedAssigner.getOrElse(
+      new LegacyTimestampWatermarkHandler[T](
+        new BoundedOutOfOrderPreviousElementAssigner[T](
+          kafkaConfig.defaultMaxOutOfOrdernessMillis.getOrElse(defaultMaxOutOfOrdernessMillis)
+        )
+      )
+    )
+  )
 
   protected def deserializeTestData(topic: String, record: ConsumerRecord[Array[Byte], Array[Byte]]): T = {
     // we use deserialize(record) instead of deserialize(record, collector) for backward compatibility reasons
