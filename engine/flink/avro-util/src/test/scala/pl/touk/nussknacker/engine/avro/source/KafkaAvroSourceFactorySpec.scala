@@ -41,7 +41,7 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
 
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
 
-  override protected val schemaRegistryProvider: ConfluentSchemaRegistryProvider = ConfluentSchemaRegistryProvider.avroPayload(confluentClientFactory)
+  override protected lazy val schemaRegistryProvider: ConfluentSchemaRegistryProvider = ConfluentSchemaRegistryProvider.avroPayload(confluentClientFactory)
 
   test("should read generated record in v1") {
     val givenObj = FullNameV1.createRecord("Jan", "Kowalski")

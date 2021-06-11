@@ -20,7 +20,7 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableD
 
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
 
-  override protected val schemaRegistryProvider: ConfluentSchemaRegistryProvider = ConfluentSchemaRegistryProvider.avroPayload(confluentClientFactory)
+  override protected lazy val schemaRegistryProvider: ConfluentSchemaRegistryProvider = ConfluentSchemaRegistryProvider.avroPayload(confluentClientFactory)
 
   private val encode = BestEffortJsonEncoder(failOnUnkown = false).encode _
   

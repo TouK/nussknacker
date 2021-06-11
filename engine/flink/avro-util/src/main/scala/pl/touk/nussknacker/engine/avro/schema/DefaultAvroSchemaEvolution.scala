@@ -78,7 +78,7 @@ class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWri
     try {
       val out = new ByteArrayOutputStream
       val encoder = encoderFactory.directBinaryEncoder(out, null)
-      val writer = createDatumWriter(record.getSchema, useSchemaReflection = useSchemaReflection, AvroUtils.isSpecificRecord(record))
+      val writer = createDatumWriter(record, record.getSchema, useSchemaReflection = useSchemaReflection)
       writer.write(record, encoder)
       encoder.flush()
       val bytes = out.toByteArray

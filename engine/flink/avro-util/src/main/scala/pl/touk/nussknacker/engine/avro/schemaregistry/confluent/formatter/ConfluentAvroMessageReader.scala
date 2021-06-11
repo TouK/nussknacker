@@ -1,9 +1,6 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter
 
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
-import java.io.IOException
-import java.nio.charset.StandardCharsets
-
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.serializers.AbstractKafkaAvroSerializer
 import org.apache.avro.Schema.Type
@@ -12,9 +9,11 @@ import org.apache.avro.util.Utf8
 import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.errors.SerializationException
-import pl.touk.nussknacker.engine.avro.AvroUtils
-import pl.touk.nussknacker.engine.avro.schema.StringForcingDatumReaderProvider
+import pl.touk.nussknacker.engine.avro.schema.DatumReaderWriterMixin
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
+
+import java.io.IOException
+import java.nio.charset.StandardCharsets
 
 /**
   * This class is mainly copy-paste of Confluent's AvroMessageReader but with better constructor handling
@@ -28,7 +27,7 @@ private[confluent] class ConfluentAvroMessageReader(schemaRegistryClient: Schema
                                                     topic: String,
                                                     useStringForKey: Boolean,
                                                     keySeparator: String)
-  extends AbstractKafkaAvroSerializer {
+  extends AbstractKafkaAvroSerializer with DatumReaderWriterMixin {
 
   schemaRegistry = schemaRegistryClient
 
@@ -77,7 +76,7 @@ private[confluent] class ConfluentAvroMessageReader(schemaRegistryClient: Schema
 
   private def jsonToAvro(jsonString: String, schema: Schema) = {
     try {
-      val reader = StringForcingDatumReaderProvider.genericDatumReader[AnyRef](schema, schema, AvroUtils.genericData)
+      val reader = createDatumReader(schema, schema, useSchemaReflection = false, useSpecificAvroReader = false)
       val obj = reader.read(null, decoderFactory.jsonDecoder(schema, jsonString))
       if (schema.getType == Type.STRING)
         obj.asInstanceOf[Utf8].toString

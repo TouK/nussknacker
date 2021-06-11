@@ -24,12 +24,12 @@ object KafkaAvroTestProcessConfigCreator {
 
 class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
 
-  protected val testSchemaRegistryProvider: SchemaRegistryProvider = createSchemaRegistryProvider
+  protected val schemaRegistryProvider: SchemaRegistryProvider = createSchemaRegistryProvider
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
-    val avroSourceFactory = new KafkaAvroSourceFactory(testSchemaRegistryProvider, processObjectDependencies, None)
-    val avroSpecificSourceFactory = new SpecificRecordKafkaAvroSourceFactory[GeneratedAvroClassWithLogicalTypes](testSchemaRegistryProvider, processObjectDependencies, None)
-    val avroSourceFactoryWithKeySchemaSupport = new KafkaAvroSourceFactory(testSchemaRegistryProvider, processObjectDependencies, None) {
+    val avroSourceFactory = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
+    val avroSpecificSourceFactory = new SpecificRecordKafkaAvroSourceFactory[GeneratedAvroClassWithLogicalTypes](schemaRegistryProvider, processObjectDependencies, None)
+    val avroSourceFactoryWithKeySchemaSupport = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None) {
       override protected def prepareKafkaConfig: KafkaConfig = super.prepareKafkaConfig.copy(useStringForKey = false)
     }
 
@@ -46,8 +46,8 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
     Map(
-      "kafka-avro-raw" -> defaultCategory(new KafkaAvroSinkFactory(testSchemaRegistryProvider, processObjectDependencies)),
-      "kafka-avro" -> defaultCategory(new KafkaAvroSinkFactoryWithEditor(testSchemaRegistryProvider, processObjectDependencies)),
+      "kafka-avro-raw" -> defaultCategory(new KafkaAvroSinkFactory(schemaRegistryProvider, processObjectDependencies)),
+      "kafka-avro" -> defaultCategory(new KafkaAvroSinkFactoryWithEditor(schemaRegistryProvider, processObjectDependencies)),
       "sinkForInputMeta" -> defaultCategory(SinkFactory.noParam(SinkForInputMeta))
     )
   }

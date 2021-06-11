@@ -34,7 +34,7 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
 
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
 
-  override protected val schemaRegistryProvider: ConfluentSchemaRegistryProvider = ConfluentSchemaRegistryProvider.avroPayload(confluentClientFactory)
+  override protected lazy val schemaRegistryProvider: ConfluentSchemaRegistryProvider = ConfluentSchemaRegistryProvider.avroPayload(confluentClientFactory)
 
   private def validate(params: (String, Expression)*): TransformationResult = {
     val modelData = LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator)
