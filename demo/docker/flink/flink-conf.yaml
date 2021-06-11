@@ -29,8 +29,8 @@ taskmanager.hostname: taskmanager
 
 taskmanager.data.port: 6126
 
-taskmanager.memory.task.heap.size: 256m
-taskmanager.memory.managed.size: 204m
+taskmanager.memory.task.heap.size: 1256m
+taskmanager.memory.managed.size: 1204m
 
 env.java.opts.taskmanager: "-Dcom.sun.management.jmxremote -Djava.rmi.server.hostname=localhost -Dcom.sun.management.jmxremote.port=9009 -Dcom.sun.management.jmxremote.rmi.port=9008 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false"
 
@@ -72,6 +72,11 @@ high-availability.storageDir: file:///opt/flink/data/storage
 state.backend: filesystem
 state.checkpoints.dir: file:///opt/flink/data/checkpoints
 state.savepoints.dir: file:///opt/flink/data/savepoints
+
+state.backend.rocksdb.metrics.estimate-num-keys: true
+state.backend.rocksdb.metrics.estimate-live-data-size: true
+#We can have many jobs per cluster, in such setting managed memory is not easy to tune
+state.backend.rocksdb.memory.managed: false
 
 metrics.reporters: influxdb_reporter
 
