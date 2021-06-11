@@ -17,7 +17,6 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.Confluent
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaVersionOption}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer
 import pl.touk.nussknacker.engine.avro.helpers.KafkaAvroSpecMixin
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.{GenericNodeTransformationValidator, TransformationResult}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
@@ -33,8 +32,6 @@ class KafkaAvroSinkFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpec
   override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
 
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
-
-  override protected lazy val schemaRegistryProvider: ConfluentSchemaRegistryProvider = ConfluentSchemaRegistryProvider.avroPayload(confluentClientFactory)
 
   private def validate(params: (String, Expression)*): TransformationResult = {
     val modelData = LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator)
