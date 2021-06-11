@@ -31,7 +31,8 @@ import scala.language.higherKinds
 // is stored in multiple windows with different offsets.
 // NOTE: it would be much cleaner if we evaluated aggregateBy here. However, FLINK-10250 prevents us from doing this and we *have* to compute it before
 class AggregatorFunction[MapT[K,V]](protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long,
-                                    override val nodeId: NodeId, protected val aggregateElementType: TypingResult)
+                                    override val nodeId: NodeId, protected val aggregateElementType: TypingResult,
+                                    protected override val aggregateTypeInformation: TypeInformation[AnyRef])
                                    (implicit override val rangeMap: FlinkRangeMap[MapT])
   extends LatelyEvictableStateFunction[ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef], MapT[Long, AnyRef]]
   with AggregatorFunctionMixin[MapT] {
@@ -161,9 +162,6 @@ trait AggregatorFunctionMixin[MapT[K,V]] { self: StateHolder[MapT[Long, AnyRef]]
     new ValueStateDescriptor[MapT[Long, AnyRef]]("state",
       rangeMap.typeInformation[Long, AnyRef](implicitly[TypeInformation[Long]], aggregateTypeInformation))
 
-  // TODO pass type information based on validatedStoredType for fast (de)serialization
-  protected def aggregateTypeInformation: TypeInformation[AnyRef] = {
-    implicitly[TypeInformation[AnyRef]]
-  }
+  protected def aggregateTypeInformation: TypeInformation[AnyRef]
 
 }

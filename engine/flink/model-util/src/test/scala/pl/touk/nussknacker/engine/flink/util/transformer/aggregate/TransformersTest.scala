@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
-import java.time.Duration
-import java.util
 import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.flink.streaming.api.scala._
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
@@ -23,21 +22,24 @@ import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElemen
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SessionWindowAggregateTransformer, SlidingAggregateTransformerV2, TumblingAggregateTransformer}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
+import java.time.Duration
+import java.util
 import java.util.Arrays.asList
 import scala.collection.JavaConverters._
 import scala.collection.immutable.ListMap
 
 class TransformersTest extends FunSuite with FlinkSpec with Matchers {
 
-  def modelData(list: List[TestRecord] = List()): LocalModelData = LocalModelData(ConfigFactory.empty(), new Creator(list))
+  def modelData(list: List[TestRecord] = List()): LocalModelData = LocalModelData(ConfigFactory
+    .empty().withValue("useTypingResultTypeInformation", fromAnyRef(true)), new Creator(list))
 
   val validator: ProcessValidator = modelData().validator
 
@@ -374,6 +376,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers {
     val beforeAggregate = EspProcessBuilder
       .id("aggregateTest")
       .parallelism(1)
+      .stateOnDisk(true)
       .exceptionHandler()
       .source("start", "start")
       .buildSimpleVariable("id", "id", "#input.id")

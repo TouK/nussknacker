@@ -49,5 +49,5 @@ object GenericTypeInformationDetection extends TypeInformationDetection {
   override def forValueWithContext[T](validationContext: ValidationContext, value: TypingResult): TypeInformation[ValueWithContext[T]]
     = implicitly[TypeInformation[ValueWithContext[AnyRef]]].asInstanceOf[TypeInformation[ValueWithContext[T]]]
 
-  override def forType(typingResult: TypingResult): TypeInformation[Any] = implicitly[TypeInformation[Any]]
+  override def forType(typingResult: TypingResult): TypeInformation[AnyRef] = implicitly[TypeInformation[AnyRef]]
 }

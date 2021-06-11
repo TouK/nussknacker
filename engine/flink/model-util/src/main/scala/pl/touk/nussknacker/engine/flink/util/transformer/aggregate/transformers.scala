@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import org.apache.flink.annotation.PublicEvolving
+import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.java.typeutils.TupleTypeInfo
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.assigners.{EventTimeSessionWindows, TumblingEventTimeWindows}
 import org.apache.flink.streaming.api.windowing.time.Time
@@ -43,12 +45,13 @@ object transformers {
       .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
           implicit val fctx: FlinkCustomNodeContext = ctx
+          val typeInfos = AggregatorTypeInformations(ctx, aggregator, aggregateBy)
 
           val aggregatorFunction =
             if (emitWhenEventLeft)
-              new EmitWhenEventLeftAggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, aggregateBy.returnType)
+              new EmitWhenEventLeftAggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, aggregateBy.returnType, typeInfos.storedTypeInfo)
             else
-              new AggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, aggregateBy.returnType)
+              new AggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, aggregateBy.returnType, typeInfos.storedTypeInfo)
           start
             .keyByWithValue(keyBy, _ => aggregateBy)
             .process(aggregatorFunction)
@@ -77,6 +80,7 @@ object transformers {
       .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
           implicit val fctx: FlinkCustomNodeContext = ctx
+          val typeInfos = AggregatorTypeInformations(ctx, aggregator, aggregateBy)
 
           val keyedStream = start
             .keyByWithValue(keyBy, _ => aggregateBy)
@@ -85,16 +89,16 @@ object transformers {
               keyedStream
                  .window(TumblingEventTimeWindows.of(Time.milliseconds(windowLength.toMillis)))
                  .trigger(FireOnEachEvent[AnyRef, TimeWindow](EventTimeTrigger.create()))
-                 .aggregate(new UnwrappingAggregateFunction(aggregator, aggregateBy.returnType, _.value, LastContextStrategy))
+                 .aggregate(new UnwrappingAggregateFunction(aggregator, aggregateBy.returnType, _.value, LastContextStrategy))(typeInfos.accWithCtxTypeInfo, typeInfos.returnedValueTypeInfo)
             case TumblingWindowTrigger.OnEnd =>
               keyedStream
                  .window(TumblingEventTimeWindows.of(Time.milliseconds(windowLength.toMillis)))
                 //TODO: which context do we want to emit?
-                 .aggregate(new UnwrappingAggregateFunction(aggregator, aggregateBy.returnType, _.value, FirstContextStrategy))
+                 .aggregate(new UnwrappingAggregateFunction(aggregator, aggregateBy.returnType, _.value, FirstContextStrategy))(typeInfos.accWithCtxTypeInfo, typeInfos.returnedValueTypeInfo)
             case TumblingWindowTrigger.OnEndWithExtraWindow =>
               keyedStream
                  //TODO: alignment??
-                 .process(new EmitExtraWindowWhenNoDataTumblingAggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, aggregateBy.returnType))
+                 .process(new EmitExtraWindowWhenNoDataTumblingAggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, aggregateBy.returnType, typeInfos.storedTypeInfo))
           }).setUid(ctx, explicitUidInStatefulOperators)
         }))
 
@@ -111,6 +115,8 @@ object transformers {
       .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
           implicit val fctx: FlinkCustomNodeContext = ctx
+          val typeInfos = AggregatorTypeInformations(ctx, aggregator, aggregateBy)
+
           val baseTrigger =
             ClosingEndEventTrigger[ValueWithContext[KeyedValue[String, (AnyRef, java.lang.Boolean)]], TimeWindow](EventTimeTrigger.create(), _.value.value._2)
           val trigger = sessionWindowTrigger match {
@@ -121,10 +127,29 @@ object transformers {
             .keyByWithValue(keyBy, _.product(aggregateBy, endSessionCondition))
             .window(EventTimeSessionWindows.withGap(Time.milliseconds(sessionTimeout.toMillis)))
             .trigger(trigger)
-            .aggregate(new UnwrappingAggregateFunction(aggregator, aggregateBy.returnType, _.value._1, LastContextStrategy))
+            .aggregate(new UnwrappingAggregateFunction(aggregator, aggregateBy.returnType, _.value._1, LastContextStrategy))(typeInfos.accWithCtxTypeInfo, typeInfos.returnedValueTypeInfo)
             .setUid(ctx, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
         }))
 
+  case class AggregatorTypeInformations(ctx: FlinkCustomNodeContext, aggregator: Aggregator, aggregateBy: LazyParameter[AnyRef]) {
 
+    private val detection = ctx.typeInformationDetection
+
+    private val vctx = ctx.validationContext.left.get
+
+    private val returnType = aggregator.computeOutputType(aggregateBy.returnType)
+      .valueOr(e => throw new IllegalArgumentException(s"Validation error should have happened, got $e"))
+    private val storedType = aggregator.computeStoredType(aggregateBy.returnType)
+      .valueOr(e => throw new IllegalArgumentException(s"Validation error should have happened, got $e"))
+
+    lazy val storedTypeInfo: TypeInformation[AnyRef] = detection.forType(storedType)
+    lazy val returnTypeInfo: TypeInformation[AnyRef] = detection.forType(returnType)
+
+    lazy val contextTypeInfo: TypeInformation[NkContext] = detection.forContext(vctx)
+    lazy val returnedValueTypeInfo: TypeInformation[ValueWithContext[AnyRef]] = detection.forValueWithContext(vctx, returnType)
+
+    lazy val accWithCtxTypeInfo: TypeInformation[UnwrappingAggregateFunction.AccumulatorWithContext] =  new TupleTypeInfo(storedTypeInfo, contextTypeInfo)
+
+  }
 
 }

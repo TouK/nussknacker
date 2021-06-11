@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import org.apache.flink.api.common.state.ValueState
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.TimerService
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
@@ -22,7 +23,8 @@ import scala.language.higherKinds
  * state eviction on ours own.
  */
 class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K,V]](protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long,
-                                                                     override val nodeId: NodeId, protected val aggregateElementType: TypingResult)
+                                                                     override val nodeId: NodeId, protected val aggregateElementType: TypingResult,
+                                                                     protected override val aggregateTypeInformation: TypeInformation[AnyRef])
                                                                     (implicit override val rangeMap: FlinkRangeMap[MapT])
   extends KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]
     with StateHolder[MapT[Long, AnyRef]]
