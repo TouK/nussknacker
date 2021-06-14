@@ -708,7 +708,6 @@ lazy val util = (project in engine("util")).
       Seq(
         "org.springframework" % "spring-core" % springV,
         "com.github.ben-manes.caffeine" % "caffeine" % caffeineCacheV,
-        "com.github.bigwheel" %% "util-backports" % utilBackportsV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "com.iheart" %% "ficus" % ficusV,
         "io.circe" %% "circe-java8" % circeJava8V,
