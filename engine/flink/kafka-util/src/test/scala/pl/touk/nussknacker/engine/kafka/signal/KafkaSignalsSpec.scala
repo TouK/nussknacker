@@ -50,30 +50,7 @@ class KafkaSignalsSpec extends FunSuite with Matchers with FlinkSpec with KafkaS
       record(1200),
       record(2000)
     )
-    val creator: EmptyProcessConfigCreator = new EmptyProcessConfigCreator {
-
-      override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-        "signalReader" -> WithCategories(CustomSignalReader),
-        "transformWithTime" -> WithCategories(TransformerWithTime)
-      )
-
-      override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
-        "input" -> WithCategories(SampleNodes.simpleRecordSource(data))
-      )
-
-      override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
-        "logService" -> WithCategories(new MockService)
-      )
-
-      override def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[TestProcessSignalFactory]] = {
-        val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config)
-        Map("sig1" ->
-          WithCategories(new TestProcessSignalFactory(kafkaConfig, signalTopic)))
-      }
-
-      override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
-        ExceptionHandlerFactory.noParams(_ => RecordingExceptionHandler)
-    }
+    val creator = new KafkaSignalsCreator(data)
 
     val env = flinkMiniCluster.createExecutionEnvironment()
     val modelData = LocalModelData(config, creator)
