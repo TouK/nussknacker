@@ -1,17 +1,12 @@
 package pl.touk.nussknacker.ui.util
 
 import java.net.ServerSocket
+import scala.util.Using
 
 object AvailablePortFinder {
 
-  def findAvailablePort(): Int = {
-    val socket = new ServerSocket(0)
-    try {
-      socket.setReuseAddress(true)
-      socket.getLocalPort
-    } finally {
-      socket.close()
-    }
+  def findAvailablePort(): Int = Using.resource(new ServerSocket(0)) { socket =>
+    socket.setReuseAddress(true)
+    socket.getLocalPort
   }
-
 }

@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.util
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
+import scala.util.Using.Releasable
 import scala.util.{Failure, Success}
 
 object Implicits {
@@ -67,4 +68,7 @@ object Implicits {
     }
   }
 
+  implicit object SourceIsReleasable extends Releasable[scala.io.Source] {
+    def release(resource: scala.io.Source): Unit = resource.close()
+  }
 }

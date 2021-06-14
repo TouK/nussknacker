@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.engine.process.runner
 
-import org.apache.flink.api.common.JobExecutionResult
 import org.apache.flink.core.fs.FileSystem
-import org.apache.flink.configuration.{Configuration, CoreOptions, JobManagerOptions, RestOptions, TaskManagerOptions}
+import org.apache.flink.configuration.{Configuration, CoreOptions, RestOptions, TaskManagerOptions}
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfiguration}
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
@@ -12,6 +11,7 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.util.MetaDataExtractor
 
 import scala.collection.JavaConverters._
+import scala.util.Using
 
 trait FlinkStubbedRunner {
 
@@ -45,16 +45,14 @@ trait FlinkStubbedRunner {
     // it is required for proper working of HadoopFileSystem
     FileSystem.initialize(configuration, null)
 
-    val exec: MiniCluster = new MiniCluster(new MiniClusterConfiguration.Builder()
-          .setNumSlotsPerTaskManager(env.getParallelism)
-          .setConfiguration(configuration).build())
-    try {
+    Using.resource(
+      new MiniCluster(new MiniClusterConfiguration.Builder()
+        .setNumSlotsPerTaskManager(env.getParallelism)
+        .setConfiguration(configuration).build())) { exec =>
+
       exec.start()
       val id = exec.submitJob(jobGraph).get().getJobID
       exec.requestJobResult(id).get().toJobExecutionResult(getClass.getClassLoader)
-    } finally {
-      exec.close()
     }
   }
-
 }

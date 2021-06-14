@@ -2,13 +2,14 @@ package pl.touk.nussknacker.engine.standalone.deployment
 
 import java.io.{File, PrintWriter}
 import java.nio.charset.StandardCharsets
-
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.standalone.api.StandaloneDeploymentData
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.util.Implicits.SourceIsReleasable
 
 import scala.io.Source
+import scala.util.Using
 
 trait ProcessRepository {
 
@@ -45,11 +46,8 @@ class FileProcessRepository(path: File) extends ProcessRepository {
 
   override def add(id: ProcessName, deploymentData: StandaloneDeploymentData): Unit = {
     val outFile = new File(path, id.value)
-    val writer = new PrintWriter(outFile, StandardCharsets.UTF_8.name())
-    try {
+    Using.resource(new PrintWriter(outFile, StandardCharsets.UTF_8.name())) { writer =>
       writer.write(deploymentData.asJson.spaces2)
-    } finally {
-      writer.close()
     }
   }
 
@@ -57,10 +55,10 @@ class FileProcessRepository(path: File) extends ProcessRepository {
     new File(path, id.value).delete()
   }
 
-  private def fileToString(file: File)={
-    val s = Source.fromFile(file, StandardCharsets.UTF_8.name())
-    try s.getLines().mkString("\n") finally s.close()
-  }
+  private def fileToString(file: File) =
+    Using.resource(Source.fromFile(file, StandardCharsets.UTF_8.name())) { s =>
+      s.getLines().mkString("\n")
+    }
 
   override def loadAll: Map[ProcessName, StandaloneDeploymentData] = path.listFiles().filter(_.isFile).map { file =>
     ProcessName(file.getName) -> CirceUtil.decodeJson[StandaloneDeploymentData](fileToString(file))

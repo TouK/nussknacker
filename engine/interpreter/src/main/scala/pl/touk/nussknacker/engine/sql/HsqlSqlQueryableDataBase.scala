@@ -2,13 +2,13 @@ package pl.touk.nussknacker.engine.sql
 
 import java.sql._
 import java.util.UUID
-
 import com.typesafe.scalalogging.LazyLogging
 import org.hsqldb.jdbc.JDBCDriver
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.typed.{TypedMap, TypedObjectDefinition, typing}
 
 import scala.collection.mutable
+import scala.util.Using
 import scala.util.control.Exception._
 
 
@@ -40,9 +40,7 @@ class HsqlSqlQueryableDataBase(query: String, tables: Map[String, ColumnModel]) 
       createTableQuery(table._1, table._2)
     } foreach { query =>
       logger.debug(query)
-      val statement = connection.prepareStatement(query)
-      statement.execute()
-      statement.close()
+      Using.resource(connection.prepareStatement(query))(_.execute())
     }
   }
 

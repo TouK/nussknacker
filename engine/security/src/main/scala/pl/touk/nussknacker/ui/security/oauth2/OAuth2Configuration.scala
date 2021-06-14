@@ -4,6 +4,7 @@ import java.net.URI
 import java.nio.charset.{Charset, StandardCharsets}
 import java.security.PublicKey
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.util.Implicits.SourceIsReleasable
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
 import pl.touk.nussknacker.ui.security.api.AuthenticationMethod.AuthenticationMethod
@@ -12,6 +13,7 @@ import sttp.model.{HeaderNames, MediaType, Uri}
 
 import scala.concurrent.duration.{FiniteDuration, HOURS}
 import scala.io.Source
+import scala.util.Using
 
 case class OAuth2Configuration(method: AuthenticationMethod,
                                usersFile: URI,
@@ -90,7 +92,7 @@ object JwtConfiguration {
 
       def getContent(content: Option[String], file: Option[String]): Option[String] =
         content.orElse(file map { path =>
-          Source.fromFile(path, StandardCharsets.UTF_8.name).mkString
+          Using.resource(Source.fromFile(path, StandardCharsets.UTF_8.name))(_.mkString)
         })
 
       getContent(publicKey, publicKeyFile).map(CertificatesAndKeys.publicKeyFromString(_, charset)) orElse

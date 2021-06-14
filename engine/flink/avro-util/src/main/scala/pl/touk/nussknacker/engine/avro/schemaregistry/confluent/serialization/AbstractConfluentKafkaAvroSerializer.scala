@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization
 
-import java.io.{ByteArrayOutputStream, IOException, OutputStream}
-import java.nio.ByteBuffer
 import io.confluent.kafka.schemaregistry.avro.{AvroSchema, AvroSchemaUtils}
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
 import io.confluent.kafka.serializers.{AbstractKafkaAvroSerializer, AbstractKafkaSchemaSerDe}
@@ -10,6 +8,10 @@ import org.apache.avro.generic.GenericContainer
 import org.apache.avro.io.{Encoder, EncoderFactory}
 import org.apache.kafka.common.errors.SerializationException
 import pl.touk.nussknacker.engine.avro.schema.{AvroSchemaEvolution, DatumReaderWriterMixin}
+
+import java.io.{ByteArrayOutputStream, IOException, OutputStream}
+import java.nio.ByteBuffer
+import scala.util.Using
 
 /**
   * Abstract confluent serializer class. Serialize algorithm is copy past from AbstractKafkaAvroSerializer.serializeImpl.
@@ -54,27 +56,26 @@ class AbstractConfluentKafkaAvroSerializer(avroSchemaEvolution: AvroSchemaEvolut
       }
     } catch {
       case exc: RestClientException =>
-                throw new SerializationException(s"Error registering/retrieving Avro schema: " + avroSchema.rawSchema(), exc)
+        throw new SerializationException(s"Error registering/retrieving Avro schema: " + avroSchema.rawSchema(), exc)
     }
   }
 
-  protected def writeData(data: Any, avroSchema: Schema, schemaId: Int): Array[Byte] = {
-    val out = new ByteArrayOutputStream
-    writeHeader(data, avroSchema, schemaId, out)
+  protected def writeData(data: Any, avroSchema: Schema, schemaId: Int): Array[Byte] =
+    Using.resource(new ByteArrayOutputStream) { out =>
 
-    data match {
-      case array: Array[Byte] => out.write(array)
-      case _ =>
-        val encoder = encoderToUse(avroSchema, out)
-        val writer = createDatumWriter(data, avroSchema, useSchemaReflection = useSchemaReflection)
-        writer.write(data, encoder)
-        encoder.flush()
+      writeHeader(data, avroSchema, schemaId, out)
+
+      data match {
+        case array: Array[Byte] => out.write(array)
+        case _ =>
+          val encoder = encoderToUse(avroSchema, out)
+          val writer = createDatumWriter(data, avroSchema, useSchemaReflection = useSchemaReflection)
+          writer.write(data, encoder)
+          encoder.flush()
+      }
+
+      out.toByteArray
     }
-
-    val bytes = out.toByteArray
-    out.close()
-    bytes
-  }
 
   protected def encoderToUse(schema: Schema, out: OutputStream): Encoder = this.encoderFactory.directBinaryEncoder(out, null)
 

@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.util.ThreadUtils
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future, Promise}
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Using}
 
 object KafkaUtils extends LazyLogging {
 
@@ -38,11 +38,8 @@ object KafkaUtils extends LazyLogging {
     AdminClient.create(properties)
   }
 
-  def usingAdminClient[T](kafkaConfig: KafkaConfig)(adminClientOperation: Admin => T): T = {
-    val c = createKafkaAdminClient(kafkaConfig)
-    try adminClientOperation(c)
-    finally c.close()
-  }
+  def usingAdminClient[T](kafkaConfig: KafkaConfig)(adminClientOperation: Admin => T): T =
+    Using.resource(createKafkaAdminClient(kafkaConfig))(adminClientOperation)
 
   def validateTopicsExistence(topics: List[PreparedKafkaTopic], kafkaConfig: KafkaConfig): Unit = {
     new CachedTopicsExistenceValidator(kafkaConfig = kafkaConfig)
@@ -155,11 +152,7 @@ object KafkaUtils extends LazyLogging {
     // http://stackoverflow.com/questions/40037857/intermittent-exception-in-tests-using-the-java-kafka-client
     ThreadUtils.withThisAsContextClassLoader(classOf[KafkaClient].getClassLoader) {
       val consumer: KafkaConsumer[Array[Byte], Array[Byte]] = new KafkaConsumer(toPropertiesForTempConsumer(config, groupId))
-      try {
-        fun(consumer)
-      } finally {
-        consumer.close()
-      }
+      Using.resource(consumer)(fun)
     }
   }
 
@@ -174,17 +167,10 @@ object KafkaUtils extends LazyLogging {
     consumer.commitSync()
   }
 
-  def sendToKafkaWithTempProducer(topic: String, key: Array[Byte], value: Array[Byte])(kafkaConfig: KafkaConfig): Future[RecordMetadata] = {
-    var producer: KafkaProducer[Array[Byte], Array[Byte]] = null
-    try {
-      producer = createProducer(kafkaConfig, "temp-"+topic)
+  def sendToKafkaWithTempProducer(topic: String, key: Array[Byte], value: Array[Byte])(kafkaConfig: KafkaConfig): Future[RecordMetadata] =
+    Using.resource(createProducer(kafkaConfig, "temp-"+topic)) { producer =>
       sendToKafka(topic, key, value)(producer)
-    } finally {
-      if (producer != null) {
-        producer.close()
-      }
     }
-  }
 
   def sendToKafka[K, V](topic: String, key: K, value: V)(producer: KafkaProducer[K, V]): Future[RecordMetadata] = {
     val promise = Promise[RecordMetadata]()

@@ -13,7 +13,7 @@ import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
 
 import scala.collection.convert.DecorateAsJava
-import scala.util.Try
+import scala.util.{Try, Using}
 
 trait DbTesting
   extends BeforeAndAfterEach
@@ -38,18 +38,14 @@ trait DbTesting
     }
   }
 
-  def cleanDB(): Try[Unit] = {
-    Try {
-      val session = db.db.createSession()
-      session.prepareStatement("""delete from "process_attachments"""").execute()
-      session.prepareStatement("""delete from "process_comments"""").execute()
-      session.prepareStatement("""delete from "process_actions"""").execute()
-      session.prepareStatement("""delete from "process_versions"""").execute()
-      session.prepareStatement("""delete from "tags"""").execute()
-      session.prepareStatement("""delete from "environments"""").execute()
-      session.prepareStatement("""delete from "processes"""").execute()
-      session.close()
-    }
+  def cleanDB(): Try[Unit] = Using(db.db.createSession()) { session =>
+    session.prepareStatement("""delete from "process_attachments"""").execute()
+    session.prepareStatement("""delete from "process_comments"""").execute()
+    session.prepareStatement("""delete from "process_actions"""").execute()
+    session.prepareStatement("""delete from "process_versions"""").execute()
+    session.prepareStatement("""delete from "tags"""").execute()
+    session.prepareStatement("""delete from "environments"""").execute()
+    session.prepareStatement("""delete from "processes"""").execute()
   }
 }
 

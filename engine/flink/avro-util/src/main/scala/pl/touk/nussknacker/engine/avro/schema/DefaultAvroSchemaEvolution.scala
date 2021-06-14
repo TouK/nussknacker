@@ -2,13 +2,12 @@ package pl.touk.nussknacker.engine.avro.schema
 
 import java.io.{ByteArrayOutputStream, IOException}
 import java.nio.ByteBuffer
-
 import org.apache.avro.Schema
 import org.apache.avro.generic._
 import org.apache.avro.io.{DatumReader, DecoderFactory, EncoderFactory}
 import pl.touk.nussknacker.engine.avro.{AvroUtils, RuntimeSchemaData}
 
-import scala.util.Try
+import scala.util.{Try, Using}
 
 /**
   * It's base implementation of AvroSchemaEvolution. In this case strategy to evolve record to schema is as follows:
@@ -76,19 +75,18 @@ class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWri
     * To serialization we use schema from record.
     */
   protected def serializeRecord(record: GenericContainer): Array[Byte] = {
-    try {
-      val out = new ByteArrayOutputStream
-      val encoder = encoderFactory.directBinaryEncoder(out, null)
-      val writer = createDatumWriter(record, record.getSchema, useSchemaReflection = useSchemaReflection)
-      writer.write(record, encoder)
-      encoder.flush()
-      val bytes = out.toByteArray
-      out.close()
-      bytes
-    } catch {
-      case exc@(_: RuntimeException | _: IOException) =>
-        // avro serialization may throw IOException, AvroRuntimeException, NullPointerException, etc
-        throw new AvroSchemaEvolutionException(s"Error at serialization record to payload.", exc)
+    Using.resource(new ByteArrayOutputStream) { out =>
+      try {
+        val encoder = encoderFactory.directBinaryEncoder(out, null)
+        val writer = createDatumWriter(record, record.getSchema, useSchemaReflection = useSchemaReflection)
+        writer.write(record, encoder)
+        encoder.flush()
+        out.toByteArray
+      } catch {
+        case exc@(_: RuntimeException | _: IOException) =>
+          // avro serialization may throw IOException, AvroRuntimeException, NullPointerException, etc
+          throw new AvroSchemaEvolutionException(s"Error at serialization record to payload.", exc)
+      }
     }
   }
 }

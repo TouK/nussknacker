@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.sql
 
-import java.sql.SQLSyntaxErrorException
-
 import cats.data.Validated._
 import cats.data._
 import pl.touk.nussknacker.engine.api.Context
@@ -12,7 +10,9 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.sql.columnmodel.CreateColumnModel
 import pl.touk.nussknacker.engine.sql.preparevalues.PrepareTables
 
+import java.sql.SQLSyntaxErrorException
 import scala.collection.JavaConverters._
+import scala.util.Using
 
 object SqlExpressionParser extends ExpressionParser {
 
@@ -48,31 +48,29 @@ object SqlExpressionParser extends ExpressionParser {
     TypedExpression(expression, listResult, SqlExpressionTypingInfo(typingResult))
   }
 
-  private def getQueryReturnType(original: String, colModel: Map[String, ColumnModel]): Validated[NonEmptyList[ExpressionParseError], TypingResult] = {
-    val db = new HsqlSqlQueryableDataBase(original, colModel)
-    try {
-      Validated.Valid(db.getTypingResult)
-    } catch {
-      case e: SQLSyntaxErrorException =>
-        Validated.Invalid(NonEmptyList(ExpressionParseError(e.getMessage), Nil))
-    } finally {
-      db.close()
+  private def getQueryReturnType(original: String, colModel: Map[String, ColumnModel]): Validated[NonEmptyList[ExpressionParseError], TypingResult] =
+    Using.resource(new HsqlSqlQueryableDataBase(original, colModel)) { db =>
+      try {
+        Validated.Valid(db.getTypingResult)
+      } catch {
+        case e: SQLSyntaxErrorException =>
+          Validated.Invalid(NonEmptyList(ExpressionParseError(e.getMessage), Nil))
+      }
     }
-  }
 
   override def parseWithoutContextValidation(original: String, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError], Expression] =
     throw new IllegalStateException("shouldn't be used")
 
 }
 
-case class SqlExpressEvaluationException(notAListExceptions :NonEmptyList[PrepareTables.NotAListException])
+case class SqlExpressEvaluationException(notAListExceptions: NonEmptyList[PrepareTables.NotAListException])
   extends IllegalArgumentException(notAListExceptions.toString())
 
 class SqlExpression(private[sql] val columnModels: Map[String, ColumnModel],
-                     val original: String) extends Expression {
+                    val original: String) extends Expression {
 
   override val language: String = SqlExpressionParser.languageId
-  
+
   private val databaseHolder: ThreadLocal[SqlQueryableDataBase] = new ThreadLocal[SqlQueryableDataBase] {
     private var threadToDatabase = Map[Thread, SqlQueryableDataBase]()
 
@@ -94,10 +92,6 @@ class SqlExpression(private[sql] val columnModels: Map[String, ColumnModel],
     }
   }
 
-  private def newDatabase(): SqlQueryableDataBase = synchronized {
-    new HsqlSqlQueryableDataBase(original, columnModels)
-  }
-
   override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = {
     //TODO: optimize if needed
     evaluate(ctx.variables ++ globals).asJava.asInstanceOf[T]
@@ -108,6 +102,10 @@ class SqlExpression(private[sql] val columnModels: Map[String, ColumnModel],
     PrepareTables(variables, columnModels)
       .map(db.query)
       .valueOr(error => throw SqlExpressEvaluationException(error))
+  }
+
+  private def newDatabase(): SqlQueryableDataBase = synchronized {
+    new HsqlSqlQueryableDataBase(original, columnModels)
   }
 
 }
