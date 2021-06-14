@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.namespaces.{KafkaUsageKey, NamingContext}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.kafka.validator.CachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.util.ThreadUtils
+import pl.touk.nussknacker.engine.util.exception.WithResources
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.Duration
@@ -38,11 +39,8 @@ object KafkaUtils extends LazyLogging {
     AdminClient.create(properties)
   }
 
-  def usingAdminClient[T](kafkaConfig: KafkaConfig)(adminClientOperation: Admin => T): T = {
-    val c = createKafkaAdminClient(kafkaConfig)
-    try adminClientOperation(c)
-    finally c.close()
-  }
+  def usingAdminClient[T](kafkaConfig: KafkaConfig)(adminClientOperation: Admin => T): T =
+    WithResources.use(createKafkaAdminClient(kafkaConfig))(adminClientOperation)
 
   def validateTopicsExistence(topics: List[PreparedKafkaTopic], kafkaConfig: KafkaConfig): Unit = {
     new CachedTopicsExistenceValidator(kafkaConfig = kafkaConfig)
@@ -155,11 +153,7 @@ object KafkaUtils extends LazyLogging {
     // http://stackoverflow.com/questions/40037857/intermittent-exception-in-tests-using-the-java-kafka-client
     ThreadUtils.withThisAsContextClassLoader(classOf[KafkaClient].getClassLoader) {
       val consumer: KafkaConsumer[Array[Byte], Array[Byte]] = new KafkaConsumer(toPropertiesForTempConsumer(config, groupId))
-      try {
-        fun(consumer)
-      } finally {
-        consumer.close()
-      }
+      WithResources.use(consumer)(fun)
     }
   }
 
@@ -174,17 +168,10 @@ object KafkaUtils extends LazyLogging {
     consumer.commitSync()
   }
 
-  def sendToKafkaWithTempProducer(topic: String, key: Array[Byte], value: Array[Byte])(kafkaConfig: KafkaConfig): Future[RecordMetadata] = {
-    var producer: KafkaProducer[Array[Byte], Array[Byte]] = null
-    try {
-      producer = createProducer(kafkaConfig, "temp-"+topic)
+  def sendToKafkaWithTempProducer(topic: String, key: Array[Byte], value: Array[Byte])(kafkaConfig: KafkaConfig): Future[RecordMetadata] =
+    WithResources.use(createProducer(kafkaConfig, "temp-"+topic)) { producer =>
       sendToKafka(topic, key, value)(producer)
-    } finally {
-      if (producer != null) {
-        producer.close()
-      }
     }
-  }
 
   def sendToKafka[K, V](topic: String, key: K, value: V)(producer: KafkaProducer[K, V]): Future[RecordMetadata] = {
     val promise = Promise[RecordMetadata]()
@@ -197,11 +184,9 @@ object KafkaUtils extends LazyLogging {
   }
 
   def producerCallback(promise: Promise[RecordMetadata]): Callback =
-    new Callback {
-      override def onCompletion(metadata: RecordMetadata, exception: Exception): Unit = {
-        val result = if (exception == null) Success(metadata) else Failure(exception)
-        promise.complete(result)
-      }
+    (metadata: RecordMetadata, exception: Exception) => {
+      val result = if (exception == null) Success(metadata) else Failure(exception)
+      promise.complete(result)
     }
 }
 

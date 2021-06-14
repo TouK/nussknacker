@@ -14,11 +14,12 @@ import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.standalone.api.StandaloneContextPreparer
+import pl.touk.nussknacker.engine.standalone.api.metrics.MetricsProvider
 import pl.touk.nussknacker.engine.standalone.api.types.GenericListResultType
 import pl.touk.nussknacker.engine.standalone.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.standalone.metrics.dropwizard.DropwizardMetricsProvider
-import pl.touk.nussknacker.engine.standalone.api.metrics.MetricsProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.exception.WithResources
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import java.util
@@ -55,10 +56,10 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
       .id("proc1")
       .exceptionHandler()
       .source("start", "request1-post-source")
-        .split("split",
-          GraphBuilder.sink("sink1", "#input.field1", "response-sink"),
-          GraphBuilder.sink("sink2", "#input.field2", "response-sink")
-        )
+      .split("split",
+        GraphBuilder.sink("sink1", "#input.field1", "response-sink"),
+        GraphBuilder.sink("sink2", "#input.field2", "response-sink")
+      )
 
     val result = runProcess(process, Request1("a", "b"))
 
@@ -79,22 +80,21 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
     val creator = new StandaloneProcessConfigCreator
     val metricRegistry = new MetricRegistry
 
-    val interpreter = prepareInterpreter(process, creator, metricRegistry)
-    interpreter.open(JobData(process.metaData, ProcessVersion.empty, DeploymentData.empty))
-    val contextId = "context-id"
-    val result = interpreter.invoke(Request1("a", "b"), Some(contextId)).futureValue
+    WithResources.use(prepareInterpreter(process, creator, metricRegistry)) { interpreter =>
+      interpreter.open(JobData(process.metaData, ProcessVersion.empty, DeploymentData.empty))
+      val contextId = "context-id"
+      val result = interpreter.invoke(Request1("a", "b"), Some(contextId)).futureValue
 
-    result shouldBe Right(List(Response(s"alamakota-$contextId")))
-    creator.processorService.invocationsCount.get() shouldBe 1
+      result shouldBe Right(List(Response(s"alamakota-$contextId")))
+      creator.processorService.invocationsCount.get() shouldBe 1
 
-    eventually {
-      metricRegistry.getGauges().get(MetricRegistry.name("invocation", "success", "instantRate")
-              .tagged("processId", "proc1")).getValue.asInstanceOf[Double] should not be 0
-      metricRegistry.getHistograms().get(MetricRegistry.name("invocation", "success", "histogram")
-              .tagged("processId", "proc1")).getCount shouldBe 1
+      eventually {
+        metricRegistry.getGauges().get(MetricRegistry.name("invocation", "success", "instantRate")
+          .tagged("processId", "proc1")).getValue.asInstanceOf[Double] should not be 0
+        metricRegistry.getHistograms().get(MetricRegistry.name("invocation", "success", "histogram")
+          .tagged("processId", "proc1")).getCount shouldBe 1
+      }
     }
-
-    interpreter.close()
   }
 
   test("collect results after element split") {
@@ -158,23 +158,25 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
 
     val metricRegistry = new MetricRegistry
 
-    val interpreter = prepareInterpreter(process, new StandaloneProcessConfigCreator, metricRegistry = metricRegistry)
-    interpreter.open(JobData(process.metaData, ProcessVersion.empty, DeploymentData.empty))
-    val result = interpreter.invoke(Request1("a", "b")).futureValue
+    WithResources.use(
+      prepareInterpreter(process, new StandaloneProcessConfigCreator, metricRegistry = metricRegistry)
+    ) { interpreter =>
+      interpreter.open(JobData(process.metaData, ProcessVersion.empty, DeploymentData.empty))
+      val result = interpreter.invoke(Request1("a", "b")).futureValue
 
-    result shouldBe Right(List("true"))
+      result shouldBe Right(List("true"))
 
-    eventually {
-      metricRegistry.getGauges().get(MetricRegistry.name("invocation", "success", "instantRate")
-        .tagged("processId", "proc1")).getValue.asInstanceOf[Double] should not be 0
-      metricRegistry.getHistograms().get(MetricRegistry.name("invocation", "success", "histogram")
-        .tagged("processId", "proc1")).getCount shouldBe 1
-      metricRegistry.getGauges().get(MetricRegistry.name("service", "OK", "instantRate")
-        .tagged("processId", "proc1", "serviceName", "enricherWithOpenService")).getValue.asInstanceOf[Double] should not be 0
-      metricRegistry.getHistograms().get(MetricRegistry.name("service", "OK", "histogram")
-              .tagged("processId", "proc1", "serviceName", "enricherWithOpenService")).getCount shouldBe 1
+      eventually {
+        metricRegistry.getGauges().get(MetricRegistry.name("invocation", "success", "instantRate")
+          .tagged("processId", "proc1")).getValue.asInstanceOf[Double] should not be 0
+        metricRegistry.getHistograms().get(MetricRegistry.name("invocation", "success", "histogram")
+          .tagged("processId", "proc1")).getCount shouldBe 1
+        metricRegistry.getGauges().get(MetricRegistry.name("service", "OK", "instantRate")
+          .tagged("processId", "proc1", "serviceName", "enricherWithOpenService")).getValue.asInstanceOf[Double] should not be 0
+        metricRegistry.getHistograms().get(MetricRegistry.name("service", "OK", "histogram")
+          .tagged("processId", "proc1", "serviceName", "enricherWithOpenService")).getCount shouldBe 1
+      }
     }
-    interpreter.close()
   }
 
   test("run process using custom node with ContextTransformation API") {
@@ -240,7 +242,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
     result shouldBe Left(NonEmptyList.of(
       EspExceptionInfo(Some("sink"),
         SinkException("FailingSink failed"),
-        Context( "context-id", Map("input" -> Request1("a","b")), None))
+        Context("context-id", Map("input" -> Request1("a", "b")), None))
     ))
   }
 
@@ -273,7 +275,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
     val process = EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
       GraphBuilder
         .source("sourceId1", "request1-post-source")
-        .split("spl", 
+        .split("spl",
           GraphBuilder.buildSimpleVariable("v1", "v1", "'aa'").branchEnd("branch1", "join1"),
           GraphBuilder.buildSimpleVariable("v1a", "v1", "'bb'").branchEnd("branch1a", "join1")),
       GraphBuilder
@@ -308,17 +310,15 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
                  input: Any,
                  creator: StandaloneProcessConfigCreator = new StandaloneProcessConfigCreator,
                  metricRegistry: MetricRegistry = new MetricRegistry,
-                 contextId: Option[String] = None): GenericListResultType[Any] = {
-    val interpreter = prepareInterpreter(
+                 contextId: Option[String] = None): GenericListResultType[Any] =
+    WithResources.use(prepareInterpreter(
       process = process,
       creator = creator,
       metricRegistry = metricRegistry
-    )
-    interpreter.open(JobData(process.metaData,ProcessVersion.empty, DeploymentData.empty))
-    val result = interpreter.invoke(input, contextId).futureValue
-    interpreter.close()
-    result
-  }
+    )) { interpreter =>
+      interpreter.open(JobData(process.metaData, ProcessVersion.empty, DeploymentData.empty))
+      interpreter.invoke(input, contextId).futureValue
+    }
 
   def prepareInterpreter(process: EspProcess,
                          creator: StandaloneProcessConfigCreator,

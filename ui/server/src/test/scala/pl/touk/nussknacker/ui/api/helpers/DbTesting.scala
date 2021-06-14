@@ -8,6 +8,7 @@ import com.whisk.docker.impl.spotify.SpotifyDockerFactory
 import com.whisk.docker.scalatest.DockerTestKit
 import org.scalatest.time.{Second, Seconds, Span}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
+import pl.touk.nussknacker.engine.util.exception.WithResources
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
@@ -40,15 +41,15 @@ trait DbTesting
 
   def cleanDB(): Try[Unit] = {
     Try {
-      val session = db.db.createSession()
-      session.prepareStatement("""delete from "process_attachments"""").execute()
-      session.prepareStatement("""delete from "process_comments"""").execute()
-      session.prepareStatement("""delete from "process_actions"""").execute()
-      session.prepareStatement("""delete from "process_versions"""").execute()
-      session.prepareStatement("""delete from "tags"""").execute()
-      session.prepareStatement("""delete from "environments"""").execute()
-      session.prepareStatement("""delete from "processes"""").execute()
-      session.close()
+      WithResources.use(db.db.createSession()) { session =>
+        session.prepareStatement("""delete from "process_attachments"""").execute()
+        session.prepareStatement("""delete from "process_comments"""").execute()
+        session.prepareStatement("""delete from "process_actions"""").execute()
+        session.prepareStatement("""delete from "process_versions"""").execute()
+        session.prepareStatement("""delete from "tags"""").execute()
+        session.prepareStatement("""delete from "environments"""").execute()
+        session.prepareStatement("""delete from "processes"""").execute()
+      }
     }
   }
 }

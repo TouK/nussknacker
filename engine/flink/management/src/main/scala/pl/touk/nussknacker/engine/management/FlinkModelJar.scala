@@ -4,10 +4,10 @@ import java.io.{File, FileOutputStream}
 import java.net.URL
 import java.nio.file.Files
 import java.util.jar.{JarEntry, JarInputStream, JarOutputStream}
-
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.io.{FileUtils, IOUtils}
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.util.exception.WithResources
 
 class FlinkModelJar extends LazyLogging {
 
@@ -51,22 +51,16 @@ class FlinkModelJar extends LazyLogging {
 
   private def copyEntriesToLib(tempFile: File, other: List[URL]): Unit = {
     val output = new FileOutputStream(tempFile)
-    val jarOutput = new JarOutputStream(output)
-    try {
+    WithResources.use(new JarOutputStream(output)) { jarOutput =>
       other.foreach(putToJar(jarOutput))
-    } finally {
-      jarOutput.close()
     }
   }
 
   private def putToJar(jarOutputStream: JarOutputStream)(url: URL) = {
     val entry = new JarEntry(s"lib/${url.getPath.replaceAll("/", "_")}")
     jarOutputStream.putNextEntry(entry)
-    val stream = url.openStream()
-    try {
+    WithResources.use(url.openStream()) { stream =>
       IOUtils.copy(stream, jarOutputStream)
-    } finally {
-      stream.close()
     }
   }
 
