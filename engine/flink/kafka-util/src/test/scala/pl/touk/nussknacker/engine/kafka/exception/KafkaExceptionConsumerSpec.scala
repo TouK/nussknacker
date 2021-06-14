@@ -1,50 +1,87 @@
 package pl.touk.nussknacker.engine.kafka.exception
 
-import org.apache.kafka.clients.producer.MockProducer
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientException}
-import pl.touk.nussknacker.engine.api.{CirceUtil, Context, MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.kafka.MockProducerCreator
+import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
+import pl.touk.nussknacker.engine.api.deployment.DeploymentData
+import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
+import pl.touk.nussknacker.engine.kafka.KafkaSpec
+import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SimpleRecord
+import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
+import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
+import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils._
 
-import java.time.Instant
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import java.util.Date
 
-class KafkaExceptionConsumerSpec extends FunSuite with Matchers {
+class KafkaExceptionConsumerSpec extends FunSuite with FlinkSpec with KafkaSpec with Matchers {
 
-  private val mockProducer = new MockProducer[Array[Byte], Array[Byte]]()
+  private val topicName = "testingErrors"
 
-  private val metaData = MetaData("test", StreamMetaData())
+  protected var registrar: FlinkProcessRegistrar = _
 
-  private val consumerConfig = KafkaExceptionConsumerConfig("mockTopic",
-    stackTraceLengthLimit = 20,
-    includeHost = true,
-    includeInputEvent = false,
-    additionalParams = Map("testValue" -> "1"))
+  protected override def beforeAll(): Unit = {
+    super.beforeAll()
+    val configWithExceptionHandler = config
+      .withValue("exceptionHandler.type", fromAnyRef("Kafka"))
+      .withValue("exceptionHandler.topic", fromAnyRef(topicName))
+      .withValue("exceptionHandler.additionalParams.configurableKey", fromAnyRef("sampleValue"))
+      .withValue("exceptionHandler.kafka", config.getConfig("kafka").root())
 
-  private val exception = EspExceptionInfo(Some("nodeId"), NonTransientException("input1", "mess", Instant.ofEpochMilli(111)), Context("ctxId"))
+    val modelData = LocalModelData(configWithExceptionHandler, new ExceptionTestConfigCreator())
+    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
+  }
 
-  private val serializationSchema = KafkaJsonExceptionSerializationSchema(metaData, consumerConfig)
+  test("should record errors on topic") {
+    val process = EspProcessBuilder
+      .id("testProcess")
+      .exceptionHandler()
+      .source("source", "source")
+      .filter("shouldFail", "1/0 != 10")
+      .emptySink("end", "sink")
 
-  private val consumer = TempProducerKafkaExceptionConsumer(serializationSchema, MockProducerCreator(mockProducer))
+    val env = flinkMiniCluster.createExecutionEnvironment()
+    registrar.register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty, DeploymentData.empty)
+    env.withJobRunning(process.id) {
 
-  test("records event") {
-    consumer.consume(exception)
+      val consumer = kafkaClient.createConsumer()
+      val consumed = consumer.consume(topicName).head
+      new String(consumed.key()) shouldBe "testProcess-shouldFail"
 
-    val message = mockProducer.history().asScala.toList match {
-      case one :: Nil => one
-      case other => fail(s"Expected one message, got $other")
+      val decoded = CirceUtil.decodeJsonUnsafe[KafkaExceptionInfo](consumed.message())
+      decoded.nodeId shouldBe Some("shouldFail")
+      decoded.processName shouldBe "testProcess"
+      decoded.message shouldBe Some("Unknown exception")
+      decoded.exceptionInput shouldBe Some("SpelExpressionEvaluationException:Expression [1/0 != 10] evaluation failed, message: / by zero")
+      decoded.additionalData shouldBe Map("configurableKey" -> "sampleValue")
+
     }
-    message.topic() shouldBe consumerConfig.topic
-    new String(message.key()) shouldBe "test-nodeId"
-    val decodedPayload = CirceUtil.decodeJsonUnsafe[KafkaExceptionInfo](message.value())
-
-    decodedPayload.processName shouldBe metaData.id
-    decodedPayload.nodeId shouldBe Some("nodeId")
-    decodedPayload.exceptionInput shouldBe Some("input1")
-    decodedPayload.message shouldBe Some("mess")
-    decodedPayload.timestamp shouldBe 111
-    decodedPayload.additionalData shouldBe Map("testValue" -> "1")
-
+    
 
   }
+
+
+}
+
+class ExceptionTestConfigCreator extends EmptyProcessConfigCreator {
+
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
+    "source" -> WithCategories(SampleNodes.simpleRecordSource(SimpleRecord("id1", 1, "value1", new Date())::Nil))
+  )
+
+  override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
+    "sink" -> WithCategories(SinkFactory.noParam(SampleNodes.MonitorEmptySink))
+  )
+
+  override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
+    ConfigurableExceptionHandlerFactory(processObjectDependencies)
 }

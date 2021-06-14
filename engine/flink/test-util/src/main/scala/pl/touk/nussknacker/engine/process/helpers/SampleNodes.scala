@@ -5,6 +5,7 @@ import cats.data.Validated.Valid
 import com.github.ghik.silencer.silent
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.ExecutionConfig
+import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.{FilterFunction, MapFunction}
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.co.RichCoMapFunction

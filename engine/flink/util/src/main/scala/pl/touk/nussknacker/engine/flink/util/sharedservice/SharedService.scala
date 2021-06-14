@@ -14,8 +14,7 @@ import scala.reflect.ClassTag
 
   This API should be used with care, used incorrectly it can lead to resource leaks.
 
-  Implementation notes:
-  - we
+  TODO: there should be additional proxy layer to avoid situations when one service is returned twice.
  */
 abstract class SharedServiceHolder[CreationData, Service <: SharedService[CreationData] : ClassTag] extends LazyLogging {
 
@@ -69,4 +68,5 @@ trait SharedService[CreationData] extends AutoCloseable {
   protected def sharedServiceHolder: SharedServiceHolder[CreationData, _]
 
   protected[sharedservice] def internalClose(): Unit
+
 }
