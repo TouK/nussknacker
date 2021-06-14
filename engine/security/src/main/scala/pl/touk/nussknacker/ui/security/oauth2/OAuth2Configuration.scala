@@ -4,6 +4,7 @@ import java.net.URI
 import java.nio.charset.{Charset, StandardCharsets}
 import java.security.PublicKey
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.util.Implicits.SourceIsReleasable
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
 import pl.touk.nussknacker.ui.security.api.AuthenticationMethod.AuthenticationMethod
