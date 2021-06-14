@@ -43,10 +43,10 @@ To see biggest differences please consult the [changelog](Changelog.md).
     Default implementation of initializer, see `BasicFlinkGenericContextInitializer`, provides default definition of variables as a `ValidationContext` with single "input" variable.
     The implementation requires to provide separately the definition of "input" variable type (`TypingResult`).
     See `GenericSourceWithCustomVariablesSample`.
-  - Rename `TestDataParserProvider` to `SourceTestSupport`
   - To enable "test source" functionality, a source needs to be extended with `SourceTestSupport`.
+  - For flink sources that use `TestDataParserProvider` switch to `FlinkSourceTestSupport` (which is used to provide "test source" functionality for flink sources).
+  - Old `TestDataParserProvider` is renamed to `SourceTestSupport`
   - To enable test data generator for "test source" , a source needs to be extended with both `SourceTestSupport` and `TestDataGenerator`.
-  - `FlinkSourceTestSupport` is used to provide "test source" functionality for flink sources.
     What was related to "test source" functionality and was obsolete in `FlinkSource` now is excluded to `FlinkSourceTestSupport`.
   - `FlinkCustomNodeContext` has access to `TypeInformationDetection`, it allows to get TypeInformation for the node stream mapping from ValidationContext.
   - For kafka sources `RecordFormatter` parses raw test data to `ConsumerRecord` which fits into deserializer (instead of `ProducerRecord` that required another transformation).
