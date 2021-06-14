@@ -6,7 +6,7 @@
   "license": "UNLICENSED",
   "private": true,
   "scripts": {
-    "build": "NODE_ENV=production webpack --progress && cp -R assets/icons/license dist",
+    "build": "NODE_OPTIONS=--max_old_space_size=4096 NODE_ENV=production webpack --progress && cp -R assets/icons/license dist",
     "check-types": "tsc",
     "lint": "eslint --ext .ts,.tsx,.js,.jsx",
     "svgo": "svgo --config .svgo.yml",
@@ -76,7 +76,7 @@
     "react-error-boundary": "^1.2.5",
     "react-highlight-words": "^0.17.0",
     "react-hot-loader": "^4.13.0",
-    "react-i18next": "^11.9.0",
+    "react-i18next": "^11.11.0",
     "react-inspector": "^5.1.1",
     "react-json-tree": "^0.15.0",
     "react-ladda": "~6.0.0",
