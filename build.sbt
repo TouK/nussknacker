@@ -259,7 +259,6 @@ val cronParserV = "9.1.3"
 val javaxValidationApiV = "2.0.1.Final"
 val caffeineCacheV = "2.8.8"
 val sttpV = "2.2.9"
-val utilBackportsV = "2.1"
 
 lazy val commonDockerSettings = {
   Seq(
