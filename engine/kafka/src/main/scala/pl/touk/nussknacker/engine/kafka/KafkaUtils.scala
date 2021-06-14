@@ -188,6 +188,7 @@ object KafkaUtils extends LazyLogging {
         val result = if (exception == null) Success(metadata) else Failure(exception)
         promise.complete(result)
       }
+    }
 }
 
 case class PreparedKafkaTopic(original: String, prepared: String)
