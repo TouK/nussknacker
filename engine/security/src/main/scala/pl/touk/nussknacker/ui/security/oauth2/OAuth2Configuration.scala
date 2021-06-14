@@ -12,6 +12,7 @@ import sttp.model.{HeaderNames, MediaType, Uri}
 
 import scala.concurrent.duration.{FiniteDuration, HOURS}
 import scala.io.Source
+import scala.util.Using
 
 case class OAuth2Configuration(method: AuthenticationMethod,
                                usersFile: URI,
@@ -90,7 +91,7 @@ object JwtConfiguration {
 
       def getContent(content: Option[String], file: Option[String]): Option[String] =
         content.orElse(file map { path =>
-          Source.fromFile(path, StandardCharsets.UTF_8.name).mkString
+          Using.resource(Source.fromFile(path, StandardCharsets.UTF_8.name))(_.mkString)
         })
 
       getContent(publicKey, publicKeyFile).map(CertificatesAndKeys.publicKeyFromString(_, charset)) orElse
