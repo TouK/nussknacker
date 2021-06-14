@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.standalone.api.StandaloneDeploymentData
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.util.Implicits.SourceIsReleasable
 
 import scala.io.Source
 import scala.util.Using

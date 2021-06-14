@@ -183,10 +183,11 @@ object KafkaUtils extends LazyLogging {
   }
 
   def producerCallback(promise: Promise[RecordMetadata]): Callback =
-    (metadata: RecordMetadata, exception: Exception) => {
-      val result = if (exception == null) Success(metadata) else Failure(exception)
-      promise.complete(result)
-    }
+    new Callback {
+      override def onCompletion(metadata: RecordMetadata, exception: Exception): Unit = {
+        val result = if (exception == null) Success(metadata) else Failure(exception)
+        promise.complete(result)
+      }
 }
 
 case class PreparedKafkaTopic(original: String, prepared: String)
