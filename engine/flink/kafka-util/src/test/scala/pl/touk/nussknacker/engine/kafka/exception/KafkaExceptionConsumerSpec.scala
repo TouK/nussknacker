@@ -23,7 +23,7 @@ class KafkaExceptionConsumerSpec extends FunSuite with Matchers {
 
   private val exception = EspExceptionInfo(Some("nodeId"), NonTransientException("input1", "mess", Instant.ofEpochMilli(111)), Context("ctxId"))
 
-  private val serializationSchema = KafkaExceptionSerializationSchema(metaData, consumerConfig)
+  private val serializationSchema = KafkaJsonExceptionSerializationSchema(metaData, consumerConfig)
 
   private val consumer = TempProducerKafkaExceptionConsumer(serializationSchema, MockProducerCreator(mockProducer))
 

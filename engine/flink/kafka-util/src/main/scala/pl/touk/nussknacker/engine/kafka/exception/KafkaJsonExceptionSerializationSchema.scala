@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets
 import java.time.ZoneId
 import scala.io.Source
 
-case class KafkaExceptionSerializationSchema(metaData: MetaData, consumerConfig: KafkaExceptionConsumerConfig) {
+case class KafkaJsonExceptionSerializationSchema(metaData: MetaData, consumerConfig: KafkaExceptionConsumerConfig) {
 
   def serialize(exceptionInfo: EspExceptionInfo[NonTransientException]): ProducerRecord[Array[Byte], Array[Byte]] = {
     val key = s"${metaData.id}-${exceptionInfo.nodeId.getOrElse("")}".getBytes(StandardCharsets.UTF_8)

@@ -17,7 +17,7 @@ class KafkaExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
     val kafkaConfig = KafkaConfig.parseConfig(additionalConfig)
     val consumerConfig = additionalConfig.rootAs[KafkaExceptionConsumerConfig]
     val producerCreator = kafkaProducerCreator(kafkaConfig)
-    val serialization = KafkaExceptionSerializationSchema(metaData, consumerConfig)
+    val serialization = KafkaJsonExceptionSerializationSchema(metaData, consumerConfig)
     if (consumerConfig.useSharedProducer) {
       SharedProducerKafkaExceptionConsumer(metaData, serialization, producerCreator)
     } else {
@@ -32,7 +32,7 @@ class KafkaExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
 
 }
 
-case class TempProducerKafkaExceptionConsumer(serializationSchema: KafkaExceptionSerializationSchema,
+case class TempProducerKafkaExceptionConsumer(serializationSchema: KafkaJsonExceptionSerializationSchema,
                                               kafkaProducerCreator: KafkaProducerCreator.Binary) extends FlinkEspExceptionConsumer {
 
   override def consume(exceptionInfo: EspExceptionInfo[NonTransientException]): Unit = {
@@ -43,7 +43,7 @@ case class TempProducerKafkaExceptionConsumer(serializationSchema: KafkaExceptio
 }
 
 case class SharedProducerKafkaExceptionConsumer(metaData: MetaData,
-                                                serializationSchema: KafkaExceptionSerializationSchema,
+                                                serializationSchema: KafkaJsonExceptionSerializationSchema,
                                                 kafkaProducerCreator: KafkaProducerCreator.Binary) extends FlinkEspExceptionConsumer with WithSharedKafkaProducer {
   override def consume(exceptionInfo: EspExceptionInfo[NonTransientException]): Unit = {
     sendToKafka(serializationSchema.serialize(exceptionInfo))(SynchronousExecutionContext.ctx)

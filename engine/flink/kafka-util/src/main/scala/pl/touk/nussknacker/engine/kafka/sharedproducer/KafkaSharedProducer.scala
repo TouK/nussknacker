@@ -35,37 +35,10 @@ final case class DefaultSharedKafkaProducer(creationData: KafkaProducerCreator.B
 
   override protected def sharedServiceHolder: SharedServiceHolder[KafkaProducerCreator.Binary, _] = SharedKafkaProducerHolder
 
-  // See FlinkKafkaProducer.close. Producer is closed again in case of an exception.
   override def internalClose(): Unit = {
-    try {
-      logger.debug("Flushing producer")
-      producer.flush()
-      logger.debug("Closing producer")
-      producer.close(Duration.ZERO)
-    } catch {
-      case NonFatal(e) =>
-        logger.error("Exception while flushing or closing", e)
-        try {
-          logger.warn("Closing producer again")
-          producer.close(Duration.ZERO)
-        } catch {
-          case NonFatal(e) =>
-            logger.error("Exception while closing producer second time", e)
-        }
-    }
+    producer.close()
   }
 
-  private class CallbackWithFailureLogging(promise: Promise[Unit]) extends Callback {
-    override def onCompletion(metadata: RecordMetadata, exception: Exception): Unit = {
-      if (exception != null) {
-        //can be e.g. redirected to specific logger
-        logger.error(s"Sending record $metadata failed", exception)
-        promise.complete(Failure(exception))
-      } else {
-        promise.complete(Success(()))
-      }
-    }
-  }
 }
 
 trait SharedKafkaProducer {
