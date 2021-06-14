@@ -581,7 +581,7 @@ lazy val process = (project in engine("flink/process")).
         "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
       )
     }
-  ).dependsOn(flinkUtil, interpreter, kafka % "test", kafkaTestUtil % "test", kafkaFlinkUtil % "test->test", flinkTestUtil % "test")
+  ).dependsOn(flinkUtil, interpreter, flinkTestUtil % "test")
 
 lazy val interpreter = (project in engine("interpreter")).
   settings(commonSettings).
@@ -667,7 +667,7 @@ lazy val avroFlinkUtil = (project in engine("flink/avro-util")).
       )
     }
   )
-  .dependsOn(kafkaFlinkUtil, interpreter, kafkaTestUtil % "test", flinkTestUtil % "test", process % "test->test")
+  .dependsOn(kafkaFlinkUtil, interpreter, kafkaTestUtil % "test", flinkTestUtil % "test", process % "test")
 
 lazy val kafkaFlinkUtil = (project in engine("flink/kafka-util")).
   settings(commonSettings).
@@ -681,7 +681,7 @@ lazy val kafkaFlinkUtil = (project in engine("flink/kafka-util")).
       )
     }
   ).
-  dependsOn(kafka, flinkUtil, kafkaTestUtil % "test", flinkTestUtil % "test")
+  dependsOn(kafka, flinkUtil, process % "test", kafkaTestUtil % "test", flinkTestUtil % "test")
 
 lazy val kafkaTestUtil = (project in engine("kafka-test-util")).
   settings(commonSettings).

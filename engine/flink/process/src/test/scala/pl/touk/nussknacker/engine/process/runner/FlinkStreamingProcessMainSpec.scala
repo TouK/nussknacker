@@ -1,22 +1,23 @@
 package pl.touk.nussknacker.engine.process.runner
 
-import java.net.ConnectException
 import io.circe.Encoder
 import org.scalatest.{FlatSpec, Inside, Matchers}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
-import pl.touk.nussknacker.engine.flink.util.exception.{BrieflyLoggingExceptionHandler, ConfigurableExceptionHandlerFactory}
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
+
+import java.net.ConnectException
 
 class FlinkStreamingProcessMainSpec extends FlatSpec with Matchers with Inside {
 
@@ -56,7 +57,6 @@ class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
   )
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map("stateCustom" -> WithCategories(StateCustomNode),
-    "signalReader" -> WithCategories(CustomSignalReader),
     "transformWithTime" -> WithCategories(TransformerWithTime),
     "joinBranchExpression" -> WithCategories(CustomJoinUsingBranchExpressions)
   )
@@ -68,9 +68,8 @@ class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
     "genericSourceWithCustomVariables" -> WithCategories(GenericSourceWithCustomVariables)
   )
 
-  override def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[TestProcessSignalFactory]] = Map("sig1" ->
-    WithCategories(new TestProcessSignalFactory(KafkaConfig("", None, None), "")))
-
+  override def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[ProcessSignalSender]] =
+    Map.empty
 
   override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
     ConfigurableExceptionHandlerFactory(processObjectDependencies)

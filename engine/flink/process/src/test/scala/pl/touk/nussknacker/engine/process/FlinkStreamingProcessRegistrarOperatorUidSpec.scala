@@ -71,7 +71,6 @@ class FlinkStreamingProcessRegistrarOperatorUidSpec extends FunSuite with Proces
 
   def streamGraph(process: EspProcess): StreamGraph = {
     val config = ConfigFactory.load()
-      .withValue("kafka.kafkaAddress", fromAnyRef("http://notexist.pl"))
       .withValue("globalParameters.explicitUidInStatefulOperators", fromAnyRef(true))
     val creator: ProcessConfigCreator = ProcessTestHelpers.prepareCreator(List.empty, config)
 

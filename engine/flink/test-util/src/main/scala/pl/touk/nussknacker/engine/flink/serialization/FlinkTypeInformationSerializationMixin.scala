@@ -1,12 +1,12 @@
-package pl.touk.nussknacker.engine.kafka.serialization
-
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+package pl.touk.nussknacker.engine.flink.serialization
 
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.TypeSerializer
 import org.apache.flink.core.memory.{DataInputViewStreamWrapper, DataOutputViewStreamWrapper}
 import org.scalatest.{Assertion, Matchers}
+
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 
 trait FlinkTypeInformationSerializationMixin extends Matchers {
 
@@ -32,13 +32,13 @@ trait FlinkTypeInformationSerializationMixin extends Matchers {
     toDeserialize.deserialize(new DataInputViewStreamWrapper(new ByteArrayInputStream(input)))
   }
 
-  protected def serializeRoundTrip[T](record: T, typeInfo: TypeInformation[T], executionConfig: ExecutionConfig = executionConfigWithoutKryo)(expected:T = record): Assertion = {
+  protected def serializeRoundTrip[T](record: T, typeInfo: TypeInformation[T], executionConfig: ExecutionConfig = executionConfigWithoutKryo)(expected: T = record): Assertion = {
     getSerializeRoundTrip(record, typeInfo, executionConfig) shouldBe expected
   }
 
   protected def serializeRoundTripWithSerializers[T](record: T,
                                                      toSerialize: TypeSerializer[T],
-                                                     toDeserialize: TypeSerializer[T])(expected:T = record): Assertion = {
+                                                     toDeserialize: TypeSerializer[T])(expected: T = record): Assertion = {
     getSerializeRoundTripWithSerializers(record, toSerialize, toDeserialize) shouldBe expected
   }
 

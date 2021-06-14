@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.process.source
+package pl.touk.nussknacker.engine.kafka.source
 
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -9,16 +9,14 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetection, TypingResultAwareTypeInformationCustomisation}
+import pl.touk.nussknacker.engine.flink.serialization.FlinkTypeInformationSerializationMixin
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactoryMixin.SampleKey
-import pl.touk.nussknacker.engine.kafka.serialization.FlinkTypeInformationSerializationMixin
-import pl.touk.nussknacker.engine.kafka.source.InputMeta
+import pl.touk.nussknacker.engine.kafka.source.InputMetaDeserializationSpec.sampleKeyTypeInformation
 import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection
 
 import scala.collection.JavaConverters._
 
 class InputMetaDeserializationSpec extends FunSuite with Matchers with FlinkTypeInformationSerializationMixin{
-
-  import pl.touk.nussknacker.engine.process.source.InputMetaDeserializationSpec._
 
   test("should serialize and deserialize input metadata with TypeInformation serializer") {
     val typeInformation = InputMeta.typeInformation[SampleKey](sampleKeyTypeInformation)
@@ -47,8 +45,6 @@ object InputMetaDeserializationSpec {
 }
 
 class SampleKeyTypeInformationCustomisation extends TypingResultAwareTypeInformationCustomisation {
-
-  import pl.touk.nussknacker.engine.process.source.InputMetaDeserializationSpec.sampleKeyTypeInformation
 
   override def customise(originalDetection: TypeInformationDetection): PartialFunction[typing.TypingResult, TypeInformation[_]] = {
     case a:TypedClass if a.objType.klass == classOf[SampleKey] => sampleKeyTypeInformation

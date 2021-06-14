@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed.fromInstance
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetection, TypingResultAwareTypeInformationCustomisation}
-import pl.touk.nussknacker.engine.kafka.serialization.FlinkTypeInformationSerializationMixin
+import pl.touk.nussknacker.engine.flink.serialization.FlinkTypeInformationSerializationMixin
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{BaseJavaMapBasedSerializer, TypedObjectBasedSerializerSnapshot, TypedObjectBasedTypeInformation, TypedObjectBasedTypeSerializer, TypedScalaMapSerializer}
 import pl.touk.nussknacker.engine.process.typeinformation.testTypedObject.{CustomObjectTypeInformation, CustomTypedObject}
 import pl.touk.nussknacker.engine.util.Implicits._

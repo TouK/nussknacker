@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.avro
 
+import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator}
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
@@ -12,10 +13,11 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
 import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory}
-import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
+import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSink, FlinkCustomStreamTransformation}
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForInputMeta
+import pl.touk.nussknacker.engine.kafka.source.InputMeta
+import pl.touk.nussknacker.engine.process.helpers.SinkForType
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 object KafkaAvroTestProcessConfigCreator {
@@ -25,6 +27,10 @@ object KafkaAvroTestProcessConfigCreator {
 class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
 
   protected val schemaRegistryProvider: SchemaRegistryProvider = createSchemaRegistryProvider
+
+  {
+    SinkForInputMeta.clear()
+  }
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
     val avroSourceFactory = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
@@ -73,3 +79,5 @@ object ExtractAndTransformTimestamp extends CustomStreamTransformer {
       }))
 
 }
+
+case object SinkForInputMeta extends SinkForType[InputMeta[Any]]
