@@ -2,9 +2,10 @@ package pl.touk.nussknacker.engine.management.sample
 
 import java.time.LocalDateTime
 import com.typesafe.config.Config
-import io.circe.Encoder
+import io.circe.{Decoder, Encoder}
+import io.circe.parser.decode
 import net.ceedubs.ficus.Ficus._
-import org.apache.flink.api.common.serialization.SimpleStringSchema
+import org.apache.flink.api.common.serialization.{DeserializationSchema, SimpleStringSchema}
 import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, MandatoryParameterValidator, StringParameterEditor}
@@ -18,6 +19,7 @@ import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
+import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.SlidingAggregateTransformerV2
 import pl.touk.nussknacker.engine.flink.util.transformer.outer.OuterJoinTransformer
@@ -28,7 +30,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializatio
 import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.management.sample.dict.{BusinessConfigDictionary, RGBDictionary, TestDictionary}
-import pl.touk.nussknacker.engine.management.sample.dto.ConstantState
+import pl.touk.nussknacker.engine.management.sample.dto.{ConstantState, SampleProduct}
 import pl.touk.nussknacker.engine.management.sample.global.ConfigTypedGlobalVariable
 import pl.touk.nussknacker.engine.management.sample.helper.DateProcessHelper
 import pl.touk.nussknacker.engine.management.sample.service._
@@ -36,6 +38,9 @@ import pl.touk.nussknacker.engine.management.sample.signal.{RemoveLockProcessSig
 import pl.touk.nussknacker.engine.management.sample.source._
 import pl.touk.nussknacker.engine.management.sample.transformer._
 import pl.touk.nussknacker.engine.util.LoggingListener
+
+import java.nio.charset.StandardCharsets
+import scala.reflect.ClassTag
 
 object DevProcessConfigCreator {
   val oneElementValue = "One element"
@@ -76,7 +81,14 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     val schemaRegistryProvider = createSchemaRegistryProvider(processObjectDependencies)
     val avroSourceFactory = new KafkaAvroSourceFactory[Any, Any](schemaRegistryProvider, processObjectDependencies, None)
     Map(
-      "real-kafka" -> all(simpleStringValueKafkaSource(processObjectDependencies)),
+      "real-kafka" -> all(fixedValueKafkaSource[String](
+        processObjectDependencies,
+        new SimpleStringSchema())
+      ),
+      "real-kafka-json-SampleProduct" -> all(fixedValueKafkaSource(
+        processObjectDependencies,
+        new EspDeserializationSchema(bytes => decode[SampleProduct](new String(bytes, StandardCharsets.UTF_8)).right.get)
+      )),
       "real-kafka-avro" -> all(avroSourceFactory),
       "kafka-transaction" -> all(FlinkSourceFactory.noParam(new NoEndingSource)),
       "boundedSource" -> categories(BoundedSource),
@@ -202,9 +214,9 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     )
   }
 
-  private def simpleStringValueKafkaSource(processObjectDependencies: ProcessObjectDependencies): KafkaSourceFactory[String, String] = {
-    val schemaFactory = new FixedValueDeserializationSchemaFactory(new SimpleStringSchema)
-    val formatterFactory = new ConsumerRecordToJsonFormatterFactory[String, String]
-    new KafkaSourceFactory[String, String](schemaFactory, None, formatterFactory, processObjectDependencies)
+  private def fixedValueKafkaSource[T: ClassTag:Encoder:Decoder](processObjectDependencies: ProcessObjectDependencies, schema: DeserializationSchema[T]): KafkaSourceFactory[String, T] = {
+    val schemaFactory = new FixedValueDeserializationSchemaFactory(schema)
+    val formatterFactory = new ConsumerRecordToJsonFormatterFactory[String, T]
+    new KafkaSourceFactory[String, T](schemaFactory, None, formatterFactory, processObjectDependencies)
   }
 }

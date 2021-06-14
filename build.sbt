@@ -667,7 +667,7 @@ lazy val avroFlinkUtil = (project in engine("flink/avro-util")).
       )
     }
   )
-  .dependsOn(kafkaFlinkUtil, interpreter, kafkaTestUtil % "test", flinkTestUtil % "test", process % "test")
+  .dependsOn(kafkaFlinkUtil, kafkaTestUtil % "test", flinkTestUtil % "test", process % "test")
 
 lazy val kafkaFlinkUtil = (project in engine("flink/kafka-util")).
   settings(commonSettings).
@@ -681,7 +681,7 @@ lazy val kafkaFlinkUtil = (project in engine("flink/kafka-util")).
       )
     }
   ).
-  dependsOn(kafka, flinkUtil, process % "test", kafkaTestUtil % "test", flinkTestUtil % "test")
+  dependsOn(interpreter, kafka, flinkUtil, process % "test", kafkaTestUtil % "test", flinkTestUtil % "test")
 
 lazy val kafkaTestUtil = (project in engine("kafka-test-util")).
   settings(commonSettings).

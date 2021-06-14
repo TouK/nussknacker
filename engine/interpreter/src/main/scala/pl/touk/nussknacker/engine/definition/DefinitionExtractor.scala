@@ -32,7 +32,10 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
     (obj match {
       //TODO: how validators/editors in NodeConfig should be handled for GenericNodeTransformation/WithExplicitMethodToInvoke?
       case e:GenericNodeTransformation[_] =>
-        val returnType = if (e.nodeDependencies.contains(OutputVariableNameDependency)) Unknown else Typed[Void]
+        val returnType = e match {
+          case withExplicitTypes: WithExplicitPossibleProducedVariableTypes => Typed(withExplicitTypes.possibleVariableClasses)
+          case _ => if (e.nodeDependencies.contains(OutputVariableNameDependency)) Unknown else Typed[Void]
+        }
         val parametersList = StandardParameterEnrichment.enrichParameterDefinitions(e.initialParameters, objWithCategories.nodeConfig)
         val definition = ObjectDefinition(parametersList, returnType, objWithCategories.categories, objWithCategories.nodeConfig)
         Right(GenericNodeTransformationMethodDef(e, definition))

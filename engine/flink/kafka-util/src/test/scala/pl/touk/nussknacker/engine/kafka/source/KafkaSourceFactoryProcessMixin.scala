@@ -1,12 +1,14 @@
 package pl.touk.nussknacker.engine.kafka.source
 
+import com.typesafe.config.ConfigFactory
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{BeforeAndAfter, FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.{ProcessVersion, process}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaSourceFactoryMixin
@@ -18,6 +20,7 @@ import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForStrings
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.test.NussknackerAssertions
 
 import scala.collection.JavaConverters.mapAsJavaMapConverter
@@ -27,6 +30,10 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
   protected var registrar: FlinkProcessRegistrar = _
 
   private lazy val creator: KafkaSourceFactoryProcessConfigCreator = new KafkaSourceFactoryProcessConfigCreator(kafkaConfig)
+
+  protected lazy val processDefinition: ProcessDefinitionExtractor.ProcessDefinition[DefinitionExtractor.ObjectWithMethodDef] =
+    ProcessDefinitionExtractor.extractObjectWithMethods(creator,
+      process.ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader)))
 
   protected override def beforeAll(): Unit = {
     super.beforeAll()
