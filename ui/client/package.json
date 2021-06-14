@@ -6,7 +6,7 @@
   "license": "UNLICENSED",
   "private": true,
   "scripts": {
-    "build": "NODE_ENV=production webpack --progress && cp -R assets/icons/license dist",
+    "build": "NODE_OPTIONS=--max_old_space_size=4096 NODE_ENV=production webpack --progress && cp -R assets/icons/license dist",
     "check-types": "tsc",
     "lint": "eslint --ext .ts,.tsx,.js,.jsx",
     "svgo": "svgo --config .svgo.yml",
