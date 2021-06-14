@@ -5,16 +5,16 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.util.jar.{JarEntry, JarOutputStream}
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
-import pl.touk.nussknacker.engine.util.exception.WithResources
 
 import scala.reflect.ClassTag
+import scala.util.Using
 
 object ModelJarBuilder {
 
   //mainly for testing
   def buildJarWithConfigCreator[T<:ProcessConfigCreator:ClassTag](outputFile: File = Files.createTempFile("creator", ".jar").toFile) : File = {
     val output = new FileOutputStream(outputFile)
-    WithResources.use(new JarOutputStream(output)) { jarOutput =>
+    Using.resource(new JarOutputStream(output)) { jarOutput =>
       putToJar(
         jarOutput,
         "META-INF/services/pl.touk.nussknacker.engine.api.process.ProcessConfigCreator",

@@ -6,9 +6,9 @@ import com.typesafe.scalalogging.LazyLogging
 import org.hsqldb.jdbc.JDBCDriver
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.typed.{TypedMap, TypedObjectDefinition, typing}
-import pl.touk.nussknacker.engine.util.exception.WithResources
 
 import scala.collection.mutable
+import scala.util.Using
 import scala.util.control.Exception._
 
 
@@ -40,7 +40,7 @@ class HsqlSqlQueryableDataBase(query: String, tables: Map[String, ColumnModel]) 
       createTableQuery(table._1, table._2)
     } foreach { query =>
       logger.debug(query)
-      WithResources.use(connection.prepareStatement(query))(_.execute())
+      Using.resource(connection.prepareStatement(query))(_.execute())
     }
   }
 

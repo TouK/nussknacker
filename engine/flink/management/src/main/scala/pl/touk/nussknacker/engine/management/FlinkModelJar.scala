@@ -7,7 +7,8 @@ import java.util.jar.{JarEntry, JarInputStream, JarOutputStream}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.io.{FileUtils, IOUtils}
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.util.exception.WithResources
+
+import scala.util.Using
 
 class FlinkModelJar extends LazyLogging {
 
@@ -51,7 +52,7 @@ class FlinkModelJar extends LazyLogging {
 
   private def copyEntriesToLib(tempFile: File, other: List[URL]): Unit = {
     val output = new FileOutputStream(tempFile)
-    WithResources.use(new JarOutputStream(output)) { jarOutput =>
+    Using.resource(new JarOutputStream(output)) { jarOutput =>
       other.foreach(putToJar(jarOutput))
     }
   }
@@ -59,7 +60,7 @@ class FlinkModelJar extends LazyLogging {
   private def putToJar(jarOutputStream: JarOutputStream)(url: URL) = {
     val entry = new JarEntry(s"lib/${url.getPath.replaceAll("/", "_")}")
     jarOutputStream.putNextEntry(entry)
-    WithResources.use(url.openStream()) { stream =>
+    Using.resource(url.openStream()) { stream =>
       IOUtils.copy(stream, jarOutputStream)
     }
   }

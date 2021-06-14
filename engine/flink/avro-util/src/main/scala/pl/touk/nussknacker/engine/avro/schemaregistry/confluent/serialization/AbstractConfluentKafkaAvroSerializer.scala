@@ -8,10 +8,10 @@ import org.apache.avro.generic.GenericContainer
 import org.apache.avro.io.{Encoder, EncoderFactory}
 import org.apache.kafka.common.errors.SerializationException
 import pl.touk.nussknacker.engine.avro.schema.{AvroSchemaEvolution, DatumReaderWriterMixin}
-import pl.touk.nussknacker.engine.util.exception.WithResources
 
 import java.io.{ByteArrayOutputStream, IOException, OutputStream}
 import java.nio.ByteBuffer
+import scala.util.Using
 
 /**
   * Abstract confluent serializer class. Serialize algorithm is copy past from AbstractKafkaAvroSerializer.serializeImpl.
@@ -61,7 +61,7 @@ class AbstractConfluentKafkaAvroSerializer(avroSchemaEvolution: AvroSchemaEvolut
   }
 
   protected def writeData(data: Any, avroSchema: Schema, schemaId: Int): Array[Byte] =
-    WithResources.use(new ByteArrayOutputStream) { out =>
+    Using.resource(new ByteArrayOutputStream) { out =>
 
       writeHeader(data, avroSchema, schemaId, out)
 

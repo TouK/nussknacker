@@ -28,6 +28,7 @@ import pl.touk.nussknacker.engine.standalone.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.{ModelData, compiledgraph}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Using.Releasable
 import scala.util.control.NonFatal
 
 object StandaloneProcessInterpreter {
@@ -227,7 +228,7 @@ case class StandaloneProcessInterpreter(source: StandaloneSource[Any],
                                         context: StandaloneContext,
                                         private val invoker: types.InterpreterType,
                                         private val lifecycle: Seq[Lifecycle],
-                                        private val modelData: ModelData) extends InvocationMetrics {
+                                        private val modelData: ModelData) extends InvocationMetrics with AutoCloseable {
 
   val id: String = context.processId
 

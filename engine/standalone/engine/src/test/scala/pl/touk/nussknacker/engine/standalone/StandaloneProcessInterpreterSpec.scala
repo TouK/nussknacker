@@ -19,11 +19,11 @@ import pl.touk.nussknacker.engine.standalone.api.types.GenericListResultType
 import pl.touk.nussknacker.engine.standalone.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.standalone.metrics.dropwizard.DropwizardMetricsProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.util.exception.WithResources
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import java.util
 import scala.collection.immutable.ListMap
+import scala.util.Using
 
 class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryPatientScalaFutures {
 
@@ -80,7 +80,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
     val creator = new StandaloneProcessConfigCreator
     val metricRegistry = new MetricRegistry
 
-    WithResources.use(prepareInterpreter(process, creator, metricRegistry)) { interpreter =>
+    Using.resource(prepareInterpreter(process, creator, metricRegistry)) { interpreter =>
       interpreter.open(JobData(process.metaData, ProcessVersion.empty, DeploymentData.empty))
       val contextId = "context-id"
       val result = interpreter.invoke(Request1("a", "b"), Some(contextId)).futureValue
@@ -158,7 +158,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
 
     val metricRegistry = new MetricRegistry
 
-    WithResources.use(
+    Using.resource(
       prepareInterpreter(process, new StandaloneProcessConfigCreator, metricRegistry = metricRegistry)
     ) { interpreter =>
       interpreter.open(JobData(process.metaData, ProcessVersion.empty, DeploymentData.empty))
@@ -311,7 +311,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
                  creator: StandaloneProcessConfigCreator = new StandaloneProcessConfigCreator,
                  metricRegistry: MetricRegistry = new MetricRegistry,
                  contextId: Option[String] = None): GenericListResultType[Any] =
-    WithResources.use(prepareInterpreter(
+    Using.resource(prepareInterpreter(
       process = process,
       creator = creator,
       metricRegistry = metricRegistry

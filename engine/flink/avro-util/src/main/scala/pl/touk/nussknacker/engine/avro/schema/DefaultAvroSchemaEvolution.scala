@@ -6,9 +6,8 @@ import org.apache.avro.Schema
 import org.apache.avro.generic._
 import org.apache.avro.io.{DatumReader, DecoderFactory, EncoderFactory}
 import pl.touk.nussknacker.engine.avro.{AvroUtils, RuntimeSchemaData}
-import pl.touk.nussknacker.engine.util.exception.WithResources
 
-import scala.util.Try
+import scala.util.{Try, Using}
 
 /**
   * It's base implementation of AvroSchemaEvolution. In this case strategy to evolve record to schema is as follows:
@@ -76,7 +75,7 @@ class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWri
     * To serialization we use schema from record.
     */
   protected def serializeRecord(record: GenericContainer): Array[Byte] = {
-    WithResources.use(new ByteArrayOutputStream) { out =>
+    Using.resource(new ByteArrayOutputStream) { out =>
       try {
         val encoder = encoderFactory.directBinaryEncoder(out, null)
         val writer = createDatumWriter(record, record.getSchema, useSchemaReflection = useSchemaReflection)

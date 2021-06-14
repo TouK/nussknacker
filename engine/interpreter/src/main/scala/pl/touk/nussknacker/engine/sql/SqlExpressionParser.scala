@@ -9,10 +9,10 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.sql.columnmodel.CreateColumnModel
 import pl.touk.nussknacker.engine.sql.preparevalues.PrepareTables
-import pl.touk.nussknacker.engine.util.exception.WithResources
 
 import java.sql.SQLSyntaxErrorException
 import scala.collection.JavaConverters._
+import scala.util.Using
 
 object SqlExpressionParser extends ExpressionParser {
 
@@ -49,7 +49,7 @@ object SqlExpressionParser extends ExpressionParser {
   }
 
   private def getQueryReturnType(original: String, colModel: Map[String, ColumnModel]): Validated[NonEmptyList[ExpressionParseError], TypingResult] =
-    WithResources.use(new HsqlSqlQueryableDataBase(original, colModel)) { db =>
+    Using.resource(new HsqlSqlQueryableDataBase(original, colModel)) { db =>
       try {
         Validated.Valid(db.getTypingResult)
       } catch {

@@ -259,6 +259,7 @@ val cronParserV = "9.1.3"
 val javaxValidationApiV = "2.0.1.Final"
 val caffeineCacheV = "2.8.8"
 val sttpV = "2.2.9"
+val utilBackportsV = "2.1"
 
 lazy val commonDockerSettings = {
   Seq(
@@ -707,6 +708,7 @@ lazy val util = (project in engine("util")).
       Seq(
         "org.springframework" % "spring-core" % springV,
         "com.github.ben-manes.caffeine" % "caffeine" % caffeineCacheV,
+        "com.github.bigwheel" %% "util-backports" % utilBackportsV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "com.iheart" %% "ficus" % ficusV,
         "io.circe" %% "circe-java8" % circeJava8V,

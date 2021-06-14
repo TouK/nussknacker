@@ -6,9 +6,9 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.standalone.api.StandaloneDeploymentData
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.CirceUtil
-import pl.touk.nussknacker.engine.util.exception.WithResources
 
 import scala.io.Source
+import scala.util.Using
 
 trait ProcessRepository {
 
@@ -45,7 +45,7 @@ class FileProcessRepository(path: File) extends ProcessRepository {
 
   override def add(id: ProcessName, deploymentData: StandaloneDeploymentData): Unit = {
     val outFile = new File(path, id.value)
-    WithResources.use(new PrintWriter(outFile, StandardCharsets.UTF_8.name())) { writer =>
+    Using.resource(new PrintWriter(outFile, StandardCharsets.UTF_8.name())) { writer =>
       writer.write(deploymentData.asJson.spaces2)
     }
   }
@@ -55,7 +55,7 @@ class FileProcessRepository(path: File) extends ProcessRepository {
   }
 
   private def fileToString(file: File) =
-    WithResources.use(Source.fromFile(file, StandardCharsets.UTF_8.name())) { s =>
+    Using.resource(Source.fromFile(file, StandardCharsets.UTF_8.name())) { s =>
       s.getLines().mkString("\n")
     }
 

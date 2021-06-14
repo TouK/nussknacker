@@ -13,12 +13,11 @@ import pl.touk.nussknacker.engine.api.namespaces.{KafkaUsageKey, NamingContext}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.kafka.validator.CachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.util.exception.WithResources
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future, Promise}
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Using}
 
 object KafkaUtils extends LazyLogging {
 
@@ -40,7 +39,7 @@ object KafkaUtils extends LazyLogging {
   }
 
   def usingAdminClient[T](kafkaConfig: KafkaConfig)(adminClientOperation: Admin => T): T =
-    WithResources.use(createKafkaAdminClient(kafkaConfig))(adminClientOperation)
+    Using.resource(createKafkaAdminClient(kafkaConfig))(adminClientOperation)
 
   def validateTopicsExistence(topics: List[PreparedKafkaTopic], kafkaConfig: KafkaConfig): Unit = {
     new CachedTopicsExistenceValidator(kafkaConfig = kafkaConfig)
@@ -153,7 +152,7 @@ object KafkaUtils extends LazyLogging {
     // http://stackoverflow.com/questions/40037857/intermittent-exception-in-tests-using-the-java-kafka-client
     ThreadUtils.withThisAsContextClassLoader(classOf[KafkaClient].getClassLoader) {
       val consumer: KafkaConsumer[Array[Byte], Array[Byte]] = new KafkaConsumer(toPropertiesForTempConsumer(config, groupId))
-      WithResources.use(consumer)(fun)
+      Using.resource(consumer)(fun)
     }
   }
 
@@ -169,7 +168,7 @@ object KafkaUtils extends LazyLogging {
   }
 
   def sendToKafkaWithTempProducer(topic: String, key: Array[Byte], value: Array[Byte])(kafkaConfig: KafkaConfig): Future[RecordMetadata] =
-    WithResources.use(createProducer(kafkaConfig, "temp-"+topic)) { producer =>
+    Using.resource(createProducer(kafkaConfig, "temp-"+topic)) { producer =>
       sendToKafka(topic, key, value)(producer)
     }
 

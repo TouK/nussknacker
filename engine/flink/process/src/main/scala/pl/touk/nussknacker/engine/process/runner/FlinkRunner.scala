@@ -6,15 +6,14 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.util.exception.WithResources
+
+import scala.util.Using
 
 trait FlinkRunner {
 
   protected def readProcessFromArg(arg: String): EspProcess = {
     val canonicalJson = if (arg.startsWith("@")) {
-      WithResources.use(scala.io.Source.fromFile(arg.substring(1), StandardCharsets.UTF_8.name())) { source =>
-        source.mkString
-      }
+      Using.resource(scala.io.Source.fromFile(arg.substring(1), StandardCharsets.UTF_8.name()))(_.mkString)
     } else {
       arg
     }

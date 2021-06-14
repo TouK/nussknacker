@@ -26,7 +26,6 @@ import pl.touk.nussknacker.engine.standalone.api.{StandaloneContextPreparer, Sta
 import pl.touk.nussknacker.engine.standalone.api.types._
 import pl.touk.nussknacker.engine.standalone.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestRunId, TestServiceInvocationCollector}
-import pl.touk.nussknacker.engine.util.exception.WithResources
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.engine.{ModelData, _}
 import shapeless.Typeable
@@ -34,6 +33,7 @@ import shapeless.syntax.typeable._
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.util.Using
 
 object StandaloneProcessManager {
   def apply(modelData: ModelData, config: Config) : StandaloneProcessManager = new StandaloneProcessManager(modelData, StandaloneProcessClient(config))
@@ -193,7 +193,7 @@ object TestUtils {
 
   def readProcessFromArg(arg: String): EspProcess = {
     val canonicalJson = if (arg.startsWith("@")) {
-      WithResources.use(scala.io.Source.fromFile(arg.substring(1)))(_.mkString)
+      Using.resource(scala.io.Source.fromFile(arg.substring(1)))(_.mkString)
     } else {
       arg
     }
