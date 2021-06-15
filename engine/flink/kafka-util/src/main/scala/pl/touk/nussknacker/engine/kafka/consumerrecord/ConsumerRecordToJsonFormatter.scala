@@ -1,110 +1,67 @@
 package pl.touk.nussknacker.engine.kafka.consumerrecord
 
-import java.nio.charset.StandardCharsets
-import java.util.Optional
-
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}
 import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
-import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, KafkaConfig, RecordFormatter, RecordFormatterFactory}
+import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, RecordFormatter}
+
+import java.nio.charset.StandardCharsets
 
 /**
   * RecordFormatter used to encode and decode whole raw kafka event (ConsumerRecord) in json format.
   *
   * @param deserializationSchema - schema used to convert raw kafka event to serializable representation (see SerializableConsumerRecord)
-  * @param serializeKeyValue - converts key and value from K-V domain to Array[Byte]
+  * @param keyValueSerializer - converts key and value from K-V domain to Array[Byte]
   * @tparam K - event key type
   * @tparam V - event value type
   */
 class ConsumerRecordToJsonFormatter[K: Encoder:Decoder, V: Encoder:Decoder](deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
-                                                                            serializeKeyValue: (Option[K], V) => (Array[Byte], Array[Byte]))
+                                                                            keyValueSerializer: SerializableConsumerRecordSerializer[K, V])
   extends RecordFormatter {
 
-  protected val consumerRecordDecoder: Decoder[SerializableConsumerRecord[K, V]] = deriveDecoder
-  protected val consumerRecordEncoder: Encoder[SerializableConsumerRecord[K, V]] = deriveEncoder
+  protected val consumerRecordDecoder: Decoder[SerializableConsumerRecord[K, V]] =
+    deriveDecoder[BaseSerializableConsumerRecord[K, V]].asInstanceOf[Decoder[SerializableConsumerRecord[K, V]]]
+  protected val consumerRecordEncoder: Encoder[SerializableConsumerRecord[K, V]] =
+    deriveEncoder[BaseSerializableConsumerRecord[K, V]].asInstanceOf[Encoder[SerializableConsumerRecord[K, V]]]
 
   override protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): Array[Byte] = {
-    val deserializedRecord = deserializationSchema.deserialize(record)
-    val serializableRecord = SerializableConsumerRecord(deserializedRecord)
+    val serializableRecord = prepareSerializableRecord(record)
     consumerRecordEncoder(serializableRecord).noSpaces.getBytes(StandardCharsets.UTF_8)
   }
 
+  // decode raw Array[Byte] content to [K, V] domain and prepare serializable record with all key-value-header-meta attributes
+  protected def prepareSerializableRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): SerializableConsumerRecord[K, V] = {
+    val deserializedRecord = deserializationSchema.deserialize(record)
+    BaseSerializableConsumerRecord(deserializedRecord)
+  }
+
   override protected def parseRecord(topic: String, bytes: Array[Byte]): ConsumerRecord[Array[Byte], Array[Byte]] = {
-    val serializableConsumerRecord = CirceUtil.decodeJsonUnsafe(bytes)(consumerRecordDecoder) // decode json in SerializableConsumerRecord[K, V] domain
-    serializableConsumerRecord.toKafkaConsumerRecord(topic, serializeKeyValue) // update with defaults and convert to ConsumerRecord
+    // decode json in SerializableConsumerRecord[K, V] domain
+    val serializableConsumerRecord = CirceUtil.decodeJsonUnsafe(bytes)(consumerRecordDecoder)
+    // update with defaults and convert to ConsumerRecord
+    keyValueSerializer.serialize(topic, serializableConsumerRecord)
   }
 
   override protected def testDataSplit: TestDataSplit = TestParsingUtils.newLineSplit
 
 }
 
-class ConsumerRecordToJsonFormatterFactory[K:Encoder:Decoder, V:Encoder:Decoder] extends RecordFormatterFactory {
+case class BaseSerializableConsumerRecord[K, V](key: Option[K],
+                                                value: V,
+                                                topic: Option[String],
+                                                partition: Option[Int],
+                                                offset: Option[Long],
+                                                timestamp: Option[Long],
+                                                timestampType: Option[String],
+                                                headers: Option[Map[String, Option[String]]],
+                                                leaderEpoch: Option[Int]) extends SerializableConsumerRecord[K, V]
 
-  override def create[KK, VV](kafkaConfig: KafkaConfig, deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[KK, VV]]): RecordFormatter = {
-    new ConsumerRecordToJsonFormatter[K, V](deserializationSchema.asInstanceOf[KafkaDeserializationSchema[ConsumerRecord[K, V]]], serializeKeyValue)
-  }
-
-  protected def serializeKeyValue(keyOpt: Option[K], value: V): (Array[Byte], Array[Byte]) = (serializeKey(keyOpt), serializeValue(value))
-
-  protected def serializeKey(keyOpt: Option[K]): Array[Byte] = keyOpt.map(serialize[K]).orNull
-  protected def serializeValue(value: V): Array[Byte] = serialize[V](value)
-
-  private def serialize[T: Encoder](data: T): Array[Byte] = {
-    val json = Encoder[T].apply(data)
-    json match {
-      // we handle strings this way because we want to keep result value compact and JString is formatted in quotes
-      case j if j.isString => j.asString.get.getBytes(StandardCharsets.UTF_8)
-      case other => other.noSpaces.getBytes(StandardCharsets.UTF_8)
-    }
-  }
-
-}
-
-/**
-  * Wrapper for ConsumerRecord fields used for test data serialization, eg. json serialization.
-  * All fields apart from value are optional.
-  */
-case class SerializableConsumerRecord[K, V](key: Option[K],
-                                            value: V,
-                                            topic: Option[String],
-                                            partition: Option[Int],
-                                            offset: Option[Long],
-                                            timestamp: Option[Long],
-                                            timestampType: Option[String],
-                                            headers: Option[Map[String, Option[String]]],
-                                            leaderEpoch: Option[Int]) {
-
-  /**
-    * Converts SerializableConsumerRecord to ConsumerRecord, uses default values in case of missing attributes.
-    */
-  def toKafkaConsumerRecord(formatterTopic: String, serializeKeyValue: (Option[K], V) => (Array[Byte], Array[Byte]) ): ConsumerRecord[Array[Byte], Array[Byte]] = {
-    // serialize Key and Value to Array[Byte]
-    val (keyBytes, valueBytes) = serializeKeyValue(key, value)
-    // use defaults and ignore checksum, serializedKeySize and serializedValueSize
-    new ConsumerRecord(
-      topic.getOrElse(formatterTopic),
-      partition.getOrElse(0),
-      offset.getOrElse(0L),
-      timestamp.getOrElse(ConsumerRecord.NO_TIMESTAMP),
-      timestampType.map(TimestampType.forName).getOrElse(TimestampType.NO_TIMESTAMP_TYPE),
-      ConsumerRecord.NULL_CHECKSUM.toLong,
-      ConsumerRecord.NULL_SIZE,
-      ConsumerRecord.NULL_SIZE,
-      keyBytes,
-      valueBytes,
-      ConsumerRecordUtils.toHeaders(headers.map(_.mapValues(_.orNull)).getOrElse(Map.empty)),
-      Optional.ofNullable(leaderEpoch.map(Integer.valueOf).orNull) //avoids covert null -> 0 conversion
-    )
-  }
-}
-
-object SerializableConsumerRecord {
-  def apply[K, V](deserializedRecord: ConsumerRecord[K, V]): SerializableConsumerRecord[K, V] = {
-    SerializableConsumerRecord(
+object BaseSerializableConsumerRecord {
+  def apply[K, V](deserializedRecord: ConsumerRecord[K, V]): BaseSerializableConsumerRecord[K, V] = {
+    new BaseSerializableConsumerRecord(
       Option(deserializedRecord.key()),
       deserializedRecord.value(),
       Option(deserializedRecord.topic()),

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.kafka
 
-import java.nio.charset.StandardCharsets
 import java.util.Optional
 import io.circe.generic.JsonCodec
 import io.circe.{Decoder, Encoder}
@@ -145,12 +144,6 @@ object KafkaSourceFactoryMixin {
       leaderEpoch
     )
   }
-
-  def serialize[T: Encoder](data: T): Array[Byte] = Encoder[T].apply(data).noSpaces.getBytes(StandardCharsets.UTF_8)
-
-  def serializeKeyValue(key: Option[String], value: String): (Array[Byte], Array[Byte]) = (key.map(_.getBytes(StandardCharsets.UTF_8)).orNull, value.getBytes(StandardCharsets.UTF_8))
-  def serializeKeyValue[V:Encoder](key: Option[String], value: V): (Array[Byte], Array[Byte]) = (key.map(_.getBytes(StandardCharsets.UTF_8)).orNull, serialize[V](value))
-  def serializeKeyValue[K:Encoder, V:Encoder](key: Option[K], value: V): (Array[Byte], Array[Byte]) = (key.map(serialize[K]).orNull, serialize[V](value))
 
 }
 
