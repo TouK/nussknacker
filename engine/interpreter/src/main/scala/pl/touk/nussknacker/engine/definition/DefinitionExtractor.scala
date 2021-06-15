@@ -2,12 +2,11 @@ package pl.touk.nussknacker.engine.definition
 
 import java.lang.annotation.Annotation
 import java.lang.reflect.{InvocationTargetException, Method}
-
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransformation, OutputVariableNameValue, TypedNodeDependencyValue}
-import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitMethodToInvoke}
+import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitMethodToInvoke, WithExplicitTypesToExtract}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SingleNodeConfig, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
@@ -29,9 +28,11 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
       objWithCategories.categories,
       nodeConfig
     ))
+
     (obj match {
       //TODO: how validators/editors in NodeConfig should be handled for GenericNodeTransformation/WithExplicitMethodToInvoke?
       case e:GenericNodeTransformation[_] =>
+        // Here in general we do not have a specified "returnType", hence Undefined/Void
         val returnType = if (e.nodeDependencies.contains(OutputVariableNameDependency)) Unknown else Typed[Void]
         val parametersList = StandardParameterEnrichment.enrichParameterDefinitions(e.initialParameters, objWithCategories.nodeConfig)
         val definition = ObjectDefinition(parametersList, returnType, objWithCategories.categories, objWithCategories.nodeConfig)
@@ -197,13 +198,20 @@ object DefinitionExtractor {
     }
 
     private def extractTypesFromObjectDefinition(obj: ObjectWithMethodDef): List[TypingResult] = {
-      def typesFromParameter(parameter: Parameter): Iterable[TypingResult] = {
+      def typesFromParameter(parameter: Parameter): List[TypingResult] = {
         val fromAdditionalVars = parameter.additionalVariables.values
         fromAdditionalVars.toList :+ parameter.typ
       }
 
+      def explicitTypes(obj: ObjectWithMethodDef): List[TypingResult] = {
+        obj.obj match {
+          case explicit : WithExplicitTypesToExtract => explicit.typesToExtract
+          case _ => Nil
+        }
+      }
+
       //FIXME: it was obj.methodDef.returnType, is it ok to replace with obj.returnType??
-      obj.returnType :: obj.parameters.flatMap(typesFromParameter)
+      obj.returnType :: obj.parameters.flatMap(typesFromParameter) ::: explicitTypes(obj)
     }
   }
 

@@ -7,12 +7,11 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermar
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka._
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerParameter, DefinedSingleParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
-import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.definition.{WithExplicitTypesToExtract, _}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceFactoryState
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 
@@ -42,9 +41,26 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
                                                    timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
                                                    formatterFactory: RecordFormatterFactory,
                                                    processObjectDependencies: ProcessObjectDependencies)
-  extends FlinkSourceFactory[ConsumerRecord[K, V]] with SingleInputGenericNodeTransformation[FlinkSource[ConsumerRecord[K, V]]] with WithCachedTopicsExistenceValidator {
+  extends FlinkSourceFactory[ConsumerRecord[K, V]]
+    with SingleInputGenericNodeTransformation[FlinkSource[ConsumerRecord[K, V]]]
+    with WithCachedTopicsExistenceValidator
+    with WithExplicitTypesToExtract {
 
   protected val topicNameSeparator = ","
+
+  protected val keyTypingResult: TypedClass = Typed.typedClass[K]
+
+  protected val valueTypingResult: TypedClass = Typed.typedClass[V]
+
+  // Node validation and compilation refers to ValidationContext, that returns TypingResult's of all variables returned by the source.
+  // Variable suggestion uses DefinitionExtractor that requires proper type definitions for GenericNodeTransformation (which in general does not have a specified "returnType"):
+  // - for TypeClass (which is a default scenario) - it is necessary to provide all explicit TypeClass definitions as possibleVariableClasses
+  // - for TypedObjectTypingResult - suggested variables are defined as explicit "fields"
+  // Example:
+  // - validation context indicates that #input is TypedClass(classOf(SampleProduct)), that is used by node compilation and validation
+  // - definition extractor provides detailed definition of "pl.touk.nussknacker.engine.management.sample.dto.SampleProduct"
+  // See also ProcessDefinitionExtractor.
+  def typesToExtract: List[TypedClass] = List(keyTypingResult, valueTypingResult)
 
   override type State = KafkaSourceFactoryState[K, V, DefinedParameter]
 
@@ -104,7 +120,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
 
   // Overwrite this for dynamic type definitions.
   protected def prepareContextInitializer(params: List[(String, DefinedParameter)]): KafkaContextInitializer[K, V, DefinedParameter] =
-    new KafkaContextInitializer[K, V, DefinedSingleParameter](Typed[K], Typed[V])
+    new KafkaContextInitializer[K, V, DefinedSingleParameter](keyTypingResult, valueTypingResult)
 
   /**
     * contextTransformation should handle exceptions raised by prepareInitialParameters
