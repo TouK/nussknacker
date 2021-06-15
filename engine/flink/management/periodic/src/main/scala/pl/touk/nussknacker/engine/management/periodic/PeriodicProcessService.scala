@@ -37,6 +37,11 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
     def emptyCallback: RepositoryAction[Callback] = result.map(_ => () => Future.successful(()))
   }
 
+  private implicit class RichPeriodicProcessDeployment(periodicDeployment: PeriodicProcessDeployment) {
+    def display: String = s"${periodicDeployment.periodicProcess.processVersion} with ${periodicDeployment
+        .scheduleName.map(sn => s"schedule=$sn and ").getOrElse("")}deploymentId=${periodicDeployment.periodicProcess.id}"
+  }
+
   def schedule(schedule: ScheduleProperty,
                processVersion: ProcessVersion,
                processJson: String): Future[Unit] = {
@@ -88,7 +93,7 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
   private def checkIfNotRunning(toDeploy: PeriodicProcessDeployment): Future[Option[PeriodicProcessDeployment]] = {
     delegateProcessManager.findJobStatus(toDeploy.periodicProcess.processVersion.processName).map {
       case Some(state) if state.isDeployed =>
-        logger.debug(s"Deferring run of ${toDeploy.periodicProcess} with name ${toDeploy.scheduleName} as process is currently running")
+        logger.debug(s"Deferring run of ${toDeploy.display} as process is currently running")
         None
       case _ => Some(toDeploy)
     }
@@ -127,29 +132,29 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
 
   //Mark process as Finished and reschedule - we do it transactionally
   private def reschedule(deployment: PeriodicProcessDeployment, state: Option[ProcessState]): RepositoryAction[Callback] = {
-    logger.info(s"Rescheduling process $deployment")
+    logger.info(s"Rescheduling ${deployment.display}")
     val process = deployment.periodicProcess
     for {
       callback <- deployment.nextRunAt(clock) match {
         case Right(Some(futureDate)) =>
-          logger.info(s"Rescheduling process $deployment to $futureDate")
+          logger.info(s"Rescheduling ${deployment.display} to $futureDate")
           scheduledProcessesRepository.schedule(process.id, deployment.scheduleName, futureDate).flatMap { data =>
             handleEvent(ScheduledEvent(data, firstSchedule = false))
           }.emptyCallback
         case Right(None) =>
-          logger.info(s"No next run of $deployment. Deactivating")
+          logger.info(s"No next run of ${deployment.display}. Deactivating")
           deactivateAction(process.processVersion.processName)
         case Left(error) =>
           // This case should not happen. It would mean periodic property was valid when scheduling a process
           // but was made invalid when rescheduling again.
-          logger.error(s"Wrong periodic property, error: $error. Deactivating $deployment")
+          logger.error(s"Wrong periodic property, error: $error. Deactivating ${deployment.display}")
           deactivateAction(process.processVersion.processName)
       }
     } yield callback
   }
 
   private def markFinished(deployment: PeriodicProcessDeployment, state: Option[ProcessState]): RepositoryAction[Unit] = {
-    logger.info(s"Marking process $deployment as finished")
+    logger.info(s"Marking ${deployment.display} as finished")
     for {
       _ <- scheduledProcessesRepository.markFinished(deployment.id)
       currentState <- scheduledProcessesRepository.findProcessData(deployment.id)
@@ -157,7 +162,7 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
   }
 
   private def markFailedAction(deployment: PeriodicProcessDeployment, state: Option[ProcessState]): RepositoryAction[Unit] = {
-    logger.info(s"Marking process $deployment as failed")
+    logger.info(s"Marking ${deployment.display} as failed")
     for {
       _ <- scheduledProcessesRepository.markFailed(deployment.id)
       currentState <- scheduledProcessesRepository.findProcessData(deployment.id)
@@ -220,7 +225,7 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
       }
       // We can recover since deployment actor watches only future completion.
       .recoverWith { case exception =>
-        logger.error(s"Process deployment failed for deployment id $id", exception)
+        logger.error(s"Process deployment ${deployment.display} failed", exception)
         markFailedAction(deployment, None).run
       }
   }
@@ -233,8 +238,6 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
       } catch {
         case NonFatal(e) => throw new PeriodicProcessException("Failed to invoke listener", e)
       }
-
     }
   }
-
 }
