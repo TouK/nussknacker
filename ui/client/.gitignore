@@ -19,5 +19,7 @@ reports/
 cypress.env.json
 cypress/videos
 cypress/screenshots
-cypress/**/__image_snapshots__/**/*.actual.png
-cypress/**/__image_snapshots__/**/*.diff.png
+cypress/**/__image_snapshots__/*
+!cypress/**/__image_snapshots__/*\[Linux\]*
+cypress/**/__image_snapshots__/*.diff.*
+cypress/**/__image_snapshots__/*.actual.*
