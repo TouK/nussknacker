@@ -23,6 +23,7 @@ import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import java.nio.charset.StandardCharsets
 import java.util
 import java.util.Collections
+import scala.reflect.ClassTag
 
 //TODO: Move it to source package
 object sources {
@@ -96,7 +97,7 @@ object sources {
 
   object FixedRecordFormatterFactoryWrapper {
     def apply(formatter: RecordFormatter): RecordFormatterFactory = new RecordFormatterFactory {
-      override def create[K, V](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]]): RecordFormatter = formatter
+      override def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]]): RecordFormatter = formatter
     }
   }
 

@@ -6,27 +6,28 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory}
 
 import java.nio.charset.StandardCharsets
+import scala.reflect.ClassTag
 
-class ConsumerRecordToJsonFormatterFactory[K: Encoder : Decoder, V: Encoder : Decoder] extends RecordFormatterFactory {
+class ConsumerRecordToJsonFormatterFactory[Key: Encoder : Decoder, Value: Encoder : Decoder] extends RecordFormatterFactory {
 
-  override def create[KK, VV](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[KK, VV]]): RecordFormatter = {
-    new ConsumerRecordToJsonFormatter[K, V](
-      createFormatterDeserializer[KK, VV](kafkaConfig, kafkaSourceDeserializationSchema).asInstanceOf[KafkaDeserializationSchema[ConsumerRecord[K, V]]],
-      createFormatterSerializer[KK, VV](kafkaConfig).asInstanceOf[SerializableConsumerRecordSerializer[K, V]]
+  override def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]]): RecordFormatter = {
+    new ConsumerRecordToJsonFormatter[Key, Value](
+      createFormatterDeserializer[K, V](kafkaConfig, kafkaSourceDeserializationSchema).asInstanceOf[KafkaDeserializationSchema[ConsumerRecord[Key, Value]]],
+      createFormatterSerializer[K, V](kafkaConfig).asInstanceOf[SerializableConsumerRecordSerializer[Key, Value]]
     )
   }
 
-  protected def createFormatterDeserializer[KK, VV](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[KK, VV]]):
-  KafkaDeserializationSchema[ConsumerRecord[KK, VV]] = {
+  protected def createFormatterDeserializer[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]]):
+  KafkaDeserializationSchema[ConsumerRecord[K, V]] = {
     kafkaSourceDeserializationSchema
   }
 
-  protected def createFormatterSerializer[KK, VV](kafkaConfig: KafkaConfig): SerializableConsumerRecordSerializer[KK, VV] = {
-    val serializer = new SerializableConsumerRecordSerializer[K, V] {
-      override protected def extractKey(topic: String, record: SerializableConsumerRecord[K, V]): Array[Byte] = record.key.map(encode[K]).orNull
-      override protected def extractValue(topic: String, record: SerializableConsumerRecord[K, V]): Array[Byte] = encode[V](record.value)
+  protected def createFormatterSerializer[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig): SerializableConsumerRecordSerializer[K, V] = {
+    val serializer = new SerializableConsumerRecordSerializer[Key, Value] {
+      override protected def extractKey(topic: String, record: SerializableConsumerRecord[Key, Value]): Array[Byte] = record.key.map(encode[Key]).orNull
+      override protected def extractValue(topic: String, record: SerializableConsumerRecord[Key, Value]): Array[Byte] = encode[Value](record.value)
     }
-    serializer.asInstanceOf[SerializableConsumerRecordSerializer[KK, VV]]
+    serializer.asInstanceOf[SerializableConsumerRecordSerializer[K, V]]
   }
 
   private def encode[T: Encoder](data: T): Array[Byte] = {

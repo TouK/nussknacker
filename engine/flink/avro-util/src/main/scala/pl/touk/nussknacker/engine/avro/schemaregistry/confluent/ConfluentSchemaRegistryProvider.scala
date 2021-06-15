@@ -4,7 +4,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
 import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory}
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.ConfluentAvroToJsonFormatterFactory
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.{ConfluentAvroPayloadToJsonFormatterFactory, ConfluentJsonPayloadToJsonFormatterFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.jsonpayload.{ConfluentJsonPayloadSerializerFactory, ConfluentKeyValueKafkaJsonDeserializerFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentAvroSerializationSchemaFactory, ConfluentKeyValueKafkaAvroDeserializationFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryError, SchemaRegistryProvider, SchemaRegistryUnsupportedTypeError}
@@ -41,7 +41,7 @@ object ConfluentSchemaRegistryProvider extends Serializable {
       schemaRegistryClientFactory,
       new ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory),
       new ConfluentKeyValueKafkaAvroDeserializationFactory(schemaRegistryClientFactory),
-      new ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory)
+      new ConfluentAvroPayloadToJsonFormatterFactory(schemaRegistryClientFactory)
     )
   }
 
@@ -62,7 +62,7 @@ object ConfluentSchemaRegistryProvider extends Serializable {
       schemaRegistryClientFactory,
       new ConfluentJsonPayloadSerializerFactory(schemaRegistryClientFactory),
       new ConfluentKeyValueKafkaJsonDeserializerFactory(schemaRegistryClientFactory),
-      new ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory) // TODO: provide jsonPayload formatter factory
+      new ConfluentJsonPayloadToJsonFormatterFactory
     )
   }
 
