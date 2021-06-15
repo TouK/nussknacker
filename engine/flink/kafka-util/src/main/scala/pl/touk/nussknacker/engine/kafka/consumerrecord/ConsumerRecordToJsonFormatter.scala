@@ -44,7 +44,7 @@ class ConsumerRecordToJsonFormatter[K: Encoder:Decoder, V: Encoder:Decoder](dese
 
 class ConsumerRecordToJsonFormatterFactory[K:Encoder:Decoder, V:Encoder:Decoder] extends RecordFormatterFactory {
 
-  override def create[T](kafkaConfig: KafkaConfig, deserializationSchema: KafkaDeserializationSchema[T]): RecordFormatter = {
+  override def create[KK, VV](kafkaConfig: KafkaConfig, deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[KK, VV]]): RecordFormatter = {
     new ConsumerRecordToJsonFormatter[K, V](deserializationSchema.asInstanceOf[KafkaDeserializationSchema[ConsumerRecord[K, V]]], serializeKeyValue)
   }
 

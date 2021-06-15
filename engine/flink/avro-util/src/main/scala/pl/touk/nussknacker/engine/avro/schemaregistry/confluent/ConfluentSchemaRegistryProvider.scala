@@ -13,10 +13,8 @@ import pl.touk.nussknacker.engine.kafka.RecordFormatterFactory
 
 class ConfluentSchemaRegistryProvider(val schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
                                       val serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
-                                      val deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory) extends SchemaRegistryProvider {
-
-  override def recordFormatterFactory: RecordFormatterFactory =
-    new ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory)
+                                      val deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory,
+                                      val recordFormatterFactory: RecordFormatterFactory) extends SchemaRegistryProvider {
 
   override def validateSchema(schema: Schema): ValidatedNel[SchemaRegistryError, Schema] =
   /* kafka-avro-serializer does not support Array at top level
@@ -42,17 +40,20 @@ object ConfluentSchemaRegistryProvider extends Serializable {
     ConfluentSchemaRegistryProvider(
       schemaRegistryClientFactory,
       new ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory),
-      new ConfluentKeyValueKafkaAvroDeserializationFactory(schemaRegistryClientFactory)
+      new ConfluentKeyValueKafkaAvroDeserializationFactory(schemaRegistryClientFactory),
+      new ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory)
     )
   }
 
   def apply(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
             serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
-            deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory): ConfluentSchemaRegistryProvider = {
+            deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory,
+            recordFormatterFactory: RecordFormatterFactory): ConfluentSchemaRegistryProvider = {
     new ConfluentSchemaRegistryProvider(
       schemaRegistryClientFactory,
       serializationSchemaFactory,
-      deserializationSchemaFactory
+      deserializationSchemaFactory,
+      recordFormatterFactory
     )
   }
 
@@ -60,7 +61,8 @@ object ConfluentSchemaRegistryProvider extends Serializable {
     ConfluentSchemaRegistryProvider(
       schemaRegistryClientFactory,
       new ConfluentJsonPayloadSerializerFactory(schemaRegistryClientFactory),
-      new ConfluentKeyValueKafkaJsonDeserializerFactory(schemaRegistryClientFactory)
+      new ConfluentKeyValueKafkaJsonDeserializerFactory(schemaRegistryClientFactory),
+      new ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory) // TODO: provide jsonPayload formatter factory
     )
   }
 

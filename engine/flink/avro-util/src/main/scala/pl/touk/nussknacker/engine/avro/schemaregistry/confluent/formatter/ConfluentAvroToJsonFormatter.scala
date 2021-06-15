@@ -87,7 +87,7 @@ object ConfluentAvroToJsonFormatter {
 
 class ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory) extends RecordFormatterFactory {
 
-  override def create[T](kafkaConfig: KafkaConfig, deserializationSchema: KafkaDeserializationSchema[T]): RecordFormatter = {
+  override def create[KK, VV](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[KK, VV]]): RecordFormatter = {
     new ConfluentAvroToJsonFormatter(
       schemaRegistryClientFactory,
       kafkaConfig,

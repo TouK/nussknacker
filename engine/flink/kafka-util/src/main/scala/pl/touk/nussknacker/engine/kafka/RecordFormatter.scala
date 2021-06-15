@@ -44,5 +44,5 @@ object BasicRecordFormatter {
 }
 
 trait RecordFormatterFactory extends Serializable {
-  def create[T](kafkaConfig: KafkaConfig, deserializationSchema: KafkaDeserializationSchema[T]): RecordFormatter
+  def create[K, V](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]]): RecordFormatter
 }
