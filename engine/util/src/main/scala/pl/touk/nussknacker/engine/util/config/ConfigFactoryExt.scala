@@ -30,8 +30,10 @@ object ConfigFactoryExt {
 
   def loadEmptyConfigWithOverrides(classLoader: ClassLoader): Config = ConfigFactory.load(classLoader, ConfigFactory.empty())
 
-  def load(resources: List[URI], classLoader: ClassLoader): Config = {
-    resources.map(ConfigFactoryExt.parseUri).reverse.foldLeft(loadEmptyConfigWithOverrides(classLoader))(_.withFallback(_))
-  }
-
+  def load(resources: List[URI], classLoader: ClassLoader): Config =
+    resources
+      .map(ConfigFactoryExt.parseUri)
+      .reverse
+      .foldLeft(ConfigFactory.empty())(_.withFallback(_))
+      .withFallback(loadEmptyConfigWithOverrides(classLoader))
 }
