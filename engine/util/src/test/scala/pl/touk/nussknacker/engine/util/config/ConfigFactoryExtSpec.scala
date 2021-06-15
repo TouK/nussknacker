@@ -11,7 +11,7 @@ class ConfigFactoryExtSpec extends FunSuite with Matchers {
 
   test("loads in correct order") {
 
-    val conf1 = writeToTemp(Map("f1" -> "default", "f2" ->"not so default"))
+    val conf1 = writeToTemp(Map("f1" -> "default", "f2" ->"not so default", "akka.http.server.request-timeout" -> "300s"))
     val conf2 = writeToTemp(Map("f1" -> "I win!"))
 
     val result = ConfigFactoryExt.load(List(conf1, conf2, "classpath:someConfig.conf").mkString(", "), getClass.getClassLoader)
@@ -20,7 +20,7 @@ class ConfigFactoryExtSpec extends FunSuite with Matchers {
     result.getString("f2") shouldBe "not so default"
     result.getString("f4") shouldBe "fromClasspath"
     result.hasPath("f5") shouldBe false
-
+    result.getString("akka.http.server.request-timeout") shouldBe "300s"
   }
 
   def writeToTemp(map: Map[String, Any]): URI = {
