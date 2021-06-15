@@ -1,12 +1,19 @@
 package pl.touk.nussknacker.engine.avro.helpers
 
+import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.scalatest.{Assertion, FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedSingleParameter, OutputVariableNameValue, TypedNodeDependencyValue}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
+import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer._
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.kryo.AvroSerializersRegistrar
@@ -16,6 +23,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, La
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.{EspProcess, expression}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
@@ -26,7 +34,9 @@ import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.{NussknackerAssertions, PatientScalaFutures}
 
-trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations with FlinkSpec with SchemaRegistryMixin with Matchers with LazyLogging with NussknackerAssertions with PatientScalaFutures {
+import java.nio.charset.StandardCharsets
+
+trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations with FlinkSpec with SchemaRegistryMixin with Matchers with LazyLogging with NussknackerAssertions with PatientScalaFutures with Serializable {
 
   import spel.Implicits._
 
@@ -179,5 +189,68 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
 
     def apply(topicConfig: TopicConfig, version: SchemaVersionOption, value: String, key: String = "", validationMode: Option[ValidationMode] = Some(ValidationMode.strict)): SinkAvroParam =
       new SinkAvroParam(topicConfig.output, version, (SinkValueParamName -> asSpelExpression(value)) :: Nil, key, validationMode, "kafka-avro-raw")
+  }
+
+  protected def roundTripValueObject(sourceFactory: KafkaAvroSourceFactory[Any, Any], topic: String, versionOption: SchemaVersionOption, givenKey: Any, givenValue: Any):
+  Validated[NonEmptyList[ProcessCompilationError], Assertion] = {
+    pushMessage(givenValue, topic)
+    readLastMessageAndVerify(sourceFactory, topic, versionOption, givenKey, givenValue)
+  }
+
+  protected def roundTripKeyValueObject(sourceFactory: KafkaAvroSourceFactory[Any, Any], topic: String, versionOption: SchemaVersionOption, givenKey: Any, givenValue: Any):
+  Validated[NonEmptyList[ProcessCompilationError], Assertion] = {
+    pushMessageWithKey(givenKey, givenValue, topic)
+    readLastMessageAndVerify(sourceFactory, topic, versionOption, givenKey, givenValue)
+  }
+
+  protected def readLastMessageAndVerify(sourceFactory: KafkaAvroSourceFactory[Any, Any], topic: String, versionOption: SchemaVersionOption, givenKey: Any, givenValue: Any):
+  Validated[NonEmptyList[ProcessCompilationError], Assertion] = {
+    val parameterValues = Map(KafkaAvroBaseTransformer.TopicParamName -> topic, KafkaAvroBaseTransformer.SchemaVersionParamName -> versionOptionToString(versionOption))
+    createValidatedSource(sourceFactory, parameterValues)
+      .map(source => {
+        val bytes = source.generateTestData(1)
+        info("test object: " + new String(bytes, StandardCharsets.UTF_8))
+        val deserializedObj = source.testDataParser.parseTestData(bytes).head.asInstanceOf[ConsumerRecord[Any, Any]]
+
+        deserializedObj.key() shouldEqual givenKey
+        deserializedObj.value() shouldEqual givenValue
+      })
+  }
+
+  protected def versionOptionToString(versionOption: SchemaVersionOption): String = {
+    versionOption match {
+      case LatestSchemaVersion => SchemaVersionOption.LatestOptionName
+      case ExistingSchemaVersion(v) => v.toString
+    }
+  }
+
+  private def createValidatedSource(sourceFactory: KafkaAvroSourceFactory[Any, Any], parameterValues: Map[String, Any]):
+  Validated[NonEmptyList[ProcessCompilationError], Source[AnyRef] with TestDataGenerator with FlinkSourceTestSupport[AnyRef]] = {
+    val validatedState = validateParamsAndInitializeState(sourceFactory, parameterValues)
+    validatedState.map(state => {
+      sourceFactory
+        .implementation(
+          parameterValues,
+          List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)),
+          state)
+        .asInstanceOf[Source[AnyRef] with TestDataGenerator with FlinkSourceTestSupport[AnyRef]]
+    })
+  }
+
+  // Use final contextTransformation to 1) validate parameters and 2) to calculate the final state.
+  // This transformation can return
+  // - the state that contains information on runtime key-value schemas, which is required in createSource.
+  // - validation errors
+  private def validateParamsAndInitializeState(sourceFactory: KafkaAvroSourceFactory[Any, Any], parameterValues: Map[String, Any]):
+  Validated[NonEmptyList[ProcessCompilationError], Option[KafkaAvroSourceFactory.KafkaAvroSourceFactoryState[Any, Any, DefinedSingleParameter]]] = {
+    implicit val nodeId: NodeId = NodeId("dummy")
+    val parameters = parameterValues.mapValues(value => DefinedEagerParameter(value, null)).toList
+    val definition = sourceFactory.contextTransformation(ValidationContext(), List(OutputVariableNameValue("dummy")))
+    val stepResult = definition(sourceFactory.TransformationStep(parameters, None))
+    stepResult match {
+      case result: sourceFactory.FinalResults if result.errors.isEmpty => Valid(result.state)
+      case result: sourceFactory.FinalResults => Invalid(NonEmptyList.fromListUnsafe(result.errors))
+      case _ => Invalid(NonEmptyList(CustomNodeError("Unexpected result of contextTransformation", None), Nil))
+    }
   }
 }
