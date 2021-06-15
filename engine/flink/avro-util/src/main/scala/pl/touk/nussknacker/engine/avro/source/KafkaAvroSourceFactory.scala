@@ -98,7 +98,7 @@ class KafkaAvroSourceFactory[K:ClassTag, V:ClassTag](val schemaRegistryProvider:
 
     // prepare KafkaDeserializationSchema based on key and value schema
     val deserializationSchema = schemaRegistryProvider.deserializationSchemaFactory.create[K, V](kafkaConfig, keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime)
-    val recordFormatter = schemaRegistryProvider.recordFormatterFactory.create[ConsumerRecord[K, V]](kafkaConfig, deserializationSchema)
+    val recordFormatter = schemaRegistryProvider.recordFormatterFactory.create[K, V](kafkaConfig, deserializationSchema)
 
     createSource(params,
       dependencies,
