@@ -155,8 +155,12 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
           }
         }
 
-      case e: MethodReference =>
-        extractMethodReference(e, validationContext, node, current)
+      case e: MethodReference => typeChildren(validationContext, node, current.popStack) { typedParams =>
+        TypeMethodReference(e.getName, current.stack, typedParams) match {
+          case Right(typingResult) => Valid(typingResult)
+          case Left(errorMsg) => if(strictMethodsChecking) invalid(errorMsg) else Valid(Unknown)
+        }
+      }
 
       case e: OpEQ => checkEqualityLikeOperation(validationContext, e, current)
       case e: OpNE => checkEqualityLikeOperation(validationContext, e, current)
@@ -286,20 +290,6 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         Valid(Typed(l.toSet))
   }
 
-  private def extractMethodReference(reference: MethodReference, validationContext: ValidationContext, node: SpelNode, context: TypingContext) = {
-    context.stack match {
-      case _ :: tail =>
-        typeChildren(validationContext, node, context.copy(stack = tail)) { typedParams =>
-          TypeMethodReference(reference.getName, context.stack, typedParams) match {
-            case Right(typingResult) => Valid(typingResult)
-            case Left(errorMsg) => if(strictMethodsChecking) invalid(errorMsg) else Valid(Unknown)
-          }
-        }
-      case Nil =>
-        invalid(s"Invalid method reference: ${reference.toStringAST}.")
-    }
-  }
-
   @tailrec
   private def extractSingleProperty(e: PropertyOrFieldReference)
                                    (t: SingleTypingResult): ValidatedNel[ExpressionParseError, TypingResult]  = {
@@ -390,7 +380,11 @@ object Typer {
     def pushOnStack(typingResult: CollectedTypingResult): TypingContext =
       TypingContext(typingResult.finalResult :: stack, intermediateResults ++ typingResult.intermediateResults)
 
+    def popStack: TypingContext = copy(stack = stack.tail)
+
     def stackHead: Option[TypingResult] = stack.headOption
+
+    def stackTail: List[TypingResult] = stack.tail
 
     def withoutIntermediateResults: TypingContext = copy(intermediateResults = Map.empty)
 
