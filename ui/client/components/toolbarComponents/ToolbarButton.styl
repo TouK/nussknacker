@@ -37,8 +37,9 @@
             width (buttonSize / 2)
 
         &:focus
-            outline 2px solid focusColor
-            outline-offset -1px
+            outline none!important;
+            border 2px solid focusColor!important;
+            box-shadow none!important;
             z-index 10000
 
     .has-error
