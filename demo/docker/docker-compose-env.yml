@@ -97,7 +97,7 @@ services:
     volumes:
       - ./flink/flink-conf.yaml:/tmp/flink-conf.yaml
       - ./flink/flink-entrypoint.sh:/flink-entrypoint.sh
-      - nussknacker_storage_jobmanager:/opt/flink/data
+      - nussknacker_storage_flink:/opt/flink/data
 
   taskmanager:
     container_name: nussknacker_taskmanager
@@ -116,7 +116,7 @@ services:
     volumes:
       - ./flink/flink-conf.yaml:/tmp/flink-conf.yaml
       - ./flink/flink-entrypoint.sh:/flink-entrypoint.sh
-      - nussknacker_storage_taskmanager:/opt/flink/data
+      - nussknacker_storage_flink:/opt/flink/data
     ulimits:
       nproc: 70000
       nofile:
@@ -157,6 +157,5 @@ volumes:
   nussknacker_storage_zookeeper_datalog:
   nussknacker_storage_zookeeper_data:
   nussknacker_storage_kafka_data:
-  nussknacker_storage_taskmanager:
-  nussknacker_storage_jobmanager:
+  nussknacker_storage_flink:
   nussknacker_storage_influxdb:
