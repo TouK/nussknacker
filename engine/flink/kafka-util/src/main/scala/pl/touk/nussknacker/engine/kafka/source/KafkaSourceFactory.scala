@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, Validati
 import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerParameter, DefinedSingleParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
-import pl.touk.nussknacker.engine.definition.WithExplicitPossibleProducedVariableTypes
+import pl.touk.nussknacker.engine.definition.WithExplicitTypesToExtract
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceFactoryState
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 
@@ -45,7 +45,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
   extends FlinkSourceFactory[ConsumerRecord[K, V]]
     with SingleInputGenericNodeTransformation[FlinkSource[ConsumerRecord[K, V]]]
     with WithCachedTopicsExistenceValidator
-    with WithExplicitPossibleProducedVariableTypes {
+    with WithExplicitTypesToExtract {
 
   protected val topicNameSeparator = ","
 
@@ -54,13 +54,14 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
   protected val valueTypingResult: TypedClass = Typed.typedClass[V]
 
   // Node validation and compilation refers to ValidationContext, that returns TypingResult's of all variables returned by the source.
-  // Variable suggestion uses DefinitionExtractor that requires proper type definitions for GenericNodeTransformation (which in general does not have a single "returnType"):
+  // Variable suggestion uses DefinitionExtractor that requires proper type definitions for GenericNodeTransformation (which in general does not have a specified "returnType"):
   // - for TypeClass (which is a default scenario) - it is necessary to provide all explicit TypeClass definitions as possibleVariableClasses
-  // - for TypedObjectTypingResult - suggested variables are defined explicitly
+  // - for TypedObjectTypingResult - suggested variables are defined as explicit "fields"
   // Example:
-  // - validation context indicates that #input is TypedClass(classOf(SampleProduct))
+  // - validation context indicates that #input is TypedClass(classOf(SampleProduct)), that is used by node compilation and validation
   // - definition extractor provides detailed definition of "pl.touk.nussknacker.engine.management.sample.dto.SampleProduct"
-  def possibleVariableClasses: Set[TypedClass] = Set(keyTypingResult, valueTypingResult)
+  // See also ProcessDefinitionExtractor.
+  def typesToExtract: List[TypedClass] = List(keyTypingResult, valueTypingResult)
 
   override type State = KafkaSourceFactoryState[K, V, DefinedParameter]
 

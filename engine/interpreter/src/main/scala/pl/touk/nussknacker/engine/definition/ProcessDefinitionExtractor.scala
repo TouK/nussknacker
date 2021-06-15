@@ -14,7 +14,8 @@ import scala.reflect.ClassTag
                  
 object ProcessDefinitionExtractor {
 
-  //we don't do it inside extractObjectWithMethods because this is needed only on FE, and can be a bit costly
+  // Extracts details of types (e.g. field definitions for variable suggestions) of extracted objects definitions (see extractObjectWithMethods).
+  // We don't do it inside extractObjectWithMethods because this is needed only on FE, and can be a bit costly
   def extractTypes(definition: ProcessDefinition[ObjectWithMethodDef]): Set[TypeInfos.ClazzDefinition] = {
     TypesInformation.extract(definition.services.values ++
       definition.sourceFactories.values ++
@@ -26,6 +27,7 @@ object ProcessDefinitionExtractor {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
+  // Returns object definitions with high-level possible return types of components within given ProcessConfigCreator.
   def extractObjectWithMethods(creator: ProcessConfigCreator,
                                processObjectDependencies: ProcessObjectDependencies) : ProcessDefinition[ObjectWithMethodDef] = {
 

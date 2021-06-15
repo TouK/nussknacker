@@ -29,13 +29,12 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
       objWithCategories.categories,
       nodeConfig
     ))
+
     (obj match {
       //TODO: how validators/editors in NodeConfig should be handled for GenericNodeTransformation/WithExplicitMethodToInvoke?
       case e:GenericNodeTransformation[_] =>
-        val returnType = e match {
-          case withExplicitTypes: WithExplicitPossibleProducedVariableTypes => Typed(withExplicitTypes.possibleVariableClasses)
-          case _ => if (e.nodeDependencies.contains(OutputVariableNameDependency)) Unknown else Typed[Void]
-        }
+        // Here in general we do not have a specified "returnType", hence Undefined/Void
+        val returnType = if (e.nodeDependencies.contains(OutputVariableNameDependency)) Unknown else Typed[Void]
         val parametersList = StandardParameterEnrichment.enrichParameterDefinitions(e.initialParameters, objWithCategories.nodeConfig)
         val definition = ObjectDefinition(parametersList, returnType, objWithCategories.categories, objWithCategories.nodeConfig)
         Right(GenericNodeTransformationMethodDef(e, definition))
@@ -200,13 +199,20 @@ object DefinitionExtractor {
     }
 
     private def extractTypesFromObjectDefinition(obj: ObjectWithMethodDef): List[TypingResult] = {
-      def typesFromParameter(parameter: Parameter): Iterable[TypingResult] = {
+      def typesFromParameter(parameter: Parameter): List[TypingResult] = {
         val fromAdditionalVars = parameter.additionalVariables.values
         fromAdditionalVars.toList :+ parameter.typ
       }
 
+      def explicitTypes(obj: ObjectWithMethodDef): List[TypingResult] = {
+        obj.obj match {
+          case explicit : WithExplicitTypesToExtract => explicit.typesToExtract
+          case _ => Nil
+        }
+      }
+
       //FIXME: it was obj.methodDef.returnType, is it ok to replace with obj.returnType??
-      obj.returnType :: obj.parameters.flatMap(typesFromParameter)
+      obj.returnType :: obj.parameters.flatMap(typesFromParameter) ::: explicitTypes(obj)
     }
   }
 
