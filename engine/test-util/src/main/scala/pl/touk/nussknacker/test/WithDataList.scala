@@ -4,7 +4,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 trait WithDataList[T] extends Serializable {
 
-  private val dataList = new CopyOnWriteArrayList[T]
+  @transient private val dataList = new CopyOnWriteArrayList[T]
 
   def add(element: T) : Unit = dataList.add(element)
 
