@@ -20,8 +20,8 @@ export function getFlatNodesToAddInCategory(processDefinitionData: ProcessDefini
 }
 
 export function filterNodesByLabel(filter: string): (nodesGroup: NodesGroup) => NodesGroup {
-  const regExp = RegExp(filter, `ig`)
-  const predicate = ({label}: PossibleNode) => regExp.test(label)
+  const searchText = filter.toLowerCase()
+  const predicate = ({label}: PossibleNode) => label.toLowerCase().includes(searchText)
   return (nodesGroup: NodesGroup): NodesGroup => ({
     ...nodesGroup,
     possibleNodes: nodesGroup.possibleNodes.filter(predicate),
