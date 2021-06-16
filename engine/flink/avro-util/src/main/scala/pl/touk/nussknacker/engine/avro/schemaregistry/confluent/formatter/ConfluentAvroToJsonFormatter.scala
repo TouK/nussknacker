@@ -12,6 +12,8 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{Confluen
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.ConfluentAvroToJsonFormatter.Separator
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory}
 
+import scala.reflect.ClassTag
+
 private[confluent] class ConfluentAvroToJsonFormatter(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
                                                       kafkaConfig: KafkaConfig,
                                                       createFormatter: ConfluentSchemaRegistryClient => ConfluentAvroMessageFormatter,
@@ -87,7 +89,7 @@ object ConfluentAvroToJsonFormatter {
 
 class ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory) extends RecordFormatterFactory {
 
-  override def create[KK, VV](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[KK, VV]]): RecordFormatter = {
+  override def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]]): RecordFormatter = {
     new ConfluentAvroToJsonFormatter(
       schemaRegistryClientFactory,
       kafkaConfig,
