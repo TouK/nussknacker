@@ -1,7 +1,3 @@
-* [Why Nussknacker](Why.md)
-
-
-* [Quickstart](Quickstart.md)
 * [UI Manual](UI.md)
 * [Designing processes](DesigningProcesses.md)
   * [Basic nodes](designingProcesses/BasicNodes.md)
@@ -19,9 +15,5 @@
 
 * [Monitoring](Metrics.md)
 * [How to install](Install.md)
-* [Resources](Resources.md)
-* [Powered by Nussknacker](PoweredBy.md)
-* [Roadmap](Roadmap.md)
 * [Changelog](Changelog.md)
 * [Migration guide](MigrationGuide.md)
-* [Glossary](GLOSSARY.md)

@@ -6,12 +6,6 @@ Nussknacker started as Apache Flink "self-service" process authoring tool. We st
 
 But you are not limited to Flink. The request-response engine lets you create processes exposing REST API.
 
-See:
-* [Quickstart](Quickstart.md) to have a look around
-* [Why Nussknacker](Why.md) to understand how Nussknacker can help you
-* [Architecture](Architecture.md) to understand how Nussknacker works
-* [PoweredBy](PoweredBy.md) to see where Nussknacker is used
-
 Process design
 -----------------
 ![Nussknacker in action](img/screen1b.jpg)
