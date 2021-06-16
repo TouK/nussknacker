@@ -28,12 +28,9 @@ object ConfigFactoryExt {
     load(locations, classLoader)
   }
 
-  def loadEmptyConfigWithOverrides(classLoader: ClassLoader): Config = ConfigFactory.load(classLoader, ConfigFactory.empty())
-
   def load(resources: List[URI], classLoader: ClassLoader): Config =
-    resources
+    ConfigFactory.load(classLoader, resources
       .map(ConfigFactoryExt.parseUri)
       .reverse
-      .foldLeft(ConfigFactory.empty())(_.withFallback(_))
-      .withFallback(loadEmptyConfigWithOverrides(classLoader))
+      .foldLeft(ConfigFactory.empty())(_.withFallback(_)))
 }
