@@ -1,4 +1,6 @@
-# Quickstart
+---
+title: Docker version
+---
 
 ## Prerequisites
 
@@ -11,7 +13,7 @@
 * Checkout master branch which contains always latest stable version: `git checkout master`
 * Enter demo/docker folder
 * Run `docker-compose -f docker-compose.yml -f docker-compose-env.yml up -d` and wait a until all components start
-    
+
 > In case of containers restart please use `docker-compose stop` instead of `docker-compose kill` in order to avoid Kafka startup issues.
 
 Now you are ready to check your newly created environment
@@ -23,60 +25,60 @@ Now you are ready to check your newly created environment
 
 ## Defining a new process
 
-* Go to http://localhost:8081
+* Go to [Nussknacker](http://localhost:8081/)
 * Click 'Create new process' button - name it 'DetectLargeTransactions'
-* You'll see an empty workspace 
+* You'll see an empty workspace
 * Click 'Import' on right panel and upload 'testData/DetectLargeTransactions.json'
-    
-> This process reads transactions data from Kafka, filter only those with amount greater than some value and writes filtered events back to Kafka. These events are than read by Logstash and send to Elasticsearch for further analytics
-    
+
+> This process reads transactions data from Kafka, filters only those with amount greater than some value and writes filtered events back to Kafka. These events are than read by Logstash and sent to Elasticsearch for further analytics
 * Double click on nodes to see process logic
 * Click 'Save'
+
 > You have just created your first process!
 
 <video width="100%" controls>
-  <source src="img/quickstart/createProcess.mp4" type="video/mp4">
+  <source src="img/quickstart/createProcess.mp4" type="video/mp4"></source>
 </video>
 
 ## Test process with data
 * Click 'Deploy' on the right panel
-* Verify on Flink UI at http://localhost:8081/flink/ that your process is running
-* Run ./testData/sendTestTransactions.sh script a few times to generate some data 
+* Verify on [Flink UI](http://localhost:8081/flink/) that your process is running
+* Run ./testData/sendTestTransactions.sh script a few times to generate some data
 
-> The first run may end with error from Kafka - don't worry about it. Script will send some json data to "transactions" Kafka topic. 
+> The first run may end with error from Kafka - don't worry about it. Script will send some json data to "transactions" Kafka topic.
 
-* Go to Metrics tab on Nussknacker main panel - you should see changed metrics. 
+* Go to Metrics tab on Nussknacker main panel - you should see changed metrics.
 
 > Your process just processed data from Kafka and saved filtered results!
 
 <video width="100%" controls>
-  <source src="img/quickstart/deployAndMetrics.mp4" type="video/mp4">
+  <source src="img/quickstart/deployAndMetrics.mp4" type="video/mp4"></source>
 </video>
 
-## See results in AKHQ
+## See results
 
-* Go to http://localhost:8081/akhq/ui/nussknacker/topic/processedEvents/data - you should see processed events
+* Go to AKHQ to see data in the [processedEvents topic](http://localhost:8081/akhq/ui/nussknacker/topic/processedEvents/data) - you should see processed events.
 
 ## Test your process in a sandbox
 * Clink 'generate' button in right panel of application
 
-> If you followed the Quickstart from the beggining you should already have some data on Kafka. Latest records from Kafka will be downloaded to a file.
+> If you followed the Quickstart from the beggining you should have some data on Kafka by now. Most recent records from Kafka will be downloaded to a file.
 
 * Click 'from file' button and upload file generated in last step
 * After a while you will see test results - how many records passed filters, and what where variables values
 
 <video width="100%" controls>
-  <source src="img/quickstart/testProcess.mp4" type="video/mp4">
+  <source src="img/quickstart/testProcess.mp4" type="video/mp4"></source>
 </video>
 
 ## Edit process
 * Drag & drop `clientService` from `Creator panel` -> `enrichers` -> `clientService`
 * Double click on new node, fill some node `Id`, set `clientId` to `#input.clientId` and set `Output` variable name as `clientData`. Now you can access enriched data from `clientData` variable in further processing.
 * Let's use enriched data in `save to kafka` node, set `Expression` to `#UTIL.mapAsJson({'clientId': #input.clientId, cardNumber: #clientData.cardNumber})`
-* Now run test on generated data to see if it works!
+* Now run test on the generated data to see if it works!
 
 <video width="100%" controls>
-  <source src="img/quickstart/editProcess.mp4" type="video/mp4">
+  <source src="img/quickstart/editProcess.mp4" type="video/mp4"></source>
 </video>
 
 ## What's inside?
@@ -95,7 +97,7 @@ The quickstart starts several Docker containers. Let's look at them in detail:
   * To be able to view all applications on a single port
 
 ## Switch application version
-To switch Nussknacker version 
+To switch Nussknacker version
 * set variable `NUSSKNACKER_VERSION` in `./env`
 * rebuild docker image by `docker-compose build --no-cache app`
 
@@ -111,6 +113,6 @@ If you have modified Nussknacker sources you have to rebuild docker image by:
                    --docker-update-latest=(update latest docker tag - default: true
 ```
 
-When you have build new image, then you should change .env variables: NUSSKNACKER_IMAGE, NUSSKNACKER_VERSION.
+After building new image, you should change .env variables: NUSSKNACKER_IMAGE, NUSSKNACKER_VERSION.
 
-If you want to publish image, please sign in to docker registry before run this scrip.
+If you want to publish image, please sign in to docker registry before running this script.
