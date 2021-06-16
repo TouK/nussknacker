@@ -12,6 +12,8 @@ import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
 import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, KafkaConfig, RecordFormatter, RecordFormatterFactory}
 
+import scala.reflect.ClassTag
+
 /**
   * RecordFormatter used to encode and decode whole raw kafka event (ConsumerRecord) in json format.
   *
@@ -44,8 +46,8 @@ class ConsumerRecordToJsonFormatter[K: Encoder:Decoder, V: Encoder:Decoder](dese
 
 class ConsumerRecordToJsonFormatterFactory[K:Encoder:Decoder, V:Encoder:Decoder] extends RecordFormatterFactory {
 
-  override def create[KK, VV](kafkaConfig: KafkaConfig, deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[KK, VV]]): RecordFormatter = {
-    new ConsumerRecordToJsonFormatter[K, V](deserializationSchema.asInstanceOf[KafkaDeserializationSchema[ConsumerRecord[K, V]]], serializeKeyValue)
+  override def create[KK: ClassTag, VV: ClassTag](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[KK, VV]]): RecordFormatter = {
+    new ConsumerRecordToJsonFormatter[K, V](kafkaSourceDeserializationSchema.asInstanceOf[KafkaDeserializationSchema[ConsumerRecord[K, V]]], serializeKeyValue)
   }
 
   protected def serializeKeyValue(keyOpt: Option[K], value: V): (Array[Byte], Array[Byte]) = (serializeKey(keyOpt), serializeValue(value))
