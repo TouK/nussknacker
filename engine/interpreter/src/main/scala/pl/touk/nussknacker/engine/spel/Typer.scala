@@ -205,10 +205,11 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         case None => invalid("Cannot do projection here")
         //index, check if can project?
         case Some(iterateType) =>
-          val listType = extractListType(iterateType)
-          typeChildren(validationContext, node, current.pushOnStack(listType)) {
-            case result :: Nil => Valid(Typed.genericTypeClass[java.util.List[_]](List(result)))
-            case other => invalid(s"Wrong selection type: ${other.map(_.display)}")
+          extractListType(iterateType).andThen { listType =>
+            typeChildren(validationContext, node, current.pushOnStack(listType)) {
+              case result :: Nil => Valid(Typed.genericTypeClass[java.util.List[_]](List(result)))
+              case other => invalid(s"Wrong selection type: ${other.map(_.display)}")
+            }
           }
       }
 
@@ -222,9 +223,11 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case e: Selection => current.stackHead match {
         case None => invalid("Cannot do selection here")
         case Some(iterateType) =>
-          typeChildren(validationContext, node, current.pushOnStack(extractListType(iterateType))) {
-            case result :: Nil if result.canBeSubclassOf(Typed[Boolean]) => Valid(iterateType)
-            case other => invalid(s"Wrong selection type: ${other.map(_.display)}")
+          extractListType(iterateType).andThen { elementType =>
+            typeChildren(validationContext, node, current.pushOnStack(elementType)) {
+              case result :: Nil if result.canBeSubclassOf(Typed[Boolean]) => Valid(iterateType)
+              case other => invalid(s"Wrong selection type: ${other.map(_.display)}")
+            }
           }
       }
 
@@ -315,11 +318,12 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     clazzDefinition.getPropertyOrFieldType(e.getName)
   }
 
-  private def extractListType(parent: TypingResult): TypingResult = parent match {
-    case tc: TypedClass if tc.canBeSubclassOf(Typed[java.util.List[_]]) =>
-      tc.params.headOption.getOrElse(Unknown)
+  private def extractListType(parent: TypingResult): Validated[NonEmptyList[ExpressionParseError], TypingResult] = parent match {
+    case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.List[_]]) =>
+      Valid(tc.objType.params.headOption.getOrElse(Unknown))
+    case tc: SingleTypingResult => Validated.invalidNel(ExpressionParseError(s"Cannot do projection/selection on ${tc.display}"))
     //FIXME: what if more results are present?
-    case _ => Unknown
+    case _ => Valid(Unknown)
   }
 
   private def typeChildrenAndReturnFixed(validationContext: ValidationContext, node: SpelNode, current: TypingContext)(result: TypingResult)
