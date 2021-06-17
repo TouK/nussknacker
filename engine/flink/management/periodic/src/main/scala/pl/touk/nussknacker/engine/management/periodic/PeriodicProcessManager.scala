@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.FlinkConfig
+import pl.touk.nussknacker.engine.management.periodic.Utils._
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
 import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeployment, PeriodicProcessDeploymentStatus}
 import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, PeriodicProcessListener, PeriodicProcessListenerFactory}
@@ -49,10 +50,10 @@ object PeriodicProcessManager {
     system.actorOf(RescheduleFinishedActor.props(service, periodicBatchConfig.rescheduleCheckInterval))
 
     val toClose = () => {
+      runSafely(listener.close())
       Await.ready(system.terminate(), 10 seconds)
       db.close()
       Await.ready(backend.close(), 10 seconds)
-      listener.close()
       ()
     }
     new PeriodicProcessManager(delegate, service, schedulePropertyExtractor, toClose)
