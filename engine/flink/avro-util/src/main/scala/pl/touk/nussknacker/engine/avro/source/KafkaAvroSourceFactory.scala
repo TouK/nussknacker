@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, Validati
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, TopicParamName}
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.SchemaVersionParamName
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory.KafkaAvroSourceFactoryState
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
@@ -37,14 +37,14 @@ class KafkaAvroSourceFactory[K:ClassTag, V:ClassTag](val schemaRegistryProvider:
       nextSteps(context, dependencies)
 
   protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
-    case step@TransformationStep((TopicParamName, DefinedEagerParameter(topic: String, _)) ::
+    case step@TransformationStep((`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
       (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::Nil, _) =>
       val preparedTopic = prepareTopic(topic)
       val versionOption = parseVersionOption(version)
       val valueValidationResult = determineSchemaAndType(prepareValueSchemaDeterminer(preparedTopic, versionOption), Some(SchemaVersionParamName))
 
       prepareSourceFinalResults(preparedTopic, valueValidationResult, context, dependencies, step.parameters)
-    case step@TransformationStep((TopicParamName, _) :: (SchemaVersionParamName, _) ::Nil, _) =>
+    case step@TransformationStep((`topicParamName`, _) :: (SchemaVersionParamName, _) ::Nil, _) =>
       // Edge case - for some reason Topic/Version is not defined, e.g. when topic or version does not match DefinedEagerParameter(String, _):
       // 1. FailedToDefineParameter
       // 2. not resolved as a valid String
@@ -52,10 +52,10 @@ class KafkaAvroSourceFactory[K:ClassTag, V:ClassTag](val schemaRegistryProvider:
       prepareSourceFinalErrors(context, dependencies, step.parameters, errors = Nil)
   }
 
-  protected def determineSchemaAndType(keySchemaDeterminer: AvroSchemaDeterminer, paramName: Option[String])(implicit nodeId: NodeId):
+  protected def determineSchemaAndType(schemaDeterminer: AvroSchemaDeterminer, paramName: Option[String])(implicit nodeId: NodeId):
   Validated[ProcessCompilationError, (Option[RuntimeSchemaData], TypingResult)] = {
-    keySchemaDeterminer.determineSchemaUsedInTyping.map { schemaData =>
-      (keySchemaDeterminer.toRuntimeSchema(schemaData), AvroSchemaTypeDefinitionExtractor.typeDefinition(schemaData.schema))
+    schemaDeterminer.determineSchemaUsedInTyping.map { schemaData =>
+      (schemaDeterminer.toRuntimeSchema(schemaData), AvroSchemaTypeDefinitionExtractor.typeDefinition(schemaData.schema))
     }.leftMap(error => CustomNodeError(error.getMessage, paramName))
   }
 
@@ -68,7 +68,7 @@ class KafkaAvroSourceFactory[K:ClassTag, V:ClassTag](val schemaRegistryProvider:
     val keyValidationResult = if (kafkaConfig.useStringForKey) {
       Valid((None, Typed[String]))
     } else {
-      determineSchemaAndType(prepareKeySchemaDeterminer(preparedTopic), Some(TopicParamName))
+      determineSchemaAndType(prepareKeySchemaDeterminer(preparedTopic), Some(topicParamName))
     }
 
     (keyValidationResult, valueValidationResult) match {
