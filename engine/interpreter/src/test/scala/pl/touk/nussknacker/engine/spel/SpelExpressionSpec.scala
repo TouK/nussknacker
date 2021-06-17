@@ -407,7 +407,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   }
 
   test("validate expression with projection and filtering") {
-    val ctxWithInput = ctx.withVariable("input", SampleObject(List(SampleValue(444))))
+    val ctxWithInput = ctx.withVariable("input", SampleObject(util.Arrays.asList(SampleValue(444))))
     parse[Any]("(#input.list.?[value == 5]).![value].contains(5)", ctxWithInput) shouldBe 'valid
   }
 
@@ -533,7 +533,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
         Typed[SampleValue]), paramName = None).toOption.get
 
 
-    parse[List[_]]("#input.list", ctxWithMap) should be ('valid)
+    parse[java.util.List[SampleValue]]("#input.list", ctxWithMap) should be ('valid)
     parse[Int]("#input.value", ctxWithMap) should be ('valid)
 
     parse[Set[_]]("#input.list", ctxWithMap) shouldNot be ('valid)
@@ -627,6 +627,12 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     parseWithDicts[Boolean]("#stringValue == #enum['one']", withObjVar, dicts) shouldBe 'invalid
   }
 
+  test("not allow selection/projection on non-list") {
+    parse[AnyRef]("{:}.![#this.sthsth]") shouldBe 'invalid
+    parse[AnyRef]("{:}.?[#this.sthsth]") shouldBe 'invalid
+    parse[AnyRef]("''.?[#this.sthsth]") shouldBe 'invalid
+  }
+
   test("invokes methods on primitives correctly") {
     def invokeAndCheck[T:TypeTag](expr: String, result: T): Unit = {
       val parsed = parseOrFail[T](expr)
@@ -653,7 +659,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
 }
 
-case class SampleObject(list: List[SampleValue])
+case class SampleObject(list: java.util.List[SampleValue])
 
 case class SampleValue(value: Int, anyObject: Any = "")
 
