@@ -71,11 +71,8 @@ abstract class ModelConfigLoader extends Serializable {
       and have baseUrl taken from application config
     */
     val configFallbackFromModel = ConfigFactory.parseResources(classLoader, modelConfigResource)
-    inputConfig
-      .withFallback(configFallbackFromModel)
-      //this is for reference.conf resources from model jar, we don't want to load application.conf etc.
-      .withFallback(ConfigFactoryExt.loadEmptyConfigWithOverrides(classLoader))
-      .resolve()
+    //We want to respect overrides (like system properties) and standard fallbacks (like reference.conf)
+    ConfigFactory.load(classLoader, inputConfig.withFallback(configFallbackFromModel)).resolve()
   }
 
   //only for testing

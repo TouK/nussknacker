@@ -5,9 +5,26 @@ import org.scalatest.{FunSuite, Matchers}
 
 import java.net.URI
 import java.nio.file.Files
+import java.util.UUID
 import scala.jdk.CollectionConverters.mapAsJavaMapConverter
 
 class ConfigFactoryExtSpec extends FunSuite with Matchers {
+
+  //The same mechanism is used with config.override_with_env_var
+  test("should preserve config overrides") {
+    val randomPropertyName = UUID.randomUUID().toString
+
+    val conf1 = writeToTemp(Map(randomPropertyName -> "default"))
+
+    val result = try {
+      System.setProperty(randomPropertyName, "I win!")
+      ConfigFactoryExt.load(conf1.toString, getClass.getClassLoader)
+    } finally {
+      System.getProperties.remove(randomPropertyName)
+    }
+
+    result.getString(randomPropertyName) shouldBe "I win!"
+  }
 
   test("loads in correct order") {
 
