@@ -43,7 +43,8 @@ object PeriodicProcessManager {
     val (db: jdbc.JdbcBackend.DatabaseDef, dbProfile: JdbcProfile) = DbInitializer.init(periodicBatchConfig.db)
     val scheduledProcessesRepository = new SlickPeriodicProcessesRepository(db, dbProfile, clock)
     val jarManager = FlinkJarManager(flinkConfig, periodicBatchConfig, modelData, enrichDeploymentWithJarDataFactory(originalConfig))
-    val service = new PeriodicProcessService(delegate, jarManager, scheduledProcessesRepository, listenerFactory.create(originalConfig), additionalDeploymentDataProvider, clock)
+    val listener = listenerFactory.create(originalConfig)
+    val service = new PeriodicProcessService(delegate, jarManager, scheduledProcessesRepository, listener, additionalDeploymentDataProvider, clock)
     system.actorOf(DeploymentActor.props(service, periodicBatchConfig.deployInterval))
     system.actorOf(RescheduleFinishedActor.props(service, periodicBatchConfig.rescheduleCheckInterval))
 
@@ -51,6 +52,7 @@ object PeriodicProcessManager {
       Await.ready(system.terminate(), 10 seconds)
       db.close()
       Await.ready(backend.close(), 10 seconds)
+      listener.close()
       ()
     }
     new PeriodicProcessManager(delegate, service, schedulePropertyExtractor, toClose)

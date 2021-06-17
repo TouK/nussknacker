@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeplo
 trait PeriodicProcessListener {
 
   def onPeriodicProcessEvent: PartialFunction[PeriodicProcessEvent, Unit]
-
+  def close(): Unit = {}
 }
 
 trait PeriodicProcessListenerFactory {
