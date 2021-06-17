@@ -18,11 +18,13 @@ trait PeriodicProcessListenerFactory {
   def create(config: Config): PeriodicProcessListener
 }
 
-sealed trait PeriodicProcessEvent
+sealed trait PeriodicProcessEvent {
+  val deployment: PeriodicProcessDeployment
+}
 
 case class DeployedEvent(deployment: PeriodicProcessDeployment, externalDeploymentId: Option[ExternalDeploymentId]) extends PeriodicProcessEvent
 
-case class FinishedEvent(runDetails: PeriodicProcessDeployment, processState: Option[ProcessState]) extends PeriodicProcessEvent
+case class FinishedEvent(deployment: PeriodicProcessDeployment, processState: Option[ProcessState]) extends PeriodicProcessEvent
 
 case class FailedEvent(deployment: PeriodicProcessDeployment, processState: Option[ProcessState]) extends PeriodicProcessEvent
 
