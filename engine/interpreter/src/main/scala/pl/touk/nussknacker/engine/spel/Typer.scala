@@ -12,6 +12,7 @@ import org.springframework.expression.Expression
 import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
 import org.springframework.expression.spel.ast._
 import org.springframework.expression.spel.{SpelNode, standard}
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, ExpressionTypingInfo}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
@@ -27,11 +28,15 @@ import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 import scala.annotation.tailrec
 import scala.reflect.runtime._
+import scala.util.{Success, Failure, Try}
+import scala.util.control.NonFatal
 
 private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: CommonSupertypeFinder,
                           dictTyper: SpelDictTyper, strictMethodsChecking: Boolean)(implicit settings: ClassExtractionSettings) extends LazyLogging {
 
   import ast.SpelAst._
+
+  type NodeTypingResult = ValidatedNel[ExpressionParseError, CollectedTypingResult]
 
   def typeExpression(expr: Expression, ctx: ValidationContext): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
     expr match {
@@ -66,8 +71,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     result
   }
 
-  private def typeNode(validationContext: ValidationContext, node: SpelNode, current: TypingContext)
-  : ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+  private def typeNode(validationContext: ValidationContext, node: SpelNode, current: TypingContext): NodeTypingResult = {
 
     def toResult(typ: TypingResult) = current.toResult(TypedNode(node, typ))
 
@@ -84,7 +88,14 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case _ => invalid("Wrong part types")
     }
 
-    node match {
+    def catchUnexpectedErrors(block: => NodeTypingResult): NodeTypingResult = Try(block) match {
+      case Success(value) =>
+        value
+      case Failure(e) =>
+        throw new SpelCompilationException(node, e)
+    }
+
+    catchUnexpectedErrors(node match {
 
       case e: Assign => invalid("Value modifications are not supported")
       case e: BeanReference => invalid("Bean reference is not supported")
@@ -155,12 +166,8 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
           }
         }
 
-      case e: MethodReference => typeChildren(validationContext, node, current.popStack) { typedParams =>
-        TypeMethodReference(e.getName, current.stack, typedParams) match {
-          case Right(typingResult) => Valid(typingResult)
-          case Left(errorMsg) => if(strictMethodsChecking) invalid(errorMsg) else Valid(Unknown)
-        }
-      }
+      case e: MethodReference =>
+        extractMethodReference(e, validationContext, node, current)
 
       case e: OpEQ => checkEqualityLikeOperation(validationContext, e, current)
       case e: OpNE => checkEqualityLikeOperation(validationContext, e, current)
@@ -250,7 +257,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
           case Some(result) => valid(result)
           case None => invalid(s"Unresolved reference '$name'")
         }
-    }
+    })
   }
 
   private def checkEqualityLikeOperation(validationContext: ValidationContext, node: Operator, current: TypingContext): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
@@ -288,6 +295,20 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         invalid(s"There is no property '${e.getName}' in type: ${t.display}")
       else
         Valid(Typed(l.toSet))
+  }
+
+  private def extractMethodReference(reference: MethodReference, validationContext: ValidationContext, node: SpelNode, context: TypingContext) = {
+    context.stack match {
+      case _ :: tail =>
+        typeChildren(validationContext, node, context.copy(stack = tail)) { typedParams =>
+          TypeMethodReference(reference.getName, context.stack, typedParams) match {
+            case Right(typingResult) => Valid(typingResult)
+            case Left(errorMsg) => if(strictMethodsChecking) invalid(errorMsg) else Valid(Unknown)
+          }
+        }
+      case Nil =>
+        invalid(s"Invalid method reference: ${reference.toStringAST}.")
+    }
   }
 
   @tailrec
@@ -380,11 +401,7 @@ object Typer {
     def pushOnStack(typingResult: CollectedTypingResult): TypingContext =
       TypingContext(typingResult.finalResult :: stack, intermediateResults ++ typingResult.intermediateResults)
 
-    def popStack: TypingContext = copy(stack = stack.tail)
-
     def stackHead: Option[TypingResult] = stack.headOption
-
-    def stackTail: List[TypingResult] = stack.tail
 
     def withoutIntermediateResults: TypingContext = copy(intermediateResults = Map.empty)
 
@@ -393,6 +410,8 @@ object Typer {
 
   }
 
+  class SpelCompilationException(node: SpelNode, cause: Throwable)
+    extends RuntimeException(s"Can't compile SpEL expression: `${node.toStringAST}`, message: `${cause.getMessage}`.", cause)
 }
 
 private[spel] case class TypedNode(nodeId: SpelNodeId, typ: TypingResult)

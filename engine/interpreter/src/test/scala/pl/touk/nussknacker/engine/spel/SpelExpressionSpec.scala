@@ -117,6 +117,10 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     parse[Any]("'' - 1") shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Operator '-' used with mismatch types: String and Integer")))
   }
 
+  test("use not existing method reference") {
+    parse[Any]("notExistingMethod(1)", ctxWithGlobal) shouldBe Invalid(NonEmptyList.of(ExpressionParseError("Invalid method reference: notExistingMethod(1).")))
+  }
+
   test("null properly") {
     parse[String]("null") shouldBe 'valid
     parse[Long]("null") shouldBe 'valid
