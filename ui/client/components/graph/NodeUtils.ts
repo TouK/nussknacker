@@ -5,15 +5,16 @@ import * as ProcessDefinitionUtils from "../../common/ProcessDefinitionUtils"
 import ProcessUtils from "../../common/ProcessUtils"
 import {
   Edge,
+  EdgeType,
   GroupId,
   GroupNodeType,
   GroupType,
   NodeId,
   NodeType,
   Process,
-  PropertiesType,
   ProcessDefinitionData,
-  EdgeType, UINodeType,
+  PropertiesType,
+  UINodeType,
 } from "../../types"
 import {UnknownRecord} from "../../types/common"
 
@@ -87,12 +88,19 @@ class NodeUtils {
 
   getAllNodesById = (nodeIds: NodeId[], process: Process) => this.nodesFromProcess(process).filter(node => _.includes(nodeIds, node.id))
 
-  containsOnlyPlainNodesWithoutGroups = (nodeIds: NodeId[], process: Process): boolean => {
-    return _.every(nodeIds, nodeId => {
-      const node = this.getNodeById(nodeId, process)
-      return this.isPlainNode(node) && !this.nodeIsGroup(node)
-    })
+  getAllNodesByIdWithEdges = (ids: NodeId[], process: Process) => {
+    const nodes = this.getAllNodesById(ids, process)
+    const edgesForNodes = this.getEdgesForConnectedNodes(ids, process)
+    return {
+      nodes: nodes,
+      edges: edgesForNodes,
+    }
   }
+
+  containsOnlyPlainNodesWithoutGroups = (nodeIds: NodeId[], process: Process): boolean => nodeIds.every(nodeId => {
+    const node = this.getNodeById(nodeId, process)
+    return this.isPlainNode(node)
+  })
 
   isAvailable = (node: NodeType, processDefinitionData, category): boolean => {
     const availableIdsInCategory = ProcessDefinitionUtils.getFlatNodesToAddInCategory(processDefinitionData, category)

@@ -1,5 +1,7 @@
+import {isEmpty} from "lodash"
 import {createSelector} from "reselect"
 import ProcessUtils from "../../common/ProcessUtils"
+import NodeUtils from "../../components/graph/NodeUtils"
 import ProcessStateUtils from "../../components/Process/ProcessStateUtils"
 import {Process} from "../../types"
 import {ProcessCounts} from "../graph"
@@ -26,6 +28,9 @@ export const hasError = createSelector(getProcessToDisplay, p => !ProcessUtils.h
 export const hasPropertiesErrors = createSelector(getProcessToDisplay, p => !ProcessUtils.hasNoPropertiesErrors(p))
 export const getNodeToDisplay = createSelector(getGraph, g => g.nodeToDisplay)
 export const getSelectionState = createSelector(getGraph, g => g.selectionState)
+export const getSelection = createSelector(getSelectionState, getProcessToDisplay, (s, p) => NodeUtils.getAllNodesByIdWithEdges(s, p))
+export const canModifySelectedNodes = createSelector(getSelectionState, getProcessToDisplay, (s, p) => !isEmpty(s) &&
+  NodeUtils.containsOnlyPlainNodesWithoutGroups(s, p))
 export const getHistory = createSelector(getGraph, g => g.history)
 
 export const isProcessRenamed = createSelector(

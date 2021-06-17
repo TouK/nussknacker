@@ -65,7 +65,7 @@ export const errorValidator = (errors: Array<Error>, fieldName: string): Validat
 export const mandatoryValueValidator: Validator = {
   isValid: value => !isEmpty(value),
   message: () => i18next.t("mandatoryValueValidator.message", "This field is mandatory and can not be empty"),
-  description: () => i18next.t("validator.description", "Please fill field for this parameter"),
+  description: () => i18next.t("validator.mandatory.description", "Please fill field for this parameter"),
   handledErrorType: HandledErrorType.EmptyMandatoryParameter,
   validatorType: ValidatorType.Frontend,
 }
@@ -73,7 +73,7 @@ export const mandatoryValueValidator: Validator = {
 export const fixedValueValidator = (possibleValues: Array<PossibleValue>): Validator => ({
   isValid: value => possibleValues.map(pv => pv.expression).includes(value),
   message: () => i18next.t("fixedValueValidator.message", "This value has to be one of values: ") + possibleValues.map(value => value.expression).join(","),
-  description: () => i18next.t("fixedValueValidator.description", "Please choose one of available values"),
+  description: () => i18next.t("Validator.fixed.description", "Please choose one of available values"),
   handledErrorType: HandledErrorType.InvalidPropertyFixedValue,
   validatorType: ValidatorType.Frontend,
 })
@@ -83,7 +83,7 @@ const literalRegExpPattern = (pattern: string) => new RegExp(pattern)
 export const notBlankValueValidator: Validator = {
   isValid: value => !literalRegExpPattern("'\\s*'").test(value.trim()),
   message: () => i18next.t("notBlankValueValidator.message", "This field value is required and can not be blank"),
-  description: () => i18next.t("validator.description", "Please fill field value for this parameter"),
+  description: () => i18next.t("validator.notBlank.description", "Please fill field value for this parameter"),
   handledErrorType: HandledErrorType.BlankParameter,
   validatorType: ValidatorType.Frontend,
 }

@@ -84,7 +84,7 @@ export function StrategyInitializer(props: PropsWithChildren<Props>): JSX.Elemen
           },
           buttonLabel: t("auth.StrategyInitializer.errors.504.buttonLabel", "Go to authentication page"),
           description: t(
-            "auth.StrategyInitializer.errors.504.description",
+            "auth.StrategyInitializer.errors.1024.description",
             "It seems application has some problem with authentication. Please contact with system administrators.",
           ),
         }

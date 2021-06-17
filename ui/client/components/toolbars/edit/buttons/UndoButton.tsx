@@ -1,36 +1,26 @@
 /* eslint-disable i18next/no-literal-string */
 import React from "react"
-import {RootState} from "../../../../reducers/index"
-import {useDispatch, useSelector} from "react-redux"
-import {events} from "../../../../analytics/TrackingEvents"
-import {areAllModalsClosed} from "../../../../reducers/selectors/ui"
-import {undo} from "../../../../actions/undoRedoActions"
-import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
-import {getHistory} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
+import {useSelector} from "react-redux"
+import {undo} from "../../../../actions/undoRedoActions"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/undo.svg"
+import {getHistory} from "../../../../reducers/selectors/graph"
+import {useSelectionActions} from "../../../graph/SelectionContextProvider"
+import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 
 function UndoButton(): JSX.Element {
-  const {keyActionsAvailable, history} = useSelector(mapState)
+  const {undo} = useSelectionActions()
+  const history = useSelector(getHistory)
   const {t} = useTranslation()
-  const dispatch = useDispatch()
   return (
     <CapabilitiesToolbarButton
       write
       name={t("panels.actions.edit-undo.button", "undo")}
-      disabled={!history.past.length}
+      disabled={!history.past.length || !undo}
       icon={<Icon/>}
-      onClick={() => keyActionsAvailable && dispatch(undo({
-        category: events.categories.rightPanel,
-        action: events.actions.buttonClick,
-      }))}
+      onClick={undo ? e => undo(e.nativeEvent) : null}
     />
   )
 }
-
-const mapState = (state: RootState) => ({
-  keyActionsAvailable: areAllModalsClosed(state),
-  history: getHistory(state),
-})
 
 export default UndoButton

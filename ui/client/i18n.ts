@@ -1,12 +1,14 @@
 /* eslint-disable i18next/no-literal-string */
 import i18next from "i18next"
 import LanguageDetector from "i18next-browser-languagedetector"
+import intervalPlural from "i18next-intervalplural-postprocessor"
 import Backend from "i18next-xhr-backend"
-import {initReactI18next} from "react-i18next"
 import moment from "moment"
+import {initReactI18next} from "react-i18next"
 import {nkPath} from "./config"
 
 const i18n = i18next
+  .use(intervalPlural)
   .use(Backend)
   .use(LanguageDetector)
   .use(initReactI18next)

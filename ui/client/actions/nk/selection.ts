@@ -1,13 +1,15 @@
+import NodeUtils from "../../components/graph/NodeUtils"
+import {getProcessToDisplay} from "../../reducers/selectors/graph"
 import {ThunkAction} from "../reduxTypes"
 import {deleteNodes} from "./node"
 import {reportEvent} from "./reportEvent"
 
-type Event = {category: string, action: string}
+type Event = { category: string, action: string }
 type Callback = () => void
 
-type ToggleSelectionAction = {type: "TOGGLE_SELECTION", nodeIds: string[]}
-type ExpandSelectionAction = {type: "EXPAND_SELECTION", nodeIds: string[]}
-type ResetSelectionAction = {type: "RESET_SELECTION", nodeIds: string[]}
+type ToggleSelectionAction = { type: "TOGGLE_SELECTION", nodeIds: string[] }
+type ExpandSelectionAction = { type: "EXPAND_SELECTION", nodeIds: string[] }
+type ResetSelectionAction = { type: "RESET_SELECTION", nodeIds: string[] }
 
 export type SelectionActions =
   | ToggleSelectionAction
@@ -77,14 +79,32 @@ export function deleteSelection(selectionState: string[], event: Event): ThunkAc
   }
 }
 
-export function toggleSelection(...nodeIds: string[]): SelectionActions {
-  return {type: "TOGGLE_SELECTION", nodeIds}
+export function toggleSelection(...nodeIds: string[]): ThunkAction {
+  return dispatch => {
+    window.getSelection().removeAllRanges()
+    dispatch({type: "TOGGLE_SELECTION", nodeIds})
+  }
 }
 
-export function expandSelection(...nodeIds: string[]): SelectionActions {
-  return {type: "EXPAND_SELECTION", nodeIds}
+export function expandSelection(...nodeIds: string[]): ThunkAction {
+  return dispatch => {
+    window.getSelection().removeAllRanges()
+    dispatch({type: "EXPAND_SELECTION", nodeIds})
+  }
 }
 
-export function resetSelection(...nodeIds: string[]): SelectionActions {
-  return {type: "RESET_SELECTION", nodeIds}
+export function resetSelection(...nodeIds: string[]): ThunkAction {
+  return dispatch => {
+    window.getSelection().removeAllRanges()
+    dispatch({type: "RESET_SELECTION", nodeIds})
+  }
+}
+
+export function selectAll(): ThunkAction {
+  return (dispatch, getState) => {
+    const state = getState()
+    const process = getProcessToDisplay(state)
+    const nodeIds = NodeUtils.nodesFromProcess(process).map(n => n.id)
+    dispatch(resetSelection(...nodeIds))
+  }
 }

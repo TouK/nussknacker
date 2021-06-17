@@ -13,6 +13,7 @@ export function DefaultToolbarPanel(props: ToolbarPanelProps & CollapsibleToolba
   const {t} = useTranslation()
   const {children, title, id, buttonsVariant, ...passProps} = props
   return (
+    /* i18next-extract-disable-line */
     <CollapsibleToolbar id={id} title={t(`panels.${id}.title`, title || id)} {...passProps}>
       <ToolbarButtons variant={buttonsVariant}>
         {children}
