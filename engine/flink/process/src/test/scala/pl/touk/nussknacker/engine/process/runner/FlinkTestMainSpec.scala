@@ -419,7 +419,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     //TODO: currently e.g. invocation results will behave strangely in this test, because we duplicate inputs and this results in duplicate context ids...
     results.mockedResults("proc2").map(_.value.asInstanceOf[String]).sorted shouldBe List("a", "b", "c", "c").map(_ + "-collectedDuringServiceInvocation")
   }
-  
+
   def runFlinkTest(process: EspProcess, testData: TestProcess.TestData): TestResults[Any] = {
     //We need to set context loader to avoid forking in sbt
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
