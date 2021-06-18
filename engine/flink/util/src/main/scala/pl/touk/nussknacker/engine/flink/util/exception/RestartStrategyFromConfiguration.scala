@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.exception
 
 import com.typesafe.config.Config
+import org.apache.commons.lang3.StringUtils
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.common.restartstrategy.RestartStrategies.RestartStrategyConfiguration
 import org.apache.flink.configuration.Configuration
@@ -47,7 +48,7 @@ object RestartStrategyFromConfiguration {
     val restartConfigName = (for {
       property <- restartConfig.getAs[String](scenarioPropertyPath)
       value <- MetaDataExtractor.extractProperty(metaData, property)
-      if !value.isBlank
+      if StringUtils.isNotBlank(value)
     } yield value).getOrElse(defaultStrategyPath)
     readFromConfig(restartConfig.getConfig(restartConfigName))
   }

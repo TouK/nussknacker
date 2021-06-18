@@ -162,17 +162,17 @@ lazy val commonSettings =
         "-language:postfixOps",
         "-language:existentials",
         "-Ypartial-unification",
-        //Flink image is available only for jdk8
         "-target:jvm-1.8"
+        // switch to release option after removing scala 2.11 support (not available on scala 2.11 compiler)
+//        "-release",
+//        "8"
       ),
       javacOptions := Seq(
         "-Xlint:deprecation",
         "-Xlint:unchecked",
-        //Flink image is available only for jdk8
-        "-source",
-        "1.8",
-        "-target",
-        "1.8",
+        // Using --release flag (available only on jdk >= 9) instead of -source -target to avoid usage of api from newer java version
+        "--release",
+        "8",
         //we use it e.g. to provide consistent behaviour wrt extracting parameter names from scala and java
         "-parameters"
       ),

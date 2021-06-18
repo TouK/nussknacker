@@ -2,6 +2,7 @@
 
 ## Setting up development environment
 
+- JDK >= 9 is needed - we have specified target java version to java 8, but using some compiler flags available only on JDK >= 9 (--release flag)
 - For working on engine - standard `sbt` setup should be enough
 - For working/running GUI please see `ui/README.md` for details instructions
 
