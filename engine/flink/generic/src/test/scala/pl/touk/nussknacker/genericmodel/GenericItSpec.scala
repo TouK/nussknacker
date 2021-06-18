@@ -78,24 +78,31 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
       |  "list2": [ 123 ]
       |}""".stripMargin
 
+  private val givenMatchingJsonSchemedObj =
+    """{
+      |  "first": "Jan",
+      |  "middle": null,
+      |  "last": "Kowalski"
+      |}""".stripMargin
+
   private val givenNotMatchingAvroObj = avroEncoder.encodeRecordOrError(
-    Map("first" ->"Zenon", "last" -> "Nowak"), RecordSchemaV1
+    Map("first" -> "Zenon", "last" -> "Nowak"), RecordSchemaV1
   )
 
   private val givenMatchingAvroObj = avroEncoder.encodeRecordOrError(
-    Map("first" ->"Jan", "last" -> "Kowalski"), RecordSchemaV1
+    Map("first" -> "Jan", "last" -> "Kowalski"), RecordSchemaV1
   )
 
   private val givenMatchingAvroObjConvertedToV2 = avroEncoder.encodeRecordOrError(
-    Map("first" ->"Jan", "middle" -> null, "last" -> "Kowalski"), RecordSchemaV2
+    Map("first" -> "Jan", "middle" -> null, "last" -> "Kowalski"), RecordSchemaV2
   )
 
   private val givenMatchingAvroObjV2 = avroEncoder.encodeRecordOrError(
-      Map("first" ->"Jan", "middle" -> "Tomek", "last" -> "Kowalski"), RecordSchemaV2
+    Map("first" -> "Jan", "middle" -> "Tomek", "last" -> "Kowalski"), RecordSchemaV2
   )
 
   private val givenSecondMatchingAvroObj = avroEncoder.encodeRecordOrError(
-    Map("firstname" ->"Jan"), SecondRecordSchemaV1
+    Map("firstname" -> "Jan"), SecondRecordSchemaV1
   )
 
   private def jsonProcess(filter: String) =
@@ -117,6 +124,28 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
       .filter("name-filter", filter)
       .sink("end", "#input", "kafka-json", "topic" -> s"'$JsonOutTopic'")
 
+  private def jsonSchemedProcess(topicConfig: TopicConfig, versionOption: SchemaVersionOption, validationMode: ValidationMode = ValidationMode.strict) =
+    EspProcessBuilder
+      .id("json-schemed-test")
+      .parallelism(1)
+      .exceptionHandler()
+      .source(
+        "start",
+        "kafka-registry-typed-json",
+        KafkaAvroBaseTransformer.TopicParamName -> s"'${topicConfig.input}'",
+        KafkaAvroBaseTransformer.SchemaVersionParamName -> versionOptionParam(versionOption)
+      )
+      .filter("name-filter", "#input.first == 'Jan'")
+      .emptySink(
+        "end",
+        "kafka-registry-typed-json-raw",
+        KafkaAvroBaseTransformer.SinkKeyParamName -> "",
+        KafkaAvroBaseTransformer.SinkValueParamName -> "#input",
+        KafkaAvroBaseTransformer.TopicParamName -> s"'${topicConfig.output}'",
+        KafkaAvroBaseTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
+        KafkaAvroBaseTransformer.SinkValidationModeParameterName -> s"'${validationMode.name}'"
+      )
+
   private def avroProcess(topicConfig: TopicConfig, versionOption: SchemaVersionOption, validationMode: ValidationMode = ValidationMode.strict) =
     EspProcessBuilder
       .id("avro-test")
@@ -132,9 +161,9 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
       .emptySink(
         "end",
         "kafka-avro-raw",
-        KafkaAvroBaseTransformer.SinkKeyParamName  -> "",
-        KafkaAvroBaseTransformer.SinkValueParamName  -> "#input",
-        KafkaAvroBaseTransformer.TopicParamName  -> s"'${topicConfig.output}'",
+        KafkaAvroBaseTransformer.SinkKeyParamName -> "",
+        KafkaAvroBaseTransformer.SinkValueParamName -> "#input",
+        KafkaAvroBaseTransformer.TopicParamName -> s"'${topicConfig.output}'",
         KafkaAvroBaseTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
         KafkaAvroBaseTransformer.SinkValidationModeParameterName -> s"'${validationMode.name}'"
 
@@ -197,7 +226,7 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
   test("should read avro object from kafka, filter and save it to kafka, passing timestamp") {
     val timeAgo = Instant.now().minus(10, ChronoUnit.DAYS).toEpochMilli
 
-    val topicConfig = createAndRegisterTopicConfig("read-filter-save", RecordSchemas)
+    val topicConfig = createAndRegisterTopicConfig("read-filter-save-avro", RecordSchemas)
 
     send(givenNotMatchingAvroObj, topicConfig.input)
     send(givenMatchingAvroObj, topicConfig.input, timestamp = timeAgo)
@@ -206,6 +235,21 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
       val processed = consumeOneRawAvroMessage(topicConfig.output)
       processed.timestamp shouldBe timeAgo
       valueDeserializer.deserialize(topicConfig.output, processed.message()) shouldEqual givenMatchingAvroObjConvertedToV2
+    }
+  }
+
+  test("should read schemed json from kafka, filter and save it to kafka, passing timestamp") {
+    val timeAgo = Instant.now().minus(10, ChronoUnit.DAYS).toEpochMilli
+
+    val topicConfig = createAndRegisterTopicConfig("read-filter-save-json", RecordSchemas)
+
+    kafkaClient.sendRawMessage(topicConfig.input, Array(), givenMatchingJsonObj.getBytes(StandardCharsets.UTF_8), timestamp = timeAgo)
+
+    run(jsonSchemedProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.allowOptional)) {
+      val consumer = kafkaClient.createConsumer()
+      val processedMessage = consumer.consume(topicConfig.output, secondsToWaitForAvro).head
+      processedMessage.timestamp shouldBe timeAgo
+      decodeJsonUnsafe[Json](processedMessage.message()) shouldEqual parseJson(givenMatchingJsonSchemedObj)
     }
   }
 
@@ -300,7 +344,7 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
     val converted = GenericData.get().deepCopy(RecordSchemaV2, givenMatchingAvroObjV2)
     converted.put("middle", null)
 
-    run(avroProcess(topicConfig,ExistingSchemaVersion(1), validationMode = ValidationMode.allowOptional)) {
+    run(avroProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.allowOptional)) {
       val processed = consumeOneAvroMessage(topicConfig.output)
       processed shouldEqual converted
     }
@@ -314,7 +358,7 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
     kafkaClient.sendRawMessage(topicConfig.input, Array.empty, serializedObj)
 
     assertThrows[Exception] {
-      run(avroProcess(topicConfig,ExistingSchemaVersion(1))) {
+      run(avroProcess(topicConfig, ExistingSchemaVersion(1))) {
         val processed = consumeOneAvroMessage(topicConfig.output)
         processed shouldEqual givenSecondMatchingAvroObj
       }
@@ -331,8 +375,8 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
   private def consumeOneAvroMessage(topic: String) = valueDeserializer.deserialize(topic, consumeOneRawAvroMessage(topic).message())
 
   private lazy val creator: GenericConfigCreator = new GenericConfigCreator {
-    override protected def createSchemaRegistryProvider: SchemaRegistryProvider =
-      ConfluentSchemaRegistryProvider(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
+    override protected def createAvroSchemaRegistryProvider: SchemaRegistryProvider = ConfluentSchemaRegistryProvider.avroPayload(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
+    override protected def createJsonSchemaRegistryProvider: SchemaRegistryProvider = ConfluentSchemaRegistryProvider.jsonPayload(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
   }
 
   private var registrar: FlinkProcessRegistrar = _

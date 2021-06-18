@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.CachedConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
@@ -19,7 +20,8 @@ import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 class GenericConfigCreator extends EmptyProcessConfigCreator {
 
   protected def defaultCategory[T](obj: T): WithCategories[T] = WithCategories(obj, "Default")
-  protected val schemaRegistryProvider: SchemaRegistryProvider = createSchemaRegistryProvider
+  protected val avroSerializingSchemaRegistryProvider: SchemaRegistryProvider = createAvroSchemaRegistryProvider
+  protected val jsonSerializingSchemaRegistryProvider: SchemaRegistryProvider = createJsonSchemaRegistryProvider
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
     "previousValue" -> defaultCategory(PreviousValueTransformer),
@@ -33,24 +35,22 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
   )
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
-    val avroSourceFactory = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
-
     Map(
       "kafka-json" -> defaultCategory(new GenericJsonSourceFactory(processObjectDependencies)),
       "kafka-typed-json" -> defaultCategory(new GenericTypedJsonSourceFactory(processObjectDependencies)),
-      "kafka-avro" -> defaultCategory(avroSourceFactory),
+      "kafka-avro" -> defaultCategory(new KafkaAvroSourceFactory(avroSerializingSchemaRegistryProvider, processObjectDependencies, None)),
+      "kafka-registry-typed-json" -> defaultCategory(new KafkaAvroSourceFactory(jsonSerializingSchemaRegistryProvider, processObjectDependencies, None)),
       "periodic" -> defaultCategory(PeriodicSourceFactory)
     )
   }
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
-    val kafkaAvroSinkFactory = new KafkaAvroSinkFactory(schemaRegistryProvider, processObjectDependencies)
-    val kafkaAvroSinkFactoryWithEditor = new KafkaAvroSinkFactoryWithEditor(schemaRegistryProvider, processObjectDependencies)
-
     Map(
       "kafka-json" -> defaultCategory(new GenericKafkaJsonSink(processObjectDependencies)),
-      "kafka-avro-raw" -> defaultCategory(kafkaAvroSinkFactory),
-      "kafka-avro" -> defaultCategory(kafkaAvroSinkFactoryWithEditor),
+      "kafka-avro" -> defaultCategory(new KafkaAvroSinkFactoryWithEditor(avroSerializingSchemaRegistryProvider, processObjectDependencies)),
+      "kafka-avro-raw" -> defaultCategory(new KafkaAvroSinkFactory(avroSerializingSchemaRegistryProvider, processObjectDependencies)),
+      "kafka-registry-typed-json" -> defaultCategory(new KafkaAvroSinkFactoryWithEditor(jsonSerializingSchemaRegistryProvider, processObjectDependencies)),
+      "kafka-registry-typed-json-raw" -> defaultCategory(new KafkaAvroSinkFactory(jsonSerializingSchemaRegistryProvider, processObjectDependencies)),
       "dead-end" -> defaultCategory(SinkFactory.noParam(EmptySink))
     )
   }
@@ -77,6 +77,6 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
     pl.touk.nussknacker.engine.version.BuildInfo.toMap.map { case (k, v) => k -> v.toString } + ("name" -> "generic")
   }
 
-  protected def createSchemaRegistryProvider: SchemaRegistryProvider = ConfluentSchemaRegistryProvider()
-
+  protected def createAvroSchemaRegistryProvider: SchemaRegistryProvider = ConfluentSchemaRegistryProvider()
+  protected def createJsonSchemaRegistryProvider: SchemaRegistryProvider = ConfluentSchemaRegistryProvider.jsonPayload(CachedConfluentSchemaRegistryClientFactory())
 }
