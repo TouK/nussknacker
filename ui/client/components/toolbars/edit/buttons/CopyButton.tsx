@@ -14,7 +14,7 @@ function CopyButton(): JSX.Element {
       name={t("panels.actions.edit-copy.button", "copy")}
       icon={<Icon/>}
       disabled={!copy}
-      onClick={copy ? (event => copy(event.nativeEvent)) : null}
+      onClick={copy ? event => copy(event.nativeEvent) : null}
     />
   )
 }

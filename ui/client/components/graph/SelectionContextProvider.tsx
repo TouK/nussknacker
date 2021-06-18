@@ -14,6 +14,8 @@ import {getCapabilities} from "../../reducers/selectors/other"
 import {getProcessDefinitionData} from "../../reducers/selectors/settings"
 import NodeUtils from "./NodeUtils"
 
+const hasTextSelection = () => !!window.getSelection().toString()
+
 type UserAction = ((e: Event) => unknown) | null
 
 interface UserActions {
@@ -42,7 +44,52 @@ function useClipboardParse() {
   )
 }
 
-const hasTextSelection = () => !!window.getSelection().toString()
+function useClipboardPermission(): boolean | string {
+  const clipboardPermission = useRef<PermissionStatus>()
+  const [state, setState] = useState<"denied" | "granted" | "prompt">()
+  const [text, setText] = useState("")
+  const [content, setContent] = useState("")
+
+  const parse = useClipboardParse()
+
+  if (state === "granted") {
+    navigator.clipboard.readText().then(text => {
+      setText(text)
+    }).catch(() => {return})
+  }
+
+  useEffect(() => {
+    setContent(parse(text))
+  }, [text])
+
+  useEffect(() => {
+    navigator.permissions.query({name: "clipboard-read"}).then(permission => {
+      clipboardPermission.current = permission
+      setState(permission.state)
+      permission.onchange = () => {
+        setState(permission.state)
+      }
+    })
+    return () => {
+      if (clipboardPermission.current) {
+        clipboardPermission.current.onchange = undefined
+      }
+    }
+  }, [])
+
+  return state === "prompt" || content
+}
+
+const SelectionContext = createContext<UserActions>(null)
+
+export const useSelectionActions = (): UserActions => {
+  const selectionActions = useContext(SelectionContext)
+  if (!selectionActions) {
+    throw new Error("used useSelectionActions outside provider")
+  }
+  return selectionActions
+}
+
 export default function SelectionContextProvider(props: PropsWithChildren<{ pastePosition: () => { x: number, y: number } }>): JSX.Element {
   const dispatch = useDispatch()
   const {t} = useTranslation()
@@ -176,49 +223,4 @@ export default function SelectionContextProvider(props: PropsWithChildren<{ past
       {props.children}
     </SelectionContext.Provider>
   )
-}
-const SelectionContext = createContext<UserActions>(null)
-
-function useClipboardPermission(): boolean | string {
-  const clipboardPermission = useRef<PermissionStatus>()
-  const [state, setState] = useState<"denied" | "granted" | "prompt">()
-  const [text, setText] = useState("")
-  const [content, setContent] = useState("")
-
-  const parse = useClipboardParse()
-
-  if (state === "granted") {
-    navigator.clipboard.readText().then(text => {
-      setText(text)
-    }).catch(() => {return})
-  }
-
-  useEffect(() => {
-    setContent(parse(text))
-  }, [text])
-
-  useEffect(() => {
-    navigator.permissions.query({name: "clipboard-read"}).then(permission => {
-      clipboardPermission.current = permission
-      setState(permission.state)
-      permission.onchange = () => {
-        setState(permission.state)
-      }
-    })
-    return () => {
-      if (clipboardPermission.current) {
-        clipboardPermission.current.onchange = undefined
-      }
-    }
-  }, [])
-
-  return state === "prompt" || content
-}
-
-export const useSelectionActions = (): UserActions => {
-  const selectionActions = useContext(SelectionContext)
-  if (!selectionActions) {
-    throw new Error("used useSelectionActions outside provider")
-  }
-  return selectionActions
 }
