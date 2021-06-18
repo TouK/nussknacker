@@ -169,8 +169,7 @@ lazy val commonSettings =
       javacOptions := Seq(
         "-Xlint:deprecation",
         "-Xlint:unchecked",
-        // Flink image is available only for jdk8; we use --release flag (available only on jdk >= 9) instead of -source -target
-        // to avoid usage of api from newer java version
+        // Using --release flag (available only on jdk >= 9) instead of -source -target to avoid usage of api from newer java version
         "--release",
         "8",
         //we use it e.g. to provide consistent behaviour wrt extracting parameter names from scala and java
