@@ -26,7 +26,7 @@ import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import java.nio.charset.StandardCharsets
 import scala.collection.immutable.ListMap
 
-class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSourceSpecMixin {
+class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSourceSpecMixin {
 
   import KafkaAvroSourceMockSchemaRegistry._
 
@@ -34,10 +34,16 @@ class KafkaAvroSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSource
 
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
 
-  test("should read generated record in v1") {
+  test("should read generated generic record in v1") {
     val givenObj = FullNameV1.createRecord("Jan", "Kowalski")
 
     roundTripValueObject(avroSourceFactory(useStringForKey = true), RecordTopic, ExistingSchemaVersion(1), "", givenObj)
+  }
+
+  test("should read generated specific record in v1") {
+    val givenObj = FullNameV1.createSpecificRecord("Jan", "Kowalski")
+
+    roundTripValueObject(specificSourceFactory[FullNameV1](), RecordTopic, ExistingSchemaVersion(1), "", givenObj)
   }
 
   test("should read generated record in v2") {
