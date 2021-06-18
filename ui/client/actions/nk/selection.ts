@@ -79,23 +79,26 @@ export function deleteSelection(selectionState: string[], event: Event): ThunkAc
   }
 }
 
+//remove browser text selection to avoid interference with "copy"
+const clearTextSelection = () => window.getSelection().removeAllRanges()
+
 export function toggleSelection(...nodeIds: string[]): ThunkAction {
   return dispatch => {
-    window.getSelection().removeAllRanges()
+    clearTextSelection()
     dispatch({type: "TOGGLE_SELECTION", nodeIds})
   }
 }
 
 export function expandSelection(...nodeIds: string[]): ThunkAction {
   return dispatch => {
-    window.getSelection().removeAllRanges()
+    clearTextSelection()
     dispatch({type: "EXPAND_SELECTION", nodeIds})
   }
 }
 
 export function resetSelection(...nodeIds: string[]): ThunkAction {
   return dispatch => {
-    window.getSelection().removeAllRanges()
+    clearTextSelection()
     dispatch({type: "RESET_SELECTION", nodeIds})
   }
 }

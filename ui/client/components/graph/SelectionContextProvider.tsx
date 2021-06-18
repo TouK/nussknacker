@@ -52,15 +52,21 @@ function useClipboardPermission(): boolean | string {
 
   const parse = useClipboardParse()
 
+  const checkClipboard = useCallback(async () => {
+    try {
+      setText(await navigator.clipboard.readText())
+    } catch {}
+  }, [])
+
+  // if possible monitor clipboard for new content on each render
   if (state === "granted") {
-    navigator.clipboard.readText().then(text => {
-      setText(text)
-    }).catch(() => {return})
+    checkClipboard()
   }
 
   useEffect(() => {
+    // parse clipboard content on change only
     setContent(parse(text))
-  }, [text])
+  }, [parse, text])
 
   useEffect(() => {
     navigator.permissions.query({name: "clipboard-read"}).then(permission => {
@@ -111,7 +117,7 @@ export default function SelectionContextProvider(props: PropsWithChildren<{ past
         await ClipboardUtils.writeText(JSON.stringify(selection))
         const {nodes} = selection
         if (!silent) {
-          dispatch(success(t("userActions.copy", {
+          dispatch(success(t("userActions.copy.success", {
             defaultValue: "Copied node",
             defaultValue_plural: "Copied {{count}} nodes",
             count: nodes.length,
@@ -126,7 +132,7 @@ export default function SelectionContextProvider(props: PropsWithChildren<{ past
       }
 
     },
-    [canModifySelected, dispatch, selection],
+    [canModifySelected, dispatch, selection, t],
   )
   const cut = useCallback(
     async (isInternalEvent = false) => {
@@ -135,7 +141,7 @@ export default function SelectionContextProvider(props: PropsWithChildren<{ past
         const nodeIds = copied.map(node => node.id)
         dispatch(deleteNodes(nodeIds))
         if (!isInternalEvent) {
-          dispatch(success(t("userActions.cut", {
+          dispatch(success(t("userActions.cut.success", {
             defaultValue: "Cut node",
             defaultValue_plural: "Cut {{count}} nodes",
             count: copied.length,
@@ -159,7 +165,7 @@ export default function SelectionContextProvider(props: PropsWithChildren<{ past
           const {x, y} = props.pastePosition()
           const nodesWithPositions = selection.nodes.map((node, ix) => ({node, position: {x: x + 30, y: y + ix * 180}}))
           dispatch(nodesWithEdgesAdded(nodesWithPositions, selection.edges))
-          dispatch(success(t("userActions.paste", {
+          dispatch(success(t("userActions.paste.success", {
             defaultValue: "Pasted node",
             defaultValue_plural: "Pasted {{count}} nodes",
             count: selection.nodes.length,
