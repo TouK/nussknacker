@@ -12,8 +12,7 @@ import pl.touk.nussknacker.engine.definition.TypeInfos
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.kafka.KafkaSourceFactoryMixin
-import pl.touk.nussknacker.engine.kafka.KafkaSourceFactoryMixin.ObjToSerialize
+import KafkaSourceFactoryMixin.ObjToSerialize
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryProcessConfigCreator.{SinkForSampleValue, recordingExceptionHandler}
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler

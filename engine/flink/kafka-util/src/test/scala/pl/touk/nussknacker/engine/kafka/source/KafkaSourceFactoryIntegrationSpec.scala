@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.kafka.source
 
 import org.apache.kafka.common.record.TimestampType
-import pl.touk.nussknacker.engine.kafka.KafkaSourceFactoryMixin.{ObjToSerialize, SampleKey, SampleValue}
+import KafkaSourceFactoryMixin.{ObjToSerialize, SampleKey, SampleValue}
 
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 

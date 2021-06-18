@@ -225,6 +225,40 @@ exceptionHandler {
   }
 }    
 ```
+                                             
+Out of the box, Nussknacker provides following ExceptionHandler types:
+- BrieflyLogging - log error to Flink logs (on `info` level, with stacktrace on `debug` level)
+- VerboselyLogging - log error to Flink logs on `error` level, together with all variables (should be used mainly for debugging)
+- Kafka - send errors to Kafka topic
+
+##### Kafka exception handling
+
+Errors can be sent to specified Kafka topic in following json format (see below for format configuration options): 
+```json
+{
+  "processName" : "Premium Customer Scenario",
+  "nodeId" : "filter premium customers",
+  "message" : "Unknown exception",
+  "exceptionInput" : "SpelExpressionEvaluationException:Expression [1/0 != 10] evaluation failed, message: / by zero",
+  "inputEvent" : "{ \" field1\": \"vaulue1\" }",
+  "stackTrace" : "pl.touk.nussknacker.engine.api.exception.NonTransientException: mess\n\tat pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionConsumerSerializationSpec.<init>(KafkaExceptionConsumerSerializationSpec.scala:24)\n\tat java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)\n\tat java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:490)\n\tat java.base/java.lang.Class.newInstance(Class.java:584)\n\tat org.scalatest.tools.Runner$.genSuiteConfig(Runner.scala:1431)\n\tat org.scalatest.tools.Runner$.$anonfun$doRunRunRunDaDoRunRun$8(Runner.scala:1239)\n\tat scala.collection.immutable.List.map(List.scala:286)\n\tat org.scalatest.tools.Runner$.doRunRunRunDaDoRunRun(Runner.scala:1238)\n\tat org.scalatest.tools.Runner$.$anonfun$runOptionallyWithPassFailReporter$24(Runner.scala:1033)\n\tat org.scalatest.tools.Runner$.$anonfun$runOptionallyWithPassFailReporter$24$adapted(Runner.scala:1011)\n\tat org.scalatest.tools.Runner$.withClassLoaderAndDispatchReporter(Runner.scala:1509)\n\tat org.scalatest.tools.Runner$.runOptionallyWithPassFailReporter(Runner.scala:1011)\n\tat org.scalatest.tools.Runner$.run(Runner.scala:850)\n\tat org.scalatest.tools.Runner.run(Runner.scala)\n\tat org.jetbrains.plugins.scala.testingSupport.scalaTest.ScalaTestRunner.runScalaTest2or3(ScalaTestRunner.java:38)\n\tat org.jetbrains.plugins.scala.testingSupport.scalaTest.ScalaTestRunner.main(ScalaTestRunner.java:25)",
+  "timestamp" : 1623758738000,
+  "host" : "teriberka.pl",
+  "additionalData" : {
+    "scenarioCategory" : "Marketing"
+  }
+}
+```
+Following properties can be configured:
+
+| Name         | Default value | Description |
+| ------------ | ------------- | ------------|
+| topic        | -             | Topic where errors will be sent. It should be configured separately (or topic `auto.create` setting should be enabled on Kafka cluster) | 
+| stackTraceLengthLimit | 50   | Limit of stacktrace length that will be sent (0 to omit stacktrace at all)            | 
+| includeHost  | true          | Should name of host where error occurred (e.g. TaskManager in case of Flink) be included. Can be misleading if there are many network interfaces or hostname is improperly configured)             |
+| includeInputEvent | false    | Should input event be serialized (can be large or contain sensitive data so use with care)            |
+| useSharedProducer | false    | For better performance shared Kafka producer can be used (by default it's created and closed for each error), shared Producer is kind of experimental feature and should be used with care            |
+| additionalParams  | {}       | Map of fixed parameters that can be added to Kafka message            |
 
 #### Configuring restart strategies (Flink only)
          

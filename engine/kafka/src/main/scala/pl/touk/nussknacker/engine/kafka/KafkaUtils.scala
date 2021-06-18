@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.KafkaClient
 import org.apache.kafka.clients.admin.{Admin, AdminClient}
 import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
-import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
+import org.apache.kafka.clients.producer.{Callback, KafkaProducer, Producer, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer}
 import pl.touk.nussknacker.engine.api.namespaces.{KafkaUsageKey, NamingContext}
@@ -167,19 +167,25 @@ object KafkaUtils extends LazyLogging {
     consumer.commitSync()
   }
 
-  def sendToKafkaWithTempProducer(topic: String, key: Array[Byte], value: Array[Byte])(kafkaConfig: KafkaConfig): Future[RecordMetadata] =
-    Using.resource(createProducer(kafkaConfig, "temp-"+topic)) { producer =>
-      sendToKafka(topic, key, value)(producer)
-    }
-
-  def sendToKafka[K, V](topic: String, key: K, value: V)(producer: KafkaProducer[K, V]): Future[RecordMetadata] = {
-    val promise = Promise[RecordMetadata]()
-    producer.send(new ProducerRecord(topic, key, value), KafkaUtils.producerCallback(promise))
-    promise.future
+  def sendToKafkaWithTempProducer(topic: String, key: Array[Byte], value: Array[Byte])(kafkaProducerCreator: KafkaProducerCreator[Array[Byte], Array[Byte]]): Future[RecordMetadata] = {
+    sendToKafkaWithTempProducer(new ProducerRecord(topic, key, value))(kafkaProducerCreator)
   }
 
-  def createProducer(kafkaConfig: KafkaConfig, clientId: String): KafkaProducer[Array[Byte], Array[Byte]] = {
-    new KafkaProducer[Array[Byte], Array[Byte]](KafkaUtils.toProducerProperties(kafkaConfig, clientId))
+  def sendToKafkaWithTempProducer(record: ProducerRecord[Array[Byte], Array[Byte]])(kafkaProducerCreator: KafkaProducerCreator[Array[Byte], Array[Byte]]): Future[RecordMetadata] = {
+    //returned future is completed, as this method flushes producer cache
+    Using.resource(kafkaProducerCreator.createProducer("temp-"+record.topic())) { producer =>
+      sendToKafka(record)(producer)
+    }
+  }
+
+  def sendToKafka[K, V](topic: String, key: K, value: V)(producer: Producer[K, V]): Future[RecordMetadata] = {
+    sendToKafka(new ProducerRecord(topic, key, value))(producer)
+  }
+
+  def sendToKafka[K, V](record: ProducerRecord[K, V])(producer: Producer[K, V]): Future[RecordMetadata] = {
+    val promise = Promise[RecordMetadata]()
+    producer.send(record, KafkaUtils.producerCallback(promise))
+    promise.future
   }
 
   def producerCallback(promise: Promise[RecordMetadata]): Callback =
@@ -192,3 +198,5 @@ object KafkaUtils extends LazyLogging {
 }
 
 case class PreparedKafkaTopic(original: String, prepared: String)
+
+

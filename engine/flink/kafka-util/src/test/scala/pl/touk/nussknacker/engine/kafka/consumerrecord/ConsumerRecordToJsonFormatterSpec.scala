@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.kafka.consumerrecord
 
 import java.util.Optional
-
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
-import pl.touk.nussknacker.engine.kafka.KafkaSourceFactoryMixin._
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryMixin._
 import pl.touk.nussknacker.engine.kafka._
+import pl.touk.nussknacker.engine.kafka.source.{KafkaSourceFactoryMixin, SampleConsumerRecordDeserializationSchemaFactory}
 
 class ConsumerRecordToJsonFormatterSpec extends FunSuite with Matchers with KafkaSpec with BeforeAndAfterAll with KafkaSourceFactoryMixin {
 

@@ -1,7 +1,5 @@
-package pl.touk.nussknacker.engine.kafka
+package pl.touk.nussknacker.engine.kafka.source
 
-import java.nio.charset.StandardCharsets
-import java.util.Optional
 import io.circe.generic.JsonCodec
 import io.circe.{Decoder, Encoder}
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -14,13 +12,15 @@ import org.apache.kafka.common.serialization.{Deserializer, StringDeserializer}
 import org.scalatest.{Assertion, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.kafka.KafkaSourceFactoryMixin._
 import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordDeserializationSchemaFactory, ConsumerRecordToJsonFormatterFactory}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.BaseSimpleSerializationSchema
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryMixin._
+import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, KafkaConfig, KafkaSpec}
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.test.PatientScalaFutures
 
+import java.nio.charset.StandardCharsets
+import java.util.Optional
 import scala.reflect.ClassTag
 
 trait KafkaSourceFactoryMixin extends FunSuite with Matchers with KafkaSpec with PatientScalaFutures {
