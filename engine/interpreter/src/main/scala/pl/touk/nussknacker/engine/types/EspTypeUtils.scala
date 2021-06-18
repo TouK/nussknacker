@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.types
 
 import java.lang.reflect._
 import java.util.Optional
-
 import cats.data.StateT
 import cats.effect.IO
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
@@ -11,7 +10,6 @@ import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, VisibleM
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
-import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl
 
 object EspTypeUtils {
 
@@ -135,14 +133,14 @@ object EspTypeUtils {
 
   private def extractGenericReturnType(typ: Type): Option[TypingResult] = {
     typ match {
-      case t: ParameterizedTypeImpl => extractGenericMonadReturnType(t)
+      case t: ParameterizedType => extractGenericMonadReturnType(t)
       case t => None
     }
   }
 
   // This method should be used only for method's and field's return type - for method's parameters such unwrapping has no sense
-  private def extractGenericMonadReturnType(genericReturnType: ParameterizedTypeImpl): Option[TypingResult] = {
-    val rawType = genericReturnType.getRawType
+  private def extractGenericMonadReturnType(genericReturnType: ParameterizedType): Option[TypingResult] = {
+    val rawType = genericReturnType.getRawType.asInstanceOf[Class[_]]
 
     // see ScalaLazyPropertyAccessor
     if (classOf[StateT[IO, _, _]].isAssignableFrom(rawType)) {
@@ -167,13 +165,13 @@ object EspTypeUtils {
   private def extractClass(typ: Type): Option[TypingResult] = {
     typ match {
       case t: Class[_] => Some(Typed(t))
-      case t: ParameterizedTypeImpl => Some(extractGenericParams(t))
+      case t: ParameterizedType => Some(extractGenericParams(t))
       case t => None
     }
   }
 
-  private def extractGenericParams(paramsType: ParameterizedTypeImpl): TypingResult = {
-    val rawType = paramsType.getRawType
+  private def extractGenericParams(paramsType: ParameterizedType): TypingResult = {
+    val rawType = paramsType.getRawType.asInstanceOf[Class[_]]
     Typed.genericTypeClass(rawType, paramsType.getActualTypeArguments.toList.map(p => extractClass(p).getOrElse(Unknown)))
   }
 
