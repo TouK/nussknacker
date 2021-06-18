@@ -133,27 +133,25 @@ object EspTypeUtils {
 
   private def extractGenericReturnType(typ: Type): Option[TypingResult] = {
     typ match {
-      case t: ParameterizedType => extractGenericMonadReturnType(t)
+      case t: ParameterizedType if t.getRawType.isInstanceOf[Class[_]] => extractGenericMonadReturnType(t, t.getRawType.asInstanceOf[Class[_]])
       case t => None
     }
   }
 
   // This method should be used only for method's and field's return type - for method's parameters such unwrapping has no sense
-  private def extractGenericMonadReturnType(genericReturnType: ParameterizedType): Option[TypingResult] = {
-    val rawType = genericReturnType.getRawType.asInstanceOf[Class[_]]
-
+  private def extractGenericMonadReturnType(genericReturnType: ParameterizedType, genericReturnRawType: Class[_]): Option[TypingResult] = {
     // see ScalaLazyPropertyAccessor
-    if (classOf[StateT[IO, _, _]].isAssignableFrom(rawType)) {
+    if (classOf[StateT[IO, _, _]].isAssignableFrom(genericReturnRawType)) {
       val returnType = genericReturnType.getActualTypeArguments.apply(3) // it's IndexedStateT[IO, ContextWithLazyValuesProvider, ContextWithLazyValuesProvider, A]
       extractClass(returnType)
     }
     // see ScalaOptionOrNullPropertyAccessor
-    else if (classOf[Option[_]].isAssignableFrom(rawType)) {
+    else if (classOf[Option[_]].isAssignableFrom(genericReturnRawType)) {
       val optionGenericType = genericReturnType.getActualTypeArguments.apply(0)
       extractClass(optionGenericType)
     }
     // see JavaOptionalOrNullPropertyAccessor
-    else if (classOf[Optional[_]].isAssignableFrom(rawType)) {
+    else if (classOf[Optional[_]].isAssignableFrom(genericReturnRawType)) {
       val optionalGenericType = genericReturnType.getActualTypeArguments.apply(0)
       extractClass(optionalGenericType)
     }
@@ -165,14 +163,13 @@ object EspTypeUtils {
   private def extractClass(typ: Type): Option[TypingResult] = {
     typ match {
       case t: Class[_] => Some(Typed(t))
-      case t: ParameterizedType => Some(extractGenericParams(t))
+      case t: ParameterizedType if t.getRawType.isInstanceOf[Class[_]] => Some(extractGenericParams(t, t.getRawType.asInstanceOf[Class[_]]))
       case t => None
     }
   }
 
-  private def extractGenericParams(paramsType: ParameterizedType): TypingResult = {
-    val rawType = paramsType.getRawType.asInstanceOf[Class[_]]
-    Typed.genericTypeClass(rawType, paramsType.getActualTypeArguments.toList.map(p => extractClass(p).getOrElse(Unknown)))
+  private def extractGenericParams(paramsType: ParameterizedType, paramsRawType: Class[_]): TypingResult = {
+    Typed.genericTypeClass(paramsRawType, paramsType.getActualTypeArguments.toList.map(p => extractClass(p).getOrElse(Unknown)))
   }
 
   def companionObject[T](klazz: Class[T]): T = {

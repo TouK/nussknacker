@@ -162,7 +162,7 @@ lazy val commonSettings =
         "-language:postfixOps",
         "-language:existentials",
         "-Ypartial-unification",
-        //Flink image is available only for jdk8
+        // Using -release flag (available only on jdk >= 9) instead of -source -target to avoid usage of api from newer java version
         "-release",
         "8",
       ),
