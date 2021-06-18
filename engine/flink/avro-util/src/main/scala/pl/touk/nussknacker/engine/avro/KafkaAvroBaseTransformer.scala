@@ -44,14 +44,14 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
 
     (topics match {
       case Valid(topics) => Writer[List[ProcessCompilationError], List[String]](Nil, topics)
-      case Invalid(e) => Writer[List[ProcessCompilationError], List[String]](List(CustomNodeError(e.getMessage, Some(KafkaAvroBaseTransformer.TopicParamName))), Nil)
+      case Invalid(e) => Writer[List[ProcessCompilationError], List[String]](List(CustomNodeError(e.getMessage, Some(topicParamName))), Nil)
     }).map { topics =>
       getTopicParam(topics)
     }
   }
 
   private def getTopicParam(topics: List[String]): Parameter = {
-    Parameter[String](KafkaAvroBaseTransformer.TopicParamName).copy(editor = Some(FixedValuesParameterEditor(
+    Parameter[String](topicParamName).copy(editor = Some(FixedValuesParameterEditor(
       nullTopicOption +: topics
         .flatMap(topic => processObjectDependencies.objectNaming.decodeName(topic, processObjectDependencies.config, KafkaUtils.KafkaTopicUsageKey))
         .sorted
@@ -63,7 +63,7 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
     val versions = schemaRegistryClient.getAllVersions(preparedTopic.prepared, isKey = false)
     (versions match {
       case Valid(versions) => Writer[List[ProcessCompilationError], List[Integer]](Nil, versions)
-      case Invalid(e) => Writer[List[ProcessCompilationError], List[Integer]](List(CustomNodeError(e.getMessage, Some(KafkaAvroBaseTransformer.TopicParamName))), Nil)
+      case Invalid(e) => Writer[List[ProcessCompilationError], List[Integer]](List(CustomNodeError(e.getMessage, Some(topicParamName))), Nil)
     }).map(getVersionParam)
   }
 
@@ -77,7 +77,7 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
   }.getOrElse(throw new CustomNodeValidationException(s"No node dependency: ${implicitly[ClassTag[C]].runtimeClass}", None, null))
 
   protected def extractPreparedTopic(params: Map[String, Any]): PreparedKafkaTopic = prepareTopic(
-    params(KafkaAvroBaseTransformer.TopicParamName).asInstanceOf[String]
+    params(topicParamName).asInstanceOf[String]
   )
 
   protected def extractVersionOption(params: Map[String, Any]): SchemaVersionOption = {
@@ -107,12 +107,12 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
   }
 
   protected def schemaParamStep(implicit nodeId: NodeId): NodeTransformationDefinition = {
-    case TransformationStep((TopicParamName, DefinedEagerParameter(topic: String, _)) :: Nil, _) =>
+    case TransformationStep((topicParamName, DefinedEagerParameter(topic: String, _)) :: Nil, _) =>
       val preparedTopic = prepareTopic(topic)
       val versionParam = getVersionParam(preparedTopic)
-      val topicValidationErrors = validateTopic(preparedTopic.prepared).swap.toList.map(_.toCustomNodeError(nodeId.id, Some(TopicParamName)))
+      val topicValidationErrors = validateTopic(preparedTopic.prepared).swap.toList.map(_.toCustomNodeError(nodeId.id, Some(topicParamName)))
       NextParameters(versionParam.value :: paramsDeterminedAfterSchema, errors = versionParam.written ++ topicValidationErrors)
-    case TransformationStep((TopicParamName, _) :: Nil, _) =>
+    case TransformationStep((topicParamName, _) :: Nil, _) =>
       NextParameters(parameters = fallbackVersionOptionParam :: paramsDeterminedAfterSchema)
   }
 
@@ -127,6 +127,9 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
   //edge case - for some reason Topic is not defined
   protected val fallbackVersionOptionParam: Parameter = getVersionParam(Nil)
 
+  // override it if you use other parameter name for topic
+  protected val topicParamName: String = TopicParamName
+  
 }
 
 object KafkaAvroBaseTransformer {

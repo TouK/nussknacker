@@ -35,7 +35,7 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, v
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
                                     (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = topicParamStep orElse schemaParamStep orElse {
     case TransformationStep(
-    (KafkaAvroBaseTransformer.TopicParamName, DefinedEagerParameter(topic: String, _)) ::
+    (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
       (KafkaAvroBaseTransformer.SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::
       (KafkaAvroBaseTransformer.SinkValidationModeParameterName, DefinedEagerParameter(mode: String, _)) ::
       (KafkaAvroBaseTransformer.SinkKeyParamName, _: BaseDefinedParameter) ::
@@ -60,7 +60,7 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider, v
       FinalResults(context, validationResult)
     //edge case - for some reason Topic/Version is not defined
     case TransformationStep(
-    (KafkaAvroBaseTransformer.TopicParamName, _) ::
+    (`topicParamName`, _) ::
       (KafkaAvroBaseTransformer.SchemaVersionParamName, _) ::
       (KafkaAvroBaseTransformer.SinkValidationModeParameterName, _) ::
       (KafkaAvroBaseTransformer.SinkKeyParamName, _) ::
