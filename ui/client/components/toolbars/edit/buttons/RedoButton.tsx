@@ -1,35 +1,25 @@
 import React from "react"
-import {RootState} from "../../../../reducers/index"
-import {useDispatch, useSelector} from "react-redux"
-import {events} from "../../../../analytics/TrackingEvents"
-import {areAllModalsClosed} from "../../../../reducers/selectors/ui"
-import {redo} from "../../../../actions/undoRedoActions"
-import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
-import {getHistory} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
+import {useSelector} from "react-redux"
+import {redo} from "../../../../actions/undoRedoActions"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/redo.svg"
+import {getHistory} from "../../../../reducers/selectors/graph"
+import {useSelectionActions} from "../../../graph/SelectionContextProvider"
+import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 
 function RedoButton(): JSX.Element {
-  const {keyActionsAvailable, history} = useSelector(mapState)
+  const {redo} = useSelectionActions()
+  const history = useSelector(getHistory)
   const {t} = useTranslation()
-  const dispatch = useDispatch()
   return (
     <CapabilitiesToolbarButton
       write
       name={t("panels.actions.edit-redo.button", "redo")}
-      disabled={!history.future.length}
+      disabled={!history.future.length || !redo}
       icon={<Icon/>}
-      onClick={() => keyActionsAvailable && dispatch(redo({
-        category: events.categories.rightPanel,
-        action: events.actions.buttonClick,
-      }))}
+      onClick={redo ? e => redo(e.nativeEvent) : null}
     />
   )
 }
-
-const mapState = (state: RootState) => ({
-  keyActionsAvailable: areAllModalsClosed(state),
-  history: getHistory(state),
-})
 
 export default RedoButton

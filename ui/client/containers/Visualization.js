@@ -1,24 +1,29 @@
-import _, {defaultsDeep} from "lodash"
+import _, {defaultsDeep, isEmpty} from "lodash"
 import React from "react"
 import {connect} from "react-redux"
 import ActionsUtils from "../actions/ActionsUtils"
-import {events} from "../analytics/TrackingEvents"
-import ClipboardUtils from "../common/ClipboardUtils"
-import * as JsonUtils from "../common/JsonUtils"
 import ProcessUtils from "../common/ProcessUtils"
 import * as VisualizationUrl from "../common/VisualizationUrl"
 import {GraphProvider} from "../components/graph/GraphContext"
 import NodeUtils from "../components/graph/NodeUtils"
 import {ProcessGraph as Graph} from "../components/graph/ProcessGraph"
+import SelectionContextProvider from "../components/graph/SelectionContextProvider"
 import RouteLeavingGuard from "../components/RouteLeavingGuard"
 import SpinnerWrapper from "../components/SpinnerWrapper"
 import Toolbars from "../components/toolbars/Toolbars"
-import {getProcessCategory, isBusinessView} from "../reducers/selectors/graph"
+import {
+  getFetchedProcessDetails,
+  getProcessCategory,
+  getProcessToDisplay,
+  getSelectionState,
+  isBusinessView,
+} from "../reducers/selectors/graph"
 import {getCapabilities} from "../reducers/selectors/other"
-import {getLoggedUser} from "../reducers/selectors/settings"
-import "../stylesheets/visualization.styl"
+import {getLoggedUser, getProcessDefinitionData} from "../reducers/selectors/settings"
 import {areAllModalsClosed} from "../reducers/selectors/ui"
+import "../stylesheets/visualization.styl"
 import {darkTheme} from "./darkTheme"
+import {BindKeyboardShortcuts} from "./BindKeyboardShortcuts"
 import {NkThemeProvider} from "./theme"
 
 class Visualization extends React.Component {
@@ -32,48 +37,6 @@ class Visualization extends React.Component {
   constructor(props) {
     super(props)
     this.graphRef = React.createRef()
-    this.bindShortCuts()
-  }
-
-  bindShortCuts() {
-    this.windowListeners = {
-      copy: this.bindCopyShortcut(),
-      paste: this.bindPasteShortcut(),
-      cut: this.bindCutShortcut(),
-    }
-  }
-
-  bindCopyShortcut() {
-    return (event) => {
-      // Skip event triggered by writing selection to the clipboard.
-      if (this.allowBindCopyShortcut() && this.isNotThisCopyEvent(event, copyNodeElementId)) {
-        this.props.actions.copySelection(
-          () => this.copySelection(event, true),
-          {category: events.categories.keyboard, action: events.actions.keyboard.copy},
-        )
-      }
-    }
-  }
-
-  allowBindCopyShortcut = () => this.props.allModalsClosed && _.isEmpty(this.props.selectionState) === false
-
-  bindPasteShortcut() {
-    return (event) => this.props.actions.pasteSelection(
-      () => {
-        if (["INPUT", "TEXTAREA"].includes(event.target?.tagName)) {
-          return
-        }
-        this.pasteSelection(event)
-      },
-      {category: events.categories.keyboard, action: events.actions.keyboard.paste},
-    )
-  }
-
-  bindCutShortcut() {
-    return (event) => this.props.actions.cutSelection(
-      () => this.cutSelection(event),
-      {category: events.categories.keyboard, action: events.actions.keyboard.cut},
-    )
   }
 
   componentDidUpdate(prevProps) {
@@ -108,8 +71,6 @@ class Visualization extends React.Component {
     }).catch((error) => {
       this.props.actions.handleHTTPError(error)
     })
-
-    this.bindKeyboardActions()
   }
 
   showModalDetailsIfNeeded(process) {
@@ -148,162 +109,28 @@ class Visualization extends React.Component {
     }
   }
 
-  bindKeyboardActions() {
-    window.onkeydown = (event) => {
-      if (event.ctrlKey && !event.shiftKey && event.key.toLowerCase() == "z") {
-        this.undo()
-      }
-      if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() == "z") {
-        this.redo()
-      }
-
-      if (event.key === "Delete" && !_.isEmpty(this.props.selectionState) && this.props.canDelete) {
-        this.props.actions.deleteSelection(
-          this.props.selectionState,
-          {category: events.categories.keyboard, action: events.actions.keyboard.delete},
-        )
-      }
-    }
-    _.forOwn(this.windowListeners, (listener, type) => window.addEventListener(type, listener))
-  }
-
   componentWillUnmount() {
     clearInterval(this.state.processStateIntervalId)
     this.props.actions.clearProcess()
-    _.forOwn(this.windowListeners, (listener, type) => window.removeEventListener(type, listener))
   }
 
-  fetchProcessDetails = (businessView) => this.props.actions.fetchProcessToDisplay(this.props.match.params.processId, undefined, businessView)
+  fetchProcessDetails = (businessView) => this.props.actions.fetchProcessToDisplay(
+    this.props.match.params.processId,
+    undefined,
+    businessView,
+  )
 
   fetchProcessState = () => this.props.actions.loadProcessState(this.props.fetchedProcessDetails?.id)
 
-  undo() {
-    //this `if` should be closer to reducer?
-    if (this.props.undoRedoAvailable) {
-      this.props.undoRedoActions.undo(
-        {category: events.categories.keyboard, action: events.actions.keyboard.undo},
-      )
-    }
-  }
-
-  redo() {
-    if (this.props.undoRedoAvailable) {
-      this.props.undoRedoActions.redo(
-        {category: events.categories.keyboard, action: events.actions.keyboard.redo},
-      )
-    }
-  }
-
-  copySelection = (event, shouldCreateNotification) => {
-    // Skip event triggered by writing selection to the clipboard.
-    const isNotThisCopyEvent = this.isNotThisCopyEvent(event, copyNodeElementId)
-
-    isNotThisCopyEvent && this.canCopySelection() ?
-      this.copyToClipboard(shouldCreateNotification) :
-      this.props.notificationActions.error("Can not copy selected content. It should contain only plain nodes without groups")
-  }
-
-  copyToClipboard(shouldCreateNotification) {
-    let nodeIds = this.props.selectionState
-    let process = this.props.processToDisplay
-    const selectedNodes = NodeUtils.getAllNodesById(nodeIds, process)
-    const edgesForNodes = NodeUtils.getEdgesForConnectedNodes(nodeIds, process)
-    const selection = {
-      nodes: selectedNodes,
-      edges: edgesForNodes,
-    }
-    ClipboardUtils.writeText(JSON.stringify(selection), copyNodeElementId)
-    if (shouldCreateNotification) {
-      this.props.notificationActions.success(this.successMessage("Copied", selectedNodes))
-    }
-  }
-
-  isNotThisCopyEvent(event, copyNodeElementId) {
-    return event == null || event.target && event.target.id !== copyNodeElementId
-  }
-
-  successMessage(action, selectedNodes) {
-    return `${action} ${selectedNodes.length} ${selectedNodes.length === 1 ? "node" : "nodes"}`
-  }
-
-  canCopySelection() {
-    return this.props.allModalsClosed &&
-      !_.isEmpty(this.props.selectionState) &&
-      NodeUtils.containsOnlyPlainNodesWithoutGroups(this.props.selectionState, this.props.processToDisplay)
-  }
-
-  cutSelection = (event) => {
-    if (this.canCutSelection()) {
-      this.copySelection(event, false)
-      const nodeIds = NodeUtils.getAllNodesById(this.props.selectionState, this.props.processToDisplay)
-        .map(node => node.id)
-      this.props.actions.deleteNodes(nodeIds)
-      this.props.notificationActions.success(this.successMessage("Cut", nodeIds))
-    }
-  }
-
-  canCutSelection() {
-    return this.canCopySelection() && this.props.capabilities.write
-  }
-
-  pasteSelection = (event) => {
-    if (!this.props.allModalsClosed) {
-      return
-    }
-    const clipboardText = ClipboardUtils.readText(event)
-    this.pasteSelectionFromText(clipboardText)
-  }
-
-  pasteSelectionFromClipboard = () => {
-    const clipboard = navigator.clipboard
-    if (typeof clipboard.readText !== "function") {
-      this.props.notificationActions.error("Paste button is not available. Try Ctrl+V")
-    } else {
-      clipboard.readText().then(text => this.pasteSelectionFromText(text))
-    }
-  }
-
-  pasteSelectionFromText = (text) => {
-    const selection = JsonUtils.tryParseOrNull(text)
-    const canPasteSelection = _.has(selection, "nodes") && _.has(selection, "edges") && selection.nodes.every(node => this.canAddNode(node))
-    if (!canPasteSelection) {
-      this.props.notificationActions.error("Cannot paste content from clipboard")
-      return
-    }
-
+  getPastePosition = () => {
     const paper = this.getGraphInstance()?.processGraphPaper
-    const viewportCenter = paper?.model.getBBox()?.topRight() || {x: 300, y: 100}
-
-    const positions = selection.nodes.map((node, ix) => {
-      return {x: viewportCenter.x + 30, y: viewportCenter.y + ix * 100}
-    })
-    const nodesWithPositions = _.zipWith(selection.nodes, positions, (node, position) => {
-      return {node, position}
-    })
-    this.props.actions.nodesWithEdgesAdded(nodesWithPositions, selection.edges)
-    this.props.notificationActions.success(this.successMessage("Pasted", selection.nodes))
-  }
-
-  canAddNode(node) {
-    return this.props.capabilities.write &&
-      NodeUtils.isNode(node) &&
-      !NodeUtils.nodeIsGroup(node) &&
-      NodeUtils.isAvailable(node, this.props.processDefinitionData, this.props.processCategory)
+    return paper?.model.getBBox()?.topRight() || {x: 300, y: 100}
   }
 
   getGraphInstance = () => this.graphRef.current?.getDecoratedComponentInstance()
 
   render() {
-    const graphNotReady = _.isEmpty(this.props.fetchedProcessDetails) || this.props.graphLoading
-    const selectionActions = {
-      copy: () => this.copySelection(null, true),
-      canCopy: this.canCopySelection(),
-      cut: () => this.cutSelection(null),
-      canCut: this.canCutSelection(),
-      paste: () => this.pasteSelectionFromClipboard(null),
-      canPaste: true,
-    }
-
+    const graphNotReady = isEmpty(this.props.fetchedProcessDetails) || this.props.graphLoading
     return (
       <div className={"Page graphPage"}>
         <RouteLeavingGuard
@@ -311,14 +138,17 @@ class Visualization extends React.Component {
           navigate={path => this.props.history.push(path)}
         />
 
-        <GraphProvider graph={this.getGraphInstance} selectionActions={selectionActions}>
-          <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
-            <Toolbars isReady={this.state.dataResolved}/>
-          </NkThemeProvider>
-        </GraphProvider>
+        <SelectionContextProvider pastePosition={this.getPastePosition}>
+          <BindKeyboardShortcuts disabled={!this.props.allModalsClosed}/>
+          <GraphProvider graph={this.getGraphInstance}>
+            <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
+              <Toolbars isReady={this.state.dataResolved}/>
+            </NkThemeProvider>
+          </GraphProvider>
+        </SelectionContextProvider>
 
         <SpinnerWrapper isReady={!graphNotReady}>
-          {!_.isEmpty(this.props.processDefinitionData) ? <Graph ref={this.graphRef} capabilities={this.props.capabilities}/> : null}
+          {!isEmpty(this.props.processDefinitionData) ? <Graph ref={this.graphRef} capabilities={this.props.capabilities}/> : null}
         </SpinnerWrapper>
       </div>
     )
@@ -329,30 +159,18 @@ Visualization.path = VisualizationUrl.visualizationPath
 Visualization.header = "Visualization"
 
 function mapState(state) {
-  const allModalsClosed = areAllModalsClosed(state)
-  const processCategory = getProcessCategory(state)
-  const loggedUser = getLoggedUser(state)
-  const canDelete = allModalsClosed &&
-    !NodeUtils.nodeIsGroup(state.graphReducer.nodeToDisplay) &&
-    loggedUser.canWrite(processCategory)
+  const processToDisplay = getProcessToDisplay(state)
   return {
-    processCategory: processCategory,
-    selectionState: state.graphReducer.selectionState,
-    processToDisplay: state.graphReducer.processToDisplay,
-    processDefinitionData: state.settings.processDefinitionData || {},
-    canDelete: canDelete,
-    fetchedProcessDetails: state.graphReducer.fetchedProcessDetails,
-    subprocessVersions: _.get(state.graphReducer.processToDisplay, "properties.subprocessVersions"),
-    currentNodeId: (state.graphReducer.nodeToDisplay || {}).id,
+    processToDisplay,
+    processDefinitionData: getProcessDefinitionData(state),
+    fetchedProcessDetails: getFetchedProcessDetails(state),
+    subprocessVersions: _.get(processToDisplay, "properties.subprocessVersions"),
     graphLoading: state.graphReducer.graphLoading,
-    undoRedoAvailable: allModalsClosed,
-    allModalsClosed,
+    allModalsClosed: areAllModalsClosed(state),
     nothingToSave: ProcessUtils.nothingToSave(state),
     capabilities: getCapabilities(state),
     businessView: isBusinessView(state),
   }
 }
-
-const copyNodeElementId = "copy-node"
 
 export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(Visualization)

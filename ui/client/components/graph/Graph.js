@@ -1,33 +1,30 @@
 /* eslint-disable i18next/no-literal-string */
-import {shapes} from "jointjs"
 import * as joint from "jointjs"
+import {shapes} from "jointjs"
 import "jointjs/dist/joint.css"
-import _, {cloneDeep, defer} from "lodash"
+import _, {cloneDeep, defer, sortBy} from "lodash"
 import PropTypes from "prop-types"
 import React from "react"
-import {PanZoomPlugin} from "./PanZoomPlugin"
 import {getProcessCategory, getSelectionState} from "../../reducers/selectors/graph"
 import {getLoggedUser, getProcessDefinitionData} from "../../reducers/selectors/settings"
 import "../../stylesheets/graph.styl"
-import "./svg-export/export.styl"
+import {FocusableDiv} from "./focusable"
+import {createPaper, directedLayout, drawGraph, isBackgroundObject} from "./GraphPartialsInTS"
 import * as GraphUtils from "./GraphUtils"
 import {Events} from "./joint-events"
 import * as JointJsGraphUtils from "./JointJsGraphUtils"
 import EdgeDetailsModal from "./node-modal/EdgeDetailsModal"
 import NodeDetailsModal from "./node-modal/NodeDetailsModal"
 import NodeUtils from "./NodeUtils"
-import {prepareSvg} from "./svg-export/prepareSvg"
-import {drawGraph, directedLayout, isBackgroundObject, createPaper} from "./GraphPartialsInTS"
-import {FocusableDiv} from "./focusable"
+import {PanZoomPlugin} from "./PanZoomPlugin"
 import {RangeSelectPlugin, SelectionMode} from "./RangeSelectPlugin"
-import {sortBy} from "lodash"
+import "./svg-export/export.styl"
+import {prepareSvg} from "./svg-export/prepareSvg"
 
 const isModelElement = el => el instanceof shapes.devs.Model
 const isGroupElement = el => el instanceof shapes.basic.Rect && el.attributes.nodeData.type === "_group"
 
 export class Graph extends React.Component {
-
-  redrawing = false
 
   static propTypes = {
     processToDisplay: PropTypes.object.isRequired,
@@ -36,6 +33,10 @@ export class Graph extends React.Component {
     width: PropTypes.string,
     height: PropTypes.string,
   }
+  redrawing = false
+  directedLayout = directedLayout.bind(this)
+  createPaper = createPaper.bind(this)
+  drawGraph = drawGraph.bind(this)
 
   constructor(props) {
     super(props)
@@ -59,12 +60,37 @@ export class Graph extends React.Component {
   componentWillUnmount() {
     // force destroy event on model for plugins cleanup
     this.processGraphPaper.model.destroy()
+    this.unbindEventHandlers()
+  }
+
+  bindEventHandlers() {
+    this.changeNodeDetailsOnClick()
+
+    this.processGraphPaper.on(Events.BLANK_POINTERDOWN, event => {
+      if (!event.isPropagationStopped()) {
+        if (this.props.fetchedProcessDetails != null) {
+          this.props.actions.displayNodeDetails(this.props.fetchedProcessDetails.json.properties)
+          this.props.actions.resetSelection()
+        }
+      }
+    })
+    this.hooverHandling()
+  }
+
+  unbindEventHandlers() {
+
   }
 
   componentDidMount() {
     this.processGraphPaper = this.createPaper()
     this.processGraphPaper.freeze()
-    this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.processCounts, this.props.processDefinitionData, this.props.expandedGroups)
+    this.drawGraph(
+      this.props.processToDisplay,
+      this.props.layout,
+      this.props.processCounts,
+      this.props.processDefinitionData,
+      this.props.expandedGroups,
+    )
     this.processGraphPaper.unfreeze()
     this._prepareContentForExport()
 
@@ -82,8 +108,7 @@ export class Graph extends React.Component {
       }
     })
 
-    this.changeNodeDetailsOnClick()
-    this.hooverHandling()
+    this.bindEventHandlers()
     this.highlightNodes(this.props.processToDisplay, this.props.nodeToDisplay)
     this.panAndZoom.fitSmallAndLargeGraphs()
   }
@@ -108,7 +133,13 @@ export class Graph extends React.Component {
       !_.isEqual(this.props.expandedGroups, nextProps.expandedGroups) ||
       !_.isEqual(this.props.processDefinitionData, nextProps.processDefinitionData)
     if (processChanged) {
-      this.drawGraph(nextProps.processToDisplay, nextProps.layout, nextProps.processCounts, nextProps.processDefinitionData, nextProps.expandedGroups)
+      this.drawGraph(
+        nextProps.processToDisplay,
+        nextProps.layout,
+        nextProps.processCounts,
+        nextProps.processDefinitionData,
+        nextProps.expandedGroups,
+      )
     }
 
     //when e.g. layout changed we have to remember to highlight nodes
@@ -130,8 +161,6 @@ export class Graph extends React.Component {
       }
     })
   }
-
-  directedLayout = directedLayout.bind(this)
 
   forceLayout = () => {
     this.directedLayout()
@@ -155,8 +184,6 @@ export class Graph extends React.Component {
     const to = cellViewT.model.id
     return magnetT && NodeUtils.canMakeLink(from, to, this.props.processToDisplay, this.props.processDefinitionData)
   }
-
-  createPaper = createPaper.bind(this)
 
   disconnectPreviousEdge = (previousEdge) => {
     const nodeIds = previousEdge.split("-").slice(0, 2)
@@ -191,7 +218,13 @@ export class Graph extends React.Component {
       } else if (NodeUtils.nodesAreInOneGroup(this.props.processToDisplay, [sourceNode.id, targetNode.id])) {
         // TODO: handle inject when source and target are in one group
         this.props.notificationActions.info("Injecting node in group is not possible yet")
-      } else if (GraphUtils.canInjectNode(this.props.processToDisplay, sourceNode.id, middleMan.id, targetNode.id, this.props.processDefinitionData)) {
+      } else if (GraphUtils.canInjectNode(
+        this.props.processToDisplay,
+        sourceNode.id,
+        middleMan.id,
+        targetNode.id,
+        this.props.processDefinitionData,
+      )) {
         //TODO: consider doing inject check in actions.js?
         this.props.actions.injectNode(
           sourceNode,
@@ -202,8 +235,6 @@ export class Graph extends React.Component {
       }
     }
   }
-
-  drawGraph = drawGraph.bind(this)
 
   _prepareContentForExport = () => {
     const {options, defs} = this.processGraphPaper
@@ -310,15 +341,6 @@ export class Graph extends React.Component {
         }
       })
     }
-
-    this.processGraphPaper.on(Events.BLANK_POINTERDOWN, (event) => {
-      if (!event.isPropagationStopped()) {
-        if (this.props.fetchedProcessDetails != null) {
-          this.props.actions.displayNodeDetails(this.props.fetchedProcessDetails.json.properties)
-          this.props.actions.resetSelection()
-        }
-      }
-    })
   }
 
   hooverHandling() {
@@ -361,6 +383,7 @@ export class Graph extends React.Component {
       el.toggleClass("forced-hover", false)
     })
   }
+
   moveSelectedNodesRelatively(element, position) {
     const movedNodeId = element.id
     const nodeIdsToBeMoved = _.without(this.props.selectionState, movedNodeId)
