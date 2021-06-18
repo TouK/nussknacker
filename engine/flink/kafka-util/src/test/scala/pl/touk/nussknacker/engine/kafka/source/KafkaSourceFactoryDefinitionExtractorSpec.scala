@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.kafka.source
 
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
-import pl.touk.nussknacker.engine.kafka.KafkaSourceFactoryMixin.{SampleKey, SampleValue}
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryMixin.{SampleKey, SampleValue}
 
 class KafkaSourceFactoryDefinitionExtractorSpec extends KafkaSourceFactoryProcessMixin {
 

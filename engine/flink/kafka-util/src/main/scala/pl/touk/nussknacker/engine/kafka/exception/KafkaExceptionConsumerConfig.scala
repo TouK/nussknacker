@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.kafka.exception
 
 case class KafkaExceptionConsumerConfig(topic: String,
-                                        stackTraceLengthLimit: Int = 10,
+                                        //quite large to be able to show nested exception
+                                        stackTraceLengthLimit: Int = 50,
                                         includeHost: Boolean = true,
                                         includeInputEvent: Boolean = false,
                                         //by default we use temp producer, as it's more robust

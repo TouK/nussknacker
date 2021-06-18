@@ -254,7 +254,7 @@ Following properties can be configured:
 | Name         | Default value | Description |
 | ------------ | ------------- | ------------|
 | topic        | -             | Topic where errors will be sent. It should be configured separately (or topic `auto.create` setting should be enabled on Kafka cluster) | 
-| stackTraceLengthLimit | 10   | Limit of stacktrace length that will be sent (0 to omit stacktrace at all)            | 
+| stackTraceLengthLimit | 50   | Limit of stacktrace length that will be sent (0 to omit stacktrace at all)            | 
 | includeHost  | true          | Should name of host where error occurred (e.g. TaskManager in case of Flink) be included. Can be misleading if there are many network interfaces or hostname is improperly configured)             |
 | includeInputEvent | false    | Should input event be serialized (can be large or contain sensitive data so use with care)            |
 | useSharedProducer | false    | For better performance shared Kafka producer can be used (by default it's created and closed for each error), shared Producer is kind of experimental feature and should be used with care            |
