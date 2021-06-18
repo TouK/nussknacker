@@ -162,9 +162,10 @@ lazy val commonSettings =
         "-language:postfixOps",
         "-language:existentials",
         "-Ypartial-unification",
-        // Using -release flag (available only on jdk >= 9) instead of -source -target to avoid usage of api from newer java version
-        "-release",
-        "8",
+        "-target:jvm-1.8"
+        // switch to release option after removing scala 2.11 support (not available on scala 2.11 compiler)
+//        "-release",
+//        "8"
       ),
       javacOptions := Seq(
         "-Xlint:deprecation",
