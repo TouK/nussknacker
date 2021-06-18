@@ -11,9 +11,15 @@ import SelectionContextProvider from "../components/graph/SelectionContextProvid
 import RouteLeavingGuard from "../components/RouteLeavingGuard"
 import SpinnerWrapper from "../components/SpinnerWrapper"
 import Toolbars from "../components/toolbars/Toolbars"
-import {getProcessCategory, getProcessToDisplay, getSelectionState, isBusinessView} from "../reducers/selectors/graph"
+import {
+  getFetchedProcessDetails,
+  getProcessCategory,
+  getProcessToDisplay,
+  getSelectionState,
+  isBusinessView,
+} from "../reducers/selectors/graph"
 import {getCapabilities} from "../reducers/selectors/other"
-import {getLoggedUser} from "../reducers/selectors/settings"
+import {getLoggedUser, getProcessDefinitionData} from "../reducers/selectors/settings"
 import {areAllModalsClosed} from "../reducers/selectors/ui"
 import "../stylesheets/visualization.styl"
 import {darkTheme} from "./darkTheme"
@@ -153,26 +159,14 @@ Visualization.path = VisualizationUrl.visualizationPath
 Visualization.header = "Visualization"
 
 function mapState(state) {
-  const allModalsClosed = areAllModalsClosed(state)
-  const processCategory = getProcessCategory(state)
-  const loggedUser = getLoggedUser(state)
-  const selectionState = getSelectionState(state)
-  const canDelete = allModalsClosed &&
-    !isEmpty(selectionState) &&
-    !NodeUtils.nodeIsGroup(state.graphReducer.nodeToDisplay) &&
-    loggedUser.canWrite(processCategory)
+  const processToDisplay = getProcessToDisplay(state)
   return {
-    processCategory,
-    selectionState,
-    processToDisplay: getProcessToDisplay(state),
-    processDefinitionData: state.settings.processDefinitionData || {},
-    canDelete,
-    fetchedProcessDetails: state.graphReducer.fetchedProcessDetails,
-    subprocessVersions: _.get(state.graphReducer.processToDisplay, "properties.subprocessVersions"),
-    currentNodeId: (state.graphReducer.nodeToDisplay || {}).id,
+    processToDisplay,
+    processDefinitionData: getProcessDefinitionData(state),
+    fetchedProcessDetails: getFetchedProcessDetails(state),
+    subprocessVersions: _.get(processToDisplay, "properties.subprocessVersions"),
     graphLoading: state.graphReducer.graphLoading,
-    undoRedoAvailable: allModalsClosed,
-    allModalsClosed,
+    allModalsClosed: areAllModalsClosed(state),
     nothingToSave: ProcessUtils.nothingToSave(state),
     capabilities: getCapabilities(state),
     businessView: isBusinessView(state),
