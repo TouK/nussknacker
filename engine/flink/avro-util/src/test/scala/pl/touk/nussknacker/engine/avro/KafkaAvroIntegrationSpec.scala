@@ -353,7 +353,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
       s"#input.dateTime.toEpochMilli == ${PaymentDate.instant.toEpochMilli}L AND " +
         s"#input.date.year == ${PaymentDate.date.getYear} AND #input.date.monthValue == ${PaymentDate.date.getMonthValue} AND #input.date.dayOfMonth == ${PaymentDate.date.getDayOfMonth} AND " +
         s"#input.time.hour == ${PaymentDate.date.getHour} AND #input.time.minute == ${PaymentDate.date.getMinute} AND #input.time.second == ${PaymentDate.date.getSecond} AND " +
-        s"#input.decimal == ${PaymentDate.decimal} AND" +
+        s"#input.getDecimal == ${PaymentDate.decimal} AND" +
         s"#input.text.toString == '123'")) // default value
 
     runAndVerifyResult(process, topicConfig, givenRecord, expectedRecord, useSpecificAvroReader = true)
