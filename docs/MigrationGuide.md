@@ -112,7 +112,7 @@ To see biggest differences please consult the [changelog](Changelog.md).
     - `TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory`, this approach is deprecated due to #inputMeta variable that contains key data
 
   To migrate `KafkaAvroSourceFactory`:
-    - Provide `KafkaConfig` with correct `useStringForKey` flag value. By default we want to handle keys as ordinary String and all topics related to such config require only value schema definitions (key schemas are ignored).
+    - Provide `KafkaConfig` with correct `useStringForKey` flag value. By default we want to EvictableStatehandle keys as ordinary String and all topics related to such config require only value schema definitions (key schemas are ignored).
       For specific scenario, when complex key with its own schema is provided, this flag is false and all topics related to this config require both key and value schema definitions.
       Example of default KafkaConfig override:
       `override protected def prepareKafkaConfig: KafkaConfig = super.prepareKafkaConfig.copy(useStringForKey = false)`
@@ -120,6 +120,11 @@ To see biggest differences please consult the [changelog](Changelog.md).
     - custom RecordFormatter can be wrapped in `FixedRecordFormatterFactoryWrapper` (or keep `ConfluentAvroToJsonFormatterFactory`)
     - provide timestampAssigner that is able to extract time from `ConsumerRecord[K, V]` (see example above)
 * [#1741](https://github.com/TouK/nussknacker/pull/1741) Minor changes in `KafkaUtils`, `NonTransientException` uses `Instant` instead of `LocalDateTime`
+* [#1806](https://github.com/TouK/nussknacker/pull/1806) Remove old, deprecated API:
+  - `EvictableState`, `RichEvictableState` - use `EvictableStateFunction`
+  - `checkpointInterval` - use `checkpointConfig.checkpointInterval`
+  - old versions of `sampleTransformers` - use newer ones
+  - `MiniClusterExecutionEnvironment.runningJobs()` - use `flinkMiniClusterHolder.runningJobs()`  
 
 ## In version 0.3.0
 

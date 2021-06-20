@@ -5,7 +5,6 @@ import java.util.concurrent.atomic.AtomicLong
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.concurrent.BasicThreadFactory
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService}
@@ -51,14 +50,11 @@ object DefaultAsyncExecutionConfigPreparer extends LazyLogging {
 
 case class DefaultAsyncExecutionConfigPreparer(bufferSize: Int,
                                                workers: Option[Int],
-                                               @Deprecated parallelismMultiplier: Option[Int],
                                                defaultUseAsyncInterpretation: Option[Boolean]) extends AsyncExecutionContextPreparer with LazyLogging {
 
   def prepareExecutionContext(processId: String, parallelism: Int) : ExecutionContext = {
-    logger.info(s"Creating asyncExecutor for $processId, parallelism: $parallelism, workers: $workers, multiplier: $parallelismMultiplier")
-    parallelismMultiplier.foreach(_ => logger.warn("Parallelism multiplier is deprecated. Use workers parameter"))
+    logger.info(s"Creating asyncExecutor for $processId, parallelism: $parallelism, workers: $workers")
     val executionContextWorkers = workers
-      .orElse(parallelismMultiplier.map(_ * parallelism))
       .getOrElse(throw new IllegalStateException("Neither workers nor parallelismMultiplier was defined"))
     DefaultAsyncExecutionConfigPreparer.getExecutionContext(executionContextWorkers, processId)
   }
