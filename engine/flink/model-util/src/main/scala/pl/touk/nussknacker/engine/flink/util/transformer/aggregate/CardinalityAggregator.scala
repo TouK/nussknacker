@@ -25,6 +25,9 @@ class CardinalityAggregator[Wrapper<:CardinalityWrapper:ClassTag](zeroCardinalit
 
   override def zero: CardinalityWrapper = wrapper(zeroCardinality())
 
+  override def isNeutralForAccumulator(element: AnyRef, currentAggregate: CardinalityWrapper): Boolean =
+    addElement(element, currentAggregate) == currentAggregate
+
   override def addElement(el: AnyRef, hll: Aggregate):Aggregate  = {
     val newOne = zeroCardinality()
     newOne.offer(el)
@@ -84,5 +87,20 @@ private[aggregate] abstract class CardinalityWrapper extends Value with KryoSeri
     in.read(bytes)
     wrapped = readFromBytes(bytes)
   }
+
+  def canEqual(other: Any): Boolean = other.isInstanceOf[CardinalityWrapper]
+
+  override def equals(other: Any): Boolean = other match {
+    case that: CardinalityWrapper =>
+      (that canEqual this) &&
+        wrapped == that.wrapped
+    case _ => false
+  }
+
+  override def hashCode(): Int = {
+    val state = Seq(wrapped)
+    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+  }
+
 }
 

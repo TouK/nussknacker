@@ -98,11 +98,15 @@ trait AggregatorFunctionMixin[MapT[K,V]] { self: StateHolder[MapT[Long, AnyRef]]
                                   out: Collector[ValueWithContext[AnyRef]]): MapT[Long, aggregator.Aggregate] = {
     val newElementInStateTimestamp = computeTimestampToStore(timestamp)
     val newElement = value.value.value.asInstanceOf[aggregator.Element]
-    val newState = computeNewState(newElementInStateTimestamp, newElement)
+    val (newState, stateWasChanged) = computeNewState(newElementInStateTimestamp, newElement)
 
-    updateState(newState.asInstanceOf[MapT[Long, AnyRef]], newElementInStateTimestamp + timeWindowLengthMillis, timeService)
+    if (stateWasChanged) {
+      updateState(newState.asInstanceOf[MapT[Long, AnyRef]], newElementInStateTimestamp + timeWindowLengthMillis, timeService)
+      retrievedBucketsHistogram.update(newState.toScalaMapRO.size)
+    } else {
+      doMoveEvictionTime(newElementInStateTimestamp + timeWindowLengthMillis, timeService)
+    }
     handleElementAddedToState(newElementInStateTimestamp, newElement, value.context, timeService, out)
-    retrievedBucketsHistogram.update(newState.toScalaMapRO.size)
     newState
   }
 
@@ -125,17 +129,17 @@ trait AggregatorFunctionMixin[MapT[K,V]] { self: StateHolder[MapT[Long, AnyRef]]
     aggregator.getResult(foldedState)
   }
 
-  private def computeNewState(newElementInStateTimestamp: Long, newValue: aggregator.Element): MapT[Long, aggregator.Aggregate] = {
+  // Return state after adding newValue and information about if state was changed or not
+  private def computeNewState(newElementInStateTimestamp: Long, newValue: aggregator.Element): (MapT[Long, aggregator.Aggregate], Boolean) = {
     val current: MapT[Long, aggregator.Aggregate] = stateForTimestampToSave(readStateOrInitial(), newElementInStateTimestamp)
+    val currentAggregate = current.toScalaMapRO.getOrElse(newElementInStateTimestamp, aggregator.createAccumulator()).asInstanceOf[aggregator.Aggregate]
 
     // We do not create aggregate and add to it neutral element to avoid unnecessary buckets in our state
-    if (aggregator.isNeutralForAccumulator(newValue)) {
-      current
+    if (aggregator.isNeutralForAccumulator(newValue, currentAggregate)) {
+      (current, false)
     } else {
-      val currentAggregate = current.toScalaMapRO.getOrElse(newElementInStateTimestamp, aggregator.createAccumulator())
       val newAggregate = aggregator.add(newValue, currentAggregate).asInstanceOf[aggregator.Aggregate]
-
-      current.updated(newElementInStateTimestamp, newAggregate)
+      (current.updated(newElementInStateTimestamp, newAggregate), true)
     }
   }
 

@@ -115,7 +115,7 @@ trait LatelyEvictableStateFunctionMixin[StateType] extends RichFunction with Sta
     latestEvictionTimeForKey.update(null)
   }
 
-  protected def doMoveEvictionTime(time: Long, timeService: TimerService): Unit = {
+  override protected def doMoveEvictionTime(time: Long, timeService: TimerService): Unit = {
     val latestEvictionTimeValue = latestEvictionTimeForKey.value()
     val maxEvictionTime = if (latestEvictionTimeValue == null || time > latestEvictionTimeValue) {
       time
@@ -138,5 +138,7 @@ trait StateHolder[StateType] {
 
   protected def updateState(stateValue: StateType,
                             stateValidity: Long, timeService: TimerService): Unit
+
+  protected def doMoveEvictionTime(time: Long, timeService: TimerService): Unit
 
 }
