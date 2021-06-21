@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.avro
 
-import org.apache.flink.streaming.api.functions.sink.SinkFunction
+import org.apache.avro.specific.SpecificRecord
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator}
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
@@ -20,6 +20,8 @@ import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.process.helpers.SinkForType
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
+import scala.reflect.ClassTag
+
 object KafkaAvroTestProcessConfigCreator {
   val recordingExceptionHandler = new RecordingExceptionHandler
 }
@@ -33,16 +35,19 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
   }
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
-    val avroSourceFactory = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
-    val avroSpecificSourceFactory = new SpecificRecordKafkaAvroSourceFactory[GeneratedAvroClassWithLogicalTypes](schemaRegistryProvider, processObjectDependencies, None)
-    val avroSourceFactoryWithKeySchemaSupport = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None) {
+
+    // For testing SpecificRecord should be used ONLY GENERATED avro classes.
+    // Simple implementations e.g. FullNameV1, although they extend SimpleRecordBase, are not recognized as SpecificRecord classes.
+    def avroSpecificSourceFactory[V <: SpecificRecord: ClassTag] = new SpecificRecordKafkaAvroSourceFactory[V](schemaRegistryProvider, processObjectDependencies, None)
+    val avroGenericSourceFactory = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None)
+    val avroGenericSourceFactoryWithKeySchemaSupport = new KafkaAvroSourceFactory(schemaRegistryProvider, processObjectDependencies, None) {
       override protected def prepareKafkaConfig: KafkaConfig = super.prepareKafkaConfig.copy(useStringForKey = false)
     }
 
     Map(
-      "kafka-avro" -> defaultCategory(avroSourceFactory),
-      "kafka-avro-specific" -> defaultCategory(avroSpecificSourceFactory),
-      "kafka-avro-key-value" -> defaultCategory(avroSourceFactoryWithKeySchemaSupport)
+      "kafka-avro" -> defaultCategory(avroGenericSourceFactory),
+      "kafka-avro-specific" -> defaultCategory(avroSpecificSourceFactory[GeneratedAvroClassWithLogicalTypes]),
+      "kafka-avro-key-value" -> defaultCategory(avroGenericSourceFactoryWithKeySchemaSupport)
     )
   }
 

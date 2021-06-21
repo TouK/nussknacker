@@ -15,6 +15,46 @@ import tech.allegro.schema.json2avro.converter.JsonAvroConverter
 
 import scala.reflect.ClassTag
 
+/**
+  * ConfluentJsonPayloadDeserializer converts json payload to avro.
+  * It uses avro schema which has impact on json format requirements:
+  * 1. Avro schema is used to deserialize json payload to GenericRecord or SpecificRecord.
+  *    Values should be encoded with avro conversions (see example below).
+  * 2. Allegro json2avro decoder is used instead of confluent decoder.
+  *    Decoded json should have flattened object structure (see example below).
+  *
+  * TODO: Use confluent json schema instead of avro schema for json payloads.
+  *
+  * Example object (see [GeneratedAvroClassWithLogicalTypesSchema]):
+  * {
+  *   "text" : "lorem ipsum",
+  *   "dateTime" : "2020-01-02T03:14:15Z",
+  *   "date" : "2020-01-02",
+  *   "time" : "03:14:15"
+  * }
+  *
+  * Example of json readable by confluent decoder (see [ConfluentAvroMessageFormatter]):
+  * {
+  *   "text" : "lorem ipsum",
+  *   "dateTime" : {
+  *     "long" : 1577934855000
+  *   },
+  *   "date" : {
+  *     "int" : 18263
+  *   },
+  *   "time" : {
+  *     "int" : 11655000
+  *   }
+  * }
+  *
+  * The same example to be used with allegro json2avro decoder:
+  * {
+  *   "text" : "lorem ipsum",
+  *   "dateTime" : 1577934855000,
+  *   "date" : 18263,
+  *   "time" : 11655000
+  * }
+  */
 trait ConfluentJsonPayloadDeserializer {
 
   protected def createDeserializer[T: ClassTag](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
