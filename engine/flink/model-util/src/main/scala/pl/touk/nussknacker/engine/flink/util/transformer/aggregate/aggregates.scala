@@ -5,7 +5,6 @@ import cats.instances.list._
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{NumberTypeUtils, typing}
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.aggregates.{FirstAggregator, LastAggregator, ListAggregator, SetAggregator}
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.MathUtils
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
@@ -50,9 +49,6 @@ object aggregates {
 
     override def zero: Number = null
 
-    override def isNeutralForAccumulator(element: Element, currentAggregate: Aggregate): Boolean =
-      addElement(element, currentAggregate) == currentAggregate
-
     override def addElement(n1: Number, n2: Number): Number = MathUtils.max(n1, n2)
 
     override protected val promotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ForMinMax
@@ -64,9 +60,6 @@ object aggregates {
     override type Element = Number
 
     override def zero: Number = null
-
-    override def isNeutralForAccumulator(element: Number, currentAggregate: Number): Boolean =
-      addElement(element, currentAggregate) == currentAggregate
 
     override def addElement(n1: Number, n2: Number): Number = MathUtils.min(n1, n2)
 

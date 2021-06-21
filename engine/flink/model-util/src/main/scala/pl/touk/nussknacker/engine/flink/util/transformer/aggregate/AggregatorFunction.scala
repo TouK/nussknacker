@@ -102,11 +102,11 @@ trait AggregatorFunctionMixin[MapT[K,V]] { self: StateHolder[MapT[Long, AnyRef]]
 
     if (stateWasChanged) {
       updateState(newState.asInstanceOf[MapT[Long, AnyRef]], newElementInStateTimestamp + timeWindowLengthMillis, timeService)
-      retrievedBucketsHistogram.update(newState.toScalaMapRO.size)
     } else {
       doMoveEvictionTime(newElementInStateTimestamp + timeWindowLengthMillis, timeService)
     }
     handleElementAddedToState(newElementInStateTimestamp, newElement, value.context, timeService, out)
+    retrievedBucketsHistogram.update(newState.toScalaMapRO.size)
     newState
   }
 

@@ -9,6 +9,7 @@ import org.apache.flink.core.memory.{DataInputView, DataOutputView}
 import org.apache.flink.types.Value
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
+import java.util.Objects
 import scala.reflect.ClassTag
 
 //Approximate unique count (using https://en.wikipedia.org/wiki/HyperLogLog). Result is number
@@ -24,9 +25,6 @@ class CardinalityAggregator[Wrapper<:CardinalityWrapper:ClassTag](zeroCardinalit
   override type Element = AnyRef
 
   override def zero: CardinalityWrapper = wrapper(zeroCardinality())
-
-  override def isNeutralForAccumulator(element: AnyRef, currentAggregate: CardinalityWrapper): Boolean =
-    addElement(element, currentAggregate) == currentAggregate
 
   override def addElement(el: AnyRef, hll: Aggregate):Aggregate  = {
     val newOne = zeroCardinality()
@@ -98,8 +96,7 @@ private[aggregate] abstract class CardinalityWrapper extends Value with KryoSeri
   }
 
   override def hashCode(): Int = {
-    val state = Seq(wrapped)
-    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+    Objects.hash(wrapped)
   }
 
 }
