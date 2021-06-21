@@ -18,14 +18,6 @@ import scala.collection.JavaConverters._
 class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHolder, userFlinkClusterConfig: Configuration, envConfig: AdditionalEnvironmentConfig) extends StreamExecutionEnvironment
   with LazyLogging with Matchers {
 
-  /**
-    * @deprecated
-    * Use flinkMiniClusterHolder.runningJobs() instead of this. MiniClusterExecutionEnvironment should be used only for manage one job.
-    */
-  @Deprecated
-  def runningJobs(): Iterable[JobID] =
-    flinkMiniClusterHolder.runningJobs()
-
   // Warning: this method assume that will be one job for all checks inside action. We highly recommend to execute
   // job once per test class and then do many concurrent scenarios basing on own unique keys in input.
   // Running multiple parallel instances of job in one test class can cause stealing of data from sources between those instances.
