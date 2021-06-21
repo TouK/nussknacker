@@ -20,10 +20,9 @@ import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, 
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
-import pl.touk.nussknacker.ui.NusskanckerDefaultAppRouter.logger
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, ConfigWithDefaults, FeatureTogglesConfig}
-import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DatabaseServer, DbConfig}
+import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerFactory
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
@@ -220,9 +219,6 @@ class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLoggin
   protected implicit val system: ActorSystem = ActorSystem("nussknacker-ui", config)
   protected implicit val materializer: ActorMaterializer = ActorMaterializer()
 
-  protected val jdbcServerConfig: Option[DatabaseServer.Config] = config.getAs[DatabaseServer.Config]("jdbcServer")
-  protected val hsqlServer: Option[Server] = jdbcServerConfig.map(DatabaseServer(_))
-
   // TODO: switch to general configuration via application.conf when https://github.com/akka/akka-http/issues/55 will be ready
   val interface: String = config.getString("http.interface")
   val port: Int = config.getInt("http.port")
@@ -263,11 +259,6 @@ class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLoggin
   }
 
   def initDb(config: Config): DbConfig = {
-    // Default true because of back compatibility
-    if (jdbcServerConfig.exists(_.enabled.getOrElse(true))) {
-      hsqlServer.foreach(_.start())
-    }
-
     val db = JdbcBackend.Database.forConfig("db", config)
     val profile = chooseDbProfile(config)
     val dbConfig = DbConfig(db, profile)
@@ -305,7 +296,6 @@ class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLoggin
 
   private def closeAndShutdownAll(objectsToClose: Iterable[AutoCloseable]): Unit = {
     objectsToClose.foreach(_.close())
-    hsqlServer.foreach(_.shutdown())
     system.terminate()
   }
 }
