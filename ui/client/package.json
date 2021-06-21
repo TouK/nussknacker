@@ -28,7 +28,7 @@
     "commit": "lint-staged"
   },
   "dependencies": {
-    "@babel/eslint-parser": "^7.14.3",
+    "@babel/eslint-parser": "^7.14.7",
     "@juggle/resize-observer": "^3.3.1",
     "@loadable/component": "^5.15.0",
     "ajv": "^6.12.6",
