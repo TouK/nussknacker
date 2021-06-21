@@ -71,7 +71,7 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
     }
   }
 
-  // For now SpecificRecordsource factory requires KafkaConfig with useStringForKey=true. Parameter is used to test scenario with wrong configuration.
+  // For now SpecificRecord source factory requires KafkaConfig with useStringForKey=true. Parameter is used to test scenario with wrong configuration.
   protected def specificSourceFactory[V <: SpecificRecord: ClassTag](useStringForKey: Boolean = true): KafkaAvroSourceFactory[Any, Any] = {
     val factory = new SpecificRecordKafkaAvroSourceFactory[V](schemaRegistryProvider, testProcessObjectDependencies, None) {
       override protected def prepareKafkaConfig: KafkaConfig = super.prepareKafkaConfig.copy(useStringForKey = useStringForKey)  // TODO: check what happens with false
@@ -201,16 +201,10 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
       new SinkAvroParam(topicConfig.output, version, (SinkValueParamName -> asSpelExpression(value)) :: Nil, key, validationMode, "kafka-avro-raw")
   }
 
-  protected def roundTripValueObject(sourceFactory: KafkaAvroSourceFactory[Any, Any], topic: String, versionOption: SchemaVersionOption, givenKey: Any, givenValue: Any):
+  protected def roundTripKeyValueObject(sourceFactory: Boolean => KafkaAvroSourceFactory[Any, Any], useStringForKey: Boolean, topic: String, versionOption: SchemaVersionOption, givenKey: Any, givenValue: Any):
   Validated[NonEmptyList[ProcessCompilationError], Assertion] = {
-    pushMessage(givenValue, topic)
-    readLastMessageAndVerify(sourceFactory, topic, versionOption, givenKey, givenValue)
-  }
-
-  protected def roundTripKeyValueObject(sourceFactory: KafkaAvroSourceFactory[Any, Any], topic: String, versionOption: SchemaVersionOption, givenKey: Any, givenValue: Any):
-  Validated[NonEmptyList[ProcessCompilationError], Assertion] = {
-    pushMessageWithKey(givenKey, givenValue, topic)
-    readLastMessageAndVerify(sourceFactory, topic, versionOption, givenKey, givenValue)
+    pushMessageWithKey(givenKey, givenValue, topic, useStringForKey = useStringForKey)
+    readLastMessageAndVerify(sourceFactory(useStringForKey), topic, versionOption, givenKey, givenValue)
   }
 
   protected def readLastMessageAndVerify(sourceFactory: KafkaAvroSourceFactory[Any, Any], topic: String, versionOption: SchemaVersionOption, givenKey: Any, givenValue: Any):

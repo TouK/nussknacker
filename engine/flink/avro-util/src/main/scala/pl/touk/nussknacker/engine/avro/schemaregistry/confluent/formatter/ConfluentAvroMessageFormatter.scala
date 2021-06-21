@@ -25,6 +25,7 @@ private[confluent] class ConfluentAvroMessageFormatter(schemaRegistryClient: Sch
 
   def getSchemaIdOpt(bytes: Array[Byte]): Option[Int] = {
     bytes match {
+      case null => None
       case avroContent if avroContent.nonEmpty => Some(ConfluentUtils.readId(avroContent))
       case _ => None
     }

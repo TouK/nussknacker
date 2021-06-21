@@ -68,7 +68,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
     runAndVerifyResult(process, topicConfig, PaymentV1.record, PaymentV1.record)
 
     // Here process uses value-only source with metadata, the content of event's key is treated as a string.
-    verifyInputMeta("", topicConfig.input, 0, 0L)
+    verifyInputMeta(null, topicConfig.input, 0, 0L)
   }
 
   test("should read primitive event and save it in the same format") {

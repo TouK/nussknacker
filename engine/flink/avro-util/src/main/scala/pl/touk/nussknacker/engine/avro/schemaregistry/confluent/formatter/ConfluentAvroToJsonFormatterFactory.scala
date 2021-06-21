@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.ConfluentAvroToJsonFormatter.{createKeyEncoder, createValueEncoder}
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory}
 
@@ -22,40 +23,33 @@ class ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory: Confluent
     val messageFormatter = new ConfluentAvroMessageFormatter(schemaRegistryClient.client)
     val createReader = (topic: String) => new ConfluentAvroMessageReader(schemaRegistryClient.client, topic)
 
-    new RecordFormatter {
-
-      override protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): Array[Byte] =
-        doFormatRecord[K, V](kafkaConfig, kafkaSourceDeserializationSchema, messageFormatter)(record)
-
-      override protected def parseRecord(topic: String, bytes: Array[Byte]): ConsumerRecord[Array[Byte], Array[Byte]] =
-        doParseRecord[K, V](kafkaConfig, createReader)(topic, bytes)
-
-      override protected def testDataSplit: TestDataSplit = TestParsingUtils.newLineSplit
-    }
+    new ConfluentAvroToJsonFormatter(kafkaConfig, messageFormatter, createReader, kafkaSourceDeserializationSchema)
   }
+
+}
+
+/**
+  * @tparam K - key type passed from KafkaAvroSourceFactory, used to determine which datumReaderWriter use (e.g. specific or generic)
+  * @tparam V - value type passed from KafkaAvroSourceFactory, used to determine which datumReaderWriter use (e.g. specific or generic)
+  */
+class ConfluentAvroToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig,
+                                                             messageFormatter: ConfluentAvroMessageFormatter,
+                                                             createReader: String => ConfluentAvroMessageReader,
+                                                             deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]]
+                                                            ) extends RecordFormatter {
 
   /**
     * Step 1: Deserialize raw kafka event to GenericRecord/SpecificRecord domain.
     * Step 2: Create Encoders that use ConfluentAvroMessageFormatter to convert avro object to json
     * Step 3: Encode event's data with schema id's with derived encoder.
-    * @tparam K - key type passed from KafkaAvroSourceFactory, used to determine which datumReaderWriter use (e.g. specific or generic)
-    * @tparam V - value type passed from KafkaAvroSourceFactory, used to determine which datumReaderWriter use (e.g. specific or generic)
     */
-  protected def doFormatRecord[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig,
-                                                         kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
-                                                         messageFormatter: ConfluentAvroMessageFormatter)
-                                                        (record: ConsumerRecord[Array[Byte], Array[Byte]]): Array[Byte] = {
-    val deserializedRecord = kafkaSourceDeserializationSchema.deserialize(record)
+  override protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): Array[Byte] = {
+    val deserializedRecord = deserializationSchema.deserialize(record)
     val serializableRecord = AvroSerializableConsumerRecord(
       messageFormatter.getSchemaIdOpt(record.key()),
       messageFormatter.getSchemaIdOpt(record.value()).get,
       SerializableConsumerRecord(deserializedRecord)
     )
-
-    implicit val keyEncoder: Encoder[K] = createKeyEncoder(serializableRecord.consumerRecord.key.get, kafkaConfig.useStringForKey, messageFormatter) // TODO: key.get???
-    implicit val valueEncoder: Encoder[V] = createValueEncoder(serializableRecord.consumerRecord.value, messageFormatter)
-    implicit val serializableRecordEncoder: Encoder[SerializableConsumerRecord[K, V]] = deriveEncoder
-    val consumerRecordEncoder: Encoder[AvroSerializableConsumerRecord[K, V]] = deriveEncoder
 
     consumerRecordEncoder(serializableRecord).noSpaces.getBytes(StandardCharsets.UTF_8)
   }
@@ -64,14 +58,8 @@ class ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory: Confluent
     * Step 1: Deserialize raw json bytes to AvroSerializableConsumerRecord[Json, Json] domain without interpreting key and value content.
     * Step 2: Create key and value json-to-avro interpreter based on schema id's provided in json.
     * Step 3: Use interpreter to create raw kafka ConsumerRecord
-    * @tparam K - key type passed from KafkaAvroSourceFactory, used to determine which datumReaderWriter use (e.g. specific or generic)
-    * @tparam V - value type passed from KafkaAvroSourceFactory, used to determine which datumReaderWriter use (e.g. specific or generic)
     */
-  protected def doParseRecord[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig,
-                                                        createReader: String => ConfluentAvroMessageReader)
-                                                       (topic: String, bytes: Array[Byte]): ConsumerRecord[Array[Byte], Array[Byte]] = {
-    implicit val serializableRecordDecoder: Decoder[SerializableConsumerRecord[Json, Json]] = deriveDecoder
-    val consumerRecordDecoder: Decoder[AvroSerializableConsumerRecord[Json, Json]] = deriveDecoder
+  override protected def parseRecord(topic: String, bytes: Array[Byte]): ConsumerRecord[Array[Byte], Array[Byte]] = {
     val record = CirceUtil.decodeJsonUnsafe(bytes)(consumerRecordDecoder)
 
     def serializeKeyValue(keyOpt: Option[Json], value: Json): (Array[Byte], Array[Byte]) = {
@@ -81,7 +69,7 @@ class ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory: Confluent
           // we handle strings this way because we want to keep result value compact and JString is formatted in quotes
           case Some(j) if j.isString => j.asString.get.getBytes(StandardCharsets.UTF_8)
           case Some(j) => j.noSpaces.getBytes(StandardCharsets.UTF_8)
-          case None => Array.emptyByteArray
+          case None => null
         }
       } else {
         val keySchema = record.keySchemaId.map(id => reader.schemaById(id)).getOrElse(throw new IllegalArgumentException("Error reading schema: empty schema id"))
@@ -94,9 +82,23 @@ class ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory: Confluent
     record.consumerRecord.toKafkaConsumerRecord(topic, serializeKeyValue)
   }
 
-  private def createKeyEncoder[K: ClassTag](key: K, useStringForKey: Boolean, messageFormatter: ConfluentAvroMessageFormatter): Encoder[K] = {
+  override protected def testDataSplit: TestDataSplit = TestParsingUtils.newLineSplit
+
+  implicit protected val serializableRecordDecoder: Decoder[SerializableConsumerRecord[Json, Json]] = deriveDecoder
+  protected val consumerRecordDecoder: Decoder[AvroSerializableConsumerRecord[Json, Json]] = deriveDecoder
+
+  implicit protected val keyEncoder: Encoder[K] = createKeyEncoder[K](kafkaConfig.useStringForKey, messageFormatter)
+  implicit protected val valueEncoder: Encoder[V] = createValueEncoder[V](messageFormatter)
+  implicit protected val serializableRecordEncoder: Encoder[SerializableConsumerRecord[K, V]] = deriveEncoder
+  protected val consumerRecordEncoder: Encoder[AvroSerializableConsumerRecord[K, V]] = deriveEncoder
+
+}
+
+object ConfluentAvroToJsonFormatter {
+
+  def createKeyEncoder[K: ClassTag](useStringForKey: Boolean, messageFormatter: ConfluentAvroMessageFormatter): Encoder[K] = {
     new Encoder[K] {
-      override def apply(a: K): Json = if (useStringForKey) {
+      override def apply(key: K): Json = if (useStringForKey) {
         Json.fromString(key.asInstanceOf[String])
       } else {
         messageFormatter.asJson[K](key)
@@ -104,9 +106,9 @@ class ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory: Confluent
     }
   }
 
-  private def createValueEncoder[V: ClassTag](value: V, messageFormatter: ConfluentAvroMessageFormatter): Encoder[V] = {
+  def createValueEncoder[V: ClassTag](messageFormatter: ConfluentAvroMessageFormatter): Encoder[V] = {
     new Encoder[V]{
-      override def apply(a: V): Json = {
+      override def apply(value: V): Json = {
         messageFormatter.asJson[V](value)
       }
     }
