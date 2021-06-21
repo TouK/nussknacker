@@ -76,6 +76,10 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K,V]](protected v
     invalidateAddedElementContextState(stateValue)
   }
 
+  override protected def doMoveEvictionTime(time: Long, timeService: TimerService): Unit = {
+    // state eviction is controlled in onTimer
+  }
+
   protected def evictStates(): Unit = {
     state.clear()
     addedElementContext.clear()

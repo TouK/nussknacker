@@ -92,7 +92,65 @@ class AggregatesSpec extends FunSuite with TableDrivenPropertyChecks with Matche
 
   }
 
-  class JustAnyClass
+  test("Neutral elements for accumulator should be detected for sum") {
+    val aggregator = SumAggregator
+    val oldState = 123
 
+    aggregator.isNeutralForAccumulator(0, oldState) shouldBe true
+    aggregator.isNeutralForAccumulator(1, oldState) shouldBe false
+  }
+
+  test("Neutral elements for accumulator should be detected for set") {
+    val aggregator = SetAggregator
+    val oldState = Set[AnyRef]("123")
+
+    aggregator.isNeutralForAccumulator("123", oldState) shouldBe true
+    aggregator.isNeutralForAccumulator("aaa", oldState) shouldBe false
+  }
+
+  test("Neutral elements for accumulator should be detected for max") {
+    val aggregator = MaxAggregator
+    val oldState = 123
+
+    aggregator.isNeutralForAccumulator(0, oldState) shouldBe true
+    aggregator.isNeutralForAccumulator(123, oldState) shouldBe true
+    aggregator.isNeutralForAccumulator(234, oldState) shouldBe false
+  }
+
+  test("Neutral elements for accumulator should be detected for min") {
+    val aggregator = MinAggregator
+    val oldState = 123
+
+    aggregator.isNeutralForAccumulator(0, oldState) shouldBe false
+    aggregator.isNeutralForAccumulator(123, oldState) shouldBe true
+    aggregator.isNeutralForAccumulator(234, oldState) shouldBe true
+  }
+
+  test("Neutral elements for accumulator should be detected for first") {
+    val aggregator = FirstAggregator
+
+    aggregator.isNeutralForAccumulator("aaa", aggregator.zero) shouldBe false
+    aggregator.isNeutralForAccumulator("bbb", Some("aaa")) shouldBe true
+  }
+
+  test("Neutral elements for accumulator should be detected for map") {
+    val aggregator = new MapAggregator(Map[String, Aggregator]("sumField" -> SumAggregator, "maxField" -> MaxAggregator).asJava)
+
+    val oldState = Map[String, AnyRef]("sumField" -> (5: java.lang.Integer), "maxField" -> (123: java.lang.Integer))
+
+    aggregator.isNeutralForAccumulator(Map[String, AnyRef]("sumField" -> (0: java.lang.Integer), "maxField" -> (123: java.lang.Integer)).asJava, oldState) shouldBe true
+    aggregator.isNeutralForAccumulator(Map[String, AnyRef]("sumField" -> (1: java.lang.Integer), "maxField" -> (123: java.lang.Integer)).asJava, oldState) shouldBe false
+    aggregator.isNeutralForAccumulator(Map[String, AnyRef]("sumField" -> (0: java.lang.Integer), "maxField" -> (124: java.lang.Integer)).asJava, oldState) shouldBe false
+  }
+
+  test("Neutral elements for accumulator should be detected for cardinality") {
+    val aggregator = HyperLogLogPlusAggregator()
+    val oldState = List("1", "2", "3").foldLeft(aggregator.zero)((agg, el) => aggregator.addElement(el, agg))
+
+    aggregator.isNeutralForAccumulator("1", oldState) shouldBe true
+    aggregator.isNeutralForAccumulator("4", oldState) shouldBe false
+  }
+
+  class JustAnyClass
 
 }

@@ -9,6 +9,7 @@ import org.apache.flink.core.memory.{DataInputView, DataOutputView}
 import org.apache.flink.types.Value
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
+import java.util.Objects
 import scala.reflect.ClassTag
 
 //Approximate unique count (using https://en.wikipedia.org/wiki/HyperLogLog). Result is number
@@ -84,5 +85,19 @@ private[aggregate] abstract class CardinalityWrapper extends Value with KryoSeri
     in.read(bytes)
     wrapped = readFromBytes(bytes)
   }
+
+  def canEqual(other: Any): Boolean = other.isInstanceOf[CardinalityWrapper]
+
+  override def equals(other: Any): Boolean = other match {
+    case that: CardinalityWrapper =>
+      (that canEqual this) &&
+        wrapped == that.wrapped
+    case _ => false
+  }
+
+  override def hashCode(): Int = {
+    Objects.hash(wrapped)
+  }
+
 }
 

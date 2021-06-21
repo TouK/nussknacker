@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.MathUtils
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
 
+import java.util
 import scala.collection.JavaConverters._
 
 /*
@@ -25,7 +26,7 @@ object aggregates {
 
     override def zero: Number = null
 
-    override def isNeutralForAccumulator(element: Number): Boolean =
+    override def isNeutralForAccumulator(element: Element, currentAggregate: Aggregate): Boolean =
       element.doubleValue() == 0.0
 
     override def addElement(n1: Number, n2: Number): Number = MathUtils.largeSum(n1, n2)
@@ -72,7 +73,9 @@ object aggregates {
 
     override type Element = AnyRef
 
-    override def zero: Aggregate = List()
+    override def zero: Aggregate = List.empty
+
+    override def isNeutralForAccumulator(element: ListAggregator.Element, currentAggregate: List[AnyRef]): Boolean = false
 
     //append instead of prepend (assess performance considerations...)
     override def addElement(el: Element, agg: Aggregate): Aggregate = el::agg
@@ -95,7 +98,10 @@ object aggregates {
 
     override type Element = AnyRef
 
-    override def zero: Aggregate = Set()
+    override def zero: Aggregate = Set.empty
+
+    override def isNeutralForAccumulator(element: SetAggregator.Element, currentAggregate: Set[AnyRef]): Boolean =
+      currentAggregate.contains(element)
 
     override def addElement(el: Element, agg: Aggregate): Aggregate = agg + el
 
@@ -119,6 +125,9 @@ object aggregates {
 
     override def zero: Aggregate = None
 
+    override def isNeutralForAccumulator(element: FirstAggregator.Element, currentAggregate: Option[AnyRef]): Boolean =
+      currentAggregate.isDefined
+
     override def addElement(el: Element, agg: Aggregate): Aggregate = if (agg.isEmpty) Some(el) else agg
 
     override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg1
@@ -137,6 +146,8 @@ object aggregates {
     override type Element = AnyRef
 
     override def zero: Aggregate = null
+
+    override def isNeutralForAccumulator(element: LastAggregator.Element, currentAggregate: LastAggregator.Aggregate): Boolean = false
 
     override def addElement(el: Element, agg: Aggregate): Aggregate = el
 
@@ -171,6 +182,10 @@ object aggregates {
     override type Aggregate = Map[String, AnyRef]
 
     override val zero: Aggregate = scalaFields.mapValuesNow(_.zero)
+
+    override def isNeutralForAccumulator(el: util.Map[String, AnyRef], agg: Map[String, AnyRef]): Boolean = scalaFields.forall {
+      case (field, aggregator) => aggregator.isNeutralForAccumulator(el.get(field).asInstanceOf[aggregator.Element], agg.getOrElse(field, aggregator.zero).asInstanceOf[aggregator.Aggregate])
+    }
 
     override def addElement(el: Element, agg: Aggregate): Aggregate = scalaFields.map {
       case (field, aggregator) => field -> aggregator.add(el.get(field), agg.getOrElse(field, aggregator.zero))

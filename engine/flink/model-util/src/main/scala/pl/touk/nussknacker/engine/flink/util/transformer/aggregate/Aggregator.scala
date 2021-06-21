@@ -20,7 +20,8 @@ abstract class Aggregator extends AggregateFunction[AnyRef, AnyRef, AnyRef] {
 
   def zero: Aggregate
 
-  def isNeutralForAccumulator(element: Element): Boolean = false
+  def isNeutralForAccumulator(element: Element, currentAggregate: Aggregate): Boolean =
+    addElement(element, currentAggregate) == currentAggregate
 
   def addElement(element: Element, aggregate: Aggregate): Aggregate
 
