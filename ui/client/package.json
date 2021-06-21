@@ -131,7 +131,7 @@
     "@babel/preset-typescript": "^7.13.0",
     "@babel/runtime": "^7.14.0",
     "@cypress/browserify-preprocessor": "^3.0.1",
-    "@cypress/code-coverage": "^3.9.5",
+    "@cypress/code-coverage": "^3.9.7",
     "@hot-loader/react-dom": "^17.0.1",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.4.3",
     "@svgr/webpack": "^5.5.0",
