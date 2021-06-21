@@ -11,35 +11,24 @@ import org.apache.avro.Schema
 import org.apache.kafka.common.errors.SerializationException
 import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.schema.DatumReaderWriterMixin
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 
 import scala.reflect.ClassTag
 
 /**
   * @param schemaRegistryClient schema registry client
-  * @param topic topic
   */
-private[confluent] class ConfluentAvroMessageReader(schemaRegistryClient: SchemaRegistryClient, topic: String)
+private[confluent] class ConfluentAvroMessageReader(schemaRegistryClient: SchemaRegistryClient)
   extends AbstractKafkaAvroSerializer with DatumReaderWriterMixin {
 
   schemaRegistry = schemaRegistryClient
 
   private val decoderFactory = DecoderFactory.get
 
-  def schemaById(schemaId: Int): Schema = {
-    val parsedSchema = schemaRegistryClient.getSchemaById(schemaId)
-    ConfluentUtils.extractSchema(parsedSchema)
-  }
-
-  def readJson[T: ClassTag](jsonObj: Json, schemaOpt: Option[Schema], subject: String): Array[Byte] = {
+  def readJson[T: ClassTag](jsonObj: Json, schema: Schema, subject: String): Array[Byte] = {
     try {
-      schemaOpt match {
-        case None => Array.emptyByteArray
-        case Some(schema) =>
-          val avroObj = jsonToAvro[T](jsonObj, schema)
-          val serializedValue = serializeImpl(subject, avroObj, new AvroSchema(schema))
-          serializedValue
-      }
+      val avroObj = jsonToAvro[T](jsonObj, schema)
+      val serializedValue = serializeImpl(subject, avroObj, new AvroSchema(schema))
+      serializedValue
     } catch {
       case ex: Exception =>
         throw new SerializationException("Error reading from input", ex)

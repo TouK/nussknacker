@@ -7,7 +7,6 @@ import io.confluent.kafka.serializers.AbstractKafkaAvroDeserializer
 import org.apache.avro.io.EncoderFactory
 import org.apache.kafka.common.errors.SerializationException
 import pl.touk.nussknacker.engine.avro.schema.DatumReaderWriterMixin
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 
 import java.io.{ByteArrayOutputStream, PrintStream}
 import java.nio.ByteBuffer
@@ -22,14 +21,6 @@ private[confluent] class ConfluentAvroMessageFormatter(schemaRegistryClient: Sch
   private val encoderFactory = EncoderFactory.get
 
   schemaRegistry = schemaRegistryClient
-
-  def getSchemaIdOpt(bytes: Array[Byte]): Option[Int] = {
-    bytes match {
-      case null => None
-      case avroContent if avroContent.nonEmpty => Some(ConfluentUtils.readId(avroContent))
-      case _ => None
-    }
-  }
 
   def asJson[T: ClassTag](obj: T): Json = {
     val schema = AvroSchemaUtils.getSchema(obj)
