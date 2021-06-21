@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefin
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
+import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessStatus
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider, withPermissions}
@@ -134,7 +135,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
     val result = Get("/app/buildInfo") ~> TestFactory.withoutPermissions(resources)
     result ~> check {
       status shouldBe StatusCodes.OK
-      entityAs[Map[String, Json]] shouldBe globalConfig.mapValues(_.asJson) + ("processingType" -> Map("test1" -> creatorWithBuildInfo.buildInfo()).asJson)
+      entityAs[Map[String, Json]] shouldBe (BuildInfo.toMap.mapValues(_.toString) ++ globalConfig).mapValues(_.asJson) + ("processingType" -> Map("test1" -> creatorWithBuildInfo.buildInfo()).asJson)
     }
   }
 }
