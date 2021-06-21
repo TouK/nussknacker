@@ -3,22 +3,6 @@ package pl.touk.nussknacker.ui.db
 import com.typesafe.config.Config
 import org.flywaydb.core.Flyway
 import org.flywaydb.core.internal.jdbc.DriverDataSource.DriverType
-import org.hsqldb.server.Server
-
-object DatabaseServer {
-  private[this] val i = 0
-
-  def apply(config: DatabaseServer.Config): Server = {
-    val server = new Server()
-    server.setSilent(true)
-    server.setDatabasePath(i, s"file:${config.dbFilePath};user=${config.user};password=${config.password};sql.syntax_ora=true")
-    server.setDatabaseName(i, config.dbName)
-    server.setSilent(true)
-    config.port.foreach(server.setPort)
-    server
-  }
-  case class Config(dbFilePath:String, dbName:String, user:String, password:String, port:Option[Int], enabled: Option[Boolean])
-}
 
 object DatabaseInitializer {
 

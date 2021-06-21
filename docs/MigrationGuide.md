@@ -125,6 +125,7 @@ To see biggest differences please consult the [changelog](Changelog.md).
   - `checkpointInterval` - use `checkpointConfig.checkpointInterval`
   - old versions of `sampleTransformers` - use newer ones
   - `MiniClusterExecutionEnvironment.runningJobs()` - use `flinkMiniClusterHolder.runningJobs()`  
+* [#1807](https://github.com/TouK/nussknacker/pull/1807) Removed `jdbcServer`, please use Postgres for production-ready setups
 
 ## In version 0.3.0
 
