@@ -277,14 +277,7 @@ object FlinkProcessRegistrar {
     val config = compiler.processConfig
     val eventTimeMetricDuration = config.getOrElse[FiniteDuration]("eventTimeMetricSlideDuration", 10.seconds)
 
-    // TODO checkpointInterval is deprecated - remove it in future
-    val checkpointInterval = config.getAs[FiniteDuration](path = "checkpointInterval")
-    if (checkpointInterval.isDefined) {
-      logger.warn("checkpointInterval config property is deprecated, use checkpointConfig.checkpointInterval instead")
-    }
-
     val checkpointConfig = config.getAs[CheckpointConfig](path = "checkpointConfig")
-      .orElse(checkpointInterval.map(CheckpointConfig(_)))
     val rocksDBStateBackendConfig = config.getAs[RocksDBStateBackendConfig]("rocksDB").filter(_ => compiler.diskStateBackendSupport)
 
     val defaultStreamExecutionEnvPreparer =

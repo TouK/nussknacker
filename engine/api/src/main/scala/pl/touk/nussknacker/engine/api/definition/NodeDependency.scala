@@ -52,22 +52,6 @@ object Parameter {
     Parameter(name, typ, editor = None, validators = validators, additionalVariables = Map.empty, variablesToHide = Set.empty,
       branchParam = false, isLazyParameter = false, scalaOptionParameter = false, javaOptionalParameter = false)
 
-  @deprecated("Passing runtimeClass to Parameter.apply is deprecated in favor of passing isLazyParameter", "0.1.0")
-  def apply(name: String,
-            typ: TypingResult,
-            runtimeClass: Class[_],
-            editor: Option[ParameterEditor],
-            validators: List[ParameterValidator],
-            additionalVariables: Map[String, TypingResult],
-            // TODO: It is rather temporary solution. At the end it would be nice, to have context before parameter returned in
-            //       REST validation api instead of context before node.
-            variablesToHide: Set[String],
-            branchParam: Boolean): Parameter = {
-    val isLazyParameter = classOf[LazyParameter[_]].isAssignableFrom(runtimeClass)
-    Parameter(name, typ, editor, validators, additionalVariables, variablesToHide, branchParam, isLazyParameter,
-      scalaOptionParameter = false, javaOptionalParameter = false)
-  }
-
   def optional[T: TypeTag: NotNothing](name: String): Parameter =
     Parameter.optional(name, Typed.fromDetailedType[T])
 
