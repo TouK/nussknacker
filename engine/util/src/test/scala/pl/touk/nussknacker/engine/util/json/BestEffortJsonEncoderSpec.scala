@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.util.json
 
-import java.time.{LocalDateTime, OffsetDateTime, ZoneId, ZoneOffset, ZonedDateTime}
+import java.time.{LocalDate, LocalDateTime, LocalTime, OffsetDateTime, ZoneId, ZoneOffset, ZonedDateTime}
 import java.util
-
 import io.circe.Json._
 import org.apache.avro.SchemaBuilder
 import org.apache.avro.generic.GenericRecordBuilder
 import org.scalatest.{FunSpec, Matchers}
 
+import java.util.UUID
 import scala.collection.immutable.{ListMap, ListSet}
 
 class BestEffortJsonEncoderSpec extends FunSpec with Matchers {
@@ -24,12 +24,19 @@ class BestEffortJsonEncoderSpec extends FunSpec with Matchers {
     encoder.encode(LocalDateTime.of(2020, 9, 12,
       11, 55, 33, 0)) shouldEqual fromString("2020-09-12T11:55:33")
 
+    encoder.encode(LocalDate.of(2020, 9, 12)) shouldEqual fromString("2020-09-12")
+    encoder.encode(LocalTime.of(11, 55, 33)) shouldEqual fromString("11:55:33")
+
+
     val zonedTime = ZonedDateTime.of(2020, 9, 12,
           11, 55, 33, 0, ZoneId.of("Europe/Warsaw"))
     encoder.encode(zonedTime) shouldEqual fromString("2020-09-12T11:55:33+02:00")
     encoder.encode(zonedTime.toOffsetDateTime) shouldEqual fromString("2020-09-12T11:55:33+02:00")
     //Default Instant encoding is in Z
     encoder.encode(zonedTime.toInstant) shouldEqual fromString("2020-09-12T09:55:33Z")
+
+    val uuid = UUID.randomUUID()
+    encoder.encode(uuid) shouldEqual fromString(uuid.toString)
   }
 
   it("should handle optional elements as a json") {
