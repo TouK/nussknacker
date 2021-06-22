@@ -627,10 +627,22 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     parseWithDicts[Boolean]("#stringValue == #enum['one']", withObjVar, dicts) shouldBe 'invalid
   }
 
-  test("not allow selection/projection on non-list") {
+  test("validate selection/projection on non-list") {
     parse[AnyRef]("{:}.![#this.sthsth]") shouldBe 'invalid
     parse[AnyRef]("{:}.?[#this.sthsth]") shouldBe 'invalid
     parse[AnyRef]("''.?[#this.sthsth]") shouldBe 'invalid
+  }
+
+  test("allow selection/projection on maps") {
+    parseOrFail[java.util.Map[String, Any]]("{a:1}.?[key=='']", ctx)
+      .evaluateSync[java.util.Map[String, Any]]() shouldBe Map().asJava
+    parseOrFail[java.util.Map[String, Any]]("{a:1}.?[value==1]", ctx)
+      .evaluateSync[java.util.Map[String, Any]]() shouldBe Map("a"-> 1).asJava
+
+    parseOrFail[java.util.List[String]]("{a:1}.![key]", ctx)
+      .evaluateSync[java.util.List[String]]() shouldBe List("a").asJava
+    parseOrFail[java.util.List[Any]]("{a:1}.![value]", ctx)
+      .evaluateSync[java.util.List[Any]]() shouldBe List(1).asJava
   }
 
   test("invokes methods on primitives correctly") {
