@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerParameter, DefinedSingleParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition.{WithExplicitTypesToExtract, _}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceFactoryState
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 
@@ -87,7 +87,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
 
   protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
     case step@TransformationStep((KafkaSourceFactory.TopicParamName, DefinedEagerParameter(topic: String, _)) :: _, None) =>
-      prepareSourceFinalResults(context, dependencies, step.parameters, topicsValidationErrors(topic))
+      prepareSourceFinalResults(context, dependencies, step.parameters, keyTypingResult, valueTypingResult, topicsValidationErrors(topic))
     case step@TransformationStep((KafkaSourceFactory.TopicParamName, _) :: _, None) =>
       // Edge case - for some reason Topic is not defined, e.g. when topic does not match DefinedEagerParameter(String, _):
       // 1. FailedToDefineParameter
@@ -99,10 +99,11 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
   protected def prepareSourceFinalResults(context: ValidationContext,
                                           dependencies: List[NodeDependencyValue],
                                           parameters: List[(String, DefinedParameter)],
-                                          errors: List[ProcessCompilationError],
-                                          contextInitializer: Option[KafkaContextInitializer[K, V, DefinedParameter]] = None
+                                          keyTypingResult: TypingResult,
+                                          valueTypingResult: TypingResult,
+                                          errors: List[ProcessCompilationError]
                                          )(implicit nodeId: NodeId): FinalResults = {
-    val kafkaContextInitializer = contextInitializer.getOrElse(prepareContextInitializer(parameters))
+    val kafkaContextInitializer = prepareContextInitializer(parameters, keyTypingResult, valueTypingResult)
     FinalResults(
       finalContext = kafkaContextInitializer.validationContext(context, dependencies, parameters),
       errors = errors,
@@ -119,7 +120,9 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
   }
 
   // Overwrite this for dynamic type definitions.
-  protected def prepareContextInitializer(params: List[(String, DefinedParameter)]): KafkaContextInitializer[K, V, DefinedParameter] =
+  protected def prepareContextInitializer(params: List[(String, DefinedParameter)],
+                                          keyTypingResult: TypingResult,
+                                          valueTypingResult: TypingResult): KafkaContextInitializer[K, V, DefinedParameter] =
     new KafkaContextInitializer[K, V, DefinedSingleParameter](keyTypingResult, valueTypingResult)
 
   /**

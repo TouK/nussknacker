@@ -105,7 +105,7 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
     Map("firstname" -> "Jan"), SecondRecordSchemaV1
   )
 
-  private def jsonProcess(filter: String) =
+  private def jsonTypedProcess(filter: String) =
     EspProcessBuilder
       .id("json-test")
       .parallelism(1)
@@ -203,14 +203,14 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
     sendAsJson(givenMatchingJsonObj, JsonInTopic, timeAgo)
 
     assertThrows[Exception] {
-      run(jsonProcess("#input.nestMap.notExist == ''")) {}
+      run(jsonTypedProcess("#input.nestMap.notExist == ''")) {}
     }
 
     assertThrows[Exception] {
-      run(jsonProcess("#input.list1[0].notExist == ''")) {}
+      run(jsonTypedProcess("#input.list1[0].notExist == ''")) {}
     }
 
-    val validJsonProcess = jsonProcess("#input.first == 'Jan' and " +
+    val validJsonProcess = jsonTypedProcess("#input.first == 'Jan' and " +
       "#input.nestMap.nestedField != 'dummy' and " +
       "#input.list1[0].listField != 'dummy' and " +
       "#input.list2[0] != 15")
