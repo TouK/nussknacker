@@ -46,7 +46,7 @@ private[confluent] class ConfluentAvroMessageReader(schemaRegistryClient: Schema
     } catch {
       case ex: Exception =>
         throw new SerializationException(
-          String.format("Error deserializing json %s to Avro of schema %s", jsonObj.noSpaces, schema), ex)
+          String.format("Error deserializing json %s to Avro of schema %s", jsonString, schema), ex)
     }
   }
 
