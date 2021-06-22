@@ -73,6 +73,19 @@ state.backend: filesystem
 state.checkpoints.dir: file:///opt/flink/data/checkpoints
 state.savepoints.dir: file:///opt/flink/data/savepoints
 
+#Below are base settings for rocksdb metrics, that can be used for grafana dashboards
+state.backend.rocksdb.metrics.estimate-num-keys: true
+state.backend.rocksdb.metrics.estimate-live-data-size: true
+state.backend.rocksdb.metrics.cur-size-all-mem-tables: true
+state.backend.rocksdb.metrics.size-all-mem-tables: true
+
+#We can have many jobs per cluster, in such setting managed memory is not easy to tune
+state.backend.rocksdb.memory.managed: false
+
+#For frequent writes increase the value as needed. Currently RocksDB settings can only be changed per Flink cluster
+state.backend.rocksdb.writebuffer.size: 256m
+
+
 metrics.reporters: influxdb_reporter
 
 metrics.reporter.influxdb_reporter.class: org.apache.flink.metrics.influxdb.InfluxdbReporter

@@ -55,7 +55,7 @@ object transformers {
           start
             .keyByWithValue(keyBy, _ => aggregateBy)
             .process(aggregatorFunction)
-            .setUid(ctx, explicitUidInStatefulOperators)
+            .setUidWithName(ctx, explicitUidInStatefulOperators)
         }))
   }
 
@@ -99,7 +99,7 @@ object transformers {
               keyedStream
                  //TODO: alignment??
                  .process(new EmitExtraWindowWhenNoDataTumblingAggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, aggregateBy.returnType, typeInfos.storedTypeInfo))
-          }).setUid(ctx, explicitUidInStatefulOperators)
+          }).setUidWithName(ctx, explicitUidInStatefulOperators)
         }))
 
   //Experimental component, API may change in the future
@@ -128,7 +128,7 @@ object transformers {
             .window(EventTimeSessionWindows.withGap(Time.milliseconds(sessionTimeout.toMillis)))
             .trigger(trigger)
             .aggregate(new UnwrappingAggregateFunction(aggregator, aggregateBy.returnType, _.value._1, LastContextStrategy))(typeInfos.accWithCtxTypeInfo, typeInfos.returnedValueTypeInfo)
-            .setUid(ctx, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
+            .setUidWithName(ctx, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
         }))
 
   case class AggregatorTypeInformations(ctx: FlinkCustomNodeContext, aggregator: Aggregator, aggregateBy: LazyParameter[AnyRef]) {
