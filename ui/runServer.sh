@@ -18,7 +18,6 @@ export CONFIG_FILE="$DIST_BASE_DIR/conf/dev-application.conf"
 
 export MANAGEMENT_MODEL_DIR="$PROJECT_BASE_DIR/engine/flink/management/sample/target/scala-${SCALA_VERSION}"
 export GENERIC_MODEL_DIR="$PROJECT_BASE_DIR/engine/flink/generic/target/scala-${SCALA_VERSION}"
-export DEMO_MODEL_DIR="$PROJECT_BASE_DIR/engine/demo/target/scala-${SCALA_VERSION}"
 export STANDALONE_MODEL_DIR="$PROJECT_BASE_DIR/engine/standalone/engine/sample/target/scala-${SCALA_VERSION}"
 
 $DIST_BASE_DIR/bin/run.sh
