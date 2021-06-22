@@ -212,7 +212,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         case None => invalid("Cannot do projection here")
         //index, check if can project?
         case Some(iterateType) =>
-          extractListType(iterateType).andThen { listType =>
+          extractIterativeType(iterateType).andThen { listType =>
             typeChildren(validationContext, node, current.pushOnStack(listType)) {
               case result :: Nil => Valid(Typed.genericTypeClass[java.util.List[_]](List(result)))
               case other => invalid(s"Wrong selection type: ${other.map(_.display)}")
@@ -230,7 +230,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case e: Selection => current.stackHead match {
         case None => invalid("Cannot do selection here")
         case Some(iterateType) =>
-          extractListType(iterateType).andThen { elementType =>
+          extractIterativeType(iterateType).andThen { elementType =>
             typeChildren(validationContext, node, current.pushOnStack(elementType)) {
               case result :: Nil if result.canBeSubclassOf(Typed[Boolean]) => Valid(iterateType)
               case other => invalid(s"Wrong selection type: ${other.map(_.display)}")
@@ -339,9 +339,13 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     clazzDefinition.getPropertyOrFieldType(e.getName)
   }
 
-  private def extractListType(parent: TypingResult): Validated[NonEmptyList[ExpressionParseError], TypingResult] = parent match {
-    case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.List[_]]) =>
-      Valid(tc.objType.params.headOption.getOrElse(Unknown))
+  private def extractIterativeType(parent: TypingResult): Validated[NonEmptyList[ExpressionParseError], TypingResult] = parent match {
+    case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.List[_]])
+        || tc.objType.canBeSubclassOf(Typed[java.util.Set[_]])=> Valid(tc.objType.params.headOption.getOrElse(Unknown))
+    case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
+      Valid(TypedObjectTypingResult(List(
+        ("key", tc.objType.params.headOption.getOrElse(Unknown)),
+        ("value", tc.objType.params.drop(1).headOption.getOrElse(Unknown)))))
     case tc: SingleTypingResult => Validated.invalidNel(ExpressionParseError(s"Cannot do projection/selection on ${tc.display}"))
     //FIXME: what if more results are present?
     case _ => Valid(Unknown)
