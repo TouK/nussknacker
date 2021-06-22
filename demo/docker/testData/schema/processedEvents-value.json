@@ -1,0 +1,3 @@
+{
+  "schema": "{\n  \"type\": \"record\",\n  \"name\": \"transaction\",\n  \"namespace\": \"pl.touk\",\n  \"fields\": [\n    {\n      \"name\": \"clientId\",\n      \"type\": \"string\"\n    },\n    {\n      \"name\": \"amount\",\n      \"type\": \"int\"\n    }\n  ]\n}\n"
+}
