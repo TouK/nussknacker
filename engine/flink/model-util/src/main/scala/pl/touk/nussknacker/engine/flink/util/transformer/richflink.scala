@@ -30,9 +30,15 @@ object richflink {
   }
 
   implicit class ExplicitUid[T](dataStream: DataStream[T]) {
-    def setUid(implicit ctx: FlinkCustomNodeContext, explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean): DataStream[T] =
-      ExplicitUidInOperatorsSupport.setUidIfNeed(explicitUidInStatefulOperators(ctx), ctx.nodeId)(dataStream)
+
+    //we set operator name to nodeId in custom transformers, so that some internal Flink metrics (e.g. RocksDB) are
+    //reported with operator_name tag equal to nodeId.
+    //in most cases uid should be set together with operator name, if this is not the case - use ExplicitUidInOperatorsSupport explicitly
+    def setUidWithName(implicit ctx: FlinkCustomNodeContext, explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean): DataStream[T] =
+      ExplicitUidInOperatorsSupport.setUidIfNeed(explicitUidInStatefulOperators(ctx), ctx.nodeId)(dataStream).name(ctx.nodeId)
+
   }
+
 
 
 }

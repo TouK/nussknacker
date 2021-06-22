@@ -29,8 +29,8 @@ taskmanager.hostname: taskmanager
 
 taskmanager.data.port: 6126
 
-taskmanager.memory.task.heap.size: 1256m
-taskmanager.memory.managed.size: 1204m
+taskmanager.memory.task.heap.size: 256m
+taskmanager.memory.managed.size: 204m
 
 env.java.opts.taskmanager: "-Dcom.sun.management.jmxremote -Djava.rmi.server.hostname=localhost -Dcom.sun.management.jmxremote.port=9009 -Dcom.sun.management.jmxremote.rmi.port=9008 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false"
 
@@ -73,10 +73,18 @@ state.backend: filesystem
 state.checkpoints.dir: file:///opt/flink/data/checkpoints
 state.savepoints.dir: file:///opt/flink/data/savepoints
 
+#Below are base settings for rocksdb metrics, that can be used for grafana dashboards
 state.backend.rocksdb.metrics.estimate-num-keys: true
 state.backend.rocksdb.metrics.estimate-live-data-size: true
+state.backend.rocksdb.metrics.cur-size-all-mem-tables: true
+state.backend.rocksdb.metrics.size-all-mem-tables: true
+
 #We can have many jobs per cluster, in such setting managed memory is not easy to tune
 state.backend.rocksdb.memory.managed: false
+
+#For frequent writes increase the value as needed. Currently RocksDB settings can only be changed per Flink cluster
+state.backend.rocksdb.writebuffer.size: 256m
+
 
 metrics.reporters: influxdb_reporter
 

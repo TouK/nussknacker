@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermar
 import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyOnlyMapper, StringKeyedValue, StringKeyedValueMapper}
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.{AggregateHelper, Aggregator}
+import pl.touk.nussknacker.engine.flink.util.transformer.richflink._
 
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.FiniteDuration
@@ -77,15 +78,15 @@ class OuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandler[T
 
         val storedTypeInfo = context.typeInformationDetection.forType(aggregator.computeStoredTypeUnsafe(aggregateBy.returnType))
         val aggregatorFunction = prepareAggregatorFunction(aggregator, FiniteDuration(window.toMillis, TimeUnit.MILLISECONDS), aggregateBy.returnType, storedTypeInfo)(NodeId(context.nodeId))
-        val statefulStream = keyedMainBranchStream
+        val statefulStreamWithUid = keyedMainBranchStream
           .connect(keyedJoinedStream)
           .keyBy(v => v.value, v => v.value.key)
           .process(aggregatorFunction)
-        val withUid = setUidToNodeIdIfNeed(context, statefulStream)
+          .setUidWithName(context, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
 
         timestampAssigner
-          .map(new TimestampAssignmentHelper(_).assignWatermarks(withUid))
-          .getOrElse(withUid)
+          .map(new TimestampAssignmentHelper(_).assignWatermarks(statefulStreamWithUid))
+          .getOrElse(statefulStreamWithUid)
       }
     }
   }
