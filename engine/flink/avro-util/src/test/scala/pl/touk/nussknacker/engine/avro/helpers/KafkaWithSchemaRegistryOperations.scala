@@ -1,13 +1,12 @@
 package pl.touk.nussknacker.engine.avro.helpers
 
 import java.nio.charset.StandardCharsets
-
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.Schema
 import org.apache.flink.streaming.connectors.kafka.{KafkaDeserializationSchema, KafkaSerializationSchema}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
-import org.apache.kafka.common.serialization.{Deserializer, Serializer}
+import org.apache.kafka.common.serialization.{Deserializer, Serializer, StringSerializer}
 import org.scalatest.{Assertion, Matchers}
 import pl.touk.nussknacker.engine.avro.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
@@ -23,7 +22,7 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with PatientScalaFuture
 
   def pushMessage(obj: Any, topicToSerialize: String, topicToSend: Option[String] = None, timestamp: java.lang.Long = null): RecordMetadata = {
     val serializedObj = valueSerializer.serialize(topicToSerialize, obj)
-    kafkaClient.sendRawMessage(topicToSend.getOrElse(topicToSerialize), Array.emptyByteArray, serializedObj, None, timestamp).futureValue
+    kafkaClient.sendRawMessage(topicToSend.getOrElse(topicToSerialize), null, serializedObj, None, timestamp).futureValue
   }
 
   def pushMessage(kafkaSerializer: KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]], obj: AnyRef, topic: String): RecordMetadata = {
@@ -31,8 +30,16 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with PatientScalaFuture
     kafkaClient.sendRawMessage(topic, record.key(), record.value()).futureValue
   }
 
-  def pushMessageWithKey(key: Any, value: Any, topicToSerialize: String, topicToSend: Option[String] = None, timestamp: java.lang.Long = null): RecordMetadata = {
-    val serializedKey = keySerializer.serialize(topicToSerialize, key)
+  def pushMessageWithKey(key: Any, value: Any, topicToSerialize: String, topicToSend: Option[String] = None, timestamp: java.lang.Long = null, useStringForKey: Boolean = false): RecordMetadata = {
+    val serializedKey = if (useStringForKey) {
+      key match {
+        case str: String => str.getBytes(StandardCharsets.UTF_8)
+        case null => null
+        case _ => throw new IllegalArgumentException("Expected string or null")
+      }
+    } else {
+      keySerializer.serialize(topicToSerialize, key)
+    }
     val serializedValue = valueSerializer.serialize(topicToSerialize, value)
     kafkaClient.sendRawMessage(topicToSend.getOrElse(topicToSerialize), serializedKey, serializedValue, None, timestamp).futureValue
   }

@@ -126,6 +126,16 @@ To see biggest differences please consult the [changelog](Changelog.md).
   - old versions of `sampleTransformers` - use newer ones
   - `MiniClusterExecutionEnvironment.runningJobs()` - use `flinkMiniClusterHolder.runningJobs()`  
 * [#1807](https://github.com/TouK/nussknacker/pull/1807) Removed `jdbcServer`, please use Postgres for production-ready setups
+* [#1799](https://github.com/TouK/nussknacker/pull/1799)
+  - RecordFormatterFactory instead of one, uses two type parameters: K, V
+  - ConfluentAvroToJsonFormatter is produced by ConfluentAvroToJsonFormatterFactory
+  - ConfluentAvroToJsonFormatter produces test data in valid json format, does not use Separator
+  - ConfluentAvroMessageFormatter has asJson method instead of writeTo
+  - ConfluentAvroMessageReader has readJson method instead of readMessage
+  Example test data object:
+  ```
+  {"keySchemaId":null,"valueSchemaId":1,"consumerRecord":{"key":null,"value":{"first":"Jan","last":"Kowalski"},"topic":"testAvroRecordTopic1","partition":0,"offset":0,"timestamp":1624279687756,"timestampType":"CreateTime","headers":{},"leaderEpoch":0}}
+  ```
 
 ## In version 0.3.0
 

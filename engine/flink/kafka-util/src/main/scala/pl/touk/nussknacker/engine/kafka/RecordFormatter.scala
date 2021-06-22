@@ -4,6 +4,8 @@ import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
 
+import scala.reflect.ClassTag
+
 /**
   * It is interface for bi-directional conversion between Kafka record and bytes. It is used when data
   * stored on topic aren't in human readable format and you need to add extra step in generation of test data
@@ -44,5 +46,5 @@ object BasicRecordFormatter {
 }
 
 trait RecordFormatterFactory extends Serializable {
-  def create[T](kafkaConfig: KafkaConfig, deserializationSchema: KafkaDeserializationSchema[T]): RecordFormatter
+  def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]]): RecordFormatter
 }
