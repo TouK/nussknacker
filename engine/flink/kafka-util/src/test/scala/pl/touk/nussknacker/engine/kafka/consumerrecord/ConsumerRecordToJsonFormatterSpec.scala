@@ -13,10 +13,11 @@ class ConsumerRecordToJsonFormatterSpec extends FunSuite with Matchers with Kafk
   private val topic = "dummyTopic"
   private val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(sampleKeyJsonDeserializer, sampleValueJsonDeserializer)
 
-  private lazy val sampleKeyValueFormatter = new ConsumerRecordToJsonFormatter(
-    deserializationSchemaFactory.create(List(topic), kafkaConfig),
-    serializeKeyValue[SampleKey, SampleValue]
-  )
+  private lazy val sampleKeyValueFormatter =
+    ConsumerRecordToJsonFormatterFactory[SampleKey, SampleValue].create(
+      kafkaConfig,
+      deserializationSchemaFactory.create(List(topic), kafkaConfig)
+    )
 
   private lazy val basicRecordFormatter = BasicRecordFormatter()
 

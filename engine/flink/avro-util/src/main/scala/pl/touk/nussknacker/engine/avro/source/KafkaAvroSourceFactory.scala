@@ -96,9 +96,13 @@ class KafkaAvroSourceFactory[K:ClassTag, V:ClassTag](val schemaRegistryProvider:
     val preparedTopic = extractPreparedTopic(params)
     val KafkaAvroSourceFactoryState(keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime, kafkaContextInitializer) = finalState.get
 
-    // prepare KafkaDeserializationSchema based on key and value schema
+    // prepare KafkaDeserializationSchema based on given key and value schema (with schema evolution)
     val deserializationSchema = schemaRegistryProvider.deserializationSchemaFactory.create[K, V](kafkaConfig, keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime)
-    val recordFormatter = schemaRegistryProvider.recordFormatterFactory.create[K, V](kafkaConfig, deserializationSchema)
+
+    // - avro payload formatter requires to format test data with writer schema, id of writer schema comes with event
+    // - for json payload event does not come with writer schema id
+    val formatterSchema = schemaRegistryProvider.deserializationSchemaFactory.create[K, V](kafkaConfig, None, None)
+    val recordFormatter = schemaRegistryProvider.recordFormatterFactory.create[K, V](kafkaConfig, formatterSchema)
 
     createSource(params,
       dependencies,

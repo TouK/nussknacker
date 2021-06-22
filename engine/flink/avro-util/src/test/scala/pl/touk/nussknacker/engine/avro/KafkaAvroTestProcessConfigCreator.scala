@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
 import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory}
-import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSink, FlinkCustomStreamTransformation}
+import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
