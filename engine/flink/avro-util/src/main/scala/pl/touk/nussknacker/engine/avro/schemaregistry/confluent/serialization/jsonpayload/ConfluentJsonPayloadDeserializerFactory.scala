@@ -23,7 +23,7 @@ import scala.reflect.ClassTag
   * 2. Allegro json2avro decoder is used instead of confluent decoder.
   *    Decoded json should have flattened object structure (see example below).
   *
-  * TODO: Use confluent json schema instead of avro schema for json payloads.
+  * TODO: Add support to json payloads specified in json schema
   *
   * Example object (see [GeneratedAvroClassWithLogicalTypesSchema]):
   * {

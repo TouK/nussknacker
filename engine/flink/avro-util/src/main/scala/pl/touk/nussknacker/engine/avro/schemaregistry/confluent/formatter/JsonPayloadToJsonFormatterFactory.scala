@@ -23,7 +23,7 @@ import scala.reflect.ClassTag
 class JsonPayloadToJsonFormatterFactory extends RecordFormatterFactory {
 
   override def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]]): RecordFormatter = {
-    val asJsonDeserializerFactory = new KeyValueKafkaJsonDeserializerFactory
+    val asJsonDeserializerFactory = new KafkaJsonKeyValueDeserializationSchemaFactory
     val asJsonDeserializer = asJsonDeserializerFactory.create[Json, Json](kafkaConfig, None, None)
 
     new ConsumerRecordToJsonFormatter[Json, Json](asJsonDeserializer)
@@ -31,7 +31,7 @@ class JsonPayloadToJsonFormatterFactory extends RecordFormatterFactory {
 
 }
 
-class KeyValueKafkaJsonDeserializerFactory extends KafkaAvroKeyValueDeserializationSchemaFactory {
+class KafkaJsonKeyValueDeserializationSchemaFactory extends KafkaAvroKeyValueDeserializationSchemaFactory {
 
   override protected def createKeyDeserializer[K: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[K] =
     toJsonDeserializer.asInstanceOf[Deserializer[K]]
@@ -46,15 +46,10 @@ class KeyValueKafkaJsonDeserializerFactory extends KafkaAvroKeyValueDeserializat
     TypeInformation.of(classOf[Json]).asInstanceOf[TypeInformation[V]]
 
   // always deserialize key to valid Json
-  override protected def createKeyOrStringDeserializer[K: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[K] =
-    if (kafkaConfig.useStringForKey) {
-      new Deserializer[Json] {
-        override def deserialize(topic: String, data: Array[Byte]): Json =
-          Option(data).map(data => Json.fromString(new String(data, StandardCharsets.UTF_8))).orNull
-      }.asInstanceOf[Deserializer[K]]
-    } else {
-      createKeyDeserializer(schemaDataOpt, kafkaConfig)
-    }
+  override protected def createStringKeyDeserializer: Deserializer[_] = new Deserializer[Json] {
+    override def deserialize(topic: String, data: Array[Byte]): Json =
+      Option(data).map(data => Json.fromString(new String(data, StandardCharsets.UTF_8))).orNull
+  }
 
   private def toJsonDeserializer: Deserializer[Json] = new Deserializer[Json] {
     override def deserialize(topic: String, data: Array[Byte]): Json =
