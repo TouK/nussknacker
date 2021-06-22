@@ -38,6 +38,12 @@ case class ValidationContext(localVariables: Map[String, TypingResult] = Map.emp
   def withVariable(outputVar: OutputVar, value: TypingResult)(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, ValidationContext] =
     withVariable(outputVar.outputName, value, Some(outputVar.fieldName))
 
+  def withVariableOverriden(name: String, value: TypingResult, paramName: Option[String])
+                           (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, ValidationContext] = {
+    validateVariableFormat(name, paramName)
+      .map(_ => copy(localVariables = localVariables + (name -> value)))
+  }
+
   private def validateVariableExists(name: String, paramName: Option[String])(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, String] =
     if (variables.contains(name)) Invalid(OverwrittenVariable(name, paramName)).toValidatedNel else Valid(name)
 

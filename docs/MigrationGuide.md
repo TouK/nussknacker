@@ -116,6 +116,9 @@ To see biggest differences please consult the [changelog](Changelog.md).
     - `KafkaAvroValueDeserializationSchemaFactory` (source requires deserialization to `ConsumerRecord[K, V]`, there are only deserializers based on `KafkaAvroKeyValueDeserializationSchemaFactory`)
     - `ConfluentKafkaAvroDeserializationSchemaFactory`, use `ConfluentKeyValueKafkaAvroDeserializationFactory`
     - `TupleAvroKeyValueKafkaAvroDeserializerSchemaFactory`, this approach is deprecated due to #inputMeta variable that contains key data
+* [#1886](https://github.com/TouK/nussknacker/pull/1886) aggregate-sliding with emitWhenEventLeft = true, aggregate-tumbling and aggregate-session components now
+  doesn't emit full context of variables that were before node (because of performance reasons and because that wasn't obvious which one context is emitted).
+  If you want to emit some information other than aggregated value and key (availabled via new `#key` variable), you should use `#AGG.map` expression in `aggregateBy`.
 
   To migrate `KafkaAvroSourceFactory`:
     - Provide `KafkaConfig` with correct `useStringForKey` flag value. By default we want to EvictableStatehandle keys as ordinary String and all topics related to such config require only value schema definitions (key schemas are ignored).
