@@ -27,8 +27,7 @@ private[confluent] class ConfluentAvroMessageReader(schemaRegistryClient: Schema
   def readJson[T: ClassTag](jsonObj: Json, schema: Schema, subject: String): Array[Byte] = {
     try {
       val avroObj = jsonToAvro[T](jsonObj, schema)
-      val serializedValue = serializeImpl(subject, avroObj, new AvroSchema(schema))
-      serializedValue
+      serializeImpl(subject, avroObj, new AvroSchema(schema))
     } catch {
       case ex: Exception =>
         throw new SerializationException("Error reading from input", ex)
@@ -36,8 +35,8 @@ private[confluent] class ConfluentAvroMessageReader(schemaRegistryClient: Schema
   }
 
   private def jsonToAvro[T: ClassTag](jsonObj: Json, schema: Schema): AnyRef = {
+    val jsonString = jsonObj.noSpaces
     try {
-      val jsonString = jsonObj.noSpaces
       val reader = createDatumReader(schema, schema, useSchemaReflection = false, useSpecificAvroReader = AvroUtils.isSpecificRecord[T])
       val obj = reader.read(null, decoderFactory.jsonDecoder(schema, jsonString))
       if (schema.getType == Type.STRING)
