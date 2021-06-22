@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import org.apache.flink.annotation.PublicEvolving
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.java.typeutils.TupleTypeInfo
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.assigners.{EventTimeSessionWindows, TumblingEventTimeWindows}
 import org.apache.flink.streaming.api.windowing.time.Time
@@ -13,7 +12,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.{Context => NkContext, _}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
-import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValue
+import pl.touk.nussknacker.engine.flink.util.keyed.{KeyedValue, StringKeyedValue}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.{ClosingEndEventTrigger, FireOnEachEvent}
 import pl.touk.nussknacker.engine.flink.util.transformer.richflink._
 
@@ -41,7 +40,7 @@ object transformers {
                          emitWhenEventLeft: Boolean,
                          explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean
                         )(implicit nodeId: NodeId): ContextTransformation = {
-    ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, aggregateBy))
+    ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, !emitWhenEventLeft, aggregateBy))
       .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
           implicit val fctx: FlinkCustomNodeContext = ctx
@@ -76,7 +75,8 @@ object transformers {
                           tumblingWindowTrigger: TumblingWindowTrigger,
                           explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean
                          )(implicit nodeId: NodeId): ContextTransformation =
-    ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, aggregateBy))
+    // TODO: to be consistent with sliding window we should probably forward context of variables for tumblingWindowTrigger == TumblingWindowTrigger.OnEvent
+    ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, emitContext = false, aggregateBy))
       .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
           implicit val fctx: FlinkCustomNodeContext = ctx
@@ -89,12 +89,11 @@ object transformers {
               keyedStream
                  .window(TumblingEventTimeWindows.of(Time.milliseconds(windowLength.toMillis)))
                  .trigger(FireOnEachEvent[AnyRef, TimeWindow](EventTimeTrigger.create()))
-                 .aggregate(new UnwrappingAggregateFunction(aggregator, aggregateBy.returnType, _.value, LastContextStrategy))(typeInfos.accWithCtxTypeInfo, typeInfos.returnedValueTypeInfo)
+                 .aggregate(new UnwrappingAggregateFunction(aggregator, aggregateBy.returnType, identity))(StringKeyedValue.typeInformation(typeInfos.storedTypeInfo), typeInfos.returnedValueTypeInfo)
             case TumblingWindowTrigger.OnEnd =>
               keyedStream
                  .window(TumblingEventTimeWindows.of(Time.milliseconds(windowLength.toMillis)))
-                //TODO: which context do we want to emit?
-                 .aggregate(new UnwrappingAggregateFunction(aggregator, aggregateBy.returnType, _.value, FirstContextStrategy))(typeInfos.accWithCtxTypeInfo, typeInfos.returnedValueTypeInfo)
+                 .aggregate(new UnwrappingAggregateFunction(aggregator, aggregateBy.returnType, identity))(StringKeyedValue.typeInformation(typeInfos.storedTypeInfo), typeInfos.returnedValueTypeInfo)
             case TumblingWindowTrigger.OnEndWithExtraWindow =>
               keyedStream
                  //TODO: alignment??
@@ -111,7 +110,8 @@ object transformers {
                                sessionWindowTrigger: SessionWindowTrigger,
                                variableName: String
                               )(implicit nodeId: NodeId): ContextTransformation =
-    ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, aggregateBy))
+    // TODO: to be consistent with sliding window we should probably forward context of variables for tumblingWindowTrigger == SessionWindowTrigger.OnEnd
+    ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, emitContext = false, aggregateBy))
       .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
           implicit val fctx: FlinkCustomNodeContext = ctx
@@ -127,7 +127,7 @@ object transformers {
             .keyByWithValue(keyBy, _.product(aggregateBy, endSessionCondition))
             .window(EventTimeSessionWindows.withGap(Time.milliseconds(sessionTimeout.toMillis)))
             .trigger(trigger)
-            .aggregate(new UnwrappingAggregateFunction(aggregator, aggregateBy.returnType, _.value._1, LastContextStrategy))(typeInfos.accWithCtxTypeInfo, typeInfos.returnedValueTypeInfo)
+            .aggregate(new UnwrappingAggregateFunction(aggregator, aggregateBy.returnType, _._1))(StringKeyedValue.typeInformation(typeInfos.storedTypeInfo), typeInfos.returnedValueTypeInfo)
             .setUidWithName(ctx, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
         }))
 
@@ -147,8 +147,6 @@ object transformers {
 
     lazy val contextTypeInfo: TypeInformation[NkContext] = detection.forContext(vctx)
     lazy val returnedValueTypeInfo: TypeInformation[ValueWithContext[AnyRef]] = detection.forValueWithContext(vctx, returnType)
-
-    lazy val accWithCtxTypeInfo: TypeInformation[UnwrappingAggregateFunction.AccumulatorWithContext] =  new TupleTypeInfo(storedTypeInfo, contextTypeInfo)
 
   }
 

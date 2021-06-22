@@ -6,5 +6,6 @@ object VariableConstants {
   final val InputMetaVariableName = "inputMeta"
   final val MetaVariableName = "meta"
   final val OutputVariableName = "output"
+  final val KeyVariableName = "key"
 
 }

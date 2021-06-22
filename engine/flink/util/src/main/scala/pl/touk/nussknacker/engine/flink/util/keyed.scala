@@ -1,10 +1,15 @@
 package pl.touk.nussknacker.engine.flink.util
 
+import cats.data.ValidatedNel
 import org.apache.flink.api.common.functions.RichMapFunction
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
-import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter, ValueWithContext}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter, ValueWithContext, VariableConstants}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkLazyParameterFunctionHelper, LazyParameterInterpreterFunction}
+
 import scala.reflect.runtime.universe.TypeTag
 
 // Must be in object because of Java interop (problems with package object) and abstract type StringKeyedValue[V]
@@ -112,6 +117,23 @@ object keyed {
     }
 
     override def map(ctx: Context): ValueWithContext[String] = ValueWithContext(interpret(ctx), ctx)
+
+  }
+
+  trait KeyEnricher {
+
+    def enrichWithKey[V](ctx: Context, keyedValue: StringKeyedValue[V]): Context =
+      enrichWithKey(ctx, keyedValue.key)
+
+    def enrichWithKey[V](ctx: Context, key: String): Context =
+      ctx.withVariable(VariableConstants.KeyVariableName, key)
+
+  }
+
+  object KeyEnricher {
+
+    def contextTransformation(ctx: ValidationContext)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] =
+      ctx.withVariable(VariableConstants.KeyVariableName, Typed[String], None)
 
   }
 

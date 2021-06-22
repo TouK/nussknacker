@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, NodeId}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.flink.util.keyed.KeyEnricher
 
 /*
   This class serves two purposes:
@@ -49,9 +50,14 @@ abstract class Aggregator extends AggregateFunction[AnyRef, AnyRef, AnyRef] {
 
   override final def merge(a: AnyRef, b: AnyRef): AnyRef = mergeAggregates(a.asInstanceOf[Aggregate], b.asInstanceOf[Aggregate])
 
-  final def toContextTransformation(variableName: String, aggregateBy: LazyParameter[_])(implicit nodeId: NodeId):
-    ValidationContext => ValidatedNel[ProcessCompilationError, ValidationContext] = validationCtx => computeOutputType(aggregateBy.returnType)
+  final def toContextTransformation(variableName: String, emitContext: Boolean, aggregateBy: LazyParameter[_])(implicit nodeId: NodeId):
+    ValidationContext => ValidatedNel[ProcessCompilationError, ValidationContext] = validationCtx =>
+    computeOutputType(aggregateBy.returnType)
     //TODO: better error?
       .leftMap(message => NonEmptyList.of(CannotCreateObjectError(message, nodeId.id)))
-      .andThen(validationCtx.withVariable(variableName, _, paramName = None))
+      .andThen { outputType =>
+        val ctx = if (emitContext) validationCtx else ValidationContext.empty
+        ctx.withVariable(variableName, outputType, paramName = None)
+      }.andThen(KeyEnricher.contextTransformation)
+
 }
