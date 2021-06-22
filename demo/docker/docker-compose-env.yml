@@ -30,7 +30,7 @@ services:
 
   kafka:
     container_name: nussknacker_kafka
-    image: ${KAFKA_REPOSITORY-wurstmeister/kafka}:${KAFKA_VERSION-2.12-2.5.0}
+    image: ${KAFKA_REPOSITORY-wurstmeister/kafka}:${KAFKA_VERSION-2.12-2.3.0}
     ports:
       - "3032:9092"
     environment:
