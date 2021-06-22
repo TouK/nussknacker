@@ -2,11 +2,23 @@
   "metaData" : {
     "id" : "DetectLargeTransactions",
     "typeSpecificData" : {
-      "type" : "StreamMetaData",
-      "parallelism" : 2
+      "parallelism" : 2,
+      "splitStateToDisk" : true,
+      "useAsyncInterpretation" : null,
+      "checkpointIntervalInSeconds" : null,
+      "type" : "StreamMetaData"
     },
+    "isSubprocess" : false,
     "additionalFields" : {
-      
+      "description" : null,
+      "groups" : [
+      ],
+      "properties" : {
+
+      }
+    },
+    "subprocessVersions" : {
+
     }
   },
   "exceptionHandlerRef" : {
@@ -15,106 +27,238 @@
   },
   "nodes" : [
     {
-      "type" : "Source",
-      "id" : "transactions",
+      "id" : "kafka-registry-typed-json",
       "ref" : {
-        "typ" : "kafka-transaction",
+        "typ" : "kafka-registry-typed-json",
         "parameters" : [
           {
-            "name" : "topic",
+            "name" : "Topic",
             "expression" : {
               "language" : "spel",
               "expression" : "'transactions'"
             }
+          },
+          {
+            "name" : "Schema version",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'latest'"
+            }
           }
         ]
-      }
+      },
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 180,
+          "y" : 0
+        }
+      },
+      "type" : "Source"
     },
     {
-      "type" : "Split",
-      "id" : "split",
       "nexts" : [
         [
           {
-            "type" : "Filter",
+            "nextFalse" : [
+            ],
             "id" : "only large ones",
             "expression" : {
               "language" : "spel",
               "expression" : "#input.amount > 20"
             },
-            "nextFalse" : []
+            "isDisabled" : null,
+            "additionalFields" : {
+              "description" : null,
+              "layoutData" : {
+                "x" : 0,
+                "y" : 360
+              }
+            },
+            "type" : "Filter"
           },
           {
-            "type" : "Sink",
             "id" : "save to kafka",
             "ref" : {
-              "typ" : "kafka-stringSink",
+              "typ" : "kafka-registry-typed-json",
               "parameters" : [
                 {
-                  "name" : "topic",
+                  "name" : "Topic",
                   "expression" : {
                     "language" : "spel",
                     "expression" : "'processedEvents'"
                   }
+                },
+                {
+                  "name" : "Schema version",
+                  "expression" : {
+                    "language" : "spel",
+                    "expression" : "'latest'"
+                  }
+                },
+                {
+                  "name" : "Key",
+                  "expression" : {
+                    "language" : "spel",
+                    "expression" : ""
+                  }
+                },
+                {
+                  "name" : "clientId",
+                  "expression" : {
+                    "language" : "spel",
+                    "expression" : "#input.clientId"
+                  }
+                },
+                {
+                  "name" : "amount",
+                  "expression" : {
+                    "language" : "spel",
+                    "expression" : "#input.amount"
+                  }
                 }
               ]
             },
-            "endResult" : {
-              "language" : "spel",
-              "expression" : "#input"
-            }
+            "endResult" : null,
+            "isDisabled" : null,
+            "additionalFields" : {
+              "description" : null,
+              "layoutData" : {
+                "x" : 0,
+                "y" : 540
+              }
+            },
+            "type" : "Sink"
           }
         ],
         [
           {
-            "type" : "CustomNode",
-            "id" : "amount aggregation",
+            "id" : "aggregate-sliding",
             "outputVar" : "aggregated",
-            "nodeType" : "transactionAmountAggregator",
+            "nodeType" : "aggregate-sliding",
             "parameters" : [
               {
-                "name" : "clientId",
+                "name" : "keyBy",
                 "expression" : {
                   "language" : "spel",
                   "expression" : "#input.clientId"
                 }
+              },
+              {
+                "name" : "aggregator",
+                "expression" : {
+                  "language" : "spel",
+                  "expression" : "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).SUM"
+                }
+              },
+              {
+                "name" : "aggregateBy",
+                "expression" : {
+                  "language" : "spel",
+                  "expression" : "#input.amount"
+                }
+              },
+              {
+                "name" : "windowLength",
+                "expression" : {
+                  "language" : "spel",
+                  "expression" : "T(java.time.Duration).parse('P1D')"
+                }
+              },
+              {
+                "name" : "emitWhenEventLeft",
+                "expression" : {
+                  "language" : "spel",
+                  "expression" : "true"
+                }
               }
-            ]
+            ],
+            "additionalFields" : {
+              "description" : null,
+              "layoutData" : {
+                "x" : 360,
+                "y" : 360
+              }
+            },
+            "type" : "CustomNode"
           },
           {
-            "type" : "Filter",
+            "nextFalse" : [
+            ],
             "id" : "filter large amount",
             "expression" : {
               "language" : "spel",
-              "expression" : "#aggregated.amount > 30"
+              "expression" : "#aggregated > 30"
             },
-            "nextFalse" : []
+            "isDisabled" : null,
+            "additionalFields" : {
+              "description" : null,
+              "layoutData" : {
+                "x" : 360,
+                "y" : 540
+              }
+            },
+            "type" : "Filter"
           },
           {
-            "type" : "Processor",
             "id" : "alert",
-            "service" : {
-              "id" : "alertService",
+            "ref" : {
+              "typ" : "kafka-registry-typed-json",
               "parameters" : [
+                {
+                  "name" : "Topic",
+                  "expression" : {
+                    "language" : "spel",
+                    "expression" : "'alerts'"
+                  }
+                },
+                {
+                  "name" : "Schema version",
+                  "expression" : {
+                    "language" : "spel",
+                    "expression" : "'latest'"
+                  }
+                },
+                {
+                  "name" : "Key",
+                  "expression" : {
+                    "language" : "spel",
+                    "expression" : ""
+                  }
+                },
                 {
                   "name" : "message",
                   "expression" : {
                     "language" : "spel",
-                    "expression" : "'Client: ' + #input.clientId + ' has exceeded limit, total amount: ' + #aggregated.amount"
-                  }
-                },
-                {
-                  "name" : "category",
-                  "expression" : {
-                    "language" : "spel",
-                    "expression" : "'alert'"
+                    "expression" : "'Client: ' + #input.clientId + ' has exceeded limit, total amount: ' + #aggregated"
                   }
                 }
               ]
-            }
+            },
+            "endResult" : null,
+            "isDisabled" : null,
+            "additionalFields" : {
+              "description" : null,
+              "layoutData" : {
+                "x" : 360,
+                "y" : 720
+              }
+            },
+            "type" : "Sink"
           }
         ]
-      ]
+      ],
+      "id" : "split",
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 180,
+          "y" : 180
+        }
+      },
+      "type" : "Split"
     }
+  ],
+  "additionalBranches" : [
   ]
 }

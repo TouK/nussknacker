@@ -2,11 +2,23 @@
   "metaData" : {
     "id" : "DetectLargeTransactions",
     "typeSpecificData" : {
-      "type" : "StreamMetaData",
-      "parallelism" : 2
+      "parallelism" : 2,
+      "splitStateToDisk" : true,
+      "useAsyncInterpretation" : null,
+      "checkpointIntervalInSeconds" : null,
+      "type" : "StreamMetaData"
     },
+    "isSubprocess" : false,
     "additionalFields" : {
-      
+      "description" : null,
+      "groups" : [
+      ],
+      "properties" : {
+
+      }
+    },
+    "subprocessVersions" : {
+
     }
   },
   "exceptionHandlerRef" : {
@@ -15,49 +27,107 @@
   },
   "nodes" : [
     {
-      "type" : "Source",
       "id" : "transactions",
       "ref" : {
-        "typ" : "kafka-transaction",
+        "typ" : "kafka-registry-typed-json",
         "parameters" : [
           {
-            "name" : "topic",
+            "name" : "Topic",
             "expression" : {
               "language" : "spel",
               "expression" : "'transactions'"
             }
+          },
+          {
+            "name" : "Schema version",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'latest'"
+            }
           }
         ]
-      }
+      },
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 0
+        }
+      },
+      "type" : "Source"
     },
     {
-      "type" : "Filter",
+      "nextFalse" : [
+      ],
       "id" : "only large ones",
       "expression" : {
         "language" : "spel",
         "expression" : "#input.amount > 20"
       },
-      "nextFalse" : []
+      "isDisabled" : null,
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 180
+        }
+      },
+      "type" : "Filter"
     },
     {
-      "type" : "Sink",
       "id" : "save to kafka",
       "ref" : {
-        "typ" : "kafka-stringSink",
+        "typ" : "kafka-registry-typed-json",
         "parameters" : [
           {
-            "name" : "topic",
+            "name" : "Topic",
             "expression" : {
               "language" : "spel",
               "expression" : "'processedEvents'"
             }
+          },
+          {
+            "name" : "Schema version",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'latest'"
+            }
+          },
+          {
+            "name" : "Key",
+            "expression" : {
+              "language" : "spel",
+              "expression" : ""
+            }
+          },
+          {
+            "name" : "clientId",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "#input.clientId"
+            }
+          },
+          {
+            "name" : "amount",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "#input.amount"
+            }
           }
         ]
       },
-      "endResult" : {
-        "language" : "spel",
-        "expression" : "#input"
-      }
+      "endResult" : null,
+      "isDisabled" : null,
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 360
+        }
+      },
+      "type" : "Sink"
     }
+  ],
+  "additionalBranches" : [
   ]
 }

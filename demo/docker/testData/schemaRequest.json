@@ -1,6 +1,0 @@
-{
-  "schema": 
-  "{ \"type\": \"record\", \"name\": \"test\", \"fields\": [ { \"type\": \"string\", \"name\": \"field1\" }, { \"type\": \"int\", \"name\": \"field2\" } ] }" 
-}
-  
-

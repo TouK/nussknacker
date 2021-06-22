@@ -50,7 +50,7 @@ waitForOK() {
 waitForOK "api/processes" "Checking Frontend API response.." "Frontend not started" "app"
 
 echo "Creating process"
-CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "http://admin:admin@localhost:8081/api/processes/DetectLargeTransactions/FraudDetection?isSubprocess=false")
+CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "http://admin:admin@localhost:8081/api/processes/DetectLargeTransactions/Default?isSubprocess=false")
 if [[ $CODE == 201 ]]; then
   echo "Process creation success"
 elif [[ $CODE == 400 ]]; then

@@ -15,5 +15,5 @@ Running
 * Full env: `docker-compose -f docker-compose.yml -f docker-compose-env.yml up -d` // Full env tests
 * App env: `docker-compose up -d` // Only launch standalone application (available on 3081 port)
 * Dependencies envs: `docker-compose -f docker-compose-env.yml up -d` // Envs for dev integration tests
-* App env with generic model: `NUSSKNACKER_CONFIG_FILE=/opt/nussknacker/conf/application.conf docker-compose up -d` // Launch standalone application with generic model
+* Cleanup local environment `docker-compose down --rmi all --volumes --remove-orphans`
 * JVM options for Nussknacker (e.g. heap size etc) can be configure with JDK_JAVA_OPTIONS env variable
