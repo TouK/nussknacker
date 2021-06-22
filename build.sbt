@@ -660,6 +660,7 @@ lazy val avroFlinkUtil = (project in engine("flink/avro-util")).
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
         "tech.allegro.schema.json2avro" % "converter" % "0.2.10",
+        "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % "2.10.5",
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.apache.flink" % "flink-avro" % flinkV,
         "org.apache.flink" %% s"flink-connector-kafka" % flinkV % "test",

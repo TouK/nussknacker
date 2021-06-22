@@ -8,7 +8,7 @@ import org.scalatest.Assertion
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor5}
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
 import pl.touk.nussknacker.engine.avro.helpers.SchemaRegistryMixin
-import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, PaymentV1, PaymentV2}
+import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, PaymentDate, PaymentV1, PaymentV2}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 
 class ConfluentKafkaAvroDeserializationSpec extends SchemaRegistryMixin with TableDrivenPropertyChecks with ConfluentKafkaAvroSeDeSpecMixin {
@@ -27,6 +27,20 @@ class ConfluentKafkaAvroDeserializationSpec extends SchemaRegistryMixin with Tab
       (avroSetup, true, PaymentV1.record, PaymentV1.record, "simple.from-subject-version"),
       (jsonSetup, true, PaymentV1.exampleData, PaymentV1.record, "json.simple.from-subject-version")
 
+    )
+
+    runDeserializationTest(table, version, schemas)
+  }
+
+  test("should properly deserialize record to avro object with logical types") {
+    val schemas = List(PaymentDate.schema)
+    val version = Some(1)
+
+    val table = Table[SchemaRegistryProviderSetup, Boolean, Any, GenericRecord, String](
+      ("setup", "schemaEvolution", "givenObj", "expectedObj", "topic"),
+      (avroSetup, false, PaymentDate.record, PaymentDate.record, "simple.from-record"),
+      (avroSetup, true, PaymentDate.record, PaymentDate.record, "simple.from-subject-version"),
+      (jsonSetup, true, PaymentDate.exampleData, PaymentDate.record, "json.simple.from-subject-version")
     )
 
     runDeserializationTest(table, version, schemas)

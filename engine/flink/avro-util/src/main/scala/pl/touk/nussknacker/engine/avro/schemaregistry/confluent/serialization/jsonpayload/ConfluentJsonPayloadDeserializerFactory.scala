@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.jsonpayload
 
-import java.lang
-
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import org.apache.avro.specific.SpecificRecordBase
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.kafka.common.serialization.Deserializer
@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroKeyValueDeserializ
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import tech.allegro.schema.json2avro.converter.JsonAvroConverter
 
+import java.lang
 import scala.reflect.ClassTag
 
 trait ConfluentJsonPayloadDeserializer {
@@ -31,7 +32,7 @@ trait ConfluentJsonPayloadDeserializer {
 
     new ConfluentKafkaAvroDeserializer[T](kafkaConfig, schemaDataOpt, schemaRegistryClient, isKey, specificClass.isDefined) {
 
-      private val converter = new JsonAvroConverter()
+      private val converter = prepareConverter
 
       override protected def deserialize(topic: String, isKey: lang.Boolean, payload: Array[Byte], readerSchema: Option[RuntimeSchemaData]): AnyRef = {
         val schema = readerSchema.get.schema
@@ -41,6 +42,12 @@ trait ConfluentJsonPayloadDeserializer {
         }
       }
     }
+  }
+
+  private def prepareConverter[T: ClassTag] = {
+    val objectMapper = new ObjectMapper()
+    objectMapper.registerModule(new JavaTimeModule())
+    new JsonAvroConverter(objectMapper)
   }
 
   protected def createTypeInfo[T: ClassTag](kafkaConfig: KafkaConfig, schemaDataOpt: Option[RuntimeSchemaData]): TypeInformation[T] = {
