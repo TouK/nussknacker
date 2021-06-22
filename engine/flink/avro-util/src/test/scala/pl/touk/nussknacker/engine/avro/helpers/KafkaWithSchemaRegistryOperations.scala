@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.avro.helpers
 
-import io.circe.Json
-
 import java.nio.charset.StandardCharsets
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.Schema
@@ -160,13 +158,9 @@ object SimpleKafkaJsonDeserializer extends Deserializer[Any] {
   }
 }
 
-class SimpleKafkaJsonSerializer(highPriority: PartialFunction[Any, Json]) extends Serializer[Any] {
+object SimpleKafkaJsonSerializer extends Serializer[Any] {
 
-  val encoder: BestEffortJsonEncoder = BestEffortJsonEncoder(failOnUnkown = true, highPriority = highPriority)
+  val encoder: BestEffortJsonEncoder = BestEffortJsonEncoder(failOnUnkown = true)
 
   override def serialize(topic: String, data: Any): Array[Byte] = encoder.encode(data).spaces2.getBytes(StandardCharsets.UTF_8)
-}
-
-object SimpleKafkaJsonSerializer {
-  def apply(highPriority: PartialFunction[Any, Json] = Map()): SimpleKafkaJsonSerializer = new SimpleKafkaJsonSerializer(highPriority)
 }

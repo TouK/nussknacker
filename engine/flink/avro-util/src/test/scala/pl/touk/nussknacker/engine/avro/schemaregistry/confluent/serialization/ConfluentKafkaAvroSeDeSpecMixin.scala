@@ -30,7 +30,7 @@ trait ConfluentKafkaAvroSeDeSpecMixin extends SchemaRegistryMixin with TableDriv
 
   lazy val jsonSetup: SchemaRegistryProviderSetup = SchemaRegistryProviderSetup(SchemaRegistryProviderSetupType.json,
         ConfluentSchemaRegistryProvider.jsonPayload(MockSchemaRegistry.factory),
-        SimpleKafkaJsonSerializer(),
+        SimpleKafkaJsonSerializer,
         SimpleKafkaJsonDeserializer)
 
   object SchemaRegistryProviderSetupType extends Enumeration {

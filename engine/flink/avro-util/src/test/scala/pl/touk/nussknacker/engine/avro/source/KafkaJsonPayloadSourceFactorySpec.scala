@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.engine.avro.source
 
-import io.circe.Json
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.kafka.common.serialization.Serializer
 import pl.touk.nussknacker.engine.avro.helpers.{KafkaAvroSpecMixin, SimpleKafkaJsonSerializer}
-import pl.touk.nussknacker.engine.avro.schema.GeneratedAvroClassWithLogicalTypesSchema.fixedEncoder
-import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, GeneratedAvroClassWithLogicalTypes, GeneratedAvroClassWithLogicalTypesSchema}
+import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, GeneratedAvroClassSample, GeneratedAvroClassSampleSchema}
 import pl.touk.nussknacker.engine.avro.schemaregistry.ExistingSchemaVersion
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
@@ -21,9 +19,9 @@ class KafkaJsonPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
   override protected lazy val schemaRegistryProvider: ConfluentSchemaRegistryProvider = ConfluentSchemaRegistryProvider.jsonPayload(confluentClientFactory)
 
   // Use kafka-json serializers
-  override protected def keySerializer: Serializer[Any] = SimpleKafkaJsonSerializer()
+  override protected def keySerializer: Serializer[Any] = SimpleKafkaJsonSerializer
 
-  override protected def valueSerializer: Serializer[Any] = new SimpleKafkaJsonSerializer(highPriorityAvroEncoder)
+  override protected def valueSerializer: Serializer[Any] = SimpleKafkaJsonSerializer
 
   test("should read generated generic record in v1 with null key") {
     val givenValue = FullNameV1.record
@@ -38,12 +36,9 @@ class KafkaJsonPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
   }
 
   test("should read generated specific record in v1") {
-    val givenValue = GeneratedAvroClassWithLogicalTypesSchema.specificRecord.asInstanceOf[GeneratedAvroClassWithLogicalTypes]
+    val givenValue = GeneratedAvroClassSampleSchema.specificRecord.asInstanceOf[GeneratedAvroClassSample]
 
-    roundTripKeyValueObject(specificSourceFactory[GeneratedAvroClassWithLogicalTypes], useStringForKey = true, RecordTopic, ExistingSchemaVersion(1), "", givenValue)
+    roundTripKeyValueObject(specificSourceFactory[GeneratedAvroClassSample], useStringForKey = true, RecordTopic, ExistingSchemaVersion(1), "", givenValue)
   }
 
-  private val highPriorityAvroEncoder: PartialFunction[Any, Json] = {
-    case e: GeneratedAvroClassWithLogicalTypes => fixedEncoder(e)
-  }
 }

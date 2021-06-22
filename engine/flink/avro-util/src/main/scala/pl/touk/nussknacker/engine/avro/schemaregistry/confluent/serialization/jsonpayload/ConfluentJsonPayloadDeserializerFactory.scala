@@ -17,6 +17,8 @@ import scala.reflect.ClassTag
 
 /**
   * ConfluentJsonPayloadDeserializer converts json payload to avro.
+  * Used with schemas WITHOUT logical types due to avro conversion limitations.
+  *
   * It uses avro schema which has impact on json format requirements:
   * 1. Avro schema is used to deserialize json payload to GenericRecord or SpecificRecord.
   *    Values should be encoded with avro conversions (see example below).
@@ -25,7 +27,7 @@ import scala.reflect.ClassTag
   *
   * TODO: Add support to json payloads specified in json schema
   *
-  * Example object (see [GeneratedAvroClassWithLogicalTypesSchema]):
+  * Example object with logical types (serialized with BestJsonEffortEncoder, see [GeneratedAvroClassWithLogicalTypes]):
   * {
   *   "text" : "lorem ipsum",
   *   "dateTime" : "2020-01-02T03:14:15Z",

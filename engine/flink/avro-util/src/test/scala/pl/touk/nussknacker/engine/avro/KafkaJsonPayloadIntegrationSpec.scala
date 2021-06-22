@@ -1,12 +1,10 @@
 package pl.touk.nussknacker.engine.avro
 
-import io.circe.Json
-import org.apache.kafka.common.serialization.Deserializer
+import org.apache.kafka.common.serialization.{Deserializer, Serializer}
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import pl.touk.nussknacker.engine.avro.KafkaAvroTestProcessConfigCreator.recordingExceptionHandler
 import pl.touk.nussknacker.engine.avro.helpers.{KafkaAvroSpecMixin, SimpleKafkaJsonDeserializer, SimpleKafkaJsonSerializer}
-import pl.touk.nussknacker.engine.avro.schema.GeneratedAvroClassWithLogicalTypesSchema.fixedEncoder
-import pl.touk.nussknacker.engine.avro.schema.{GeneratedAvroClassWithLogicalTypes, GeneratedAvroClassWithLogicalTypesSchema, PaymentV1}
+import pl.touk.nussknacker.engine.avro.schema.{GeneratedAvroClassSampleSchema, GeneratedAvroClassWithLogicalTypes, PaymentV1}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaRegistryProvider}
@@ -31,7 +29,7 @@ class KafkaJsonPayloadIntegrationSpec extends FunSuite with KafkaAvroSpecMixin w
 
   override protected def prepareValueDeserializer(useSpecificAvroReader: Boolean): Deserializer[Any] = SimpleKafkaJsonDeserializer
 
-  override protected def valueSerializer: SimpleKafkaJsonSerializer = SimpleKafkaJsonSerializer(highPriorityAvroEncoder)
+  override protected def valueSerializer: Serializer[Any] = SimpleKafkaJsonSerializer
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -49,22 +47,19 @@ class KafkaJsonPayloadIntegrationSpec extends FunSuite with KafkaAvroSpecMixin w
     val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "#input")
     val process = createAvroProcess(sourceParam, sinkParam)
 
-    runAndVerifyResult(process, topicConfig, PaymentV1.exampleData, valueSerializer.encoder.encode(PaymentV1.exampleData))
+    runAndVerifyResult(process, topicConfig, PaymentV1.exampleData, SimpleKafkaJsonSerializer.encoder.encode(PaymentV1.exampleData))
   }
 
   test("should read and write json of specific record via avro schema") {
-    val topicConfig = createAndRegisterTopicConfig("simple-specific", GeneratedAvroClassWithLogicalTypesSchema.schema)
+    val topicConfig = createAndRegisterTopicConfig("simple-specific", GeneratedAvroClassSampleSchema.schema)
     val sourceParam = SourceAvroParam.forSpecific(topicConfig)
     val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "#input")
     val process = createAvroProcess(sourceParam, sinkParam)
 
-    val givenObj = GeneratedAvroClassWithLogicalTypesSchema.specificRecord
-    val expectedJson = valueSerializer.encoder.encode(givenObj)
+    val givenObj = GeneratedAvroClassSampleSchema.specificRecord
+    val expectedJson = SimpleKafkaJsonSerializer.encoder.encode(givenObj)
 
     runAndVerifyResult(process, topicConfig, givenObj, expectedJson, useSpecificAvroReader = true)
   }
 
-  private val highPriorityAvroEncoder: PartialFunction[Any, Json] = {
-    case e: GeneratedAvroClassWithLogicalTypes => fixedEncoder(e)
-  }
 }
