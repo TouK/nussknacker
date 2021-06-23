@@ -5,7 +5,6 @@
       <env name="AUTHENTICATION_USERS_FILE" value="../../../nussknacker-dist/src/universal/conf/users.conf" />
       <env name="MANAGEMENT_MODEL_DIR" value="../../../engine/flink/management/sample/target/scala-2.12" />
       <env name="GENERIC_MODEL_DIR" value="../../../engine/flink/generic/target/scala-2.12" />
-      <env name="DEMO_MODEL_DIR" value="../../../engine/demo/target/scala-2.12" />
       <env name="STANDALONE_MODEL_DIR" value="../../../engine/standalone/engine/sample/target/scala-2.12" />
       <env name="DEVELOPMENT_MODE" value="true" />
       <env name="GRAFANA_URL" value="http://localhost:8081/grafana" />

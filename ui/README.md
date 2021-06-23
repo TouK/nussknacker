@@ -20,7 +20,7 @@ You can do all steps at once with ```buildServer.sh``` script
     * VM options:         -Dnussknacker.config.locations=../../../nussknacker-dist/src/universal/conf/dev-application.conf -Dlogback.configurationFile=../logback-dev.xml
     * Working directory:  should be set to ui/server/work
     * Environment variables: 
-```AUTHENTICATION_USERS_FILE=../../../nussknacker-dist/src/universal/conf/users.conf;MANAGEMENT_MODEL_DIR=../../../engine/flink/management/sample/target/scala-2.12;GENERIC_MODEL_DIR=../../../engine/flink/generic/target/scala-2.12;DEMO_MODEL_DIR=../../../engine/demo/target/scala-2.12;STANDALONE_MODEL_DIR=../../../engine/standalone/engine/sample/target/scala-2.12```
+```AUTHENTICATION_USERS_FILE=../../../nussknacker-dist/src/universal/conf/users.conf;MANAGEMENT_MODEL_DIR=../../../engine/flink/management/sample/target/scala-2.12;GENERIC_MODEL_DIR=../../../engine/flink/generic/target/scala-2.12;STANDALONE_MODEL_DIR=../../../engine/standalone/engine/sample/target/scala-2.12```
 If you want to connect to infrastructure in docker you need to set on end of line also:
 ```;FLINK_REST_URL=http://localhost:3031;FLINK_QUERYABLE_STATE_PROXY_URL=localhost:3063;SCHEMA_REGISTRY_URL=http://localhost:3082;KAFKA_ADDRESS=localhost:3032```
     * Module classpath:  nussknacker-ui (this is ```ui/server``` folder) 

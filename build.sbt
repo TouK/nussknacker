@@ -334,13 +334,11 @@ lazy val dist = {
       packageName in Universal := ("nussknacker" + "-" + version.value),
       Keys.compile in Compile := (Keys.compile in Compile).dependsOn(
         (assembly in Compile) in generic,
-        (assembly in Compile) in demo,
         (assembly in Compile) in flinkProcessManager,
         (assembly in Compile) in engineStandalone
       ).value,
       mappings in Universal ++= Seq(
         (crossTarget in generic).value / "genericModel.jar" -> "model/genericModel.jar",
-        (crossTarget in demo).value / s"demoModel.jar" -> "model/demoModel.jar",
         (crossTarget in flinkProcessManager).value / s"nussknacker-flink-manager.jar" -> "managers/nussknacker-flink-manager.jar",
         (crossTarget in engineStandalone).value / s"nussknacker-standalone-manager.jar" -> "managers/nussknacker-standalone-manager.jar"
       ),
@@ -533,26 +531,6 @@ lazy val managementJavaSample = (project in engine("flink/management/java_sample
       )
     }
   ).dependsOn(flinkUtil, process % "runtime")
-
-lazy val demo = (project in engine("demo")).
-  settings(commonSettings).
-  settings(assemblySampleSettings("demoModel.jar"): _*).
-  settings(publishAssemblySettings: _*).
-  settings(
-    name := "nussknacker-demo",
-    libraryDependencies ++= {
-      Seq(
-        "com.fasterxml.jackson.core" % "jackson-databind" % jacksonV,
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
-        "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided",
-        "org.scalatest" %% "scalatest" % scalaTestV % "test",
-        "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
-        "ch.qos.logback" % "logback-classic" % logbackV % "test"
-      )
-    }
-  )
-  .dependsOn(process % "runtime,test", kafkaFlinkUtil, flinkModelUtil, kafkaTestUtil % "test", flinkTestUtil % "test")
-
 
 lazy val generic = (project in engine("flink/generic")).
   settings(commonSettings).
@@ -965,11 +943,9 @@ lazy val ui = (project in file("ui/server"))
     },
     parallelExecution in ThisBuild := false,
     Keys.test in SlowTests := (Keys.test in SlowTests).dependsOn(
-      //TODO: maybe here there should be engine/demo??
       (assembly in Compile) in flinkManagementSample
     ).value,
     Keys.test in Test := (Keys.test in Test).dependsOn(
-      //TODO: maybe here there should be engine/demo??
       (assembly in Compile) in flinkManagementSample
     ).value,
     /*
@@ -1065,7 +1041,7 @@ lazy val bom = (project in file("bom"))
   ).dependsOn(modules.map(k => k:ClasspathDep[ProjectReference]):_*)
 
 lazy val modules = List[ProjectReference](
-  engineStandalone, standaloneApp, flinkProcessManager, flinkPeriodicProcessManager, standaloneSample, flinkManagementSample, managementJavaSample, demo, generic,
+  engineStandalone, standaloneApp, flinkProcessManager, flinkPeriodicProcessManager, standaloneSample, flinkManagementSample, managementJavaSample, generic,
   process, interpreter, benchmarks, kafka, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
   flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils, queryableState,
   restmodel, listenerApi, ui
@@ -1103,5 +1079,5 @@ lazy val root = (project in file("."))
     )
   )
 
-addCommandAlias("assemblySamples", ";flinkManagementSample/assembly;standaloneSample/assembly;demo/assembly;generic/assembly")
+addCommandAlias("assemblySamples", ";flinkManagementSample/assembly;standaloneSample/assembly;generic/assembly")
 addCommandAlias("assemblyEngines", ";flinkProcessManager/assembly;engineStandalone/assembly")
