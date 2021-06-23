@@ -333,7 +333,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
       GeneratedAvroClassWithLogicalTypes.SCHEMA$,
       GeneratedAvroClassWithLogicalTypesNewSchema.schema
     ))
-    val sourceParam = SourceAvroParam.forSpecific(topicConfig)
+    val sourceParam = SourceAvroParam.forSpecificWithLogicalTypes(topicConfig)
     val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(2), "#input")
 
     val givenRecord = GeneratedAvroClassWithLogicalTypesOldSchema(

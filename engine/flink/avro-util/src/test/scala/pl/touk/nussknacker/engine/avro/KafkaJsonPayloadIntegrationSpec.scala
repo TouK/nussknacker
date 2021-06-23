@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.engine.avro
 
-import org.apache.avro.Schema
-import org.apache.kafka.common.serialization.Deserializer
+import org.apache.kafka.common.serialization.{Deserializer, Serializer}
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import pl.touk.nussknacker.engine.avro.KafkaAvroTestProcessConfigCreator.recordingExceptionHandler
 import pl.touk.nussknacker.engine.avro.helpers.{KafkaAvroSpecMixin, SimpleKafkaJsonDeserializer, SimpleKafkaJsonSerializer}
-import pl.touk.nussknacker.engine.avro.schema.PaymentV1
+import pl.touk.nussknacker.engine.avro.schema.{GeneratedAvroClassSampleSchema, GeneratedAvroClassWithLogicalTypes, PaymentV1}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaRegistryProvider}
@@ -22,13 +21,15 @@ class KafkaJsonPayloadIntegrationSpec extends FunSuite with KafkaAvroSpecMixin w
       ConfluentSchemaRegistryProvider.jsonPayload(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
   }
   
-  protected val paymentSchemas: List[Schema] = List(PaymentV1.schema)
-
-  override def schemaRegistryClient: MockSchemaRegistryClient = schemaRegistryMockClient
+  override protected def schemaRegistryClient: MockSchemaRegistryClient = schemaRegistryMockClient
 
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
 
   override protected lazy val schemaRegistryProvider: ConfluentSchemaRegistryProvider = ConfluentSchemaRegistryProvider.jsonPayload(confluentClientFactory)
+
+  override protected def prepareValueDeserializer(useSpecificAvroReader: Boolean): Deserializer[Any] = SimpleKafkaJsonDeserializer
+
+  override protected def valueSerializer: Serializer[Any] = SimpleKafkaJsonSerializer
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -40,16 +41,25 @@ class KafkaJsonPayloadIntegrationSpec extends FunSuite with KafkaAvroSpecMixin w
     recordingExceptionHandler.clear()
   }
 
-  test("should read and write json via avro schema") {
-    val topicConfig = createAndRegisterTopicConfig("simple", PaymentV1.schema)
+  test("should read and write json of generic record via avro schema") {
+    val topicConfig = createAndRegisterTopicConfig("simple-generic", PaymentV1.schema)
     val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
     val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "#input")
     val process = createAvroProcess(sourceParam, sinkParam)
 
-    runAndVerifyResult(process, topicConfig, PaymentV1.exampleData, valueSerializer.encoder.encode(PaymentV1.exampleData))
+    runAndVerifyResult(process, topicConfig, PaymentV1.exampleData, SimpleKafkaJsonSerializer.encoder.encode(PaymentV1.exampleData))
   }
 
-  override protected def prepareValueDeserializer(useSpecificAvroReader: Boolean): Deserializer[Any] = SimpleKafkaJsonDeserializer
+  test("should read and write json of specific record via avro schema") {
+    val topicConfig = createAndRegisterTopicConfig("simple-specific", GeneratedAvroClassSampleSchema.schema)
+    val sourceParam = SourceAvroParam.forSpecific(topicConfig)
+    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "#input")
+    val process = createAvroProcess(sourceParam, sinkParam)
 
-  override protected def valueSerializer: SimpleKafkaJsonSerializer.type = SimpleKafkaJsonSerializer
+    val givenObj = GeneratedAvroClassSampleSchema.specificRecord
+    val expectedJson = SimpleKafkaJsonSerializer.encoder.encode(givenObj)
+
+    runAndVerifyResult(process, topicConfig, givenObj, expectedJson, useSpecificAvroReader = true)
+  }
+
 }

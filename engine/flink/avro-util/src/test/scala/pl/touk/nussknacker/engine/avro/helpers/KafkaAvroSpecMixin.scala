@@ -94,6 +94,7 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
       case GenericSourceAvroParam(_, version) => List(SchemaVersionParamName -> asSpelExpression(formatVersionParam(version)))
       case GenericSourceWithKeySupportAvroParam(_, version) => List(SchemaVersionParamName -> asSpelExpression(formatVersionParam(version)))
       case SpecificSourceAvroParam(_) => List.empty
+      case SpecificWithLogicalTypesSourceAvroParam(_) => List.empty
     })
 
     val baseSinkParams: List[(String, expression.Expression)] = List(
@@ -166,12 +167,16 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
     override def sourceType: String = "kafka-avro"
   }
 
+  case class GenericSourceWithKeySupportAvroParam(topic: String, versionOption: SchemaVersionOption) extends SourceAvroParam {
+    override def sourceType: String = "kafka-avro-key-value"
+  }
+
   case class SpecificSourceAvroParam(topic: String) extends SourceAvroParam {
     override def sourceType: String = "kafka-avro-specific"
   }
 
-  case class GenericSourceWithKeySupportAvroParam(topic: String, versionOption: SchemaVersionOption) extends SourceAvroParam {
-    override def sourceType: String = "kafka-avro-key-value"
+  case class SpecificWithLogicalTypesSourceAvroParam(topic: String) extends SourceAvroParam {
+    override def sourceType: String = "kafka-avro-specific-with-logical-types"
   }
 
   object SourceAvroParam {
@@ -179,11 +184,14 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
     def forGeneric(topicConfig: TopicConfig, versionOption: SchemaVersionOption): SourceAvroParam =
       GenericSourceAvroParam(topicConfig.input, versionOption)
 
+    def forGenericWithKeySchemaSupport(topicConfig: TopicConfig, versionOption: SchemaVersionOption): SourceAvroParam =
+      GenericSourceWithKeySupportAvroParam(topicConfig.input, versionOption)
+
     def forSpecific(topicConfig: TopicConfig): SourceAvroParam =
       SpecificSourceAvroParam(topicConfig.input)
 
-    def forGenericWithKeySchemaSupport(topicConfig: TopicConfig, versionOption: SchemaVersionOption): SourceAvroParam =
-      GenericSourceWithKeySupportAvroParam(topicConfig.input, versionOption)
+    def forSpecificWithLogicalTypes(topicConfig: TopicConfig): SourceAvroParam =
+      SpecificWithLogicalTypesSourceAvroParam(topicConfig.input)
 
   }
 

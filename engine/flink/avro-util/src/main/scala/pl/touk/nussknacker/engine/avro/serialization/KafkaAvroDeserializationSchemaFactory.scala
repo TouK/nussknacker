@@ -49,6 +49,8 @@ abstract class KafkaAvroKeyValueDeserializationSchemaFactory
 
   protected def createValueTypeInfo[V: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): TypeInformation[V]
 
+  protected def createStringKeyDeserializer: Deserializer[_] = new StringDeserializer
+
   override def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig,
                                                 keySchemaDataOpt: Option[RuntimeSchemaData],
                                                 valueSchemaDataOpt: Option[RuntimeSchemaData]
@@ -58,7 +60,7 @@ abstract class KafkaAvroKeyValueDeserializationSchemaFactory
 
       @transient
       private lazy val keyDeserializer = if (kafkaConfig.useStringForKey) {
-        {new StringDeserializer}.asInstanceOf[Deserializer[K]]
+        createStringKeyDeserializer.asInstanceOf[Deserializer[K]]
       } else {
         createKeyDeserializer[K](keySchemaDataOpt, kafkaConfig)
       }

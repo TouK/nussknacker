@@ -13,11 +13,8 @@ import scala.reflect.ClassTag
 
 /**
   * RecordFormatter used to encode and decode whole raw kafka event (ConsumerRecord) in json format.
-  *
-  * @param deserializationSchema - schema used to convert raw kafka event to serializable representation (see SerializableConsumerRecord)
-  * @param serializeKeyValue - converts key and value from K-V domain to Array[Byte]
-  * @tparam K - event key type
-  * @tparam V - event value type
+  * @tparam K - event key type with provided Encoder/Decoder
+  * @tparam V - event value type with provided Encoder/Decoder
   */
 class ConsumerRecordToJsonFormatterFactory[K:Encoder:Decoder, V:Encoder:Decoder] extends RecordFormatterFactory {
 

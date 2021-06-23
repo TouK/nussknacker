@@ -16,6 +16,11 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFor
 import java.nio.charset.StandardCharsets
 import scala.reflect.ClassTag
 
+/**
+  * RecordFormatter factory for kafka avro sources with avro payload.
+  *
+  * @param schemaRegistryClientFactory
+  */
 class ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory) extends RecordFormatterFactory {
 
   override def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]]): RecordFormatter = {
@@ -30,6 +35,9 @@ class ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory: Confluent
 }
 
 /**
+  * Formatter uses writer schema ids to assure test data represent raw events data, without schema evolution (which adjusts data to reader schema).
+  * Test data record contains data of ConsumerRecord and contains key and value schema ids (see [AvroSerializableConsumerRecord]).
+  *
   * @tparam K - key type passed from KafkaAvroSourceFactory, used to determine which datumReaderWriter use (e.g. specific or generic)
   * @tparam V - value type passed from KafkaAvroSourceFactory, used to determine which datumReaderWriter use (e.g. specific or generic)
   */
