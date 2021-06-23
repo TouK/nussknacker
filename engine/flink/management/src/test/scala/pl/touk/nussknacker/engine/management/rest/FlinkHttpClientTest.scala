@@ -1,11 +1,15 @@
 package pl.touk.nussknacker.engine.management.rest
 
+import io.circe.syntax.EncoderOps
 import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.time.Span.convertSpanToDuration
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.FlinkConfig
-import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{JarFile, JarsResponse, UploadJarResponse}
+import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{FlinkError, JarFile, JarsResponse, UploadJarResponse}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import sttp.client.Response
+import sttp.client.monad.FutureMonad
+import sttp.client.{HttpError, Response}
 import sttp.client.testing.SttpBackendStub
 import sttp.model.{Method, StatusCode}
 
@@ -13,7 +17,9 @@ import java.io.File
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext.Implicits._
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.FiniteDuration
+import scala.util.Failure
 
 class FlinkHttpClientTest extends FunSuite
   with Matchers
@@ -24,6 +30,7 @@ class FlinkHttpClientTest extends FunSuite
   private val jarFile = new File(s"/tmp/${jarFileName}")
   private val jarId = s"${UUID.randomUUID()}-example.jar"
   private val flinkJarFile = JarFile(jarId, jarFileName)
+  private val deploymentId = ExternalDeploymentId("someDeploymentId")
 
   val config: FlinkConfig = FlinkConfig(FiniteDuration(10, TimeUnit.SECONDS), None, "http://localhost:12345/flink", None)
 
@@ -103,5 +110,27 @@ class FlinkHttpClientTest extends FunSuite
     val result = flinkClient.deleteJarIfExists(jarFileName).futureValue
 
     result shouldBe (())
+  }
+
+  test("should throw FlinkError if action failed") {
+    implicit val backend = new SttpBackendStub[Future, Nothing, Nothing](new FutureMonad(), {
+      case req if req.uri.path == List("jars") =>
+        Future.successful(Response.ok(Right(JarsResponse(files = Some(List(JarFile(id = jarId, name = jarFileName)))))))
+      case req if req.uri.path == List("jars", jarId, "run") =>
+        Future.failed(HttpError(FlinkError(List("Error, error")).asJson.noSpaces, StatusCode.InternalServerError))
+      case req if req.uri.path == List("jobs", deploymentId.value) && req.method == Method.PATCH =>
+        Future.failed(HttpError(FlinkError(List("Error, error")).asJson.noSpaces, StatusCode.InternalServerError))
+    }, PartialFunction.empty, None)
+
+    val flinkClient = new HttpFlinkClient(config)
+
+    def checkIfWrapped(action: Future[_]) = {
+      Await.ready(action, convertSpanToDuration(patienceConfig.timeout)).value should matchPattern {
+        case Some(Failure(_: FlinkClientError)) =>
+      }
+    }
+
+    checkIfWrapped(flinkClient.cancel(deploymentId))
+    checkIfWrapped(flinkClient.runProgram(jarFile, "any", Nil, None))
   }
 }

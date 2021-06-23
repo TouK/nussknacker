@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.management.rest
 
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.Error
+import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.deployment.{ExternalDeploymentId, SavepointResult}
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
 import pl.touk.nussknacker.engine.management.{FlinkArgsEncodeHack, FlinkConfig}
@@ -8,6 +10,7 @@ import pl.touk.nussknacker.engine.sttp.SttpJson
 import pl.touk.nussknacker.engine.util.exception.DeeplyCheckingExceptionExtractor
 import sttp.client.circe._
 import sttp.client.{NothingT, SttpBackend, _}
+import sttp.model.StatusCode
 
 import java.io.File
 import java.util.concurrent.TimeoutException
@@ -45,7 +48,9 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
       .map { file =>
         logger.info(s"Uploaded jar to $file")
         new File(file.filename).getName
-    }
+      }
+      .recoverWith(recoverWithMessage("upload Nussnknacker jar to Flink"))
+
   }
 
   override def deleteJarIfExists(jarFileName: String): Future[Unit] = {
@@ -68,7 +73,9 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
     basicRequest
       .delete(flinkUrl.path("jars", jarId))
       .send()
-      .flatMap(handleUnitResponse)
+      .flatMap(handleUnitResponse("delete jar"))
+      .recoverWith(recoverWithMessage("delete jar"))
+
   }
 
 
@@ -84,6 +91,8 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
           .sortBy(_.`last-modification`)
           .reverse
       }
+      .recoverWith(recoverWithMessage("retrieve Flink jobs"))
+
   }
 
   def getJobConfig(jobId: String): Future[flinkRestModel.ExecutionConfig] = {
@@ -126,24 +135,28 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
     basicRequest
       .patch(flinkUrl.path("jobs", deploymentId.value))
       .send()
-      .flatMap(handleUnitResponse)
+      .flatMap(handleUnitResponse("cancel scenario"))
+      .recoverWith(recoverWithMessage("cancel scenario"))
+
   }
 
   def makeSavepoint(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
     val savepointRequest = basicRequest
       .post(flinkUrl.path("jobs", deploymentId.value, "savepoints"))
       .body(SavepointTriggerRequest(`target-directory` = savepointDir, `cancel-job` = false))
-    processSavepointRequest(deploymentId, savepointRequest)
+    processSavepointRequest(deploymentId, savepointRequest, "make savepoint")
   }
 
   def stop(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
     val stopRequest = basicRequest
       .post(flinkUrl.path("jobs", deploymentId.value, "stop"))
       .body(StopRequest(targetDirectory = savepointDir, drain = false))
-    processSavepointRequest(deploymentId, stopRequest)
+    processSavepointRequest(deploymentId, stopRequest, "stop scenario")
   }
 
-  private def processSavepointRequest(deploymentId: ExternalDeploymentId, request: RequestT[Identity, Either[String, String], Nothing]): Future[SavepointResult] = {
+  private def processSavepointRequest(deploymentId: ExternalDeploymentId,
+                                      request: RequestT[Identity, Either[String, String], Nothing],
+                                      action: String): Future[SavepointResult] = {
     request
       .response(asJson[SavepointTriggerResponse])
       .send()
@@ -151,6 +164,7 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
       .flatMap { response =>
         waitForSavepoint(deploymentId, response.`request-id`)
       }
+      .recoverWith(recoverWithMessage(action))
   }
 
   private val timeoutExtractor = DeeplyCheckingExceptionExtractor.forClass[TimeoutException]
@@ -180,13 +194,29 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
             logger.warn("TimeoutException occurred while waiting for deploy result. Recovering with Future.successful...", e)
             None
         })
+        .recoverWith(recoverWithMessage("deploy scenario"))
     }
 
   }
 
-  private def handleUnitResponse(response: Response[Either[String, String]]): Future[Unit] = (response.code, response.body) match {
+  private def handleUnitResponse(action: String)(response: Response[Either[String, String]]): Future[Unit] = (response.code, response.body) match {
     case (code, Right(_)) if code.isSuccess => Future.successful(())
-    case (code, Left(error)) => Future.failed(new RuntimeException(s"Request failed: $error, code: $code"))
+    case (code, Left(error)) => handleClientError(error, code, action)
+  }
+
+  //We don't want to pass Flink error directly to user, as it usually contains stacktrace etc.
+  private def handleClientError(body: String, status: StatusCode, action: String) = {
+    val decodedErrors =
+      CirceUtil.decodeJson[FlinkError](body).fold(error => FlinkError(List(s"Failed to decode: $error")), identity)
+    logger.error(s"Failed to $action, status code: $status, errors from Flink: ${decodedErrors.errors.mkString("\n")}")
+    Future.failed(FlinkClientError(s"Flink cluster failed to $action. Detailed error information in logs"))
+  }
+
+  private def recoverWithMessage[T](action: String): PartialFunction[Throwable, Future[T]] = {
+    case HttpError(body, status) => handleClientError(body, status, action)
   }
 
 }
+
+case class FlinkClientError(message: String) extends Exception(message)
+
