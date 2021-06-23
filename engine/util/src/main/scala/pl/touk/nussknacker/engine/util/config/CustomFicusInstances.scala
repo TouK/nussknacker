@@ -6,6 +6,7 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.{FicusConfig, SimpleFicusConfig}
 import net.ceedubs.ficus.readers._
 
+import java.util.UUID
 import scala.language.implicitConversions
 import scala.util.Try
 
@@ -20,6 +21,9 @@ object CustomFicusInstances extends AnyValReaders with StringReader with SymbolR
     .map(value => Try(new URI(value)).filter(Option(_).map(_.getScheme).exists(_.nonEmpty)).getOrElse(new File(value).toURI))
 
   implicit val urlValueReader: ValueReader[URL] = uriValueReader.map(_.toURL)
+
+  implicit val uuidValueReader: ValueReader[UUID] = ValueReader[String]
+    .map(value => UUID.fromString(value))
 
   implicit def toFicusConfig(config: Config): FicusConfig = SimpleFicusConfig(config)
 

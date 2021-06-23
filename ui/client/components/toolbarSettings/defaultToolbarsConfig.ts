@@ -12,15 +12,9 @@ export const defaultToolbarsConfig: WithId<ToolbarsConfig> = {
       id: "PROCESS-INFO",
       buttons: [
         {type: BuiltinButtonTypes.processSave},
-        {type: BuiltinButtonTypes.deploy},
-        {type: BuiltinButtonTypes.deployCancel},
-        {type: BuiltinButtonTypes.deployMetrics},
-        // {
-        //   type: CustomButtonTypes.customLink,
-        //   name: "metrics",
-        //   icon: "toolbarButtons/metrics.svg",
-        //   href: "/metrics/{{processId}}",
-        // },
+        {type: BuiltinButtonTypes.processDeploy},
+        {type: BuiltinButtonTypes.processCancel},
+        {type: BuiltinButtonTypes.processMetrics}, //replace it by custom link
       ],
     },
     {
@@ -50,7 +44,7 @@ export const defaultToolbarsConfig: WithId<ToolbarsConfig> = {
       id: "PROCESS-PANELS",
       title: "process",
       buttons: [
-        {type: BuiltinButtonTypes.editProperties},
+        {type: BuiltinButtonTypes.processProperties},
         {type: BuiltinButtonTypes.processCompare},
         {type: BuiltinButtonTypes.processMigrate},
         {type: BuiltinButtonTypes.processImport},

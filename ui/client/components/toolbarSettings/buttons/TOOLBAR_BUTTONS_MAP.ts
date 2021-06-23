@@ -40,9 +40,9 @@ type ToolbarButtonsMap = {
 
 export const TOOLBAR_BUTTONS_MAP: ToolbarButtonsMap = {
   [BuiltinButtonTypes.processSave]: SaveButton,
-  [BuiltinButtonTypes.deploy]: DeployButton,
-  [BuiltinButtonTypes.deployCancel]: CancelDeployButton,
-  [BuiltinButtonTypes.deployMetrics]: MetricsButton, // like "custom-link" but disabled for subprocess
+  [BuiltinButtonTypes.processDeploy]: DeployButton,
+  [BuiltinButtonTypes.processCancel]: CancelDeployButton,
+  [BuiltinButtonTypes.processMetrics]: MetricsButton, // like "custom-link" but disabled for subprocess
   [BuiltinButtonTypes.viewBusinessView]: BussinesViewSwitch,
   [BuiltinButtonTypes.viewZoomIn]: ZoomInButton,
   [BuiltinButtonTypes.viewZoomOut]: ZoomOutButton,
@@ -53,7 +53,7 @@ export const TOOLBAR_BUTTONS_MAP: ToolbarButtonsMap = {
   [BuiltinButtonTypes.editPaste]: PasteButton,
   [BuiltinButtonTypes.editDelete]: DeleteButton,
   [BuiltinButtonTypes.editLayout]: LayoutButton,
-  [BuiltinButtonTypes.editProperties]: PropertiesButton,
+  [BuiltinButtonTypes.processProperties]: PropertiesButton,
   [BuiltinButtonTypes.processCompare]: CompareButton,
   [BuiltinButtonTypes.processMigrate]: MigrateButton,
   [BuiltinButtonTypes.processImport]: ImportButton,

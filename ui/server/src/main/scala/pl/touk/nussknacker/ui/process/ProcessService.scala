@@ -4,7 +4,7 @@ import akka.util.Timeout
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.{GraphProcess, ProcessActionType, ProcessState}
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName, ProcessVersionId}
-import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
+import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.process.deployment.{Cancel, CheckStatus, Deploy}
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
@@ -45,6 +45,8 @@ object ProcessService {
 }
 
 trait ProcessService {
+
+  def getProcess[PS: ProcessShapeFetchStrategy](processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[XError[BaseProcessDetails[PS]]]
 
   def getProcessState(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[ProcessState]
 
@@ -129,7 +131,7 @@ class DBProcessService(managerActor: ActorRef,
 
   private def doAction(action: ProcessActionType, processIdWithName: ProcessIdWithName, savepointPath: Option[String], comment: Option[String])
                       (actionToDo: (ProcessIdWithName, Option[String], Option[String]) => Future[EmptyResponse])
-                      (implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] = {
+                      (implicit user: LoggedUser): Future[EmptyResponse] = {
     withNotArchivedProcess(processIdWithName, action) { process =>
       if (process.isSubprocess) {
         Future(Left(ProcessIllegalAction.subprocess(action, processIdWithName)))
@@ -223,11 +225,19 @@ class DBProcessService(managerActor: ActorRef,
       }
     }
 
+  override def getProcess[PS: ProcessShapeFetchStrategy](processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[XError[BaseProcessDetails[PS]]] =
+    fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[PS](processIdWithName.id).flatMap {
+      case Some(process) =>
+        Future(Right(process))
+      case None =>
+        Future(Left(ProcessNotFoundError(processIdWithName.id.value.toString)))
+    }
+
   private def archiveSubprocess(process: BaseProcessDetails[_])(implicit user: LoggedUser): Future[EmptyResponse] =
     doArchive(process)
 
   private def doOnProcessStateVerification(process: BaseProcessDetails[_], actionToCheck: ProcessActionType)(callback: BaseProcessDetails[_] => Future[EmptyResponse])
-                                          (implicit ec: ExecutionContext, user: LoggedUser): Future[EmptyResponse] =
+                                          (implicit user: LoggedUser): Future[EmptyResponse] =
     getProcessState(process.idWithName).flatMap(state => {
       if (state.allowedActions.contains(actionToCheck)) {
         callback(process)
@@ -246,11 +256,9 @@ class DBProcessService(managerActor: ActorRef,
     ProcessResponse(ProcessId(processVersionEntity.processId), ProcessVersionId(processVersionEntity.id), processName)
 
   private def withProcess[T](processIdWithName: ProcessIdWithName)(callback: BaseProcessDetails[_] => Future[XError[T]])(implicit user: LoggedUser) = {
-    fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id).flatMap {
-      case Some(process) =>
-        callback(process)
-      case None =>
-        Future(Left(ProcessNotFoundError(processIdWithName.id.value.toString)))
+    getProcess[Unit](processIdWithName).flatMap {
+      case Left(err) => Future(Left(err))
+      case Right(t) => callback(t)
     }
   }
 
