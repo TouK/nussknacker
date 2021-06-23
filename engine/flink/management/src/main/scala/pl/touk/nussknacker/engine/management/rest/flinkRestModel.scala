@@ -54,5 +54,7 @@ object flinkRestModel {
   @JsonCodec(decodeOnly = true) case class JarFile(id: String, name: String)
 
   @JsonCodec case class RunResponse(jobid: String)
+
+  @JsonCodec case class FlinkError(errors: List[String])
 }
 
