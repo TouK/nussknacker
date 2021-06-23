@@ -57,10 +57,10 @@ processTypes {
 
 metricsSettings {
   url: "http://localhost:3000/dashboard/db/$dashboard?theme=dark&var-processName=$process&var-env=demo"
-  defaultDashboard: "flink-esp"
+  defaultDashboard: "nussknacker-scenario"
   processingTypeToDashboard: {
     "request-response": "standalone",
-    "streaming": "flink-esp"
+    "streaming": "nussknacker-scenario"
   }
 }
 
@@ -140,10 +140,10 @@ types and their configurations below.
 ```
 metricsSettings {
   url: "http://localhost:3000/dashboard/db/$dashboard?theme=dark&var-processName=$process&var-env=demo"
-  defaultDashboard: "flink-esp"
+  defaultDashboard: "nussknacker-scenario"
   processingTypeToDashboard: {
     "request-response": "standalone",
-    "streaming": "flink-esp"
+    "streaming": "nussknacker-scenario"
   }
 }
 ```

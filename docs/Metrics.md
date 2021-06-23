@@ -82,7 +82,7 @@ Reporting metrics to InfluxDB and Grafana
 -----------------------------------------
 
 We provide sample configuration and dashboard for InfluxDB & Grafana. Please check [Docker demo](https://github.com/TouK/nussknacker/tree/staging/demo/docker).
-The dashboard can be found [here](https://github.com/TouK/nussknacker/blob/staging/demo/docker/grafana/dashboards/Flink-ESP.json).
+The dashboard can be found [here](https://github.com/TouK/nussknacker/blob/staging/demo/docker/grafana/dashboards/nussknacker-scenario.json).
 
 While Flink provides [InfluxDB reporter](https://ci.apache.org/projects/flink/flink-docs-stable/monitoring/metrics.html#influxdb-orgapacheflinkmetricsinfluxdbinfluxdbreporter),
 it's lacking a few of capabilities we needed. That's why in Docker demo setup we send metrics through Telegraf, to:
