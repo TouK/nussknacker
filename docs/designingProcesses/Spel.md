@@ -29,12 +29,16 @@ they are usually `java.lang` (primitives), `java.util` (List, Map) and `java.tim
 | ---------- | ------- | ------- | ----------- |
 | null       | null    | null    |             |
 | String     | string  | string  | UTF-8       |
+| Boolean    | boolean | boolean |             |
 | Integer    | number  | int     | 32bit       |
 | Long       | number  | long    | 64bit       |
 | Float      | number  | float   | single precision |
 | Double     | number  | double  | double precision |
-| BigDecimal | number  | double  | enable computation without rounding errors |
-| Boolean    | boolean | boolean |             |
+| BigDecimal | number  | bytes or fixed + decimal | enable computation without rounding errors |
+| UUID       | string  | string + uuid | uuid |
+
+More information about how to declare each type in Avro you can find in [Avro ducumentation](http://avro.apache.org/docs/current/spec.html#schemas), 
+especially about [Avro logical types](http://avro.apache.org/docs/current/spec.html#Logical+Types).
 
 ### Records/objects
          
@@ -66,13 +70,15 @@ also in some context `Collection` can be met (it's Java API for handling lists, 
 ### Handling date/time.
 
 Formats of date/time are pretty complex - especially in Java. There are basically three ways of storing date:
-- as timestamp - absolute value, number of milliseconds since 01-01-1970T00:00:00 UTC. In Nussknacker this is 
+- as timestamp - absolute value, number of milliseconds since 1970-01-01T00:00:00 UTC. In Nussknacker this is 
   usually seen as `Long` or `Instant`. This format is handy for storing/sending values, a bit problematic when
   it comes to computations like adding a month or extracting date. 
 - as date/time without timezone information (this is usually handy if your system is in one timezone).
   Converting to timestamp is done using Nussknacker server timezone.
   In Nussknacker they are usually represented as `LocalDate` and `LocalDateTime`. Suitable for date computations like adding a month or extracting date. 
-- as date/time with stored timezone. In Nussknacker usually seen as `ZonedDateTime` or `ZonedTime`. Suitable for date computations like adding a month or extracting date. 
+- as date/time with stored timezone. In Nussknacker usually seen as `ZonedDateTime`. Suitable for date computations like adding a month or extracting date. 
+- as date/time with stored time offset. In Nussknacker usually seen as `OffsetDateTime`. Contrary to `ZonedDateTime` doesn't handle daylight saving time. 
+  Quite often used to hold timestamp with additional information showing what was the local date/time from "user perspective" 
                                            
 Conversions of different types of dates are handled either by 
 - `#DATE` helper has methods for parsing and conversion
@@ -84,15 +90,16 @@ Conversions of different types of dates are handled either by
 The following table mapping of types, possible JSON representation (no standard here though) and 
 mapping of AVRO types (`int + date` means `int` type with `date` logical type):
 
-| Java type     | JSON    | Avro                      | Sample                  | Comment     |
-| ----------    | ------- | ------------------------- | ----------------------- | ----------- |
-| LocalDate     | string  | int + date                | 2021-05-17              | Timezone is not stored            |
-| LocalDateTime | string  | -                         | 2021-05-17T07:34:00     | Timezone is not stored            |
-| ZonedDate     | string  | -                         | 2021-05-17+02[Europe/Warsaw]           |             |
-| ZonedDateTime | string  | -                         | 2021-05-17T07:34:00+02[Europe/Warsaw] |             |
-| Long          | number  | long, long + local-timestamp-millis, long + local-timestamp-micros                       |                         | Raw timestamp (millis since 01.01.1970.) |
-| Instant       | number  | long + timestamp-millis, long + timestamp-micros)   |                         | Raw timestamp (millis since 01.01.1970.) |
-      
+| Java type      | JSON    | Avro                        | Sample                     | Comment                |
+| -------------- | ------- | --------------------------- | -------------------------- | ---------------------- |
+| LocalDate      | string  | int + date                  | 2021-05-17                 | Timezone is not stored |
+| LocalTime      | string  | int + time-millis or long + time-micros | 07:34:00.12345 | Timezone is not stored |
+| LocalDateTime  | string  | not supported yet           | 2021-05-17T07:34:00        | Timezone is not stored |
+| ZonedDateTime  | string  | long + timestamp-millis or timestamp-micros (not supported in sources) | 2021-05-17T07:34:00+02:00 |  |
+| OffsetDateTime | string  | long + timestamp-millis or timestamp-micros (not supported in sources) | 2021-05-17T07:34:00+02:00 |  |
+| Instant        | number  | long + timestamp-millis or timestamp-micros | 2021-05-17T05:34:00Z | Timestamp (millis since 1970-01-01) in human readable format |
+| Long           | number  | long, long + local-timestamp-millis or local-timestamp-micros | 123456789 | Raw timestamp (millis since 1970-01-01) |
+
 # SpEL syntax
 
 ## Literals
