@@ -529,7 +529,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "alias": "[[tag_process]] - [[tag_action]]",
+              "alias": "[[tag_process]] - [[tag_nodeId]]",
               "dsType": "influxdb",
               "groupBy": [
                 {
@@ -2972,7 +2972,7 @@
       "thresholds": "",
       "timeFrom": null,
       "timeShift": null,
-      "title": "Last checkpoint duration",
+      "title": "Last checkpoint size",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -3394,8 +3394,8 @@
     ]
   },
   "time": {
-    "from": "2021-06-22T11:34:20.620Z",
-    "to": "2021-06-22T12:34:20.620Z"
+    "from": "now-30m",
+    "to": "now"
   },
   "timepicker": {
     "now": true,

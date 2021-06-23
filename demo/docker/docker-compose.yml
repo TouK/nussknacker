@@ -13,6 +13,9 @@ services:
       FLINK_ROCKSDB_CHECKPOINT_DATA_URI: file:///opt/flink/data/rocksdb-checkpoints
     volumes:
       - nussknacker_storage_app:/opt/nussknacker/storage
+      #this is needed to be able to verify savepoints during deployments
+      - nussknacker_storage_flink:/opt/flink/data
+
 
 volumes:
   nussknacker_storage_app:

@@ -56,7 +56,7 @@ processTypes {
 
 
 metricsSettings {
-  url: "http://localhost:3000/dashboard/db/$dashboard?theme=dark&var-processName=$process&var-env=demo"
+  url: "http://localhost:3000/d/$dashboard?theme=dark&var-processName=$process&var-env=demo"
   defaultDashboard: "nussknacker-scenario"
   processingTypeToDashboard: {
     "request-response": "standalone",
@@ -139,7 +139,7 @@ types and their configurations below.
 ###Monitoring config
 ```
 metricsSettings {
-  url: "http://localhost:3000/dashboard/db/$dashboard?theme=dark&var-processName=$process&var-env=demo"
+  url: "http://localhost:3000/d/$dashboard?theme=dark&var-processName=$process&var-env=demo"
   defaultDashboard: "nussknacker-scenario"
   processingTypeToDashboard: {
     "request-response": "standalone",
