@@ -7,13 +7,13 @@ import {CapabilitiesToolbarButton} from "../../../toolbarComponents/Capabilities
 function PasteButton(): JSX.Element {
   const {t} = useTranslation()
 
-  const {paste} = useSelectionActions()
+  const {paste, canPaste} = useSelectionActions()
   return (
     <CapabilitiesToolbarButton
       write
       name={t("panels.actions.edit-paste.button", "paste")}
       icon={<Icon/>}
-      disabled={!paste}
+      disabled={!paste || !canPaste}
       onClick={paste ? event => paste(event.nativeEvent) : null}
     />
   )

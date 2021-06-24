@@ -21,6 +21,7 @@ type UserAction = ((e: Event) => unknown) | null
 interface UserActions {
   copy: UserAction,
   paste: UserAction,
+  canPaste: boolean,
   cut: UserAction,
   delete: UserAction,
   undo: UserAction,
@@ -188,7 +189,8 @@ export default function SelectionContextProvider(props: PropsWithChildren<{ past
         {category: events.categories.keyboard, action: events.actions.keyboard.copy},
       ),
     )),
-    paste: canAccessClipboard && capabilities.write && ((e) => dispatch(
+    canPaste: !!canAccessClipboard,
+    paste: capabilities.write && ((e) => dispatch(
       pasteSelection(
         () => paste(e),
         {category: events.categories.keyboard, action: events.actions.keyboard.paste},
