@@ -44,7 +44,7 @@ object sources {
       editor = Some(JsonParameterEditor)
     )
 
-    override def initialParameters: List[Parameter] = super.initialParameters ++ List(TypeParameter)
+    override protected def prepareInitialParameters: List[Parameter] = super.prepareInitialParameters ++ List(TypeParameter)
 
     override protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
       case step@TransformationStep((TopicParamName, DefinedEagerParameter(topic: String, _)) ::
