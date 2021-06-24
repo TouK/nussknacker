@@ -5,18 +5,19 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
 import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Source, TestDataGenerator}
+import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
+import pl.touk.nussknacker.engine.api.definition.{JsonParameterEditor, MandatoryParameterValidator, NotBlankParameterValidator, Parameter}
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
 import pl.touk.nussknacker.engine.api.typed._
-import pl.touk.nussknacker.engine.api.{CirceUtil, MethodToInvoke, ParamName}
-import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
-import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrderPreviousElementAssigner
 import pl.touk.nussknacker.engine.kafka.consumerrecord.FixedValueDeserializationSchemaFactory
-import pl.touk.nussknacker.engine.kafka.serialization.NKKafkaDeserializationSchemaWrapper
-import pl.touk.nussknacker.engine.kafka.source.{KafkaSource, KafkaSourceFactory}
-import pl.touk.nussknacker.engine.kafka.{BasicRecordFormatter, KafkaConfig, KafkaUtils, RecordFormatter, RecordFormatterFactory}
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.TopicParamName
+import pl.touk.nussknacker.engine.kafka.{BasicRecordFormatter, KafkaConfig, RecordFormatter, RecordFormatterFactory}
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
@@ -33,17 +34,25 @@ object sources {
   class GenericJsonSourceFactory(processObjectDependencies: ProcessObjectDependencies) extends KafkaSourceFactory[String, java.util.Map[_, _]](
     new FixedValueDeserializationSchemaFactory(JsonMapDeserialization), None, FixedRecordFormatterFactoryWrapper(JsonRecordFormatter), processObjectDependencies)
 
-  class GenericTypedJsonSourceFactory(processObjectDependencies: ProcessObjectDependencies)
-    extends FlinkSourceFactory[TypedMap] with Serializable {
+  class GenericTypedJsonSourceFactory(processObjectDependencies: ProcessObjectDependencies) extends KafkaSourceFactory[String, TypedMap](
+    new FixedValueDeserializationSchemaFactory(JsonTypedMapDeserialization), None, FixedRecordFormatterFactoryWrapper(JsonRecordFormatter), processObjectDependencies) {
 
-    @MethodToInvoke
-    def create(@ParamName("topic") topic: String, @ParamName("type") definition: java.util.Map[String, _]): Source[TypedMap] with TestDataGenerator = {
-      val kafkaConfig = KafkaConfig.parseProcessObjectDependencies(processObjectDependencies)
-      val deserializationSchema = new NKKafkaDeserializationSchemaWrapper(JsonTypedMapDeserialization)
-      val preparedTopics = List(KafkaUtils.prepareKafkaTopic(topic, processObjectDependencies))
-      new KafkaSource(preparedTopics, kafkaConfig, deserializationSchema, None, JsonRecordFormatter) with ReturningType {
-        override def returnType: typing.TypingResult = TypingUtils.typeMapDefinition(definition)
-      }
+    protected val TypeDefinitionParamName = "type"
+
+    protected val TypeParameter: Parameter = Parameter[java.util.Map[String, _]](TypeDefinitionParamName).copy(
+      validators = List(MandatoryParameterValidator, NotBlankParameterValidator),
+      editor = Some(JsonParameterEditor)
+    )
+
+    override protected def prepareInitialParameters: List[Parameter] = super.prepareInitialParameters ++ List(TypeParameter)
+
+    override protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
+      case step@TransformationStep((TopicParamName, DefinedEagerParameter(topic: String, _)) ::
+        (TypeDefinitionParamName, DefinedEagerParameter(definition: Any, _)) :: Nil, _) =>
+        val typingResult = TypingUtils.typeMapDefinition(definition.asInstanceOf[java.util.Map[String, _]])
+        prepareSourceFinalResults(context, dependencies, step.parameters, keyTypingResult, typingResult, Nil)
+      case step@TransformationStep((TopicParamName, top) :: (TypeDefinitionParamName, typ) :: Nil, _) =>
+        prepareSourceFinalErrors(context, dependencies, step.parameters, errors = Nil)
     }
   }
 
