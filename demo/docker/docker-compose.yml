@@ -19,3 +19,4 @@ services:
 
 volumes:
   nussknacker_storage_app:
+  nussknacker_storage_flink:
