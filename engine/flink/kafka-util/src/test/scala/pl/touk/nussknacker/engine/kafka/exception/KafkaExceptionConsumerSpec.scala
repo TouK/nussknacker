@@ -60,8 +60,8 @@ class KafkaExceptionConsumerSpec extends FunSuite with FlinkSpec with KafkaSpec 
       val decoded = CirceUtil.decodeJsonUnsafe[KafkaExceptionInfo](consumed.message())
       decoded.nodeId shouldBe Some("shouldFail")
       decoded.processName shouldBe "testProcess"
-      decoded.message shouldBe Some("Unknown exception")
-      decoded.exceptionInput shouldBe Some("SpelExpressionEvaluationException:Expression [1/0 != 10] evaluation failed, message: / by zero")
+      decoded.message shouldBe Some("Expression [1/0 != 10] evaluation failed, message: / by zero")
+      decoded.exceptionInput shouldBe Some("1/0 != 10")
       decoded.additionalData shouldBe Map("configurableKey" -> "sampleValue")
 
     }
