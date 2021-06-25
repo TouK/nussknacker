@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
+import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
@@ -64,7 +65,7 @@ final case class ParsedSpelExpression(original: String, parser: () => Validated[
 }
 
 class SpelExpressionEvaluationException(val expression: String, val ctxId: String, cause: Throwable)
-  extends RuntimeException(s"Expression [$expression] evaluation failed, message: ${cause.getMessage}", cause)
+  extends NonTransientException(expression, s"Expression [$expression] evaluation failed, message: ${cause.getMessage}", cause = cause)
 
 class SpelExpression(parsed: ParsedSpelExpression,
                      expectedReturnType: TypingResult,
