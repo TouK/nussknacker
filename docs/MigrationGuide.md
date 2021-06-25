@@ -136,7 +136,8 @@ To see biggest differences please consult the [changelog](Changelog.md).
   ```
   {"keySchemaId":null,"valueSchemaId":1,"consumerRecord":{"key":null,"value":{"first":"Jan","last":"Kowalski"},"topic":"testAvroRecordTopic1","partition":0,"offset":0,"timestamp":1624279687756,"timestampType":"CreateTime","headers":{},"leaderEpoch":0}}
   ```
-* [#1825](https://github.com/TouK/nussknacker/pull/1825) Default dashboard renamed from `flink-esp` to `nussknacker-scenario`     
+* [#1825](https://github.com/TouK/nussknacker/pull/1825) Default dashboard renamed from `flink-esp` to `nussknacker-scenario`
+* [#1836](https://github.com/TouK/nussknacker/pull/1836) Change default `kafka.consumerGroupNamingStrategy` to `processId-nodeId`.     
 
 ## In version 0.3.0
 

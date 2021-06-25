@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.kafka
 
-import org.apache.flink.annotation.PublicEvolving
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 
 class ConsumerGroupDeterminer(consumerGroupNamingStrategy: ConsumerGroupNamingStrategy.Value) {
@@ -20,8 +19,7 @@ class ConsumerGroupDeterminer(consumerGroupNamingStrategy: ConsumerGroupNamingSt
 
 object ConsumerGroupDeterminer {
 
-  @PublicEvolving // default behaviour will be changed to `ConsumerGroupNamingStrategy.ProcessIdNodeId` in some future
   def apply(config: KafkaConfig): ConsumerGroupDeterminer =
-    new ConsumerGroupDeterminer(config.consumerGroupNamingStrategy.getOrElse(ConsumerGroupNamingStrategy.ProcessId))
+    new ConsumerGroupDeterminer(config.consumerGroupNamingStrategy.getOrElse(ConsumerGroupNamingStrategy.ProcessIdNodeId))
 
 }
