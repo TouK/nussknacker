@@ -2,16 +2,30 @@ package pl.touk.nussknacker.ui.config.processtoolbar
 
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
+import net.ceedubs.ficus.readers.{CollectionReaders, ValueReader}
 
 import java.util.UUID
 
-case class ProcessToolbarsConfig(uuid: Option[UUID], topLeft: List[ToolbarPanelConfig], bottomLeft: List[ToolbarPanelConfig], topRight: List[ToolbarPanelConfig], bottomRight: List[ToolbarPanelConfig])
+object ProcessToolbarsConfig {
+
+  import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  import net.ceedubs.ficus.readers.EnumerationReader._
+
+  // scala 2.11 needs it
+  implicit val panelListReader: ValueReader[List[ToolbarPanelConfig]] =
+    (config: Config, path: String) => CollectionReaders.traversableReader[List, ToolbarPanelConfig].read(config, path)
+}
+
+case class ProcessToolbarsConfig(uuid: Option[UUID], topLeft: List[ToolbarPanelConfig], bottomLeft: List[ToolbarPanelConfig], topRight: List[ToolbarPanelConfig], bottomRight: List[ToolbarPanelConfig]) {
+  lazy val uniqueCode = uuid.map(_.toString).getOrElse(hashCode().toString)
+}
 
 object ProcessToolbarsConfigProvider extends LazyLogging {
 
   import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-  import net.ceedubs.ficus.readers.EnumerationReader._
+  import ProcessToolbarsConfig._
 
   private val emptyConfig: Config = ConfigFactory.parseString(
     """

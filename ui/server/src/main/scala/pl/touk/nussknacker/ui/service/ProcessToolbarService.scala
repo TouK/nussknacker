@@ -36,7 +36,7 @@ object ProcessToolbarSettings {
 
   def fromConfig(processToolbarConfig: ProcessToolbarsConfig, process: BaseProcessDetails[_]): ProcessToolbarSettings =
     ProcessToolbarSettings(
-      processToolbarConfig.uuid.getOrElse(createProcessToolbarUUID(process, processToolbarConfig)),
+      createProcessToolbarUUID(processToolbarConfig.uniqueCode, process),
       processToolbarConfig.topLeft.filterNot(tp => verifyCondition(tp.hide, process)).map(tp => ToolbarPanel.fromConfig(tp, process)),
       processToolbarConfig.bottomLeft.filterNot(tp => verifyCondition(tp.hide, process)).map(tp => ToolbarPanel.fromConfig(tp, process)),
       processToolbarConfig.topRight.filterNot(tp => verifyCondition(tp.hide, process)).map(tp => ToolbarPanel.fromConfig(tp, process)),
@@ -90,8 +90,8 @@ case class ToolbarButton(`type`: ToolbarButtonType, title: Option[String], icon:
 
 private [service] object ToolbarHelper {
 
-  def createProcessToolbarUUID(process: BaseProcessDetails[_], config: ProcessToolbarsConfig): UUID =
-    UUID.nameUUIDFromBytes(s"${config.hashCode()}-${process.isSubprocess}-${process.isArchived}".getBytes())
+  def createProcessToolbarUUID(baseCode: String, process: BaseProcessDetails[_]): UUID =
+    UUID.nameUUIDFromBytes(s"$baseCode-${process.isSubprocess}-${process.isArchived}".getBytes())
 
   def fillByProcessData(text: String, process: BaseProcessDetails[_]): String =
     text

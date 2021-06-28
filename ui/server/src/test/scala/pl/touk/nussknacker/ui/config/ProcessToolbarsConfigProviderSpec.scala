@@ -6,7 +6,7 @@ import pl.touk.nussknacker.ui.config.processtoolbar._
 
 import java.util.UUID
 
-class ProcessToolbarConfigSpec extends FlatSpec with Matchers {
+class ProcessToolbarsConfigProviderSpec extends FlatSpec with Matchers {
 
   import org.scalatest.prop.TableDrivenPropertyChecks._
   import ToolbarButtonsConfigVariant._
