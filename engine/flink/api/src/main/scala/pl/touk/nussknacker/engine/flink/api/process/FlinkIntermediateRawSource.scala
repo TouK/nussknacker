@@ -42,7 +42,7 @@ trait FlinkIntermediateRawSource[Raw] extends ExplicitUidInOperatorsSupport { se
     //1. add source and 2. set UID
     val rawSourceWithUid = setUidToNodeIdIfNeed(flinkNodeContext, env
       .addSource[Raw](sourceFunction)(typeInformation)
-      .name(s"${flinkNodeContext.metaData.id}-${flinkNodeContext.nodeId}-source"))
+      .name(flinkNodeContext.nodeId))
 
     //3. assign timestamp and watermark policy
     val rawSourceWithUidAndTimestamp = timestampAssigner
