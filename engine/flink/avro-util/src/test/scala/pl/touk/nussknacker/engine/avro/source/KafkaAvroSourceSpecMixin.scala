@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.avro.{AvroUtils, TestSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
-import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2, PaymentV1}
+import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, FullNameV2, GeneratedAvroClassWithLogicalTypesNewSchema, PaymentDate, PaymentV1}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 
@@ -29,6 +29,8 @@ trait KafkaAvroSourceSpecMixin {
     val IntTopicWithKey: String = "testAvroIntTopic1WithKey"
     val IntTopicNoKey: String = "testAvroIntTopic1NoKey"
     val InvalidDefaultsTopic: String = "testAvroInvalidDefaultsTopic1"
+    val PaymentDateTopic: String = "testPaymentDateTopic"
+    val GeneratedWithLogicalTypesTopic: String = "testGeneratedWithLogicalTypesTopic"
 
     val IntSchema: Schema = AvroUtils.parseSchema(
       """{
@@ -62,6 +64,8 @@ trait KafkaAvroSourceSpecMixin {
       .register(IntTopicWithKey, IntSchema, 1, isKey = false)
       .register(IntTopicWithKey, IntSchema, 1, isKey = true)
       .register(InvalidDefaultsTopic, InvalidDefaultsSchema, 1, isKey = false)
+      .register(PaymentDateTopic, PaymentDate.schema, 1, isKey = false)
+      .register(GeneratedWithLogicalTypesTopic, GeneratedAvroClassWithLogicalTypesNewSchema.schema, 1, isKey = false)
       .build
 
     val factory: CachedConfluentSchemaRegistryClientFactory = TestSchemaRegistryClientFactory(schemaRegistryMockClient)
