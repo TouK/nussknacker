@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.flink.api.compat
 
-import org.apache.flink.annotation.Public
+import org.apache.flink.annotation.{Public, PublicEvolving}
 import org.apache.flink.streaming.api.datastream.{DataStreamSink, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.scala.DataStream
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
@@ -68,9 +68,11 @@ object ExplicitUidInOperatorsSupport {
       stream
   }
 
+  @PublicEvolving
   def defaultExplicitUidInStatefulOperators(nodeCtx: FlinkCustomNodeContext): Boolean =
     defaultExplicitUidInStatefulOperators(nodeCtx.globalParameters)
 
+  @PublicEvolving
   def defaultExplicitUidInStatefulOperators(globalParameters: Option[NkGlobalParameters]): Boolean =
     globalParameters.flatMap(_.configParameters).flatMap(_.explicitUidInStatefulOperators).getOrElse(true)
 
