@@ -53,6 +53,7 @@ Nussknacker versions
 * [#1809](https://github.com/TouK/nussknacker/pull/1809) Performance optimization for aggregates: do not update state if added element is neutral for current state
 * [#1820](https://github.com/TouK/nussknacker/pull/1820) Added missing support for some logical types (LocalDate, LocalTime, UUID) in json encoding
 * [#1799](https://github.com/TouK/nussknacker/pull/1799) ConfluentAvroToJsonFormatter produces and reads test data in valid json format with full kafka metadata and schema ids.
+* [#TODO](https://github.com/TouK/nussknacker/pull/TODO) Set up `explicitUidInStatefulOperators` model's flag to `true` by default.
 
 0.3.1 (not released yet) 
 ------------------------
