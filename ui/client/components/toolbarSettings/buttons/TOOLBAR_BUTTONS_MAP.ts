@@ -42,7 +42,7 @@ export const TOOLBAR_BUTTONS_MAP: ToolbarButtonsMap = {
   [BuiltinButtonTypes.processSave]: SaveButton,
   [BuiltinButtonTypes.processDeploy]: DeployButton,
   [BuiltinButtonTypes.processCancel]: CancelDeployButton,
-  [BuiltinButtonTypes.processMetrics]: MetricsButton, // like "custom-link" but disabled for subprocess
+  [BuiltinButtonTypes.processMetrics]: MetricsButton, //TODO: remove after start using be api
   [BuiltinButtonTypes.viewBusinessView]: BussinesViewSwitch,
   [BuiltinButtonTypes.viewZoomIn]: ZoomInButton,
   [BuiltinButtonTypes.viewZoomOut]: ZoomOutButton,

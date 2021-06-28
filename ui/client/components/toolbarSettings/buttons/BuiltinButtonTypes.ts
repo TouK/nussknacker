@@ -2,7 +2,7 @@ export enum BuiltinButtonTypes {
   processSave = "process-save",
   processDeploy = "process-deploy",
   processCancel = "process-cancel",
-  processMetrics = "process-metrics",
+  processMetrics = "process-metrics", //TODO: remove after start using be api
   editUndo = "edit-undo",
   editRedo = "edit-redo",
   editCopy = "edit-copy",

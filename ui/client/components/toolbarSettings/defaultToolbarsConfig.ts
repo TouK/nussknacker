@@ -5,6 +5,7 @@ import {ButtonsVariant} from "../toolbarComponents/ToolbarButtons"
 import {BuiltinButtonTypes} from "./buttons"
 import {ToolbarsConfig} from "./types"
 
+//TODO: remove after start using be api
 export const defaultToolbarsConfig: WithId<ToolbarsConfig> = {
   id: "random-string",
   [ToolbarsSide.TopRight]: [
@@ -14,7 +15,7 @@ export const defaultToolbarsConfig: WithId<ToolbarsConfig> = {
         {type: BuiltinButtonTypes.processSave},
         {type: BuiltinButtonTypes.processDeploy},
         {type: BuiltinButtonTypes.processCancel},
-        {type: BuiltinButtonTypes.processMetrics}, //replace it by custom link
+        {type: BuiltinButtonTypes.processMetrics},
       ],
     },
     {

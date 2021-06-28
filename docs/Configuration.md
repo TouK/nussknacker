@@ -1,3 +1,4 @@
+
 Configuration
 =============
 
@@ -135,6 +136,139 @@ categoriesConfig: {
 ```
 For each category you have to define its processing type (`streaming` in examples above). You can read about processing
 types and their configurations below.
+
+### Process Toolbar Configuration
+
+Toolbars and buttons at process window are configurable, you can provide your own default process toolbar configuration by:
+
+```
+processToolbarConfig {
+  defaultConfig {
+    topLeft: [
+      { type: "tips-panel" }
+    ]
+    topRight: [
+      {
+        type: "process-info-panel"
+        buttons: [
+          { type: "process-save", disabled: { subprocess: false, archived: true, type: "oneof" } }
+          { type: "custom-link", title: "Metrics for {{processName}}", templateHref="/metrics/{{processId}}" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+We can also create special configuration for each category by:
+```
+processToolbarConfig {
+  categoryConfig {
+   "CategoryName" {
+        topLeft: [
+          { type: "creator-panel", hide: {subprocess: true, archived: false, type: "allof"} }
+        ]
+    } 
+  }
+}
+```
+
+#### Toolbar Panel Conditioning
+
+Configuration allow us to:
+* hiding panels
+* hiding or disabling buttons
+
+Each of this function can be configured by condition expression where we can use three parameters:
+- subproces: boolean // if true then condition match only subprocess, by default ignored
+- archived: boolean // if true then condition match only archived, by default ignored
+- type condition: allof / oneof // information about that we check only one condition or all conditions
+
+#### Default Process Panel Configuration
+
+```
+processToolbarConfig {
+  defaultConfig {
+    "top-left": [
+      { type: "tips-panel" }
+      { type: "creator-panel" }
+      { type: "versions-panel" }
+      { type: "comments-panel" }
+      { type: "attachments-panel" }
+    ]
+    "top-right": [
+      {
+        type: "process-info-panel"
+        buttons: [
+          { type: "process-save", disabled: { archived: true } }
+          { type: "process-deploy", disabled: { subprocess: true, archived: true, type: "oneof" } }
+          { type: "process-cancel", disabled: { subprocess: true, archived: true, type: "oneof" } }
+          { type: "custom-link", title: "metrics", icon: "/assets/buttons/metrics.svg", templateHref: "/metrics/{{processName}}", disabled: { subprocess: true } }
+        ]
+      }
+      {
+        id: "view-panel"
+        type: "buttons-panel"
+        buttons: [
+          { type: "view-business-view" }
+          { type: "view-zoom-in" }
+          { type: "view-zoom-out" }
+          { type: "view-reset" }
+        ]
+      }
+      {
+        id: "edit-panel"
+        type: "buttons-panel"
+        hide: { archived: true }
+        buttonsVariant: "small"
+        buttons: [
+          { type: "edit-undo" }
+          { type: "edit-redo" }
+          { type: "edit-copy" }
+          { type: "edit-paste" }
+          { type: "edit-delete" }
+          { type: "edit-layout" }
+        ]
+      }
+      {
+        id: "process-panel"
+        type: "buttons-panel"
+        buttons: [
+          { type: "process-properties", hide: { subprocess: true } }
+          { type: "process-compare" }
+          { type: "process-migrate", hide: { archived: true }, disabled: { subprocess: true } }
+          { type: "process-import", hide: { archived: true } }
+          { type: "process-json" }
+          { type: "process-pdf" }
+          { type: "process-archive", hide: { archived: true } }
+          { type: "process-unarchive", hide: { archived: false } }
+        ]
+      }
+      {
+        id: "test-panel"
+        type: "buttons-panel"
+        hide: { subprocess: true }
+        buttons: [
+          { type: "test-from-file", disabled: { archived: true } }
+          { type: "test-generate", disabled: { archived: true } }
+          { type: "test-counts" }
+          { type: "test-hide" }
+        ]
+      }
+      {
+        id: "group-panel"
+        type: "buttons-panel"
+        hide: { archived: true }
+        buttons: [
+          { type: "group" }
+          { type: "ungroup" }
+        ]
+      }
+      { type: "details-panel" }
+    ]
+  }
+}
+```
 
 ###Monitoring config
 ```
