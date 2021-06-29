@@ -1,9 +1,15 @@
+
 # Migration guide
 
 To see biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 0.4.0 (not released yet) 
 
+* [#1845](https://github.com/TouK/nussknacker/pull/1845)
+  `AuthenticatorData` has been renamed to `AuthenticationResources` and changed into a trait, `apply` construction has
+  been preserved. `AuthenticatorFactory` and its `createAuthenticator`  method has been renamed to
+  `AuthenticationProvider` and `createAuthenticationResources`. It is recommended to rename the main class of any custom
+  authentication module to `<Something>AuthenticationProvider` accordingly.
 * [#1542](https://github.com/TouK/nussknacker/pull/1542)
   `KafkaConfig` now has new parameter `topicsExistenceValidationConfig`. When `topicsExistenceValidationConfig.enabled = true`
   Kafka sources/sinks do not validate if provided topic does not exist and cluster is configured with `auto.create.topics.enable=false`
