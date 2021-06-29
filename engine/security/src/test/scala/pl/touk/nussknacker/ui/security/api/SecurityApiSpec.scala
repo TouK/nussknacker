@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.security.api
 
 import java.nio.charset.StandardCharsets
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers._
@@ -14,7 +13,7 @@ import akka.http.scaladsl.server.directives.RouteDirectives.reject
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, Directive1, Route}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.Matchers
-import pl.touk.nussknacker.ui.security.api.AuthenticatorFactory.LoggedUserAuth
+import pl.touk.nussknacker.ui.security.api.AuthenticationResources.LoggedUserAuth
 
 import scala.concurrent.{ExecutionContext, Future}
 

@@ -10,7 +10,7 @@ import java.net.URI
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
-class BasicHttpAuthenticatorDataSpec extends FunSpec with Matchers {
+class BasicHttpAuthenticationResourcesSpec extends FunSpec with Matchers {
   class DummyConfiguration(usersList: List[ConfigUser], rulesList: List[ConfigRule] = List.empty, method: AuthenticationMethod = AuthenticationMethod.BasicAuth,
                            usersFile: URI = URI.create("classpath:basicauth-user.conf"), cachingHashes: Option[CachingHashesConfig] = None)
     extends DefaultAuthenticationConfiguration(method: AuthenticationMethod, usersFile: URI, cachingHashes) {

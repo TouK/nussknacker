@@ -102,7 +102,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val actionRepository = DbProcessActionRepository.create(dbConfig, modelData)
     val processActivityRepository = new ProcessActivityRepository(dbConfig)
 
-    val authenticator = AuthenticatorProvider(config, getClass.getClassLoader, processCategoryService.getAllCategories)
+    val authenticationResources = AuthenticationResources(config, getClass.getClassLoader, processCategoryService.getAllCategories)
 
     val counter = new ProcessCounter(subprocessRepository)
 
@@ -170,9 +170,10 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     //TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings
     val apiResourcesWithoutAuthentication: List[Route] = List(
-      new SettingsResources(featureTogglesConfig, typeToConfig, authenticator.config, analyticsConfig).publicRoute(),
-      appResources.publicRoute()
-    ) ++ authenticator.routes
+      new SettingsResources(featureTogglesConfig, typeToConfig, authenticationResources.config, analyticsConfig).publicRoute(),
+      appResources.publicRoute(),
+      authenticationResources.route
+    )
 
     //TODO: In the future will be nice to have possibility to pass authenticator.directive to resource and there us it at concrete path resource
     val webResources = new WebResources(config.getString("http.publicPath"))
@@ -181,7 +182,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         webResources.route
       } ~  pathPrefix("api") {
         apiResourcesWithoutAuthentication.reduce(_ ~ _)
-      } ~ authenticator.directive { user =>
+      } ~ authenticationResources.directive { user =>
         pathPrefix("api") {
           apiResourcesWithAuthentication.map(_.securedRoute(user)).reduce(_ ~ _)
         }
