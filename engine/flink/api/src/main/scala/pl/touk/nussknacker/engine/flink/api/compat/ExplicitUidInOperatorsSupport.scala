@@ -11,15 +11,16 @@ import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
  * Regards to https://ci.apache.org/projects/flink/flink-docs-stable/ops/upgrading.html#matching-operator-state
  * operator with state should has specified uid. Otherwise recovery of state could fail.
  *
- * Currently this class doesn't set up uids until you add:
+ * Currently this class sets up uids by default
+ *
+ * You can disable this globally by adding:
  * ```
  * globalParameters {
- *   explicitUidInStatefulOperators: true
+ *   explicitUidInStatefulOperators: false
  * }
  * ```
  * in your model config.
  *
- * In the future this behaviour will change to setting up uids by default.
  */
 trait ExplicitUidInOperatorsSupport {
 
@@ -67,13 +68,12 @@ object ExplicitUidInOperatorsSupport {
       stream
   }
 
-  @PublicEvolving // default behaviour will be switched to true in some future
+  @PublicEvolving
   def defaultExplicitUidInStatefulOperators(nodeCtx: FlinkCustomNodeContext): Boolean =
     defaultExplicitUidInStatefulOperators(nodeCtx.globalParameters)
 
-  @PublicEvolving // default behaviour will be switched to true in some future
+  @PublicEvolving
   def defaultExplicitUidInStatefulOperators(globalParameters: Option[NkGlobalParameters]): Boolean =
-    globalParameters.flatMap(_.configParameters).flatMap(_.explicitUidInStatefulOperators).getOrElse(false)
-
+    globalParameters.flatMap(_.configParameters).flatMap(_.explicitUidInStatefulOperators).getOrElse(true)
 
 }
