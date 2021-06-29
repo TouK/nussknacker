@@ -5,7 +5,7 @@ import org.apache.commons.io.IOUtils
 import pl.touk.nussknacker.engine.api.Service
 import pl.touk.nussknacker.engine.api.definition.ServiceWithExplicitMethod
 import pl.touk.nussknacker.engine.api.process.{SingleNodeConfig, WithCategories}
-import pl.touk.nussknacker.openapi.http.backend.DispatchConfig
+import pl.touk.nussknacker.openapi.http.backend.HttpClientConfig
 import pl.touk.nussknacker.openapi.parser.SwaggerParser
 import pl.touk.nussknacker.openapi.{OpenAPISecurityConfig, OpenAPIServicesConfig, OpenAPIsConfig, SwaggerService}
 
@@ -14,7 +14,7 @@ class SwaggerEnrichers(baseUrl: Option[URL]) {
   def enrichers(swaggerServices: List[SwaggerService],
                 additionalCategories: List[String],
                 fixedParameters: Map[String, () => AnyRef],
-                clientConfig: DispatchConfig): Seq[SwaggerEnricherDefinition] = {
+                clientConfig: HttpClientConfig): Seq[SwaggerEnricherDefinition] = {
     swaggerServices.map { swaggerService =>
       SwaggerEnricherDefinition(
         swaggerService.name,
@@ -31,7 +31,7 @@ object SwaggerEnrichers {
   def enrichersForOpenAPIsConfig(openAPIsConfig: OpenAPIsConfig,
                                  predefinedCategories: List[String],
                                  fixedParameters: Map[String, () => AnyRef],
-                                 clientConfig: DispatchConfig,
+                                 clientConfig: HttpClientConfig,
                                  swaggerServiceFilter: Option[SwaggerService => Boolean]): Map[String, WithCategories[Service]] = {
     openAPIsConfig.openapis match {
       case None => Map.empty
@@ -44,7 +44,7 @@ object SwaggerEnrichers {
   def enrichersForOpenAPIServicesConfig(openAPIServicesConfig: OpenAPIServicesConfig,
                                         predefinedCategories: List[String],
                                         fixedParameters: Map[String, () => AnyRef],
-                                        clientConfig: DispatchConfig,
+                                        clientConfig: HttpClientConfig,
                                         swaggerServiceFilter: Option[SwaggerService => Boolean]): Map[String, WithCategories[Service]] = {
     // Warning: openapi specification can be encoded in Unicode (UTF-8, UTF-16, UTF-32)
     val definition = IOUtils.toString(openAPIServicesConfig.url, "UTF-8")
@@ -62,7 +62,7 @@ object SwaggerEnrichers {
                              securities: Map[String, OpenAPISecurityConfig],
                              predefinedCategories: List[String],
                              fixedParameters: Map[String, () => AnyRef],
-                             clientConfig: DispatchConfig,
+                             clientConfig: HttpClientConfig,
                              swaggerServiceFilter: Option[SwaggerService => Boolean]): Map[String, WithCategories[Service]] = {
     val swaggerServices = SwaggerParser.parse(definition, securities).filter(swaggerServiceFilter.getOrElse(_ => true))
     new SwaggerEnrichers(rootUrl)
@@ -81,7 +81,7 @@ object SwaggerEnrichers {
                       securities: Map[String, OpenAPISecurityConfig],
                       predefinedCategories: List[String],
                       fixedParameters: Map[String, () => AnyRef],
-                      clientConfig: DispatchConfig,
+                      clientConfig: HttpClientConfig,
                       swaggerServiceFilter: Option[SwaggerService => Boolean]): Map[String, WithCategories[Service]] = {
     val openAPIServicesConfig = OpenAPIServicesConfig(definitionUrl, rootUrl, Some(securities))
     enrichersForOpenAPIServicesConfig(openAPIServicesConfig, predefinedCategories, fixedParameters, clientConfig, swaggerServiceFilter)

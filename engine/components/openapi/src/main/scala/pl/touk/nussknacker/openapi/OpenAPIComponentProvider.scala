@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
 import pl.touk.nussknacker.openapi.OpenAPIsConfig._
 import pl.touk.nussknacker.openapi.enrichers.SwaggerEnrichers
-import pl.touk.nussknacker.openapi.http.backend.DefaultDispatchConfig
+import pl.touk.nussknacker.openapi.http.backend.DefaultHttpClientConfig
 import pl.touk.nussknacker.openapi.parser.SwaggerParser
 
 import scala.jdk.CollectionConverters.seqAsJavaListConverter
@@ -38,7 +38,7 @@ class OpenAPIComponentProvider extends ComponentProvider with LazyLogging {
 
     //TODO: configuration...
     val fixedParameters: Map[String, () => AnyRef] = Map.empty
-    val clientConfig = DefaultDispatchConfig().copy(useNative = Some(false))
+    val clientConfig = DefaultHttpClientConfig().copy(useNative = Some(false))
     new SwaggerEnrichers(openAPIsConfig.rootURL)
       .enrichers(swaggerServices, Nil, fixedParameters, clientConfig)
       .map(service => ComponentDefinition(service.name, service.service)).toList

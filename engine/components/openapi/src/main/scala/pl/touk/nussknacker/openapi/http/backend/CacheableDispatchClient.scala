@@ -2,7 +2,7 @@ package pl.touk.nussknacker.openapi.http.backend
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.openapi.http.backend.EspSttpBackend.HttpBackend
+import pl.touk.nussknacker.openapi.http.backend.OpenapiSttpBackend.HttpBackend
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 
 import scala.concurrent.ExecutionContext
@@ -20,9 +20,9 @@ object CacheableHttpBackend extends CacheableClient[HttpBackend] with LazyLoggin
       override def info(str: => String): Unit = {}
       override def warn(str: => String): Unit = {}
       override def shutdown(client: HttpBackend): Unit = CacheableHttpBackend.shutdown(client)
-      override def create(dispatchConfig: DispatchConfig, metaData: MetaData): HttpBackend = CacheableHttpBackend.create(dispatchConfig, metaData)
+      override def create(httpClientConfig: HttpClientConfig, metaData: MetaData): HttpBackend = CacheableHttpBackend.create(httpClientConfig, metaData)
     }
-    val client = toInitialize.retrieveClient(DefaultDispatchConfig().copy(useNative = Some(false)), MetaData("initializing", StreamMetaData()), "initializingClient")
+    val client = toInitialize.retrieveClient(DefaultHttpClientConfig().copy(useNative = Some(false)), MetaData("initializing", StreamMetaData()), "initializingClient")
     client.shutdown()
   }
 
@@ -30,11 +30,11 @@ object CacheableHttpBackend extends CacheableClient[HttpBackend] with LazyLoggin
   override def warn(str: => String): Unit = logger.warn(str)
   override def shutdown(client: HttpBackend): Unit = client.close()
 
-  override def create(dispatchConfig: DispatchConfig, metaData: MetaData): HttpBackend = {
+  override def create(httpClientConfig: HttpClientConfig, metaData: MetaData): HttpBackend = {
     // Może powinniśmy przełączyć na EC z NK?
     implicit val ec: ExecutionContext = ExecutionContext.global
-    val DispatchConfig = dispatchConfig.toAsyncHttpClientConfig(Option(metaData.id))
-    AsyncHttpClientFutureBackend.usingConfigBuilder(_ => DispatchConfig)
+    val HttpClientConfig = httpClientConfig.toAsyncHttpClientConfig(Option(metaData.id))
+    AsyncHttpClientFutureBackend.usingConfigBuilder(_ => HttpClientConfig)
   }
 }
 
@@ -52,11 +52,11 @@ trait CacheableClient[T] {
   def info(str: => String): Unit
   def warn(str: => String): Unit
 
-  def retrieveClient(dispatchConfig: DispatchConfig, metaData: MetaData, serviceName: String): ShutdownableClient = synchronized {
+  def retrieveClient(httpClientConfig: HttpClientConfig, metaData: MetaData, serviceName: String): ShutdownableClient = synchronized {
     if (clients == 0) {
-      client = Option(create(dispatchConfig, metaData))
+      client = Option(create(httpClientConfig, metaData))
       info(s"Created client processName:${metaData.id} serviceName:$serviceName by thread: ${Thread.currentThread().getName}}")
-      checkerThread = Some(ShutdownDetector.startCheckerThread(metaData, () => client.isEmpty, forceCloseIfNeeded(dispatchConfig)))
+      checkerThread = Some(ShutdownDetector.startCheckerThread(metaData, () => client.isEmpty, forceCloseIfNeeded(httpClientConfig)))
     }
     clients += 1
     val clientToAdd = new ShutdownableClient(client.get)
@@ -68,7 +68,7 @@ trait CacheableClient[T] {
 
   def shutdown(client: T): Unit
 
-  def create(dispatchConfig: DispatchConfig, metaData: MetaData): T
+  def create(httpClientConfig: HttpClientConfig, metaData: MetaData): T
 
   class ShutdownableClient(val client: T) {
 
@@ -86,7 +86,7 @@ trait CacheableClient[T] {
 
   }
 
-  private def forceCloseIfNeeded(config: DispatchConfig)(): Unit = synchronized {
+  private def forceCloseIfNeeded(config: HttpClientConfig)(): Unit = synchronized {
     val forceShutdown = config.forceShutdown.getOrElse(false)
     if (clientInfo.nonEmpty) {
       warn(s"Clients were not closed! Not closed clients: ${clientInfo.values.mkString(", ")}, forcing shutdown: $forceShutdown")
