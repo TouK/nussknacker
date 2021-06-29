@@ -475,6 +475,8 @@ object SampleNodes {
 
   case object SinkForStrings extends SinkForType[String]
 
+  case object SinkForLongs extends SinkForType[java.lang.Long]
+
   object EmptyService extends Service {
     def invoke(): Future[Unit.type] = Future.successful(Unit)
   }

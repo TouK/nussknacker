@@ -10,13 +10,15 @@ import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.TypeInfos
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor}
-import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.test.{FlinkSpec, RecordingExceptionHandler}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import KafkaSourceFactoryMixin.ObjToSerialize
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryProcessConfigCreator.{SinkForSampleValue, recordingExceptionHandler}
+import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryProcessConfigCreator.SinkForSampleValue
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryProcessMixin.recordingExceptionHandler
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
-import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForStrings
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{SinkForLongs, SinkForStrings}
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -29,7 +31,7 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
 
   protected var registrar: FlinkProcessRegistrar = _
 
-  private lazy val creator: KafkaSourceFactoryProcessConfigCreator = new KafkaSourceFactoryProcessConfigCreator(kafkaConfig)
+  protected  lazy val creator: ProcessConfigCreator = new KafkaSourceFactoryProcessConfigCreator(kafkaConfig)
 
   protected lazy val processDefinition: ProcessDefinitionExtractor.ProcessDefinition[DefinitionExtractor.ObjectWithMethodDef] =
     ProcessDefinitionExtractor.extractObjectWithMethods(creator,
@@ -48,6 +50,7 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
     SinkForSampleValue.clear()
     SinkForInputMeta.clear()
     SinkForStrings.clear()
+    SinkForLongs.clear()
   }
 
   after {
@@ -136,4 +139,8 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
 
   }
 
+}
+
+object KafkaSourceFactoryProcessMixin {
+  val recordingExceptionHandler = new RecordingExceptionHandler
 }

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.generic
 
+import cats.data.Validated.{Invalid, Valid}
 import io.circe.{Decoder, Json, JsonObject}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
@@ -9,17 +10,20 @@ import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
-import pl.touk.nussknacker.engine.api.definition.{JsonParameterEditor, MandatoryParameterValidator, NotBlankParameterValidator, Parameter}
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
 import pl.touk.nussknacker.engine.api.typed._
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializer, FlinkSource}
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.consumerrecord.FixedValueDeserializationSchemaFactory
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
+import pl.touk.nussknacker.engine.kafka.generic.KafkaDelayedSourceFactory._
+import pl.touk.nussknacker.engine.kafka.generic.KafkaTypedSourceFactory._
+import pl.touk.nussknacker.engine.kafka.source.{KafkaSource, KafkaSourceFactory}
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.TopicParamName
-import pl.touk.nussknacker.engine.kafka.{BasicRecordFormatter, KafkaConfig, RecordFormatter, RecordFormatterFactory}
+import pl.touk.nussknacker.engine.kafka.{BasicRecordFormatter, KafkaConfig, PreparedKafkaTopic, RecordFormatter, RecordFormatterFactory}
 import pl.touk.nussknacker.engine.util.Implicits._
-import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
 import java.nio.charset.StandardCharsets
 import java.util
@@ -37,22 +41,82 @@ object sources {
   class GenericTypedJsonSourceFactory(processObjectDependencies: ProcessObjectDependencies) extends KafkaSourceFactory[String, TypedMap](
     new FixedValueDeserializationSchemaFactory(JsonTypedMapDeserialization), None, FixedRecordFormatterFactoryWrapper(JsonRecordFormatter), processObjectDependencies) {
 
-    protected val TypeDefinitionParamName = "type"
-
-    protected val TypeParameter: Parameter = Parameter[java.util.Map[String, _]](TypeDefinitionParamName).copy(
-      validators = List(MandatoryParameterValidator, NotBlankParameterValidator),
-      editor = Some(JsonParameterEditor)
+    override protected def prepareInitialParameters: List[Parameter] = super.prepareInitialParameters ++ List(
+      TypeParameter
     )
-
-    override protected def prepareInitialParameters: List[Parameter] = super.prepareInitialParameters ++ List(TypeParameter)
 
     override protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
       case step@TransformationStep((TopicParamName, DefinedEagerParameter(topic: String, _)) ::
         (TypeDefinitionParamName, DefinedEagerParameter(definition: Any, _)) :: Nil, _) =>
-        val typingResult = TypingUtils.typeMapDefinition(definition.asInstanceOf[java.util.Map[String, _]])
-        prepareSourceFinalResults(context, dependencies, step.parameters, keyTypingResult, typingResult, Nil)
+        val topicValidationErrors = topicsValidationErrors(topic)
+        calculateTypingResult(definition) match {
+          case Valid((_, typingResult)) =>
+            prepareSourceFinalResults(context, dependencies, step.parameters, keyTypingResult, typingResult, topicValidationErrors)
+          case Invalid(exc) =>
+            val errors = topicValidationErrors ++ List(exc.toCustomNodeError(nodeId))
+            prepareSourceFinalErrors(context, dependencies, step.parameters, errors)
+        }
       case step@TransformationStep((TopicParamName, top) :: (TypeDefinitionParamName, typ) :: Nil, _) =>
         prepareSourceFinalErrors(context, dependencies, step.parameters, errors = Nil)
+    }
+  }
+
+  class DelayedGenericTypedJsonSourceFactory(timestampAssigner: Option[TimestampWatermarkHandler[TypedJson]],
+                                             formatterFactory: RecordFormatterFactory,
+                                             processObjectDependencies: ProcessObjectDependencies)
+    extends KafkaSourceFactory[String, TypedMap](
+      new FixedValueDeserializationSchemaFactory(JsonTypedMapDeserialization),
+      timestampAssigner,
+      formatterFactory,
+      processObjectDependencies
+    ) {
+
+    override protected def prepareInitialParameters: List[Parameter] = super.prepareInitialParameters ++ List(
+      TypeParameter, TimestampParameter, DelayParameter
+    )
+
+    override def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
+      case step@TransformationStep(
+      (TopicParamName, DefinedEagerParameter(topic: String, _)) ::
+        (TypeDefinitionParamName, DefinedEagerParameter(definition: TypeDefinition, _)) ::
+        (TimestampFieldParamName, DefinedEagerParameter(field, _)) ::
+        (DelayParameterName, DefinedEagerParameter(delay, _)) :: Nil, _
+      ) =>
+        val topicValidationErrors = topicsValidationErrors(topic)
+        calculateTypingResult(definition) match {
+          case Valid((definition, typingResult)) =>
+            val delayValidationErrors = Option(delay.asInstanceOf[java.lang.Long]).map(d => validateDelay(d)).getOrElse(Nil)
+            val timestampValidationErrors = Option(field.asInstanceOf[String]).map(f => validateTimestampField(f, definition)).getOrElse(Nil)
+            val errors = topicValidationErrors ++ timestampValidationErrors ++ delayValidationErrors
+            prepareSourceFinalResults(context, dependencies, step.parameters, keyTypingResult, typingResult, errors)
+          case Invalid(exc) =>
+            val errors = topicValidationErrors ++ List(exc.toCustomNodeError(nodeId))
+            prepareSourceFinalErrors(context, dependencies, step.parameters, errors = errors)
+        }
+      case step@TransformationStep((TopicParamName, _) :: (TypeDefinitionParamName, _) :: (TimestampFieldParamName, _) :: (DelayParameterName, _) :: Nil, _) =>
+        prepareSourceFinalErrors(context, dependencies, step.parameters, errors = Nil)
+    }
+
+    override protected def createSource(params: Map[String, Any],
+                                        dependencies: List[NodeDependencyValue],
+                                        finalState: Option[State],
+                                        preparedTopics: List[PreparedKafkaTopic],
+                                        kafkaConfig: KafkaConfig,
+                                        deserializationSchema: KafkaDeserializationSchema[TypedJson],
+                                        formatter: RecordFormatter,
+                                        flinkContextInitializer: FlinkContextInitializer[TypedJson]): FlinkSource[TypedJson] = {
+      val delay = extractDelayInMillis(params)
+      val timestampFieldName = extractTimestampField(params)
+
+      val extractTimestamp: (TypedJson, Long) => Long = (consumerRecord, kafkaEventTimestamp) => {
+        Option(timestampFieldName).map(f => consumerRecord.value().get(f).asInstanceOf[Long]).getOrElse(kafkaEventTimestamp)
+      }
+
+      new KafkaSource[TypedJson](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter) {
+        override val contextInitializer: FlinkContextInitializer[TypedJson] = flinkContextInitializer
+        override protected def createFlinkSource(consumerGroupId: String) =
+          new DelayedFlinkKafkaConsumer(preparedTopics, deserializationSchema, kafkaConfig, consumerGroupId, extractTimestamp, delay)
+      }
     }
   }
 

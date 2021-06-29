@@ -34,7 +34,7 @@ class SpecificRecordKafkaAvroSourceFactory[V <: SpecificRecord: ClassTag](schema
         val clazz = classTag[V].runtimeClass.asInstanceOf[Class[V]]
         val schemaData = RuntimeSchemaData(LogicalTypesAvroFactory.extractAvroSpecificSchema(clazz, AvroUtils.specificData), None)
 
-        prepareSourceFinalResults(preparedTopic, Valid((Some(schemaData), Typed.typedClass(clazz))), context, dependencies, step.parameters)
+        prepareSourceFinalResults(preparedTopic, Valid((Some(schemaData), Typed.typedClass(clazz))), context, dependencies, step.parameters, Nil)
 
       case step@TransformationStep((`topicParamName`, _) :: Nil, _) =>
         prepareSourceFinalErrors(context, dependencies, step.parameters, List.empty)
