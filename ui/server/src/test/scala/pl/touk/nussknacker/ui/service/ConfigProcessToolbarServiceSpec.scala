@@ -26,7 +26,7 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
       |  processToolbarConfig {
       |    defaultConfig {
       |      topLeft: [
-      |        { type: "tips-panel", hide: {subprocess: true} }
+      |        { type: "tips-panel", hidden: {subprocess: true} }
       |      ]
       |      topRight: [
       |        {
@@ -41,14 +41,14 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
       |        {
       |           id: "buttons1"
       |           type: "buttons-panel"
-      |           hide: {subprocess: false}
+      |           hidden: {subprocess: false}
       |           buttonsVariant: "small"
-      |           buttons: [ { type: "process-deploy" }, { type: "process-pdf", hide: {archived: true} }]
+      |           buttons: [ { type: "process-deploy" }, { type: "process-pdf", hidden: {archived: true} }]
       |        }
       |        {
       |           id: "buttons2"
       |           type: "buttons-panel"
-      |           hide: { archived: true }
+      |           hidden: { archived: true }
       |           buttons: [ { type: "process-cancel" } ]
       |        }
       |      ]
@@ -56,9 +56,9 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
       |    categoryConfig {
       |      "Category1" {
       |        topLeft: [
-      |          { type: "creator-panel", hide: {subprocess: true, archived: false, type: "allof"} }
-      |          { type: "attachments-panel", hide: {subprocess: true, archived: true, type: "allof"} }
-      |          { type: "comments-panel", hide: {subprocess: false, archived: true, type: "allof"} }
+      |          { type: "creator-panel", hidden: {subprocess: true, archived: false, type: "allof"} }
+      |          { type: "attachments-panel", hidden: {subprocess: true, archived: true, type: "allof"} }
+      |          { type: "comments-panel", hidden: {subprocess: false, archived: true, type: "allof"} }
       |        ]
       |        bottomRight: [
       |          { type: "versions-panel" }
@@ -67,9 +67,9 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
       |      "Category3" {
       |        uuid: "68013242-2007-462b-9526-7a9f8684227c"
       |        topLeft: [
-      |          { type: "creator-panel", hide: {subprocess: true, archived: false} }
-      |          { type: "attachments-panel", hide: {subprocess: true, archived: true } }
-      |          { type: "comments-panel", hide: {subprocess: false, archived: true } }
+      |          { type: "creator-panel", hidden: {subprocess: true, archived: false} }
+      |          { type: "attachments-panel", hidden: {subprocess: true, archived: true } }
+      |          { type: "comments-panel", hidden: {subprocess: false, archived: true } }
       |        ]
       |        bottomRight: [
       |          { type: "versions-panel" }
@@ -96,7 +96,7 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
       (subprocess, None, false),
       (archivedSubprocess, None, false),
 
-      //All
+      //All of conditions match
       (process, Some(ToolbarCondition(Some(false), None, Some(ToolbarConditionType.AllOf))), true),
       (process, Some(ToolbarCondition(Some(true), None, Some(ToolbarConditionType.AllOf))), false),
       (process, Some(ToolbarCondition(None, Some(false), Some(ToolbarConditionType.AllOf))), true),
@@ -133,7 +133,7 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
       (archivedSubprocess, Some(ToolbarCondition(Some(true), Some(false), Some(ToolbarConditionType.AllOf))), false),
       (archivedSubprocess, Some(ToolbarCondition(Some(true), Some(true), Some(ToolbarConditionType.AllOf))), true),
 
-      //OneOf
+      //One of conditions match
       (process, Some(ToolbarCondition(Some(false), None, Some(ToolbarConditionType.OneOf))), true),
       (process, Some(ToolbarCondition(Some(true), None, Some(ToolbarConditionType.OneOf))), false),
       (process, Some(ToolbarCondition(None, Some(false), Some(ToolbarConditionType.OneOf))), true),
@@ -260,7 +260,7 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
           ))),
           ToolbarPanel("buttons1", None, Some(Small), Some(List(
             ToolbarButton(ProcessDeploy, None, None, None, disabled = false),
-            ToolbarButton(ProcessPDF, None, None, None, disabled = false),
+            ToolbarButton(ProcessPDF, None, None, None, disabled = false)
           ))),
           ToolbarPanel("buttons2", None, None, Some(List(
             ToolbarButton(ProcessCancel, None, None, None, disabled = false)

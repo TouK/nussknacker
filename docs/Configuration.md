@@ -139,7 +139,16 @@ types and their configurations below.
 
 ### Process Toolbar Configuration
 
-Toolbars and buttons at process window are configurable, you can provide your own default process toolbar configuration by:
+Toolbars and buttons at process window are configurable, you can configure params:
+
+* uuid - optional uuid identifier which determines unique code for FE localstorage cache, 
+  default: null - we generate uuid from hashcode config
+* topLeft - optional top left panel, default: empty list
+* bottomLeft - optional bottom left panel, default: empty list
+* topRight - optional top right panel, default: empty list
+* bottomRight - optional bottom right panel, default: empty list
+
+Example configuration:
 
 ```
 processToolbarConfig {
@@ -166,7 +175,7 @@ processToolbarConfig {
   categoryConfig {
    "CategoryName" {
         topLeft: [
-          { type: "creator-panel", hide: {subprocess: true, archived: false, type: "allof"} }
+          { type: "creator-panel", hidden: {subprocess: true, archived: false, type: "allof"} }
         ]
     } 
   }
@@ -183,6 +192,21 @@ Each of this function can be configured by condition expression where we can use
 - subproces: boolean // if true then condition match only subprocess, by default ignored
 - archived: boolean // if true then condition match only archived, by default ignored
 - type condition: allof / oneof // information about that we check only one condition or all conditions
+
+#### Toolbar Panel Templating
+
+Configuration allows to templating params like: 
+* `title`
+* `tempalteHref`
+* `icon`
+
+Right now we allow to template two elements:
+* process id -`{{processId}}`
+* process name - `{{processName}}`
+
+Example usage:
+* `title: "Metrics for {{processName}}"`
+* `templateHref="/metrics/{{processId}}" `
 
 #### Default Process Panel Configuration
 
@@ -219,7 +243,7 @@ processToolbarConfig {
       {
         id: "edit-panel"
         type: "buttons-panel"
-        hide: { archived: true }
+        hidden: { archived: true }
         buttonsVariant: "small"
         buttons: [
           { type: "edit-undo" }
@@ -234,31 +258,31 @@ processToolbarConfig {
         id: "process-panel"
         type: "buttons-panel"
         buttons: [
-          { type: "process-properties", hide: { subprocess: true } }
+          { type: "process-properties", hidden: { subprocess: true } }
           { type: "process-compare" }
-          { type: "process-migrate", hide: { archived: true }, disabled: { subprocess: true } }
-          { type: "process-import", hide: { archived: true } }
+          { type: "process-migrate", hidden: { archived: true }, disabled: { subprocess: true } }
+          { type: "process-import", hidden: { archived: true } }
           { type: "process-json" }
           { type: "process-pdf" }
-          { type: "process-archive", hide: { archived: true } }
-          { type: "process-unarchive", hide: { archived: false } }
+          { type: "process-archive", hidden: { archived: true } }
+          { type: "process-unarchive", hidden: { archived: false } }
         ]
       }
       {
         id: "test-panel"
         type: "buttons-panel"
-        hide: { subprocess: true }
+        hidden: { subprocess: true }
         buttons: [
           { type: "test-from-file", disabled: { archived: true } }
           { type: "test-generate", disabled: { archived: true } }
           { type: "test-counts" }
-          { type: "test-hide" }
+          { type: "test-hidden" }
         ]
       }
       {
         id: "group-panel"
         type: "buttons-panel"
-        hide: { archived: true }
+        hidden: { archived: true }
         buttons: [
           { type: "group" }
           { type: "ungroup" }

@@ -4,7 +4,6 @@ import com.typesafe.config.Config
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarButtonConfigType.ToolbarButtonType
-import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarConditionType.ToolbarConditionType
 import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarPanelTypeConfig.ToolbarPanelType
 import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarButtonsConfigVariant.ToolbarButtonVariant
 import pl.touk.nussknacker.ui.config.processtoolbar._
@@ -35,10 +34,10 @@ object ProcessToolbarSettings {
   def fromConfig(processToolbarConfig: ProcessToolbarsConfig, process: BaseProcessDetails[_]): ProcessToolbarSettings =
     ProcessToolbarSettings(
       createProcessToolbarId(processToolbarConfig, process),
-      processToolbarConfig.topLeft.filterNot(tp => verifyCondition(tp.hide, process)).map(tp => ToolbarPanel.fromConfig(tp, process)),
-      processToolbarConfig.bottomLeft.filterNot(tp => verifyCondition(tp.hide, process)).map(tp => ToolbarPanel.fromConfig(tp, process)),
-      processToolbarConfig.topRight.filterNot(tp => verifyCondition(tp.hide, process)).map(tp => ToolbarPanel.fromConfig(tp, process)),
-      processToolbarConfig.bottomRight.filterNot(tp => verifyCondition(tp.hide, process)).map(tp => ToolbarPanel.fromConfig(tp, process))
+      processToolbarConfig.topLeft.filterNot(tp => verifyCondition(tp.hidden, process)).map(tp => ToolbarPanel.fromConfig(tp, process)),
+      processToolbarConfig.bottomLeft.filterNot(tp => verifyCondition(tp.hidden, process)).map(tp => ToolbarPanel.fromConfig(tp, process)),
+      processToolbarConfig.topRight.filterNot(tp => verifyCondition(tp.hidden, process)).map(tp => ToolbarPanel.fromConfig(tp, process)),
+      processToolbarConfig.bottomRight.filterNot(tp => verifyCondition(tp.hidden, process)).map(tp => ToolbarPanel.fromConfig(tp, process))
     )
 }
 
@@ -60,7 +59,7 @@ object ToolbarPanel {
       config.buttons.map(buttons =>
         buttons
           .filterNot(button => {
-            verifyCondition(button.hide, process)
+            verifyCondition(button.hidden, process)
           })
           .map(button => ToolbarButton.fromConfig(button, process))
       )
@@ -89,7 +88,7 @@ case class ToolbarButton(`type`: ToolbarButtonType, title: Option[String], icon:
 private [service] object ToolbarHelper {
 
   def createProcessToolbarId(config: ProcessToolbarsConfig, process: BaseProcessDetails[_]): String =
-    s"${config.uuidCode}-${process.isSubprocess}-${process.isArchived}"
+    s"${config.uuidCode}-${if(process.isArchived) "archived" else "not-archived"}-${if(process.isSubprocess) "subprocess" else "process"}"
 
   def fillByProcessData(text: String, process: BaseProcessDetails[_]): String =
     text
@@ -98,7 +97,7 @@ private [service] object ToolbarHelper {
 
   def verifyCondition(condition: Option[ToolbarCondition], process: BaseProcessDetails[_]): Boolean = {
     condition.nonEmpty && condition.exists(con => {
-      if (con.shouldVerifyAllProperties) {
+      if (con.shouldMatchAllOfConditions) {
         verifySubprocessCondition(con, process) && verifyArchivedCondition(con, process)
       } else {
         verifySubprocessCondition(con, process) || verifyArchivedCondition(con, process)
@@ -107,11 +106,12 @@ private [service] object ToolbarHelper {
   }
 
   private def verifySubprocessCondition(condition: ToolbarCondition, process: BaseProcessDetails[_]) =
-    verifyCondition(process.isSubprocess, condition.subprocess, condition.`type`)
+    verifyCondition(process.isSubprocess, condition.subprocess,condition.shouldMatchAllOfConditions)
 
   private def verifyArchivedCondition(condition: ToolbarCondition, process: BaseProcessDetails[_]) =
-    verifyCondition(process.isArchived, condition.archived, condition.`type`)
+    verifyCondition(process.isArchived, condition.archived, condition.shouldMatchAllOfConditions)
 
-  private def verifyCondition(toVerify: Boolean, expected: Option[Boolean], `type`: Option[ToolbarConditionType]): Boolean =
-    (`type`.exists(ToolbarConditionType.isAll) && expected.isEmpty) || expected.exists(_.equals(toVerify))
+  //When we should match all conditions and expected condition is empty (not set) then we ignore this condition
+  private def verifyCondition(toVerify: Boolean, expected: Option[Boolean], shouldMatchAllOfConditions: Boolean): Boolean =
+    (shouldMatchAllOfConditions && expected.isEmpty) || expected.exists(_.equals(toVerify))
 }

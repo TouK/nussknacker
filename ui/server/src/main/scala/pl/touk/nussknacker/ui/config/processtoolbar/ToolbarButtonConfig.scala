@@ -8,12 +8,14 @@ case class ToolbarButtonConfig(
   title: Option[String],
   icon: Option[String],
   templateHref: Option[String],
-  hide: Option[ToolbarCondition],
+  hidden: Option[ToolbarCondition],
   disabled: Option[ToolbarCondition]
 ) {
 
   if (ToolbarButtonConfigType.requiresHrefTemplate(`type`)) {
     require(templateHref.isDefined, s"Button ${`type`} requires param: 'templateHref'.")
+  } else {
+    require(templateHref.isEmpty, s"Button ${`type`} doesn't contain param: 'templateHref'.")
   }
 }
 

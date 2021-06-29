@@ -52,15 +52,19 @@ case class ToolbarPanelConfig(
   title: Option[String],
   buttonsVariant: Option[ToolbarButtonVariant],
   buttons: Option[List[ToolbarButtonConfig]],
-  hide: Option[ToolbarCondition]
+  hidden: Option[ToolbarCondition]
 ) {
 
   if (ToolbarPanelTypeConfig.requiresIdentity(`type`)) {
     require(id.exists(_.nonEmpty), s"Toolbar ${`type`} requires param: 'id'.")
+  } else {
+    require(id.isEmpty, s"Toolbar ${`type`} doesn't contain param: 'id'.")
   }
 
   if (ToolbarPanelTypeConfig.requiresButtons(`type`)) {
     require(buttons.exists(_.nonEmpty), s"Toolbar ${`type`} requires non empty param: 'buttons'.")
+  } else {
+    require(buttons.isEmpty, s"Toolbar ${`type`} doesn't contain param: 'buttons'.")
   }
 
   def identity: String = id.getOrElse(`type`.toString)

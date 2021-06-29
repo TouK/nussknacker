@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.config
 
 import com.typesafe.config.{Config, ConfigFactory}
-import org.apache.kafka.common.config.ConfigException
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.ui.config.processtoolbar._
 
@@ -19,7 +18,7 @@ class ProcessToolbarsConfigProviderSpec extends FlatSpec with Matchers {
       |processToolbarConfig {
       |    defaultConfig {
       |      topLeft: [
-      |        { type: "tips-panel", hide: { subprocess: true } }
+      |        { type: "tips-panel", hidden: { subprocess: true } }
       |      ]
       |      topRight: [
       |        {
@@ -60,22 +59,36 @@ class ProcessToolbarsConfigProviderSpec extends FlatSpec with Matchers {
       |            ]
       |          }
       |        ]
-      |      }
-      |      "ButtonsError" {
+      |      },
+      |      "RedundantTemplateHref" {
       |        topLeft: [
       |          {
-      |            id: "button1"
-      |            type: "buttons-panel"
-      |            title: "Buttons Info"
+      |            type: "process-info-panel"
+      |            title: "Process Info"
+      |            buttons: [
+      |              { type: "process-save", title: "metrics", icon: "/assets/buttons/save.svg", templateHref="no-url" }
+      |            ]
       |          }
       |        ]
       |      },
-      |      "ButtonsIdError" {
+      |      "MissingButtonsError" {
       |        topLeft: [
-      |          {
-      |            type: "buttons-panel"
-      |            title: "Buttons Info"
-      |          }
+      |          { id: "button1", type: "buttons-panel", title: "Buttons Info" }
+      |        ]
+      |      },
+      |      "RedundantButtonsError" {
+      |        topLeft: [
+      |          { type: "tips-panel", hidden: { subprocess: true }, buttons: [] }
+      |        ]
+      |      },
+      |      "MissingIdError" {
+      |        topLeft: [
+      |          { type: "buttons-panel", title: "Buttons Info" }
+      |        ]
+      |      },
+      |      "RedundantIdError" {
+      |        topLeft: [
+      |          { type: "tips-panel", hidden: { subprocess: true }, id: "BadId" }
       |        ]
       |      }
       |    }
@@ -90,11 +103,12 @@ class ProcessToolbarsConfigProviderSpec extends FlatSpec with Matchers {
       List(ToolbarPanelConfig(TipsPanel, None, None, None, None, Some(ToolbarCondition(Some(true), None, None)))),
       Nil,
       List(
-        ToolbarPanelConfig(ProcessInfoPanel, None, Some("Process Info"), None, Some(List(
+        ToolbarPanelConfig(ProcessInfoPanel, None,
+          Some("Process Info"), None, Some(List(
           ToolbarButtonConfig(ToolbarButtonConfigType.ProcessSave, Some("save"), Some("/assets/buttons/save.svg"), None, None, Some(ToolbarCondition(None, Some(true), None))),
           ToolbarButtonConfig(ToolbarButtonConfigType.ProcessDeploy, None, None, None, None, None),
-          ToolbarButtonConfig(ToolbarButtonConfigType.CustomLink, Some("metrics"), Some("/assets/buttons/metrics.svg"), Some("/metrics/{{processName}}"), None, None),
-        )),None)
+          ToolbarButtonConfig(ToolbarButtonConfigType.CustomLink, Some("metrics"), Some("/assets/buttons/metrics.svg"), Some("/metrics/{{processName}}"), None, None)
+        )), None)
       ),
       Nil
     )
@@ -105,8 +119,8 @@ class ProcessToolbarsConfigProviderSpec extends FlatSpec with Matchers {
       Nil,
       List(
         ToolbarPanelConfig(ProcessInfoPanel, None, Some("Process Info Right"), Some(Small), Some(List(
-          ToolbarButtonConfig(ToolbarButtonConfigType.ProcessSave, None, None, None, None, None),
-        )),None)
+          ToolbarButtonConfig(ToolbarButtonConfigType.ProcessSave, None, None, None, None, None)
+        )), None)
       ),
       List(ToolbarPanelConfig(VersionsPanel, None, None, None, None, None))
     )
@@ -127,8 +141,12 @@ class ProcessToolbarsConfigProviderSpec extends FlatSpec with Matchers {
     val errorTestingConfigs = Table(
       ("config", "category", "message"),
       (processToolbarConfig, "CustomLinkError", "Button custom-link requires param: 'templateHref'."),
-      (processToolbarConfig, "ButtonsIdError", "Toolbar buttons-panel requires param: 'id'."),
-      (processToolbarConfig, "ButtonsError", "Toolbar buttons-panel requires non empty param: 'buttons'."),
+      (processToolbarConfig, "MissingIdError", "Toolbar buttons-panel requires param: 'id'."),
+      (processToolbarConfig, "MissingButtonsError", "Toolbar buttons-panel requires non empty param: 'buttons'."),
+      (processToolbarConfig, "RedundantButtonsError", "Toolbar tips-panel doesn't contain param: 'buttons'."),
+      (processToolbarConfig, "RedundantIdError", "Toolbar tips-panel doesn't contain param: 'id'."),
+      (processToolbarConfig, "RedundantIdError", "Toolbar tips-panel doesn't contain param: 'id'."),
+      (processToolbarConfig, "RedundantTemplateHref", "Button process-save doesn't contain param: 'templateHref'.")
     )
 
     forAll(errorTestingConfigs) { (config: Config, category: String, message) =>

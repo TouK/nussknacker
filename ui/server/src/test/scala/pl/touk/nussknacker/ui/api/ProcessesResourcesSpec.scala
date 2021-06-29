@@ -28,7 +28,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.config.processtoolbar.ProcessToolbarsConfigProvider
 import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
-import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarPanelTypeConfig.{AttachmentsPanel, CommentsPanel, CreatorPanel, ProcessInfoPanel, TipsPanel}
+import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarPanelTypeConfig.{CreatorPanel, ProcessInfoPanel, TipsPanel}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -750,7 +750,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
 
     withProcessToolbars(processName) { toolbar =>
       toolbar shouldBe ProcessToolbarSettings(
-        id = s"${UUID.nameUUIDFromBytes(toolbarConfig.hashCode().toString.getBytes)}-false-false",
+        id = s"${toolbarConfig.uuidCode}-not-archived-process",
         List(
           ToolbarPanel(TipsPanel, None, None, None),
           ToolbarPanel(CreatorPanel, None, None, None)
@@ -815,7 +815,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   protected def withProcessToolbars(processName: ProcessName, isAdmin: Boolean = false)(callback: ProcessToolbarSettings => Unit): Unit =
     getProcessToolbars(processName, isAdmin) ~> check {
       status shouldEqual StatusCodes.OK
-      val toolbar = decode[ProcessToolbarSettings](responseAs[String]).getOrElse(throw new IllegalArgumentException("Error at parsing response."))
+      val toolbar = decode[ProcessToolbarSettings](responseAs[String]).right.get
       callback(toolbar)
     }
 

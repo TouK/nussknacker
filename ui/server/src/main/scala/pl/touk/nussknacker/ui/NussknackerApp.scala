@@ -6,12 +6,9 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.stream.{ActorMaterializer, Materializer}
-import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromMap}
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.commons.io.FileUtils
-import org.hsqldb.server.Server
-import pl.touk.nussknacker.engine.{ModelData, ProcessManagerProvider, ProcessingTypeData}
+import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
@@ -42,7 +39,6 @@ import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
 import sttp.client.{NothingT, SttpBackend}
 import sttp.client.akkahttp.AkkaHttpBackend
 
-import java.nio.file.Files
 import scala.collection.JavaConverters.{getClass, _}
 import scala.concurrent.Future
 
@@ -119,6 +115,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val systemRequestTimeout = system.settings.config.getDuration("akka.http.server.request-timeout")
     val managementActor = system.actorOf(ManagementActor.props(managers, processRepository, actionRepository, subprocessResolver, processChangeListener), "management")
     val processService = new DBProcessService(managementActor, systemRequestTimeout, newProcessPreparer, processCategoryService, processResolving, dbRepositoryManager, processRepository, actionRepository, writeProcessRepository)
+
     val configProcessToolbarService = new ConfigProcessToolbarService(config, processCategoryService.getAllCategories)
 
     val processAuthorizer = new AuthorizeProcess(processRepository)
