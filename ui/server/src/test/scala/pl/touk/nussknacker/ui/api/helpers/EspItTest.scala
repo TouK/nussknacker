@@ -143,7 +143,9 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   )
   val attachmentService = new ProcessAttachmentService(attachmentsPath, processActivityRepository)
   val processActivityRoute = new ProcessActivityResource(processActivityRepository, fetchingProcessRepository)
+  val processActivityRouteWithAllPermissions: Route = withAllPermissions(processActivityRoute)
   val attachmentsRoute = new AttachmentResources(attachmentService, fetchingProcessRepository)
+  val attachmentsRouteWithAllPermissions: Route = withAllPermissions(attachmentsRoute)
 
   def createProcessRequest(processName: ProcessName)(callback: StatusCode => Assertion): Assertion = {
     Post(s"/processes/${processName.value}/$testCategoryName?isSubprocess=false") ~> processesRouteWithAllPermissions ~> check {
@@ -197,8 +199,8 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     }
   }
 
-  def updateProcess(processName: ProcessName, process: EspProcess)(testCode: => Assertion): Assertion = {
-    Put(s"/processes/${processName.value}", TestFactory.posting.toEntityAsProcessToSave(process)) ~> processesRouteWithAllPermissions ~> check {
+  def updateProcess(processName: ProcessName, process: EspProcess, comment: String = "")(testCode: => Assertion): Assertion = {
+    Put(s"/processes/${processName.value}", TestFactory.posting.toEntityAsProcessToSave(process, comment)) ~> processesRouteWithAllPermissions ~> check {
       testCode
     }
   }
@@ -254,6 +256,10 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
       val process = decodeJsonProcess(response)
       callback(process)
     }
+  }
+
+  def getActivity(processName: ProcessName): RouteTestResult = {
+    Get(s"/processes/${processName.value}/activity") ~> processActivityRouteWithAllPermissions
   }
 
   object ProcessesQuery {

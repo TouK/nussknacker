@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import java.time.LocalDateTime
+
 import cats.data._
 import cats.syntax.either._
 import com.typesafe.scalalogging.LazyLogging
@@ -19,7 +20,7 @@ import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository._
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, UpdateProcessAction}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessUpdated, UpdateProcessAction}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DateUtils
 import slick.dbio.DBIOAction
@@ -35,13 +36,15 @@ object ProcessRepository {
   case class UpdateProcessAction(id: ProcessId, deploymentData: ProcessDeploymentData, comment: String)
 
   case class CreateProcessAction(processName: ProcessName, category: String, processDeploymentData: ProcessDeploymentData, processingType: ProcessingType, isSubprocess: Boolean)
+
+  case class ProcessUpdated(oldVersion: Option[ProcessVersionEntityData], newVersion: Option[ProcessVersionEntityData])
 }
 
 trait ProcessRepository[F[_]] {
 
   def saveNewProcess(action: CreateProcessAction)(implicit loggedUser: LoggedUser): F[XError[Option[ProcessVersionEntityData]]]
 
-  def updateProcess(action: UpdateProcessAction)(implicit loggedUser: LoggedUser): F[XError[Option[ProcessVersionEntityData]]]
+  def updateProcess(action: UpdateProcessAction)(implicit loggedUser: LoggedUser): F[XError[ProcessUpdated]]
 
   def updateCategory(processId: ProcessId, category: String)(implicit loggedUser: LoggedUser): F[XError[Unit]]
 
@@ -78,7 +81,9 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
         case Some(_) => DBIOAction.successful(ProcessAlreadyExists(action.processName.value).asLeft)
         case None => processesTable.filter(_.name === action.processName.value).result.headOption.flatMap {
           case Some(_) => DBIOAction.successful(ProcessAlreadyExists(action.processName.value).asLeft)
-          case None => (insertNew += processToSave).flatMap(entity => updateProcessInternal(ProcessId(entity.id), action.processDeploymentData))
+          case None => (insertNew += processToSave)
+            .flatMap(entity => updateProcessInternal(ProcessId(entity.id), action.processDeploymentData))
+            .map(_.right.map(_.newVersion))
         }
       }
     }
@@ -86,14 +91,22 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
     insertAction
   }
 
-  def updateProcess(updateProcessAction: UpdateProcessAction)(implicit loggedUser: LoggedUser): DB[XError[Option[ProcessVersionEntityData]]] =
-    updateProcessInternal(updateProcessAction.id, updateProcessAction.deploymentData).flatMap {
-      case Right(Some(newVersion)) =>
-        newCommentAction(ProcessId(newVersion.processId), newVersion.id, updateProcessAction.comment).map(_ => Right(Some(newVersion)))
-      case a => DBIO.successful(a)
+  def updateProcess(updateProcessAction: UpdateProcessAction)(implicit loggedUser: LoggedUser): DB[XError[ProcessUpdated]] = {
+    def addNewCommentToVersion(version: ProcessVersionEntityData) = {
+      newCommentAction(ProcessId(version.processId), version.id, updateProcessAction.comment)
     }
 
-  private def updateProcessInternal(processId: ProcessId, processDeploymentData: ProcessDeploymentData)(implicit loggedUser: LoggedUser): DB[XError[Option[ProcessVersionEntityData]]] = {
+    updateProcessInternal(updateProcessAction.id, updateProcessAction.deploymentData).flatMap {
+      // Comment should be added via ProcessService not to mix this repository responsibility.
+      case updateProcessRes@Right(ProcessUpdated(_, Some(newVersion))) =>
+        addNewCommentToVersion(newVersion).map(_ => updateProcessRes)
+      case updateProcessRes@Right(ProcessUpdated(Some(oldVersion), _)) =>
+        addNewCommentToVersion(oldVersion).map(_ => updateProcessRes)
+      case a => DBIO.successful(a)
+    }
+  }
+
+  private def updateProcessInternal(processId: ProcessId, processDeploymentData: ProcessDeploymentData)(implicit loggedUser: LoggedUser): DB[XError[ProcessUpdated]] = {
     val (maybeJson, maybeMainClass) = processDeploymentData match {
       case GraphProcess(json) => (Some(json), None)
       case CustomProcess(mainClass) => (None, Some(mainClass))
@@ -137,7 +150,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
       latestProcessVersion <- rightT(fetchProcessLatestVersionsQuery(processId)(ProcessShapeFetchStrategy.FetchDisplayable).result.headOption)
       newProcessVersion <- EitherT.fromEither(versionToInsert(latestProcessVersion, process.processingType))
       _ <- EitherT.right[EspError](newProcessVersion.map(processVersionsTable += _).getOrElse(dbMonad.pure(0)))
-    } yield newProcessVersion
+    } yield ProcessUpdated(oldVersion = latestProcessVersion, newVersion = newProcessVersion)
     insertAction.value
   }
 

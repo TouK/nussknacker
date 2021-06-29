@@ -10,6 +10,7 @@ import cats.syntax.semigroup._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
 import org.scalatest._
+import org.scalatest.LoneElement._
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
@@ -19,7 +20,7 @@ import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.restmodel.process.ProcessId
+import pl.touk.nussknacker.restmodel.process.{ProcessId, UpdateProcessResponse}
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -27,6 +28,7 @@ import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.Future
@@ -45,7 +47,6 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   val routeWithWrite: Route = withPermissions(processesRoute, testPermissionWrite)
   val routeWithAllPermissions: Route = withAllPermissions(processesRoute)
   val routeWithAdminPermissions: Route = withAdminPermissions(processesRoute)
-  val processActivityRouteWithAllPermission: Route = withAllPermissions(processActivityRoute)
   implicit val loggedUser: LoggedUser = LoggedUser("1", "lu", testCategory)
 
   private val processName: ProcessName = ProcessName(SampleProcess.process.id)
@@ -406,13 +407,38 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     val command = ProcessTestData.createEmptyUpdateProcessCommand(processName, None)
 
     createProcessRequest(processName) { code =>
-      Put(s"/processes/${processName.value}", TestFactory.posting.toRequest(command)) ~> processesRouteWithAllPermissions ~> check {
+      code shouldBe StatusCodes.Created
+
+      updateProcess(command) {
         withProcess(processName) { process =>
           process.history.map(_.size) shouldBe Some(1)
         }
+        status shouldEqual StatusCodes.OK
       }
+    }
+  }
 
-      code shouldBe StatusCodes.Created
+  test("update process with the same json should add comment for current version") {
+    val process = ProcessTestData.validProcess
+    val comment = "Update the same version"
+
+    saveProcess(processName, process) {
+      withProcess(processName) { process =>
+        process.history.map(_.size) shouldBe Some(2)
+      }
+      status shouldEqual StatusCodes.OK
+    }
+
+    updateProcess(processName, process, comment) {
+      withProcess(processName) { process =>
+        process.history.map(_.size) shouldBe Some(2)
+      }
+      status shouldEqual StatusCodes.OK
+    }
+
+    getActivity(processName) ~> check {
+      val comments = responseAs[ProcessActivity].comments
+      comments.loneElement.content shouldBe comment
     }
   }
 

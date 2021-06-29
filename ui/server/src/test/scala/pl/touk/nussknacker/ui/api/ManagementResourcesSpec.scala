@@ -119,7 +119,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
         //TODO: remove Deployment:, Stop: after adding custom icons
         val expectedDeployComment = "Deployment: deployComment"
         val expectedStopComment = "Stop: cancelComment"
-        Get(s"/processes/${SampleProcess.process.id}/activity") ~> withAllPermissions(processActivityRoute) ~> check {
+        getActivity(ProcessName(SampleProcess.process.id)) ~> check {
           val comments = responseAs[ProcessActivity].comments.sortBy(_.id)
           comments.map(_.content) shouldBe List(expectedDeployComment, expectedStopComment)
 
