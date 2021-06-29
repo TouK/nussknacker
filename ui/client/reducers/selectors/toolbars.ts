@@ -15,7 +15,7 @@ export const getOpenedNodeGroups = createSelector(getNodeToolbox, t => t?.opened
 
 const getCollapsed = createSelector(getToolbars, t => t.collapsed)
 
-export const getIsCollapsed = (id: string) => (state: RootState) => id && getCollapsed(state)[id]
+export const getIsCollapsed = createSelector(getCollapsed, collapsed => (id: string) => !!collapsed[id])
 export const getOrderForPosition = (side: ToolbarsSide) => (state: RootState) => getPositions(state)[side] || []
 
 export const getToolbarsConfig = () => defaultToolbarsConfig
