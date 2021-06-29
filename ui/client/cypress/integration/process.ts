@@ -67,7 +67,7 @@ describe("Process", () => {
       cy.wait("@save").its("response.statusCode").should("eq", 200)
       cy.contains(/^ok$/i).should("not.exist")
       cy.contains(/was saved$/i).should("be.visible")
-      cy.get("#graphContainer").toMatchImageSnapshot()
+      cy.get("#graphContainer").wait(200).toMatchImageSnapshot()
     })
   })
 
