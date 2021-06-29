@@ -18,8 +18,8 @@ import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
-import pl.touk.nussknacker.genericmodel.GenericConfigCreator
 import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils._
+import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 import java.nio.charset.StandardCharsets
 
@@ -71,7 +71,7 @@ class SampleProcessWithRestDBServiceSpec extends FunSuite with BeforeAndAfterAll
     }
   }
 
-  private lazy val creator = new GenericConfigCreator
+  private lazy val creator = new EmptyProcessConfigCreator
 
   private var registrar: FlinkProcessRegistrar = _
 

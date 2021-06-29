@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.openapi.SwaggerService
 import pl.touk.nussknacker.openapi.extractor.ParametersExtractor
 import pl.touk.nussknacker.openapi.http.SwaggerSttpService
-import pl.touk.nussknacker.openapi.http.backend.{CacheableHttpBackend, HttpClientConfig}
+import pl.touk.nussknacker.openapi.http.backend.{CacheableHttpBackendHolder, HttpClientConfig, ShutdownableHttpClient}
 
 import java.net.URL
 import scala.concurrent.{ExecutionContext, Future}
@@ -22,7 +22,7 @@ class SwaggerEnricher(rootUrl: Option[URL], swaggerService: SwaggerService,
 
   private val parameterExtractor = new ParametersExtractor(swaggerService, fixedParams)
 
-  private var httpBackend: CacheableHttpBackend.ShutdownableClient = _
+  private var httpClient: ShutdownableHttpClient = _
 
   override def parameterDefinition: List[Parameter] =
     parameterExtractor.parameterDefinition
@@ -35,17 +35,17 @@ class SwaggerEnricher(rootUrl: Option[URL], swaggerService: SwaggerService,
                                                    collector: ServiceInvocationCollector,
                                                    metaData: MetaData,
                                                    contextId: ContextId): Future[AnyRef] = measuring {
-    swaggerHttpService.invoke(parameterExtractor.prepareParams(params))(httpBackend.client)
+    swaggerHttpService.invoke(parameterExtractor.prepareParams(params))(httpClient.httpBackend)
   }
 
   override def open(jobData: JobData): Unit = {
-    httpBackend = CacheableHttpBackend.retrieveClient(httpClientConfig, jobData.metaData, serviceName)
+    httpClient = CacheableHttpBackendHolder.retrieveService((httpClientConfig, ExecutionContext.global))(jobData.metaData)
   }
 
   override protected def serviceName: String = swaggerService.name
 
   override def close(): Unit = synchronized {
-    httpBackend.shutdown()
+    httpClient.close()
   }
 
 }
