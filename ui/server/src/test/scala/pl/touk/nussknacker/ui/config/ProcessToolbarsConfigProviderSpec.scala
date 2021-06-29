@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.config
 
 import com.typesafe.config.{Config, ConfigFactory}
+import org.apache.kafka.common.config.ConfigException
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.ui.config.processtoolbar._
 
@@ -112,9 +113,8 @@ class ProcessToolbarsConfigProviderSpec extends FlatSpec with Matchers {
 
     val testingConfigs = Table(
       ("config", "category", "expected"),
-      (processToolbarConfig, "Category1", defaultToolbarConfig),
-      (processToolbarConfig, "Category2", categoryToolbarConfig),
-      (ConfigFactory.empty(), "Category1", ProcessToolbarsConfig(None, Nil, Nil, Nil, Nil))
+      (processToolbarConfig, "NotExistCategory", defaultToolbarConfig),
+      (processToolbarConfig, "Category2", categoryToolbarConfig)
     )
 
     forAll(testingConfigs) { (config: Config, category: String, expected) =>
@@ -135,6 +135,12 @@ class ProcessToolbarsConfigProviderSpec extends FlatSpec with Matchers {
       intercept[IllegalArgumentException] {
         ProcessToolbarsConfigProvider.create(config, Some(category))
       }.getMessage should include(message)
+    }
+  }
+
+  it should "raise exception when configuration is missing" in {
+    intercept[com.typesafe.config.ConfigException.Missing] {
+      ProcessToolbarsConfigProvider.create(ConfigFactory.empty(), None)
     }
   }
 }

@@ -750,7 +750,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
 
     withProcessToolbars(processName) { toolbar =>
       toolbar shouldBe ProcessToolbarSettings(
-        uuid = UUID.nameUUIDFromBytes(s"${toolbarConfig.hashCode()}-false-false".getBytes()),
+        id = s"${UUID.nameUUIDFromBytes(toolbarConfig.hashCode().toString.getBytes)}-false-false",
         List(
           ToolbarPanel(TipsPanel, None, None, None),
           ToolbarPanel(CreatorPanel, None, None, None)

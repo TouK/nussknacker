@@ -83,8 +83,6 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
 
   private val categories = List("Category1", "Category3")
 
-  private val emptyConfig = ConfigFactory.empty()
-
   it should "verify all toolbar condition cases" in {
     val process = createProcess("process", "Category1", isSubprocess = false, isArchived = false)
     val archivedProcess = createProcess("archived-process", "Category1", isSubprocess = false, isArchived = true)
@@ -181,7 +179,6 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
 
   it should "properly create process toolbar configuration" in {
     val service = new ConfigProcessToolbarService(config, categories)
-    val serviceWithEmptyConfig = new ConfigProcessToolbarService(emptyConfig, List.empty)
 
     val process = createProcess("process", "Category1", isSubprocess = false, isArchived = false)
     val archivedProcess = createProcess("archived-process", "Category1", isSubprocess = false, isArchived = true)
@@ -189,7 +186,6 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
     val archivedSubprocess = createProcess("archived-subprocess", "Category1", isSubprocess = true, isArchived = true)
     val processCategory2 = createProcess("process2", "Category2", isSubprocess = false, isArchived = false)
     val processCategory3 = createProcess("process3", "Category3", isSubprocess = false, isArchived = false)
-    val emptyProcess = createProcess("empty", "empty", isSubprocess = false, isArchived = false)
 
     val testingData = Table(
       ("service", "process"),
@@ -198,8 +194,7 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
       (service, subprocess),
       (service, archivedSubprocess),
       (service, processCategory2),
-      (service, processCategory3),
-//      (serviceWithEmptyConfig, emptyProcess)
+      (service, processCategory3)
     )
 
     forAll(testingData) { (service: ProcessToolbarService, process: BaseProcessDetails[_]) =>
@@ -211,14 +206,11 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
 
   private def createProcessToolbarSettings(process: BaseProcessDetails[_]): ProcessToolbarSettings = {
     val processToolbarConfig = ProcessToolbarsConfigProvider.create(config, Some(process.processCategory))
-    val emptyToolbarConfig = ProcessToolbarsConfigProvider.create(emptyConfig, Some(process.processCategory))
-
-    val emptyUuid = ToolbarHelper.createProcessToolbarUUID(emptyToolbarConfig.uniqueCode, process)
-    val uuid = ToolbarHelper.createProcessToolbarUUID(processToolbarConfig.uniqueCode, process)
+    val id = ToolbarHelper.createProcessToolbarId(processToolbarConfig, process)
 
     (process.isSubprocess, process.isArchived, process.processCategory) match {
       case (false, false, "Category1") => ProcessToolbarSettings(
-        uuid,
+        id,
         List(
           ToolbarPanel(CreatorPanel, None, None, None),
           ToolbarPanel(AttachmentsPanel, None, None, None),
@@ -238,7 +230,7 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
         List(ToolbarPanel(VersionsPanel, None, None, None))
       )
       case (false, true, "Category1") => ProcessToolbarSettings(
-        uuid,
+        id,
         List(
           ToolbarPanel(CreatorPanel, None, None, None),
           ToolbarPanel(AttachmentsPanel, None, None, None)
@@ -254,7 +246,7 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
         List(ToolbarPanel(VersionsPanel, None, None, None))
       )
       case (true, false, "Category1") => ProcessToolbarSettings(
-        uuid,
+        id,
         List(
           ToolbarPanel(AttachmentsPanel, None, None, None),
           ToolbarPanel(CommentsPanel, None, None, None)
@@ -277,7 +269,7 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
         List(ToolbarPanel(VersionsPanel, None, None, None))
       )
       case (true, true, "Category1") => ProcessToolbarSettings(
-        uuid,
+        id,
         List(
           ToolbarPanel(CreatorPanel, None, None, None),
           ToolbarPanel(CommentsPanel, None, None, None)
@@ -296,7 +288,7 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
         List(ToolbarPanel(VersionsPanel, None, None, None))
       )
       case (false, false, "Category2") => ProcessToolbarSettings(
-        uuid,
+        id,
         List(
           ToolbarPanel(TipsPanel, None, None, None)
         ),
@@ -314,7 +306,7 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
         Nil
       )
       case (false, false, "Category3") => ProcessToolbarSettings(
-        uuid,
+        id,
         List(
           ToolbarPanel(AttachmentsPanel, None, None, None)
         ),
@@ -332,7 +324,7 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
         List(ToolbarPanel(VersionsPanel, None, None, None))
       )
       case (_, _, _) =>
-        ProcessToolbarSettings(emptyUuid, Nil, Nil, Nil, Nil)
+        ProcessToolbarSettings("not-exist", Nil, Nil, Nil, Nil)
     }
   }
 

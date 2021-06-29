@@ -9,8 +9,6 @@ import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarPanelTypeConfig.Toolb
 import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarButtonsConfigVariant.ToolbarButtonVariant
 import pl.touk.nussknacker.ui.config.processtoolbar._
 
-import java.util.UUID
-
 trait ProcessToolbarService {
   def getProcessToolbarSettings(process: BaseProcessDetails[_]): ProcessToolbarSettings
 }
@@ -36,7 +34,7 @@ object ProcessToolbarSettings {
 
   def fromConfig(processToolbarConfig: ProcessToolbarsConfig, process: BaseProcessDetails[_]): ProcessToolbarSettings =
     ProcessToolbarSettings(
-      createProcessToolbarUUID(processToolbarConfig.uniqueCode, process),
+      createProcessToolbarId(processToolbarConfig, process),
       processToolbarConfig.topLeft.filterNot(tp => verifyCondition(tp.hide, process)).map(tp => ToolbarPanel.fromConfig(tp, process)),
       processToolbarConfig.bottomLeft.filterNot(tp => verifyCondition(tp.hide, process)).map(tp => ToolbarPanel.fromConfig(tp, process)),
       processToolbarConfig.topRight.filterNot(tp => verifyCondition(tp.hide, process)).map(tp => ToolbarPanel.fromConfig(tp, process)),
@@ -45,7 +43,7 @@ object ProcessToolbarSettings {
 }
 
 @JsonCodec
-case class ProcessToolbarSettings(uuid: UUID, topLeft: List[ToolbarPanel], bottomLeft: List[ToolbarPanel], topRight: List[ToolbarPanel], bottomRight: List[ToolbarPanel])
+case class ProcessToolbarSettings(id: String, topLeft: List[ToolbarPanel], bottomLeft: List[ToolbarPanel], topRight: List[ToolbarPanel], bottomRight: List[ToolbarPanel])
 
 object ToolbarPanel {
 
@@ -90,8 +88,8 @@ case class ToolbarButton(`type`: ToolbarButtonType, title: Option[String], icon:
 
 private [service] object ToolbarHelper {
 
-  def createProcessToolbarUUID(baseCode: String, process: BaseProcessDetails[_]): UUID =
-    UUID.nameUUIDFromBytes(s"$baseCode-${process.isSubprocess}-${process.isArchived}".getBytes())
+  def createProcessToolbarId(config: ProcessToolbarsConfig, process: BaseProcessDetails[_]): String =
+    s"${config.uuidCode}-${process.isSubprocess}-${process.isArchived}"
 
   def fillByProcessData(text: String, process: BaseProcessDetails[_]): String =
     text

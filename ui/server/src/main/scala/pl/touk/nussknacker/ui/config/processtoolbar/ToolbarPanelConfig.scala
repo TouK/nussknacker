@@ -37,9 +37,11 @@ object ToolbarPanelTypeConfig extends Enumeration {
   val ButtonsPanel: Value = Value("buttons-panel")
   val DetailsPanel: Value = Value("details-panel")
 
+  //Some of panels require buttons not empty list param, this method verify that..
   def requiresButtons(`type`: ToolbarPanelType): Boolean =
     toolbarsWithButtons.contains(`type`)
 
+  //Some of panels require id param, this method verify that..
   def requiresIdentity(`type`: ToolbarPanelType): Boolean =
     toolbarsWithIdentity.contains(`type`)
 }
