@@ -26,6 +26,11 @@ export class RangeSelectPlugin {
     paper.model.once("destroy", this.destroy.bind(this))
   }
 
+  get isActive(): boolean {
+    const box = this.rectangle.getBBox()
+    return !!(box.width && box.height)
+  }
+
   private get mode(): SelectionMode {
     if (this.keys.includes("Shift")) {
       return SelectionMode.toggle
@@ -85,13 +90,16 @@ export class RangeSelectPlugin {
     }
   }
 
-  private onExit({data}: Event): void {
-    if (data?.selectStart) {
+  private onExit(event: Event): void {
+    if (event.data?.selectStart) {
       const strict = !this.rectangle.attr("body/strokeDasharray")
       const elements = this.paper.model.findModelsInArea(this.rectangle.getBBox(), {strict})
-      this.paper.trigger("rangeSelect:selected", {elements, mode: this.mode})
+      if (this.isActive) {
+        event.stopPropagation()
+        this.paper.trigger("rangeSelect:selected", {elements, mode: this.mode})
+      }
     }
-    this.cleanup(data)
+    this.cleanup(event.data)
   }
 
   private cleanup(data?: EventData): void {

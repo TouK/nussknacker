@@ -4,6 +4,7 @@ import {connect} from "react-redux"
 import ActionsUtils from "../actions/ActionsUtils"
 import ProcessUtils from "../common/ProcessUtils"
 import * as VisualizationUrl from "../common/VisualizationUrl"
+import {RECT_HEIGHT, RECT_WIDTH} from "../components/graph/EspNode/esp"
 import {GraphProvider} from "../components/graph/GraphContext"
 import NodeUtils from "../components/graph/NodeUtils"
 import {ProcessGraph as Graph} from "../components/graph/ProcessGraph"
@@ -11,15 +12,9 @@ import SelectionContextProvider from "../components/graph/SelectionContextProvid
 import RouteLeavingGuard from "../components/RouteLeavingGuard"
 import SpinnerWrapper from "../components/SpinnerWrapper"
 import Toolbars from "../components/toolbars/Toolbars"
-import {
-  getFetchedProcessDetails,
-  getProcessCategory,
-  getProcessToDisplay,
-  getSelectionState,
-  isBusinessView,
-} from "../reducers/selectors/graph"
+import {getFetchedProcessDetails, getProcessToDisplay, isBusinessView} from "../reducers/selectors/graph"
 import {getCapabilities} from "../reducers/selectors/other"
-import {getLoggedUser, getProcessDefinitionData} from "../reducers/selectors/settings"
+import {getProcessDefinitionData} from "../reducers/selectors/settings"
 import {areAllModalsClosed} from "../reducers/selectors/ui"
 import "../stylesheets/visualization.styl"
 import {darkTheme} from "./darkTheme"
@@ -138,14 +133,14 @@ class Visualization extends React.Component {
           navigate={path => this.props.history.push(path)}
         />
 
-        <SelectionContextProvider pastePosition={this.getPastePosition}>
-          <BindKeyboardShortcuts disabled={!this.props.allModalsClosed}/>
-          <GraphProvider graph={this.getGraphInstance}>
+        <GraphProvider graph={this.getGraphInstance}>
+          <SelectionContextProvider pastePosition={this.getPastePosition}>
+            <BindKeyboardShortcuts disabled={!this.props.allModalsClosed}/>
             <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
               <Toolbars isReady={this.state.dataResolved}/>
             </NkThemeProvider>
-          </GraphProvider>
-        </SelectionContextProvider>
+          </SelectionContextProvider>
+        </GraphProvider>
 
         <SpinnerWrapper isReady={!graphNotReady}>
           {!isEmpty(this.props.processDefinitionData) ? <Graph ref={this.graphRef} capabilities={this.props.capabilities}/> : null}

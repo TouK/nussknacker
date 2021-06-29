@@ -41,7 +41,7 @@ function isGraphConnected(nodes: NodeId[], edges: Edge[]): boolean {
 
 function getSelectedNodes(state: GraphState): NodeType[] {
   const {processToDisplay, selectionState = []} = state
-  return NodeUtils.nodesFromProcess(processToDisplay).filter(n => selectionState.includes(n.id))
+  return NodeUtils.nodesWithGroups(processToDisplay).filter(n => selectionState.includes(n.id))
 }
 
 export function getSelectedGroups(state: GraphState): GroupType[] {
@@ -151,7 +151,7 @@ export function addNodesWithLayout(state: GraphState, {nodes, layout}: ReturnTyp
 export function removeSubprocessVersionForLastSubprocess(processToDisplay: Process, idToDelete: NodeId) {
   const subprocessVersions = processToDisplay.properties.subprocessVersions
   const nodeToDelete = processToDisplay.nodes.find(n => n.id === idToDelete)
-  if (nodeToDelete.type === "SubprocessInput") {
+  if (nodeToDelete?.type === "SubprocessInput") {
     const subprocessId = nodeToDelete.ref?.id
     const allSubprocessNodes = processToDisplay.nodes.filter(n => n.ref?.id === subprocessId)
     const isLastOne = allSubprocessNodes.length === 1

@@ -22,6 +22,16 @@ linkColor = white
         opacity .5
         stroke-opacity .5
 
+    &.dragHovered
+        .connection
+            opacity .5
+        .connection-wrap
+            opacity .5
+            stroke-opacity .5
+            stroke-width 24
+            stroke-linecap square
+            stroke red
+
     .connection
         stroke linkColor
         stroke-width 2
@@ -31,12 +41,17 @@ linkColor = white
             stroke-width 3
             stroke-dasharray 3 0 3
 
-    .link-tool .tool-remove
-        cursor default
-        filter saturate(.75)
-        transition all .25s ease-in-out
-        &:hover
-            filter saturate(2)
+    .link-tool
+        //TODO: fix this without css
+        &[visibility=hidden]
+            // remove hidden tools from size calculations
+            display none
+        .tool-remove
+            cursor default
+            filter saturate(.75)
+            transition all .25s ease-in-out
+            &:hover
+                filter saturate(2)
 
 .joint-type-esp-model
     .body

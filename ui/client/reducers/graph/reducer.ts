@@ -209,13 +209,15 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
       }
     }
     case "NODE_ADDED": {
-      return addNodesWithLayout(
-        state,
-        prepareNewNodesWithLayout(state, [{
-          node: action.node,
-          position: action.position,
-        }], false),
-      )
+      const nodeWithPosition = {
+        node: action.node,
+        position: action.position,
+      }
+      const {uniqueIds, nodes, layout} = prepareNewNodesWithLayout(state, [nodeWithPosition], false)
+      return {
+        ...addNodesWithLayout(state, {nodes, layout}),
+        selectionState: uniqueIds,
+      }
     }
     case "NODES_WITH_EDGES_ADDED": {
       const {nodes, layout, uniqueIds} = prepareNewNodesWithLayout(state, action.nodesWithPositions, true)
@@ -237,6 +239,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
           ...stateWithNodesAdded.processToDisplay,
           edges: updatedEdges,
         },
+        selectionState: uniqueIds,
       }
     }
     case "VALIDATION_RESULT": {

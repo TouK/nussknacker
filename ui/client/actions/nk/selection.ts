@@ -1,6 +1,7 @@
 import NodeUtils from "../../components/graph/NodeUtils"
 import {getProcessToDisplay} from "../../reducers/selectors/graph"
 import {ThunkAction} from "../reduxTypes"
+import {ungroup} from "./groups"
 import {deleteNodes} from "./node"
 import {reportEvent} from "./reportEvent"
 
@@ -65,13 +66,18 @@ export function pasteSelection(pasteFunction: Callback, event: Event): ThunkActi
 }
 
 export function deleteSelection(selectionState: string[], event: Event): ThunkAction {
-  return (dispatch) => {
+  return (dispatch, getState) => {
+    const process = getProcessToDisplay(getState())
+    const selectedNodes = NodeUtils.getAllNodesById(selectionState, process).map(n => n.id)
+
     dispatch(reportEvent({
       category: event.category,
       action: event.action,
       name: "delete",
     }))
-    dispatch(deleteNodes(selectionState))
+
+    dispatch(ungroup(selectedNodes))
+    dispatch(deleteNodes(selectedNodes))
 
     return dispatch({
       type: "DELETE_SELECTION",
@@ -107,7 +113,7 @@ export function selectAll(): ThunkAction {
   return (dispatch, getState) => {
     const state = getState()
     const process = getProcessToDisplay(state)
-    const nodeIds = NodeUtils.nodesFromProcess(process).map(n => n.id)
+    const nodeIds = NodeUtils.nodesWithGroups(process).map(n => n.id)
     dispatch(resetSelection(...nodeIds))
   }
 }

@@ -1,20 +1,19 @@
 /* eslint-disable i18next/no-literal-string */
-import NodeUtils from "../NodeUtils"
-import {makeLink, makeElement, boundingRect} from "../EspNode"
-import {Process, GroupId, ProcessDefinitionData} from "../../../types"
-import {Layout} from "../../../actions/nk"
-import {ProcessCounts} from "../../../reducers/graph"
-import {updateLayout} from "./updateLayout"
-import {redraw} from "./redraw"
 import {dia} from "jointjs"
 import {isEqual} from "lodash"
+import {Layout} from "../../../actions/nk"
+import {ProcessCounts} from "../../../reducers/graph"
+import {Process, ProcessDefinitionData} from "../../../types"
+import {boundingRect, makeElement, makeLink} from "../EspNode"
+import NodeUtils from "../NodeUtils"
+import {redraw} from "./redraw"
+import {updateLayout} from "./updateLayout"
 
 export function drawGraph(
   process: Process,
   layout: Layout,
   processCounts: ProcessCounts,
   processDefinitionData: ProcessDefinitionData,
-  expandedGroups: GroupId[],
 ) {
   const graph: dia.Graph = this.graph
   const directedLayout = this.directedLayout
@@ -24,9 +23,9 @@ export function drawGraph(
   performance.mark("redrawing start")
   this.redrawing = true
 
-  const nodesWithGroups = NodeUtils.nodesFromProcess(process, expandedGroups)
-  const edgesWithGroups = NodeUtils.edgesFromProcess(process, expandedGroups)
-  const groups = NodeUtils.getExpandedGroups(process, expandedGroups)
+  const nodesWithGroups = NodeUtils.nodesFromProcess(process)
+  const edgesWithGroups = NodeUtils.edgesFromProcess(process)
+  const groups = NodeUtils.getExpandedGroups(process)
 
   const nodes = nodesWithGroups.map(makeElement(processCounts, processDefinitionData))
   const edges = edgesWithGroups.map(makeLink)
@@ -36,15 +35,17 @@ export function drawGraph(
 
   const cells = [...boundingRects, ...nodes, ...edges]
 
-  const newCells = cells.filter(cell => !graph.getCell(cell.id))
-  const deletedCells = graph.getCells().filter(oldCell => !cells.find(cell => cell.id === oldCell.id))
+  const currentCells = graph.getCells()
+  const currentIds = currentCells.map(c => c.id)
+  const newCells = cells.filter(cell => !currentIds.includes(cell.id))
+  const deletedCells = currentCells.filter(oldCell => !cells.find(cell => cell.id === oldCell.id))
   const changedCells = cells.filter(cell => {
     const old = graph.getCell(cell.id)
-    return !isEqual(old?.get("definitionToCompare"), cell.get("definitionToCompare"))
+    return old && !isEqual(old.get("definitionToCompare"), cell.get("definitionToCompare"))
   })
   performance.mark("compute")
 
-  _redraw(newCells, deletedCells, changedCells, cells)
+  _redraw(newCells, deletedCells, changedCells)
   performance.mark("redraw")
 
   _updateLayout(layout)

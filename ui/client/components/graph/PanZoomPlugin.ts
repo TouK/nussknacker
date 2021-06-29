@@ -1,9 +1,10 @@
 import {dia} from "jointjs"
+import {debounce} from "lodash"
 import svgPanZoom from "svg-pan-zoom"
 import {CursorMask} from "./CursorMask"
 import {Events} from "./joint-events"
 
-type EventData = { panStart?: { x: number, y: number } }
+type EventData = { panStart?: { x: number, y: number, touched?: boolean } }
 type Event = JQuery.MouseEventBase<any, EventData>
 
 export class PanZoomPlugin {
@@ -41,14 +42,22 @@ export class PanZoomPlugin {
         const dy = (eventY - panStart.y) * zoom
         const {movementX: x = dx, movementY: y = dy} = event.originalEvent
         this.instance.panBy({x, y})
+        panStart.touched = true
       } else {
         this.cleanup(event)
       }
     })
 
     paper.on(Events.BLANK_POINTERUP, (event: Event) => {
+      if (event.data?.panStart?.touched) {
+        event.stopImmediatePropagation()
+      }
       this.cleanup(event)
     })
+  }
+
+  get zoom(): number {
+    return this.instance.getZoom()
   }
 
   private cleanup(event: Event) {
@@ -56,14 +65,15 @@ export class PanZoomPlugin {
     this.cursorMask.disable()
   }
 
-  fitSmallAndLargeGraphs = (): void => {
+  fitSmallAndLargeGraphs = debounce((): void => {
     this.instance.updateBBox()
+    this.instance.resize()
     this.instance.fit()
     const {realZoom} = this.instance.getSizes()
     const toZoomBy = realZoom > 1.2 ? 1 / realZoom : 0.8 //the bigger zoom, the further we get
     this.instance.zoomBy(toZoomBy)
     this.instance.center()
-  }
+  }, 200)
 
   zoomIn = () => {
     this.instance.zoomIn()

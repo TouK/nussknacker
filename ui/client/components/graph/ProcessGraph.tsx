@@ -1,3 +1,4 @@
+import {g} from "jointjs"
 import {DropTarget} from "react-dnd"
 import {connect} from "react-redux"
 import {compose} from "redux"
@@ -11,15 +12,22 @@ import {
   getProcessToDisplay,
   isBusinessView,
 } from "../../reducers/selectors/graph"
-import {isNodeDetailsModalVisible} from "../../reducers/selectors/ui"
 import {getExpandedGroups} from "../../reducers/selectors/groups"
+import {isNodeDetailsModalVisible} from "../../reducers/selectors/ui"
+import {setLinksHovered} from "./dragHelpers"
 import {commonState, Graph} from "./Graph"
 
 const spec = {
-  drop: (props, monitor, component) => {
+  drop: (props, monitor, component: Graph) => {
     const clientOffset = monitor.getClientOffset()
     const relOffset = component.processGraphPaper.clientToLocalPoint(clientOffset)
     component.addNode(monitor.getItem(), relOffset)
+    setLinksHovered(component.graph)
+  },
+  hover: (props, monitor, component: Graph) => {
+    const clientOffset = monitor.getClientOffset()
+    const point = component.processGraphPaper.clientToLocalPoint(clientOffset)
+    setLinksHovered(component.graph, new g.Rect(point).inflate(30, 10))
   },
 }
 
