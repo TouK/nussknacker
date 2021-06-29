@@ -1,6 +1,8 @@
 export enum Events {
   LINK_CONNECT = "link:connect",
+  LINK_MOUSEOVER = "link:mouseover",
   CELL_POINTERUP = "cell:pointerup",
+  CELL_POINTERDOWN = "cell:pointerdown",
   CELL_POINTERCLICK = "cell:pointerclick",
   CELL_POINTERDBLCLICK = "cell:pointerdblclick",
   CELL_MOUSEOVER = "cell:mouseover",
@@ -9,5 +11,7 @@ export enum Events {
   BLANK_POINTERMOVE = "blank:pointermove",
   BLANK_MOUSEOVER = "blank:mouseover",
   REMOVE = "remove",
+  ADD = "add",
   CHANGE_POSITION = "change:position",
+  CHANGE_DRAG_OVER = "change:draggedOver",
 }

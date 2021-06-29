@@ -4,7 +4,7 @@ import {CursorMask} from "./CursorMask"
 import {Events} from "./joint-events"
 import {pressedKeys} from "./KeysObserver"
 
-type EventData = {selectStart?: {x: number, y: number}}
+type EventData = { selectStart?: { x: number, y: number } }
 type Event = JQuery.TriggeredEvent<any, EventData>
 
 export enum SelectionMode {

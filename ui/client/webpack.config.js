@@ -79,6 +79,7 @@ module.exports = {
       stream: require.resolve("stream-browserify"), //reason: jsonwebtoken
       http: require.resolve("stream-http"), //reason: matomo-tracker
       https: require.resolve("https-browserify"), //reason: matomo-tracker
+      fs: false,
     },
   },
   entry: entry,
@@ -184,15 +185,6 @@ module.exports = {
   ].filter(p => p !== null),
   module: {
     rules: [
-      {
-        // TODO: remove after update to babel 7.12
-        // https://github.com/babel/babel/pull/10853
-        // https://github.com/webpack/webpack/issues/11467#issuecomment-691873586
-        test: /\.m?js/,
-        resolve: {
-          fullySpecified: false,
-        },
-      },
       {
         test: require.resolve("jointjs"),
         use: [

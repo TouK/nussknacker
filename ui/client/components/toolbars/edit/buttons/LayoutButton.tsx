@@ -16,7 +16,7 @@ function LayoutButton() {
       write
       name={t("panels.actions.edit-layout.button", "layout")}
       icon={<Icon/>}
-      onClick={() => dispatch(layout(() => graphGetter().forceLayout()))}
+      onClick={() => dispatch(layout(() => graphGetter()?.forceLayout()))}
     />
   )
 }
