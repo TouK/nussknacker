@@ -1,21 +1,18 @@
 package pl.touk.nussknacker.engine.kafka.source
 
 import io.circe.{Decoder, Encoder}
-import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.kafka.common.serialization.StringDeserializer
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
-import pl.touk.nussknacker.engine.flink.api.process.BasicFlinkSink
-import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
-import KafkaSourceFactoryMixin.{SampleKey, SampleValue, createDeserializer}
-import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordToJsonFormatterFactory
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryProcessConfigCreator._
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordToJsonFormatterFactory
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryMixin.{SampleKey, SampleValue, createDeserializer}
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryProcessConfigCreator._
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryProcessMixin.recordingExceptionHandler
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForStrings
 import pl.touk.nussknacker.engine.process.helpers.SinkForType
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
-import pl.touk.nussknacker.test.WithDataList
 
 import scala.reflect.ClassTag
 
@@ -46,7 +43,6 @@ class KafkaSourceFactoryProcessConfigCreator(kafkaConfig: KafkaConfig) extends E
 }
 
 object KafkaSourceFactoryProcessConfigCreator {
-  val recordingExceptionHandler = new RecordingExceptionHandler
 
   case object SinkForSampleValue extends SinkForType[SampleValue]
 
