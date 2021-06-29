@@ -2,22 +2,22 @@ package pl.touk.nussknacker.openapi.http.backend
 
 import net.ceedubs.ficus.readers.ValueReader
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
-import pl.touk.nussknacker.openapi.http.backend.DispatchConfig.EffectiveDispatchConfig
+import pl.touk.nussknacker.openapi.http.backend.HttpClientConfig.EffectiveHttpClientConfig
 import sttp.client.SttpBackendOptions
 
 import scala.concurrent.duration._
 
-case class DispatchConfig(timeout: Option[FiniteDuration],
-                          connectTimeout: Option[FiniteDuration],
-                          maxPoolSize: Option[Int],
-                          useNative: Option[Boolean],
-                          followRedirect: Option[Boolean],
-                          forceShutdown: Option[Boolean],
-                          //jakbysmy chcieli tunowac pojedyncze procesy
-                          configForProcess: Option[Map[String, DispatchConfig]]) {
+case class HttpClientConfig(timeout: Option[FiniteDuration],
+                            connectTimeout: Option[FiniteDuration],
+                            maxPoolSize: Option[Int],
+                            useNative: Option[Boolean],
+                            followRedirect: Option[Boolean],
+                            forceShutdown: Option[Boolean],
+                            //jakbysmy chcieli tunowac pojedyncze procesy
+                            configForProcess: Option[Map[String, HttpClientConfig]]) {
 
   def toAsyncHttpClientConfig(processId: Option[String]): DefaultAsyncHttpClientConfig.Builder = {
-    val effectiveConfig = toEffectiveDispatchConfig(processId)
+    val effectiveConfig = toEffectiveHttpClientConfig(processId)
     new DefaultAsyncHttpClientConfig.Builder()
       .setConnectTimeout(effectiveConfig.connectTimeout.toMillis.toInt)
       .setRequestTimeout(effectiveConfig.timeout.toMillis.toInt)
@@ -28,19 +28,19 @@ case class DispatchConfig(timeout: Option[FiniteDuration],
   }
 
   def toSttpBackendOptions(processId: Option[String]): SttpBackendOptions = {
-    val effectiveConfig = toEffectiveDispatchConfig(processId)
+    val effectiveConfig = toEffectiveHttpClientConfig(processId)
     SttpBackendOptions.Default.copy(connectionTimeout = effectiveConfig.connectTimeout)
   }
 
-  private def toEffectiveDispatchConfig(processId: Option[String]): EffectiveDispatchConfig = {
-    def extractConfig[T](extract: DispatchConfig => Option[T], default: T): T = {
+  private def toEffectiveHttpClientConfig(processId: Option[String]): EffectiveHttpClientConfig = {
+    def extractConfig[T](extract: HttpClientConfig => Option[T], default: T): T = {
       val specificConfig = processId.flatMap(id => configForProcess.flatMap(_.get(id)))
       specificConfig.flatMap(extract).orElse(extract(this)).getOrElse(default)
     }
-    EffectiveDispatchConfig(
-      timeout = extractConfig(_.timeout, DefaultDispatchConfig.timeout),
-      connectTimeout = extractConfig(_.connectTimeout, DefaultDispatchConfig.timeout),
-      maxPoolSize = extractConfig(_.maxPoolSize, DefaultDispatchConfig.maxPoolSize),
+    EffectiveHttpClientConfig(
+      timeout = extractConfig(_.timeout, DefaultHttpClientConfig.timeout),
+      connectTimeout = extractConfig(_.connectTimeout, DefaultHttpClientConfig.timeout),
+      maxPoolSize = extractConfig(_.maxPoolSize, DefaultHttpClientConfig.maxPoolSize),
       useNative = extractConfig(_.useNative, true),
       followRedirect = extractConfig(_.followRedirect, false),
       forceShutdown = extractConfig(_.forceShutdown, false)
@@ -48,20 +48,20 @@ case class DispatchConfig(timeout: Option[FiniteDuration],
   }
 }
 
-object DispatchConfig {
+object HttpClientConfig {
 
-  private case class EffectiveDispatchConfig(timeout: FiniteDuration,
-                                             connectTimeout: FiniteDuration,
-                                             maxPoolSize: Int,
-                                             useNative: Boolean,
-                                             followRedirect: Boolean,
-                                             forceShutdown: Boolean)
+  private case class EffectiveHttpClientConfig(timeout: FiniteDuration,
+                                               connectTimeout: FiniteDuration,
+                                               maxPoolSize: Int,
+                                               useNative: Boolean,
+                                               followRedirect: Boolean,
+                                               forceShutdown: Boolean)
 
   //ArbitraryTypeReader nietety tu wymieka :/
-  implicit val vr: ValueReader[DispatchConfig] = ValueReader.relative(conf => {
+  implicit val vr: ValueReader[HttpClientConfig] = ValueReader.relative(conf => {
     import net.ceedubs.ficus.Ficus._
     def forOption[T](path: String)(implicit r: ValueReader[T]) = optionValueReader[T].read(conf, path)
-    DispatchConfig(
+    HttpClientConfig(
       timeout = forOption[FiniteDuration]("timeout"),
       connectTimeout = forOption[FiniteDuration]("connectTimeout"),
       maxPoolSize = forOption[Int]("maxPoolSize"),
@@ -73,9 +73,9 @@ object DispatchConfig {
   })
 }
 
-object DefaultDispatchConfig {
+object DefaultHttpClientConfig {
 
-  def apply() : DispatchConfig = DispatchConfig(None, None, None, None, None, None, None)
+  def apply() : HttpClientConfig = HttpClientConfig(None, None, None, None, None, None, None)
 
   val maxPoolSize: Int = 20
 

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.openapi.http.backend
 import com.typesafe.scalalogging.Logger
 import org.slf4j.LoggerFactory
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ServiceInvocationCollector, TransmissionNames}
-import pl.touk.nussknacker.openapi.http.backend.EspSttpBackend.HttpBackend
+import pl.touk.nussknacker.openapi.http.backend.OpenapiSttpBackend.HttpBackend
 import sttp.client.monad.MonadError
 import sttp.client.ws.WebSocketResponse
 import sttp.client.{NothingT, Request, Response, _}
@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
-object EspSttpBackend {
+object OpenapiSttpBackend {
 
   type HttpBackend = SttpBackend[Future, Nothing, Nothing]
 
@@ -22,10 +22,10 @@ object EspSttpBackend {
 
 }
 
-class EspSttpBackend(delegate: HttpBackend, dispatchConfig: DispatchConfig, baseLoggerName: String)
-                    (implicit ec: ExecutionContext, serviceInvocationCollector: ServiceInvocationCollector) extends HttpBackend {
+class OpenapiSttpBackend(delegate: HttpBackend, httpClientConfig: HttpClientConfig, baseLoggerName: String)
+                        (implicit ec: ExecutionContext, serviceInvocationCollector: ServiceInvocationCollector) extends HttpBackend {
 
-  import EspSttpBackend._
+  import OpenapiSttpBackend._
 
   private val requestLogger = Logger(LoggerFactory.getLogger(s"$baseLoggerName.request"))
   private val responseLogger = Logger(LoggerFactory.getLogger(s"$baseLoggerName.response"))
@@ -35,7 +35,7 @@ class EspSttpBackend(delegate: HttpBackend, dispatchConfig: DispatchConfig, base
     lazy val requestLog = RequestResponseLog(request)
     requestLogger.debug(s"[$correlationId]: ${requestLog.pretty}")
     // Read timeout is set per request.
-    val withReadTimeoutRequest = dispatchConfig.timeout.map(request.readTimeout).getOrElse(request)
+    val withReadTimeoutRequest = httpClientConfig.timeout.map(request.readTimeout).getOrElse(request)
     val withLoggedStringResponseBody = withReadTimeoutRequest.response(withStringResponseBody(request.response))
     val reqTime = System.currentTimeMillis()
     lazy val response = delegate.send(withLoggedStringResponseBody)

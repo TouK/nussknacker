@@ -9,14 +9,14 @@ import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.openapi.SwaggerService
 import pl.touk.nussknacker.openapi.extractor.ParametersExtractor
 import pl.touk.nussknacker.openapi.http.SwaggerSttpService
-import pl.touk.nussknacker.openapi.http.backend.{CacheableHttpBackend, DispatchConfig}
+import pl.touk.nussknacker.openapi.http.backend.{CacheableHttpBackend, HttpClientConfig}
 
 import java.net.URL
 import scala.concurrent.{ExecutionContext, Future}
 
 class SwaggerEnricher(rootUrl: Option[URL], swaggerService: SwaggerService,
                       fixedParams: Map[String, () => AnyRef],
-                      httpClientConfig: DispatchConfig) extends ServiceWithExplicitMethod with TimeMeasuringService {
+                      httpClientConfig: HttpClientConfig) extends ServiceWithExplicitMethod with TimeMeasuringService {
 
   private val swaggerHttpService = new SwaggerSttpService(rootUrl, swaggerService)
 
