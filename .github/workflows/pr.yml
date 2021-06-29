@@ -262,7 +262,7 @@ jobs:
         shell: bash
         run: |
           docker run -d -p 8083:8080 -e CONFIG_FORCE_processTypes_streaming_engineConfig_type=stub -e NUSSKNACKER_CONFIG_FILE=/opt/nussknacker/conf/dev-application.conf --name nussknacker_e2e_fe touk/nussknacker:$NUSSKNACKER_VERSION
-          `npm bin`/wait-on $CYPRESS_BASE_URL && npm run test:e2e
+          npx wait-on $CYPRESS_BASE_URL && npm run test:e2e
           docker kill nussknacker_e2e_fe
       - name: Test quickstart
         shell: bash
