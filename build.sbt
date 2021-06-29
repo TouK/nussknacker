@@ -378,6 +378,9 @@ lazy val dist = {
 
 def engine(name: String) = file(s"engine/$name")
 
+def component(name: String) = file(s"engine/components/$name")
+
+
 lazy val engineStandalone = (project in engine("standalone/engine")).
   configs(IntegrationTest).
   settings(commonSettings).
@@ -900,6 +903,34 @@ lazy val queryableState = (project in engine("queryableState")).
   ).dependsOn(api)
 
 
+val swaggerParserV = "2.0.20"
+val swaggerIntegrationV = "2.1.3"
+
+lazy val openapi = (project in component("openapi")).
+    configs(IntegrationTest).
+    settings(commonSettings).
+    settings(Defaults.itSettings).
+    settings(
+      name := "nussknacker-openapi",
+      libraryDependencies ++= Seq(
+        "io.swagger.parser.v3" % "swagger-parser" % swaggerParserV excludeAll(
+          ExclusionRule(organization = "javax.mail"),
+          ExclusionRule(organization = "javax.activation"),
+          ExclusionRule(organization = "javax.validation"),
+          ExclusionRule(organization = "com.sun.activation")
+        ),
+        "io.swagger.core.v3" % "swagger-integration" % swaggerIntegrationV  excludeAll(
+          ExclusionRule(organization = "com.sun.activation")
+        ),
+        "com.softwaremill.sttp.client" %% "circe" % sttpV excludeAll ExclusionRule(organization = "io.circe"),
+        "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV  excludeAll(
+          ExclusionRule(organization = "com.sun.activation")
+        ),
+        //TODO: make it Flink-agnostic
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % Provided,
+        "org.scalatest" %% "scalatest" % scalaTestV %  "it,test"
+      ),
+    ).dependsOn(api, process % Provided, httpUtils % Provided, flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
 
 lazy val buildUi = taskKey[Unit]("builds ui")
 
