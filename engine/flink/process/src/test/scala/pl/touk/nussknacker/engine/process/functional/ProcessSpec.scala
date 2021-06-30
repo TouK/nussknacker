@@ -4,6 +4,9 @@ import java.util.Date
 
 import cats.data.NonEmptyList
 import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.LoneElement._
+import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
+import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -256,4 +259,20 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
     EagerLifecycleService.list shouldBe 'empty
   }
 
+  test("should have correct run mode") {
+    val process = EspProcessBuilder
+      .id("proc")
+      .exceptionHandler()
+      .source("start", "input")
+      .enricher("runMode", "runMode", "returningRunModeService")
+      .sink("out", "#runMode.toString", "sinkForStrings")
+
+    val data = List(
+      SimpleRecord("a", 1, "a", new Date(1))
+    )
+
+    processInvoker.invokeWithSampleData(process, data)
+
+    SinkForStrings.data.loneElement shouldBe RunMode.Engine.toString
+  }
 }

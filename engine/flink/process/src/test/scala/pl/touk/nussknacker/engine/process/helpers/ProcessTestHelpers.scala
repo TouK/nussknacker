@@ -69,7 +69,8 @@ object ProcessTestHelpers {
       "lifecycleService" -> WithCategories(LifecycleService),
       "eagerLifecycleService" -> WithCategories(EagerLifecycleService),
       "enricherWithOpenService" -> WithCategories(new EnricherWithOpenService),
-      "serviceAcceptingOptionalValue" -> WithCategories(ServiceAcceptingScalaOption)
+      "serviceAcceptingOptionalValue" -> WithCategories(ServiceAcceptingScalaOption),
+      "returningRunModeService" -> WithCategories(new ReturningRunModeService(processObjectDependencies))
     )
 
     override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[FlinkSourceFactory[_]]] = Map(
