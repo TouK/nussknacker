@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, PreparedKafkaT
 import java.time.temporal.ChronoUnit
 import java.{lang, time, util}
 import java.util.Properties
+import java.util.function.Consumer
 import scala.collection.JavaConverters._
 
 class DelayedFlinkKafkaConsumer[T](topics: List[PreparedKafkaTopic],
@@ -82,10 +83,12 @@ class DelayedKafkaFetcher[T](sourceContext: SourceFunction.SourceContext[T],
                                          offset: Long,
                                          kafkaEventTimestamp: Long): Unit = {
     var maxEventTimestamp = 0L
-    records.forEach(r => {
-      val recordTimestamp = timeExtract(r, kafkaEventTimestamp)
-      if(recordTimestamp > maxEventTimestamp){
-        maxEventTimestamp = recordTimestamp
+    records.forEach(new Consumer[T]{
+      override def accept(r: T): Unit = {
+        val recordTimestamp = timeExtract(r, kafkaEventTimestamp)
+        if(recordTimestamp > maxEventTimestamp){
+          maxEventTimestamp = recordTimestamp
+        }
       }
     })
 
