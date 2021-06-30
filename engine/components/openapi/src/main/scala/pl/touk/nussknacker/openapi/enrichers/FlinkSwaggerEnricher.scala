@@ -21,7 +21,7 @@ class FlinkSwaggerEnricher(rootUrl: Option[URL], swaggerService: SwaggerService,
   }
 
   override def close(): Unit = synchronized {
-    httpClient.close()
+    Option(httpClient).foreach(_.close())
   }
 
   override implicit protected def httpBackendForEc(implicit ec: ExecutionContext): SttpBackend[Future, Nothing, Nothing] =

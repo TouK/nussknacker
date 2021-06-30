@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.kafka
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{BeforeAndAfterAll, Suite}
+import pl.touk.nussknacker.test.AvailablePortFinder
 
 trait KafkaSpec extends BeforeAndAfterAll { self: Suite =>
 

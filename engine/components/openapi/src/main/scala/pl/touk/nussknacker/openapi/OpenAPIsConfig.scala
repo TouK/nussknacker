@@ -6,7 +6,7 @@ import net.ceedubs.ficus.readers.ValueReader
 
 case class OpenAPIsConfig(openapis: Option[List[OpenAPIServicesConfig]])
 
-case class OpenAPIServicesConfig(url: URL, rootURL: Option[URL], securities: Option[Map[String, OpenAPISecurityConfig]])
+case class OpenAPIServicesConfig(url: URL, rootUrl: Option[URL], securities: Option[Map[String, OpenAPISecurityConfig]])
 
 sealed trait OpenAPISecurityConfig
 
@@ -26,7 +26,7 @@ object OpenAPIsConfig {
   implicit val openAPIServicesConfigVR: ValueReader[OpenAPIServicesConfig] = ValueReader.relative(conf => {
     OpenAPIServicesConfig(
       url = conf.as[URL]("url"),
-      rootURL = conf.as[Option[URL]]("rootURL"),
+      rootUrl = conf.as[Option[URL]]("rootUrl"),
       securities = conf.as[Option[Map[String, OpenAPISecurityConfig]]]("security")
     )
   })

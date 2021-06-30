@@ -1,56 +1,67 @@
 package pl.touk.nussknacker.openapi.functional
 
 import com.typesafe.scalalogging.LazyLogging
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.time.{Millis, Seconds, Span}
-import org.scalatest.{BeforeAndAfterAll, EitherValues, FunSuite, Matchers}
+import org.scalatest._
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.definition.ServiceWithExplicitMethod
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{ServiceInvocationCollector, ToCollect}
+import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.standalone.api.{StandaloneContextLifecycle, StandaloneContextPreparer}
+import pl.touk.nussknacker.engine.standalone.metrics.NoOpMetricsProvider
+import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
+import pl.touk.nussknacker.openapi
 import pl.touk.nussknacker.openapi.ApiKeyConfig
-import pl.touk.nussknacker.openapi.enrichers.SwaggerEnrichers
-//import pl.touk.nussknacker.openapi.http.backend.DefaultDispatchConfig
+import pl.touk.nussknacker.openapi.enrichers.{BaseSwaggerEnricher, BaseSwaggerEnricherCreator, SwaggerEnrichers}
+import pl.touk.nussknacker.openapi.parser.SwaggerParser
+import pl.touk.nussknacker.test.PatientScalaFutures
+import sttp.client.SttpBackend
+import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 
+import java.net.URL
+import scala.collection.JavaConverters._
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
-import scala.jdk.CollectionConverters.{asScalaBufferConverter, mapAsScalaMapConverter}
 
-//TODO: move to integration tests or remove "real" RestDB invocation
-class RestDBServiceSpec extends FunSuite with BeforeAndAfterAll with Matchers with EitherValues with LazyLogging with ScalaFutures {
-
-  final override implicit def patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(5, Seconds)), interval = scaled(Span(50, Millis)))
+class RestDBServiceSpec extends fixture.FunSuite with BeforeAndAfterAll with Matchers with EitherValues with LazyLogging with PatientScalaFutures {
 
   implicit val metaData: MetaData = MetaData("testProc", StreamMetaData())
-  implicit val collector: ServiceInvocationCollector = new ServiceInvocationCollector {
-    override def collectWithResponse[A](request: => ToCollect, mockValue: Option[A])(action: => Future[InvocationCollectors.CollectableAction[A]], names: InvocationCollectors.TransmissionNames)(implicit ec: ExecutionContext): Future[A] = action.map(_.result)
-  }
   implicit val contextId: ContextId = ContextId("testContextId")
 
-  /*
-  private val service: ServiceWithExplicitMethod = {
-    val definition = Source.fromInputStream(getClass.getClassLoader.getResourceAsStream("restdb-swagger.json")).mkString
+  type FixtureParam = ServiceWithExplicitMethod
+
+  def withFixture(test: OneArgTest): Outcome = {
+    val definition = Source.fromInputStream(getClass.getClassLoader.getResourceAsStream("customer-swagger.json")).mkString
     val securities = Map("apikey" -> ApiKeyConfig("TODO"))
+    val services = SwaggerParser.parse(definition, securities)
 
-    val categories = List("Default")
-    val fixedParameters: Map[String, () => AnyRef] = Map.empty
-    val clientConfig = DefaultDispatchConfig().copy(useNative = Some(false))
+    val backend = AsyncHttpClientFutureBackend()
+    try {
+      StubService.withCustomerService { port =>
+        val enricher = new SwaggerEnrichers(Some(new URL(s"http://localhost:$port")), new SimpleEnricherCreator(backend))
+          .enrichers(services, Nil, Map.empty).head.service.asInstanceOf[ServiceWithExplicitMethod with StandaloneContextLifecycle]
+        enricher.open(JobData(metaData, ProcessVersion.empty, DeploymentData.empty), new StandaloneContextPreparer(NoOpMetricsProvider).prepare("1"))
 
-    val servicesMap = SwaggerEnrichers.enrichersForDefinition(definition, None, securities, categories, fixedParameters, clientConfig, None)
-
-    val service = servicesMap("GET-companies").value.asInstanceOf[ServiceWithExplicitMethod]
-    service.open(JobData(metaData, ProcessVersion.empty, DeploymentData.empty))
-    service
+        withFixture(test.toNoArgTest(enricher))
+      }
+    } finally {
+      backend.close()
+    }
   }
 
-  ignore("companies") {
-    import scala.concurrent.ExecutionContext.Implicits.global
+  test("companies") { service =>
 
-    val valueWithChosenFields = service.invokeService(List("{\"zip\":\"AX6 7KK\"}", null)).futureValue
-      .asInstanceOf[java.util.List[_]].asScala.map(_.asInstanceOf[TypedMap].asScala)
-      .map(_.filterKeys(List("zip", "city").contains))
-    valueWithChosenFields shouldEqual List(Map("zip" -> "AX6 7KK", "city" -> "La Magdeleine"))
-  }         */
+    val valueWithChosenFields = service.invokeService(List("10")).futureValue.asInstanceOf[TypedMap].asScala
+    valueWithChosenFields shouldEqual Map("name" -> "Robert Wright", "id" -> 10, "category" -> "GOLD")
+  }
+
+  class SimpleEnricherCreator(backend: SttpBackend[Future, Nothing, Nothing]) extends BaseSwaggerEnricherCreator {
+    override def create(rootUrl: Option[URL], swaggerService: openapi.SwaggerService, fixedParams: Map[String, () => AnyRef]): BaseSwaggerEnricher
+    = new BaseSwaggerEnricher(rootUrl, swaggerService, fixedParams) with TimeMeasuringService {
+      override implicit protected def httpBackendForEc(implicit ec: ExecutionContext): SttpBackend[Future, Nothing, Nothing] = backend
+    }
+  }
+
+
 }

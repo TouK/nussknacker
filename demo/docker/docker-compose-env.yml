@@ -151,7 +151,9 @@ services:
       - jobmanager
       - taskmanager
       - grafana
-
+  customerservice:
+    container_name: nussknac_customerservice
+    build: customerservice
 
 volumes:
   nussknacker_storage_zookeeper_datalog:

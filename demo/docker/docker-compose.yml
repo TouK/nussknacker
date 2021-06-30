@@ -7,7 +7,9 @@ services:
     ports:
       - "3081:8080"
     environment:
-      NUSSKNACKER_CONFIG_FILE: ${NUSSKNACKER_CONFIG_FILE:-/opt/nussknacker/conf/application.conf}
+      #multiple, comma separated, config files can be used. They will be merged in order, via HOCON fallback mechanism
+      #https://github.com/lightbend/config/blob/master/HOCON.md#config-object-merging-and-file-merging
+      NUSSKNACKER_CONFIG_FILE: ${NUSSKNACKER_CONFIG_FILE-/opt/nussknacker/conf/application.conf,/opt/nussknacker/conf/nussknacker.conf}
       COUNTS_URL: http://influxdb:8086/query
       JDK_JAVA_OPTIONS: -Xmx256M
       FLINK_ROCKSDB_CHECKPOINT_DATA_URI: file:///opt/flink/data/rocksdb-checkpoints
@@ -15,6 +17,7 @@ services:
       - nussknacker_storage_app:/opt/nussknacker/storage
       #this is needed to be able to verify savepoints during deployments
       - nussknacker_storage_flink:/opt/flink/data
+      - ./nussknacker/nussknacker.conf:/opt/nussknacker/conf/nussknacker.conf
 
 
 volumes:
