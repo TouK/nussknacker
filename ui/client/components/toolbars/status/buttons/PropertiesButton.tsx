@@ -9,7 +9,6 @@ import {
   getProcessUnsavedNewName,
   hasError,
   hasPropertiesErrors,
-  isSubprocess,
 } from "../../../../reducers/selectors/graph"
 import NodeUtils from "../../../graph/NodeUtils"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
@@ -34,11 +33,6 @@ function PropertiesButton(): JSX.Element {
     },
     [dispatch, name, processToDisplay, t],
   )
-
-  const subprocess = useSelector(isSubprocess)
-  if (subprocess) {
-    return null
-  }
 
   return (
     <ToolbarButton

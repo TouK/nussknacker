@@ -1,6 +1,8 @@
 import {Action} from "../actions/reduxTypes"
 import User from "../common/models/User"
 import {ProcessDefinitionData} from "../types"
+import {WithId} from "../types/common"
+import {ToolbarsConfig} from "../components/toolbarSettings/types"
 
 export enum AuthBackends {
   BASIC = "BasicAuth",
@@ -16,6 +18,7 @@ export type SettingsState = {
   analyticsSettings: $TodoType,
   processDefinitionData: ProcessDefinitionData,
   availableQueryableStates: $TodoType,
+  processToolbarsConfiguration: WithId<ToolbarsConfig>,
 }
 
 export type AuthenticationSettings = {
@@ -33,6 +36,7 @@ const initialState: SettingsState = {
   analyticsSettings: {},
   processDefinitionData: {},
   availableQueryableStates: {},
+  processToolbarsConfiguration: null,
 }
 
 export function reducer(state: SettingsState = initialState, action: Action): SettingsState {
@@ -62,6 +66,12 @@ export function reducer(state: SettingsState = initialState, action: Action): Se
       return {
         ...state,
         availableQueryableStates: action.availableQueryableStates,
+      }
+    }
+    case "PROCESS_TOOLBARS_CONFIGURATION_LOADED": {
+      return {
+        ...state,
+        processToolbarsConfiguration: action.data,
       }
     }
     default:

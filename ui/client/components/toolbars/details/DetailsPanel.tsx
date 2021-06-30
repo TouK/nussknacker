@@ -10,7 +10,7 @@ function DetailsPanel() {
   const {t} = useTranslation()
 
   return (
-    <CollapsibleToolbar id="DETAILS-PANEL" title={t("panels.details.title", "Details")} isHidden={!capabilities.write}>
+    <CollapsibleToolbar id="details-panel" title={t("panels.details.title", "Details")} isHidden={!capabilities.write}>
       <SideNodeDetails/>
     </CollapsibleToolbar>
   )

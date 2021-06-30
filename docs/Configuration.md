@@ -1,4 +1,3 @@
-
 Configuration
 =============
 
@@ -161,7 +160,7 @@ processToolbarConfig {
         type: "process-info-panel"
         buttons: [
           { type: "process-save", disabled: { subprocess: false, archived: true, type: "oneof" } }
-          { type: "custom-link", title: "Metrics for {{processName}}", templateHref="/metrics/{{processId}}" }
+          { type: "custom-link", title: "Metrics for {{processName}}", url: "/metrics/{{processId}}" }
         ]
       }
     ]
@@ -174,6 +173,7 @@ We can also create special configuration for each category by:
 processToolbarConfig {
   categoryConfig {
    "CategoryName" {
+        id: "58f1acff-d864-4d66-9f86-0fa7319f7043"
         topLeft: [
           { type: "creator-panel", hidden: {subprocess: true, archived: false, type: "allof"} }
         ]
@@ -189,16 +189,17 @@ Configuration allow us to:
 * hiding or disabling buttons
 
 Each of this function can be configured by condition expression where we can use three parameters:
-- subproces: boolean // if true then condition match only subprocess, by default ignored
-- archived: boolean // if true then condition match only archived, by default ignored
-- type condition: allof / oneof // information about that we check only one condition or all conditions
+* `subprocess: boolean` - if true then condition match only subprocess, by default ignored
+* `archived: boolean` - if true then condition match only archived, by default ignored
+* `type: allof / oneof` - information about that checked will be only one condition or all conditions
 
 #### Toolbar Panel Templating
 
 Configuration allows to templating params like: 
-* `title`
-* `tempalteHref`
-* `icon`
+* `name` - available only on Buttons
+* `title`- available on Panels and  Buttons 
+* `url` - available only on CustomLink and CustomAction buttons 
+* `icon`- available only on Buttons
 
 Right now we allow to template two elements:
 * process id -`{{processId}}`
@@ -206,33 +207,36 @@ Right now we allow to template two elements:
 
 Example usage:
 * `title: "Metrics for {{processName}}"`
-* `templateHref="/metrics/{{processId}}" `
+* `name: "deploy {{processName}}"`
+* `url: "/metrics/{{processId}}" `
+* `icon: "/assets/process-icon-{{processId}}"`
 
 #### Default Process Panel Configuration
 
 ```
 processToolbarConfig {
   defaultConfig {
-    "top-left": [
+    topLeft: [
       { type: "tips-panel" }
-      { type: "creator-panel" }
+      { type: "creator-panel", hidden: { archived: true } }
       { type: "versions-panel" }
       { type: "comments-panel" }
       { type: "attachments-panel" }
     ]
-    "top-right": [
+    topRight: [
       {
         type: "process-info-panel"
         buttons: [
-          { type: "process-save", disabled: { archived: true } }
+          { type: "process-save", title: "Save changes", disabled: { archived: true } }
           { type: "process-deploy", disabled: { subprocess: true, archived: true, type: "oneof" } }
           { type: "process-cancel", disabled: { subprocess: true, archived: true, type: "oneof" } }
-          { type: "custom-link", title: "metrics", icon: "/assets/buttons/metrics.svg", templateHref: "/metrics/{{processName}}", disabled: { subprocess: true } }
+          { type: "custom-link", name: "metrics", icon: "/assets/buttons/metrics.svg", url: "/metrics/{{processName}}", disabled: { subprocess: true } }
         ]
       }
       {
         id: "view-panel"
         type: "buttons-panel"
+        title: "view"
         buttons: [
           { type: "view-business-view" }
           { type: "view-zoom-in" }
@@ -243,6 +247,7 @@ processToolbarConfig {
       {
         id: "edit-panel"
         type: "buttons-panel"
+        title: "edit"
         hidden: { archived: true }
         buttonsVariant: "small"
         buttons: [
@@ -257,11 +262,12 @@ processToolbarConfig {
       {
         id: "process-panel"
         type: "buttons-panel"
+        title: "process"
         buttons: [
           { type: "process-properties", hidden: { subprocess: true } }
           { type: "process-compare" }
-          { type: "process-migrate", hidden: { archived: true }, disabled: { subprocess: true } }
-          { type: "process-import", hidden: { archived: true } }
+          { type: "process-migrate", disabled: { archived: true } }
+          { type: "process-import", disabled: { archived: true } }
           { type: "process-json" }
           { type: "process-pdf" }
           { type: "process-archive", hidden: { archived: true } }
@@ -271,17 +277,19 @@ processToolbarConfig {
       {
         id: "test-panel"
         type: "buttons-panel"
+        title: "test"
         hidden: { subprocess: true }
         buttons: [
           { type: "test-from-file", disabled: { archived: true } }
           { type: "test-generate", disabled: { archived: true } }
           { type: "test-counts" }
-          { type: "test-hidden" }
+          { type: "test-hide" }
         ]
       }
       {
         id: "group-panel"
         type: "buttons-panel"
+        title: "group"
         hidden: { archived: true }
         buttons: [
           { type: "group" }

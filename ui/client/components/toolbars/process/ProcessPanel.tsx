@@ -10,7 +10,7 @@ import Properties from "../status/buttons/PropertiesButton"
 
 function ProcessPanel(): JSX.Element {
   return (
-    <DefaultToolbarPanel id="PROCESS-PANEL">
+    <DefaultToolbarPanel id="process-info-panel">
       <Properties/>
       <CompareButton/>
       <MigrateButton/>

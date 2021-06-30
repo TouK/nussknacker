@@ -38,11 +38,11 @@ object ToolbarPanelTypeConfig extends Enumeration {
   val DetailsPanel: Value = Value("details-panel")
 
   //Some of panels require buttons not empty list param, this method verify that..
-  def requiresButtons(`type`: ToolbarPanelType): Boolean =
+  def requiresButtonsParam(`type`: ToolbarPanelType): Boolean =
     toolbarsWithButtons.contains(`type`)
 
   //Some of panels require id param, this method verify that..
-  def requiresIdentity(`type`: ToolbarPanelType): Boolean =
+  def requiresIdParam(`type`: ToolbarPanelType): Boolean =
     toolbarsWithIdentity.contains(`type`)
 }
 
@@ -55,16 +55,17 @@ case class ToolbarPanelConfig(
   hidden: Option[ToolbarCondition]
 ) {
 
-  if (ToolbarPanelTypeConfig.requiresIdentity(`type`)) {
+  if (ToolbarPanelTypeConfig.requiresIdParam(`type`)) {
     require(id.exists(_.nonEmpty), s"Toolbar ${`type`} requires param: 'id'.")
   } else {
     require(id.isEmpty, s"Toolbar ${`type`} doesn't contain param: 'id'.")
   }
 
-  if (ToolbarPanelTypeConfig.requiresButtons(`type`)) {
+  if (ToolbarPanelTypeConfig.requiresButtonsParam(`type`)) {
     require(buttons.exists(_.nonEmpty), s"Toolbar ${`type`} requires non empty param: 'buttons'.")
   } else {
     require(buttons.isEmpty, s"Toolbar ${`type`} doesn't contain param: 'buttons'.")
+    require(buttonsVariant.isEmpty, s"Toolbar ${`type`} doesn't contain param: 'buttonsVariant'.")
   }
 
   def identity: String = id.getOrElse(`type`.toString)

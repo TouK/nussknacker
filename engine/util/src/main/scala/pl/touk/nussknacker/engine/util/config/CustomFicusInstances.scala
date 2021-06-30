@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.util.config
 
 import java.io.File
-import java.net.{URI, URL, URLConnection, URLStreamHandler, URLStreamHandlerFactory}
+import java.net.{URI, URL}
 import com.typesafe.config.Config
 import net.ceedubs.ficus.{FicusConfig, SimpleFicusConfig}
 import net.ceedubs.ficus.readers._

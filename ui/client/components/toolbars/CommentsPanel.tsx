@@ -7,7 +7,7 @@ export function CommentsPanel() {
   const {t} = useTranslation()
 
   return (
-    <CollapsibleToolbar id="COMMENTS-PANEL" title={t("panels.comments.title", "Comments")}>
+    <CollapsibleToolbar id="comments-panel" title={t("panels.comments.title", "Comments")}>
       <ProcessComments/>
     </CollapsibleToolbar>
   )

@@ -75,15 +75,16 @@ object ToolbarButton {
 
   def fromConfig(config: ToolbarButtonConfig, process: BaseProcessDetails[_]): ToolbarButton = ToolbarButton(
     config.`type`,
+    config.name.map(t => fillByProcessData(t, process)),
     config.title.map(t => fillByProcessData(t, process)),
     config.icon.map(i => fillByProcessData(i, process)),
-    config.templateHref.map(th => fillByProcessData(th, process)),
+    config.url.map(th => fillByProcessData(th, process)),
     disabled = verifyCondition(config.disabled, process)
   )
 }
 
 @JsonCodec
-case class ToolbarButton(`type`: ToolbarButtonType, title: Option[String], icon: Option[String], url: Option[String], disabled: Boolean)
+case class ToolbarButton(`type`: ToolbarButtonType, name: Option[String], title: Option[String], icon: Option[String], url: Option[String], disabled: Boolean)
 
 private [service] object ToolbarHelper {
 

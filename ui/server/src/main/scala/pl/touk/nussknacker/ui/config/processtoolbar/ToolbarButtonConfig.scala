@@ -5,17 +5,22 @@ import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarButtonConfigType.Tool
 
 case class ToolbarButtonConfig(
   `type`: ToolbarButtonType,
+  name: Option[String],
   title: Option[String],
   icon: Option[String],
-  templateHref: Option[String],
+  url: Option[String],
   hidden: Option[ToolbarCondition],
   disabled: Option[ToolbarCondition]
 ) {
 
-  if (ToolbarButtonConfigType.requiresHrefTemplate(`type`)) {
-    require(templateHref.isDefined, s"Button ${`type`} requires param: 'templateHref'.")
+  if (ToolbarButtonConfigType.requiresNameParam(`type`)) {
+    require(name.isDefined, s"Button ${`type`} requires param: 'name'.")
+  }
+
+  if (ToolbarButtonConfigType.requiresUrlParam(`type`)) {
+    require(url.isDefined, s"Button ${`type`} requires param: 'url'.")
   } else {
-    require(templateHref.isEmpty, s"Button ${`type`} doesn't contain param: 'templateHref'.")
+    require(url.isEmpty, s"Button ${`type`} doesn't contain param: 'url'.")
   }
 }
 
@@ -25,8 +30,12 @@ object ToolbarButtonConfigType extends Enumeration {
 
   type ToolbarButtonType = Value
 
-  private lazy val buttonsWithHrefTemplate: List[ToolbarButtonType] = List(
+  private lazy val customButtons: List[ToolbarButtonType] = List(
     CustomAction,
+    CustomLink
+  )
+
+  private lazy val urlButtons: List[ToolbarButtonType] = List(
     CustomLink
   )
 
@@ -68,6 +77,10 @@ object ToolbarButtonConfigType extends Enumeration {
   val CustomLink: Value = Value("custom-link")
   val CustomAction: Value = Value("custom-action")
 
-  def requiresHrefTemplate(`type`: ToolbarButtonType): Boolean =
-    buttonsWithHrefTemplate.contains(`type`)
+  def requiresNameParam(`type`: ToolbarButtonType): Boolean =
+    customButtons.contains(`type`)
+
+  def requiresUrlParam(`type`: ToolbarButtonType): Boolean =
+    urlButtons.contains(`type`)
+
 }

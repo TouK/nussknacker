@@ -6,6 +6,8 @@ import api from "../api"
 import {UserData} from "../common/models/User"
 import {ProcessStateType, ProcessType} from "../components/Process/types"
 import {API_URL} from "../config"
+import {WithId} from "../types/common"
+import {ToolbarsConfig} from "../components/toolbarSettings/types"
 
 type HealthCheckProcessDeploymentType = {
   status: string,
@@ -153,6 +155,12 @@ class HttpService {
   fetchProcessesStates() {
     return api.get<StatusesType>("/processes/status")
       .catch(error => Promise.reject(this.addError("Cannot fetch statuses", error)))
+  }
+
+  fetchProcessToolbarsConfiguration(processId) {
+    const promise = api.get<WithId<ToolbarsConfig>>(`/processes/${processId}/toolbars`)
+    promise.catch(error => this.addError("Cannot fetch process toolbars configuration", error))
+    return promise
   }
 
   fetchProcessState(processId) {

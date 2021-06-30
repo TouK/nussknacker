@@ -7,7 +7,7 @@ export function AttachmentsPanel() {
   const {t} = useTranslation()
 
   return (
-    <CollapsibleToolbar id="ATTACHMENTS-PANEL" title={t("panels.attachments.title", "Attachments")}>
+    <CollapsibleToolbar id="attachments-panel" title={t("panels.attachments.title", "Attachments")}>
       <ProcessAttachments/>
     </CollapsibleToolbar>
   )

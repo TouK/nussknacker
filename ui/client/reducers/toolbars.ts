@@ -4,11 +4,10 @@ import {Reducer} from "../actions/reduxTypes"
 import {combineReducers} from "redux"
 
 export enum ToolbarsSide {
-  TopRight = "TOP-RIGHT",
-  BottomRight = "BOTTOM-RIGHT",
-  TopLeft = "TOP-LEFT",
-  BottomLeft = "BOTTOM-LEFT",
-  Hidden = "HIDDEN",
+  TopRight = "topRight",
+  BottomRight = "bottomRight",
+  TopLeft = "topLeft",
+  BottomLeft = "bottomLeft",
 }
 
 type NodeToolbox = {

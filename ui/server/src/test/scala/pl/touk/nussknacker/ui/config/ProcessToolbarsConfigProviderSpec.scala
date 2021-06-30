@@ -25,16 +25,16 @@ class ProcessToolbarsConfigProviderSpec extends FlatSpec with Matchers {
       |          type: "process-info-panel"
       |          title: "Process Info"
       |          buttons: [
-      |            { type: "process-save", icon: "/assets/buttons/save.svg", title: "save", disabled: { archived: true } }
+      |            { type: "process-save", icon: "/assets/buttons/save.svg", name: "save", disabled: { archived: true } }
       |            { type: "process-deploy" }
-      |            { type: "custom-link", title: "metrics", icon: "/assets/buttons/metrics.svg", templateHref: "/metrics/{{processName}}" }
+      |            { type: "custom-link", name: "metrics", title: "Metrics for process {{processName}}", icon: "/assets/buttons/metrics.svg", url: "/metrics/{{processName}}" }
       |          ]
       |        }
       |      ]
       |    }
       |    categoryConfig {
       |      "Category2" {
-      |        uuid: "58f1acff-d864-4d66-9f86-0fa7319f7043"
+      |        uuid: 58f1acff-d864-4d66-9f86-0fa7319f7043
       |        topRight: [
       |          {
       |            type: "process-info-panel"
@@ -49,24 +49,35 @@ class ProcessToolbarsConfigProviderSpec extends FlatSpec with Matchers {
       |          { type: "versions-panel" }
       |        ]
       |      }
-      |      "CustomLinkError" {
+      |      "MissingUrlError" {
       |        topLeft: [
       |          {
       |            type: "process-info-panel"
       |            title: "Process Info"
       |            buttons: [
-      |             { type: "custom-link", title: "metrics", icon: "/assets/buttons/metrics.svg" }
+      |             { type: "custom-link", name: "metrics", icon: "/assets/buttons/metrics.svg" }
       |            ]
       |          }
       |        ]
       |      },
-      |      "RedundantTemplateHref" {
+      |      "MissingNameError" {
       |        topLeft: [
       |          {
       |            type: "process-info-panel"
       |            title: "Process Info"
       |            buttons: [
-      |              { type: "process-save", title: "metrics", icon: "/assets/buttons/save.svg", templateHref="no-url" }
+      |             { type: "custom-link", url: "/metrics", icon: "/assets/buttons/metrics.svg" }
+      |            ]
+      |          }
+      |        ]
+      |      },
+      |      "RedundantUrlError" {
+      |        topLeft: [
+      |          {
+      |            type: "process-info-panel"
+      |            title: "Process Info"
+      |            buttons: [
+      |              { type: "process-save", title: "metrics", icon: "/assets/buttons/save.svg", url: "no-url" }
       |            ]
       |          }
       |        ]
@@ -79,6 +90,11 @@ class ProcessToolbarsConfigProviderSpec extends FlatSpec with Matchers {
       |      "RedundantButtonsError" {
       |        topLeft: [
       |          { type: "tips-panel", hidden: { subprocess: true }, buttons: [] }
+      |        ]
+      |      },
+      |      "RedundantButtonsVariantError" {
+      |        topLeft: [
+      |          { type: "tips-panel", hidden: { subprocess: true }, buttonsVariant: "small" }
       |        ]
       |      },
       |      "MissingIdError" {
@@ -105,9 +121,9 @@ class ProcessToolbarsConfigProviderSpec extends FlatSpec with Matchers {
       List(
         ToolbarPanelConfig(ProcessInfoPanel, None,
           Some("Process Info"), None, Some(List(
-          ToolbarButtonConfig(ToolbarButtonConfigType.ProcessSave, Some("save"), Some("/assets/buttons/save.svg"), None, None, Some(ToolbarCondition(None, Some(true), None))),
-          ToolbarButtonConfig(ToolbarButtonConfigType.ProcessDeploy, None, None, None, None, None),
-          ToolbarButtonConfig(ToolbarButtonConfigType.CustomLink, Some("metrics"), Some("/assets/buttons/metrics.svg"), Some("/metrics/{{processName}}"), None, None)
+          ToolbarButtonConfig(ToolbarButtonConfigType.ProcessSave, Some("save"), None, Some("/assets/buttons/save.svg"), None, None, Some(ToolbarCondition(None, Some(true), None))),
+          ToolbarButtonConfig(ToolbarButtonConfigType.ProcessDeploy, None, None, None, None, None, None),
+          ToolbarButtonConfig(ToolbarButtonConfigType.CustomLink, Some("metrics"), Some("Metrics for process {{processName}}"), Some("/assets/buttons/metrics.svg"), Some("/metrics/{{processName}}"), None, None)
         )), None)
       ),
       Nil
@@ -119,7 +135,7 @@ class ProcessToolbarsConfigProviderSpec extends FlatSpec with Matchers {
       Nil,
       List(
         ToolbarPanelConfig(ProcessInfoPanel, None, Some("Process Info Right"), Some(Small), Some(List(
-          ToolbarButtonConfig(ToolbarButtonConfigType.ProcessSave, None, None, None, None, None)
+          ToolbarButtonConfig(ToolbarButtonConfigType.ProcessSave, None, None, None, None, None, None)
         )), None)
       ),
       List(ToolbarPanelConfig(VersionsPanel, None, None, None, None, None))
@@ -140,13 +156,14 @@ class ProcessToolbarsConfigProviderSpec extends FlatSpec with Matchers {
   it should "raise exception when configuration contains errors" in {
     val errorTestingConfigs = Table(
       ("config", "category", "message"),
-      (processToolbarConfig, "CustomLinkError", "Button custom-link requires param: 'templateHref'."),
+      (processToolbarConfig, "MissingUrlError", "Button custom-link requires param: 'url'."),
+      (processToolbarConfig, "MissingNameError", "Button custom-link requires param: 'name'."),
       (processToolbarConfig, "MissingIdError", "Toolbar buttons-panel requires param: 'id'."),
       (processToolbarConfig, "MissingButtonsError", "Toolbar buttons-panel requires non empty param: 'buttons'."),
       (processToolbarConfig, "RedundantButtonsError", "Toolbar tips-panel doesn't contain param: 'buttons'."),
       (processToolbarConfig, "RedundantIdError", "Toolbar tips-panel doesn't contain param: 'id'."),
-      (processToolbarConfig, "RedundantIdError", "Toolbar tips-panel doesn't contain param: 'id'."),
-      (processToolbarConfig, "RedundantTemplateHref", "Button process-save doesn't contain param: 'templateHref'.")
+      (processToolbarConfig, "RedundantUrlError", "Button process-save doesn't contain param: 'url'."),
+      (processToolbarConfig, "RedundantButtonsVariantError", "Toolbar tips-panel doesn't contain param: 'buttonsVariant'.")
     )
 
     forAll(errorTestingConfigs) { (config: Config, category: String, message) =>

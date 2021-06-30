@@ -10,7 +10,7 @@ export function VersionsPanel(): JSX.Element {
   const capabilities = useSelector(getCapabilities)
 
   return (
-    <CollapsibleToolbar id="VERSIONS-PANEL" title={t("panels.versions.title", "Versions")}>
+    <CollapsibleToolbar id="versions-panel" title={t("panels.versions.title", "Versions")}>
       <ProcessHistory isReadOnly={!capabilities.write}/>
     </CollapsibleToolbar>
   )
