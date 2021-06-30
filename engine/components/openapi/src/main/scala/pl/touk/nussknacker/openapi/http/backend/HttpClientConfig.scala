@@ -13,7 +13,7 @@ case class HttpClientConfig(timeout: Option[FiniteDuration],
                             useNative: Option[Boolean],
                             followRedirect: Option[Boolean],
                             forceShutdown: Option[Boolean],
-                            //jakbysmy chcieli tunowac pojedyncze procesy
+                            //this can be used to tune single scenario
                             configForProcess: Option[Map[String, HttpClientConfig]]) {
 
   def toAsyncHttpClientConfig(processId: Option[String]): DefaultAsyncHttpClientConfig.Builder = {
@@ -57,7 +57,7 @@ object HttpClientConfig {
                                                followRedirect: Boolean,
                                                forceShutdown: Boolean)
 
-  //ArbitraryTypeReader nietety tu wymieka :/
+  //ArbitraryTypeReader cannot handle nested option here... :/
   implicit val vr: ValueReader[HttpClientConfig] = ValueReader.relative(conf => {
     import net.ceedubs.ficus.Ficus._
     def forOption[T](path: String)(implicit r: ValueReader[T]) = optionValueReader[T].read(conf, path)

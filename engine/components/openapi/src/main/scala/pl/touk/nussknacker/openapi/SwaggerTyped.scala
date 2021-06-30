@@ -7,6 +7,7 @@ import io.swagger.v3.oas.models.media.{ArraySchema, MapSchema, ObjectSchema, Sch
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedClass, TypedObjectTypingResult}
 import pl.touk.nussknacker.openapi.parser.SwaggerRefSchemas
 
+import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 
 @JsonCodec sealed trait SwaggerTyped { self =>
@@ -33,6 +34,8 @@ case class SwaggerArray(elementType: SwaggerTyped) extends SwaggerTyped
 case class SwaggerObject(elementType: Map[PropertyName, SwaggerTyped], required: Set[PropertyName]) extends SwaggerTyped
 
 object SwaggerTyped {
+
+  @tailrec
   def apply(schema: Schema[_], swaggerRefSchemas: SwaggerRefSchemas): SwaggerTyped = schema match {
     case objectSchema: ObjectSchema => SwaggerObject(objectSchema, swaggerRefSchemas)
     case mapSchema: MapSchema => SwaggerObject(mapSchema, swaggerRefSchemas)

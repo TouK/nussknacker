@@ -3,14 +3,15 @@ package pl.touk.nussknacker.openapi
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions, ConfigValueFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
+import net.ceedubs.ficus.Ficus._
 import org.apache.commons.io.IOUtils
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
 import pl.touk.nussknacker.openapi.OpenAPIsConfig._
-import pl.touk.nussknacker.openapi.enrichers.SwaggerEnrichers
-import pl.touk.nussknacker.openapi.http.backend.DefaultHttpClientConfig
+import pl.touk.nussknacker.openapi.enrichers.{BaseSwaggerEnricherCreator, SwaggerEnrichers}
+import pl.touk.nussknacker.openapi.http.backend.{DefaultHttpClientConfig, HttpClientConfig}
 import pl.touk.nussknacker.openapi.parser.SwaggerParser
 
 import scala.jdk.CollectionConverters.seqAsJavaListConverter
@@ -36,12 +37,17 @@ class OpenAPIComponentProvider extends ComponentProvider with LazyLogging {
     val swaggerServices =
       CirceUtil.decodeJsonUnsafe[List[SwaggerService]](serviceDefinitionConfig, "Failed to parse service config")
 
-    //TODO: configuration...
+    //TODO: configuration
     val fixedParameters: Map[String, () => AnyRef] = Map.empty
-    val clientConfig = DefaultHttpClientConfig().copy(useNative = Some(false))
-    new SwaggerEnrichers(openAPIsConfig.rootURL)
-      .enrichers(swaggerServices, Nil, fixedParameters, clientConfig)
+    new SwaggerEnrichers(openAPIsConfig.rootURL, prepareBaseEnricherCreator(config))
+      .enrichers(swaggerServices, Nil, fixedParameters)
+      //FIXME: documentation is ignore ATM
       .map(service => ComponentDefinition(service.name, service.service)).toList
+  }
+
+  protected def prepareBaseEnricherCreator(config: Config): BaseSwaggerEnricherCreator = {
+    val clientConfig = config.getAs[HttpClientConfig]("httpClientConfig").getOrElse(DefaultHttpClientConfig())
+    BaseSwaggerEnricherCreator(clientConfig)
   }
 
   override def isCompatible(version: NussknackerVersion): Boolean = true

@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.openapi.ApiKeyConfig
 import pl.touk.nussknacker.openapi.enrichers.SwaggerEnrichers
-import pl.touk.nussknacker.openapi.http.backend.DefaultHttpClientConfig
+//import pl.touk.nussknacker.openapi.http.backend.DefaultDispatchConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
@@ -29,13 +29,14 @@ class RestDBServiceSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
   }
   implicit val contextId: ContextId = ContextId("testContextId")
 
+  /*
   private val service: ServiceWithExplicitMethod = {
     val definition = Source.fromInputStream(getClass.getClassLoader.getResourceAsStream("restdb-swagger.json")).mkString
     val securities = Map("apikey" -> ApiKeyConfig("TODO"))
 
     val categories = List("Default")
     val fixedParameters: Map[String, () => AnyRef] = Map.empty
-    val clientConfig = DefaultHttpClientConfig().copy(useNative = Some(false))
+    val clientConfig = DefaultDispatchConfig().copy(useNative = Some(false))
 
     val servicesMap = SwaggerEnrichers.enrichersForDefinition(definition, None, securities, categories, fixedParameters, clientConfig, None)
 
@@ -51,5 +52,5 @@ class RestDBServiceSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
       .asInstanceOf[java.util.List[_]].asScala.map(_.asInstanceOf[TypedMap].asScala)
       .map(_.filterKeys(List("zip", "city").contains))
     valueWithChosenFields shouldEqual List(Map("zip" -> "AX6 7KK", "city" -> "La Magdeleine"))
-  }
+  }         */
 }

@@ -926,11 +926,10 @@ lazy val openapi = (project in component("openapi")).
         "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV  excludeAll(
           ExclusionRule(organization = "com.sun.activation")
         ),
-        //TODO: make it Flink-agnostic
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % Provided,
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided,optional",
         "org.scalatest" %% "scalatest" % scalaTestV %  "it,test"
       ),
-    ).dependsOn(api, process % Provided, httpUtils % Provided, flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
+    ).dependsOn(api, process % "provided,optional", standaloneUtil % "provided,optional", httpUtils % Provided, flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
 
 lazy val buildUi = taskKey[Unit]("builds ui")
 
