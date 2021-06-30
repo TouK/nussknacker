@@ -101,7 +101,7 @@
     "svg-pan-zoom": "~3.6.0",
     "url-join": "^4.0.1",
     "url-loader": "^4.1.1",
-    "use-debounce": "^3.3.0",
+    "use-debounce": "^7.0.0",
     "uuid": "^8.3.2"
   },
   "devDependencies": {
