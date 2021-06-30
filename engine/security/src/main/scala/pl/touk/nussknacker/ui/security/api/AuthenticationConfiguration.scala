@@ -15,10 +15,6 @@ import pl.touk.nussknacker.ui.security.api.Permission.Permission
 import scala.concurrent.duration._
 
 trait AuthenticationConfiguration {
-  def authorizeUrl: Option[URI] = Option.empty
-  def authSeverPublicKey: Option[PublicKey] = Option.empty
-  def idTokenNonceVerificationRequired: Boolean
-  def implicitGrantEnabled: Boolean
   def method: AuthenticationMethod
   def usersFile: URI
 

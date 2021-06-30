@@ -170,9 +170,9 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     //TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings
     val apiResourcesWithoutAuthentication: List[Route] = List(
-      new SettingsResources(featureTogglesConfig, typeToConfig, authenticationResources.config, analyticsConfig).publicRoute(),
+      new SettingsResources(featureTogglesConfig, typeToConfig, authenticationResources.name, analyticsConfig).publicRoute(),
       appResources.publicRoute(),
-      authenticationResources.route
+      authenticationResources.routeWithPathPrefix
     )
 
     //TODO: In the future will be nice to have possibility to pass authenticator.directive to resource and there us it at concrete path resource
@@ -182,7 +182,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         webResources.route
       } ~  pathPrefix("api") {
         apiResourcesWithoutAuthentication.reduce(_ ~ _)
-      } ~ authenticationResources.directive { user =>
+      } ~ authenticationResources.authenticate() { user =>
         pathPrefix("api") {
           apiResourcesWithAuthentication.map(_.securedRoute(user)).reduce(_ ~ _)
         }
