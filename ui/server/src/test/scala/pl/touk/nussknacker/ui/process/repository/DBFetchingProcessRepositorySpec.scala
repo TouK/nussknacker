@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import java.time.LocalDateTime
+
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -17,7 +18,7 @@ import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestPermissions, TestPro
 import pl.touk.nussknacker.ui.db.entity.ProcessVersionEntityData
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.Comment
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, UpdateProcessAction}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessUpdated, UpdateProcessAction}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -188,7 +189,9 @@ class DBFetchingProcessRepositorySpec
     val latestProcessVersion = fetchLatestProcessVersion(processName)
     latestProcessVersion.id shouldBe latestVersionId
 
-    val newVersionInfoOpt = updateProcess(latestProcessVersion.copy(json = Some("{}")))
+    val ProcessUpdated(oldVersionInfoOpt, newVersionInfoOpt) = updateProcess(latestProcessVersion.copy(json = Some("{}")))
+    oldVersionInfoOpt shouldBe 'defined
+    oldVersionInfoOpt.get.id shouldBe latestVersionId
     newVersionInfoOpt shouldBe 'defined
     newVersionInfoOpt.get.id shouldBe (latestVersionId + 1)
 
@@ -200,14 +203,14 @@ class DBFetchingProcessRepositorySpec
     ).nonEmpty
   }
 
-  private def updateProcess(processVersion: ProcessVersionEntityData): Option[ProcessVersionEntityData] = {
+  private def updateProcess(processVersion: ProcessVersionEntityData): ProcessUpdated = {
     processVersion.json shouldBe 'defined
     val json = processVersion.json.get
     val action = UpdateProcessAction(ProcessId(processVersion.processId), GraphProcess(json), "")
 
-    val processVersionED = repositoryManager.runInTransaction(writingRepo.updateProcess(action)).futureValue
-    processVersionED shouldBe 'right
-    processVersionED.right.get
+    val processUpdated = repositoryManager.runInTransaction(writingRepo.updateProcess(action)).futureValue
+    processUpdated shouldBe 'right
+    processUpdated.right.get
   }
 
   private def saveProcess(espProcess: EspProcess, now: LocalDateTime, category: String = "") = {

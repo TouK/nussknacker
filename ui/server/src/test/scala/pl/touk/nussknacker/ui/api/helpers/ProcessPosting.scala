@@ -19,9 +19,9 @@ class ProcessPosting {
     toRequest(ProcessConverter.toDisplayable(ProcessCanonizer.canonize(process), TestProcessingTypes.Streaming))
   }
 
-  def toEntityAsProcessToSave(process: EspProcess): RequestEntity = {
+  def toEntityAsProcessToSave(process: EspProcess, comment: String = ""): RequestEntity = {
     val displayable = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(process), TestProcessingTypes.Streaming)
-    toRequest(UpdateProcessCommand(displayable, comment = ""))
+    toRequest(UpdateProcessCommand(displayable, comment = comment))
   }
 
   def toEntity(properties: ProcessProperties): RequestEntity = {
