@@ -67,7 +67,8 @@ describe("Process", () => {
         .trigger("mouseup", {force: true})
       cy.get("@ungroupButton").should("be.enabled").click()
       cy.get("@layoutButton").click()
-      cy.get("@graph").wait(200).toMatchImageSnapshot()
+      //TODO: remove wait
+      cy.get("@graph").wait(1000).toMatchImageSnapshot()
     })
 
     it("should open group details on collapsed and expanded group", () => {
