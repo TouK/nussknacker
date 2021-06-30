@@ -10,7 +10,7 @@ import pl.touk.nussknacker.openapi.{ApiKeyConfig, ApiKeyInHeader, OpenAPISecurit
 
 import scala.collection.JavaConverters._
 
-object SecuritiesParser extends LazyLogging {
+private[parser] object SecuritiesParser extends LazyLogging {
 
   import cats.syntax.apply._
 

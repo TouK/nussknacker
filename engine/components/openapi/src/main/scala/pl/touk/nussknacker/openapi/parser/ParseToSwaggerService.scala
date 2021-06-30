@@ -16,7 +16,7 @@ import pl.touk.nussknacker.openapi._
 import scala.collection.JavaConverters._
 import scala.util.Try
 
-object ParseToSwaggerService {
+private[parser] object ParseToSwaggerService {
 
   import cats.implicits._
 
@@ -65,7 +65,7 @@ object ParseToSwaggerService {
   }
 }
 
-class ParseToSwaggerService(uriWithParameters: String,
+private[parser] class ParseToSwaggerService(uriWithParameters: String,
                             swaggerRefSchemas: SwaggerRefSchemas,
                             servers: List[Server],
                             globalSecurityRequirements: List[SecurityRequirement],

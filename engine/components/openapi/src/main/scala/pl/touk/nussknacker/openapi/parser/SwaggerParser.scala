@@ -26,7 +26,7 @@ object SwaggerParser {
     )
   }
 
-  def parseToSwagger(rawSwagger: String): OpenAPI = {
+  private[parser] def parseToSwagger(rawSwagger: String): OpenAPI = {
     val swagger30 = new OpenAPIV3Parser().readContents(rawSwagger)
     Option(swagger30.getOpenAPI)
       .getOrElse {

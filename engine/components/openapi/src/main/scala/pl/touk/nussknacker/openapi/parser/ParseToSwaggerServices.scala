@@ -7,7 +7,7 @@ import pl.touk.nussknacker.openapi.{OpenAPISecurityConfig, SwaggerService}
 
 import scala.collection.JavaConverters._
 
-object ParseToSwaggerServices {
+private[parser] object ParseToSwaggerServices {
 
   def apply(paths: Map[String, PathItem],
             swaggerRefSchemas: SwaggerRefSchemas,
