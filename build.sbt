@@ -387,7 +387,6 @@ def engine(name: String) = file(s"engine/$name")
 
 def component(name: String) = file(s"engine/components/$name")
 
-
 lazy val engineStandalone = (project in engine("standalone/engine")).
   configs(IntegrationTest).
   settings(commonSettings).
@@ -943,6 +942,19 @@ lazy val openapi = (project in component("openapi")).
       ),
     ).dependsOn(api % Provided, process % Provided, engineStandalone % Provided, standaloneUtil % Provided, httpUtils % Provided, flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
 
+lazy val sql = (project in component("sql")).
+  configs(IntegrationTest).
+  settings(commonSettings).
+  settings(Defaults.itSettings).
+  settings(
+    name := "nussknacker-sql",
+    libraryDependencies ++= Seq(
+      "com.zaxxer" % "HikariCP" % "4.0.3",
+      "org.apache.flink" %% "flink-streaming-scala" % flinkV % Provided,
+      "org.scalatest" %% "scalatest" % scalaTestV % "it,test"
+    ),
+  ).dependsOn(api, process % Provided, engineStandalone % "provided,optional", standaloneUtil % "provided,optional", httpUtils % Provided, flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
+
 lazy val buildUi = taskKey[Unit]("builds ui")
 
 def runNpm(command: String, errorMessage: String, outputPath: File): Unit = {
@@ -1086,7 +1098,7 @@ lazy val modules = List[ProjectReference](
   engineStandalone, standaloneApp, flinkProcessManager, flinkPeriodicProcessManager, standaloneSample, flinkManagementSample, managementJavaSample, generic,
   openapi, process, interpreter, benchmarks, kafka, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
   flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils, queryableState,
-  restmodel, listenerApi, ui
+  restmodel, listenerApi, ui, sql
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 
