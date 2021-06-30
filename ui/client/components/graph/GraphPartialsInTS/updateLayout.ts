@@ -1,16 +1,19 @@
-import {Layout} from "../../../actions/nk"
-import {isEmpty} from "lodash"
-import {Graph} from "../Graph"
 import {dia} from "jointjs"
+import {isEmpty} from "lodash"
+import {Layout} from "../../../actions/nk"
+import {Graph} from "../Graph"
+import {isElement} from "./cellUtils"
 
 export function updateLayout(graph: dia.Graph, directedLayout: typeof Graph.prototype.directedLayout) {
-  return (layout: Layout) => {
+  return (layout: Layout): void => {
     if (isEmpty(layout)) {
       directedLayout()
     } else {
-      layout.forEach(node => {
-        const cell = graph.getCell(node.id)
-        if (cell && JSON.stringify(cell.get("position")) !== JSON.stringify(node.position)) cell.set("position", node.position)
+      layout.forEach(({position, id}) => {
+        const cell = graph.getCell(id)
+        if (isElement(cell) && JSON.stringify(cell.position()) !== JSON.stringify(position)) {
+          cell.position(position.x, position.y)
+        }
       })
     }
   }

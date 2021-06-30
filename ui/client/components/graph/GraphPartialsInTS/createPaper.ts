@@ -1,6 +1,6 @@
 import * as joint from "jointjs"
 import {dia} from "jointjs"
-import {isBackgroundObject} from "./isBackgroundObject"
+import {isBackgroundObject} from "./cellUtils"
 import {defaults} from "lodash"
 import {defaultLink} from "../EspNode/link"
 import {arrowMarker} from "../arrowMarker"
@@ -64,6 +64,7 @@ export function createPaper(): dia.Paper {
   const {height = "100%", width = "100%"} = this.props
   const paper = getPaper(
     {
+      async: true,
       height,
       width,
       model: this.graph,
@@ -72,10 +73,11 @@ export function createPaper(): dia.Paper {
     },
     canWrite,
   )
+
   return paper
-    .on(Events.CELL_POINTERUP, (cell) => {
+    .on(Events.CELL_POINTERUP, (cell: dia.CellView) => {
       this.changeLayoutIfNeeded()
-      this.handleInjectBetweenNodes(cell)
+      this.handleInjectBetweenNodes(cell.model)
     })
     .on(Events.LINK_CONNECT, (cell) => {
       this.disconnectPreviousEdge(cell.model.id)

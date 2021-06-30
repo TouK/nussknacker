@@ -1,18 +1,19 @@
 /* eslint-disable i18next/no-literal-string */
 import * as joint from "jointjs"
-import {shapes} from "jointjs"
 import "jointjs/dist/joint.css"
-import _, {cloneDeep, defer, sortBy} from "lodash"
+import _, {cloneDeep, debounce, defer, isEqual, sortBy} from "lodash"
 import PropTypes from "prop-types"
 import React from "react"
 import {getProcessCategory, getSelectionState} from "../../reducers/selectors/graph"
 import {getLoggedUser, getProcessDefinitionData} from "../../reducers/selectors/settings"
 import "../../stylesheets/graph.styl"
+import {filterDragHovered, setLinksHovered} from "./dragHelpers"
 import {FocusableDiv} from "./focusable"
-import {createPaper, directedLayout, drawGraph, isBackgroundObject} from "./GraphPartialsInTS"
+import {createPaper, directedLayout, drawGraph, isBackgroundObject, isGroupElement, isModelElement} from "./GraphPartialsInTS"
+import styles from "./graphTheme.styl"
+
 import * as GraphUtils from "./GraphUtils"
 import {Events} from "./joint-events"
-import * as JointJsGraphUtils from "./JointJsGraphUtils"
 import EdgeDetailsModal from "./node-modal/EdgeDetailsModal"
 import NodeDetailsModal from "./node-modal/NodeDetailsModal"
 import NodeUtils from "./NodeUtils"
@@ -20,9 +21,6 @@ import {PanZoomPlugin} from "./PanZoomPlugin"
 import {RangeSelectPlugin, SelectionMode} from "./RangeSelectPlugin"
 import "./svg-export/export.styl"
 import {prepareSvg} from "./svg-export/prepareSvg"
-
-const isModelElement = el => el instanceof shapes.devs.Model
-const isGroupElement = el => el instanceof shapes.basic.Rect && el.attributes.nodeData.type === "_group"
 
 export class Graph extends React.Component {
 
@@ -37,6 +35,10 @@ export class Graph extends React.Component {
   directedLayout = directedLayout.bind(this)
   createPaper = createPaper.bind(this)
   drawGraph = drawGraph.bind(this)
+  forceLayout = debounce(() => {
+    this.directedLayout(this.props.selectionState)
+    this.panAndZoom.fitSmallAndLargeGraphs()
+  }, 50)
 
   constructor(props) {
     super(props)
@@ -66,7 +68,7 @@ export class Graph extends React.Component {
   bindEventHandlers() {
     this.changeNodeDetailsOnClick()
 
-    this.processGraphPaper.on(Events.BLANK_POINTERDOWN, event => {
+    this.processGraphPaper.on(Events.BLANK_POINTERUP, event => {
       if (!event.isPropagationStopped()) {
         if (this.props.fetchedProcessDetails != null) {
           this.props.actions.displayNodeDetails(this.props.fetchedProcessDetails.json.properties)
@@ -89,7 +91,6 @@ export class Graph extends React.Component {
       this.props.layout,
       this.props.processCounts,
       this.props.processDefinitionData,
-      this.props.expandedGroups,
     )
     this.processGraphPaper.unfreeze()
     this._prepareContentForExport()
@@ -110,6 +111,23 @@ export class Graph extends React.Component {
 
     this.bindEventHandlers()
     this.highlightNodes(this.props.processToDisplay, this.props.nodeToDisplay)
+
+    this.graph.on(Events.CHANGE_DRAG_OVER, () => {
+      const links = this.graph.getLinks()
+      links.forEach(l => this.unhighlightCell(l, styles.dragHovered))
+
+      const [active] = filterDragHovered(links)
+
+      if (active) {
+        this.highlightCell(active, styles.dragHovered)
+        active.toBack()
+      }
+    })
+    this.graph.on(Events.ADD, (cell) => {
+      this.handleInjectBetweenNodes(cell)
+      setLinksHovered(this.graph)
+    })
+
     this.panAndZoom.fitSmallAndLargeGraphs()
   }
 
@@ -138,7 +156,6 @@ export class Graph extends React.Component {
         nextProps.layout,
         nextProps.processCounts,
         nextProps.processDefinitionData,
-        nextProps.expandedGroups,
       )
     }
 
@@ -148,23 +165,6 @@ export class Graph extends React.Component {
     if (processChanged || nodeToDisplayChanged || selectedNodesChanged) {
       this.highlightNodes(nextProps.processToDisplay, nextProps.nodeToDisplay, nextProps.selectionState)
     }
-  }
-
-  componentDidUpdate(previousProps) {
-    //we have to do this after render, otherwise graph is not fully initialized yet
-    const diff = _.difference(this.props.processToDisplay.nodes.map(n => n.id), previousProps.processToDisplay.nodes.map(n => n.id))
-    diff.forEach(nid => {
-      const cell = JointJsGraphUtils.findCell(this.graph, nid)
-      const cellView = this.processGraphPaper.findViewByModel(cell)
-      if (cellView) {
-        this.handleInjectBetweenNodes(cellView)
-      }
-    })
-  }
-
-  forceLayout = () => {
-    this.directedLayout()
-    defer(this.panAndZoom.fitSmallAndLargeGraphs)
   }
 
   zoomIn() {
@@ -196,12 +196,14 @@ export class Graph extends React.Component {
     return this.props.processToDisplay.edges.some(edge => edge.from === nodeIds[0] && edge.to === nodeIds[1])
   }
 
-  handleInjectBetweenNodes = (cellView) => {
-    const linkBelowCell = JointJsGraphUtils.findLinkBelowCell(this.graph, cellView, this.processGraphPaper)
-    if (linkBelowCell) {
-      const source = JointJsGraphUtils.findCell(this.graph, linkBelowCell.attributes.source.id)
-      const target = JointJsGraphUtils.findCell(this.graph, linkBelowCell.attributes.target.id)
-      const middleMan = cellView.model
+  handleInjectBetweenNodes = (middleMan) => {
+    const links = this.graph.getLinks()
+    const [linkBelowCell] = filterDragHovered(links)
+
+    if (linkBelowCell && middleMan) {
+      const source = this.graph.getCell(linkBelowCell.getSourceElement().id)
+      const target = this.graph.getCell(linkBelowCell.getTargetElement().id)
+
       const middleManNode = middleMan.attributes.nodeData
 
       const sourceNodeData = source.attributes.nodeData
@@ -291,12 +293,17 @@ export class Graph extends React.Component {
   }
 
   changeLayoutIfNeeded = () => {
-    let newLayout = sortBy(this.graph.getElements().filter(el => !isBackgroundObject(el)).map(el => {
-      const pos = el.get("position")
-      return {id: el.id, position: pos}
-    }), "id")
-    if (!_.isEqual(this.props.layout, newLayout)) {
-      this.props.actions && this.props.actions.layoutChanged(newLayout)
+    const {layout, actions} = this.props
+    const elements = this.graph.getElements().filter(isModelElement)
+    const newLayout = sortBy(
+      elements.map(el => {
+        const {x, y} = el.get("position")
+        return {id: el.id, position: {x, y}}
+      }),
+      e => e.id,
+    )
+    if (!isEqual(layout, newLayout)) {
+      actions?.layoutChanged(newLayout)
     }
   }
 
@@ -355,10 +362,8 @@ export class Graph extends React.Component {
   }
 
   getNodeData(model) {
-    const {expandedGroups, processToDisplay} = this.props
-    return NodeUtils
-      .nodesFromProcess(processToDisplay, isGroupElement(model) ? [] : expandedGroups)
-      .find(({id}) => id === model.attributes.nodeData.id)
+    const {processToDisplay} = this.props
+    return NodeUtils.getNodeById(model.attributes.nodeData.id, processToDisplay)
   }
 
   //needed for proper switch/filter label handling
@@ -385,6 +390,7 @@ export class Graph extends React.Component {
   }
 
   moveSelectedNodesRelatively(element, position) {
+    this.redrawing = true
     const movedNodeId = element.id
     const nodeIdsToBeMoved = _.without(this.props.selectionState, movedNodeId)
     const cellsToBeMoved = nodeIdsToBeMoved.map(nodeId => this.graph.getCell(nodeId))
@@ -394,6 +400,7 @@ export class Graph extends React.Component {
       const {position: originalPosition} = this.findNodeInLayout(cell.id)
       cell.position(originalPosition.x + offset.x, originalPosition.y + offset.y)
     })
+    this.redrawing = false
   }
 
   findNodeInLayout(nodeId) {
@@ -402,7 +409,7 @@ export class Graph extends React.Component {
 
   nodesMoving() {
     this.graph.on(Events.CHANGE_POSITION, (element, position) => {
-      if (!this.redrawing && (this.props.selectionState || []).includes(element.id) && isModelElement(element)) {
+      if (!this.redrawing && this.props.selectionState?.includes(element.id) && isModelElement(element)) {
         this.moveSelectedNodesRelatively(element, position)
       }
     })

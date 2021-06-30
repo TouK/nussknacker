@@ -4,7 +4,7 @@ import {CursorMask} from "./CursorMask"
 import {Events} from "./joint-events"
 import {pressedKeys} from "./KeysObserver"
 
-type EventData = {selectStart?: {x: number, y: number}}
+type EventData = { selectStart?: { x: number, y: number } }
 type Event = JQuery.TriggeredEvent<any, EventData>
 
 export enum SelectionMode {
@@ -24,6 +24,11 @@ export class RangeSelectPlugin {
     paper.on(Events.BLANK_POINTERMOVE, this.onChange.bind(this))
     paper.on(Events.BLANK_POINTERUP, this.onExit.bind(this))
     paper.model.once("destroy", this.destroy.bind(this))
+  }
+
+  get isActive(): boolean {
+    const box = this.rectangle.getBBox()
+    return !!(box.width && box.height)
   }
 
   private get mode(): SelectionMode {
@@ -85,13 +90,16 @@ export class RangeSelectPlugin {
     }
   }
 
-  private onExit({data}: Event): void {
-    if (data?.selectStart) {
+  private onExit(event: Event): void {
+    if (event.data?.selectStart) {
       const strict = !this.rectangle.attr("body/strokeDasharray")
       const elements = this.paper.model.findModelsInArea(this.rectangle.getBBox(), {strict})
-      this.paper.trigger("rangeSelect:selected", {elements, mode: this.mode})
+      if (this.isActive) {
+        event.stopPropagation()
+        this.paper.trigger("rangeSelect:selected", {elements, mode: this.mode})
+      }
     }
-    this.cleanup(data)
+    this.cleanup(event.data)
   }
 
   private cleanup(data?: EventData): void {

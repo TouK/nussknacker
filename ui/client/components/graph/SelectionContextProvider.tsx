@@ -1,7 +1,17 @@
 import React, {createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
-import {copySelection, cutSelection, deleteNodes, deleteSelection, nodesWithEdgesAdded, pasteSelection, selectAll} from "../../actions/nk"
+import {useDebouncedCallback} from "use-debounce"
+import {
+  copySelection,
+  cutSelection,
+  deleteNodes,
+  deleteSelection,
+  layout,
+  nodesWithEdgesAdded,
+  pasteSelection,
+  selectAll,
+} from "../../actions/nk"
 import {error, success} from "../../actions/notificationActions"
 import {redo, undo} from "../../actions/undoRedoActions"
 import {events} from "../../analytics/TrackingEvents"
@@ -12,6 +22,7 @@ import {useDocumentListeners} from "../../containers/useDocumentListeners"
 import {canModifySelectedNodes, getProcessCategory, getSelection, getSelectionState} from "../../reducers/selectors/graph"
 import {getCapabilities} from "../../reducers/selectors/other"
 import {getProcessDefinitionData} from "../../reducers/selectors/settings"
+import {useGraph} from "./GraphContext"
 import NodeUtils from "./NodeUtils"
 
 const hasTextSelection = () => !!window.getSelection().toString()
@@ -70,7 +81,7 @@ function useClipboardPermission(): boolean | string {
   }, [parse, text])
 
   useEffect(() => {
-    navigator.permissions.query({name: "clipboard-read"}).then(permission => {
+    navigator.permissions?.query({name: "clipboard-read"}).then(permission => {
       clipboardPermission.current = permission
       setState(permission.state)
       permission.onchange = () => {
@@ -154,6 +165,25 @@ export default function SelectionContextProvider(props: PropsWithChildren<{ past
   )
 
   const parse = useClipboardParse()
+  const graphGetter = useGraph()
+
+  const [parseInsertNodes] = useDebouncedCallback((clipboardText) => {
+    const selection = parse(clipboardText)
+    if (selection) {
+      const {x, y} = props.pastePosition()
+      const nodesWithPositions = selection.nodes.map((node, ix) => ({node, position: {x: x + 60, y: y + ix * 180}}))
+      dispatch(nodesWithEdgesAdded(nodesWithPositions, selection.edges))
+      dispatch(success(t("userActions.paste.success", {
+        defaultValue: "Pasted node",
+        defaultValue_plural: "Pasted {{count}} nodes",
+        count: selection.nodes.length,
+      })))
+      dispatch(layout(() => graphGetter()?.forceLayout()))
+    } else {
+      dispatch(error(t("userActions.paste.failed", "Cannot paste content from clipboard")))
+    }
+  }, 250)
+
   const paste = useCallback(
     async (event?: Event) => {
       if (isInputEvent(event)) {
@@ -161,24 +191,12 @@ export default function SelectionContextProvider(props: PropsWithChildren<{ past
       }
       try {
         const clipboardText = await ClipboardUtils.readText(event)
-        const selection = parse(clipboardText)
-        if (selection) {
-          const {x, y} = props.pastePosition()
-          const nodesWithPositions = selection.nodes.map((node, ix) => ({node, position: {x: x + 30, y: y + ix * 180}}))
-          dispatch(nodesWithEdgesAdded(nodesWithPositions, selection.edges))
-          dispatch(success(t("userActions.paste.success", {
-            defaultValue: "Pasted node",
-            defaultValue_plural: "Pasted {{count}} nodes",
-            count: selection.nodes.length,
-          })))
-        } else {
-          dispatch(error(t("userActions.paste.failed", "Cannot paste content from clipboard")))
-        }
+        parseInsertNodes(clipboardText)
       } catch {
         dispatch(error(t("userActions.paste.notAvailable", "Paste button is not available. Try Ctrl+V")))
       }
     },
-    [dispatch, parse, props, t],
+    [dispatch, parseInsertNodes, t],
   )
 
   const canAccessClipboard = useClipboardPermission()

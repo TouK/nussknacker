@@ -1,18 +1,22 @@
 /* eslint-disable i18next/no-literal-string */
-import {ProcessCounts} from "../../../reducers/graph"
-import {cloneDeepWith, get, isEmpty, toString} from "lodash"
-import ProcessUtils from "../../../common/ProcessUtils"
-import customAttrs from "../../../assets/json/nodeAttributes.json"
-import NodeUtils from "../NodeUtils"
-import {getIconHref} from "./getIconHref"
-import {EspNodeShape, EspGroupShape} from "./esp"
-import {ProcessDefinitionData, NodeType} from "../../../types"
 import * as joint from "jointjs"
+import {dia} from "jointjs"
+import {cloneDeepWith, get, isEmpty, toString} from "lodash"
+import customAttrs from "../../../assets/json/nodeAttributes.json"
+import ProcessUtils from "../../../common/ProcessUtils"
+import {ProcessCounts} from "../../../reducers/graph"
+import {NodeType, ProcessDefinitionData} from "../../../types"
+import {setLinksHovered} from "../dragHelpers"
+import {isModelElement} from "../GraphPartialsInTS"
+import {Events} from "../joint-events"
+import NodeUtils from "../NodeUtils"
+import {EspGroupShape, EspNodeShape} from "./esp"
+import {getIconHref} from "./getIconHref"
 
 const maxLineLength = 24
 const maxLineCount = 2
 
-function getBodyContent(bodyContent = ""): { text: string, multiline?: boolean } {
+function getBodyContent(bodyContent = ""): {text: string, multiline?: boolean} {
   if (bodyContent.length <= maxLineLength) {
     return {
       text: bodyContent,
@@ -118,11 +122,30 @@ export const makeElement = (counts: ProcessCounts, processDefinitionData: Proces
       //This is used by jointjs to handle callbacks/changes
       //TODO: figure out what should be here?
       definitionToCompare: {
-        node: cloneDeepWith(node, (val, key: string) => ["branchParameters", "parameters"].includes(key) ? null : undefined),
+        node: cloneDeepWith(node, (val, key: string) => [
+          "additionalFields",
+          "branchParameters",
+          "parameters",
+        ].includes(key) ?
+          null :
+          undefined),
         processCounts,
       },
     }
 
-    return NodeUtils.nodeIsGroup(node) ? new EspGroupShape(attributes) : new EspNodeShape(attributes)
+    const element = NodeUtils.nodeIsGroup(node) ? new EspGroupShape(attributes) : new EspNodeShape(attributes)
+
+    element.once(Events.ADD, (e: dia.Element) => {
+      // add event listeners after element setup
+      setTimeout(() => {
+        e.on(Events.CHANGE_POSITION, (el: dia.Element) => {
+          if (isModelElement(el) && !el.graph.getNeighbors(el).length) {
+            setLinksHovered(el.graph, el.getBBox())
+          }
+        })
+      })
+    })
+
+    return element
   }
 }

@@ -3,9 +3,11 @@ import NodeUtils from "../../components/graph/NodeUtils"
 import HttpService from "../../http/HttpService"
 import {getSelectedGroups} from "../../reducers/graph/utils"
 import {getGraph} from "../../reducers/selectors/graph"
-import {ThunkAction, Action} from "../reduxTypes"
-import {GroupId, GroupType, NodeId, NodeType, Process, ValidationResult} from "../../types"
+import {getGroups} from "../../reducers/selectors/groups"
+import {GroupId, GroupType, NodeId, Process, ValidationResult} from "../../types"
+import {Action, ThunkAction} from "../reduxTypes"
 import {reportEvent} from "./reportEvent"
+import {resetSelection} from "./selection"
 
 function withReportEvent(name: string, action: Action): ThunkAction {
   return (dispatch) => {
@@ -21,6 +23,8 @@ function withReportEvent(name: string, action: Action): ThunkAction {
 
 export const groupSelected = () => withReportEvent("group", {type: "GROUP"})
 
+const delay = (t = 0) => new Promise(resolve => {setTimeout(resolve, t)})
+
 export function ungroupSelected(): ThunkAction {
   return (dispatch, getState) => {
     dispatch(reportEvent({
@@ -29,13 +33,18 @@ export function ungroupSelected(): ThunkAction {
       name: "ungroup",
     }))
 
-    getSelectedGroups(getGraph(getState())).forEach(({id}) => {
-      // delay action to avoid view flickering
-      setTimeout(() => {
-        dispatch({type: "EXPAND_GROUP", id: id})
-        dispatch({type: "UNGROUP", groupToRemove: id})
-      })
-    })
+    return dispatch(ungroup(getSelectedGroups(getGraph(getState())).map(g => g.id)))
+  }
+}
+
+export function ungroup(selectedGroups: Array<GroupType["id"]>): ThunkAction {
+  return async (dispatch) => {
+    await Promise.all(selectedGroups.map(async id => {dispatch({type: "EXPAND_GROUP", id: id})}))
+    // delay action to avoid view flickering
+    await delay()
+    return Promise.all(selectedGroups.map(async id => {
+      dispatch({type: "UNGROUP", groupToRemove: id})
+    }))
   }
 }
 
@@ -46,8 +55,13 @@ export type ToggleGroupAction = {
   id: GroupId,
 }
 
-export function expandGroup(id: GroupId): Action {
-  return {type: "EXPAND_GROUP", id}
+export function expandGroup(id: GroupId): ThunkAction {
+  return (dispatch, getState) => {
+    const group = getGroups(getState()).find(g => g.id === id)
+
+    dispatch({type: "EXPAND_GROUP", id})
+    dispatch(resetSelection(id, ...group.nodes))
+  }
 }
 
 export function collapseGroup(id: GroupId): Action {

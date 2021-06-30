@@ -1,4 +1,4 @@
-import React, {Children, PropsWithChildren, useMemo, useState} from "react"
+import React, {Children, PropsWithChildren, useCallback, useMemo, useState} from "react"
 import styles from "./CollapsibleToolbar.styl"
 import {useSelector, useDispatch} from "react-redux"
 import {toggleToolbar} from "../../actions/nk/toolbars"
@@ -17,11 +17,14 @@ export type CollapsibleToolbarProps = PropsWithChildren<{
 
 export function CollapsibleToolbar({title, children, isHidden, id}: CollapsibleToolbarProps): JSX.Element | null {
   const dispatch = useDispatch()
-  const isCollapsed = useSelector(getIsCollapsed(id))
-  const [isShort, setIsShort] = useState(isCollapsed)
+  const isCollapsed = useSelector(getIsCollapsed)
+  const [isShort, setIsShort] = useState(isCollapsed(id))
   const [isCollapsing, setIsCollapsing] = useState(false)
   const [isExpanding, setIsExpanding] = useState(false)
-  const onToggle = () => id && dispatch(toggleToolbar(id, !isCollapsed))
+  const onToggle = useCallback(
+    () => id && dispatch(toggleToolbar(id, !isCollapsed(id))),
+    [dispatch, id, isCollapsed]
+  )
   const isCollapsible = !!id
 
   const {tabIndex, ...handlerProps} = useDragHandler()
@@ -48,7 +51,7 @@ export function CollapsibleToolbar({title, children, isHidden, id}: CollapsibleT
   return (
     <div className={styles.wrapper}>
       <Panel
-        expanded={!isCollapsed}
+        expanded={!isCollapsed(id)}
         onToggle={onToggle}
         bsClass={styles.panel}
         className={classNames(
