@@ -34,10 +34,12 @@ case class OAuth2Configuration(method: AuthenticationMethod,
                                defaultTokenExpirationTime: FiniteDuration = FiniteDuration(1, HOURS)
                               ) extends AuthenticationConfiguration {
 
-  override def authorizeUrl: Option[URI] = Option(Uri(authorizeUri).params(Map(
+  def authorizeUrl: Option[URI] = Option(Uri(authorizeUri).params(Map(
     "client_id" -> clientId,
     "redirect_uri" -> redirectUrl
   ) ++ authorizeParams).toJavaUri)
+
+  def authSeverPublicKey: Option[PublicKey] = Option.empty
 
   def redirectUrl: String = redirectUri.toString
 

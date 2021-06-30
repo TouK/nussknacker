@@ -4,7 +4,7 @@ import {nanoid} from "nanoid"
 import * as queryString from "query-string"
 import SystemUtils from "../../../common/SystemUtils"
 import HttpService from "../../../http/HttpService"
-import {AuthenticationSettings} from "../../../reducers/settings"
+import {OAuth2Settings} from "../../../reducers/settings"
 import {AuthErrorCodes} from "../AuthErrorCodes"
 import {Strategy, StrategyConstructor} from "../Strategy"
 
@@ -12,7 +12,7 @@ export const OAuth2Strategy: StrategyConstructor = class OAuth2Strategy implemen
   private onError?: (error: AuthErrorCodes) => void
 
   constructor(
-    private settings: AuthenticationSettings,
+    private settings: OAuth2Settings,
     onError?: (error: AuthErrorCodes) => void,
   ) { this.onError = onError }
 
@@ -68,7 +68,7 @@ export const OAuth2Strategy: StrategyConstructor = class OAuth2Strategy implemen
     this.onError = callback
   }
 
-  private verifyTokens(settings: AuthenticationSettings, queryHashParams): boolean {
+  private verifyTokens(settings: OAuth2Settings, queryHashParams): boolean {
     if (settings.jwtAuthServerPublicKey) {
       const verifyAccessToken = () => {
         try {
@@ -100,7 +100,7 @@ export const OAuth2Strategy: StrategyConstructor = class OAuth2Strategy implemen
     }
   }
 
-  private handleJwtError(error: jwt.JsonWebTokenError, settings: AuthenticationSettings) {
+  private handleJwtError(error: jwt.JsonWebTokenError, settings: OAuth2Settings) {
     console.warn(error)
     if (error.name === "TokenExpiredError") {
       this.redirectToAuthorizeUrl(settings.authorizeUrl)

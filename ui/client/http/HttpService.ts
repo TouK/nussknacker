@@ -384,6 +384,10 @@ class HttpService {
     return api.get<T>(`/authentication/oauth2?code=${authorizeCode}`)
   }
 
+  fetchAuthenticationSettings<T>(backend: string) {
+    return api.get<T>(`/authentication/${backend.toLowerCase()}/settings`)
+  }
+
   async fetchProcessesNames() {
     const responses = await Promise.all([
       this.fetchProcesses(),
