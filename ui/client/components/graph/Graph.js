@@ -123,6 +123,7 @@ export class Graph extends React.Component {
         active.toBack()
       }
     })
+
     this.graph.on(Events.ADD, (cell) => {
       this.handleInjectBetweenNodes(cell)
       setLinksHovered(this.graph)

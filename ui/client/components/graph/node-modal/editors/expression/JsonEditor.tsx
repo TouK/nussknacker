@@ -2,9 +2,10 @@ import React from "react"
 import {UnknownFunction} from "../../../../../types/common"
 
 import AceEditor from "./ace"
+import {ExpressionObj} from "./types"
 
 type Props = {
-  expressionObj: $TodoType,
+  expressionObj: ExpressionObj,
   onValueChange: UnknownFunction,
   className: string,
 }

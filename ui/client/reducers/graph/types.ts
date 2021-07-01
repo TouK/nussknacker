@@ -2,7 +2,10 @@ import {Layout} from "../../actions/nk"
 import {ProcessStateType, ProcessType} from "../../components/Process/types"
 import {NodeType, Process, GroupType, Edge} from "../../types"
 
-export type ProcessCounts = $TodoType
+export type ProcessCounts = Record<string, {
+  errors: number,
+  all: number,
+}>
 
 export type GraphState = {
   graphLoading: boolean,

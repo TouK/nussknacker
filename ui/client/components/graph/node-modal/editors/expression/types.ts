@@ -1,7 +1,8 @@
 export enum ExpressionLang {
   SQL = "sql",
   SpEL = "spel",
-  String = "string"
+  String = "string",
+  JSON = "json"
 }
 
 export type ExpressionObj = {

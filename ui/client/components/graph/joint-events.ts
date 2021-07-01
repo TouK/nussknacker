@@ -6,6 +6,7 @@ export enum Events {
   CELL_POINTERCLICK = "cell:pointerclick",
   CELL_POINTERDBLCLICK = "cell:pointerdblclick",
   CELL_MOUSEOVER = "cell:mouseover",
+  CELL_MOUSEOUT = "cell:mouseout",
   BLANK_POINTERDOWN = "blank:pointerdown",
   BLANK_POINTERUP = "blank:pointerup",
   BLANK_POINTERMOVE = "blank:pointermove",

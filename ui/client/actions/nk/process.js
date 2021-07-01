@@ -6,6 +6,7 @@ import * as SubprocessSchemaAligner from "../../components/graph/SubprocessSchem
 import HttpService from "../../http/HttpService"
 import * as UndoRedoActions from "../undoRedoActions"
 import {displayProcessActivity} from "./displayProcessActivity"
+import {displayProcessCounts} from "./displayProcessCounts"
 import {fetchProcessDefinition} from "./processDefinitionData"
 import {reportEvent} from "./reportEvent"
 import {businessViewChanged} from "./ui/layout"
@@ -151,10 +152,7 @@ function displayTestResults(testResults) {
       type: "DISPLAY_TEST_RESULTS_DETAILS",
       testResults: testResults.results,
     })
-    dispatch({
-      type: "DISPLAY_PROCESS_COUNTS",
-      processCounts: testResults.counts,
-    })
+    dispatch(displayProcessCounts(testResults.counts))
   }
 }
 
