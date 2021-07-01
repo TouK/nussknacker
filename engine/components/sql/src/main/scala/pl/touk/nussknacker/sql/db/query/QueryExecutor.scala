@@ -35,6 +35,7 @@ class SingleResultQueryExecutor(tableDef: TableDefinition) extends QueryExecutor
 }
 
 class ResultSetQueryExecutor(tableDef: TableDefinition) extends QueryExecutor {
+
   import scala.collection.JavaConverters.bufferAsJavaListConverter
 
   override type QueryResult = java.util.List[TypedMap]

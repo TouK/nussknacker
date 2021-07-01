@@ -8,6 +8,7 @@ import pl.touk.nussknacker.sql.utils.BaseDatabaseQueryEnricherTest
 import scala.concurrent.Await
 
 class DatabaseLookupEnricherTest extends BaseDatabaseQueryEnricherTest {
+
   import scala.collection.JavaConverters._
   import scala.concurrent.duration._
 

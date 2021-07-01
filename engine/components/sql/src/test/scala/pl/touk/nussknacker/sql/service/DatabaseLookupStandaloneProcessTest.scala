@@ -13,6 +13,14 @@ import pl.touk.nussknacker.sql.utils._
 import scala.collection.JavaConverters._
 
 class DatabaseLookupStandaloneProcessTest extends FunSuite with Matchers with StandaloneProcessTest with BeforeAndAfterAll with WithDB {
+  override val modelData: LocalModelData = LocalModelData(config, new StandaloneConfigCreator)
+  override val contextPreparer: StandaloneContextPreparer = new StandaloneContextPreparer(NoOpMetricsProvider)
+  override val prepareDbDDLs: List[String] = List(
+    "CREATE TABLE persons (id INT, name VARCHAR(40));",
+    "INSERT INTO persons (id, name) VALUES (1, 'John')",
+    "CREATE TABLE persons_lower (\"id\" INT, \"name\" VARCHAR(40));",
+    "INSERT INTO persons_lower VALUES (1, 'John')"
+  )
   private val config = ConfigFactory.parseMap(Map(
     "sqlEnricherDbPool" -> Map(
       "driverClassName" -> dbConf.driverClassName,
@@ -21,16 +29,6 @@ class DatabaseLookupStandaloneProcessTest extends FunSuite with Matchers with St
       "url" -> dbConf.url
     ).asJava
   ).asJava)
-
-  override val modelData: LocalModelData = LocalModelData(config, new StandaloneConfigCreator)
-  override val contextPreparer: StandaloneContextPreparer = new StandaloneContextPreparer(NoOpMetricsProvider)
-
-  override val prepareDbDDLs: List[String] = List(
-    "CREATE TABLE persons (id INT, name VARCHAR(40));",
-    "INSERT INTO persons (id, name) VALUES (1, 'John')",
-    "CREATE TABLE persons_lower (\"id\" INT, \"name\" VARCHAR(40));",
-    "INSERT INTO persons_lower VALUES (1, 'John')"
-  )
 
   test("should enrich input with data from db") {
     val process = EspProcessBuilder
@@ -43,7 +41,7 @@ class DatabaseLookupStandaloneProcessTest extends FunSuite with Matchers with St
         "Key value" -> "#input.id",
         "Cache TTL" -> ""
       )
-      .emptySink("response",  "response", "name" -> "#output.NAME")
+      .emptySink("response", "response", "name" -> "#output.NAME")
 
     val validatedResult = runProcess(process, StandaloneRequest(1))
     validatedResult shouldBe 'right
@@ -68,7 +66,7 @@ class DatabaseLookupStandaloneProcessTest extends FunSuite with Matchers with St
         "Key value" -> "#input.id",
         "Cache TTL" -> ""
       )
-      .emptySink("response",  "response", "name" -> "#output.name")
+      .emptySink("response", "response", "name" -> "#output.name")
 
     val validatedResult = runProcess(process, StandaloneRequest(1))
     validatedResult shouldBe 'right

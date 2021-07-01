@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.QueryServiceIn
 import scala.concurrent.{ExecutionContext, Future}
 
 trait BaseDatabaseQueryEnricherTest extends FunSuite with Matchers with BeforeAndAfterAll with WithDB {
+
   import cats.implicits.catsStdInstancesForFuture
 
   implicit val ec: ExecutionContext = ExecutionContext.Implicits.global

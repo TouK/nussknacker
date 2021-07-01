@@ -6,7 +6,8 @@ import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 import java.sql.{Connection, DriverManager}
 import java.util.UUID
 
-trait WithDB { self: BeforeAndAfterAll =>
+trait WithDB {
+  self: BeforeAndAfterAll =>
 
   var conn: Connection = _
 

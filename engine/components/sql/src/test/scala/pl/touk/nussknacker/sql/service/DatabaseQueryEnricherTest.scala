@@ -8,14 +8,15 @@ import pl.touk.nussknacker.sql.utils.BaseDatabaseQueryEnricherTest
 import scala.concurrent.Await
 
 class DatabaseQueryEnricherTest extends BaseDatabaseQueryEnricherTest {
+
   import scala.collection.JavaConverters._
   import scala.concurrent.duration._
 
   override val service = new DatabaseQueryEnricher(dbConf)
 
   override val prepareDbDDLs: List[String] = List(
-  "CREATE TABLE persons (id INT, name VARCHAR(40));",
-  "INSERT INTO persons (id, name) VALUES (1, 'John')"
+    "CREATE TABLE persons (id INT, name VARCHAR(40));",
+    "INSERT INTO persons (id, name) VALUES (1, 'John')"
   )
 
   test("DatabaseQueryEnricher#implementation without cache") {

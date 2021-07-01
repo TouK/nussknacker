@@ -12,10 +12,10 @@ import pl.touk.nussknacker.engine.standalone.api.types.GenericListResultType
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext.ctx
 
-
 trait StandaloneProcessTest extends Matchers with ScalaFutures {
 
   def modelData: LocalModelData
+
   def contextPreparer: StandaloneContextPreparer
 
   def runProcess(process: EspProcess, input: Any): GenericListResultType[Any] = {
