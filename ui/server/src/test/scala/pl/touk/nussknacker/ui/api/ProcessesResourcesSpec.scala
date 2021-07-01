@@ -759,7 +759,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
         List(ToolbarPanel(ProcessInfoPanel, None, None, Some(List(
           ToolbarButton(ProcessSave, None, None, None, None, disabled = true),
           ToolbarButton(ProcessDeploy, None, None, None, None, disabled = false),
-          ToolbarButton(CustomLink, None, Some(s"Custom link for ${processName.value}"), None, Some(s"/test/${id.value}"), disabled = false)
+          ToolbarButton(CustomLink, Some("custom"), Some(s"Custom link for ${processName.value}"), None, Some(s"/test/${id.value}"), disabled = false)
         )))),
         List()
       )

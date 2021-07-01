@@ -160,7 +160,7 @@ processToolbarConfig {
         type: "process-info-panel"
         buttons: [
           { type: "process-save", disabled: { subprocess: false, archived: true, type: "oneof" } }
-          { type: "custom-link", title: "Metrics for {{processName}}", url: "/metrics/{{processId}}" }
+          { type: "custom-link", title: "Metrics for $processName", url: "/metrics/$processId" }
         ]
       }
     ]
@@ -202,14 +202,14 @@ Configuration allows to templating params like:
 * `icon`- available only on Buttons
 
 Right now we allow to template two elements:
-* process id -`{{processId}}`
-* process name - `{{processName}}`
+* process id -`$processId`
+* process name - `$processName`
 
 Example usage:
-* `title: "Metrics for {{processName}}"`
-* `name: "deploy {{processName}}"`
-* `url: "/metrics/{{processId}}" `
-* `icon: "/assets/process-icon-{{processId}}"`
+* `title: "Metrics for $processName"`
+* `name: "deploy $processName"`
+* `url: "/metrics/$processId" `
+* `icon: "/assets/process-icon-$processId"`
 
 #### Default Process Panel Configuration
 
@@ -230,7 +230,7 @@ processToolbarConfig {
           { type: "process-save", title: "Save changes", disabled: { archived: true } }
           { type: "process-deploy", disabled: { subprocess: true, archived: true, type: "oneof" } }
           { type: "process-cancel", disabled: { subprocess: true, archived: true, type: "oneof" } }
-          { type: "custom-link", name: "metrics", icon: "/assets/buttons/metrics.svg", url: "/metrics/{{processName}}", disabled: { subprocess: true } }
+          { type: "custom-link", name: "metrics", icon: "/assets/buttons/metrics.svg", url: "/metrics/$processName", disabled: { subprocess: true } }
         ]
       }
       {

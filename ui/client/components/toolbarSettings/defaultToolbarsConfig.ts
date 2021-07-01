@@ -5,7 +5,7 @@ import {ButtonsVariant} from "../toolbarComponents/ToolbarButtons"
 import {BuiltinButtonTypes} from "./buttons"
 import {ToolbarsConfig} from "./types"
 
-//It's just fallback for rest api
+//It's only to local development
 export function defaultToolbarsConfig(isSubprocess: boolean, isArchived: boolean): WithId<ToolbarsConfig> {
 
   const processPanelButtons = (!isSubprocess ? [{type: BuiltinButtonTypes.processProperties}]: []).concat(

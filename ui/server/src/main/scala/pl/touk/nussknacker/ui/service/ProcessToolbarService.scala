@@ -14,15 +14,16 @@ trait ProcessToolbarService {
 
 class ConfigProcessToolbarService(config: Config, categories: List[String]) extends ProcessToolbarService {
 
-  private val defaultProcessToolbarConfig = ProcessToolbarsConfigProvider.create(config, None)
-
   private val categoriesProcessToolbarConfig: Map[String, ProcessToolbarsConfig] =
     categories
       .map(category => category -> ProcessToolbarsConfigProvider.create(config, Some(category)))
       .toMap
 
   override def getProcessToolbarSettings(process: BaseProcessDetails[_]): ProcessToolbarSettings = {
-    val toolbarConfig = categoriesProcessToolbarConfig.getOrElse(process.processCategory, defaultProcessToolbarConfig)
+    val toolbarConfig = categoriesProcessToolbarConfig.getOrElse(process.processCategory,
+      throw new IllegalArgumentException(s"Try to get process toolbar settings for not existing category: ${process.processCategory}. Available categories: ${categoriesProcessToolbarConfig.keys.mkString(",")}.")
+    )
+
     ProcessToolbarSettings.fromConfig(toolbarConfig, process)
   }
 }
@@ -93,8 +94,8 @@ private [service] object ToolbarHelper {
 
   def fillByProcessData(text: String, process: BaseProcessDetails[_]): String =
     text
-      .replace("{{processName}}", process.name)
-      .replace("{{processId}}", process.processId.value.toString)
+      .replace("$processName", process.name)
+      .replace("$processId", process.processId.value.toString)
 
   def verifyCondition(condition: Option[ToolbarCondition], process: BaseProcessDetails[_]): Boolean = {
     condition.nonEmpty && condition.exists(con => {

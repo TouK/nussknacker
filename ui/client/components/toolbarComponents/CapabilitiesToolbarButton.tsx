@@ -13,13 +13,13 @@ interface Props {
 export function CapabilitiesToolbarButton({deploy, change, write, disabled, hide, ...props}: ToolbarButtonProps & Props): JSX.Element | null {
   const capabilities = useSelector(getCapabilities)
   const checks = {deploy, change, write}
-  const disabledByCapabilities = Object.keys(capabilities).some(key => checks[key] && !capabilities[key])
+  const hiddenByCapabilities = Object.keys(capabilities).some(key => checks[key] && !capabilities[key])
 
-  if (hide && disabledByCapabilities) {
+  if (hide && hiddenByCapabilities) {
     return null
   }
 
-  const overridesProps = {...props, ...{disabled: disabled || disabledByCapabilities}}
+  const overridesProps = {...props, ...{disabled: disabled || hiddenByCapabilities}}
 
   return <ToolbarButton {...overridesProps} />
 }

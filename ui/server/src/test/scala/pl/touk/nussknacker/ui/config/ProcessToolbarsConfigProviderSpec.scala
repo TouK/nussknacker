@@ -27,7 +27,7 @@ class ProcessToolbarsConfigProviderSpec extends FlatSpec with Matchers {
       |          buttons: [
       |            { type: "process-save", icon: "/assets/buttons/save.svg", name: "save", disabled: { archived: true } }
       |            { type: "process-deploy" }
-      |            { type: "custom-link", name: "metrics", title: "Metrics for process {{processName}}", icon: "/assets/buttons/metrics.svg", url: "/metrics/{{processName}}" }
+      |            { type: "custom-link", name: "metrics", title: "Metrics for process $processName", icon: "/assets/buttons/metrics.svg", url: "/metrics/$processName" }
       |          ]
       |        }
       |      ]
@@ -123,7 +123,7 @@ class ProcessToolbarsConfigProviderSpec extends FlatSpec with Matchers {
           Some("Process Info"), None, Some(List(
           ToolbarButtonConfig(ToolbarButtonConfigType.ProcessSave, Some("save"), None, Some("/assets/buttons/save.svg"), None, None, Some(ToolbarCondition(None, Some(true), None))),
           ToolbarButtonConfig(ToolbarButtonConfigType.ProcessDeploy, None, None, None, None, None, None),
-          ToolbarButtonConfig(ToolbarButtonConfigType.CustomLink, Some("metrics"), Some("Metrics for process {{processName}}"), Some("/assets/buttons/metrics.svg"), Some("/metrics/{{processName}}"), None, None)
+          ToolbarButtonConfig(ToolbarButtonConfigType.CustomLink, Some("metrics"), Some("Metrics for process $processName"), Some("/assets/buttons/metrics.svg"), Some("/metrics/$processName"), None, None)
         )), None)
       ),
       Nil
