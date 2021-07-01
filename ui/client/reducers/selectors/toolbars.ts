@@ -2,6 +2,9 @@ import {defaultToolbarsConfig} from "../../components/toolbarSettings/defaultToo
 import {RootState} from "../index"
 import {ToolbarsSide, ToolbarsState, ToolbarsStates} from "../toolbars"
 import {createSelector} from "reselect"
+import {getSettings} from "./settings"
+import {useSelector} from "react-redux"
+import {isArchived, isSubprocess} from "./graph"
 
 const getToolbarsState = (state: RootState): ToolbarsStates => state.toolbars || {}
 export const getToolbars = createSelector(getToolbarsState, (t): ToolbarsState => {
@@ -18,7 +21,9 @@ const getCollapsed = createSelector(getToolbars, t => t.collapsed)
 export const getIsCollapsed = createSelector(getCollapsed, collapsed => (id: string) => !!collapsed[id])
 export const getOrderForPosition = (side: ToolbarsSide) => (state: RootState) => getPositions(state)[side] || []
 
-export const getToolbarsConfig = () => defaultToolbarsConfig
+export const getToolbarsConfig = createSelector(getSettings, isSubprocess, isArchived, (settings, subprocess, archived) =>
+  settings?.processToolbarsConfiguration || defaultToolbarsConfig(subprocess, archived)
+)
 
 export const isLeftPanelOpened = createSelector(getToolbars, ({panels}) => panels?.left)
 export const isRightPanelOpened = createSelector(getToolbars, ({panels}) => panels?.right)

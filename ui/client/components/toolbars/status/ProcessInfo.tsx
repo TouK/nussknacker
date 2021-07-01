@@ -2,7 +2,6 @@ import i18next from "i18next"
 import React, {memo} from "react"
 import {connect} from "react-redux"
 import {SwitchTransition} from "react-transition-group"
-import {absoluteBePath} from "../../../common/UrlUtils"
 import {RootState} from "../../../reducers"
 import {getFetchedProcessDetails, getProcessState, isProcessStateLoaded, getProcessUnsavedNewName, isProcessRenamed} from "../../../reducers/selectors/graph"
 import {getCustomActions} from "../../../reducers/selectors/settings"
@@ -16,6 +15,7 @@ import {DragHandle} from "../../toolbarComponents/DragHandle"
 import {ToolbarButtons} from "../../toolbarComponents/ToolbarButtons"
 import {DefaultToolbarPanel, ToolbarPanelProps} from "../../toolbarComponents/DefaultToolbarPanel"
 import {ActionButton} from "../../toolbarSettings/buttons"
+import UrlIcon from "../../UrlIcon"
 
 type State = UnknownRecord
 
@@ -50,9 +50,9 @@ class ProcessInfo extends React.Component<ToolbarPanelProps & StateProps, State>
     description: string,
   ) => {
     if (process.isArchived || process.isSubprocess) {
-      const icon = absoluteBePath(process.isArchived ? ProcessInfo.archivedIcon : ProcessInfo.subprocessIcon)
+      const path = process.isArchived ? ProcessInfo.archivedIcon : ProcessInfo.subprocessIcon
       return (
-        <img alt={description} title={description} src={icon}/>
+        <UrlIcon path={path} title={description} />
       )
     }
 

@@ -7,26 +7,22 @@ import {CreatorPanel} from "../toolbars/creator/CreatorPanel"
 import {DefaultToolbarPanel, ToolbarPanelProps} from "../toolbarComponents/DefaultToolbarPanel"
 import DetailsPanel from "../toolbars/details/DetailsPanel"
 import ProcessInfo from "../toolbars/status/ProcessInfo"
-import TestPanel from "../toolbars/test/TestPanel"
 import {UserSettingsPanel} from "../toolbars/UserSettingsPanel"
 import {VersionsPanel} from "../toolbars/VersionsPanel"
 
 export const TOOLBAR_COMPONENTS_MAP: Record<string, ComponentType<ToolbarPanelProps>> = {
   DefaultPanel: DefaultToolbarPanel,
 
-  // only small changes from default
-  "TEST-PANEL": TestPanel,
-
   // custom with buttons
-  "PROCESS-INFO": ProcessInfo,
+  "process-info-panel": ProcessInfo,
 
   // no buttons at all
-  "DETAILS-PANEL": DetailsPanel,
-  "TIPS-PANEL": TipsPanel,
-  "CREATOR-PANEL": CreatorPanel,
-  "VERSIONS-PANEL": VersionsPanel,
-  "COMMENTS-PANEL": CommentsPanel,
-  "ATTACHMENTS-PANEL": AttachmentsPanel,
-  "USER-SETTINGS-PANEL": UserSettingsPanel,
+  "details-panel": DetailsPanel,
+  "tips-panel": TipsPanel,
+  "creator-panel": CreatorPanel,
+  "versions-panel": VersionsPanel,
+  "comments-panel": CommentsPanel,
+  "attachments-panel": AttachmentsPanel,
+  "user-settings-panel": UserSettingsPanel,
 }
 

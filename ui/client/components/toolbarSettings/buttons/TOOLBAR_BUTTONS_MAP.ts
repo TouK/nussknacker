@@ -20,13 +20,12 @@ import {LinkButton} from "./LinkButton"
 import {ActionButton} from "./ActionButton"
 import CancelDeployButton from "../../toolbars/status/buttons/CancelDeployButton"
 import DeployButton from "../../toolbars/status/buttons/DeployButton"
-import MetricsButton from "../../toolbars/status/buttons/MetricsButton"
 import PropertiesButton from "../../toolbars/status/buttons/PropertiesButton"
 import CountsButton from "../../toolbars/test/buttons/CountsButton"
 import FromFileButton from "../../toolbars/test/buttons/FromFileButton"
 import GenerateButton from "../../toolbars/test/buttons/GenerateButton"
 import HideButton from "../../toolbars/test/buttons/HideButton"
-import BussinesViewSwitch from "../../toolbars/view/buttons/BussinesViewSwitch"
+import BusinessViewSwitch from "../../toolbars/view/buttons/BusinessViewSwitch"
 import {ResetViewButton} from "../../toolbars/view/buttons/ResetViewButton"
 import {ZoomInButton} from "../../toolbars/view/buttons/ZoomInButton"
 import {ZoomOutButton} from "../../toolbars/view/buttons/ZoomOutButton"
@@ -40,10 +39,9 @@ type ToolbarButtonsMap = {
 
 export const TOOLBAR_BUTTONS_MAP: ToolbarButtonsMap = {
   [BuiltinButtonTypes.processSave]: SaveButton,
-  [BuiltinButtonTypes.deploy]: DeployButton,
-  [BuiltinButtonTypes.deployCanel]: CancelDeployButton,
-  [BuiltinButtonTypes.deployMetrics]: MetricsButton, // like "custom-link" but disabled for subprocess
-  [BuiltinButtonTypes.viewBussinesView]: BussinesViewSwitch,
+  [BuiltinButtonTypes.processDeploy]: DeployButton,
+  [BuiltinButtonTypes.processCancel]: CancelDeployButton,
+  [BuiltinButtonTypes.viewBusinessView]: BusinessViewSwitch,
   [BuiltinButtonTypes.viewZoomIn]: ZoomInButton,
   [BuiltinButtonTypes.viewZoomOut]: ZoomOutButton,
   [BuiltinButtonTypes.viewReset]: ResetViewButton,
@@ -53,7 +51,7 @@ export const TOOLBAR_BUTTONS_MAP: ToolbarButtonsMap = {
   [BuiltinButtonTypes.editPaste]: PasteButton,
   [BuiltinButtonTypes.editDelete]: DeleteButton,
   [BuiltinButtonTypes.editLayout]: LayoutButton,
-  [BuiltinButtonTypes.editProperties]: PropertiesButton,
+  [BuiltinButtonTypes.processProperties]: PropertiesButton,
   [BuiltinButtonTypes.processCompare]: CompareButton,
   [BuiltinButtonTypes.processMigrate]: MigrateButton,
   [BuiltinButtonTypes.processImport]: ImportButton,

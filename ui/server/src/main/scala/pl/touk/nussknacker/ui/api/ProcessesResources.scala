@@ -40,16 +40,19 @@ import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListene
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnCategoryChanged
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, UpdateProcessCommand}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.service.{ProcessToolbarService, ProcessToolbarSettings}
 
 //TODO: Move remained business logic to processService
-class ProcessesResources(val processRepository: FetchingProcessRepository[Future],
-                         processService: ProcessService,
-                         processValidation: ProcessValidation,
-                         processResolving: UIProcessResolving,
-                         val processAuthorizer:AuthorizeProcess,
-                         processChangeListener: ProcessChangeListener,
-                         typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData])
-                        (implicit val ec: ExecutionContext, mat: Materializer)
+class ProcessesResources(
+  val processRepository: FetchingProcessRepository[Future],
+  processService: ProcessService,
+  processToolbarService: ProcessToolbarService,
+  processValidation: ProcessValidation,
+  processResolving: UIProcessResolving,
+  val processAuthorizer:AuthorizeProcess,
+  processChangeListener: ProcessChangeListener,
+  typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData]
+)(implicit val ec: ExecutionContext, mat: Materializer)
   extends Directives
     with FailFastCirceSupport
     with EspPathMatchers
@@ -252,6 +255,15 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
           (get & processId(processName)) { processId =>
             complete {
               processService.getProcessState(processId).map(ToResponseMarshallable(_))
+            }
+          }
+        } ~ path("processes" / Segment / "toolbars") { processName =>
+          (get & processId(processName)) { processId =>
+            complete {
+              processService
+                .getProcess[Unit](processId)
+                .map(resp => resp.map(processToolbarService.getProcessToolbarSettings))
+                .map(toResponseEither[ProcessToolbarSettings])
             }
           }
         } ~ path("processes" / "category" / Segment / Segment) { (processName, category) =>

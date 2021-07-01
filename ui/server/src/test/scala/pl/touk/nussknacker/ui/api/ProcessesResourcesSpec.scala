@@ -8,7 +8,6 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import cats.instances.all._
 import cats.syntax.semigroup._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.Json
 import org.scalatest._
 import org.scalatest.LoneElement._
 import pl.touk.nussknacker.engine.api.StreamMetaData
@@ -27,10 +26,15 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.ui.config.processtoolbar.ProcessToolbarsConfigProvider
+import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
+import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarPanelTypeConfig.{CreatorPanel, ProcessInfoPanel, TipsPanel}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.service.{ProcessToolbarSettings, ToolbarButton, ToolbarPanel}
 
+import java.util.UUID
 import scala.concurrent.Future
 import scala.language.higherKinds
 
@@ -39,6 +43,9 @@ import scala.language.higherKinds
   */
 class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
   with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
+
+  import io.circe._, io.circe.parser._
+
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   override protected def createProcessManager(): MockProcessManager = new MockProcessManager(SimpleStateStatus.NotDeployed)
@@ -238,7 +245,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   test("allow update category for existing process") {
     val processId = createProcess(processName)
 
-    changeProcessCategory(processName, secondTestCategoryName, adminPermission = true) { status =>
+    changeProcessCategory(processName, secondTestCategoryName, isAdmin = true) { status =>
       status shouldEqual StatusCodes.OK
 
       val process = getProcessDetails(processId)
@@ -249,7 +256,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   test("not allow update to not existed category") {
     createProcess(processName)
 
-    changeProcessCategory(processName, "not-exists-category", adminPermission = true) { status =>
+    changeProcessCategory(processName, "not-exists-category", isAdmin = true) { status =>
       status shouldEqual StatusCodes.BadRequest
     }
   }
@@ -257,13 +264,13 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   test("not allow update category archived process") {
     createArchivedProcess(processName)
 
-    changeProcessCategory(processName, secondTestCategoryName, adminPermission = true) { status =>
+    changeProcessCategory(processName, secondTestCategoryName, isAdmin = true) { status =>
       status shouldEqual StatusCodes.Conflict
     }
   }
 
   test("return 404 on update process category for non existing process") {
-    changeProcessCategory(ProcessName("not-exists-process"), secondTestCategoryName, adminPermission = true) { status =>
+    changeProcessCategory(ProcessName("not-exists-process"), secondTestCategoryName, isAdmin = true) { status =>
       status shouldBe StatusCodes.NotFound
     }
   }
@@ -305,11 +312,11 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
 
     updateCategory(processId, category)
 
-    withProcess(processName, adminPermission = true) { process =>
+    withProcess(processName, isAdmin = true) { process =>
       process.processCategory shouldEqual category
     }
 
-    withProcesses(ProcessesQuery.empty, adminPermission = true) { processes =>
+    withProcesses(ProcessesQuery.empty, isAdmin = true) { processes =>
       processes.exists(_.processId == processId.value) shouldBe true
     }
   }
@@ -737,6 +744,34 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     }
   }
 
+  test("fetching process toolbar definitions") {
+    val toolbarConfig = ProcessToolbarsConfigProvider.create(testConfig, Some(TestPermissions.testCategoryName))
+    val id = createProcess(processName)
+
+    withProcessToolbars(processName) { toolbar =>
+      toolbar shouldBe ProcessToolbarSettings(
+        id = s"${toolbarConfig.uuidCode}-not-archived-process",
+        List(
+          ToolbarPanel(TipsPanel, None, None, None),
+          ToolbarPanel(CreatorPanel, None, None, None)
+        ),
+        List(),
+        List(ToolbarPanel(ProcessInfoPanel, None, None, Some(List(
+          ToolbarButton(ProcessSave, None, None, None, None, disabled = true),
+          ToolbarButton(ProcessDeploy, None, None, None, None, disabled = false),
+          ToolbarButton(CustomLink, Some("custom"), Some(s"Custom link for ${processName.value}"), None, Some(s"/test/${id.value}"), disabled = false)
+        )))),
+        List()
+      )
+    }
+  }
+
+  test("fetching toolbar definitions for not exist process should return 404 response") {
+    getProcessToolbars(processName) ~> check {
+      status shouldEqual StatusCodes.NotFound
+    }
+  }
+
   case class StateStatusResponse(name: String, `type`: String)
 
   private def parseStateResponse(stateResponse: Json): StateStatusResponse = {
@@ -777,17 +812,24 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
       callback(status)
     }
 
-  private def changeProcessCategory(processName: ProcessName, category: String, adminPermission: Boolean = false)(callback: StatusCode => Any): Any = {
-    val permission = if (adminPermission) withAdminPermissions(processesRoute) else withPermissions(processesRoute, testPermissionAll)
+  protected def withProcessToolbars(processName: ProcessName, isAdmin: Boolean = false)(callback: ProcessToolbarSettings => Unit): Unit =
+    getProcessToolbars(processName, isAdmin) ~> check {
+      status shouldEqual StatusCodes.OK
+      val toolbar = decode[ProcessToolbarSettings](responseAs[String]).right.get
+      callback(toolbar)
+    }
 
-    Post(s"/processes/category/${processName.value}/$category") ~> permission ~> check {
-      if (adminPermission) {
+  private def getProcessToolbars(processName: ProcessName, isAdmin: Boolean = false): RouteTestResult =
+    Get(s"/processes/${processName.value}/toolbars") ~> routeWithPermissions(processesRoute, isAdmin)
+
+  private def changeProcessCategory(processName: ProcessName, category: String, isAdmin: Boolean = false)(callback: StatusCode => Any): Any =
+    Post(s"/processes/category/${processName.value}/$category") ~> routeWithPermissions(processesRoute, isAdmin) ~> check {
+      if (isAdmin) {
         callback(status)
       } else {
         rejection shouldBe server.AuthorizationFailedRejection
       }
     }
-  }
 
   private def archiveProcess(processName: ProcessName)(callback: StatusCode => Any): Any =
     Post(s"/archive/${processName.value}") ~> withPermissions(processesRoute, testPermissionWrite |+| testPermissionRead) ~> check {

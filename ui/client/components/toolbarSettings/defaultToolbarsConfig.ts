@@ -5,90 +5,88 @@ import {ButtonsVariant} from "../toolbarComponents/ToolbarButtons"
 import {BuiltinButtonTypes} from "./buttons"
 import {ToolbarsConfig} from "./types"
 
-export const defaultToolbarsConfig: WithId<ToolbarsConfig> = {
-  id: "random-string",
-  [ToolbarsSide.TopRight]: [
-    {
-      id: "PROCESS-INFO",
-      buttons: [
-        {type: BuiltinButtonTypes.processSave},
-        {type: BuiltinButtonTypes.deploy},
-        {type: BuiltinButtonTypes.deployCanel},
-        {type: BuiltinButtonTypes.deployMetrics},
-        // {
-        //   type: CustomButtonTypes.customLink,
-        //   name: "metrics",
-        //   icon: "toolbarButtons/metrics.svg",
-        //   href: "/metrics/{{processId}}",
-        // },
-      ],
-    },
-    {
-      id: "VIEW-PANEL",
-      title: "view",
-      buttons: [
-        {type: BuiltinButtonTypes.viewBussinesView},
-        {type: BuiltinButtonTypes.viewZoomIn},
-        {type: BuiltinButtonTypes.viewZoomOut},
-        {type: BuiltinButtonTypes.viewReset},
-      ],
-    },
-    {
-      id: "EDIT-PANEL",
-      title: "edit",
-      buttonsVariant: ButtonsVariant.small,
-      buttons: [
-        {type: BuiltinButtonTypes.editUndo},
-        {type: BuiltinButtonTypes.editRedo},
-        {type: BuiltinButtonTypes.editCopy},
-        {type: BuiltinButtonTypes.editPaste},
-        {type: BuiltinButtonTypes.editDelete},
-        {type: BuiltinButtonTypes.editLayout},
-      ],
-    },
-    {
-      id: "PROCESS-PANELS",
-      title: "process",
-      buttons: [
-        {type: BuiltinButtonTypes.editProperties},
-        {type: BuiltinButtonTypes.processCompare},
-        {type: BuiltinButtonTypes.processMigrate},
-        {type: BuiltinButtonTypes.processImport},
-        {type: BuiltinButtonTypes.processJSON},
-        {type: BuiltinButtonTypes.processPDF},
-        {type: BuiltinButtonTypes.processArchiveToggle},
-      ],
-    },
-    {
-      id: "TEST-PANEL",
-      title: "test",
-      buttons: [
-        {type: BuiltinButtonTypes.testFromFile},
-        {type: BuiltinButtonTypes.testGenerate},
-        {type: BuiltinButtonTypes.testCounts},
-        {type: BuiltinButtonTypes.testHide},
-      ],
-    },
-    {
-      id: "GROUP-PANEL",
-      title: "group",
-      buttons: [
-        {type: BuiltinButtonTypes.group},
-        {type: BuiltinButtonTypes.ungroup},
-      ],
-    },
-    {id: "DETAILS-PANEL"},
-  ],
-  [ToolbarsSide.TopLeft]: [
-    {id: "TIPS-PANEL"},
-    {id: "CREATOR-PANEL"},
-    {id: "VERSIONS-PANEL"},
-    {id: "COMMENTS-PANEL"},
-    {id: "ATTACHMENTS-PANEL"},
-  ],
-  [ToolbarsSide.BottomRight]: process.env.NODE_ENV !== "production" ?
+//It's only to local development
+export function defaultToolbarsConfig(isSubprocess: boolean, isArchived: boolean): WithId<ToolbarsConfig> {
+
+  const processPanelButtons = (!isSubprocess ? [{type: BuiltinButtonTypes.processProperties}]: []).concat(
     [
-      {id: "USER-SETTINGS-PANEL"},
-    ] :
-    [],
+      {type: BuiltinButtonTypes.processCompare},
+      {type: BuiltinButtonTypes.processMigrate},
+      {type: BuiltinButtonTypes.processImport},
+      {type: BuiltinButtonTypes.processJSON},
+      {type: BuiltinButtonTypes.processPDF},
+      {type: BuiltinButtonTypes.processArchiveToggle},
+    ]
+  )
+
+  return {
+    id: "a7334f9b-87aa-43d4-82ce-a9ac9dd3e5dc",
+    [ToolbarsSide.TopRight]: [
+      {
+        id: "process-info-panel",
+        buttons: [
+          {type: BuiltinButtonTypes.processSave},
+          {type: BuiltinButtonTypes.processDeploy},
+          {type: BuiltinButtonTypes.processCancel},
+        ],
+      },
+      {
+        id: "view-panel",
+        title: "view",
+        buttons: [
+          {type: BuiltinButtonTypes.viewBusinessView},
+          {type: BuiltinButtonTypes.viewZoomIn},
+          {type: BuiltinButtonTypes.viewZoomOut},
+          {type: BuiltinButtonTypes.viewReset},
+        ],
+      },
+      {
+        id: "edit-panel",
+        title: "edit",
+        buttonsVariant: ButtonsVariant.small,
+        buttons: isArchived ? [] : [
+          {type: BuiltinButtonTypes.editUndo},
+          {type: BuiltinButtonTypes.editRedo},
+          {type: BuiltinButtonTypes.editCopy},
+          {type: BuiltinButtonTypes.editPaste},
+          {type: BuiltinButtonTypes.editDelete},
+          {type: BuiltinButtonTypes.editLayout},
+        ],
+      },
+      {
+        id: "process-panel",
+        title: "process",
+        buttons: processPanelButtons,
+      },
+      {
+        id: "test-panel",
+        title: "test",
+        buttons: [
+          {type: BuiltinButtonTypes.testFromFile},
+          {type: BuiltinButtonTypes.testGenerate},
+          {type: BuiltinButtonTypes.testCounts},
+          {type: BuiltinButtonTypes.testHide},
+        ],
+      },
+      {
+        id: "group-panel",
+        title: "group",
+        buttons: isArchived ? [] : [
+          {type: BuiltinButtonTypes.group},
+          {type: BuiltinButtonTypes.ungroup},
+        ],
+      },
+      {id: "details-panel"},
+    ],
+    [ToolbarsSide.TopLeft]: [
+      {id: "tips-panel"},
+      {id: "creator-panel"},
+      {id: "versions-panel"},
+      {id: "comments-panel"},
+      {id: "attachments-panel"},
+    ],
+    [ToolbarsSide.BottomRight]: process.env.NODE_ENV !== "production" ? [
+      {id: "user-settings-panel"},
+    ] : [],
+  }
 }

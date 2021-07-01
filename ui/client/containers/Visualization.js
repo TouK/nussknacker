@@ -44,6 +44,7 @@ class Visualization extends React.Component {
     const businessView = VisualizationUrl.extractBusinessViewParams(this.props.location.search)
     this.setBusinessView(businessView)
     this.fetchProcessDetails(businessView).then((details) => {
+      this.props.actions.loadProcessToolbarsConfiguration(this.props.match.params.processId)
       this.props.actions.displayProcessActivity(this.props.match.params.processId)
       this.props.actions.fetchProcessDefinition(
         details.fetchedProcessDetails.processingType,

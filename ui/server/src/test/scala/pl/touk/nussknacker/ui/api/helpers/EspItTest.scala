@@ -37,6 +37,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcess
 import pl.touk.nussknacker.ui.process.repository.RepositoryManager
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{DefaultAuthenticationConfiguration, LoggedUser}
+import pl.touk.nussknacker.ui.service.ConfigProcessToolbarService
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import java.time
@@ -95,10 +96,12 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   private implicit val user: LoggedUser = TestFactory.adminUser("user")
 
   val processService: DBProcessService = createDBProcessService(managementActor)
+  val configProcessToolbarService = new ConfigProcessToolbarService(testConfig, processCategoryService.getAllCategories)
 
   val processesRoute = new ProcessesResources(
     processRepository = fetchingProcessRepository,
     processService = processService,
+    processToolbarService = configProcessToolbarService,
     processValidation = processValidation,
     processResolving = processResolving,
     processAuthorizer = processAuthorizer,
@@ -242,16 +245,13 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     Get(s"/processes/${processName.value}") ~> withPermissions(processesRoute, testPermissionRead)
   }
 
-  def tryProcess(processName: ProcessName, adminPermission: Boolean = false)(callback: (StatusCode, String) => Unit): Unit = {
-    val permission = if(adminPermission) withAdminPermissions(processesRoute) else withPermissions(processesRoute, testPermissionRead)
-
-    Get(s"/processes/${processName.value}") ~> permission ~> check {
+  def tryProcess(processName: ProcessName, isAdmin: Boolean = false)(callback: (StatusCode, String) => Unit): Unit =
+    Get(s"/processes/${processName.value}") ~> routeWithPermissions(processesRoute, isAdmin) ~> check {
       callback(status, responseAs[String])
     }
-  }
 
-  def withProcess(processName: ProcessName, adminPermission: Boolean = false)(callback: ProcessJson => Unit): Unit = {
-    tryProcess(processName, adminPermission) { (status, response) =>
+  def withProcess(processName: ProcessName, isAdmin: Boolean = false)(callback: ProcessJson => Unit): Unit = {
+    tryProcess(processName, isAdmin) { (status, response) =>
       status shouldEqual StatusCodes.OK
       val process = decodeJsonProcess(response)
       callback(process)
@@ -296,16 +296,18 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   case class ProcessesQuery(categories: List[String], isSubprocess: Option[Boolean], isArchived: Option[Boolean])
 
-  protected def withProcesses(query: ProcessesQuery, adminPermission: Boolean = false)(callback: List[ProcessJson] => Unit): Unit = {
-    val permission = if(adminPermission) withAdminPermissions(processesRoute) else withPermissions(processesRoute, testPermissionRead)
+  protected def withProcesses(query: ProcessesQuery, isAdmin: Boolean = false)(callback: List[ProcessJson] => Unit): Unit = {
     val url = ProcessesQuery.createQueryParamsUrl(query)
 
-    Get(url) ~> permission ~> check {
+    Get(url) ~> routeWithPermissions(processesRoute, isAdmin) ~> check {
       status shouldEqual StatusCodes.OK
       val processes = parseResponseToListJsonProcess(responseAs[String])
       callback(processes)
     }
   }
+
+  protected def routeWithPermissions(route: RouteWithUser, isAdmin: Boolean = false): Route =
+    if (isAdmin) withAdminPermissions(route) else withAllPermissions(route)
 
   def getProcesses: RouteTestResult = {
     Get(s"/processes") ~> withPermissions(processesRoute, testPermissionRead)
@@ -315,9 +317,8 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     Get(s"/settings") ~> settingsRouteWithoutPermissions
   }
 
-  def getUser(isAdmin: Boolean): RouteTestResult = {
-    Get("/user") ~> (if (isAdmin) withAdminPermissions(usersRoute) else withAllPermissions(usersRoute))
-  }
+  def getUser(isAdmin: Boolean): RouteTestResult =
+    Get("/user") ~> routeWithPermissions(usersRoute, isAdmin)
 
   def getProcessDefinitionData(processingType: String, subprocessVersions: Json): RouteTestResult = {
     Post(s"/processDefinitionData/$processingType?isSubprocess=false", toEntity(subprocessVersions)) ~> withPermissions(definitionResources, testPermissionRead)

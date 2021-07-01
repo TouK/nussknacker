@@ -2,6 +2,8 @@ import {getToolbarsInitData} from "../../reducers/selectors/toolbars"
 import {ToolbarsSide} from "../../reducers/toolbars"
 import {ThunkAction} from "../reduxTypes"
 import {Toolbar} from "../../components/toolbarComponents/toolbar"
+import {WithId} from "../../types/common"
+import {ToolbarsConfig} from "../../components/toolbarSettings/types"
 
 export type ToolbarPosition = [ToolbarsSide | string, number]
 
@@ -11,8 +13,12 @@ type MoveToolbarAction = { type: "MOVE_TOOLBAR", from: ToolbarPosition, to: Tool
 type ToggleToolbarAction = { type: "TOGGLE_TOOLBAR", id: string, isCollapsed: boolean }
 type ToggleToolboxGroupAction = { type: "TOGGLE_NODE_TOOLBOX_GROUP", nodeGroup: string }
 type ToggleAllToolbarsAction = { type: "TOGGLE_ALL_TOOLBARS", isCollapsed: boolean }
+type ProcessToolbarsConfigurationAction = { type: "PROCESS_TOOLBARS_CONFIGURATION_LOADED", data: WithId<ToolbarsConfig> }
 
-export const toggleAllToolbars = (isCollapsed: boolean): ToggleAllToolbarsAction => ({type: "TOGGLE_ALL_TOOLBARS", isCollapsed})
+export const toggleAllToolbars = (isCollapsed: boolean): ToggleAllToolbarsAction => ({
+  type: "TOGGLE_ALL_TOOLBARS",
+  isCollapsed
+})
 
 export const resetToolbars = (): ThunkAction => {
   return (dispatch, getState) => {
@@ -57,3 +63,4 @@ export type ToolbarActions =
   | ToggleToolbarAction
   | ToggleAllToolbarsAction
   | ToggleToolboxGroupAction
+  | ProcessToolbarsConfigurationAction

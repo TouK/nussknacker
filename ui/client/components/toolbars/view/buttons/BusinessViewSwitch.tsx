@@ -10,12 +10,12 @@ import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/busi
 
 type Props = StateProps
 
-function BussinesViewSwitch(props: Props) {
+function BusinessViewSwitch(props: Props) {
   const {businessView, fetchProcessToDisplay, nothingToSave, processId, versionId} = props
   const {t} = useTranslation()
   return (
     <ToolbarButton
-      name={t("panels.actions.view-bussinesView.label", "business")}
+      name={t("panels.actions.view-businessView.label", "business")}
       icon={<Icon/>}
       isActive={businessView}
       disabled={!nothingToSave}
@@ -39,4 +39,4 @@ const mapDispatch = (dispatch) => bindActionCreators({
 
 type StateProps = ReturnType<typeof mapState> & ReturnType<typeof mapDispatch>
 
-export default connect(mapState, mapDispatch)(BussinesViewSwitch)
+export default connect(mapState, mapDispatch)(BusinessViewSwitch)
