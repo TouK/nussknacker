@@ -201,6 +201,7 @@
     "less-loader": "^8.1.1",
     "lint-staged": "^11.0.0",
     "merge-cypress-jest-coverage": "^1.7.0",
+    "millify": "^4.0.0",
     "moment-locales-webpack-plugin": "^1.2.0",
     "node-libs-browser": "^2.2.1",
     "path-browserify": "^1.0.1",

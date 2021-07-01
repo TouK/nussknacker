@@ -8,6 +8,8 @@ export interface UserSettings {
 
 const reducer: Reducer<UserSettings> = (state = {}, action) => {
   switch (action.type) {
+    case "SET_SETTINGS":
+      return action.settings
     case "TOGGLE_SETTINGS":
       return action.settings.reduce((value, key) => ({...value, [key]: !state[key]}), state)
     default:

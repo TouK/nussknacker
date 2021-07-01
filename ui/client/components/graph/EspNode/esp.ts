@@ -2,6 +2,7 @@
 import {dia, shapes, util} from "jointjs"
 import expandIcon from "../../../assets/img/expand.svg"
 import "../graphTheme.styl"
+import {getStringWidth} from "./element"
 import {getRoundedRectPath} from "./getRoundedRectPath"
 
 const CONTENT_COLOR = "#1E1E1E"
@@ -122,7 +123,7 @@ const testResults: dia.MarkupNodeJSON = {
       className: "testResultsPlaceholder",
       attributes: {
         height: testResultsHeight,
-        y: RECT_HEIGHT,
+        y: RECT_HEIGHT - testResultsHeight/2,
       },
     },
     {
@@ -131,16 +132,16 @@ const testResults: dia.MarkupNodeJSON = {
       className: "testResultsSummary",
       attributes: {
         height: testResultsHeight,
-        y: RECT_HEIGHT + testResultsHeight / 2 + 1,
+        y: RECT_HEIGHT + testResultsHeight / 2 + 1 - testResultsHeight/2,
       },
     },
   ],
   attributes: {
     noExport: "",
-
   },
 }
 
+const refX = RECT_HEIGHT - getStringWidth("1")/2
 const defaults = util.defaultsDeep(
   {
     size: {
@@ -155,12 +156,15 @@ const defaults = util.defaultsDeep(
         stroke: BORDER_COLOR,
       },
       testResults: {
-        refX: RECT_WIDTH,
+        refX,
+        rx: 5,
+        z: 2,
       },
       testResultsSummary: {
         textAnchor: "middle",
         textVerticalAnchor: "middle",
-        refX: RECT_WIDTH,
+        refX,
+        z: 2,
       },
     },
     inPorts: [],
@@ -172,12 +176,14 @@ const defaults = util.defaultsDeep(
           attrs: {
             magnet: "passive",
             type: "input",
+            z: 1,
           },
         },
         out: {
           position: {name: `bottom`, args: {dx: 90}},
           attrs: {
             type: "output",
+            z: 1,
           },
         },
       },

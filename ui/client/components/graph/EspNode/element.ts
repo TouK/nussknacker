@@ -1,6 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import * as joint from "jointjs"
-import {dia} from "jointjs"
+import {attributes, dia, shapes} from "jointjs"
 import {cloneDeepWith, get, isEmpty, toString} from "lodash"
 import customAttrs from "../../../assets/json/nodeAttributes.json"
 import ProcessUtils from "../../../common/ProcessUtils"
@@ -65,11 +64,33 @@ function getBodyContent(bodyContent = ""): {text: string, multiline?: boolean} {
   }
 }
 
-function getStringWidth(str = "", pxPerChar = 0, padding = 0) {
+export function getStringWidth(str = "", pxPerChar = 8, padding = 7) {
   return toString(str).length * pxPerChar + 2 * padding
 }
 
-export const makeElement = (counts: ProcessCounts, processDefinitionData: ProcessDefinitionData) => {
+export const updateNodeCounts = (processCounts :ProcessCounts) => (node: shapes.devs.Model): void => {
+  const count = processCounts[node.id]
+  const hasCounts = !isEmpty(count)
+  const hasErrors = hasCounts && count?.errors > 0
+  const testCounts = hasCounts ? count?.all.toString() || "0" : ""
+  const testResultsWidth = getStringWidth(testCounts)
+
+  const testResultsSummary: attributes.SVGTextAttributes = {
+    text: testCounts,
+    fill: "#cccccc",
+    x: testResultsWidth / 2,
+  }
+  const testResults: attributes.SVGRectAttributes = {
+    display: hasCounts ? "block" : "none",
+    fill: hasErrors ? "#662222": "#4d4d4d",
+    stroke: hasErrors ? "red": "#4d4d4d",
+    strokeWidth: hasErrors ? 3 : 0,
+    width: testResultsWidth,
+  }
+  node.attr({testResultsSummary, testResults})
+}
+
+export function makeElement(processDefinitionData: ProcessDefinitionData): (node: NodeType) => shapes.devs.Model {
   const nodesSettings = processDefinitionData.nodesConfig || {}
   return (node: NodeType) => {
     const description = get(node.additionalFields, "description", null)
@@ -78,13 +99,7 @@ export const makeElement = (counts: ProcessCounts, processDefinitionData: Proces
     const nodeSettings = nodesSettings?.[ProcessUtils.findNodeConfigName(node)]
     const iconHref = getIconHref(node, nodeSettings)
 
-    const processCounts = counts[node.id]
-    const hasCounts = !isEmpty(processCounts)
-    const hasErrors = hasCounts && processCounts?.errors > 0
-    const testCounts = hasCounts ? processCounts?.all || 0 : ""
-    const testResultsWidth = getStringWidth(testCounts, 8, 8)
-
-    const attributes: joint.shapes.devs.ModelAttributes = {
+    const attributes: shapes.devs.ModelAttributes = {
       id: node.id,
       inPorts: NodeUtils.hasInputs(node) ? ["In"] : [],
       outPorts: NodeUtils.hasOutputs(node) ? ["Out"] : [],
@@ -106,16 +121,6 @@ export const makeElement = (counts: ProcessCounts, processDefinitionData: Proces
           text: bodyContent,
           opacity: node.isDisabled ? 0.65 : 1,
         },
-        testResultsSummary: {
-          text: testCounts,
-          fill: hasErrors ? "red" : "#CCCCCC",
-          x: -testResultsWidth / 2,
-        },
-        testResults: {
-          display: hasCounts ? "block" : "none",
-          width: testResultsWidth,
-          x: -testResultsWidth,
-        },
       },
       rankDir: "R",
       nodeData: node,
@@ -129,7 +134,6 @@ export const makeElement = (counts: ProcessCounts, processDefinitionData: Proces
         ].includes(key) ?
           null :
           undefined),
-        processCounts,
       },
     }
 

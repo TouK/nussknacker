@@ -16,7 +16,7 @@ export interface AceWrapperProps extends Pick<IAceEditorProps,
     readOnly?: boolean,
     rows?: number,
   },
-  customAceEditorCompleter,
+  customAceEditorCompleter?,
   showLineNumbers?: boolean,
 }
 
@@ -70,7 +70,7 @@ export default forwardRef(function AceWrapper({
       highlightActiveLine={false}
       editorProps={DEFAULF_EDITOR_PROPS}
       setOptions={{...DEFAULT_OPTIONS, showLineNumbers}}
-      enableBasicAutocompletion={[customAceEditorCompleter]}
+      enableBasicAutocompletion={customAceEditorCompleter && [customAceEditorCompleter]}
       commands={[...DEFAULT_COMMANDS, ...commands]}
     />
   )
