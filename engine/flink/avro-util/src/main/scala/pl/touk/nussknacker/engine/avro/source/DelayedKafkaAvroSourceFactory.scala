@@ -12,11 +12,10 @@ import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.SchemaVersionPar
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.flink.api.process.FlinkContextInitializer
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
-import pl.touk.nussknacker.engine.kafka.generic.DelayedFlinkKafkaConsumer
+import pl.touk.nussknacker.engine.kafka.generic.BaseKafkaDelayedSourceFactory
 import pl.touk.nussknacker.engine.kafka.generic.KafkaDelayedSourceFactory._
 import pl.touk.nussknacker.engine.kafka.generic.KafkaTypedSourceFactory.TypeDefinitionParamName
 import pl.touk.nussknacker.engine.kafka.source.KafkaSource
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, RecordFormatter}
 
 import scala.collection.JavaConverters._
@@ -25,7 +24,8 @@ import scala.reflect.ClassTag
 class DelayedKafkaAvroSourceFactory[K:ClassTag, V:ClassTag](schemaRegistryProvider: SchemaRegistryProvider,
                                                             processObjectDependencies: ProcessObjectDependencies,
                                                             timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]])
-  extends KafkaAvroSourceFactory[K, V](schemaRegistryProvider, processObjectDependencies, timestampAssigner){
+  extends KafkaAvroSourceFactory[K, V](schemaRegistryProvider, processObjectDependencies, timestampAssigner)
+    with BaseKafkaDelayedSourceFactory {
 
   override def paramsDeterminedAfterSchema: List[Parameter] = super.paramsDeterminedAfterSchema ++ List(
     TimestampParameter, DelayParameter
@@ -45,7 +45,7 @@ class DelayedKafkaAvroSourceFactory[K:ClassTag, V:ClassTag](schemaRegistryProvid
 
       valueValidationResult match {
         case Valid((valueRuntimeSchema, _)) =>
-          val definition = valueRuntimeSchema.map(_.schema.getFields.asScala.map(f => (f.name(), "")).toMap ).getOrElse(Map.empty).asJava
+          val definition = valueRuntimeSchema.map(_.schema.getFields.asScala.map(f => (f.name(), ())).toMap ).getOrElse(Map.empty).asJava
           val delayValidationErrors = Option(delay.asInstanceOf[java.lang.Long]).map(d => validateDelay(d)).getOrElse(Nil)
           val timestampValidationErrors = Option(field.asInstanceOf[String]).map(f => validateTimestampField(f, definition)).getOrElse(Nil)
           val errors = delayValidationErrors ++ timestampValidationErrors
@@ -63,21 +63,20 @@ class DelayedKafkaAvroSourceFactory[K:ClassTag, V:ClassTag](schemaRegistryProvid
                                       preparedTopics: List[PreparedKafkaTopic],
                                       kafkaConfig: KafkaConfig,
                                       deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
+                                      timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
                                       formatter: RecordFormatter,
                                       flinkContextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]]): KafkaSource[ConsumerRecord[K, V]] = {
-    val delay = extractDelayInMillis(params)
     val timestampFieldName = extractTimestampField(params)
-
     val extractTimestamp: (ConsumerRecord[K, V], Long) => Long = (consumerRecord, kafkaEventTimestamp) => {
       Option(timestampFieldName)
         .map(f => consumerRecord.value().asInstanceOf[GenericRecord].get(f).asInstanceOf[Long])
         .getOrElse(kafkaEventTimestamp)
     }
-
-    new KafkaSource[ConsumerRecord[K, V]](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter) {
-      override val contextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]] = flinkContextInitializer
-      override protected def createFlinkSource(consumerGroupId: String) =
-        new DelayedFlinkKafkaConsumer(preparedTopics, deserializationSchema, kafkaConfig, consumerGroupId, extractTimestamp, delay)
+    extractDelayInMillis(params) match {
+      case millis if millis > 0 =>
+        createDelayedKafkaSource[K, V](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, flinkContextInitializer, millis, extractTimestamp)
+      case _ =>
+        super.createSource(params, dependencies, finalState, preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, flinkContextInitializer)
     }
   }
 }

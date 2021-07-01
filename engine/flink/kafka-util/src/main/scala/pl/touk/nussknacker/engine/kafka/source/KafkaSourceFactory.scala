@@ -142,7 +142,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
     val deserializationSchema = deserializationSchemaFactory.create(topics, kafkaConfig)
     val formatter = formatterFactory.create(kafkaConfig, deserializationSchema)
     val contextInitializer = finalState.get.contextInitializer
-    createSource(params, dependencies, finalState, preparedTopics, kafkaConfig, deserializationSchema, formatter, contextInitializer)
+    createSource(params, dependencies, finalState, preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, contextInitializer)
   }
 
   /**
@@ -154,6 +154,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
                              preparedTopics: List[PreparedKafkaTopic],
                              kafkaConfig: KafkaConfig,
                              deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
+                             timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
                              formatter: RecordFormatter,
                              flinkContextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]]): FlinkSource[ConsumerRecord[K, V]] = {
     new KafkaSource[ConsumerRecord[K, V]](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter) {

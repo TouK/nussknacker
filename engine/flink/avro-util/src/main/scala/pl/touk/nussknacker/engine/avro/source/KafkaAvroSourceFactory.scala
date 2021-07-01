@@ -122,15 +122,7 @@ class KafkaAvroSourceFactory[K:ClassTag, V:ClassTag](val schemaRegistryProvider:
     val formatterSchema = schemaRegistryProvider.deserializationSchemaFactory.create[K, V](kafkaConfig, None, None)
     val recordFormatter = schemaRegistryProvider.recordFormatterFactory.create[K, V](kafkaConfig, formatterSchema)
 
-    createSource(params,
-      dependencies,
-      finalState,
-      List(preparedTopic),
-      kafkaConfig,
-      deserializationSchema,
-      recordFormatter,
-      kafkaContextInitializer
-    )
+    createSource(params, dependencies, finalState, List(preparedTopic), kafkaConfig, deserializationSchema, timestampAssigner, recordFormatter, kafkaContextInitializer)
   }
 
   /**
@@ -142,15 +134,10 @@ class KafkaAvroSourceFactory[K:ClassTag, V:ClassTag](val schemaRegistryProvider:
                              preparedTopics: List[PreparedKafkaTopic],
                              kafkaConfig: KafkaConfig,
                              deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
+                             timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
                              formatter: RecordFormatter,
                              flinkContextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]]): KafkaSource[ConsumerRecord[K, V]] = {
-    new KafkaSource[ConsumerRecord[K, V]](
-      preparedTopics,
-      kafkaConfig,
-      deserializationSchema,
-      timestampAssigner,
-      formatter
-    ) {
+    new KafkaSource[ConsumerRecord[K, V]](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter) {
       override val contextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]] = flinkContextInitializer
     }
   }
