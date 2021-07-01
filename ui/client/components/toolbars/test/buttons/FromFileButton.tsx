@@ -8,19 +8,21 @@ import {reportEvent} from "../../../../actions/nk/reportEvent"
 import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 import {getTestCapabilities, getProcessId, getProcessToDisplay} from "../../../../reducers/selectors/graph"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/from-file.svg"
+import {ToolbarButtonProps} from "../../types"
 
-type Props = StateProps
+type Props = StateProps & ToolbarButtonProps
 
 function FromFileButton(props: Props) {
-  const {processId, processToDisplay, testCapabilities} = props
+  const {processId, processToDisplay, testCapabilities, disabled} = props
   const {reportEvent, testProcessFromFile} = props
   const {t} = useTranslation()
+  const available = !disabled && testCapabilities.canBeTested
 
   return (
     <CapabilitiesToolbarButton write
       name={t("panels.actions.test-fromFile.button", "from file")}
       icon={<Icon/>}
-      disabled={!testCapabilities.canBeTested}
+      disabled={!available}
       onDrop={(files) => files.forEach((file) => testProcessFromFile(processId, file, processToDisplay))}
       onClick={() => reportEvent({
         category: events.categories.rightPanel,

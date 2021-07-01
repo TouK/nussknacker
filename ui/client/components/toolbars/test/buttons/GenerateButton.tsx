@@ -7,18 +7,20 @@ import {toggleModalDialog} from "../../../../actions/nk/modal"
 import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 import {getTestCapabilities, isLatestProcessVersion} from "../../../../reducers/selectors/graph"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/generate.svg"
+import {ToolbarButtonProps} from "../../types"
 
-type Props = StateProps
+type Props = StateProps & ToolbarButtonProps
 
 function GenerateButton(props: Props) {
-  const {processIsLatestVersion, testCapabilities, toggleModalDialog} = props
+  const {processIsLatestVersion, testCapabilities, toggleModalDialog, disabled} = props
+  const available = !disabled && processIsLatestVersion && testCapabilities.canGenerateTestData
   const {t} = useTranslation()
 
   return (
     <CapabilitiesToolbarButton write
       name={t("panels.actions.test-generate.button", "generate")}
       icon={<Icon/>}
-      disabled={!processIsLatestVersion || !testCapabilities.canGenerateTestData}
+      disabled={!available}
       onClick={() => toggleModalDialog(Dialogs.types.generateTestData)}
     />
   )

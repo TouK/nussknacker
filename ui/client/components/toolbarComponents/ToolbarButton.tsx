@@ -43,7 +43,7 @@ function ToolbarButton({onDrop, title, className, iconClassName, labelClassName,
     ),
   }
 
-  if (onDrop) {
+  if (!disabled && onDrop) {
     return (
       <Dropzone onDrop={onDrop}>
         {({getRootProps, getInputProps}) => (

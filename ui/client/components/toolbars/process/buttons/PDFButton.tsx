@@ -8,11 +8,13 @@ import {isBusinessView, getProcessVersionId, getProcessId} from "../../../../red
 import {useTranslation} from "react-i18next"
 import {useGraph} from "../../../graph/GraphContext"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/PDF.svg"
+import {ToolbarButtonProps} from "../../types"
 
-type Props = StateProps
+type Props = StateProps & ToolbarButtonProps
 
 function PDFButton(props: Props) {
-  const {processId, businessView, versionId, canExport, exportProcessToPdf} = props
+  const {processId, businessView, versionId, canExport, exportProcessToPdf, disabled} = props
+  const available = !disabled && canExport
   const {t} = useTranslation()
   const graphGetter = useGraph()
 
@@ -20,7 +22,7 @@ function PDFButton(props: Props) {
     <ToolbarButton
       name={t("panels.actions.process-PDF.button", "PDF")}
       icon={<Icon/>}
-      disabled={!canExport}
+      disabled={!available}
       onClick={async () => {
         // TODO: add busy indicator
         // TODO: try to do this in worker

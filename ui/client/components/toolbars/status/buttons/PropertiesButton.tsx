@@ -12,10 +12,12 @@ import {
 } from "../../../../reducers/selectors/graph"
 import NodeUtils from "../../../graph/NodeUtils"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
+import {ToolbarButtonProps} from "../../types"
 
-function PropertiesButton(): JSX.Element {
+function PropertiesButton(props: ToolbarButtonProps): JSX.Element {
   const {t} = useTranslation()
   const dispatch = useDispatch()
+  const {disabled} = props
 
   const processToDisplay = useSelector(getProcessToDisplay)
   const name = useSelector(getProcessUnsavedNewName)
@@ -39,6 +41,7 @@ function PropertiesButton(): JSX.Element {
       name={t("panels.actions.edit-properties.button", "properties")}
       hasError={errors && propertiesErrors}
       icon={<Icon/>}
+      disabled={disabled}
       onClick={onClick}
     />
   )

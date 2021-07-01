@@ -6,16 +6,17 @@ import {useDispatch} from "react-redux"
 import {StatusType} from "../../../Process/types"
 import {useTranslation} from "react-i18next"
 import {CustomAction} from "../../../../types"
+import {ToolbarButtonProps} from "../../types"
 
-type Props = {
+type CustomActionProps = {
   action: CustomAction,
   processId: string,
   processStatus: StatusType | null,
-}
+} & ToolbarButtonProps
 
-export default function CustomActionButton(props: Props) {
+export default function CustomActionButton(props: CustomActionProps) {
 
-  const {action, processStatus} = props
+  const {action, processStatus, disabled} = props
 
   const dispatch = useDispatch()
   const {t} = useTranslation()
@@ -25,9 +26,9 @@ export default function CustomActionButton(props: Props) {
     <DefaultIcon/>
 
   const statusName = processStatus?.name
-  const isDisabled = !action.allowedStateStatusNames.includes(statusName)
+  const available = !disabled && action.allowedStateStatusNames.includes(statusName)
 
-  const toolTip = isDisabled ?
+  const toolTip = available ?
     t("panels.actions.custom-action.tooltips.disabled", "Disabled for {{statusName}} status.", {statusName}) :
     null
 
@@ -35,7 +36,7 @@ export default function CustomActionButton(props: Props) {
     <ToolbarButton
       name={action.name}
       title={toolTip}
-      disabled={isDisabled}
+      disabled={!available}
       icon={icon}
       onClick={() => dispatch(toggleCustomAction(action))}
     />
