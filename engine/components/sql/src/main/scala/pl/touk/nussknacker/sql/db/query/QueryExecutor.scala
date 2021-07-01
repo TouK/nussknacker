@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.sql.db.schema.TableDefinition
 
 import java.sql.{PreparedStatement, ResultSet}
-import scala.collection.mutable.ArrayBuffer
+import java.util
 
 trait QueryExecutor {
 
@@ -36,16 +36,14 @@ class SingleResultQueryExecutor(tableDef: TableDefinition) extends QueryExecutor
 
 class ResultSetQueryExecutor(tableDef: TableDefinition) extends QueryExecutor {
 
-  import scala.collection.JavaConverters.bufferAsJavaListConverter
-
   override type QueryResult = java.util.List[TypedMap]
 
   override def execute(statement: PreparedStatement): QueryResult = {
     val resultSet = statement.executeQuery()
-    val results = new ArrayBuffer[TypedMap]()
+    val results = new util.ArrayList[TypedMap]()
     while (resultSet.next()) {
-      results += toTypedMap(tableDef, resultSet)
+      results add toTypedMap(tableDef, resultSet)
     }
-    results.asJava
+    results
   }
 }

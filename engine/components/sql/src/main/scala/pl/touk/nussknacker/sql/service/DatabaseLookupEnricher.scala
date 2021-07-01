@@ -6,10 +6,10 @@ import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, Validati
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, Parameter, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
-import pl.touk.nussknacker.sql.db.query.{QueryArgument, QueryArguments, QueryArgumentsExtractor, SingleResultStrategy}
+import pl.touk.nussknacker.sql.db.query.{QueryArgument, QueryArguments, SingleResultStrategy}
 import pl.touk.nussknacker.sql.db.schema.TableDefinition
-import pl.touk.nussknacker.sql.definition.TypeToParameterEditor
 import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher.{CacheTTLParam, CacheTTLParamName, TransformationState}
 
 
@@ -35,12 +35,13 @@ object DatabaseLookupEnricher {
       // This error should only happen when defining a process via Nussknacker's programming interface.
       throw new IllegalArgumentException(s"Invalid key column: $keyColumnName. Available columns: ${tableDef.columnDefs.map(_.name).mkString(", ")}")
     }
-    Parameter(KeyValueParamName, columnDef.typ)
-      .copy(isLazyParameter = true, editor = TypeToParameterEditor(columnDef.typ))
+    Parameter(KeyValueParamName, columnDef.typing)
+      .copy(isLazyParameter = true, editor = new ParameterTypeEditorDeterminer(columnDef.typing).determine())
   }
 }
 
 class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig) extends DatabaseQueryEnricher(dBPoolConfig) {
+
   import DatabaseLookupEnricher._
 
   override protected val queryArgumentsExtractor: (Int, Map[String, Any]) => QueryArguments =
@@ -66,7 +67,7 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig) extends DatabaseQueryEn
 
   protected def keyColumnParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])
                                   (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
-    case TransformationStep((TableParamName, _) :: (CacheTTLParamName, _) :: (KeyColumnParamName, DefinedEagerParameter(keyColumn: String, _)) :: Nil, Some(state) ) =>
+    case TransformationStep((TableParamName, _) :: (CacheTTLParamName, _) :: (KeyColumnParamName, DefinedEagerParameter(keyColumn: String, _)) :: Nil, Some(state)) =>
       val queryWithWhere = s"""${state.query} WHERE ${sqlDialect.quoteIdentifier(keyColumn)} = ?"""
       val newState = state.copy(query = queryWithWhere)
       NextParameters(
@@ -79,7 +80,7 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig) extends DatabaseQueryEn
                                     (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition =
     initialStep(context, dependencies) orElse
       tableParamStep(context, dependencies) orElse
-        keyColumnParamStep(context, dependencies) orElse
-          finalStep(context, dependencies)
+      keyColumnParamStep(context, dependencies) orElse
+      finalStep(context, dependencies)
 
 }

@@ -13,7 +13,7 @@ object TableDefinition {
 }
 
 case class TableDefinition(columnDefs: List[ColumnDefinition]) {
-  val rowType: TypedObjectTypingResult = TypedObjectTypingResult(columnDefs.map(col => col.name -> col.typ))
+  val rowType: TypedObjectTypingResult = TypedObjectTypingResult(columnDefs.map(col => col.name -> col.typing))
 
   val resultSetType: TypingResult = TypedClass(classOf[java.util.List[_]], rowType :: Nil)
 }

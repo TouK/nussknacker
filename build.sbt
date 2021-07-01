@@ -950,10 +950,10 @@ lazy val sql = (project in component("sql")).
     name := "nussknacker-sql",
     libraryDependencies ++= Seq(
       "com.zaxxer" % "HikariCP" % "4.0.3",
-      "org.apache.flink" %% "flink-streaming-scala" % flinkV % Provided,
+      "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided,optional",
       "org.scalatest" %% "scalatest" % scalaTestV % "it,test"
     ),
-  ).dependsOn(api, process % Provided, engineStandalone % "provided,optional", standaloneUtil % "provided,optional", httpUtils % Provided, flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
+  ).dependsOn(api, process % "provided,optional", engineStandalone % "provided,optional", standaloneUtil % "provided,optional", httpUtils % Provided, flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
 
 lazy val buildUi = taskKey[Unit]("builds ui")
 

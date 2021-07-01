@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 import pl.touk.nussknacker.sql.service.DatabaseLookupEnricher
 
+//TODO: extract to separate, standalone tests module
 class StandaloneConfigCreator extends EmptyProcessConfigCreator {
 
   private val Category = "Test"

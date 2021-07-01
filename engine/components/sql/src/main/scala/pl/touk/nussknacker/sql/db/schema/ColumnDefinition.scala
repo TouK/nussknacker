@@ -9,7 +9,7 @@ object ColumnDefinition {
     ColumnDefinition(
       no = columnNo,
       name = resultMeta.getColumnName(columnNo),
-      typ = Typed(Class.forName(resultMeta.getColumnClassName(columnNo))))
+      typing = Typed(Class.forName(resultMeta.getColumnClassName(columnNo))))
 }
 
-case class ColumnDefinition(no: Int, name: String, typ: TypingResult)
+case class ColumnDefinition(no: Int, name: String, typing: TypingResult)

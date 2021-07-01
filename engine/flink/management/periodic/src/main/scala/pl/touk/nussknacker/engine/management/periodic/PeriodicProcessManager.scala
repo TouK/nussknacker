@@ -13,8 +13,8 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.periodic.Utils._
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
-import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeployment, PeriodicProcessDeploymentStatus}
-import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, PeriodicProcessListener, PeriodicProcessListenerFactory}
+import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeploymentStatus}
+import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, PeriodicProcessListenerFactory}
 import slick.jdbc
 import slick.jdbc.JdbcProfile
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
