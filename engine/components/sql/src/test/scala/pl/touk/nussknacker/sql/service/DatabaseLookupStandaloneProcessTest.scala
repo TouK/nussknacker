@@ -13,7 +13,6 @@ import pl.touk.nussknacker.sql.utils._
 import scala.collection.JavaConverters._
 
 class DatabaseLookupStandaloneProcessTest extends FunSuite with Matchers with StandaloneProcessTest with BeforeAndAfterAll with WithDB {
-  override val modelData: LocalModelData = LocalModelData(config, new StandaloneConfigCreator)
   override val contextPreparer: StandaloneContextPreparer = new StandaloneContextPreparer(NoOpMetricsProvider)
   override val prepareDbDDLs: List[String] = List(
     "CREATE TABLE persons (id INT, name VARCHAR(40));",
@@ -29,6 +28,8 @@ class DatabaseLookupStandaloneProcessTest extends FunSuite with Matchers with St
       "url" -> dbConf.url
     ).asJava
   ).asJava)
+
+  override val modelData: LocalModelData = LocalModelData(config, new StandaloneConfigCreator)
 
   test("should enrich input with data from db") {
     val process = EspProcessBuilder

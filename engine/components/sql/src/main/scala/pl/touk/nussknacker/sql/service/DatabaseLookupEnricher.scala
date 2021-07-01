@@ -43,7 +43,7 @@ object DatabaseLookupEnricher {
 class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig) extends DatabaseQueryEnricher(dBPoolConfig) {
   import DatabaseLookupEnricher._
 
-  override protected val queryArgumentsExtractor: QueryArgumentsExtractor =
+  override protected val queryArgumentsExtractor: (Int, Map[String, Any]) => QueryArguments =
     (argsCount: Int, params: Map[String, Any]) =>
       QueryArguments(
         QueryArgument(index = 1, value = params(KeyValueParamName)) :: Nil)

@@ -72,7 +72,7 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig) extends EagerService
 
   override val nodeDependencies: List[NodeDependency] = OutputVariableNameDependency :: metaData :: Nil
 
-  protected val queryArgumentsExtractor: QueryArgumentsExtractor = (argsCount: Int, params: Map[String, Any]) => {
+  protected val queryArgumentsExtractor: (Int, Map[String, Any]) => QueryArguments = (argsCount: Int, params: Map[String, Any]) => {
     QueryArguments(
       (1 to argsCount).map { argNo =>
         val paramName = s"$ArgPrefix$argNo"

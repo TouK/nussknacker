@@ -21,7 +21,7 @@ class DatabaseEnricherInvokerWithCache(query: String,
                                        argsCount: Int,
                                        tableDef: TableDefinition,
                                        strategy: QueryResultStrategy,
-                                       queryArgumentsExtractor: QueryArgumentsExtractor,
+                                       queryArgumentsExtractor: (Int, Map[String, Any]) => QueryArguments,
                                        cacheTTL: Duration,
                                        override val returnType: typing.TypingResult,
                                        override val getConnection: () => Connection) extends DatabaseEnricherInvoker(query, argsCount, tableDef, strategy, queryArgumentsExtractor, returnType, getConnection) {

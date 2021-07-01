@@ -15,7 +15,7 @@ class DatabaseEnricherInvoker(query: String,
                               argsCount: Int,
                               tableDef: TableDefinition,
                               strategy: QueryResultStrategy,
-                              queryArgumentsExtractor: QueryArgumentsExtractor,
+                              queryArgumentsExtractor: (Int, Map[String, Any]) => QueryArguments,
                               val returnType: typing.TypingResult,
                               val getConnection: () => Connection) extends ServiceInvoker with WithDBConnectionPool {
 
