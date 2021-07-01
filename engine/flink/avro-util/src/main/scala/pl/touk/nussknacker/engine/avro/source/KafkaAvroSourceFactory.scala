@@ -23,6 +23,23 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, Record
 
 import scala.reflect.ClassTag
 
+/**
+  * Base implementation of KafkaSource factory with Avro schema support. It is based on GenericNodeTransformation to
+  * - allow key and value type identification based on Schema Registry and
+  * - allow Context initialization with event's value, key and metadata
+  * You can provide schemas for both key and value. When useStringForKey = true (see KafkaConfig) the contents of event's key
+  * are treated as String (this is default scenario).
+  * Reader schema used in runtime is determined by topic and version.
+  * Reader schema can be different than schema used by writer (e.g. when writer produces event with new schema), in that case "schema evolution" may be required.
+  * For SpecificRecord use SpecificRecordKafkaAvroSourceFactory.
+  * Assumptions:
+  * 1. Every event that comes in has its key and value schemas registered in Schema Registry.
+  * 2. Avro payload must include schema id for both Generic and Specific records (to provide "schema evolution" we need to know the exact writers schema).
+  *
+  * @param schemaRegistryProvider - provides a set of strategies for serialization and deserialization while event processing and/or testing.
+  * @tparam K - type of event's key, used to determine if key object is Specific or Generic (for GenericRecords use Any)
+  * @tparam V - type of event's value, used to determine if value object is Specific or Generic (for GenericRecords use Any)
+  */
 class KafkaAvroSourceFactory[K:ClassTag, V:ClassTag](val schemaRegistryProvider: SchemaRegistryProvider,
                                                      val processObjectDependencies: ProcessObjectDependencies,
                                                      timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]])

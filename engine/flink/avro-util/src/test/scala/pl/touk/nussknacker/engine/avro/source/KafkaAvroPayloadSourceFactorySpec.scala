@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResu
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData, VariableConstants}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.{SchemaVersionParamName, TopicParamName}
 import pl.touk.nussknacker.engine.avro.helpers.KafkaAvroSpecMixin
-import pl.touk.nussknacker.engine.avro.schema.{AvroStringSettings, FullNameV1, FullNameV2, PaymentV1}
+import pl.touk.nussknacker.engine.avro.schema.{AvroStringSettings, FullNameV1, FullNameV2, GeneratedAvroClassWithLogicalTypes, GeneratedAvroClassWithLogicalTypesNewSchema, PaymentDate, PaymentV1}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaVersionOption}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 import java.nio.charset.StandardCharsets
+import java.time.{LocalDateTime, ZoneOffset}
 import scala.collection.immutable.ListMap
 
 class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSourceSpecMixin {
@@ -50,6 +51,20 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     val givenObj = FullNameV1.createSpecificRecord("Jan", "Kowalski")
 
     roundTripKeyValueObject(specificSourceFactory[FullNameV1], useStringForKey = true, RecordTopic, ExistingSchemaVersion(1), null, givenObj)
+  }
+
+  test("should read last generated generic record with logical types") {
+    val givenObj = PaymentDate.record
+
+    roundTripKeyValueObject(avroSourceFactory, useStringForKey = true, PaymentDateTopic, ExistingSchemaVersion(1), "", givenObj)
+  }
+
+  test("should read last generated specific record with logical types ") {
+    val date = LocalDateTime.of(2020, 1, 2, 3, 14, 15)
+    val decimal = new java.math.BigDecimal("12.34")
+    val givenObj = new GeneratedAvroClassWithLogicalTypes("loremipsum", date.toInstant(ZoneOffset.UTC), date.toLocalDate, date.toLocalTime, decimal)
+
+    roundTripKeyValueObject(specificSourceFactory[GeneratedAvroClassWithLogicalTypes], useStringForKey = true, GeneratedWithLogicalTypesTopic, ExistingSchemaVersion(1), "", givenObj)
   }
 
   test("should read generated record in v2") {
