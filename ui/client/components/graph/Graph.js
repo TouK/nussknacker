@@ -1,13 +1,14 @@
 /* eslint-disable i18next/no-literal-string */
 import * as joint from "jointjs"
 import "jointjs/dist/joint.css"
-import _, {cloneDeep, debounce, defer, isEqual, sortBy} from "lodash"
+import _, {cloneDeep, debounce, isEqual, sortBy} from "lodash"
 import PropTypes from "prop-types"
 import React from "react"
 import {getProcessCategory, getSelectionState} from "../../reducers/selectors/graph"
 import {getLoggedUser, getProcessDefinitionData} from "../../reducers/selectors/settings"
 import "../../stylesheets/graph.styl"
 import {filterDragHovered, setLinksHovered} from "./dragHelpers"
+import {updateNodeCounts} from "./EspNode/element"
 import {FocusableDiv} from "./focusable"
 import {createPaper, directedLayout, drawGraph, isBackgroundObject, isGroupElement, isModelElement} from "./GraphPartialsInTS"
 import styles from "./graphTheme.styl"
@@ -89,7 +90,6 @@ export class Graph extends React.Component {
     this.drawGraph(
       this.props.processToDisplay,
       this.props.layout,
-      this.props.processCounts,
       this.props.processDefinitionData,
     )
     this.processGraphPaper.unfreeze()
@@ -111,6 +111,7 @@ export class Graph extends React.Component {
 
     this.bindEventHandlers()
     this.highlightNodes(this.props.processToDisplay, this.props.nodeToDisplay)
+    this.updateNodesCounts()
 
     this.graph.on(Events.CHANGE_DRAG_OVER, () => {
       const links = this.graph.getLinks()
@@ -146,26 +147,37 @@ export class Graph extends React.Component {
   }
 
   componentWillUpdate(nextProps, nextState) {
-    const processChanged = !_.isEqual(this.props.processToDisplay, nextProps.processToDisplay) ||
-      !_.isEqual(this.props.layout, nextProps.layout) ||
-      !_.isEqual(this.props.processCounts, nextProps.processCounts) ||
-      !_.isEqual(this.props.expandedGroups, nextProps.expandedGroups) ||
-      !_.isEqual(this.props.processDefinitionData, nextProps.processDefinitionData)
+    const processChanged = !isEqual(this.props.processToDisplay, nextProps.processToDisplay) ||
+      !isEqual(this.props.layout, nextProps.layout) ||
+      !isEqual(this.props.expandedGroups, nextProps.expandedGroups) ||
+      !isEqual(this.props.processDefinitionData, nextProps.processDefinitionData)
     if (processChanged) {
       this.drawGraph(
         nextProps.processToDisplay,
         nextProps.layout,
-        nextProps.processCounts,
         nextProps.processDefinitionData,
       )
     }
 
     //when e.g. layout changed we have to remember to highlight nodes
-    const nodeToDisplayChanged = !_.isEqual(this.props.nodeToDisplay, nextProps.nodeToDisplay)
-    const selectedNodesChanged = !_.isEqual(this.props.selectionState, nextProps.selectionState)
+    const nodeToDisplayChanged = !isEqual(this.props.nodeToDisplay, nextProps.nodeToDisplay)
+    const selectedNodesChanged = !isEqual(this.props.selectionState, nextProps.selectionState)
     if (processChanged || nodeToDisplayChanged || selectedNodesChanged) {
       this.highlightNodes(nextProps.processToDisplay, nextProps.nodeToDisplay, nextProps.selectionState)
     }
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    const {processCounts} = this.props
+    if (!isEqual(processCounts, prevProps.processCounts)) {
+      this.updateNodesCounts()
+    }
+  }
+
+  updateNodesCounts() {
+    const {processCounts} = this.props
+    const nodes = this.graph.getElements().filter(isModelElement)
+    nodes.forEach(updateNodeCounts(processCounts))
   }
 
   zoomIn() {

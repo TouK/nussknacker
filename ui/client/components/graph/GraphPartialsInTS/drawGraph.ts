@@ -12,9 +12,8 @@ import {updateLayout} from "./updateLayout"
 export function drawGraph(
   process: Process,
   layout: Layout,
-  processCounts: ProcessCounts,
   processDefinitionData: ProcessDefinitionData,
-) {
+): void {
   const graph: dia.Graph = this.graph
   const directedLayout = this.directedLayout
   const _updateLayout = updateLayout(graph, directedLayout)
@@ -27,7 +26,7 @@ export function drawGraph(
   const edgesWithGroups = NodeUtils.edgesFromProcess(process)
   const groups = NodeUtils.getExpandedGroups(process)
 
-  const nodes = nodesWithGroups.map(makeElement(processCounts, processDefinitionData))
+  const nodes = nodesWithGroups.map(makeElement(processDefinitionData))
   const edges = edgesWithGroups.map(makeLink)
   const boundingRects = groups.map(boundingRect(nodes, layout, nodesWithGroups))
 
