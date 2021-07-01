@@ -86,4 +86,9 @@ export const defaultToolbarsConfig: WithId<ToolbarsConfig> = {
     {id: "COMMENTS-PANEL"},
     {id: "ATTACHMENTS-PANEL"},
   ],
+  [ToolbarsSide.BottomRight]: process.env.NODE_ENV !== "production" ?
+    [
+      {id: "USER-SETTINGS-PANEL"},
+    ] :
+    [],
 }
