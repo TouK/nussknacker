@@ -1,16 +1,18 @@
-package pl.touk.nussknacker.genericmodel
+package pl.touk.nussknacker.engine.kafka.generic
 
 import io.circe.generic.JsonCodec
-import io.circe.syntax._
+import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.kafka.generic.KafkaDelayedSourceFactory.{DelayParameterName, TimestampFieldParamName}
 import pl.touk.nussknacker.engine.kafka.generic.KafkaTypedSourceFactory.TypeDefinitionParamName
 import pl.touk.nussknacker.engine.kafka.generic.sources.{DelayedGenericTypedJsonSourceFactory, FixedRecordFormatterFactoryWrapper, JsonRecordFormatter}
+import pl.touk.nussknacker.engine.kafka.serialization.schemas.JsonSerializationSchema
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryProcessMixin
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryProcessMixin.recordingExceptionHandler
@@ -18,16 +20,15 @@ import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForLongs
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
-import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.util.UUID
 
-class DelayedGenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec with KafkaSourceFactoryProcessMixin {
+class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec with KafkaSourceFactoryProcessMixin {
 
   @JsonCodec
-  private case class BasicEvent(id: String, name: String, timestamp: Long)
+  case class BasicEvent(id: String, name: String, timestamp: Long)
 
-  private object BasicEvent {
+  object BasicEvent {
     final val timestampFieldName = "timestamp"
 
     final val definition = """{"id":"String","name":"String","timestamp":"Long"}"""
@@ -35,51 +36,40 @@ class DelayedGenericItSpec extends FunSuite with FlinkSpec with Matchers with Ka
     def apply(name: String): BasicEvent = BasicEvent(UUID.randomUUID().toString, name, Instant.now().toEpochMilli)
   }
 
+  private val serializationSchema: String => KafkaSerializationSchema[Any] =
+    (topic: String) => new JsonSerializationSchema[BasicEvent](topic).asInstanceOf[KafkaSerializationSchema[Any]]
+
   override protected lazy val creator: ProcessConfigCreator = new DelayedGenericProcessConfigCreator
 
   private val now: Long = System.currentTimeMillis()
 
-  private val event: BasicEvent = BasicEvent(id = "123", name = "kafka-generic-delayed-test", timestamp = now)
+  private val givenObj = BasicEvent(id = "123", name = "kafka-generic-delayed-test", timestamp = now)
 
   test("properly process data using kafka-generic-delayed source") {
-    val inputTopic = "topic-all-parameters-valid"
-    val process = createProcessWithDelayedSource(inputTopic, BasicEvent.definition, s"'${BasicEvent.timestampFieldName}'", "0L")
-    kafkaClient.createTopic(inputTopic, 1)
-    kafkaClient.sendRawMessage(inputTopic, Array.empty, event.asJson.noSpaces.getBytes(StandardCharsets.UTF_8), timestamp = now).futureValue
-    run(process) {
-      eventually {
-        recordingExceptionHandler.data shouldBe empty
-        SinkForLongs.data should have size 1
-      }
-    }
+    val topic = "topic-all-parameters-valid"
+    val process = createProcessWithDelayedSource(topic, BasicEvent.definition, s"'${BasicEvent.timestampFieldName}'", "0L")
+    runAndVerify(topic, process, givenObj)
   }
 
   test("timestampField and delay param are null") {
-    val inputTopic = "topic-empty-parameters"
-    val process = createProcessWithDelayedSource(inputTopic, BasicEvent.definition, s"null", s"null")
-    kafkaClient.createTopic(inputTopic, 1)
-    kafkaClient.sendRawMessage(inputTopic, Array.empty, event.asJson.noSpaces.getBytes(StandardCharsets.UTF_8), timestamp = now).futureValue
-    run(process) {
-      eventually {
-        recordingExceptionHandler.data shouldBe empty
-        SinkForLongs.data should have size 1
-      }
-    }
+    val topic = "topic-empty-parameters"
+    val process = createProcessWithDelayedSource(topic, BasicEvent.definition, "null", "null")
+    runAndVerify(topic, process, givenObj)
   }
 
   test("handle not exist timestamp field param") {
-    val inputTopic = "topic-invalid-timestamp-field"
-    val process = createProcessWithDelayedSource(inputTopic, BasicEvent.definition, s"'unknownField'", s"null")
+    val topic = "topic-invalid-timestamp-field"
+    val process = createProcessWithDelayedSource(topic, BasicEvent.definition, "'unknownField'", "null")
     intercept[IllegalArgumentException] {
-      run(process) {}
+      runAndVerify(topic, process, givenObj)
     }.getMessage should include ("Field: 'unknownField' doesn't exist in definition: id,name,timestamp.")
   }
 
   test("handle invalid negative param") {
-    val inputTopic = "topic-invalid-delay"
-    val process = createProcessWithDelayedSource(inputTopic, BasicEvent.definition, s"'${BasicEvent.timestampFieldName}'", s"-10L")
+    val topic = "topic-invalid-delay"
+    val process = createProcessWithDelayedSource(topic, BasicEvent.definition, s"'${BasicEvent.timestampFieldName}'", "-10L")
     intercept[IllegalArgumentException] {
-      run(process) {}
+      runAndVerify(topic, process, givenObj)
     }.getMessage should include ("LowerThanRequiredParameter(This field value has to be a number greater than or equal to 0,Please fill field with proper number,delayInMillis,start)")
   }
 
@@ -98,8 +88,20 @@ class DelayedGenericItSpec extends FunSuite with FlinkSpec with Matchers with Ka
         s"$TimestampFieldParamName" -> s"${timestampField}",
         s"$DelayParameterName" -> s"${delay}"
       )
-      .sink("out", "T(java.lang.System).currentTimeMillis()", "sinkForStrings")
+      .sink("out", "T(java.lang.System).currentTimeMillis()", "sinkForLongs")
   }
+
+  private def runAndVerify(topic: String, process: EspProcess, givenObj: AnyRef): Unit = {
+    createTopic(topic)
+    pushMessage(serializationSchema(topic), givenObj, topic, timestamp = now)
+    run(process) {
+      eventually {
+        recordingExceptionHandler.data shouldBe empty
+        SinkForLongs.data should have size 1
+      }
+    }
+  }
+
 }
 
 class DelayedGenericProcessConfigCreator extends EmptyProcessConfigCreator {
@@ -112,7 +114,7 @@ class DelayedGenericProcessConfigCreator extends EmptyProcessConfigCreator {
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
     Map(
-      "sinkForStrings" -> defaultCategory(SinkFactory.noParam(SinkForLongs))
+      "sinkForLongs" -> defaultCategory(SinkFactory.noParam(SinkForLongs))
     )
   }
 

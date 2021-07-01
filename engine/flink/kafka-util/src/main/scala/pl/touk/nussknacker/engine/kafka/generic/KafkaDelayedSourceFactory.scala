@@ -2,8 +2,9 @@ package pl.touk.nussknacker.engine.kafka.generic
 
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
-import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, MandatoryParameterValidator, MaximalNumberValidator, MinimalNumberValidator, NotBlankParameterValidator, Parameter, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, MaximalNumberValidator, MinimalNumberValidator, Parameter, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 
 object KafkaDelayedSourceFactory {
 
@@ -13,15 +14,12 @@ object KafkaDelayedSourceFactory {
 
   final val DelayParameterName = "delayInMillis"
 
-  final val DelayParameter = Parameter[java.lang.Long](DelayParameterName).copy(
-    validators = List(MandatoryParameterValidator, NotBlankParameterValidator)
-  )
+  final val DelayParameter = Parameter.optional(DelayParameterName, Typed[java.lang.Long])
 
   final val TimestampFieldParamName = "timestampField"
 
-  final val TimestampParameter = Parameter[String](TimestampFieldParamName).copy(
-    editor = Some(DualParameterEditor(simpleEditor = StringParameterEditor, defaultMode = DualEditorMode.RAW)),
-    validators = List(MandatoryParameterValidator, NotBlankParameterValidator)
+  final val TimestampParameter = Parameter.optional(TimestampFieldParamName, Typed[String]).copy(
+    editor = Some(DualParameterEditor(simpleEditor = StringParameterEditor, defaultMode = DualEditorMode.RAW))
   )
 
   def extractTimestampField(params: Map[String, Any]): String =
@@ -31,17 +29,15 @@ object KafkaDelayedSourceFactory {
     params(DelayParameterName).asInstanceOf[Long]
 
   def validateDelay(value: java.lang.Long)(implicit nodeId: NodeId): List[ProcessCompilationError] = {
-    Option(value).map(v => delayValidators.flatMap(_.isValid(DelayParameterName, v.toString, None).swap.toList)).getOrElse(Nil)
+    delayValidators.flatMap(_.isValid(DelayParameterName, value.toString, None).swap.toList)
   }
 
   def validateTimestampField(field: String, definition: java.util.Map[String, _])(implicit nodeId: NodeId): List[ProcessCompilationError] = {
-    Option(field).map(f => {
-      if (!definition.containsKey(f)) {
-        List(new CustomNodeError(nodeId.id, s"Field: '$f' doesn't exist in definition: ${definition.asScala.keys.mkString(",")}.", Some(TimestampFieldParamName)))
-      } else {
-        List.empty
-      }
-    }).getOrElse(Nil)
+    if (!definition.containsKey(field)) {
+      List(new CustomNodeError(nodeId.id, s"Field: '$field' doesn't exist in definition: ${definition.asScala.keys.mkString(",")}.", Some(TimestampFieldParamName)))
+    } else {
+      List.empty
+    }
   }
 
 }

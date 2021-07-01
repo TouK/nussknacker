@@ -69,7 +69,7 @@ object sources {
       timestampAssigner,
       formatterFactory,
       processObjectDependencies
-    ) {
+    ) with BaseKafkaDelayedSourceFactory {
 
     override protected def prepareInitialParameters: List[Parameter] = super.prepareInitialParameters ++ List(
       TypeParameter, TimestampParameter, DelayParameter
@@ -103,19 +103,20 @@ object sources {
                                         preparedTopics: List[PreparedKafkaTopic],
                                         kafkaConfig: KafkaConfig,
                                         deserializationSchema: KafkaDeserializationSchema[TypedJson],
+                                        timestampAssigner: Option[TimestampWatermarkHandler[TypedJson]],
                                         formatter: RecordFormatter,
                                         flinkContextInitializer: FlinkContextInitializer[TypedJson]): FlinkSource[TypedJson] = {
-      val delay = extractDelayInMillis(params)
       val timestampFieldName = extractTimestampField(params)
-
-      val extractTimestamp: (TypedJson, Long) => Long = (consumerRecord, kafkaEventTimestamp) => {
-        Option(timestampFieldName).map(f => consumerRecord.value().get(f).asInstanceOf[Long]).getOrElse(kafkaEventTimestamp)
+      val extractTimestamp: (ConsumerRecord[String, TypedMap], Long) => Long = (consumerRecord, kafkaEventTimestamp) => {
+        Option(timestampFieldName)
+          .map(f => consumerRecord.value().get(f).asInstanceOf[Long])
+          .getOrElse(kafkaEventTimestamp)
       }
-
-      new KafkaSource[TypedJson](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter) {
-        override val contextInitializer: FlinkContextInitializer[TypedJson] = flinkContextInitializer
-        override protected def createFlinkSource(consumerGroupId: String) =
-          new DelayedFlinkKafkaConsumer(preparedTopics, deserializationSchema, kafkaConfig, consumerGroupId, extractTimestamp, delay)
+      extractDelayInMillis(params) match {
+        case millis if millis > 0 =>
+          createDelayedKafkaSource[String, TypedMap](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, flinkContextInitializer, millis, extractTimestamp)
+        case _ =>
+          super.createSource(params, dependencies, finalState, preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, flinkContextInitializer)
       }
     }
   }

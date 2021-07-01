@@ -41,7 +41,10 @@ class DelayedFlinkKafkaConsumer[T](topics: List[PreparedKafkaTopic],
       properties.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false")
     }
 
-    new DelayedKafkaFetcher(sourceContext, assignedPartitionsWithInitialOffsets, watermarkStrategy,
+    new DelayedKafkaFetcher(
+      sourceContext,
+      assignedPartitionsWithInitialOffsets,
+      watermarkStrategy,
       runtimeContext.getProcessingTimeService,
       runtimeContext.getExecutionConfig.getAutoWatermarkInterval,
       runtimeContext.getUserCodeClassLoader,
@@ -52,7 +55,9 @@ class DelayedFlinkKafkaConsumer[T](topics: List[PreparedKafkaTopic],
       properties,
       pollTimeout,
       useMetrics,
-      timeExtract, delay)
+      timeExtract,
+      delay
+    )
   }
 }
 
