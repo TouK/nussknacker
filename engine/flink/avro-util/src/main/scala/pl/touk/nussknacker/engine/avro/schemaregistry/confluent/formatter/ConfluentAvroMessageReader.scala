@@ -27,8 +27,7 @@ private[confluent] class ConfluentAvroMessageReader(schemaRegistryClient: Schema
   def readJson[T: ClassTag](jsonObj: Json, schemaId: Int, schema: Schema): Array[Byte] = {
     try {
       val avroObj = jsonToAvro[T](jsonObj, schema)
-      val avroSchema = new AvroSchema(schema)
-      writeData(avroObj, avroSchema.rawSchema(), schemaId)
+      writeData(avroObj, schema, schemaId)
     } catch {
       case ex: Exception =>
         throw new SerializationException("Error reading from input", ex)
