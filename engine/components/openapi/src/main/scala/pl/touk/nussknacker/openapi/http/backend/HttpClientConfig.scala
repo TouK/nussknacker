@@ -41,7 +41,8 @@ case class HttpClientConfig(timeout: Option[FiniteDuration],
       timeout = extractConfig(_.timeout, DefaultHttpClientConfig.timeout),
       connectTimeout = extractConfig(_.connectTimeout, DefaultHttpClientConfig.timeout),
       maxPoolSize = extractConfig(_.maxPoolSize, DefaultHttpClientConfig.maxPoolSize),
-      useNative = extractConfig(_.useNative, true),
+      //FIXME: does not work by default?
+      useNative = extractConfig(_.useNative, false),
       followRedirect = extractConfig(_.followRedirect, false),
       forceShutdown = extractConfig(_.forceShutdown, false)
     )

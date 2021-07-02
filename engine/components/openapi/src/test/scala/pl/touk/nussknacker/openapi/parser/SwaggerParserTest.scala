@@ -1,19 +1,19 @@
 package pl.touk.nussknacker.openapi.parser
 
-import java.net.URL
-import java.nio.charset.Charset
-
 import org.apache.commons.io.IOUtils
-import pl.touk.nussknacker.openapi.{HeaderParameter, _}
+import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.openapi.{HeaderParameter, _}
 
 class SwaggerParserTest extends FunSuite with Matchers {
+
+  private val baseConfig = OpenAPIServicesConfig()
 
   test("reads swagger 2.0") {
 
     val swaggerJson = IOUtils.toString(getClass.getResourceAsStream("/swagger/swagger-20.json"), "UTF-8")
 
-    val openApi = SwaggerParser.parse(swaggerJson, Map.empty).head
+    val openApi = SwaggerParser.parse(swaggerJson, baseConfig).head
 
     openApi.name shouldBe "getCollectionDataUsingGET"
 
@@ -30,9 +30,9 @@ class SwaggerParserTest extends FunSuite with Matchers {
   }
 
   test("reads body params") {
-    val swaggerJson = IOUtils.toString(getClass.getResourceAsStream("/swagger/enricher-body-param.yml"), null.asInstanceOf[Charset])
+    val swaggerJson = IOUtils.toString(getClass.getResourceAsStream("/swagger/enricher-body-param.yml"))
 
-    val openApi = SwaggerParser.parse(swaggerJson, Map.empty).head
+    val openApi = SwaggerParser.parse(swaggerJson, baseConfig.copy(allowedMethods = List("POST"))).head
 
     openApi.name shouldBe "testService"
 
@@ -45,6 +45,26 @@ class SwaggerParserTest extends FunSuite with Matchers {
     )
 
     openApi.pathParts shouldBe List(PlainPart("someService"), PathParameterPart("param1"))
+
+  }
+
+  test("reads only configured methods and patterns") {
+
+    val swaggerJson = IOUtils.toString(getClass.getResourceAsStream("/swagger/multiple-operations.yml"))
+
+    forAll(Table(("allowedMethods", "namePattern", "expectedNames"),
+      (List("GET", "POST"), ".*", List("getService", "postService")),
+      (List("GET"), ".*", List("getService")),
+      (List("GET", "POST"), "post.*", List("postService")),
+      (List("GET"), "post.*", List()),
+
+    )) { (allowedMethods, namePattern, expectedNames) =>
+      SwaggerParser.parse(swaggerJson, baseConfig.copy(allowedMethods = allowedMethods,
+        namePattern = namePattern.r)).map(_.name) shouldBe expectedNames
+
+
+    }
+
 
   }
 

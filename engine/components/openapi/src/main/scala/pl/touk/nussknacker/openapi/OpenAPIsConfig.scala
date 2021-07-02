@@ -1,12 +1,17 @@
 package pl.touk.nussknacker.openapi
 
-import java.net.URL
+import io.swagger.v3.oas.models.PathItem.HttpMethod
 
+import java.net.URL
 import net.ceedubs.ficus.readers.ValueReader
 
-case class OpenAPIsConfig(openapis: Option[List[OpenAPIServicesConfig]])
+import scala.util.matching.Regex
 
-case class OpenAPIServicesConfig(url: URL, rootUrl: Option[URL], securities: Option[Map[String, OpenAPISecurityConfig]])
+case class OpenAPIServicesConfig(//by default we allow only GET, as enrichers should be idempotent and not change data
+                                 allowedMethods: List[String] = List(HttpMethod.GET.name()),
+                                 namePattern: Regex = ".*".r,
+                                 rootUrl: Option[URL] = None,
+                                 securities: Option[Map[String, OpenAPISecurityConfig]] = None)
 
 sealed trait OpenAPISecurityConfig
 
@@ -17,15 +22,9 @@ object OpenAPIsConfig {
   import net.ceedubs.ficus.Ficus._
   import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
 
-  implicit val openAPIsConfigVR: ValueReader[OpenAPIsConfig] = ValueReader.relative(conf => {
-    OpenAPIsConfig(
-      openapis = conf.as[Option[List[OpenAPIServicesConfig]]]("openapi")
-    )
-  })
 
   implicit val openAPIServicesConfigVR: ValueReader[OpenAPIServicesConfig] = ValueReader.relative(conf => {
     OpenAPIServicesConfig(
-      url = conf.as[URL]("url"),
       rootUrl = conf.as[Option[URL]]("rootUrl"),
       securities = conf.as[Option[Map[String, OpenAPISecurityConfig]]]("security")
     )

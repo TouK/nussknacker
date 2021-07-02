@@ -13,7 +13,7 @@ import scala.collection.JavaConverters._
 
 object SwaggerParser {
 
-  def parse(rawSwagger: String, securities: Map[String, OpenAPISecurityConfig]): List[SwaggerService] = {
+  def parse(rawSwagger: String, openAPIsConfig: OpenAPIServicesConfig): List[SwaggerService] = {
     val openapi = parseToSwagger(rawSwagger)
     val securitySchemas = Option(openapi.getComponents.getSecuritySchemes).map(_.asScala.toMap)
     ParseToSwaggerServices(
@@ -22,8 +22,10 @@ object SwaggerParser {
       openapi.getServers.asScala.toList,
       Option(openapi.getSecurity.asScala).map(_.toList).getOrElse(Nil),
       securitySchemas,
-      securities
-    )
+      openAPIsConfig.securities.getOrElse(Map.empty)
+    ).filter(service => openAPIsConfig.allowedMethods.contains(service.method))
+     .filter(_.name.matches(openAPIsConfig.namePattern.regex))
+
   }
 
   private[parser] def parseToSwagger(rawSwagger: String): OpenAPI = {

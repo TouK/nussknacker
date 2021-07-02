@@ -3,8 +3,8 @@ package pl.touk.nussknacker.openapi.extractor
 import java.lang
 import java.net.URL
 import java.util.Collections.singletonMap
-
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.openapi.OpenAPIServicesConfig
 import pl.touk.nussknacker.openapi.extractor.ServiceRequest.SwaggerRequestType
 import pl.touk.nussknacker.openapi.parser.SwaggerParser
 import sttp.client.StringBody
@@ -22,7 +22,7 @@ class ServiceRequestTest extends FunSuite with Matchers {
   private def prepareRequest(location: String, inputParams: List[AnyRef], fixedParams: Map[String, () => AnyRef]): SwaggerRequestType = {
     val rawSwagger =
       Source.fromInputStream(getClass.getClassLoader.getResourceAsStream(location)).mkString
-    val swaggerService = SwaggerParser.parse(rawSwagger, Map.empty).head
+    val swaggerService = SwaggerParser.parse(rawSwagger, OpenAPIServicesConfig(allowedMethods = List("POST", "GET"))).head
     val parametersExtractor = new ParametersExtractor(swaggerService, fixedParams)
     ServiceRequest(rootUrl = baseUrl, swaggerService, parametersExtractor.prepareParams(inputParams))
   }

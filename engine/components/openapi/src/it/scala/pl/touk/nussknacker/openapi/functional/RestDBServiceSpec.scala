@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.standalone.api.{StandaloneContextLifecycle, St
 import pl.touk.nussknacker.engine.standalone.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
 import pl.touk.nussknacker.openapi
-import pl.touk.nussknacker.openapi.ApiKeyConfig
+import pl.touk.nussknacker.openapi.{ApiKeyConfig, OpenAPIServicesConfig}
 import pl.touk.nussknacker.openapi.enrichers.{BaseSwaggerEnricher, BaseSwaggerEnricherCreator, SwaggerEnrichers}
 import pl.touk.nussknacker.openapi.parser.SwaggerParser
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -33,12 +33,16 @@ class RestDBServiceSpec extends fixture.FunSuite with BeforeAndAfterAll with Mat
 
   def withFixture(test: OneArgTest): Outcome = {
     val definition = Source.fromInputStream(getClass.getClassLoader.getResourceAsStream("customer-swagger.json")).mkString
-    val securities = Map("apikey" -> ApiKeyConfig("TODO"))
-    val services = SwaggerParser.parse(definition, securities)
+
 
     val backend = AsyncHttpClientFutureBackend()
     try {
       StubService.withCustomerService { port =>
+        val securities = Map("apikey" -> ApiKeyConfig("TODO"))
+        val config = OpenAPIServicesConfig(securities = Some(securities),
+          rootUrl = Some(new URL(s"http://localhost:$port")))
+        val services = SwaggerParser.parse(definition, config)
+
         val enricher = new SwaggerEnrichers(Some(new URL(s"http://localhost:$port")), new SimpleEnricherCreator(backend))
           .enrichers(services, Nil, Map.empty).head.service.asInstanceOf[ServiceWithExplicitMethod with StandaloneContextLifecycle]
         enricher.open(JobData(metaData, ProcessVersion.empty, DeploymentData.empty), new StandaloneContextPreparer(NoOpMetricsProvider).prepare("1"))

@@ -29,8 +29,7 @@ abstract class BaseSwaggerEnricher(rootUrl: Option[URL], swaggerService: Swagger
 
   implicit protected def httpBackendForEc(implicit ec: ExecutionContext): SttpBackend[Future, Nothing, Nothing]
 
-  override def parameterDefinition: List[Parameter] =
-    parameterExtractor.parameterDefinition
+  override def parameterDefinition: List[Parameter] = parameterExtractor.parameterDefinition
 
   override def returnType: typing.TypingResult =
     swaggerService.responseSwaggerType.map(_.typingResult)
@@ -53,6 +52,11 @@ trait BaseSwaggerEnricherCreator {
 
 }
 
+/*
+  We want to be able to use OpenAPI integration both in Flink and standalone mode.
+  This class should work if classpath contains either Flink or standalone, that's why
+  we use class names
+ */
 object BaseSwaggerEnricherCreator {
 
   def apply(httpClientConfig: HttpClientConfig): BaseSwaggerEnricherCreator = {
@@ -69,6 +73,7 @@ object BaseSwaggerEnricherCreator {
     if (isStandaloneBased) {
       return new BaseSwaggerEnricherCreator {
 
+        //TODO: figure out how to pass client...
         lazy val asyncHttpClient = new DefaultAsyncHttpClient(httpClientConfig.toAsyncHttpClientConfig(None).build())
 
         override def create(rootUrl: Option[URL], swaggerService: SwaggerService, fixedParams: Map[String, () => AnyRef]): BaseSwaggerEnricher =
