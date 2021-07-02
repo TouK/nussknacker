@@ -73,7 +73,7 @@ object NussknackerVersion {
 
 case class NussknackerVersion(value: Semver)
 
-case class ComponentDefinition(name: String, component: Component)
+case class ComponentDefinition(name: String, component: Component, icon: Option[String] = None, docsUrl: Option[String] = None)
 
 
 

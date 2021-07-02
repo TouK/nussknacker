@@ -1,0 +1,34 @@
+openapi: "3.0.0"
+info:
+  title: Simple API overview
+  version: 2.0.0
+servers:
+  - url: http://petstore.swagger.io/v1
+paths:
+  /someService:
+    get:
+      responses:
+        '200':
+          description: "-"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Component'
+      operationId: getService
+    post:
+      operationId: postService
+      responses:
+        '200':
+          description:
+            Returns ComponentsByAccount.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Component'
+components:
+  schemas:
+    Component:
+      type: object
+      properties:
+        NAME:
+          type: string

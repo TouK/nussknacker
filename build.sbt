@@ -212,6 +212,10 @@ lazy val commonSettings =
         //Our main kafka dependencies are Confluent (for avro) and Flink (Kafka connector)
         "org.apache.kafka" % "kafka-clients" % kafkaV,
         "org.apache.kafka" %% "kafka" % kafkaV,
+
+        "io.netty" % "netty-handler" % nettyV,
+        "io.netty" % "netty-codec" % nettyV,
+        "io.netty" % "netty-transport-native-epoll" % nettyV,
       )
     )
 
@@ -246,6 +250,7 @@ val commonsIOV = "2.4"
 val dropWizardV = "5.0.0-rc3"
 val scalaCollectionsCompatV = "2.3.2"
 val testcontainersScalaV = "0.39.3"
+val nettyV = "4.1.48.Final"
 
 val akkaHttpV = "10.1.8"
 val akkaHttpCirceV = "1.27.0"
@@ -377,6 +382,9 @@ lazy val dist = {
 }
 
 def engine(name: String) = file(s"engine/$name")
+
+def component(name: String) = file(s"engine/components/$name")
+
 
 lazy val engineStandalone = (project in engine("standalone/engine")).
   configs(IntegrationTest).
@@ -545,6 +553,7 @@ lazy val generic = (project in engine("flink/generic")).
       )
     })
   .dependsOn(process % "runtime,test", avroFlinkUtil, flinkModelUtil, flinkTestUtil % "test", kafkaTestUtil % "test",
+    openapi,
     //for local development
     ui % "test")
 
@@ -900,6 +909,35 @@ lazy val queryableState = (project in engine("queryableState")).
   ).dependsOn(api)
 
 
+val swaggerParserV = "2.0.20"
+val swaggerIntegrationV = "2.1.3"
+
+lazy val openapi = (project in component("openapi")).
+    configs(IntegrationTest).
+    settings(commonSettings).
+    settings(Defaults.itSettings).
+    settings(
+      name := "nussknacker-openapi",
+      libraryDependencies ++= Seq(
+        "io.swagger.parser.v3" % "swagger-parser" % swaggerParserV excludeAll(
+          ExclusionRule(organization = "javax.mail"),
+          ExclusionRule(organization = "javax.validation"),
+          ExclusionRule(organization = "jakarta.activation"),
+          ExclusionRule(organization = "jakarta.validation")
+        ),
+        "io.swagger.core.v3" % "swagger-integration" % swaggerIntegrationV  excludeAll(
+          ExclusionRule(organization = "jakarta.activation"),
+          ExclusionRule(organization = "jakarta.validation")
+        ),
+        "com.softwaremill.sttp.client" %% "circe" % sttpV excludeAll ExclusionRule(organization = "io.circe"),
+        "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV  excludeAll(
+          ExclusionRule(organization = "com.sun.activation", name = "javax.activation"),
+        ),
+        "io.netty" % "netty-transport-native-epoll" % nettyV,
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided,optional",
+        "org.scalatest" %% "scalatest" % scalaTestV %  "it,test"
+      ),
+    ).dependsOn(api, process % "provided,optional", engineStandalone % "provided,optional", standaloneUtil % "provided,optional", httpUtils % Provided, flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
 
 lazy val buildUi = taskKey[Unit]("builds ui")
 
@@ -1042,7 +1080,7 @@ lazy val bom = (project in file("bom"))
 
 lazy val modules = List[ProjectReference](
   engineStandalone, standaloneApp, flinkProcessManager, flinkPeriodicProcessManager, standaloneSample, flinkManagementSample, managementJavaSample, generic,
-  process, interpreter, benchmarks, kafka, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
+  openapi, process, interpreter, benchmarks, kafka, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
   flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils, queryableState,
   restmodel, listenerApi, ui
 )

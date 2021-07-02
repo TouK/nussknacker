@@ -1,0 +1,140 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "",
+    "version": "1.0",
+    "title": ""
+  },
+  "host": "11.11.11.11:7021",
+  "basePath": "/system1-collections/",
+  "tags": [],
+  "paths": {
+    "/line/getCollectionData/{accountNo}": {
+      "get": {
+        "tags": [
+          "1-controller"
+        ],
+        "summary": "Get collections information",
+        "operationId": "getCollectionDataUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json;charset=UTF-8"
+        ],
+        "parameters": [
+          {
+            "name": "accountNo",
+            "in": "path",
+            "description": "accountNo",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pretty",
+            "in": "query",
+            "description": "pretty",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "System-Name",
+            "in": "header",
+            "description": "System-Name",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "System-User-Name",
+            "in": "header",
+            "description": "System-User-Name",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "X-Correlation-ID",
+            "in": "header",
+            "description": "X-Correlation-ID",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "sdDate": {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                "ocbDate": {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                "collectionIndicator": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+              }
+          },
+          "400": {
+            "description": "Problem with request"
+          },
+          "404": {
+            "description": "Requested account not found"
+          },
+          "500": {
+            "description": "Operation exception"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "HistoryStep": {
+      "type": "object"
+    },
+    "ReconCostData": {
+      "type": "object",
+      "properties": {
+        "reconAmount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "costClass": {
+          "type": "string",
+          "enum": [
+            "EXEC",
+            "BLAH"
+          ]
+        }
+      }
+    },
+    "ReconCostRequest": {
+      "type": "object",
+      "properties": {
+        "accountNo": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "annotation": {
+          "type": "string"
+        },
+        "transDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "reconCosts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ReconCostData"
+          }
+        }
+      }
+    }
+  }
+}

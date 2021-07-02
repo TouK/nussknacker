@@ -1,0 +1,52 @@
+openapi: "3.0.0"
+info:
+  title: Simple API overview
+  version: 2.0.0
+servers:
+  - url: http://petstore.swagger.io/v1
+paths:
+  /someService/{param1}:
+    post:
+      operationId: testService
+      summary: testOperation
+      tags:
+        - Default
+      externalDocs:
+        url: https://touk.pl
+      parameters:
+        - name: param1
+          in: path
+          schema:
+            type: integer
+            format: int64
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                offers:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      accountId:
+                        type: integer
+                otherField:
+                  type: string
+      responses:
+        '200':
+          description:
+            Returns ComponentsByAccount.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Component'
+components:
+  schemas:
+    Component:
+      type: object
+      properties:
+        NAME:
+          type: string

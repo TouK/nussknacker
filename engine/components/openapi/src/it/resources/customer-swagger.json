@@ -1,0 +1,66 @@
+{
+  "paths": {
+    "/customers/{customer_id}": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Customer"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "customers"
+        ],
+        "operationId": "getCustomer"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "customer_id",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      ]
+    }
+  },
+  "info": {
+    "title": "Customers",
+    "version": "v1"
+  },
+  "tags": [
+    {
+      "name": "customers",
+      "description": "Operations on customers"
+    }
+  ],
+  "openapi": "3.0.2",
+  "components": {
+    "schemas": {
+      "Customer": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer",
+            "readOnly": true
+          }
+        }
+      }
+    },
+    "responses": {}
+  }
+}

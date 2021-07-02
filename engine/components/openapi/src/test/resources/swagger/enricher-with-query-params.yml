@@ -1,0 +1,65 @@
+openapi: "3.0.0"
+info:
+  title: Simple API overview
+  version: 2.0.0
+servers:
+  - url: http://petstore.swagger.io/v1
+paths:
+  /someService/someSubPath/{pathParam1}/otherSubPath/{pathParam2}:
+    get:
+      operationId: getComponentsByAccount
+      x-vertx-event-bus: components_by_account.myapp
+      summary: Get the Components by accountNo.
+      tags:
+        - Category1
+        - Default
+      externalDocs:
+        url: https://touk.pl
+      parameters:
+        - name: pathParam1
+          in: path
+          schema:
+            type: integer
+            format: int64
+          required: true
+        - name: pathParam2
+          in: path
+          schema:
+            type: string
+          required: true
+        - name: queryParam1
+          in: query
+          schema:
+            type: array
+            items:
+              type: integer
+          required: false
+        - name: queryParam2
+          in: query
+          schema:
+            type: boolean
+          required: false
+        - name: queryParam3
+          in: query
+          schema:
+            type: object
+            properties:
+              NAME:
+                type: string
+          required: false
+
+      responses:
+        '200':
+          description:
+            Returns ComponentsByAccount.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Component'
+components:
+  schemas:
+    Component:
+      type: object
+      properties:
+        NAME:
+          type: string

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.kafka
+package pl.touk.nussknacker.test
 
 import java.net.ServerSocket
 
@@ -19,7 +19,7 @@ object AvailablePortFinder {
     }
   }
 
-  def withAvailablePortsBlocked(n: Int)(listen: List[Int] => Unit): Unit = {
+  def withAvailablePortsBlocked[T](n: Int)(listen: List[Int] => T): T = {
     synchronized {
       listen(findAvailablePorts(n))
     }
