@@ -24,7 +24,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
 
-class RestDBServiceSpec extends fixture.FunSuite with BeforeAndAfterAll with Matchers with EitherValues with LazyLogging with PatientScalaFutures {
+class OpenAPIServiceSpec extends fixture.FunSuite with BeforeAndAfterAll with Matchers with EitherValues with LazyLogging with PatientScalaFutures {
 
   implicit val metaData: MetaData = MetaData("testProc", StreamMetaData())
   implicit val contextId: ContextId = ContextId("testContextId")
@@ -54,7 +54,7 @@ class RestDBServiceSpec extends fixture.FunSuite with BeforeAndAfterAll with Mat
     }
   }
 
-  test("companies") { service =>
+  test("service returns customers") { service =>
 
     val valueWithChosenFields = service.invokeService(List("10")).futureValue.asInstanceOf[TypedMap].asScala
     valueWithChosenFields shouldEqual Map("name" -> "Robert Wright", "id" -> 10, "category" -> "GOLD")

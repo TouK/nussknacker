@@ -73,7 +73,8 @@ object BaseSwaggerEnricherCreator {
     if (isStandaloneBased) {
       return new BaseSwaggerEnricherCreator {
 
-        //TODO: figure out how to pass client...
+        //TODO: figure out how to create client only once and enable its closing. Also: do we want to pass processId here?
+        //Should client be one per request-response deployment, or per scenario? 
         lazy val asyncHttpClient = new DefaultAsyncHttpClient(httpClientConfig.toAsyncHttpClientConfig(None).build())
 
         override def create(rootUrl: Option[URL], swaggerService: SwaggerService, fixedParams: Map[String, () => AnyRef]): BaseSwaggerEnricher =

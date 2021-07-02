@@ -17,16 +17,16 @@ of HTTP method, path and parameters (to provide some level of uniqueness)
 
 Table below describes data types that OpenAPI integration handles:
 | OpenAPI Type  | OpenAPI Format | Type in Nussknacker |
-| ------------- | -------------- | ------------------- | 
-| boolean       |                | Boolean |
-| string        |                | String |
-| string        | date-time      | LocalDateTime | 
-| integer       |                | Long       |
-| number        |                | BigDecimal |
-| number        | double         | Double     |
-| number        | float          | Double     |
-| array         |                | array      |
-| map/object    |                | record     |
+| ------------- | -------------- | ------------------- |
+| boolean       |                | Boolean             |
+| string        |                | String              |
+| string        | date-time      | LocalDateTime       |
+| integer       |                | Long                |
+| number        |                | BigDecimal          |
+| number        | double         | Double              |
+| number        | float          | Double              |
+| array         |                | array               |
+| map/object    |                | record              |
 
 OpenAPI integration can handle schema references. 
 For objects and maps we use `properties` to define structure.
@@ -55,10 +55,10 @@ components {
 }
 ```
 
-| Parameter | Required | Default | Description |
-| ----------| -------- | ------- | ----------- |
-| url       | true     |         | URL with OpenAPI resource |
-| rootUrl   | false    |         | Base URL of service, can be used to override value from OpenAPI in NAT settings |
-| allowedMethods | false | ["GET"] | Usually only GET services should be used as enrichers are meant to be idempotent and not change data |
-| namePattern | false | .* | Regexp for filtering operations by operationId (i.e. enricher name)
-| security  | false | | Configuration for [authentication](https://swagger.io/docs/specification/authentication/). Currently only apiKey is supported |
+| Parameter      | Required | Default | Description                                                                                                                   |
+| ----------     | -------- | ------- | -----------                                                                                                                   |
+| url            | true     |         | URL with OpenAPI resource                                                                                                     |
+| rootUrl        | false    |         | Base URL of service, can be used to override value from OpenAPI in NAT settings                                               |
+| allowedMethods | false    | ["GET"] | Usually only GET services should be used as enrichers are meant to be idempotent and not change data                          |
+| namePattern    | false    | .*      | Regexp for filtering operations by operationId (i.e. enricher name)                                                           |
+| security       | false    |         | Configuration for [authentication](https://swagger.io/docs/specification/authentication/). Currently only apiKey is supported |

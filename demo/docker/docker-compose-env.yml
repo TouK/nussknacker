@@ -152,7 +152,7 @@ services:
       - taskmanager
       - grafana
   customerservice:
-    container_name: nussknac_customerservice
+    container_name: nussknacker_customerservice
     build: customerservice
 
 volumes:

@@ -56,8 +56,7 @@ class SwaggerParserTest extends FunSuite with Matchers {
       (List("GET", "POST"), ".*", List("getService", "postService")),
       (List("GET"), ".*", List("getService")),
       (List("GET", "POST"), "post.*", List("postService")),
-      (List("GET"), "post.*", List()),
-
+      (List("GET"), "post.*", List())
     )) { (allowedMethods, namePattern, expectedNames) =>
       SwaggerParser.parse(swaggerJson, baseConfig.copy(allowedMethods = allowedMethods,
         namePattern = namePattern.r)).map(_.name) shouldBe expectedNames
