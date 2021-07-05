@@ -12,7 +12,7 @@ export function UserSettingsPanel(): JSX.Element {
   const [settings, , reset] = useUserSettings()
   const value = Object.entries(settings).map(([label, value]) => ({label, value}))
   return (
-    <CollapsibleToolbar id="user-settings-panel" title={t("panels.userSettings.title", "User settings")}>
+    <CollapsibleToolbar id="user-settings-panel" title={t("panels.userSettings.title", "🧪 User settings")}>
       <Creatable
         isMulti
         value={value}
