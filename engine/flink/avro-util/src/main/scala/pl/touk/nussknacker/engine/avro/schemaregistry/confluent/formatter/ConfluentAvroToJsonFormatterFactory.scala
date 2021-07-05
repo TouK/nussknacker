@@ -80,12 +80,11 @@ class ConfluentAvroToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaC
           case None => null
         }
       } else {
-        val keySchemaId = record.keySchemaId.getOrElse(throw new IllegalArgumentException("Error reading key schema: empty schema id"))
-        val keySchema = getSchemaById(keySchemaId)
-        keyOpt.map(keyJson => messageReader.readJson[K](keyJson, keySchemaId, keySchema)).getOrElse(throw new IllegalArgumentException("Error reading key schema: expected valid avro key"))
+        val keySchema = record.keySchemaId.map(id => getSchemaById(id)).getOrElse(throw new IllegalArgumentException("Error reading key schema: empty schema id"))
+        keyOpt.map(keyJson => messageReader.readJson(keyJson, keySchema, ConfluentUtils.keySubject(topic))).getOrElse(throw new IllegalArgumentException("Error reading key schema: expected valid avro key"))
       }
       val valueSchema = getSchemaById(record.valueSchemaId)
-      val valueBytes = messageReader.readJson[V](value, record.valueSchemaId, valueSchema)
+      val valueBytes = messageReader.readJson(value, valueSchema, ConfluentUtils.valueSubject(topic))
       (keyBytes, valueBytes)
     }
     record.consumerRecord.toKafkaConsumerRecord(topic, serializeKeyValue)
