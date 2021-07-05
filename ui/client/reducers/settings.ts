@@ -1,6 +1,6 @@
 import {Action} from "../actions/reduxTypes"
 import User from "../common/models/User"
-import {DEV_TOOLBARS} from "../components/toolbarSettings/defaultToolbarsConfig"
+import {DEV_TOOLBARS} from "../components/toolbarSettings/DEV_TOOLBARS"
 import {ProcessDefinitionData} from "../types"
 import {WithId} from "../types/common"
 import {ToolbarsConfig} from "../components/toolbarSettings/types"

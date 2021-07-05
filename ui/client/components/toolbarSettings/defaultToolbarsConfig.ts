@@ -3,13 +3,8 @@ import {ToolbarsSide} from "../../reducers/toolbars"
 import {WithId} from "../../types/common"
 import {ButtonsVariant} from "../toolbarComponents/ToolbarButtons"
 import {BuiltinButtonTypes} from "./buttons"
+import {DEV_TOOLBARS} from "./DEV_TOOLBARS"
 import {ToolbarsConfig} from "./types"
-
-export const DEV_TOOLBARS = process.env.NODE_ENV !== "production" ?
-  [
-    {id: "user-settings-panel"},
-  ] :
-  []
 
 //It's only to local development
 export function defaultToolbarsConfig(isSubprocess: boolean, isArchived: boolean): WithId<ToolbarsConfig> {
