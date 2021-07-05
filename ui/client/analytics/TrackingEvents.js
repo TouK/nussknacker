@@ -1,6 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
 export const events = {
   categories: {
+    leftPanel: "right_panel",
     rightPanel: "right_panel",
     keyboard: "keyboard",
   },

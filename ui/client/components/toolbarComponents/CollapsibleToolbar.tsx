@@ -1,13 +1,13 @@
-import React, {Children, PropsWithChildren, useCallback, useMemo, useState} from "react"
-import styles from "./CollapsibleToolbar.styl"
-import {useSelector, useDispatch} from "react-redux"
-import {toggleToolbar} from "../../actions/nk/toolbars"
-import {useDragHandler} from "./DragHandle"
-import Panel from "react-bootstrap/lib/Panel"
 import classNames from "classnames"
-import {getIsCollapsed} from "../../reducers/selectors/toolbars"
-import ErrorBoundary from "../common/ErrorBoundary"
+import React, {Children, PropsWithChildren, useCallback, useMemo, useState} from "react"
+import Panel from "react-bootstrap/lib/Panel"
+import {useDispatch, useSelector} from "react-redux"
+import {toggleToolbar} from "../../actions/nk/toolbars"
 import {ReactComponent as CollapseIcon} from "../../assets/img/arrows/panel-hide-arrow.svg"
+import {getIsCollapsed, getToolbarsConfigId} from "../../reducers/selectors/toolbars"
+import ErrorBoundary from "../common/ErrorBoundary"
+import styles from "./CollapsibleToolbar.styl"
+import {useDragHandler} from "./DragHandle"
 
 export type CollapsibleToolbarProps = PropsWithChildren<{
   id?: string,
@@ -21,9 +21,11 @@ export function CollapsibleToolbar({title, children, isHidden, id}: CollapsibleT
   const [isShort, setIsShort] = useState(isCollapsed(id))
   const [isCollapsing, setIsCollapsing] = useState(false)
   const [isExpanding, setIsExpanding] = useState(false)
+  const configId = useSelector(getToolbarsConfigId)
+
   const onToggle = useCallback(
-    () => id && dispatch(toggleToolbar(id, !isCollapsed(id))),
-    [dispatch, id, isCollapsed]
+    () => id && dispatch(toggleToolbar(id, configId, !isCollapsed(id))),
+    [configId, dispatch, id, isCollapsed],
   )
   const isCollapsible = !!id
 
