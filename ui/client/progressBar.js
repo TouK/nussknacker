@@ -14,7 +14,7 @@ function getElapsed() {
   const {longTime} = options
   const elapsed = Math.round((Date.now() - startTime) / 1000)
   const elapsedColor = elapsed < longTime / 2 ? chalk.green : elapsed < longTime ? chalk.yellow : chalk.red
-  return elapsedColor(`${elapsed}s`)
+  return elapsedColor(padStart(`${elapsed}s`, 4))
 }
 
 function getBar(percentage) {
@@ -32,12 +32,14 @@ const getLine = (percentage, massage = "", ...args) => chalk.cyan([
   chalk.dim(args.filter(Boolean)),
 ].join(" "))
 
-function render(...args) {
+const isCi = process.env.CI === "true"
+
+const render = throttle((...args) => {
   process.stdout.cursorTo(0)
   process.stdout.clearLine()
   process.stdout.write(getLine(...args))
   process.stdout.cursorTo(0)
-}
+}, isCi? 5000: 1000)
 
 module.exports = throttle((percentage, ...args) => {
   if (percentage <= 0) {

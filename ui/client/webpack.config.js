@@ -19,7 +19,6 @@ const NODE_ENV = process.env.NODE_ENV || "development"
 const GIT_HASH = childProcess.execSync("git log -1 --format=%H").toString()
 const GIT_DATE = childProcess.execSync("git log -1 --format=%cd").toString()
 const isProd = NODE_ENV === "production"
-const isCi = process.env.CI === "true"
 
 const smp = new SpeedMeasurePlugin({
   disable: true,
@@ -185,7 +184,7 @@ module.exports = smp.wrap({
     // each 10% log entry in separate line - fix for travis no output problem
     new ForkTsCheckerWebpackPlugin(),
     isProd ? null : new ReactRefreshWebpackPlugin(),
-    isCi ? null : new webpack.ProgressPlugin(progressBar),
+    new webpack.ProgressPlugin(progressBar),
   ].filter(Boolean),
   module: {
     rules: [
