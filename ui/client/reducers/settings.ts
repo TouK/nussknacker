@@ -1,8 +1,10 @@
 import {Action} from "../actions/reduxTypes"
 import User from "../common/models/User"
+import {DEV_TOOLBARS} from "../components/toolbarSettings/defaultToolbarsConfig"
 import {ProcessDefinitionData} from "../types"
 import {WithId} from "../types/common"
 import {ToolbarsConfig} from "../components/toolbarSettings/types"
+import {ToolbarsSide} from "./toolbars"
 
 export enum AuthBackends {
   BASIC = "BasicAuth",
@@ -71,7 +73,7 @@ export function reducer(state: SettingsState = initialState, action: Action): Se
     case "PROCESS_TOOLBARS_CONFIGURATION_LOADED": {
       return {
         ...state,
-        processToolbarsConfiguration: action.data,
+        processToolbarsConfiguration: {...action.data, [ToolbarsSide.BottomRight]: [...action.data.bottomRight, ...DEV_TOOLBARS]},
       }
     }
     default:

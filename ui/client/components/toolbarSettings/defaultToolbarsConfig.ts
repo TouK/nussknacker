@@ -5,10 +5,16 @@ import {ButtonsVariant} from "../toolbarComponents/ToolbarButtons"
 import {BuiltinButtonTypes} from "./buttons"
 import {ToolbarsConfig} from "./types"
 
+export const DEV_TOOLBARS = process.env.NODE_ENV !== "production" ?
+  [
+    {id: "user-settings-panel"},
+  ] :
+  []
+
 //It's only to local development
 export function defaultToolbarsConfig(isSubprocess: boolean, isArchived: boolean): WithId<ToolbarsConfig> {
 
-  const processPanelButtons = (!isSubprocess ? [{type: BuiltinButtonTypes.processProperties}]: []).concat(
+  const processPanelButtons = (!isSubprocess ? [{type: BuiltinButtonTypes.processProperties}] : []).concat(
     [
       {type: BuiltinButtonTypes.processCompare},
       {type: BuiltinButtonTypes.processMigrate},
@@ -44,14 +50,16 @@ export function defaultToolbarsConfig(isSubprocess: boolean, isArchived: boolean
         id: "edit-panel",
         title: "edit",
         buttonsVariant: ButtonsVariant.small,
-        buttons: isArchived ? [] : [
-          {type: BuiltinButtonTypes.editUndo},
-          {type: BuiltinButtonTypes.editRedo},
-          {type: BuiltinButtonTypes.editCopy},
-          {type: BuiltinButtonTypes.editPaste},
-          {type: BuiltinButtonTypes.editDelete},
-          {type: BuiltinButtonTypes.editLayout},
-        ],
+        buttons: isArchived ?
+          [] :
+          [
+            {type: BuiltinButtonTypes.editUndo},
+            {type: BuiltinButtonTypes.editRedo},
+            {type: BuiltinButtonTypes.editCopy},
+            {type: BuiltinButtonTypes.editPaste},
+            {type: BuiltinButtonTypes.editDelete},
+            {type: BuiltinButtonTypes.editLayout},
+          ],
       },
       {
         id: "process-panel",
@@ -71,10 +79,12 @@ export function defaultToolbarsConfig(isSubprocess: boolean, isArchived: boolean
       {
         id: "group-panel",
         title: "group",
-        buttons: isArchived ? [] : [
-          {type: BuiltinButtonTypes.group},
-          {type: BuiltinButtonTypes.ungroup},
-        ],
+        buttons: isArchived ?
+          [] :
+          [
+            {type: BuiltinButtonTypes.group},
+            {type: BuiltinButtonTypes.ungroup},
+          ],
       },
       {id: "details-panel"},
     ],
@@ -85,8 +95,6 @@ export function defaultToolbarsConfig(isSubprocess: boolean, isArchived: boolean
       {id: "comments-panel"},
       {id: "attachments-panel"},
     ],
-    [ToolbarsSide.BottomRight]: process.env.NODE_ENV !== "production" ? [
-      {id: "user-settings-panel"},
-    ] : [],
+    [ToolbarsSide.BottomRight]: DEV_TOOLBARS,
   }
 }
