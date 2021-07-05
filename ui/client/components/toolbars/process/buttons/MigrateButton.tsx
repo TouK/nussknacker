@@ -11,12 +11,16 @@ import {getFeatureSettings} from "../../../../reducers/selectors/settings"
 import {isMigrationPossible, getProcessVersionId, getProcessId} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/migrate.svg"
+import {ToolbarButtonProps} from "../../types"
 
-function MigrateButton(props: StateProps) {
+type Props = StateProps & ToolbarButtonProps
+
+function MigrateButton(props: Props) {
   const {
     processId, migrationPossible, featuresSettings,
-    versionId, toggleConfirmDialog,
+    versionId, toggleConfirmDialog, disabled,
   } = props
+  const available = !disabled && migrationPossible
   const {t} = useTranslation()
 
   if (isEmpty(featuresSettings?.remoteEnvironment)) {
@@ -28,7 +32,7 @@ function MigrateButton(props: StateProps) {
       deploy
       name={t("panels.actions.process-migrate.button", "migrate")}
       icon={<Icon/>}
-      disabled={!migrationPossible}
+      disabled={!available}
       onClick={() => toggleConfirmDialog(
         true,
         DialogMessages.migrate(processId, featuresSettings.remoteEnvironment.targetEnvironmentId),

@@ -7,18 +7,21 @@ import {RootState} from "../../../../reducers/index"
 import {getProcessId, getProcessVersionId, isBusinessView, isPristine} from "../../../../reducers/selectors/graph"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/business.svg"
+import {ToolbarButton as ToolbarButtonProps} from "../../../toolbarSettings/buttons"
 
-type Props = StateProps
+type Props = StateProps & ToolbarButtonProps
 
 function BusinessViewSwitch(props: Props) {
-  const {businessView, fetchProcessToDisplay, nothingToSave, processId, versionId} = props
+  const {businessView, fetchProcessToDisplay, nothingToSave, processId, versionId, disabled} = props
+  const available = !disabled && nothingToSave
   const {t} = useTranslation()
+
   return (
     <ToolbarButton
       name={t("panels.actions.view-businessView.label", "business")}
       icon={<Icon/>}
       isActive={businessView}
-      disabled={!nothingToSave}
+      disabled={!available}
       onClick={() => {
         fetchProcessToDisplay(processId, versionId, !businessView)
       }}

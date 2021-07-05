@@ -13,13 +13,19 @@ import {useTranslation} from "react-i18next"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/unarchive.svg"
 import {ProcessesTabData} from "../../../../containers/Processes"
 import {SubProcessesTabData} from "../../../../containers/SubProcesses"
+import {ToolbarButtonProps} from "../../types"
 
-function UnArchiveButton(props: StateProps) {
+type Props = StateProps & ToolbarButtonProps
+
+function UnArchiveButton(props: Props) {
   const {
-    processId, isArchived,
+    processId,
+    isArchived,
     toggleConfirmDialog,
+    disabled,
   } = props
   const redirectPath = isSubprocess ? ProcessesTabData.path : SubProcessesTabData.path
+  const available = !disabled || !isArchived
   const {t} = useTranslation()
 
   return (
@@ -27,8 +33,8 @@ function UnArchiveButton(props: StateProps) {
       change
       name={t("panels.actions.process-unarchive.button", "unarchive")}
       icon={<Icon/>}
-      disabled={!isArchived}
-      onClick={() => isArchived && toggleConfirmDialog(
+      disabled={!available}
+      onClick={() => toggleConfirmDialog(
         true,
         DialogMessages.unArchiveProcess(processId),
         () => HttpService.unArchiveProcess(processId).then(() => history.push(redirectPath)),

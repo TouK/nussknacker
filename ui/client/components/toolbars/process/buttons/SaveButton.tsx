@@ -9,19 +9,23 @@ import {getCapabilities} from "../../../../reducers/selectors/other"
 import Dialogs from "../../../modals/Dialogs"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 import classes from "./SaveButton.styl"
+import {ToolbarButtonProps} from "../../types"
 
-function SaveButton(): JSX.Element {
+function SaveButton(props: ToolbarButtonProps): JSX.Element {
   const {t} = useTranslation()
+  const {disabled} = props
   const capabilities = useSelector(getCapabilities)
   const saveDisabled = useSelector(isSaveDisabled)
   const dispatch = useDispatch()
+
+  const available = !disabled && (!saveDisabled || capabilities.write)
 
   return (
     <ToolbarButton
       name={t("panels.actions.process-save.button", "save")}
       icon={<Icon/>}
-      labelClassName={cn("button-label", !saveDisabled && classes.unsaved)}
-      disabled={saveDisabled || !capabilities.write}
+      labelClassName={cn("button-label", !disabled && !saveDisabled && classes.unsaved)}
+      disabled={!available}
       onClick={() =>
         //TODO: Checking permission to archive should be done by check action from state - we should add new action type
         dispatch(toggleModalDialog(Dialogs.types.saveProcess))

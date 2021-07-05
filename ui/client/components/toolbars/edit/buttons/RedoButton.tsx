@@ -6,18 +6,22 @@ import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/redo
 import {getHistory} from "../../../../reducers/selectors/graph"
 import {useSelectionActions} from "../../../graph/SelectionContextProvider"
 import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
+import {ToolbarButtonProps} from "../../types"
 
-function RedoButton(): JSX.Element {
+function RedoButton(props: ToolbarButtonProps): JSX.Element {
   const {redo} = useSelectionActions()
   const history = useSelector(getHistory)
   const {t} = useTranslation()
+  const {disabled} = props
+  const available = !disabled && history.future.length > 0 && redo
+
   return (
     <CapabilitiesToolbarButton
       write
       name={t("panels.actions.edit-redo.button", "redo")}
-      disabled={!history.future.length || !redo}
+      disabled={!available}
       icon={<Icon/>}
-      onClick={redo ? e => redo(e.nativeEvent) : null}
+      onClick={available ? e => redo(e.nativeEvent) : null}
     />
   )
 }

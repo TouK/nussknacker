@@ -7,21 +7,26 @@ import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 import {getProcessVersionId, getProcessToDisplay} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/JSON.svg"
+import {ToolbarButtonProps} from "../../types"
 
-type Props = StateProps
+type Props = StateProps & ToolbarButtonProps
 
 function JSONButton(props: Props) {
   const {
-    processToDisplay, versionId, canExport,
+    processToDisplay,
+    versionId,
+    canExport,
     exportProcessToJSON,
+    disabled,
   } = props
+  const available = !disabled && canExport
   const {t} = useTranslation()
 
   return (
     <ToolbarButton
       name={t("panels.actions.process-JSON.button", "JSON")}
       icon={<Icon/>}
-      disabled={!canExport}
+      disabled={!available}
       onClick={() => exportProcessToJSON(processToDisplay, versionId)}
     />
   )

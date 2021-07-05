@@ -5,17 +5,20 @@ import {CapabilitiesToolbarButton} from "../../../toolbarComponents/Capabilities
 import {useTranslation} from "react-i18next"
 import {useGraph} from "../../../graph/GraphContext"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/layout.svg"
+import {ToolbarButtonProps} from "../../types"
 
-function LayoutButton() {
+function LayoutButton(props: ToolbarButtonProps) {
   const dispatch = useThunkDispatch()
   const {t} = useTranslation()
   const graphGetter = useGraph()
+  const {disabled} = props
 
   return (
     <CapabilitiesToolbarButton
       write
       name={t("panels.actions.edit-layout.button", "layout")}
       icon={<Icon/>}
+      disabled={disabled}
       onClick={() => dispatch(layout(() => graphGetter()?.forceLayout()))}
     />
   )

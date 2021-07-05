@@ -9,11 +9,12 @@ import {CapabilitiesToolbarButton} from "../../../toolbarComponents/Capabilities
 import {getProcessId} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/import.svg"
+import {ToolbarButtonProps} from "../../types"
 
-type Props = StateProps
+type Props = StateProps & ToolbarButtonProps
 
 function ImportButton(props: Props) {
-  const {processId, importFiles, reportEvent} = props
+  const {processId, importFiles, reportEvent, disabled} = props
   const {t} = useTranslation()
 
   return (
@@ -21,7 +22,7 @@ function ImportButton(props: Props) {
       write
       name={t("panels.actions.process-import.button", "import")}
       icon={<Icon/>}
-      disabled={false}
+      disabled={disabled}
       onClick={() => reportEvent({
         category: events.categories.rightPanel,
         action: events.actions.buttonClick,

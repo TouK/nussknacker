@@ -7,21 +7,24 @@ import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 import {hasOneVersion} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/compare.svg"
+import {ToolbarButtonProps} from "../../types"
 
-type Props = StateProps
+type Props = StateProps & ToolbarButtonProps
 
 function CompareButton(props: Props) {
   const {
     hasOneVersion,
     toggleModalDialog,
+    disabled,
   } = props
+  const available = !disabled && !hasOneVersion
   const {t} = useTranslation()
 
   return (
     <ToolbarButton
       name={t("panels.actions.process-compare.button", "compare")}
       icon={<Icon/>}
-      disabled={hasOneVersion}
+      disabled={!available}
       onClick={() => toggleModalDialog(Dialogs.types.compareVersions)}
     />
   )

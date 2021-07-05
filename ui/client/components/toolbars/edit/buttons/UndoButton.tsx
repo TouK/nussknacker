@@ -7,18 +7,22 @@ import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/undo
 import {getHistory} from "../../../../reducers/selectors/graph"
 import {useSelectionActions} from "../../../graph/SelectionContextProvider"
 import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
+import {ToolbarButtonProps} from "../../types"
 
-function UndoButton(): JSX.Element {
+function UndoButton(props: ToolbarButtonProps): JSX.Element {
   const {undo} = useSelectionActions()
   const history = useSelector(getHistory)
   const {t} = useTranslation()
+  const {disabled} = props
+  const available = !disabled && history.past.length > 0 && undo
+
   return (
     <CapabilitiesToolbarButton
       write
       name={t("panels.actions.edit-undo.button", "undo")}
-      disabled={!history.past.length || !undo}
+      disabled={!available}
       icon={<Icon/>}
-      onClick={undo ? e => undo(e.nativeEvent) : null}
+      onClick={available ? e => undo(e.nativeEvent) : null}
     />
   )
 }
