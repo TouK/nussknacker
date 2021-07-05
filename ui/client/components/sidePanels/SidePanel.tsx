@@ -6,12 +6,12 @@ import {ScrollbarsExtended} from "./ScrollbarsExtended"
 import TogglePanel from "../TogglePanel"
 import {useDispatch, useSelector} from "react-redux"
 import {isRightPanelOpened, isLeftPanelOpened} from "../../reducers/selectors/toolbars"
-import {toggleRightPanel, toggleLeftPanel} from "../../actions/nk/ui/layout"
+import {togglePanel} from "../../actions/nk/ui/layout"
 
 export function useSidePanelToggle(side: "LEFT" | "RIGHT") {
   const dispatch = useDispatch()
   const isOpened = useSelector(side === "RIGHT" ? isRightPanelOpened : isLeftPanelOpened)
-  const onToggle = () => dispatch(side === "RIGHT" ? toggleRightPanel() : toggleLeftPanel())
+  const onToggle = () => dispatch(togglePanel(side))
   return {isOpened, onToggle}
 }
 

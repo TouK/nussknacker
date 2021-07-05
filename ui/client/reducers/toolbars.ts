@@ -1,7 +1,7 @@
+import {combineReducers} from "redux"
 import {persistReducer} from "redux-persist"
 import storage from "redux-persist/lib/storage"
 import {Reducer} from "../actions/reduxTypes"
-import {combineReducers} from "redux"
 
 export enum ToolbarsSide {
   TopRight = "topRight",
@@ -156,20 +156,29 @@ const combinedReducers = combineReducers<ToolbarsState>({
   collapsed, positions, nodeToolbox, initData, panels,
 })
 
-const configReducer: Reducer<ToolbarsState> = (state, action) => {
-  const withReset = resetReducer(state, action)
-  return combinedReducers(withReset, action)
-}
-
-const configIdReducer: Reducer<string> = (state = "", action) => {
-  return action.type === "REGISTER_TOOLBARS" ? action.configId : state
-}
-
 const reducer: Reducer<ToolbarsStates> = (state = {}, action) => {
-  const currentConfigId = configIdReducer(state.currentConfigId, action)
-  return currentConfigId ?
-    {...state, currentConfigId, [`#${currentConfigId}`]: configReducer(state[`#${currentConfigId}`], action)} :
-    state
+  switch (action.type) {
+    case "REGISTER_TOOLBARS":
+    case "RESET_TOOLBARS":
+    case "MOVE_TOOLBAR":
+    case "TOGGLE_TOOLBAR":
+    case "TOGGLE_ALL_TOOLBARS":
+    case "TOGGLE_LEFT_PANEL":
+    case "TOGGLE_RIGHT_PANEL":
+    case "TOGGLE_NODE_TOOLBOX_GROUP":
+      const withReset = resetReducer(state[`#${action.configId}`], action)
+      return {
+        ...state,
+        currentConfigId: action.configId,
+        [`#${action.configId}`]: combinedReducers(withReset, action),
+      }
+    default:
+      return state
+  }
 }
 
-export const toolbars = persistReducer({key: `toolbars`, storage}, reducer)
+export const toolbars = persistReducer({
+  key: `toolbars`,
+  blacklist: [`currentConfigId`],
+  storage,
+}, reducer)
