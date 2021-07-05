@@ -59,6 +59,8 @@ module.exports = throttle((percentage, ...args) => {
     interval = setInterval(() => render(percentage, ...args), 500)
     render(percentage, ...args)
   } else {
-    process.stdout.clearLine()
+    if (!isCi) {
+      process.stdout.clearLine()
+    }
   }
 }, 500)
