@@ -1,4 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
+const progressBar = require("./progressBar.js")
 const bootstrap = require("bootstrap")
 const path = require("path")
 const webpack = require("webpack")
@@ -12,14 +13,22 @@ const {camelCase} = require("lodash")
 const MomentLocalesPlugin = require("moment-locales-webpack-plugin")
 const ReactRefreshWebpackPlugin = require("@pmmmwh/react-refresh-webpack-plugin")
 const PreloadWebpackPlugin = require("@vue/preload-webpack-plugin")
+const SpeedMeasurePlugin = require("speed-measure-webpack-plugin")
 
 const NODE_ENV = process.env.NODE_ENV || "development"
 const GIT_HASH = childProcess.execSync("git log -1 --format=%H").toString()
 const GIT_DATE = childProcess.execSync("git log -1 --format=%cd").toString()
 const isProd = NODE_ENV === "production"
+const isCi = process.env.CI === "true"
+
+const smp = new SpeedMeasurePlugin({
+  disable: true,
+  outputFormat: "humanVerbose",
+  loaderTopFiles: 5,
+})
 
 const {ModuleFederationPlugin} = webpack.container
-const {dependencies, name} = require("./package.json")
+const {name} = require("./package.json")
 const entry = {
   main: path.resolve(__dirname, "./init.js"),
 }
@@ -45,7 +54,7 @@ const fileLoader = {
   },
 }
 
-module.exports = {
+module.exports = smp.wrap({
   mode: NODE_ENV,
   optimization: {
     splitChunks: {
@@ -96,6 +105,7 @@ module.exports = {
     historyApiFallback: {
       index: "/static/main.html",
     },
+    overlay: {errors: true, warnings: false},
     hot: true,
     host: "0.0.0.0",
     disableHostCheck: true,
@@ -173,16 +183,10 @@ module.exports = {
       },
     }),
     // each 10% log entry in separate line - fix for travis no output problem
-    new webpack.ProgressPlugin((percentage, message, ...args) => {
-      const decimalPercentage = Math.ceil(percentage * 100)
-      if (this.previouslyPrintedPercentage == null || decimalPercentage >= this.previouslyPrintedPercentage + 10 || decimalPercentage === 100) {
-        console.log(` ${decimalPercentage}%`, message, ...args)
-        this.previouslyPrintedPercentage = decimalPercentage
-      }
-    }),
     new ForkTsCheckerWebpackPlugin(),
-    !isProd ? new ReactRefreshWebpackPlugin() : null,
-  ].filter(p => p !== null),
+    isProd ? null : new ReactRefreshWebpackPlugin(),
+    isCi ? null : new webpack.ProgressPlugin(progressBar),
+  ].filter(Boolean),
   module: {
     rules: [
       {
@@ -207,6 +211,7 @@ module.exports = {
       },
       {
         test: /\.[tj]sx?$/,
+        exclude: /node_modules/,
         use: ["babel-loader"],
       },
       {
@@ -229,11 +234,13 @@ module.exports = {
       {
         test: /\.css?$/,
         enforce: "pre",
+        exclude: /node_modules/,
         use: cssPreLoaders,
       },
       {
         test: /\.styl$/,
         enforce: "pre",
+        exclude: /node_modules/,
         use: [
           ...cssPreLoaders,
           {
@@ -249,6 +256,7 @@ module.exports = {
       {
         test: /\.less$/,
         enforce: "pre",
+        exclude: /node_modules/,
         use: [...cssPreLoaders, "less-loader"],
       },
       {
@@ -259,10 +267,10 @@ module.exports = {
         test: /\.(png|jpg)$/,
         use: [fileLoader],
       },
-
       {
         test: /\.svg$/,
         enforce: "pre",
+        exclude: /font/,
         use: [
           "svg-transform-loader",
           {
@@ -297,4 +305,4 @@ module.exports = {
       },
     ],
   },
-}
+})
