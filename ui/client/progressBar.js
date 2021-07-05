@@ -32,14 +32,22 @@ const getLine = (percentage, massage = "", ...args) => chalk.cyan([
   chalk.dim(args.filter(Boolean)),
 ].join(" "))
 
-const isCi = process.env.CI === "true"
+const isCi = process.env.CI === "true" || !process.stdout.isTTY
 
-const render = throttle((...args) => {
+const renderCi = throttle(
+  (...args) => console.log(getLine(...args)),
+  5000,
+  {leading: true, trailing: true},
+)
+
+const renderTTY = (...args) => {
   process.stdout.cursorTo(0)
   process.stdout.clearLine()
   process.stdout.write(getLine(...args))
   process.stdout.cursorTo(0)
-}, isCi? 5000: 1000)
+}
+
+const render = isCi ? renderCi : renderTTY
 
 module.exports = throttle((percentage, ...args) => {
   if (percentage <= 0) {
