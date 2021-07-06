@@ -20,7 +20,7 @@ object SwaggerParser {
       paths = openapi.getPaths.asScala.toMap,
       swaggerRefSchemas = ParseSwaggerRefSchemas(openapi),
       openapi.getServers.asScala.toList,
-      Option(openapi.getSecurity.asScala).map(_.toList).getOrElse(Nil),
+      Option(openapi.getSecurity).map(_.asScala.toList).getOrElse(Nil),
       securitySchemas,
       openAPIsConfig.securities.getOrElse(Map.empty)
     ).filter(service => openAPIsConfig.allowedMethods.contains(service.method))
