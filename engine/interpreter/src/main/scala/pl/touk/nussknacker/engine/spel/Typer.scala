@@ -12,10 +12,11 @@ import org.springframework.expression.Expression
 import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
 import org.springframework.expression.spel.ast._
 import org.springframework.expression.spel.{SpelNode, standard}
+import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, ExpressionTypingInfo}
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings}
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.dict.SpelDictTyper
@@ -28,11 +29,14 @@ import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 import scala.annotation.tailrec
 import scala.reflect.runtime._
-import scala.util.{Success, Failure, Try}
+import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
 
 private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: CommonSupertypeFinder,
-                          dictTyper: SpelDictTyper, strictMethodsChecking: Boolean)(implicit settings: ClassExtractionSettings) extends LazyLogging {
+                          dictTyper: SpelDictTyper, strictMethodsChecking: Boolean,
+                          typeDefinitionSet: TypeDefinitionSet = TypeDefinitionSet(),
+                          referenceTypeValidating: Boolean
+                         )(implicit settings: ClassExtractionSettings) extends LazyLogging {
 
   import ast.SpelAst._
 
@@ -251,7 +255,22 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         case _ => invalid("Invalid ternary operator") // shouldn't happen
       }
       //TODO: what should be here?
-      case e: TypeReference => fixed(Unknown)
+
+      case e: TypeReference => {
+
+        if(!referenceTypeValidating) {
+          println("AUTO VALIDATE BECAUSE FLAG")
+          return valid(Unknown)
+        }
+
+//        typeDefinitionSet.displayBasicInfo(e:SpelNode)
+
+        if(typeDefinitionSet.validateTypeReference(e:SpelNode)) {
+          return valid(Unknown)
+        }
+        return invalid("class was not found")
+
+      }
 
       case e: VariableReference =>
         //only sane way of getting variable name :|
@@ -378,7 +397,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     Invalid(NonEmptyList.of(ExpressionParseError(message)))
 
   def withDictTyper(dictTyper: SpelDictTyper) =
-    new Typer(classLoader, commonSupertypeFinder, dictTyper, strictMethodsChecking = strictMethodsChecking)
+    new Typer(classLoader, commonSupertypeFinder, dictTyper, strictMethodsChecking = strictMethodsChecking, typeDefinitionSet, referenceTypeValidating)
 
 }
 

@@ -93,10 +93,53 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     ObjectDefinition.noParam,
     ExpressionDefinition(
       Map("processHelper" -> ObjectDefinition(List(), Typed(ProcessHelper.getClass), List("cat1"), SingleNodeConfig.zero)),
-      List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false, strictMethodsChecking = true
+      List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false, strictMethodsChecking = true, referenceTypeValidating = true
     ),
     ClassExtractionSettings.Default
   )
+
+  test("TypeReference validation T(MathContext), should succeed") {
+
+    //mbz
+    val invalidStaticMethod = "T(MathContext).exit()"
+
+    val testProcess =
+      EspProcessBuilder
+        .id("TypeReferenceValidationFailure")
+        .exceptionHandler()
+        .source("source1", "source")
+        .filter("filter1", invalidStaticMethod)
+        .sink("id1", "#input", "sink")
+
+    //todo: tu sie dzieje
+    val compilationResult = validate(testProcess, baseDefinition)
+
+    compilationResult.result should matchPattern {
+      case Valid(_) =>
+    }
+
+  }
+
+  test("TypeReference validation T(System), should fail") {
+
+    //mbz
+    val invalidStaticMethod = "T(System).exit()"
+
+    val testProcess =
+    EspProcessBuilder
+      .id("TypeReferenceValidationFailure")
+      .exceptionHandler()
+      .source("source1", "source")
+      .filter("filter1", invalidStaticMethod)
+      .sink("id1", "#input", "sink")
+
+    val compilationResult = validate(testProcess, baseDefinition)
+
+    compilationResult.result should matchPattern {
+      case Valid(_) =>
+    }
+
+  }
 
   test("validated with success") {
     val correctProcess = EspProcessBuilder

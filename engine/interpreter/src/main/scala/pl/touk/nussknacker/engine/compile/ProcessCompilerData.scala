@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.engine.compile
 
 import java.util.concurrent.TimeUnit
-
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.Interpreter
+import pl.touk.nussknacker.engine.{Interpreter, TypeDefinitionSet}
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValue
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.EspExceptionHandler
@@ -11,7 +10,7 @@ import pl.touk.nussknacker.engine.api.{Lifecycle, MetaData, ProcessListener}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.definition.LazyInterpreterDependencies
+import pl.touk.nussknacker.engine.definition.{LazyInterpreterDependencies, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -40,7 +39,8 @@ object ProcessCompilerData {
     val dictRegistryFactory = loadDictRegistry(userCodeClassLoader)
     val dictRegistry = dictRegistryFactory.createEngineDictRegistry(definitions.expressionConfig.dictionaries)
 
-    val expressionCompiler = ExpressionCompiler.withOptimization(userCodeClassLoader, dictRegistry, definitions.expressionConfig, definitions.settings)
+    val typeDefinitionSet = new TypeDefinitionSet(ProcessDefinitionExtractor.extractTypes(definitions))
+    val expressionCompiler = ExpressionCompiler.withOptimization(userCodeClassLoader, dictRegistry, definitions.expressionConfig, definitions.settings, typeDefinitionSet)
     //for testing environment it's important to take classloader from user jar
     val nodeCompiler = new NodeCompiler(definitions, expressionCompiler, userCodeClassLoader, resultsCollector)
     val subCompiler = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)

@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.definition
 
 import java.util.Collections
-
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.conversion.ProcessConfigCreatorMapping
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory.NoParamExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, ProcessObjectDependencies}
@@ -65,7 +65,7 @@ class LazyParameterSpec extends FunSuite with Matchers {
 
   private def prepareInterpreter = {
     val exprDef = ExpressionDefinition(Map.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, Map.empty,
-      hideMetaVariable = false, strictMethodsChecking = true)
+      hideMetaVariable = false, strictMethodsChecking = true, referenceTypeValidating = false)
     val processDef = ProcessDefinition(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty,
       ObjectWithMethodDef.withEmptyConfig(new NoParamExceptionHandlerFactory(_ => null), ProcessObjectDefinitionExtractor.exceptionHandler), exprDef, ClassExtractionSettings.Default)
     val lazyInterpreterDeps = prepareLazyInterpreterDeps(processDef)
@@ -79,7 +79,10 @@ class LazyParameterSpec extends FunSuite with Matchers {
 
   def prepareLazyInterpreterDeps(definitions: ProcessDefinition[ObjectWithMethodDef]): LazyInterpreterDependencies = {
     val expressionEvaluator =  ExpressionEvaluator.unOptimizedEvaluator(GlobalVariablesPreparer(definitions.expressionConfig))
-    val expressionCompiler = ExpressionCompiler.withOptimization(getClass.getClassLoader, new SimpleDictRegistry(Map.empty), definitions.expressionConfig, ClassExtractionSettings.Default)
+    val typeDefinitionSet = new TypeDefinitionSet(ProcessDefinitionExtractor.extractTypes(definitions))
+    val expressionCompiler = ExpressionCompiler.withOptimization(getClass.getClassLoader,
+      new SimpleDictRegistry(Map.empty), definitions.expressionConfig,
+      ClassExtractionSettings.Default, typeDefinitionSet)
     LazyInterpreterDependencies(expressionEvaluator, expressionCompiler, 10.seconds)
   }
 
