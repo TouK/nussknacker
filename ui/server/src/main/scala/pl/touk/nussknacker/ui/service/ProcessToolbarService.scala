@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.service
 
 import com.typesafe.config.Config
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.util.UriUtils
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarButtonConfigType.ToolbarButtonType
 import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarPanelTypeConfig.ToolbarPanelType
@@ -78,8 +79,8 @@ object ToolbarButton {
     config.`type`,
     config.name.map(t => fillByProcessData(t, process)),
     config.title.map(t => fillByProcessData(t, process)),
-    config.icon.map(i => fillByProcessData(i, process)),
-    config.url.map(th => fillByProcessData(th, process)),
+    config.icon.map(i => fillByProcessData(i, process, urlOption = true)),
+    config.url.map(th => fillByProcessData(th, process, urlOption = true)),
     disabled = verifyCondition(config.disabled, process)
   )
 }
@@ -92,10 +93,13 @@ private [service] object ToolbarHelper {
   def createProcessToolbarId(config: ProcessToolbarsConfig, process: BaseProcessDetails[_]): String =
     s"${config.uuidCode}-${if(process.isArchived) "archived" else "not-archived"}-${if(process.isSubprocess) "subprocess" else "process"}"
 
-  def fillByProcessData(text: String, process: BaseProcessDetails[_]): String =
+  def fillByProcessData(text: String, process: BaseProcessDetails[_], urlOption: Boolean = false): String = {
+    val processName = if (urlOption) UriUtils.encodeURIComponent(process.name) else process.name
+
     text
-      .replace("$processName", process.name)
+      .replace("$processName", processName)
       .replace("$processId", process.processId.value.toString)
+  }
 
   def verifyCondition(condition: Option[ToolbarCondition], process: BaseProcessDetails[_]): Boolean = {
     condition.nonEmpty && condition.exists(con => {
