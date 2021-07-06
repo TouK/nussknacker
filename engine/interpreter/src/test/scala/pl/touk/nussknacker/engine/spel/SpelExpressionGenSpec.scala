@@ -8,6 +8,7 @@ import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.{FunSuite, Inside, Matchers}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import org.springframework.expression.spel.support.StandardEvaluationContext
+import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, TypedExpression}
@@ -97,7 +98,7 @@ class SpelExpressionGenSpec extends FunSuite with ScalaCheckDrivenPropertyChecks
 
   private def validate(expr: String, a: Any, b: Any): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val parser = SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(Map.empty), enableSpelForceCompile = false, strictTypeChecking = true,
-      List.empty, SpelExpressionParser.Standard, strictMethodsChecking = true)(ClassExtractionSettings.Default)
+      List.empty, SpelExpressionParser.Standard, strictMethodsChecking = true, typeDefinitionSet = TypeDefinitionSet(), referenceTypeValidating = false)(ClassExtractionSettings.Default)
     implicit val nodeId: NodeId = NodeId("fooNode")
     val validationContext = ValidationContext.empty
       .withVariable("a", Typed.fromInstance(a), paramName = None).toOption.get
