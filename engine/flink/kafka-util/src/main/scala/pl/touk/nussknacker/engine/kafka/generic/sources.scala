@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.consumerrecord.FixedValueDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.generic.KafkaDelayedSourceFactory._
 import pl.touk.nussknacker.engine.kafka.generic.KafkaTypedSourceFactory._
-import pl.touk.nussknacker.engine.kafka.source.{KafkaSource, KafkaSourceFactory}
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.{BasicRecordFormatter, KafkaConfig, PreparedKafkaTopic, RecordFormatter, RecordFormatterFactory}
 import pl.touk.nussknacker.engine.util.Implicits._
@@ -61,9 +61,9 @@ object sources {
     }
   }
 
-  class DelayedGenericTypedJsonSourceFactory(timestampAssigner: Option[TimestampWatermarkHandler[TypedJson]],
-                                             formatterFactory: RecordFormatterFactory,
-                                             processObjectDependencies: ProcessObjectDependencies)
+  class DelayedGenericTypedJsonSourceFactory(formatterFactory: RecordFormatterFactory,
+                                             processObjectDependencies: ProcessObjectDependencies,
+                                             timestampAssigner: Option[TimestampWatermarkHandler[TypedJson]])
     extends KafkaSourceFactory[String, TypedMap](
       new FixedValueDeserializationSchemaFactory(JsonTypedMapDeserialization),
       timestampAssigner,
@@ -72,7 +72,7 @@ object sources {
     ) with BaseKafkaDelayedSourceFactory {
 
     override protected def prepareInitialParameters: List[Parameter] = super.prepareInitialParameters ++ List(
-      TypeParameter, TimestampParameter, DelayParameter
+      TypeParameter, TimestampFieldParameter, DelayParameter
     )
 
     override def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
@@ -106,15 +106,18 @@ object sources {
                                         timestampAssigner: Option[TimestampWatermarkHandler[TypedJson]],
                                         formatter: RecordFormatter,
                                         flinkContextInitializer: FlinkContextInitializer[TypedJson]): FlinkSource[TypedJson] = {
-      val timestampFieldName = extractTimestampField(params)
-      val extractTimestamp: (ConsumerRecord[String, TypedMap], Long) => Long = (consumerRecord, kafkaEventTimestamp) => {
-        Option(timestampFieldName)
-          .map(f => consumerRecord.value().get(f).asInstanceOf[Long])
-          .getOrElse(kafkaEventTimestamp)
-      }
       extractDelayInMillis(params) match {
         case millis if millis > 0 =>
-          createDelayedKafkaSource[String, TypedMap](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, flinkContextInitializer, millis, extractTimestamp)
+          val timestampFieldName = extractTimestampField(params)
+          val timestampAssignerWithExtract: Option[TimestampWatermarkHandler[TypedJson]] =
+            Option(timestampFieldName)
+              .map(fieldName => {
+                prepareTimestampAssigner(
+                  kafkaConfig,
+                  (element: TypedJson) => element.value().get(fieldName).asInstanceOf[Long]
+                )
+              }).orElse(timestampAssigner)
+          createDelayedKafkaSource[String, TypedMap](preparedTopics, kafkaConfig, deserializationSchema, timestampAssignerWithExtract, formatter, flinkContextInitializer, millis)
         case _ =>
           super.createSource(params, dependencies, finalState, preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, flinkContextInitializer)
       }

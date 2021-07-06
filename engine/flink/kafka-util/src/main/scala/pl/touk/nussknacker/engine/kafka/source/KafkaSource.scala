@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, Fli
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrderPreviousElementAssigner
 import pl.touk.nussknacker.engine.kafka._
+import pl.touk.nussknacker.engine.kafka.source.KafkaSource.defaultMaxOutOfOrdernessMillis
 
 import scala.collection.JavaConverters._
 
@@ -30,8 +31,6 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
     with ExplicitUidInOperatorsSupport {
 
   private lazy val topics: List[String] = preparedTopics.map(_.prepared)
-
-  private val defaultMaxOutOfOrdernessMillis = 60000
 
   override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[Context] = {
     val consumerGroupId = overriddenConsumerGroup.getOrElse(ConsumerGroupDeterminer(kafkaConfig).consumerGroup(flinkNodeContext))
@@ -81,4 +80,8 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
     deserializationSchema.deserialize(record)
   }
 
+}
+
+object KafkaSource {
+  val defaultMaxOutOfOrdernessMillis = 60000
 }
