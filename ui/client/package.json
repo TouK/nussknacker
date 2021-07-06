@@ -149,7 +149,7 @@
     "@types/loadable__component": "^5.13.3",
     "@types/lodash": "^4.14.170",
     "@types/react": "^17.0.12",
-    "@types/react-beautiful-dnd": "^13.0.0",
+    "@types/react-beautiful-dnd": "^13.1.0",
     "@types/react-bootstrap": "^0.32.25",
     "@types/react-custom-scrollbars": "^4.0.7",
     "@types/react-dom": "^17.0.8",
