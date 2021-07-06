@@ -35,7 +35,6 @@ export function UserSettingsPanel(): JSX.Element {
       />
     </CollapsibleToolbar>
   )
-
 }
 
 const Menu = () => <></>

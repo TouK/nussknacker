@@ -11,7 +11,7 @@ export interface LinkButtonProps {
   title?: string,
   url: string,
   icon?: string,
-  disabled: boolean,
+  disabled?: boolean,
 }
 
 export function LinkButton({url, icon, name, title, disabled}: LinkButtonProps): JSX.Element {
