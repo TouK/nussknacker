@@ -1,0 +1,15 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`PlainStyleLink should suport ? 1`] = `"<a class=\\"css-1gfub0l\\" href=\\"/?google\\"></a>"`;
+
+exports[`PlainStyleLink should support # 1`] = `"<a class=\\"css-1gfub0l\\" href=\\"/#google\\"></a>"`;
+
+exports[`PlainStyleLink should support / 1`] = `"<a class=\\"css-1gfub0l\\" href=\\"/google\\"></a>"`;
+
+exports[`PlainStyleLink should support // 1`] = `"<a class=\\"css-1gfub0l\\" href=\\"//google.com\\"></a>"`;
+
+exports[`PlainStyleLink should support http:// 1`] = `"<a class=\\"css-1gfub0l\\" href=\\"http://google.com\\"></a>"`;
+
+exports[`PlainStyleLink should support https:// 1`] = `"<a class=\\"css-1gfub0l\\" href=\\"https://google.com\\"></a>"`;
+
+exports[`PlainStyleLink should support plain string 1`] = `"<a class=\\"css-1gfub0l\\" href=\\"/google\\"></a>"`;
