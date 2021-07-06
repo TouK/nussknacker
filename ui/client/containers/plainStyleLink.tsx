@@ -5,8 +5,8 @@ import {Link, LinkProps} from "react-router-dom"
 
 const externalUrlRe = /^(https?:)?\/\/\w/
 
-export function isExternalUrl(to: unknown): to is string {
-  return isString(to) && externalUrlRe.test(to)
+export function isExternalUrl(maybeUrl: unknown): maybeUrl is string {
+  return isString(maybeUrl) && externalUrlRe.test(maybeUrl)
 }
 
 export function PlainStyleLink({disabled, to, ...props}: LinkProps & {disabled?: boolean}): JSX.Element {
