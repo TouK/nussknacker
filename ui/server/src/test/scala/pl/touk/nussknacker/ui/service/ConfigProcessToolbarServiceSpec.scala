@@ -5,6 +5,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.process.ProcessId
+import pl.touk.nussknacker.engine.util.UriUtils
 import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.ui.config.processtoolbar._
@@ -187,7 +188,7 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
   }
 
   it should "properly create process toolbar configuration" in {
-    val process = createProcess("process", "Category1", isSubprocess = false, isArchived = false)
+    val process = createProcess("process with space", "Category1", isSubprocess = false, isArchived = false)
     val archivedProcess = createProcess("archived-process", "Category1", isSubprocess = false, isArchived = true)
     val subprocess = createProcess("subprocess", "Category1", isSubprocess = true, isArchived = false)
     val archivedSubprocess = createProcess("archived-subprocess", "Category1", isSubprocess = true, isArchived = true)
@@ -215,6 +216,8 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
     val processToolbarConfig = ProcessToolbarsConfigProvider.create(config, Some(process.processCategory))
     val id = ToolbarHelper.createProcessToolbarId(processToolbarConfig, process)
 
+    def processName(process: BaseProcessDetails[_]) = UriUtils.encodeURIComponent(process.name)
+
     (process.isSubprocess, process.isArchived, process.processCategory) match {
       case (false, false, "Category1") => ProcessToolbarSettings(
         id,
@@ -227,7 +230,7 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
         List(
           ToolbarPanel(ProcessInfoPanel, Some(s"Process Info ${process.name}"), None, Some(List(
             ToolbarButton(ProcessSave, None, Some("save"), Some(s"/assets/${process.processId.value}/buttons/save.svg"), None, disabled = false),
-            ToolbarButton(CustomLink, Some("metrics"), Some("metrics for process"), None, Some(s"/metrics/${process.name}"), disabled = false),
+            ToolbarButton(CustomLink, Some("metrics"), Some("metrics for process"), None, Some(s"/metrics/${processName(process)}"), disabled = false),
             ToolbarButton(CustomLink, Some("analytics"), None, None, Some(s"/analytics/${process.processId.value}"), disabled = false)
           ))),
           ToolbarPanel("buttons2", None, None,  Some(List(
@@ -246,7 +249,7 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
         List(
           ToolbarPanel(ProcessInfoPanel, Some(s"Process Info ${process.name}"), None, Some(List(
             ToolbarButton(ProcessSave, None, Some("save"), Some(s"/assets/${process.processId.value}/buttons/save.svg"), None, disabled = true),
-            ToolbarButton(CustomLink, Some("metrics"), Some("metrics for process"), None, Some(s"/metrics/${process.name}"), disabled = false),
+            ToolbarButton(CustomLink, Some("metrics"), Some("metrics for process"), None, Some(s"/metrics/${processName(process)}"), disabled = false),
             ToolbarButton(CustomLink, Some("analytics"), None, None, Some(s"/analytics/${process.processId.value}"), disabled = false)
           )))
         ),
@@ -262,7 +265,7 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
         List(
           ToolbarPanel(ProcessInfoPanel, Some(s"Process Info ${process.name}"), None, Some(List(
             ToolbarButton(ProcessSave, None, Some("save"), Some(s"/assets/${process.processId.value}/buttons/save.svg"), None, disabled = false),
-            ToolbarButton(CustomLink, Some("metrics"), Some("metrics for process"), None, Some(s"/metrics/${process.name}"), disabled = false),
+            ToolbarButton(CustomLink, Some("metrics"), Some("metrics for process"), None, Some(s"/metrics/${processName(process)}"), disabled = false),
             ToolbarButton(CustomLink, Some("analytics"), None, None, Some(s"/analytics/${process.processId.value}"), disabled = false)
           ))),
           ToolbarPanel("buttons1", None, Some(Small), Some(List(
@@ -285,7 +288,7 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
         List(
           ToolbarPanel(ProcessInfoPanel, Some(s"Process Info ${process.name}"), None, Some(List(
             ToolbarButton(ProcessSave, None, Some("save"), Some(s"/assets/${process.processId.value}/buttons/save.svg"), None, disabled = true),
-            ToolbarButton(CustomLink, Some("metrics"), Some("metrics for process"), None, Some(s"/metrics/${process.name}"), disabled = false),
+            ToolbarButton(CustomLink, Some("metrics"), Some("metrics for process"), None, Some(s"/metrics/${processName(process)}"), disabled = false),
             ToolbarButton(CustomLink, Some("analytics"), None, None, Some(s"/analytics/${process.processId.value}"), disabled = true)
           ))),
           ToolbarPanel("buttons1", None, Some(Small),  Some(List(
@@ -303,7 +306,7 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
         List(
           ToolbarPanel(ProcessInfoPanel, Some(s"Process Info ${process.name}"), None, Some(List(
             ToolbarButton(ProcessSave, None, Some("save"), Some(s"/assets/${process.processId.value}/buttons/save.svg"), None, disabled = false),
-            ToolbarButton(CustomLink, Some("metrics"), Some("metrics for process"), None, Some(s"/metrics/${process.name}"), disabled = false),
+            ToolbarButton(CustomLink, Some("metrics"), Some("metrics for process"), None, Some(s"/metrics/${processName(process)}"), disabled = false),
             ToolbarButton(CustomLink, Some("analytics"), None, None, Some(s"/analytics/${process.processId.value}"), disabled = false)
           ))),
           ToolbarPanel("buttons2", None, None, Some(List(
@@ -321,7 +324,7 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
         List(
           ToolbarPanel(ProcessInfoPanel, Some(s"Process Info ${process.name}"), None, Some(List(
             ToolbarButton(ProcessSave, None, Some("save"), Some(s"/assets/${process.processId.value}/buttons/save.svg"), None, disabled = false),
-            ToolbarButton(CustomLink, Some("metrics"), Some("metrics for process"), None, Some(s"/metrics/${process.name}"), disabled = false),
+            ToolbarButton(CustomLink, Some("metrics"), Some("metrics for process"), None, Some(s"/metrics/${processName(process)}"), disabled = false),
             ToolbarButton(CustomLink, Some("analytics"), None, None, Some(s"/analytics/${process.processId.value}"), disabled = false)
           ))),
           ToolbarPanel("buttons2", None, None, Some(List(
