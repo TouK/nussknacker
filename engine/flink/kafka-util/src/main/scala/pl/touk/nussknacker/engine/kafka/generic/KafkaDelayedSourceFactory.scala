@@ -18,7 +18,7 @@ object KafkaDelayedSourceFactory {
 
   final val TimestampFieldParamName = "timestampField"
 
-  // TODO: consider changing to lazy parameter
+  // TODO: consider changing to lazy parameter and add the same parameter also in "not delayed" kafka sources
   final val TimestampFieldParameter = Parameter.optional(TimestampFieldParamName, Typed[String]).copy(
     editor = Some(DualParameterEditor(simpleEditor = StringParameterEditor, defaultMode = DualEditorMode.RAW))
   )
