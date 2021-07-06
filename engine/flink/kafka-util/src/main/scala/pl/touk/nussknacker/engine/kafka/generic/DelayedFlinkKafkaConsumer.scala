@@ -25,7 +25,6 @@ class DelayedFlinkKafkaConsumer[T](topics: List[PreparedKafkaTopic],
                                    schema: KafkaDeserializationSchema[T],
                                    config: KafkaConfig,
                                    consumerGroupId: String,
-                                   timeExtract: (T, Long) => Long,
                                    delay: Long)
   extends FlinkKafkaConsumer[T](topics.map(_.prepared).asJava, schema, KafkaUtils.toProperties(config, Some(consumerGroupId))) {
 
@@ -55,7 +54,6 @@ class DelayedFlinkKafkaConsumer[T](topics: List[PreparedKafkaTopic],
       properties,
       pollTimeout,
       useMetrics,
-      timeExtract,
       delay
     )
   }
@@ -78,7 +76,6 @@ class DelayedKafkaFetcher[T](sourceContext: SourceFunction.SourceContext[T],
                              kafkaProperties: Properties,
                              pollTimeout: lang.Long,
                              useMetrics: Boolean,
-                             timeExtract: (T, Long) => Long,
                              delay: Long) extends KafkaFetcher[T](sourceContext, assignedPartitionsWithInitialOffsets, watermarkStrategy,
   processingTimeProvider, autoWatermarkInterval, userCodeClassLoader, taskNameWithSubtasks, deserializer, kafkaProperties, pollTimeout, metricGroup, consumerMetricGroup, useMetrics) with LazyLogging {
   import DelayedKafkaFetcher._
@@ -90,7 +87,7 @@ class DelayedKafkaFetcher[T](sourceContext: SourceFunction.SourceContext[T],
     var maxEventTimestamp = 0L
     records.forEach(new Consumer[T]{
       override def accept(r: T): Unit = {
-        val recordTimestamp = timeExtract(r, kafkaEventTimestamp)
+        val recordTimestamp = partitionState.extractTimestamp(r, kafkaEventTimestamp)
         if(recordTimestamp > maxEventTimestamp){
           maxEventTimestamp = recordTimestamp
         }
@@ -105,9 +102,7 @@ class DelayedKafkaFetcher[T](sourceContext: SourceFunction.SourceContext[T],
 
       val logMessage = s"Sleeping for $sleepTime ms of total $eventDelay ms for ${records.size()} events. Max event timestamp is $maxEventTimestamp, fetcher delay is $delay."
 
-      if (sleepTime < maxSleepTime) {
-        logger.debug(logMessage)
-      } else {
+      if (sleepTime >= maxSleepTime) {
         logger.info(logMessage)
       }
 

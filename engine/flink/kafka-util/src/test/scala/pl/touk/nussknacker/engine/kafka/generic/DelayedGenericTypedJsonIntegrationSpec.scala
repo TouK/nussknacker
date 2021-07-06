@@ -108,7 +108,7 @@ class DelayedGenericProcessConfigCreator extends EmptyProcessConfigCreator {
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
     Map(
-      "kafka-generic-delayed" -> defaultCategory(new DelayedGenericTypedJsonSourceFactory(None, FixedRecordFormatterFactoryWrapper(JsonRecordFormatter), processObjectDependencies))
+      "kafka-generic-delayed" -> defaultCategory(new DelayedGenericTypedJsonSourceFactory(FixedRecordFormatterFactoryWrapper(JsonRecordFormatter), processObjectDependencies, None))
     )
   }
 
