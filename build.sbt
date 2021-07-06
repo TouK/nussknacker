@@ -341,13 +341,15 @@ lazy val dist = {
         (assembly in Compile) in generic,
         (assembly in Compile) in flinkProcessManager,
         (assembly in Compile) in engineStandalone,
-        (assembly in Compile) in openapi
+        (assembly in Compile) in openapi,
+        (assembly in Compile) in sql,
       ).value,
       mappings in Universal ++= Seq(
         (crossTarget in generic).value / "genericModel.jar" -> "model/genericModel.jar",
         (crossTarget in flinkProcessManager).value / "nussknacker-flink-manager.jar" -> "managers/nussknacker-flink-manager.jar",
         (crossTarget in engineStandalone).value / "nussknacker-standalone-manager.jar" -> "managers/nussknacker-standalone-manager.jar",
-        (crossTarget in openapi).value / "openapi.jar" -> "components/openapi.jar"
+        (crossTarget in openapi).value / "openapi.jar" -> "components/openapi.jar",
+        (crossTarget in sql).value / "sql.jar" -> "components/sql.jar"
       ),
       /* //FIXME: figure out how to filter out only for .tgz, not for docker
       mappings in Universal := {
@@ -946,6 +948,9 @@ lazy val sql = (project in component("sql")).
   configs(IntegrationTest).
   settings(commonSettings).
   settings(Defaults.itSettings).
+  settings(commonSettings).
+  settings(assemblySampleSettings("sql.jar"): _*).
+  settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-sql",
     libraryDependencies ++= Seq(

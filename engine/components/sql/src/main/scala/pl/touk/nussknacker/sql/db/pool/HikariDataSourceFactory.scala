@@ -9,7 +9,9 @@ object HikariDataSourceFactory {
     hikariConf.setJdbcUrl(conf.url)
     hikariConf.setUsername(conf.username)
     hikariConf.setPassword(conf.password)
+    hikariConf.setMinimumIdle(conf.initialSize)
     hikariConf.setMaximumPoolSize(conf.maxTotal)
+    hikariConf.setConnectionTimeout(conf.timeout.toMillis)
     hikariConf.setDriverClassName(conf.driverClassName)
     conf.connectionProperties.foreach { case (name, value) =>
       hikariConf.addDataSourceProperty(name, value)

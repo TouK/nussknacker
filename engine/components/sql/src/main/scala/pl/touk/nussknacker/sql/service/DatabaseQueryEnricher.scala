@@ -58,6 +58,7 @@ TODO:
 */
 class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig) extends EagerService
   with Lifecycle with SingleInputGenericNodeTransformation[ServiceInvoker] {
+
   import DatabaseQueryEnricher._
 
   override type State = TransformationState
