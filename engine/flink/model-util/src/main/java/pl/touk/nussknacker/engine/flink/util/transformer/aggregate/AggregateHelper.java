@@ -17,14 +17,14 @@ import scala.collection.JavaConverters;
 public class AggregateHelper {
 
     public static final SimpleParameterEditor SIMPLE_EDITOR = new FixedValuesParameterEditor(JavaConverters.collectionAsScalaIterableConverter(Arrays.asList(
-            new FixedExpressionValue("T(" + AggregateHelper.class.getName() + ").FIRST", "First"),
-            new FixedExpressionValue("T(" + AggregateHelper.class.getName() + ").LAST", "Last"),
-            new FixedExpressionValue("T(" + AggregateHelper.class.getName() + ").MIN", "Min"),
-            new FixedExpressionValue("T(" + AggregateHelper.class.getName() + ").MAX", "Max"),
-            new FixedExpressionValue("T(" + AggregateHelper.class.getName() + ").SUM", "Sum"),
-            new FixedExpressionValue("T(" + AggregateHelper.class.getName() + ").LIST", "List"),
-            new FixedExpressionValue("T(" + AggregateHelper.class.getName() + ").SET", "Set"),
-            new FixedExpressionValue("T(" + AggregateHelper.class.getName() + ").APPROX_CARDINALITY", "ApproximateSetCardinality"))).asScala().toList());
+            new FixedExpressionValue("#AGG.sum", "First"),
+            new FixedExpressionValue("#AGG.last", "Last"),
+            new FixedExpressionValue("#AGG.min", "Min"),
+            new FixedExpressionValue("#AGG.max", "Max"),
+            new FixedExpressionValue("#AGG.sum", "Sum"),
+            new FixedExpressionValue("#AGG.list", "List"),
+            new FixedExpressionValue("#AGG.set", "Set"),
+            new FixedExpressionValue("#AGG.approxCardinality", "ApproximateSetCardinality"))).asScala().toList());
 
     public static final DualParameterEditor DUAL_EDITOR = new DualParameterEditor(SIMPLE_EDITOR, DualEditorMode.SIMPLE);
 
@@ -55,7 +55,7 @@ public class AggregateHelper {
 
     public Aggregator approxCardinality = APPROX_CARDINALITY;
 
-    public Aggregator map(@ParamName("parts" ) Map<String, Aggregator> parts) {
+    public Aggregator map(@ParamName("parts") Map<String, Aggregator> parts) {
         return new aggregates.MapAggregator(parts);
     }
 

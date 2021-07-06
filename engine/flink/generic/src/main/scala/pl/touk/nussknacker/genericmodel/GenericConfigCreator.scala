@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSink
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SessionWindowAggregateTransformer, SlidingAggregateTransformerV2, TumblingAggregateTransformer}
 import pl.touk.nussknacker.engine.flink.util.transformer.outer.OuterJoinTransformer
 import pl.touk.nussknacker.engine.flink.util.transformer.{DelayTransformer, PeriodicSourceFactory, PreviousValueTransformer, UnionTransformer, UnionWithMemoTransformer}
@@ -67,7 +68,8 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
         "NUMERIC" -> defaultCategory(numeric),
         "CONV" -> defaultCategory(conversion),
         "DATE" -> defaultCategory(date),
-        "UTIL" -> defaultCategory(util)
+        "UTIL" -> defaultCategory(util),
+        "AGG" -> defaultCategory(new AggregateHelper)
       ),
       List()
     )

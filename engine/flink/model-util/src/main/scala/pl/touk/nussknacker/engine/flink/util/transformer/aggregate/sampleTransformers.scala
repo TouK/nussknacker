@@ -32,14 +32,14 @@ object sampleTransformers {
                 @DualEditor(simpleEditor = new SimpleEditor(
                   `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
                   possibleValues = Array(
-                    new LabeledExpression(label = "First", expression = "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).FIRST"),
-                    new LabeledExpression(label = "Last",  expression = "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).LAST"),
-                    new LabeledExpression(label = "Min",   expression = "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).MIN"),
-                    new LabeledExpression(label = "Max",   expression = "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).MAX"),
-                    new LabeledExpression(label = "Sum",   expression = "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).SUM"),
-                    new LabeledExpression(label = "List",  expression = "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).LIST"),
-                    new LabeledExpression(label = "Set",   expression = "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).SET"),
-                    new LabeledExpression(label = "ApproximateSetCardinality", expression = "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).APPROX_CARDINALITY")
+                    new LabeledExpression(label = "First", expression = "#AGG.first"),
+                    new LabeledExpression(label = "Last",  expression = "#AGG.last"),
+                    new LabeledExpression(label = "Min",   expression = "#AGG.min"),
+                    new LabeledExpression(label = "Max",   expression = "#AGG.max"),
+                    new LabeledExpression(label = "Sum",   expression = "#AGG.sum"),
+                    new LabeledExpression(label = "List",  expression = "#AGG.list"),
+                    new LabeledExpression(label = "Set",   expression = "#AGG.set"),
+                    new LabeledExpression(label = "ApproximateSetCardinality", expression = "#AGG.approxCardinality")
                   )), defaultMode = DualEditorMode.SIMPLE) aggregator: Aggregator,
                 @ParamName("aggregateBy") aggregateBy: LazyParameter[AnyRef],
                 @ParamName("windowLength") length: java.time.Duration,
@@ -58,14 +58,14 @@ object sampleTransformers {
                 @DualEditor(simpleEditor = new SimpleEditor(
                   `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
                   possibleValues = Array(
-                    new LabeledExpression(label = "First", expression = "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).FIRST"),
-                    new LabeledExpression(label = "Last",  expression = "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).LAST"),
-                    new LabeledExpression(label = "Min",   expression = "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).MIN"),
-                    new LabeledExpression(label = "Max",   expression = "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).MAX"),
-                    new LabeledExpression(label = "Sum",   expression = "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).SUM"),
-                    new LabeledExpression(label = "List",  expression = "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).LIST"),
-                    new LabeledExpression(label = "Set",   expression = "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).SET"),
-                    new LabeledExpression(label = "ApproximateSetCardinality", expression = "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).APPROX_CARDINALITY")
+                    new LabeledExpression(label = "First", expression = "#AGG.firST"),
+                    new LabeledExpression(label = "Last",  expression = "#AGG.lasT"),
+                    new LabeledExpression(label = "Min",   expression = "#AGG.min"),
+                    new LabeledExpression(label = "Max",   expression = "#AGG.max"),
+                    new LabeledExpression(label = "Sum",   expression = "#AGG.sum"),
+                    new LabeledExpression(label = "List",  expression = "#AGG.lisT"),
+                    new LabeledExpression(label = "Set",   expression = "#AGG.set"),
+                    new LabeledExpression(label = "ApproximateSetCardinality", expression = "#AGG.approxCardinality")
                   )), defaultMode = DualEditorMode.SIMPLE) aggregator: Aggregator,
                 @ParamName("aggregateBy") aggregateBy: LazyParameter[AnyRef],
                 @ParamName("windowLength") length: java.time.Duration,
@@ -87,14 +87,14 @@ object sampleTransformers {
                 @DualEditor(simpleEditor = new SimpleEditor(
                   `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
                   possibleValues = Array(
-                    new LabeledExpression(label = "First", expression = "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).FIRST"),
-                    new LabeledExpression(label = "Last",  expression = "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).LAST"),
-                    new LabeledExpression(label = "Min",   expression = "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).MIN"),
-                    new LabeledExpression(label = "Max",   expression = "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).MAX"),
-                    new LabeledExpression(label = "Sum",   expression = "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).SUM"),
-                    new LabeledExpression(label = "List",  expression = "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).LIST"),
-                    new LabeledExpression(label = "Set",   expression = "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).SET"),
-                    new LabeledExpression(label = "ApproximateSetCardinality", expression = "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).APPROX_CARDINALITY")
+                    new LabeledExpression(label = "First", expression = "#AGG.first"),
+                    new LabeledExpression(label = "Last",  expression = "#AGG.last"),
+                    new LabeledExpression(label = "Min",   expression = "#AGG.min"),
+                    new LabeledExpression(label = "Max",   expression = "#AGG.max"),
+                    new LabeledExpression(label = "Sum",   expression = "#AGG.sum"),
+                    new LabeledExpression(label = "List",  expression = "#AGG.list"),
+                    new LabeledExpression(label = "Set",   expression = "#AGG.set"),
+                    new LabeledExpression(label = "ApproximateSetCardinality", expression = "#AGG.approxCardinality")
                   )), defaultMode = DualEditorMode.SIMPLE) aggregator: Aggregator,
                 @ParamName("aggregateBy") aggregateBy: LazyParameter[AnyRef],
                 @ParamName("endSessionCondition") endSessionCondition: LazyParameter[java.lang.Boolean],

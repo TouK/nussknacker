@@ -231,3 +231,4 @@ If you need to invoke the same method in many places, probably the best solution
 | `CONV` | General conversion functions |
 | `DATE` | Date operations (parsing, printing) | 
 | `UTIL` | Various utilities (e.g. identifier generation) |
+| `AGG` | Aggregator functions |
