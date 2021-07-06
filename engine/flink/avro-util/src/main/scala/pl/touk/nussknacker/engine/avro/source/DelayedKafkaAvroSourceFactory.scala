@@ -52,7 +52,7 @@ class DelayedKafkaAvroSourceFactory[K:ClassTag, V:ClassTag](schemaRegistryProvid
         case Invalid(exc) =>
           prepareSourceFinalErrors(context, dependencies, step.parameters, List(exc))
       }
-    case step@TransformationStep((`topicParamName`, _) :: (SchemaVersionParamName, _) :: (TypeDefinitionParamName, _) :: (TimestampFieldParamName, _) :: (DelayParameterName, _) :: Nil, _) =>
+    case step@TransformationStep((`topicParamName`, _) :: (SchemaVersionParamName, _) :: (TimestampFieldParamName, _) :: (DelayParameterName, _) :: Nil, _) =>
       prepareSourceFinalErrors(context, dependencies, step.parameters, errors = Nil)
   }
 
