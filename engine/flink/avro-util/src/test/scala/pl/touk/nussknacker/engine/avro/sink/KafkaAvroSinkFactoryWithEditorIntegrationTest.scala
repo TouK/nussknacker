@@ -103,7 +103,7 @@ class KafkaAvroSinkFactoryWithEditorIntegrationTest extends KafkaAvroSpecMixin w
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val modelData = LocalModelData(config, processConfigCreator)
-    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData, RunMode.Engine), executionConfigPreparerChain(modelData))
+    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), executionConfigPreparerChain(modelData), RunMode.Normal)
     topicSchemas.foreach { case (topicName, schema) =>
       topicConfigs = topicConfigs + (topicName -> createAndRegisterTopicConfig(topicName, schema))
     }

@@ -273,6 +273,6 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
 
     processInvoker.invokeWithSampleData(process, data)
 
-    SinkForStrings.data.loneElement shouldBe RunMode.Engine.toString
+    SinkForStrings.data.loneElement shouldBe RunMode.Normal.toString
   }
 }

@@ -65,7 +65,7 @@ class NamespacedKafkaSourceSinkTest extends FunSuite with FlinkSpec with KafkaSp
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val modelData = LocalModelData(config, configCreator, objectNaming = new TestObjectNaming)
-    registrar = process.registrar.FlinkProcessRegistrar(new FlinkProcessCompiler(modelData, RunMode.Engine), ExecutionConfigPreparer.unOptimizedChain(modelData))
+    registrar = process.registrar.FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData), RunMode.Normal)
   }
 
   private def run(process: EspProcess)(action: => Unit): Unit = {

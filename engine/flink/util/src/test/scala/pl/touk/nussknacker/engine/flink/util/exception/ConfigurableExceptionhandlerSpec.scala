@@ -29,7 +29,7 @@ class ConfigurableExceptionhandlerSpec extends FunSuite with Matchers {
 
   private def configurableExceptionHandler = ClassLoaderWithServices.withCustomServices(List((classOf[FlinkEspExceptionConsumerProvider],
     classOf[TestExceptionConsumerProvider]))) { loader =>
-    new ConfigurableExceptionHandler(metaData, ProcessObjectDependencies(config, DefaultNamespacedObjectNaming, RunMode.Engine), loader)
+    new ConfigurableExceptionHandler(metaData, ProcessObjectDependencies(config, DefaultNamespacedObjectNaming), loader)
   }
 
 

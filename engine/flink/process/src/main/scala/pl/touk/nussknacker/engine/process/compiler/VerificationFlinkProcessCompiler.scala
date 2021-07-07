@@ -17,7 +17,7 @@ class VerificationFlinkProcessCompiler(process: EspProcess,
                                        creator: ProcessConfigCreator,
                                        processConfig: Config,
                                        objectNaming: ObjectNaming)
-  extends StubbedFlinkProcessCompiler(process, creator, processConfig, objectNaming, RunMode.Verification) {
+  extends StubbedFlinkProcessCompiler(process, creator, processConfig, objectNaming) {
 
   override protected def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] = List()
 

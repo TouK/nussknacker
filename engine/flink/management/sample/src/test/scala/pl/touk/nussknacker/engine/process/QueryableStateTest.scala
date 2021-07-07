@@ -51,7 +51,7 @@ class QueryableStateTest extends FlatSpec with FlinkSpec with Matchers with Kafk
     }
     val testConfig = TestConfig(kafkaZookeeperServer)
     val modelData = LocalModelData(testConfig, creator)
-    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData, RunMode.Engine), ExecutionConfigPreparer.unOptimizedChain(modelData))
+    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData), RunMode.Normal)
   }
 
 
@@ -84,7 +84,7 @@ class QueryableStateTest extends FlatSpec with FlinkSpec with Matchers with Kafk
         flinkMiniCluster.runningJobs() should contain (jobId)
         queryState(jobId.toString).futureValue shouldBe true
       }
-      creator.signals(ProcessObjectDependencies(TestConfig(kafkaZookeeperServer), ObjectNamingProvider(getClass.getClassLoader), RunMode.Engine)).values
+      creator.signals(ProcessObjectDependencies(TestConfig(kafkaZookeeperServer), ObjectNamingProvider(getClass.getClassLoader))).values
         .head.value.sendSignal(DevProcessConfigCreator.oneElementValue)(lockProcess.id)
 
       eventually {

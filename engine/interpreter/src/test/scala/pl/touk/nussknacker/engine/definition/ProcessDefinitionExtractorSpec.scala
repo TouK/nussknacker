@@ -22,7 +22,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
 
   private val processDefinition: ProcessDefinitionExtractor.ProcessDefinition[DefinitionExtractor.ObjectWithMethodDef] =
     ProcessDefinitionExtractor.extractObjectWithMethods(TestCreator,
-      process.ProcessObjectDependencies(ConfigFactory.load(), ObjectNamingProvider(getClass.getClassLoader), RunMode.Definition))
+      process.ProcessObjectDependencies(ConfigFactory.load(), ObjectNamingProvider(getClass.getClassLoader)))
 
   test("extract definitions") {
     val signal1 = processDefinition.signalsWithTransformers.get("signal1")

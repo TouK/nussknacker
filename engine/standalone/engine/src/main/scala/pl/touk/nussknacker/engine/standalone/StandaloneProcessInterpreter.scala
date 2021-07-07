@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeter
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, UnsupportedPart}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, RunMode}
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{process, _}
 import pl.touk.nussknacker.engine.compile._
@@ -38,7 +38,7 @@ object StandaloneProcessInterpreter {
   : ValidatedNel[ProcessCompilationError, StandaloneProcessInterpreter] = modelData.withThisAsContextClassLoader {
 
     val creator = modelData.configCreator
-    val processObjectDependencies = ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming, RunMode.Engine)
+    val processObjectDependencies = ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming)
 
     val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(creator, processObjectDependencies)
     val listeners = creator.listeners(processObjectDependencies) ++ additionalListeners

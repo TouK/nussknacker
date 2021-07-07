@@ -27,7 +27,7 @@ class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin with OptionValues
       .withValue("namespace", fromAnyRef(namespace))
   }
 
-  override protected lazy val testProcessObjectDependencies: ProcessObjectDependencies = ProcessObjectDependencies(config, objectNaming, RunMode.Engine)
+  override protected lazy val testProcessObjectDependencies: ProcessObjectDependencies = ProcessObjectDependencies(config, objectNaming)
 
   override protected def schemaRegistryClient: MockSchemaRegistryClient = schemaRegistryMockClient
 
@@ -42,7 +42,7 @@ class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin with OptionValues
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val modelData = LocalModelData(config, creator, objectNaming = objectNaming)
-    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData, RunMode.Engine), executionConfigPreparerChain(modelData))
+    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), executionConfigPreparerChain(modelData), RunMode.Normal)
   }
 
   test("should create source with proper filtered and converted topics") {

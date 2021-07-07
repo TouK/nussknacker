@@ -37,7 +37,7 @@ class KafkaExceptionConsumerSpec extends FunSuite with FlinkSpec with KafkaSpec 
       .withValue("exceptionHandler.kafka", config.getConfig("kafka").root())
 
     val modelData = LocalModelData(configWithExceptionHandler, new ExceptionTestConfigCreator())
-    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData, RunMode.Engine), ExecutionConfigPreparer.unOptimizedChain(modelData))
+    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData), RunMode.Normal)
   }
 
   test("should record errors on topic") {

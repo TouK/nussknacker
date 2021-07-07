@@ -33,7 +33,7 @@ class SampleNotificationProcess extends FlatSpec with Matchers with FlinkSpec {
 
     val modelData = LocalModelData(config, creator)
     val env = flinkMiniCluster.createExecutionEnvironment()
-    FlinkProcessRegistrar(new FlinkProcessCompiler(modelData, RunMode.Engine), ExecutionConfigPreparer.unOptimizedChain(modelData))
+    FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData), RunMode.Normal)
       .register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty, DeploymentData.empty)
 
     env.withJobRunning(process.id) {}

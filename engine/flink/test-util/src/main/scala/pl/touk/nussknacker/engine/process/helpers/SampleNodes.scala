@@ -794,13 +794,4 @@ object SampleNodes {
 
   @JsonCodec case class KeyValue(key: String, value: Int, date: Long)
 
-  class ReturningRunModeService(processObjectDependencies: ProcessObjectDependencies) extends Service {
-
-    @MethodToInvoke
-    def invoke: Future[RunMode] = {
-      Future.successful(processObjectDependencies.runMode)
-    }
-
-  }
-
 }

@@ -34,7 +34,7 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
 
   protected lazy val processDefinition: ProcessDefinitionExtractor.ProcessDefinition[DefinitionExtractor.ObjectWithMethodDef] =
     ProcessDefinitionExtractor.extractObjectWithMethods(creator,
-      process.ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader), RunMode.Engine))
+      process.ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader)))
 
   protected def extractTypes(definition: ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef]): Set[TypeInfos.ClazzDefinition] =
     ProcessDefinitionExtractor.extractTypes(definition)
@@ -42,7 +42,7 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
   protected override def beforeAll(): Unit = {
     super.beforeAll()
     val modelData = LocalModelData(config, creator)
-    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData, RunMode.Engine), ExecutionConfigPreparer.unOptimizedChain(modelData))
+    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData), RunMode.Normal)
   }
 
   before {

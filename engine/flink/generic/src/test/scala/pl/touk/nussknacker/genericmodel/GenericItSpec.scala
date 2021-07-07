@@ -52,7 +52,7 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
     // we turn off auto registration to do it on our own passing mocked schema registry client
     .withValue(s"kafka.kafkaEspProperties.${AvroSerializersRegistrar.autoRegisterRecordSchemaIdSerializationProperty}", fromAnyRef(false))
 
-  lazy val mockProcessObjectDependencies: ProcessObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader), RunMode.Engine)
+  lazy val mockProcessObjectDependencies: ProcessObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
 
   lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config)
 
@@ -386,7 +386,7 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val modelData = LocalModelData(config, creator)
-    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData, RunMode.Engine), executionConfigPreparerChain(modelData))
+    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), executionConfigPreparerChain(modelData), RunMode.Normal)
   }
 
   private def executionConfigPreparerChain(modelData: LocalModelData) = {

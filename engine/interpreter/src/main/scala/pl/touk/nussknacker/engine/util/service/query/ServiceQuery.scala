@@ -3,12 +3,12 @@ package pl.touk.nussknacker.engine.util.service.query
 import cats.Monad
 import cats.implicits._
 import java.util.UUID
+
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.process.RunMode
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -52,7 +52,7 @@ class ServiceQuery(modelData: ModelData) {
 
     //we create new definitions each time, to avoid lifecycle problems
     val definitions = modelData.withThisAsContextClassLoader {
-      ProcessDefinitionExtractor.extractObjectWithMethods(modelData.configCreator, ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming, RunMode.ServiceQuery))
+      ProcessDefinitionExtractor.extractObjectWithMethods(modelData.configCreator, ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming))
     }
 
     val collector = new QueryServiceInvocationCollector()

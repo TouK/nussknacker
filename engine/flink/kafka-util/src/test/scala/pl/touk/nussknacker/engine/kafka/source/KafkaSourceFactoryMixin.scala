@@ -11,16 +11,16 @@ import org.apache.kafka.common.record.TimestampType
 import org.apache.kafka.common.serialization.{Deserializer, StringDeserializer}
 import org.scalatest.{Assertion, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, RunMode}
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordDeserializationSchemaFactory, ConsumerRecordToJsonFormatterFactory}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.BaseSimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryMixin._
 import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, KafkaConfig, KafkaSpec}
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.test.PatientScalaFutures
+
 import java.nio.charset.StandardCharsets
 import java.util.Optional
-
 import scala.reflect.ClassTag
 
 trait KafkaSourceFactoryMixin extends FunSuite with Matchers with KafkaSpec with PatientScalaFutures {
@@ -68,7 +68,7 @@ trait KafkaSourceFactoryMixin extends FunSuite with Matchers with KafkaSpec with
   }
 
   protected lazy val StringSourceFactory: KafkaSourceFactory[Any, Any] = {
-    val processObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader), RunMode.Engine)
+    val processObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
     val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(new StringDeserializer with Serializable, new StringDeserializer with Serializable)
     val formatterFactory = new ConsumerRecordToJsonFormatterFactory[String, String]
     val sourceFactory = new KafkaSourceFactory(
@@ -81,7 +81,7 @@ trait KafkaSourceFactoryMixin extends FunSuite with Matchers with KafkaSpec with
   }
 
   protected lazy val SampleEventSourceFactory: KafkaSourceFactory[Any, Any] = {
-    val processObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader), RunMode.Engine)
+    val processObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
     val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(new StringDeserializer with Serializable, sampleValueJsonDeserializer)
     val formatterFactory = new ConsumerRecordToJsonFormatterFactory[String, SampleValue]
     val sourceFactory = new KafkaSourceFactory(
@@ -94,7 +94,7 @@ trait KafkaSourceFactoryMixin extends FunSuite with Matchers with KafkaSpec with
   }
 
   protected lazy val ConsumerRecordValueSourceFactory: KafkaSourceFactory[Any, Any] = {
-    val processObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader), RunMode.Engine)
+    val processObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
     val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(new StringDeserializer with Serializable, sampleValueJsonDeserializer)
     val formatterFactory = new ConsumerRecordToJsonFormatterFactory[String, SampleValue]
     val sourceFactory = new KafkaSourceFactory(
@@ -107,7 +107,7 @@ trait KafkaSourceFactoryMixin extends FunSuite with Matchers with KafkaSpec with
   }
 
   protected lazy val ConsumerRecordKeyValueSourceFactory: KafkaSourceFactory[Any, Any] = {
-    val processObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader), RunMode.Engine)
+    val processObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
     val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(sampleKeyJsonDeserializer, sampleValueJsonDeserializer)
     val formatterFactory = new ConsumerRecordToJsonFormatterFactory[SampleKey, SampleValue]
     val sourceFactory = new KafkaSourceFactory(

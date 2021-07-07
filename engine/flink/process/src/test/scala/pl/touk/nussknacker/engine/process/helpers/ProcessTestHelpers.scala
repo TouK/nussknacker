@@ -34,7 +34,7 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
 
       val env = flinkMiniCluster.createExecutionEnvironment()
       val modelData = LocalModelData(config, creator)
-      FlinkProcessRegistrar(new FlinkProcessCompiler(modelData, RunMode.Engine), ExecutionConfigPreparer.unOptimizedChain(modelData))
+      FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData), RunMode.Normal)
         .register(new StreamExecutionEnvironment(env), process, processVersion, DeploymentData.empty)
 
       MockService.clear()
@@ -50,7 +50,7 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
                parallelism: Int, actionToInvokeWithJobRunning: => Unit): Unit = {
       val env = flinkMiniCluster.createExecutionEnvironment()
       val modelData = LocalModelData(config, creator)
-      registrar.FlinkProcessRegistrar(new FlinkProcessCompiler(modelData, RunMode.Engine), ExecutionConfigPreparer.unOptimizedChain(modelData))
+      registrar.FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData), RunMode.Normal)
         .register(new StreamExecutionEnvironment(env), process, processVersion, DeploymentData.empty)
 
       MockService.clear()
@@ -69,8 +69,7 @@ object ProcessTestHelpers {
       "lifecycleService" -> WithCategories(LifecycleService),
       "eagerLifecycleService" -> WithCategories(EagerLifecycleService),
       "enricherWithOpenService" -> WithCategories(new EnricherWithOpenService),
-      "serviceAcceptingOptionalValue" -> WithCategories(ServiceAcceptingScalaOption),
-      "returningRunModeService" -> WithCategories(new ReturningRunModeService(processObjectDependencies))
+      "serviceAcceptingOptionalValue" -> WithCategories(ServiceAcceptingScalaOption)
     )
 
     override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[FlinkSourceFactory[_]]] = Map(

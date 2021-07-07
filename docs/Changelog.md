@@ -54,7 +54,7 @@ Nussknacker versions
 * [#1820](https://github.com/TouK/nussknacker/pull/1820) Added missing support for some logical types (LocalDate, LocalTime, UUID) in json encoding
 * [#1799](https://github.com/TouK/nussknacker/pull/1799) ConfluentAvroToJsonFormatter produces and reads test data in valid json format with full kafka metadata and schema ids.
 * [#1839](https://github.com/TouK/nussknacker/pull/1839) Set up `explicitUidInStatefulOperators` model's flag to `true` by default.
-* [#1357](https://github.com/TouK/nussknacker/pull/1357) Add run mode when invoking ProcessConfigCreator to be able to determine if we are inside e.g. test process run.
+* [#1357](https://github.com/TouK/nussknacker/pull/1357) Add run mode to FLinkCustomNodeContext to be able to determine if we are inside e.g. test process run.
 
 0.3.1 (not released yet) 
 ------------------------
