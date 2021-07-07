@@ -13,6 +13,9 @@ trait TimestampWatermarkHandler[T] extends Serializable {
 
   def assignTimestampAndWatermarks(dataStream: DataStream[T]): DataStream[T]
 
+  // this timestamp extraction is supported for legacy handlers
+  def extractTimestamp(element: T, recordTimestamp: Long): Option[Long]
+
 }
 
 class StandardTimestampWatermarkHandler[T](strategy: WatermarkStrategy[T]) extends TimestampWatermarkHandler[T] {
@@ -20,6 +23,8 @@ class StandardTimestampWatermarkHandler[T](strategy: WatermarkStrategy[T]) exten
   override def assignTimestampAndWatermarks(dataStream: DataStream[T]): DataStream[T] = {
     dataStream.assignTimestampsAndWatermarks(strategy)
   }
+
+  def extractTimestamp(element: T, recordTimestamp: Long): Option[Long] = None
 }
 
 object StandardTimestampWatermarkHandler {
@@ -45,4 +50,7 @@ class LegacyTimestampWatermarkHandler[T](timestampAssigner: TimestampAssigner[T]
         dataStream.assignTimestampsAndWatermarks(punctuated)
     }
   }
+
+  override def extractTimestamp(element: T, recordTimestamp: Long): Option[Long] =
+    Option(timestampAssigner.extractTimestamp(element, recordTimestamp))
 }

@@ -30,16 +30,16 @@ trait BaseKafkaDelayedSourceFactory {
     new KafkaSource[ConsumerRecord[K, V]](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter) {
       override val contextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]] = flinkContextInitializer
       override protected def createFlinkSource(consumerGroupId: String) =
-        new DelayedFlinkKafkaConsumer(preparedTopics, deserializationSchema, kafkaConfig, consumerGroupId, delay)
+        new DelayedFlinkKafkaConsumer(preparedTopics, deserializationSchema, kafkaConfig, consumerGroupId, delay, timestampAssigner)
     }
   }
 
-  protected def prepareTimestampAssigner[K, V](kafkaConfig: KafkaConfig, extract: ConsumerRecord[K, V] => Long): TimestampWatermarkHandler[ConsumerRecord[K, V]] = {
+  protected def prepareTimestampAssigner[K, V](kafkaConfig: KafkaConfig, extract: (ConsumerRecord[K, V], Long) => Long): TimestampWatermarkHandler[ConsumerRecord[K, V]] = {
     new LegacyTimestampWatermarkHandler[ConsumerRecord[K, V]](
       new BoundedOutOfOrderPreviousElementAssigner[ConsumerRecord[K, V]](
         kafkaConfig.defaultMaxOutOfOrdernessMillis.getOrElse(defaultMaxOutOfOrdernessMillis)
       ) {
-        override def extractTimestamp(element: ConsumerRecord[K, V], previousElementTimestamp: Long): Long = extract(element)
+        override def extractTimestamp(element: ConsumerRecord[K, V], previousElementTimestamp: Long): Long = extract(element, previousElementTimestamp)
       }
     )
   }
