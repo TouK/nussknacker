@@ -347,7 +347,7 @@ lazy val dist = {
         (crossTarget in generic).value / "genericModel.jar" -> "model/genericModel.jar",
         (crossTarget in flinkProcessManager).value / s"nussknacker-flink-manager.jar" -> "managers/nussknacker-flink-manager.jar",
         (crossTarget in engineStandalone).value / s"nussknacker-standalone-manager.jar" -> "managers/nussknacker-standalone-manager.jar",
-        (crossTarget in openapi).value / "openapi.jar" -> "model/openapi.jar"
+        (crossTarget in openapi).value / "openapi.jar" -> "components/openapi.jar"
       ),
       /* //FIXME: figure out how to filter out only for .tgz, not for docker
       mappings in Universal := {
