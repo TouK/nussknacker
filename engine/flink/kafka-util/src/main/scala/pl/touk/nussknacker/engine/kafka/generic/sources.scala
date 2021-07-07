@@ -114,7 +114,7 @@ object sources {
               .map(fieldName => {
                 prepareTimestampAssigner(
                   kafkaConfig,
-                  (element: TypedJson) => element.value().get(fieldName).asInstanceOf[Long]
+                  (element: TypedJson, kafkaEventTimestamp: Long) => element.value().get(fieldName).asInstanceOf[Long]
                 )
               }).orElse(timestampAssigner)
           createDelayedKafkaSource[String, TypedMap](preparedTopics, kafkaConfig, deserializationSchema, timestampAssignerWithExtract, formatter, flinkContextInitializer, millis)

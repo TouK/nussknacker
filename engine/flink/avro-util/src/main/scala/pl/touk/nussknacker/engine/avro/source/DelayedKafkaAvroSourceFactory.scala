@@ -14,7 +14,6 @@ import pl.touk.nussknacker.engine.flink.api.process.FlinkContextInitializer
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.kafka.generic.BaseKafkaDelayedSourceFactory
 import pl.touk.nussknacker.engine.kafka.generic.KafkaDelayedSourceFactory._
-import pl.touk.nussknacker.engine.kafka.generic.KafkaTypedSourceFactory.TypeDefinitionParamName
 import pl.touk.nussknacker.engine.kafka.source.KafkaSource
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, RecordFormatter}
 
@@ -73,7 +72,7 @@ class DelayedKafkaAvroSourceFactory[K:ClassTag, V:ClassTag](schemaRegistryProvid
             .map(fieldName => {
               prepareTimestampAssigner(
                 kafkaConfig,
-                (element: ConsumerRecord[K, V]) => element.value().asInstanceOf[GenericRecord].get(fieldName).asInstanceOf[Long]
+                (element: ConsumerRecord[K, V], kafkaEventTimestamp: Long) => element.value().asInstanceOf[GenericRecord].get(fieldName).asInstanceOf[Long]
               )
             }).orElse(timestampAssigner)
         createDelayedKafkaSource[K, V](preparedTopics, kafkaConfig, deserializationSchema, timestampAssignerWithExtract, formatter, flinkContextInitializer, millis)
