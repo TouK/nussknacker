@@ -7,6 +7,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.SchemaVersionParamName
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
@@ -42,10 +43,9 @@ class DelayedKafkaAvroSourceFactory[K:ClassTag, V:ClassTag](schemaRegistryProvid
       val valueValidationResult = determineSchemaAndType(prepareValueSchemaDeterminer(preparedTopic, versionOption), Some(SchemaVersionParamName))
 
       valueValidationResult match {
-        case Valid((valueRuntimeSchema, _)) =>
-          val definition = valueRuntimeSchema.map(_.schema.getFields.asScala.map(f => (f.name(), ())).toMap ).getOrElse(Map.empty).asJava
+        case Valid((valueRuntimeSchema, typingResult)) =>
           val delayValidationErrors = Option(delay.asInstanceOf[java.lang.Long]).map(d => validateDelay(d)).getOrElse(Nil)
-          val timestampValidationErrors = Option(field.asInstanceOf[String]).map(f => validateTimestampField(f, definition)).getOrElse(Nil)
+          val timestampValidationErrors = Option(field.asInstanceOf[String]).map(f => validateTimestampField(f, typingResult)).getOrElse(Nil)
           val errors = delayValidationErrors ++ timestampValidationErrors
           prepareSourceFinalResults(preparedTopic, valueValidationResult, context, dependencies, step.parameters, errors)
         case Invalid(exc) =>
@@ -72,12 +72,18 @@ class DelayedKafkaAvroSourceFactory[K:ClassTag, V:ClassTag](schemaRegistryProvid
             .map(fieldName => {
               prepareTimestampAssigner(
                 kafkaConfig,
-                (element: ConsumerRecord[K, V], kafkaEventTimestamp: Long) => element.value().asInstanceOf[GenericRecord].get(fieldName).asInstanceOf[Long]
+                extractTimestampFromField(fieldName)
               )
             }).orElse(timestampAssigner)
         createDelayedKafkaSource[K, V](preparedTopics, kafkaConfig, deserializationSchema, timestampAssignerWithExtract, formatter, flinkContextInitializer, millis)
       case _ =>
         super.createSource(params, dependencies, finalState, preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, flinkContextInitializer)
     }
+  }
+
+  def extractTimestampFromField(fieldName: String)(element: ConsumerRecord[K, V], kafkaEventTimestamp: Long): Long = {
+    Option(element.value().asInstanceOf[GenericRecord].get(fieldName)) // null value is not acceptable
+      .map(_.asInstanceOf[Long])
+      .getOrElse(throw NonTransientException(TimestampFieldParamName, s"Cannot extract empty timestamp from field ${TimestampFieldParamName}"))
   }
 }

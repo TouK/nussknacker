@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
 import pl.touk.nussknacker.engine.api.typed._
@@ -86,7 +87,7 @@ object sources {
         calculateTypingResult(definition) match {
           case Valid((definition, typingResult)) =>
             val delayValidationErrors = Option(delay.asInstanceOf[java.lang.Long]).map(d => validateDelay(d)).getOrElse(Nil)
-            val timestampValidationErrors = Option(field.asInstanceOf[String]).map(f => validateTimestampField(f, definition)).getOrElse(Nil)
+            val timestampValidationErrors = Option(field.asInstanceOf[String]).map(f => validateTimestampField(f, typingResult)).getOrElse(Nil)
             val errors = topicValidationErrors ++ timestampValidationErrors ++ delayValidationErrors
             prepareSourceFinalResults(context, dependencies, step.parameters, keyTypingResult, typingResult, errors)
           case Invalid(exc) =>
@@ -114,13 +115,19 @@ object sources {
               .map(fieldName => {
                 prepareTimestampAssigner(
                   kafkaConfig,
-                  (element: TypedJson, kafkaEventTimestamp: Long) => element.value().get(fieldName).asInstanceOf[Long]
+                  extractTimestampFromField(fieldName)
                 )
               }).orElse(timestampAssigner)
           createDelayedKafkaSource[String, TypedMap](preparedTopics, kafkaConfig, deserializationSchema, timestampAssignerWithExtract, formatter, flinkContextInitializer, millis)
         case _ =>
           super.createSource(params, dependencies, finalState, preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, flinkContextInitializer)
       }
+    }
+
+    def extractTimestampFromField(fieldName: String)(element: TypedJson, kafkaEventTimestamp: Long): Long = {
+      Option(element.value().get(fieldName)) // null value is not acceptable
+        .map(_.asInstanceOf[Long])
+        .getOrElse(throw NonTransientException(TimestampFieldParamName, s"Cannot extract empty timestamp from field ${TimestampFieldParamName}"))
     }
   }
 

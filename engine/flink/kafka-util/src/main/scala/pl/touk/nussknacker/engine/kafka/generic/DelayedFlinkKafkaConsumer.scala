@@ -91,6 +91,11 @@ class DelayedKafkaFetcher[T](sourceContext: SourceFunction.SourceContext[T],
     var maxEventTimestamp = 0L
     records.forEach(new Consumer[T]{
       override def accept(r: T): Unit = {
+
+        // Here: partitionState.extractTimestamp works correctly only for brand-new timestamp handlers
+        // (for legacy not, hence timestamp handler (timestampAssigner) has its own extractTimestamp)
+        // See also [[pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler]]
+
         val recordTimestamp = timestampAssigner
           .flatMap(_.extractTimestamp(r, kafkaEventTimestamp))
           .getOrElse(partitionState.extractTimestamp(r, kafkaEventTimestamp))

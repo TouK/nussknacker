@@ -2,9 +2,11 @@ package pl.touk.nussknacker.engine.kafka.generic
 
 import io.circe.generic.JsonCodec
 import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
+import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
+import pl.touk.nussknacker.engine.api.exception.{ExceptionHandlerFactory, NonTransientException}
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -18,6 +20,7 @@ import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryProcessMixin
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryProcessMixin.recordingExceptionHandler
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForLongs
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 import java.time.Instant
@@ -26,14 +29,14 @@ import java.util.UUID
 class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec with KafkaSourceFactoryProcessMixin {
 
   @JsonCodec
-  case class BasicEvent(id: String, name: String, timestamp: Long)
+  case class BasicEvent(id: String, name: String, timestamp: Option[Long])
 
   object BasicEvent {
     final val timestampFieldName = "timestamp"
 
     final val definition = """{"id":"String","name":"String","timestamp":"Long"}"""
 
-    def apply(name: String): BasicEvent = BasicEvent(UUID.randomUUID().toString, name, Instant.now().toEpochMilli)
+    def apply(name: String): BasicEvent = BasicEvent(UUID.randomUUID().toString, name, Some(Instant.now().toEpochMilli))
   }
 
   private val serializationSchema: String => KafkaSerializationSchema[Any] =
@@ -43,7 +46,7 @@ class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec wit
 
   private val now: Long = System.currentTimeMillis()
 
-  private val givenObj = BasicEvent(id = "123", name = "kafka-generic-delayed-test", timestamp = now)
+  private val givenObj = BasicEvent(id = "123", name = "kafka-generic-delayed-test", timestamp = Some(now))
 
   test("properly process data using kafka-generic-delayed source") {
     val topic = "topic-all-parameters-valid"
@@ -59,10 +62,31 @@ class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec wit
 
   test("handle not exist timestamp field param") {
     val topic = "topic-invalid-timestamp-field"
-    val process = createProcessWithDelayedSource(topic, BasicEvent.definition, "'unknownField'", "null")
+    val process = createProcessWithDelayedSource(topic, BasicEvent.definition, "'unknownField'", "10L")
     intercept[IllegalArgumentException] {
       runAndVerify(topic, process, givenObj)
     }.getMessage should include ("Field: 'unknownField' doesn't exist in definition: id,name,timestamp.")
+  }
+
+  test("handle invalid type of timestamp field") {
+    val topic = "topic-invalid-timestamp-type"
+    val process = createProcessWithDelayedSource(topic, BasicEvent.definition, "'name'", "10L")
+    intercept[IllegalArgumentException] {
+      runAndVerify(topic, process, givenObj)
+    }.getMessage should include ("Field: 'name' has invalid type: String.")
+  }
+
+  test("null timestamp should raise exception") {
+    val testProcessObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
+    val sourceFactory = creator.sourceFactories(testProcessObjectDependencies)("kafka-generic-delayed").value.asInstanceOf[DelayedGenericTypedJsonSourceFactory]
+    val recordOk = new ConsumerRecord[String, TypedMap]("dummy", 1, 1L, "", TypedMap(Map("msisdn" -> "abc", "ts" -> 456L)))
+    sourceFactory.extractTimestampFromField("ts")(recordOk, 123L) shouldBe 456L
+
+    val recordWithNull = new ConsumerRecord[String, TypedMap]("dummy", 1, 1L, "", TypedMap(Map("msisdn" -> "abc", "ts" -> null)))
+    intercept[NonTransientException]{
+      sourceFactory.extractTimestampFromField("ts")(recordWithNull, 123L)
+    }.getMessage should include ("Cannot extract empty timestamp from field timestampField")
+
   }
 
   test("handle invalid negative param") {

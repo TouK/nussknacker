@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, MaximalNumberValidator, MinimalNumberValidator, Parameter, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 
 object KafkaDelayedSourceFactory {
 
@@ -33,11 +33,14 @@ object KafkaDelayedSourceFactory {
     delayValidators.flatMap(_.isValid(DelayParameterName, value.toString, None).swap.toList)
   }
 
-  def validateTimestampField(field: String, definition: java.util.Map[String, _])(implicit nodeId: NodeId): List[ProcessCompilationError] = {
-    if (!definition.containsKey(field)) {
-      List(new CustomNodeError(nodeId.id, s"Field: '$field' doesn't exist in definition: ${definition.asScala.keys.mkString(",")}.", Some(TimestampFieldParamName)))
-    } else {
-      List.empty
+  def validateTimestampField(field: String, typingResult: TypingResult)(implicit nodeId: NodeId): List[ProcessCompilationError] = {
+    typingResult match {
+      case TypedObjectTypingResult(fields, _, _) => fields.get(field) match {
+        case Some(fieldTypingResult) if List(Typed[java.lang.Long], Typed[Long]).contains(fieldTypingResult) => List.empty
+        case Some(fieldTypingResult) => List(new CustomNodeError(nodeId.id, s"Field: '$field' has invalid type: ${fieldTypingResult.display}.", Some(TimestampFieldParamName)))
+        case None => List(new CustomNodeError(nodeId.id, s"Field: '$field' doesn't exist in definition: ${fields.keys.mkString(",")}.", Some(TimestampFieldParamName)))
+      }
+      case _ => throw new IllegalArgumentException(s"Not supported delayed source type definition: ${typingResult.getClass.getSimpleName}")
     }
   }
 
