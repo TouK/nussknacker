@@ -16,7 +16,6 @@ case class TypeDefinitionSet(typeDefinitions: Set[TypeInfos.ClazzDefinition] = S
     val spelNodeChildAST = spelNode.getChild(0).toStringAST
 
     typeDefinitions.foreach(typeDefinition => {
-      println(typeDefinition.clazzName.display)
       if(typeDefinition.clazzName.display.equals(spelNodeChildAST))
         return true
     })
