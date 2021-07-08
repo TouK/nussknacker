@@ -100,7 +100,6 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("TypeReference validation T(MathContext), should succeed") {
 
-    //mbz
     val invalidStaticMethod = "T(MathContext).exit()"
 
     val testProcess =
@@ -111,7 +110,6 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .filter("filter1", invalidStaticMethod)
         .sink("id1", "#input", "sink")
 
-    //todo: tu sie dzieje
     val compilationResult = validate(testProcess, baseDefinition)
 
     compilationResult.result should matchPattern {
@@ -122,7 +120,6 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("TypeReference validation T(System), should fail") {
 
-    //mbz
     val invalidStaticMethod = "T(System).exit()"
 
     val testProcess =
