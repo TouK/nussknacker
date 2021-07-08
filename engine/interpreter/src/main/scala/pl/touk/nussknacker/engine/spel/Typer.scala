@@ -259,16 +259,13 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case e: TypeReference => {
 
         if(!referenceTypeValidating) {
-          println("AUTO VALIDATE BECAUSE FLAG")
           return valid(Unknown)
         }
-
-//        typeDefinitionSet.displayBasicInfo(e:SpelNode)
 
         if(typeDefinitionSet.validateTypeReference(e:SpelNode)) {
           return valid(Unknown)
         }
-        return invalid("class was not found")
+        return invalid("class is not allowed to be passed as TypeReference")
 
       }
 

@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.benchmarks.spel
 
 import java.util.concurrent.TimeUnit
-
 import cats.data.Validated.{Invalid, Valid}
 import org.openjdk.jmh.annotations._
+import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -19,10 +19,10 @@ class SpelBenchmarkSetup(expression: String, vars: Map[String, AnyRef]) {
 
   private val expressionDefinition = ExpressionDefinition(globalVariables = Map(), globalImports = Nil, additionalClasses = List(),
     languages = LanguageConfiguration.default, optimizeCompilation = true,
-    strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false, strictMethodsChecking = true)
+    strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false, strictMethodsChecking = true, referenceTypeValidating = false)
 
   private val expressionCompiler = ExpressionCompiler.withOptimization(
-    getClass.getClassLoader, new SimpleDictRegistry(Map.empty), expressionDefinition, settings = ClassExtractionSettings.Default)
+    getClass.getClassLoader, new SimpleDictRegistry(Map.empty), expressionDefinition, settings = ClassExtractionSettings.Default, typeDefinitionSet = TypeDefinitionSet())
 
   private val validationContext = ValidationContext(vars.mapValues(Typed.fromInstance), Map.empty)
 
