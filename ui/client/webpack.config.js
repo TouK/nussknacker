@@ -20,12 +20,6 @@ const GIT_HASH = childProcess.execSync("git log -1 --format=%H").toString()
 const GIT_DATE = childProcess.execSync("git log -1 --format=%cd").toString()
 const isProd = NODE_ENV === "production"
 
-const smp = new SpeedMeasurePlugin({
-  disable: true,
-  outputFormat: "humanVerbose",
-  loaderTopFiles: 5,
-})
-
 const {ModuleFederationPlugin} = webpack.container
 const {name} = require("./package.json")
 const entry = {
@@ -53,7 +47,25 @@ const fileLoader = {
   },
 }
 
-module.exports = smp.wrap({
+// From https://stackoverflow.com/a/64564708 - to monitor changed files. Unfortunatelly touch <file> causes printing root project directory instead of touched file
+class WatchRunPlugin {
+  apply(compiler) {
+    compiler.hooks.watchRun.tap('WatchRun', (comp) => {
+      if (comp.modifiedFiles || comp.removedFiles) {
+        const changedFiles = Array.from(comp.modifiedFiles, (file) => `\n  ${file}`).join('');
+        const removedFiles = Array.from(comp.removedFiles, (file) => `\n  ${file}`).join('');
+        console.log('===============================');
+        console.log('FILES CHANGED:', changedFiles);
+        console.log('FILES REMOVED:', removedFiles);
+        // uncomment for watched files debugging purpose
+        //console.log('FILE TIMESTAMPS:', comp.fileTimestamps);
+        console.log('===============================');
+      }
+    });
+  }
+}
+
+module.exports = {
   mode: NODE_ENV,
   optimization: {
     splitChunks: {
@@ -122,6 +134,21 @@ module.exports = smp.wrap({
         },
       },
     },
+    watchOptions: {
+      ignored: [
+        '**/dist',
+        '**/target',
+        // ignore vim swap files
+        '**/*.sw[pon]',
+        // less resources usage - after npm ci, npm start need to be run again
+        '**/node_modules',
+        // TODO: separe src/main, src/test and so on
+        '**/cypress*',
+        '**/jest*',
+        '**/test*',
+        '**/*.md',
+      ]
+    },
   },
   plugins: [
     new MomentLocalesPlugin({
@@ -150,7 +177,7 @@ module.exports = smp.wrap({
     new HtmlWebpackHarddiskPlugin(),
     new CopyPlugin({
       patterns: [
-        {from: "translations", to: "assets/locales"},
+        {from: "translations", to: "assets/locales", noErrorOnMissing: true},
         {from: "assets/img/favicon.png", to: "assets/img/favicon.png"},
       ],
     }),
@@ -181,10 +208,10 @@ module.exports = smp.wrap({
         DATE: JSON.stringify(GIT_DATE),
       },
     }),
-    // each 10% log entry in separate line - fix for travis no output problem
     new ForkTsCheckerWebpackPlugin(),
     isProd ? null : new ReactRefreshWebpackPlugin(),
     new webpack.ProgressPlugin(progressBar),
+    new WatchRunPlugin()
   ].filter(Boolean),
   module: {
     rules: [
@@ -304,4 +331,4 @@ module.exports = smp.wrap({
       },
     ],
   },
-})
+}
