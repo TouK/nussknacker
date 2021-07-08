@@ -147,7 +147,7 @@
     "@types/jsonwebtoken": "^8.5.4",
     "@types/kefir": "^3.8.6",
     "@types/loadable__component": "^5.13.3",
-    "@types/lodash": "^4.14.170",
+    "@types/lodash": "^4.14.171",
     "@types/react": "^17.0.12",
     "@types/react-beautiful-dnd": "^13.1.0",
     "@types/react-bootstrap": "^0.32.25",
