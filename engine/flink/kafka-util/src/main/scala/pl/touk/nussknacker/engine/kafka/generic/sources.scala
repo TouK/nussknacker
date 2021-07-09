@@ -125,9 +125,10 @@ object sources {
     }
 
     def extractTimestampFromField(fieldName: String)(element: TypedJson, kafkaEventTimestamp: Long): Long = {
-      Option(element.value().get(fieldName)) // null value is not acceptable
+      // TODO: Handle exceptions thrown within sources (now the whole process fails)
+      Option(element.value().get(fieldName))
         .map(_.asInstanceOf[Long])
-        .getOrElse(throw NonTransientException(TimestampFieldParamName, s"Cannot extract empty timestamp from field ${TimestampFieldParamName}"))
+        .getOrElse(0L) // explicit null to 0L conversion (instead of implicit unboxing)
     }
   }
 

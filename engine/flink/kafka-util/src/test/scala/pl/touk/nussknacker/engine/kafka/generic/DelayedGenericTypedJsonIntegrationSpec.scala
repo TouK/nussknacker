@@ -80,12 +80,10 @@ class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec wit
     val testProcessObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
     val sourceFactory = creator.sourceFactories(testProcessObjectDependencies)("kafka-generic-delayed").value.asInstanceOf[DelayedGenericTypedJsonSourceFactory]
     val recordOk = new ConsumerRecord[String, TypedMap]("dummy", 1, 1L, "", TypedMap(Map("msisdn" -> "abc", "ts" -> 456L)))
-    sourceFactory.extractTimestampFromField("ts")(recordOk, 123L) shouldBe 456L
+    sourceFactory.extractTimestampFromField("ts")(recordOk, 123L) shouldEqual 456L
 
     val recordWithNull = new ConsumerRecord[String, TypedMap]("dummy", 1, 1L, "", TypedMap(Map("msisdn" -> "abc", "ts" -> null)))
-    intercept[NonTransientException]{
-      sourceFactory.extractTimestampFromField("ts")(recordWithNull, 123L)
-    }.getMessage should include ("Cannot extract empty timestamp from field timestampField")
+    sourceFactory.extractTimestampFromField("ts")(recordWithNull, 123L) shouldEqual 0L
 
   }
 
