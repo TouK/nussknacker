@@ -163,7 +163,7 @@ Below we provide some valuable resources on how to monitor the Kafka cluster:
 
 For patch version changes (e.g. 1.11.1 to 1.11.2) upgrade usually goes without problems - it’s enough to replace Flink with new version with rolling upgrade on cluster.
 
-For major release changes (e.g. 1.11 to 1.12) it’s a bit more involved, the safest way is the following:
+For minor release changes (e.g. 1.11 to 1.12) it’s a bit more involved, the safest way is the following:
 
 
 
@@ -190,16 +190,16 @@ Below we describe endpoints that return general information about the Nussknacke
 
 
 
-* /api/app/buildInfo GET - returns basic information about deployed version of Nussknacker
-* /api/app/healthCheck GET 200 - use to check if Nussknacker Designer is up
-* /api/app/healthCheck/process/deployment GET
+* `/api/app/buildInfo GET` - returns basic information about deployed version of Nussknacker
+* `/api/app/healthCheck GET 200` - use to check if Nussknacker Designer is up
+* `/api/app/healthCheck/process/deployment GET`
   * 200 - if all deployed scenarios are running
   * 500 - basic information about deployed scenarios that are not running (e.g. failed, restarting etc.)
-* /api/app/healthCheck/process/validation GET
+* `/api/app/healthCheck/process/validation GET`
   * 200 - if all scenarios are valid
   * 500 - list of not-valid scenarios
-* /api/app/config GET (requires admin permissions) - serialized configuration of Nussknacker Designer and components (NOTE: configuration returned by this endpoint does not have all [substitutions](https://github.com/lightbend/config/blob/master/HOCON.md#substitutions) resolved, e.g. some some environmental variables will not be returned)
-* /api/app/processingtype/reload POST (requires admin permissions) - reload configuration of models. Used mostly if you use custom components which have dynamic configuration (e.g. list of components depend on external registry, like MLFlow or OpenAPI)
+* `/api/app/config GET` (requires admin permissions) - serialized configuration of Nussknacker Designer and components (NOTE: configuration returned by this endpoint does not have all [substitutions](https://github.com/lightbend/config/blob/master/HOCON.md#substitutions) resolved, e.g. some some environmental variables will not be returned)
+* `/api/app/processingtype/reload POST` (requires admin permissions) - reload configuration of models. Used mostly if you use custom components which have dynamic configuration (e.g. list of components depend on external registry, like MLFlow or OpenAPI)
 
 
 ### Common problems with Flink cluster
@@ -249,24 +249,24 @@ State of the scenario can be viewed in the scenario list, in the scenario detail
 
 
 * Not running
-  * _NotDeployed _(initial status before first deploy)
+  * _NotDeployed_ (initial status before first deploy)
   * _Canceled_
-  * _Finished _(for finite sources, e.g. batch)
+  * _Finished_ (for finite sources, e.g. batch)
 * Running without problems
   * Running
 * Temporary states
   * _DuringDeploy_
-  * _Restarting -_ (after an unexpected exception, check Flink console for the details)
+  * _Restarting_ - (after an unexpected exception, check Flink console for the details)
 * Problem
-  * _Failed - _the scenario ended with an error, the configured restart strategy prevents from running further
-  * _Error - _any of the following (in all cases jobmanager logs should be checked, this situation should be resolved manually):
+  * _Failed_ - the scenario ended with an error, the configured restart strategy prevents from running further
+  * _Error_ - any of the following (in all cases jobmanager logs should be checked, this situation should be resolved manually):
     * Scenario was deployed, but cannot find job on the Flink cluster
     * Scenario is running on Flink, but in a different version then saved in Nussknacker, probably some deployment error occurred
-  * _Warning - _any of the following (in all cases jobmanager logs should be checked, this situation should be resolved manually):
+  * _Warning_ - any of the following (in all cases jobmanager logs should be checked, this situation should be resolved manually):
     * The scenario was stopped in Nussknacker, but is still running on Flink
-  * _FailedToGet - _cannot obtain the state of the Flink job from the cluster. This usually indicates that connection problems or problems with the cluster
-  * _MultipleJobsRunning - _indicates that there are multiple Flink jobs running for one scenario. This should not happen, usually it happens after some deployment problems (restart during deployment, timeouts). This should be resolved manually, by cancelling Flink jobs.
-  * _Unknown - _should not happen, check the logs and consult Nussknacker team
+  * _FailedToGet_ -cannot obtain the state of the Flink job from the cluster. This usually indicates that connection problems or problems with the cluster
+  * _MultipleJobsRunning_ indicates that there are multiple Flink jobs running for one scenario. This should not happen, usually it happens after some deployment problems (restart during deployment, timeouts). This should be resolved manually, by cancelling Flink jobs.
+  * _Unknown_ should not happen, check the logs and consult Nussknacker team
 
 
 #### UI Actions
@@ -309,11 +309,11 @@ Endpoints under “admin”
 
 
 
-* /api/processManagement/deploy/{processId} POST
-* /api/processManagement/cancel/{processId} POST
-* /api/adminProcessManagement/snapshot/{processId}?savepointDir={} POST
-* /api/adminProcessManagement/stop/{processId}?savepointDir={} POST
-* /api/adminProcessManagement/deploy/{processId}/{savepointPath} POST
+* `/api/processManagement/deploy/{processId} POST`
+* `/api/processManagement/cancel/{processId} POST`
+* `/api/adminProcessManagement/snapshot/{processId}?savepointDir={} POST`
+* `/api/adminProcessManagement/stop/{processId}?savepointDir={} POST`
+* `/api/adminProcessManagement/deploy/{processId}/{savepointPath} POST`
 
 
 ### Common problems with scenarios
