@@ -257,12 +257,10 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
       case e: TypeReference => {
         if(!referenceTypeValidating) {
-          return valid(Unknown)
-        }
-        if(typeDefinitionSet.validateTypeReference(e:SpelNode))
-          return valid(Unknown)
-        else return invalid("Class is not allowed to be passed as TypeReference")
-
+           valid(Unknown)
+        } else if(typeDefinitionSet.validateTypeReference(e:SpelNode))
+          valid(Unknown)
+        else invalid("Class is not allowed to be passed as TypeReference")
       }
 
       case e: VariableReference =>
