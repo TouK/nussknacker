@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.expression.Expression
+import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.compiledgraph.node.{Sink, Source, _}
 import pl.touk.nussknacker.engine.compiledgraph.service._
 import pl.touk.nussknacker.engine.compiledgraph.variable._
@@ -27,7 +28,8 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
 
   private val expressionName = "expression"
 
-  def interpret(node: Node, ctx: Context): F[Either[List[InterpretationResult], EspExceptionInfo[_ <: Throwable]]] = {
+  def interpret(node: Node, ctx: Context)
+               (implicit runMode: RunMode): F[Either[List[InterpretationResult], EspExceptionInfo[_ <: Throwable]]] = {
     monad.handleError[Either[List[InterpretationResult], EspExceptionInfo[_ <: Throwable]]](tryToInterpretNode(node, ctx).map(Left(_))) {
       case NodeIdExceptionWrapper(nodeId, exception) =>
         val exInfo = EspExceptionInfo(Some(nodeId), exception, ctx)
@@ -38,7 +40,8 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
     }
   }
 
-  private def tryToInterpretNode(node: Node, ctx: Context): F[List[InterpretationResult]] = {
+  private def tryToInterpretNode(node: Node, ctx: Context)
+                                (implicit runMode: RunMode): F[List[InterpretationResult]] = {
     try {
       monad.handleErrorWith(interpretNode(node, ctx))(err => monad.raiseError(transform(node.id)(err)))
     } catch {
@@ -53,7 +56,8 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
 
   private implicit def nodeToId(implicit node: Node): NodeId = NodeId(node.id)
 
-  private def interpretNode(node: Node, ctx: Context): F[List[InterpretationResult]] = {
+  private def interpretNode(node: Node, ctx: Context)
+                           (implicit runMode: RunMode): F[List[InterpretationResult]] = {
     implicit val nodeImplicit: Node = node
     listeners.foreach(_.nodeEntered(node.id, ctx, metaData))
     node match {
@@ -142,7 +146,8 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
     }
   }
 
-  private def interpretOptionalNext(node: Node, optionalNext: Option[Next], ctx: Context): F[List[InterpretationResult]] = {
+  private def interpretOptionalNext(node: Node, optionalNext: Option[Next], ctx: Context)
+                                   (implicit runMode: RunMode): F[List[InterpretationResult]] = {
     optionalNext match {
       case Some(next) =>
         interpretNext(next, ctx)
@@ -152,7 +157,8 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
     }
   }
 
-  private def interpretNext(next: Next, ctx: Context): F[List[InterpretationResult]] =
+  private def interpretNext(next: Next, ctx: Context)
+                           (implicit runMode: RunMode): F[List[InterpretationResult]] =
     next match {
       case NextNode(node) => tryToInterpretNode(node, ctx)
       case PartRef(ref) => monad.pure(List(InterpretationResult(NextPartReference(ref), outputValue(ctx), ctx)))
@@ -177,7 +183,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
     }
   }
 
-  private def invoke(ref: ServiceRef, ctx: Context)(implicit node: Node): F[ValueWithContext[Any]] = {
+  private def invoke(ref: ServiceRef, ctx: Context)(implicit node: Node, runMode: RunMode): F[ValueWithContext[Any]] = {
     val (preparedParams, resultFuture) = ref.invoke(ctx, expressionEvaluator)
     resultFuture.onComplete { result =>
       //TODO: what about implicit??
@@ -203,7 +209,8 @@ class Interpreter(listeners: Seq[ProcessListener],
                       metaData: MetaData,
                       ctx: Context)
                      (implicit shape: InterpreterShape[F],
-                      ec: ExecutionContext): F[Either[List[InterpretationResult], EspExceptionInfo[_ <: Throwable]]] = {
+                      ec: ExecutionContext,
+                      runMode: RunMode): F[Either[List[InterpretationResult], EspExceptionInfo[_ <: Throwable]]] = {
     new InterpreterInternal[F](listeners, expressionEvaluator, shape)(metaData, ec).interpret(node, ctx)
   }
 

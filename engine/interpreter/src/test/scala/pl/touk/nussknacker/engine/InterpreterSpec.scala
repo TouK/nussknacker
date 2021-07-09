@@ -88,14 +88,15 @@ class InterpreterSpec extends FunSuite with Matchers {
     NameDictService.clear()
 
     val metaData = MetaData("process1", StreamMetaData())
+    implicit val runMode: RunMode = RunMode.Normal
     val process = EspProcess(metaData, ExceptionHandlerRef(List.empty), NonEmptyList.of(node))
 
     val processCompilerData = compile(services, transformers, process, listeners)
     val interpreter = processCompilerData.interpreter
-    val parts = failOnErrors(processCompilerData.compile())
+    val parts = failOnErrors(processCompilerData.compile()(RunMode.Normal))
 
     def compileNode(part: ProcessPart) =
-      failOnErrors(processCompilerData.subPartCompiler.compile(part.node, part.validationContext)(metaData).result)
+      failOnErrors(processCompilerData.subPartCompiler.compile(part.node, part.validationContext)(metaData, RunMode.Normal).result)
 
     val initialCtx = Context("abc").withVariable(VariableConstants.InputVariableName, transaction)
 
@@ -790,7 +791,10 @@ object InterpreterSpec {
       new ServiceInvoker {
 
         override def invokeService(params: Map[String, Any])
-                                  (implicit ec: ExecutionContext, collector: InvocationCollectors.ServiceInvocationCollector, contextId: ContextId): Future[AnyRef] = {
+                                  (implicit ec: ExecutionContext,
+                                   collector: InvocationCollectors.ServiceInvocationCollector,
+                                   contextId: ContextId,
+                                   runMode: RunMode): Future[AnyRef] = {
           Future.successful(params("lazy").asInstanceOf[AnyRef])
         }
 
@@ -831,7 +835,9 @@ object InterpreterSpec {
       new ServiceInvoker {
         override def invokeService(params: Map[String, Any])
                                   (implicit ec: ExecutionContext,
-                                   collector: InvocationCollectors.ServiceInvocationCollector, contextId: ContextId): Future[AnyRef] = {
+                                   collector: InvocationCollectors.ServiceInvocationCollector,
+                                   contextId: ContextId,
+                                   runMode: RunMode): Future[AnyRef] = {
           Future.successful(params(paramName).asInstanceOf[AnyRef])
         }
 

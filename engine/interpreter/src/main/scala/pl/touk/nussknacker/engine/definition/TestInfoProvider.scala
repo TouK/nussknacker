@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.process.{TestDataGenerator, SourceTestSupport}
+import pl.touk.nussknacker.engine.api.process.{RunMode, SourceTestSupport, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.{MetaData, process}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
@@ -43,6 +43,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
 
   private def prepareSourceObj(source: Source)(implicit metaData: MetaData): Option[process.Source[Any]] = {
     implicit val nodeId: NodeId = NodeId(source.id)
+    implicit val runNode: RunMode = RunMode.Normal
     nodeCompiler.compileSource(source).compiledObject.toOption
   }
 

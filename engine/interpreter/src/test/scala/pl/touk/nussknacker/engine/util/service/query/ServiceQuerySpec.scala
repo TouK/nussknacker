@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, Validati
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, ParameterWithExtractor}
 import pl.touk.nussknacker.engine.api.{ContextId, EagerService, LazyParameter, MethodToInvoke, ParamName, Service, ServiceInvoker}
-import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, ProcessObjectDependencies, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, ProcessObjectDependencies, RunMode, WithCategories}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -86,7 +86,8 @@ object QueryServiceTesting {
   class CollectingEagerInvoker(static: String) extends ServiceInvoker {
     override def invokeService(params: Map[String, Any])(implicit ec: ExecutionContext,
                                                          collector: ServiceInvocationCollector,
-                                                         contextId: ContextId): Future[Any] = {
+                                                         contextId: ContextId,
+                                                         runMode: RunMode): Future[Any] = {
       val returnValue = s"static-$static-dynamic-${params("dynamic")}"
       collector.collect("mocked" + returnValue, Option("")) {
         Future.successful(returnValue)

@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.expression.ExpressionParser
+import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
@@ -40,7 +41,7 @@ class ProcessCompiler(protected val classLoader: ClassLoader,
   override def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): ProcessCompiler =
     new ProcessCompiler(classLoader, sub.withExpressionParsers(modify), globalVariablesPreparer, nodeCompiler.withExpressionParsers(modify))
 
-  override def compile(process: EspProcess): CompilationResult[CompiledProcessParts] = {
+  override def compile(process: EspProcess)(implicit runMode: RunMode): CompilationResult[CompiledProcessParts] = {
     super.compile(process)
   }
 }
@@ -52,6 +53,7 @@ trait ProcessValidator extends LazyLogging {
   }
 
   def validate(process: EspProcess): CompilationResult[Unit] = {
+    implicit val runMode: RunMode = RunMode.Normal
     try {
       compile(process).map(_ => Unit)
     } catch {
@@ -63,7 +65,7 @@ trait ProcessValidator extends LazyLogging {
 
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): ProcessValidator
 
-  protected def compile(process: EspProcess): CompilationResult[_]
+  protected def compile(process: EspProcess)(implicit runMode: RunMode): CompilationResult[_]
 
 }
 
@@ -77,7 +79,7 @@ protected trait ProcessCompilerBase {
 
   protected def globalVariablesPreparer: GlobalVariablesPreparer
 
-  protected def compile(process: EspProcess): CompilationResult[CompiledProcessParts] = {
+  protected def compile(process: EspProcess)(implicit runMode: RunMode): CompilationResult[CompiledProcessParts] = {
     ThreadUtils.withThisAsContextClassLoader(classLoader) {
       compile(ProcessSplitter.split(process))
     }
@@ -86,7 +88,7 @@ protected trait ProcessCompilerBase {
   private def contextWithOnlyGlobalVariables(implicit metaData: MetaData): ValidationContext
   = globalVariablesPreparer.emptyValidationContext(metaData)
 
-  private def compile(splittedProcess: SplittedProcess): CompilationResult[CompiledProcessParts] = {
+  private def compile(splittedProcess: SplittedProcess)(implicit runMode: RunMode): CompilationResult[CompiledProcessParts] = {
     implicit val metaData: MetaData = splittedProcess.metaData
     val (typingInfo, compiledExceptionHandler) = nodeCompiler.compileExceptionHandler(splittedProcess.exceptionHandlerRef)
     val nodeTypingInfo = Map(NodeTypingInfo.ExceptionHandlerNodeId -> NodeTypingInfo(contextWithOnlyGlobalVariables, typingInfo, None))
@@ -103,7 +105,7 @@ protected trait ProcessCompilerBase {
     We need to sort SourceParts to know types of variables in branches for joins. See comment in PartSort
     In the future we'll probably move to direct representation of process as graph and this will no longer be needed
    */
-  private def compileSources(sources: NonEmptyList[SourcePart])(implicit meta: MetaData): CompilationResult[NonEmptyList[PotentiallyStartPart]] = {
+  private def compileSources(sources: NonEmptyList[SourcePart])(implicit meta: MetaData, runMode: RunMode): CompilationResult[NonEmptyList[PotentiallyStartPart]] = {
     val zeroAcc = (CompilationResult(Valid(List[PotentiallyStartPart]())), new BranchEndContexts(Nil))
     //we use fold here (and not map/sequence), because we can compile part which starts from Join only when we
     //know compilation results (stored in BranchEndContexts) of all branches that end in this join
@@ -130,7 +132,7 @@ protected trait ProcessCompilerBase {
   }
 
   private def compile(source: SourcePart, branchEndContexts: BranchEndContexts)
-                     (implicit metaData: MetaData): CompilationResult[compiledgraph.part.PotentiallyStartPart] = {
+                     (implicit metaData: MetaData, runMode: RunMode): CompilationResult[compiledgraph.part.PotentiallyStartPart] = {
     implicit val nodeId: NodeId = NodeId(source.id)
 
     source match {
@@ -144,7 +146,7 @@ protected trait ProcessCompilerBase {
   }
 
   private def compileParts(parts: List[SubsequentPart], ctx: Map[String, ValidationContext])
-                          (implicit metaData: MetaData): CompilationResult[List[compiledgraph.part.SubsequentPart]] = {
+                          (implicit metaData: MetaData, runMode: RunMode): CompilationResult[List[compiledgraph.part.SubsequentPart]] = {
     import CompilationResult._
     parts.map(p =>
       ctx.get(p.id).map(compileSubsequentPart(p, _)).getOrElse(CompilationResult(Invalid(NonEmptyList.of[ProcessCompilationError](MissingPart(p.id)))))
@@ -152,7 +154,7 @@ protected trait ProcessCompilerBase {
   }
 
   private def compileSubsequentPart(part: SubsequentPart, ctx: ValidationContext)
-                                   (implicit metaData: MetaData): CompilationResult[compiledgraph.part.SubsequentPart] = {
+                                   (implicit metaData: MetaData, runMode: RunMode): CompilationResult[compiledgraph.part.SubsequentPart] = {
     implicit val nodeId: NodeId = NodeId(part.id)
     part match {
       case SinkPart(node) =>
@@ -165,7 +167,7 @@ protected trait ProcessCompilerBase {
   }
 
   def compileSourcePart(part: SourcePart, sourceData: SourceNodeData)
-                       (implicit nodeId: NodeId, metaData: MetaData): CompilationResult[compiledgraph.part.SourcePart] = {
+                       (implicit nodeId: NodeId, metaData: MetaData, runMode: RunMode): CompilationResult[compiledgraph.part.SourcePart] = {
     val NodeCompilationResult(typingInfo, parameters, initialCtx, compiledSource, _) = nodeCompiler.compileSource(sourceData)
 
     val validatedSource = sub.validate(part.node, initialCtx.valueOr(_ => contextWithOnlyGlobalVariables))
@@ -182,7 +184,8 @@ protected trait ProcessCompilerBase {
     }
   }
 
-  def compileSinkPart(node: EndingNode[Sink], ctx: ValidationContext)(implicit metaData: MetaData, nodeId: NodeId): CompilationResult[part.SinkPart] = {
+  def compileSinkPart(node: EndingNode[Sink], ctx: ValidationContext)
+                     (implicit metaData: MetaData, nodeId: NodeId, runMode: RunMode): CompilationResult[part.SinkPart] = {
     val NodeCompilationResult(typingInfo, parameters, _, compiledSink, _) = nodeCompiler.compileSink(node.data, ctx)
     val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo, parameters))
     CompilationResult.map2(sub.validate(node, ctx), CompilationResult(nodeTypingInfo, compiledSink))((_, obj) =>
@@ -192,7 +195,7 @@ protected trait ProcessCompilerBase {
 
   def compileEndingCustomNodePart(node: splittednode.EndingNode[CustomNode], data: CustomNodeData,
                                   ctx: ValidationContext)
-                                 (implicit metaData: MetaData, nodeId: NodeId): CompilationResult[compiledgraph.part.CustomNodePart] = {
+                                 (implicit metaData: MetaData, nodeId: NodeId, runMode: RunMode): CompilationResult[compiledgraph.part.CustomNodePart] = {
     val NodeCompilationResult(typingInfo, parameters, validatedNextCtx, compiledNode, _) = nodeCompiler.compileCustomNodeObject(data, Left(ctx), ending = true)
     val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx, typingInfo, parameters))
 
@@ -206,7 +209,7 @@ protected trait ProcessCompilerBase {
 
   def compileCustomNodePart(part: ProcessPart, node: splittednode.OneOutputNode[CustomNodeData], data: CustomNodeData,
                             ctx: Either[ValidationContext, BranchEndContexts])
-                           (implicit metaData: MetaData, nodeId: NodeId): CompilationResult[compiledgraph.part.CustomNodePart] = {
+                           (implicit metaData: MetaData, nodeId: NodeId, runMode: RunMode): CompilationResult[compiledgraph.part.CustomNodePart] = {
     val NodeCompilationResult(typingInfo, parameters, validatedNextCtx, compiledNode, _) = nodeCompiler.compileCustomNodeObject(data, ctx.right.map(_.contextsForJoin(data.id)), ending = false)
 
     val nextPartsValidation = sub.validate(node, validatedNextCtx.valueOr(_ => ctx.left.getOrElse(contextWithOnlyGlobalVariables)))

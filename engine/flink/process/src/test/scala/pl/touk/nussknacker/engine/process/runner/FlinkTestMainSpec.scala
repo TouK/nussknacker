@@ -28,6 +28,7 @@ import scala.concurrent.{Await, Future}
 
 class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAndAfterEach {
 
+  import scala.collection.JavaConverters._
   import spel.Implicits._
 
   override protected def beforeEach(): Unit = {
@@ -427,12 +428,13 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
       .id("proc")
       .exceptionHandler()
       .source("start", "input")
-      .enricher("runMode", "runMode", "returningRunModeService")
-      .sink("out", "#runMode", "monitor")
+      .enricher("runModeService", "runModeService", "returningRunModeService")
+      .customNode("runModeCustomNode", "runModeCustomNode", "transformerAddingRunMode")
+      .sink("out", "{#runModeService, #runModeCustomNode}", "monitor")
 
     val results = runFlinkTest(process, TestData("0|1|2|3|4|5|6"))
 
-    results.invocationResults("out").map(_.value) shouldBe List(RunMode.Test)
+    results.invocationResults("out").map(_.value) shouldBe List(List(RunMode.Test, RunMode.Test).asJava)
   }
 
   def runFlinkTest(process: EspProcess, testData: TestProcess.TestData): TestResults[Any] = {

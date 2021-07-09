@@ -168,7 +168,9 @@ object SampleNodes {
       val newI = new ServiceInvoker with WithLifecycle {
         override def invokeService(params: Map[String, Any])
                                   (implicit ec: ExecutionContext,
-                                   collector: ServiceInvocationCollector, contextId: ContextId): Future[Any] = {
+                                   collector: ServiceInvocationCollector,
+                                   contextId: ContextId,
+                                   runMode: RunMode): Future[Any] = {
           if (!opened) {
             throw new IllegalArgumentException
           }
@@ -189,7 +191,8 @@ object SampleNodes {
     def invoke(@ParamName("static") static: String, @ParamName("dynamic") dynamic: LazyParameter[String]): ServiceInvoker = new ServiceInvoker {
       override def invokeService(params: Map[String, Any])(implicit ec: ExecutionContext,
                                                            collector: ServiceInvocationCollector,
-                                                           contextId: ContextId): Future[Any] = {
+                                                           contextId: ContextId,
+                                                           runMode: RunMode): Future[Any] = {
         collector.collect(s"static-$static-dynamic-${params("dynamic")}", Option(())) {
           Future.successful(())
         }
@@ -209,7 +212,8 @@ object SampleNodes {
 
     @MethodToInvoke(returnType = classOf[SimpleRecordWithPreviousValue])
     def execute(@ParamName("stringVal") stringVal: String,
-                @ParamName("keyBy") keyBy: LazyParameter[String]) = FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
+                @ParamName("keyBy") keyBy: LazyParameter[String])
+               (implicit nodeId: NodeId, metaData: MetaData, runMode: RunMode) = FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
       setUidToNodeIdIfNeed(context,
         start
           .map(context.lazyParameterHelper.lazyMapFunction(keyBy))
@@ -388,6 +392,19 @@ object SampleNodes {
         start
           .map(context.lazyParameterHelper.lazyMapFunction[AnyRef](param))
       })
+
+  }
+
+  object TransformerAddingRunMode extends CustomStreamTransformer {
+
+    @MethodToInvoke
+    def execute = {
+      FlinkCustomStreamTransformation((start: DataStream[Context], flinkCustomNodeContext: FlinkCustomNodeContext) => {
+        val runMode = flinkCustomNodeContext.runMode
+        start
+          .map(context => ValueWithContext[AnyRef](runMode, context))
+      })
+    }
 
   }
 
@@ -682,6 +699,8 @@ object SampleNodes {
 
   object GenericParametersSink extends SinkFactory with SingleInputGenericNodeTransformation[Sink]  {
 
+    private val runModeDependency = TypedNodeDependency(classOf[RunMode])
+
     override type State = Nothing
 
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId)
@@ -710,7 +729,7 @@ object SampleNodes {
           dataStream
             .map(_.finalContext)
             .map(flinkNodeContext.lazyParameterHelper.lazyMapFunction(params("value").asInstanceOf[LazyParameter[String]]))
-            .map[Any]((v: ValueWithContext[String]) => s"${v.value}+$typ-$version")
+            .map[Any]((v: ValueWithContext[String]) => s"${v.value}+$typ-$version+runMode:${runModeDependency.extract(dependencies)}")
             .addSink(SinkForStrings.toFlinkFunction)
         }
 
@@ -718,7 +737,7 @@ object SampleNodes {
       }
     }
 
-    override def nodeDependencies: List[NodeDependency] = Nil
+    override def nodeDependencies: List[NodeDependency] = List(runModeDependency)
   }
 
   object ProcessHelper {
@@ -774,7 +793,7 @@ object SampleNodes {
   object TypedJsonSource extends FlinkSourceFactory[TypedMap] with ReturningType {
 
     @MethodToInvoke
-    def create(processMetaData: MetaData,  @ParamName("type") definition: java.util.Map[String, _]): Source[_] = {
+    def create(processMetaData: MetaData, runMode: RunMode, @ParamName("type") definition: java.util.Map[String, _]): Source[_] = {
       new CollectionSource[TypedMap](new ExecutionConfig, List(), None, Typed[TypedMap]) with FlinkSourceTestSupport[TypedMap] with ReturningType {
 
         override def testDataParser: TestDataParser[TypedMap] = new EmptyLineSplittedTestDataParser[TypedMap] {
@@ -793,5 +812,14 @@ object SampleNodes {
   }
 
   @JsonCodec case class KeyValue(key: String, value: Int, date: Long)
+
+  object ReturningRunModeService extends Service {
+
+    @MethodToInvoke
+    def invoke(implicit runMode: RunMode): Future[RunMode] = {
+      Future.successful(runMode)
+    }
+
+  }
 
 }

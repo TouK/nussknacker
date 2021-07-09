@@ -5,6 +5,7 @@ import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
+import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.{Context, InterpretationResult}
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.process.ProcessPartFunction
@@ -17,17 +18,18 @@ import scala.util.control.NonFatal
 
 private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
                                                     val node: SplittedNode[_<:NodeData],
-                                                    validationContext: ValidationContext, useIOMonad: Boolean)
+                                                    validationContext: ValidationContext, useIOMonad: Boolean,
+                                                    runMode: RunMode)
   extends RichFlatMapFunction[Context, InterpretationResult] with ProcessPartFunction {
 
   private lazy implicit val ec: ExecutionContext = SynchronousExecutionContext.ctx
-  private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node, validationContext)
+  private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node, validationContext)(runMode)
 
   import compiledProcessWithDeps._
 
   override def flatMap(input: Context, collector: Collector[InterpretationResult]): Unit = {
     (try {
-      runInterpreter(input)
+      runInterpreter(input)(runMode)
     } catch {
       case NonFatal(error) => Right(EspExceptionInfo(None, error, input))
     }) match {
@@ -38,7 +40,8 @@ private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsP
     }
   }
 
-  private def runInterpreter(input: Context): Either[List[InterpretationResult], EspExceptionInfo[_ <: Throwable]] = {
+  private def runInterpreter(input: Context)
+                            (implicit runMode: RunMode): Either[List[InterpretationResult], EspExceptionInfo[_ <: Throwable]] = {
     //we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {
       interpreter.interpret(compiledNode, metaData, input).unsafeRunSync()

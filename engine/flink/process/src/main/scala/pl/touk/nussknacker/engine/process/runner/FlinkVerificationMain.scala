@@ -34,6 +34,6 @@ class FlinkVerificationMain(val modelData: ModelData, val process: EspProcess, p
 
   protected def prepareRegistrar(): FlinkProcessRegistrar = {
     FlinkProcessRegistrar(new VerificationFlinkProcessCompiler(
-      process, modelData.configCreator, modelData.processConfig, modelData.objectNaming), ExecutionConfigPreparer.defaultChain(modelData), RunMode.Verification)
+      process, modelData.configCreator, modelData.processConfig, modelData.objectNaming), ExecutionConfigPreparer.defaultChain(modelData), RunMode.Normal)
   }
 }

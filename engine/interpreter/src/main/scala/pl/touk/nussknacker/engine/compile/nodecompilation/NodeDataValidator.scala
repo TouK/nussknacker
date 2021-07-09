@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.TypedValue
+import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
@@ -29,6 +30,7 @@ object NodeDataValidator {
                validationContext: ValidationContext,
                branchContexts: Map[String, ValidationContext]
               )(implicit metaData: MetaData): ValidationResponse = {
+    implicit val runMode: RunMode = RunMode.Normal
     modelData.withThisAsContextClassLoader {
 
       val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
@@ -59,4 +61,3 @@ object NodeDataValidator {
     ValidationPerformed(nodeCompilationResult.errors, nodeCompilationResult.parameters, expressionType = nodeCompilationResult.expressionType)
 }
 
-                                                                                                           

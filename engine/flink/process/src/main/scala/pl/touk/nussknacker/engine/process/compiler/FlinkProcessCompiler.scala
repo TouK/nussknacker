@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, De
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies, RunMode}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
@@ -46,7 +46,9 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
   def compileProcess(process: EspProcess,
                      processVersion: ProcessVersion,
                      deploymentData: DeploymentData,
-                     resultCollector: ResultCollector)(userCodeClassLoader: ClassLoader): FlinkProcessCompilerData = {
+                     resultCollector: ResultCollector,
+                     runMode: RunMode)
+                    (userCodeClassLoader: ClassLoader): FlinkProcessCompilerData = {
     val processObjectDependencies = ProcessObjectDependencies(processConfig, objectNaming)
 
     //TODO: this should be somewhere else?
@@ -63,7 +65,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
     val compiledProcess =
       ProcessCompilerData.prepare(process, definitions(processObjectDependencies), listenersToUse, userCodeClassLoader, resultCollector)
 
-    val compiledExceptionHandler = validateOrFailProcessCompilation(compiledProcess.compileExceptionHandler())
+    val compiledExceptionHandler = validateOrFailProcessCompilation(compiledProcess.compileExceptionHandler()(runMode))
     val listeningExceptionHandler = new ListeningExceptionHandler(listenersToUse,
       //FIXME: remove casting...
       compiledExceptionHandler.asInstanceOf[FlinkEspExceptionHandler])

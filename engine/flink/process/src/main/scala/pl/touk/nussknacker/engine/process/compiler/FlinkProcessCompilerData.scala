@@ -6,7 +6,7 @@ import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
+import pl.touk.nussknacker.engine.api.process.{AsyncExecutionContextPreparer, RunMode}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData}
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
@@ -49,8 +49,8 @@ class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
     compiledProcess.lifecycle(nodesToUse).foreach(_.close())
   }
 
-  def compileSubPart(node: SplittedNode[_], validationContext: ValidationContext): Node = {
-    validateOrFail(compiledProcess.subPartCompiler.compile(node, validationContext)(compiledProcess.metaData).result)
+  def compileSubPart(node: SplittedNode[_], validationContext: ValidationContext)(implicit runMode: RunMode): Node = {
+    validateOrFail(compiledProcess.subPartCompiler.compile(node, validationContext)(compiledProcess.metaData, runMode).result)
   }
 
   private def validateOrFail[T](validated: ValidatedNel[ProcessCompilationError, T]): T = validated match {
@@ -64,7 +64,7 @@ class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
 
   val lazyInterpreterDeps: LazyInterpreterDependencies = compiledProcess.lazyInterpreterDeps
 
-  def compileProcess(): CompiledProcessParts = validateOrFail(compiledProcess.compile())
+  def compileProcess()(implicit runMode: RunMode): CompiledProcessParts = validateOrFail(compiledProcess.compile())
 
   def restartStrategy: RestartStrategies.RestartStrategyConfiguration = exceptionHandler.restartStrategy
 

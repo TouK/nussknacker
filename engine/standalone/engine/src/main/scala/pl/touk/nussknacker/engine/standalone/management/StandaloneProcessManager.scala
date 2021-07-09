@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.ModelData.ClasspathConfig
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessObjectDependencies, SourceTestSupport}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessObjectDependencies, RunMode, SourceTestSupport}
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -125,10 +125,11 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
 
     //in tests we don't send metrics anywhere
     val testContext = new StandaloneContextPreparer(NoOpMetricsProvider)
+    val runMode: RunMode = RunMode.Test
 
     //FIXME: validation??
     val standaloneInterpreter = StandaloneProcessInterpreter(process, testContext, modelData,
-      additionalListeners = List(collectingListener), new TestServiceInvocationCollector(collectingListener.runId)
+      additionalListeners = List(collectingListener), new TestServiceInvocationCollector(collectingListener.runId), runMode
     ) match {
       case Valid(interpreter) => interpreter
       case Invalid(errors) => throw new IllegalArgumentException("Error during interpreter preparation: " + errors.toList.mkString(", "))

@@ -31,14 +31,14 @@ class InterpreterSetup[T:ClassTag] {
                            listeners: Seq[ProcessListener]): (Context, ExecutionContext) => F[Either[List[InterpretationResult], EspExceptionInfo[_ <: Throwable]]] = {
     val compiledProcess = compile(services, process, listeners)
     val interpreter = compiledProcess.interpreter
-    val parts = failOnErrors(compiledProcess.compile())
+    val parts = failOnErrors(compiledProcess.compile()(RunMode.Normal))
 
     def compileNode(part: ProcessPart) =
-      failOnErrors(compiledProcess.subPartCompiler.compile(part.node, part.validationContext)(process.metaData).result)
+      failOnErrors(compiledProcess.subPartCompiler.compile(part.node, part.validationContext)(process.metaData, RunMode.Normal).result)
     val compiled = compileNode(parts.sources.head)
     val shape = implicitly[InterpreterShape[F]]
     (initialCtx: Context, ec: ExecutionContext) =>
-      interpreter.interpret[F](compiled, process.metaData, initialCtx)(shape, ec)
+      interpreter.interpret[F](compiled, process.metaData, initialCtx)(shape, ec, RunMode.Normal)
   }
 
   def compile(servicesToUse: Map[String, Service], process: EspProcess, listeners: Seq[ProcessListener]): ProcessCompilerData = {

@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValue
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.EspExceptionHandler
+import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.{Lifecycle, MetaData, ProcessListener}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
@@ -90,10 +91,10 @@ class ProcessCompilerData(compiler: ProcessCompiler,
 
   def metaData: MetaData = process.metaData
 
-  def compile(): ValidatedNel[ProcessCompilationError, CompiledProcessParts] =
+  def compile()(implicit runMode: RunMode): ValidatedNel[ProcessCompilationError, CompiledProcessParts] =
     compiler.compile(process).result
 
-  def compileExceptionHandler(): ValidatedNel[ProcessCompilationError, EspExceptionHandler] =
-    nodeCompiler.compileExceptionHandler(process.exceptionHandlerRef)(metaData)._2
+  def compileExceptionHandler()(implicit runMode: RunMode): ValidatedNel[ProcessCompilationError, EspExceptionHandler] =
+    nodeCompiler.compileExceptionHandler(process.exceptionHandlerRef)(metaData, runMode)._2
 
 }
