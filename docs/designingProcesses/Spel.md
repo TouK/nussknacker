@@ -118,7 +118,7 @@ There are a few notable exceptions:
 |`true`	      |true	   | Boolean |
 |`null`	      | null   | Null    |
 |`{1,2,3,4}`    |  a list of integers from 1 to 4	| List[Integer] |
-|`{john:300, alex:400}` |a map (key-value collection) | Map[String, Integer] |
+|`{john:300, alex:400}` |a map (name-value collection) | Map[String, Integer] |
 | `#input` | variable | |                                         
                                     
 ## Arithmetic Operators
@@ -161,7 +161,7 @@ are shown in code completion hints.
 | Expression  |	Result | Type   |
 | ------------|--------|--------|
 |`{1,2,3,4}[0]` | 1 | Integer |
-|`{jan:300, alex:400}[alex]` | a value of key 'alex', which is 400	| Integer |
+|`{jan:300, alex:400}[alex]` | a value of field 'alex', which is 400	| Integer |
 
 ## Filtering lists
                           
