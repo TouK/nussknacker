@@ -61,6 +61,7 @@ On the other hand, `map` describes "generic" structure - Nussknacker tacitly ass
                                                              
 Nussknacker usually infers structure of record from external source (e.g. AVRO schema), but it can also detect it from map literals.
 
+
 ### Arrays/lists
 
 In Nussknacker (e.g. in code completion) JSON / Avro arrays are refered to as `Lists`; 
@@ -131,6 +132,12 @@ There are a few notable exceptions:
 
 | Expression  |	Result | Type   |
 | ------------|--------|--------|
+| `2 == 2` | true	| boolean |
+| `2 > 1` | true	| boolean |
+| `true AND false` | false	| boolean |
+| `true && false` | false	| boolean |
+| `true OR false` | true	| boolean |
+| `true OR false` | true	| boolean |
 | `2 > 1 ? 'a' : 'b'` |	"a"	| String |
 | `2 < 1 ? 'a' : 'b'` |	"b"	String |
 | `#nonNullVar == null ? 'Uknown' : 'Success'` |	"Success" | String |
