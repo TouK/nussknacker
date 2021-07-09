@@ -248,7 +248,7 @@ object ProcessValidator {
 
   def default(definitions: ProcessDefinition[ObjectWithMethodDef], dictRegistry: DictRegistry,
               classLoader: ClassLoader = getClass.getClassLoader): ProcessValidator = {
-    val typeDefinitionSet = new TypeDefinitionSet(ProcessDefinitionExtractor.extractTypes(definitions))
+    val typeDefinitionSet = TypeDefinitionSet(ProcessDefinitionExtractor.extractTypes(definitions))
 
     val expressionCompiler = ExpressionCompiler.withoutOptimization(classLoader, dictRegistry, definitions.expressionConfig, definitions.settings, typeDefinitionSet)
     val nodeCompiler = new NodeCompiler(definitions, expressionCompiler, classLoader, PreventInvocationCollector, RunMode.Normal)

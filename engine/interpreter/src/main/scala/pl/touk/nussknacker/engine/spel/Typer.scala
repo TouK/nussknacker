@@ -34,8 +34,8 @@ import scala.util.control.NonFatal
 
 private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: CommonSupertypeFinder,
                           dictTyper: SpelDictTyper, strictMethodsChecking: Boolean,
-                          typeDefinitionSet: TypeDefinitionSet = TypeDefinitionSet(),
-                          referenceTypeValidating: Boolean
+                          referenceTypeValidating: Boolean,
+                          typeDefinitionSet: TypeDefinitionSet = TypeDefinitionSet()
                          )(implicit settings: ClassExtractionSettings) extends LazyLogging {
 
   import ast.SpelAst._
@@ -254,18 +254,14 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
           }
         case _ => invalid("Invalid ternary operator") // shouldn't happen
       }
-      //TODO: what should be here?
 
       case e: TypeReference => {
-
         if(!referenceTypeValidating) {
           return valid(Unknown)
         }
-
-        if(typeDefinitionSet.validateTypeReference(e:SpelNode)) {
+        if(typeDefinitionSet.validateTypeReference(e:SpelNode))
           return valid(Unknown)
-        }
-        return invalid("class is not allowed to be passed as TypeReference")
+        else return invalid("Class is not allowed to be passed as TypeReference")
 
       }
 
@@ -394,7 +390,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     Invalid(NonEmptyList.of(ExpressionParseError(message)))
 
   def withDictTyper(dictTyper: SpelDictTyper) =
-    new Typer(classLoader, commonSupertypeFinder, dictTyper, strictMethodsChecking = strictMethodsChecking, typeDefinitionSet, referenceTypeValidating)
+    new Typer(classLoader, commonSupertypeFinder, dictTyper, strictMethodsChecking = strictMethodsChecking, referenceTypeValidating, typeDefinitionSet)
 
 }
 

@@ -79,7 +79,7 @@ class LazyParameterSpec extends FunSuite with Matchers {
 
   def prepareLazyInterpreterDeps(definitions: ProcessDefinition[ObjectWithMethodDef]): LazyInterpreterDependencies = {
     val expressionEvaluator =  ExpressionEvaluator.unOptimizedEvaluator(GlobalVariablesPreparer(definitions.expressionConfig))
-    val typeDefinitionSet = new TypeDefinitionSet(ProcessDefinitionExtractor.extractTypes(definitions))
+    val typeDefinitionSet = TypeDefinitionSet(ProcessDefinitionExtractor.extractTypes(definitions))
     val expressionCompiler = ExpressionCompiler.withOptimization(getClass.getClassLoader,
       new SimpleDictRegistry(Map.empty), definitions.expressionConfig,
       ClassExtractionSettings.Default, typeDefinitionSet)
