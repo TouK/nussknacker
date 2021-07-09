@@ -139,7 +139,7 @@ There are a few notable exceptions:
 | `true OR false` | true	| boolean |
 | `true OR false` | true	| boolean |
 | `2 > 1 ? 'a' : 'b'` |	"a"	| String |
-| `2 < 1 ? 'a' : 'b'` |	"b"	String |
+| `2 < 1 ? 'a' : 'b'` |	"b"	| String |
 | `#nonNullVar == null ? 'Uknown' : 'Success'` |	"Success" | String |
 | `#nullVar == null ? 'Unknown' : 'Success'` | "Unknown" | String |
 | `#nullVar?:'Unknown'` | "Unknown" | String |
