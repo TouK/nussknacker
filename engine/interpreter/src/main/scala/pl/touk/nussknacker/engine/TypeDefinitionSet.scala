@@ -18,7 +18,7 @@ case class TypeDefinitionSet(typeDefinitions: Set[TypeInfos.ClazzDefinition] = S
 
     val newLine = "\n"
     val tab = "\t"
-    val basicInfo: StringBuilder = new StringBuilder()
+    val basicInfo = new StringBuilder()
 
     typeDefinitions.foreach(element => {
 
