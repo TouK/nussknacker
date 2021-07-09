@@ -207,8 +207,8 @@ object SpelExpressionParser extends LazyLogging {
               imports: List[String],
               flavour: Flavour,
               strictMethodsChecking: Boolean,
-              typeDefinitionSet: TypeDefinitionSet,
-              referenceTypeValidating: Boolean)
+              referenceTypeValidating: Boolean,
+              typeDefinitionSet: TypeDefinitionSet = TypeDefinitionSet())
              (implicit classExtractionSettings: ClassExtractionSettings): SpelExpressionParser = {
     val functions = Map(
       "today" -> classOf[LocalDate].getDeclaredMethod("now"),
