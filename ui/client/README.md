@@ -53,7 +53,7 @@ npm test
 ## E2E (cypress) tests
 
 Background: Cypress is a framework for end-to-end frontend tests. It verifies correctness of results using captured image snapshots.
-It ran tests in browser connected to our frontend application at http://localhost:3000. It uses some variables available
+It runs tests in browser connected to our frontend application at http://localhost:3000. It uses some variables available
 in `cypress.env.json` like credentials.
 
 > WARNING: Image snapshots are **OS** and even **resolution** dependent! Please add image snapshots captured on unified environment.
@@ -90,7 +90,7 @@ Just like in options above, you should run backend and frontend before and the s
 #### Using unified linux environment 
 
 This is the correct option if you want to add/modify image snapshots and make sure that it was done in deterministic way.
-It ran backend in docker container, frontend connected to this backend and after that it ran cypress tests also in docker container.
+It runs backend in docker container, frontend connected to this backend and after that it runs cypress tests also in docker container.
 ```
 npm run test:e2e:docker
 ```
