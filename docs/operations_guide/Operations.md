@@ -7,7 +7,7 @@ The parts describing scenario management and tuning should be accessible also fo
 
 ## Prerequisites
 
-To better understand the documentation below one needs to grasp some of the concepts of Flink, metrics, etc. We won’t go into much detail here, only references to worthy resources.
+To better understand the documentation below one needs to grasp some of the concepts of Flink, metrics, etc. We won’t go into much detail here, only give references to worthy resources.
 
 Some of them are external, but it also helps to read about important Nussknacker concepts in [link]...
 
@@ -58,7 +58,7 @@ In the documentation we assume standard metrics setup (available in docker-compo
 * Grafana to visualize metrics
 * Flink InfluxDB reporter with Telegraf relay to deliver metrics to InfluxDB
 
-It’s good to have an understanding of core InfluxDB concepts, such as tag or data series:
+To better understand the documentation below one needs to grasp some of the concepts of Flink, metrics, etc. We won’t go into much detail here, only give references to worthy resources. It’s good to have an understanding of core InfluxDB concepts, such as tag or data series:
 
 [https://docs.influxdata.com/influxdb/v1.8/concepts/key_concepts/](https://docs.influxdata.com/influxdb/v1.8/concepts/key_concepts/)
 
@@ -102,7 +102,7 @@ For Nussknacker there are additional tips/things to consider:
 
 
 
-* `state.backend.rocksdb.memory.managed: false` - in some deployments we’ve found that large number of jobs cause some problems with automatic memory management
+* `state.backend.rocksdb.memory.managed: false` - in some deployments we’ve found that a large number of jobs causes some problems with automatic memory management
 * `state.backend.rocksdb.writebuffer.size - `consider increasing if you have many write-heavy aggregations
 
 
@@ -120,7 +120,7 @@ For Nussknacker there are additional tips/things to consider:
 
 #### Flink cluster
 
-Flink provides various metrics on its health and performance, see:
+Flink provides various metrics describing it’s health and performance, see:
 
 [https://ci.apache.org/projects/flink/flink-docs-stable/docs/ops/metrics/#system-metrics](https://ci.apache.org/projects/flink/flink-docs-stable/docs/ops/metrics/#system-metrics)
 
