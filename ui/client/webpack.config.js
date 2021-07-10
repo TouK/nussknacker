@@ -47,7 +47,9 @@ const fileLoader = {
   },
 }
 
-// From https://stackoverflow.com/a/64564708 - to monitor changed files. Unfortunatelly touch <file> causes printing root project directory instead of touched file
+// From https://stackoverflow.com/a/64564708 - to monitor changed files. Unfortunatelly sometimes is reported main project directory
+// instead of real "touched" file. More accurate method is to do: 
+// inotifywait -r . -m -e modify -e attrib -e move -e create -e delete -e delete_self
 class WatchRunPlugin {
   apply(compiler) {
     compiler.hooks.watchRun.tap('WatchRun', (comp) => {
@@ -142,8 +144,9 @@ module.exports = {
         '**/*.sw[pon]',
         // less resources usage - after npm ci, npm start need to be run again
         '**/node_modules',
-        // TODO: separe src/main, src/test and so on
+        // TODO: separate src/main, src/test and so on
         '**/cypress*',
+        '**/.nyc_output',
         '**/jest*',
         '**/test*',
         '**/*.md',
