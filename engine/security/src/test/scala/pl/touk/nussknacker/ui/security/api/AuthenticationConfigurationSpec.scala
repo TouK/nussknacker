@@ -4,6 +4,8 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FlatSpec, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.util.cache.CacheConfig
+import pl.touk.nussknacker.ui.security.basicauth.BasicAuthenticationConfiguration
+
 import scala.concurrent.duration._
 
 class AuthenticationConfigurationSpec extends FlatSpec with Matchers with ScalatestRouteTest with OptionValues {
@@ -16,9 +18,9 @@ class AuthenticationConfigurationSpec extends FlatSpec with Matchers with Scalat
         }
       """.stripMargin)
 
-    val authConfig = DefaultAuthenticationConfiguration.create(config)
-    authConfig shouldBe a[DefaultAuthenticationConfiguration]
-    authConfig.method shouldBe AuthenticationMethod.Other
+    val authConfig = BasicAuthenticationConfiguration.create(config)
+    authConfig shouldBe a[BasicAuthenticationConfiguration]
+    authConfig.name shouldBe BasicAuthenticationConfiguration.name
     authConfig.cachingHashesOrDefault.isEnabled shouldBe false
   }
 
@@ -34,7 +36,7 @@ class AuthenticationConfigurationSpec extends FlatSpec with Matchers with Scalat
         }
       """.stripMargin)
 
-    val authConfig = DefaultAuthenticationConfiguration.create(config)
+    val authConfig = BasicAuthenticationConfiguration.create(config)
     authConfig.cachingHashesOrDefault.isEnabled shouldBe true
     authConfig.cachingHashesOrDefault.toCacheConfig.value shouldEqual CacheConfig(expireAfterAccess = Some(10.minutes))
   }

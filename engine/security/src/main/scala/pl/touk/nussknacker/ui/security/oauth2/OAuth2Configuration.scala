@@ -7,7 +7,6 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.util.Implicits.SourceIsReleasable
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
-import pl.touk.nussknacker.ui.security.api.AuthenticationMethod.AuthenticationMethod
 import pl.touk.nussknacker.ui.security.oauth2.ProfileFormat.ProfileFormat
 import sttp.model.{HeaderNames, MediaType, Uri}
 
@@ -15,8 +14,7 @@ import scala.concurrent.duration.{FiniteDuration, HOURS}
 import scala.io.Source
 import scala.util.Using
 
-case class OAuth2Configuration(method: AuthenticationMethod,
-                               usersFile: URI,
+case class OAuth2Configuration(usersFile: URI,
                                authorizeUri: URI,
                                clientSecret: String,
                                clientId: String,
@@ -33,6 +31,7 @@ case class OAuth2Configuration(method: AuthenticationMethod,
                                accessTokenRequestContentType: String = MediaType.ApplicationJson.toString(),
                                defaultTokenExpirationTime: FiniteDuration = FiniteDuration(1, HOURS)
                               ) extends AuthenticationConfiguration {
+  override def name: String = OAuth2Configuration.name
 
   def authorizeUrl: Option[URI] = Option(Uri(authorizeUri).params(Map(
     "client_id" -> clientId,
@@ -54,6 +53,7 @@ object OAuth2Configuration {
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
 
+  val name = "OAuth2"
   def create(config: Config): OAuth2Configuration = config.as[OAuth2Configuration](authenticationConfigPath)
 }
 

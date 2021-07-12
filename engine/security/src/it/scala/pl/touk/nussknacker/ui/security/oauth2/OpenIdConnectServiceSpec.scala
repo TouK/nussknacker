@@ -6,7 +6,6 @@ import org.apache.commons.lang3.StringEscapeUtils
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
-import pl.touk.nussknacker.ui.security.api.AuthenticationMethod
 import sttp.client.asynchttpclient.WebSocketHandler
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client.{SttpBackend, _}
@@ -69,7 +68,6 @@ class OpenIdConnectServiceSpec extends FunSuite with ForAllTestContainer with Ma
   private def oauth2Conf: OAuth2Configuration = {
 
     OAuth2Configuration(
-      method = AuthenticationMethod.OAuth2,
       usersFile = new URI("classpath://users.conf"),
       authorizeUri = uri"$baseUrl/auth".toJavaUri,
       clientSecret = realmClientSecret,

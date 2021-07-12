@@ -2,9 +2,13 @@ package pl.touk.nussknacker.engine.util
 
 object multiplicity {
 
-  sealed trait Multiplicity[A]
+  sealed trait Multiplicity[A] {
+    def orElse(alternative: Multiplicity[A]): Multiplicity[A] = this
+  }
 
-  case class Empty[T]() extends Multiplicity[T]
+  case class Empty[T]() extends Multiplicity[T] {
+    override def orElse(alternative: Multiplicity[T]): Multiplicity[T] = alternative
+  }
 
   case class One[T](value: T) extends Multiplicity[T]
 
