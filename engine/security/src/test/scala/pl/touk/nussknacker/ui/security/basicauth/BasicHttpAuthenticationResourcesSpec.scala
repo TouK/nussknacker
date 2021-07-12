@@ -3,17 +3,14 @@ package pl.touk.nussknacker.ui.security.basicauth
 import akka.http.scaladsl.server.directives.Credentials
 import org.scalatest.{FunSpec, Matchers}
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.{ConfigRule, ConfigUser}
-import pl.touk.nussknacker.ui.security.api.AuthenticationMethod.AuthenticationMethod
-import pl.touk.nussknacker.ui.security.api.{AuthenticationMethod, CachingHashesConfig, DefaultAuthenticationConfiguration}
 
 import java.net.URI
-import scala.concurrent.ExecutionContext.Implicits.global
 
 
 class BasicHttpAuthenticationResourcesSpec extends FunSpec with Matchers {
-  class DummyConfiguration(usersList: List[ConfigUser], rulesList: List[ConfigRule] = List.empty, method: AuthenticationMethod = AuthenticationMethod.BasicAuth,
+  class DummyConfiguration(usersList: List[ConfigUser], rulesList: List[ConfigRule] = List.empty,
                            usersFile: URI = URI.create("classpath:basicauth-user.conf"), cachingHashes: Option[CachingHashesConfig] = None)
-    extends DefaultAuthenticationConfiguration(method: AuthenticationMethod, usersFile: URI, cachingHashes) {
+    extends BasicAuthenticationConfiguration(usersFile: URI, cachingHashes) {
     override lazy val users: List[ConfigUser] = usersList
     override lazy val rules: List[ConfigRule] = rulesList
   }

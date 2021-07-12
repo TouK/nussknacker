@@ -14,6 +14,8 @@ class OAuth2AuthenticationProvider extends AuthenticationProvider with LazyLoggi
     val service = OAuth2ServiceProvider(configuration, classLoader, allCategories)
     new OAuth2AuthenticationResources(realm, service, configuration)
   }
+
+  def name: String = OAuth2Configuration.name
 }
 
 object OAuth2AuthenticationProvider {

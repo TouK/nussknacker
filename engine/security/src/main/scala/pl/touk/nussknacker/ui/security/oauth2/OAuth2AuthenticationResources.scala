@@ -18,7 +18,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class OAuth2AuthenticationResources(realm: String, service: OAuth2Service[LoggedUser, OAuth2AuthorizationData], configuration: OAuth2Configuration)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT])
   extends AuthenticationResources with Directives with LazyLogging with FailFastCirceSupport {
 
-  override val name: String = configuration.method.toString
+  override val name: String = configuration.name
 
   override val frontendSettings: ToResponseMarshallable = OAuth2AuthenticationSettings(
     configuration.authorizeUrl.map(_.toString),
