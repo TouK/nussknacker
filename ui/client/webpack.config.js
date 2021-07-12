@@ -142,8 +142,6 @@ module.exports = {
         '**/target',
         // ignore vim swap files
         '**/*.sw[pon]',
-        // less resources usage - after npm ci, npm start need to be run again
-        '**/node_modules',
         // TODO: separate src/main, src/test and so on
         '**/cypress*',
         '**/.nyc_output',
