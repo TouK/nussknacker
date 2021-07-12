@@ -16,7 +16,7 @@ object ProcessDefinitionBuilder {
   def empty: ProcessDefinition[ObjectDefinition] =
     ProcessDefinition(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ObjectDefinition.noParam,
       ExpressionDefinition(Map.empty, List.empty, List.empty, languages = LanguageConfiguration(List.empty),
-        optimizeCompilation = true, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false, strictMethodsChecking = true, referenceTypeValidating = false), ClassExtractionSettings.Default)
+        optimizeCompilation = true, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false, strictMethodsChecking = true, staticMethodInvocationsChecking = false), ClassExtractionSettings.Default)
 
   def withEmptyObjects(definition: ProcessDefinition[ObjectDefinition]): ProcessDefinition[ObjectWithMethodDef] = {
 
@@ -34,7 +34,7 @@ object ProcessDefinitionBuilder {
       definition.expressionConfig.dictionaries,
       definition.expressionConfig.hideMetaVariable,
       definition.expressionConfig.strictMethodsChecking,
-      definition.expressionConfig.referenceTypeValidating
+      definition.expressionConfig.staticMethodInvocationsChecking
     )
 
     ProcessDefinition(

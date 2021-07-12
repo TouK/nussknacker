@@ -34,7 +34,7 @@ import scala.util.control.NonFatal
 
 private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: CommonSupertypeFinder,
                           dictTyper: SpelDictTyper, strictMethodsChecking: Boolean,
-                          referenceTypeValidating: Boolean,
+                          staticMethodInvocationsChecking: Boolean,
                           typeDefinitionSet: TypeDefinitionSet = TypeDefinitionSet()
                          )(implicit settings: ClassExtractionSettings) extends LazyLogging {
 
@@ -256,10 +256,16 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       }
 
       case e: TypeReference => {
-        (referenceTypeValidating, typeDefinitionSet.validateTypeReference(e)) match {
+        //todo ponizsze ma zadzialac
+        //"T(LocalDateTime).now()"
+        //todo ponizsze nie
+        //"T(LocalDateTime).nowqwe()"
+        print(typeDefinitionSet.displayBasicInfo)
+
+        (staticMethodInvocationsChecking, typeDefinitionSet.validateTypeReference(e)) match {
           case (false, _) => valid(Unknown)
-          case (true, true) => valid(Unknown)
-          case _ => invalid("Class is not allowed to be passed as TypeReference")
+          case (true, Valid(e)) => valid(Unknown)
+          case (true, Invalid(error)) => Invalid(error)
         }
       }
 
@@ -388,7 +394,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     Invalid(NonEmptyList.of(ExpressionParseError(message)))
 
   def withDictTyper(dictTyper: SpelDictTyper) =
-    new Typer(classLoader, commonSupertypeFinder, dictTyper, strictMethodsChecking = strictMethodsChecking, referenceTypeValidating, typeDefinitionSet)
+    new Typer(classLoader, commonSupertypeFinder, dictTyper, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking, typeDefinitionSet)
 
 }
 
