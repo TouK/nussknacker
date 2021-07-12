@@ -25,16 +25,15 @@ Pay special attention to the concept of keys and partitions, as they are vital t
 
 In order to understand various metrics dealing with the concept of time (e.g. delays), it’s vital to have a basic knowledge of how Flink defines those concepts.
 
-Flink reference documentation is a good starting point:
-
-[https://ci.apache.org/projects/flink/flink-docs-release-1.13/docs/concepts/time/](https://ci.apache.org/projects/flink/flink-docs-release-1.13/docs/concepts/time/)
+Flink reference [documentation on time concepts](https://ci.apache.org/projects/flink/flink-docs-stable/docs/concepts/time/)
+ is a good starting point.
 
 Pay special attention to the concept of event time and watermarks, see also [link] to understand how Nussknacker deals with them.
 
 
 ### Integration with Apache Kafka
 
-The usual way to ingest and produce events in Nussknacker is via integration with Kafka. To understand and monitor the performance of the Kafka sources it’s important to know how it works. A good explanation is available at Confluent site:
+The usual way to ingest and produce events in Nussknacker is via integration with Kafka. To understand and monitor the performance of the Kafka sources it's important to know Kafka consumer details. A good explanation is available at Confluent site:
 
 [https://docs.confluent.io/platform/current/kafka/design.html#the-consumer](https://docs.confluent.io/platform/current/kafka/design.html#the-consumer)
 
@@ -58,7 +57,7 @@ In the documentation we assume standard metrics setup (available in docker-compo
 * Grafana to visualize metrics
 * Flink InfluxDB reporter with Telegraf relay to deliver metrics to InfluxDB
 
-To better understand the documentation below one needs to grasp some of the concepts of Flink, metrics, etc. We won’t go into much detail here, only give references to worthy resources. It’s good to have an understanding of core InfluxDB concepts, such as tag or data series:
+To better understand the documentation below one needs to grasp some of the concepts of Flink, metrics, etc. It’s also good to have an understanding of core InfluxDB concepts, such as tag or data series:
 
 [https://docs.influxdata.com/influxdb/v1.8/concepts/key_concepts/](https://docs.influxdata.com/influxdb/v1.8/concepts/key_concepts/)
 
@@ -72,7 +71,8 @@ It’s possible to configure Nussknacker installation to use other metrics setup
 
 ### Common Flink configuration issues
 
-Nussknacker assumes that the Flink Session Cluster is used.
+Nussknacker assumes that the Flink Session Cluster is used (it should be possible to write own, custom `ProcessManager` to deploy with Job/Application mode, 
+but this is out of scope of this guide).
 
 It usually happens (especially for large deployments) that the Flink cluster used with Nusssknacker has quite a lot of jobs (each representing one scenario), many of them are quite small in terms of needed resources - this is different to usual Flink setup, where a cluster has one or few jobs.
 
@@ -81,7 +81,7 @@ Below we give a few tips on how to configure your cluster. Some of the configura
 
 #### Memory parameters
 
-Flink memory configuration is pretty complex, [https://ci.apache.org/projects/flink/flink-docs-master/docs/deployment/memory/mem_setup/](https://ci.apache.org/projects/flink/flink-docs-master/docs/deployment/memory/mem_setup/) - please see the official documentation for the details. Nussknacker-specific settings:
+Flink memory configuration is pretty complex, [https://ci.apache.org/projects/flink/flink-docs-stable/docs/deployment/memory/mem_setup/](https://ci.apache.org/projects/flink/flink-docs-master/docs/deployment/memory/mem_setup/) - please see the official documentation for the details. Nussknacker-specific settings:
 
 
 
@@ -89,11 +89,9 @@ Flink memory configuration is pretty complex, [https://ci.apache.org/projects/fl
 * Heap size on jobmanagers should also be larger than typical Flink deployment
 
 
-#### Configuration of RocksDB
+#### RocksDB configuration
 
 Detailed documentation on the configuration of RocksDB can be found in:
-
-
 
 * [https://ci.apache.org/projects/flink/flink-docs-stable/docs/ops/state/state_backends/](https://ci.apache.org/projects/flink/flink-docs-stable/docs/ops/state/state_backends/)
 * [https://flink.apache.org/2021/01/18/rocksdb.html](https://flink.apache.org/2021/01/18/rocksdb.html)
@@ -105,31 +103,31 @@ For Nussknacker there are additional tips/things to consider:
 * `state.backend.rocksdb.memory.managed: false` - in some deployments we’ve found that a large number of jobs causes some problems with automatic memory management
 * `state.backend.rocksdb.writebuffer.size - `consider increasing if you have many write-heavy aggregations
 
-
+                 
 #### Other
 
-
-
-* classloader.resolve-order: parent-first - Nussknacker has some problems with child-first classloading
-* cluster.evenly-spread-out-slots: true - this setting is important, because with many jobs deployed on cluster it may happen that nodes (taskmanagers) will be unevenly loaded, which can lead to performance degradation. If this happens, sometimes the easiest solution is to restart jobmanager, so that all the jobs will be partitioned again (this usually happens after restarts of some of the taskmanagers).
-* `akka.framesize` - consider increasing the value if you experience frequent timeouts on deployment
-
+* `cluster.evenly-spread-out-slots: true` - this setting is important, because with many jobs deployed on cluster it may happen that nodes (taskmanagers) will be unevenly loaded, which can lead to performance degradation. If this happens, sometimes the easiest solution is to restart jobmanager, so that all the jobs will be partitioned again (this usually happens after restarts of some of the taskmanagers).
+* `akka.framesize` - consider increasing the value if you experience frequent timeouts on deployment (for large scenario and complex components >100MB can be necessary)
+* `classloader.resolve-order` - Nussknacker has some problems with child-first classloading, it can happen especially when 
+  using custom components. Sometimes it can be necessary to set this setting to `parent-first` (see [Flink documentation](https://ci.apache.org/projects/flink/flink-docs-stable/docs/ops/debugging/debugging_classloading/#inverted-class-loading-and-classloader-resolution-order) for in-depth explanation)
 
 ### Monitoring - metrics
 
-
 #### Flink cluster
 
-Flink provides various metrics describing it’s health and performance, see:
+Flink provides various metrics describing its health and performance, see:
 
 [https://ci.apache.org/projects/flink/flink-docs-stable/docs/ops/metrics/#system-metrics](https://ci.apache.org/projects/flink/flink-docs-stable/docs/ops/metrics/#system-metrics)
 
 Flink blog post: [https://flink.apache.org/news/2019/02/25/monitoring-best-practices.html](https://flink.apache.org/news/2019/02/25/monitoring-best-practices.html) is also a valuable reference.
 
-Default Nussknacker setup uses InfluxDB + Telegraf, but you can also easily access metrics on demand using JMX + Jolokia
+Recommended Nussknacker setup (i.e., the one provided with docker based demo) uses InfluxDB + Telegraf, 
+but you can also easily access metrics on demand using e.g. JMX + Jolokia. To do this you have to:
+- enable jolokia - download Jolokia JVM agent, pass `-javaagent:{path_to_jar}/jolokia-jvm-agent.jar=port=9972,host=localhost,agentId=flink-taskmanager-demo` to Flink VM options (either via `FLINK_ENV_JAVA_OPTS`/`FLINK_ENV_JAVA_OPTS_JM` variable or `env.java.opts.(task/job)manager` configuration option)
+- enable [JMX reporter](https://ci.apache.org/projects/flink/flink-docs-stable/docs/deployment/metric_reporters/#jmx)
+With Jolokia, you can also pass VM metrics to InfluxDB via [telegraf plugin](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/jolokia2)
 
-
-
+System metrics that should be monitored:
 * VM memory:
   * Heap
   * Metaspace (Jobmanager + Taskmanager)
@@ -190,7 +188,24 @@ Below we describe endpoints that return general information about the Nussknacke
 
 
 
-* `/api/app/buildInfo GET` - returns basic information about deployed version of Nussknacker
+* `/api/app/buildInfo GET` - returns basic information about deployed version of Nussknacker. Sample output looks like this:
+```json 
+{
+  "name": "nussknacker-api",
+  "gitCommit": "360bcb1b775e384de9cf2d11af15fcbbca72eb02",
+  "buildTime": "2021-07-09T14:39:57.858134",
+  "version": "0.3.1-staging-2021-07-09-2931-360bcb1b775e384de9cf2d11af15fcbbca72eb02-SNAPSHOT",
+  "processingType": {
+    "streaming-generic": {
+      "name": "generic",
+      "version": "0.3.1-staging-2021-07-09-2931-360bcb1b775e384de9cf2d11af15fcbbca72eb02-SNAPSHOT",
+      "buildTime": "2021-07-09T14:39:57.858134",
+      "gitCommit": "360bcb1b775e384de9cf2d11af15fcbbca72eb02"
+    }
+  }
+}
+```  
+
 * `/api/app/healthCheck GET 200` - use to check if Nussknacker Designer is up
 * `/api/app/healthCheck/process/deployment GET`
   * 200 - if all deployed scenarios are running
@@ -204,38 +219,10 @@ Below we describe endpoints that return general information about the Nussknacke
 
 ### Common problems with Flink cluster
 
-
-<table>
-  <tr>
-   <td><strong>Problem</strong>
-   </td>
-   <td><strong>Possible causes</strong>
-   </td>
-  </tr>
-  <tr>
-   <td>Jobmanager / taskmanager keeps restarting with “java.lang.OutOfMemoryError: Metaspace” in logs
-   </td>
-   <td>Observe metaspace usage metrics. 
-<p>
-If metaspace grows together with the number of running Flink jobs - adding metaspace may help (see [link] e.g. taskmanager/jobmanager.memory.jvm-metaspace.size) 
-</p>
-If the metaspace usage grows after redeploymens/restart of one job - it’s probably a classloading leak. Possible root cause can be JDBC driver lib in model classpath (please check [link] how to configure them properly, <a href="https://ci.apache.org/projects/flink/flink-docs-stable/docs/ops/debugging/debugging_classloading/#unloading-of-dynamically-loaded-classes-in-user-code">Flink documentation</a> also provides some references, this error usually has to be resolved by fixing configuration)
-   </td>
-  </tr>
-  <tr>
-   <td>Jobmanager does not start, in JobManager logs lines similar to:
-<p>
-<code>2021-06-29 12:40:19,666 ERROR org.apache.flink.util.FlinkRuntimeException: Could not <strong>recover</strong> job with job id 874e811511becea2e085f57cdb12c1c1.</code>
-…
-</p>
-<code>Caused by: java.io.FileNotFoundException: /<strong>opt</strong>/flink/data/storage/nussknacker/submittedJobGraph7f8076051052 (No such <strong>file</strong> or directory)</code>
-   </td>
-   <td>In HA config, Flink stores job info both in ZooKeeper and on a filesystem. This error usually means that they are out of sync. Usually it’s necessary to remove nodes in Zookeeper manually (connect to Zookeeper, e.g. run zkClient, check high-availability.zookeeper.path.root config setting to find exact location)
-   </td>
-  </tr>
-</table>
-
-
+| Problem                                                                                                                                                                                                                                                                                                                                                                         | Possible causes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| --------                                                                                                                                                                                                                                                                                                                                                                        | -----------------                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Jobmanager / taskmanager keeps restarting with `java.lang.OutOfMemoryError: Metaspace` in logs                                                                                                                                                                                                                                                                                  | Observe metaspace usage metrics. <br/> If metaspace grows together with the number of running Flink jobs - adding metaspace may help (see [link] e.g. `taskmanager/jobmanager.memory.jvm-metaspace.size`).<br/> If the metaspace usage grows after redeploymens/restart of one job - it’s probably a classloading leak. Possible root cause can be JDBC driver lib in model classpath (please check [link] how to configure them properly, [Flink documentation](https://ci.apache.org/projects/flink/flink-docs-stable/docs/ops/debugging/debugging_classloading/#unloading-of-dynamically-loaded-classes-in-user-code) also provides some references, this error usually has to be resolved by fixing configuration) |
+| Jobmanager does not start, in JobManager logs lines similar to: <code>2021-06-29 12:40:19,666 ERROR org.apache.flink.util.FlinkRuntimeException: Could not recover job with job id 874e811511becea2e085f57cdb12c1c1.<br/>...<br/>Caused by: java.io.FileNotFoundException: /opt/flink/data/storage/nussknacker/submittedJobGraph7f8076051052 (No such file or directory)</code> | In HA config, Flink stores job info both in ZooKeeper and on a filesystem. This error usually means that they are out of sync. Usually it’s necessary to remove nodes in Zookeeper manually (connect to Zookeeper, e.g. run zkClient, check `high-availability.zookeeper.path.root` config setting to find exact location)                                                                                                                                                                                                                                                                                                                                                                                             |
 
 ## Scenarios - monitoring and troubleshooting
 
@@ -324,54 +311,14 @@ Diagnosing most of the problems below requires access to:
 
 * Flink console
 * Flink logs
-
-<table>
-  <tr>
-   <td>
-<strong>Problem</strong>
-   </td>
-   <td><strong>What to do?</strong>
-   </td>
-  </tr>
-  <tr>
-   <td>Scenario is restarting continuously after redeploy
-   </td>
-   <td>Check jobmanager logs and/or Flink console
-   </td>
-  </tr>
-  <tr>
-   <td>Scenario is restarting continuously after first deploy
-   </td>
-   <td>Check jobmanager logs and/or Flink console
-   </td>
-  </tr>
-  <tr>
-   <td>Checkpoints are failing
-   </td>
-   <td>Check jobmanager logs and/or Flink console
-   </td>
-  </tr>
-  <tr>
-   <td>Redeploy of scenario times out
-   </td>
-   <td>Check jobmanager logs and/or Flink console
-   </td>
-  </tr>
-  <tr>
-   <td><code>"State is incompatible, please stop process and start again with clean state" during deploy"</code>
-   </td>
-   <td>
-<ul>
-
-<li>Check if Nussknacker has access to savepoints</li>
-
-<li>Analyze if new state was added - if this is the case probably cancel before deploy is needed (to get rid of incompatible state)
-</li>
-</ul></td></tr>
-
-</table>
-
-
+                     
+| Problem                                                                                     | What to do                                                                                                                                                                                              |
+| --------                                                                                    | ----------                                                                                                                                                                                              |
+| Scenario is restarting continuously after redeploy                                          | Check jobmanager logs and/or Flink console                                                                                                                                                              |
+| Scenario is restarting continuously after first deploy                                      | Check jobmanager logs and/or Flink console                                                                                                                                                              |
+| Checkpoints are failing                                                                     | Check jobmanager logs and/or Flink console                                                                                                                                                              |
+| Redeploy of scenario times out                                                              | Check jobmanager logs and/or Flink console                                                                                                                                                              |
+| `State is incompatible, please stop process and start again with clean state` during deploy | <ul><li>Check if Nussknacker has access to savepoints</li><li>Analyze if new state was added - if this is the case probably cancel before deploy is needed (to get rid of incompatible state)</li></ul> |
 
 ### Nussknacker metrics
 
