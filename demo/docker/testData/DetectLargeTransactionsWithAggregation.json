@@ -3,7 +3,7 @@
     "id" : "DetectLargeTransactions",
     "typeSpecificData" : {
       "parallelism" : 2,
-      "splitStateToDisk" : true,
+      "spillStateToDisk" : true,
       "useAsyncInterpretation" : null,
       "checkpointIntervalInSeconds" : null,
       "type" : "StreamMetaData"

@@ -3,7 +3,7 @@
     "id" : "jwl-test",
     "typeSpecificData" : {
       "parallelism" : 1,
-      "splitStateToDisk" : true,
+      "spillStateToDisk" : true,
       "useAsyncInterpretation" : null,
       "checkpointIntervalInSeconds" : null,
       "type" : "StreamMetaData"
@@ -14,11 +14,11 @@
       "groups" : [
       ],
       "properties" : {
-        
+
       }
     },
     "subprocessVersions" : {
-      
+
     }
   },
   "exceptionHandlerRef" : {

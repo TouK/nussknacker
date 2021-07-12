@@ -404,10 +404,10 @@ export class NodeDetailsContent extends React.Component {
             this.createField(
               "checkbox",
               "Should split state to disk",
-              "typeSpecificProperties.splitStateToDisk",
+              "typeSpecificProperties.spillStateToDisk",
               false,
-              [errorValidator(fieldErrors, "splitStateToDisk")],
-              "splitStateToDisk",
+              [errorValidator(fieldErrors, "spillStateToDisk")],
+              "spillStateToDisk",
               false,
               false,
               "split-state-disk",
@@ -716,7 +716,7 @@ export class NodeDetailsContent extends React.Component {
       case "Properties": {
         const commonFields = "subprocessVersions"
         const fields = this.props.node.typeSpecificProperties.type === "StreamMetaData" ?
-          ["parallelism", "checkpointIntervalInSeconds", "splitStateToDisk", "useAsyncInterpretation"] :
+          ["parallelism", "checkpointIntervalInSeconds", "spillStateToDisk", "useAsyncInterpretation"] :
           ["path"]
         const additionalFields = Object.entries(this.props.additionalPropertiesConfig).map(([fieldName, fieldConfig]) => fieldName)
         const exceptionHandlerFields = this.state.editedNode.exceptionHandler.parameters.map(param => param.name)

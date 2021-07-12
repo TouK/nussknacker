@@ -3,7 +3,7 @@
     "id" : "e2e-1619718559678-sql-test-process",
     "typeSpecificData" : {
       "parallelism" : null,
-      "splitStateToDisk" : true,
+      "spillStateToDisk" : true,
       "useAsyncInterpretation" : null,
       "checkpointIntervalInSeconds" : null,
       "type" : "StreamMetaData"
@@ -19,7 +19,7 @@
       }
     },
     "subprocessVersions" : {
-      
+
     }
   },
   "exceptionHandlerRef" : {

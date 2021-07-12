@@ -16,7 +16,7 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
 
   //TODO: exception when non-streaming process?
   def stateOnDisk(useStateOnDisk: Boolean) =
-    new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = metaData.typeSpecificData.asInstanceOf[StreamMetaData].copy(splitStateToDisk = Some(useStateOnDisk))))
+    new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = metaData.typeSpecificData.asInstanceOf[StreamMetaData].copy(spillStateToDisk = Some(useStateOnDisk))))
 
 
   //TODO: exception when non-standalone process?

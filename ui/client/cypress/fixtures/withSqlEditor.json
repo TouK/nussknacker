@@ -3,7 +3,7 @@
     "id" : "sql-editor",
     "typeSpecificData" : {
       "parallelism" : 1,
-      "splitStateToDisk" : true,
+      "spillStateToDisk" : true,
       "useAsyncInterpretation" : null,
       "checkpointIntervalInSeconds" : null,
       "type" : "StreamMetaData"
@@ -19,7 +19,7 @@
       }
     },
     "subprocessVersions" : {
-      
+
     }
   },
   "exceptionHandlerRef" : {
