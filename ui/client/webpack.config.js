@@ -47,26 +47,6 @@ const fileLoader = {
   },
 }
 
-// From https://stackoverflow.com/a/64564708 - to monitor changed files. Unfortunatelly sometimes is reported main project directory
-// instead of real "touched" file. More accurate method is to do: 
-// inotifywait -r . -m -e modify -e attrib -e move -e create -e delete -e delete_self
-class WatchRunPlugin {
-  apply(compiler) {
-    compiler.hooks.watchRun.tap('WatchRun', (comp) => {
-      if (comp.modifiedFiles || comp.removedFiles) {
-        const changedFiles = Array.from(comp.modifiedFiles, (file) => `\n  ${file}`).join('');
-        const removedFiles = Array.from(comp.removedFiles, (file) => `\n  ${file}`).join('');
-        console.log('===============================');
-        console.log('FILES CHANGED:', changedFiles);
-        console.log('FILES REMOVED:', removedFiles);
-        // uncomment for watched files debugging purpose
-        //console.log('FILE TIMESTAMPS:', comp.fileTimestamps);
-        console.log('===============================');
-      }
-    });
-  }
-}
-
 module.exports = {
   mode: NODE_ENV,
   optimization: {
@@ -212,7 +192,6 @@ module.exports = {
     new ForkTsCheckerWebpackPlugin(),
     isProd ? null : new ReactRefreshWebpackPlugin(),
     new webpack.ProgressPlugin(progressBar),
-    new WatchRunPlugin()
   ].filter(Boolean),
   module: {
     rules: [
