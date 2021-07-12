@@ -93,21 +93,21 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     ObjectDefinition.noParam,
     ExpressionDefinition(
       Map("processHelper" -> ObjectDefinition(List(), Typed(ProcessHelper.getClass), List("cat1"), SingleNodeConfig.zero)),
-      List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false, strictMethodsChecking = true, referenceTypeValidating = true
+      List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false, strictMethodsChecking = true, staticMethodInvocationsChecking = true
     ),
     ClassExtractionSettings.Default
   )
 
-  test("TypeReference validation T(MathContext), should succeed") {
+  test("Invocation of Type Reference of valid class, should succeed") {
 
-    val invalidStaticMethod = "T(MathContext).exit()"
+    val typeReferenceWithValidClass = "T(MathContext).staticMethod()"
 
     val testProcess =
       EspProcessBuilder
-        .id("TypeReferenceValidationFailure")
+        .id("TypeReferenceClassValidationSuccess")
         .exceptionHandler()
         .source("source1", "source")
-        .filter("filter1", invalidStaticMethod)
+        .filter("filter1", typeReferenceWithValidClass)
         .sink("id1", "#input", "sink")
 
     val compilationResult = validate(testProcess, baseDefinition)
@@ -118,16 +118,16 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   }
 
-  test("TypeReference validation T(System), should fail") {
+  test("Invocation of Type Reference of invalid class, should fail") {
 
-    val invalidStaticMethod = "T(System).exit()"
+    val typeReferenceWithInvalidClass = "T(InvalidClassName).staticMethod()"
 
     val testProcess =
     EspProcessBuilder
-      .id("TypeReferenceValidationFailure")
+      .id("TypeReferenceClassValidationFailure")
       .exceptionHandler()
       .source("source1", "source")
-      .filter("filter1", invalidStaticMethod)
+      .filter("filter1", typeReferenceWithInvalidClass)
       .sink("id1", "#input", "sink")
 
     val compilationResult = validate(testProcess, baseDefinition)

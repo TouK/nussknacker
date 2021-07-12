@@ -19,7 +19,7 @@ class SpelBenchmarkSetup(expression: String, vars: Map[String, AnyRef]) {
 
   private val expressionDefinition = ExpressionDefinition(globalVariables = Map(), globalImports = Nil,
     languages = LanguageConfiguration.default, optimizeCompilation = true,
-    strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false, strictMethodsChecking = true, referenceTypeValidating = false)
+    strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false, strictMethodsChecking = true, staticMethodInvocationsChecking = false)
 
   private val expressionCompiler = ExpressionCompiler.withOptimization(
     getClass.getClassLoader, new SimpleDictRegistry(Map.empty), expressionDefinition, settings = ClassExtractionSettings.Default, typeDefinitionSet = TypeDefinitionSet())

@@ -25,6 +25,8 @@ object typing {
 
     def display: String
 
+    def javaClassName :String
+
   }
 
   sealed trait KnownTypingResult extends TypingResult
@@ -57,6 +59,7 @@ object typing {
 
     override def display: String = fields.map { case (name, typ) => s"$name: ${typ.display}"}.mkString("{", ", ", "}")
 
+    override def javaClassName: String = ???
   }
 
   case class TypedDict(dictId: String, valueType: SingleTypingResult) extends SingleTypingResult {
@@ -67,6 +70,7 @@ object typing {
 
     override def display: String = s"Dict(id=$dictId)"
 
+    override def javaClassName: String = ???
   }
 
   case class TypedTaggedValue(underlying: SingleTypingResult, tag: String) extends SingleTypingResult {
@@ -75,6 +79,7 @@ object typing {
 
     override def display: String = s"${underlying.display} @ $tag"
 
+    override def javaClassName: String = ???
   }
 
   // Unknown is representation of TypedUnion of all possible types
@@ -82,6 +87,7 @@ object typing {
 
     override val display = "Unknown"
 
+    override def javaClassName: String = ???
   }
 
   // constructor is package protected because you should use Typed.apply to be sure that possibleTypes.size > 1
@@ -94,10 +100,13 @@ object typing {
       case many => many.map(_.display).mkString(" | ")
     }
 
+    override def javaClassName: String = ???
   }
 
   //TODO: make sure parameter list has right size - can be filled with Unknown if needed
   case class TypedClass private[typing] (klass: Class[_], params: List[TypingResult]) extends SingleTypingResult {
+
+    override def javaClassName :String = ReflectUtils.fixedClassSimpleNameWithoutParentModule(ClassUtils.primitiveToWrapper(klass))
 
     //TODO: should we use simple name here?
     override def display: String = {
