@@ -6,7 +6,7 @@ import {useParseValue} from "./useParseValue"
 const options: OptionType<boolean>[] = [
   {label: "Show all types scenarios"},
   {label: "Show only scenarios", value: false},
-  {label: "Show only subscenarios", value: true},
+  {label: "Show only scenario fragments", value: true},
 ]
 
 export function SubprocessFilter(props: ValueFieldProps<boolean>): JSX.Element {

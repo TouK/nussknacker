@@ -18,7 +18,7 @@ function ShowProcessIcon({process}: {process: ProcessType}) {
   const {t} = useTranslation()
   return (
     <ProcessLink processId={process.name}>
-      <TableRowIcon glyph="edit" title={t("tableRowIcon-edit-subprocess", "Edit subscenario")}/>
+      <TableRowIcon glyph="edit" title={t("tableRowIcon-edit-subprocess", "Edit scenario fragment")}/>
     </ProcessLink>
   )
 }
@@ -66,6 +66,6 @@ function SubProcesses() {
 
 export const SubProcessesTabData = {
   path: `${ProcessesTabData.path}/subprocesses`,
-  header: "Subscenarios",
+  header: "Scenario fragments",
   Component: SubProcesses,
 }
