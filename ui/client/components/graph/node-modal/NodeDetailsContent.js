@@ -403,7 +403,7 @@ export class NodeDetailsContent extends React.Component {
             ),
             this.createField(
               "checkbox",
-              "Should split state to disk",
+              "Spill state to disk",
               "typeSpecificProperties.spillStateToDisk",
               false,
               [errorValidator(fieldErrors, "spillStateToDisk")],
