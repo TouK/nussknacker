@@ -63,9 +63,9 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
     val listenersToUse = listeners(processObjectDependencies)
 
     val compiledProcess =
-      ProcessCompilerData.prepare(process, definitions(processObjectDependencies), listenersToUse, userCodeClassLoader, resultCollector)
+      ProcessCompilerData.prepare(process, definitions(processObjectDependencies), listenersToUse, userCodeClassLoader, resultCollector, runMode)
 
-    val compiledExceptionHandler = validateOrFailProcessCompilation(compiledProcess.compileExceptionHandler()(runMode))
+    val compiledExceptionHandler = validateOrFailProcessCompilation(compiledProcess.compileExceptionHandler())
     val listeningExceptionHandler = new ListeningExceptionHandler(listenersToUse,
       //FIXME: remove casting...
       compiledExceptionHandler.asInstanceOf[FlinkEspExceptionHandler])

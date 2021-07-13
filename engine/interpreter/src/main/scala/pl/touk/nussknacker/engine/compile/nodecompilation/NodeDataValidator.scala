@@ -30,14 +30,13 @@ object NodeDataValidator {
                validationContext: ValidationContext,
                branchContexts: Map[String, ValidationContext]
               )(implicit metaData: MetaData): ValidationResponse = {
-    implicit val runMode: RunMode = RunMode.Normal
     modelData.withThisAsContextClassLoader {
 
       val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
         case spel: SpelExpressionParser => spel.typingDictLabels
       }
       val compiler = new NodeCompiler(modelData.processWithObjectsDefinition,
-        expressionCompiler, modelData.modelClassLoader.classLoader, PreventInvocationCollector)
+        expressionCompiler, modelData.modelClassLoader.classLoader, PreventInvocationCollector, RunMode.Normal)
       implicit val nodeId: NodeId = NodeId(nodeData.id)
 
       nodeData match {

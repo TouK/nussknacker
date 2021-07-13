@@ -51,7 +51,7 @@ class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
   }
 
   def compileSubPart(node: SplittedNode[_], validationContext: ValidationContext): Node = {
-    validateOrFail(compiledProcess.subPartCompiler.compile(node, validationContext)(compiledProcess.metaData, runMode).result)
+    validateOrFail(compiledProcess.subPartCompiler.compile(node, validationContext)(compiledProcess.metaData).result)
   }
 
   private def validateOrFail[T](validated: ValidatedNel[ProcessCompilationError, T]): T = validated match {
@@ -65,7 +65,7 @@ class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
 
   val lazyInterpreterDeps: LazyInterpreterDependencies = compiledProcess.lazyInterpreterDeps
 
-  def compileProcess(): CompiledProcessParts = validateOrFail(compiledProcess.compile()(runMode))
+  def compileProcess(): CompiledProcessParts = validateOrFail(compiledProcess.compile())
 
   def restartStrategy: RestartStrategies.RestartStrategyConfiguration = exceptionHandler.restartStrategy
 

@@ -57,7 +57,7 @@ class ServiceQuery(modelData: ModelData) {
 
     val collector = new QueryServiceInvocationCollector()
     val compiler = new NodeCompiler(definitions, ExpressionCompiler.withoutOptimization(modelData),
-      modelData.modelClassLoader.classLoader, collector)
+      modelData.modelClassLoader.classLoader, collector, RunMode.Normal)
 
 
     withOpenedService(serviceName, definitions) {
@@ -67,7 +67,7 @@ class ServiceQuery(modelData: ModelData) {
       val ctx = Context("", localVariables.mapValues(_._1), None)
       implicit val runMode: RunMode = RunMode.Normal
 
-      val compiled = compiler.compileService(ServiceRef(serviceName, params), validationContext, Some(OutputVar.enricher("output")))(NodeId(""), metaData, runMode)
+      val compiled = compiler.compileService(ServiceRef(serviceName, params), validationContext, Some(OutputVar.enricher("output")))(NodeId(""), metaData)
       compiled.compiledObject.map { service =>
           service.invoke(ctx, evaluator)._2.map(QueryResult(_, collector.retrieveResults()))
       }.valueOr(e => Future.failed(ServiceInvocationException(e)))

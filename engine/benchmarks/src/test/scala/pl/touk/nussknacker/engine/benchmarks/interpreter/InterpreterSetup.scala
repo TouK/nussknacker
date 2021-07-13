@@ -31,10 +31,10 @@ class InterpreterSetup[T:ClassTag] {
                            listeners: Seq[ProcessListener]): (Context, ExecutionContext) => F[Either[List[InterpretationResult], EspExceptionInfo[_ <: Throwable]]] = {
     val compiledProcess = compile(services, process, listeners)
     val interpreter = compiledProcess.interpreter
-    val parts = failOnErrors(compiledProcess.compile()(RunMode.Normal))
+    val parts = failOnErrors(compiledProcess.compile())
 
     def compileNode(part: ProcessPart) =
-      failOnErrors(compiledProcess.subPartCompiler.compile(part.node, part.validationContext)(process.metaData, RunMode.Normal).result)
+      failOnErrors(compiledProcess.subPartCompiler.compile(part.node, part.validationContext)(process.metaData).result)
     val compiled = compileNode(parts.sources.head)
     val shape = implicitly[InterpreterShape[F]]
     (initialCtx: Context, ec: ExecutionContext) =>
@@ -59,7 +59,7 @@ class InterpreterSetup[T:ClassTag] {
     val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(configCreator,
       api.process.ProcessObjectDependencies(ConfigFactory.empty(), ObjectNamingProvider(getClass.getClassLoader)))
 
-    ProcessCompilerData.prepare(process, definitions, listeners, getClass.getClassLoader, ProductionServiceInvocationCollector)(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
+    ProcessCompilerData.prepare(process, definitions, listeners, getClass.getClassLoader, ProductionServiceInvocationCollector, RunMode.Normal)(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
   }
 
   private def failOnErrors[Y](obj: ValidatedNel[ProcessCompilationError, Y]): Y = obj match {

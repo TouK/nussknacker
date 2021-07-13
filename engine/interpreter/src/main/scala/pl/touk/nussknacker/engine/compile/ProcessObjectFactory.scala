@@ -20,18 +20,20 @@ class ProcessObjectFactory(expressionEvaluator: ExpressionEvaluator) extends Laz
   def createObject[T](nodeDefinition: ObjectWithMethodDef,
                       compiledParameters: List[(TypedParameter, Parameter)],
                       outputVariableNameOpt: Option[String],
-                      additionalDependencies: Seq[AnyRef])
-                     (implicit nodeId: NodeId, metaData: MetaData, runMode: RunMode): ValidatedNel[ProcessCompilationError, T] = {
+                      additionalDependencies: Seq[AnyRef],
+                      runMode: RunMode)
+                     (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, T] = {
     NodeValidationExceptionHandler.handleExceptions {
-      create[T](nodeDefinition, compiledParameters, outputVariableNameOpt, additionalDependencies)
+      create[T](nodeDefinition, compiledParameters, outputVariableNameOpt, additionalDependencies, runMode)
     }
   }
 
   private def create[T](objectWithMethodDef: ObjectWithMethodDef,
                         params: List[(evaluatedparam.TypedParameter, Parameter)],
                         outputVariableNameOpt: Option[String],
-                        additional: Seq[AnyRef])
-                       (implicit processMetaData: MetaData, nodeId: NodeId, runMode: RunMode): T = {
+                        additional: Seq[AnyRef],
+                        runMode: RunMode)
+                       (implicit processMetaData: MetaData, nodeId: NodeId): T = {
     val paramsMap = params.map {
       case (tp, p) => p.name -> parameterEvaluator.prepareParameter(tp, p)._1
     }.toMap

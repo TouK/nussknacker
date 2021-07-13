@@ -93,10 +93,10 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     val processCompilerData = compile(services, transformers, process, listeners)
     val interpreter = processCompilerData.interpreter
-    val parts = failOnErrors(processCompilerData.compile()(RunMode.Normal))
+    val parts = failOnErrors(processCompilerData.compile())
 
     def compileNode(part: ProcessPart) =
-      failOnErrors(processCompilerData.subPartCompiler.compile(part.node, part.validationContext)(metaData, RunMode.Normal).result)
+      failOnErrors(processCompilerData.subPartCompiler.compile(part.node, part.validationContext)(metaData).result)
 
     val initialCtx = Context("abc").withVariable(VariableConstants.InputVariableName, transaction)
 
@@ -143,7 +143,7 @@ class InterpreterSpec extends FunSuite with Matchers {
 
     val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, api.process.ProcessObjectDependencies(ConfigFactory.empty(), ObjectNamingProvider(getClass.getClassLoader)))
 
-    ProcessCompilerData.prepare(process, definitions, listeners, getClass.getClassLoader, ProductionServiceInvocationCollector)(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
+    ProcessCompilerData.prepare(process, definitions, listeners, getClass.getClassLoader, ProductionServiceInvocationCollector, RunMode.Normal)(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
   }
 
   private def failOnErrors[T](obj: ValidatedNel[ProcessCompilationError, T]): T = obj match {

@@ -29,7 +29,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     case spel: SpelExpressionParser => spel.typingDictLabels
   }
 
-  private lazy val nodeCompiler = new NodeCompiler(modelData.processWithObjectsDefinition, expressionCompiler, modelData.modelClassLoader.classLoader, ProductionServiceInvocationCollector)
+  private lazy val nodeCompiler = new NodeCompiler(modelData.processWithObjectsDefinition, expressionCompiler, modelData.modelClassLoader.classLoader, ProductionServiceInvocationCollector, RunMode.Normal)
 
   override def getTestingCapabilities(metaData: MetaData, source: Source): TestingCapabilities = {
     val sourceObj = prepareSourceObj(source)(metaData)

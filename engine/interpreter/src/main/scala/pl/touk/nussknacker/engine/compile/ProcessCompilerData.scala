@@ -34,7 +34,8 @@ object ProcessCompilerData {
               definitions: ProcessDefinition[ObjectWithMethodDef],
               listeners: Seq[ProcessListener],
               userCodeClassLoader: ClassLoader,
-              resultsCollector: ResultCollector
+              resultsCollector: ResultCollector,
+              runMode: RunMode
              )(implicit defaultAsyncValue: DefaultAsyncInterpretationValue): ProcessCompilerData = {
     val servicesDefs = definitions.services
 
@@ -43,7 +44,7 @@ object ProcessCompilerData {
 
     val expressionCompiler = ExpressionCompiler.withOptimization(userCodeClassLoader, dictRegistry, definitions.expressionConfig, definitions.settings)
     //for testing environment it's important to take classloader from user jar
-    val nodeCompiler = new NodeCompiler(definitions, expressionCompiler, userCodeClassLoader, resultsCollector)
+    val nodeCompiler = new NodeCompiler(definitions, expressionCompiler, userCodeClassLoader, resultsCollector, runMode)
     val subCompiler = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
     val processCompiler = new ProcessCompiler(userCodeClassLoader, subCompiler, GlobalVariablesPreparer(definitions.expressionConfig), nodeCompiler)
 
@@ -91,10 +92,10 @@ class ProcessCompilerData(compiler: ProcessCompiler,
 
   def metaData: MetaData = process.metaData
 
-  def compile()(implicit runMode: RunMode): ValidatedNel[ProcessCompilationError, CompiledProcessParts] =
+  def compile(): ValidatedNel[ProcessCompilationError, CompiledProcessParts] =
     compiler.compile(process).result
 
-  def compileExceptionHandler()(implicit runMode: RunMode): ValidatedNel[ProcessCompilationError, EspExceptionHandler] =
-    nodeCompiler.compileExceptionHandler(process.exceptionHandlerRef)(metaData, runMode)._2
+  def compileExceptionHandler(): ValidatedNel[ProcessCompilationError, EspExceptionHandler] =
+    nodeCompiler.compileExceptionHandler(process.exceptionHandlerRef)(metaData)._2
 
 }
