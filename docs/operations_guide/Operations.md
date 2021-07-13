@@ -163,14 +163,12 @@ For patch version changes (e.g. 1.11.1 to 1.11.2) upgrade usually goes without p
 
 For minor release changes (e.g. 1.11 to 1.12) it’s a bit more involved, the safest way is the following:
 
-
-
 * Perform savepoints of all running jobs
 * Stop all running jobs
 * Upgrade cluster
 * Restore all jobs from savepoints
 
-See Nussknacker operations REST API part for REST endpoints [link] for performing savepoints and restoring from them.
+See Nussknacker management REST API [documentation](#deployment-rest-api) for performing savepoints and restoring from them.
 
 
 ##### Upgrading Nussknacker
@@ -294,14 +292,11 @@ Currently it’s not possible to stop a scenario while it is saving state (i.e. 
 
 Endpoints under “admin”
 
-
-
 * `/api/processManagement/deploy/{processId} POST`
 * `/api/processManagement/cancel/{processId} POST`
 * `/api/adminProcessManagement/snapshot/{processId}?savepointDir={} POST`
 * `/api/adminProcessManagement/stop/{processId}?savepointDir={} POST`
 * `/api/adminProcessManagement/deploy/{processId}/{savepointPath} POST`
-
 
 ### Common problems with scenarios
 
@@ -329,14 +324,39 @@ Flink exposes many metrics for each of the jobs, you can read about them in deta
 
 Most of them are quite technical and they do not show data from nodes of the Nussknacker scenario. Nussknacker adds a couple of its own metrics, described in the table below:
 
+#### Metric types                     
+                   
+Below we describe common 
+                 
+| Name        | Fields reported (with InfluxDB)                              | Description                                                                                                            |
+| ----        | ------                                                       | -----------                                                                                                            |
+| counter     | count                                                        |                                                                                                                        |
+| histogram   | count, max, mean, min, p50, p75, p95, p98, p99, p999, stddev | mainly used for measuring invocation times                                                                             |
+| gauge       | value                                                        | value in given point in time                                                                                           |
+| instantRate | value                                                        | special gauge for measuring throughput in given moment (standard meter has only mean throughput in 1, 5 or 15 minutes) |
 
-[https://github.com/TouK/nussknacker/blob/staging/docs/Metrics.md#common-metrics](https://github.com/TouK/nussknacker/blob/staging/docs/Metrics.md#common-metrics) - tabelka
+#### Common metrics
 
-[https://github.com/TouK/nussknacker/blob/staging/docs/Metrics.md#metrics-in-streaming-flink-mode](https://github.com/TouK/nussknacker/blob/staging/docs/Metrics.md#metrics-in-streaming-flink-mode) - tabelka
+| Measurement             | Additional tags | Metric type             | Notes                                                    |
+| -------------           | --------------- | --------                | -------------                                            |
+| nodeCount               | nodeId          | counter                 | used e.g. by count functionality                         |
+| error.instantRate       | -               | instantRate             |                                                          |
+| error.instantRateByNode | nodeId          | instantRate             | nodeId is ```unknown``` if we fail to detect exact place |
+| service.OK              | serviceName     | histogram + instantRate | histogram of successful invocation times                 |
+| service.FAIL            | serviceName     | histogram + instantRate | histogram of successful invocation times                 |
+                                         
+#### Streaming metrics                          
+
+| Measurement                 | Additional tags | Metric type           | Description                                                                    |
+| -------------               | --------------- | -----------           | -------------                                                                  |
+| source                      | nodeId          | instantRate + counter |                                                                                |
+| eventtimedelay.histogram    | nodeId          | histogram             | only for sources with eventTime, measures delay from event time to system time |
+| eventtimedelay.minimalDelay | nodeId          | gauge                 | time from last event (eventTime) to system time                                |
+| end                         | nodeId          | instantRate + counter | for sinks and end processors                                                   |
+| dead_end                    | nodeId          | instantRate + counter | for event filtered out on filters, switches etc.                               |
+
 
 Each of these metrics comes with the following tags:
-
-
 
 * process
 * slot (important for large parallelism)
