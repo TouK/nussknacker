@@ -47,6 +47,11 @@ const fileLoader = {
   },
 }
 
+//by default we use default webpack value, but we want to be able to override it for building frontend via sbt
+const outputPath = process.env.OUTPUT_PATH ?
+  path.join(process.env.OUTPUT_PATH, "classes", "web", "static") :
+  path.join(process.cwd(), "dist")
+
 module.exports = {
   mode: NODE_ENV,
   optimization: {
@@ -86,17 +91,13 @@ module.exports = {
   },
   entry: entry,
   output: {
-    //by default we use default webpack value, but we want to be able to override it for building frontend via sbt
-    path: process.env.OUTPUT_PATH ? path.join(process.env.OUTPUT_PATH, "classes", "web", "static") : path.join(process.cwd(), "dist"),
+    path: outputPath,
     filename: "[name].js",
-    //see config.js
-    publicPath: isProd ? "__publicPath__/static/" : "/static/",
   },
   devtool: isProd ? "hidden-source-map" : "eval-source-map",
   devServer: {
-    publicPath: isProd ? "__publicPath__/static/" : "/static/",
     historyApiFallback: {
-      index: "/static/main.html",
+      index: "/main.html",
     },
     overlay: {errors: true, warnings: false},
     hot: true,
@@ -151,6 +152,8 @@ module.exports = {
     new HtmlWebpackPlugin({
       title: "Nussknacker",
       hash: true,
+      //see ./config.ts
+      base: isProd ? "__publicPath__/static/" : "/",
       filename: "main.html",
       favicon: "assets/img/favicon.png",
       template: "index_template_no_doctype.ejs",

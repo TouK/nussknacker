@@ -4,7 +4,6 @@ import React from "react"
 import {withRouter} from "react-router-dom"
 import {Tab, TabList, TabPanel, Tabs} from "react-tabs"
 import "react-tabs/style/react-tabs.css"
-import {nkPath} from "../config"
 import {CustomProcesses, CustomProcessesTabData} from "./admin/CustomProcesses"
 import SearchComponents from "./admin/SearchComponents"
 import Services from "./admin/Services"
@@ -63,7 +62,7 @@ export class AdminPage extends React.Component {
   }
 }
 
-AdminPage.path = `${nkPath}/admin`
+AdminPage.path = `/admin`
 AdminPage.header = "Admin"
 
 const enhance = compose(

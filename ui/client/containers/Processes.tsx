@@ -4,7 +4,6 @@ import React from "react"
 import {Td, Tr} from "reactable"
 import Date from "../components/common/Date"
 import ProcessStateIcon from "../components/Process/ProcessStateIcon"
-import {nkPath} from "../config"
 import "../stylesheets/processes.styl"
 import styles from "../containers/processesTable.styl"
 import {EditItem} from "./editItem"
@@ -85,7 +84,7 @@ function Processes() {
 }
 
 export const ProcessesTabData = {
-  path: `${nkPath}/processes`,
+  path: `/processes`,
   header: "Processes",
   Component: Processes,
 }
