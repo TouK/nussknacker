@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
-import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, ParameterWithExtractor}
+import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, ParameterWithExtractor, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.{ContextId, EagerService, LazyParameter, MethodToInvoke, ParamName, Service, ServiceInvoker}
 import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, ProcessObjectDependencies, RunMode, WithCategories}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
@@ -106,7 +106,8 @@ object QueryServiceTesting {
   }
 
   object CreateQuery {
-    def apply(serviceName: String, serviceFactory: ProcessObjectDependencies => Service): ServiceQuery = {
+    def apply(serviceName: String, service: Service, localVariables: Map[String, Any] = Map.empty)
+             (implicit executionContext: ExecutionContext): ServiceQuery = {
       new ServiceQuery(LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator {
 
         override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
@@ -114,12 +115,8 @@ object QueryServiceTesting {
         }
 
         override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
-          super.services(processObjectDependencies) ++ Map(serviceName -> WithCategories(serviceFactory(processObjectDependencies)))
+          super.services(processObjectDependencies) ++ Map(serviceName -> WithCategories(service))
       }))
-    }
-
-    def apply(serviceName: String, service: Service): ServiceQuery = {
-      apply(serviceName, _ => service)
     }
   }
 
@@ -152,5 +149,4 @@ object QueryServiceTesting {
 
     override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)
   }
-
 }
