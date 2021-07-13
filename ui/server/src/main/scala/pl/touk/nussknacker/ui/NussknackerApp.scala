@@ -99,7 +99,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val actionRepository = DbProcessActionRepository.create(dbConfig, modelData)
     val processActivityRepository = new ProcessActivityRepository(dbConfig)
 
-    val authenticationResources = AuthenticationResources(config, getClass.getClassLoader, processCategoryService.getAllCategories)
+    val authenticationResources = AuthenticationResources(config, getClass.getClassLoader)
 
     val counter = new ProcessCounter(subprocessRepository)
 
@@ -182,9 +182,10 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         webResources.route
       } ~  pathPrefix("api") {
         apiResourcesWithoutAuthentication.reduce(_ ~ _)
-      } ~ authenticationResources.authenticate() { user =>
+      } ~ authenticationResources.authenticate() { authenticatedUser =>
         pathPrefix("api") {
-          apiResourcesWithAuthentication.map(_.securedRoute(user)).reduce(_ ~ _)
+          val loggedUser = LoggedUser(authenticatedUser, config, processCategoryService.getAllCategories)
+          apiResourcesWithAuthentication.map(_.securedRoute(loggedUser)).reduce(_ ~ _)
         }
       }
     }

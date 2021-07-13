@@ -7,13 +7,12 @@ import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.AuthenticationFailedRejection.CredentialsRejected
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.directives.BasicDirectives.{extractExecutionContext, provide}
-import akka.http.scaladsl.server.directives.Credentials
+import akka.http.scaladsl.server.directives.{AuthenticationDirective, Credentials}
 import akka.http.scaladsl.server.directives.FutureDirectives.onSuccess
 import akka.http.scaladsl.server.directives.RouteDirectives.reject
-import akka.http.scaladsl.server.{AuthenticationFailedRejection, Directive1, Route}
+import akka.http.scaladsl.server.{AuthenticationFailedRejection, Directive, Directive1, Route}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.Matchers
-import pl.touk.nussknacker.ui.security.api.AuthenticationResources.LoggedUserAuth
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -66,22 +65,22 @@ class SecurityApiSpec extends org.scalatest.FlatSpec with Matchers with Scalates
 }
 
 private object Auth {
-  val basic: LoggedUserAuth = {
+  val basic = {
     authenticateBasic(realm = "nussknacker", myUserPassAuthenticator)
   }
-  val cookieAuth: LoggedUserAuth = {
+  val cookieAuth = {
     cookie("authCookieToken").flatMap { cookie =>
       extractExecutionContext.flatMap { implicit ec ⇒
         onSuccess(authenticator(cookie)).flatMap {
           case Some(user) ⇒ provide(user)
-          case None ⇒ reject(AuthenticationFailedRejection(CredentialsRejected, HttpChallenge("", ""))): Directive1[LoggedUser]
+          case None ⇒ reject(AuthenticationFailedRejection(CredentialsRejected, HttpChallenge("", ""))): Directive1[AuthenticatedUser]
         }
       }
     }
   }
-  val someAdmin = Some(LoggedUser("1", "admin", isAdmin = true))
+  val someAdmin = Some(AuthenticatedUser("1", "admin", Nil))
 
-  def authenticator(cookie: HttpCookiePair)(implicit ec: ExecutionContext): Future[Option[LoggedUser]] = {
+  def authenticator(cookie: HttpCookiePair)(implicit ec: ExecutionContext): Future[Option[AuthenticatedUser]] = {
     Future {
       cookie match {
         case HttpCookiePair(_, "Im_a_random_hash") => someAdmin
@@ -90,7 +89,7 @@ private object Auth {
     }
   }
 
-  def myUserPassAuthenticator(credentials: Credentials): Option[LoggedUser] =
+  def myUserPassAuthenticator(credentials: Credentials): Option[AuthenticatedUser] =
     credentials match {
       case p@Credentials.Provided(id) if p.verify("admin") => someAdmin
       case _ => None
@@ -98,12 +97,12 @@ private object Auth {
 }
 
 private object SecurityApiSpec {
-  val cookieAuth: LoggedUserAuth = Auth.cookieAuth
-  val basic: LoggedUserAuth = Auth.basic
+  val cookieAuth = Auth.cookieAuth
+  val basic = Auth.basic
 
   implicit val actorSystem: ActorSystem = ActorSystem.create()
 
-  def route(authenticator: LoggedUserAuth): Route =
+  def route(authenticator: AuthenticationDirective[AuthenticatedUser]): Route =
     Route.seal {
       path("secured") {
         authenticator { userName =>

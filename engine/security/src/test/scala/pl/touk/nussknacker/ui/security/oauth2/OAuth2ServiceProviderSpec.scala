@@ -12,6 +12,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class OAuth2ServiceProviderSpec extends FlatSpec with Matchers {
   implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
   it should "return default OAuth2 service" in {
-    OAuth2ServiceProvider(ExampleOAuth2ServiceFactory.testConfig, this.getClass.getClassLoader, List.empty) shouldBe a[OAuth2Service[_, _]]
+    OAuth2ServiceProvider(ExampleOAuth2ServiceFactory.testConfig, this.getClass.getClassLoader) shouldBe a[OAuth2Service[_, _]]
   }
 }

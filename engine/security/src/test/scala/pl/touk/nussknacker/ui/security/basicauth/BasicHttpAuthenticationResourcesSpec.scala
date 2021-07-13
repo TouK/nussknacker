@@ -12,7 +12,6 @@ class BasicHttpAuthenticationResourcesSpec extends FunSpec with Matchers {
                            usersFile: URI = URI.create("classpath:basicauth-user.conf"), cachingHashes: Option[CachingHashesConfig] = None)
     extends BasicAuthenticationConfiguration(usersFile: URI, cachingHashes) {
     override lazy val users: List[ConfigUser] = usersList
-    override lazy val rules: List[ConfigRule] = rulesList
   }
 
   // result of python -c 'import bcrypt; print(bcrypt.hashpw("password".encode("utf8"), bcrypt.gensalt(rounds=12, prefix="2a")))'
@@ -22,20 +21,20 @@ class BasicHttpAuthenticationResourcesSpec extends FunSpec with Matchers {
   private val userWithEncryptedPassword = ConfigUser("foo", None, Some(encryptedPassword), List.empty)
 
   it("should authenticate using plain password") {
-    val authenticator = new BasicHttpAuthenticator(new DummyConfiguration(List(ConfigUser("foo", Some("password"), None, List.empty))), List.empty)
+    val authenticator = new BasicHttpAuthenticator(new DummyConfiguration(List(ConfigUser("foo", Some("password"), None, List.empty))))
     authenticator.authenticate(new SampleProvidedCredentials("foo","password")) shouldBe 'defined
     authenticator.authenticate(new SampleProvidedCredentials("foo","password2")) shouldBe 'empty
   }
 
   it("should authenticate using bcrypt password") {
-    val authenticator = new BasicHttpAuthenticator(new DummyConfiguration(List(userWithEncryptedPassword)), List.empty)
+    val authenticator = new BasicHttpAuthenticator(new DummyConfiguration(List(userWithEncryptedPassword)))
     authenticator.authenticate(new SampleProvidedCredentials("foo",matchingSecret)) shouldBe 'defined
     authenticator.authenticate(new SampleProvidedCredentials("foo",notMatchingSecret)) shouldBe 'empty
   }
 
   it("should cache hashes") {
     var hashComputationCount = 0
-    val authenticator = new BasicHttpAuthenticator(new DummyConfiguration(List(userWithEncryptedPassword), cachingHashes = Some(CachingHashesConfig(enabled = Some(true), None, None, None))), List.empty) {
+    val authenticator = new BasicHttpAuthenticator(new DummyConfiguration(List(userWithEncryptedPassword), cachingHashes = Some(CachingHashesConfig(enabled = Some(true), None, None, None)))) {
       override protected def computeBCryptHash(receivedSecret: String, encryptedPassword: String): String = {
         hashComputationCount += 1
         super.computeBCryptHash(receivedSecret, encryptedPassword)

@@ -9,9 +9,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class OAuth2AuthenticationProvider extends AuthenticationProvider with LazyLogging {
 
-  override def createAuthenticationResources(config: Config, classLoader: ClassLoader, allCategories: List[String])(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): AuthenticationResources = {
+  override def createAuthenticationResources(config: Config, classLoader: ClassLoader)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): AuthenticationResources = {
     val configuration = OAuth2Configuration.create(config)
-    val service = OAuth2ServiceProvider(configuration, classLoader, allCategories)
+    val service = OAuth2ServiceProvider(configuration, classLoader)
     new OAuth2AuthenticationResources(realm, service, configuration)
   }
 

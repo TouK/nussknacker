@@ -9,9 +9,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class BasicAuthenticationProvider extends AuthenticationProvider with Directives {
 
-  override def createAuthenticationResources(config: Config, classLoader: ClassLoader, allCategories: List[String])(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): AuthenticationResources = {
+  override def createAuthenticationResources(config: Config, classLoader: ClassLoader)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): AuthenticationResources = {
     val configuration = BasicAuthenticationConfiguration.create(config)
-    new BasicAuthenticationResources(realm, configuration, allCategories)
+    new BasicAuthenticationResources(realm, configuration)
   }
 
   def name: String = BasicAuthenticationConfiguration.name

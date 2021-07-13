@@ -4,35 +4,30 @@ import akka.http.scaladsl.server.directives.Credentials.Provided
 import akka.http.scaladsl.server.directives.{Credentials, SecurityDirectives}
 import org.mindrot.jbcrypt.BCrypt
 import pl.touk.nussknacker.engine.util.cache.DefaultCache
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, RulesSet}
+import pl.touk.nussknacker.ui.security.api.{AuthenticatedUser, LoggedUser, RulesSet}
 import pl.touk.nussknacker.ui.security.basicauth.BasicHttpAuthenticator.{EncryptedPassword, PlainPassword, UserWithPassword}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class BasicHttpAuthenticator(configuration: BasicAuthenticationConfiguration, allCategories: List[String]) extends SecurityDirectives.AsyncAuthenticator[LoggedUser] {
+class BasicHttpAuthenticator(configuration: BasicAuthenticationConfiguration) extends SecurityDirectives.AsyncAuthenticator[AuthenticatedUser] {
   //If we want use always reloaded config then we need just prepareUsers()
   private val users = prepareUsers()
 
   private val hashesCache =
     configuration.cachingHashesOrDefault.toCacheConfig.map(new DefaultCache[(String, String), String](_))
 
-  def apply(credentials: Credentials): Future[Option[LoggedUser]] = Future.successful {
+  def apply(credentials: Credentials): Future[Option[AuthenticatedUser]] = Future.successful {
     credentials match {
       case d@Provided(id) => authenticate(d)
       case _ => None
     }
   }
 
-  private[basicauth] def authenticate(prov: Provided): Option[LoggedUser] = {
+  private[basicauth] def authenticate(prov: Provided): Option[AuthenticatedUser] = {
     users
       .get(prov.identifier)
       .filter(us => prov.verify(us.password.value, hash(us)))
-      .map(toLoggedUser)
-  }
-
-  private[basicauth] def toLoggedUser(user: UserWithPassword): LoggedUser = {
-    val rulesSet = RulesSet.getOnlyMatchingRules(user.roles, configuration.rules, allCategories)
-    LoggedUser(id = user.identity, username = user.identity, rulesSet = rulesSet)
+      .map(user => AuthenticatedUser(user.identity, user.identity, user.roles))
   }
 
   private def hash(u: UserWithPassword)(receivedSecret: String): String = {
@@ -65,7 +60,7 @@ class BasicHttpAuthenticator(configuration: BasicAuthenticationConfiguration, al
 }
 
 object BasicHttpAuthenticator {
-  def apply(config: BasicAuthenticationConfiguration, allCategories: List[String]): BasicHttpAuthenticator = new BasicHttpAuthenticator(config, allCategories)
+  def apply(config: BasicAuthenticationConfiguration): BasicHttpAuthenticator = new BasicHttpAuthenticator(config)
 
   private sealed trait Password {
     def value: String

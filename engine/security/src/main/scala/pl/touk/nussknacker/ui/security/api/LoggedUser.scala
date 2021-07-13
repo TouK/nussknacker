@@ -1,7 +1,11 @@
 package pl.touk.nussknacker.ui.security.api
 
+import com.typesafe.config.Config
+import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigRule
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
+
+
 
 sealed trait LoggedUser {
   val id: String
@@ -11,16 +15,25 @@ sealed trait LoggedUser {
 }
 
 object LoggedUser {
-   def apply(id: String,
-             username: String,
-             categoryPermissions: Map[String, Set[Permission]] = Map.empty,
-             globalPermissions: List[GlobalPermission] = Nil,
-             isAdmin: Boolean = false): LoggedUser = {
-     if (isAdmin) {
-       AdminUser(id, username)
-     } else {
-       CommonUser(id, username, categoryPermissions, globalPermissions)
-     }
+  def apply(authenticatedUser: AuthenticatedUser, config: Config, processCategories: List[String]): LoggedUser = {
+    apply(authenticatedUser, AuthenticationConfiguration.getRules(config), processCategories)
+  }
+
+  def apply(authenticatedUser: AuthenticatedUser, rules: List[ConfigRule], processCategories: List[String]): LoggedUser = {
+    val rulesSet = RulesSet.getOnlyMatchingRules(authenticatedUser.roles, rules, processCategories)
+    apply(id = authenticatedUser.id, username = authenticatedUser.username, rulesSet = rulesSet)
+  }
+
+  def apply(id: String,
+            username: String,
+            categoryPermissions: Map[String, Set[Permission]] = Map.empty,
+            globalPermissions: List[GlobalPermission] = Nil,
+            isAdmin: Boolean = false): LoggedUser = {
+    if (isAdmin) {
+      AdminUser(id, username)
+    } else {
+      CommonUser(id, username, categoryPermissions, globalPermissions)
+    }
   }
 
   def apply(id: String, username: String, rulesSet: RulesSet): LoggedUser = {
