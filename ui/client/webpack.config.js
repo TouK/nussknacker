@@ -152,14 +152,13 @@ module.exports = {
       title: "Nussknacker",
       hash: true,
       filename: "main.html",
+      favicon: "assets/img/favicon.png",
       template: "index_template_no_doctype.ejs",
-
     }),
     new HtmlWebpackHarddiskPlugin(),
     new CopyPlugin({
       patterns: [
         {from: "translations", to: "assets/locales", noErrorOnMissing: true},
-        {from: "assets/img/favicon.png", to: "assets/img/favicon.png"},
       ],
     }),
     new PreloadWebpackPlugin({
