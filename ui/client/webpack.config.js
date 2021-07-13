@@ -150,6 +150,7 @@ module.exports = {
     new HtmlWebpackPlugin({
       title: "Nussknacker",
       hash: true,
+      chunks: ["runtime", "main"],
       //see ./config.ts
       base: isProd ? "__publicPath__/static/" : "/",
       filename: "main.html",
