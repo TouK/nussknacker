@@ -6,7 +6,7 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, RunMode, SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.kafka.KafkaZookeeperUtils._
+
 import java.util.Date
 
 class KafkaExceptionConsumerSpec extends FunSuite with FlinkSpec with KafkaSpec with Matchers {
@@ -37,7 +38,7 @@ class KafkaExceptionConsumerSpec extends FunSuite with FlinkSpec with KafkaSpec 
       .withValue("exceptionHandler.kafka", config.getConfig("kafka").root())
 
     val modelData = LocalModelData(configWithExceptionHandler, new ExceptionTestConfigCreator())
-    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData), RunMode.Normal)
+    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
   }
 
   test("should record errors on topic") {

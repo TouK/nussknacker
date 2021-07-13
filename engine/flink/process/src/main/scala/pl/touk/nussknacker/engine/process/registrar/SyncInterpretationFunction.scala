@@ -23,7 +23,7 @@ private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsP
   extends RichFlatMapFunction[Context, InterpretationResult] with ProcessPartFunction {
 
   private lazy implicit val ec: ExecutionContext = SynchronousExecutionContext.ctx
-  private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node, validationContext)(runMode)
+  private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node, validationContext)
 
   import compiledProcessWithDeps._
 

@@ -12,7 +12,7 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.scalatest.{EitherValues, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, RunMode}
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
 import pl.touk.nussknacker.engine.avro.kryo.AvroSerializersRegistrar
@@ -386,7 +386,7 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val modelData = LocalModelData(config, creator)
-    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), executionConfigPreparerChain(modelData), RunMode.Normal)
+    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), executionConfigPreparerChain(modelData))
   }
 
   private def executionConfigPreparerChain(modelData: LocalModelData) = {

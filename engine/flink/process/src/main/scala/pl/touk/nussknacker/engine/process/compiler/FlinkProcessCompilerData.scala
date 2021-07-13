@@ -33,7 +33,8 @@ class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
                                exceptionHandler: FlinkEspExceptionHandler,
                                val signalSenders: FlinkProcessSignalSenderProvider,
                                val asyncExecutionContextPreparer: AsyncExecutionContextPreparer,
-                               val processTimeout: FiniteDuration
+                               val processTimeout: FiniteDuration,
+                               runMode: RunMode
                              ) {
 
   def open(runtimeContext: RuntimeContext, nodesToUse: List[_<:NodeData]) : Unit = {
@@ -49,7 +50,7 @@ class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
     compiledProcess.lifecycle(nodesToUse).foreach(_.close())
   }
 
-  def compileSubPart(node: SplittedNode[_], validationContext: ValidationContext)(implicit runMode: RunMode): Node = {
+  def compileSubPart(node: SplittedNode[_], validationContext: ValidationContext): Node = {
     validateOrFail(compiledProcess.subPartCompiler.compile(node, validationContext)(compiledProcess.metaData, runMode).result)
   }
 
@@ -64,7 +65,7 @@ class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
 
   val lazyInterpreterDeps: LazyInterpreterDependencies = compiledProcess.lazyInterpreterDeps
 
-  def compileProcess()(implicit runMode: RunMode): CompiledProcessParts = validateOrFail(compiledProcess.compile())
+  def compileProcess(): CompiledProcessParts = validateOrFail(compiledProcess.compile()(runMode))
 
   def restartStrategy: RestartStrategies.RestartStrategyConfiguration = exceptionHandler.restartStrategy
 

@@ -310,7 +310,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers {
     val registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(model) {
       override protected def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
         List(collectingListener) ++ super.listeners(processObjectDependencies)
-    }, ExecutionConfigPreparer.unOptimizedChain(model), RunMode.Normal)
+    }, ExecutionConfigPreparer.unOptimizedChain(model))
     registrar.register(new StreamExecutionEnvironment(stoppableEnv), testProcess, ProcessVersion.empty, DeploymentData.empty, Some(collectingListener.runId))
     stoppableEnv.executeAndWaitForFinished(testProcess.id)()
   }

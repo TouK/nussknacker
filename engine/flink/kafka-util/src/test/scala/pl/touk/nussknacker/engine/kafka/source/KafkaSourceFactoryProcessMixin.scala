@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefini
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.EspProcess
 import KafkaSourceFactoryMixin.ObjToSerialize
-import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryProcessConfigCreator.{SinkForSampleValue, recordingExceptionHandler}
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
@@ -42,7 +41,7 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
   protected override def beforeAll(): Unit = {
     super.beforeAll()
     val modelData = LocalModelData(config, creator)
-    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData), RunMode.Normal)
+    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
   }
 
   before {

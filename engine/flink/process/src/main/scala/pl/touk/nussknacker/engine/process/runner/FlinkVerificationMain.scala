@@ -5,7 +5,6 @@ import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
-import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.VerificationFlinkProcessCompiler
@@ -34,6 +33,6 @@ class FlinkVerificationMain(val modelData: ModelData, val process: EspProcess, p
 
   protected def prepareRegistrar(): FlinkProcessRegistrar = {
     FlinkProcessRegistrar(new VerificationFlinkProcessCompiler(
-      process, modelData.configCreator, modelData.processConfig, modelData.objectNaming), ExecutionConfigPreparer.defaultChain(modelData), RunMode.Normal)
+      process, modelData.configCreator, modelData.processConfig, modelData.objectNaming), ExecutionConfigPreparer.defaultChain(modelData))
   }
 }

@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.avro.sink
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.{AvroRuntimeException, Schema}
 import org.scalatest.BeforeAndAfter
-import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.avro.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.avro.KafkaAvroTestProcessConfigCreator.recordingExceptionHandler
 import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
@@ -103,7 +102,7 @@ class KafkaAvroSinkFactoryWithEditorIntegrationTest extends KafkaAvroSpecMixin w
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val modelData = LocalModelData(config, processConfigCreator)
-    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), executionConfigPreparerChain(modelData), RunMode.Normal)
+    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), executionConfigPreparerChain(modelData))
     topicSchemas.foreach { case (topicName, schema) =>
       topicConfigs = topicConfigs + (topicName -> createAndRegisterTopicConfig(topicName, schema))
     }

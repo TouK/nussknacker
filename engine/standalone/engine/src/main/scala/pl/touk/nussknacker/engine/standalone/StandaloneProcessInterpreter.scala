@@ -46,7 +46,7 @@ object StandaloneProcessInterpreter {
     val compilerData = ProcessCompilerData.prepare(process,
       definitions,
       listeners,
-      modelData.modelClassLoader.classLoader, resultCollector
+      modelData.modelClassLoader.classLoader, resultCollector,
       // defaultAsyncValue is not important here because it isn't used in standalone mode
     )(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
 

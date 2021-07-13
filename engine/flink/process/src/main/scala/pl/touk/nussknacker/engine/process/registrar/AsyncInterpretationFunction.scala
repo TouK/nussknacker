@@ -27,7 +27,7 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
                                                      runMode: RunMode)
   extends RichAsyncFunction[Context, InterpretationResult] with LazyLogging with ProcessPartFunction {
 
-  private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node, validationContext)(runMode)
+  private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node, validationContext)
 
   import compiledProcessWithDeps._
 

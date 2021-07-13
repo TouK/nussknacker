@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.avro
 
 import io.circe.generic.JsonCodec
-import java.nio.charset.StandardCharsets
 
+import java.nio.charset.StandardCharsets
 import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
@@ -11,7 +11,6 @@ import org.scalatest.{Assertion, BeforeAndAfter}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
-import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer._
 import pl.touk.nussknacker.engine.avro.KafkaAvroTestProcessConfigCreator.recordingExceptionHandler
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
@@ -49,7 +48,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val modelData = LocalModelData(config, creator)
-    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), executionConfigPreparerChain(modelData), RunMode.Normal)
+    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), executionConfigPreparerChain(modelData))
   }
 
   before {

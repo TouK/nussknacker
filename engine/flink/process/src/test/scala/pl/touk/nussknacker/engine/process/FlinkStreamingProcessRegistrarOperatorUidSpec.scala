@@ -9,7 +9,7 @@ import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, RunMode}
+import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
@@ -75,7 +75,7 @@ class FlinkStreamingProcessRegistrarOperatorUidSpec extends FunSuite with Proces
 
     val env = flinkMiniCluster.createExecutionEnvironment()
     val modelData = LocalModelData(config, creator)
-    FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData), RunMode.Normal)
+    FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
       .register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty, DeploymentData.empty)
     env.getStreamGraph
   }

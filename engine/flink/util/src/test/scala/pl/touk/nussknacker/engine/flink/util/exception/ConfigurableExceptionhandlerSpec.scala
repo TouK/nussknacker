@@ -4,7 +4,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientException}
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, RunMode}
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.{Context, MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionConsumerProvider}
 import pl.touk.nussknacker.engine.flink.util.exception.TestExceptionConsumerProvider.typeName

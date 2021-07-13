@@ -42,7 +42,7 @@ import scala.language.implicitConversions
   NOTE: We should try to use *ONLY* core Flink API here, to avoid version compatibility problems.
   Various NK-dependent Flink hacks should be, if possible, placed in StreamExecutionEnvPreparer.
  */
-class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, DeploymentData, ResultCollector, RunMode) => ClassLoader => FlinkProcessCompilerData,
+class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, DeploymentData, ResultCollector) => ClassLoader => FlinkProcessCompilerData,
                             streamExecutionEnvPreparer: StreamExecutionEnvPreparer,
                             eventTimeMetricDuration: FiniteDuration,
                             runMode: RunMode) extends LazyLogging {
@@ -54,7 +54,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
       //TODO: move creation outside Registrar, together with refactoring SinkInvocationCollector...
       val collector = testRunId.map(new TestServiceInvocationCollector(_)).getOrElse(ProductionServiceInvocationCollector)
 
-      val processCompilation = compileProcess(process, processVersion, deploymentData, collector, runMode)
+      val processCompilation = compileProcess(process, processVersion, deploymentData, collector)
       val userClassLoader = UserClassLoader.get("root")
       //here we are sure the classloader is ok
       val processWithDeps = processCompilation(userClassLoader)
@@ -119,7 +119,6 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
                        testRunId: Option[TestRunId], typeInformationDetection: TypeInformationDetection): Unit = {
 
     val metaData = processWithDeps.metaData
-
     val globalParameters = NkGlobalParameters.readFromContext(env.getConfig)
     def nodeContext(nodeId: String, validationContext: Either[ValidationContext, Map[String, ValidationContext]]): FlinkCustomNodeContext = {
       FlinkCustomNodeContext(processWithDeps.jobData, nodeId, processWithDeps.processTimeout,
@@ -137,7 +136,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
 
     {
       //it is *very* important that source are in correct order here - see ProcessCompiler.compileSources comments
-      processWithDeps.compileProcess()(runMode).sources.toList.foldLeft(Map.empty[BranchEndDefinition, BranchEndData]) {
+      processWithDeps.compileProcess().sources.toList.foldLeft(Map.empty[BranchEndDefinition, BranchEndData]) {
         case (branchEnds, next: SourcePart) => branchEnds ++ registerSourcePart(next)
         case (branchEnds, joinPart: CustomNodePart) => branchEnds ++ registerJoinPart(joinPart, branchEnds)
       }
@@ -277,7 +276,7 @@ object FlinkProcessRegistrar {
   // We cannot use LazyLogging trait here because class already has LazyLogging and scala ends with cycle during resolution...
   private lazy val logger: Logger = Logger(LoggerFactory.getLogger(classOf[FlinkProcessRegistrar].getName))
 
-  def apply(compiler: FlinkProcessCompiler, prepareExecutionConfig: ExecutionConfigPreparer, runMode: RunMode): FlinkProcessRegistrar = {
+  def apply(compiler: FlinkProcessCompiler, prepareExecutionConfig: ExecutionConfigPreparer): FlinkProcessRegistrar = {
     val config = compiler.processConfig
     val eventTimeMetricDuration = config.getOrElse[FiniteDuration]("eventTimeMetricSlideDuration", 10.seconds)
 
@@ -288,7 +287,7 @@ object FlinkProcessRegistrar {
       ScalaServiceLoader.load[FlinkCompatibilityProvider](getClass.getClassLoader)
         .headOption.map(_.createExecutionEnvPreparer(config, prepareExecutionConfig, compiler.diskStateBackendSupport))
         .getOrElse(new DefaultStreamExecutionEnvPreparer(checkpointConfig, rocksDBStateBackendConfig, prepareExecutionConfig))
-    new FlinkProcessRegistrar(compiler.compileProcess, defaultStreamExecutionEnvPreparer, eventTimeMetricDuration, runMode)
+    new FlinkProcessRegistrar(compiler.compileProcess, defaultStreamExecutionEnvPreparer, eventTimeMetricDuration, compiler.runMode)
   }
 
 

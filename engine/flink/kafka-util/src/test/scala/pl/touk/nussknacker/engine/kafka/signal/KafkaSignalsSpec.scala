@@ -20,10 +20,9 @@ import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
+
 import java.nio.charset.StandardCharsets
 import java.util.Date
-
-import pl.touk.nussknacker.engine.api.process.RunMode
 
 class KafkaSignalsSpec extends FunSuite with Matchers with FlinkSpec with KafkaSpec with VeryPatientScalaFutures {
 
@@ -51,7 +50,7 @@ class KafkaSignalsSpec extends FunSuite with Matchers with FlinkSpec with KafkaS
 
     val env = flinkMiniCluster.createExecutionEnvironment()
     val modelData = LocalModelData(config, creator)
-    FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData), RunMode.Normal)
+    FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
       .register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty, DeploymentData.empty)
 
     env.withJobRunning(process.id) {

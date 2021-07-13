@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.avro
 
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
 import org.scalatest.{BeforeAndAfter, FunSuite}
-import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.avro.KafkaAvroTestProcessConfigCreator.recordingExceptionHandler
 import pl.touk.nussknacker.engine.avro.helpers.{KafkaAvroSpecMixin, SimpleKafkaJsonDeserializer, SimpleKafkaJsonSerializer}
 import pl.touk.nussknacker.engine.avro.schema.{GeneratedAvroClassSampleSchema, GeneratedAvroClassWithLogicalTypes, PaymentV1}
@@ -35,7 +34,7 @@ class KafkaJsonPayloadIntegrationSpec extends FunSuite with KafkaAvroSpecMixin w
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val modelData = LocalModelData(config, creator)
-    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), executionConfigPreparerChain(modelData), RunMode.Normal)
+    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), executionConfigPreparerChain(modelData))
   }
 
   after {

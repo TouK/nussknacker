@@ -5,7 +5,6 @@ import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
-import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.management.sample.UnitTestsProcessConfigCreator
@@ -33,7 +32,7 @@ class SampleNotificationProcess extends FlatSpec with Matchers with FlinkSpec {
 
     val modelData = LocalModelData(config, creator)
     val env = flinkMiniCluster.createExecutionEnvironment()
-    FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData), RunMode.Normal)
+    FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
       .register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty, DeploymentData.empty)
 
     env.withJobRunning(process.id) {}
