@@ -34,7 +34,7 @@ class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
                                val signalSenders: FlinkProcessSignalSenderProvider,
                                val asyncExecutionContextPreparer: AsyncExecutionContextPreparer,
                                val processTimeout: FiniteDuration,
-                               runMode: RunMode
+                               val runMode: RunMode
                              ) {
 
   def open(runtimeContext: RuntimeContext, nodesToUse: List[_<:NodeData]) : Unit = {

@@ -9,7 +9,7 @@ import org.apache.flink.streaming.api.functions.async.{ResultFuture, RichAsyncFu
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
-import pl.touk.nussknacker.engine.api.process.{AsyncExecutionContextPreparer, RunMode}
+import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
 import pl.touk.nussknacker.engine.api.{Context, InterpretationResult}
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.process.ProcessPartFunction
@@ -23,8 +23,7 @@ import scala.util.control.NonFatal
 
 private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
                                                      val node: SplittedNode[_<:NodeData], validationContext: ValidationContext,
-                                                     asyncExecutionContextPreparer: AsyncExecutionContextPreparer, useIOMonad: Boolean,
-                                                     runMode: RunMode)
+                                                     asyncExecutionContextPreparer: AsyncExecutionContextPreparer, useIOMonad: Boolean)
   extends RichAsyncFunction[Context, InterpretationResult] with LazyLogging with ProcessPartFunction {
 
   private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node, validationContext)
@@ -40,7 +39,6 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
   }
 
   override def asyncInvoke(input: Context, collector: ResultFuture[InterpretationResult]): Unit = {
-    implicit val runModeImplicit: RunMode = runMode
     try {
       invokeInterpreter(input) {
         case Right(Left(result)) => collector.complete(result.asJava)
@@ -57,8 +55,7 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
   }
 
   private def invokeInterpreter(input: Context)
-                               (callback: Either[Throwable, Either[List[InterpretationResult], EspExceptionInfo[_ <: Throwable]]] => Unit)
-                               (implicit runMode: RunMode): Unit = {
+                               (callback: Either[Throwable, Either[List[InterpretationResult], EspExceptionInfo[_ <: Throwable]]] => Unit): Unit = {
     implicit val ec: ExecutionContext = executionContext
     //we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {
