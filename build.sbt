@@ -345,8 +345,8 @@ lazy val dist = {
       ).value,
       mappings in Universal ++= Seq(
         (crossTarget in generic).value / "genericModel.jar" -> "model/genericModel.jar",
-        (crossTarget in flinkProcessManager).value / s"nussknacker-flink-manager.jar" -> "managers/nussknacker-flink-manager.jar",
-        (crossTarget in engineStandalone).value / s"nussknacker-standalone-manager.jar" -> "managers/nussknacker-standalone-manager.jar",
+        (crossTarget in flinkProcessManager).value / "nussknacker-flink-manager.jar" -> "managers/nussknacker-flink-manager.jar",
+        (crossTarget in engineStandalone).value / "nussknacker-standalone-manager.jar" -> "managers/nussknacker-standalone-manager.jar",
         (crossTarget in openapi).value / "openapi.jar" -> "components/openapi.jar"
       ),
       /* //FIXME: figure out how to filter out only for .tgz, not for docker
@@ -938,10 +938,10 @@ lazy val openapi = (project in component("openapi")).
           ExclusionRule(organization = "com.sun.activation", name = "javax.activation"),
         ),
         "io.netty" % "netty-transport-native-epoll" % nettyV,
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided,optional",
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % Provided,
         "org.scalatest" %% "scalatest" % scalaTestV %  "it,test"
       ),
-    ).dependsOn(api, process % "provided,optional", engineStandalone % "provided,optional", standaloneUtil % "provided,optional", httpUtils % Provided, flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
+    ).dependsOn(api % Provided, process % Provided, engineStandalone % Provided, standaloneUtil % Provided, httpUtils % Provided, flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
 
 lazy val buildUi = taskKey[Unit]("builds ui")
 
