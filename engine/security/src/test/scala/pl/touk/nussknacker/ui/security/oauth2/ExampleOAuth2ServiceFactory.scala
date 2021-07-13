@@ -4,9 +4,10 @@ import java.net.URI
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
+import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigRule
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
-import pl.touk.nussknacker.ui.security.api.{GlobalPermission, LoggedUser, Permission}
+import pl.touk.nussknacker.ui.security.api.{AuthenticatedUser, AuthenticationConfiguration, GlobalPermission, LoggedUser, Permission}
 import pl.touk.nussknacker.ui.security.oauth2.ExampleOAuth2ServiceFactory.{TestAccessTokenResponse, TestProfileResponse}
 import sttp.client.{NothingT, SttpBackend}
 
@@ -15,26 +16,30 @@ import scala.concurrent.duration.{Deadline, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 
 
-class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse], configuration: OAuth2Configuration)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]) extends OAuth2Service[LoggedUser, OAuth2AuthorizationData] with LazyLogging {
+class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse], configuration: OAuth2Configuration)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]) extends OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData] with LazyLogging {
 
 
-  def obtainAuthorizationAndUserInfo(authorizationCode: String): Future[(OAuth2AuthorizationData, Option[LoggedUser])] =
+  def obtainAuthorizationAndUserInfo(authorizationCode: String): Future[(OAuth2AuthorizationData, Option[AuthenticatedUser])] =
     clientApi.accessTokenRequest(authorizationCode).map((_, None))
 
-  def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(LoggedUser, Option[Deadline])] =
-    clientApi.profileRequest(accessToken).map{ prf =>
+  def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(AuthenticatedUser, Option[Deadline])] =
+    clientApi.profileRequest(accessToken).map{ prf: TestProfileResponse =>
       LoggedUser(
         id = prf.uid,
         username = prf.email,
         isAdmin = ExampleOAuth2ServiceFactory.isAdmin(prf.clearance.roles),
-        categoryPermissions = ExampleOAuth2ServiceFactory.getPermissions(prf.clearance.roles, prf.clearance.portals),
         globalPermissions = ExampleOAuth2ServiceFactory.getGlobalPermissions(prf.clearance.roles)
+      )
+      AuthenticatedUser(
+        prf.uid,
+        username = prf.email,
+        prf.clearance.roles
       )
     }.map((_, None))
 }
 
 class ExampleOAuth2ServiceFactory extends OAuth2ServiceFactory {
-  override def create(configuration: OAuth2Configuration, allCategories: List[String])(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): ExampleOAuth2Service =
+  override def create(configuration: OAuth2Configuration)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): ExampleOAuth2Service =
     ExampleOAuth2ServiceFactory.service(configuration)
 }
 
@@ -88,6 +93,8 @@ object ExampleOAuth2ServiceFactory {
       None
     )
 
+  val testRules: List[AuthenticationConfiguration.ConfigRule] = AuthenticationConfiguration.getRules(testConfig.usersFile)
+
   object TestPermissionResponse extends Enumeration {
     type PermissionTest = Value
     val Reader = Value("Reader")
@@ -117,5 +124,5 @@ object ExampleOAuth2ServiceFactory {
 
   @JsonCodec case class TestProfileResponse(email: String, uid: String, clearance: TestProfileClearanceResponse)
   @JsonCodec case class TestTokenIntrospectionResponse(exp: Option[Long])
-  @JsonCodec case class TestProfileClearanceResponse(roles: List[String], portals: List[String])
+  @JsonCodec case class TestProfileClearanceResponse(roles: List[String])
 }

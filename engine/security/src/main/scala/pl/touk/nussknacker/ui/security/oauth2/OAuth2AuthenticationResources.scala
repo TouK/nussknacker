@@ -2,20 +2,19 @@ package pl.touk.nussknacker.ui.security.oauth2
 
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}
-import akka.http.scaladsl.server.directives.SecurityDirectives
+import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
 import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
-import pl.touk.nussknacker.ui.security.api.AuthenticationResources.LoggedUserAuth
-import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.{AuthenticatedUser, AuthenticationResources}
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class OAuth2AuthenticationResources(realm: String, service: OAuth2Service[LoggedUser, OAuth2AuthorizationData], configuration: OAuth2Configuration)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT])
+class OAuth2AuthenticationResources(realm: String, service: OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData], configuration: OAuth2Configuration)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT])
   extends AuthenticationResources with Directives with LazyLogging with FailFastCirceSupport {
 
   override val name: String = configuration.name
@@ -27,7 +26,7 @@ class OAuth2AuthenticationResources(realm: String, service: OAuth2Service[Logged
     configuration.implicitGrantEnabled
   )
 
-  override def authenticate(): LoggedUserAuth = {
+  override def authenticate(): AuthenticationDirective[AuthenticatedUser] = {
     SecurityDirectives.authenticateOAuth2Async(
       authenticator = OAuth2Authenticator(configuration, service),
       realm = realm

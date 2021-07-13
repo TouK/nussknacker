@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
 import java.time.LocalDate
-
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
 import io.circe.java8.time.{JavaTimeDecoders, JavaTimeEncoders}
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, RulesSet}
+import pl.touk.nussknacker.ui.security.api.{AuthenticatedUser, LoggedUser, RulesSet}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2Profile.getUserRoles
 
 import scala.concurrent.duration.Deadline
@@ -52,10 +51,9 @@ object OpenIdConnectUserInfo extends EpochSecondsCodecs with JavaTimeDecoders wi
 }
 
 object OpenIdConnectProfile extends OAuth2Profile[OpenIdConnectUserInfo] {
-  def getLoggedUser(profile: OpenIdConnectUserInfo, configuration: OAuth2Configuration, allCategories: List[String]): LoggedUser = {
+  def getAuthenticatedUser(profile: OpenIdConnectUserInfo, configuration: OAuth2Configuration): AuthenticatedUser = {
     val userRoles = getUserRoles(profile.email, configuration)
-    val rulesSet = RulesSet.getOnlyMatchingRules(userRoles, configuration.rules, allCategories)
     val username = profile.preferredUsername.orElse(profile.nickname).orElse(profile.subject).get
-    LoggedUser(id = profile.subject.get, username = username, rulesSet = rulesSet)
+    AuthenticatedUser(id = profile.subject.get, username = username, userRoles)
   }
 }
