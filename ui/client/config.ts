@@ -16,8 +16,3 @@ export const BACKEND_STATIC_URL = __DEV__ ? `/be-static/` : __webpack_public_pat
 
 export const DATE_FORMAT = "YYYY-MM-DD HH:mm:ss"
 export const DISPLAY_DATE_FORMAT = "YYYY-MM-DD|HH:mm"
-
-export {
-  DATE_FORMAT as dateFormat,
-  DISPLAY_DATE_FORMAT as displayDateFormat,
-}
