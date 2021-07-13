@@ -144,6 +144,7 @@ To see biggest differences please consult the [changelog](Changelog.md).
   ```
 * [#1825](https://github.com/TouK/nussknacker/pull/1825) Default dashboard renamed from `flink-esp` to `nussknacker-scenario`
 * [#1836](https://github.com/TouK/nussknacker/pull/1836) Change default `kafka.consumerGroupNamingStrategy` to `processId-nodeId`.     
+* [#1357](https://github.com/TouK/nussknacker/pull/1357) Run mode added to nodes. `ServiceInvoker` interface was extended with new, implicit `runMode` parameter. 
 
 ## In version 0.3.0
 

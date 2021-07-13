@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.process.functional
 import java.util.Date
 
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
@@ -66,7 +67,7 @@ class GenericTransformationSpec extends FunSuite with Matchers with ProcessTestH
 
     processInvoker.invokeWithSampleData(process, Nil)
 
-    SinkForStrings.data shouldBe List("type2-3+type1-2")
+    SinkForStrings.data shouldBe List(s"type2-3+type1-2+runMode:${RunMode.Normal}")
   }
 
   test("be able to generic source with multiple variables on start (with multipart compilation)") {
@@ -82,6 +83,6 @@ class GenericTransformationSpec extends FunSuite with Matchers with ProcessTestH
 
     processInvoker.invokeWithSampleData(process, Nil)
 
-    SinkForStrings.data shouldBe List("test|transformed:test|4+type1-2")
+    SinkForStrings.data shouldBe List(s"test|transformed:test|4+type1-2+runMode:${RunMode.Normal}")
   }
 }

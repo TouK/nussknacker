@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.standalone
 
 import cats.Id
-
 import java.util.concurrent.atomic.AtomicLong
+
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{EitherT, NonEmptyList, Validated, ValidatedNel, Writer, WriterT}
 import pl.touk.nussknacker.engine.Interpreter.{FutureShape, InterpreterShape}
@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeter
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, UnsupportedPart}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, RunMode}
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{process, _}
 import pl.touk.nussknacker.engine.compile._
@@ -34,7 +34,7 @@ import scala.util.control.NonFatal
 object StandaloneProcessInterpreter {
 
   def apply(process: EspProcess, contextPreparer: StandaloneContextPreparer, modelData: ModelData,
-            additionalListeners: List[ProcessListener], resultCollector: ResultCollector)
+            additionalListeners: List[ProcessListener], resultCollector: ResultCollector, runMode: RunMode)
   : ValidatedNel[ProcessCompilationError, StandaloneProcessInterpreter] = modelData.withThisAsContextClassLoader {
 
     val creator = modelData.configCreator
@@ -46,7 +46,8 @@ object StandaloneProcessInterpreter {
     val compilerData = ProcessCompilerData.prepare(process,
       definitions,
       listeners,
-      modelData.modelClassLoader.classLoader, resultCollector
+      modelData.modelClassLoader.classLoader, resultCollector,
+      runMode
       // defaultAsyncValue is not important here because it isn't used in standalone mode
     )(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
 
@@ -55,7 +56,7 @@ object StandaloneProcessInterpreter {
 
       val nodesUsed = NodesCollector.collectNodesInAllParts(ProcessSplitter.split(process).sources).map(_.data)
       val lifecycle = compilerData.lifecycle(nodesUsed)
-      StandaloneInvokerCompiler(compiledProcess, compilerData).compile.map(_.run).map { case (sinkTypes, invoker) =>
+      StandaloneInvokerCompiler(compiledProcess, compilerData, runMode).compile.map(_.run).map { case (sinkTypes, invoker) =>
         StandaloneProcessInterpreter(source, sinkTypes, contextPreparer.prepare(process.id), invoker, lifecycle, modelData)
       }
     }
@@ -65,7 +66,7 @@ object StandaloneProcessInterpreter {
     = compiledProcess.sources.head.asInstanceOf[SourcePart].obj.asInstanceOf[StandaloneSource[Any]]
 
 
-  private case class StandaloneInvokerCompiler(compiledProcess: CompiledProcessParts, processCompilerData: ProcessCompilerData) {
+  private case class StandaloneInvokerCompiler(compiledProcess: CompiledProcessParts, processCompilerData: ProcessCompilerData, runMode: RunMode) {
 
     import cats.implicits._
     type CompilationResult[K] = ValidatedNel[ProcessCompilationError, K]
@@ -122,7 +123,7 @@ object StandaloneProcessInterpreter {
     }
 
 
-    private def compilePartInvokers(parts: List[SubsequentPart]) : CompilationResult[WithSinkTypes[Map[String, InterpreterType]]] =
+    private def compilePartInvokers(parts: List[SubsequentPart]): CompilationResult[WithSinkTypes[Map[String, InterpreterType]]] =
       parts.map(part => compiledPartInvoker(part).map(compiled => part.id -> compiled))
         .sequence[CompilationResult, (String, WithSinkTypes[InterpreterType])].map { res =>
           Writer(res.flatMap(_._2.written).toMap, res.toMap.mapValues(_.value))
@@ -146,6 +147,7 @@ object StandaloneProcessInterpreter {
     private def invokeInterpreterOnContext(node: Node)(ctx: Context)(implicit ec: ExecutionContext) = {
       //TODO: refactor StandaloneInterpreter to use IO
       implicit val shape: InterpreterShape[Future] = new FutureShape
+      implicit val implicitRunMode: RunMode = runMode
       processCompilerData.interpreter.interpret[Future](node, processCompilerData.metaData, ctx).map(_.swap.leftMap(NonEmptyList.one))
     }
 

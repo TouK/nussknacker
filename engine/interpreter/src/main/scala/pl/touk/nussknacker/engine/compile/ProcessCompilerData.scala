@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValue
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.EspExceptionHandler
+import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.{Lifecycle, MetaData, ProcessListener}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
@@ -33,7 +34,8 @@ object ProcessCompilerData {
               definitions: ProcessDefinition[ObjectWithMethodDef],
               listeners: Seq[ProcessListener],
               userCodeClassLoader: ClassLoader,
-              resultsCollector: ResultCollector
+              resultsCollector: ResultCollector,
+              runMode: RunMode
              )(implicit defaultAsyncValue: DefaultAsyncInterpretationValue): ProcessCompilerData = {
     val servicesDefs = definitions.services
 
@@ -42,7 +44,7 @@ object ProcessCompilerData {
 
     val expressionCompiler = ExpressionCompiler.withOptimization(userCodeClassLoader, dictRegistry, definitions.expressionConfig, definitions.settings)
     //for testing environment it's important to take classloader from user jar
-    val nodeCompiler = new NodeCompiler(definitions, expressionCompiler, userCodeClassLoader, resultsCollector)
+    val nodeCompiler = new NodeCompiler(definitions, expressionCompiler, userCodeClassLoader, resultsCollector, runMode)
     val subCompiler = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
     val processCompiler = new ProcessCompiler(userCodeClassLoader, subCompiler, GlobalVariablesPreparer(definitions.expressionConfig), nodeCompiler)
 
@@ -50,7 +52,7 @@ object ProcessCompilerData {
 
     val expressionEvaluator = ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners, process.metaData)
 
-    val interpreter = Interpreter(listeners, expressionEvaluator)
+    val interpreter = Interpreter(listeners, expressionEvaluator, runMode)
 
     new ProcessCompilerData(
       processCompiler,

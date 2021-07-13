@@ -81,7 +81,8 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
     }
   }
 
-  private def handleSourceNode(nodeData: StartingNodeData, ctx: ValidationContext, next: splittednode.Next)(implicit metaData: MetaData): CompilationResult[node.Source] = {
+  private def handleSourceNode(nodeData: StartingNodeData, ctx: ValidationContext, next: splittednode.Next)
+                              (implicit metaData: MetaData): CompilationResult[node.Source] = {
     // just like in a custom node we can't add input context here because it contains output variable context (not input)
     nodeData match {
       case graph.node.Source(id, _, _) =>
@@ -138,7 +139,8 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
     }
   }
 
-  private def compileSubsequent(ctx: ValidationContext, data: OneOutputSubsequentNodeData, next: Next)(implicit nodeId: NodeId, metaData: MetaData): CompilationResult[Node] = {
+  private def compileSubsequent(ctx: ValidationContext, data: OneOutputSubsequentNodeData, next: Next)
+                               (implicit nodeId: NodeId, metaData: MetaData): CompilationResult[Node] = {
     def toCompilationResult[T](validated: ValidatedNel[ProcessCompilationError, T],
                                expressionsTypingInfo: Map[String, ExpressionTypingInfo], parameters: Option[List[Parameter]]) =
       CompilationResult(Map(data.id -> NodeTypingInfo(ctx, expressionsTypingInfo, parameters)), validated)
