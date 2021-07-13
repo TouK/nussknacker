@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.management.rest
 
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.Error
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.deployment.{ExternalDeploymentId, SavepointResult}
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
@@ -14,6 +13,7 @@ import sttp.model.StatusCode
 
 import java.io.File
 import java.util.concurrent.TimeoutException
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 
 class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future, Nothing, NothingT], ec: ExecutionContext) extends FlinkClient with LazyLogging {
@@ -105,7 +105,7 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
   }
 
   //FIXME: get rid of sleep, refactor?
-  def waitForSavepoint(jobId: ExternalDeploymentId, savepointId: String, timeoutLeft: Long = config.jobManagerTimeout.toMillis): Future[SavepointResult] = {
+  def waitForSavepoint(jobId: ExternalDeploymentId, savepointId: String, timeoutLeft: Long = config.jobManagerTimeout.getOrElse(1 minute).toMillis): Future[SavepointResult] = {
     val start = System.currentTimeMillis()
     if (timeoutLeft <= 0) {
       return Future.failed(new Exception(s"Failed to complete savepoint in time for $jobId and trigger $savepointId"))

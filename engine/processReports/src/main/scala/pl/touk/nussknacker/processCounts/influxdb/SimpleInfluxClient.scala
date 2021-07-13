@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.processCounts.influxdb
 
 import java.util.concurrent.TimeUnit
-
 import sttp.client._
 import sttp.client.circe._
 import io.circe.Decoder
@@ -9,6 +8,7 @@ import pl.touk.nussknacker.engine.sttp.SttpJson
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.language.implicitConversions
 
 class InfluxException(cause: Throwable) extends Exception(cause)
 case class InvalidInfluxResponse(message: String, cause: Throwable) extends InfluxException(cause) {
@@ -24,8 +24,12 @@ class SimpleInfluxClient(config: InfluxConfig)(implicit backend: SttpBackend[Fut
   private val uri = uri"${config.influxUrl}"
 
   def query(query: String)(implicit ec: ExecutionContext): Future[List[InfluxSeries]] = {
-    basicRequest.get(uri.params("db" -> config.database, "q" -> query))
-      .auth.basic(config.user, config.password)
+    def addAuth[T, S](req: Request[T, S]): RequestT[Identity, T, S] = (for {
+      user <- config.user
+      password <- config.password
+    } yield req .auth.basic(user, password)).getOrElse(req)
+
+    addAuth(basicRequest.get(uri.params("db" -> config.database, "q" -> query)))
       .response(asJson[InfluxResponse])
       .send()
       .flatMap(SttpJson.failureToFuture[InfluxResponse])
