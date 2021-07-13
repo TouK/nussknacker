@@ -13,7 +13,7 @@
     "svgo": "svgo --config .svgo.yml",
     "check": "npm run check-types && npm run lint -- . --rule 'i18next/no-literal-string: warn'",
     "@comment translations json has higher priority than default labels in code, so we remove them before each start script, to make development faster": "",
-    "clean-translations": "rm ./translations/ -rf",
+    "clean-translations": "rm ./translations/* -rf",
     "start": "npm run clean-translations && BACKEND_DOMAIN=http://localhost:8080 webpack serve",
     "start:backend-docker": "npm run clean-translations && start-server-and-test start-backend:docker http-get://localhost:8080/static/main.html start",
     "start:backend-staging": "npm run clean-translations && BACKEND_DOMAIN=https://staging.nussknacker.io webpack serve",
@@ -29,7 +29,8 @@
     "test:e2e:linux:update": "docker run --add-host=host.docker.internal:host-gateway -it -v $PWD:/client -w /client -e CYPRESS_SNAPSHOT_UPDATE=true cypress/included:6.8.0 --config baseUrl=http://host.docker.internal:3000",
     "test:e2e:docker:update": "start-server-and-test start:backend-docker http-get://localhost:3000/static/main.html test:e2e:linux:update",
     "coverage": "npx merge-cypress-jest-coverage",
-    "commit": "lint-staged"
+    "commit": "lint-staged",
+    "make-types": "make-federated-types --outputDir ./.federated-types"
   },
   "dependencies": {
     "@babel/eslint-parser": "^7.14.7",
@@ -138,6 +139,7 @@
     "@cypress/browserify-preprocessor": "^3.0.1",
     "@cypress/code-coverage": "^3.9.7",
     "@hot-loader/react-dom": "^17.0.1",
+    "@pixability-ui/federated-types": "^0.1.0",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.4.3",
     "@svgr/webpack": "^5.5.0",
     "@testing-library/dom": "^7.31.0",
@@ -174,8 +176,8 @@
     "babel-loader": "^8.2.2",
     "babel-plugin-istanbul": "^6.0.0",
     "chalk": "^2.4.2",
+    "clean-webpack-plugin": "^4.0.0-alpha.0",
     "color": "^3.1.3",
-    "copy-webpack-plugin": "^8.1.1",
     "crypto-browserify": "^3.12.0",
     "css-loader": "^5.2.6",
     "cypress": "^6.9.1",
@@ -191,6 +193,7 @@
     "eslint-plugin-react-hooks": "^4.2.0-rc.2",
     "expect": "^27.0.6",
     "file-loader": "^6.1.1",
+    "filemanager-webpack-plugin": "^6.1.4",
     "fork-ts-checker-webpack-plugin": "^6.2.12",
     "html-loader": "^2.1.2",
     "html-webpack-harddisk-plugin": "^2.0.0",
@@ -234,9 +237,11 @@
     "typescript-plugin-css-modules": "^3.4.0",
     "ua-parser-js": "^0.7.28",
     "wait-on": "^5.3.0",
-    "webpack": "^5.41.1",
+    "webpack": "5.44.0",
     "webpack-cli": "^4.7.2",
-    "webpack-dev-server": "^3.11.2"
+    "webpack-dev-server": "^3.11.2",
+    "webpack-remote-types-plugin": "^0.2.4",
+    "webpack-shell-plugin-next": "^2.2.2"
   },
   "@comment lint-staged": "We add svgo preprocessing as a pre-commit hook to avoid surprise that someone based on global style classes from svgo that won't be available anymore after preprocessing",
   "lint-staged": {

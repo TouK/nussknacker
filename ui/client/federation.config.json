@@ -1,0 +1,6 @@
+{
+  "name": "nussknackerUi",
+  "exposes": {
+    "./config": "./config.ts"
+  }
+}

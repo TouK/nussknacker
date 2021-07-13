@@ -7,13 +7,14 @@ const childProcess = require("child_process")
 const HtmlWebpackPlugin = require("html-webpack-plugin")
 const HtmlWebpackHarddiskPlugin = require("html-webpack-harddisk-plugin")
 const TerserPlugin = require("terser-webpack-plugin")
-const CopyPlugin = require("copy-webpack-plugin")
+const FileManagerPlugin = require("filemanager-webpack-plugin")
+const {CleanWebpackPlugin} = require("clean-webpack-plugin")
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin")
-const {camelCase} = require("lodash")
+const federationConfig = require("./federation.config.json")
 const MomentLocalesPlugin = require("moment-locales-webpack-plugin")
 const ReactRefreshWebpackPlugin = require("@pmmmwh/react-refresh-webpack-plugin")
 const PreloadWebpackPlugin = require("@vue/preload-webpack-plugin")
-const SpeedMeasurePlugin = require("speed-measure-webpack-plugin")
+const WebpackShellPluginNext = require("webpack-shell-plugin-next")
 
 const NODE_ENV = process.env.NODE_ENV || "development"
 const GIT_HASH = childProcess.execSync("git log -1 --format=%H").toString()
@@ -21,7 +22,6 @@ const GIT_DATE = childProcess.execSync("git log -1 --format=%cd").toString()
 const isProd = NODE_ENV === "production"
 
 const {ModuleFederationPlugin} = webpack.container
-const {name} = require("./package.json")
 const entry = {
   main: path.resolve(__dirname, "./init.js"),
 }
@@ -52,18 +52,14 @@ const outputPath = process.env.OUTPUT_PATH ?
   path.join(process.env.OUTPUT_PATH, "classes", "web", "static") :
   path.join(process.cwd(), "dist")
 
+const onDoneWatch = {
+  scripts: ["npm run make-types"],
+  blocking: true,
+}
+
 module.exports = {
   mode: NODE_ENV,
   optimization: {
-    splitChunks: {
-      cacheGroups: {
-        commons: {
-          test: /[\\/]node_modules[\\/]/,
-          name: "vendors",
-          chunks: "all",
-        },
-      },
-    },
     minimizer: [new TerserPlugin({
       parallel: true,
       //Reactable bug: https://github.com/abdulrahman-khankan/reactable/issues/3
@@ -119,17 +115,18 @@ module.exports = {
     },
     watchOptions: {
       ignored: [
-        '**/dist',
-        '**/target',
+        "**/dist",
+        "**/target",
         // ignore vim swap files
-        '**/*.sw[pon]',
+        "**/*.sw[pon]",
         // TODO: separate src/main, src/test and so on
-        '**/cypress*',
-        '**/.nyc_output',
-        '**/jest*',
-        '**/test*',
-        '**/*.md',
-      ]
+        "**/cypress*",
+        "**/.nyc_output",
+        "**/.federated-types",
+        "**/jest*",
+        "**/test*",
+        "**/*.md",
+      ],
     },
   },
   plugins: [
@@ -137,7 +134,8 @@ module.exports = {
       localesToKeep: ["pl"],
     }),
     new ModuleFederationPlugin({
-      name: camelCase(name),
+      filename: "remoteEntry.js",
+      ...federationConfig,
       shared: {
         react: {
           eager: true,
@@ -159,10 +157,28 @@ module.exports = {
       template: "index_template_no_doctype.ejs",
     }),
     new HtmlWebpackHarddiskPlugin(),
-    new CopyPlugin({
-      patterns: [
-        {from: "translations", to: "assets/locales", noErrorOnMissing: true},
-      ],
+    new WebpackShellPluginNext({
+      onBeforeNormalRun: onDoneWatch,
+      onDoneWatch: onDoneWatch,
+    }),
+    new FileManagerPlugin({
+      events: {
+        onEnd: {
+          copy: [
+            {source: "translations", destination: path.join(outputPath, "assets/locales")},
+          ],
+          archive: [
+            {
+              source: ".federated-types",
+              destination: path.join(outputPath, `${federationConfig.name}-dts.tgz`),
+              format: "tar",
+              options: {
+                gzip: true,
+              },
+            },
+          ],
+        },
+      },
     }),
     new PreloadWebpackPlugin({
       rel: "preload",
@@ -192,6 +208,7 @@ module.exports = {
       },
     }),
     new ForkTsCheckerWebpackPlugin(),
+    new CleanWebpackPlugin(),
     isProd ? null : new ReactRefreshWebpackPlugin(),
     new webpack.ProgressPlugin(progressBar),
   ].filter(Boolean),

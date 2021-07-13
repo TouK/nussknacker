@@ -9,7 +9,8 @@ node_modules/
 npm-debug.log
 
 dist/
-translations/
+translations/*
+.federated-types/
 
 coverage/
 *-coverage/
