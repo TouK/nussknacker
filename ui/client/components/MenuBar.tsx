@@ -1,11 +1,13 @@
 import React, {ReactNode, useEffect, useState} from "react"
 import {useTranslation} from "react-i18next"
+import {useSelector} from "react-redux"
 import {NavLink} from "react-router-dom"
 import {ReactComponent as NussknackerLogo} from "../assets/img/nussknacker-logo.svg"
 import {AdminPage} from "../containers/AdminPage"
 import {CustomTabPath} from "../containers/CustomTab"
 import {ProcessesTabData} from "../containers/Processes"
 import {Signals} from "../containers/Signals"
+import {getCustomTabs} from "../reducers/selectors/settings"
 import {Flex} from "./common/Flex"
 import {ButtonWithFocus} from "./withFocus"
 
@@ -56,7 +58,7 @@ export function MenuBar({appPath, rightElement = null, leftElement = null, ...pr
   const {loggedUser, featuresSettings} = props
   const showSignals = featuresSettings.signals
   const showAdmin = loggedUser.globalPermissions.adminTab
-  const customTabs = featuresSettings.customTabs ? [...featuresSettings.customTabs] : []
+  const customTabs = useSelector(getCustomTabs)
 
   const [expanded, setExpanded] = useStateWithRevertTimeout(false)
   const {t} = useTranslation()

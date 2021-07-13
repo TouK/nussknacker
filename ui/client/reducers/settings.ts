@@ -1,6 +1,7 @@
 import {Action} from "../actions/reduxTypes"
 import User from "../common/models/User"
 import {DEV_TOOLBARS} from "../components/toolbarSettings/DEV_TOOLBARS"
+import {DynamicTabData} from "../containers/DynamicTab"
 import {ProcessDefinitionData} from "../types"
 import {WithId} from "../types/common"
 import {ToolbarsConfig} from "../components/toolbarSettings/types"
@@ -12,9 +13,18 @@ export enum AuthBackends {
   OTHER = "Other",
 }
 
+interface FeaturesSettings {
+  customTabs?: DynamicTabData[],
+  remoteEnvironment?,
+  counts?,
+  environmentAlert?,
+  intervalTimeSettings?,
+  metrics?,
+}
+
 export type SettingsState = {
   loggedUser: Partial<User>,
-  featuresSettings: $TodoType,
+  featuresSettings: FeaturesSettings,
   authenticationSettings: AuthenticationSettings,
   analyticsSettings: $TodoType,
   processDefinitionData: ProcessDefinitionData,
