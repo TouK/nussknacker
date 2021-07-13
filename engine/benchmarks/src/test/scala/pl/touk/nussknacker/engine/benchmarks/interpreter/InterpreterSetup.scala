@@ -38,7 +38,7 @@ class InterpreterSetup[T:ClassTag] {
     val compiled = compileNode(parts.sources.head)
     val shape = implicitly[InterpreterShape[F]]
     (initialCtx: Context, ec: ExecutionContext) =>
-      interpreter.interpret[F](compiled, process.metaData, initialCtx)(shape, ec, RunMode.Normal)
+      interpreter.interpret[F](compiled, process.metaData, initialCtx)(shape, ec)
   }
 
   def compile(servicesToUse: Map[String, Service], process: EspProcess, listeners: Seq[ProcessListener]): ProcessCompilerData = {

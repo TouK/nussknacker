@@ -52,7 +52,7 @@ object ProcessCompilerData {
 
     val expressionEvaluator = ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners, process.metaData)
 
-    val interpreter = Interpreter(listeners, expressionEvaluator)
+    val interpreter = Interpreter(listeners, expressionEvaluator, runMode)
 
     new ProcessCompilerData(
       processCompiler,
