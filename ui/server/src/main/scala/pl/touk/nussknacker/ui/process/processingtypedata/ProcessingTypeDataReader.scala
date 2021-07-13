@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.ui.process.processingtypedata
 
-import pl.touk.nussknacker.engine.{ProcessManagerProvider, ProcessingTypeConfig, ProcessingTypeData}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
+import pl.touk.nussknacker.engine.{ProcessManagerProvider, ProcessingTypeConfig, ProcessingTypeData}
 
 object ProcessingTypeDataReader extends LazyLogging {
 
@@ -29,6 +29,15 @@ object ProcessingTypeDataReader extends LazyLogging {
         key -> config.as[ProcessingTypeConfig](key)(ProcessingTypeConfig.reader)
       }.toMap
     }
-    config.as[Map[String, ProcessingTypeConfig]]("processTypes")
+
+    val processTypesOption = config.getAs[Map[String, ProcessingTypeConfig]]("processTypes")
+    val scenarioTypesOption = config.getAs[Map[String, ProcessingTypeConfig]]("scenarioTypes")
+    (scenarioTypesOption, processTypesOption) match {
+      case (Some(scenarioTypes), _) => scenarioTypes
+      case (None, Some(processTypes)) =>
+        logger.info("ScenarioTypes configuration is missing - falling back to old configuration")
+        processTypes
+      case (None, None) => throw new RuntimeException("No scenario types configuration provided")
+    }
   }
 }
