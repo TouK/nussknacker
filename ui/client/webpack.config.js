@@ -196,17 +196,6 @@ module.exports = {
   module: {
     rules: [
       {
-        test: require.resolve("jointjs"),
-        use: [
-          {
-            loader: "expose-loader",
-            options: {
-              exposes: ["joint"],
-            },
-          },
-        ],
-      },
-      {
         test: /\.html$/,
         use: {
           loader: "html-loader",

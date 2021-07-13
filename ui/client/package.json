@@ -190,7 +190,6 @@
     "eslint-plugin-react": "^7.24.0",
     "eslint-plugin-react-hooks": "^4.2.0-rc.2",
     "expect": "^27.0.6",
-    "expose-loader": "^2.0.0",
     "file-loader": "^6.1.1",
     "fork-ts-checker-webpack-plugin": "^6.2.12",
     "html-loader": "^2.1.2",

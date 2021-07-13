@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import * as joint from "jointjs"
+import {dia} from "jointjs"
 import "jointjs/dist/joint.css"
 import _, {cloneDeep, debounce, isEqual, sortBy} from "lodash"
 import PropTypes from "prop-types"
@@ -44,7 +44,7 @@ export class Graph extends React.Component {
   constructor(props) {
     super(props)
 
-    this.graph = new joint.dia.Graph()
+    this.graph = new dia.Graph()
     this.graph.on(Events.REMOVE, (e, f) => {
       if (e.isLink() && !this.redrawing) {
         this.props.actions.nodesDisconnected(e.attributes.source.id, e.attributes.target.id)

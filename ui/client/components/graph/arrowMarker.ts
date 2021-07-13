@@ -1,8 +1,8 @@
 /* eslint-disable i18next/no-literal-string */
-import * as joint from "jointjs"
+import {V} from "jointjs"
 import arrow from "!raw-loader!./arrow.svg"
 
-export const arrowMarker = joint.V("marker", {
+export const arrowMarker = V("marker", {
   viewBox: "0 0 10 10",
   refX: 8,
   refY: 5,
@@ -10,4 +10,4 @@ export const arrowMarker = joint.V("marker", {
   markerHeight: 20,
   orient: "auto",
   class: "arrow-marker",
-}, joint.V(arrow).children())
+}, V(arrow).children())

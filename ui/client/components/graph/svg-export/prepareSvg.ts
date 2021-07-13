@@ -1,11 +1,11 @@
 /* eslint-disable i18next/no-literal-string */
 import css from "!raw-loader!./export.styl"
-import * as joint from "jointjs"
+import {dia, util, V, Vectorizer} from "jointjs"
 import {memoize} from "lodash"
 import {svgTowDataURL, toXml} from "../../../common/SVGUtils"
 
 function createStyle() {
-  const style = joint.V("style").node
+  const style = V("style").node
   style.appendChild(document.createTextNode(css))
   return style
 }
@@ -13,7 +13,7 @@ function createStyle() {
 const getDataUrl = memoize(async (url: string) => {
   const response = await fetch(url)
   const svgStr = await response.text()
-  return {dataurl: svgTowDataURL(svgStr), id: joint.util.uniqueId("img")}
+  return {dataurl: svgTowDataURL(svgStr), id: util.uniqueId("img")}
 })
 
 function _debugInWindow(svg: string | SVGElement) {
@@ -21,33 +21,33 @@ function _debugInWindow(svg: string | SVGElement) {
   window.open(null).document.write(svgString)
 }
 
-async function embedImage(image: joint.Vectorizer) {
+async function embedImage(image: Vectorizer) {
   const href = image.attr("xlink:href")
   const {dataurl, id} = await getDataUrl(href)
   image.attr("xlink:href", dataurl)
   return {dataurl, id}
 }
 
-function createDefInNeeded(image: joint.Vectorizer, id: string) {
+function createDefInNeeded(image: Vectorizer, id: string) {
   const defs = image.defs()
   const existingDef = defs.findOne(`#${id}`)
   if (!existingDef) {
-    const def = joint.V(image.clone(), {id})
+    const def = V(image.clone(), {id})
     defs.append(def)
     return def
   }
   return existingDef
 }
 
-async function replaceWithDef(img: joint.Vectorizer) {
+async function replaceWithDef(img: Vectorizer) {
   const {id} = await embedImage(img)
   const def = createDefInNeeded(img, id)
-  const use = joint.V("use", {["xlink:href"]: `#${def.id}`})
+  const use = V("use", {["xlink:href"]: `#${def.id}`})
   return img.node.replaceWith(use.node)
 }
 
 function embedImages(svg: SVGElement) {
-  const images = joint.V(svg)
+  const images = V(svg)
     .find("image[*|href]")
     .filter(i => !i.attr("xlink:href").startsWith("data:image"))
 
@@ -80,8 +80,8 @@ function createPlaceholder(parent = document.body) {
   return el
 }
 
-function createPaper(placeholder: HTMLDivElement, maxSize: number, {options, defs}: Pick<joint.dia.Paper, "options" | "defs">) {
-  const paper = new joint.dia.Paper({
+function createPaper(placeholder: HTMLDivElement, maxSize: number, {options, defs}: Pick<dia.Paper, "options" | "defs">) {
+  const paper = new dia.Paper({
     ...options,
     el: placeholder,
     width: maxSize,
@@ -102,7 +102,7 @@ function addStyles(svg: SVGElement, height: number, width: number) {
   svg.setAttribute("class", "graph-export")
 }
 
-export async function prepareSvg(options: Pick<joint.dia.Paper, "options" | "defs">, a, maxSize = 15000) {
+export async function prepareSvg(options: Pick<dia.Paper, "options" | "defs">, a, maxSize = 15000) {
   const placeholder = createPlaceholder()
   const {svg, width, height} = createPaper(placeholder, maxSize, options)
 
