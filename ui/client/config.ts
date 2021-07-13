@@ -9,10 +9,11 @@
  */
 
 const publicUrl = new URL(__webpack_public_path__.replace(/static\/$/, "") || "/")
+const href = publicUrl.href.replace(/\/$/, "")
 
 export const BASE_PATH = publicUrl.pathname
-export const API_URL = `${publicUrl.href.replace(/\/$/, "")}/api`
-export const BACKEND_STATIC_URL = __DEV__ ? `/be-static/` : __webpack_public_path__
+export const API_URL = `${href}/api`
+export const BACKEND_STATIC_URL = __DEV__ ? `${href}/be-static/` : __webpack_public_path__
 
 export const DATE_FORMAT = "YYYY-MM-DD HH:mm:ss"
 export const DISPLAY_DATE_FORMAT = "YYYY-MM-DD|HH:mm"
