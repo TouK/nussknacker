@@ -100,7 +100,8 @@ metrics.scope.tm.job: demo.<host>.taskmanagerJob.<tm_id>.<job_name>
 metrics.scope.task: demo.<host>.taskmanagerTask.<tm_id>.<job_name>.<task_name>.<subtask_index>
 metrics.scope.operator: demo.<host>.taskmanagerTask.<tm_id>.<job_name>.<operator_name>.<subtask_index>
 
-classloader.resolve-order: parent-first
+#Uncomment if you encounter problems with classloading with complex custom components
+#classloader.resolve-order: parent-first
 akka.framesize: 209715200b
 
 query.server.port: 6125
