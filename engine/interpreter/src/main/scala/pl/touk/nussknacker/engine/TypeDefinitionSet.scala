@@ -10,6 +10,16 @@ import pl.touk.nussknacker.engine.spel.TypedNode
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.RichSpelNode
 
 
+object TypeDefinitionSet {
+
+  def apply(typeDefinitionSet: Set[TypeInfos.ClazzDefinition] = Set()): TypeDefinitionSet = {
+
+    val clazzDefinitionMap = typeDefinitionSet.map(clazzDefinition => clazzDefinition.clazzName.javaClassName -> clazzDefinition).toMap
+
+    new TypeDefinitionSet(clazzDefinitionMap)
+  }
+}
+
 class TypeDefinitionSet(typeDefinitions: Map[String, TypeInfos.ClazzDefinition]) {
 
   def validateTypeReference(spelNode: SpelNode): Validated[NonEmptyList[ExpressionParseError], SpelNode] = {
@@ -32,9 +42,17 @@ class TypeDefinitionSet(typeDefinitions: Map[String, TypeInfos.ClazzDefinition])
     typeDefinitions.keySet.foreach(key => {
       val element = typeDefinitions.getOrElse(key, throw new Exception(s"No value found for key ${key}"))
       basicInfo.append(newLine ++ element.clazzName.display ++ newLine ++ tab ++ "methods: " ++ newLine)
+
       element.methods.foreach(method => {
         basicInfo.append(
           newLine ++ tab ++ tab ++ method._1 ++ tab ++ method._2.toString ++ newLine
+        )
+      })
+      basicInfo.append(newLine ++ tab ++ "static methods: " ++ newLine)
+
+      element.staticMethods.foreach(staticMethod => {
+        basicInfo.append(
+          newLine ++ tab ++ tab ++ staticMethod._1 ++ tab ++ staticMethod._2.toString ++ newLine
         )
       })
     })
@@ -43,12 +61,3 @@ class TypeDefinitionSet(typeDefinitions: Map[String, TypeInfos.ClazzDefinition])
   }
 }
 
-object TypeDefinitionSet {
-
-  def apply(typeDefinitionSet: Set[TypeInfos.ClazzDefinition] = Set()): TypeDefinitionSet = {
-
-    val clazzDefinitionMap = typeDefinitionSet.map(clazzDefinition => clazzDefinition.clazzName.javaClassName -> clazzDefinition).toMap
-
-    new TypeDefinitionSet(clazzDefinitionMap)
-  }
-}
