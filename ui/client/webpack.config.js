@@ -92,6 +92,9 @@ module.exports = {
   },
   devtool: isProd ? "hidden-source-map" : "eval-source-map",
   devServer: {
+    contentBase: [
+      path.join(__dirname, "dist"),
+    ],
     historyApiFallback: {
       index: "/main.html",
     },
