@@ -29,16 +29,16 @@ public class ExpressionConfig implements Serializable {
 
     private final boolean hideMetaVariable;
 
-    public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<WithCategories<String>> globalImports, List<Class> testValue) {
-        this(globalProcessVariables, globalImports, testValue, new LanguageConfiguration(List$.MODULE$.empty()), true, true, Collections.emptyMap(), false);
+    public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<WithCategories<String>> globalImports, List<Class> allowedClasses) {
+        this(globalProcessVariables, globalImports, allowedClasses, new LanguageConfiguration(List$.MODULE$.empty()), true, true, Collections.emptyMap(), false);
     }
 
     public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<WithCategories<String>> globalImports,
-                            List<Class> testValue, LanguageConfiguration languages, boolean optimizeCompilation, boolean strictTypeChecking,
+                            List<Class> allowedClasses, LanguageConfiguration languages, boolean optimizeCompilation, boolean strictTypeChecking,
                             Map<String, WithCategories<DictDefinition>> dictionaries, boolean hideMetaVariable) {
         this.globalProcessVariables = globalProcessVariables;
         this.globalImports = globalImports;
-        this.allowedClasses = testValue;
+        this.allowedClasses = allowedClasses;
         this.languages = languages;
         this.optimizeCompilation = optimizeCompilation;
         this.strictTypeChecking = strictTypeChecking;
