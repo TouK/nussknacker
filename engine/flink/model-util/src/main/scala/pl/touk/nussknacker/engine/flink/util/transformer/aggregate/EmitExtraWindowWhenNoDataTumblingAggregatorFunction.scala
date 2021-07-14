@@ -55,7 +55,7 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K,V]](protected v
     val previousTimestamp = timestamp - timeWindowLengthMillis
     val currentStateValue = readStateOrInitial()
     val finalVal = computeFinalValue(currentStateValue, previousTimestamp)
-    out.collect(ValueWithContext(finalVal, KeyEnricher.enrichWithKey(NkContext(""), ctx.getCurrentKey)))
+    out.collect(ValueWithContext(finalVal, KeyEnricher.enrichWithKey(NkContext.withInitialId, ctx.getCurrentKey)))
 
     val previousTimestampStateAndRest = stateForTimestampToReadUntilEnd(currentStateValue, previousTimestamp)
     if (previousTimestampStateAndRest.toScalaMapRO.isEmpty) {

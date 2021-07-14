@@ -28,7 +28,7 @@ class UnwrappingAggregateFunction[Input](aggregator: Aggregator,
 
   override def getResult(accumulator: StringKeyedValue[AnyRef]): ValueWithContext[AnyRef] = {
     val finalResult = aggregator.alignToExpectedType(aggregator.getResult(accumulator.value), expectedType)
-    ValueWithContext(finalResult, KeyEnricher.enrichWithKey(Context(""), accumulator))
+    ValueWithContext(finalResult, KeyEnricher.enrichWithKey(Context.withInitialId, accumulator))
   }
 
   override def merge(a: StringKeyedValue[AnyRef], b: StringKeyedValue[AnyRef]): StringKeyedValue[AnyRef] = {

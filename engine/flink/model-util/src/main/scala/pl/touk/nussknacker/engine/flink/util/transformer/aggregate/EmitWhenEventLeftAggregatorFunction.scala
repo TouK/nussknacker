@@ -54,7 +54,7 @@ class EmitWhenEventLeftAggregatorFunction[MapT[K,V]](protected val aggregator: A
     }.getOrElse(currentStateValue)
     if (stateForRecentlySentEvent.toRO(timestamp - timeWindowLengthMillis).toScalaMapRO.nonEmpty) {
       val finalVal = computeFinalValue(currentStateValue, timestamp)
-      out.collect(ValueWithContext(finalVal, KeyEnricher.enrichWithKey(NkContext(""), ctx.getCurrentKey)))
+      out.collect(ValueWithContext(finalVal, KeyEnricher.enrichWithKey(NkContext.withInitialId, ctx.getCurrentKey)))
     }
   }
 
