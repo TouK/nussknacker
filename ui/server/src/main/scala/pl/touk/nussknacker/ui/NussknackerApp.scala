@@ -100,6 +100,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val processActivityRepository = new ProcessActivityRepository(dbConfig)
 
     val authenticationResources = AuthenticationResources(config, getClass.getClassLoader)
+    val authorizationRules = AuthenticationConfiguration.getRules(config)
 
     val counter = new ProcessCounter(subprocessRepository)
 
@@ -184,7 +185,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         apiResourcesWithoutAuthentication.reduce(_ ~ _)
       } ~ authenticationResources.authenticate() { authenticatedUser =>
         pathPrefix("api") {
-          val loggedUser = LoggedUser(authenticatedUser, config, processCategoryService.getAllCategories)
+          val loggedUser = LoggedUser(authenticatedUser, authorizationRules, processCategoryService.getAllCategories)
           apiResourcesWithAuthentication.map(_.securedRoute(loggedUser)).reduce(_ ~ _)
         }
       }
