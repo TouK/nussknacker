@@ -18,13 +18,13 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
-  it("should handle missing processing type") {
+  it("should handle missing scenario type") {
     getProcessDefinitionData("foo", Map.empty[String, Long].asJson) ~> check {
       status shouldBe StatusCodes.NotFound
     }
   }
 
-  it("should return definition data for existing processing type") {
+  it("should return definition data for existing scenario type") {
     getProcessDefinitionData(existingProcessingType, Map.empty[String, Long].asJson) ~> check {
       status shouldBe StatusCodes.OK
 

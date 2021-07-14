@@ -59,7 +59,7 @@ class DefinitionResources(modelDataProvider: ProcessingTypeDataProvider[ModelDat
           }
         } ~ dictResources.route(processingTypeData.modelData)
       }.getOrElse {
-        complete(HttpResponse(status = StatusCodes.NotFound, entity = s"Processing type: $processingType not found"))
+        complete(HttpResponse(status = StatusCodes.NotFound, entity = s"Scenario type: $processingType not found"))
       }
     }
   }

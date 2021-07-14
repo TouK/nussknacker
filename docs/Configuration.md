@@ -133,7 +133,7 @@ categoriesConfig: {
   "fraud": "streaming",
 }
 ```
-For each category you have to define its processing type (`streaming` in examples above). You can read about processing
+For each category you have to define its scenario type (`streaming` in examples above). You can read about processing
 types and their configurations below.
 
 ### Process Toolbar Configuration
@@ -332,11 +332,11 @@ akka {
 * `environment` - key of environment (used e.g. for alerts) - e.g. test or production
 * `attachmentsPath` - location on disk where attachments will be stored
 
-##Processing types 
+##Scenario types 
 One installation of Nussknacker can handle many different processing engines - currently the main supported engine is
 Flink in streaming mode. Processing engines are defined in `scenarioTypes` section. You can e.g. have two processing
 types pointing to separate Flink clusters. Each processing engine has its name (e.g. `flinkStreaming`). 
-Processing type configuration consists of two main parts:
+Scenario type configuration consists of two main parts:
 * engine configuration
 * model configuration
 
