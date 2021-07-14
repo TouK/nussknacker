@@ -42,7 +42,7 @@ class ConfigurationTest extends FunSuite with Matchers {
 
   //to be able to run this test:
   //add -Dconfig.override_with_env_vars=true to VM parameters
-  //set env variable: CONFIG_FORCE_processTypes_streaming_modelConfig_testProperty=testValue
+  //set env variable: CONFIG_FORCE_scenarioTypes_streaming_modelConfig_testProperty=testValue
   ignore("check if env properties are used/passed") {
     modelDataConfig.getString("testProperty") shouldBe "testValue"
     modelData.inputConfigDuringExecution.config.getString("testProperty") shouldBe "testValue"

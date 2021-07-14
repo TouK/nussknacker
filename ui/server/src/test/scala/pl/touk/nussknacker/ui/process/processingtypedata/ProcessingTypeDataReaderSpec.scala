@@ -4,16 +4,32 @@ import com.typesafe
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import org.scalatest.FunSuite
 import org.scalatest.Matchers.{convertToAnyShouldWrapper, include}
-import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
 class ProcessingTypeDataReaderSpec extends FunSuite {
 
-  private val baseConfiguration: Config = ScalaMajorVersionConfig.configWithScalaMajorVersion(ConfigFactory.parseResources("ui.conf"))
+  private val oldConfiguration: Config = ConfigFactory.parseString(
+    """
+      |processTypes {
+      |  "streaming" {
+      |    engineConfig {
+      |      jobManagerTimeout: 1m
+      |      restUrl: "http://localhost:8081"
+      |      queryableStateProxyUrlMissing: "localhost:9123"
+      |      type: "flinkStreaming"
+      |    }
+      |
+      |    modelConfig {
+      |      classPath: ["engine/flink/management/sample/target/scala-2.12/managementSample.jar"]
+      |    }
+      |  }
+      |}
+      |""".stripMargin
+  )
 
   import scala.collection.JavaConverters._
 
   test("should load old processTypes configuration") {
-    val processTypes = ProcessingTypeDataReader.loadProcessingTypeData(baseConfiguration)
+    val processTypes = ProcessingTypeDataReader.loadProcessingTypeData(oldConfiguration)
 
     processTypes.all.size shouldBe 1
     processTypes.all.keys.take(1) shouldBe Set("streaming")
@@ -21,10 +37,10 @@ class ProcessingTypeDataReaderSpec extends FunSuite {
 
   test("should optionally load scenarioTypes configuration") {
     val configuration = ConfigFactory.parseMap(Map[String, Any](
-      "scenarioTypes.newStreamingScenario" -> ConfigValueFactory.fromAnyRef(baseConfiguration.getConfig("processTypes.streaming").root())
+      "scenarioTypes.newStreamingScenario" -> ConfigValueFactory.fromAnyRef(oldConfiguration.getConfig("processTypes.streaming").root())
     ).asJava)
 
-    val config = baseConfiguration.withFallback(configuration).resolve()
+    val config = oldConfiguration.withFallback(configuration).resolve()
 
     val processTypes = ProcessingTypeDataReader.loadProcessingTypeData(config)
 

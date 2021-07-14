@@ -12,7 +12,7 @@ To create/customize Nussknacker engine you have to:
 
 To configure process category to use particular engine, see following configuration:
 ```
-    processTypes {
+    scenarioTypes {
       "streaming": {
         type: ... //name of engine, e.g. "flinkStreaming"
         //... - additional engine config (e.g. location of Flink cluster, etc.)

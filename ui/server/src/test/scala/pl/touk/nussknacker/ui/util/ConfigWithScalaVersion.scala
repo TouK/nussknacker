@@ -8,5 +8,5 @@ object ConfigWithScalaVersion {
 
   val config: Config = ScalaMajorVersionConfig.configWithScalaMajorVersion(ConfigFactory.parseResources("ui.conf"))
 
-  val streamingProcessTypeConfig: Config = config.getConfig("processTypes.streaming")
+  val streamingProcessTypeConfig: Config = config.getConfig("scenarioTypes.streaming")
 }
