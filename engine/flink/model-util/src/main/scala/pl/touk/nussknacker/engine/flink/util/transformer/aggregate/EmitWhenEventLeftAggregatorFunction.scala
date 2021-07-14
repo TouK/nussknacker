@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{ValueWithContext, Context => NkContext}
 import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
-import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
+import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValue}
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap._
 
@@ -54,7 +54,7 @@ class EmitWhenEventLeftAggregatorFunction[MapT[K,V]](protected val aggregator: A
     }.getOrElse(currentStateValue)
     if (stateForRecentlySentEvent.toRO(timestamp - timeWindowLengthMillis).toScalaMapRO.nonEmpty) {
       val finalVal = computeFinalValue(currentStateValue, timestamp)
-      out.collect(ValueWithContext(finalVal, enrichWithKey(NkContext(""), ctx.getCurrentKey)))
+      out.collect(ValueWithContext(finalVal, KeyEnricher.enrichWithKey(NkContext(""), ctx.getCurrentKey)))
     }
   }
 

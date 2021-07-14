@@ -44,7 +44,7 @@ class AggregatorFunction[MapT[K,V]](protected val aggregator: Aggregator, protec
 
 }
 
-trait AggregatorFunctionMixin[MapT[K,V]] extends KeyEnricher { self: StateHolder[MapT[Long, AnyRef]] =>
+trait AggregatorFunctionMixin[MapT[K,V]] { self: StateHolder[MapT[Long, AnyRef]] =>
 
   def getRuntimeContext: RuntimeContext
 
@@ -89,7 +89,8 @@ trait AggregatorFunctionMixin[MapT[K,V]] extends KeyEnricher { self: StateHolder
     val newState = addElementToState(value, timestamp, timeService, out)
     val finalVal = computeFinalValue(newState, timestamp)
     timeHistogram.update(System.nanoTime() - start)
-    out.collect(ValueWithContext(finalVal, enrichWithKey(value.context, value.value)))
+    out.collect(ValueWithContext(finalVal, KeyEnricher.enrichWithKey(value.context, value.value)))
+
   }
 
   protected def addElementToState(value: ValueWithContext[StringKeyedValue[AnyRef]],

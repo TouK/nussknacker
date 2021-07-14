@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValu
 class UnwrappingAggregateFunction[Input](aggregator: Aggregator,
                                          passedType: TypingResult,
                                          unwrapAggregatedValue: Input => AnyRef)
-  extends AggregateFunction[ValueWithContext[StringKeyedValue[Input]], StringKeyedValue[AnyRef], ValueWithContext[AnyRef]] with KeyEnricher {
+  extends AggregateFunction[ValueWithContext[StringKeyedValue[Input]], StringKeyedValue[AnyRef], ValueWithContext[AnyRef]] {
 
   private val expectedType = aggregator.computeOutputType(passedType)
     .valueOr(msg => throw new IllegalArgumentException(msg))
@@ -28,7 +28,7 @@ class UnwrappingAggregateFunction[Input](aggregator: Aggregator,
 
   override def getResult(accumulator: StringKeyedValue[AnyRef]): ValueWithContext[AnyRef] = {
     val finalResult = aggregator.alignToExpectedType(aggregator.getResult(accumulator.value), expectedType)
-    ValueWithContext(finalResult, enrichWithKey(Context(""), accumulator))
+    ValueWithContext(finalResult, KeyEnricher.enrichWithKey(Context(""), accumulator))
   }
 
   override def merge(a: StringKeyedValue[AnyRef], b: StringKeyedValue[AnyRef]): StringKeyedValue[AnyRef] = {

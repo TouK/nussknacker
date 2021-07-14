@@ -120,17 +120,13 @@ object keyed {
 
   }
 
-  trait KeyEnricher {
+  object KeyEnricher {
 
     def enrichWithKey[V](ctx: Context, keyedValue: StringKeyedValue[V]): Context =
       enrichWithKey(ctx, keyedValue.key)
 
     def enrichWithKey[V](ctx: Context, key: String): Context =
       ctx.withVariable(VariableConstants.KeyVariableName, key)
-
-  }
-
-  object KeyEnricher {
 
     def contextTransformation(ctx: ValidationContext)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] =
       ctx.withVariableOverriden(VariableConstants.KeyVariableName, Typed[String], None)
