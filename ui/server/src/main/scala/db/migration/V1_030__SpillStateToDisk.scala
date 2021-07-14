@@ -16,18 +16,17 @@ object V1_030__SpillStateToDisk {
   private[migration] def renameSpillStateToDisk(jsonProcess: Json): Option[Json] = {
     val typeSpecificDataCursor = jsonProcess.hcursor.downField("metaData").downField("typeSpecificData")
     val updatedTypeSpecificData = typeSpecificDataCursor
-      .withFocus(typeSpecificData => {
-        val spillStateToDisk = typeSpecificData.hcursor.downField("splitStateToDisk").focus
-        spillStateToDisk match {
+      .withFocus { typeSpecificData =>
+        val splitStateToDisk = typeSpecificData.hcursor.downField("splitStateToDisk").focus
+        splitStateToDisk match {
           case Some(oldValue) =>
-            return typeSpecificDataCursor.withFocus(json => {
-              val jsonWithNewField = json.mapObject(_.add("spillStateToDisk", oldValue))
-              val jsonWithoutOldField = jsonWithNewField.hcursor.downField("splitStateToDisk").delete.top.get
-              jsonWithoutOldField
-            }).top
+            return typeSpecificDataCursor.withFocus { json =>
+              json.mapObject(_.add("spillStateToDisk", oldValue))
+                .hcursor.downField("splitStateToDisk").delete.top.get
+            }.top
           case None => typeSpecificData
         }
-      })
+      }
     updatedTypeSpecificData.top
   }
 
