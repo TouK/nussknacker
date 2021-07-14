@@ -15,7 +15,7 @@ object ProcessDefinitionBuilder {
 
   def empty: ProcessDefinition[ObjectDefinition] =
     ProcessDefinition(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ObjectDefinition.noParam,
-      ExpressionDefinition(Map.empty, List.empty, languages = LanguageConfiguration(List.empty),
+      ExpressionDefinition(Map.empty, List.empty, List.empty, languages = LanguageConfiguration(List.empty),
         optimizeCompilation = true, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false, strictMethodsChecking = true), ClassExtractionSettings.Default)
 
   def withEmptyObjects(definition: ProcessDefinition[ObjectDefinition]): ProcessDefinition[ObjectWithMethodDef] = {
@@ -27,6 +27,7 @@ object ProcessDefinitionBuilder {
     val expressionDefinition = ExpressionDefinition(
       definition.expressionConfig.globalVariables.mapValuesNow(makeDummyDefinition(_)),
       definition.expressionConfig.globalImports,
+      definition.expressionConfig.allowedClasses,
       definition.expressionConfig.languages,
       definition.expressionConfig.optimizeCompilation,
       definition.expressionConfig.strictTypeChecking,

@@ -43,6 +43,12 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
       classDefinition.map(_.methods.keys) shouldBe Some(Set("someField", "toString"))
   }
 
+  test("extract type info from classes from allowed classes") {
+    val types = ProcessDefinitionExtractor.extractTypes(processDefinition)
+    val classDefinition = types.find(_.clazzName == Typed[AllowedClass])
+    classDefinition.map(_.methods.keys) shouldBe Some(Set("someField", "toString"))
+  }
+
   test("extract definition from WithExplicitMethodToInvoke") {
     val definition = processDefinition.services("configurable1")
 
@@ -126,7 +132,9 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
         "helper" -> WithCategories(SampleHelper, "category"),
         "typedGlobal" -> WithCategories(SampleTypedVariable, "category")
       ),
-      globalImports = Nil
+      globalImports = Nil, allowedClasses = List(
+        classOf[AllowedClass]
+      )
     )
 
     override def buildInfo(): Map[String, String] = Map()
@@ -169,6 +177,8 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
   }
 
   case class OnlyUsedInAdditionalVariable(someField: String)
+
+  case class AllowedClass(someField: String)
 
   case class EmptyExplicitMethodToInvoke(parameterDefinition: List[Parameter], returnType: TypingResult) extends Service with WithExplicitMethodToInvoke {
 

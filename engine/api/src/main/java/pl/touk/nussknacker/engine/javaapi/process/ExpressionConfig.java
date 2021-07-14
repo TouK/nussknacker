@@ -17,6 +17,8 @@ public class ExpressionConfig implements Serializable {
 
     private final List<WithCategories<String>> globalImports;
 
+    private final List<Class> allowedClasses;
+
     private final LanguageConfiguration languages;
 
     private final boolean optimizeCompilation;
@@ -27,15 +29,16 @@ public class ExpressionConfig implements Serializable {
 
     private final boolean hideMetaVariable;
 
-    public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<WithCategories<String>> globalImports) {
-        this(globalProcessVariables, globalImports, new LanguageConfiguration(List$.MODULE$.empty()), true, true, Collections.emptyMap(), false);
+    public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<WithCategories<String>> globalImports, List<Class> testValue) {
+        this(globalProcessVariables, globalImports, testValue, new LanguageConfiguration(List$.MODULE$.empty()), true, true, Collections.emptyMap(), false);
     }
 
     public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<WithCategories<String>> globalImports,
-                            LanguageConfiguration languages, boolean optimizeCompilation, boolean strictTypeChecking,
+                            List<Class> testValue, LanguageConfiguration languages, boolean optimizeCompilation, boolean strictTypeChecking,
                             Map<String, WithCategories<DictDefinition>> dictionaries, boolean hideMetaVariable) {
         this.globalProcessVariables = globalProcessVariables;
         this.globalImports = globalImports;
+        this.allowedClasses = testValue;
         this.languages = languages;
         this.optimizeCompilation = optimizeCompilation;
         this.strictTypeChecking = strictTypeChecking;
@@ -49,6 +52,10 @@ public class ExpressionConfig implements Serializable {
 
     public List<WithCategories<String>> getGlobalImports() {
         return globalImports;
+    }
+
+    public List<Class> getAllowedClasses() {
+        return allowedClasses;
     }
 
     public LanguageConfiguration getLanguages() {
@@ -80,6 +87,7 @@ public class ExpressionConfig implements Serializable {
                 strictTypeChecking == that.strictTypeChecking &&
                 Objects.equals(globalProcessVariables, that.globalProcessVariables) &&
                 Objects.equals(globalImports, that.globalImports) &&
+                Objects.equals(allowedClasses, that.allowedClasses) &&
                 Objects.equals(languages, that.languages) &&
                 Objects.equals(dictionaries, that.dictionaries) &&
                 Objects.equals(hideMetaVariable, that.hideMetaVariable);
@@ -87,7 +95,7 @@ public class ExpressionConfig implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(globalProcessVariables, globalImports, languages, optimizeCompilation, strictTypeChecking, dictionaries, hideMetaVariable);
+        return Objects.hash(globalProcessVariables, globalImports, allowedClasses, languages, optimizeCompilation, strictTypeChecking, dictionaries, hideMetaVariable);
     }
 
 }

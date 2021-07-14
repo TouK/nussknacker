@@ -114,7 +114,7 @@ object ProcessTestHelpers {
         "processHelper" -> WithCategories(ProcessHelper),
         "enum" -> WithCategories(DictInstance(dictId, dictDef)),
         "typedMap" -> WithCategories(TypedMap(Map("aField" -> "123"))))
-      ExpressionConfig(globalProcessVariables, List.empty, dictionaries = Map(dictId -> WithCategories(dictDef)))
+      ExpressionConfig(globalProcessVariables, List.empty, List.empty, dictionaries = Map(dictId -> WithCategories(dictDef)))
     }
 
     override def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[ProcessSignalSender]] = Map.empty

@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, QueryableStateNa
 import pl.touk.nussknacker.engine.component.ComponentExtractor
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import shapeless.syntax.typeable._
-
 import scala.reflect.ClassTag
                  
 object ProcessDefinitionExtractor {
@@ -22,7 +21,7 @@ object ProcessDefinitionExtractor {
       definition.customStreamTransformers.values.map(_._1) ++
       definition.signalsWithTransformers.values.map(_._1) ++
       definition.expressionConfig.globalVariables.values
-    )(definition.settings)
+    ) (definition.settings) ++ TypesInformation.extractFromList(definition.expressionConfig.allowedClasses) (definition.settings)
   }
 
   import pl.touk.nussknacker.engine.util.Implicits._
@@ -77,6 +76,7 @@ object ProcessDefinitionExtractor {
       customStreamTransformersDefs.mapValuesNow(k => (k, extractCustomTransformerData(k))),
       signalsDefs, exceptionHandlerFactoryDefs, ExpressionDefinition(globalVariablesDefs,
         globalImportsDefs,
+        expressionConfig.allowedClasses,
         expressionConfig.languages,
         expressionConfig.optimizeCompilation,
         expressionConfig.strictTypeChecking,
@@ -141,6 +141,7 @@ object ProcessDefinitionExtractor {
     val expressionDefinition = ExpressionDefinition(
       definition.expressionConfig.globalVariables.mapValuesNow(_.objectDefinition),
       definition.expressionConfig.globalImports,
+      definition.expressionConfig.allowedClasses,
       definition.expressionConfig.languages,
       definition.expressionConfig.optimizeCompilation,
       definition.expressionConfig.strictTypeChecking,
@@ -160,8 +161,8 @@ object ProcessDefinitionExtractor {
     )
   }
 
-  case class ExpressionDefinition[+T <: ObjectMetadata](globalVariables: Map[String, T], globalImports: List[String], languages: LanguageConfiguration,
-                                                        optimizeCompilation: Boolean, strictTypeChecking: Boolean, dictionaries: Map[String, DictDefinition],
-                                                        hideMetaVariable: Boolean, strictMethodsChecking: Boolean)
+  case class ExpressionDefinition[+T <: ObjectMetadata](globalVariables: Map[String, T], globalImports: List[String], allowedClasses: List[Class[_]],
+                                                        languages: LanguageConfiguration, optimizeCompilation: Boolean, strictTypeChecking: Boolean,
+                                                        dictionaries: Map[String, DictDefinition], hideMetaVariable: Boolean, strictMethodsChecking: Boolean)
 
 }

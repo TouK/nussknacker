@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.engine.management.sample
 
-import java.time.LocalDateTime
 import com.typesafe.config.Config
-import io.circe.{Decoder, Encoder}
 import io.circe.parser.decode
+import io.circe.{Decoder, Encoder}
 import net.ceedubs.ficus.Ficus._
 import org.apache.flink.api.common.serialization.{DeserializationSchema, SimpleStringSchema}
 import org.apache.flink.streaming.api.scala._
@@ -40,6 +39,7 @@ import pl.touk.nussknacker.engine.management.sample.transformer._
 import pl.touk.nussknacker.engine.util.LoggingListener
 
 import java.nio.charset.StandardCharsets
+import java.time.LocalDateTime
 import scala.reflect.ClassTag
 
 object DevProcessConfigCreator {
@@ -195,6 +195,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
     ExpressionConfig(
       globalProcessVariables,
+      List.empty,
       List.empty,
       LanguageConfiguration(List()),
       dictionaries = Map(

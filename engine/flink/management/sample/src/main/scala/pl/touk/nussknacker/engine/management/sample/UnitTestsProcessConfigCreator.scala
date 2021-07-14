@@ -118,7 +118,7 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
     val globalProcessVariables = Map(
       "DATE" -> all(DateProcessHelper)
     )
-    ExpressionConfig(globalProcessVariables, List.empty)
+    ExpressionConfig(globalProcessVariables, List.empty, List.empty)
   }
 
   override def signals(processObjectDependencies: ProcessObjectDependencies) = Map.empty

@@ -197,6 +197,12 @@ object DefinitionExtractor {
       TypesInformationExtractor.clazzAndItsChildrenDefinition(classesToExtractDefinitions)
     }
 
+    def extractFromList(objectToExtractClassesFromCollection: Iterable[Class[_]])
+                       (implicit settings: ClassExtractionSettings): Set[TypeInfos.ClazzDefinition] = {
+      val ref = objectToExtractClassesFromCollection.map(Typed.apply)
+      TypesInformationExtractor.clazzAndItsChildrenDefinition(ref) (settings)
+    }
+
     private def extractTypesFromObjectDefinition(obj: ObjectWithMethodDef): List[TypingResult] = {
       def typesFromParameter(parameter: Parameter): List[TypingResult] = {
         val fromAdditionalVars = parameter.additionalVariables.values
