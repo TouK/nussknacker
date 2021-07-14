@@ -35,7 +35,7 @@ import scala.util.control.NonFatal
 private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: CommonSupertypeFinder,
                           dictTyper: SpelDictTyper, strictMethodsChecking: Boolean,
                           staticMethodInvocationsChecking: Boolean,
-                          typeDefinitionSet: TypeDefinitionSet = TypeDefinitionSet()
+                          typeDefinitionSet: TypeDefinitionSet = TypeDefinitionSet.empty
                          )(implicit settings: ClassExtractionSettings) extends LazyLogging {
 
   import ast.SpelAst._
@@ -170,8 +170,9 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
           }
         }
 
-      case e: MethodReference =>
+      case e: MethodReference => {
         extractMethodReference(e, validationContext, node, current)
+      }
 
       case e: OpEQ => checkEqualityLikeOperation(validationContext, e, current)
       case e: OpNE => checkEqualityLikeOperation(validationContext, e, current)
@@ -256,15 +257,16 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       }
 
       case e: TypeReference => {
-        //todo ponizsze ma zadzialac
+        //todo example below should work
         //"T(LocalDateTime).now()"
-        //todo ponizsze nie
+        //todo example below should not work
         //"T(LocalDateTime).nowqwe()"
-        print(typeDefinitionSet.displayBasicInfo)
+
+        logger.debug(typeDefinitionSet.displayBasicInfo)
 
         (staticMethodInvocationsChecking, typeDefinitionSet.validateTypeReference(e)) match {
           case (false, _) => valid(Unknown)
-          case (true, Valid(e)) => valid(Unknown)
+          case (true, Valid(typedClass: TypedClass)) => valid(Unknown)
           case (true, Invalid(error)) => Invalid(error)
         }
       }

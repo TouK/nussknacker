@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransformation, OutputVariableNameValue, TypedNodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitMethodToInvoke, WithExplicitTypesToExtract}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SingleNodeConfig, WithCategories}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectMetadata, _}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MethodDefinition
@@ -245,7 +245,7 @@ object TypeInfos {
 
   @JsonCodec(encodeOnly = true) case class MethodInfo(parameters: List[Parameter], refClazz: TypingResult, description: Option[String], varArgs: Boolean)
 
-  case class ClazzDefinition(clazzName: TypingResult, methods: Map[String, List[MethodInfo]], staticMethods: Map[String, List[MethodInfo]]) {
+  case class ClazzDefinition(clazzName: TypedClass, methods: Map[String, List[MethodInfo]], staticMethods: Map[String, List[MethodInfo]]) {
 
     def getPropertyOrFieldType(methodName: String): Option[TypingResult] = {
       val filtered = methods.get(methodName).toList

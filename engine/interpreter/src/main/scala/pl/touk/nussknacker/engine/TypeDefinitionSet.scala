@@ -4,7 +4,7 @@ import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{Invalid, Valid}
 import org.springframework.expression.spel.SpelNode
 import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor, TypeInfos}
 import pl.touk.nussknacker.engine.spel.TypedNode
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.RichSpelNode
@@ -12,9 +12,12 @@ import pl.touk.nussknacker.engine.spel.ast.SpelAst.RichSpelNode
 
 object TypeDefinitionSet {
 
-  def apply(typeDefinitionSet: Set[TypeInfos.ClazzDefinition] = Set()): TypeDefinitionSet = {
+  def empty: TypeDefinitionSet = apply(Set())
 
-    val clazzDefinitionMap = typeDefinitionSet.map(clazzDefinition => clazzDefinition.clazzName.javaClassName -> clazzDefinition).toMap
+  def apply(typeDefinitionSet: Set[TypeInfos.ClazzDefinition]): TypeDefinitionSet = {
+
+    val clazzDefinitionMap = typeDefinitionSet.map(
+      clazzDefinition => clazzDefinition.clazzName.javaClassName -> clazzDefinition).toMap
 
     new TypeDefinitionSet(clazzDefinitionMap)
   }
@@ -22,12 +25,12 @@ object TypeDefinitionSet {
 
 class TypeDefinitionSet(typeDefinitions: Map[String, TypeInfos.ClazzDefinition]) {
 
-  def validateTypeReference(spelNode: SpelNode): Validated[NonEmptyList[ExpressionParseError], SpelNode] = {
+  def validateTypeReference(spelNode: SpelNode): Validated[NonEmptyList[ExpressionParseError], TypedClass] = {
 
     val spelNodeChildAST = spelNode.children.headOption.getOrElse(throw new Exception("SpelNode has no children")).toStringAST
 
-    if(typeDefinitions.contains(spelNodeChildAST)) {
-      Valid(spelNode)
+    if (typeDefinitions.contains(spelNodeChildAST)) {
+      Valid(typeDefinitions.getOrElse(spelNodeChildAST, throw new Exception("Class not found")).clazzName)
     } else {
       Invalid(NonEmptyList.of(ExpressionParseError("Class is not allowed to be passed as TypeReference")))
     }
@@ -35,7 +38,7 @@ class TypeDefinitionSet(typeDefinitions: Map[String, TypeInfos.ClazzDefinition])
 
   def displayBasicInfo: String = {
 
-    val newLine = "\n"
+    val newLine = System.lineSeparator()
     val tab = "\t"
     val basicInfo = new StringBuilder()
 

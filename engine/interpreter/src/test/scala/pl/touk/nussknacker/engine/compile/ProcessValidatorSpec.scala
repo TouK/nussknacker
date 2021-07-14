@@ -100,7 +100,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("Invocation of Type Reference of valid class, should succeed") {
 
-    val typeReferenceWithValidClass = "T(MathContext).staticMethod()"
+    val typeReferenceWithValidClass = "T(BigDecimal).abs()"
 
     val testProcess =
       EspProcessBuilder
