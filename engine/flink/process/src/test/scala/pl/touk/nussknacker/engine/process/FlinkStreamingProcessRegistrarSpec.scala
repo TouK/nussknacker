@@ -42,7 +42,7 @@ class FlinkStreamingProcessRegistrarSpec extends FlatSpec with Matchers with Pro
 
   //TODO: some better check than "it does not crash"?
   it should "use rocksDB backend" in {
-    val process = EspProcess(MetaData("proc1", StreamMetaData(splitStateToDisk = Some(true))),
+    val process = EspProcess(MetaData("proc1", StreamMetaData(spillStateToDisk = Some(true))),
       ExceptionHandlerRef(List.empty),
       NonEmptyList.of(GraphBuilder.source("id", "input")
         .customNode("custom2", "outRec", "stateCustom", "keyBy" -> "#input.id", "stringVal" -> "'terefere'")

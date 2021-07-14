@@ -42,11 +42,11 @@ object ProcessAdditionalFields {
 @ConfiguredJsonCodec sealed trait TypeSpecificData
 
 case class StreamMetaData(parallelism: Option[Int] = None,
-                          //we assume it's safer to split state to disk and fix performance than to fix heap problems...
-                          splitStateToDisk: Option[Boolean] = Some(true),
+                          //we assume it's safer to spill state to disk and fix performance than to fix heap problems...
+                          spillStateToDisk: Option[Boolean] = Some(true),
                           useAsyncInterpretation: Option[Boolean] = None,
                           checkpointIntervalInSeconds: Option[Long] = None) extends TypeSpecificData {
-  
+
   def checkpointIntervalDuration  : Option[Duration]= checkpointIntervalInSeconds.map(Duration.apply(_, TimeUnit.SECONDS))
 
   def shouldUseAsyncInterpretation(implicit defaultValue: DefaultAsyncInterpretationValue) : Boolean = useAsyncInterpretation.getOrElse(defaultValue.value)

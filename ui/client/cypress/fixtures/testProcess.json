@@ -3,7 +3,7 @@
     "id": "e2e-1612884598459-process-test-process",
     "typeSpecificData": {
       "parallelism": 1,
-      "splitStateToDisk": true,
+      "spillStateToDisk": true,
       "useAsyncInterpretation": null,
       "checkpointIntervalInSeconds": null,
       "type": "StreamMetaData"
