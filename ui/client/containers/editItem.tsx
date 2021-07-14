@@ -17,7 +17,7 @@ export function ShowItem({process}: {process: ProcessType}) {
   const {t} = useTranslation()
 
   const title = process.isSubprocess ?
-    t("tableRowIcon-show-subprocess", "Show scenario fragment") :
+    t("tableRowIcon-show-subprocess", "Show fragment") :
     t("tableRowIcon-show", "Show scenario")
 
   return (
