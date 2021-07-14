@@ -63,7 +63,7 @@ export function MenuBar({appPath, rightElement = null, leftElement = null, ...pr
 
   function buildMenu() {
     const defaultMenuItems: MenuItemData[] = [
-      {show: true, path: ProcessesTabData.path, title: t("menu.processes", "Processes")},
+      {show: true, path: ProcessesTabData.path, title: t("menu.processes", "Scenarios")},
       {show: showSignals, path: Signals.path, title: t("menu.signals", "Signals")},
       {show: showAdmin, path: AdminPage.path, title: t("menu.adminPage", "Admin")},
     ]

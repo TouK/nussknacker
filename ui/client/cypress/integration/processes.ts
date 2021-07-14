@@ -21,7 +21,7 @@ describe("Processes list", () => {
   })
 
   it("should allow creating new process", function() {
-    cy.contains(/^create new process$/i).should("be.visible").click()
+    cy.contains(/^create new scenario$/i).should("be.visible").click()
     cy.get("#newProcessId").type(this.processName)
     cy.contains(/^create$/i).should("be.enabled").click()
     cy.url().should("contain", `visualization\/${this.processName}`)

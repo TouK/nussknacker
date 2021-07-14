@@ -86,6 +86,6 @@ function Processes() {
 
 export const ProcessesTabData = {
   path: `${nkPath}/processes`,
-  header: "Processes",
+  header: "Scenarios",
   Component: Processes,
 }
