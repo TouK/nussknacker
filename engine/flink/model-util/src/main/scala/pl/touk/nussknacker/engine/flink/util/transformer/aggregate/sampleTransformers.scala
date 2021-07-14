@@ -23,6 +23,8 @@ object sampleTransformers {
   /**
    * This aggregator can be used for both predefined aggregators (see list below) and for some specialized aggregators like #AGG.map
    * when you switch editor to "raw mode". It also has `emitWhenEventLeft` flag.
+   *
+   * You should define `#AGG` global variable, because it is used in editors picked for `aggregateBy` parameter.
    */
   object SlidingAggregateTransformerV2 extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
@@ -50,6 +52,11 @@ object sampleTransformers {
     }
   }
 
+  /**
+   * Tumbling window aggregator.
+   *
+   * You should define `#AGG` global variable, because it is used in editors picked for `aggregateBy` parameter.
+   */
   object TumblingAggregateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
     @MethodToInvoke(returnType = classOf[AnyRef])
@@ -77,8 +84,11 @@ object sampleTransformers {
 
   }
 
-
-  //Experimental component, API may change in the future
+  /**
+   * Session window aggregator. This component is experimental - API may change in the future
+   *
+   * You should define `#AGG` global variable, because it is used in editors picked for `aggregateBy` parameter.
+   */
   object SessionWindowAggregateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
     @MethodToInvoke(returnType = classOf[AnyRef])

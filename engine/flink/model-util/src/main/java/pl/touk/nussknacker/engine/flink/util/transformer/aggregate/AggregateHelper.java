@@ -10,10 +10,14 @@ import pl.touk.nussknacker.engine.api.definition.SimpleParameterEditor;
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode;
 import scala.collection.JavaConverters;
 
-// This class is in Java, because constants are used in expressions in editors - see
-// `pl.touk.nussknacker.engine.flink.util.transformer.aggregate.SlidingAggregateTransformerV2`. and scala objects are
-// not good for that. Be aware that. If you add some new aggregator please add it also there to make sure that it will
-// be available in selectbox.
+/**
+ * This class is in Java, because constants are used in expressions in editors - see
+ * `pl.touk.nussknacker.engine.flink.util.transformer.aggregate.SlidingAggregateTransformerV2`. and scala objects are
+ * not good for that. Be aware that. If you add some new aggregator please add it also there to make sure that it will
+ * be available in selectbox.
+ *
+ * You should define `#AGG` global variable, because it is used in editors.
+ */
 public class AggregateHelper {
 
     public static final SimpleParameterEditor SIMPLE_EDITOR = new FixedValuesParameterEditor(JavaConverters.collectionAsScalaIterableConverter(Arrays.asList(
