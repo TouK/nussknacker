@@ -151,6 +151,7 @@ To see biggest differences please consult the [changelog](Changelog.md).
 * [#1886](https://github.com/TouK/nussknacker/pull/1886) aggregate-sliding with emitWhenEventLeft = true, aggregate-tumbling and aggregate-session components now
   doesn't emit full context of variables that were before node (because of performance reasons and because that wasn't obvious which one context is emitted).
   If you want to emit some information other than aggregated value and key (availabled via new `#key` variable), you should use `#AGG.map` expression in `aggregateBy`.
+* [#1910](https://github.com/TouK/nussknacker/pull/1910) `processTypes` renamed to `scenarioTypes`. You can still use old `processTypes` configuration. Old configuration will be removed in version `0.5.0`. 
 
 ## In version 0.3.0
 
