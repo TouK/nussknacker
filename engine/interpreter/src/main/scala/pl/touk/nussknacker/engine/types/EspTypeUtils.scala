@@ -17,18 +17,18 @@ object EspTypeUtils {
 
   def clazzDefinition(clazz: Class[_])
                      (implicit settings: ClassExtractionSettings): ClazzDefinition =
-    ClazzDefinition(Typed.typedClass(clazz), extractPublicMethodsAndFields(clazz))
+    ClazzDefinition(Typed.typedClass(clazz), extractPublicMethodsAndFields(clazz, staticMethodsAndFields = false))
 
-  private def extractPublicMethodsAndFields(clazz: Class[_])
-                                          (implicit settings: ClassExtractionSettings): Map[String, List[MethodInfo]] = {
+  private def extractPublicMethodsAndFields(clazz: Class[_], staticMethodsAndFields: Boolean)
+                                           (implicit settings: ClassExtractionSettings): Map[String, List[MethodInfo]] = {
     val membersPredicate = settings.visibleMembersPredicate(clazz)
-    val methods = extractPublicMethods(clazz, membersPredicate)
-    val fields = extractPublicFields(clazz, membersPredicate).mapValuesNow(List(_))
+    val methods = extractPublicMethods(clazz, membersPredicate, staticMethodsAndFields)
+    val fields = extractPublicFields(clazz, membersPredicate, staticMethodsAndFields).mapValuesNow(List(_))
     methods ++ fields
   }
 
-  private def extractPublicMethods(clazz: Class[_], membersPredicate: VisibleMembersPredicate)
-                                  (implicit settings: ClassExtractionSettings): Map[String, List[MethodInfo]] = {
+  private def extractPublicMethods(clazz: Class[_], membersPredicate: VisibleMembersPredicate, staticMethodsAndFields: Boolean)
+                                  (implicit settings: ClassExtractionSettings): (Map[String, List[MethodInfo]]) = {
     /* From getMethods javadoc: If this {@code Class} object represents an interface then the returned array
            does not contain any implicitly declared methods from {@code Object}.
            The same for primitives - we assume that languages like SpEL will be able to do boxing
@@ -43,7 +43,9 @@ object EspTypeUtils {
     }
     val publicMethods = clazz.getMethods.toList ++ additionalMethods
 
-    val filteredMethods = publicMethods.filter(membersPredicate.shouldBeVisible)
+    val filteredMethods =
+      if (staticMethodsAndFields) publicMethods.filter(membersPredicate.shouldBeVisible).filter(m => Modifier.isStatic(m.getModifiers))
+      else publicMethods.filter(membersPredicate.shouldBeVisible).filter(m => !Modifier.isStatic(m.getModifiers))
 
     val methodNameAndInfoList = filteredMethods.flatMap { method =>
       val extractedMethod = extractMethod(method)
@@ -98,10 +100,13 @@ object EspTypeUtils {
   private def extractMethod(method: Method)
     = MethodInfo(extractParameters(method), extractMethodReturnType(method), extractNussknackerDocs(method), method.isVarArgs)
 
-  private def extractPublicFields(clazz: Class[_], membersPredicate: VisibleMembersPredicate)
+  private def extractPublicFields(clazz: Class[_], membersPredicate: VisibleMembersPredicate, staticMethodsAndFields: Boolean)
                                  (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
     val interestingFields = clazz.getFields.filter(membersPredicate.shouldBeVisible)
-    interestingFields.map { field =>
+    val fields =
+      if(staticMethodsAndFields) interestingFields.filter(m => Modifier.isStatic(m.getModifiers))
+      else interestingFields.filter(m => !Modifier.isStatic(m.getModifiers))
+    fields.map { field =>
       field.getName -> MethodInfo(List.empty, extractFieldReturnType(field), extractNussknackerDocs(field), varArgs = false)
     }.toMap
   }
