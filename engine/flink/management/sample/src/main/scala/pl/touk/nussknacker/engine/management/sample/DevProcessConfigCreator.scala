@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.management.sample
 
+import java.time.LocalDateTime
 import com.typesafe.config.Config
-import io.circe.parser.decode
 import io.circe.{Decoder, Encoder}
+import io.circe.parser.decode
 import net.ceedubs.ficus.Ficus._
 import org.apache.flink.api.common.serialization.{DeserializationSchema, SimpleStringSchema}
 import org.apache.flink.streaming.api.scala._
@@ -18,7 +19,7 @@ import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
-import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
+import pl.touk.nussknacker.engine.flink.util.source.{EspDeserializationSchema, ReturningClassInstanceSource, ReturningTestCaseClass}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.SlidingAggregateTransformerV2
 import pl.touk.nussknacker.engine.flink.util.transformer.outer.OuterJoinTransformer
@@ -39,7 +40,6 @@ import pl.touk.nussknacker.engine.management.sample.transformer._
 import pl.touk.nussknacker.engine.util.LoggingListener
 
 import java.nio.charset.StandardCharsets
-import java.time.LocalDateTime
 import scala.reflect.ClassTag
 
 object DevProcessConfigCreator {
@@ -96,7 +96,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "communicationSource" -> categories(DynamicParametersSource),
       "csv-source" -> categories(FlinkSourceFactory.noParam(new CsvSource)),
       "genericSourceWithCustomVariables" -> categories(GenericSourceWithCustomVariablesSample),
-      "sql-source" -> categories(SqlSource)
+      "sql-source" -> categories(SqlSource),
+      "classInstanceSource" -> all(new ReturningClassInstanceSource)
     )
   }
 
@@ -193,10 +194,14 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "TypedConfig" -> all(ConfigTypedGlobalVariable)
     )
 
+    val allowedClasses = List(
+      classOf[ReturningTestCaseClass]
+    )
+
     ExpressionConfig(
       globalProcessVariables,
       List.empty,
-      List.empty,
+      allowedClasses,
       LanguageConfiguration(List()),
       dictionaries = Map(
         TestDictionary.id -> categories(TestDictionary.definition),
