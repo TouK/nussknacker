@@ -91,7 +91,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     }
   }
 
-  test("can't deploy subprocess") {
+  test("can't deploy fragment") {
     val id = createProcess(processName, testCategoryName, isSubprocess = true)
     val processIdWithName = ProcessIdWithName(id, processName)
 
@@ -101,7 +101,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     }
   }
 
-  test("can't cancel subprocess") {
+  test("can't cancel fragment") {
     val id = createProcess(processName, testCategoryName, isSubprocess = true)
     val processIdWithName = ProcessIdWithName(id, processName)
 
@@ -309,7 +309,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     customAction(SampleProcess.process.id, CustomActionRequest("invalid-status")) ~> check {
       status shouldBe StatusCodes.Forbidden
-      responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = false, msg = s"Process status: WARNING is not allowed for action invalid-status")
+      responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = false, msg = s"Scenario status: WARNING is not allowed for action invalid-status")
     }
   }
 

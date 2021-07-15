@@ -59,7 +59,7 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
           val currentAtPath = pathToInterpreterMap.get(pathToDeploy).map(_.id)
           currentAtPath match {
             case Some(oldId) if oldId != processName.value =>
-              Invalid(NonEmptyList.of(DeploymentError(Set(), s"Process $oldId is already deployed at path $pathToDeploy")))
+              Invalid(NonEmptyList.of(DeploymentError(Set(), s"Scenario $oldId is already deployed at path $pathToDeploy")))
             case _ =>
               val interpreter = newInterpreter(process)
               interpreter.foreach { processInterpreter =>

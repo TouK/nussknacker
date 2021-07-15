@@ -98,7 +98,7 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
     results.head.shouldFail shouldBe false
   }
 
-  test("should migrate subprocess and its usage within scenario") {
+  test("should migrate fragment and its usage within scenario") {
     val testMigration = newTestModelMigrations(new TestMigrations(7))
     val subprocess = ProcessTestData.toValidatedDisplayable(ProcessCanonizer.uncanonize(ProcessTestData.sampleSubprocessOneOut).getOrElse(null))
     val process =

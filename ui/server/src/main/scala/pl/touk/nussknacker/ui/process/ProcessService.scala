@@ -300,7 +300,7 @@ class DBProcessService(managerActor: ActorRef,
       case Some(processingType) =>
         callback(processingType)
       case None =>
-        Future(Left(ProcessValidationError("Process category not found.")))
+        Future(Left(ProcessValidationError("Scenario category not found.")))
     }
 
   private def withNotCustomProcess[T](process: BaseProcessDetails[_], errorMessage: String)(callback: BaseProcessDetails[_] => Future[XError[T]])(implicit user: LoggedUser) = {

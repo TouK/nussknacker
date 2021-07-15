@@ -200,7 +200,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
 
   }
 
-  it should "convert sink in subprocess" in {
+  it should "convert sink in fragment" in {
 
     val oldJson =
       CirceUtil.decodeJsonUnsafe[Json](

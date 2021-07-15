@@ -54,7 +54,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
 
   }
 
-  test("resolve nested subprocesses") {
+  test("resolve nested fragments") {
 
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
       .exceptionHandler()
@@ -92,7 +92,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
     resolved.nodes.find(_.id == "sub-sub2-f1") shouldBe 'defined
   }
 
-  test("not resolve subprocess with missing parameters") {
+  test("not resolve fragment with missing parameters") {
 
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
       .exceptionHandler()
@@ -112,7 +112,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
 
   }
 
-  test("not resolve subprocess with bad outputs") {
+  test("not resolve fragment with bad outputs") {
 
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
       .exceptionHandler()
@@ -133,7 +133,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
 
   }
 
-  test("not disable subprocess with many outputs") {
+  test("not disable fragment with many outputs") {
 
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
       .exceptionHandler()
@@ -163,7 +163,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
     resolvedValidated shouldBe Invalid(NonEmptyList.of(DisablingManyOutputsSubprocess("sub", Set("output1", "output2"))))
 
   }
-  test("not disable subprocess with no outputs") {
+  test("not disable fragment with no outputs") {
 
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
       .exceptionHandler()
@@ -186,7 +186,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
 
   }
 
-  test("inline disabled subprocess without inner nodes") {
+  test("inline disabled fragment without inner nodes") {
     val processWithEmptySubprocess = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
       .exceptionHandler()
       .source("source", "source1")
@@ -252,7 +252,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
     inside(resolver.resolve(processWithDisabledSubprocess))(pattern)
   }
 
-  test("resolve subprocess at end of process") {
+  test("resolve fragment at end of process") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
       .exceptionHandler()
       .source("source", "source1")
@@ -273,7 +273,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
     resolved.nodes.filter(_.isInstanceOf[Subprocess]) shouldBe 'empty
   }
 
-  test("detect unknown subprocess") {
+  test("detect unknown fragment") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder
       .id("process1")
       .exceptionHandler()
@@ -287,7 +287,7 @@ class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
     resolvedValidated shouldBe Invalid(NonEmptyList.of(UnknownSubprocess(id = "subProcessId", nodeId = "nodeSubprocessId")))
   }
 
-  test("should resolve diamond subprocesses") {
+  test("should resolve diamond fragments") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
       .exceptionHandler()
       .source("source", "source1")

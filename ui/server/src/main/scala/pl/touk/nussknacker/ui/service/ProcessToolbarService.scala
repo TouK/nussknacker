@@ -91,7 +91,7 @@ case class ToolbarButton(`type`: ToolbarButtonType, name: Option[String], title:
 private [service] object ToolbarHelper {
 
   def createProcessToolbarId(config: ProcessToolbarsConfig, process: BaseProcessDetails[_]): String =
-    s"${config.uuidCode}-${if(process.isArchived) "archived" else "not-archived"}-${if(process.isSubprocess) "subprocess" else "scenario"}"
+    s"${config.uuidCode}-${if(process.isArchived) "archived" else "not-archived"}-${if(process.isSubprocess) "fragment" else "scenario"}"
 
   def fillByProcessData(text: String, process: BaseProcessDetails[_], urlOption: Boolean = false): String = {
     val processName = if (urlOption) UriUtils.encodeURIComponent(process.name) else process.name

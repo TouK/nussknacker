@@ -12,7 +12,7 @@ import scala.language.higherKinds
 class SubprocessRepositorySpec extends FlatSpec with ScalatestRouteTest with Matchers with BeforeAndAfterEach with EspItTest with VeryPatientScalaFutures {
 
   import pl.touk.nussknacker.ui.api.helpers.TestFactory.testCategoryName
-  it should "fetches subprocess by its version" in {
+  it should "fetches fragment by its version" in {
     val sampleSubprocess = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess, TestProcessingTypes.Streaming)
     val sampleSubprocess2 = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess2, TestProcessingTypes.Streaming)
     saveSubProcess(sampleSubprocess) { status shouldEqual StatusCodes.OK }

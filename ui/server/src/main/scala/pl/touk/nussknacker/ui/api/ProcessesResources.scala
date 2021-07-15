@@ -206,7 +206,7 @@ class ProcessesResources(
                 complete {
                   processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId.id, businessView).map[ToResponseMarshallable] {
                     case Some(process) => validateAndReverseResolve(enrichDetailsWithProcessState(process), businessView) // todo: we should really clearly separate backend objects from ones returned to the front
-                    case None => HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
+                    case None => HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found")
                   }
                 }
               }
@@ -231,7 +231,7 @@ class ProcessesResources(
               complete {
                 processRepository.fetchProcessDetailsForId[CanonicalProcess](processId.id, versionId, businessView).map[ToResponseMarshallable] {
                   case Some(process) => validateAndReverseResolve(process, businessView) // todo: we should really clearly separate backend objects from ones returned to the front
-                  case None => HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
+                  case None => HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found")
                 }
               }
             }
@@ -343,7 +343,7 @@ class ProcessesResources(
   = processRepository.fetchProcessDetailsForId[DisplayableProcess](processId, version, businessView).map { maybeProcess =>
       maybeProcess.flatMap(_.json) match {
         case Some(displayable) => process(displayable)
-        case None => HttpResponse(status = StatusCodes.NotFound, entity = s"Process $processId in version $version not found"): ToResponseMarshallable
+        case None => HttpResponse(status = StatusCodes.NotFound, entity = s"Scenario $processId in version $version not found"): ToResponseMarshallable
       }
   }
 
@@ -368,9 +368,9 @@ class ProcessesResources(
 object ProcessesResources {
   case class UnmarshallError(message: String) extends Exception(message) with FatalError
 
-  case class WrongProcessId(processId: String, givenId: String) extends Exception(s"Process has id $givenId instead of $processId") with BadRequestError
+  case class WrongProcessId(processId: String, givenId: String) extends Exception(s"Scenario has id $givenId instead of $processId") with BadRequestError
 
-  case class ProcessNotInitializedError(id: String) extends Exception(s"Process $id is not initialized") with NotFoundError
+  case class ProcessNotInitializedError(id: String) extends Exception(s"Scenario $id is not initialized") with NotFoundError
 
   case class NodeNotFoundError(processId: String, nodeId: String) extends Exception(s"Node $nodeId not found inside scenario $processId") with NotFoundError
 }

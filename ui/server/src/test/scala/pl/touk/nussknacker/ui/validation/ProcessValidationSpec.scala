@@ -170,7 +170,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     }
   }
 
-  test("don't validate properties on subprocess") {
+  test("don't validate properties on fragment") {
 
     val processValidation = new ProcessValidation(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.validator),
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
@@ -228,7 +228,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
 
   }
 
-  test("validates subprocess input definition") {
+  test("validates fragment input definition") {
     val process = createProcess(
       nodes = List(
         Source("in", SourceRef("processSource", List())),
@@ -261,7 +261,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     }
   }
 
-  test("validates disabled subprocess with parameters") {
+  test("validates disabled fragment with parameters") {
     val process = createProcess(
       nodes = List(
         Source("in", SourceRef("processSource", List())),
@@ -294,7 +294,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     validationResult.saveAllowed shouldBe true
   }
 
-  test("validates and returns type info of subprocess output fields") {
+  test("validates and returns type info of fragment output fields") {
     val process = createProcess(
       nodes = List(
         Source("source", SourceRef("processSource", Nil)),

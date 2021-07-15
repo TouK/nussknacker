@@ -93,7 +93,7 @@ class PeriodicProcessManager(val delegate: ProcessManager,
       .map(_.isDefined)
       .flatMap(shouldStop => {
         if (shouldStop) {
-          logger.info(s"Process ${processVersion.processName} is running or scheduled. Cancelling before reschedule")
+          logger.info(s"Scenario ${processVersion.processName} is running or scheduled. Cancelling before reschedule")
           cancel(processVersion.processName, user).map(_ => ())
         }
         else Future.successful(())

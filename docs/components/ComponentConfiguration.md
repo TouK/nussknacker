@@ -1,0 +1,7 @@
+Component configuration
+=======================
+
+```
+
+```
+

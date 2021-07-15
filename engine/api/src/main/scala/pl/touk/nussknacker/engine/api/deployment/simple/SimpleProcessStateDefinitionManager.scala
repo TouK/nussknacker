@@ -89,21 +89,21 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     statusDescriptionsMap.get(stateStatus)
 
   def shouldBeRunningTooltip(deployedVersionId: Long, user: String): String =
-    s"Process deployed in version ${deployedVersionId} (by ${user}), should be running!"
+    s"Scenario deployed in version ${deployedVersionId} (by ${user}), should be running!"
 
   def mismatchDeployedVersionTooltip(deployedVersionId: Long, exceptedVersionId: Long, user: String): String =
-    s"Process deployed in version ${deployedVersionId} (by ${user}), expected version ${exceptedVersionId}!"
+    s"Scenario deployed in version ${deployedVersionId} (by ${user}), expected version ${exceptedVersionId}!"
 
   def missingDeployedVersionTooltip(exceptedVersionId: Long, user: String): String =
-    s"Process deployed without version (by ${user}), expected version ${exceptedVersionId}!"
+    s"Scenario deployed without version (by ${user}), expected version ${exceptedVersionId}!"
 
-  val shouldBeRunningDescription: String = "Process currently is not running!"
+  val shouldBeRunningDescription: String = "Scenario currently is not running!"
 
   val mismatchDeployedVersionDescription: String = "Deployed scenario mismatch version!"
 
   val missingDeployedVersionDescription: String = "Missing version of deployed scenario!"
 
-  val processWithoutActionMessage: String = "Process state error - no actions found!"
+  val processWithoutActionMessage: String = "Scenario state error - no actions found!"
 
   val deployFailedIcon: URI = URI.create("/assets/states/deploy-failed.svg")
 
@@ -114,8 +114,8 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
   val notDeployedWarningIcon: URI = URI.create("/assets/states/not-deployed-warning.svg")
 
   def  shouldNotBeRunningMessage(deployed: Boolean): String =
-    if (deployed) "Process has been canceled but still is running!"
-    else "Process has been never deployed but now is running!"
+    if (deployed) "Scenario has been canceled but still is running!"
+    else "Scenario has been never deployed but now is running!"
 
   def shouldNotBeRunningIcon(deployed: Boolean): URI =
     if (deployed) stoppingWarningIcon else notDeployedWarningIcon

@@ -84,7 +84,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
     saveProcess(process)
   }
 
-  test("initializes custom processes") {
+  test("initializes custom scenarios") {
     Get("/api/processes/customProcess1") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
     }
@@ -190,7 +190,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
     }
   }
 
-  test("be able to work with subprocess with custom class inputs") {
+  test("be able to work with fragment with custom class inputs") {
     val processId = UUID.randomUUID().toString
     val endpoint = s"/api/processes/$processId"
 

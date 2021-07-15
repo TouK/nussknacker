@@ -374,7 +374,7 @@ class InterpreterSpec extends FunSuite with Matchers {
 
   }
 
-  test("handle subprocess") {
+  test("handle fragment") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
       .exceptionHandler()
       .source("source", "transaction-source")
@@ -398,7 +398,7 @@ class InterpreterSpec extends FunSuite with Matchers {
     interpretProcess(resolved, Transaction(accountId = "a"), List()) shouldBe "result"
   }
 
-  test("handle subprocess with two occurrences") {
+  test("handle fragment with two occurrences") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
       .exceptionHandler()
       .source("source", "transaction-source")
@@ -427,7 +427,7 @@ class InterpreterSpec extends FunSuite with Matchers {
   }
 
 
-  test("handle nested subprocess") {
+  test("handle nested fragment") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
       .exceptionHandler()
       .source("source", "transaction-source")
@@ -457,7 +457,7 @@ class InterpreterSpec extends FunSuite with Matchers {
     interpretProcess(resolved, Transaction(accountId = "a"), List()) shouldBe "result"
   }
 
-  test("handle subprocess with more than one output") {
+  test("handle fragment with more than one output") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
       .exceptionHandler()
       .source("source", "transaction-source")
@@ -484,7 +484,7 @@ class InterpreterSpec extends FunSuite with Matchers {
     interpretProcess(resolved, Transaction(accountId = "b"), List()) shouldBe "result2"
   }
 
-  test("handle subprocess at end") {
+  test("handle fragment at end") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
       .exceptionHandler()
       .source("source", "transaction-source")
@@ -503,7 +503,7 @@ class InterpreterSpec extends FunSuite with Matchers {
     interpretProcess(resolved, Transaction(accountId = "a"), List()) shouldBe "result"
   }
 
-  test("interprets subprocess output fields") {
+  test("interprets fragment output fields") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder.id("test")
       .exceptionHandler()
       .source("source", "transaction-source")

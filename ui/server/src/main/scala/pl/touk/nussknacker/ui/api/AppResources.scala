@@ -89,7 +89,7 @@ class AppResources(config: Config,
               if (processes.isEmpty) {
                 createHealthCheckHttpResponse(OK)
               } else {
-                createHealthCheckHttpResponse(ERROR, Some("Processes with validation errors"), Some(processes.toSet))
+                createHealthCheckHttpResponse(ERROR, Some("Scenarios with validation errors"), Some(processes.toSet))
               }
             }
           }

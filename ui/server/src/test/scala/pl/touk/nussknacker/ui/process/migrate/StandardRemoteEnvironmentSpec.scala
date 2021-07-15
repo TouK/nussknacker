@@ -111,7 +111,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with PatientS
           }
 
         case UpdateProcess() =>
-          Future.failed(new Exception("Process does not exist"))
+          Future.failed(new Exception("Scenario does not exist"))
 
         case _ =>
           throw new AssertionError(s"Not expected $path")
@@ -204,7 +204,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with PatientS
     remoteEnvironment.addedSubprocess shouldBe None
 
     whenReady(migrated.get) { processToSave =>
-      processToSave.comment shouldBe "Process migrated from testEnv by test"
+      processToSave.comment shouldBe "Scenario migrated from testEnv by test"
       processToSave.process shouldBe ProcessTestData.validDisplayableProcess.toDisplayable
     }
   }
@@ -227,12 +227,12 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with PatientS
     remoteEnvironment.addedSubprocess shouldBe Some(false)
 
     whenReady(migrated.get) { processToSave =>
-      processToSave.comment shouldBe "Process migrated from testEnv by test"
+      processToSave.comment shouldBe "Scenario migrated from testEnv by test"
       processToSave.process shouldBe ProcessTestData.validDisplayableProcess.toDisplayable
     }
   }
 
-  it should "migrate subprocess" in {
+  it should "migrate fragment" in {
     var migrated : Option[Future[UpdateProcessCommand]] = None
     val subprocess = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess, TestProcessingTypes.Streaming)
     val category = "Category"
@@ -249,7 +249,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with PatientS
     remoteEnvironment.addedSubprocess shouldBe Some(true)
 
     whenReady(migrated.get) { processToSave =>
-      processToSave.comment shouldBe "Process migrated from testEnv by test"
+      processToSave.comment shouldBe "Scenario migrated from testEnv by test"
       processToSave.process shouldBe subprocess
     }
   }

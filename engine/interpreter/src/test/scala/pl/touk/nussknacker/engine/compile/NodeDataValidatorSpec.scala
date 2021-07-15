@@ -188,7 +188,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
     }
   }
 
-  ignore("should validate subprocess") {
+  ignore("should validate fragment") {
     //TODO
   }
 

@@ -19,7 +19,7 @@ trait FlinkProcessMain[Env] extends FlinkRunner with LazyLogging {
     try {
       val args = FlinkArgsDecodeHack.prepareProgramArgs(argsWithHack)
 
-      require(args.nonEmpty, "Process json should be passed as a first argument")
+      require(args.nonEmpty, "Scenario json should be passed as a first argument")
       val process = readProcessFromArg(args(0))
       val processVersion = parseProcessVersion(args(1))
       val deploymentData = parseDeploymentData(args(2))

@@ -54,7 +54,7 @@ class NotificationResources(managementActor: ActorRef,
       case DeploymentActionType.Deployment => "deployed"
       case DeploymentActionType.Cancel => "cancelled"
     }
-    Notification(s"Process ${processName.value} is $actionString by ${deploymentInfo.userId}", NotificationType.info)
+    Notification(s"Scenario ${processName.value} is $actionString by ${deploymentInfo.userId}", NotificationType.info)
   }
 
 }

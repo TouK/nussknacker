@@ -74,7 +74,7 @@ case class ProcessVersionEntityData(id: Long,
   def deploymentData: ProcessDeploymentData = (json, mainClass) match {
     case (Some(j), _) => GraphProcess(j)
     case (None, Some(mc)) => CustomProcess(mc)
-    case _ => throw new IllegalStateException(s"Process version has neither json nor mainClass. ${this}")
+    case _ => throw new IllegalStateException(s"Scenario version has neither json nor mainClass. ${this}")
   }
 
   def toProcessVersion(processName: ProcessName): ProcessVersion = ProcessVersion(

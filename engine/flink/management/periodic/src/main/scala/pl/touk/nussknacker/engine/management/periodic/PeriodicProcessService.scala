@@ -217,7 +217,7 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
     } yield externalDeploymentId
     deploymentAction
       .flatMap { externalDeploymentId =>
-        logger.info("Process has been deployed {} for deployment id {}", deploymentWithJarData.processVersion, id)
+        logger.info("Scenario has been deployed {} for deployment id {}", deploymentWithJarData.processVersion, id)
         //TODO: add externalDeploymentId??
         scheduledProcessesRepository.markDeployed(id)
           .flatMap(_ => scheduledProcessesRepository.findProcessData(id))
@@ -225,7 +225,7 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
       }
       // We can recover since deployment actor watches only future completion.
       .recoverWith { case exception =>
-        logger.error(s"Process deployment ${deployment.display} failed", exception)
+        logger.error(s"Scenario deployment ${deployment.display} failed", exception)
         markFailedAction(deployment, None).run
       }
   }

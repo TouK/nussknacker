@@ -77,7 +77,7 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
     }
     db.run(action).flatMap {
       case Some(subproc) => Future.successful(subproc)
-      case None => Future.failed(new Exception(s"Subprocess ${subprocessName}, version: ${version} not found"))
+      case None => Future.failed(new Exception(s"Fragment ${subprocessName}, version: ${version} not found"))
     }
   }
 

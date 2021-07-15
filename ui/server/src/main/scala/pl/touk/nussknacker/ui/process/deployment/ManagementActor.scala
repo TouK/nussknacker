@@ -227,7 +227,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
       case Some(state) if state.status.isFinished =>
         findDeployedVersion(idWithName).flatMap {
           case Some(version) =>
-            deployedProcessRepository.markProcessAsCancelled(idWithName.id, version.value, Some("Process finished")).map(_ =>
+            deployedProcessRepository.markProcessAsCancelled(idWithName.id, version.value, Some("Scenario finished")).map(_ =>
               processChangeListener.handle(OnFinished(idWithName.id, version))
             )
           case _ => Future.successful(())
