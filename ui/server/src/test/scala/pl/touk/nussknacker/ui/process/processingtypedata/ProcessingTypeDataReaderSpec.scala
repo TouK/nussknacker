@@ -54,8 +54,7 @@ class ProcessingTypeDataReaderSpec extends FunSuite {
         |scenarioTypes {
         |  "streaming" {
         |    engineConfig {
-        |      restUrl: "http://localhost:8081"
-        |      queryableStateProxyUrlMissing: "localhost:9123"
+        |      restUrlMissing: "http://localhost:8081"
         |      type: "flinkStreaming"
         |    }
         |
@@ -71,7 +70,7 @@ class ProcessingTypeDataReaderSpec extends FunSuite {
 
     intercept[typesafe.config.ConfigException] {
       ProcessingTypeDataReader.loadProcessingTypeData(config)
-    }.getMessage should include("No configuration setting found for key 'root.jobManagerTimeout'")
+    }.getMessage should include("No configuration setting found for key 'root.restUrl'")
   }
 
   test("should throw when no configuration is provided") {
