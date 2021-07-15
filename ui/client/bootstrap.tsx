@@ -17,8 +17,6 @@ import "./i18n"
 import configureStore from "./store/configureStore"
 import "./stylesheets/notifications.styl"
 
-import "./index" // import delcared/global types needed to generate types for module federation
-
 const {store, persistor} = configureStore()
 const rootContainer = document.getElementById("root")
 

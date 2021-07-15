@@ -13,7 +13,7 @@ export enum AuthBackends {
   OTHER = "Other",
 }
 
-interface FeaturesSettings {
+export interface FeaturesSettings {
   customTabs?: DynamicTabData[],
   remoteEnvironment?,
   counts?,

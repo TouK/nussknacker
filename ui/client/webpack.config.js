@@ -129,7 +129,9 @@ module.exports = {
     },
     watchOptions: {
       ignored: [
+        "webpack.config.js",
         "**/dist",
+        "**/dist/**",
         "**/target",
         // ignore vim swap files
         "**/*.sw[pon]",
@@ -178,21 +180,32 @@ module.exports = {
     }),
     new FileManagerPlugin({
       events: {
-        onEnd: {
-          copy: [
-            {source: "translations", destination: path.join(outputPath, "assets/locales")},
-          ],
-          archive: [
-            {
+        onEnd: [
+          {
+            copy: [{
+              source: "translations",
+              destination: path.join(outputPath, "assets/locales"),
+            }],
+          },
+          {
+            archive: [{
               source: ".federated-types",
               destination: path.join(outputPath, `${federationConfig.name}-dts.tgz`),
               format: "tar",
               options: {
                 gzip: true,
               },
-            },
-          ],
-        },
+            }],
+          },
+          {
+            delete: [{
+              source: ".federated-types",
+              options: {
+                force: true,
+              },
+            }],
+          },
+        ],
       },
     }),
     new PreloadWebpackPlugin({
