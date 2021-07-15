@@ -27,7 +27,7 @@ class SimpleInfluxClient(config: InfluxConfig)(implicit backend: SttpBackend[Fut
     def addAuth[T, S](req: Request[T, S]): RequestT[Identity, T, S] = (for {
       user <- config.user
       password <- config.password
-    } yield req .auth.basic(user, password)).getOrElse(req)
+    } yield req.auth.basic(user, password)).getOrElse(req)
 
     addAuth(basicRequest.get(uri.params("db" -> config.database, "q" -> query)))
       .response(asJson[InfluxResponse])

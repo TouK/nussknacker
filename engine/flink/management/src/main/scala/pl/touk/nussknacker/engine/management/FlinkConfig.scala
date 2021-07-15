@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.management
 
 import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.DurationInt
 
-case class FlinkConfig(jobManagerTimeout: Option[FiniteDuration],
+case class FlinkConfig(restUrl: String,
                        queryableStateProxyUrl: Option[String],
-                       restUrl: String,
-                       shouldVerifyBeforeDeploy: Option[Boolean])
+                       jobManagerTimeout: FiniteDuration = 1 minute,
+                       shouldVerifyBeforeDeploy: Boolean = true)

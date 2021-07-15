@@ -32,7 +32,7 @@ class FlinkHttpClientTest extends FunSuite
   private val flinkJarFile = JarFile(jarId, jarFileName)
   private val deploymentId = ExternalDeploymentId("someDeploymentId")
 
-  val config: FlinkConfig = FlinkConfig(None, None, "http://localhost:12345/flink", None)
+  val config: FlinkConfig = FlinkConfig("http://localhost:12345/flink", None)
 
   test("uploadJarFileIfNotExists - should upload jar") {
     implicit val backend = SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial {
