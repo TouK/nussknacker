@@ -15,8 +15,6 @@ import scala.concurrent.duration._
 object propertyAccessors {
 
   def configured(): Seq[PropertyAccessor] = {
-    //FIXME: configurable timeout...
-    val lazyValuesTimeout = 1 minute
 
     Seq(
       new ReflectivePropertyAccessor(),
