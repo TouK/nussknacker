@@ -53,7 +53,6 @@ export class Graph extends React.Component {
     this.nodesMoving()
 
     this.espGraphRef = React.createRef()
-    this.parent = document.getElementById(this.props.parent)
   }
 
   getEspGraphRef = () => {

@@ -36,8 +36,6 @@ function mapState(state) {
     ...commonState(state),
     // eslint-disable-next-line i18next/no-literal-string
     divId: "esp-graph",
-    // eslint-disable-next-line i18next/no-literal-string
-    parent: "working-area",
     padding: 0,
     singleClickNodeDetailsEnabled: true,
     nodeIdPrefixForSubprocessTests: "",
