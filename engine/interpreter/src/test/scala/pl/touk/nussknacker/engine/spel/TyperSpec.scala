@@ -34,7 +34,7 @@ class TyperSpec extends FunSuite with Matchers {
   private val classResolutionStrategy = SupertypeClassResolutionStrategy.Union
   private val commonSupertypeFinder = new CommonSupertypeFinder(classResolutionStrategy, strictTypeChecking)
   private val dict = new SimpleDictRegistry(Map.empty)
-  private val typer = new Typer(this.getClass.getClassLoader, commonSupertypeFinder, new KeysDictTyper(dict), strictMethodsChecking, staticMethodInvocationsChecking)(ClassExtractionSettings.Default)
+  private val typer = new Typer(this.getClass.getClassLoader, commonSupertypeFinder, new KeysDictTyper(dict), strictMethodsChecking, staticMethodInvocationsChecking, TypeDefinitionSet.empty, null)(ClassExtractionSettings.Default)
   private val parser = new org.springframework.expression.spel.standard.SpelExpressionParser()
 
   private def typeExpression(expr: String, variables: (String, Any)*): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {

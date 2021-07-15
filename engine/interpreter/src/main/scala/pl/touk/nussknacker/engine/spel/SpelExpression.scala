@@ -208,7 +208,7 @@ object SpelExpressionParser extends LazyLogging {
               flavour: Flavour,
               strictMethodsChecking: Boolean,
               staticMethodInvocationsChecking: Boolean,
-              typeDefinitionSet: TypeDefinitionSet = TypeDefinitionSet(Set()))
+              typeDefinitionSet: TypeDefinitionSet)
              (implicit classExtractionSettings: ClassExtractionSettings): SpelExpressionParser = {
     val functions = Map(
       "today" -> classOf[LocalDate].getDeclaredMethod("now"),
@@ -224,8 +224,8 @@ object SpelExpressionParser extends LazyLogging {
 
     val classResolutionStrategy = if (strictTypeChecking) SupertypeClassResolutionStrategy.Intersection else SupertypeClassResolutionStrategy.Union
     val commonSupertypeFinder = new CommonSupertypeFinder(classResolutionStrategy, strictTypeChecking)
-    val validator = new SpelExpressionValidator(new Typer(classLoader, commonSupertypeFinder, new KeysDictTyper(dictRegistry), strictMethodsChecking, staticMethodInvocationsChecking, typeDefinitionSet))
     val evaluationContextPreparer = new EvaluationContextPreparer(classLoader, imports, propertyAccessors, functions)
+    val validator = new SpelExpressionValidator(new Typer(classLoader, commonSupertypeFinder, new KeysDictTyper(dictRegistry), strictMethodsChecking, staticMethodInvocationsChecking, typeDefinitionSet, evaluationContextPreparer))
     new SpelExpressionParser(parser, validator, dictRegistry, enableSpelForceCompile, flavour, evaluationContextPreparer)
   }
 

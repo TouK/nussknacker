@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.spel.Typer._
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.ast.SpelNodePrettyPrinter
+import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 import pl.touk.nussknacker.engine.spel.typer.{MapLikePropertyTyper, TypeMethodReference}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
@@ -35,7 +36,8 @@ import scala.util.control.NonFatal
 private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: CommonSupertypeFinder,
                           dictTyper: SpelDictTyper, strictMethodsChecking: Boolean,
                           staticMethodInvocationsChecking: Boolean,
-                          typeDefinitionSet: TypeDefinitionSet = TypeDefinitionSet.empty
+                          typeDefinitionSet: TypeDefinitionSet,
+                          evaluationContextPreparer: EvaluationContextPreparer
                          )(implicit settings: ClassExtractionSettings) extends LazyLogging {
 
   import ast.SpelAst._
@@ -258,14 +260,15 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
       case e: TypeReference => {
 
-        print(typeDefinitionSet.displayBasicInfo)
-        if (staticMethodInvocationsChecking)
-          typeDefinitionSet.validateTypeReference(e) match {
+        if (staticMethodInvocationsChecking) {
+
+          typeDefinitionSet.validateTypeReference(e, evaluationContextPreparer) match {
             case Valid(typedClass: TypedClass) => valid(Unknown)
             case Invalid(error) => Invalid(error)
           }
-        else
+        } else {
           valid(Unknown)
+        }
       }
 
       case e: VariableReference =>
@@ -393,7 +396,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     Invalid(NonEmptyList.of(ExpressionParseError(message)))
 
   def withDictTyper(dictTyper: SpelDictTyper) =
-    new Typer(classLoader, commonSupertypeFinder, dictTyper, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking, typeDefinitionSet)
+    new Typer(classLoader, commonSupertypeFinder, dictTyper, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking, typeDefinitionSet,  evaluationContextPreparer)
 
 }
 

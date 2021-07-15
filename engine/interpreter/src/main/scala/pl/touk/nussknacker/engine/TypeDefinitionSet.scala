@@ -2,60 +2,46 @@ package pl.touk.nussknacker.engine
 
 import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{Invalid, Valid}
-import org.springframework.expression.spel.SpelNode
+import org.springframework.expression.spel.{ExpressionState}
+import org.springframework.expression.spel.ast.TypeReference
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor, TypeInfos}
 import pl.touk.nussknacker.engine.spel.TypedNode
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.RichSpelNode
+import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 
 
 object TypeDefinitionSet {
 
-  def empty: TypeDefinitionSet = apply(Set())
+  def empty: TypeDefinitionSet = apply(Set.empty)
 
   def apply(typeDefinitionSet: Set[TypeInfos.ClazzDefinition]): TypeDefinitionSet = {
 
-    val clazzDefinitionMap = typeDefinitionSet.map(
-      clazzDefinition => clazzDefinition.clazzName.javaClassName -> clazzDefinition).toMap
+//    val clazzDefinitionSet = typeDefinitionSet.map(
+//      clazzDefinition => clazzDefinition.clazzName)
 
-    new TypeDefinitionSet(clazzDefinitionMap)
+    new TypeDefinitionSet(typeDefinitionSet)
   }
 }
 
-class TypeDefinitionSet(typeDefinitions: Map[String, TypeInfos.ClazzDefinition]) {
+class TypeDefinitionSet(typeDefinitions: Set[TypeInfos.ClazzDefinition]) {
 
-  def typeDefinitionMap = typeDefinitions
+//  def typeDefinitionMap = typeDefinitions
 
-  def validateTypeReference(spelNode: SpelNode): Validated[NonEmptyList[ExpressionParseError], TypedClass] = {
+  def validateTypeReference(typeReference: TypeReference, evaluationContextPreparer: EvaluationContextPreparer): Validated[NonEmptyList[ExpressionParseError], TypedClass] = {
 
-    val spelNodeChildAST = spelNode.children.headOption.getOrElse(throw new Exception("SpelNode has no children")).toStringAST
+    val evaluationContext = evaluationContextPreparer.prepareEvaluationContext(Context(""), Map.empty)
 
-    if (typeDefinitions.contains(spelNodeChildAST)) {
-      Valid(typeDefinitions.getOrElse(spelNodeChildAST, throw new Exception("Class not found")).clazzName)
-    } else {
-      Invalid(NonEmptyList.of(ExpressionParseError("Class is not allowed to be passed as TypeReference")))
+    val typeReferenceClazz = typeReference.getValue(new ExpressionState(evaluationContext))
+
+    typeDefinitions.find(typeDefinition => typeDefinition.clazzName.klass.equals(typeReferenceClazz)) match {
+      case Some(clazzDefinition : TypeInfos.ClazzDefinition) => Valid(clazzDefinition.clazzName)
+      case _ => Invalid(NonEmptyList.of(ExpressionParseError("Class is not allowed to be passed as TypeReference")))
     }
-  }
-
-  def displayBasicInfo: String = {
-
-    val newLine = System.lineSeparator()
-    val tab = "\t"
-    val basicInfo = new StringBuilder()
-
-    typeDefinitions.keySet.foreach(key => {
-      val element = typeDefinitions.getOrElse(key, throw new Exception(s"No value found for key ${key}"))
-      basicInfo.append(newLine ++ element.clazzName.display ++ newLine ++ tab ++ "methods: " ++ newLine)
-
-      element.methods.foreach(method => {
-        basicInfo.append(
-          newLine ++ tab ++ tab ++ method._1 ++ tab ++ method._2.toString ++ newLine
-        )
-      })
-    })
-    basicInfo.result()
 
   }
+
 }
 

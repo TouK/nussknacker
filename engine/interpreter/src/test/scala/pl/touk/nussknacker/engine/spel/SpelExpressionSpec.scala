@@ -96,7 +96,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
                                 flavour: Flavour, strictMethodsChecking: Boolean, staticMethodInvocationsChecking: Boolean): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val imports = List(SampleValue.getClass.getPackage.getName)
     SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(dictionaries), enableSpelForceCompile = true,
-      strictTypeChecking = true, imports, flavour, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking = false)(ClassExtractionSettings.Default).parse(expr, validationCtx, Typed.fromDetailedType[T])
+      strictTypeChecking = true, imports, flavour, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking = false, TypeDefinitionSet.empty)(ClassExtractionSettings.Default).parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 
   test("invoke simple expression") {

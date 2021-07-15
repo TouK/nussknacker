@@ -42,11 +42,6 @@ class TypeMethodReference(methodName: String, currentResults: List[TypingResult]
     }
   }
 
-  private def validateStaticMethods(methodInfos:List[MethodInfo]): Either[Option[String], List[MethodInfo]] = {
-    val clazz = typeDefinitionSet.typeDefinitionMap
-    // todo implement logic for getting clazz then methods of that class from typeDefMap then check if it contains method passed from parameter
-    ???
-  }
 
   private def validateClassDefinitionsNonEmpty(clazzDefinitions: List[ClazzDefinition]): Either[Option[String], List[ClazzDefinition]] =
     if (clazzDefinitions.isEmpty) Left(None) else Right(clazzDefinitions)
