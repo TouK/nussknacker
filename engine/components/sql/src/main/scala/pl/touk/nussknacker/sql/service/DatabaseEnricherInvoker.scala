@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.sql.service
 
+import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.{ContextId, ServiceInvoker}
@@ -25,7 +26,7 @@ class DatabaseEnricherInvoker(query: String,
   }
 
   override def invokeService(params: Map[String, Any])
-                            (implicit ec: ExecutionContext, collector: ServiceInvocationCollector, contextId: ContextId): Future[queryExecutor.QueryResult] =
+                            (implicit ec: ExecutionContext, collector: ServiceInvocationCollector, contextId: ContextId, runMode: RunMode): Future[queryExecutor.QueryResult] =
     Future.successful {
       queryDatabase(queryArgumentsExtractor(argsCount, params))
     }

@@ -15,17 +15,11 @@ class DatabaseEnricherComponentProvider extends ComponentProvider {
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
     val componentConfig = config.getConfig("config")
-    val dbQueryEnrichers = componentConfig.as[List[DbEnricherConfig]]("databaseQueryEnrichers").map { dbEnricherConfig =>
-      ComponentDefinition(
-        name = dbEnricherConfig.name,
-        component = new DatabaseQueryEnricher(dbEnricherConfig.dbPool))
-    }
-    val dbLookupEnrichers = componentConfig.as[List[DbEnricherConfig]]("databaseLookupEnrichers").map { dbEnricherConfig =>
-      ComponentDefinition(
-        name = dbEnricherConfig.name,
-        component = new DatabaseLookupEnricher(dbEnricherConfig.dbPool))
-    }
-    dbQueryEnrichers ++ dbLookupEnrichers
+    val queryConfig = componentConfig.as[DbEnricherConfig]("databaseQueryEnricher")
+    val lookupConfig = componentConfig.as[DbEnricherConfig]("databaseLookupEnricher")
+    val dbQueryEnrichers = ComponentDefinition(name = queryConfig.name, component = new DatabaseQueryEnricher(queryConfig.dbPool))
+    val dbLookupEnrichers = ComponentDefinition(name = lookupConfig.name, component = new DatabaseLookupEnricher(lookupConfig.dbPool))
+    List(dbQueryEnrichers, dbLookupEnrichers)
   }
 
   override def isCompatible(version: NussknackerVersion): Boolean = true

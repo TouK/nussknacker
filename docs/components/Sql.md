@@ -6,7 +6,6 @@ Nussknacker `Sql` enricher can connect to SQL databases with HikariCP JDBC conne
 It supports:
 
 - real time database lookup - a simplified mode where you can select from table filtering for a specified key.
-- generic DDM/DDL query enricher
 - both `databaseQueryEnricher` as well as `databaseLookupEnricher` can cache queries results
 - you can specify cache TTL (Time To Live) duration via `Cache TTL` property
 - for `databaseQueryEnricher` you can specify `Result Strategy`
@@ -42,9 +41,11 @@ myDatabasePool {
 | maxTotal        | false    | 10      | Maximum pool size               |
 | initialSize     | false    | 0       | Minimum idle size               |
 
+> As a user you have to provide the database driver. It should be placed in flink /lib folder, more info can be found in [Flink Documentation](https://ci.apache.org/projects/flink/flink-docs-stable/docs/ops/debugging/debugging_classloading/#unloading-of-dynamically-loaded-classes-in-user-code)
+
 Next you have to configure component itself.
 
-You can have multiple databaseQueryEnrichers and databaseLookupEnrichers for multiple various database connections. You
+You can have multiple components for multiple various database connections. You
 can also specify only one of them.
 
 ```
@@ -52,18 +53,20 @@ components {
   yourUniqueComponentName: {
     type: databaseEnricher   #this defines your component type
     config: {
-      databaseQueryEnrichers: [
-        { name: "myDatabaseQuery", dbPool: ${myDatabasePool} }
-      ]
-      databaseLookupEnrichers: [
-        { name: "myDatabaseLookup", dbPool: ${myDatabasePool} }
-      ]
+      databaseQueryEnricher {
+        name: "myDatabaseQuery"
+        dbPool: ${myDatabasePool}
+      }
+      databaseLookupEnricher { 
+        name: "myDatabaseLookup"
+        dbPool: ${myDatabasePool}
+      }
     }
   }
 }
 ```
 
-| Parameter               | Required | Default | Description                                 |
-| ----------              | -------- | ------- | -----------                                 |
-| databaseQueryEnrichers  | true     |         | List of database query enrichers components |
-| databaseLookupEnrichers | true     |         | List of database lookup components          |
+| Parameter              | Required | Default | Description                       |
+| ----------             | -------- | ------- | -----------                       |
+| databaseQueryEnricher  | true     |         | Database query enricher component |
+| databaseLookupEnricher | true     |         | Database lookup component         |
