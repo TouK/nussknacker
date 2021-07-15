@@ -89,11 +89,15 @@ object transformers {
               keyedStream
                  .window(TumblingEventTimeWindows.of(Time.milliseconds(windowLength.toMillis)))
                  .trigger(FireOnEachEvent[AnyRef, TimeWindow](EventTimeTrigger.create()))
-                 .aggregate(new UnwrappingAggregateFunction(aggregator, aggregateBy.returnType, identity))(StringKeyedValue.typeInformation(typeInfos.storedTypeInfo), typeInfos.returnedValueTypeInfo)
+                 .aggregate(
+                   new UnwrappingAggregateFunction[AnyRef](aggregator, aggregateBy.returnType, identity),
+                   new EnrichingWithKeyFunction)(typeInfos.storedTypeInfo, typeInfos.returnTypeInfo, typeInfos.returnedValueTypeInfo)
             case TumblingWindowTrigger.OnEnd =>
               keyedStream
                  .window(TumblingEventTimeWindows.of(Time.milliseconds(windowLength.toMillis)))
-                 .aggregate(new UnwrappingAggregateFunction(aggregator, aggregateBy.returnType, identity))(StringKeyedValue.typeInformation(typeInfos.storedTypeInfo), typeInfos.returnedValueTypeInfo)
+                 .aggregate(
+                   new UnwrappingAggregateFunction[AnyRef](aggregator, aggregateBy.returnType, identity),
+                   new EnrichingWithKeyFunction)(typeInfos.storedTypeInfo, typeInfos.returnTypeInfo, typeInfos.returnedValueTypeInfo)
             case TumblingWindowTrigger.OnEndWithExtraWindow =>
               keyedStream
                  //TODO: alignment??
@@ -127,7 +131,9 @@ object transformers {
             .keyByWithValue(keyBy, _.product(aggregateBy, endSessionCondition))
             .window(EventTimeSessionWindows.withGap(Time.milliseconds(sessionTimeout.toMillis)))
             .trigger(trigger)
-            .aggregate(new UnwrappingAggregateFunction(aggregator, aggregateBy.returnType, _._1))(StringKeyedValue.typeInformation(typeInfos.storedTypeInfo), typeInfos.returnedValueTypeInfo)
+            .aggregate(
+              new UnwrappingAggregateFunction[(AnyRef, java.lang.Boolean)](aggregator, aggregateBy.returnType, _._1),
+              new EnrichingWithKeyFunction)(typeInfos.storedTypeInfo, typeInfos.returnTypeInfo, typeInfos.returnedValueTypeInfo)
             .setUidWithName(ctx, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
         }))
 
