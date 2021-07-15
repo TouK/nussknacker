@@ -1,16 +1,17 @@
 package pl.touk.nussknacker.engine.spel.typer
 
+import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 object TypeMethodReference {
-  def apply(methodName: String, currentResults: List[TypingResult], params: List[TypingResult])(implicit settings: ClassExtractionSettings): Either[String, TypingResult] =
-    new TypeMethodReference(methodName, currentResults, params).call
+  def apply(methodName: String, currentResults: List[TypingResult], params: List[TypingResult], typeDefinitionSet: TypeDefinitionSet)(implicit settings: ClassExtractionSettings): Either[String, TypingResult] =
+    new TypeMethodReference(methodName, currentResults, params, typeDefinitionSet).call
 }
 
-class TypeMethodReference(methodName: String, currentResults: List[TypingResult], calledParams: List[TypingResult]) {
+class TypeMethodReference(methodName: String, currentResults: List[TypingResult], calledParams: List[TypingResult], typeDefinitionSet: TypeDefinitionSet) {
   def call(implicit settings: ClassExtractionSettings): Either[String, TypingResult] =
     currentResults.headOption match {
       case Some(tc: SingleTypingResult) =>
@@ -30,6 +31,7 @@ class TypeMethodReference(methodName: String, currentResults: List[TypingResult]
     val validatedType = for {
       nonEmptyClassDefinitions <- validateClassDefinitionsNonEmpty(clazzDefinitions).right
       nonEmptyMethods <- validateMethodsNonEmpty(nonEmptyClassDefinitions).right
+//      validatedStatic <- validateStaticMethods(nonEmptyMethods).right
       returnTypesForMatchingParams <- validateMethodParameterTypes(nonEmptyMethods).right
     } yield Typed(returnTypesForMatchingParams.toSet)
 
@@ -38,6 +40,12 @@ class TypeMethodReference(methodName: String, currentResults: List[TypingResult]
       case Left(Some(message)) => Left(message)
       case Right(returnType) => Right(returnType)
     }
+  }
+
+  private def validateStaticMethods(methodInfos:List[MethodInfo]): Either[Option[String], List[MethodInfo]] = {
+    val clazz = typeDefinitionSet.typeDefinitionMap
+    // todo implement logic for getting clazz then methods of that class from typeDefMap then check if it contains method passed from parameter
+    ???
   }
 
   private def validateClassDefinitionsNonEmpty(clazzDefinitions: List[ClazzDefinition]): Either[Option[String], List[ClazzDefinition]] =

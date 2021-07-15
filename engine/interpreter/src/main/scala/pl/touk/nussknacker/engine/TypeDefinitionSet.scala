@@ -25,6 +25,8 @@ object TypeDefinitionSet {
 
 class TypeDefinitionSet(typeDefinitions: Map[String, TypeInfos.ClazzDefinition]) {
 
+  def typeDefinitionMap = typeDefinitions
+
   def validateTypeReference(spelNode: SpelNode): Validated[NonEmptyList[ExpressionParseError], TypedClass] = {
 
     val spelNodeChildAST = spelNode.children.headOption.getOrElse(throw new Exception("SpelNode has no children")).toStringAST
@@ -49,13 +51,6 @@ class TypeDefinitionSet(typeDefinitions: Map[String, TypeInfos.ClazzDefinition])
       element.methods.foreach(method => {
         basicInfo.append(
           newLine ++ tab ++ tab ++ method._1 ++ tab ++ method._2.toString ++ newLine
-        )
-      })
-      basicInfo.append(newLine ++ tab ++ "static methods: " ++ newLine)
-
-      element.staticMethods.foreach(staticMethod => {
-        basicInfo.append(
-          newLine ++ tab ++ tab ++ staticMethod._1 ++ tab ++ staticMethod._2.toString ++ newLine
         )
       })
     })

@@ -233,5 +233,4 @@ object typing {
 
   case class BooleanValue(value: Boolean) extends AdditionalDataValue
 
-
 }

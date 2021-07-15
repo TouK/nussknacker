@@ -171,7 +171,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         }
 
       case e: MethodReference => {
-        extractMethodReference(e, validationContext, node, current)
+        extractMethodReference(e, validationContext, node, current, typeDefinitionSet)
       }
 
       case e: OpEQ => checkEqualityLikeOperation(validationContext, e, current)
@@ -257,18 +257,15 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       }
 
       case e: TypeReference => {
-        //todo example below should work
-        //"T(LocalDateTime).now()"
-        //todo example below should not work
-        //"T(LocalDateTime).nowqwe()"
 
-        logger.debug(typeDefinitionSet.displayBasicInfo)
-
-        (staticMethodInvocationsChecking, typeDefinitionSet.validateTypeReference(e)) match {
-          case (false, _) => valid(Unknown)
-          case (true, Valid(typedClass: TypedClass)) => valid(Unknown)
-          case (true, Invalid(error)) => Invalid(error)
-        }
+        print(typeDefinitionSet.displayBasicInfo)
+        if (staticMethodInvocationsChecking)
+          typeDefinitionSet.validateTypeReference(e) match {
+            case Valid(typedClass: TypedClass) => valid(Unknown)
+            case Invalid(error) => Invalid(error)
+          }
+        else
+          valid(Unknown)
       }
 
       case e: VariableReference =>
@@ -318,11 +315,11 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         Valid(Typed(l.toSet))
   }
 
-  private def extractMethodReference(reference: MethodReference, validationContext: ValidationContext, node: SpelNode, context: TypingContext) = {
+  private def extractMethodReference(reference: MethodReference, validationContext: ValidationContext, node: SpelNode, context: TypingContext, typeDefinitionSet: TypeDefinitionSet) = {
     context.stack match {
       case _ :: tail =>
         typeChildren(validationContext, node, context.copy(stack = tail)) { typedParams =>
-          TypeMethodReference(reference.getName, context.stack, typedParams) match {
+          TypeMethodReference(reference.getName, context.stack, typedParams, typeDefinitionSet) match {
             case Right(typingResult) => Valid(typingResult)
             case Left(errorMsg) => if(strictMethodsChecking) invalid(errorMsg) else Valid(Unknown)
           }

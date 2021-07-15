@@ -245,7 +245,7 @@ object TypeInfos {
 
   @JsonCodec(encodeOnly = true) case class MethodInfo(parameters: List[Parameter], refClazz: TypingResult, description: Option[String], varArgs: Boolean)
 
-  case class ClazzDefinition(clazzName: TypedClass, methods: Map[String, List[MethodInfo]], staticMethods: Map[String, List[MethodInfo]]) {
+  case class ClazzDefinition(clazzName: TypedClass, methods: Map[String, List[MethodInfo]]) {
 
     def getPropertyOrFieldType(methodName: String): Option[TypingResult] = {
       val filtered = methods.get(methodName).toList
