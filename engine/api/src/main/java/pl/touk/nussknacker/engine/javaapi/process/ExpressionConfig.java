@@ -17,7 +17,7 @@ public class ExpressionConfig implements Serializable {
 
     private final List<WithCategories<String>> globalImports;
 
-    private final List<Class> additionalClasses;
+    private final List<WithCategories<Object>> additionalClasses;
 
     private final LanguageConfiguration languages;
 
@@ -29,12 +29,12 @@ public class ExpressionConfig implements Serializable {
 
     private final boolean hideMetaVariable;
 
-    public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<WithCategories<String>> globalImports, List<Class> additionalClasses) {
+    public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<WithCategories<String>> globalImports, List<WithCategories<Object>> additionalClasses) {
         this(globalProcessVariables, globalImports, additionalClasses, new LanguageConfiguration(List$.MODULE$.empty()), true, true, Collections.emptyMap(), false);
     }
 
     public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<WithCategories<String>> globalImports,
-                            List<Class> additionalClasses, LanguageConfiguration languages, boolean optimizeCompilation, boolean strictTypeChecking,
+                            List<WithCategories<Object>> additionalClasses, LanguageConfiguration languages, boolean optimizeCompilation, boolean strictTypeChecking,
                             Map<String, WithCategories<DictDefinition>> dictionaries, boolean hideMetaVariable) {
         this.globalProcessVariables = globalProcessVariables;
         this.globalImports = globalImports;
@@ -54,7 +54,7 @@ public class ExpressionConfig implements Serializable {
         return globalImports;
     }
 
-    public List<Class> getAdditionalClasses() {
+    public List<WithCategories<Object>> getAdditionalClasses() {
         return additionalClasses;
     }
 

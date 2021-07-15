@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.expression.ExpressionParser
 //TODO: how to make this config less spel-centric?, move globalImports and optimizeCompilation to spel configuration
 case class ExpressionConfig(globalProcessVariables: Map[String, WithCategories[AnyRef]],
                             globalImports: List[WithCategories[String]],
-                            additionalClasses: List[Class[_]],
+                            additionalClasses: List[WithCategories[AnyRef]],
                             languages: LanguageConfiguration = LanguageConfiguration.default,
                             optimizeCompilation: Boolean = true,
                             strictTypeChecking: Boolean = true,

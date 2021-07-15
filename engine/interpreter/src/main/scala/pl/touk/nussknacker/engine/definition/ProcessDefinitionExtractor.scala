@@ -20,8 +20,9 @@ object ProcessDefinitionExtractor {
       definition.sourceFactories.values ++
       definition.customStreamTransformers.values.map(_._1) ++
       definition.signalsWithTransformers.values.map(_._1) ++
-      definition.expressionConfig.globalVariables.values
-    ) (definition.settings) ++ TypesInformation.extractFromList(definition.expressionConfig.additionalClasses) (definition.settings)
+      definition.expressionConfig.globalVariables.values ++
+      definition.expressionConfig.additionalClasses
+    ) (definition.settings)
   }
 
   import pl.touk.nussknacker.engine.util.Implicits._
@@ -63,9 +64,11 @@ object ProcessDefinitionExtractor {
 
     val exceptionHandlerFactoryDefs = ObjectWithMethodDef.withEmptyConfig(exceptionHandlerFactory, ProcessObjectDefinitionExtractor.exceptionHandler)
 
-    val globalVariablesDefs = GlobalVariableDefinitionExtractor.extractDefinitions(expressionConfig.globalProcessVariables)
+    val globalVariablesDefs = ExpressionConfigDefinitionExtractor.extractDefinitions(expressionConfig.globalProcessVariables)
 
     val globalImportsDefs = expressionConfig.globalImports.map(_.value)
+
+    val additionalClassesDefs = ExpressionConfigDefinitionExtractor.extractDefinitions(expressionConfig.additionalClasses)
 
     val settings = creator.classExtractionSettings(processObjectDependencies)
 
@@ -76,7 +79,7 @@ object ProcessDefinitionExtractor {
       customStreamTransformersDefs.mapValuesNow(k => (k, extractCustomTransformerData(k))),
       signalsDefs, exceptionHandlerFactoryDefs, ExpressionDefinition(globalVariablesDefs,
         globalImportsDefs,
-        expressionConfig.additionalClasses,
+        additionalClassesDefs,
         expressionConfig.languages,
         expressionConfig.optimizeCompilation,
         expressionConfig.strictTypeChecking,
@@ -141,7 +144,7 @@ object ProcessDefinitionExtractor {
     val expressionDefinition = ExpressionDefinition(
       definition.expressionConfig.globalVariables.mapValuesNow(_.objectDefinition),
       definition.expressionConfig.globalImports,
-      definition.expressionConfig.additionalClasses,
+      definition.expressionConfig.additionalClasses.map(_.objectDefinition),
       definition.expressionConfig.languages,
       definition.expressionConfig.optimizeCompilation,
       definition.expressionConfig.strictTypeChecking,
@@ -161,7 +164,7 @@ object ProcessDefinitionExtractor {
     )
   }
 
-  case class ExpressionDefinition[+T <: ObjectMetadata](globalVariables: Map[String, T], globalImports: List[String], additionalClasses: List[Class[_]],
+  case class ExpressionDefinition[+T <: ObjectMetadata](globalVariables: Map[String, T], globalImports: List[String], additionalClasses: List[T],
                                                         languages: LanguageConfiguration, optimizeCompilation: Boolean, strictTypeChecking: Boolean,
                                                         dictionaries: Map[String, DictDefinition], hideMetaVariable: Boolean, strictMethodsChecking: Boolean)
 

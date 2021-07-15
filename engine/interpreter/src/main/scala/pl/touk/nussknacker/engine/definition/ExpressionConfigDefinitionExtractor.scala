@@ -8,12 +8,16 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef, StandardObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
 
-object GlobalVariableDefinitionExtractor {
+object ExpressionConfigDefinitionExtractor {
 
   def extractDefinitions(objs: Map[String, WithCategories[AnyRef]]): Map[String, ObjectWithMethodDef] = {
     objs.map { case (varName, varWithCategories) =>
       (varName, extractDefinition(varName, varWithCategories))
     }
+  }
+
+  def extractDefinitions(objs: List[WithCategories[AnyRef]]): List[ObjectWithMethodDef] = {
+    objs.map(obj => extractDefinition(obj.value.toString, obj))
   }
 
   private def extractDefinition(varName: String, varWithCategories: WithCategories[AnyRef]): StandardObjectWithMethodDef = {
