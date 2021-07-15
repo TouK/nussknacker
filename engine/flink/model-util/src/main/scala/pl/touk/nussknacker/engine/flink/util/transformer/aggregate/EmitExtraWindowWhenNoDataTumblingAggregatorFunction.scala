@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{ValueWithContext, Context => NkContext}
 import pl.touk.nussknacker.engine.flink.api.state.StateHolder
-import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
+import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValue}
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap._
 
@@ -28,7 +28,7 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K,V]](protected v
                                                                     (implicit override val rangeMap: FlinkRangeMap[MapT])
   extends KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]
     with StateHolder[MapT[Long, AnyRef]]
-    with AggregatorFunctionMixin[MapT] with AddedElementContextStateHolder[MapT] {
+    with AggregatorFunctionMixin[MapT] {
 
   type FlinkCtx = KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]#Context
   type FlinkOnTimerCtx = KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]#OnTimerContext
@@ -38,7 +38,6 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K,V]](protected v
 
   override def open(parameters: Configuration): Unit = {
     state = getRuntimeContext.getState(stateDescriptor)
-    addedElementContext = getRuntimeContext.getState(addedElementContextDescriptor)
   }
 
   override protected val minimalResolutionMs: Long = timeWindowLengthMillis
@@ -49,20 +48,15 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K,V]](protected v
 
   override protected def handleElementAddedToState(newElementInStateTimestamp: Long, newElement: aggregator.Element, nkCtx: NkContext,
                                                    timerService: TimerService, out: Collector[ValueWithContext[AnyRef]]): Unit = {
-    addedElementContext.update(readAddedElementContextOrInitial().updated(newElementInStateTimestamp, nkCtx))
     timerService.registerEventTimeTimer(newElementInStateTimestamp + timeWindowLengthMillis)
   }
 
   override def onTimer(timestamp: Long, ctx: FlinkOnTimerCtx, out: Collector[ValueWithContext[AnyRef]]): Unit = {
-    val currentStateValue = readStateOrInitial()
     val previousTimestamp = timestamp - timeWindowLengthMillis
+    val currentStateValue = readStateOrInitial()
+    val finalVal = computeFinalValue(currentStateValue, previousTimestamp)
+    out.collect(ValueWithContext(finalVal, KeyEnricher.enrichWithKey(NkContext.withInitialId, ctx.getCurrentKey)))
 
-    readAddedElementContextOrInitial().toRO(previousTimestamp).toScalaMapRO.lastOption.foreach {
-      case (_, nkCtx) =>
-        val finalVal = computeFinalValue(currentStateValue, previousTimestamp)
-        out.collect(ValueWithContext(finalVal, nkCtx))
-    }
-    
     val previousTimestampStateAndRest = stateForTimestampToReadUntilEnd(currentStateValue, previousTimestamp)
     if (previousTimestampStateAndRest.toScalaMapRO.isEmpty) {
       evictStates()
@@ -73,7 +67,6 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K,V]](protected v
 
   override protected def updateState(stateValue: MapT[Long, AnyRef], stateValidity: Long, timeService: TimerService): Unit = {
     state.update(stateValue)
-    invalidateAddedElementContextState(stateValue)
   }
 
   override protected def doMoveEvictionTime(time: Long, timeService: TimerService): Unit = {
@@ -82,7 +75,6 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K,V]](protected v
 
   protected def evictStates(): Unit = {
     state.clear()
-    addedElementContext.clear()
   }
 
   override protected def readState(): MapT[Long, AnyRef] = state.value()

@@ -1,6 +1,25 @@
 package pl.touk.nussknacker.engine.api
 
+import java.util.UUID
+import scala.util.Random
+
 object Context {
+
+  // prefix is to distinguish between externally provided and internal (initially created) id
+  private val initialContextIdPrefix = "initial-"
+
+  /**
+    * For performance reasons, is used unsecure random - see UUIDBenchmark for details. In this case random correlation id
+    * is used only for internal purpose so is not important in security context.
+    */
+  private val random = new Random()
+
+  /**
+    * Should be used for newly created context - when there is no suitable external correlation / tracing id
+    */
+  def withInitialId: Context = {
+    Context(initialContextIdPrefix + new UUID(random.nextLong(), random.nextLong()).toString)
+  }
 
   def apply(id: String) : Context = Context(id, Map.empty, None)
 
@@ -8,6 +27,12 @@ object Context {
 
 case class ContextId(value: String)
 
+/**
+  * Context is container for variables used in expression evaluation
+  * @param id correlation id/trace id used for tracing (logs, error presentation) and for tests mechanism, it should be always defined
+  * @param variables variables available in evaluation
+  * @param parentContext context used for scopes handling, mainly for subprocess invocation purpose
+  */
 case class Context(id: String, variables: Map[String, Any], parentContext: Option[Context]) {
 
   def apply[T](name: String): T =

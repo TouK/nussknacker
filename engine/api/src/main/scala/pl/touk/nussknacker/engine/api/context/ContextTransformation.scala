@@ -40,7 +40,7 @@ sealed trait AbstractContextTransformation {
   *   ContextTransformation
   *     .definedBy(_.withVariable("foo", Typed[String])
   *     .implementedBy { () =>
-  *       Future.success(Context("").withVariable("foo", "bar")
+  *       Future.success(Context.withRandomId.withVariable("foo", "bar")
   *     }
   * `
   */

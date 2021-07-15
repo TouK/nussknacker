@@ -33,7 +33,7 @@ object StandaloneSorter extends CustomStreamTransformer {
               } yield ranks.zip(outputs)
               zipped.map { listWithRank =>
                 val finalList = listWithRank.sortBy(_._1.doubleValue()).reverse.take(maxCount).map(_._2).asJava
-                Context("").withVariable(outputVariable, finalList)
+                Context.withInitialId.withVariable(outputVariable, finalList)
               }.flatMap(c => outputContinuation(c :: Nil, ec))
           }
         }
