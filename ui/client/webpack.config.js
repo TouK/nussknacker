@@ -171,7 +171,6 @@ module.exports = {
       base: isProd ? "__publicPath__/static/" : "/",
       filename: "main.html",
       favicon: "assets/img/favicon.png",
-      template: "index_template_no_doctype.ejs",
     }),
     new HtmlWebpackHarddiskPlugin(),
     new WebpackShellPluginNext({
