@@ -3,7 +3,7 @@ import React, {useCallback, useEffect, useMemo, useState} from "react"
 import {useDispatch, useSelector} from "react-redux"
 import TreeView from "react-treeview"
 import {toggleToolboxGroup} from "../../../actions/nk/toolbars"
-import {getOpenedNodeGroups} from "../../../reducers/selectors/toolbars"
+import {getOpenedNodeGroups, getToolbarsConfigId} from "../../../reducers/selectors/toolbars"
 import {NodesGroup} from "../../../types"
 import Tool from "./Tool"
 
@@ -37,12 +37,13 @@ export function ToolboxNodeGroup({nodeGroup, highlight}: {nodeGroup: NodesGroup,
   const isEmpty = useMemo(() => nodeGroupIsEmpty(nodeGroup), [nodeGroup])
 
   const [forceCollapsed, toggleForceCollapsed] = useStateToggleWithReset(!highlight)
+  const configId = useSelector(getToolbarsConfigId)
 
   const toggle = useCallback(() => {
     if (!isEmpty) {
-      dispatch(toggleToolboxGroup(name))
+      dispatch(toggleToolboxGroup(name, configId))
     }
-  }, [dispatch, isEmpty, name])
+  }, [dispatch, configId, isEmpty, name])
 
   const label = <span className={"group-label"} onClick={highlight ? toggleForceCollapsed : toggle}>{name}</span>
 

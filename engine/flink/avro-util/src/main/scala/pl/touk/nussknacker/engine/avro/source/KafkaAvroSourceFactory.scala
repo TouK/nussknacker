@@ -60,7 +60,7 @@ class KafkaAvroSourceFactory[K:ClassTag, V:ClassTag](val schemaRegistryProvider:
       val versionOption = parseVersionOption(version)
       val valueValidationResult = determineSchemaAndType(prepareValueSchemaDeterminer(preparedTopic, versionOption), Some(SchemaVersionParamName))
 
-      prepareSourceFinalResults(preparedTopic, valueValidationResult, context, dependencies, step.parameters)
+      prepareSourceFinalResults(preparedTopic, valueValidationResult, context, dependencies, step.parameters, Nil)
     case step@TransformationStep((`topicParamName`, _) :: (SchemaVersionParamName, _) ::Nil, _) =>
       // Edge case - for some reason Topic/Version is not defined, e.g. when topic or version does not match DefinedEagerParameter(String, _):
       // 1. FailedToDefineParameter
@@ -81,7 +81,8 @@ class KafkaAvroSourceFactory[K:ClassTag, V:ClassTag](val schemaRegistryProvider:
                                           valueValidationResult: Validated[ProcessCompilationError, (Option[RuntimeSchemaData], TypingResult)],
                                           context: ValidationContext,
                                           dependencies: List[NodeDependencyValue],
-                                          parameters: List[(String, DefinedParameter)])(implicit nodeId: NodeId): FinalResults = {
+                                          parameters: List[(String, DefinedParameter)],
+                                          errors: List[ProcessCompilationError])(implicit nodeId: NodeId): FinalResults = {
     val keyValidationResult = if (kafkaConfig.useStringForKey) {
       Valid((None, Typed[String]))
     } else {
@@ -92,7 +93,7 @@ class KafkaAvroSourceFactory[K:ClassTag, V:ClassTag](val schemaRegistryProvider:
       case (Valid((keyRuntimeSchema, keyType)), Valid((valueRuntimeSchema, valueType))) =>
         val finalInitializer = new KafkaContextInitializer[K, V, DefinedParameter](keyType, valueType)
         val finalState = KafkaAvroSourceFactoryState(keyRuntimeSchema, valueRuntimeSchema, finalInitializer)
-        FinalResults(finalInitializer.validationContext(context, dependencies, parameters), state = Some(finalState))
+        FinalResults(finalInitializer.validationContext(context, dependencies, parameters), state = Some(finalState), errors = errors)
       case _ =>
         prepareSourceFinalErrors(context, dependencies, parameters, keyValidationResult.swap.toList ++ valueValidationResult.swap.toList)
     }
@@ -121,15 +122,7 @@ class KafkaAvroSourceFactory[K:ClassTag, V:ClassTag](val schemaRegistryProvider:
     val formatterSchema = schemaRegistryProvider.deserializationSchemaFactory.create[K, V](kafkaConfig, None, None)
     val recordFormatter = schemaRegistryProvider.recordFormatterFactory.create[K, V](kafkaConfig, formatterSchema)
 
-    createSource(params,
-      dependencies,
-      finalState,
-      List(preparedTopic),
-      kafkaConfig,
-      deserializationSchema,
-      recordFormatter,
-      kafkaContextInitializer
-    )
+    createSource(params, dependencies, finalState, List(preparedTopic), kafkaConfig, deserializationSchema, timestampAssigner, recordFormatter, kafkaContextInitializer)
   }
 
   /**
@@ -141,15 +134,10 @@ class KafkaAvroSourceFactory[K:ClassTag, V:ClassTag](val schemaRegistryProvider:
                              preparedTopics: List[PreparedKafkaTopic],
                              kafkaConfig: KafkaConfig,
                              deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
+                             timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
                              formatter: RecordFormatter,
                              flinkContextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]]): KafkaSource[ConsumerRecord[K, V]] = {
-    new KafkaSource[ConsumerRecord[K, V]](
-      preparedTopics,
-      kafkaConfig,
-      deserializationSchema,
-      timestampAssigner,
-      formatter
-    ) {
+    new KafkaSource[ConsumerRecord[K, V]](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter) {
       override val contextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]] = flinkContextInitializer
     }
   }

@@ -38,8 +38,8 @@ export function AddProcessButton(props: {isSubprocess: boolean, className?: stri
   const clashedNames = useClashedNames(addOpened)
   const {t} = useTranslation()
 
-  const message = isSubprocess ? t("addProcessButton.subprocess", "Create new subprocess") :
-    t("addProcessButton.process", "Create new process")
+  const message = isSubprocess ? t("addProcessButton.subprocess", "Create new fragment") :
+    t("addProcessButton.process", "Create new scenario")
 
   return (
     <>

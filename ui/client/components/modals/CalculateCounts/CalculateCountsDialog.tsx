@@ -60,12 +60,12 @@ function CalculateCountsDialog(): JSX.Element {
       header={t("calculateCounts.title", "counts")}
     >
       <Picker
-        label={t("calculateCounts.processCountsFrom", "Process counts from")}
+        label={t("calculateCounts.processCountsFrom", "Scenario counts from")}
         onChange={setFrom}
         value={from}
       />
       <Picker
-        label={t("calculateCounts.processCountsTo", "Process counts to")}
+        label={t("calculateCounts.processCountsTo", "Scenario counts to")}
         onChange={setTo}
         value={to}
       />

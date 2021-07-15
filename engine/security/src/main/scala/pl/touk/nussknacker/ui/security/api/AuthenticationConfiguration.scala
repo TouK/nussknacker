@@ -1,57 +1,37 @@
 package pl.touk.nussknacker.ui.security.api
 
-import java.io.File
-import java.net.{URI, URL}
-import java.security.PublicKey
+import java.net.URI
 
-import com.typesafe.config.{Config, ConfigFactory}
-import pl.touk.nussknacker.engine.util.cache.CacheConfig
+import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
-import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.{ConfigRule, ConfigUser}
-import pl.touk.nussknacker.ui.security.api.AuthenticationMethod.AuthenticationMethod
+import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigUser
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
 
-import scala.concurrent.duration._
-
 trait AuthenticationConfiguration {
-  def authorizeUrl: Option[URI] = Option.empty
-  def authSeverPublicKey: Option[PublicKey] = Option.empty
-  def idTokenNonceVerificationRequired: Boolean
-  def implicitGrantEnabled: Boolean
-  def method: AuthenticationMethod
+  def name: String
   def usersFile: URI
 
   val userConfig: Config = ConfigFactoryExt.parseUri(usersFile)
 
   lazy val users: List[ConfigUser] = AuthenticationConfiguration.getUsers(userConfig)
-
-  lazy val rules: List[ConfigRule] = AuthenticationConfiguration.getRules(userConfig)
-}
-
-object AuthenticationMethod extends Enumeration {
-  type AuthenticationMethod = Value
-
-  val BasicAuth = Value("BasicAuth")
-  val OAuth2 = Value("OAuth2")
-  val Other = Value("Other")
 }
 
 object AuthenticationConfiguration {
-  import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.EnumerationReader._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 
   val authenticationConfigPath = "authentication"
   val methodConfigPath = s"$authenticationConfigPath.method"
+  val usersConfigPath = s"$authenticationConfigPath.usersFile"
   val usersConfigurationPath = "users"
   val rulesConfigurationPath = "rules"
 
-  def parseMethod(config: Config): AuthenticationMethod = config.as[AuthenticationMethod](methodConfigPath)
-
   def getUsers(config: Config): List[ConfigUser] = config.as[List[ConfigUser]](usersConfigurationPath)
 
-  def getRules(config: Config): List[ConfigRule] = config.as[List[ConfigRule]](rulesConfigurationPath)
+  def getRules(usersFile: URI): List[ConfigRule] = ConfigFactoryExt.parseUri(usersFile).as[List[ConfigRule]](rulesConfigurationPath)
+  def getRules(config: Config): List[ConfigRule] = getRules(config.as[URI](usersConfigPath))
 
   case class ConfigUser(identity: String,
                         password: Option[String],
@@ -63,53 +43,4 @@ object AuthenticationConfiguration {
                         categories: List[String] = List.empty,
                         permissions: List[Permission] = List.empty,
                         globalPermissions: List[GlobalPermission] = List.empty)
-}
-
-case class DefaultAuthenticationConfiguration(method: AuthenticationMethod = AuthenticationMethod.Other, usersFile: URI,
-                                              cachingHashes: Option[CachingHashesConfig]) extends AuthenticationConfiguration {
-
-  def cachingHashesOrDefault: CachingHashesConfig = cachingHashes.getOrElse(CachingHashesConfig.defaultConfig)
-
-  def implicitGrantEnabled: Boolean = false
-
-  def idTokenNonceVerificationRequired: Boolean = false
-}
-
-object DefaultAuthenticationConfiguration {
-  import AuthenticationConfiguration._
-  import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-  import net.ceedubs.ficus.readers.EnumerationReader._
-
-  def create(config: Config): DefaultAuthenticationConfiguration =
-    config.as[DefaultAuthenticationConfiguration](authenticationConfigPath)
-}
-
-case class CachingHashesConfig(enabled: Option[Boolean],
-                               maximumSize: Option[Long],
-                               expireAfterAccess: Option[FiniteDuration],
-                               expireAfterWrite: Option[FiniteDuration]) {
-
-  def isEnabled: Boolean = enabled.getOrElse(CachingHashesConfig.defaultEnabledValue)
-
-  def toCacheConfig: Option[CacheConfig[(String, String), String]] =
-    if (isEnabled) {
-      Some(CacheConfig(
-        maximumSize.getOrElse(CacheConfig.defaultMaximumSize),
-        expireAfterAccess.orElse(CachingHashesConfig.defaultExpireAfterAccess),
-        expireAfterWrite.orElse(CachingHashesConfig.defaultExpireAfterWrite)
-      ))
-    } else {
-      None
-    }
-
-}
-
-object CachingHashesConfig {
-
-  val defaultEnabledValue: Boolean = false
-  val defaultExpireAfterAccess: Option[FiniteDuration] = Some(1.hour)
-  val defaultExpireAfterWrite: Option[FiniteDuration] = None
-  val defaultConfig: CachingHashesConfig = CachingHashesConfig(Some(defaultEnabledValue), None, None, None)
-
 }

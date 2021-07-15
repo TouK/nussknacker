@@ -4,32 +4,32 @@ import akka.http.scaladsl.server.directives.Credentials.Provided
 import akka.http.scaladsl.server.directives.{Credentials, SecurityDirectives}
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{AuthenticatedUser, LoggedUser}
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class OAuth2Authenticator(configuration: OAuth2Configuration, service: OAuth2Service[LoggedUser, _])
+class OAuth2Authenticator(configuration: OAuth2Configuration, service: OAuth2Service[AuthenticatedUser, _])
                          (implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT])
-  extends SecurityDirectives.AsyncAuthenticator[LoggedUser] with LazyLogging {
-  def apply(credentials: Credentials): Future[Option[LoggedUser]] =
+  extends SecurityDirectives.AsyncAuthenticator[AuthenticatedUser] with LazyLogging {
+  def apply(credentials: Credentials): Future[Option[AuthenticatedUser]] =
     authenticate(credentials)
 
-  private[security] def authenticate(credentials: Credentials): Future[Option[LoggedUser]] = {
+  private[security] def authenticate(credentials: Credentials): Future[Option[AuthenticatedUser]] = {
     credentials match {
       case Provided(token) => authenticate(token)
       case _ => Future.successful(Option.empty)
     }
   }
 
-  private[oauth2] def authenticate(token: String): Future[Option[LoggedUser]] =
+  private[oauth2] def authenticate(token: String): Future[Option[AuthenticatedUser]] =
     service.checkAuthorizationAndObtainUserinfo(token).map(prf => Option(prf._1)).recover {
       case OAuth2ErrorHandler(_) => Option.empty // Expired or non-exists token - user not authenticated
     }
 }
 
 object OAuth2Authenticator extends LazyLogging {
-  def apply(configuration: OAuth2Configuration, service: OAuth2Service[LoggedUser, _])(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): OAuth2Authenticator =
+  def apply(configuration: OAuth2Configuration, service: OAuth2Service[AuthenticatedUser, _])(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): OAuth2Authenticator =
     new OAuth2Authenticator(configuration, service)
 }
 

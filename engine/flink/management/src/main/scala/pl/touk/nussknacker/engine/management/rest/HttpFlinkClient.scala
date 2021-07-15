@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.management.rest
 
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.Error
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.deployment.{ExternalDeploymentId, SavepointResult}
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._

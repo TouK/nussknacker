@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, De
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies, RunMode}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
@@ -35,18 +35,20 @@ import scala.concurrent.duration.FiniteDuration
 class FlinkProcessCompiler(creator: ProcessConfigCreator,
                            val processConfig: Config,
                            val diskStateBackendSupport: Boolean,
-                           objectNaming: ObjectNaming) extends Serializable {
+                           objectNaming: ObjectNaming,
+                           val runMode: RunMode) extends Serializable {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  def this(modelData: ModelData) = this(modelData.configCreator, modelData.processConfig, diskStateBackendSupport = true, modelData.objectNaming)
+  def this(modelData: ModelData) = this(modelData.configCreator, modelData.processConfig, diskStateBackendSupport = true, modelData.objectNaming, runMode = RunMode.Normal)
 
   def compileProcess(process: EspProcess,
                      processVersion: ProcessVersion,
                      deploymentData: DeploymentData,
-                     resultCollector: ResultCollector)(userCodeClassLoader: ClassLoader): FlinkProcessCompilerData = {
+                     resultCollector: ResultCollector)
+                    (userCodeClassLoader: ClassLoader): FlinkProcessCompilerData = {
     val processObjectDependencies = ProcessObjectDependencies(processConfig, objectNaming)
 
     //TODO: this should be somewhere else?
@@ -61,7 +63,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
     val listenersToUse = listeners(processObjectDependencies)
 
     val compiledProcess =
-      ProcessCompilerData.prepare(process, definitions(processObjectDependencies), listenersToUse, userCodeClassLoader, resultCollector)
+      ProcessCompilerData.prepare(process, definitions(processObjectDependencies), listenersToUse, userCodeClassLoader, resultCollector, runMode)
 
     val compiledExceptionHandler = validateOrFailProcessCompilation(compiledProcess.compileExceptionHandler())
     val listeningExceptionHandler = new ListeningExceptionHandler(listenersToUse,
@@ -74,7 +76,8 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
       exceptionHandler = listeningExceptionHandler,
       signalSenders = new FlinkProcessSignalSenderProvider(signalSenders(processObjectDependencies)),
       asyncExecutionContextPreparer = asyncExecutionContextPreparer,
-      processTimeout = timeout
+      processTimeout = timeout,
+      runMode = runMode
     )
   }
 

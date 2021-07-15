@@ -4,6 +4,7 @@ import {RootState} from "../../reducers"
 import {AuthenticationSettings} from "../../reducers/settings"
 import {STRATEGIES} from "./strategies"
 import {Strategy} from "./Strategy"
+import {RemoteAuthStrategy} from "./strategies/RemoteAuthStrategy";
 
 interface Props {
   onChange: (strategy: Strategy) => void,
@@ -13,7 +14,7 @@ export function StrategySelector({children, onChange}: PropsWithChildren<Props>)
   const authenticationSettings = useSelector<RootState, AuthenticationSettings>(state => state.settings.authenticationSettings)
   const {backend} = authenticationSettings
 
-  const strategyConstructor = useMemo(() => STRATEGIES[backend], [backend])
+  const strategyConstructor = useMemo(() => backend && (STRATEGIES[backend] || RemoteAuthStrategy), [backend])
   const strategy = useMemo(() => strategyConstructor && new strategyConstructor(authenticationSettings), [strategyConstructor, authenticationSettings])
   const Wrapper = strategy?.Wrapper || React.Fragment
 

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.processCounts.influxdb
 
-case class InfluxConfig(influxUrl: String, user: String, password: String,
+case class InfluxConfig(influxUrl: String, user: Option[String], password: Option[String],
                         database: String,
                         queryMode: QueryMode.Value = QueryMode.OnlySingleDifference,
                         metricsConfig: Option[MetricsConfig])

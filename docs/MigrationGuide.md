@@ -145,6 +145,8 @@ To see biggest differences please consult the [changelog](Changelog.md).
 * [#1663](https://github.com/TouK/nussknacker/pull/1663) Default `FlinkExceptionHandler` implementations are deprecated, use `ConfigurableExceptionHandler` instead.
 * [#1731](https://github.com/TouK/nussknacker/pull/1731) RockDB config's flag `incrementalCheckpoints` is turned on by default.
 * [#1825](https://github.com/TouK/nussknacker/pull/1825) Default dashboard renamed from `flink-esp` to `nussknacker-scenario`
+* [#1836](https://github.com/TouK/nussknacker/pull/1836) Change default `kafka.consumerGroupNamingStrategy` to `processId-nodeId`.     
+* [#1357](https://github.com/TouK/nussknacker/pull/1357) Run mode added to nodes. `ServiceInvoker` interface was extended with new, implicit `runMode` parameter. 
 * [#1836](https://github.com/TouK/nussknacker/pull/1836) Change default `kafka.consumerGroupNamingStrategy` to `processId-nodeId`.
 * [#1886](https://github.com/TouK/nussknacker/pull/1886) aggregate-sliding with emitWhenEventLeft = true, aggregate-tumbling and aggregate-session components now
   doesn't emit full context of variables that were before node (because of performance reasons and because that wasn't obvious which one context is emitted).

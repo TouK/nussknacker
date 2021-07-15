@@ -7,14 +7,13 @@ import pl.touk.nussknacker.engine.api.ProcessListener
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionInfo, NonTransientException}
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
-import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies, RunMode}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializer, FlinkIntermediateRawSource, FlinkSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.util.exception.ConsumingNonTransientExceptions
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.modelconfig.{InputConfigDuringExecution, ModelConfigLoader}
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListener
 
 class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
@@ -22,7 +21,7 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
                                collectingListener: ResultsCollectingListener,
                                process: EspProcess,
                                testData: TestData, executionConfig: ExecutionConfig,
-                               objectNaming: ObjectNaming) extends StubbedFlinkProcessCompiler(process, creator, inputConfigDuringExecution, objectNaming) {
+                               objectNaming: ObjectNaming) extends StubbedFlinkProcessCompiler(process, creator, inputConfigDuringExecution, objectNaming, RunMode.Test) {
 
 
   override protected def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =

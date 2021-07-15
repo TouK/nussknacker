@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{AuthenticatedUser, LoggedUser}
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 
 class DefaultOAuth2ServiceFactory extends OAuth2ServiceFactory {
-  override def create(configuration: OAuth2Configuration, allCategories: List[String])(implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT]): OAuth2Service[LoggedUser, OAuth2AuthorizationData] = {
+  override def create(configuration: OAuth2Configuration)(implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT]): OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData] = {
     new CachingOAuth2Service(
       configuration.profileFormat.getOrElse {
         throw new Exception("profileFormat is missing in the authentication configuration")
@@ -15,12 +15,12 @@ class DefaultOAuth2ServiceFactory extends OAuth2ServiceFactory {
         case ProfileFormat.OIDC =>
           new UserMappingOAuth2Service(
             OpenIdConnectService(configuration),
-            (userInfo: OpenIdConnectUserInfo) => OpenIdConnectProfile.getLoggedUser(userInfo, configuration, allCategories)
+            (userInfo: OpenIdConnectUserInfo) => OpenIdConnectProfile.getAuthenticatedUser(userInfo, configuration)
           )
         case ProfileFormat.GITHUB =>
           new UserMappingOAuth2Service(
             BaseOAuth2Service[GitHubProfileResponse](configuration),
-            (profileResponse: GitHubProfileResponse) => GitHubProfile.getLoggedUser(profileResponse, configuration, allCategories)
+            (profileResponse: GitHubProfileResponse) => GitHubProfile.getAuthenticatedUser(profileResponse, configuration)
           )
       }
       , configuration)
@@ -28,8 +28,8 @@ class DefaultOAuth2ServiceFactory extends OAuth2ServiceFactory {
 }
 
 object DefaultOAuth2ServiceFactory {
-  def service(configuration: OAuth2Configuration, allCategories: List[String])(implicit backend: SttpBackend[Future, Nothing, NothingT], ec: ExecutionContext): OAuth2Service[LoggedUser, OAuth2AuthorizationData] =
-    DefaultOAuth2ServiceFactory().create(configuration, allCategories)
+  def service(configuration: OAuth2Configuration)(implicit backend: SttpBackend[Future, Nothing, NothingT], ec: ExecutionContext): OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData] =
+    DefaultOAuth2ServiceFactory().create(configuration)
 
   def apply(): DefaultOAuth2ServiceFactory = new DefaultOAuth2ServiceFactory
 }

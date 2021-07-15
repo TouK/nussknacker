@@ -6,7 +6,7 @@ import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
+import pl.touk.nussknacker.engine.api.process.{AsyncExecutionContextPreparer, RunMode}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData}
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
@@ -33,7 +33,8 @@ class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
                                exceptionHandler: FlinkEspExceptionHandler,
                                val signalSenders: FlinkProcessSignalSenderProvider,
                                val asyncExecutionContextPreparer: AsyncExecutionContextPreparer,
-                               val processTimeout: FiniteDuration
+                               val processTimeout: FiniteDuration,
+                               val runMode: RunMode
                              ) {
 
   def open(runtimeContext: RuntimeContext, nodesToUse: List[_<:NodeData]) : Unit = {

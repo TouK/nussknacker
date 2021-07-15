@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.process.registrar
 
 import java.util.concurrent.TimeUnit
-import com.typesafe.config.Config
+
 import com.typesafe.scalalogging.{LazyLogging, Logger}
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.streaming.api.environment.RemoteStreamEnvironment
@@ -116,7 +116,6 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
                        testRunId: Option[TestRunId], typeInformationDetection: TypeInformationDetection): Unit = {
 
     val metaData = processWithDeps.metaData
-
     val globalParameters = NkGlobalParameters.readFromContext(env.getConfig)
     def nodeContext(nodeId: String, validationContext: Either[ValidationContext, Map[String, ValidationContext]]): FlinkCustomNodeContext = {
       FlinkCustomNodeContext(processWithDeps.jobData, nodeId, processWithDeps.processTimeout,
@@ -125,7 +124,8 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
         exceptionHandlerPreparer = runtimeContext => compiledProcessWithDeps(runtimeContext.getUserCodeClassLoader).prepareExceptionHandler(runtimeContext),
         globalParameters = globalParameters,
         validationContext,
-        typeInformationDetection)
+        typeInformationDetection,
+        processWithDeps.runMode)
     }
 
     val wrapAsync: (DataStream[Context], ProcessPart, String) => DataStream[Unit]

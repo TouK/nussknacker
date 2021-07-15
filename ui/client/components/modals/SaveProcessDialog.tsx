@@ -32,8 +32,8 @@ function SaveProcessDialog(): JSX.Element {
   return (
     <GenericModalDialog init={reset} confirm={confirm} type={Dialogs.types.saveProcess}>
       <p>{isRenamed ?
-        t("saveProcess.renameTitle", "Save process and rename to {{name}}", {name: unsavedNewName}) :
-        t("saveProcess.title", "Save process {{name}}", {name: processName})
+        t("saveProcess.renameTitle", "Save scenario and rename to {{name}}", {name: unsavedNewName}) :
+        t("saveProcess.title", "Save scenario {{name}}", {name: processName})
       }</p>
       <CommentInput onChange={onInputChange} value={comment}/>
     </GenericModalDialog>

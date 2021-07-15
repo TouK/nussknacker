@@ -18,7 +18,7 @@ function SaveButton(props: ToolbarButtonProps): JSX.Element {
   const saveDisabled = useSelector(isSaveDisabled)
   const dispatch = useDispatch()
 
-  const available = !disabled && (!saveDisabled || capabilities.write)
+  const available = !disabled && !saveDisabled && capabilities.write
 
   return (
     <ToolbarButton

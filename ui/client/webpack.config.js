@@ -19,13 +19,6 @@ const NODE_ENV = process.env.NODE_ENV || "development"
 const GIT_HASH = childProcess.execSync("git log -1 --format=%H").toString()
 const GIT_DATE = childProcess.execSync("git log -1 --format=%cd").toString()
 const isProd = NODE_ENV === "production"
-const isCi = process.env.CI === "true"
-
-const smp = new SpeedMeasurePlugin({
-  disable: true,
-  outputFormat: "humanVerbose",
-  loaderTopFiles: 5,
-})
 
 const {ModuleFederationPlugin} = webpack.container
 const {name} = require("./package.json")
@@ -54,7 +47,7 @@ const fileLoader = {
   },
 }
 
-module.exports = smp.wrap({
+module.exports = {
   mode: NODE_ENV,
   optimization: {
     splitChunks: {
@@ -123,6 +116,20 @@ module.exports = smp.wrap({
         },
       },
     },
+    watchOptions: {
+      ignored: [
+        '**/dist',
+        '**/target',
+        // ignore vim swap files
+        '**/*.sw[pon]',
+        // TODO: separate src/main, src/test and so on
+        '**/cypress*',
+        '**/.nyc_output',
+        '**/jest*',
+        '**/test*',
+        '**/*.md',
+      ]
+    },
   },
   plugins: [
     new MomentLocalesPlugin({
@@ -151,7 +158,7 @@ module.exports = smp.wrap({
     new HtmlWebpackHarddiskPlugin(),
     new CopyPlugin({
       patterns: [
-        {from: "translations", to: "assets/locales"},
+        {from: "translations", to: "assets/locales", noErrorOnMissing: true},
         {from: "assets/img/favicon.png", to: "assets/img/favicon.png"},
       ],
     }),
@@ -182,10 +189,9 @@ module.exports = smp.wrap({
         DATE: JSON.stringify(GIT_DATE),
       },
     }),
-    // each 10% log entry in separate line - fix for travis no output problem
     new ForkTsCheckerWebpackPlugin(),
     isProd ? null : new ReactRefreshWebpackPlugin(),
-    isCi ? null : new webpack.ProgressPlugin(progressBar),
+    new webpack.ProgressPlugin(progressBar),
   ].filter(Boolean),
   module: {
     rules: [
@@ -305,4 +311,4 @@ module.exports = smp.wrap({
       },
     ],
   },
-})
+}

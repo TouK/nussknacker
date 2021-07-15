@@ -25,3 +25,4 @@ _book/
 out/
 *.bsp
 ui/client/cypress/fixtures/env.json
+*.swp

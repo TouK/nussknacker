@@ -38,9 +38,10 @@ function ToolbarsLayer(props: {toolbars: Toolbar[], configId: string}): JSX.Elem
       dispatch(moveToolbar(
         [source.droppableId, source.index],
         [destination.droppableId, destination.index],
+        configId
       ))
     }
-  }, [dispatch])
+  }, [configId, dispatch])
 
   const onDragStart = useCallback(() => {setIsDragging(true)}, [])
 

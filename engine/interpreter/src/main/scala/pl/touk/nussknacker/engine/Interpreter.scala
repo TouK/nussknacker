@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.expression.Expression
+import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.compiledgraph.node.{Sink, Source, _}
 import pl.touk.nussknacker.engine.compiledgraph.service._
 import pl.touk.nussknacker.engine.compiledgraph.variable._
@@ -19,9 +20,10 @@ import scala.language.higherKinds
 import scala.util.control.NonFatal
 
 private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
-                                expressionEvaluator: ExpressionEvaluator,
-                                interpreterShape: InterpreterShape[F]
-                               )(implicit metaData: MetaData, executor: ExecutionContext) {
+                                        expressionEvaluator: ExpressionEvaluator,
+                                        interpreterShape: InterpreterShape[F],
+                                        runMode: RunMode
+                                       )(implicit metaData: MetaData, executor: ExecutionContext) {
 
   private implicit val monad: MonadError[F, Throwable] = interpreterShape.monadError
 
@@ -178,6 +180,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
   }
 
   private def invoke(ref: ServiceRef, ctx: Context)(implicit node: Node): F[ValueWithContext[Any]] = {
+    implicit val implicitRunMode: RunMode = runMode
     val (preparedParams, resultFuture) = ref.invoke(ctx, expressionEvaluator)
     resultFuture.onComplete { result =>
       //TODO: what about implicit??
@@ -197,14 +200,15 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
 
 
 class Interpreter(listeners: Seq[ProcessListener],
-                  expressionEvaluator: ExpressionEvaluator) {
+                  expressionEvaluator: ExpressionEvaluator,
+                  runMode: RunMode) {
 
   def interpret[F[_]](node: Node,
                       metaData: MetaData,
                       ctx: Context)
                      (implicit shape: InterpreterShape[F],
                       ec: ExecutionContext): F[Either[List[InterpretationResult], EspExceptionInfo[_ <: Throwable]]] = {
-    new InterpreterInternal[F](listeners, expressionEvaluator, shape)(metaData, ec).interpret(node, ctx)
+    new InterpreterInternal[F](listeners, expressionEvaluator, shape, runMode)(metaData, ec).interpret(node, ctx)
   }
 
 }
@@ -212,8 +216,9 @@ class Interpreter(listeners: Seq[ProcessListener],
 object Interpreter {
 
   def apply(listeners: Seq[ProcessListener],
-            expressionEvaluator: ExpressionEvaluator): Interpreter = {
-    new Interpreter(listeners, expressionEvaluator)
+            expressionEvaluator: ExpressionEvaluator,
+            runMode: RunMode): Interpreter = {
+    new Interpreter(listeners, expressionEvaluator, runMode)
   }
 
   //Interpreter can be invoked with various effects, we require MonadError capabilities and ability to convert service invocation results

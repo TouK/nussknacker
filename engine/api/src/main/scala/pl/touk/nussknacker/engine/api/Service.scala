@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.api
 
 import pl.touk.nussknacker.engine.api.component.Component
+import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
@@ -36,8 +37,9 @@ abstract class EagerService extends Service
 trait ServiceInvoker {
 
   def invokeService(params: Map[String, Any])(implicit ec: ExecutionContext,
-                                               collector: InvocationCollectors.ServiceInvocationCollector,
-                                               contextId: ContextId): Future[Any]
+                                              collector: InvocationCollectors.ServiceInvocationCollector,
+                                              contextId: ContextId,
+                                              runMode: RunMode): Future[Any]
 
   def returnType: TypingResult
 

@@ -3,11 +3,12 @@ package pl.touk.nussknacker.engine.util.service.query
 import cats.Monad
 import cats.implicits._
 import java.util.UUID
+
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, RunMode}
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -56,14 +57,15 @@ class ServiceQuery(modelData: ModelData) {
 
     val collector = new QueryServiceInvocationCollector()
     val compiler = new NodeCompiler(definitions, ExpressionCompiler.withoutOptimization(modelData),
-      modelData.modelClassLoader.classLoader, collector)
+      modelData.modelClassLoader.classLoader, collector, RunMode.Normal)
 
 
-    withOpenedService(serviceName, definitions) { 
+    withOpenedService(serviceName, definitions) {
 
       val variablesPreparer = GlobalVariablesPreparer(definitions.expressionConfig)
       val validationContext = variablesPreparer.validationContextWithLocalVariables(metaData, localVariables.mapValues(_._2))
       val ctx = Context("", localVariables.mapValues(_._1), None)
+      implicit val runMode: RunMode = RunMode.Normal
 
       val compiled = compiler.compileService(ServiceRef(serviceName, params), validationContext, Some(OutputVar.enricher("output")))(NodeId(""), metaData)
       compiled.compiledObject.map { service =>

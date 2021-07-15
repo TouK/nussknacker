@@ -2,7 +2,7 @@ import React, {FunctionComponent, PropsWithChildren} from "react"
 import {PendingPromise} from "../../../../common/PendingPromise"
 import SystemUtils from "../../../../common/SystemUtils"
 import ErrorBoundary from "../../../../components/common/ErrorBoundary"
-import {AuthenticationSettings} from "../../../../reducers/settings"
+import {RemoteAuthenticationSettings} from "../../../../reducers/settings"
 import {ExternalModule, splitUrl, useExternalLib} from "../../../ExternalLib"
 import {ModuleString, ModuleUrl} from "../../../ExternalLib/types"
 import {AuthErrorCodes} from "../../AuthErrorCodes"
@@ -59,10 +59,10 @@ export const RemoteAuthStrategy: StrategyConstructor = class RemoteAuthStrategy 
     this.onError = callback
   }
 
-  constructor(private settings: AuthenticationSettings) {}
+  constructor(private settings: RemoteAuthenticationSettings) {}
 
   private get urlWithScope(): {scope: ModuleString, url: ModuleUrl} {
-    const [url, scope] = splitUrl(this.settings.authorizeUrl as ModuleUrl)
+    const [url, scope] = splitUrl(this.settings.moduleUrl as ModuleUrl)
     return {url, scope}
   }
 

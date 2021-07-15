@@ -1,7 +1,7 @@
 import NodeUtils from "../../components/graph/NodeUtils"
 import {getProcessToDisplay} from "../../reducers/selectors/graph"
 import {ThunkAction} from "../reduxTypes"
-import {ungroup} from "./groups"
+import {ungroupSelected} from "./groups"
 import {deleteNodes} from "./node"
 import {reportEvent} from "./reportEvent"
 
@@ -76,7 +76,7 @@ export function deleteSelection(selectionState: string[], event: Event): ThunkAc
       name: "delete",
     }))
 
-    dispatch(ungroup(selectedNodes))
+    dispatch(ungroupSelected())
     dispatch(deleteNodes(selectedNodes))
 
     return dispatch({

@@ -1,17 +1,17 @@
 import {events} from "../../../analytics/TrackingEvents"
 import * as VisualizationUrl from "../../../common/VisualizationUrl"
 import history from "../../../history"
-import {NodeId} from "../../../types"
-import {reportEvent} from "../reportEvent"
-import {ThunkAction} from "../../reduxTypes"
 import {getLayout} from "../../../reducers/selectors/layout"
+import {NodeId} from "../../../types"
+import {ThunkAction} from "../../reduxTypes"
+import {reportEvent} from "../reportEvent"
 
-export type Position = { x: number, y: number }
-export type NodePosition = { id: NodeId, position: Position }
+export type Position = {x: number, y: number}
+export type NodePosition = {id: NodeId, position: Position}
 export type Layout = NodePosition[]
 export type GraphLayoutFunction = () => void
-export type LayoutChangedAction = { layout: Layout, type: "LAYOUT_CHANGED" }
-export type TogglePanelAction = { type: "TOGGLE_LEFT_PANEL" | "TOGGLE_RIGHT_PANEL" }
+export type LayoutChangedAction = {layout: Layout, type: "LAYOUT_CHANGED"}
+export type TogglePanelAction = {type: "TOGGLE_LEFT_PANEL" | "TOGGLE_RIGHT_PANEL", configId: string}
 
 export function layoutChanged(layout?: Layout): ThunkAction {
   return (dispatch, getState) => dispatch({
@@ -20,22 +20,19 @@ export function layoutChanged(layout?: Layout): ThunkAction {
   })
 }
 
-export function toggleLeftPanel(): TogglePanelAction {
-  return {
-    type: "TOGGLE_LEFT_PANEL",
-  }
-}
+export function togglePanel(side: "LEFT" | "RIGHT"): ThunkAction {
+  return (dispatch, getState) => {
+    const configId = getState().toolbars?.currentConfigId
 
-export function toggleRightPanel(): ThunkAction {
-  return (dispatch) => {
     dispatch({
-      type: "TOGGLE_RIGHT_PANEL",
+      type: side === "LEFT" ? "TOGGLE_LEFT_PANEL" : "TOGGLE_RIGHT_PANEL",
+      configId,
     })
 
     dispatch(reportEvent({
-      category: events.categories.rightPanel,
+      category: side === "LEFT" ? events.categories.leftPanel : events.categories.rightPanel,
       action: events.actions.buttonClick,
-      name: "toggle_right_panel",
+      name: side === "LEFT" ? "toggle_left_panel" : "toggle_right_panel",
     }))
   }
 }

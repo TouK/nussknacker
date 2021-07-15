@@ -20,8 +20,10 @@ import pl.touk.nussknacker.engine.standalone.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.standalone.metrics.dropwizard.DropwizardMetricsProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
-
 import java.util
+
+import pl.touk.nussknacker.engine.api.process.RunMode
+
 import scala.collection.immutable.ListMap
 import scala.util.Using
 
@@ -332,7 +334,7 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
     val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
     val ctx = new StandaloneContextPreparer(metricsProvider)
 
-    val maybeinterpreter = StandaloneProcessInterpreter(process, ctx, simpleModelData, Nil, ProductionServiceInvocationCollector)
+    val maybeinterpreter = StandaloneProcessInterpreter(process, ctx, simpleModelData, Nil, ProductionServiceInvocationCollector, RunMode.Normal)
 
     maybeinterpreter shouldBe 'valid
     val interpreter = maybeinterpreter.toOption.get

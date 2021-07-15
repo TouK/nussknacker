@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.TypedValue
+import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
@@ -35,7 +36,7 @@ object NodeDataValidator {
         case spel: SpelExpressionParser => spel.typingDictLabels
       }
       val compiler = new NodeCompiler(modelData.processWithObjectsDefinition,
-        expressionCompiler, modelData.modelClassLoader.classLoader, PreventInvocationCollector)
+        expressionCompiler, modelData.modelClassLoader.classLoader, PreventInvocationCollector, RunMode.Normal)
       implicit val nodeId: NodeId = NodeId(nodeData.id)
 
       nodeData match {
@@ -59,4 +60,3 @@ object NodeDataValidator {
     ValidationPerformed(nodeCompilationResult.errors, nodeCompilationResult.parameters, expressionType = nodeCompilationResult.expressionType)
 }
 
-                                                                                                           

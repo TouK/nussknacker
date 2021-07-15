@@ -12,11 +12,13 @@ import sttp.model.{StatusCode, Uri}
 import scala.concurrent.Future
 import scala.language.higherKinds
 
-class AuthenticationOAuth2ResourcesSpec extends FunSpec with Matchers with ScalatestRouteTest with FailFastCirceSupport {
+class OAuth2AuthenticationResourcesSpec extends FunSpec with Matchers with ScalatestRouteTest with FailFastCirceSupport {
 
   val config = ExampleOAuth2ServiceFactory.testConfig
 
-  def routes(route: AuthenticationOAuth2Resources) = route.route()
+  val realm = "nussknacker"
+
+  def routes(oauth2Resources: OAuth2AuthenticationResources) = oauth2Resources.routeWithPathPrefix
 
   protected lazy val errorAuthenticationResources = {
     implicit val testingBackend = new RecordingSttpBackend(
@@ -26,7 +28,7 @@ class AuthenticationOAuth2ResourcesSpec extends FunSpec with Matchers with Scala
       .thenRespondWrapped(Future(Response(Option.empty, StatusCode.InternalServerError, "Bad Request")))
     )
 
-    new AuthenticationOAuth2Resources(DefaultOAuth2ServiceFactory.service(config, List.empty))
+    new OAuth2AuthenticationResources(realm, DefaultOAuth2ServiceFactory.service(config), config)
   }
 
   protected lazy val badAuthenticationResources = {
@@ -35,7 +37,7 @@ class AuthenticationOAuth2ResourcesSpec extends FunSpec with Matchers with Scala
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespondWrapped(Future(Response(Option.empty, StatusCode.BadRequest, "Bad Request")))
 
-    new AuthenticationOAuth2Resources(DefaultOAuth2ServiceFactory.service(config, List.empty))
+    new OAuth2AuthenticationResources(realm, DefaultOAuth2ServiceFactory.service(config), config)
   }
 
   protected lazy val authenticationResources = {
@@ -47,10 +49,10 @@ class AuthenticationOAuth2ResourcesSpec extends FunSpec with Matchers with Scala
       .thenRespond(""" { "id": "1", "email": "some@email.com" } """)
 
 
-    new AuthenticationOAuth2Resources(DefaultOAuth2ServiceFactory.service(config, List.empty))
+    new OAuth2AuthenticationResources(realm, DefaultOAuth2ServiceFactory.service(config), config)
   }
 
-  def authenticationOauth2(resource: AuthenticationOAuth2Resources, authorizationCode: String) = {
+  def authenticationOauth2(resource: OAuth2AuthenticationResources, authorizationCode: String) = {
     Get(s"/authentication/oauth2?code=$authorizationCode") ~> routes(resource)
   }
 

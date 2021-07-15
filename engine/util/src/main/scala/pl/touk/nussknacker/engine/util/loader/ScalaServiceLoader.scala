@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.engine.util.loader
 
 import pl.touk.nussknacker.engine.api.NamedServiceProvider
-
-import java.util.ServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 
+import java.util.ServiceLoader
 import scala.reflect.ClassTag
 
 object ScalaServiceLoader {
@@ -14,7 +13,6 @@ object ScalaServiceLoader {
     val claz: Class[T] = toClass(classTag)
     ServiceLoader
       .load(claz, classLoader)
-      .iterator()
       .asScala
       .toList
   }
@@ -39,7 +37,7 @@ object ScalaServiceLoader {
     val className = implicitly[ClassTag[T]].runtimeClass.getName
     Multiplicity(available.filter(_.name == name)) match {
       case Empty() =>
-        throw new IllegalArgumentException(s"Failed to find $className with name '$name', available names: ${available.map(_.name).mkString(", ")}")
+        throw new IllegalArgumentException(s"Failed to find $className with name '$name', available names: ${available.map(_.name).distinct.mkString(", ")}")
       case One(instance) => instance
       case Many(more) =>
         throw new IllegalArgumentException(s"More than one $className with name '$name' found: ${more.map(_.getClass).mkString(", ")}")

@@ -7,23 +7,24 @@ import {ToolbarsConfig} from "../../components/toolbarSettings/types"
 
 export type ToolbarPosition = [ToolbarsSide | string, number]
 
-type ResetToolbarsAction = { type: "RESET_TOOLBARS", toolbars: Array<[string, ToolbarsSide]> }
+type ResetToolbarsAction = { type: "RESET_TOOLBARS", toolbars: Array<[string, ToolbarsSide]>, configId: string }
 type RegisterToolbarsAction = { type: "REGISTER_TOOLBARS", toolbars: Array<[string, ToolbarsSide]>, configId: string }
-type MoveToolbarAction = { type: "MOVE_TOOLBAR", from: ToolbarPosition, to: ToolbarPosition }
-type ToggleToolbarAction = { type: "TOGGLE_TOOLBAR", id: string, isCollapsed: boolean }
-type ToggleToolboxGroupAction = { type: "TOGGLE_NODE_TOOLBOX_GROUP", nodeGroup: string }
-type ToggleAllToolbarsAction = { type: "TOGGLE_ALL_TOOLBARS", isCollapsed: boolean }
+type MoveToolbarAction = { type: "MOVE_TOOLBAR", from: ToolbarPosition, to: ToolbarPosition, configId: string }
+type ToggleToolbarAction = { type: "TOGGLE_TOOLBAR", id: string, isCollapsed: boolean, configId: string }
+type ToggleToolboxGroupAction = { type: "TOGGLE_NODE_TOOLBOX_GROUP", nodeGroup: string, configId: string }
+type ToggleAllToolbarsAction = { type: "TOGGLE_ALL_TOOLBARS", isCollapsed: boolean, configId: string }
 type ProcessToolbarsConfigurationAction = { type: "PROCESS_TOOLBARS_CONFIGURATION_LOADED", data: WithId<ToolbarsConfig> }
 
-export const toggleAllToolbars = (isCollapsed: boolean): ToggleAllToolbarsAction => ({
+export const toggleAllToolbars = (isCollapsed: boolean, configId: string): ToggleAllToolbarsAction => ({
   type: "TOGGLE_ALL_TOOLBARS",
-  isCollapsed
+  isCollapsed,
+  configId,
 })
 
-export const resetToolbars = (): ThunkAction => {
+export const resetToolbars = (configId: string): ThunkAction => {
   return (dispatch, getState) => {
     const toolbars = getToolbarsInitData(getState())
-    dispatch({type: "RESET_TOOLBARS", toolbars})
+    dispatch({type: "RESET_TOOLBARS", toolbars, configId})
   }
 }
 
@@ -35,24 +36,27 @@ export function registerToolbars(toolbars: Toolbar[], configId: string): Registe
   }
 }
 
-export function moveToolbar(from: ToolbarPosition, to: ToolbarPosition): MoveToolbarAction {
+export function moveToolbar(from: ToolbarPosition, to: ToolbarPosition, configId: string): MoveToolbarAction {
   return {
     type: "MOVE_TOOLBAR",
     from, to,
+    configId,
   }
 }
 
-export function toggleToolbar(id: string, isCollapsed = false): ToggleToolbarAction {
+export function toggleToolbar(id: string , configId: string, isCollapsed = false): ToggleToolbarAction {
   return {
     type: "TOGGLE_TOOLBAR",
     id, isCollapsed,
+    configId,
   }
 }
 
-export function toggleToolboxGroup(nodeGroup: string): ToggleToolboxGroupAction {
+export function toggleToolboxGroup(nodeGroup: string, configId: string): ToggleToolboxGroupAction {
   return {
     type: "TOGGLE_NODE_TOOLBOX_GROUP",
     nodeGroup,
+    configId,
   }
 }
 
