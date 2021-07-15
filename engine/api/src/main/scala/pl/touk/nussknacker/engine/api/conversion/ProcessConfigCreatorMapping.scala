@@ -37,7 +37,7 @@ object ProcessConfigCreatorMapping {
         ExpressionConfig(
           globalProcessVariables = jec.getGlobalProcessVariables.asScala.toMap,
           globalImports = jec.getGlobalImports.asScala.toList,
-          allowedClasses = jec.getAllowedClasses.asScala.toList,
+          additionalClasses = jec.getAdditionalClasses.asScala.toList,
           languages = jec.getLanguages,
           optimizeCompilation = jec.isOptimizeCompilation,
           strictTypeChecking = jec.isStrictTypeChecking,

@@ -194,14 +194,14 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "TypedConfig" -> all(ConfigTypedGlobalVariable)
     )
 
-    val allowedClasses = List(
+    val additionalClasses = List(
       classOf[ReturningTestCaseClass]
     )
 
     ExpressionConfig(
       globalProcessVariables,
       List.empty,
-      allowedClasses,
+      additionalClasses,
       LanguageConfiguration(List()),
       dictionaries = Map(
         TestDictionary.id -> categories(TestDictionary.definition),

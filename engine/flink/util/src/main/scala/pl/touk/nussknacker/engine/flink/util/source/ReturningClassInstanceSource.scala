@@ -9,12 +9,12 @@ import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory
 class ReturningClassInstanceSource extends FlinkSourceFactory[Any]  {
 
   @MethodToInvoke
-  def source(@ParamName("Allowed class")
+  def source(@ParamName("Additional class")
              @DualEditor(
                simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
                defaultMode = DualEditorMode.SIMPLE
-             )  allowedClass: String) =
-    new CollectionSource[Any](StreamExecutionEnvironment.getExecutionEnvironment.getConfig, List.empty, None, Typed.typedClass(Class.forName(allowedClass)))
+             )  additionalClass: String) =
+    new CollectionSource[Any](StreamExecutionEnvironment.getExecutionEnvironment.getConfig, List.empty, None, Typed.typedClass(Class.forName(additionalClass)))
 
 }
 case class ReturningTestCaseClass(someMethod: String)
