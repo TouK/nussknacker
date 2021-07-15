@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 class UiProcessMarshallerSpec extends FlatSpec with Matchers {
 
-  val someProcessDescription = "process description"
+  val someProcessDescription = "scenario description"
   val someNodeDescription = "single node description"
   val processWithPartialAdditionalFields =
     s"""
@@ -58,7 +58,7 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
        |}
       """.stripMargin
 
-  it should "unmarshall to displayable process properly" in {
+  it should "unmarshall to displayable scenario properly" in {
     val displayableProcess = ProcessConverter.toDisplayableOrDie(processWithPartialAdditionalFields, TestProcessingTypes.Streaming)
 
     val processDescription = displayableProcess.properties.additionalFields.flatMap(_.description)
@@ -67,7 +67,7 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
     nodeDescription shouldBe Some(someNodeDescription)
   }
 
-  it should "marshall and unmarshall process" in {
+  it should "marshall and unmarshall scenario" in {
     val baseProcess = processWithFullAdditionalFields
     val displayableProcess = ProcessConverter.toDisplayableOrDie(baseProcess, TestProcessingTypes.Streaming)
     val canonical = ProcessConverter.fromDisplayable(displayableProcess)

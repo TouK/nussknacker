@@ -149,7 +149,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     }
   }
 
-  test("not allow required process fields") {
+  test("not allow required scenario fields") {
     val processValidation = new ProcessValidation(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.validator),
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
         "field1" -> AdditionalPropertyConfig(None, None, Some(List(MandatoryParameterValidator)), Some("label1")),
@@ -185,7 +185,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
 
   }
 
-  test("validate type) process field") {
+  test("validate type) scenario field") {
     val possibleValues = List(FixedExpressionValue("true", "true"), FixedExpressionValue("false", "false"))
     val processValidation = new ProcessValidation(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.validator),
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(

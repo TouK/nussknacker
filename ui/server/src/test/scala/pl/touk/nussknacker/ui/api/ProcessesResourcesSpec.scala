@@ -744,13 +744,13 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     }
   }
 
-  test("fetching process toolbar definitions") {
+  test("fetching scenario toolbar definitions") {
     val toolbarConfig = ProcessToolbarsConfigProvider.create(testConfig, Some(TestPermissions.testCategoryName))
     val id = createProcess(processName)
 
     withProcessToolbars(processName) { toolbar =>
       toolbar shouldBe ProcessToolbarSettings(
-        id = s"${toolbarConfig.uuidCode}-not-archived-process",
+        id = s"${toolbarConfig.uuidCode}-not-archived-scenario",
         List(
           ToolbarPanel(TipsPanel, None, None, None),
           ToolbarPanel(CreatorPanel, None, None, None)

@@ -113,7 +113,7 @@ class DBProcessService(managerActor: ActorRef,
           processActionRepository.markProcessAsUnArchived(processId = process.idWithName.id, process.processVersionId)
         ).map(_ => ().asRight)
       } else {
-        Future(Left(ProcessIllegalAction("Can't unarchive not archived process.")))
+        Future(Left(ProcessIllegalAction("Can't unarchive not archived scenario.")))
       }
     }
 
@@ -150,7 +150,7 @@ class DBProcessService(managerActor: ActorRef,
   // FIXME: How should look flow? Process -> archive -> delete?
   override def deleteProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[EmptyResponse] =
     withProcess(processIdWithName) { process =>
-      withNotRunningState(process, "Can't delete still running process.") { _ =>
+      withNotRunningState(process, "Can't delete still running scenario.") { _ =>
         repositoryManager.runInTransaction(
           processRepository.deleteProcess(processIdWithName.id)
         ).map(_ => ().asRight)
@@ -158,8 +158,8 @@ class DBProcessService(managerActor: ActorRef,
     }
 
   override def renameProcess(processIdWithName: ProcessIdWithName, name: String)(implicit user: LoggedUser): Future[XError[UpdateProcessNameResponse]] =
-    withNotArchivedProcess(processIdWithName, "Can't rename archived process.") { process =>
-      withNotRunningState(process, "Can't change name still running process.") { _ =>
+    withNotArchivedProcess(processIdWithName, "Can't rename archived scenario.") { process =>
+      withNotRunningState(process, "Can't change name still running scenario.") { _ =>
         repositoryManager.runInTransaction(
           processRepository
             .renameProcess(processIdWithName, name)
@@ -172,7 +172,7 @@ class DBProcessService(managerActor: ActorRef,
     }
 
   override def updateCategory(processIdWithName: ProcessIdWithName, category: String)(implicit user: LoggedUser): Future[XError[UpdateProcessCategoryResponse]] =
-    withNotArchivedProcess(processIdWithName, "Can't update category archived process.") { process =>
+    withNotArchivedProcess(processIdWithName, "Can't update category archived scenario.") { process =>
       withProcessingType(category) { _ =>
         repositoryManager.runInTransaction(
           processRepository
@@ -198,7 +198,7 @@ class DBProcessService(managerActor: ActorRef,
           case Right(maybeEntity) =>
             maybeEntity
               .map(entity => Right(toProcessResponse(command.processName, entity)))
-              .getOrElse(Left(ProcessValidationError("Unknown error on creating process.")))
+              .getOrElse(Left(ProcessValidationError("Unknown error on creating scenario.")))
           case Left(value) =>
             Left(value)
       }
@@ -206,8 +206,8 @@ class DBProcessService(managerActor: ActorRef,
 
   // FIXME: Update process should update process and create process version in transactional way, but right we do all in process repository..
   override def updateProcess(processIdWithName: ProcessIdWithName, action: UpdateProcessCommand)(implicit user: LoggedUser): Future[XError[UpdateProcessResponse]] =
-    withNotArchivedProcess(processIdWithName, "Can't update graph archived process.") { process =>
-      withNotCustomProcess(process, "Can't update custom process.") { _ =>
+    withNotArchivedProcess(processIdWithName, "Can't update graph archived scenario.") { process =>
+      withNotCustomProcess(process, "Can't update custom scenario.") { _ =>
         val result = for {
           validation <- EitherT.fromEither[Future](FatalValidationError.saveNotAllowedAsError(processResolving.validateBeforeUiResolving(action.process)))
           deploymentData = {

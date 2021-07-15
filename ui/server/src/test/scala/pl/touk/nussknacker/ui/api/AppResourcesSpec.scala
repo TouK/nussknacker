@@ -61,12 +61,12 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
 
     result ~> check {
       status shouldBe StatusCodes.InternalServerError
-      val expectedResponse = HealthCheckProcessResponse(ERROR, Some("Deployed processes not running (probably failed)"), Some(Set(first.id.name.value, third.id.name.value)))
+      val expectedResponse = HealthCheckProcessResponse(ERROR, Some("Deployed scenarios not running (probably failed)"), Some(Set(first.id.name.value, third.id.name.value)))
       entityAs[HealthCheckProcessResponse] shouldBe expectedResponse
     }
   }
 
-  test("it shouldn't return healthcheck when process canceled") {
+  test("it shouldn't return healthcheck when scenario canceled") {
     val statusCheck = TestProbe()
     val resources = prepareBasicAppResources(statusCheck)
 
@@ -80,7 +80,7 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
 
     result ~> check {
       status shouldBe StatusCodes.InternalServerError
-      val expectedResponse = HealthCheckProcessResponse(ERROR, Some("Deployed processes not running (probably failed)"), Some(Set(second.id.name.value)))
+      val expectedResponse = HealthCheckProcessResponse(ERROR, Some("Deployed scenarios not running (probably failed)"), Some(Set(second.id.name.value)))
       entityAs[HealthCheckProcessResponse] shouldBe expectedResponse
     }
   }

@@ -16,7 +16,7 @@ object ProcessingTypeDataReader extends LazyLogging {
     val types: Map[ProcessingType, ProcessingTypeConfig] = readProcessingTypeConfig(config)
     val valueMap = types.map {
       case (name, typeConfig) =>
-        logger.debug(s"Creating process manager: $name with config: $typeConfig")
+        logger.debug(s"Creating scenario manager: $name with config: $typeConfig")
         val managerProvider = ScalaServiceLoader.loadNamed[ProcessManagerProvider](typeConfig.engineType)
         name -> ProcessingTypeData.createProcessingTypeData(managerProvider, typeConfig)
     }

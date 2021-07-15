@@ -184,7 +184,7 @@ class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
 
     intercept[IllegalArgumentException] {
       service.getProcessToolbarSettings(process)
-    }.getMessage should include(s"Try to get process toolbar settings for not existing category: ${process.processCategory}.")
+    }.getMessage should include(s"Try to get scenario toolbar settings for not existing category: ${process.processCategory}.")
   }
 
   it should "properly create process toolbar configuration" in {

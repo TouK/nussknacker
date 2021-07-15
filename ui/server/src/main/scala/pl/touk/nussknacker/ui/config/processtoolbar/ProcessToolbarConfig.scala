@@ -66,7 +66,7 @@ object ProcessToolbarsConfigProvider extends LazyLogging {
     if (config.hasPath(path)) {
       Some(config.getConfig(path))
     } else {
-      logger.debug(s"Can't load category: $category process toolbar config.")
+      logger.debug(s"Can't load category: $category scenario toolbar config.")
       None
     }
   }

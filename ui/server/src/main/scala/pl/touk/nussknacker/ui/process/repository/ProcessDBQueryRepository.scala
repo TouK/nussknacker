@@ -112,7 +112,7 @@ object ProcessDBQueryRepository {
     buildInfo = actionData._1.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty)
   )
 
-  case class ProcessNotFoundError(id: String) extends Exception(s"No process $id found") with NotFoundError
+  case class ProcessNotFoundError(id: String) extends Exception(s"No scenario $id found") with NotFoundError
 
   case class ProcessAlreadyExists(id: String) extends BadRequestError {
     def getMessage = s"Process $id already exists"

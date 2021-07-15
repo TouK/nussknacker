@@ -68,11 +68,11 @@ class DeploymentService(context: StandaloneContextPreparer, modelData: ModelData
                 processInterpreters.put(processName, (processInterpreter, deploymentData))
                 pathToInterpreterMap.put(pathToDeploy, processInterpreter)
                 processInterpreter.open(JobData(process.metaData, deploymentData.processVersion, deploymentData.deploymentData))
-                logger.info(s"Successfully deployed process ${processName.value}")
+                logger.info(s"Successfully deployed scenario ${processName.value}")
               }
               interpreter.map(_ => ())
           }
-        case _ => Invalid(NonEmptyList.of(DeploymentError(Set(), "Wrong process type")))
+        case _ => Invalid(NonEmptyList.of(DeploymentError(Set(), "Wrong scenario type")))
       }
     }.toEither
 

@@ -64,7 +64,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader)))
   private val validator = ProcessValidator.default(objectWithMethodDef, new SimpleDictRegistry(Map.empty))
 
-  test("valid process") {
+  test("valid scenario") {
     val validProcess = processBase
       .customNode("custom1", "outPutVar", "myCustomStreamTransformer", "stringVal" -> "#additionalVar1")
       .sink("out", "''", "dummySink")
@@ -85,7 +85,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     )
   }
 
-  test("valid process - custom node with optional end and with output var as ending node") {
+  test("valid scenario - custom node with optional end and with output var as ending node") {
     val validProcess = processBase
       .endingCustomNode("custom1", Some("outputVar"), "addingVariableOptionalEndingCustomNode", "stringVal" -> "'someValue'")
 
@@ -100,7 +100,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     )
   }
 
-  test("valid process - custom node with optional end and without output var as ending node") {
+  test("valid scenario - custom node with optional end and without output var as ending node") {
     val validProcess = processBase
       .endingCustomNode("custom1", None, "optionalEndingTransformer", "stringVal" -> "'someValue'")
 
@@ -115,7 +115,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     )
   }
 
-  test("valid process - custom node with optional end with ongoing node") {
+  test("valid scenario - custom node with optional end with ongoing node") {
     val validProcess = processBase
       .customNode("custom1", "outPutVar", "optionalEndingTransformer", "stringVal" -> "'someValue'")
       .sink("out", "''", "dummySink")
@@ -136,7 +136,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     )
   }
 
-  test("invalid process - non ending custom node ends process - transformation api case") {
+  test("invalid scenario - non ending custom node ends scenario - transformation api case") {
     val invalidProcess = processBase
       .endingCustomNode("custom1", Some("outputVar"), "nonEndingCustomNodeReturningTransformation", "stringVal" -> "'someValue'")
 
@@ -145,7 +145,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     }
   }
 
-  test("invalid process - non ending custom node ends process - non-transformation api case") {
+  test("invalid scenario - non ending custom node ends scenario - non-transformation api case") {
     val invalidProcess = processBase
       .endingCustomNode("custom1", Some("outputVar"), "nonEndingCustomNodeReturningUnit", "stringVal" -> "'someValue'")
 
@@ -154,7 +154,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     }
   }
   
-  test("invalid process with non-existing variable") {
+  test("invalid scenario with non-existing variable") {
     val invalidProcess = processBase
       .customNode("custom1", "outPutVar", "myCustomStreamTransformer", "stringVal" -> "#nonExisitngVar")
       .sink("out", "''", "dummySink")
@@ -164,7 +164,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     }
   }
 
-  test("invalid process with variable of a incorrect type") {
+  test("invalid scenario with variable of a incorrect type") {
     val invalidProcess = processBase
       .customNode("custom1", "outPutVar", "myCustomStreamTransformer", "stringVal" -> "42")
       .sink("out", "''", "dummySink")
@@ -174,7 +174,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     }
   }
 
-  test("valid process using context transformation api - adding variable") {
+  test("valid scenario using context transformation api - adding variable") {
     val validProcess = processBase
       .customNode("custom1", "outPutVar", "addingVariableStreamTransformer")
       .sink("out", "#outPutVar", "dummySink")
@@ -209,7 +209,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     }
   }
 
-  test("valid process using context transformation api - adding variable using compile time evaluated parameter") {
+  test("valid scenario using context transformation api - adding variable using compile time evaluated parameter") {
     val validProcess = processBase
       .customNode("custom1", "outPutVar", "producingTupleTransformer", "numberOfFields" -> "1 + 1")
       .sink("out", "#outPutVar.field1", "dummySink")
@@ -232,7 +232,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     }
   }
 
-  test("valid process using context transformation api - union") {
+  test("valid scenario using context transformation api - union") {
     val validProcess = processWithUnion("#outPutVar.branch1")
 
     val validationResult = validator.validate(validProcess)
@@ -243,7 +243,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
       ListMap("branch2" -> Typed[Int], "branch1" -> Typed[String]))
   }
 
-  test("invalid process using context transformation api - union") {
+  test("invalid scenario using context transformation api - union") {
     val invalidProcess = processWithUnion("#outPutVar.branch2")
     val validationResult2 = validator.validate(invalidProcess).result
 
@@ -370,7 +370,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     }
   }
 
-  test("process with enricher") {
+  test("scenario with enricher") {
     val validProcess = processBase
       .enricher("enricher", "outPutVar", "enricher")
       .sink("out", "''", "dummySink")
@@ -391,7 +391,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     )
   }
 
-  test("join-custom-join should work (branch end is in different part of process)") {
+  test("join-custom-join should work (branch end is in different part of scenario)") {
     val validProcess =
       EspProcess(MetaData("proc1", StreamMetaData()), ExceptionHandlerRef(List()), NonEmptyList.of(
         GraphBuilder

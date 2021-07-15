@@ -26,7 +26,7 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
     results.head.newErrors shouldBe ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty)
   }
 
-  test("should perform test migration on multiple source process") {
+  test("should perform test migration on multiple source scenario") {
     val testMigration = newTestModelMigrations(new TestMigrations(8))
     val process = ProcessTestData.toDetails(ProcessTestData.multipleSourcesValidProcess)
 
@@ -57,7 +57,7 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
     results.head.shouldFail shouldBe true
   }
 
-  test("should detect failed migration on multiple sources process") {
+  test("should detect failed migration on multiple sources scenario") {
     val testMigration = newTestModelMigrations(new TestMigrations(9))
     val process = ProcessTestData.toDetails(ProcessTestData.multipleSourcesValidProcess)
 
@@ -98,7 +98,7 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
     results.head.shouldFail shouldBe false
   }
 
-  test("should migrate subprocess and its usage within process") {
+  test("should migrate subprocess and its usage within scenario") {
     val testMigration = newTestModelMigrations(new TestMigrations(7))
     val subprocess = ProcessTestData.toValidatedDisplayable(ProcessCanonizer.uncanonize(ProcessTestData.sampleSubprocessOneOut).getOrElse(null))
     val process =

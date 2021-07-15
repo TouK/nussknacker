@@ -84,7 +84,7 @@ class PeriodicProcessManager(val delegate: ProcessManager,
       case (_: GraphProcess, Left(error)) =>
         Future.failed(new PeriodicProcessException(error))
       case _ =>
-        Future.failed(new PeriodicProcessException("Only periodic processes can be scheduled"))
+        Future.failed(new PeriodicProcessException("Only periodic scenarios can be scheduled"))
     }
   }
 

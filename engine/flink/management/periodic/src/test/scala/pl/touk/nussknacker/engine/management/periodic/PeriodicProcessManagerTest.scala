@@ -60,7 +60,7 @@ class PeriodicProcessManagerTest extends FunSuite
     state shouldBe 'empty
   }
 
-  test("findJobStatus - should be scheduled when process scheduled and no job on Flink") {
+  test("findJobStatus - should be scheduled when scenario scheduled and no job on Flink") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
 
@@ -72,7 +72,7 @@ class PeriodicProcessManagerTest extends FunSuite
     state.value.allowedActions shouldBe List(ProcessActionType.Cancel, ProcessActionType.Deploy)
   }
 
-  test("findJobStatus - should be scheduled when process scheduled and job finished on Flink") {
+  test("findJobStatus - should be scheduled when scenario scheduled and job finished on Flink") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
     f.delegateProcessManagerStub.setStateStatus(FlinkStateStatus.Finished)
@@ -84,7 +84,7 @@ class PeriodicProcessManagerTest extends FunSuite
     state.value.allowedActions shouldBe List(ProcessActionType.Cancel, ProcessActionType.Deploy)
   }
 
-  test("findJobStatus - should be running when process deployed and job running on Flink") {
+  test("findJobStatus - should be running when scenario deployed and job running on Flink") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
     f.delegateProcessManagerStub.setStateStatus(FlinkStateStatus.Running)
@@ -96,7 +96,7 @@ class PeriodicProcessManagerTest extends FunSuite
     state.value.allowedActions shouldBe List(ProcessActionType.Cancel)
   }
 
-  test("findJobStatus - should be waiting for reschedule if job finished on Flink but process is still deployed") {
+  test("findJobStatus - should be waiting for reschedule if job finished on Flink but scenario is still deployed") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
     f.delegateProcessManagerStub.setStateStatus(FlinkStateStatus.Finished)
@@ -119,7 +119,7 @@ class PeriodicProcessManagerTest extends FunSuite
     state.value.allowedActions shouldBe List(ProcessActionType.Cancel)
   }
 
-  test("deploy - should fail for custom process") {
+  test("deploy - should fail for custom scenario") {
     val f = new Fixture
 
     val deploymentResult = f.periodicProcessManager.deploy(processVersion, DeploymentData.empty, CustomProcess("test"), None)
@@ -135,7 +135,7 @@ class PeriodicProcessManagerTest extends FunSuite
     intercept[PeriodicProcessException](Await.result(deploymentResult, patienceConfig.timeout))
   }
 
-  test("deploy - should schedule periodic process") {
+  test("deploy - should schedule periodic scenario") {
     val f = new Fixture
 
     f.periodicProcessManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen(), None).futureValue
@@ -144,7 +144,7 @@ class PeriodicProcessManagerTest extends FunSuite
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
   }
 
-  test("deploy - should cancel existing process if already scheduled") {
+  test("deploy - should cancel existing scenario if already scheduled") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
 
@@ -166,7 +166,7 @@ class PeriodicProcessManagerTest extends FunSuite
     state.value.allowedActions shouldBe List(ProcessActionType.Cancel)
   }
 
-  test("should redeploy failed process") {
+  test("should redeploy failed scenario") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
     f.delegateProcessManagerStub.setStateStatus(FlinkStateStatus.Failed)
@@ -178,7 +178,7 @@ class PeriodicProcessManagerTest extends FunSuite
     f.repository.deploymentEntities.map(_.status) shouldBe List(PeriodicProcessDeploymentStatus.Failed, PeriodicProcessDeploymentStatus.Scheduled)
   }
 
-  test("should redeploy scheduled process") {
+  test("should redeploy scheduled scenario") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
     f.getAllowedActions shouldBe List(ProcessActionType.Cancel, ProcessActionType.Deploy)
@@ -189,7 +189,7 @@ class PeriodicProcessManagerTest extends FunSuite
     f.repository.deploymentEntities.map(_.status) shouldBe List(PeriodicProcessDeploymentStatus.Scheduled, PeriodicProcessDeploymentStatus.Scheduled)
   }
 
-  test("should redeploy running process") {
+  test("should redeploy running scenario") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
     f.delegateProcessManagerStub.setStateStatus(FlinkStateStatus.Running)
@@ -201,7 +201,7 @@ class PeriodicProcessManagerTest extends FunSuite
     f.repository.deploymentEntities.map(_.status) shouldBe List(PeriodicProcessDeploymentStatus.Deployed, PeriodicProcessDeploymentStatus.Scheduled)
   }
 
-  test("should redeploy finished process") {
+  test("should redeploy finished scenario") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
     f.delegateProcessManagerStub.setStateStatus(FlinkStateStatus.Finished)
@@ -244,7 +244,7 @@ class PeriodicProcessManagerTest extends FunSuite
     f.periodicProcessManager.findJobStatus(processName).futureValue.get.status shouldBe SimpleStateStatus.Canceled
   }
 
-  test("should cancel failed process after disappeared from Flink console") {
+  test("should cancel failed scenario after disappeared from Flink console") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
     f.delegateProcessManagerStub.setStateStatus(FlinkStateStatus.Failed)

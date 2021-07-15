@@ -296,7 +296,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
     for {
       deploymentResolved <- resolvedDeploymentData
       maybeProcessName <- processRepository.fetchProcessName(ProcessId(latestVersion.processId))
-      processName = maybeProcessName.getOrElse(throw new IllegalArgumentException(s"Unknown process Id ${latestVersion.processId}"))
+      processName = maybeProcessName.getOrElse(throw new IllegalArgumentException(s"Unknown scenario Id ${latestVersion.processId}"))
       //TODO:
       deploymentData = DeploymentData(DeploymentId(""), toManagerUser(user), Map.empty)
       _ <- processManagerValue.deploy(latestVersion.toProcessVersion(processName), deploymentData, deploymentResolved, savepointPath)

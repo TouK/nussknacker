@@ -24,7 +24,7 @@ class FlinkProcessVerifier(modelData: ModelData) extends StaticMethodRunner(mode
       case NonFatal(e) =>
         logger.info(s"Failed to verify $processId", e)
         Future.failed(
-          new IllegalArgumentException("State is incompatible, please stop process and start again with clean state", e))
+          new IllegalArgumentException("State is incompatible, please stop scenario and start again with clean state", e))
     }
   }
 }

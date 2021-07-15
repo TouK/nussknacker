@@ -48,7 +48,7 @@ class PeriodicProcessServiceTest extends FunSuite
   }
 
   // Flink job could disappear from Flink console.
-  test("handleFinished - should reschedule process if Flink job is missing") {
+  test("handleFinished - should reschedule scenario if Flink job is missing") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
 

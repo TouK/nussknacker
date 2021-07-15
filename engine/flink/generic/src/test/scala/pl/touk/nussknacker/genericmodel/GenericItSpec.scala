@@ -299,7 +299,7 @@ class GenericItSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec
         .sink("end", "#outPutVar", "kafka-json", "topic" -> s"'$topicOut'")
     ))
 
-    logger.info("Starting union process")
+    logger.info("Starting union scenario")
     run(process) {
       logger.info("Waiting for consumer")
       val consumer = kafkaClient.createConsumer().consume(topicOut, secondsToWaitForAvro)

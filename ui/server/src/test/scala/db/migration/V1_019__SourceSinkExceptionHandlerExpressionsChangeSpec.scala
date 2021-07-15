@@ -58,7 +58,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
           |"exceptionHandlerRef": {"parameters":[{"name": "param1", "value": "string1"}]},
           |"nodes":[
           |]}
-          |""".stripMargin, "invalid process")
+          |""".stripMargin, "invalid scenario")
 
     val converted = migrateAndConvert(oldJson)
     val handler = converted.exceptionHandlerRef
@@ -76,7 +76,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
           |    $sourceToConvert
           |  ]
           |}
-          |""".stripMargin, "invalid process")
+          |""".stripMargin, "invalid scenario")
 
     val migrated = migrationFunc(oldJson).get
 
@@ -109,7 +109,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
           |  ${sinkToConvert("sink2")}
           |  ]
           |}
-          |""".stripMargin, "invalid process")
+          |""".stripMargin, "invalid scenario")
 
     val converted = migrateAndConvert(oldJson)
 
@@ -140,7 +140,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
           |  }
           |  ]
           |}
-          |""".stripMargin, "invalid process")
+          |""".stripMargin, "invalid scenario")
 
     val converted = migrateAndConvert(oldJson)
 
@@ -185,7 +185,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
           |  }
           |  ]
           |}
-          |""".stripMargin, "invalid process")
+          |""".stripMargin, "invalid scenario")
 
     val converted = migrateAndConvert(oldJson)
 
@@ -222,7 +222,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec w
           |  }
           |  ]
           |}
-          |""".stripMargin, "invalid process")
+          |""".stripMargin, "invalid scenario")
 
     val converted = migrateAndConvert(oldJson)
     

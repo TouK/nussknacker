@@ -28,12 +28,12 @@ object PrettyValidationErrors {
       case SubprocessParamClassLoadError(fieldName, refClazzName, nodeId) =>
         node("Invalid parameter type.", s"Failed to load $refClazzName", fieldName = Some(fieldName))
       case DuplicatedNodeIds(ids) => node(s"Duplicate node ids: ${ids.mkString(", ")}", "Two nodes cannot have same id", errorType = NodeValidationErrorType.RenderNotAllowed)
-      case EmptyProcess => node("Empty process", "Process is empty, please add some nodes")
+      case EmptyProcess => node("Empty scenario", "Process is empty, please add some nodes")
       case InvalidRootNode(_) => node("Invalid root node", "Process can start only from source node")
-      case InvalidTailOfBranch(_) => node("Invalid end of process", "Process branch can only end with sink, processor or ending custom transformer")
+      case InvalidTailOfBranch(_) => node("Invalid end of scenario", "Process branch can only end with sink, processor or ending custom transformer")
 
       case MissingParameters(params, NodeTypingInfo.ExceptionHandlerNodeId) =>
-        node(s"Global process parameters not filled", s"Please fill process properties ${params.mkString(", ")} by clicking 'Properties button'")
+        node(s"Global scenario parameters not filled", s"Please fill scenario properties ${params.mkString(", ")} by clicking 'Properties button'")
       case MissingParameters(params, _) =>
         node(s"Node parameters not filled: ${params.mkString(", ")}", s"Please fill missing node parameters: : ${params.mkString(", ")}")
 
@@ -51,7 +51,7 @@ object PrettyValidationErrors {
       case InvalidVariableOutputName(varName, _, paramName) => node(s"Variable output name '$varName' contains unsupported chars.", "Please use only letters, numbers or '_'.", fieldName = paramName)
       case NotSupportedExpressionLanguage(languageId, _) => node(s"Language $languageId is not supported", "Currently only SPEL expressions are supported")
       case MissingPart(id) => node("MissingPart", s"Node $id has missing part")
-      case WrongProcessType() => node("Wrong process type", "Process type doesn't match category - please check configuration")
+      case WrongProcessType() => node("Wrong scenario type", "Process type doesn't match category - please check configuration")
       case UnsupportedPart(id) => node("UnsupportedPart", s"Type of node $id is unsupported right now")
       case UnknownSubprocess(id, nodeId) => node("Unknown subprocess", s"Node $nodeId uses subprocess $id which is missing")
       case InvalidSubprocess(id, nodeId) => node("Invalid subprocess", s"Node $nodeId uses subprocess $id which is invalid")
@@ -71,7 +71,7 @@ object PrettyValidationErrors {
   }
 
   def noValidatorKnown(typ: ProcessingTypeData.ProcessingType): NodeValidationError = {
-    NodeValidationError(typ.toString, s"No validator available for $typ", "No validator for process type - please check configuration", fieldName = None,
+    NodeValidationError(typ.toString, s"No validator available for $typ", "No validator for scenario type - please check configuration", fieldName = None,
       errorType = NodeValidationErrorType.RenderNotAllowed)
   }
 
@@ -96,7 +96,7 @@ object PrettyValidationErrors {
   }
 
   def disabledNode(typ: String): NodeValidationError = {
-    NodeValidationError(typ, s"Node is disabled", "Deploying process with disabled node can have unexpected consequences", fieldName = None, errorType = NodeValidationErrorType.SaveAllowed)
+    NodeValidationError(typ, s"Node is disabled", "Deploying scenario with disabled node can have unexpected consequences", fieldName = None, errorType = NodeValidationErrorType.SaveAllowed)
   }
 
   def unknownProperty(typ: String, propertyName: String): NodeValidationError =

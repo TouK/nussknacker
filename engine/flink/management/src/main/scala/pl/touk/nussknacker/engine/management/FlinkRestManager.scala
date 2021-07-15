@@ -48,7 +48,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
       //currently we're rather lax on this, so that this change is backward-compatible
       //we log debug here for now, since it's invoked v. often
       if (version.isEmpty) {
-        logger.debug(s"No correct version in deployed process: ${job.name}")
+        logger.debug(s"No correct version in deployed scenario: ${job.name}")
       }
       Some(ProcessState(
         Some(ExternalDeploymentId(job.jid)),
@@ -151,7 +151,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
   // this code is executed synchronously by ManagementActor thus we don't care that much about possible races
   // and extraneous jar uploads introduced by asynchronous invocation
   override protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
-    logger.debug(s"Starting to deploy process: $processName with savepoint $savepointPath")
+    logger.debug(s"Starting to deploy scenario: $processName with savepoint $savepointPath")
     client.runProgram(jarFile, mainClass, args, savepointPath)
   }
 

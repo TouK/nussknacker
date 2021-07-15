@@ -44,31 +44,31 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
   )
 
   val statusTooltipsMap: Map[StateStatus, String] = Map(
-    SimpleStateStatus.FailedToGet -> "There are problems obtaining the process state. Please check if your engine is working properly.",
-    SimpleStateStatus.Unknown -> "Unknown state of the process. We can't recognize process state.",
-    SimpleStateStatus.NotDeployed -> "The process is not deployed.",
-    SimpleStateStatus.DuringDeploy -> "The process has been already started and currently is being deployed.",
-    SimpleStateStatus.Running -> "The process has been successfully deployed and currently is running.",
-    SimpleStateStatus.Canceled -> "The process has been successfully cancelled.",
-    SimpleStateStatus.DuringCancel -> "The process currently is being canceled.",
-    SimpleStateStatus.Failed -> "There are some problems with process.",
-    SimpleStateStatus.Finished -> "The process completed successfully.",
-    SimpleStateStatus.Error -> "There are some errors. Please check if everything is okay with process!",
-    SimpleStateStatus.Warning -> "There are some warnings. Please check if everything is okay with process!"
+    SimpleStateStatus.FailedToGet -> "There are problems obtaining the scenario state. Please check if your engine is working properly.",
+    SimpleStateStatus.Unknown -> "Unknown state of the scenario. We can't recognize scenario state.",
+    SimpleStateStatus.NotDeployed -> "The scenario is not deployed.",
+    SimpleStateStatus.DuringDeploy -> "The scenario has been already started and currently is being deployed.",
+    SimpleStateStatus.Running -> "The scenario has been successfully deployed and currently is running.",
+    SimpleStateStatus.Canceled -> "The scenario has been successfully cancelled.",
+    SimpleStateStatus.DuringCancel -> "The scenario currently is being canceled.",
+    SimpleStateStatus.Failed -> "There are some problems with scenario.",
+    SimpleStateStatus.Finished -> "The scenario completed successfully.",
+    SimpleStateStatus.Error -> "There are some errors. Please check if everything is okay with scenario!",
+    SimpleStateStatus.Warning -> "There are some warnings. Please check if everything is okay with scenario!"
   )
 
   val statusDescriptionsMap: Map[StateStatus, String] = Map(
-    SimpleStateStatus.FailedToGet -> "Failed to get a state of the process.",
-    SimpleStateStatus.Unknown -> "Unknown state of the process.",
-    SimpleStateStatus.NotDeployed -> "The process is not deployed.",
-    SimpleStateStatus.DuringDeploy -> "The process is being deployed.",
-    SimpleStateStatus.Running -> "The process is running.",
-    SimpleStateStatus.Canceled -> "The process is canceled.",
-    SimpleStateStatus.DuringCancel -> "The process is being canceled.",
-    SimpleStateStatus.Failed -> "There are some problems with process.",
-    SimpleStateStatus.Finished -> "The process has finished.",
-    SimpleStateStatus.Error -> "There are errors establishing a process state.",
-    SimpleStateStatus.Warning -> "There are some warnings establishing a process state."
+    SimpleStateStatus.FailedToGet -> "Failed to get a state of the scenario.",
+    SimpleStateStatus.Unknown -> "Unknown state of the scenario.",
+    SimpleStateStatus.NotDeployed -> "The scenario is not deployed.",
+    SimpleStateStatus.DuringDeploy -> "The scenario is being deployed.",
+    SimpleStateStatus.Running -> "The scenario is running.",
+    SimpleStateStatus.Canceled -> "The scenario is canceled.",
+    SimpleStateStatus.DuringCancel -> "The scenario is being canceled.",
+    SimpleStateStatus.Failed -> "There are some problems with scenario.",
+    SimpleStateStatus.Finished -> "The scenario has finished.",
+    SimpleStateStatus.Error -> "There are errors establishing a scenario state.",
+    SimpleStateStatus.Warning -> "There are some warnings establishing a scenario state."
   )
 
   override def statusIcon(stateStatus: StateStatus): Option[URI] =
@@ -99,9 +99,9 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
 
   val shouldBeRunningDescription: String = "Process currently is not running!"
 
-  val mismatchDeployedVersionDescription: String = "Deployed process mismatch version!"
+  val mismatchDeployedVersionDescription: String = "Deployed scenario mismatch version!"
 
-  val missingDeployedVersionDescription: String = "Missing version of deployed process!"
+  val missingDeployedVersionDescription: String = "Missing version of deployed scenario!"
 
   val processWithoutActionMessage: String = "Process state error - no actions found!"
 

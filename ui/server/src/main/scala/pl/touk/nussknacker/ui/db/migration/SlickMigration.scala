@@ -46,7 +46,7 @@ trait ProcessJsonMigration extends SlickMigration with EspTables {
     .map(_.json).update(json.map(prepareAndUpdateJson))
 
   private def prepareAndUpdateJson(json: String): String = {
-    val jsonProcess = CirceUtil.decodeJsonUnsafe[Json](json, "invalid process")
+    val jsonProcess = CirceUtil.decodeJsonUnsafe[Json](json, "invalid scenario")
     val updated = updateProcessJson(jsonProcess)
     updated.getOrElse(jsonProcess).noSpaces
   }

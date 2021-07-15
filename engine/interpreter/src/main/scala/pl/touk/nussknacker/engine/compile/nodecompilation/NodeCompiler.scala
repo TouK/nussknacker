@@ -326,7 +326,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
   //TODO: better classloader error handling
   private def loadFromParameter(subprocessParameter: SubprocessParameter)(implicit nodeId: NodeId) =
     subprocessParameter.typ.toRuntimeClass(classLoader).map(Typed(_)).getOrElse(throw new IllegalArgumentException(
-      s"Failed to load subprocess parameter: ${subprocessParameter.typ.refClazzName} for ${nodeId.id}"))
+      s"Failed to load scenario fragment parameter: ${subprocessParameter.typ.refClazzName} for ${nodeId.id}"))
 
   private def compileObjectWithTransformation[T](parameters: List[evaluatedparam.Parameter],
                                                  branchParameters: List[evaluatedparam.BranchParameters],

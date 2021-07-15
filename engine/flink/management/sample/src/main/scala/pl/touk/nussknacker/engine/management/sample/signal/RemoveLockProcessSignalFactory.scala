@@ -43,7 +43,7 @@ object SampleSignalHandlingTransformer {
         logger.info(s"Signal received: $signal")
         handle(signal)
       } else {
-        logger.info(s"Signal for other process received, ignoring. Current process ${metaData.id}, signal $signal")
+        logger.info(s"Signal for other scenario received, ignoring. Current scenario ${metaData.id}, signal $signal")
       }
     }
   }

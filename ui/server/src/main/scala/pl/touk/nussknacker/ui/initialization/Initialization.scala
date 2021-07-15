@@ -95,7 +95,7 @@ class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: D
     val results: DB[List[Unit]] = customProcesses
       .map { case (processName, processClass) =>
         val deploymentData = CustomProcess(processClass)
-        logger.info(s"Saving custom process $processName")
+        logger.info(s"Saving custom scenario $processName")
         saveOrUpdate(
           processName = ProcessName(processName),
           category = "Technical",

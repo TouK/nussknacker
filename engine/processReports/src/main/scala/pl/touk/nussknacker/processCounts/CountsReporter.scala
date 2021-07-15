@@ -32,7 +32,7 @@ object CannotFetchCountsError {
   private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
   def restartsDetected(dates: List[LocalDateTime]): CannotFetchCountsError = CannotFetchCountsError(
-    s"Counts unavailable, as process was restarted/deployed on following dates: ${dates.map(_.format(dateTimeFormatter)).mkString(", ")}"
+    s"Counts unavailable, as scenario was restarted/deployed on following dates: ${dates.map(_.format(dateTimeFormatter)).mkString(", ")}"
   )
 }
 

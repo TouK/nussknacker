@@ -372,5 +372,5 @@ object ProcessesResources {
 
   case class ProcessNotInitializedError(id: String) extends Exception(s"Process $id is not initialized") with NotFoundError
 
-  case class NodeNotFoundError(processId: String, nodeId: String) extends Exception(s"Node $nodeId not found inside process $processId") with NotFoundError
+  case class NodeNotFoundError(processId: String, nodeId: String) extends Exception(s"Node $nodeId not found inside scenario $processId") with NotFoundError
 }

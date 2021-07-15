@@ -50,7 +50,7 @@ trait FlinkProcessMain[Env] extends FlinkRunner with LazyLogging {
                            prepareExecutionConfig: ExecutionConfigPreparer): Unit
 
   private def parseProcessVersion(json: String): ProcessVersion =
-    CirceUtil.decodeJsonUnsafe[ProcessVersion](json, "invalid process version")
+    CirceUtil.decodeJsonUnsafe[ProcessVersion](json, "invalid scenario version")
 
   private def parseDeploymentData(json: String): DeploymentData =
     CirceUtil.decodeJsonUnsafe[DeploymentData](json, "invalid DeploymentData")

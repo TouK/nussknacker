@@ -97,7 +97,7 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
     val (status, message) = failedMigrations match {
       case Nil => (StatusCodes.OK, "Migrations successful")
       case _ => (StatusCodes.InternalServerError,
-        s"Migration failed, following processes have new errors: ${failedMigrations.mkString(", ")}")
+        s"Migration failed, following scenarios have new errors: ${failedMigrations.mkString(", ")}")
     }
     val summary = TestMigrationSummary(message, testMigrationResults)
 

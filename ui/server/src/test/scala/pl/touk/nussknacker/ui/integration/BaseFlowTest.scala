@@ -211,7 +211,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
         val res = responseAs[ValidationResult]
         //TODO: in the future should be more local error
         res.errors.globalErrors.map(_.description) shouldBe List(
-          "Fatal error: Failed to load subprocess parameter: i.do.not.exist for input1, please check configuration")
+          "Fatal error: Failed to load scenario fragment parameter: i.do.not.exist for input1, please check configuration")
 
         Get(endpoint) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
           status shouldEqual StatusCodes.OK
