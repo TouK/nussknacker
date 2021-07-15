@@ -102,11 +102,22 @@ module.exports = {
     hot: true,
     host: "0.0.0.0",
     disableHostCheck: true,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Credentials": "true",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+      "Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization",
+    },
     port: 3000,
     proxy: {
       "/api": {
         target: process.env.BACKEND_DOMAIN,
         changeOrigin: true,
+        onProxyRes: (proxyRes, req, res) => {
+          if (req.headers?.origin) {
+            res.setHeader("Access-Control-Allow-Origin", req.headers.origin)
+          }
+        },
       },
       "/be-static": {
         target: process.env.BACKEND_DOMAIN,
