@@ -7,6 +7,7 @@ import {SettingsState} from "../settings"
 
 export const getSettings = (state: RootState): SettingsState => state.settings
 
+export const getAuthenticationSettings = createSelector(getSettings, s => s.authenticationSettings)
 export const getFeatureSettings = createSelector(getSettings, s => s.featuresSettings)
 export const getCustomTabs = createSelector(getFeatureSettings, (s): DynamicTabData[] => s.customTabs || [])
 export const getLoggedUser = createSelector(getSettings, s => s.loggedUser)
