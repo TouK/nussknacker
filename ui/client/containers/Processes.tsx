@@ -85,6 +85,6 @@ function Processes() {
 
 export const ProcessesTabData = {
   path: `/processes`,
-  header: "Processes",
+  header: "Scenarios",
   Component: Processes,
 }

@@ -28,7 +28,7 @@ class OAuth2AuthenticationResourcesSpec extends FunSpec with Matchers with Scala
       .thenRespondWrapped(Future(Response(Option.empty, StatusCode.InternalServerError, "Bad Request")))
     )
 
-    new OAuth2AuthenticationResources(realm, DefaultOAuth2ServiceFactory.service(config, List.empty), config)
+    new OAuth2AuthenticationResources(realm, DefaultOAuth2ServiceFactory.service(config), config)
   }
 
   protected lazy val badAuthenticationResources = {
@@ -37,7 +37,7 @@ class OAuth2AuthenticationResourcesSpec extends FunSpec with Matchers with Scala
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespondWrapped(Future(Response(Option.empty, StatusCode.BadRequest, "Bad Request")))
 
-    new OAuth2AuthenticationResources(realm, DefaultOAuth2ServiceFactory.service(config, List.empty), config)
+    new OAuth2AuthenticationResources(realm, DefaultOAuth2ServiceFactory.service(config), config)
   }
 
   protected lazy val authenticationResources = {
@@ -49,7 +49,7 @@ class OAuth2AuthenticationResourcesSpec extends FunSpec with Matchers with Scala
       .thenRespond(""" { "id": "1", "email": "some@email.com" } """)
 
 
-    new OAuth2AuthenticationResources(realm, DefaultOAuth2ServiceFactory.service(config, List.empty), config)
+    new OAuth2AuthenticationResources(realm, DefaultOAuth2ServiceFactory.service(config), config)
   }
 
   def authenticationOauth2(resource: OAuth2AuthenticationResources, authorizationCode: String) = {

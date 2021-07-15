@@ -26,7 +26,7 @@ import scala.concurrent.duration._
 //TODO move some tests to FlinkHttpClientTest
 class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutures {
 
-  private val config = FlinkConfig(10 minute, None, "http://test.pl", None)
+  private val config = FlinkConfig("http://test.pl", None)
 
   private var statuses: List[JobOverview] = List()
 

@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.compile.nodecompilation.ParameterEvaluator
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
@@ -19,21 +20,23 @@ class ProcessObjectFactory(expressionEvaluator: ExpressionEvaluator) extends Laz
   def createObject[T](nodeDefinition: ObjectWithMethodDef,
                       compiledParameters: List[(TypedParameter, Parameter)],
                       outputVariableNameOpt: Option[String],
-                      additionalDependencies: Seq[AnyRef])
+                      additionalDependencies: Seq[AnyRef],
+                      runMode: RunMode)
                      (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, T] = {
     NodeValidationExceptionHandler.handleExceptions {
-      create[T](nodeDefinition, compiledParameters, outputVariableNameOpt, additionalDependencies)
+      create[T](nodeDefinition, compiledParameters, outputVariableNameOpt, additionalDependencies, runMode)
     }
   }
 
   private def create[T](objectWithMethodDef: ObjectWithMethodDef,
                         params: List[(evaluatedparam.TypedParameter, Parameter)],
                         outputVariableNameOpt: Option[String],
-                        additional: Seq[AnyRef])
+                        additional: Seq[AnyRef],
+                        runMode: RunMode)
                        (implicit processMetaData: MetaData, nodeId: NodeId): T = {
     val paramsMap = params.map {
       case (tp, p) => p.name -> parameterEvaluator.prepareParameter(tp, p)._1
     }.toMap
-    objectWithMethodDef.invokeMethod(paramsMap, outputVariableNameOpt, Seq(processMetaData, nodeId) ++ additional).asInstanceOf[T]
+    objectWithMethodDef.invokeMethod(paramsMap, outputVariableNameOpt, Seq(processMetaData, nodeId, runMode) ++ additional).asInstanceOf[T]
   }
 }

@@ -1,16 +1,16 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
 import java.net.URI
-
 import io.circe.Json
 import org.scalatest.{FlatSpec, Matchers, Suite}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, Permission}
+import pl.touk.nussknacker.ui.security.api.{AuthenticatedUser, AuthenticationConfiguration, LoggedUser, Permission}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2CompoundException, OAuth2ServerError}
 import sttp.client.Response
 import sttp.client.testing.SttpBackendStub
 import sttp.model.{StatusCode, Uri}
 
+import scala.concurrent.duration.Deadline
 import scala.concurrent.{ExecutionContext, Future}
 
 class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with PatientScalaFutures with Suite  {
@@ -19,6 +19,7 @@ class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
   import ExecutionContext.Implicits.global
 
   val config = ExampleOAuth2ServiceFactory.testConfig
+  val rules = ExampleOAuth2ServiceFactory.testRules
 
   def createErrorOAuth2Service(uri: URI, code: StatusCode) = {
     implicit val testingBackend = SttpBackendStub
@@ -26,7 +27,7 @@ class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
       .whenRequestMatches(_.uri.equals(Uri(uri)))
       .thenRespondWrapped(Future(Response(Option.empty, code)))
 
-    DefaultOAuth2ServiceFactory.service(config, List.empty)
+    DefaultOAuth2ServiceFactory.service(config)
   }
 
   def createDefaultServiceMock(body: Json, uri: URI) = {
@@ -35,7 +36,7 @@ class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
       .whenRequestMatches(_.uri.equals(Uri(uri)))
       .thenRespond(body.toString)
 
-    DefaultOAuth2ServiceFactory.service(config, List.empty)
+    DefaultOAuth2ServiceFactory.service(config)
   }
 
   it should ("properly parse data from authentication") in {
@@ -46,7 +47,7 @@ class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
       .thenRespond(body.asJson.toString())
       .whenRequestMatches(_.uri.equals((Uri(config.profileUri))))
       .thenRespond(Map("id" -> "1", "email" -> "some@email.com").asJson.toString())
-    val service = DefaultOAuth2ServiceFactory.service(config, List.empty)
+    val service = DefaultOAuth2ServiceFactory.service(config)
     val (data, _) = service.obtainAuthorizationAndUserInfo("6V1reBXblpmfjRJP").futureValue
 
     data shouldBe a[OAuth2AuthorizationData]
@@ -74,7 +75,8 @@ class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
   it should ("properly parse data from profile for profile type User") in {
     val response: Map[String, String] = Map("id" -> "1", "email" -> "some@email.com")
     val service = createDefaultServiceMock(response.asJson, config.profileUri)
-    val (user, _) = service.checkAuthorizationAndObtainUserinfo("6V1reBXblpmfjRJP").futureValue
+    val user = service.checkAuthorizationAndObtainUserinfo("6V1reBXblpmfjRJP")
+      .map { case (user, _) => LoggedUser(user, rules, List.empty) }.futureValue
 
     user shouldBe a[LoggedUser]
     user.isAdmin shouldBe false
@@ -89,7 +91,8 @@ class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
   it should ("properly parse data from profile for profile type UserWithAdminTab") in {
     val response: Map[String, String] = Map("id" -> "1", "email" -> "example2@email.com")
     val service = createDefaultServiceMock(response.asJson, config.profileUri)
-    val (user, _) = service.checkAuthorizationAndObtainUserinfo("6V1reBXblpmfjRJP").futureValue
+    val user = service.checkAuthorizationAndObtainUserinfo("6V1reBXblpmfjRJP")
+      .map { case (user, _) => LoggedUser(user, rules, List.empty) }.futureValue
 
     user shouldBe a[LoggedUser]
     user.isAdmin shouldBe false
@@ -109,7 +112,8 @@ class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
 
     val response: Map[String, String] = Map("id" -> "1", "email" -> "example@email.com")
     val service = createDefaultServiceMock(response.asJson, config.profileUri)
-    val (user, _) = service.checkAuthorizationAndObtainUserinfo("6V1reBXblpmfjRJP").futureValue
+    val user = service.checkAuthorizationAndObtainUserinfo("6V1reBXblpmfjRJP")
+      .map { case (user, _) => LoggedUser(user, rules, List.empty) }.futureValue
 
     user shouldBe a[LoggedUser]
     user.isAdmin shouldBe true
@@ -130,7 +134,8 @@ class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
   it should ("properly parse data from profile for profile without email") in {
     val response: Map[String, String] = Map("id" -> "1")
     val service = createDefaultServiceMock(response.asJson, config.profileUri)
-    val (user, _) = service.checkAuthorizationAndObtainUserinfo("6V1reBXblpmfjRJP").futureValue
+    val user = service.checkAuthorizationAndObtainUserinfo("6V1reBXblpmfjRJP")
+      .map { case (user, _) => LoggedUser(user, rules, List.empty) }.futureValue
 
     user shouldBe a[LoggedUser]
     user.isAdmin shouldBe false

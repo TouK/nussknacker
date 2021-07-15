@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNod
 import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerBranchParameter, DefinedEagerParameter, DefinedSingleParameter, FailedToDefineParameter, JoinGenericNodeTransformation, NodeDependencyValue, OutputVariableNameValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency}
-import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory, Source, SourceFactory, TestDataGenerator, SourceTestSupport}
+import pl.touk.nussknacker.engine.api.process.{RunMode, Sink, SinkFactory, Source, SourceFactory, SourceTestSupport, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 
@@ -194,7 +194,7 @@ object validationHelpers {
           FinalResults(context, errors = List(CustomNodeError("Output not defined", None)))
       }
     }
-    override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency, TypedNodeDependency(classOf[MetaData]))
+    override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency, TypedNodeDependency(classOf[MetaData]), TypedNodeDependency(classOf[RunMode]))
 
   }
 
@@ -204,7 +204,6 @@ object validationHelpers {
     protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
       finalResult(context, rest, "otherNameThanInput")
     }
-    override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]))
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[List[String]]): Source[String] = {
 
@@ -241,7 +240,6 @@ object validationHelpers {
     protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
       FinalResults(context)
     }
-    override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]))
 
   }
 
@@ -249,7 +247,6 @@ object validationHelpers {
     protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {
       FinalResults(context)
     }
-    override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]))
 
   }
 
@@ -263,7 +260,7 @@ object validationHelpers {
           FinalResults(context, errors = List(CustomNodeError("Output not defined", None)))
       }
     }
-    override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency, TypedNodeDependency(classOf[MetaData]))
+    override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency, TypedNodeDependency(classOf[MetaData]), TypedNodeDependency(classOf[RunMode]))
   }
 
 
@@ -300,6 +297,8 @@ object validationHelpers {
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): T = {
       null.asInstanceOf[T]
     }
+
+    override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency(classOf[MetaData]), TypedNodeDependency(classOf[RunMode]))
 
   }
 

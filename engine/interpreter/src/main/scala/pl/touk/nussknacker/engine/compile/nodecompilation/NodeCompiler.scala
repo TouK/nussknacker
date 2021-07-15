@@ -10,10 +10,10 @@ import pl.touk.nussknacker.engine.api.context.transformation.{JoinGenericNodeTra
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExceptionInfo}
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo, TypedExpression, TypedExpressionMap}
-import pl.touk.nussknacker.engine.api.process.Source
+import pl.touk.nussknacker.engine.api.process.{RunMode, Source}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType}
-import pl.touk.nussknacker.engine.api.{Context, VariableConstants, EagerService, MetaData, ServiceInvoker}
+import pl.touk.nussknacker.engine.api.{Context, EagerService, MetaData, ServiceInvoker, VariableConstants}
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo.DefaultExpressionId
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{ExpressionCompilation, NodeCompilationResult}
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeTypingInfo, NodeValidationExceptionHandler, ProcessObjectFactory}
@@ -62,10 +62,11 @@ object NodeCompiler {
 class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
                    objectParametersExpressionCompiler: ExpressionCompiler,
                    classLoader: ClassLoader,
-                   resultCollector: ResultCollector) {
+                   resultCollector: ResultCollector,
+                   runMode: RunMode) {
 
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): NodeCompiler = {
-    new NodeCompiler(definitions, objectParametersExpressionCompiler.withExpressionParsers(modify), classLoader, resultCollector)
+    new NodeCompiler(definitions, objectParametersExpressionCompiler.withExpressionParsers(modify), classLoader, resultCollector, runMode)
   }
 
   type GenericValidationContext = Either[ValidationContext, Map[String, ValidationContext]]
@@ -383,7 +384,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
 
     val compiledObjectWithTypingInfo = objectParametersExpressionCompiler.compileObjectParameters(parameterDefinitionsToUse.getOrElse(nodeDefinition.parameters),
       parameters, branchParameters, ctx, branchContexts, eager = false).andThen { compiledParameters =>
-      factory.createObject[T](nodeDefinition, compiledParameters, outputVariableNameOpt, additionalDependencies).map { obj =>
+      factory.createObject[T](nodeDefinition, compiledParameters, outputVariableNameOpt, additionalDependencies, runMode).map { obj =>
         val typingInfo = compiledParameters.flatMap {
           case (TypedParameter(name, TypedExpression(_, _, typingInfo)), _) =>
             List(name -> typingInfo)

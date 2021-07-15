@@ -4,7 +4,6 @@ import com.dimafeng.testcontainers.{ForAllTestContainer, InfluxDBContainer}
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import org.influxdb.InfluxDBFactory
 import org.influxdb.dto.Point
-import org.scalatest.concurrent.Eventually
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{Assertion, FunSuite, Matchers}
 import pl.touk.nussknacker.processCounts.{CannotFetchCountsError, ExecutionCount, RangeCount}
@@ -110,7 +109,7 @@ class InfluxCountsReporterSpec extends FunSuite with ForAllTestContainer with Ta
     private val influxDB = InfluxDBFactory.connect(container.url, container.username, container.password)
 
     def reporter(queryMode: QueryMode.Value) = new InfluxCountsReporter(env,
-      InfluxConfig(container.url + "/query", container.username, container.password, container.database, queryMode, Some(config))
+      InfluxConfig(container.url + "/query", Option(container.username), Option(container.password), container.database, queryMode, Some(config))
     )
 
     influxDB.setDatabase(container.database)

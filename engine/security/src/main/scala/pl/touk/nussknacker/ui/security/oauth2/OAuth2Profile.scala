@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 
 trait OAuth2Profile[ProfileResponse] {
-  def getLoggedUser(profile: ProfileResponse, configuration: OAuth2Configuration, allCategories: List[String]): LoggedUser
+  def getAuthenticatedUser(profile: ProfileResponse, configuration: OAuth2Configuration): AuthenticatedUser
 }
 
 object OAuth2Profile {

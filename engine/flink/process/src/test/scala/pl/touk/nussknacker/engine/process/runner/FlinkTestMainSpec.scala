@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.process.runner
 
-import java.util.Date
+import java.util.{Date, UUID}
+
 import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.runtime.client.JobExecutionException
@@ -8,6 +9,7 @@ import org.scalatest._
 import pl.touk.nussknacker.engine.api.deployment.TestProcess
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess._
+import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
@@ -26,6 +28,7 @@ import scala.concurrent.{Await, Future}
 
 class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAndAfterEach {
 
+  import scala.collection.JavaConverters._
   import spel.Implicits._
 
   override protected def beforeEach(): Unit = {
@@ -418,6 +421,20 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
 
     //TODO: currently e.g. invocation results will behave strangely in this test, because we duplicate inputs and this results in duplicate context ids...
     results.mockedResults("proc2").map(_.value.asInstanceOf[String]).sorted shouldBe List("a", "b", "c", "c").map(_ + "-collectedDuringServiceInvocation")
+  }
+
+  test("should have correct run mode") {
+    val process = EspProcessBuilder
+      .id("proc")
+      .exceptionHandler()
+      .source("start", "input")
+      .enricher("runModeService", "runModeService", "returningRunModeService")
+      .customNode("runModeCustomNode", "runModeCustomNode", "transformerAddingRunMode")
+      .sink("out", "{#runModeService, #runModeCustomNode}", "monitor")
+
+    val results = runFlinkTest(process, TestData("0|1|2|3|4|5|6"))
+
+    results.invocationResults("out").map(_.value) shouldBe List(List(RunMode.Test, RunMode.Test).asJava)
   }
 
   def runFlinkTest(process: EspProcess, testData: TestProcess.TestData): TestResults[Any] = {

@@ -5,6 +5,7 @@ import java.util.concurrent.{CompletionStage, Executor}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.context.OutputVar
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.{ContextId, MetaData, Service, ServiceInvoker}
@@ -23,10 +24,11 @@ private[definition] class ServiceInvokerImpl(metaData: MetaData,
 
   override def invokeService(params: Map[String, Any])(implicit ec: ExecutionContext,
                                                        collector: ServiceInvocationCollector,
-                                                       contextId: ContextId): Future[AnyRef] = {
+                                                       contextId: ContextId,
+                                                       runMode: RunMode): Future[AnyRef] = {
     objectWithMethodDef.invokeMethod(params,
       outputVariableNameOpt = outputVariableNameOpt.map(_.outputName),
-      additional = Seq(ec, collector, metaData, nodeId, contextId)
+      additional = Seq(ec, collector, metaData, nodeId, contextId, runMode)
     ).asInstanceOf[Future[AnyRef]]
   }
 
@@ -43,22 +45,16 @@ private[definition] class JavaServiceInvokerImpl(metaData: MetaData,
 
   override def invokeService(params: Map[String, Any])(implicit ec: ExecutionContext,
                                                        collector: ServiceInvocationCollector,
-                                                       contextId: ContextId): Future[AnyRef] = {
+                                                       contextId: ContextId,
+                                                       runMode: RunMode): Future[AnyRef] = {
     val result = objectWithMethodDef.invokeMethod(params,
       outputVariableNameOpt = outputVariableNameOpt.map(_.outputName),
-      additional = Seq(ec, collector, metaData, nodeId, contextId)
+      additional = Seq(ec, collector, metaData, nodeId, contextId, runMode)
     )
     FutureConverters.toScala(result.asInstanceOf[CompletionStage[AnyRef]])
   }
 
   override def returnType: typing.TypingResult = objectWithMethodDef.returnType
-
-  private def prepareExecutor(ec: ExecutionContext) =
-    new Executor {
-      override def execute(command: Runnable): Unit = {
-        ec.execute(command)
-      }
-    }
 
 }
 
@@ -90,7 +86,7 @@ object DefaultServiceInvoker {
 
     override protected val expectedReturnType: Option[Class[_]] = Some(classOf[Future[_]])
     override protected val additionalDependencies = Set[Class[_]](classOf[ExecutionContext],
-      classOf[ServiceInvocationCollector], classOf[MetaData], classOf[NodeId], classOf[ContextId])
+      classOf[ServiceInvocationCollector], classOf[MetaData], classOf[NodeId], classOf[ContextId], classOf[RunMode])
 
   }
 
@@ -98,7 +94,7 @@ object DefaultServiceInvoker {
 
     override protected val expectedReturnType: Option[Class[_]] = Some(classOf[java.util.concurrent.CompletionStage[_]])
     override protected val additionalDependencies = Set[Class[_]](classOf[Executor],
-      classOf[ServiceInvocationCollector], classOf[MetaData], classOf[NodeId], classOf[ContextId])
+      classOf[ServiceInvocationCollector], classOf[MetaData], classOf[NodeId], classOf[ContextId], classOf[RunMode])
 
   }
 
@@ -106,7 +102,7 @@ object DefaultServiceInvoker {
 
     override protected val expectedReturnType: Option[Class[_]] = Some(classOf[ServiceInvoker])
     override protected val additionalDependencies = Set[Class[_]](classOf[ExecutionContext],
-      classOf[ServiceInvocationCollector], classOf[MetaData], classOf[NodeId], classOf[ContextId])
+      classOf[ServiceInvocationCollector], classOf[MetaData], classOf[NodeId], classOf[ContextId], classOf[RunMode])
 
   }
 

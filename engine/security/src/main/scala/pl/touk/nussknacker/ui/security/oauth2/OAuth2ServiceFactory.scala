@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.duration.{Deadline, FiniteDuration}
@@ -20,6 +20,6 @@ trait OAuth2Service[+UserInfoData, +AuthorizationData <: OAuth2AuthorizationData
 
 
 trait OAuth2ServiceFactory {
-  def create(configuration: OAuth2Configuration, allCategories: List[String])(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): OAuth2Service[LoggedUser, OAuth2AuthorizationData] =
+  def create(configuration: OAuth2Configuration)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData] =
     throw new NotImplementedError("Trying to use the new version of the interface, which is not implemented yet")
 }
