@@ -170,12 +170,18 @@ class PeriodicProcessManagerTest extends FunSuite
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
     f.delegateProcessManagerStub.setStateStatus(FlinkStateStatus.Failed)
-    f.getAllowedActions shouldBe List(ProcessActionType.Cancel) // redeploy is blocked in GUI but API allows it
+    val failedProcessState = f.periodicProcessManager.findJobStatus(processName).futureValue.value
+    failedProcessState.status shouldBe FlinkStateStatus.Failed
+    failedProcessState.allowedActions shouldBe List(ProcessActionType.Cancel) // redeploy is blocked in GUI but API allows it
 
     f.periodicProcessManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen(), None).futureValue
 
     f.repository.processEntities.map(_.active) shouldBe List(false, true)
     f.repository.deploymentEntities.map(_.status) shouldBe List(PeriodicProcessDeploymentStatus.Failed, PeriodicProcessDeploymentStatus.Scheduled)
+    val scheduledProcessState = f.periodicProcessManager.findJobStatus(processName).futureValue.value
+    // Previous job is still visible as Failed.
+    scheduledProcessState.status shouldBe a[ScheduledStatus]
+    scheduledProcessState.allowedActions shouldBe List(ProcessActionType.Cancel, ProcessActionType.Deploy)
   }
 
   test("should redeploy scheduled process") {
