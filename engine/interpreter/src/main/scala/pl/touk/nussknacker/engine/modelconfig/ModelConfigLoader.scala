@@ -27,9 +27,9 @@ abstract class ModelConfigLoader extends Serializable {
     * [[resolveConfig]])
     *
     * Method used for performance reasons to reduce serialized configuration size inside deployed processes. By default
-    * config from main nussknacker file at path: processTypes.{type_name}.modelConfig is passed unchanged.
+    * config from main nussknacker file at path: scenarioTypes.{type_name}.modelConfig is passed unchanged.
     *
-    * @param inputConfig configuration from processTypes.{type_name}.modelConfig
+    * @param inputConfig configuration from scenarioTypes.{type_name}.modelConfig
     * @return config part that is later passed to a running process (see e.g. FlinkProcessCompiler)
     */
   def resolveInputConfigDuringExecution(inputConfig: Config, classLoader: ClassLoader): InputConfigDuringExecution = {

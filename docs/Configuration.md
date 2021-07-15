@@ -29,7 +29,7 @@ usersFile: "./conf/users.conf"
 environment: "demo"
 attachmentsPath: "/tmp/touk/esp-frontend/attachments"
        
-processTypes {
+scenarioTypes {
   streaming {
     engineConfig {    
       type: "flinkStreaming"
@@ -91,7 +91,7 @@ Detailed rules are described in [documentation](https://github.com/lightbend/con
 ```              
 you can override them in ```application.conf``` like this:
 ```hocon 
-processTypes {
+scenarioTypes {
   type1 {
     modelConfig {
       timeout: 20s
@@ -116,7 +116,7 @@ All configurations can also be overridden with environmental variables. Please c
 In particular, Nussknacker docker image is executed with ```-Dconfig.override_with_env_vars=true```   
 For example, to override samples above you would have to define:
 ```shell script
-   CONFIG_FORCE_processTypes_type1_modelConfig_timeout=30s
+   CONFIG_FORCE_scenarioTypes_type1_modelConfig_timeout=30s
    CONFIG_FORCE_environmentAlert_content="MY environment"  
 ```
 
@@ -133,7 +133,7 @@ categoriesConfig: {
   "fraud": "streaming",
 }
 ```
-For each category you have to define its processing type (`streaming` in examples above). You can read about processing
+For each category you have to define its scenario type (`streaming` in examples above). You can read about processing
 types and their configurations below.
 
 ### Process Toolbar Configuration
@@ -332,11 +332,11 @@ akka {
 * `environment` - key of environment (used e.g. for alerts) - e.g. test or production
 * `attachmentsPath` - location on disk where attachments will be stored
 
-##Processing types 
+##Scenario types 
 One installation of Nussknacker can handle many different processing engines - currently the main supported engine is
-Flink in streaming mode. Processing engines are defined in `processTypes` section. You can e.g. have two processing
+Flink in streaming mode. Processing engines are defined in `scenarioTypes` section. You can e.g. have two processing
 types pointing to separate Flink clusters. Each processing engine has its name (e.g. `flinkStreaming`). 
-Processing type configuration consists of two main parts:
+Scenario type configuration consists of two main parts:
 * engine configuration
 * model configuration
 
