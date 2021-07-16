@@ -25,7 +25,6 @@ case class TypeDefinitionSet(typeDefinitions: Set[TypeInfos.ClazzDefinition]) {
 
     val typeReferenceClazz = typeReference.getValue(new ExpressionState(evaluationContext))
 
-    println(typeReferenceClazz)
     typeDefinitions.find(typeDefinition => typeDefinition.clazzName.klass.equals(typeReferenceClazz)) match {
       case Some(clazzDefinition : TypeInfos.ClazzDefinition) => Valid(clazzDefinition.clazzName)
       case _ => Invalid(NonEmptyList.of(ExpressionParseError(s"Class ${typeReferenceClazz} is not allowed to be passed as TypeReference")))

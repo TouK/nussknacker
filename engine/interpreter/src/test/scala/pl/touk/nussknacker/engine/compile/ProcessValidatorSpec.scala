@@ -98,7 +98,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     ClassExtractionSettings.Default
   )
 
-  test("Invocation of Type Reference of valid class, should succeed") {
+  test("Validation of Type Reference using accessible class, success scenario") {
 
     val typeReferenceWithValidClass = "T(String).copyValueOf()"
 
@@ -114,6 +114,26 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     compilationResult.result should matchPattern {
       case Valid(_) =>
+    }
+
+  }
+
+  test("Validation of Type Reference using inaccessible class, failure scenario") {
+
+    val typeReferenceWithValidClass = "T(System).copyValueOf()"
+
+    val testProcess =
+      EspProcessBuilder
+        .id("TypeReferenceClassValidationSuccess")
+        .exceptionHandler()
+        .source("source1", "source")
+        .filter("filter1", typeReferenceWithValidClass)
+        .sink("id1", "#input", "sink")
+
+    val compilationResult = validate(testProcess, baseDefinition)
+
+    compilationResult.result should matchPattern {
+      case Invalid(NonEmptyList(ExpressionParseError(_, _, _, _), _)) =>
     }
 
   }
