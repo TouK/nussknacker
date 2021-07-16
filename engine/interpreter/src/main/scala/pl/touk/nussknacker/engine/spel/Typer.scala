@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, ExpressionTypingInfo}
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings}
+import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.dict.SpelDictTyper
@@ -30,7 +30,7 @@ import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 import scala.annotation.tailrec
 import scala.reflect.runtime._
-import scala.util.{Failure, Success, Try}
+import scala.util.{Success, Failure, Try}
 import scala.util.control.NonFatal
 
 private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: CommonSupertypeFinder,

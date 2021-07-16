@@ -22,7 +22,7 @@ class SpelBenchmarkSetup(expression: String, vars: Map[String, AnyRef]) {
     strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false, strictMethodsChecking = true, staticMethodInvocationsChecking = false)
 
   private val expressionCompiler = ExpressionCompiler.withOptimization(
-    getClass.getClassLoader, new SimpleDictRegistry(Map.empty), expressionDefinition, settings = ClassExtractionSettings.Default, typeDefinitionSet = TypeDefinitionSet())
+    getClass.getClassLoader, new SimpleDictRegistry(Map.empty), expressionDefinition, settings = ClassExtractionSettings.Default, typeDefinitionSet = TypeDefinitionSet.empty)
 
   private val validationContext = ValidationContext(vars.mapValues(Typed.fromInstance), Map.empty)
 

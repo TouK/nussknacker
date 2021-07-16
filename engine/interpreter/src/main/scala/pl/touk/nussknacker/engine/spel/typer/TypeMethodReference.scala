@@ -31,7 +31,6 @@ class TypeMethodReference(methodName: String, currentResults: List[TypingResult]
     val validatedType = for {
       nonEmptyClassDefinitions <- validateClassDefinitionsNonEmpty(clazzDefinitions).right
       nonEmptyMethods <- validateMethodsNonEmpty(nonEmptyClassDefinitions).right
-//      validatedStatic <- validateStaticMethods(nonEmptyMethods).right
       returnTypesForMatchingParams <- validateMethodParameterTypes(nonEmptyMethods).right
     } yield Typed(returnTypesForMatchingParams.toSet)
 
@@ -41,7 +40,6 @@ class TypeMethodReference(methodName: String, currentResults: List[TypingResult]
       case Right(returnType) => Right(returnType)
     }
   }
-
 
   private def validateClassDefinitionsNonEmpty(clazzDefinitions: List[ClazzDefinition]): Either[Option[String], List[ClazzDefinition]] =
     if (clazzDefinitions.isEmpty) Left(None) else Right(clazzDefinitions)
