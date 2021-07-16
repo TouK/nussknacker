@@ -7,7 +7,6 @@ const childProcess = require("child_process")
 const HtmlWebpackPlugin = require("html-webpack-plugin")
 const HtmlWebpackHarddiskPlugin = require("html-webpack-harddisk-plugin")
 const TerserPlugin = require("terser-webpack-plugin")
-const FileManagerPlugin = require("filemanager-webpack-plugin")
 const {CleanWebpackPlugin} = require("clean-webpack-plugin")
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin")
 const federationConfig = require("./federation.config.json")
@@ -15,6 +14,7 @@ const MomentLocalesPlugin = require("moment-locales-webpack-plugin")
 const ReactRefreshWebpackPlugin = require("@pmmmwh/react-refresh-webpack-plugin")
 const PreloadWebpackPlugin = require("@vue/preload-webpack-plugin")
 const WebpackShellPluginNext = require("webpack-shell-plugin-next")
+const CopyPlugin = require("copy-webpack-plugin")
 
 const NODE_ENV = process.env.NODE_ENV || "development"
 const GIT_HASH = childProcess.execSync("git log -1 --format=%H").toString()
@@ -51,11 +51,6 @@ const fileLoader = {
 const outputPath = process.env.OUTPUT_PATH ?
   path.join(process.env.OUTPUT_PATH, "classes", "web", "static") :
   path.join(process.cwd(), "dist")
-
-const onDoneWatch = {
-  scripts: ["npm run make-types"],
-  blocking: true,
-}
 
 module.exports = {
   mode: NODE_ENV,
@@ -131,14 +126,14 @@ module.exports = {
       ignored: [
         "webpack.config.js",
         "**/dist",
-        "**/dist/**",
         "**/target",
         // ignore vim swap files
         "**/*.sw[pon]",
         // TODO: separate src/main, src/test and so on
         "**/cypress*",
         "**/.nyc_output",
-        "**/.federated-types",
+        "**/.federated-types/**/*",
+        "**/dist/*-dts.tgz",
         "**/jest*",
         "**/test*",
         "**/*.md",
@@ -174,38 +169,19 @@ module.exports = {
     }),
     new HtmlWebpackHarddiskPlugin(),
     new WebpackShellPluginNext({
-      onBeforeNormalRun: onDoneWatch,
-      onDoneWatch: onDoneWatch,
-    }),
-    new FileManagerPlugin({
-      events: {
-        onEnd: [
-          {
-            copy: [{
-              source: "translations",
-              destination: path.join(outputPath, "assets/locales"),
-            }],
-          },
-          {
-            archive: [{
-              source: ".federated-types",
-              destination: path.join(outputPath, `${federationConfig.name}-dts.tgz`),
-              format: "tar",
-              options: {
-                gzip: true,
-              },
-            }],
-          },
-          {
-            delete: [{
-              source: ".federated-types",
-              options: {
-                force: true,
-              },
-            }],
-          },
+      onAfterDone: {
+        scripts: [
+          `npm run make-types`,
+          `tar -C .federated-types -czf "${path.join(outputPath, `${federationConfig.name}-dts.tgz`)}" .`,
+          `rm -rf .federated-types/*`,
         ],
+        swallowError: true,
       },
+    }),
+    new CopyPlugin({
+      patterns: [
+        {from: "translations", to: "assets/locales", noErrorOnMissing: true},
+      ],
     }),
     new PreloadWebpackPlugin({
       rel: "preload",
