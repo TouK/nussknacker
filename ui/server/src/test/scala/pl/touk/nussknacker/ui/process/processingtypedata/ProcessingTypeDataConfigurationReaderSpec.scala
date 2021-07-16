@@ -5,7 +5,7 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import org.scalatest.FunSuite
 import org.scalatest.Matchers.{convertToAnyShouldWrapper, include}
 
-class ProcessingTypeDataReaderSpec extends FunSuite {
+class ProcessingTypeDataConfigurationReaderSpec extends FunSuite {
 
   private val oldConfiguration: Config = ConfigFactory.parseString(
     """
@@ -19,7 +19,7 @@ class ProcessingTypeDataReaderSpec extends FunSuite {
       |    }
       |
       |    modelConfig {
-      |      classPath: ["engine/flink/management/sample/target/scala-2.12/managementSample.jar"]
+      |      classPath: ["test.jar"]
       |    }
       |  }
       |}
@@ -29,10 +29,10 @@ class ProcessingTypeDataReaderSpec extends FunSuite {
   import scala.collection.JavaConverters._
 
   test("should load old processTypes configuration") {
-    val processTypes = ProcessingTypeDataReader.loadProcessingTypeData(oldConfiguration)
+    val processTypes = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(oldConfiguration)
 
-    processTypes.all.size shouldBe 1
-    processTypes.all.keys.take(1) shouldBe Set("streaming")
+    processTypes.size shouldBe 1
+    processTypes.keys.take(1) shouldBe Set("streaming")
   }
 
   test("should optionally load scenarioTypes configuration") {
@@ -42,10 +42,10 @@ class ProcessingTypeDataReaderSpec extends FunSuite {
 
     val config = oldConfiguration.withFallback(configuration).resolve()
 
-    val processTypes = ProcessingTypeDataReader.loadProcessingTypeData(config)
+    val processTypes = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
 
-    processTypes.all.size shouldBe 1
-    processTypes.all.keys.take(1) shouldBe Set("newStreamingScenario")
+    processTypes.size shouldBe 1
+    processTypes.keys.take(1) shouldBe Set("newStreamingScenario")
   }
 
   test("should throw when required configuration is missing") {
@@ -54,12 +54,12 @@ class ProcessingTypeDataReaderSpec extends FunSuite {
         |scenarioTypes {
         |  "streaming" {
         |    engineConfig {
-        |      restUrlMissing: "http://localhost:8081"
-        |      type: "flinkStreaming"
+        |      restUrl: "http://localhost:8081"
+        |      typeMissing: "flinkStreaming"
         |    }
         |
         |    modelConfig {
-        |      classPath: ["engine/flink/management/sample/target/scala-2.12/managementSample.jar"]
+        |      classPath: ["test.jar"]
         |    }
         |  }
         |}
@@ -69,8 +69,8 @@ class ProcessingTypeDataReaderSpec extends FunSuite {
     val config = configuration.resolve()
 
     intercept[typesafe.config.ConfigException] {
-      ProcessingTypeDataReader.loadProcessingTypeData(config)
-    }.getMessage should include("No configuration setting found for key 'root.restUrl'")
+      ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
+    }.getMessage should include("No configuration setting found for key 'engineConfig.type'")
   }
 
   test("should throw when no configuration is provided") {
@@ -83,7 +83,7 @@ class ProcessingTypeDataReaderSpec extends FunSuite {
     val config = configuration.resolve()
 
     intercept[RuntimeException] {
-      ProcessingTypeDataReader.loadProcessingTypeData(config)
+      ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
     }.getMessage should include("No scenario types configuration provided")
   }
 
