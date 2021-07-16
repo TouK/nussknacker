@@ -11,7 +11,7 @@ type TabData = {path: string, header: string, Component: ComponentType}
 export function Tabs({tabs, children}: PropsWithChildren<{tabs: TabData[]}>) {
   const {theme} = useNkTheme()
   return (
-    <div className={cx(theme.themeClass, css({backgroundColor: theme.colors.canvasBackground}))}>
+    <div className={cx(styles.tabsRoot, theme.themeClass, css({backgroundColor: theme.colors.canvasBackground}))}>
       <div className={cx(styles.tabsWrap)}>
         {children}
         <div
