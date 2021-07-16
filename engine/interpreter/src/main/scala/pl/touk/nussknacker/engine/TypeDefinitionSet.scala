@@ -19,16 +19,11 @@ object TypeDefinitionSet {
 
   def apply(typeDefinitionSet: Set[TypeInfos.ClazzDefinition]): TypeDefinitionSet = {
 
-//    val clazzDefinitionSet = typeDefinitionSet.map(
-//      clazzDefinition => clazzDefinition.clazzName)
-
     new TypeDefinitionSet(typeDefinitionSet)
   }
 }
 
 class TypeDefinitionSet(typeDefinitions: Set[TypeInfos.ClazzDefinition]) {
-
-//  def typeDefinitionMap = typeDefinitions
 
   def validateTypeReference(typeReference: TypeReference, evaluationContextPreparer: EvaluationContextPreparer): Validated[NonEmptyList[ExpressionParseError], TypedClass] = {
 
