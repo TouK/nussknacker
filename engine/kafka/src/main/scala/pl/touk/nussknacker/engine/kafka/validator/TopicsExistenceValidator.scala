@@ -34,8 +34,6 @@ case class CachedTopicsExistenceValidatorConfig(autoCreateFlagFetchCacheTtl: Fin
 
 object CachedTopicsExistenceValidatorConfig {
   val AutoCreateTopicPropertyName = "auto.create.topics.enable"
-  val TopicExistenceValidationEnabledPropertyName = "topic.existence.validation.enabled"
-  val ValidationEnabledDefault = false
   val DefaultConfig: CachedTopicsExistenceValidatorConfig = CachedTopicsExistenceValidatorConfig(
     autoCreateFlagFetchCacheTtl = 5 minutes, topicsFetchCacheTtl = 30 seconds, adminClientTimeout = 500 millis
   )

@@ -49,14 +49,12 @@ object DefaultAsyncExecutionConfigPreparer extends LazyLogging {
 }
 
 case class DefaultAsyncExecutionConfigPreparer(bufferSize: Int,
-                                               workers: Option[Int],
+                                               workers: Int,
                                                defaultUseAsyncInterpretation: Option[Boolean]) extends AsyncExecutionContextPreparer with LazyLogging {
 
   def prepareExecutionContext(processId: String, parallelism: Int) : ExecutionContext = {
     logger.info(s"Creating asyncExecutor for $processId, parallelism: $parallelism, workers: $workers")
-    val executionContextWorkers = workers
-      .getOrElse(throw new IllegalStateException("Neither workers nor parallelismMultiplier was defined"))
-    DefaultAsyncExecutionConfigPreparer.getExecutionContext(executionContextWorkers, processId)
+    DefaultAsyncExecutionConfigPreparer.getExecutionContext(workers, processId)
   }
 
   def close() : Unit = {
