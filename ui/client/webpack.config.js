@@ -98,7 +98,6 @@ module.exports = {
     host: "0.0.0.0",
     disableHostCheck: true,
     headers: {
-      "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Credentials": "true",
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
       "Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization",
@@ -146,6 +145,8 @@ module.exports = {
     }),
     new ModuleFederationPlugin({
       filename: "remoteEntry.js",
+      // `federation.config.json` is used by @pixability-ui/federated-types,
+      // it's also good method to connect all places where `name` is needed.
       ...federationConfig,
       shared: {
         react: {
@@ -172,6 +173,8 @@ module.exports = {
       onAfterDone: {
         scripts: [
           `npm run make-types`,
+          // this .tgz with types for exposed modules lands in public root
+          // and could be downloaded by remote side (e.g. `webpack-remote-types-plugin`).
           `tar -C .federated-types -czf "${path.join(outputPath, `${federationConfig.name}-dts.tgz`)}" .`,
           `rm -rf .federated-types/*`,
         ],
