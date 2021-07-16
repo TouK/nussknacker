@@ -197,7 +197,6 @@ object DefinitionExtractor {
       TypesInformationExtractor.clazzAndItsChildrenDefinition(classesToExtractDefinitions)
     }
 
-
     private def extractTypesFromObjectDefinition(obj: ObjectWithMethodDef): List[TypingResult] = {
       def typesFromParameter(parameter: Parameter): List[TypingResult] = {
         val fromAdditionalVars = parameter.additionalVariables.values

@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, QueryableStateNa
 import pl.touk.nussknacker.engine.component.ComponentExtractor
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import shapeless.syntax.typeable._
+
 import scala.reflect.ClassTag
                  
 object ProcessDefinitionExtractor {

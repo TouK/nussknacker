@@ -69,7 +69,7 @@ class GenericConfigCreator extends EmptyProcessConfigCreator {
         "DATE" -> defaultCategory(date),
         "UTIL" -> defaultCategory(util)
       ),
-      List(), List()
+      List()
     )
   }
 
