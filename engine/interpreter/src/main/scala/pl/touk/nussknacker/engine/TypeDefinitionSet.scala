@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine
 
 import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{Invalid, Valid}
-import org.springframework.expression.spel.{ExpressionState}
+import org.springframework.expression.EvaluationContext
+import org.springframework.expression.spel.ExpressionState
 import org.springframework.expression.spel.ast.TypeReference
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
@@ -10,24 +11,17 @@ import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor, TypeInfos}
 import pl.touk.nussknacker.engine.spel.TypedNode
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.RichSpelNode
-import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 
 
 object TypeDefinitionSet {
 
-  def empty: TypeDefinitionSet = apply(Set.empty)
+  def empty: TypeDefinitionSet = TypeDefinitionSet(Set.empty)
 
-  def apply(typeDefinitionSet: Set[TypeInfos.ClazzDefinition]): TypeDefinitionSet = {
-
-    new TypeDefinitionSet(typeDefinitionSet)
-  }
 }
 
-class TypeDefinitionSet(typeDefinitions: Set[TypeInfos.ClazzDefinition]) {
+case class TypeDefinitionSet(typeDefinitions: Set[TypeInfos.ClazzDefinition]) {
 
-  def validateTypeReference(typeReference: TypeReference, evaluationContextPreparer: EvaluationContextPreparer): Validated[NonEmptyList[ExpressionParseError], TypedClass] = {
-
-    val evaluationContext = evaluationContextPreparer.prepareEvaluationContext(Context(""), Map.empty)
+  def validateTypeReference(typeReference: TypeReference, evaluationContext: EvaluationContext): Validated[NonEmptyList[ExpressionParseError], TypedClass] = {
 
     val typeReferenceClazz = typeReference.getValue(new ExpressionState(evaluationContext))
 

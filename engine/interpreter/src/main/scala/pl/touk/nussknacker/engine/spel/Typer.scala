@@ -262,7 +262,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
         if (staticMethodInvocationsChecking) {
 
-          typeDefinitionSet.validateTypeReference(e, evaluationContextPreparer) match {
+          typeDefinitionSet.validateTypeReference(e, evaluationContextPreparer.prepareEvaluationContext(Context(""), Map.empty)) match {
             case Valid(typedClass: TypedClass) => valid(Unknown)
             case Invalid(error) => Invalid(error)
           }
