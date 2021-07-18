@@ -77,7 +77,7 @@ class QueryableStateResources(typeToConfig: ProcessingTypeDataProvider[Processin
 
   private def fetchState(processingType: String, jobId: String, queryName: String, key: Option[String]): Future[String] = {
     typeToConfig.forTypeUnsafe(processingType).queryableClient match {
-      case None => Future.failed(new Exception(s"Queryable client not found for processing type $processingType"))
+      case None => Future.failed(new Exception(s"Queryable client not found for scenario type $processingType"))
       case Some(queryableClient) =>
         key match {
           case Some(k) => queryableClient.fetchJsonState(jobId, queryName, k)

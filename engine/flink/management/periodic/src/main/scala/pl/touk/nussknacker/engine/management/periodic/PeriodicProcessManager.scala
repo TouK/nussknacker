@@ -116,10 +116,38 @@ class PeriodicProcessManager(val delegate: ProcessManager,
     delegate.test(name, json, testData, variableEncoder)
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
+    def createScheduledProcessState(processDeployment: PeriodicProcessDeployment): ProcessState = {
+      ProcessState(
+        Some(ExternalDeploymentId("future")),
+        status = ScheduledStatus(processDeployment.runAt),
+        version = Option(processDeployment.periodicProcess.processVersion),
+        definitionManager = processStateDefinitionManager,
+        //TODO: this date should be passed/handled through attributes
+        startTime = Option(processDeployment.runAt.toEpochSecond(ZoneOffset.UTC)),
+        attributes = Option.empty,
+        errors = List.empty
+      )
+    }
+
+    def createFailedProcessState(processDeployment: PeriodicProcessDeployment): ProcessState = {
+      ProcessState(
+        Some(ExternalDeploymentId("future")),
+        status = SimpleStateStatus.Failed,
+        version = Option(processDeployment.periodicProcess.processVersion),
+        definitionManager = processStateDefinitionManager,
+        startTime = Option.empty,
+        attributes = Option.empty,
+        errors = List.empty
+      )
+    }
+
     def handleFailed(original: Option[ProcessState]): Future[Option[ProcessState]] = {
       service.getLatestDeployment(name).map {
         // this method returns only active schedules, so 'None' means this process has been already canceled
         case None => original.map(_.copy(status = SimpleStateStatus.Canceled))
+        // Previous, failed job is still accessible via Flink API but process has been scheduled to run again in future.
+        case Some(processDeployment) if processDeployment.state.status == PeriodicProcessDeploymentStatus.Scheduled =>
+          Some(createScheduledProcessState(processDeployment))
         case _ => original
       }
     }
@@ -128,25 +156,8 @@ class PeriodicProcessManager(val delegate: ProcessManager,
       service.getLatestDeployment(name).map { maybeProcessDeployment =>
         maybeProcessDeployment.map { processDeployment =>
           processDeployment.state.status match {
-            case PeriodicProcessDeploymentStatus.Scheduled => Some(ProcessState(
-              Some(ExternalDeploymentId("future")),
-              status = ScheduledStatus(processDeployment.runAt),
-              version = Option(processDeployment.periodicProcess.processVersion),
-              definitionManager = processStateDefinitionManager,
-              //TODO: this date should be passed/handled through attributes
-              startTime = Option(processDeployment.runAt.toEpochSecond(ZoneOffset.UTC)),
-              attributes = Option.empty,
-              errors = List.empty
-            ))
-            case PeriodicProcessDeploymentStatus.Failed => Some(ProcessState(
-              Some(ExternalDeploymentId("future")),
-              status = SimpleStateStatus.Failed,
-              version = Option(processDeployment.periodicProcess.processVersion),
-              definitionManager = processStateDefinitionManager,
-              startTime = Option.empty,
-              attributes = Option.empty,
-              errors = List.empty
-            ))
+            case PeriodicProcessDeploymentStatus.Scheduled => Some(createScheduledProcessState(processDeployment))
+            case PeriodicProcessDeploymentStatus.Failed => Some(createFailedProcessState(processDeployment))
             case PeriodicProcessDeploymentStatus.Deployed | PeriodicProcessDeploymentStatus.Finished =>
               original.map(o => o.copy(status = WaitingForScheduleStatus))
           }

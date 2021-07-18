@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import java.util.concurrent.TimeUnit
-
 import cats.data.NonEmptyList
 import com.codahale.metrics.{Histogram, SlidingTimeWindowReservoir}
 import org.apache.flink.api.common.functions.RuntimeContext
@@ -17,7 +16,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{ValueWithContext, Context => NkContext}
 import pl.touk.nussknacker.engine.flink.api.state.{LatelyEvictableStateFunction, StateHolder}
-import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
+import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValue}
 import pl.touk.nussknacker.engine.flink.util.metrics.MetricUtils
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap._
@@ -90,7 +89,8 @@ trait AggregatorFunctionMixin[MapT[K,V]] { self: StateHolder[MapT[Long, AnyRef]]
     val newState = addElementToState(value, timestamp, timeService, out)
     val finalVal = computeFinalValue(newState, timestamp)
     timeHistogram.update(System.nanoTime() - start)
-    out.collect(ValueWithContext(finalVal, value.context))
+    out.collect(ValueWithContext(finalVal, KeyEnricher.enrichWithKey(value.context, value.value)))
+
   }
 
   protected def addElementToState(value: ValueWithContext[StringKeyedValue[AnyRef]],
