@@ -99,7 +99,7 @@ trait DockerTest extends DockerTestKit with ExtremelyPatientScalaFutures with La
   }
 
   def config: Config = ConfigFactory.load()
-    .withValue("engineConfig.restUrl", fromAnyRef(s"http://${jobManagerContainer.getIpAddresses().futureValue.head}:$FlinkJobManagerRestPort"))
+    .withValue("deploymentConfig.restUrl", fromAnyRef(s"http://${jobManagerContainer.getIpAddresses().futureValue.head}:$FlinkJobManagerRestPort"))
     .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(Collections.singletonList(classPath)))
     .withFallback(additionalConfig)
 

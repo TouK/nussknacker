@@ -1,5 +1,5 @@
 import classNames from "classnames"
-import _ from "lodash"
+import _, {sortBy} from "lodash"
 import React from "react"
 import {connect} from "react-redux"
 import {v4 as uuid4} from "uuid"
@@ -435,7 +435,8 @@ export class NodeDetailsContent extends React.Component {
             null,
             "query-path",
           )]
-        const additionalFields = Object.entries(this.props.additionalPropertiesConfig).map(
+        //we sort by name, to have predictable order of properties (should be replaced by defining order in configuration)
+        const additionalFields = sortBy(Object.entries(this.props.additionalPropertiesConfig), e => e[0]).map(
           ([propName, propConfig]) => (
             <AdditionalProperty
               key={propName}

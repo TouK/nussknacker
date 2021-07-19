@@ -37,6 +37,7 @@ describe("Process", () => {
       cy.contains(/^properties/i).should("be.enabled").click()
       cy.get("[data-testid=node-modal]").should("be.visible").find("input").within(inputs => {
         cy.wrap(inputs).first().click().type("-renamed")
+        //this is idx of "Max events", which should be int
         cy.wrap(inputs).eq(6).click().type("wrong data")
       })
       cy.contains(/^apply/i).should("be.enabled").click()
