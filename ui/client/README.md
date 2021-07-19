@@ -2,7 +2,10 @@
 
 ## NodeJS and NPM 
 
-Make sure you have relatively new nodejs/npm version (see `.nvmrc` for details)
+Make sure you have relatively new nodejs/npm version (see `.nvmrc` for details). To make sure that you use correct version, use:
+```
+nvm use
+```
 
 ## Package dependencies
 
