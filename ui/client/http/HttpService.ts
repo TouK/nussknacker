@@ -6,6 +6,7 @@ import api from "../api"
 import {UserData} from "../common/models/User"
 import {ProcessStateType, ProcessType} from "../components/Process/types"
 import {API_URL} from "../config"
+import {AuthenticationSettings} from "../reducers/settings"
 import {WithId} from "../types/common"
 import {ToolbarsConfig} from "../components/toolbarSettings/types"
 
@@ -96,6 +97,24 @@ class HttpService {
 
   fetchSettings() {
     return api.get<SettingsData>("/settings")
+  }
+
+  fetchSettingsWithAuth() {
+    return this.fetchSettings()
+      .then(({data}) => {
+        const {backend} = data.authentication
+        const settings = data
+        return this.fetchAuthenticationSettings<AuthenticationSettings>(backend)
+          .then(({data}) => {
+            return {
+              ...settings,
+              authentication: {
+                ...settings.authentication,
+                ...data,
+              },
+            }
+          })
+      })
   }
 
   fetchLoggedUser() {
