@@ -97,6 +97,8 @@ services:
     volumes:
       - ./flink/flink-conf.yaml:/tmp/flink-conf.yaml
       - ./flink/flink-entrypoint.sh:/flink-entrypoint.sh
+      # can be removed unless you use database enricher
+      - ./flink/postgresql-42.2.19.jar:/opt/flink/lib/postgresql-42.2.19.jar
       - nussknacker_storage_flink:/opt/flink/data
 
   taskmanager:
@@ -117,6 +119,8 @@ services:
       - ./flink/flink-conf.yaml:/tmp/flink-conf.yaml
       - ./flink/flink-entrypoint.sh:/flink-entrypoint.sh
       - nussknacker_storage_flink:/opt/flink/data
+      # can be removed unless you use database enricher
+      - ./flink/postgresql-42.2.19.jar:/opt/flink/lib/postgresql-42.2.19.jar
     ulimits:
       nproc: 70000
       nofile:
@@ -154,6 +158,12 @@ services:
   customerservice:
     container_name: nussknacker_customerservice
     build: customerservice
+  postgres:
+    container_name: nussknacker_postgres
+    hostname: nussknacker_postgres
+    image: ghusta/postgres-world-db
+    ports:
+      - "5432:5432"
 
 volumes:
   nussknacker_storage_zookeeper_datalog:
