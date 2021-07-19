@@ -37,6 +37,22 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     }
   }
 
+  it("should return definition data for allowed classes") {
+    getProcessDefinitionData(existingProcessingType, Map.empty[String, Long].asJson) ~> check {
+      status shouldBe StatusCodes.OK
+
+      val typesInformation = responseAs[Json].hcursor
+        .downField("processDefinition")
+        .downField("typesInformation")
+        .downAt(_.hcursor.downField("clazzName").get[String]("display").right.value == "ReturningTestCaseClass")
+        .downField("clazzName")
+        .downField("display")
+
+      typesInformation.focus.get shouldBe Json.fromString("ReturningTestCaseClass")
+    }
+  }
+
+
   it("should return all definition services") {
     getProcessDefinitionServices ~> check {
       status shouldBe StatusCodes.OK
@@ -306,7 +322,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
             )
           ),
           "type" -> Json.fromString("FixedValuesValidator")
-      ))
+        ))
     }
   }
 

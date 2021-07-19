@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 /* This is helper class for testing SpEL expressions, see SampleSpelBenchmark for usage */
 class SpelBenchmarkSetup(expression: String, vars: Map[String, AnyRef]) {
 
-  private val expressionDefinition = ExpressionDefinition(globalVariables = Map(), globalImports = Nil,
+  private val expressionDefinition = ExpressionDefinition(globalVariables = Map(), globalImports = Nil, additionalClasses = List(),
     languages = LanguageConfiguration.default, optimizeCompilation = true,
     strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false, strictMethodsChecking = true)
 

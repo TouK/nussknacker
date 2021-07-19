@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.exception.ConfigurableExceptionHandlerFactory
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
-import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
+import pl.touk.nussknacker.engine.flink.util.source.{EspDeserializationSchema, ReturningClassInstanceSource, ReturningTestCaseClass}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.SlidingAggregateTransformerV2
 import pl.touk.nussknacker.engine.flink.util.transformer.outer.OuterJoinTransformer
@@ -96,7 +96,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "communicationSource" -> categories(DynamicParametersSource),
       "csv-source" -> categories(FlinkSourceFactory.noParam(new CsvSource)),
       "genericSourceWithCustomVariables" -> categories(GenericSourceWithCustomVariablesSample),
-      "sql-source" -> categories(SqlSource)
+      "sql-source" -> categories(SqlSource),
+      "classInstanceSource" -> all(new ReturningClassInstanceSource)
     )
   }
 
@@ -193,9 +194,14 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "TypedConfig" -> all(ConfigTypedGlobalVariable)
     )
 
+    val additionalClasses = List(
+      classOf[ReturningTestCaseClass]
+    )
+
     ExpressionConfig(
       globalProcessVariables,
       List.empty,
+      additionalClasses,
       LanguageConfiguration(List()),
       dictionaries = Map(
         TestDictionary.id -> categories(TestDictionary.definition),

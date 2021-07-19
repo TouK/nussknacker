@@ -22,7 +22,8 @@ object ProcessDefinitionExtractor {
       definition.customStreamTransformers.values.map(_._1) ++
       definition.signalsWithTransformers.values.map(_._1) ++
       definition.expressionConfig.globalVariables.values
-    )(definition.settings)
+    ) (definition.settings) ++
+      TypesInformation.extractFromClassList(definition.expressionConfig.additionalClasses)(definition.settings)
   }
 
   import pl.touk.nussknacker.engine.util.Implicits._
@@ -77,6 +78,7 @@ object ProcessDefinitionExtractor {
       customStreamTransformersDefs.mapValuesNow(k => (k, extractCustomTransformerData(k))),
       signalsDefs, exceptionHandlerFactoryDefs, ExpressionDefinition(globalVariablesDefs,
         globalImportsDefs,
+        expressionConfig.additionalClasses,
         expressionConfig.languages,
         expressionConfig.optimizeCompilation,
         expressionConfig.strictTypeChecking,
@@ -141,6 +143,7 @@ object ProcessDefinitionExtractor {
     val expressionDefinition = ExpressionDefinition(
       definition.expressionConfig.globalVariables.mapValuesNow(_.objectDefinition),
       definition.expressionConfig.globalImports,
+      definition.expressionConfig.additionalClasses,
       definition.expressionConfig.languages,
       definition.expressionConfig.optimizeCompilation,
       definition.expressionConfig.strictTypeChecking,
@@ -160,8 +163,8 @@ object ProcessDefinitionExtractor {
     )
   }
 
-  case class ExpressionDefinition[+T <: ObjectMetadata](globalVariables: Map[String, T], globalImports: List[String], languages: LanguageConfiguration,
-                                                        optimizeCompilation: Boolean, strictTypeChecking: Boolean, dictionaries: Map[String, DictDefinition],
-                                                        hideMetaVariable: Boolean, strictMethodsChecking: Boolean)
+  case class ExpressionDefinition[+T <: ObjectMetadata](globalVariables: Map[String, T], globalImports: List[String], additionalClasses: List[Class[_]],
+                                                        languages: LanguageConfiguration, optimizeCompilation: Boolean, strictTypeChecking: Boolean,
+                                                        dictionaries: Map[String, DictDefinition], hideMetaVariable: Boolean, strictMethodsChecking: Boolean)
 
 }

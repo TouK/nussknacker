@@ -58,7 +58,7 @@ public class TestProcessConfigCreator implements ProcessConfigCreator {
 
     @Override
     public ExpressionConfig expressionConfig(ProcessObjectDependencies processObjectDependencies) {
-        return new ExpressionConfig(Collections.emptyMap(), Collections.emptyList());
+        return new ExpressionConfig(Collections.emptyMap(), Collections.emptyList(), Collections.emptyList());
     }
 
     @Override
