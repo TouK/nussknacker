@@ -4,7 +4,6 @@ import {connect} from "react-redux"
 import ActionsUtils from "../actions/ActionsUtils"
 import QueriedStateTable from "../components/QueriedStateTable"
 import {InputWithFocus, SelectWithFocus} from "../components/withFocus"
-import {nkPath} from "../config"
 import HttpService from "../http/HttpService"
 
 //this needs some love
@@ -127,7 +126,7 @@ export class Signals extends React.Component {
 
 }
 
-Signals.path = `${nkPath}/signals`
+Signals.path = `/signals`
 Signals.header = "Signals"
 
 function mapState(state) {

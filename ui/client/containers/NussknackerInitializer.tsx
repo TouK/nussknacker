@@ -1,7 +1,8 @@
 import React, {PropsWithChildren, useCallback} from "react"
-import {useDispatch} from "react-redux"
+import {useDispatch, useSelector} from "react-redux"
 import {assignUser} from "../actions/nk"
 import HttpService from "../http/HttpService"
+import {getAuthenticationSettings} from "../reducers/selectors/settings"
 import {AuthInitializer} from "./Auth"
 
 function NussknackerInitializer({children}: PropsWithChildren<unknown>): JSX.Element {
@@ -14,8 +15,10 @@ function NussknackerInitializer({children}: PropsWithChildren<unknown>): JSX.Ele
     [dispatch],
   )
 
+  const authenticationSettings = useSelector(getAuthenticationSettings)
+
   return (
-    <AuthInitializer onAuthFulfilled={onAuth}>
+    <AuthInitializer authenticationSettings={authenticationSettings} onAuthFulfilled={onAuth}>
       {children}
     </AuthInitializer>
   )

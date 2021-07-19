@@ -5,7 +5,7 @@ import JSONTree from "react-json-tree"
 import {connect} from "react-redux"
 import {Table} from "reactable"
 import ActionsUtils from "../actions/ActionsUtils"
-import {dateFormat} from "../config"
+import {DATE_FORMAT} from "../config"
 import HttpService from "../http/HttpService"
 import {ButtonWithFocus, InputWithFocus, SelectWithFocus} from "./withFocus"
 
@@ -103,7 +103,7 @@ class QueriedStateTable extends React.Component {
       return fetchedState.map((entry, idx) => {
         return _.mapValues(entry, (value, key) => {
           if (key.toLowerCase().includes("timestamp")) {
-            return Moment(value).format(dateFormat)
+            return Moment(value).format(DATE_FORMAT)
           } else if (_.isObject(value)) {
             return this.renderJsonTree(value)
           } else {

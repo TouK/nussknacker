@@ -5,7 +5,7 @@ import intervalPlural from "i18next-intervalplural-postprocessor"
 import Backend from "i18next-xhr-backend"
 import moment from "moment"
 import {initReactI18next} from "react-i18next"
-import {nkPath} from "./config"
+import {BACKEND_STATIC_URL} from "./config"
 
 const i18n = i18next
   .use(intervalPlural)
@@ -18,7 +18,7 @@ i18n.init({
   defaultNS: "main",
   fallbackLng: "en",
   backend: {
-    loadPath: `${nkPath}/static/assets/locales/{{lng}}/{{ns}}.json`,
+    loadPath: `${BACKEND_STATIC_URL}/assets/locales/{{lng}}/{{ns}}.json`,
   },
   whitelist: ["en", "pl"],
   interpolation: {

@@ -7,13 +7,13 @@ const childProcess = require("child_process")
 const HtmlWebpackPlugin = require("html-webpack-plugin")
 const HtmlWebpackHarddiskPlugin = require("html-webpack-harddisk-plugin")
 const TerserPlugin = require("terser-webpack-plugin")
-const CopyPlugin = require("copy-webpack-plugin")
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin")
-const {camelCase} = require("lodash")
+const federationConfig = require("./federation.config.json")
 const MomentLocalesPlugin = require("moment-locales-webpack-plugin")
 const ReactRefreshWebpackPlugin = require("@pmmmwh/react-refresh-webpack-plugin")
 const PreloadWebpackPlugin = require("@vue/preload-webpack-plugin")
-const SpeedMeasurePlugin = require("speed-measure-webpack-plugin")
+const WebpackShellPluginNext = require("webpack-shell-plugin-next")
+const CopyPlugin = require("copy-webpack-plugin")
 
 const NODE_ENV = process.env.NODE_ENV || "development"
 const GIT_HASH = childProcess.execSync("git log -1 --format=%H").toString()
@@ -21,7 +21,6 @@ const GIT_DATE = childProcess.execSync("git log -1 --format=%cd").toString()
 const isProd = NODE_ENV === "production"
 
 const {ModuleFederationPlugin} = webpack.container
-const {name} = require("./package.json")
 const entry = {
   main: path.resolve(__dirname, "./init.js"),
 }
@@ -47,18 +46,14 @@ const fileLoader = {
   },
 }
 
+//by default we use default webpack value, but we want to be able to override it for building frontend via sbt
+const outputPath = process.env.OUTPUT_PATH ?
+  path.join(process.env.OUTPUT_PATH, "classes", "web", "static") :
+  path.join(process.cwd(), "dist")
+
 module.exports = {
   mode: NODE_ENV,
   optimization: {
-    splitChunks: {
-      cacheGroups: {
-        commons: {
-          test: /[\\/]node_modules[\\/]/,
-          name: "vendors",
-          chunks: "all",
-        },
-      },
-    },
     minimizer: [new TerserPlugin({
       parallel: true,
       //Reactable bug: https://github.com/abdulrahman-khankan/reactable/issues/3
@@ -86,27 +81,36 @@ module.exports = {
   },
   entry: entry,
   output: {
-    //by default we use default webpack value, but we want to be able to override it for building frontend via sbt
-    path: process.env.OUTPUT_PATH ? path.join(process.env.OUTPUT_PATH, "classes", "web", "static") : path.join(process.cwd(), "dist"),
+    path: outputPath,
     filename: "[name].js",
-    //see config.js
-    publicPath: isProd ? "__publicPath__/static/" : "/static/",
   },
   devtool: isProd ? "hidden-source-map" : "eval-source-map",
   devServer: {
-    publicPath: isProd ? "__publicPath__/static/" : "/static/",
+    contentBase: [
+      path.join(__dirname, "dist"),
+    ],
     historyApiFallback: {
-      index: "/static/main.html",
+      index: "/main.html",
     },
     overlay: {errors: true, warnings: false},
     hot: true,
     host: "0.0.0.0",
     disableHostCheck: true,
+    headers: {
+      "Access-Control-Allow-Credentials": "true",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+      "Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization",
+    },
     port: 3000,
     proxy: {
       "/api": {
         target: process.env.BACKEND_DOMAIN,
         changeOrigin: true,
+        onProxyRes: (proxyRes, req, res) => {
+          if (req.headers?.origin) {
+            res.setHeader("Access-Control-Allow-Origin", req.headers.origin)
+          }
+        },
       },
       "/be-static": {
         target: process.env.BACKEND_DOMAIN,
@@ -118,17 +122,20 @@ module.exports = {
     },
     watchOptions: {
       ignored: [
-        '**/dist',
-        '**/target',
+        "webpack.config.js",
+        "**/dist",
+        "**/target",
         // ignore vim swap files
-        '**/*.sw[pon]',
+        "**/*.sw[pon]",
         // TODO: separate src/main, src/test and so on
-        '**/cypress*',
-        '**/.nyc_output',
-        '**/jest*',
-        '**/test*',
-        '**/*.md',
-      ]
+        "**/cypress*",
+        "**/.nyc_output",
+        "**/.federated-types/**/*",
+        "**/dist/*-dts.tgz",
+        "**/jest*",
+        "**/test*",
+        "**/*.md",
+      ],
     },
   },
   plugins: [
@@ -136,7 +143,10 @@ module.exports = {
       localesToKeep: ["pl"],
     }),
     new ModuleFederationPlugin({
-      name: camelCase(name),
+      filename: "remoteEntry.js",
+      // `federation.config.json` is used by @pixability-ui/federated-types,
+      // it's also good method to connect all places where `name` is needed.
+      ...federationConfig,
       shared: {
         react: {
           eager: true,
@@ -151,15 +161,28 @@ module.exports = {
     new HtmlWebpackPlugin({
       title: "Nussknacker",
       hash: true,
+      chunks: ["runtime", "main"],
+      //see ./config.ts
+      base: isProd ? "__publicPath__/static/" : "/",
       filename: "main.html",
-      template: "index_template_no_doctype.ejs",
-
+      favicon: "assets/img/favicon.png",
     }),
     new HtmlWebpackHarddiskPlugin(),
+    new WebpackShellPluginNext({
+      onAfterDone: {
+        scripts: [
+          `npm run make-types`,
+          // this .tgz with types for exposed modules lands in public root
+          // and could be downloaded by remote side (e.g. `webpack-remote-types-plugin`).
+          `tar -C .federated-types -czf "${path.join(outputPath, `${federationConfig.name}-dts.tgz`)}" .`,
+          `rm -rf .federated-types/*`,
+        ],
+        swallowError: true,
+      },
+    }),
     new CopyPlugin({
       patterns: [
         {from: "translations", to: "assets/locales", noErrorOnMissing: true},
-        {from: "assets/img/favicon.png", to: "assets/img/favicon.png"},
       ],
     }),
     new PreloadWebpackPlugin({
@@ -195,17 +218,6 @@ module.exports = {
   ].filter(Boolean),
   module: {
     rules: [
-      {
-        test: require.resolve("jointjs"),
-        use: [
-          {
-            loader: "expose-loader",
-            options: {
-              exposes: ["joint"],
-            },
-          },
-        ],
-      },
       {
         test: /\.html$/,
         use: {

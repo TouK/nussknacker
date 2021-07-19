@@ -1,5 +1,4 @@
-import * as joint from "jointjs"
-import {dia} from "jointjs"
+import {dia, V} from "jointjs"
 import {isBackgroundObject} from "./cellUtils"
 import {defaults} from "lodash"
 import {defaultLink} from "../EspNode/link"
@@ -7,7 +6,7 @@ import {arrowMarker} from "../arrowMarker"
 import {Events} from "../joint-events"
 
 function getPaper(opts: dia.Paper.Options, canWrite: boolean) {
-  const paper = new joint.dia.Paper({
+  const paper = new dia.Paper({
     ...opts,
     gridSize: 1,
     clickThreshold: 2,
@@ -17,7 +16,7 @@ function getPaper(opts: dia.Paper.Options, canWrite: boolean) {
       const {model} = cellView
       if (!canWrite) {
         return false
-      } else if (model instanceof joint.dia.Link) {
+      } else if (model instanceof dia.Link) {
         // Disable the default vertex add and label move functionality on pointerdown.
         return {vertexAdd: false, labelMove: false}
       } else if (isBackgroundObject(model)) {
@@ -29,17 +28,17 @@ function getPaper(opts: dia.Paper.Options, canWrite: boolean) {
     },
     linkPinning: false,
     defaultLink: defaultLink,
-    linkView: joint.dia.LinkView.extend({
-      options: defaults<joint.dia.LinkView.Options, joint.dia.LinkView.Options>({
+    linkView: dia.LinkView.extend({
+      options: defaults<dia.LinkView.Options, dia.LinkView.Options>({
         shortLinkLength: 60,
         longLinkLength: 180,
         linkToolsOffset: 20,
         doubleLinkToolsOffset: 20,
         doubleLinkTools: true,
-      }, joint.dia.LinkView.prototype.options),
+      }, dia.LinkView.prototype.options),
     }),
   })
-  joint.V(paper.defs).append(arrowMarker)
+  V(paper.defs).append(arrowMarker)
   paper.options.defaultRouter = {
     name: `manhattan`,
     args: {

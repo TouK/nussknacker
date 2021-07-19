@@ -3,10 +3,9 @@ import {omitBy} from "lodash"
 import Moment from "moment"
 import * as  queryString from "query-string"
 import {ParseOptions} from "query-string"
-import {nkPath} from "../config"
 import {NodeId} from "../types"
 
-export const visualizationBasePath = `${nkPath}/visualization`
+export const visualizationBasePath = `/visualization`
 export const visualizationPath = `${visualizationBasePath}/:processId`
 
 function nodeIdPart(nodeId): string {

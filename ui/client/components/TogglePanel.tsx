@@ -1,12 +1,17 @@
 import cn from "classnames"
-import PropTypes from "prop-types"
 import React from "react"
 import {useTranslation} from "react-i18next"
 import "../stylesheets/togglePanel.styl"
 
 import SvgDiv from "./SvgDiv"
 
-export default function TogglePanel(props) {
+interface Props {
+  isOpened: boolean,
+  onToggle: () => void,
+  type: "RIGHT" | "LEFT",
+}
+
+export default function TogglePanel(props: Props): JSX.Element {
   const {t} = useTranslation()
   const {isOpened, onToggle, type} = props
   const left = type === "LEFT" ? isOpened : !isOpened
@@ -17,10 +22,4 @@ export default function TogglePanel(props) {
   return (
     <SvgDiv title={title} className={cn("togglePanel", type, {"is-opened": isOpened})} onClick={onToggle} svgFile={iconFile}/>
   )
-}
-
-TogglePanel.propTypes = {
-  type: PropTypes.oneOf(["RIGHT", "LEFT"]).isRequired,
-  isOpened: PropTypes.bool.isRequired,
-  onToggle: PropTypes.func.isRequired,
 }

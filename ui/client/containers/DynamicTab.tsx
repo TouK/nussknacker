@@ -4,9 +4,12 @@ import ErrorBoundary from "../components/common/ErrorBoundary"
 import {ExternalModule, splitUrl, useExternalLib} from "./ExternalLib"
 import {ModuleString, ModuleUrl} from "./ExternalLib/types"
 
-type DynamicTabData = {
-  title: string,
+export type DynamicTabData = {
+  name: string,
   id: string,
+  // expected:
+  //  * url of working app - to include in iframe
+  //  * url ({module}/{path}@{host}/{remoteEntry}.js) of hosted remoteEntry js file (module federation) with default exported react component - included as component
   url: string,
 }
 

@@ -18,7 +18,8 @@ import configureStore from "./store/configureStore"
 import "./stylesheets/notifications.styl"
 
 const {store, persistor} = configureStore()
-const rootContainer = document.getElementById("root")
+const rootContainer = document.createElement(`div`)
+document.body.appendChild(rootContainer)
 
 Modal.setAppElement(rootContainer)
 
