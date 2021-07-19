@@ -55,13 +55,6 @@ There can be at most one edge of type `Default`, and it gets all records that do
 For each incoming record `Expression` is evaluated and result is assigned to `exprVal` variable. After that, records are tested against condition `Expressions` from output edges one by one. Record goes to the first output  where the edge condition is evaluated to `true`. If record doesn't match any conditional output, and default output exists, record goes to default output. Otherwise mismatching record is filtered out.
 
 
-## SQL Variable
-   
-SQL Variable evaluates sql `Expression`, and assigns to `Variable Name.` The SQL statement can return only one record??? value?
-
-![sql_variable_window](../img/sql_variable_window.png)
-
-
 ## Union
 
 ![union_window](../img/union_window.png)
