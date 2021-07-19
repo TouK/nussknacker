@@ -49,8 +49,9 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     Map("sampleEnricher" -> ObjectDefinition(List.empty, Typed[SimpleRecord], List()), "withParamsService" -> ObjectDefinition(List(Parameter[String]("par1")),
       Typed[SimpleRecord], List())),
     Map("source" -> ObjectDefinition(List.empty, Typed[SimpleRecord], List()),
-        "sourceWithParam" -> ObjectDefinition(List(Parameter[Any]("param")), Typed[SimpleRecord], List()),
-        "typedMapSource" -> ObjectDefinition(List(Parameter[TypedObjectDefinition]("type")), Typed[TypedMap], List())
+      "sourceWithUnknown" -> ObjectDefinition(List.empty, Unknown, List()),
+      "sourceWithParam" -> ObjectDefinition(List(Parameter[Any]("param")), Typed[SimpleRecord], List()),
+      "typedMapSource" -> ObjectDefinition(List(Parameter[TypedObjectDefinition]("type")), Typed[TypedMap], List())
     ),
     Map("sink" -> (ObjectDefinition.noParam, SinkAdditionalData(true)),
       "sinkWithLazyParam" -> (ObjectDefinition.withParams(List(Parameter[String]("lazyString").copy(isLazyParameter = true))), SinkAdditionalData(true))),
@@ -58,15 +59,15 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     Map("customTransformer" -> (ObjectDefinition(List.empty, Typed[SimpleRecord], List()), emptyQueryNamesData()),
       "withParamsTransformer" -> (ObjectDefinition(List(Parameter[String]("par1")), Typed[SimpleRecord], List()), emptyQueryNamesData()),
       "manyParams" -> (ObjectDefinition(List(
-                Parameter[String]("par1").copy(isLazyParameter = true),
-                Parameter[String]("par2"),
-                Parameter[String]("par3").copy(isLazyParameter = true),
-                Parameter[String]("par4")), Typed[SimpleRecord], List()), emptyQueryNamesData()),
+        Parameter[String]("par1").copy(isLazyParameter = true),
+        Parameter[String]("par2"),
+        Parameter[String]("par3").copy(isLazyParameter = true),
+        Parameter[String]("par4")), Typed[SimpleRecord], List()), emptyQueryNamesData()),
       "clearingContextTransformer" -> (ObjectDefinition(List.empty, Typed[SimpleRecord], List()), emptyQueryNamesData(true)),
       "withManyParameters" -> (ObjectDefinition(List(
         Parameter[String]("lazyString").copy(isLazyParameter = true), Parameter[Integer]("lazyInt").copy(isLazyParameter = true),
         Parameter[Long]("long").copy(validators = List(MinimalNumberValidator(0))))
-      , Typed[SimpleRecord], List()), emptyQueryNamesData(true)),
+        , Typed[SimpleRecord], List()), emptyQueryNamesData(true)),
       "withoutReturnType" -> (ObjectDefinition(List(Parameter[String]("par1")), Typed[Void], List()), emptyQueryNamesData()),
       "withMandatoryParams" -> (ObjectDefinition.withParams(List(Parameter[String]("mandatoryParam"))), emptyQueryNamesData()),
       "withNotBlankParams" -> (ObjectDefinition.withParams(List(NotBlankParameter("notBlankParam", Typed.typedClass(classOf[String])))), emptyQueryNamesData()),
@@ -93,10 +94,49 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     ObjectDefinition.noParam,
     ExpressionDefinition(
       Map("processHelper" -> ObjectDefinition(List(), Typed(ProcessHelper.getClass), List("cat1"), SingleNodeConfig.zero)),
-      List.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false, strictMethodsChecking = true, staticMethodInvocationsChecking = true
+      List.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, dictionaries = Map.empty,
+      hideMetaVariable = false, strictMethodsChecking = true, staticMethodInvocationsChecking = true, disableMethodExecutionForUnknown = false
     ),
     ClassExtractionSettings.Default
   )
+
+
+  test("enable method execution for Unknown") {
+
+    val correctProcess = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "sourceWithUnknown")
+      .filter("filter1", "#input.imaginaryMethod")
+      .sink("id2", "#input", "sink")
+
+    val compilationResult = validate(correctProcess, baseDefinition)
+
+    compilationResult.result should matchPattern {
+      case Valid(_) =>
+    }
+  }
+
+  test("disable method execution for Unknown") {
+
+    val baseDefinitionCopy = baseDefinition.copy(
+      expressionConfig = baseDefinition.expressionConfig.copy(
+        disableMethodExecutionForUnknown = true))
+
+    val correctProcess = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "sourceWithUnknown")
+      .filter("filter1", "#input.imaginaryMethod")
+      .sink("id2", "#input", "sink")
+
+    val compilationResult = validate(correctProcess, baseDefinitionCopy)
+
+    compilationResult.result should matchPattern {
+      case Invalid(NonEmptyList(ExpressionParseError(_, _, _, _), _)) =>
+    }
+
+  }
 
   test("Validation of Type Reference using accessible class, success scenario") {
 
@@ -181,10 +221,10 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("allow global variables in source definition") {
     val correctProcess = EspProcessBuilder
-          .id("process1")
-          .exceptionHandler()
-          .source("id1", "sourceWithParam", "param" -> "#processHelper")
-          .sink("id2", "#input", "sink")
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "sourceWithParam", "param" -> "#processHelper")
+      .sink("id2", "#input", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinition)
 
@@ -259,12 +299,12 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(
-        BlankParameter(_, _, "notBlankParam", "customNodeId1"),
-        List(
-          BlankParameter(_, _, "notBlankParam", "customNodeId2"),
-          BlankParameter(_, _, "notBlankParam", "customNodeId3"),
-          BlankParameter(_, _, "notBlankParam", "customNodeId4")
-        )
+      BlankParameter(_, _, "notBlankParam", "customNodeId1"),
+      List(
+      BlankParameter(_, _, "notBlankParam", "customNodeId2"),
+      BlankParameter(_, _, "notBlankParam", "customNodeId3"),
+      BlankParameter(_, _, "notBlankParam", "customNodeId4")
+      )
       )) =>
     }
   }
@@ -309,10 +349,10 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(
-        InvalidIntegerLiteralParameter(_, _, "nullableLiteralIntegerParam", "customNodeId"),
-        List(
-          InvalidIntegerLiteralParameter(_, _, "nullableLiteralIntegerParam", "customNodeId2")
-        )
+      InvalidIntegerLiteralParameter(_, _, "nullableLiteralIntegerParam", "customNodeId"),
+      List(
+      InvalidIntegerLiteralParameter(_, _, "nullableLiteralIntegerParam", "customNodeId2")
+      )
       )) =>
     }
   }
@@ -329,7 +369,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(
-        MismatchParameter(_, _, "regExpParam", "customNodeId"), _
+      MismatchParameter(_, _, "regExpParam", "customNodeId"), _
       )) =>
     }
   }
@@ -362,12 +402,12 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(
-        JsonRequiredParameter(_, _, "jsonParam", "customNodeId"),
-        List(
-          JsonRequiredParameter(_, _, "jsonParam", "customNodeId2"),
-          JsonRequiredParameter(_, _, "jsonParam", "customNodeId3"),
-          JsonRequiredParameter(_, _, "jsonParam", "customNodeId4")
-        )
+      JsonRequiredParameter(_, _, "jsonParam", "customNodeId"),
+      List(
+      JsonRequiredParameter(_, _, "jsonParam", "customNodeId2"),
+      JsonRequiredParameter(_, _, "jsonParam", "customNodeId3"),
+      JsonRequiredParameter(_, _, "jsonParam", "customNodeId4")
+      )
       )) =>
     }
   }
@@ -743,7 +783,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .source("id1", "source")
       .switch("switch", "''", "var2",
         GraphBuilder.buildSimpleVariable("var3", "var3", "''").emptySink("id2", "sink"),
-         Case("true", GraphBuilder.buildSimpleVariable("var3b", "var3", "#var2.length()").emptySink("id3", "sink")))
+        Case("true", GraphBuilder.buildSimpleVariable("var3b", "var3", "#var2.length()").emptySink("id3", "sink")))
 
     val compilationResult = validate(process, definitionWithTypedSource)
     compilationResult.result should matchPattern {
@@ -771,7 +811,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .source("id1", "source")
       .switch("switch", "''", "var2",
         GraphBuilder.buildSimpleVariable("var3", "var3", "''").emptySink("id2", "sink"),
-         Case("false", GraphBuilder.sink("id3", "#var3", "sink")))
+        Case("false", GraphBuilder.sink("id3", "#var3", "sink")))
 
     validate(process, definitionWithTypedSource).result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference 'var3'", "id3", Some(DefaultExpressionId), "#var3"), _)) =>
@@ -1200,7 +1240,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   }
 
   private val definitionWithTypedSource = baseDefinition.copy(sourceFactories
-    = Map("source" -> ObjectDefinition.noParam.copy(returnType = Typed[SimpleRecord])))
+  = Map("source" -> ObjectDefinition.noParam.copy(returnType = Typed[SimpleRecord])))
 
   private val definitionWithTypedSourceAndTransformNode =
     definitionWithTypedSource.withCustomStreamTransformer("custom",
