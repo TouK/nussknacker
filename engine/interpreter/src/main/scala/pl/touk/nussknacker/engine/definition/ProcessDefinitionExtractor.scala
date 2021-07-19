@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import shapeless.syntax.typeable._
 
 import scala.reflect.ClassTag
-                 
+
 object ProcessDefinitionExtractor {
 
   // Extracts details of types (e.g. field definitions for variable suggestions) of extracted objects definitions (see extractObjectWithMethods).
@@ -53,7 +53,7 @@ object ProcessDefinitionExtractor {
 
     val signalsDefs = ObjectWithMethodDef.forMap(signals, ProcessObjectDefinitionExtractor.signals, nodesConfig).map { case (signalName, signalSender) =>
       val transformers = customStreamTransformersDefs.filter { case (_, transformerDef) =>
-          transformerDef.annotations.flatMap(_.cast[SignalTransformer]).exists(_.signalClass() == signalSender.obj.getClass)
+        transformerDef.annotations.flatMap(_.cast[SignalTransformer]).exists(_.signalClass() == signalSender.obj.getClass)
       }.keySet
       (signalName, (signalSender, transformers))
     }
@@ -85,7 +85,8 @@ object ProcessDefinitionExtractor {
         expressionConfig.dictionaries.mapValuesNow(_.value),
         expressionConfig.hideMetaVariable,
         expressionConfig.strictMethodsChecking,
-        expressionConfig.staticMethodInvocationsChecking
+        expressionConfig.staticMethodInvocationsChecking,
+        expressionConfig.disableMethodExecutionForUnknown
       ), settings)
   }
 
@@ -123,7 +124,7 @@ object ProcessDefinitionExtractor {
 
   case class ProcessDefinition[T <: ObjectMetadata](services: Map[String, T],
                                                     sourceFactories: Map[String, T],
-                                                   //TODO: find easier way to handle *AdditionalData?
+                                                    //TODO: find easier way to handle *AdditionalData?
                                                     sinkFactories: Map[String, (T, SinkAdditionalData)],
                                                     customStreamTransformers: Map[String, (T, CustomTransformerAdditionalData)],
                                                     signalsWithTransformers: Map[String, (T, Set[TransformerId])],
@@ -151,7 +152,8 @@ object ProcessDefinitionExtractor {
       definition.expressionConfig.dictionaries,
       definition.expressionConfig.hideMetaVariable,
       definition.expressionConfig.strictMethodsChecking,
-      definition.expressionConfig.staticMethodInvocationsChecking
+      definition.expressionConfig.staticMethodInvocationsChecking,
+      definition.expressionConfig.disableMethodExecutionForUnknown
     )
     ProcessDefinition(
       definition.services.mapValuesNow(_.objectDefinition),
@@ -167,6 +169,7 @@ object ProcessDefinitionExtractor {
 
   case class ExpressionDefinition[+T <: ObjectMetadata](globalVariables: Map[String, T], globalImports: List[String], additionalClasses: List[Class[_]],
                                                         languages: LanguageConfiguration, optimizeCompilation: Boolean, strictTypeChecking: Boolean,
-                                                        dictionaries: Map[String, DictDefinition], hideMetaVariable: Boolean, strictMethodsChecking: Boolean, staticMethodInvocationsChecking: Boolean)
+                                                        dictionaries: Map[String, DictDefinition], hideMetaVariable: Boolean, strictMethodsChecking: Boolean,
+                                                        staticMethodInvocationsChecking: Boolean, disableMethodExecutionForUnknown: Boolean)
 
 }

@@ -37,7 +37,8 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
                           dictTyper: SpelDictTyper, strictMethodsChecking: Boolean,
                           staticMethodInvocationsChecking: Boolean,
                           typeDefinitionSet: TypeDefinitionSet,
-                          evaluationContextPreparer: EvaluationContextPreparer
+                          evaluationContextPreparer: EvaluationContextPreparer,
+                          disableMethodExecutionForUnknown: Boolean
                          )(implicit settings: ClassExtractionSettings) extends LazyLogging {
 
   import ast.SpelAst._
@@ -303,7 +304,11 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
   }
 
   private def extractProperty(e: PropertyOrFieldReference, t: TypingResult): ValidatedNel[ExpressionParseError, TypingResult] = t match {
-    case Unknown => Valid(Unknown)
+    case Unknown =>
+      if(disableMethodExecutionForUnknown)
+        invalid("Property access on Unknown type is blocked")
+      else
+        Valid(Unknown)
     case s: SingleTypingResult =>
       extractSingleProperty(e)(s)
     case TypedUnion(possible) =>
@@ -318,7 +323,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     context.stack match {
       case _ :: tail =>
         typeChildren(validationContext, node, context.copy(stack = tail)) { typedParams =>
-          TypeMethodReference(reference.getName, context.stack, typedParams, typeDefinitionSet) match {
+          TypeMethodReference(reference.getName, context.stack, typedParams, typeDefinitionSet, disableMethodExecutionForUnknown) match {
             case Right(typingResult) => Valid(typingResult)
             case Left(errorMsg) => if(strictMethodsChecking) invalid(errorMsg) else Valid(Unknown)
           }
@@ -392,7 +397,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     Invalid(NonEmptyList.of(ExpressionParseError(message)))
 
   def withDictTyper(dictTyper: SpelDictTyper) =
-    new Typer(classLoader, commonSupertypeFinder, dictTyper, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking, typeDefinitionSet,  evaluationContextPreparer)
+    new Typer(classLoader, commonSupertypeFinder, dictTyper, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking, typeDefinitionSet,  evaluationContextPreparer, disableMethodExecutionForUnknown)
 
 }
 

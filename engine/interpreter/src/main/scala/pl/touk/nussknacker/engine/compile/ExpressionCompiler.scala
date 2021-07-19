@@ -42,9 +42,11 @@ object ExpressionCompiler {
                       optimizeCompilation: Boolean, settings: ClassExtractionSettings, typeDefinitionSet: TypeDefinitionSet): ExpressionCompiler = {
     val defaultParsers = Seq(
       SpelExpressionParser.default(loader, dictRegistry, optimizeCompilation, expressionConfig.strictTypeChecking,
-        expressionConfig.globalImports, SpelExpressionParser.Standard, expressionConfig.strictMethodsChecking, expressionConfig.staticMethodInvocationsChecking, typeDefinitionSet)(settings),
+        expressionConfig.globalImports, SpelExpressionParser.Standard, expressionConfig.strictMethodsChecking,
+        expressionConfig.staticMethodInvocationsChecking, typeDefinitionSet, expressionConfig.disableMethodExecutionForUnknown)(settings),
       SpelExpressionParser.default(loader, dictRegistry, optimizeCompilation, expressionConfig.strictTypeChecking,
-        expressionConfig.globalImports, SpelExpressionParser.Template, expressionConfig.strictMethodsChecking, expressionConfig.staticMethodInvocationsChecking, typeDefinitionSet)(settings),
+        expressionConfig.globalImports, SpelExpressionParser.Template, expressionConfig.strictMethodsChecking,
+        expressionConfig.staticMethodInvocationsChecking, typeDefinitionSet, expressionConfig.disableMethodExecutionForUnknown)(settings),
       SqlExpressionParser)
     val parsersSeq = defaultParsers ++ expressionConfig.languages.expressionParsers
     val parsers = parsersSeq.map(p => p.languageId -> p).toMap
