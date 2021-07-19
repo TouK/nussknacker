@@ -71,7 +71,7 @@ It’s possible to configure Nussknacker installation to use other metrics setup
 
 ### Common Flink configuration issues
 
-Nussknacker assumes that the Flink Session Cluster is used (it should be possible to write own, custom `ProcessManager` to deploy with Job/Application mode, 
+Nussknacker assumes that the Flink Session Cluster is used (it should be possible to write own, custom `DeploymentManager` to deploy with Job/Application mode, 
 but this is out of scope of this guide).
 
 It usually happens (especially for large deployments) that the Flink cluster used with Nusssknacker has quite a lot of jobs (each representing one scenario), many of them are quite small in terms of needed resources - this is different to usual Flink setup, where a cluster has one or few jobs.

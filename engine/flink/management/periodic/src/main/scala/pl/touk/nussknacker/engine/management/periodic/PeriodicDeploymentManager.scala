@@ -23,8 +23,8 @@ import sttp.client.{NothingT, SttpBackend}
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-object PeriodicProcessManager {
-  def apply(delegate: ProcessManager,
+object PeriodicDeploymentManager {
+  def apply(delegate: DeploymentManager,
             schedulePropertyExtractor: SchedulePropertyExtractor,
             enrichDeploymentWithJarDataFactory: EnrichDeploymentWithJarDataFactory,
             periodicBatchConfig: PeriodicBatchConfig,
@@ -32,7 +32,7 @@ object PeriodicProcessManager {
             originalConfig: Config,
             modelData: ModelData,
             listenerFactory: PeriodicProcessListenerFactory,
-            additionalDeploymentDataProvider: AdditionalDeploymentDataProvider): PeriodicProcessManager = {
+            additionalDeploymentDataProvider: AdditionalDeploymentDataProvider): PeriodicDeploymentManager = {
     implicit val system: ActorSystem = ActorSystem("periodic-process-manager-provider")
     implicit val ec: ExecutionContext = ExecutionContext.global
     implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend.usingConfigBuilder { builder =>
@@ -56,15 +56,15 @@ object PeriodicProcessManager {
       Await.ready(backend.close(), 10 seconds)
       ()
     }
-    new PeriodicProcessManager(delegate, service, schedulePropertyExtractor, toClose)
+    new PeriodicDeploymentManager(delegate, service, schedulePropertyExtractor, toClose)
   }
 }
 
-class PeriodicProcessManager(val delegate: ProcessManager,
+class PeriodicDeploymentManager(val delegate: DeploymentManager,
                              service: PeriodicProcessService,
                              schedulePropertyExtractor: SchedulePropertyExtractor,
                              toClose: () => Unit)
-                            (implicit val ec: ExecutionContext) extends ProcessManager with LazyLogging {
+                            (implicit val ec: ExecutionContext) extends DeploymentManager with LazyLogging {
 
   override def deploy(processVersion: ProcessVersion,
                       deploymentData: DeploymentData,

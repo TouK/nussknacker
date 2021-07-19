@@ -8,7 +8,7 @@ cd $WORKING_DIR
 
 SCALA_VERSION=${SCALA_VERSION:-2.12}
 PROJECT_BASE_DIR="../../.."
-#management jars are currently needed to access ProcessManagers
+#management jars are currently needed to access DeploymentManagers
 FLINK_ENGINE_JAR=$PROJECT_BASE_DIR/engine/flink/management/target/scala-${SCALA_VERSION}/nussknacker-flink-manager.jar
 STANDALONE_ENGINE_JAR=$PROJECT_BASE_DIR/engine/standalone/engine/target/scala-${SCALA_VERSION}/nussknacker-standalone-manager.jar
 

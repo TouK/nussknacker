@@ -10,7 +10,7 @@ Nussknacker consists of three parts:
 
 
 ##Engine
-Engine consists of various modules that enable creation of processes building blocks in UI and interpretation of process diagrams. Engines implement `ProcessManagerProvider`.
+Engine consists of various modules that enable creation of processes building blocks in UI and interpretation of process diagrams. Engines implement `DeploymentManagerProvider`.
 
 ##UI
 The **ui** application is a simple application written using Scala, Akka Http and Slick on the backend side and ReactJS on the front. Processes, their history, comments and other metadata are persisted in relational database (by default it's simple embedded H2). UI communicates with Apache Flink cluster using embedded Flink client. 

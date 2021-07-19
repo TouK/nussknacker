@@ -30,7 +30,7 @@ import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
 object ManagementActor {
-  def props(managers: ProcessingTypeDataProvider[ProcessManager],
+  def props(managers: ProcessingTypeDataProvider[DeploymentManager],
             processRepository: FetchingProcessRepository[Future],
             processActionRepository: DbProcessActionRepository,
             subprocessResolver: SubprocessResolver,
@@ -40,7 +40,7 @@ object ManagementActor {
   }
 }
 
-class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
+class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
                       processRepository: FetchingProcessRepository[Future],
                       deployedProcessRepository: DbProcessActionRepository,
                       subprocessResolver: SubprocessResolver,
@@ -57,20 +57,20 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
         reply(withDeploymentInfo(process, user, DeploymentActionType.Deployment, comment, deployRes))
       }
     case Snapshot(id, user, savepointDir) =>
-      reply(processManager(id.id)(ec, user).flatMap(_.savepoint(id.name, savepointDir)))
+      reply(deploymentManager(id.id)(ec, user).flatMap(_.savepoint(id.name, savepointDir)))
     case Stop(id, user, savepointDir) =>
-      reply(processManager(id.id)(ec, user).flatMap(_.stop(id.name, savepointDir, toManagerUser(user))))
+      reply(deploymentManager(id.id)(ec, user).flatMap(_.stop(id.name, savepointDir, toManagerUser(user))))
     case Cancel(id, user, comment) =>
       ensureNoDeploymentRunning {
         implicit val loggedUser: LoggedUser = user
         val cancelRes = cancelProcess(id, comment)
         reply(withDeploymentInfo(id, user, DeploymentActionType.Cancel, comment, cancelRes))
       }
-    //TODO: should be handled in ProcessManager
+    //TODO: should be handled in DeploymentManager
     case CheckStatus(id, user) if isBeingDeployed(id.name) =>
       implicit val loggedUser: LoggedUser = user
       val processStatus = for {
-        manager <- processManager(id.id)
+        manager <- deploymentManager(id.id)
       } yield ProcessStatus.createState(
         SimpleStateStatus.DuringDeploy,
         manager.processStateDefinitionManager
@@ -94,7 +94,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
       ensureNoDeploymentRunning {
         implicit val loggedUser: LoggedUser = user
         val testAction = for {
-          manager <- processManager(id.id)
+          manager <- deploymentManager(id.id)
           resolvedProcess <- resolveGraph(processJson)
           testResult <- manager.test(id.name, resolvedProcess, testData, encoder)
         } yield testResult
@@ -115,7 +115,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
               processVersion = processVersionData.toProcessVersion(id.name),
               user = toManagerUser(user),
               params = params)
-            processManager(id.id).flatMap { manager =>
+            deploymentManager(id.id).flatMap { manager =>
               manager.customActions.find(_.name == actionName) match {
                 case Some(customAction) =>
                   getProcessStatus(id).flatMap(status => {
@@ -138,20 +138,20 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
   private def getProcessStatus(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[ProcessState] =
     for {
       actions <- processRepository.fetchProcessActions(processIdWithName.id)
-      manager <- processManager(processIdWithName.id)
+      manager <- deploymentManager(processIdWithName.id)
       state <- findJobState(manager, processIdWithName)
       _ <- handleFinishedProcess(processIdWithName, state)
     } yield handleObsoleteStatus(state, actions.headOption)
 
-  private def findJobState(processManager: ProcessManager, processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[Option[ProcessState]] =
-    processManager.findJobStatus(processIdWithName.name).recover {
+  private def findJobState(deploymentManager: DeploymentManager, processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[Option[ProcessState]] =
+    deploymentManager.findJobStatus(processIdWithName.name).recover {
       case NonFatal(e) =>
         logger.warn(s"Failed to get status of ${processIdWithName.id}: ${e.getMessage}", e)
         Some(ProcessStatus.failedToGet)
     }
 
   //This method handles some corner cases like retention for keeping old states - some engine can cleanup canceled states. It's more Flink hermetic.
-  //TODO: In future we should move this functionality to ProcessManager.
+  //TODO: In future we should move this functionality to DeploymentManager.
   private def handleObsoleteStatus(processState: Option[ProcessState], lastAction: Option[ProcessAction]): ProcessState =
     (processState, lastAction) match {
       case (Some(state), _) if state.status.isFailed => state
@@ -163,20 +163,20 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
       case (None, None) => ProcessStatus.simple(SimpleStateStatus.NotDeployed)
     }
 
-  //TODO: In future we should move this functionality to ProcessManager.
+  //TODO: In future we should move this functionality to DeploymentManager.
   private def handleState(state: ProcessState, lastAction: Option[ProcessAction]): ProcessState =
     state.status match {
       case SimpleStateStatus.NotDeployed if lastAction.isEmpty =>
         ProcessStatus.simple(SimpleStateStatus.NotDeployed)
       //TODO: Should FlinkStateStatus.Restarting also be here?. Currently it's not handled to
-      //avoid dependency on FlinkProcessManager
+      //avoid dependency on FlinkDeploymentManager
       case SimpleStateStatus.DuringCancel | SimpleStateStatus.Finished if lastAction.isEmpty =>
         ProcessStatus.simpleWarningProcessWithoutAction(Some(state))
       case _ => state
     }
 
   //Thise method handles some corner cases for canceled process -> with last action = Canceled
-  //TODO: In future we should move this functionality to ProcessManager.
+  //TODO: In future we should move this functionality to DeploymentManager.
   private def handleCanceledState(processState: Option[ProcessState]): ProcessState =
     processState match {
       case Some(state) => state.status match {
@@ -186,7 +186,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
     }
 
   //This method handles some corner cases for following deploy state mismatch last action version
-  //TODO: In future we should move this functionality to ProcessManager.
+  //TODO: In future we should move this functionality to DeploymentManager.
   private def handleFollowingDeployState(state: ProcessState, lastAction: Option[ProcessAction]): ProcessState =
     lastAction match {
       case Some(action) if !action.isDeployed =>
@@ -198,7 +198,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
     }
 
   //This method handles some corner cases for deployed action mismatch state version
-  //TODO: In future we should move this functionality to ProcessManager.
+  //TODO: In future we should move this functionality to DeploymentManager.
   private def handleMismatchDeployedLastAction(processState: Option[ProcessState], action: ProcessAction): ProcessState =
     processState match {
       case Some(state) =>
@@ -258,7 +258,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
 
   private def cancelProcess(processId: ProcessIdWithName, comment: Option[String])(implicit user: LoggedUser): Future[ProcessActionEntityData] = {
     for {
-      manager <- processManager(processId.id)
+      manager <- deploymentManager(processId.id)
       _ <- manager.cancel(processId.name, toManagerUser(user))
       maybeVersion <- findDeployedVersion(processId)
       version <- maybeVersion match {
@@ -291,7 +291,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
                                    savepointPath: Option[String],
                                    comment: Option[String])(implicit user: LoggedUser): Future[ProcessActionEntityData] = {
     val resolvedDeploymentData = resolveDeploymentData(latestVersion.deploymentData)
-    val processManagerValue = managers.forTypeUnsafe(processingType)
+    val deploymentManagerValue = managers.forTypeUnsafe(processingType)
 
     for {
       deploymentResolved <- resolvedDeploymentData
@@ -299,7 +299,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
       processName = maybeProcessName.getOrElse(throw new IllegalArgumentException(s"Unknown scenario Id ${latestVersion.processId}"))
       //TODO:
       deploymentData = DeploymentData(DeploymentId(""), toManagerUser(user), Map.empty)
-      _ <- processManagerValue.deploy(latestVersion.toProcessVersion(processName), deploymentData, deploymentResolved, savepointPath)
+      _ <- deploymentManagerValue.deploy(latestVersion.toProcessVersion(processName), deploymentData, deploymentResolved, savepointPath)
       deployedActionData <- deployedProcessRepository.markProcessAsDeployed(
         ProcessId(latestVersion.processId), latestVersion.id, processingType, comment
       )
@@ -322,7 +322,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[ProcessManager],
     CatsSyntax.toFuture(validatedGraph)(e => new RuntimeException(e.head.toString))
   }
 
-  private def processManager(processId: ProcessId)(implicit ec: ExecutionContext, user: LoggedUser): Future[ProcessManager] = {
+  private def deploymentManager(processId: ProcessId)(implicit ec: ExecutionContext, user: LoggedUser): Future[DeploymentManager] = {
     processRepository.fetchProcessingType(processId).map(managers.forTypeUnsafe)
   }
 

@@ -48,7 +48,7 @@ class DefinitionResources(modelDataProvider: ProcessingTypeDataProvider[ModelDat
                 complete(
                   UIProcessObjectsFactory.prepareUIProcessObjects(
                     processingTypeData.modelData,
-                    processingTypeData.processManager,
+                    processingTypeData.deploymentManager,
                     user,
                     subprocesses,
                     isSubprocess,

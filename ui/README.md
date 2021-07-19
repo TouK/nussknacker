@@ -7,8 +7,8 @@ If you want to run UI to develop/debug your own model, please skip to last secti
 
 Before running either from console or from IDE you have to manually build:
 - run `npm ci` in `ui/client` (only if you want to test/compile FE, see `Readme.md` in `ui/client` for more details)
-- custom models (```assemblySamples``` in sbt - not needed if running from IDE with stubbed ProcessManager, see below)
-- ProcessManager(s) (```assemblyEngines``` in sbt - not needed if running from IDE with stubbed ProcessManager, see below)
+- custom models (```assemblySamples``` in sbt - not needed if running from IDE with stubbed DeploymentManager, see below)
+- DeploymentManager(s) (```assemblyEngines``` in sbt - not needed if running from IDE with stubbed DeploymentManager, see below)
 - UI (```ui/assembly``` in sbt, not needed if you want to use FE development mode)
 You can do all steps at once with ```buildServer.sh``` script
 
@@ -24,7 +24,7 @@ You can do all steps at once with ```buildServer.sh``` script
 If you want to connect to infrastructure in docker you need to set on end of line also:
 ```;FLINK_REST_URL=http://localhost:3031;FLINK_QUERYABLE_STATE_PROXY_URL=localhost:3063;SCHEMA_REGISTRY_URL=http://localhost:3082;KAFKA_ADDRESS=localhost:3032```
     * Module classpath:  nussknacker-ui (this is ```ui/server``` folder) 
-    * "Included dependencies with "Provided" scope" should be checked, so that Flink ProcessManager is included in the classpath
+    * "Included dependencies with "Provided" scope" should be checked, so that Flink DeploymentManager is included in the classpath
 
 ## Running backend for frontend development
 If you want run backend only for front-end development, please run `./runServer.sh`
@@ -36,7 +36,7 @@ If you want run backend only for front-end development, please run `./runServer.
 ## Access to service
  Service should be available at ~~http://localhost:8080/api~~
 
-# Running UI to develop/debug additional models with stubbed ProcessManager
+# Running UI to develop/debug additional models with stubbed DeploymentManager
 
 If you want to run Nussknacker UI to see if your model behaves correctly (e.g. if dynamic parameters are OK),
 you don't have to follow steps above. You also don't have to build model jar and put it in

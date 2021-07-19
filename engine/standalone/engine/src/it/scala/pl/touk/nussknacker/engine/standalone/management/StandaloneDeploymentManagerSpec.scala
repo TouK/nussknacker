@@ -17,15 +17,15 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
-class StandaloneProcessManagerSpec extends FunSuite with VeryPatientScalaFutures with Matchers {
+class StandaloneDeploymentManagerSpec extends FunSuite with VeryPatientScalaFutures with Matchers {
 
   test("it should parse test data and test standalone process") {
 
     val config = ScalaMajorVersionConfig.configWithScalaMajorVersion(ConfigFactory.parseResources("standalone.conf"))
-    val modelData = StandaloneProcessManagerProvider
+    val modelData = StandaloneDeploymentManagerProvider
       .defaultTypeConfig(config).toModelData
 
-    val manager = new StandaloneProcessManager(modelData, null)
+    val manager = new StandaloneDeploymentManager(modelData, null)
 
     val process = ProcessMarshaller.toJson(ProcessCanonizer.canonize(EspProcessBuilder
         .id("")

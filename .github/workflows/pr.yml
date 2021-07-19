@@ -148,7 +148,7 @@ jobs:
         run:  tar xfz target.tgz
       - name: Integration tests
         shell: bash
-        run: ./ciRunSbt.sh flinkProcessManager/it:test engineStandalone/it:test processReports/it:test security/it:test
+        run: ./ciRunSbt.sh flinkDeploymentManager/it:test engineStandalone/it:test processReports/it:test security/it:test
   slowTests:
     name: Slow tests
     runs-on: ubuntu-latest

@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.marshall.{ProcessMarshaller, ProcessUnmarshall
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
 import pl.touk.nussknacker.engine.standalone.api.{StandaloneContextPreparer, StandaloneDeploymentData}
-import pl.touk.nussknacker.engine.standalone.management.StandaloneProcessManagerProvider
+import pl.touk.nussknacker.engine.standalone.management.StandaloneDeploymentManagerProvider
 
 import scala.concurrent.ExecutionContext
 
@@ -25,7 +25,7 @@ object DeploymentService {
   //TODO this is temporary solution, we should keep these processes e.g. in ZK
   //also: how to pass model data around?
   def apply(context: StandaloneContextPreparer, config: Config): DeploymentService = {
-    val modelData = StandaloneProcessManagerProvider.defaultTypeConfig(config).toModelData
+    val modelData = StandaloneDeploymentManagerProvider.defaultTypeConfig(config).toModelData
     new DeploymentService(context, modelData, FileProcessRepository(config.getString("standaloneEngineProcessLocation")))
   }
 

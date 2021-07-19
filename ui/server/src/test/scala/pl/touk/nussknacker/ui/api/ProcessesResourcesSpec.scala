@@ -48,7 +48,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
-  override protected def createProcessManager(): MockProcessManager = new MockProcessManager(SimpleStateStatus.NotDeployed)
+  override protected def createDeploymentManager(): MockDeploymentManager = new MockDeploymentManager(SimpleStateStatus.NotDeployed)
 
   val routeWithRead: Route = withPermissions(processesRoute, testPermissionRead)
   val routeWithWrite: Route = withPermissions(processesRoute, testPermissionWrite)
@@ -94,7 +94,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   test("not allow to archive still running process") {
     createDeployedProcess(processName)
 
-    processManager.withProcessStateStatus(SimpleStateStatus.Running) {
+    deploymentManager.withProcessStateStatus(SimpleStateStatus.Running) {
       archiveProcess(processName) { status =>
         status shouldEqual StatusCodes.Conflict
       }
@@ -176,7 +176,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     createProcess(processName)
     val newName = ProcessName("ProcessChangedName")
 
-    processManager.withProcessStateStatus(SimpleStateStatus.Running) {
+    deploymentManager.withProcessStateStatus(SimpleStateStatus.Running) {
       renameProcess(processName, newName) { status =>
         status shouldEqual StatusCodes.Conflict
       }
@@ -734,7 +734,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   test("fetching status for deployed process should properly return status") {
     createDeployedProcess(processName)
 
-    processManager.withProcessStateStatus(SimpleStateStatus.Running) {
+    deploymentManager.withProcessStateStatus(SimpleStateStatus.Running) {
       Get(s"/processes/${processName.value}/status") ~> routeWithAllPermissions ~> check {
         status shouldEqual StatusCodes.OK
         val stateStatusResponse = parseStateResponse(responseAs[Json])

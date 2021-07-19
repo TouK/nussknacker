@@ -29,12 +29,12 @@ class PeriodicProcessServiceTest extends FunSuite
 
   class Fixture {
     val repository = new db.InMemPeriodicProcessesRepository
-    val delegateProcessManagerStub = new ProcessManagerStub
+    val delegateDeploymentManagerStub = new DeploymentManagerStub
     val jarManagerStub = new JarManagerStub
     val events = new ArrayBuffer[PeriodicProcessEvent]()
     val additionalData = Map("testMap" -> "testValue")
     val periodicProcessService = new PeriodicProcessService(
-      delegateProcessManager = delegateProcessManagerStub,
+      delegateDeploymentManager = delegateDeploymentManagerStub,
       jarManager = jarManagerStub,
       scheduledProcessesRepository = repository,
       new PeriodicProcessListener {
@@ -66,7 +66,7 @@ class PeriodicProcessServiceTest extends FunSuite
   test("handleFinished - should reschedule for finished Flink job") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateProcessManagerStub.setStateStatus(FlinkStateStatus.Finished)
+    f.delegateDeploymentManagerStub.setStateStatus(FlinkStateStatus.Finished)
 
     f.periodicProcessService.handleFinished.futureValue
 
@@ -76,7 +76,7 @@ class PeriodicProcessServiceTest extends FunSuite
     f.repository.deploymentEntities.map(_.status) shouldBe List(PeriodicProcessDeploymentStatus.Finished, PeriodicProcessDeploymentStatus.Scheduled)
 
     val finished :: scheduled :: Nil = f.repository.deploymentEntities.map(createPeriodicProcessDeployment(processEntity, _)).toList
-    f.events.toList shouldBe List(FinishedEvent(finished, f.delegateProcessManagerStub.jobStatus), ScheduledEvent(scheduled, firstSchedule = false))
+    f.events.toList shouldBe List(FinishedEvent(finished, f.delegateDeploymentManagerStub.jobStatus), ScheduledEvent(scheduled, firstSchedule = false))
   }
 
   test("handle first schedule") {
@@ -96,7 +96,7 @@ class PeriodicProcessServiceTest extends FunSuite
   test("handleFinished - should mark as failed for failed Flink job") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateProcessManagerStub.setStateStatus(FlinkStateStatus.Failed)
+    f.delegateDeploymentManagerStub.setStateStatus(FlinkStateStatus.Failed)
 
     f.periodicProcessService.handleFinished.futureValue
 
@@ -106,7 +106,7 @@ class PeriodicProcessServiceTest extends FunSuite
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
 
     val expectedDetails = createPeriodicProcessDeployment(processEntity, f.repository.deploymentEntities.head)
-    f.events.toList shouldBe List(FailedEvent(expectedDetails, f.delegateProcessManagerStub.jobStatus))
+    f.events.toList shouldBe List(FailedEvent(expectedDetails, f.delegateDeploymentManagerStub.jobStatus))
   }
 
   test("deploy - should deploy and mark as so") {

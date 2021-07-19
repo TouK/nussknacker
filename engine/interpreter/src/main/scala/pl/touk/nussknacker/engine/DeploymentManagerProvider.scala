@@ -4,14 +4,14 @@ import java.net.URL
 import com.typesafe.config.Config
 import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.api.{NamedServiceProvider, TypeSpecificData}
-import pl.touk.nussknacker.engine.api.deployment.ProcessManager
+import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
 
-trait ProcessManagerProvider extends NamedServiceProvider {
+trait DeploymentManagerProvider extends NamedServiceProvider {
 
-  def createProcessManager(modelData: ModelData, config: Config): ProcessManager
+  def createDeploymentManager(modelData: ModelData, config: Config): DeploymentManager
 
   def createQueryableClient(config: Config): Option[QueryableClient]
 
@@ -20,7 +20,7 @@ trait ProcessManagerProvider extends NamedServiceProvider {
   def supportsSignals: Boolean
 }
 
-case class ProcessingTypeData(processManager: ProcessManager,
+case class ProcessingTypeData(deploymentManager: DeploymentManager,
                               modelData: ModelData,
                               emptyProcessCreate: Boolean => TypeSpecificData,
                               queryableClient: Option[QueryableClient],
@@ -28,7 +28,7 @@ case class ProcessingTypeData(processManager: ProcessManager,
 
   def close(): Unit = {
     modelData.close()
-    processManager.close()
+    deploymentManager.close()
     queryableClient.foreach(_.close())
   }
 
@@ -62,20 +62,20 @@ object ProcessingTypeData {
 
   type ProcessingType = String
 
-  def createProcessingTypeData(processManagerProvider: ProcessManagerProvider, modelData: ModelData, managerConfig: Config): ProcessingTypeData = {
-    val manager = processManagerProvider.createProcessManager(modelData, managerConfig)
-    val queryableClient = processManagerProvider.createQueryableClient(managerConfig)
+  def createProcessingTypeData(deploymentManagerProvider: DeploymentManagerProvider, modelData: ModelData, managerConfig: Config): ProcessingTypeData = {
+    val manager = deploymentManagerProvider.createDeploymentManager(modelData, managerConfig)
+    val queryableClient = deploymentManagerProvider.createQueryableClient(managerConfig)
     ProcessingTypeData(
       manager,
       modelData,
-      processManagerProvider.emptyProcessMetadata,
+      deploymentManagerProvider.emptyProcessMetadata,
       queryableClient,
-      processManagerProvider.supportsSignals)
+      deploymentManagerProvider.supportsSignals)
   }
 
-  def createProcessingTypeData(processManagerProvider: ProcessManagerProvider, processTypeConfig: ProcessingTypeConfig): ProcessingTypeData = {
+  def createProcessingTypeData(deploymentManagerProvider: DeploymentManagerProvider, processTypeConfig: ProcessingTypeConfig): ProcessingTypeData = {
     val modelData = processTypeConfig.toModelData
     val managerConfig = processTypeConfig.deploymentConfig
-    createProcessingTypeData(processManagerProvider, modelData, managerConfig)
+    createProcessingTypeData(deploymentManagerProvider, modelData, managerConfig)
   }
 }

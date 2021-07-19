@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
 import pl.touk.nussknacker.engine.api.definition.{Parameter, RawParameterEditor}
-import pl.touk.nussknacker.engine.api.deployment.ProcessManager
+import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.process.{AdditionalPropertyConfig, ParameterConfig, SingleNodeConfig}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -31,7 +31,7 @@ object UIProcessObjectsFactory {
   import pl.touk.nussknacker.engine.util.config.FicusReaders._
 
   def prepareUIProcessObjects(modelDataForType: ModelData,
-                              processManager: ProcessManager,
+                              deploymentManager: DeploymentManager,
                               user: LoggedUser,
                               subprocessesDetails: Set[SubprocessDetails],
                               isSubprocess: Boolean,
@@ -85,7 +85,7 @@ object UIProcessObjectsFactory {
         processDefinition = chosenProcessDefinition,
         isSubprocess = isSubprocess,
         subprocessesDetails = subprocessesDetails),
-      customActions = processManager.customActions.map(UICustomAction(_)),
+      customActions = deploymentManager.customActions.map(UICustomAction(_)),
       defaultAsyncInterpretation = defaultAsyncInterpretation.value)
   }
 

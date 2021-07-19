@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.management.FlinkProcessStateDefinitionManager
 
 import scala.concurrent.Future
 
-class ProcessManagerStub extends ProcessManager {
+class DeploymentManagerStub extends DeploymentManager {
 
   var jobStatus: Option[ProcessState] = None
 
