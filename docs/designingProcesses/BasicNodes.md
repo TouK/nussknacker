@@ -2,9 +2,9 @@
 
 Node works with a data stream. It can produce, fetch, send, collect data or organize data flow. Each node has at least two parameters: `Name` and `Description`. Name has to be unique in a scenario. Description is a narrative of your choice.  
 
-With the exception of Source and Sink nodes (link) all other nodes have input and at least one output flow.
+Most of the nodes, with source and sink nodes being notable exceptions, have input and at least one output flow.
 
-Some nodes can be disabled by selecting `Disable` checkbox. 
+Sinks and filters can be disabled by selecting `Disable` checkbox. 
 
 # Filter
    
@@ -19,6 +19,15 @@ Records from the `source` which meets condition go to the `blue sink`, and other
 
 ![filter window](../img/filter_window.png)
 The Expression field should contain the SpEL expression for the filtering conditiona and should produce a boolean value
+
+# Split 
+ 
+Split node logically splits processing into two or more parallel branches. Each branch receives all records and processes them independently. 
+
+![split graph](../img/split_graph.png)
+
+Every record from the `source` gos to `sink 1` and `sink 2`. Split node doesn't have additional parameters.
+
 
 
 # Switch
@@ -43,7 +52,7 @@ There can be at most one edge of type `Default`, and it gets all records that do
 
 
 ### Flow
-For each incoming record `Expression` is evaluated and result is assigned to `exprVal` variable. After that, records are tested against condition `Expressions` from output edges one by one. Record goes to first output which condition it satisfies. If record doesn't match any conditional output, and default output exists, record goes to default output. Otherwise mismatching record is filtered out.
+For each incoming record `Expression` is evaluated and result is assigned to `exprVal` variable. After that, records are tested against condition `Expressions` from output edges one by one. Record goes to the first output  where the edge condition is evaluated to `true`. If record doesn't match any conditional output, and default output exists, record goes to default output. Otherwise mismatching record is filtered out.
 
 
 ## SQL Variable
