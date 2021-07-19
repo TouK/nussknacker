@@ -31,14 +31,14 @@ abstract class CustomStreamTransformer extends Component {
   def canHaveManyInputs: Boolean = false
 
   // For now it is only supported by Flink streaming runtime
-  def canBeEnding: Boolean = false 
-  
+  def canBeEnding: Boolean = false
+
 }
 
 /**
   * Lazy parameter is representation of parameter of custom node which should be evaluated for each record:
-  * ```def execute(@ParamName("keyBy") keyBy: LazyParameter[String], @ParamName ("length") length: String)```
-  * In this case, length is computed as constant during process compilation, while keyBy is evaluated for each event
+  * ```def execute(@ParamName("groupBy") groupBy: LazyParameter[String], @ParamName ("length") length: String)```
+  * In this case, length is computed as constant during process compilation, while groupBy is evaluated for each event
   * Cannot be evaluated directly (no method like 'evaluate'),
   * as evaluation may need lifecycle handling, to use it see LazyParameterInterpreter
   *

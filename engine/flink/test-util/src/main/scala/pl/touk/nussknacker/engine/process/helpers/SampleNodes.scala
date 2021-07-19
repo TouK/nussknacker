@@ -212,11 +212,11 @@ object SampleNodes {
 
     @MethodToInvoke(returnType = classOf[SimpleRecordWithPreviousValue])
     def execute(@ParamName("stringVal") stringVal: String,
-                @ParamName("keyBy") keyBy: LazyParameter[String])
+                @ParamName("groupBy") groupBy: LazyParameter[String])
                (implicit nodeId: NodeId, metaData: MetaData, runMode: RunMode) = FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
       setUidToNodeIdIfNeed(context,
         start
-          .map(context.lazyParameterHelper.lazyMapFunction(keyBy))
+          .map(context.lazyParameterHelper.lazyMapFunction(groupBy))
           .keyBy(_.value)
           .mapWithState[ValueWithContext[AnyRef], Long] {
             case (SimpleFromValueWithContext(ctx, sr), Some(oldState)) =>
@@ -237,11 +237,11 @@ object SampleNodes {
   object CustomFilter extends CustomStreamTransformer {
 
     @MethodToInvoke(returnType = classOf[Void])
-    def execute(@ParamName("input") keyBy: LazyParameter[String],
+    def execute(@ParamName("groupBy") groupBy: LazyParameter[String],
                 @ParamName("stringVal") stringVal: String) = FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
 
       start
-        .filter(new AbstractOneParamLazyParameterFunction(keyBy, context.lazyParameterHelper) with FilterFunction[Context] {
+        .filter(new AbstractOneParamLazyParameterFunction(groupBy, context.lazyParameterHelper) with FilterFunction[Context] {
           override def filter(value: Context): Boolean = evaluateParameter(value) == stringVal
         })
         .map(ValueWithContext[AnyRef](null, _))
@@ -251,13 +251,13 @@ object SampleNodes {
   object CustomFilterContextTransformation extends CustomStreamTransformer {
 
     @MethodToInvoke(returnType = classOf[Void])
-    def execute(@ParamName("input") keyBy: LazyParameter[String], @ParamName("stringVal") stringVal: String): ContextTransformation =
+    def execute(@ParamName("groupBy") groupBy: LazyParameter[String], @ParamName("stringVal") stringVal: String): ContextTransformation =
       ContextTransformation
         .definedBy(Valid(_))
         .implementedBy(
           FlinkCustomStreamTransformation { (start: DataStream[Context], context: FlinkCustomNodeContext) =>
             start
-              .filter(new AbstractOneParamLazyParameterFunction(keyBy, context.lazyParameterHelper) with FilterFunction[Context] {
+              .filter(new AbstractOneParamLazyParameterFunction(groupBy, context.lazyParameterHelper) with FilterFunction[Context] {
                 override def filter(value: Context): Boolean = evaluateParameter(value) == stringVal
               })
               .map(ValueWithContext[AnyRef](null, _))

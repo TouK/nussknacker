@@ -59,7 +59,7 @@ class FlinkStreamingProcessRegistrarOperatorUidSpec extends FunSuite with Proces
       ExceptionHandlerRef(List.empty),
       NonEmptyList.of(GraphBuilder
         .source("sourceId", "input")
-        .customNode(customNodeId, "out", "stateCustom", "stringVal" -> "'123'", "keyBy" -> "'123'")
+        .customNode(customNodeId, "out", "stateCustom", "stringVal" -> "'123'", "groupBy" -> "'123'")
         .emptySink("sinkId", "monitor")))
 
     val graph = streamGraph(process)

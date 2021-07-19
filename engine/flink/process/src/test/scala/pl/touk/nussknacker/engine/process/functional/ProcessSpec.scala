@@ -5,7 +5,6 @@ import java.util.Date
 import cats.data.NonEmptyList
 import org.scalatest.{FunSuite, Matchers}
 import org.scalatest.LoneElement._
-import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
@@ -120,7 +119,7 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
         .branchEnd("end1", "join1"),
       GraphBuilder.source("idOtherInt", "intInputWithParam", "param" -> "15")
         .branchEnd("end2", "join1"),
-      
+
       GraphBuilder.source("id2", "input")
         .branchEnd("end1", "join2"),
       GraphBuilder.branch("join1", "joinBranchExpression", Some("input2"),
@@ -226,7 +225,7 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
         .source("id", "input")
         .processor("processor1", "eagerLifecycleService", "name" -> "'1'")
         //just to test we open also in different process parts
-        .customNodeNoOutput("custom", "customFilter", "input" -> "''", "stringVal" -> "''")
+        .customNodeNoOutput("custom", "customFilter", "groupBy" -> "''", "stringVal" -> "''")
         .processor("processor2", "eagerLifecycleService", "name" -> "'2'")
         .processorEnd("enricher", "lifecycleService")
 

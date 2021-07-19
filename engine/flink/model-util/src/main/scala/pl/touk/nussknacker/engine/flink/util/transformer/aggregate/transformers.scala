@@ -24,15 +24,15 @@ import scala.concurrent.duration.Duration
 // in the future - see ExplicitUidInOperatorsCompat for more info
 object transformers {
 
-  def slidingTransformer(keyBy: LazyParameter[CharSequence],
+  def slidingTransformer(groupBy: LazyParameter[CharSequence],
                          aggregateBy: LazyParameter[AnyRef],
                          aggregator: Aggregator,
                          windowLength: Duration,
                          variableName: String)(implicit nodeId: NodeId): ContextTransformation =
-    slidingTransformer(keyBy, aggregateBy, aggregator, windowLength, variableName, emitWhenEventLeft = false,
+    slidingTransformer(groupBy, aggregateBy, aggregator, windowLength, variableName, emitWhenEventLeft = false,
       ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
 
-  def slidingTransformer(keyBy: LazyParameter[CharSequence],
+  def slidingTransformer(groupBy: LazyParameter[CharSequence],
                          aggregateBy: LazyParameter[AnyRef],
                          aggregator: Aggregator,
                          windowLength: Duration,
@@ -52,22 +52,22 @@ object transformers {
             else
               new AggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, aggregateBy.returnType, typeInfos.storedTypeInfo)
           start
-            .keyByWithValue(keyBy, _ => aggregateBy)
+            .groupByByWithValue(groupBy, _ => aggregateBy)
             .process(aggregatorFunction)
             .setUidWithName(ctx, explicitUidInStatefulOperators)
         }))
   }
 
-  def tumblingTransformer(keyBy: LazyParameter[CharSequence],
+  def tumblingTransformer(groupBy: LazyParameter[CharSequence],
                           aggregateBy: LazyParameter[AnyRef],
                           aggregator: Aggregator,
                           windowLength: Duration,
                           variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
-    tumblingTransformer(keyBy, aggregateBy, aggregator, windowLength, variableName, TumblingWindowTrigger.OnEnd,
+    tumblingTransformer(groupBy, aggregateBy, aggregator, windowLength, variableName, TumblingWindowTrigger.OnEnd,
       ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
   }
 
-  def tumblingTransformer(keyBy: LazyParameter[CharSequence],
+  def tumblingTransformer(groupBy: LazyParameter[CharSequence],
                           aggregateBy: LazyParameter[AnyRef],
                           aggregator: Aggregator,
                           windowLength: Duration,
@@ -83,7 +83,7 @@ object transformers {
           val typeInfos = AggregatorTypeInformations(ctx, aggregator, aggregateBy)
 
           val keyedStream = start
-            .keyByWithValue(keyBy, _ => aggregateBy)
+            .groupByByWithValue(groupBy, _ => aggregateBy)
           (tumblingWindowTrigger match {
             case TumblingWindowTrigger.OnEvent =>
               keyedStream
@@ -106,7 +106,7 @@ object transformers {
         }))
 
   //Experimental component, API may change in the future
-  def sessionWindowTransformer(keyBy: LazyParameter[CharSequence],
+  def sessionWindowTransformer(groupBy: LazyParameter[CharSequence],
                                aggregateBy: LazyParameter[AnyRef],
                                aggregator: Aggregator,
                                sessionTimeout: Duration,
@@ -128,7 +128,7 @@ object transformers {
             case SessionWindowTrigger.OnEnd => baseTrigger
           }
           start
-            .keyByWithValue(keyBy, _.product(aggregateBy, endSessionCondition))
+            .groupByByWithValue(groupBy, _.product(aggregateBy, endSessionCondition))
             .window(EventTimeSessionWindows.withGap(Time.milliseconds(sessionTimeout.toMillis)))
             .trigger(trigger)
             .aggregate(

@@ -16,7 +16,7 @@ object StatefulSampleProcess {
       .id(id)
      .exceptionHandler()
       .source("state", "oneSource")
-        .customNode("stateful", "stateVar", "stateful", "keyBy" -> "#input")
+        .customNode("stateful", "stateVar", "stateful", "groupBy" -> "#input")
         .sink("end", "#stateVar": Expression, "kafka-string", "topic" -> s"'output-$id'")
   }
 
@@ -35,7 +35,7 @@ object StatefulSampleProcess {
     .exceptionHandler()
     .source("state", "oneSource")
     .customNode("transform", "aggregate", "aggregate",
-      "keyBy" -> "'test'",
+      "groupBy" -> "'test'",
       "aggregator" -> s"#AGG.map({x: $aggegatorExpression})",
       "aggregateBy" -> "{ x: 1 }",
       "windowLength" -> "T(java.time.Duration).parse('PT1H')",

@@ -389,7 +389,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
 
     def params(data: AggregateData) = {
     val baseParams: List[(String, Expression)] = List(
-      "keyBy" -> "#id",
+      "groupBy" -> "#id",
       "aggregateBy" -> data.aggregateBy,
       "aggregator" -> data.aggregator,
       data.timeoutParamName -> "T(java.time.Duration).parse('PT2H')")

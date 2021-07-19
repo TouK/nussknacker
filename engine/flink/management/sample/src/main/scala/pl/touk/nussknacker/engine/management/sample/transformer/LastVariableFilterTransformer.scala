@@ -26,9 +26,9 @@ object LastVariableFilterTransformer extends CustomStreamTransformer with Single
 
   private val valueParameter = ParameterWithExtractor.lazyMandatory[AnyRef](valueParameterName)
 
-  private val keyByParameterName = "keyBy"
+  private val groupByParameterName = "groupBy"
 
-  private val keyByParameter = ParameterWithExtractor.lazyMandatory[String](keyByParameterName)
+  private val groupByParameter = ParameterWithExtractor.lazyMandatory[String](groupByParameterName)
 
   private def conditionParameter(valueType: TypingResult) = Parameter(conditionParameterName, Typed[Boolean])
     .copy(isLazyParameter = true, additionalVariables = Map("current" -> valueType, "previous" -> valueType))
@@ -36,25 +36,25 @@ object LastVariableFilterTransformer extends CustomStreamTransformer with Single
   type State = Nothing
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
-    case TransformationStep(Nil, _) => NextParameters(keyByParameter.parameter :: valueParameter.parameter ::Nil)
-    case TransformationStep((`keyByParameterName`,_ ) :: (`valueParameterName`, DefinedLazyParameter(expr)) :: Nil, _) => NextParameters(conditionParameter(expr.returnType)::Nil)
+    case TransformationStep(Nil, _) => NextParameters(groupByParameter.parameter :: valueParameter.parameter ::Nil)
+    case TransformationStep((gropuByParameterName,_ ) :: (`valueParameterName`, DefinedLazyParameter(expr)) :: Nil, _) => NextParameters(conditionParameter(expr.returnType)::Nil)
     //if we cannot determine value, we'll assume it's type is Unknown
-    case TransformationStep((`keyByParameterName`, _) :: (`valueParameterName`, FailedToDefineParameter) :: Nil, _) => NextParameters(conditionParameter(Unknown)::Nil)
-    case TransformationStep((`keyByParameterName`, _) :: (`valueParameterName`, _) :: (`conditionParameterName`, _) :: Nil, _) => FinalResults(context)
+    case TransformationStep((gropuByParameterName, _) :: (`valueParameterName`, FailedToDefineParameter) :: Nil, _) => NextParameters(conditionParameter(Unknown)::Nil)
+    case TransformationStep((gropuByParameterName, _) :: (`valueParameterName`, _) :: (`conditionParameterName`, _) :: Nil, _) => FinalResults(context)
   }
 
-  override def initialParameters: List[Parameter] = List(keyByParameter.parameter, valueParameter.parameter, conditionParameter(Unknown))
+  override def initialParameters: List[Parameter] = List(groupByParameter.parameter, valueParameter.parameter, conditionParameter(Unknown))
 
   override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkCustomStreamTransformation= {
     val value = valueParameter.extractValue(params)
     val condition = params(conditionParameterName).asInstanceOf[LazyParameter[java.lang.Boolean]]
-    val keyBy = keyByParameter.extractValue(params)
+    val groupBy = groupByParameter.extractValue(params)
 
     FlinkCustomStreamTransformation((str: DataStream[Context], ctx: FlinkCustomNodeContext) => {
       str
-        .map(new StringKeyedValueMapper(ctx.lazyParameterHelper, keyBy, value))
+        .map(new StringKeyedValueMapper(ctx.lazyParameterHelper, groupBy, value))
         .keyBy(_.value.key)
         .process(new ConditionalUpdateFunction(condition, ctx.lazyParameterHelper))
     })

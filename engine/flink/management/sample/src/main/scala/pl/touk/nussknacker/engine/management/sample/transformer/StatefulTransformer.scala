@@ -9,10 +9,10 @@ import org.apache.flink.streaming.api.scala._
 case object StatefulTransformer extends CustomStreamTransformer with LazyLogging {
 
   @MethodToInvoke
-  def execute(@ParamName("keyBy") keyBy: LazyParameter[String]): FlinkCustomStreamTransformation
+  def execute(@ParamName("groupBy") groupBy: LazyParameter[String]): FlinkCustomStreamTransformation
   = FlinkCustomStreamTransformation((start: DataStream[Context], ctx: FlinkCustomNodeContext) => {
     start
-      .map(ctx.lazyParameterHelper.lazyMapFunction(keyBy))
+      .map(ctx.lazyParameterHelper.lazyMapFunction(groupBy))
       .keyBy(_.value)
       .mapWithState[ValueWithContext[AnyRef], List[String]] { case (StringFromIr(ir, sr), oldState) =>
         logger.info(s"received: $sr, current state: $oldState")

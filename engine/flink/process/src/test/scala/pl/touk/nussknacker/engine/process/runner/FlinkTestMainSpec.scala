@@ -107,7 +107,7 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
         .id("proc1")
         .exceptionHandler()
         .source("id", "input")
-        .customNode("cid", "out", "stateCustom", "keyBy" -> "#input.id", "stringVal" -> "'s'")
+        .customNode("cid", "out", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'s'")
         .sink("out", "#input.value1 + ' ' + #out.previous", "monitor")
 
     val input = SimpleRecord("0", 1, "2", new Date(3), Some(4), 5, "6")
@@ -135,8 +135,8 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     invocationResults("cid") shouldBe
       List(
         //we record only LazyParameter execution results
-        ExpressionInvocationResult("proc1-id-0-0", "keyBy", "0"),
-        ExpressionInvocationResult("proc1-id-0-1", "keyBy", "0")
+        ExpressionInvocationResult("proc1-id-0-0", "groupBy", "0"),
+        ExpressionInvocationResult("proc1-id-0-1", "groupBy", "0")
       )
     invocationResults("out") shouldBe
       List(

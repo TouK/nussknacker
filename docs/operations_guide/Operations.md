@@ -514,7 +514,7 @@ Data serialization is one of the most costly operations in the Nussknacker/Flink
 
 
 
-* Data is reshuffled between nodes during keyBy operations (e.g. before aggregations)
+* Data is reshuffled between nodes during groupBy operations (e.g. before aggregations)
 * Data is serialized to disk during state processing (e.g. aggregations)
 
 Nussknacker needs to know the exact type of processed data during compilation of scenario. Avoid using sources and expressions which do not provide such information.

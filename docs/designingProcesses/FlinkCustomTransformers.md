@@ -36,7 +36,7 @@ subsequent events from any branch during `stateTimeout`. Produced object has val
 ![aggregate_window](../img/aggregate_window.png)
 
 This element defines generic aggregation of values in sliding time window of given length. Parameters are:
-- keyBy - expression defining key for which we compute aggregate, e.g. `#input.userId`
+- groupBy - expression defining key for which we compute aggregate, e.g. `#input.userId`
 - aggregator - type of aggregation (see below)
 - aggregateBy - value which will be aggregated (e.g. `#input.callDuration`, `#input.productId`)
 - windowLength - length of time window, window will cover range: (exclusive) now-windowLength, (inclusive) now
@@ -81,11 +81,11 @@ Example, for aggregate-tumbling node with length of 10 minutes, aggregation max,
 ![previous_value_window](../img/previous_value_window.png)
 
 Simple transformation which stores arbitrary value for given key. This element has two parameters:
-- keyBy - expression defining key for which we compute aggregate, e.g. `#input.userId`
+- groupBy - expression defining key for which we compute aggregate, e.g. `#input.userId`
 - value - stored value
 
 So, for example, given stream of events which contain users with their current location, when we set 
-- keyBy is `#input.userId`
+- groupBy is `#input.userId`
 - value is `#input.location`
 then the value of output variable is the previous location for current user. If this is the first appearance of this user,
 **current** location will be returned
