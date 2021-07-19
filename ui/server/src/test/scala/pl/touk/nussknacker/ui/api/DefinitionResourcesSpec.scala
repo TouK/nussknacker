@@ -18,6 +18,25 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
+  it("should handle missing scenario type") {
+    getProcessDefinitionData("foo", Map.empty[String, Long].asJson) ~> check {
+      status shouldBe StatusCodes.NotFound
+    }
+  }
+
+  it("should return definition data for existing scenario type") {
+    getProcessDefinitionData(existingProcessingType, Map.empty[String, Long].asJson) ~> check {
+      status shouldBe StatusCodes.OK
+
+      val noneReturnType = responseAs[Json].hcursor
+        .downField("processDefinition")
+        .downField("customStreamTransformers")
+        .downField("noneReturnTypeTransformer")
+
+      noneReturnType.downField("returnType").focus shouldBe Some(Json.Null)
+    }
+  }
+
   it("should return definition data for allowed classes") {
     getProcessDefinitionData(existingProcessingType, Map.empty[String, Long].asJson) ~> check {
       status shouldBe StatusCodes.OK
@@ -33,24 +52,6 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     }
   }
 
-  it("should handle missing processing type") {
-    getProcessDefinitionData("foo", Map.empty[String, Long].asJson) ~> check {
-      status shouldBe StatusCodes.NotFound
-    }
-  }
-
-  it("should return definition data for existing processing type") {
-    getProcessDefinitionData(existingProcessingType, Map.empty[String, Long].asJson) ~> check {
-      status shouldBe StatusCodes.OK
-
-      val noneReturnType = responseAs[Json].hcursor
-        .downField("processDefinition")
-        .downField("customStreamTransformers")
-        .downField("noneReturnTypeTransformer")
-
-      noneReturnType.downField("returnType").focus shouldBe Some(Json.Null)
-    }
-  }
 
   it("should return all definition services") {
     getProcessDefinitionServices ~> check {
@@ -103,7 +104,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     }
   }
 
-  it("should return info about editor based on subprocess node configuration") {
+  it("should return info about editor based on fragment node configuration") {
     val processName = ProcessName(SampleProcess.process.id)
     val processWithSubProcess = ProcessTestData.validProcessWithSubprocess(processName)
     val displayableSubProcess = ProcessConverter.toDisplayable(processWithSubProcess.subprocess, TestProcessingTypes.Streaming)
@@ -321,7 +322,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
             )
           ),
           "type" -> Json.fromString("FixedValuesValidator")
-      ))
+        ))
     }
   }
 

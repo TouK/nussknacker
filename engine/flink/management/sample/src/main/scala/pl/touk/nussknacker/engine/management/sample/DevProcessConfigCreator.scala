@@ -195,7 +195,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     )
 
     val additionalClasses = List(
-      WithCategories(ReturningTestCaseClass)
+      classOf[ReturningTestCaseClass]
     )
 
     ExpressionConfig(

@@ -133,7 +133,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
         "typedGlobal" -> WithCategories(SampleTypedVariable, "category")
       ),
       globalImports = Nil, additionalClasses = List(
-        WithCategories(AdditionalClass)
+        classOf[AdditionalClass]
       )
     )
 

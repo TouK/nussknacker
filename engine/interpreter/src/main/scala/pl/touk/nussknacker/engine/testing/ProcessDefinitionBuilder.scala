@@ -27,7 +27,7 @@ object ProcessDefinitionBuilder {
     val expressionDefinition = ExpressionDefinition(
       definition.expressionConfig.globalVariables.mapValuesNow(makeDummyDefinition(_)),
       definition.expressionConfig.globalImports,
-      definition.expressionConfig.additionalClasses.map(makeDummyDefinition(_)),
+      definition.expressionConfig.additionalClasses,
       definition.expressionConfig.languages,
       definition.expressionConfig.optimizeCompilation,
       definition.expressionConfig.strictTypeChecking,
