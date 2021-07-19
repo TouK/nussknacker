@@ -99,6 +99,10 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
       strictTypeChecking = true, imports, flavour, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking = false, TypeDefinitionSet.empty)(ClassExtractionSettings.Default).parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 
+  test("evaluate static method call on validated class") {
+    parseOrFail[Any]("T(java.lang.String).copyValueOf({'t', 'e', 's', 't'})").evaluateSync[String](ctx) should equal("test")
+  }
+
   test("invoke simple expression") {
     parseOrFail[java.lang.Number]("#obj.value + 4").evaluateSync[Long](ctx) should equal(6)
   }

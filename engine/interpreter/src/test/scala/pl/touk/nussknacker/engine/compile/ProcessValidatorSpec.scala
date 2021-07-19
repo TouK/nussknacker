@@ -120,11 +120,11 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("Validation of Type Reference using inaccessible class, failure scenario") {
 
-    val typeReferenceWithValidClass = "T(System).copyValueOf()"
+    val typeReferenceWithValidClass = "T(System).exit()"
 
     val testProcess =
       EspProcessBuilder
-        .id("TypeReferenceClassValidationSuccess")
+        .id("TypeReferenceClassValidationFailure")
         .exceptionHandler()
         .source("source1", "source")
         .filter("filter1", typeReferenceWithValidClass)
