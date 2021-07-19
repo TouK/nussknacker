@@ -97,6 +97,7 @@ services:
     volumes:
       - ./flink/flink-conf.yaml:/tmp/flink-conf.yaml
       - ./flink/flink-entrypoint.sh:/flink-entrypoint.sh
+      # can be removed unless you use database enricher
       - ./flink/postgresql-42.2.19.jar:/opt/flink/lib/postgresql-42.2.19.jar
       - nussknacker_storage_flink:/opt/flink/data
 
@@ -118,6 +119,7 @@ services:
       - ./flink/flink-conf.yaml:/tmp/flink-conf.yaml
       - ./flink/flink-entrypoint.sh:/flink-entrypoint.sh
       - nussknacker_storage_flink:/opt/flink/data
+      # can be removed unless you use database enricher
       - ./flink/postgresql-42.2.19.jar:/opt/flink/lib/postgresql-42.2.19.jar
     ulimits:
       nproc: 70000
