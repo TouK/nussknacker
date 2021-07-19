@@ -261,8 +261,8 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case e: TypeReference => {
 
         if (staticMethodInvocationsChecking) {
-          typeDefinitionSet.validateTypeReference(e, evaluationContextPreparer.prepareEvaluationContext(Context(""), Map.empty))
-             .map(_ => Unknown.asInstanceOf[CollectedTypingResult])
+          TypeDefinitionSet.withDefaultClasses.validateTypeReference(e, evaluationContextPreparer.prepareEvaluationContext(Context(""), Map.empty))
+            .map(_ => toResult(Unknown))
         } else {
           valid(Unknown)
         }
