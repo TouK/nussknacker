@@ -71,9 +71,9 @@ class AppResources(config: Config,
               if (set.isEmpty) {
                 createHealthCheckHttpResponse(OK)
               } else {
-                logger.warn(s"Processes not running: ${set.keys}")
-                logger.debug(s"Processes not running - more details: $set")
-                createHealthCheckHttpResponse(ERROR, Some("Deployed processes not running (probably failed)"), Some(set.keys.toSet))
+                logger.warn(s"Scenarios not running: ${set.keys}")
+                logger.debug(s"Scenarios not running - more details: $set")
+                createHealthCheckHttpResponse(ERROR, Some("Deployed scenarios not running (probably failed)"), Some(set.keys.toSet))
               }
             }.recover[Future[HttpResponse]] {
               case NonFatal(e) =>
@@ -89,7 +89,7 @@ class AppResources(config: Config,
               if (processes.isEmpty) {
                 createHealthCheckHttpResponse(OK)
               } else {
-                createHealthCheckHttpResponse(ERROR, Some("Processes with validation errors"), Some(processes.toSet))
+                createHealthCheckHttpResponse(ERROR, Some("Scenarios with validation errors"), Some(processes.toSet))
               }
             }
           }

@@ -36,7 +36,7 @@ object FileProcessRepository {
     val dir = new File(path)
     dir.mkdirs()
     if (!dir.isDirectory || !dir.canRead) {
-      throw new IllegalArgumentException(s"Cannot use $dir for storing processes")
+      throw new IllegalArgumentException(s"Cannot use $dir for storing scenarios")
     }
     new FileProcessRepository(dir)
   }

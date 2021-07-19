@@ -40,7 +40,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
-  it should "find errors in a bad process" in {
+  it should "find errors in a bad scenario" in {
     Post("/processValidation", posting.toEntity(ProcessTestData.invalidProcess)) ~> route ~> check {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
@@ -48,7 +48,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
     }
   }
 
-  it should "find errors in process with Mandatory parameters" in {
+  it should "find errors in scenario with Mandatory parameters" in {
     Post("/processValidation", posting.toEntity(ProcessTestData.invalidProcessWithEmptyMandatoryParameter)) ~> route ~> check {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
@@ -56,7 +56,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
     }
   }
 
-  it should "find errors in process with NotBlank parameters" in {
+  it should "find errors in scenario with NotBlank parameters" in {
     Post("/processValidation", posting.toEntity(ProcessTestData.invalidProcessWithBlankParameter)) ~> route ~> check {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
@@ -64,7 +64,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
     }
   }
 
-  it should "find errors in process properties" in {
+  it should "find errors in scenario properties" in {
     Post("/processValidation", posting.toEntity(TestFactory.processWithInvalidAdditionalProperties)) ~> route ~> check {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
@@ -75,7 +75,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
     }
   }
 
-  it should "find errors in process with wrong fixed expression value" in {
+  it should "find errors in scenario with wrong fixed expression value" in {
     Post("/processValidation", posting.toEntity(ProcessTestData.invalidProcessWithWrongFixedExpressionValue)) ~> route ~> check {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
@@ -107,7 +107,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
     }
   }
 
-  it should "find errors in process of bad shape" in {
+  it should "find errors in scenario of bad shape" in {
     val invalidShapeProcess = newDisplayableProcess("p1",
       List(Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())), node.Filter("f1", Expression("spel", "false"))),
       List(Edge("s1", "f1", None))
@@ -120,13 +120,13 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
     }
   }
 
-  it should "find no errors in a good process" in {
+  it should "find no errors in a good scenario" in {
     Post("/processValidation", posting.toEntity(ProcessTestData.validProcess)) ~> route ~> check {
       status shouldEqual StatusCodes.OK
     }
   }
 
-  it should "warn if process has disabled filter or processor" in {
+  it should "warn if scenario has disabled filter or processor" in {
     val nodes = List(
       node.Source("source1", SourceRef(ProcessTestData.existingSourceFactory, List())),
       node.Filter("filter1", Expression("spel", "false"), isDisabled = Some(true)),

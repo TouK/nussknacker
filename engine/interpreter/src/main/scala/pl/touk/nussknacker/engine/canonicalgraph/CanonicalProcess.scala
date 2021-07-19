@@ -26,7 +26,7 @@ object CanonicalProcess {
       if (subprocessNode.outputs.size == 1) {
         withoutDisabled(subprocessNode.outputs.values.head)
       } else {
-        throw new Exception("Fatal error. Disabled subprocess should be validated to have exactly one output")
+        throw new Exception("Fatal error. Disabled scenario fragment should be validated to have exactly one output")
       }
     case filterNode: canonicalnode.FilterNode =>
       List(

@@ -42,14 +42,14 @@ class CanonicalProcessTest extends FunSuite with Matchers {
     withNodesEnabled.withoutDisabledNodes shouldBe withNodesEnabled
   }
 
-  test("#withoutDisabledNodes with disabled subprocess") {
+  test("#withoutDisabledNodes with disabled fragment") {
     val withDisabledSubprocess = process(
       List(source1, subprocess(List(sink1), isDisabled = true)))
 
     withDisabledSubprocess.withoutDisabledNodes shouldBe process(List(source1, sink1))
   }
 
-  test("#withoutDisabledNodes with subprocess with disabled subprocess") {
+  test("#withoutDisabledNodes with fragment with disabled fragment") {
     val withSubprocessWithDisabledSubprocess = process(
       List(
         source1,
@@ -76,7 +76,7 @@ class CanonicalProcessTest extends FunSuite with Matchers {
     )
   }
 
-  test("#withoutDisabledNodes with disabled subprocess with disabled subprocess") {
+  test("#withoutDisabledNodes with disabled fragment with disabled fragment") {
     val withDisabledSubprocessWithDisabledSubprocess = process(
       List(
         source1,
@@ -135,7 +135,7 @@ class CanonicalProcessTest extends FunSuite with Matchers {
     )
   }
 
-  test("#withoutDisabledNodes with split with subprocess with disabled subprocess") {
+  test("#withoutDisabledNodes with split with fragment with disabled fragment") {
     process(
       List(
         source1,

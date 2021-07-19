@@ -88,7 +88,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     }
   }
 
-  it("should return info about editor based on subprocess node configuration") {
+  it("should return info about editor based on fragment node configuration") {
     val processName = ProcessName(SampleProcess.process.id)
     val processWithSubProcess = ProcessTestData.validProcessWithSubprocess(processName)
     val displayableSubProcess = ProcessConverter.toDisplayable(processWithSubProcess.subprocess, TestProcessingTypes.Streaming)

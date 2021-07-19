@@ -76,7 +76,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
 
     val insertNew = processesTable.returning(processesTable.map(_.id)).into { case (entity, newId) => entity.copy(id = newId) }
 
-    val insertAction = logDebug(s"Saving process ${action.processName.value} by user $loggedUser").flatMap { _ =>
+    val insertAction = logDebug(s"Saving scenario ${action.processName.value} by user $loggedUser").flatMap { _ =>
       latestProcessVersionsNoJsonQuery(action.processName).result.headOption.flatMap {
         case Some(_) => DBIOAction.successful(ProcessAlreadyExists(action.processName.value).asLeft)
         case None => processesTable.filter(_.name === action.processName.value).result.headOption.flatMap {
@@ -143,7 +143,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
     def rightT[T](value: DB[T]): EitherT[DB, EspError, T] = EitherT[DB, EspError, T](value.map(Right(_)))
 
     val insertAction = for {
-      _ <- rightT(logDebug(s"Updating process $processId by user $loggedUser"))
+      _ <- rightT(logDebug(s"Updating scenario $processId by user $loggedUser"))
       maybeProcess <- rightT(processTableFilteredByUser.filter(_.id === processId.value).result.headOption)
       process <- EitherT.fromEither[DB](Either.fromOption(maybeProcess, ProcessNotFoundError(processId.value.toString)))
       _ <- EitherT.fromEither(Either.cond(process.processType == ProcessType.fromDeploymentData(processDeploymentData), (), InvalidProcessTypeError(processId.value.toString))) //FIXME: Move this condition to service..

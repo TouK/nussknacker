@@ -13,16 +13,16 @@ class CronSchedulePropertyExtractorTest extends FunSuite
 
   private val extractor = CronSchedulePropertyExtractor()
 
-  test("should fail for custom process") {
+  test("should fail for custom scenario") {
     val result = extractor(CustomProcess("test"))
 
-    inside(result) { case Left("Custom process is not supported") => }
+    inside(result) { case Left("Custom scenario is not supported") => }
   }
 
-  test("should fail for unparseable process json") {
+  test("should fail for unparseable scenario json") {
     val result = extractor(GraphProcess("broken"))
 
-    inside(result) { case Left("Process is unparseable") => }
+    inside(result) { case Left("Scenario is unparseable") => }
   }
 
   test("should fail for missing cron property") {

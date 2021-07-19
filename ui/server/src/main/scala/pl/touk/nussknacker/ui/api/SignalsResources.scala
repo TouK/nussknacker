@@ -35,7 +35,7 @@ class SignalsResources(modelData: ProcessingTypeDataProvider[ModelData],
                 case Some(process) =>
                   SignalDispatcher.dispatchSignal(modelData.forTypeUnsafe(process.processingType))(signalType, processId.name.value, params.mapValues(_.asInstanceOf[AnyRef]))
                 case None =>
-                  HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
+                  HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found")
               }
             }
           }

@@ -17,10 +17,10 @@ object SchedulePropertyExtractor {
     processDeploymentData match {
       case GraphProcess(processAsJson) =>
         for {
-          canonicalProcess <- ProcessMarshaller.fromJson(processAsJson).leftMap(_ => "Process is unparseable").toEither.right
+          canonicalProcess <- ProcessMarshaller.fromJson(processAsJson).leftMap(_ => "Scenario is unparseable").toEither.right
           property <- canonicalProcess.metaData.additionalFields.flatMap(_.properties.get(name)).toRight(s"$name property is missing").right
         } yield property
-      case CustomProcess(_) => Left("Custom process is not supported")
+      case CustomProcess(_) => Left("Custom scenario is not supported")
     }
   }
 

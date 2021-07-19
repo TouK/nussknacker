@@ -16,7 +16,7 @@ class JavaConfigProcessManagerSpec extends FunSuite with Matchers with Streaming
 
   override protected def classPath: String = s"./engine/flink/management/java_sample/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/managementJavaSample.jar"
 
-  test("deploy java process in running flink") {
+  test("deploy java scenario in running flink") {
     val processId = "runningJavaFlink"
 
     val process = EspProcessBuilder

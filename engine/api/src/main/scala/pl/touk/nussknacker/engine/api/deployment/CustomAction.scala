@@ -44,7 +44,7 @@ sealed trait CustomActionError extends Exception {
 case class CustomActionFailure(request: CustomActionRequest, msg: String) extends CustomActionError
 
 case class CustomActionInvalidStatus(request: CustomActionRequest, stateStatusName: String) extends CustomActionError {
-  override val msg: String = s"Process status: $stateStatusName is not allowed for action ${request.name}"
+  override val msg: String = s"Scenario status: $stateStatusName is not allowed for action ${request.name}"
 }
 
 case class CustomActionNotImplemented(request: CustomActionRequest) extends CustomActionError {

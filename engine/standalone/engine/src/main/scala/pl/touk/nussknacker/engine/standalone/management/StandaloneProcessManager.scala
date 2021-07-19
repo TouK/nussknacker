@@ -49,23 +49,23 @@ class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessCl
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData,
                       savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     savepointPath match {
-      case Some(_) => Future.failed(new UnsupportedOperationException("Cannot make savepoint on standalone process"))
+      case Some(_) => Future.failed(new UnsupportedOperationException("Cannot make savepoint on standalone scenario"))
       case None =>
         processDeploymentData match {
           case GraphProcess(processAsJson) =>
             client.deploy(StandaloneDeploymentData(processAsJson, System.currentTimeMillis(), processVersion, deploymentData)).map(_ => None)
           case CustomProcess(mainClass) =>
-            Future.failed(new UnsupportedOperationException("custom process in standalone engine is not supported"))
+            Future.failed(new UnsupportedOperationException("custom scenario in standalone engine is not supported"))
         }
     }
   }
 
   override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] = {
-    Future.failed(new UnsupportedOperationException("Cannot make savepoint on standalone process"))
+    Future.failed(new UnsupportedOperationException("Cannot make savepoint on standalone scenario"))
   }
 
   override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] = {
-    Future.failed(new UnsupportedOperationException("Cannot stop standalone process"))
+    Future.failed(new UnsupportedOperationException("Cannot stop standalone scenario"))
   }
 
   override def test[T](processName: ProcessName, processJson: String, testData: TestData, variableEncoder: Any => T): Future[TestResults[T]] = {

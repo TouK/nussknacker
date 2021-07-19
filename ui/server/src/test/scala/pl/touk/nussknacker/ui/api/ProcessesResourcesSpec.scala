@@ -80,7 +80,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
 
   //FIXME: Implement subprocess valiation
-  ignore("not allow to archive still used subprocess") {
+  ignore("not allow to archive still used fragment") {
     val processWithSubprocess = ProcessTestData.validProcessWithSubprocess(processName)
     val displayableSubprocess = ProcessConverter.toDisplayable(processWithSubprocess.subprocess, TestProcessingTypes.Streaming)
     saveSubProcess(displayableSubprocess)(succeed)
@@ -101,7 +101,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     }
   }
 
-  test("allow to archive subprocess used in archived process") {
+  test("allow to archive fragment used in archived process") {
     val processWithSubprocess = ProcessTestData.validProcessWithSubprocess(processName)
     val displayableSubprocess = ProcessConverter.toDisplayable(processWithSubprocess.subprocess, TestProcessingTypes.Streaming)
     saveSubProcess(displayableSubprocess)(succeed)
@@ -116,7 +116,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     }
   }
 
-  test("or not allow to create new process named as archived one") {
+  test("or not allow to create new scenario named as archived one") {
     val process = ProcessTestData.validProcess
     saveProcess(processName, process)(succeed)
 
@@ -126,7 +126,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
 
     Post(s"/processes/${processName.value}/$testCategoryName?isSubprocess=false") ~> processesRouteWithAllPermissions ~> check {
       status shouldBe StatusCodes.BadRequest
-      responseAs[String] shouldEqual s"Process ${processName.value} already exists"
+      responseAs[String] shouldEqual s"Scenario ${processName.value} already exists"
     }
   }
 
@@ -183,7 +183,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     }
   }
 
-  test("return list of subprocess without archived process") {
+  test("return list of fragment without archived process") {
     val sampleSubprocess = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess, TestProcessingTypes.Streaming)
     saveSubProcess(sampleSubprocess) {
       status shouldEqual StatusCodes.OK
@@ -744,13 +744,13 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     }
   }
 
-  test("fetching process toolbar definitions") {
+  test("fetching scenario toolbar definitions") {
     val toolbarConfig = ProcessToolbarsConfigProvider.create(testConfig, Some(TestPermissions.testCategoryName))
     val id = createProcess(processName)
 
     withProcessToolbars(processName) { toolbar =>
       toolbar shouldBe ProcessToolbarSettings(
-        id = s"${toolbarConfig.uuidCode}-not-archived-process",
+        id = s"${toolbarConfig.uuidCode}-not-archived-scenario",
         List(
           ToolbarPanel(TipsPanel, None, None, None),
           ToolbarPanel(CreatorPanel, None, None, None)

@@ -58,6 +58,7 @@ Nussknacker versions
 * [#1357](https://github.com/TouK/nussknacker/pull/1357) Add run mode to nodes to be able to determine if we are inside e.g. test process run.
   Run mode is can be declared as a dependency in generic node transformations. Nodes created via `@MethodToInvoke` can declare `RunMode` as an implicit parameter.
   `RunMode` is also available in `FlinkCustomNodeContext`.
+* [#1911](https://github.com/TouK/nussknacker/pull/1911) Rename `process` to `scenario`, `subprocess` to `fragment` in messages at backend and some test cases names                                                        
 
 0.3.1 (not released yet) 
 ------------------------

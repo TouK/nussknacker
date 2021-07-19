@@ -21,7 +21,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
 
   import spel.Implicits._
 
-  it should "marshall and unmarshall to same process" in {
+  it should "marshall and unmarshall to same scenario" in {
 
     def nestedGraph(id: String) =
       GraphBuilder
@@ -44,7 +44,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
     result should equal(Some(process))
   }
      
-  it should "marshall and unmarshall to same process with ending processor" in {
+  it should "marshall and unmarshall to same scenario with ending processor" in {
     val process = EspProcessBuilder
             .id("process1")
             .exceptionHandler()
@@ -56,7 +56,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
     result should equal(Some(process))
   }
 
-  it should "marshall and unmarshall to same process with ending custom node" in {
+  it should "marshall and unmarshall to same scenario with ending custom node" in {
     val process = EspProcessBuilder
       .id("process1")
       .exceptionHandler()
@@ -68,7 +68,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
     result should equal(Some(process))
   }
   
-  it should "marshall and unmarshall to same process with additional fields" in {
+  it should "marshall and unmarshall to same scenario with additional fields" in {
     val processAdditionalFields = Table(
       "processAditionalFields",
       ProcessAdditionalFields(description = Some("process description"), groups = Set(Group(id = "4", nodes = Set("10", "20"), None, None)), properties = Map("customProperty" -> "customPropertyValue")),

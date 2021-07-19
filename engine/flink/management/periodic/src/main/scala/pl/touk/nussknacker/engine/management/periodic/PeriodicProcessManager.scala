@@ -84,7 +84,7 @@ class PeriodicProcessManager(val delegate: ProcessManager,
       case (_: GraphProcess, Left(error)) =>
         Future.failed(new PeriodicProcessException(error))
       case _ =>
-        Future.failed(new PeriodicProcessException("Only periodic processes can be scheduled"))
+        Future.failed(new PeriodicProcessException("Only periodic scenarios can be scheduled"))
     }
   }
 
@@ -93,7 +93,7 @@ class PeriodicProcessManager(val delegate: ProcessManager,
       .map(_.isDefined)
       .flatMap(shouldStop => {
         if (shouldStop) {
-          logger.info(s"Process ${processVersion.processName} is running or scheduled. Cancelling before reschedule")
+          logger.info(s"Scenario ${processVersion.processName} is running or scheduled. Cancelling before reschedule")
           cancel(processVersion.processName, user).map(_ => ())
         }
         else Future.successful(())

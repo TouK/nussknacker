@@ -24,7 +24,7 @@ class RescheduleFinishedActor(service: PeriodicProcessService, interval: FiniteD
 
   override def receive: Receive = {
     case CheckStates =>
-      logger.debug("Checking processes to be rescheduled or marked as failed")
+      logger.debug("Checking scenarios to be rescheduled or marked as failed")
       service.handleFinished
   }
 

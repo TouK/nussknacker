@@ -124,11 +124,11 @@ object DefinitionPreparer {
     //so far we don't allow nested subprocesses...
     val subprocesses = if (!isSubprocess) {
       List(
-        NodeGroup("subprocesses",
+        NodeGroup("fragments",
           processDefinition.subprocessInputs.map {
             case (id, definition) =>
               val nodes = evaluator.prepareEvaluatedParameter(UINodeDefinition(id, definition.parameters))
-              NodeToAdd("subprocess", id, SubprocessInput("", SubprocessRef(id, nodes)), readCategories.intersect(definition.categories))
+              NodeToAdd("fragments", id, SubprocessInput("", SubprocessRef(id, nodes)), readCategories.intersect(definition.categories))
           }.toList))
     } else {
       List.empty

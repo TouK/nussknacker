@@ -237,7 +237,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
           Map()
 
         case part: SinkPart =>
-          throw new IllegalArgumentException(s"Process can only use flink sinks, instead given: ${part.obj}")
+          throw new IllegalArgumentException(s"Scenario can only use flink sinks, instead given: ${part.obj}")
         case part@CustomNodePart(transformerObj, node, contextBefore, contextAfter, _, _) =>
 
           val transformer = transformerObj match {

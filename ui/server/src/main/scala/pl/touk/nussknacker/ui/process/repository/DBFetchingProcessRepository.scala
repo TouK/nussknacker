@@ -216,7 +216,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
     implicitly[ProcessShapeFetchStrategy[PS]] match {
       case ProcessShapeFetchStrategy.FetchCanonical => canonical.asInstanceOf[PS]
       case ProcessShapeFetchStrategy.FetchDisplayable => ProcessConverter.toDisplayable(canonical, process.processingType, businessView).asInstanceOf[PS]
-      case ProcessShapeFetchStrategy.NotFetch => throw new IllegalArgumentException("Process conversion shouldn't be necesary for NotFetch strategy")
+      case ProcessShapeFetchStrategy.NotFetch => throw new IllegalArgumentException("Scenario conversion shouldn't be necesary for NotFetch strategy")
     }
   }
 }

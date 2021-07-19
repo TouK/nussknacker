@@ -72,7 +72,7 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository[
     case Some(displayableProcess) =>
       exportProcess(displayableProcess)
     case None =>
-      HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
+      HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found")
   }
 
   private def exportProcess(processDetails: DisplayableProcess): HttpResponse = {
@@ -97,9 +97,9 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository[
         PdfExporter.exportToPdf(svg, process, processActivity, json)
       }.map { pdf =>
         HttpResponse(status = StatusCodes.OK, entity = HttpEntity(pdf))
-      }.getOrElse(HttpResponse(status = StatusCodes.NotFound, entity = "Process not found"))
+      }.getOrElse(HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found"))
     case None =>
-      HttpResponse(status = StatusCodes.NotFound, entity = "Process not found")
+      HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found")
   }
 
 }

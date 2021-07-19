@@ -45,7 +45,7 @@ private[periodic] class FlinkJarManager(flinkClient: FlinkClient,
 
   override def prepareDeploymentWithJar(processVersion: ProcessVersion,
                                         processJson: String): Future[DeploymentWithJarData] = {
-    logger.info(s"Prepare deployment for process: $processVersion")
+    logger.info(s"Prepare deployment for scenario: $processVersion")
     copyJarToLocalDir(processVersion).flatMap { jarFileName =>
       val deploymentWithJarData = model.DeploymentWithJarData(
         processVersion = processVersion,
@@ -68,7 +68,7 @@ private[periodic] class FlinkJarManager(flinkClient: FlinkClient,
 
   override def deployWithJar(deploymentWithJarData: DeploymentWithJarData, deploymentData: DeploymentData): Future[Option[ExternalDeploymentId]] = {
     val processVersion = deploymentWithJarData.processVersion
-    logger.info(s"Deploying process ${processVersion.processName.value}, version id: ${processVersion.versionId} and jar: ${deploymentWithJarData.jarFileName}")
+    logger.info(s"Deploying scenario ${processVersion.processName.value}, version id: ${processVersion.versionId} and jar: ${deploymentWithJarData.jarFileName}")
     val jarFile = jarsDir.resolve(deploymentWithJarData.jarFileName).toFile
     val args = FlinkProcessManager.prepareProgramArgs(deploymentWithJarData.modelConfig,
       processVersion,

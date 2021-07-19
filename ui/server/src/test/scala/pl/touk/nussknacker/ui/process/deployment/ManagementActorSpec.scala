@@ -195,7 +195,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
       //See comment in ManagementActor.handleState...
       state.status shouldBe FlinkStateStatus.Restarting
       state.allowedActions shouldBe List(ProcessActionType.Cancel)
-      state.description shouldBe Some("Process is restarting...")
+      state.description shouldBe Some("Scenario is restarting...")
 
     }
   }

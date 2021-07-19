@@ -49,7 +49,7 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
       case Right(scheduleDates) if scheduleDates.forall(_._2.isEmpty) =>
         Future.failed(new PeriodicProcessException(s"No future date determined by $schedule"))
       case Right(scheduleDates) =>
-        logger.info("Scheduling periodic process: {} on {}", processVersion, scheduleDates)
+        logger.info("Scheduling periodic scenario: {} on {}", processVersion, scheduleDates)
         jarManager.prepareDeploymentWithJar(processVersion, processJson).flatMap { deploymentWithJarData =>
           initialSchedule(schedule, scheduleDates, deploymentWithJarData)
         }
@@ -93,7 +93,7 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
   private def checkIfNotRunning(toDeploy: PeriodicProcessDeployment): Future[Option[PeriodicProcessDeployment]] = {
     delegateProcessManager.findJobStatus(toDeploy.periodicProcess.processVersion.processName).map {
       case Some(state) if state.isDeployed =>
-        logger.debug(s"Deferring run of ${toDeploy.display} as process is currently running")
+        logger.debug(s"Deferring run of ${toDeploy.display} as scenario is currently running")
         None
       case _ => Some(toDeploy)
     }
@@ -212,12 +212,12 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
       additionalDeploymentDataProvider.prepareAdditionalData(deployment))
     val deploymentWithJarData = deployment.periodicProcess.deploymentData
     val deploymentAction = for {
-      _ <- Future.successful(logger.info("Deploying process {} for deployment id {}", deploymentWithJarData.processVersion, id))
+      _ <- Future.successful(logger.info("Deploying scenario {} for deployment id {}", deploymentWithJarData.processVersion, id))
       externalDeploymentId <- jarManager.deployWithJar(deploymentWithJarData, deploymentData)
     } yield externalDeploymentId
     deploymentAction
       .flatMap { externalDeploymentId =>
-        logger.info("Process has been deployed {} for deployment id {}", deploymentWithJarData.processVersion, id)
+        logger.info("Scenario has been deployed {} for deployment id {}", deploymentWithJarData.processVersion, id)
         //TODO: add externalDeploymentId??
         scheduledProcessesRepository.markDeployed(id)
           .flatMap(_ => scheduledProcessesRepository.findProcessData(id))
@@ -225,7 +225,7 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
       }
       // We can recover since deployment actor watches only future completion.
       .recoverWith { case exception =>
-        logger.error(s"Process deployment ${deployment.display} failed", exception)
+        logger.error(s"Scenario deployment ${deployment.display} failed", exception)
         markFailedAction(deployment, None).run
       }
   }

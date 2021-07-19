@@ -11,25 +11,25 @@ class FlinkProcessStateSpec extends FunSpec with Matchers with Inside {
   def createProcessState(stateStatus: StateStatus): ProcessState =
     ProcessState("12", stateStatus, Some(ProcessVersion.empty), FlinkProcessStateDefinitionManager)
 
-  it ("process state should be during deploy") {
+  it ("scenario state should be during deploy") {
     val state = createProcessState(FlinkStateStatus.DuringDeploy)
     state.status.isDuringDeploy shouldBe true
     state.allowedActions shouldBe List(ProcessActionType.Cancel)
   }
 
-  it ("process state should be running") {
+  it ("scenario state should be running") {
     val state = createProcessState(FlinkStateStatus.Running)
     state.status.isRunning shouldBe true
     state.allowedActions shouldBe List(ProcessActionType.Cancel, ProcessActionType.Pause, ProcessActionType.Deploy)
   }
 
-  it ("process state should be finished") {
+  it ("scenario state should be finished") {
     val state = createProcessState(FlinkStateStatus.Finished)
     state.status.isFinished shouldBe true
     state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Archive)
   }
 
-  it ("process state should be restarting") {
+  it ("scenario state should be restarting") {
     val state = createProcessState(FlinkStateStatus.Restarting)
     state.status.isFinished shouldBe false
     state.status.isRunning shouldBe false

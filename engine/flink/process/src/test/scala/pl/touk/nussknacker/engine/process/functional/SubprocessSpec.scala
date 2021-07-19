@@ -21,7 +21,7 @@ class SubprocessSpec extends FunSuite with Matchers with ProcessTestHelpers {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
-  test("should accept same id in subprocess and main process ") {
+  test("should accept same id in fragment and main process ") {
 
     val process = resolve(EspProcessBuilder.id("proc1")
       .exceptionHandler()
@@ -39,7 +39,7 @@ class SubprocessSpec extends FunSuite with Matchers with ProcessTestHelpers {
     MockService.data.head shouldBe "a"
   }
 
-  test("should handle split in subprocess") {
+  test("should handle split in fragment") {
 
     val process = resolve(EspProcessBuilder.id("proc1")
       .exceptionHandler()
@@ -57,7 +57,7 @@ class SubprocessSpec extends FunSuite with Matchers with ProcessTestHelpers {
     MockService.data.head shouldBe "a"
   }
 
-  test("be possible to use global vars in subprocess") {
+  test("be possible to use global vars in fragment") {
     val process = resolve(EspProcessBuilder.id("proc1")
       .exceptionHandler()
       .source("id", "input")
@@ -74,7 +74,7 @@ class SubprocessSpec extends FunSuite with Matchers with ProcessTestHelpers {
     MockService.data.head shouldBe "a"
   }
 
-  test("be possible to use diamond subprocesses") {
+  test("be possible to use diamond fragments") {
     val process = resolve(EspProcessBuilder.id("proc1")
       .exceptionHandler()
       .source("id", "input")

@@ -111,7 +111,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with PatientS
           }
 
         case UpdateProcess() =>
-          Future.failed(new Exception("Process does not exist"))
+          Future.failed(new Exception("Scenario does not exist"))
 
         case _ =>
           throw new AssertionError(s"Not expected $path")
@@ -119,7 +119,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with PatientS
     }
   }
 
-  it should "not migrate not validating process" in {
+  it should "not migrate not validating scenario" in {
 
     val remoteEnvironment = new MockRemoteEnvironment {
       override protected def request(path: Uri, method: HttpMethod, request: MessageEntity) : Future[HttpResponse] = {
@@ -142,7 +142,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with PatientS
 
   }
 
-  it should "handle spaces in process id" in {
+  it should "handle spaces in scenario id" in {
     val process = ProcessTestData.toValidatedDisplayable(ProcessTestData.validProcessWithId("a b c")).toDisplayable
 
     val remoteEnvironment = new MockRemoteEnvironment {
@@ -165,7 +165,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with PatientS
 
   }
 
-  it should "handle non-ascii signs in process id" in {
+  it should "handle non-ascii signs in scenario id" in {
     val process = ProcessTestData.toValidatedDisplayable(ProcessTestData.validProcessWithId("łódź")).toDisplayable
 
     val remoteEnvironment = new MockRemoteEnvironment {
@@ -186,7 +186,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with PatientS
 
   }
 
-  it should "migrate valid existing process" in {
+  it should "migrate valid existing scenario" in {
     var migrated : Option[Future[UpdateProcessCommand]] = None
     val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
       ProcessTestData.validProcess.id,
@@ -204,12 +204,12 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with PatientS
     remoteEnvironment.addedSubprocess shouldBe None
 
     whenReady(migrated.get) { processToSave =>
-      processToSave.comment shouldBe "Process migrated from testEnv by test"
+      processToSave.comment shouldBe "Scenario migrated from testEnv by test"
       processToSave.process shouldBe ProcessTestData.validDisplayableProcess.toDisplayable
     }
   }
 
-  it should "migrate valid non-existing process" in {
+  it should "migrate valid non-existing scenario" in {
     var migrated : Option[Future[UpdateProcessCommand]] = None
     val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
       ProcessTestData.validProcess.id,
@@ -227,12 +227,12 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with PatientS
     remoteEnvironment.addedSubprocess shouldBe Some(false)
 
     whenReady(migrated.get) { processToSave =>
-      processToSave.comment shouldBe "Process migrated from testEnv by test"
+      processToSave.comment shouldBe "Scenario migrated from testEnv by test"
       processToSave.process shouldBe ProcessTestData.validDisplayableProcess.toDisplayable
     }
   }
 
-  it should "migrate subprocess" in {
+  it should "migrate fragment" in {
     var migrated : Option[Future[UpdateProcessCommand]] = None
     val subprocess = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess, TestProcessingTypes.Streaming)
     val category = "Category"
@@ -249,7 +249,7 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with PatientS
     remoteEnvironment.addedSubprocess shouldBe Some(true)
 
     whenReady(migrated.get) { processToSave =>
-      processToSave.comment shouldBe "Process migrated from testEnv by test"
+      processToSave.comment shouldBe "Scenario migrated from testEnv by test"
       processToSave.process shouldBe subprocess
     }
   }

@@ -20,7 +20,7 @@ class PeriodicProcessManagerProvider(delegate: ProcessManagerProvider,
   override def name: String = s"${delegate.name}Periodic"
 
   override def createProcessManager(modelData: ModelData, config: Config): ProcessManager = {
-    logger.info("Creating periodic process manager")
+    logger.info("Creating periodic scenario manager")
     val delegateProcessManager = delegate.createProcessManager(modelData, config)
 
     import net.ceedubs.ficus.Ficus._

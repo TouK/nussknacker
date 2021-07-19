@@ -57,7 +57,7 @@ class InitializationOnPostgresItSpec
     repository.fetchProcessesDetails[Unit]().futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(2)))
   }
 
-  it should "migrate processes when subprocesses present" in {
+  it should "migrate processes when fragments present" in {
     saveSampleProcess("sub1", subprocess = true)
     saveSampleProcess("id1")
 

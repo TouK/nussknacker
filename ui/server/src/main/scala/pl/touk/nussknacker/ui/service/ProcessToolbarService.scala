@@ -22,7 +22,7 @@ class ConfigProcessToolbarService(config: Config, categories: List[String]) exte
 
   override def getProcessToolbarSettings(process: BaseProcessDetails[_]): ProcessToolbarSettings = {
     val toolbarConfig = categoriesProcessToolbarConfig.getOrElse(process.processCategory,
-      throw new IllegalArgumentException(s"Try to get process toolbar settings for not existing category: ${process.processCategory}. Available categories: ${categoriesProcessToolbarConfig.keys.mkString(",")}.")
+      throw new IllegalArgumentException(s"Try to get scenario toolbar settings for not existing category: ${process.processCategory}. Available categories: ${categoriesProcessToolbarConfig.keys.mkString(",")}.")
     )
 
     ProcessToolbarSettings.fromConfig(toolbarConfig, process)
@@ -91,7 +91,7 @@ case class ToolbarButton(`type`: ToolbarButtonType, name: Option[String], title:
 private [service] object ToolbarHelper {
 
   def createProcessToolbarId(config: ProcessToolbarsConfig, process: BaseProcessDetails[_]): String =
-    s"${config.uuidCode}-${if(process.isArchived) "archived" else "not-archived"}-${if(process.isSubprocess) "subprocess" else "process"}"
+    s"${config.uuidCode}-${if(process.isArchived) "archived" else "not-archived"}-${if(process.isSubprocess) "fragment" else "scenario"}"
 
   def fillByProcessData(text: String, process: BaseProcessDetails[_], urlOption: Boolean = false): String = {
     val processName = if (urlOption) UriUtils.encodeURIComponent(process.name) else process.name

@@ -41,7 +41,7 @@ class DefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions
     )
   }
 
-  test("return edge types for subprocess, filters and switches") {
+  test("return edge types for fragment, filters and switches") {
     val subprocessesDetails = TestFactory.sampleSubprocessRepository.loadSubprocesses(Map.empty)
     val edgeTypes = DefinitionPreparer.prepareEdgeTypes(
       user = TestFactory.adminUser("aa"),

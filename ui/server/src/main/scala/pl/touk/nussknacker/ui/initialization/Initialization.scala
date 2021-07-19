@@ -95,7 +95,7 @@ class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: D
     val results: DB[List[Unit]] = customProcesses
       .map { case (processName, processClass) =>
         val deploymentData = CustomProcess(processClass)
-        logger.info(s"Saving custom process $processName")
+        logger.info(s"Saving custom scenario $processName")
         saveOrUpdate(
           processName = ProcessName(processName),
           category = "Technical",
@@ -125,7 +125,7 @@ class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: D
             fetchingProcessRepository.fetchLatestProcessVersion[Unit](processId).flatMap {
               case Some(version) if version.user == Initialization.nussknackerUser.username =>
                 repository.updateProcess(UpdateProcessAction(processId, deploymentData, "External update")).map(_.right.map(_ => ()))
-              case latestVersion => logger.info(s"Process $processId not updated. DB version is: \n${latestVersion.flatMap(_.json).getOrElse("")}\n " +
+              case latestVersion => logger.info(s"Scenario $processId not updated. DB version is: \n${latestVersion.flatMap(_.json).getOrElse("")}\n " +
                 s" and version from file is: \n$deploymentData")
                 DBIOAction.successful(Right(()))
             }.andThen {

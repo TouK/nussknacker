@@ -46,7 +46,7 @@ class InitializationOnHsqlItSpec extends FlatSpec with ScalatestRouteTest with M
     repository.fetchProcessesDetails[Unit]().futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(2)))
   }
 
-  it should "migrate processes when subprocesses present" in {
+  it should "migrate processes when fragments present" in {
     (1 to 20).foreach { id =>
       saveSampleProcess(s"sub$id", subprocess = true)
     }

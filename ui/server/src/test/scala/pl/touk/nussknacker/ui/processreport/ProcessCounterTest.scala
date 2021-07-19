@@ -93,7 +93,7 @@ class ProcessCounterTest extends FunSuite with Matchers {
     )
   }
 
-  test("compute counts for subprocess") {
+  test("compute counts for fragment") {
     val process = ProcessCanonizer.canonize(EspProcessBuilder
       .id("test").parallelism(1).exceptionHandler()
       .source("source1", "")

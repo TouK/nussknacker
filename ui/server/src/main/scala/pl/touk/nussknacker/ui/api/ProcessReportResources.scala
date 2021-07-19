@@ -30,9 +30,9 @@ class ProcessReportResources(countsReporter: CountsReporter, processCounter: Pro
               case Some(process) =>
                 process.json match {
                   case Some(displayable) => computeCounts(displayable, request)
-                  case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Counts unavailable for this process"))
+                  case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Counts unavailable for this scenario"))
                 }
-              case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Process not found"))
+              case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found"))
             }
           }
         }

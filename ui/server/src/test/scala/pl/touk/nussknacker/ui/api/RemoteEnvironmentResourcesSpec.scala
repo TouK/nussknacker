@@ -36,18 +36,18 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
   private val processName: ProcessName = ProcessName(processId)
 
   val readWritePermissions: CategorizedPermission = testPermissionRead |+| testPermissionWrite
-  it should "fail when process does not exist" in {
+  it should "fail when scenario does not exist" in {
     val remoteEnvironment = new MockRemoteEnvironment
     val route = withPermissions(new RemoteEnvironmentResources(remoteEnvironment, fetchingProcessRepository, processAuthorizer),readWritePermissions)
 
     Get(s"/remoteEnvironment/$processId/2/compare/1") ~> route ~> check {
       status shouldEqual StatusCodes.NotFound
-      responseAs[String] should include("No process fooProcess found")
+      responseAs[String] should include("No scenario fooProcess found")
     }
 
     Post(s"/remoteEnvironment/$processId/2/migrate") ~> route ~> check {
       status shouldEqual StatusCodes.NotFound
-      responseAs[String] should include("No process fooProcess found")
+      responseAs[String] should include("No scenario fooProcess found")
     }
 
     remoteEnvironment.compareInvocations shouldBe 'empty
@@ -55,7 +55,7 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
 
   }
 
-  it should "invoke migration for found process" in {
+  it should "invoke migration for found scenario" in {
     val difference = Map("node1" -> NodeNotPresentInCurrent("node1", Filter("node1", Expression("spel", "#input == 4"))))
     val remoteEnvironment = new MockRemoteEnvironment(mockDifferences = Map(processId -> difference))
 
@@ -92,7 +92,7 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
     Get(s"/remoteEnvironment/testAutomaticMigration") ~> route ~> check {
       status shouldEqual StatusCodes.InternalServerError
 
-      responseAs[TestMigrationSummary] shouldBe TestMigrationSummary("Migration failed, following processes have new errors: failingProcess", results)
+      responseAs[TestMigrationSummary] shouldBe TestMigrationSummary("Migration failed, following scenarios have new errors: failingProcess", results)
     }
   }
 

@@ -30,7 +30,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
 
   private val defaultDeploymentData = DeploymentData.empty
   
-  test("deploy process in running flink") {
+  test("deploy scenario in running flink") {
     val processId = "runningFlink"
 
     val version = ProcessVersion(15, ProcessName(processId), "user1", Some(13))
@@ -45,7 +45,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
 
   //manual test because it is hard to make it automatic
   //to run this test you have to add Thread.sleep(over 1 minute) to FlinkProcessMain.main method
-  ignore("continue on timeout exception during process deploy") {
+  ignore("continue on timeout exception during scenario deploy") {
     val processId = "runningFlink"
     val process = SampleProcess.prepareProcess(processId)
     val marshaled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
@@ -76,7 +76,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     processManager.cancel(ProcessName("not existing job"), user = userToAct).futureValue shouldBe (())
   }
 
-  test("be able verify&redeploy kafka process") {
+  test("be able verify&redeploy kafka scenario") {
 
     val processId = "verifyAndRedeploy"
     val outTopic = s"output-$processId"
@@ -89,7 +89,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     kafkaClient.createTopic(outTopic, 1)
     kafkaClient.createTopic(inTopic, 1)
 
-    logger.info("Kafka topics created, deploying process")
+    logger.info("Kafka topics created, deploying scenario")
 
     deployProcessAndWaitIfRunning(kafkaProcess, empty(processId))
 
@@ -159,7 +159,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     cancel(processId)
   }
 
-  test("should stop process and deploy it using savepoint") {
+  test("should stop scenario and deploy it using savepoint") {
     val processId = "stop"
     val outTopic = s"output-$processId"
     kafkaClient.createTopic(outTopic)
@@ -197,7 +197,7 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     val newMarshalled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(StatefulSampleProcess.prepareProcessWithLongState(processId))).spaces2
     val exception = processManager.deploy(empty(process.id), defaultDeploymentData, GraphProcess(newMarshalled), None).failed.futureValue
 
-    exception.getMessage shouldBe "State is incompatible, please stop process and start again with clean state"
+    exception.getMessage shouldBe "State is incompatible, please stop scenario and start again with clean state"
 
     cancel(processId)
   }
@@ -218,14 +218,14 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     val newMarshalled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(StatefulSampleProcess.processWithMapAggegator(processId, "#AGG.approxCardinality"))).spaces2
     val exception = processManager.deploy(empty(process.id), defaultDeploymentData, GraphProcess(newMarshalled), None).failed.futureValue
 
-    exception.getMessage shouldBe "State is incompatible, please stop process and start again with clean state"
+    exception.getMessage shouldBe "State is incompatible, please stop scenario and start again with clean state"
 
     cancel(processId)
   }
 
   def empty(processId: String): ProcessVersion = ProcessVersion.empty.copy(processName = ProcessName(processId))
 
-  test("deploy custom process") {
+  test("deploy custom scenario") {
     val processId = "customProcess"
 
     assert(processManager.deploy(empty(processId), defaultDeploymentData, CustomProcess("pl.touk.nussknacker.engine.management.sample.CustomProcess"), None).isReadyWithin(100 seconds))
@@ -237,12 +237,12 @@ class FlinkStreamingProcessManagerSpec extends FunSuite with Matchers with Strea
     cancel(processId)
   }
 
-  test("extract process definition") {
+  test("extract scenario definition") {
     val definition = processingTypeConfig.toModelData.processDefinition
     definition.services should contain key "accountService"
   }
 
-  test("dispatch process signal to kafka") {
+  test("dispatch scenario signal to kafka") {
     val signalsTopic = s"esp.signal-${UUID.randomUUID()}"
     val configWithSignals = config
       .withValue("modelConfig.signals.topic", ConfigValueFactory.fromAnyRef(signalsTopic))

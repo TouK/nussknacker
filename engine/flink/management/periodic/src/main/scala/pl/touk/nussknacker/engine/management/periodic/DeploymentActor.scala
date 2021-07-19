@@ -33,11 +33,11 @@ class DeploymentActor(service: PeriodicProcessService, interval: FiniteDuration)
 
   override def receive: Receive = {
     case CheckToBeDeployed =>
-      logger.debug("Checking processes to be deployed")
+      logger.debug("Checking scenarios to be deployed")
       service.findToBeDeployed.foreach { runDetails => self ! WaitingForDeployment(runDetails.toList) }
     case WaitingForDeployment(Nil) =>
     case WaitingForDeployment(runDetails :: _) =>
-      logger.info("Found a process to be deployed: {}", runDetails.id)
+      logger.info("Found a scenario to be deployed: {}", runDetails.id)
       service.deploy(runDetails) onComplete { result => self ! DeploymentCompleted(result.isSuccess) }
       context.become(ongoingDeployment(runDetails))
   }
