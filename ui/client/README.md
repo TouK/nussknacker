@@ -75,6 +75,7 @@ npm run test:e2e:dev
 ```
 you will see cypress devServer. It is useful to see what is done in each test, but it has some drawbacks:
 - "Run all specs" option doesn't work correctly
+- You can't invoke test case separately without changing file with scenario - you have to change "it" -> "xit" to exclude or "it" -> "it.only" to test separately 
 - Produced image snapshots are OS dependent, so you shouldn't use it for purpose of changing captured image snapshots!
   
 #### Using devServer in CLI
@@ -87,6 +88,7 @@ npm run test:e2e
 #### Using Intellij Idea
 
 Thanks to [Cypress Plugin](https://plugins.jetbrains.com/plugin/13819-cypress-support) you can run tests by just clicking play button.
+If you want to see, what cypress do, you can turn "Headed" mode on.
 
 Just like in options above, you should run backend and frontend before and the same - you shouldn't use it for purpose of changing captured image snapshots!
 
