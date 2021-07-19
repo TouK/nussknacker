@@ -43,6 +43,6 @@ object FlinkStreamingProcessManagerProvider {
 
   def defaultProcessManager(config: Config): ProcessManager = {
     val typeConfig = ProcessingTypeConfig.read(config)
-    new FlinkStreamingProcessManagerProvider().createProcessManager(typeConfig.toModelData, typeConfig.engineConfig)
+    new FlinkStreamingProcessManagerProvider().createProcessManager(typeConfig.toModelData, typeConfig.deploymentConfig)
   }
 }

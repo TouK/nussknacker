@@ -42,16 +42,16 @@ object ProcessingTypeConfig {
 
   def read(config: Config): ProcessingTypeConfig =
     ProcessingTypeConfig(
-      config.getString("engineConfig.type"),
+      config.getString("deploymentConfig.type"),
       config.as[List[URL]]("modelConfig.classPath"),
-      config.getConfig("engineConfig"),
+      config.getConfig("deploymentConfig"),
       config.getConfig("modelConfig")
     )
 }
 
 case class ProcessingTypeConfig(engineType: String,
                                 classPath: List[URL],
-                                engineConfig: Config,
+                                deploymentConfig: Config,
                                 modelConfig: Config) {
 
   def toModelData: ModelData = ModelData(modelConfig, ModelClassLoader(classPath))
@@ -75,7 +75,7 @@ object ProcessingTypeData {
 
   def createProcessingTypeData(processManagerProvider: ProcessManagerProvider, processTypeConfig: ProcessingTypeConfig): ProcessingTypeData = {
     val modelData = processTypeConfig.toModelData
-    val managerConfig = processTypeConfig.engineConfig
+    val managerConfig = processTypeConfig.deploymentConfig
     createProcessingTypeData(processManagerProvider, modelData, managerConfig)
   }
 }
