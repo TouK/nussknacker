@@ -7,7 +7,6 @@ const childProcess = require("child_process")
 const HtmlWebpackPlugin = require("html-webpack-plugin")
 const HtmlWebpackHarddiskPlugin = require("html-webpack-harddisk-plugin")
 const TerserPlugin = require("terser-webpack-plugin")
-const {CleanWebpackPlugin} = require("clean-webpack-plugin")
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin")
 const federationConfig = require("./federation.config.json")
 const MomentLocalesPlugin = require("moment-locales-webpack-plugin")
@@ -214,7 +213,6 @@ module.exports = {
       },
     }),
     new ForkTsCheckerWebpackPlugin(),
-    new CleanWebpackPlugin(),
     isProd ? null : new ReactRefreshWebpackPlugin(),
     new webpack.ProgressPlugin(progressBar),
   ].filter(Boolean),
