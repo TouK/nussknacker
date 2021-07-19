@@ -11,7 +11,7 @@ class ProcessingTypeDataConfigurationReaderSpec extends FunSuite {
     """
       |processTypes {
       |  "streaming" {
-      |    engineConfig {
+      |    deploymentConfig {
       |      jobManagerTimeout: 1m
       |      restUrl: "http://localhost:8081"
       |      queryableStateProxyUrlMissing: "localhost:9123"
@@ -53,7 +53,7 @@ class ProcessingTypeDataConfigurationReaderSpec extends FunSuite {
       """
         |scenarioTypes {
         |  "streaming" {
-        |    engineConfig {
+        |    deploymentConfig {
         |      restUrl: "http://localhost:8081"
         |      typeMissing: "flinkStreaming"
         |    }
@@ -70,7 +70,7 @@ class ProcessingTypeDataConfigurationReaderSpec extends FunSuite {
 
     intercept[typesafe.config.ConfigException] {
       ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
-    }.getMessage should include("No configuration setting found for key 'engineConfig.type'")
+    }.getMessage should include("No configuration setting found for key 'deploymentConfig.type'")
   }
 
   test("should throw when no configuration is provided") {

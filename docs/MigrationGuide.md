@@ -182,6 +182,8 @@ that will be hidden before parameter's evaluation
     - Removed: `getClusterClient` from `FlinkMiniClusterHolder` interface, because of flink compatibility at Flink 1.9 
     - Renamed: `FlinkStreamingProcessRegistrar` to `FlinkProcessManager`
 * [#1303](https://github.com/TouK/nussknacker/pull/1303) TypedObjectTypingResult has a new field: additionalInfo
+* Various naming changes:
+  * [#1917](https://github.com/TouK/nussknacker/pull/1917) configuration of `engineConfig` to `deploymentConfig`                           
 
 ## In version 0.2.0
 
@@ -336,7 +338,7 @@ Be aware that we are using avro 1.9.2 instead of default Flink's 1.8.2 (for java
     ```
     processTypes {
       "type e.g. streaming" {
-        engineConfig { 
+        deploymentConfig { 
           type: "flinkStreaming"
           PUT HERE PROPERTIES OF flinkConfig FROM OLD CONFIG 
         }
@@ -378,7 +380,7 @@ Be aware that we are using avro 1.9.2 instead of default Flink's 1.8.2 (for java
 * [#588](https://github.com/TouK/nussknacker/pull/588) [#882](https://github.com/TouK/nussknacker/pull/882) `FlinkSource` API changed, current implementation is now `BasicFlinkSource`
 * [#839](https://github.com/TouK/nussknacker/pull/839) [#882](https://github.com/TouK/nussknacker/pull/882) `FlinkSink` API changed, current implementation is now `BasicFlinkSink`
 * [#841](https://github.com/TouK/nussknacker/pull/841) `ProcessConfigCreator` API changed; note that currently all process objects are invoked with `ProcessObjectDependencies` as a parameter. The APIs of `KafkaSinkFactory`, `KafkaSourceFactory`, and all their implementations were changed. `Config` is available as property of `ProcessObjectDependencies` instance.
-* [#863](https://github.com/TouK/nussknacker/pull/863) `restUrl` in `engineConfig` need to be preceded with protocol. Host with port only is not allowed anymore.
+* [#863](https://github.com/TouK/nussknacker/pull/863) `restUrl` in `deploymentConfig` need to be preceded with protocol. Host with port only is not allowed anymore.
 * Rename `grafanaSettings` to `metricsSettings` in configuration.
 
 ## In version 0.0.12

@@ -167,7 +167,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
           Some("1"),
           FixedValuesParameterEditor(fixedPossibleValues),
           List(FixedValuesValidator(fixedPossibleValues)),
-          Some("Number of theards")
+          Some("Number of threads")
         )
       )
 
@@ -186,7 +186,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       entity should include("Configured property environment (Environment) is missing")
       entity should include("This field value has to be an integer number")
       entity should include("Unknown property unknown")
-      entity should include("Property numberOfThreads (Number of theards) has invalid value")
+      entity should include("Property numberOfThreads (Number of threads) has invalid value")
     }
   }
 

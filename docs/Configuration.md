@@ -31,7 +31,7 @@ attachmentsPath: "/tmp/touk/esp-frontend/attachments"
        
 scenarioTypes {
   streaming {
-    engineConfig {    
+    deploymentConfig {    
       type: "flinkStreaming"
       restUrl: "http://localhost:8081"
       parallelism: 4
