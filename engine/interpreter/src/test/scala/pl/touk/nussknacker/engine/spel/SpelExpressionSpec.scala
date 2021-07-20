@@ -8,6 +8,7 @@ import java.util.Collections
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import org.apache.avro.generic.GenericData
+import org.apache.commons.lang3.ClassUtils
 import org.scalatest.{EitherValues, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.Context
@@ -18,7 +19,8 @@ import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
 import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, TypedExpression}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.definition.TypeInfos
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.types.{GeneratedAvroClass, JavaClassWithVarargs}
@@ -96,7 +98,18 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
                                 flavour: Flavour, strictMethodsChecking: Boolean, staticMethodInvocationsChecking: Boolean): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val imports = List(SampleValue.getClass.getPackage.getName)
     SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(dictionaries), enableSpelForceCompile = true,
-      strictTypeChecking = true, imports, flavour, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking = true, TypeDefinitionSet.withDefaultClasses)(ClassExtractionSettings.Default).parse(expr, validationCtx, Typed.fromDetailedType[T])
+      strictTypeChecking = true, imports, flavour, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking = true, typeDefinitionSetWithDefaultClasses)(ClassExtractionSettings.Default).parse(expr, validationCtx, Typed.fromDetailedType[T])
+  }
+
+  private def typeDefinitionSetWithDefaultClasses: TypeDefinitionSet = {
+
+    def createTestClazzDefinitionFromClassNames(className: String) =
+      TypeInfos.ClazzDefinition(TypedClass(ClassUtils.primitiveToWrapper(ClassUtils.getClass(className)), Nil), Map.empty)
+
+    val stringClazzDefinition = createTestClazzDefinitionFromClassNames("java.lang.String")
+    val longClazzDefinition = createTestClazzDefinitionFromClassNames("java.lang.Long")
+
+    TypeDefinitionSet(Set(stringClazzDefinition, longClazzDefinition))
   }
 
   test("evaluate static method call on validated class") {
@@ -104,7 +117,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   }
 
   test("evaluate static method call on unvalidated class") {
-    parseOrFail[String]("T(java.lang.System).exit()").evaluateSync[String](ctx) should equal("test")
+    parseOrFail[Long]("T(java.lang.Long).parseLong('1')").evaluateSync[Long](ctx) should equal(1L)
   }
 
   test("invoke simple expression") {

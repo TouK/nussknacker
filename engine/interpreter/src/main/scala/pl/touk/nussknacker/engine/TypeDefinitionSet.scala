@@ -13,33 +13,33 @@ import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefini
 import pl.touk.nussknacker.engine.spel.TypedNode
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.RichSpelNode
 
+import scala.util.{Failure, Success, Try}
+
+
 
 object TypeDefinitionSet {
 
   def empty: TypeDefinitionSet = TypeDefinitionSet(Set.empty)
 
-  def withDefaultClasses: TypeDefinitionSet = {
-
-    def createTestClazzDefinitionFromClassNames(className: String) =
-      TypeInfos.ClazzDefinition(TypedClass(ClassUtils.primitiveToWrapper(ClassUtils.getClass(className)), Nil), Map.empty)
-
-    val stringClazzDefinition = createTestClazzDefinitionFromClassNames("java.lang.String")
-    val longClazzDefinition = createTestClazzDefinitionFromClassNames("java.lang.Long")
-
-    TypeDefinitionSet(Set(stringClazzDefinition, longClazzDefinition))
-  }
-
 }
 
 case class TypeDefinitionSet(typeDefinitions: Set[TypeInfos.ClazzDefinition]) {
 
-  def validateTypeReference(typeReference: TypeReference, evaluationContext: EvaluationContext): Validated[NonEmptyList[ExpressionParseError], TypedClass] = {
+  def validateTypeReference(typeReference: TypeReference, evaluationContext: EvaluationContext): Valid[TypedClass] = {
 
-    val typeReferenceClazz = typeReference.getValue(new ExpressionState(evaluationContext))
+    /**
+      * getValue mutates TypeReference but is still safe
+      * it adds values to fields type and exitTypeDescriptor but field type is transient and exitTypeDescriptor is of a primitive type (String)
+      */
+    val typeReferenceClazz = Try(typeReference.getValue(new ExpressionState(evaluationContext)))
 
-    typeDefinitions.find(typeDefinition => typeDefinition.clazzName.klass.equals(typeReferenceClazz)) match {
-      case Some(clazzDefinition : TypeInfos.ClazzDefinition) => Valid(clazzDefinition.clazzName)
-      case _ => Invalid(NonEmptyList.of(ExpressionParseError(s"Class ${typeReferenceClazz} is not allowed to be passed as TypeReference")))
+    typeReferenceClazz match {
+      case Success(typeReferenceClazz) =>
+        typeDefinitions.find(typeDefinition => typeDefinition.clazzName.klass.equals(typeReferenceClazz)) match {
+          case Some(clazzDefinition: TypeInfos.ClazzDefinition) => Valid(clazzDefinition.clazzName)
+          case None => Invalid(NonEmptyList.of(ExpressionParseError(s"Class ${typeReferenceClazz} is not allowed to be passed as TypeReference")))
+        }
+      case _ => Invalid(NonEmptyList.of(ExpressionParseError(s"Class ${typeReference.toStringAST} does not exist")))
     }
 
   }
