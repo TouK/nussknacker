@@ -25,7 +25,7 @@ object TypeDefinitionSet {
 
 case class TypeDefinitionSet(typeDefinitions: Set[TypeInfos.ClazzDefinition]) {
 
-  def validateTypeReference(typeReference: TypeReference, evaluationContext: EvaluationContext): Valid[TypedClass] = {
+  def validateTypeReference(typeReference: TypeReference, evaluationContext: EvaluationContext): Validated[NonEmptyList[ExpressionParseError], TypedClass] = {
 
     /**
       * getValue mutates TypeReference but is still safe
