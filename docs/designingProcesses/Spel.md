@@ -61,6 +61,7 @@ On the other hand, `map` describes "generic" structure - Nussknacker tacitly ass
                                                              
 Nussknacker usually infers structure of record from external source (e.g. AVRO schema), but it can also detect it from map literals.
 
+
 ### Arrays/lists
 
 In Nussknacker (e.g. in code completion) JSON / Avro arrays are refered to as `Lists`; 
@@ -117,7 +118,7 @@ There are a few notable exceptions:
 |`true`	      |true	   | Boolean |
 |`null`	      | null   | Null    |
 |`{1,2,3,4}`    |  a list of integers from 1 to 4	| List[Integer] |
-|`{john:300, alex:400}` |a map (key-value collection) | Map[String, Integer] |
+|`{john:300, alex:400}` |a map (name-value collection) | Map[String, Integer] |
 | `#input` | variable | |                                         
                                     
 ## Arithmetic Operators
@@ -131,11 +132,17 @@ There are a few notable exceptions:
 
 | Expression  |	Result | Type   |
 | ------------|--------|--------|
+| `2 == 2` | true	| boolean |
+| `2 > 1` | true	| boolean |
+| `true AND false` | false	| boolean |
+| `true && false` | false	| boolean |
+| `true OR false` | true	| boolean |
+| `true OR false` | true	| boolean |
 | `2 > 1 ? 'a' : 'b'` |	"a"	| String |
-| `2 < 1 ? 'a' : 'b'` |	"b"	String |
-| `#nonNullVar == null ? 'Success'` : 'Unknown' |	"Success" | String |
-| `#nullVar == null ? 'Success'` : 'Unknown' | "Unknown" | String |
-| `#nullVar?:'Unknown` | "Unknown" | String |
+| `2 < 1 ? 'a' : 'b'` |	"b"	| String |
+| `#nonNullVar == null ? 'Unkown' : 'Success'` |	"Success" | String |
+| `#nullVar == null ? 'Unknown' : 'Success'` | "Unknown" | String |
+| `#nullVar?:'Unknown'` | "Unknown" | String |
 | `'john'?:'Unknown'` | "john" | String |
 
 ## Method invocations
@@ -154,7 +161,7 @@ are shown in code completion hints.
 | Expression  |	Result | Type   |
 | ------------|--------|--------|
 |`{1,2,3,4}[0]` | 1 | Integer |
-|`{jan:300, alex:400}[alex]` | a value of key 'alex', which is 400	| Integer |
+|`{jan:300, alex:400}[alex]` | a value of field 'alex', which is 400	| Integer |
 
 ## Filtering lists
                           
