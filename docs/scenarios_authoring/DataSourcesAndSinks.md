@@ -133,17 +133,17 @@ The disadvantage of using Kafka-typed-json as a data source is that whenever the
 
 ### No type information + JSON serialization
 
-There is only one component in this group -  Kafka-json source. The content of the JSON formatted Kafka event does not need to be declared in Nussknacker Designer. The values of the JSON object can still be accessed using the `#input.field-name `notation, however no hints will be available and no validations related to field names and their data types will be performed. 
+There is only one component in this group -  Kafka-json sourVRce. The content of the JSON formatted Kafka event does not need to be declared in Nussknacker Designer. The values of the JSON object can still be accessed using the `#input.field-name `notation, however no hints will be available and no validations related to field names and their data types will be performed. 
 
 
 ### Summary and comparison
 
 | Nussknacker source / sink component | Schema description | Data serialization format | Data types supported| Limitations   | Advantages                | 
 |-------------------------------------|--------------------|--------------------------|---------------------|----------------|---------------------------|  
-| <p> Kafka-avro </p>Kafka-avro-raw (sink only) | AVRO in Confluent Schema Registry | AVRO |AVRO supported | Slightly more involving initially because of Schema Registry| <p> Hints and data type related validations </p> Maintainability  |  
-| <p> kafka-registry-typed-json </p> kafka-registry-typed-json-raw (sink only) | AVRO in Confluent Schema Registry|JSON |AVRO supported |  Slightly more involving initially because of Schema Registry| <p> Hints and data type related validations </p> Maintainability | 
-| kafka-typed-json (only source)  | Declared inside  Kafka-typed-json component | JSON | Common between Java and JSON| <p> May become difficult to maintain </p> No validation of input data at runtime |Hints during authoring |  
-| kafka-json| none | JSON | Common between Java and JSON | No hints and data type related validations | Good for JSON objects whose structure is not known at design time |  
+| Schema Registry + Avro serialization | Avro in Confluent Schema Registry | Avro |Avro supported | Slightly more involving initially because of Schema Registry| <p> Hints and data type related validations </p> Maintainability  |  
+| Schema Registry + JSON serialization| Avro in Confluent Schema Registry|JSON |Avro supported |  Slightly more involving initially because of Schema Registry| <p> Hints and data type related validations </p> Maintainability | 
+| Manually typed + JSON serialization  | Declared inside  Kafka-typed-json component | JSON | Common between Java and JSON| <p> May become difficult to maintain </p> No validation of input data at runtime |Hints during authoring |  
+| No type information + JSON serialization| none | JSON | Common between Java and JSON | No hints and data type related validations | Good for JSON objects whose structure is not known at design time |  
 
  
 
