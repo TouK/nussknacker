@@ -7,11 +7,11 @@ import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodI
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 object TypeMethodReference {
-  def apply(methodName: String, currentResults: List[TypingResult], params: List[TypingResult], typeDefinitionSet: TypeDefinitionSet)(implicit settings: ClassExtractionSettings): Either[String, TypingResult] =
-    new TypeMethodReference(methodName, currentResults, params, typeDefinitionSet).call
+  def apply(methodName: String, currentResults: List[TypingResult], params: List[TypingResult], typeDefinitionSet: TypeDefinitionSet, disableMethodExecutionForUnknown: Boolean)(implicit settings: ClassExtractionSettings): Either[String, TypingResult] =
+    new TypeMethodReference(methodName, currentResults, params, typeDefinitionSet, disableMethodExecutionForUnknown).call
 }
 
-class TypeMethodReference(methodName: String, currentResults: List[TypingResult], calledParams: List[TypingResult], typeDefinitionSet: TypeDefinitionSet) {
+class TypeMethodReference(methodName: String, currentResults: List[TypingResult], calledParams: List[TypingResult], typeDefinitionSet: TypeDefinitionSet, disableMethodExecutionForUnknown: Boolean) {
   def call(implicit settings: ClassExtractionSettings): Either[String, TypingResult] =
     currentResults.headOption match {
       case Some(tc: SingleTypingResult) =>
@@ -19,7 +19,10 @@ class TypeMethodReference(methodName: String, currentResults: List[TypingResult]
       case Some(TypedUnion(nestedTypes)) =>
         typeFromClazzDefinitions(extractClazzDefinitions(nestedTypes))
       case _ =>
-        Right(Unknown)
+        if(disableMethodExecutionForUnknown)
+          Left("Method access on Unknown type is blocked")
+        else
+          Right(Unknown)
     }
 
   private def extractClazzDefinitions(typedClasses: Set[SingleTypingResult])(implicit settings: ClassExtractionSettings): List[ClazzDefinition] =
