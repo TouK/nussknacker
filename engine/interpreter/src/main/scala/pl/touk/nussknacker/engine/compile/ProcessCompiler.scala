@@ -246,8 +246,7 @@ protected trait ProcessCompilerBase {
 
 object ProcessValidator {
 
-  def default(definitions: ProcessDefinition[ObjectWithMethodDef], dictRegistry: DictRegistry,
-              classLoader: ClassLoader = getClass.getClassLoader): ProcessValidator = {
+  def default(definitions: ProcessDefinition[ObjectWithMethodDef], dictRegistry: DictRegistry, classLoader: ClassLoader = getClass.getClassLoader): ProcessValidator = {
     val typeDefinitionSet = TypeDefinitionSet(ProcessDefinitionExtractor.extractTypes(definitions))
 
     val expressionCompiler = ExpressionCompiler.withoutOptimization(classLoader, dictRegistry, definitions.expressionConfig, definitions.settings, typeDefinitionSet)
