@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.{EspDeserializationSchema, ReturningClassInstanceSource, ReturningTestCaseClass}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.SlidingAggregateTransformerV2
-import pl.touk.nussknacker.engine.flink.util.transformer.outer.OuterJoinTransformer
+import pl.touk.nussknacker.engine.flink.util.transformer.join.SingleSideJoinTransformer
 import pl.touk.nussknacker.engine.flink.util.transformer.{TransformStateTransformer, UnionTransformer, UnionWithMemoTransformer}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordToJsonFormatterFactory, FixedValueDeserializationSchemaFactory}
@@ -165,7 +165,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "aggregate" -> categories(SlidingAggregateTransformerV2),
     "union" -> categories(UnionTransformer),
     "union-memo" -> categories(UnionWithMemoTransformer),
-    "outer-join" -> categories(OuterJoinTransformer),
+    "single-side-join" -> categories(SingleSideJoinTransformer),
     "state" -> all(TransformStateTransformer),
     "unionWithEditors" -> all(JoinTransformerWithEditors),
     // types

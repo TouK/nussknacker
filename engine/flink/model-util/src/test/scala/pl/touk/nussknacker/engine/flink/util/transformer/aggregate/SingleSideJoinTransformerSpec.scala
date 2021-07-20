@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.flink.util.function.CoProcessFunctionIntercept
 import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.{BlockingQueueSource, EmitWatermarkAfterEachElementCollectionSource}
-import pl.touk.nussknacker.engine.flink.util.transformer.outer.{BranchType, OuterJoinTransformer}
+import pl.touk.nussknacker.engine.flink.util.transformer.join.{BranchType, SingleSideJoinTransformer}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.SourceNode
@@ -41,9 +41,9 @@ import java.util.Collections.{emptyList, singletonList}
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters.mapAsScalaMapConverter
 
-class OuterJoinTransformerSpec extends FunSuite with FlinkSpec with Matchers with VeryPatientScalaFutures {
+class SingleSideJoinTransformerSpec extends FunSuite with FlinkSpec with Matchers with VeryPatientScalaFutures {
 
-  import OuterJoinTransformerSpec._
+  import SingleSideJoinTransformerSpec._
   import pl.touk.nussknacker.engine.spel.Implicits._
 
   private val MainBranchId = "main"
@@ -66,7 +66,7 @@ class OuterJoinTransformerSpec extends FunSuite with FlinkSpec with Matchers wit
       GraphBuilder.source("joined-source", "start-joined")
         .branchEnd(JoinedBranchId, JoinNodeId),
       GraphBuilder
-        .branch(JoinNodeId, "outer-join", Some(OutVariableName),
+        .branch(JoinNodeId, "single-side-join", Some(OutVariableName),
           List(
             MainBranchId -> List(
               "branchType" -> s"T(${classOf[BranchType].getName}).MAIN",
@@ -96,7 +96,7 @@ class OuterJoinTransformerSpec extends FunSuite with FlinkSpec with Matchers wit
     input1.add(OneRecord(key, 0, -1))
     // We can't be sure that main records will be consumed after matching joined records so we need to wait for them.
     eventually {
-      OuterJoinTransformerSpec.elementsAddedToState should have size input2.size
+      SingleSideJoinTransformerSpec.elementsAddedToState should have size input2.size
     }
     input1.add(OneRecord(key, 2, -1))
     input1.finish()
@@ -123,11 +123,11 @@ class OuterJoinTransformerSpec extends FunSuite with FlinkSpec with Matchers wit
   }
 
   private def modelData(input1: BlockingQueueSource[OneRecord], input2: List[OneRecord], collectingListener: ResultsCollectingListener) =
-    LocalModelData(ConfigFactory.empty(), new OuterJoinTransformerSpec.Creator(input1, input2, collectingListener))
+    LocalModelData(ConfigFactory.empty(), new SingleSideJoinTransformerSpec.Creator(input1, input2, collectingListener))
 
 }
 
-object OuterJoinTransformerSpec {
+object SingleSideJoinTransformerSpec {
 
   val elementsAddedToState = new ConcurrentLinkedQueue[StringKeyedValue[AnyRef]]()
 
@@ -135,7 +135,7 @@ object OuterJoinTransformerSpec {
 
     override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
       Map(
-        "outer-join" -> WithCategories(new OuterJoinTransformer(None) {
+        "single-side-join" -> WithCategories(new SingleSideJoinTransformer(None) {
           override protected def prepareAggregatorFunction(aggregator: Aggregator, stateTimeout: FiniteDuration, aggregateElementType: TypingResult, storedTypeInfo: TypeInformation[AnyRef])
                                                           (implicit nodeId: ProcessCompilationError.NodeId):
           CoProcessFunction[ValueWithContext[String], ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]] = {
