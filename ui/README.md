@@ -8,7 +8,7 @@ If you want to run UI to develop/debug your own model, please skip to last secti
 Before running either from console or from IDE you have to manually build:
 - run `npm ci` in `ui/client` (only if you want to test/compile FE, see `Readme.md` in `ui/client` for more details)
 - custom models (```assemblySamples``` in sbt - not needed if running from IDE with stubbed DeploymentManager, see below)
-- DeploymentManager(s) (```assemblyEngines``` in sbt - not needed if running from IDE with stubbed DeploymentManager, see below)
+- DeploymentManager(s) (```assemblyDeploymentManagers``` in sbt - not needed if running from IDE with stubbed DeploymentManager, see below)
 - UI (```ui/assembly``` in sbt, not needed if you want to use FE development mode)
 You can do all steps at once with ```buildServer.sh``` script
 
