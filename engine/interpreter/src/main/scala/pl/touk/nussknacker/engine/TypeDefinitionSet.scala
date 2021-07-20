@@ -46,4 +46,3 @@ case class TypeDefinitionSet(typeDefinitions: Set[TypeInfos.ClazzDefinition]) {
 
 }
 
-//ClazzDefinition(TypedClass(class scala.Option,List()),Map(empty -> List(MethodInfo(List(),TypedClass(boolean,List()),None,false)), isDefined -> List(MethodInfo(List(),TypedClass(boolean,List()),None,false)), defined -> List(MethodInfo(List(),TypedClass(boolean,List()),None,false)), toString -> List(MethodInfo(List(),TypedClass(class java.lang.String,List()),None,false)), get -> List(MethodInfo(List(),Unknown,None,false)), contains -> List(MethodInfo(List(Parameter(elem,Unknown)),TypedClass(boolean,List()),None,false)), isEmpty -> List(MethodInfo(List(),TypedClass(boolean,List()),None,false))))
