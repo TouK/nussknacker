@@ -1,2 +1,3 @@
 pl.touk.nussknacker.ui.security.basicauth.BasicAuthenticationProvider
 pl.touk.nussknacker.ui.security.oauth2.OAuth2AuthenticationProvider
+pl.touk.nussknacker.ui.security.dummy.DummyAuthenticationProvider

@@ -4,8 +4,6 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.NamedServiceProvider
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.ui.security.basicauth.BasicAuthenticationProvider
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2AuthenticationProvider
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
