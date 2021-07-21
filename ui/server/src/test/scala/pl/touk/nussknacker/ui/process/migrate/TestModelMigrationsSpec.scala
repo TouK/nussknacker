@@ -1,17 +1,17 @@
 package pl.touk.nussknacker.ui.process.migrate
 
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.RedundantParameters
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.RedundantParameters
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{Source, SubprocessInput, SubprocessInputDefinition}
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingServiceId, existingSinkFactory, existingSourceFactory}
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessingTypes}
 import pl.touk.nussknacker.restmodel.displayedgraph.ValidatedDisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult, ValidationWarnings}
+import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingServiceId, existingSinkFactory, existingSourceFactory}
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessingTypes}
 
 import scala.reflect.ClassTag
 
@@ -81,7 +81,7 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
   test("should report only new errors") {
     val testMigration = newTestModelMigrations(new TestMigrations(2, 4))
 
-    val invalidProcess : ValidatedDisplayableProcess =
+    val invalidProcess: ValidatedDisplayableProcess =
       ProcessTestData.toValidatedDisplayable(EspProcessBuilder
         .id("fooProcess")
         .exceptionHandler()
@@ -120,11 +120,11 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
   }
 
   private def getFirst[T: ClassTag](result: TestMigrationResult): T = {
-    result.converted.nodes.collectFirst { case t: T => t}.get
+    result.converted.nodes.collectFirst { case t: T => t }.get
   }
 
-  private def errorTypes(validationResult: ValidationResult) : Map[String, List[String]]
-    = validationResult.errors.invalidNodes.mapValues(_.map(_.typ))
+  private def errorTypes(validationResult: ValidationResult): Map[String, List[String]]
+  = validationResult.errors.invalidNodes.mapValues(_.map(_.typ))
 
   private def newTestModelMigrations(testMigrations: TestMigrations): TestModelMigrations = {
     new TestModelMigrations(TestFactory.mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> testMigrations), TestFactory.processValidation)
