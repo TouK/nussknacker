@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine
 import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{Invalid, Valid}
 import org.apache.commons.lang3.ClassUtils
-import org.springframework.expression.EvaluationContext
+import org.springframework.expression.{EvaluationContext, EvaluationException}
 import org.springframework.expression.spel.ExpressionState
 import org.springframework.expression.spel.ast.TypeReference
 import pl.touk.nussknacker.engine.api.Context
@@ -37,9 +37,10 @@ case class TypeDefinitionSet(typeDefinitions: Set[TypeInfos.ClazzDefinition]) {
       case Success(typeReferenceClazz) =>
         typeDefinitions.find(typeDefinition => typeDefinition.clazzName.klass.equals(typeReferenceClazz)) match {
           case Some(clazzDefinition: TypeInfos.ClazzDefinition) => Valid(clazzDefinition.clazzName)
-          case None => Invalid(NonEmptyList.of(ExpressionParseError(s"Class ${typeReferenceClazz} is not allowed to be passed as TypeReference")))
+          case None => Invalid(NonEmptyList.of(ExpressionParseError(s"${typeReferenceClazz} is not allowed to be passed as TypeReference")))
         }
-      case _ => Invalid(NonEmptyList.of(ExpressionParseError(s"Class ${typeReference.toStringAST} does not exist")))
+      case Failure(_: EvaluationException) => Invalid(NonEmptyList.of(ExpressionParseError(s"Class ${typeReference.toStringAST} does not exist")))
+      case Failure(exception) => throw exception
     }
 
   }

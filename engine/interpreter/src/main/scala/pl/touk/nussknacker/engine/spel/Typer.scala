@@ -172,9 +172,8 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
           }
         }
 
-      case e: MethodReference => {
+      case e: MethodReference =>
         extractMethodReference(e, validationContext, node, current, typeDefinitionSet)
-      }
 
       case e: OpEQ => checkEqualityLikeOperation(validationContext, e, current)
       case e: OpNE => checkEqualityLikeOperation(validationContext, e, current)
