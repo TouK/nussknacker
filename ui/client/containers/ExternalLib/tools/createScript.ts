@@ -1,15 +1,17 @@
 import {ScriptUrl} from "../types"
 
 export function createScript(url: ScriptUrl): Promise<void> {
-  // eslint-disable-next-line i18next/no-literal-string
-  const element = document.createElement("script")
-  const promise = new Promise<void>((resolve, reject) => {
+  const element = document.createElement(`script`)
+
+  return new Promise<void>((resolve, reject) => {
     element.src = url
     element.type = "text/javascript"
     element.async = true
 
     element.onload = () => {
       resolve()
+      // setTimeout to ensure full init (e.g. relying on document.currentScript etc) before remove
+      setTimeout(() => document.head.removeChild(element))
     }
 
     element.onerror = () => {
@@ -19,11 +21,5 @@ export function createScript(url: ScriptUrl): Promise<void> {
 
     document.head.appendChild(element)
 
-  }).finally(() => cleanup())
-
-  const cleanup = () => {
-    document.head.removeChild(element)
-  }
-
-  return promise
+  })
 }
