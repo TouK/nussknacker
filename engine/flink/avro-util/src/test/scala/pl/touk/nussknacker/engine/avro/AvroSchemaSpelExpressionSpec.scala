@@ -160,12 +160,12 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
   it("should add dictionaryId if annotated") {
     val schema = wrapWithRecordSchema(
       s"""[
-         |  {
-         |    "name": "withDict",
-         |    "type": "string",
-         |    "${AvroSchemaTypeDefinitionExtractor.dictIdProperty}": "$dictId"
-         |  }
-         |]""".stripMargin)
+        |  {
+        |    "name": "withDict",
+        |    "type": "string",
+        |    "${AvroSchemaTypeDefinitionExtractor.dictIdProperty}": "$dictId"
+        |  }
+        |]""".stripMargin)
     val ctx = ValidationContext.empty.withVariable("input",
       AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).andThen(_.withVariable("DICT1", TypedDict(dictId, Typed.typedClass[String]), paramName = None)).toOption.get
 

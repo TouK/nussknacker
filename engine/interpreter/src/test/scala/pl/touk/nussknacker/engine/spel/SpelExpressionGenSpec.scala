@@ -50,7 +50,7 @@ class SpelExpressionGenSpec extends FunSuite with ScalaCheckDrivenPropertyChecks
     forAll(NumberGen, NumberGen) { (a, b) =>
       (a, b) match {
         case (_: java.math.BigInteger | _: java.math.BigDecimal, bNum: Number) if bNum.doubleValue <= 0 || bNum.doubleValue > 1000 =>
-        // BigInteger and BigDecimal not accept non positive exponent and has complexity dependent on exponent value
+          // BigInteger and BigDecimal not accept non positive exponent and has complexity dependent on exponent value
         case _ =>
           checkIfEvaluatedClassMatchesExpected("^", a, b)
       }
