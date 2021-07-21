@@ -169,7 +169,7 @@
                 "name" : "emitWhenEventLeft",
                 "expression" : {
                   "language" : "spel",
-                  "expression" : "true"
+                  "expression" : "false"
                 }
               }
             ],
