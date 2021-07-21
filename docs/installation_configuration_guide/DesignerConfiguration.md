@@ -11,14 +11,14 @@
 | ssl.keyStore.location                       | Medium     | string   |               | Keystore file location (required if SSL enabled)                                                                                                                               |
 | ssl.keyStore.password                       | Medium     | string   |               | Keystore file password (required if SSL enabled)                                                                                                                               |
 | akka.*                                      | Medium     |          |               | [Akka HTTP](https://doc.akka.io/docs/akka-http/current/index.html) is used for HTTP serving, you can configure it in standard way. Below we give Nussknacker-specific defaults |
-| akka.http.server.parsing.max-content-length | Low        | int      | 300000000     |                                                                                                                                                                                |
-| akka.http.server.request-timeout            | Low        | duration | 1 minute      |                                                                                                                                                                                |
+| akka.http.server.parsing.max-content-length | Low        | int      | 300000000     | Requests (e.g. with test data) can be quite large, so we increase the limit                                                                                                    |
+| akka.http.server.request-timeout            | Low        | duration | 1 minute      | Consider increasing the value if you have large test data or long savepoint times during deploy                                                                                |
 
 ## Database configuration
 
 Currently Nussknacker supports following databases:
 
-* HSQL (embedded)
+* HSQL (embedded), we use `syntax_ora` option
 * PostgreSQL
 
 Please
@@ -27,44 +27,80 @@ for detailed list of configuration options.
 
 The table below presents most important options, or the ones that have Nussknacker specific defaults.
 
-| Parameter name       | Importance | Type   | Default value                                             | Description |
-| --------------       | ---------- | ----   | -------------                                             | ----------- |
-| db.url               | High       | string | "jdbc:hsqldb:file:"${storageDir}"/db;sql.syntax_ora=true" |             |
-| db.driver            | High       | string | "org.hsqldb.jdbc.JDBCDriver"                              |             |
-| db.user              | High       | string | "SA"                                                      |             |
-| db.password          | High       | string | ""                                                        |             |
-| db.connectionTimeout | Low        | int    | 30000                                                     |             |
-| db.maximumPoolSize   | Low        | int    | 5                                                         |             |
-| db.minimumIdle       | Low        | int    | 1                                                         |             |
-| db.numThreads        | Low        | int    | 5                                                         |             |
+| Parameter name       | Importance | Type   | Default value                                             | Description                                                                                 |
+| --------------       | ---------- | ----   | -------------                                             | -----------                                                                                 |
+| db.url               | High       | string | "jdbc:hsqldb:file:"${storageDir}"/db;sql.syntax_ora=true" | Default HSQL location                                                                       |
+| db.driver            | High       | string | "org.hsqldb.jdbc.JDBCDriver"                              |                                                                                             |
+| db.user              | High       | string | "SA"                                                      |                                                                                             |
+| db.password          | High       | string | ""                                                        |                                                                                             |
+| db.connectionTimeout | Low        | int    | 30000                                                     |                                                                                             |
+| db.maximumPoolSize   | Low        | int    | 5                                                         | We have lower limits than default config, since then designer is not heavy-load application |
+| db.minimumIdle       | Low        | int    | 1                                                         | We have lower limits than default config, since then designer is not heavy-load application |
+| db.numThreads        | Low        | int    | 5                                                         | We have lower limits than default config, since then designer is not heavy-load application |
 
 ## Metrics settings
+                                                                     
+### Metric dashboard
 
-| Parameter name                                 | Importance | Type | Default value | Description |
-| --------------                                 | ---------- | ---- | ------------- | ----------- |
-| metricsSettings.url                            | High           |      |               |             |
-| metricsSettings.defaultDashboard               | Medium           |      |               |             |
-| metricsSettings.processingTypeToDashboard      | Low           |      |               |             |
-| countsSettings.influxUrl                       | Medium           |      |               |             |
-| countsSettings.database                        | Medium           |      |               |             |
-| countsSettings.user                            | Medium           |      |               |             |
-| countsSettings.password                        | Medium           |      |               |             |
-| countsSettings.queryMode                       | Low           |      |               |             |
-| countsSettings.metricsConfig.sourceCountMetric | Low           |      |               |             |
-| countsSettings.metricsConfig.nodeCountMetric   | Low           |      |               |             |
-| countsSettings.metricsConfig.nodeIdTag         | Low           |      |               |             |
-| countsSettings.metricsConfig.slotTag           | Low           |      |               |             |
-| countsSettings.metricsConfig.processTag        | Low           |      |               |             |
-| countsSettings.metricsConfig.countField        | Low           |      |               |             |
-| countsSettings.metricsConfig.envTag            | Low           |      |               |             |
+Each scenario can have link to grafana dashboard. In [docker setup](https://github.com/TouK/nussknacker/tree/staging/demo/docker/grafana) we 
+provide `nussknacker-scenario` dashboard. 
+You can modify/configure own, the only assumption that we make is that [variable](https://grafana.com/docs/grafana/latest/variables/) is used to display metrics for particular scenario.
+
+Each scenario type can have different dashboard, this is configured by 
+`metricsSettings.processingTypeToDashboard` settings. If no mapping is configured, `metricsSettings.defaultDashboard` is used.
+Actual link for particular scenario is created by replacing 
+- `$dashboard` with configured dashboard
+- `$process` with scenario name
+in `metricsSettings.url` setting.
+
+| Parameter name                            | Importance | Type   | Default value                                                                                | Description                                                                                                                    |
+| --------------                            | ---------- | ----   | -------------                                                                                | -----------                                                                                                                    |
+| metricsSettings.url                       | High       | string | `/grafana/d/$dashboard?theme=dark&var-processName=$process&var-env=local` (for docker setup) | URL (accessible from user browser, in docker setup its configured as relative URL) to Grafana dashboard, see above for details |
+| metricsSettings.defaultDashboard          | Medium     | string | nussknacker-scenario (for docker setup)                                                      | Default dashboard                                                                                                              |
+| metricsSettings.processingTypeToDashboard | Low        | map    |                                                                                              | Mapping of scenario types to dashboard                                                                                         |
+
+
+### Counts                                                 
+
+Counts are based on InfluxDB metrics, stored in ```nodeCount``` measurement by default.
+```countsSettings.queryMode``` setting can be used to choose metric computation algorithm:
+- `OnlySingleDifference` - subtracts values between end and beginning of requested range. Fast method, but if restart
+  in the requested time range is detected error is returned. We assume the job was restarted when event counter at the source 
+  decreases.
+- `OnlySumOfDifferences` - difference is computed by summing differences in measurements for requested time range. 
+  This method works a bit better for restart situations, but can be slow for large diagrams and wide time ranges.
+- `SumOfDifferencesForRestarts` - if restart is detected, the metrics are computed with `OnlySumDifferences`, otherwis - with `OnlySingleDifferences`
+       
+If you have custom metrics settings which result in different fields or tags (e.g. you have different telegraf configuration), you can configure required values
+with the settings presented below:
+
+| Parameter name                                 | Importance | Type                                                                      | Default value        | Description                                                                                                                                   |
+| --------------                                 | ---------- | ----                                                                      | -------------        | -----------                                                                                                                                   |
+| countsSettings.influxUrl                       | Medium     | string                                                                    |                      | Main InfluxDB query endpoint (e.g. http://influx:8086/query). It should be accessible from Nussknacker Designer server, not from user browser |
+| countsSettings.database                        | Medium     | string                                                                    |                      |                                                                                                                                               |
+| countsSettings.user                            | Medium     | string                                                                    |                      |                                                                                                                                               |
+| countsSettings.password                        | Medium     | string                                                                    |                      |                                                                                                                                               |
+| countsSettings.queryMode                       | Low        | OnlySingleDifference / OnlySumOfDifferences / SumOfDifferencesForRestarts | OnlySingleDifference |                                                                                                                                               |
+| countsSettings.metricsConfig.sourceCountMetric | Low        | string                                                                    | source_count         |                                                                                                                                               |
+| countsSettings.metricsConfig.nodeCountMetric   | Low        | string                                                                    | nodeCount            |                                                                                                                                               |
+| countsSettings.metricsConfig.nodeIdTag         | Low        | string                                                                    | nodeId               |                                                                                                                                               |
+| countsSettings.metricsConfig.slotTag           | Low        | string                                                                    | slot                 |                                                                                                                                               |
+| countsSettings.metricsConfig.processTag        | Low        | string                                                                    | process              |                                                                                                                                               |
+| countsSettings.metricsConfig.countField        | Low        | string                                                                    | count                |                                                                                                                                               |
+| countsSettings.metricsConfig.envTag            | Low        | string                                                                    | env                  |                                                                                                                                               |
 
 ## Deployment settings
 
-| Parameter name                  | Importance | Type | Default value | Description |
-| --------------                  | ---------- | ---- | ------------- | ----------- |
-| commentSettings.link            | Low           |      |               |             |
-| commentSettings.matchExpression | Low           |      |               |             |
-| deploySettings.requireComment   | Low           |      |               |             |
+Nussknacker Designer can be configured to replace certain values in comments to links, that can point e.g., to external issue tracker like
+GitHub issues or Jira. For example, `MARKETING-555` will change to link `https://jira.organization.com/jira/browse/MARKETING-555`.
+See [development configuration](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L104) for example configuration.                                 
+
+
+| Parameter name                  | Importance | Type    | Default value | Description                                                                                                                           |
+| --------------                  | ---------- | ----    | ------------- | -----------                                                                                                                           |
+| commentSettings.matchExpression | Low        | regexp  |               | Regular expression to look for issue identifier (e.g. `(issues/[0-9]*)` - note use of regexp group)                                   |
+| commentSettings.link            | Low        | string  |               | Link template (e.g. `https://github.com/TouK/nussknacker/$1` - `$1` will be replaced with matched group from `matchExpression` config |
+| deploySettings.requireComment   | Low        | boolean | false         | If true, comment is required for deployment. Also, if `matchExpression` is defined, at least one match is required                    |
 
 ## Security
 
@@ -515,33 +551,36 @@ Nussknacker installation may consist of more than one environment. Typical examp
 - environment for testing scenarios, which mirrors production data (e.g. via Kafka mirror-maker), but contains
   only scenarios that are currently worked on
 - production environment
-Nussknacker Designer can be configured to allow easy migration from one 
 
+You can configure `secondaryEnvironment` to allow for 
+- easy migration of scenarios
+- comparing scenarios between environments
+- testing (currently only via REST API) if all scenarios from secondary environment are valid with model configuration from this environment (useful for testing configuration etc.)
+Currently, you can only configure secondary environment if it uses BASIC authentication - technical user is needed to access REST API.
 
-| Parameter name                              | Importance | Type | Default value | Description |
-| --------------                              | ---------- | ---- | ------------- | ----------- |
-| environment                                 | Medium          |      |               |             |
-| environmentAlert.content                    | Low           |      |               |             |
-| environmentAlert.cssClass                   | Low           |      |               |             |
-| secondaryEnvironment.remoteConfig.uri       | Medium           |      |               |             |
-| secondaryEnvironment.remoteConfig.batchSize | Low           |      |               |             |
-| secondaryEnvironment.user                   | Medium            |      |               |             |
-| secondaryEnvironment.password               | Medium           |      |               |             |
-| secondaryEnvironment.targetEnvironmentId    | Low           |      |               |             |
+| Parameter name                              | Importance | Type                                                                | Default value | Description                                                                                                                                                                                                 |
+| --------------                              | ---------- | ----                                                                | ------------- | -----------                                                                                                                                                                                                 |
+| environment                                 | Medium     | string                                                              |               | Used mainly for metrics configuration. Please note: it **has** to be consistent with [tag configuration of metrics](https://github.com/TouK/nussknacker/blob/staging/demo/docker/telegraf/telegraf.conf#L6) |
+| environmentAlert.content                    | Low        | string                                                              |               | Human readable name of environment, to display in UI                                                                                                                                                        |
+| environmentAlert.cssClass                   | Low        | indicator-green / indicator-blue / indicator-yellow / indicator-red |               | Color of environment indicator                                                                                                                                                                              |
+| secondaryEnvironment.remoteConfig.uri       | Medium     | string                                                              |               | URL of Nussknacker REST API e.g. `http://secondary.host:8080/api`                                                                                                                                           |
+| secondaryEnvironment.remoteConfig.batchSize | Low        | int                                                                 | 10            | For testing compatibility we have to load all scenarios, we do it in batches to optimize                                                                                                                    |
+| secondaryEnvironment.user                   | Medium     | string                                                              |               | User that should be used for migration/comparison                                                                                                                                                           |
+| secondaryEnvironment.password               | Medium     | string                                                              |               | Password of the user that should be used for migration/comparison                                                                                                                                           |
+| secondaryEnvironment.targetEnvironmentId    | Low        | string                                                              |               | Name of the secondary environment (used mainly for messages for user)                                                                                                                                       |
 
 ## Other configuration options
 
-| Parameter name                   | Importance | Type | Default value | Description |
-| --------------                   | ---------- | ---- | ------------- | ----------- |
-| attachmentsPath                  |            |      |               |             |
-| testResultsMaxSizeInBytes        |            |      |               |             |
-| analytics.engine                 |            |      |               |             |
-| analytics.url                    |            |      |               |             |
-| analytics.siteId                 |            |      |               |             |
-| customProcesses                  |            |      |               |             |
-| intervalTimeSettings.processes   |            |      |               |             |
-| intervalTimeSettings.healthCheck |            |      |               |             |
-| developmentMode                  |            |      |               |             |
+| Parameter name                   | Importance | Type    | Default value         | Description                                                                                   |
+| --------------                   | ---------- | ----    | -------------         | -----------                                                                                   |
+| attachmentsPath                  | Medium     | string  | ./storage/attachments | Place where scenario attachments are stored                                                   |
+| testResultsMaxSizeInBytes        | Low        | int     | 500MB                 | Limits size of returned test data for tests from file                                         |
+| analytics.engine                 | Low        | Matomo  |                       | Currently only available analytics engine is [Matomo](https://matomo.org/)                    |
+| analytics.url                    | Low        | string  |                       | URL of Matomo server                                                                          |
+| analytics.siteId                 | Low        | string  |                       | [Site id](https://matomo.org/faq/general/faq_19212/)                                          |
+| intervalTimeSettings.processes   | Low        | int     | 20000                 | How often frontend reloads scenario list                                                      |
+| intervalTimeSettings.healthCheck | Low        | int     | 30000                 | How often frontend reloads checks scenarios states                                            |
+| developmentMode                  | Medium     | boolean | false                 | For development mode we disable some security features like CORS. **Don't** use in production |
 
 ## Scenario type, categories
 
@@ -555,7 +594,11 @@ categoriesConfig: {
 }
 ```
 
-For each category you have to define its scenario type (`streaming` in examples above). You can read about processing
-types and their configurations below.
+For each category you have to define its scenario type (`streaming` in examples above). Scenario type configuration consists of two parts:
+- `deploymentConfig` - [deployment manager configuration](DeploymentManagerConfiguration.md)
+- `modelConfig` - [model configuration](ModelConfiguration.md)
 
-TODO
+See [example](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L33) 
+from development config to configure multiple scenario types.
+
+

@@ -196,7 +196,6 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
       Future.successful(Right(testMigrationResults))
     }
 
-    override def targetEnvironmentId = "abcd"
   }
 
 
