@@ -369,7 +369,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(
-       MismatchParameter(_, _, "regExpParam", "customNodeId"), _
+        MismatchParameter(_, _, "regExpParam", "customNodeId"), _
       )) =>
     }
   }
@@ -783,7 +783,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .source("id1", "source")
       .switch("switch", "''", "var2",
         GraphBuilder.buildSimpleVariable("var3", "var3", "''").emptySink("id2", "sink"),
-        Case("true", GraphBuilder.buildSimpleVariable("var3b", "var3", "#var2.length()").emptySink("id3", "sink")))
+         Case("true", GraphBuilder.buildSimpleVariable("var3b", "var3", "#var2.length()").emptySink("id3", "sink")))
 
     val compilationResult = validate(process, definitionWithTypedSource)
     compilationResult.result should matchPattern {
@@ -811,7 +811,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .source("id1", "source")
       .switch("switch", "''", "var2",
         GraphBuilder.buildSimpleVariable("var3", "var3", "''").emptySink("id2", "sink"),
-        Case("false", GraphBuilder.sink("id3", "#var3", "sink")))
+         Case("false", GraphBuilder.sink("id3", "#var3", "sink")))
 
     validate(process, definitionWithTypedSource).result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference 'var3'", "id3", Some(DefaultExpressionId), "#var3"), _)) =>
@@ -1240,7 +1240,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   }
 
   private val definitionWithTypedSource = baseDefinition.copy(sourceFactories
-  = Map("source" -> ObjectDefinition.noParam.copy(returnType = Typed[SimpleRecord])))
+    = Map("source" -> ObjectDefinition.noParam.copy(returnType = Typed[SimpleRecord])))
 
   private val definitionWithTypedSourceAndTransformNode =
     definitionWithTypedSource.withCustomStreamTransformer("custom",

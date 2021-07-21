@@ -145,7 +145,7 @@ class SpelExpressionParser(parser: org.springframework.expression.spel.standard.
   }
 
   private def shouldUseNullExpression(original: String): Boolean
-   = flavour != Template && StringUtils.isBlank(original)
+    = flavour != Template && StringUtils.isBlank(original)
 
   private def baseParse(original: String): Validated[NonEmptyList[ExpressionParseError], Expression] = {
     Validated.catchNonFatal(parser.parseExpression(original, flavour.parserContext.orNull)).leftMap(ex => NonEmptyList.of(ExpressionParseError(ex.getMessage)))

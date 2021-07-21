@@ -124,7 +124,7 @@ object ProcessDefinitionExtractor {
 
   case class ProcessDefinition[T <: ObjectMetadata](services: Map[String, T],
                                                     sourceFactories: Map[String, T],
-                                                    //TODO: find easier way to handle *AdditionalData?
+                                                   //TODO: find easier way to handle *AdditionalData?
                                                     sinkFactories: Map[String, (T, SinkAdditionalData)],
                                                     customStreamTransformers: Map[String, (T, CustomTransformerAdditionalData)],
                                                     signalsWithTransformers: Map[String, (T, Set[TransformerId])],
