@@ -18,28 +18,33 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.sql.SqlExpressionParser
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
-import pl.touk.nussknacker.engine.{ModelData, compiledgraph, graph}
+import pl.touk.nussknacker.engine.{ModelData, TypeDefinitionSet, compiledgraph, graph}
 
 object ExpressionCompiler {
 
-  def withOptimization(loader: ClassLoader, dictRegistry: DictRegistry, expressionConfig: ExpressionDefinition[ObjectMetadata], settings: ClassExtractionSettings): ExpressionCompiler
-  = default(loader, dictRegistry, expressionConfig, expressionConfig.optimizeCompilation, settings)
+  def withOptimization(loader: ClassLoader, dictRegistry: DictRegistry, expressionConfig: ExpressionDefinition[ObjectMetadata],
+                       settings: ClassExtractionSettings, typeDefinitionSet: TypeDefinitionSet): ExpressionCompiler
+  = default(loader, dictRegistry, expressionConfig, expressionConfig.optimizeCompilation, settings, typeDefinitionSet)
 
-  def withoutOptimization(loader: ClassLoader, dictRegistry: DictRegistry, expressionConfig: ExpressionDefinition[ObjectMetadata], settings: ClassExtractionSettings): ExpressionCompiler
-  = default(loader, dictRegistry, expressionConfig, optimizeCompilation = false, settings)
+  def withoutOptimization(loader: ClassLoader, dictRegistry: DictRegistry, expressionConfig: ExpressionDefinition[ObjectMetadata],
+                          settings: ClassExtractionSettings, typeDefinitionSet: TypeDefinitionSet): ExpressionCompiler
+  = default(loader, dictRegistry, expressionConfig, optimizeCompilation = false, settings, typeDefinitionSet)
 
   def withoutOptimization(modelData: ModelData): ExpressionCompiler = {
     withoutOptimization(modelData.modelClassLoader.classLoader,
       modelData.dictServices.dictRegistry,
       modelData.processDefinition.expressionConfig,
-      modelData.processDefinition.settings)
+      modelData.processDefinition.settings,
+      TypeDefinitionSet(modelData.typeDefinitions))
   }
 
   private def default(loader: ClassLoader, dictRegistry: DictRegistry, expressionConfig: ExpressionDefinition[ObjectMetadata],
-                      optimizeCompilation: Boolean, settings: ClassExtractionSettings): ExpressionCompiler = {
+                      optimizeCompilation: Boolean, settings: ClassExtractionSettings, typeDefinitionSet: TypeDefinitionSet): ExpressionCompiler = {
     val defaultParsers = Seq(
-      SpelExpressionParser.default(loader, dictRegistry, optimizeCompilation, expressionConfig.strictTypeChecking, expressionConfig.globalImports, SpelExpressionParser.Standard, expressionConfig.strictMethodsChecking)(settings),
-      SpelExpressionParser.default(loader, dictRegistry, optimizeCompilation, expressionConfig.strictTypeChecking, expressionConfig.globalImports, SpelExpressionParser.Template, expressionConfig.strictMethodsChecking)(settings),
+      SpelExpressionParser.default(loader, dictRegistry, optimizeCompilation, expressionConfig.strictTypeChecking,
+        expressionConfig.globalImports, SpelExpressionParser.Standard, expressionConfig.strictMethodsChecking, expressionConfig.staticMethodInvocationsChecking, typeDefinitionSet)(settings),
+      SpelExpressionParser.default(loader, dictRegistry, optimizeCompilation, expressionConfig.strictTypeChecking,
+        expressionConfig.globalImports, SpelExpressionParser.Template, expressionConfig.strictMethodsChecking, expressionConfig.staticMethodInvocationsChecking, typeDefinitionSet)(settings),
       SqlExpressionParser)
     val parsersSeq = defaultParsers ++ expressionConfig.languages.expressionParsers
     val parsers = parsersSeq.map(p => p.languageId -> p).toMap

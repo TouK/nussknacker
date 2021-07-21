@@ -15,7 +15,8 @@ case class ExpressionConfig(globalProcessVariables: Map[String, WithCategories[A
                             //      DictInstance have the same dictId as DictDefinition
                             dictionaries: Map[String, WithCategories[DictDefinition]] = Map.empty,
                             hideMetaVariable: Boolean = false,
-                            strictMethodsChecking: Boolean = true
+                            strictMethodsChecking: Boolean = true,
+                            staticMethodInvocationsChecking: Boolean = false
                            )
 
 object ExpressionConfig {

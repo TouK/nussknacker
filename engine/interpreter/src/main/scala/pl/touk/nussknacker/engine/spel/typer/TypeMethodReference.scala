@@ -1,16 +1,17 @@
 package pl.touk.nussknacker.engine.spel.typer
 
+import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 object TypeMethodReference {
-  def apply(methodName: String, currentResults: List[TypingResult], params: List[TypingResult])(implicit settings: ClassExtractionSettings): Either[String, TypingResult] =
-    new TypeMethodReference(methodName, currentResults, params).call
+  def apply(methodName: String, currentResults: List[TypingResult], params: List[TypingResult], typeDefinitionSet: TypeDefinitionSet)(implicit settings: ClassExtractionSettings): Either[String, TypingResult] =
+    new TypeMethodReference(methodName, currentResults, params, typeDefinitionSet).call
 }
 
-class TypeMethodReference(methodName: String, currentResults: List[TypingResult], calledParams: List[TypingResult]) {
+class TypeMethodReference(methodName: String, currentResults: List[TypingResult], calledParams: List[TypingResult], typeDefinitionSet: TypeDefinitionSet) {
   def call(implicit settings: ClassExtractionSettings): Either[String, TypingResult] =
     currentResults.headOption match {
       case Some(tc: SingleTypingResult) =>

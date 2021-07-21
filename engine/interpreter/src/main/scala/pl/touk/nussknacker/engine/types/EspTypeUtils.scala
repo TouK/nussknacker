@@ -17,9 +17,9 @@ object EspTypeUtils {
 
   def clazzDefinition(clazz: Class[_])
                      (implicit settings: ClassExtractionSettings): ClazzDefinition =
-    ClazzDefinition(Typed(clazz), extractPublicMethodAndFields(clazz))
+    ClazzDefinition(Typed.typedClass(clazz), extractPublicMethodsAndFields(clazz))
 
-  private def extractPublicMethodAndFields(clazz: Class[_])
+  private def extractPublicMethodsAndFields(clazz: Class[_])
                                           (implicit settings: ClassExtractionSettings): Map[String, List[MethodInfo]] = {
     val membersPredicate = settings.visibleMembersPredicate(clazz)
     val methods = extractPublicMethods(clazz, membersPredicate)
