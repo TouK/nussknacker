@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.migration
 
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, ProcessNodesRewriter}
-import pl.touk.nussknacker.engine.graph.exceptionhandler
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.node.NodeData
 
@@ -13,17 +12,23 @@ import scala.reflect.ClassTag
   */
 trait ProcessMigration {
 
-   def description: String
-  
-   def failOnNewValidationError: Boolean
+  def description: String
 
-   def migrateProcess(canonicalProcess: CanonicalProcess): CanonicalProcess
+  def failOnNewValidationError: Boolean
+
+  def migrateProcess(canonicalProcess: CanonicalProcess): CanonicalProcess
 }
 
 object ProcessMigrations {
 
-  def empty : ProcessMigrations = new ProcessMigrations {
+  def empty: ProcessMigrations = new ProcessMigrations {
     override def processMigrations: Map[Int, ProcessMigration] = Map()
+  }
+
+  def listOf(migrations: ProcessMigration*): ProcessMigrations = new ProcessMigrations {
+    override def processMigrations: Map[Int, ProcessMigration] = migrations.zipWithIndex.map {
+      case (processMigration, index) => index + 1 -> processMigration
+    }.toMap
   }
 
 }
@@ -49,7 +54,7 @@ trait NodeMigration extends ProcessMigration {
       override protected def rewriteExceptionHandler(exceptionHandlerRef: ExceptionHandlerRef)(implicit metaData: MetaData): Option[ExceptionHandlerRef] =
         None
 
-      override protected def rewriteNode[T <: NodeData: ClassTag](data: T)(implicit metaData: MetaData): Option[T] =
+      override protected def rewriteNode[T <: NodeData : ClassTag](data: T)(implicit metaData: MetaData): Option[T] =
         migrateNode(metaData).lift(data).map(_.asInstanceOf[T])
     }
     rewriter.rewriteProcess(canonicalProcess)

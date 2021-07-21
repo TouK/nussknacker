@@ -45,7 +45,7 @@ class FlinkStreamingProcessRegistrarSpec extends FlatSpec with Matchers with Pro
     val process = EspProcess(MetaData("proc1", StreamMetaData(spillStateToDisk = Some(true))),
       ExceptionHandlerRef(List.empty),
       NonEmptyList.of(GraphBuilder.source("id", "input")
-        .customNode("custom2", "outRec", "stateCustom", "keyBy" -> "#input.id", "stringVal" -> "'terefere'")
+        .customNode("custom2", "outRec", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
         .processor("proc2", "logService", "all" -> "#input.value2")
         .emptySink("out", "monitor")))
     val data = List(

@@ -29,7 +29,7 @@ object sampleTransformers {
   object SlidingAggregateTransformerV2 extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
     @MethodToInvoke(returnType = classOf[AnyRef])
-    def execute(@ParamName("keyBy") keyBy: LazyParameter[CharSequence],
+    def execute(@ParamName("groupBy") groupBy: LazyParameter[CharSequence],
                 @ParamName("aggregator")
                 @DualEditor(simpleEditor = new SimpleEditor(
                   `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
@@ -48,7 +48,7 @@ object sampleTransformers {
                 @ParamName("emitWhenEventLeft") emitWhenEventLeft: Boolean,
                 @OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
       val windowDuration = Duration(length.toMillis, TimeUnit.MILLISECONDS)
-      transformers.slidingTransformer(keyBy, aggregateBy, aggregator, windowDuration, variableName, emitWhenEventLeft, explicitUidInStatefulOperators)
+      transformers.slidingTransformer(groupBy, aggregateBy, aggregator, windowDuration, variableName, emitWhenEventLeft, explicitUidInStatefulOperators)
     }
   }
 
@@ -60,7 +60,7 @@ object sampleTransformers {
   object TumblingAggregateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
     @MethodToInvoke(returnType = classOf[AnyRef])
-    def execute(@ParamName("keyBy") keyBy: LazyParameter[CharSequence],
+    def execute(@ParamName("groupBy") groupBy: LazyParameter[CharSequence],
                 @ParamName("aggregator")
                 @DualEditor(simpleEditor = new SimpleEditor(
                   `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
@@ -79,7 +79,7 @@ object sampleTransformers {
                 @ParamName("emitWhen") trigger: TumblingWindowTrigger,
                 @OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
       val windowDuration = Duration(length.toMillis, TimeUnit.MILLISECONDS)
-      transformers.tumblingTransformer(keyBy, aggregateBy, aggregator, windowDuration, variableName, trigger, explicitUidInStatefulOperators)
+      transformers.tumblingTransformer(groupBy, aggregateBy, aggregator, windowDuration, variableName, trigger, explicitUidInStatefulOperators)
     }
 
   }
@@ -92,7 +92,7 @@ object sampleTransformers {
   object SessionWindowAggregateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
     @MethodToInvoke(returnType = classOf[AnyRef])
-    def execute(@ParamName("keyBy") keyBy: LazyParameter[CharSequence],
+    def execute(@ParamName("groupBy") groupBy: LazyParameter[CharSequence],
                 @ParamName("aggregator")
                 @DualEditor(simpleEditor = new SimpleEditor(
                   `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
@@ -113,7 +113,7 @@ object sampleTransformers {
                 @OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
       val sessionTimeoutDuration = Duration(sessionTimeout.toMillis, TimeUnit.MILLISECONDS)
       transformers.sessionWindowTransformer(
-        keyBy, aggregateBy, aggregator, sessionTimeoutDuration, endSessionCondition, trigger, variableName)
+        groupBy, aggregateBy, aggregator, sessionTimeoutDuration, endSessionCondition, trigger, variableName)
     }
 
   }

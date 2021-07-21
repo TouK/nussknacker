@@ -30,7 +30,7 @@ import scala.concurrent.duration._
 object TransformStateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
   @MethodToInvoke(returnType = classOf[AnyRef])
-  def invoke(@ParamName("key") key: LazyParameter[CharSequence],
+  def invoke(@ParamName("groupBy") groupBy: LazyParameter[CharSequence],
              @ParamName("transformWhen") transformWhen: LazyParameter[java.lang.Boolean],
              @AdditionalVariables(Array(new AdditionalVariable(name = "previous", clazz = classOf[AnyRef])))
              @ParamName("newValue") newValue: LazyParameter[AnyRef],
@@ -44,7 +44,7 @@ object TransformStateTransformer extends CustomStreamTransformer with ExplicitUi
           implicit val nctx: FlinkCustomNodeContext = nodeContext
           setUidToNodeIdIfNeed(nodeContext,
             stream
-              .keyBy(key)
+              .groupBy(groupBy)
               .process(new TransformStateFunction[String](
                 nodeContext.lazyParameterHelper, transformWhen, newValue, stateTimeoutSeconds.seconds)))
         }

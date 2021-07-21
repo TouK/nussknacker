@@ -138,7 +138,7 @@
             "nodeType" : "aggregate-sliding",
             "parameters" : [
               {
-                "name" : "keyBy",
+                "name" : "groupBy",
                 "expression" : {
                   "language" : "spel",
                   "expression" : "#input.clientId"

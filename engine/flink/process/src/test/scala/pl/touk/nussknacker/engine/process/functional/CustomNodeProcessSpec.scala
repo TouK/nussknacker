@@ -18,7 +18,7 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
       .source("id", "input")
       .buildSimpleVariable("map", "map", "{:}")
       .buildSimpleVariable("list", "list", "{}")
-      .customNode("custom", "outRec", "stateCustom", "keyBy" -> "#input.id", "stringVal" -> "''")
+      .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "''")
       .buildSimpleVariable("mapToString", "mapToString", "#map.toString()")
       .buildSimpleVariable("listToString", "listToString", "#list.toString()")
       .emptySink("out", "monitor")
@@ -54,7 +54,7 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
     val process = EspProcessBuilder.id("proc1")
       .exceptionHandler()
       .source("id", "input")
-      .customNode("custom", "outRec", "stateCustom", "keyBy" -> "#input.id", "stringVal" -> "'terefere'")
+      .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
       .filter("delta", "#outRec.record.value1 > #outRec.previous + 5")
       .processor("proc2", "logService", "all" -> "#outRec")
       .emptySink("out", "monitor")
@@ -81,7 +81,7 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
     val process = EspProcessBuilder.id("proc1")
       .exceptionHandler()
       .source("id", "input")
-      .customNode("custom", "outRec", "stateCustom", "keyBy" -> "#input.id", "stringVal" -> "'terefere'")
+      .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
       .split("split",
         GraphBuilder
           .filter("delta", "#outRec.record.value1 > #outRec.previous + 5")
@@ -126,13 +126,13 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
 
   test("be able to split after custom node") {
     val additionalFilterBranch = GraphBuilder.filter("falseFilter", "#outRec.record.value1 > #outRec.previous + 1")
-      .customNode("custom2", "outRec2", "stateCustom", "keyBy" -> "#input.id", "stringVal" -> "'terefere'")
+      .customNode("custom2", "outRec2", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
       .emptySink("outFalse", "monitor")
 
     val process = EspProcessBuilder.id("proc1")
       .exceptionHandler()
       .source("id", "input")
-      .customNode("custom", "outRec", "stateCustom", "keyBy" -> "#input.id", "stringVal" -> "'terefere'")
+      .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
       .split("split",
         GraphBuilder.processorEnd("proc3", "logService", "all" -> "'allRec-' + #outRec.record.value1"),
         //additionalFilterBranch added, to make this case more complicated
@@ -204,7 +204,7 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
       .exceptionHandler()
       .source("id", "input")
       .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'")
-      .customNode("custom", "outRec", "stateCustom", "keyBy" -> "#input.id", "stringVal" -> "'terefere'")
+      .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
       .processorEnd("proc2", "logService", "all" -> "#beforeNode")
 
     val data = List(SimpleRecord("1", 3, "a", new Date(0)))
@@ -219,7 +219,7 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
       .exceptionHandler()
       .source("id", "input")
       .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'")
-      .customNodeNoOutput("custom", "customFilter", "input" -> "#input.id", "stringVal" -> "'terefere'")
+      .customNodeNoOutput("custom", "customFilter", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
       .processorEnd("proc2", "logService", "all" -> "#input.id")
 
     val data = List(SimpleRecord("terefere", 3, "a", new Date(0)), SimpleRecord("kuku", 3, "b", new Date(0)))
@@ -235,7 +235,7 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
       .exceptionHandler()
       .source("id", "input")
       .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'")
-      .customNodeNoOutput("custom", "customFilterContextTransformation", "input" -> "#input.id", "stringVal" -> "'terefere'")
+      .customNodeNoOutput("custom", "customFilterContextTransformation", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
       .processorEnd("proc2", "logService", "all" -> "#input.id")
 
     val data = List(SimpleRecord("terefere", 3, "a", new Date(0)), SimpleRecord("kuku", 3, "b", new Date(0)))
@@ -263,7 +263,7 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
     val process = EspProcessBuilder.id("proc1")
       .exceptionHandler()
       .source("id", "input")
-      .customNode("custom", "outRec", "stateCustom", "keyBy" -> "#input.id", "stringVal" -> "'terefere'")
+      .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
       .filter("delta", "#outRec.record.value999 > #outRec.previous + 5")
       .processor("proc2", "logService", "all" -> "#outRec")
       .emptySink("out", "monitor")
