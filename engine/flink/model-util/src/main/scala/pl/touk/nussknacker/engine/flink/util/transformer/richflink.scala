@@ -20,13 +20,13 @@ object richflink {
         .keyBy((k: ValueWithContext[String]) => k.value)
 
 
-    def groupByByWithValue[T <: AnyRef: TypeTag: TypeInformation](groupBy: LazyParameter[CharSequence], value: LazyParameterInterpreter => LazyParameter[T])(implicit ctx: FlinkCustomNodeContext): KeyedStream[ValueWithContext[KeyedValue[String, T]], String] =
+    def groupByWithValue[T <: AnyRef: TypeTag: TypeInformation](groupBy: LazyParameter[CharSequence], value: LazyParameterInterpreter => LazyParameter[T])(implicit ctx: FlinkCustomNodeContext): KeyedStream[ValueWithContext[KeyedValue[String, T]], String] =
       dataStream
         .map(new StringKeyedValueMapper(ctx.lazyParameterHelper, groupBy, value))
         .keyBy((k: ValueWithContext[keyed.KeyedValue[String, T]]) => k.value.key)
 
     def groupByWithValue[T <: AnyRef: TypeTag: TypeInformation](groupBy: LazyParameter[CharSequence], value: LazyParameter[T])(implicit ctx: FlinkCustomNodeContext): KeyedStream[ValueWithContext[KeyedValue[String, T]], String] =
-      groupByByWithValue(groupBy, _ => value)
+      groupByWithValue(groupBy, _ => value)
   }
 
   implicit class ExplicitUid[T](dataStream: DataStream[T]) {

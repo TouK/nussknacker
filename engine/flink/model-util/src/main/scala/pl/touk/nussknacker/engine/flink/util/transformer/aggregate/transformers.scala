@@ -52,7 +52,7 @@ object transformers {
             else
               new AggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, aggregateBy.returnType, typeInfos.storedTypeInfo)
           start
-            .groupByByWithValue(groupBy, _ => aggregateBy)
+            .groupByWithValue(groupBy, _ => aggregateBy)
             .process(aggregatorFunction)
             .setUidWithName(ctx, explicitUidInStatefulOperators)
         }))
@@ -83,7 +83,7 @@ object transformers {
           val typeInfos = AggregatorTypeInformations(ctx, aggregator, aggregateBy)
 
           val keyedStream = start
-            .groupByByWithValue(groupBy, _ => aggregateBy)
+            .groupByWithValue(groupBy, _ => aggregateBy)
           (tumblingWindowTrigger match {
             case TumblingWindowTrigger.OnEvent =>
               keyedStream
@@ -128,7 +128,7 @@ object transformers {
             case SessionWindowTrigger.OnEnd => baseTrigger
           }
           start
-            .groupByByWithValue(groupBy, _.product(aggregateBy, endSessionCondition))
+            .groupByWithValue(groupBy, _.product(aggregateBy, endSessionCondition))
             .window(EventTimeSessionWindows.withGap(Time.milliseconds(sessionTimeout.toMillis)))
             .trigger(trigger)
             .aggregate(
