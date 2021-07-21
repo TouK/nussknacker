@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.spel
 
 import java.time.{LocalDate, LocalDateTime}
 import java.util
-
 import cats.data.Validated.Valid
 import cats.data.{NonEmptyList, Validated}
 import com.typesafe.scalalogging.LazyLogging
@@ -11,7 +10,7 @@ import org.springframework.expression._
 import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
 import org.springframework.expression.spel.ast.SpelNodeImpl
 import org.springframework.expression.spel.{SpelCompilerMode, SpelEvaluationException, SpelParserConfiguration, standard}
-import pl.touk.nussknacker.engine.api
+import pl.touk.nussknacker.engine.{TypeDefinitionSet, api}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
@@ -21,6 +20,7 @@ import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.definition.TypeInfos
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, LabelsDictTyper}
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.functionUtils.CollectionUtils
@@ -206,7 +206,9 @@ object SpelExpressionParser extends LazyLogging {
               strictTypeChecking: Boolean,
               imports: List[String],
               flavour: Flavour,
-              strictMethodsChecking: Boolean)
+              strictMethodsChecking: Boolean,
+              staticMethodInvocationsChecking: Boolean,
+              typeDefinitionSet: TypeDefinitionSet)
              (implicit classExtractionSettings: ClassExtractionSettings): SpelExpressionParser = {
     val functions = Map(
       "today" -> classOf[LocalDate].getDeclaredMethod("now"),
@@ -222,8 +224,8 @@ object SpelExpressionParser extends LazyLogging {
 
     val classResolutionStrategy = if (strictTypeChecking) SupertypeClassResolutionStrategy.Intersection else SupertypeClassResolutionStrategy.Union
     val commonSupertypeFinder = new CommonSupertypeFinder(classResolutionStrategy, strictTypeChecking)
-    val validator = new SpelExpressionValidator(new Typer(classLoader, commonSupertypeFinder, new KeysDictTyper(dictRegistry), strictMethodsChecking))
     val evaluationContextPreparer = new EvaluationContextPreparer(classLoader, imports, propertyAccessors, functions)
+    val validator = new SpelExpressionValidator(new Typer(classLoader, commonSupertypeFinder, new KeysDictTyper(dictRegistry), strictMethodsChecking, staticMethodInvocationsChecking, typeDefinitionSet, evaluationContextPreparer))
     new SpelExpressionParser(parser, validator, dictRegistry, enableSpelForceCompile, flavour, evaluationContextPreparer)
   }
 

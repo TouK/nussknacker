@@ -4,6 +4,7 @@ import cats.data.Validated.Valid
 import cats.data.ValidatedNel
 import org.scalatest.{FunSuite, Matchers}
 import org.springframework.expression.common.TemplateParserContext
+import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
@@ -29,10 +30,11 @@ class TyperSpec extends FunSuite with Matchers {
 
   private val strictTypeChecking = false
   private val strictMethodsChecking = false
+  private val staticMethodInvocationsChecking = false
   private val classResolutionStrategy = SupertypeClassResolutionStrategy.Union
   private val commonSupertypeFinder = new CommonSupertypeFinder(classResolutionStrategy, strictTypeChecking)
   private val dict = new SimpleDictRegistry(Map.empty)
-  private val typer = new Typer(this.getClass.getClassLoader, commonSupertypeFinder, new KeysDictTyper(dict), strictMethodsChecking)(ClassExtractionSettings.Default)
+  private val typer = new Typer(this.getClass.getClassLoader, commonSupertypeFinder, new KeysDictTyper(dict), strictMethodsChecking, staticMethodInvocationsChecking, TypeDefinitionSet.empty, evaluationContextPreparer = null)(ClassExtractionSettings.Default)
   private val parser = new org.springframework.expression.spel.standard.SpelExpressionParser()
 
   private def typeExpression(expr: String, variables: (String, Any)*): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {

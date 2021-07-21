@@ -8,7 +8,9 @@ import java.util.Collections
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import org.apache.avro.generic.GenericData
+import org.apache.commons.lang3.ClassUtils
 import org.scalatest.{EitherValues, FunSuite, Matchers}
+import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -17,7 +19,8 @@ import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
 import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, TypedExpression}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.definition.TypeInfos
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.types.{GeneratedAvroClass, JavaClassWithVarargs}
@@ -73,29 +76,52 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   private def parseWithDicts[T: TypeTag](expr: String, context: Context = ctx, dictionaries: Map[String, DictDefinition]): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val validationCtx = ValidationContext(
       context.variables.mapValuesNow(Typed.fromInstance))
-    parse(expr, validationCtx, dictionaries, Standard, strictMethodsChecking = true)
+    parse(expr, validationCtx, dictionaries, Standard, strictMethodsChecking = true, staticMethodInvocationsChecking = true)
   }
 
   private def parseWithoutStrictMethodsChecking[T: TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val validationCtx = ValidationContext(context.variables.mapValuesNow(Typed.fromInstance))
-    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = false)
+    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = false, staticMethodInvocationsChecking = true)
   }
 
   private def parse[T: TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val validationCtx = ValidationContext(
       context.variables.mapValuesNow(Typed.fromInstance))
-    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = true)
+    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = true, staticMethodInvocationsChecking = true)
   }
 
   private def parse[T: TypeTag](expr: String, validationCtx: ValidationContext): ValidatedNel[ExpressionParseError, TypedExpression] = {
-    parse(expr, validationCtx, Map.empty, Standard, strictMethodsChecking = true)
+    parse(expr, validationCtx, Map.empty, Standard, strictMethodsChecking = true, staticMethodInvocationsChecking = true)
   }
 
   private def parse[T: TypeTag](expr: String, validationCtx: ValidationContext, dictionaries: Map[String, DictDefinition],
-                                flavour: Flavour, strictMethodsChecking: Boolean): ValidatedNel[ExpressionParseError, TypedExpression] = {
+                                flavour: Flavour, strictMethodsChecking: Boolean, staticMethodInvocationsChecking: Boolean): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val imports = List(SampleValue.getClass.getPackage.getName)
     SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(dictionaries), enableSpelForceCompile = true,
-      strictTypeChecking = true, imports, flavour, strictMethodsChecking = strictMethodsChecking)(ClassExtractionSettings.Default).parse(expr, validationCtx, Typed.fromDetailedType[T])
+      strictTypeChecking = true, imports, flavour, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking = true, typeDefinitionSetWithDefaultClasses)(ClassExtractionSettings.Default).parse(expr, validationCtx, Typed.fromDetailedType[T])
+  }
+
+  private def typeDefinitionSetWithDefaultClasses: TypeDefinitionSet = {
+
+    def createTestClazzDefinitionFromClassNames(className: String) =
+      TypeInfos.ClazzDefinition(TypedClass(ClassUtils.primitiveToWrapper(ClassUtils.getClass(className)), Nil), Map.empty)
+
+    val stringClazzDefinition = createTestClazzDefinitionFromClassNames("java.lang.String")
+    val longClazzDefinition = createTestClazzDefinitionFromClassNames("java.lang.Long")
+
+    TypeDefinitionSet(Set(stringClazzDefinition, longClazzDefinition))
+  }
+
+  test("evaluate static method call on validated class String") {
+    parseOrFail[String]("T(java.lang.String).copyValueOf({'t', 'e', 's', 't'})").evaluateSync[String](ctx) should equal("test")
+  }
+
+  test("evaluate static method call on unvalidated class") {
+    parse[Any]("T(java.lang.System).exit()") shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("class java.lang.System is not allowed to be passed as TypeReference")))
+  }
+
+  test("evaluate static method call on non-existing class") {
+    parse[Any]("T(java.lang.NonExistingClass).method()") shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Class T(java.lang.NonExistingClass) does not exist")))
   }
 
   test("invoke simple expression") {

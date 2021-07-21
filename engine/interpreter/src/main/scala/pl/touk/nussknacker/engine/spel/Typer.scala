@@ -12,6 +12,7 @@ import org.springframework.expression.Expression
 import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
 import org.springframework.expression.spel.ast._
 import org.springframework.expression.spel.{SpelNode, standard}
+import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, ExpressionTypingInfo}
@@ -23,6 +24,7 @@ import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.spel.Typer._
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.ast.SpelNodePrettyPrinter
+import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 import pl.touk.nussknacker.engine.spel.typer.{MapLikePropertyTyper, TypeMethodReference}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
@@ -32,7 +34,11 @@ import scala.util.{Success, Failure, Try}
 import scala.util.control.NonFatal
 
 private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: CommonSupertypeFinder,
-                          dictTyper: SpelDictTyper, strictMethodsChecking: Boolean)(implicit settings: ClassExtractionSettings) extends LazyLogging {
+                          dictTyper: SpelDictTyper, strictMethodsChecking: Boolean,
+                          staticMethodInvocationsChecking: Boolean,
+                          typeDefinitionSet: TypeDefinitionSet,
+                          evaluationContextPreparer: EvaluationContextPreparer
+                         )(implicit settings: ClassExtractionSettings) extends LazyLogging {
 
   import ast.SpelAst._
 
@@ -167,7 +173,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         }
 
       case e: MethodReference =>
-        extractMethodReference(e, validationContext, node, current)
+        extractMethodReference(e, validationContext, node, current, typeDefinitionSet)
 
       case e: OpEQ => checkEqualityLikeOperation(validationContext, e, current)
       case e: OpNE => checkEqualityLikeOperation(validationContext, e, current)
@@ -250,8 +256,16 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
           }
         case _ => invalid("Invalid ternary operator") // shouldn't happen
       }
-      //TODO: what should be here?
-      case e: TypeReference => fixed(Unknown)
+
+      case e: TypeReference => {
+
+        if (staticMethodInvocationsChecking) {
+          typeDefinitionSet.validateTypeReference(e, evaluationContextPreparer.prepareEvaluationContext(Context(""), Map.empty))
+            .map(_ => toResult(Unknown))
+        } else {
+          valid(Unknown)
+        }
+      }
 
       case e: VariableReference =>
         //only sane way of getting variable name :|
@@ -300,11 +314,11 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         Valid(Typed(l.toSet))
   }
 
-  private def extractMethodReference(reference: MethodReference, validationContext: ValidationContext, node: SpelNode, context: TypingContext) = {
+  private def extractMethodReference(reference: MethodReference, validationContext: ValidationContext, node: SpelNode, context: TypingContext, typeDefinitionSet: TypeDefinitionSet) = {
     context.stack match {
       case _ :: tail =>
         typeChildren(validationContext, node, context.copy(stack = tail)) { typedParams =>
-          TypeMethodReference(reference.getName, context.stack, typedParams) match {
+          TypeMethodReference(reference.getName, context.stack, typedParams, typeDefinitionSet) match {
             case Right(typingResult) => Valid(typingResult)
             case Left(errorMsg) => if(strictMethodsChecking) invalid(errorMsg) else Valid(Unknown)
           }
@@ -378,7 +392,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     Invalid(NonEmptyList.of(ExpressionParseError(message)))
 
   def withDictTyper(dictTyper: SpelDictTyper) =
-    new Typer(classLoader, commonSupertypeFinder, dictTyper, strictMethodsChecking = strictMethodsChecking)
+    new Typer(classLoader, commonSupertypeFinder, dictTyper, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking, typeDefinitionSet,  evaluationContextPreparer)
 
 }
 

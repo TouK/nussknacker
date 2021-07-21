@@ -98,7 +98,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
 
     val typeUtils = singleClassAndItsChildrenDefinition[Embeddable]()
 
-    typeUtils.find(_.clazzName == Typed[TestEmbedded]) shouldBe Some(ClazzDefinition(Typed[TestEmbedded], Map(
+    typeUtils.find(_.clazzName == Typed[TestEmbedded]) shouldBe Some(ClazzDefinition(Typed.typedClass[TestEmbedded], Map(
       "string" -> List(MethodInfo(List(), Typed[String], None, varArgs = false)),
       "javaList" -> List(MethodInfo(List(), Typed.fromDetailedType[java.util.List[String]], None, varArgs = false)),
       "scalaList" -> List(MethodInfo(List(), Typed.fromDetailedType[List[String]], None, varArgs = false)),
@@ -111,7 +111,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
   test("should not discover hidden fields") {
     val typeUtils = singleClassDefinition[ClassWithHiddenFields]()
 
-    typeUtils shouldBe Some(ClazzDefinition(Typed[ClassWithHiddenFields], Map(
+    typeUtils shouldBe Some(ClazzDefinition(Typed.typedClass[ClassWithHiddenFields], Map(
       "normalField" -> List(MethodInfo(List(), Typed[String], None, varArgs = false)),
       "normalParam" -> List(MethodInfo(List(), Typed[String], None, varArgs = false)),
       "toString" -> List(MethodInfo(List(), Typed[String], None, varArgs = false))

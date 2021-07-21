@@ -152,6 +152,10 @@ To see biggest differences please consult the [changelog](Changelog.md).
   doesn't emit full context of variables that were before node (because of performance reasons and because that wasn't obvious which one context is emitted).
   If you want to emit some information other than aggregated value and key (availabled via new `#key` variable), you should use `#AGG.map` expression in `aggregateBy`.
 * [#1910](https://github.com/TouK/nussknacker/pull/1910) `processTypes` renamed to `scenarioTypes`. You can still use old `processTypes` configuration. Old configuration will be removed in version `0.5.0`. 
+* Various naming changes:
+  * [#1917](https://github.com/TouK/nussknacker/pull/1917) configuration of `engineConfig` to `deploymentConfig`                           
+  * [#1921](https://github.com/TouK/nussknacker/pull/1921) `ProcessManager` to `DeploymentManager`                           
+  * [#1927](https://github.com/TouK/nussknacker/pull/1927) Rename `outer-join` to `single-side-join`
 
 ## In version 0.3.0
 
@@ -182,9 +186,6 @@ that will be hidden before parameter's evaluation
     - Removed: `getClusterClient` from `FlinkMiniClusterHolder` interface, because of flink compatibility at Flink 1.9 
     - Renamed: `FlinkStreamingProcessRegistrar` to `FlinkProcessManager`
 * [#1303](https://github.com/TouK/nussknacker/pull/1303) TypedObjectTypingResult has a new field: additionalInfo
-* Various naming changes:
-  * [#1917](https://github.com/TouK/nussknacker/pull/1917) configuration of `engineConfig` to `deploymentConfig`                           
-  * [#1921](https://github.com/TouK/nussknacker/pull/1921) `ProcessManager` to `DeploymentManager`                           
 
 ## In version 0.2.0
 

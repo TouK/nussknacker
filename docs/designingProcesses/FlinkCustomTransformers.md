@@ -90,7 +90,7 @@ So, for example, given stream of events which contain users with their current l
 then the value of output variable is the previous location for current user. If this is the first appearance of this user,
 **current** location will be returned
 
-## Outer join
+## Single side join
 
 Joins multiple branches in one stream. For each incoming branch we have to define two parameters:
 - branchType - defined if branch is MAIN branch or JOINED branch (should be exact one branch of type MAIN and exact one of type JOINED)

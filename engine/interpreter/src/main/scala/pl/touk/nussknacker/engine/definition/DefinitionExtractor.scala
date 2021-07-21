@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransformation, OutputVariableNameValue, TypedNodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitMethodToInvoke, WithExplicitTypesToExtract}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SingleNodeConfig, WithCategories}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectMetadata, _}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MethodDefinition
@@ -31,13 +31,13 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
 
     (obj match {
       //TODO: how validators/editors in NodeConfig should be handled for GenericNodeTransformation/WithExplicitMethodToInvoke?
-      case e:GenericNodeTransformation[_] =>
+      case e: GenericNodeTransformation[_] =>
         // Here in general we do not have a specified "returnType", hence Undefined/Void
         val returnType = if (e.nodeDependencies.contains(OutputVariableNameDependency)) Unknown else Typed[Void]
         val parametersList = StandardParameterEnrichment.enrichParameterDefinitions(e.initialParameters, objWithCategories.nodeConfig)
         val definition = ObjectDefinition(parametersList, returnType, objWithCategories.categories, objWithCategories.nodeConfig)
         Right(GenericNodeTransformationMethodDef(e, definition))
-      case e:WithExplicitMethodToInvoke =>
+      case e: WithExplicitMethodToInvoke =>
         WithExplicitMethodToInvokeMethodDefinitionExtractor.extractMethodDefinition(e,
           classOf[WithExplicitMethodToInvoke].getMethods.find(_.getName == "invoke").get, nodeConfig).right.map(fromMethodDefinition)
       case _ =>
@@ -73,7 +73,7 @@ object DefinitionExtractor {
     def categories: List[String]
 
     // TODO: Use ContextTransformation API to check if custom node is adding some output variable
-    def hasNoReturn : Boolean = Set[TypingResult](Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(returnType)
+    def hasNoReturn: Boolean = Set[TypingResult](Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(returnType)
 
   }
 
@@ -83,7 +83,7 @@ object DefinitionExtractor {
 
     def invokeMethod(params: Map[String, Any],
                      outputVariableNameOpt: Option[String],
-                     additional: Seq[AnyRef]) : Any
+                     additional: Seq[AnyRef]): Any
 
     def objectDefinition: ObjectDefinition
 
@@ -139,11 +139,11 @@ object DefinitionExtractor {
   case class FinalStateValue(value: Option[Any])
 
   case class StandardObjectWithMethodDef(obj: Any,
-                                 methodDef: MethodDefinition,
-                                 objectDefinition: ObjectDefinition) extends ObjectWithMethodDef with LazyLogging {
+                                         methodDef: MethodDefinition,
+                                         objectDefinition: ObjectDefinition) extends ObjectWithMethodDef with LazyLogging {
     def invokeMethod(params: Map[String, Any],
                      outputVariableNameOpt: Option[String],
-                     additional: Seq[AnyRef]) : Any = {
+                     additional: Seq[AnyRef]): Any = {
       val values = methodDef.orderedDependencies.prepareValues(params, outputVariableNameOpt, additional)
       try {
         methodDef.invocation(obj, values)
@@ -166,16 +166,16 @@ object DefinitionExtractor {
   }
 
   case class ObjectDefinition(parameters: List[Parameter],
-                                         returnType: TypingResult,
-                                         categories: List[String],
-                                         nodeConfig: SingleNodeConfig) extends ObjectMetadata
+                              returnType: TypingResult,
+                              categories: List[String],
+                              nodeConfig: SingleNodeConfig) extends ObjectMetadata
 
 
   object ObjectWithMethodDef {
 
     import cats.syntax.semigroup._
 
-    def forMap[T](objs: Map[String, WithCategories[_<:T]], methodExtractor: MethodDefinitionExtractor[T], externalConfig: Map[String, SingleNodeConfig]): Map[String, ObjectWithMethodDef] = {
+    def forMap[T](objs: Map[String, WithCategories[_ <: T]], methodExtractor: MethodDefinitionExtractor[T], externalConfig: Map[String, SingleNodeConfig]): Map[String, ObjectWithMethodDef] = {
       objs.map { case (id, obj) =>
         val config = externalConfig.getOrElse(id, SingleNodeConfig.zero) |+| obj.nodeConfig
         id -> (obj, config)
@@ -211,7 +211,7 @@ object DefinitionExtractor {
 
       def explicitTypes(obj: ObjectWithMethodDef): List[TypingResult] = {
         obj.obj match {
-          case explicit : WithExplicitTypesToExtract => explicit.typesToExtract
+          case explicit: WithExplicitTypesToExtract => explicit.typesToExtract
           case _ => Nil
         }
       }
@@ -238,12 +238,12 @@ object DefinitionExtractor {
 }
 
 object TypeInfos {
-  
+
   @JsonCodec(encodeOnly = true) case class Parameter(name: String, refClazz: TypingResult)
 
   @JsonCodec(encodeOnly = true) case class MethodInfo(parameters: List[Parameter], refClazz: TypingResult, description: Option[String], varArgs: Boolean)
 
-  case class ClazzDefinition(clazzName: TypingResult, methods: Map[String, List[MethodInfo]]) {
+  case class ClazzDefinition(clazzName: TypedClass, methods: Map[String, List[MethodInfo]]) {
 
     def getPropertyOrFieldType(methodName: String): Option[TypingResult] = {
       val filtered = methods.get(methodName).toList

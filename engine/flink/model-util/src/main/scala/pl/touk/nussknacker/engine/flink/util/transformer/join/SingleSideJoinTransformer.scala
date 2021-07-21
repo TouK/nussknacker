@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.flink.util.transformer.outer
+package pl.touk.nussknacker.engine.flink.util.transformer.join
 
 import java.time.Duration
 import java.util.concurrent.TimeUnit
@@ -24,10 +24,10 @@ import pl.touk.nussknacker.engine.flink.util.transformer.richflink._
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.FiniteDuration
 
-class OuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandler[TimestampedValue[ValueWithContext[AnyRef]]]])
+class SingleSideJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandler[TimestampedValue[ValueWithContext[AnyRef]]]])
   extends CustomStreamTransformer with JoinGenericNodeTransformation[FlinkCustomJoinTransformation] with ExplicitUidInOperatorsSupport with LazyLogging {
 
-  import pl.touk.nussknacker.engine.flink.util.transformer.outer.OuterJoinTransformer._
+  import pl.touk.nussknacker.engine.flink.util.transformer.join.SingleSideJoinTransformer._
 
   override def canHaveManyInputs: Boolean = true
 
@@ -102,11 +102,11 @@ class OuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandler[T
   protected def prepareAggregatorFunction(aggregator: Aggregator, stateTimeout: FiniteDuration, aggregateElementType: TypingResult, storedTypeInfo: TypeInformation[AnyRef] )
                                          (implicit nodeId: NodeId):
   CoProcessFunction[ValueWithContext[String], ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]] =
-    new OuterJoinAggregatorFunction[SortedMap](aggregator, stateTimeout.toMillis, nodeId, aggregateElementType, storedTypeInfo)
+    new SingleSideJoinAggregatorFunction[SortedMap](aggregator, stateTimeout.toMillis, nodeId, aggregateElementType, storedTypeInfo)
 
 }
 
-case object OuterJoinTransformer extends OuterJoinTransformer(None) {
+case object SingleSideJoinTransformer extends SingleSideJoinTransformer(None) {
 
   val BranchTypeParamName = "branchType"
   val BranchTypeParam: ParameterWithExtractor[Map[String, BranchType]] = ParameterWithExtractor.branchMandatory[BranchType](BranchTypeParamName)

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.flink.util.transformer.outer
+package pl.touk.nussknacker.engine.flink.util.transformer.join
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction
@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.{Aggregator, 
 
 import scala.language.higherKinds
 
-class OuterJoinAggregatorFunction[MapT[K,V]](protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long,
+class SingleSideJoinAggregatorFunction[MapT[K,V]](protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long,
                                                           override val nodeId: NodeId,
                                                           protected val aggregateElementType: TypingResult,
                                                           override protected val aggregateTypeInformation: TypeInformation[AnyRef])
