@@ -219,7 +219,7 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
       .exceptionHandler()
       .source("id", "input")
       .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'")
-      .customNodeNoOutput("custom", "customFilter", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
+      .customNodeNoOutput("custom", "customFilter", "input" -> "#input.id", "stringVal" -> "'terefere'")
       .processorEnd("proc2", "logService", "all" -> "#input.id")
 
     val data = List(SimpleRecord("terefere", 3, "a", new Date(0)), SimpleRecord("kuku", 3, "b", new Date(0)))
@@ -235,7 +235,7 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
       .exceptionHandler()
       .source("id", "input")
       .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'")
-      .customNodeNoOutput("custom", "customFilterContextTransformation", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
+      .customNodeNoOutput("custom", "customFilterContextTransformation", "input" -> "#input.id", "stringVal" -> "'terefere'")
       .processorEnd("proc2", "logService", "all" -> "#input.id")
 
     val data = List(SimpleRecord("terefere", 3, "a", new Date(0)), SimpleRecord("kuku", 3, "b", new Date(0)))
@@ -304,5 +304,18 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
     MockService.data shouldBe List("1")
   }
 
+  test("listeners should count only incoming events to nodes") {
+    CountingNodesListener.reset
+    val process = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "input")
+      .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'")
+      .customNodeNoOutput("custom", "customFilter", "input" -> "#input.id", "stringVal" -> "'terefere'")
+      .processorEnd("proc2", "logService", "all" -> "#input.id")
+    val data = List(SimpleRecord("terefere", 3, "a", new Date(0)), SimpleRecord("kuku", 3, "b", new Date(0)))
+    processInvoker.invokeWithSampleData(process, data)
+
+    CountingNodesListener.nodesEntered shouldBe List("id", "testVar", "custom", "proc2", "id", "testVar", "custom")
+  }
 
 }

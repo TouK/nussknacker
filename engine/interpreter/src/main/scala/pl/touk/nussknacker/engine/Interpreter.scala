@@ -57,9 +57,9 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
 
   private def interpretNode(node: Node, ctx: Context): F[List[InterpretationResult]] = {
     implicit val nodeImplicit: Node = node
-    listeners.foreach(_.nodeEntered(node.id, ctx, metaData))
     node match {
       case Source(_, next) =>
+        listeners.foreach(_.nodeEntered(node.id, ctx, metaData))
         interpretNext(next, ctx)
       case VariableBuilder(_, varName, Right(fields), next) =>
         val variable = createOrUpdateVariable(ctx, varName, fields)
@@ -154,11 +154,13 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
     }
   }
 
-  private def interpretNext(next: Next, ctx: Context): F[List[InterpretationResult]] =
+  private def interpretNext(next: Next, ctx: Context): F[List[InterpretationResult]] = {
+    listeners.foreach(_.nodeEntered(next.id, ctx, metaData))
     next match {
       case NextNode(node) => tryToInterpretNode(node, ctx)
       case PartRef(ref) => monad.pure(List(InterpretationResult(NextPartReference(ref), outputValue(ctx), ctx)))
     }
+  }
 
   //hmm... is this OK?
   private def outputValue(ctx: Context): Any =

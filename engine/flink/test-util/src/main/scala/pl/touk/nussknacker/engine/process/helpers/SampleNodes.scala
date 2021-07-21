@@ -237,11 +237,11 @@ object SampleNodes {
   object CustomFilter extends CustomStreamTransformer {
 
     @MethodToInvoke(returnType = classOf[Void])
-    def execute(@ParamName("groupBy") groupBy: LazyParameter[String],
+    def execute(@ParamName("input") input: LazyParameter[String],
                 @ParamName("stringVal") stringVal: String) = FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
 
       start
-        .filter(new AbstractOneParamLazyParameterFunction(groupBy, context.lazyParameterHelper) with FilterFunction[Context] {
+        .filter(new AbstractOneParamLazyParameterFunction(input, context.lazyParameterHelper) with FilterFunction[Context] {
           override def filter(value: Context): Boolean = evaluateParameter(value) == stringVal
         })
         .map(ValueWithContext[AnyRef](null, _))
@@ -251,13 +251,13 @@ object SampleNodes {
   object CustomFilterContextTransformation extends CustomStreamTransformer {
 
     @MethodToInvoke(returnType = classOf[Void])
-    def execute(@ParamName("groupBy") groupBy: LazyParameter[String], @ParamName("stringVal") stringVal: String): ContextTransformation =
+    def execute(@ParamName("input") input: LazyParameter[String], @ParamName("stringVal") stringVal: String): ContextTransformation =
       ContextTransformation
         .definedBy(Valid(_))
         .implementedBy(
           FlinkCustomStreamTransformation { (start: DataStream[Context], context: FlinkCustomNodeContext) =>
             start
-              .filter(new AbstractOneParamLazyParameterFunction(groupBy, context.lazyParameterHelper) with FilterFunction[Context] {
+              .filter(new AbstractOneParamLazyParameterFunction(input, context.lazyParameterHelper) with FilterFunction[Context] {
                 override def filter(value: Context): Boolean = evaluateParameter(value) == stringVal
               })
               .map(ValueWithContext[AnyRef](null, _))
@@ -822,6 +822,18 @@ object SampleNodes {
       Future.successful(runMode)
     }
 
+  }
+
+  object CountingNodesListener extends EmptyProcessListener {
+    var nodesEntered: List[String] = Nil
+
+    def reset: Unit = {
+      nodesEntered = Nil
+    }
+
+    override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit = {
+      nodesEntered = nodesEntered ::: nodeId :: Nil
+    }
   }
 
 }
