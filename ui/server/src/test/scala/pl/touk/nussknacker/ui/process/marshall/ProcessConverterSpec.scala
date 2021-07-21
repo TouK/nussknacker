@@ -37,7 +37,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
 
   private val metaData = StreamMetaData(Some(2), Some(false))
 
-  lazy val validation: ProcessValidation = {
+  lazy val validatiodisableMethodExecutionForUnknownn: ProcessValidation = {
     val processDefinition = ProcessDefinition[ObjectDefinition](Map("ref" -> ObjectDefinition.noParam),
       Map("sourceRef" -> ObjectDefinition.noParam), Map(), Map(), Map(), ObjectDefinition.noParam,
       ExpressionDefinition(Map.empty, List.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, Map.empty,
