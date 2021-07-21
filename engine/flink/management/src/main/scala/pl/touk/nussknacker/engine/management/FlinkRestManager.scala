@@ -20,7 +20,7 @@ import scala.concurrent.{Await, Future}
 
 class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName: String)
                       (implicit backend: SttpBackend[Future, Nothing, NothingT])
-    extends FlinkProcessManager(modelData, config.shouldVerifyBeforeDeploy, mainClassName) with LazyLogging {
+    extends FlinkDeploymentManager(modelData, config.shouldVerifyBeforeDeploy, mainClassName) with LazyLogging {
 
   protected lazy val jarFile: File = new FlinkModelJar().buildJobJar(modelData)
 

@@ -3,32 +3,32 @@ package pl.touk.nussknacker.engine.management.periodic
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.TypeSpecificData
-import pl.touk.nussknacker.engine.api.deployment.ProcessManager
+import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, DefaultAdditionalDeploymentDataProvider, EmptyListener, EmptyPeriodicProcessListenerFactory, PeriodicProcessListener, PeriodicProcessListenerFactory}
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
-import pl.touk.nussknacker.engine.{ModelData, ProcessManagerProvider}
+import pl.touk.nussknacker.engine.{ModelData, DeploymentManagerProvider}
 
-class PeriodicProcessManagerProvider(delegate: ProcessManagerProvider,
+class PeriodicDeploymentManagerProvider(delegate: DeploymentManagerProvider,
                                      schedulePropertyExtractor: SchedulePropertyExtractor = CronSchedulePropertyExtractor(),
                                      enrichDeploymentWithJarDataFactory: EnrichDeploymentWithJarDataFactory = EnrichDeploymentWithJarDataFactory.noOp,
                                      listenerFactory: PeriodicProcessListenerFactory = EmptyPeriodicProcessListenerFactory,
                                      additionalDeploymentDataProvider: AdditionalDeploymentDataProvider = DefaultAdditionalDeploymentDataProvider
-                                    ) extends ProcessManagerProvider with LazyLogging {
+                                    ) extends DeploymentManagerProvider with LazyLogging {
 
   override def name: String = s"${delegate.name}Periodic"
 
-  override def createProcessManager(modelData: ModelData, config: Config): ProcessManager = {
+  override def createDeploymentManager(modelData: ModelData, config: Config): DeploymentManager = {
     logger.info("Creating periodic scenario manager")
-    val delegateProcessManager = delegate.createProcessManager(modelData, config)
+    val delegateDeploymentManager = delegate.createDeploymentManager(modelData, config)
 
     import net.ceedubs.ficus.Ficus._
     import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-    val periodicBatchConfig = config.as[PeriodicBatchConfig]("processManager")
+    val periodicBatchConfig = config.as[PeriodicBatchConfig]("deploymentManager")
     val flinkConfig = config.rootAs[FlinkConfig]
-    PeriodicProcessManager(
-      delegate = delegateProcessManager,
+    PeriodicDeploymentManager(
+      delegate = delegateDeploymentManager,
       schedulePropertyExtractor = schedulePropertyExtractor,
       enrichDeploymentWithJarDataFactory = enrichDeploymentWithJarDataFactory,
       periodicBatchConfig = periodicBatchConfig,

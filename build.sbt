@@ -339,14 +339,14 @@ lazy val dist = {
       packageName in Universal := ("nussknacker" + "-" + version.value),
       Keys.compile in Compile := (Keys.compile in Compile).dependsOn(
         (assembly in Compile) in generic,
-        (assembly in Compile) in flinkProcessManager,
+        (assembly in Compile) in flinkDeploymentManager,
         (assembly in Compile) in engineStandalone,
         (assembly in Compile) in openapi,
         (assembly in Compile) in sql,
       ).value,
       mappings in Universal ++= Seq(
         (crossTarget in generic).value / "genericModel.jar" -> "model/genericModel.jar",
-        (crossTarget in flinkProcessManager).value / "nussknacker-flink-manager.jar" -> "managers/nussknacker-flink-manager.jar",
+        (crossTarget in flinkDeploymentManager).value / "nussknacker-flink-manager.jar" -> "managers/nussknacker-flink-manager.jar",
         (crossTarget in engineStandalone).value / "nussknacker-standalone-manager.jar" -> "managers/nussknacker-standalone-manager.jar",
         (crossTarget in openapi).value / "openapi.jar" -> "components/openapi.jar",
         (crossTarget in sql).value / "sql.jar" -> "components/sql.jar"
@@ -450,7 +450,7 @@ lazy val standaloneApp = (project in engine("standalone/app")).
   dependsOn(engineStandalone, interpreter, httpUtils, testUtil % "test", standaloneUtil % "test")
 
 
-lazy val flinkProcessManager = (project in engine("flink/management")).
+lazy val flinkDeploymentManager = (project in engine("flink/management")).
   configs(IntegrationTest).
   settings(commonSettings).
   settings(Defaults.itSettings).
@@ -483,7 +483,7 @@ lazy val flinkProcessManager = (project in engine("flink/management")).
     httpUtils % "provided",
     kafkaTestUtil % "it,test")
 
-lazy val flinkPeriodicProcessManager = (project in engine("flink/management/periodic")).
+lazy val flinkPeriodicDeploymentManager = (project in engine("flink/management/periodic")).
   settings(commonSettings).
   settings(assemblySettings("nussknacker-flink-periodic-manager.jar", includeScala = false): _*).
   settings(
@@ -497,7 +497,7 @@ lazy val flinkPeriodicProcessManager = (project in engine("flink/management/peri
         "com.cronutils" % "cron-utils" % cronParserV
       )
     }
-  ).dependsOn(flinkProcessManager,
+  ).dependsOn(flinkDeploymentManager,
     interpreter % "provided",
     api % "provided",
     httpUtils % "provided",
@@ -1034,7 +1034,7 @@ lazy val ui = (project in file("ui/server"))
         "org.slf4j" % "log4j-over-slf4j" % slf4jV,
         "com.carrotsearch" % "java-sizeof" % "0.0.5",
 
-        //It's needed by flinkProcessManager which has disabled includingScala
+        //It's needed by flinkDeploymentManager which has disabled includingScala
         "org.scala-lang" % "scala-compiler" % scalaVersion.value,
         "org.scala-lang" % "scala-reflect" % scalaVersion.value,
 
@@ -1057,7 +1057,7 @@ lazy val ui = (project in file("ui/server"))
     //TODO: this is unfortunatelly needed to run without too much hassle in Intellij...
     //provided dependency of kafka is workaround for Idea, which is not able to handle test scope on module dependency
     //otherwise it is (wrongly) added to classpath when running UI from Idea
-    flinkProcessManager % "provided" ,
+    flinkDeploymentManager % "provided" ,
     kafka % "provided",
     engineStandalone % "provided"
   )
@@ -1100,7 +1100,7 @@ lazy val bom = (project in file("bom"))
   ).dependsOn(modules.map(k => k:ClasspathDep[ProjectReference]):_*)
 
 lazy val modules = List[ProjectReference](
-  engineStandalone, standaloneApp, flinkProcessManager, flinkPeriodicProcessManager, standaloneSample, flinkManagementSample, managementJavaSample, generic,
+  engineStandalone, standaloneApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, standaloneSample, flinkManagementSample, managementJavaSample, generic,
   openapi, process, interpreter, benchmarks, kafka, avroFlinkUtil, kafkaFlinkUtil, kafkaTestUtil, util, testUtil, flinkUtil, flinkModelUtil,
   flinkTestUtil, standaloneUtil, standaloneApi, api, security, flinkApi, processReports, httpUtils, queryableState,
   restmodel, listenerApi, ui, sql
@@ -1139,4 +1139,4 @@ lazy val root = (project in file("."))
   )
 
 addCommandAlias("assemblySamples", ";flinkManagementSample/assembly;standaloneSample/assembly;generic/assembly")
-addCommandAlias("assemblyEngines", ";flinkProcessManager/assembly;engineStandalone/assembly")
+addCommandAlias("assemblyDeploymentManagers", ";flinkDeploymentManager/assembly;engineStandalone/assembly")

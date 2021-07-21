@@ -100,7 +100,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     (manager, history)
   }
 
-  def processState(manager: FlinkProcessManager,
+  def processState(manager: FlinkDeploymentManager,
                    deploymentId: ExternalDeploymentId,
                    status: StateStatus,
                    version: Option[ProcessVersion] = Option.empty,

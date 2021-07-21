@@ -7,12 +7,12 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.management.FlinkProcessManager.prepareProgramArgs
+import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
 
 import scala.concurrent.{ExecutionContext, Future}
 
-abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolean, mainClassName: String)
-  extends ProcessManager with LazyLogging {
+abstract class FlinkDeploymentManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolean, mainClassName: String)
+  extends DeploymentManager with LazyLogging {
 
   private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
@@ -118,7 +118,7 @@ abstract class FlinkProcessManager(modelData: ModelData, shouldVerifyBeforeDeplo
   override def processStateDefinitionManager: ProcessStateDefinitionManager = FlinkProcessStateDefinitionManager
 }
 
-object FlinkProcessManager {
+object FlinkDeploymentManager {
 
   def prepareProgramArgs(serializedConfig: String,
                          processVersion: ProcessVersion,

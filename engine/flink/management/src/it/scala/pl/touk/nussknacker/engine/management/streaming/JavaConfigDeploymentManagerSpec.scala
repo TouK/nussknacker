@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
 import scala.concurrent.duration._
 
-class JavaConfigProcessManagerSpec extends FunSuite with Matchers with StreamingDockerTest {
+class JavaConfigDeploymentManagerSpec extends FunSuite with Matchers with StreamingDockerTest {
 
   override protected def classPath: String = s"./engine/flink/management/java_sample/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/managementJavaSample.jar"
 
@@ -26,13 +26,13 @@ class JavaConfigProcessManagerSpec extends FunSuite with Matchers with Streaming
           .emptySink("endSend", "sink")
 
     val marshaled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
-    assert(processManager.deploy(ProcessVersion.empty.copy(processName=ProcessName(process.id)), DeploymentData.empty,
+    assert(deploymentManager.deploy(ProcessVersion.empty.copy(processName=ProcessName(process.id)), DeploymentData.empty,
       GraphProcess(marshaled), None).isReadyWithin(100 seconds))
     Thread.sleep(1000)
-    val jobStatus = processManager.findJobStatus(ProcessName(process.id)).futureValue
+    val jobStatus = deploymentManager.findJobStatus(ProcessName(process.id)).futureValue
     jobStatus.map(_.status.name) shouldBe Some(FlinkStateStatus.Running.name)
     jobStatus.map(_.status.isRunning) shouldBe Some(true)
 
-    assert(processManager.cancel(ProcessName(process.id), user = userToAct).isReadyWithin(10 seconds))
+    assert(deploymentManager.cancel(ProcessName(process.id), user = userToAct).isReadyWithin(10 seconds))
   }
 }

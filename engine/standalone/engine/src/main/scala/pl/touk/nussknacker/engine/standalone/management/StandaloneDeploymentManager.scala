@@ -37,12 +37,12 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.Using
 
-object StandaloneProcessManager {
-  def apply(modelData: ModelData, config: Config) : StandaloneProcessManager = new StandaloneProcessManager(modelData, StandaloneProcessClient(config))
+object StandaloneDeploymentManager {
+  def apply(modelData: ModelData, config: Config) : StandaloneDeploymentManager = new StandaloneDeploymentManager(modelData, StandaloneProcessClient(config))
 }
 
-class StandaloneProcessManager(modelData: ModelData, client: StandaloneProcessClient)
-  extends ProcessManager with LazyLogging {
+class StandaloneDeploymentManager(modelData: ModelData, client: StandaloneProcessClient)
+  extends DeploymentManager with LazyLogging {
 
   private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
@@ -210,10 +210,10 @@ object TestUtils {
 
 }
 
-class StandaloneProcessManagerProvider extends ProcessManagerProvider {
+class StandaloneDeploymentManagerProvider extends DeploymentManagerProvider {
 
-  override def createProcessManager(modelData: ModelData, config: Config): ProcessManager =
-    StandaloneProcessManager(modelData, config)
+  override def createDeploymentManager(modelData: ModelData, config: Config): DeploymentManager =
+    StandaloneDeploymentManager(modelData, config)
 
   override def createQueryableClient(config: Config): Option[QueryableClient] = None
 
@@ -224,7 +224,7 @@ class StandaloneProcessManagerProvider extends ProcessManagerProvider {
   override def supportsSignals: Boolean = false
 }
 
-object StandaloneProcessManagerProvider {
+object StandaloneDeploymentManagerProvider {
 
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._

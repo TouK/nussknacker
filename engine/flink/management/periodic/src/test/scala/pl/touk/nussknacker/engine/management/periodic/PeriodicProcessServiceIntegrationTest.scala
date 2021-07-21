@@ -39,12 +39,12 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
 
   class Fixture {
     val hsqlRepo: HsqlProcessRepository = HsqlProcessRepository.prepare
-    val delegateProcessManagerStub = new ProcessManagerStub
+    val delegateDeploymentManagerStub = new DeploymentManagerStub
     val jarManagerStub = new JarManagerStub
     val events = new ArrayBuffer[PeriodicProcessEvent]()
     var failListener = false
     def periodicProcessService(currentTime: Instant) = new PeriodicProcessService(
-      delegateProcessManager = delegateProcessManagerStub,
+      delegateDeploymentManager = delegateDeploymentManagerStub,
       jarManager = jarManagerStub,
       scheduledProcessesRepository = hsqlRepo.forClock(fixedClock(currentTime)),
       new PeriodicProcessListener {
@@ -155,12 +155,12 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     toDeploy should have length 2
 
     service.deploy(toDeploy.head)
-    f.delegateProcessManagerStub.setStateStatus(RunningStateStatus("running"))
+    f.delegateDeploymentManagerStub.setStateStatus(RunningStateStatus("running"))
 
     val toDeployAfterDeploy = service.findToBeDeployed.futureValue
     toDeployAfterDeploy should have length 0
 
-    f.delegateProcessManagerStub.setStateStatus(FinishedStateStatus("finished"))
+    f.delegateDeploymentManagerStub.setStateStatus(FinishedStateStatus("finished"))
     service.handleFinished.futureValue
 
     val toDeployAfterFinish = service.findToBeDeployed.futureValue
@@ -192,7 +192,7 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     val toDeploy = service.findToBeDeployed.futureValue
     toDeploy should have length 1
     service.deploy(toDeploy.head).futureValue
-    f.delegateProcessManagerStub.setStateStatus(FinishedStateStatus("running"))
+    f.delegateDeploymentManagerStub.setStateStatus(FinishedStateStatus("running"))
 
     tryWithFailedListener {
       () => service.deactivate(processName)

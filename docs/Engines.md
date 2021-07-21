@@ -1,11 +1,11 @@
 Engines
 =======
 Nussknacker was created as GUI for Flink. However, it's also possible to use it to connect to other runtimes. 
-```ProcessManager``` and ```ProcessManagerProvider``` interfaces were created to facilitate this. 
+```DeploymentManager``` and ```DeploymentManagerProvider``` interfaces were created to facilitate this. 
 In particular, we provide experimental standalone engine, which allows using Nussknacker as method of creating REST APIs
 
 To create/customize Nussknacker engine you have to:
-- Implement ```ProcessManagerProvider``` interface and register it with ServiceLoader mechanism. 
+- Implement ```DeploymentManagerProvider``` interface and register it with ServiceLoader mechanism. 
     Each provider should have unique ```name```.
 - Put implementation with all needed libraries on Nussknacker classpath. 
 - Configure appropriate model to use your process manager.

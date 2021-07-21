@@ -15,7 +15,7 @@ import java.time.{Clock, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
-class PeriodicProcessService(delegateProcessManager: ProcessManager,
+class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
                              jarManager: JarManager,
                              scheduledProcessesRepository: PeriodicProcessesRepository,
                              periodicProcessListener: PeriodicProcessListener,
@@ -91,7 +91,7 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
 
   //Currently we don't allow simultaneous runs of one scenario - only sequential, so if other schedule kicks in, it'll have to wait
   private def checkIfNotRunning(toDeploy: PeriodicProcessDeployment): Future[Option[PeriodicProcessDeployment]] = {
-    delegateProcessManager.findJobStatus(toDeploy.periodicProcess.processVersion.processName).map {
+    delegateDeploymentManager.findJobStatus(toDeploy.periodicProcess.processVersion.processName).map {
       case Some(state) if state.isDeployed =>
         logger.debug(s"Deferring run of ${toDeploy.display} as scenario is currently running")
         None
@@ -102,7 +102,7 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
   def handleFinished: Future[Unit] = {
 
     def handleSingleProcess(deployedProcess: PeriodicProcessDeployment): Future[Unit] = {
-      delegateProcessManager.findJobStatus(deployedProcess.periodicProcess.processVersion.processName).flatMap { state =>
+      delegateDeploymentManager.findJobStatus(deployedProcess.periodicProcess.processVersion.processName).flatMap { state =>
         handleFinishedAction(deployedProcess, state)
           .flatMap { needsReschedule =>
             if (needsReschedule) reschedule(deployedProcess, state) else scheduledProcessesRepository.monad.pure(()).emptyCallback
@@ -170,7 +170,7 @@ class PeriodicProcessService(delegateProcessManager: ProcessManager,
   }
 
   def deactivate(processName: ProcessName): Future[Unit] = for {
-    status <- delegateProcessManager.findJobStatus(processName)
+    status <- delegateDeploymentManager.findJobStatus(processName)
     maybePeriodicDeployment <- getLatestDeployment(processName)
     actionResult <- maybePeriodicDeployment match {
       case Some(periodicDeployment) => handleFinishedAction(periodicDeployment, status)

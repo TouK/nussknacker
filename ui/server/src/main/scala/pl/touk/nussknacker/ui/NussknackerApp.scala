@@ -80,7 +80,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val processCategoryService = new ConfigProcessCategoryService(config)
 
-    val managers = typeToConfig.mapValues(_.processManager)
+    val managers = typeToConfig.mapValues(_.deploymentManager)
 
     val subprocessRepository = new DbSubprocessRepository(dbConfig, system.dispatcher)
     val subprocessResolver = new SubprocessResolver(subprocessRepository)

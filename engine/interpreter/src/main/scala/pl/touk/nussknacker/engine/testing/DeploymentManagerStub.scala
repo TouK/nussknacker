@@ -3,14 +3,14 @@ package pl.touk.nussknacker.engine.testing
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData, TypeSpecificData}
-import pl.touk.nussknacker.engine.api.deployment.{CustomAction, CustomActionError, CustomActionNotImplemented, CustomActionRequest, CustomActionResult, DeploymentData, ExternalDeploymentId, ProcessDeploymentData, ProcessManager, ProcessState, ProcessStateDefinitionManager, SavepointResult, TestProcess, User}
+import pl.touk.nussknacker.engine.api.deployment.{CustomAction, CustomActionError, CustomActionNotImplemented, CustomActionRequest, CustomActionResult, DeploymentData, ExternalDeploymentId, ProcessDeploymentData, DeploymentManager, ProcessState, ProcessStateDefinitionManager, SavepointResult, TestProcess, User}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.{ModelData, ProcessManagerProvider}
+import pl.touk.nussknacker.engine.{ModelData, DeploymentManagerProvider}
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 
 import scala.concurrent.Future
 
-class ProcessManagerStub extends ProcessManager {
+class DeploymentManagerStub extends DeploymentManager {
 
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] =
@@ -40,9 +40,9 @@ class ProcessManagerStub extends ProcessManager {
 
 //This provider can be used for testing. Override methods to implement more complex behaviour
 //Provider is registered via ServiceLoader, so it can be used e.g. to run simple docker configuration
-class ProcessManagerProviderStub extends ProcessManagerProvider {
+class DeploymentManagerProviderStub extends DeploymentManagerProvider {
 
-  override def createProcessManager(modelData: ModelData, config: Config): ProcessManager = new ProcessManagerStub
+  override def createDeploymentManager(modelData: ModelData, config: Config): DeploymentManager = new DeploymentManagerStub
 
   override def createQueryableClient(config: Config): Option[QueryableClient] = None
 

@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.engine.{ProcessManagerProvider, ProcessingTypeConfig, ProcessingTypeData}
+import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ProcessingTypeConfig, ProcessingTypeData}
 
 object ProcessingTypeDataReader extends LazyLogging {
 
@@ -13,7 +13,7 @@ object ProcessingTypeDataReader extends LazyLogging {
     val valueMap = types.map {
       case (name, typeConfig) =>
         logger.debug(s"Creating scenario manager: $name with config: $typeConfig")
-        val managerProvider = ScalaServiceLoader.loadNamed[ProcessManagerProvider](typeConfig.engineType)
+        val managerProvider = ScalaServiceLoader.loadNamed[DeploymentManagerProvider](typeConfig.engineType)
         name -> ProcessingTypeData.createProcessingTypeData(managerProvider, typeConfig)
     }
     new MapBasedProcessingTypeDataProvider[ProcessingTypeData](valueMap)

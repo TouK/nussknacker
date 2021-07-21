@@ -8,7 +8,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.instances.future._
 import cats.data.Validated
 import cats.syntax.either._
-import pl.touk.nussknacker.engine.api.deployment.{ProcessManager, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessState}
 import pl.touk.nussknacker.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -330,13 +330,13 @@ class ProcessesResources(
   //This is temporary function to enriching process state data
   //TODO: Remove it when we will support cache for state
   private def enrichDetailsWithProcessState[PS: ProcessShapeFetchStrategy](process: BaseProcessDetails[PS]): BaseProcessDetails[PS] =
-    process.copy(state = processManager(process.processingType).map(m => ProcessStatus.createState(
+    process.copy(state = deploymentManager(process.processingType).map(m => ProcessStatus.createState(
       m.processStateDefinitionManager.mapActionToStatus(process.lastAction.map(_.action)),
       m.processStateDefinitionManager
     )))
 
-  private def processManager(processingType: ProcessingType): Option[ProcessManager] =
-    typeToConfig.forType(processingType).map(_.processManager)
+  private def deploymentManager(processingType: ProcessingType): Option[DeploymentManager] =
+    typeToConfig.forType(processingType).map(_.deploymentManager)
 
   private def withJson(processId: ProcessId, version: Long, businessView: Boolean)
                       (process: DisplayableProcess => ToResponseMarshallable)(implicit user: LoggedUser): ToResponseMarshallable

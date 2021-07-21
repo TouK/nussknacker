@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, ExternalDeploy
 import pl.touk.nussknacker.engine.management.periodic.model.DeploymentWithJarData
 import pl.touk.nussknacker.engine.management.periodic.{EnrichDeploymentWithJarData, JarManager, PeriodicBatchConfig, model}
 import pl.touk.nussknacker.engine.management.rest.{FlinkClient, HttpFlinkClient}
-import pl.touk.nussknacker.engine.management.{FlinkConfig, FlinkModelJar, FlinkProcessManager, FlinkStreamingRestManager}
+import pl.touk.nussknacker.engine.management.{FlinkConfig, FlinkModelJar, FlinkDeploymentManager, FlinkStreamingRestManager}
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 import sttp.client.{NothingT, SttpBackend}
 
@@ -70,7 +70,7 @@ private[periodic] class FlinkJarManager(flinkClient: FlinkClient,
     val processVersion = deploymentWithJarData.processVersion
     logger.info(s"Deploying scenario ${processVersion.processName.value}, version id: ${processVersion.versionId} and jar: ${deploymentWithJarData.jarFileName}")
     val jarFile = jarsDir.resolve(deploymentWithJarData.jarFileName).toFile
-    val args = FlinkProcessManager.prepareProgramArgs(deploymentWithJarData.modelConfig,
+    val args = FlinkDeploymentManager.prepareProgramArgs(deploymentWithJarData.modelConfig,
       processVersion,
       deploymentData,
       GraphProcess(deploymentWithJarData.processJson))

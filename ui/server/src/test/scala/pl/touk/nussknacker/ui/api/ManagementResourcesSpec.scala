@@ -62,7 +62,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   test("process during deploy can't be deploy again") {
     createDeployedProcess(processName, testCategoryName, isSubprocess = false)
 
-    processManager.withProcessStateStatus(SimpleStateStatus.DuringDeploy) {
+    deploymentManager.withProcessStateStatus(SimpleStateStatus.DuringDeploy) {
       deployProcess(processName.value) ~> check {
         status shouldBe StatusCodes.Conflict
       }
@@ -72,7 +72,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   test("canceled process can't be canceled again") {
     createDeployedCanceledProcess(processName, testCategoryName, isSubprocess = false)
 
-    processManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
+    deploymentManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
       cancelProcess(processName.value) ~> check {
         status shouldBe StatusCodes.Conflict
       }
@@ -83,7 +83,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     val id = createArchivedProcess(processName)
     val processIdWithName = ProcessIdWithName(id, processName)
 
-    processManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
+    deploymentManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
       deployProcess(processName.value) ~> check {
         status shouldBe StatusCodes.Conflict
         responseAs[String] shouldBe ProcessIllegalAction.archived(ProcessActionType.Deploy, processIdWithName).message
@@ -203,7 +203,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   test("return error on deployment failure") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
 
-    processManager.withFailingDeployment {
+    deploymentManager.withFailingDeployment {
       deployProcess(SampleProcess.process.id) ~> check {
         status shouldBe StatusCodes.InternalServerError
       }
@@ -214,7 +214,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     snapshot(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK
-      responseAs[String] shouldBe MockProcessManager.savepointPath
+      responseAs[String] shouldBe MockDeploymentManager.savepointPath
     }
   }
 
@@ -222,7 +222,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     stop(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK
-      responseAs[String] shouldBe MockProcessManager.stopSavepointPath
+      responseAs[String] shouldBe MockDeploymentManager.stopSavepointPath
     }
   }
 
