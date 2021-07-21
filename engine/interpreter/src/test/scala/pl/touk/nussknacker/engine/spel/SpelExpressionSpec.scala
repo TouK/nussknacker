@@ -106,10 +106,11 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     def createTestClazzDefinitionFromClassNames(className: String) =
       TypeInfos.ClazzDefinition(TypedClass(ClassUtils.primitiveToWrapper(ClassUtils.getClass(className)), Nil), Map.empty)
 
-    val stringClazzDefinition = createTestClazzDefinitionFromClassNames("java.lang.String")
-    val longClazzDefinition = createTestClazzDefinitionFromClassNames("java.lang.Long")
-
-    TypeDefinitionSet(Set(stringClazzDefinition, longClazzDefinition))
+    TypeDefinitionSet(Set(
+      createTestClazzDefinitionFromClassNames("java.lang.String"),
+      createTestClazzDefinitionFromClassNames("java.lang.Long"),
+      createTestClazzDefinitionFromClassNames("pl.touk.nussknacker.engine.spel.SampleGlobalObject")
+    ))
   }
 
   test("evaluate static method call on validated class String") {
