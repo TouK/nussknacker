@@ -7,8 +7,7 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.operators.StreamingRuntimeContext
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, KafkaDeserializationSchema}
 import org.apache.flink.streaming.connectors.kafka.config.OffsetCommitMode
-import org.apache.flink.streaming.connectors.kafka.internal.KafkaFetcher
-import org.apache.flink.streaming.connectors.kafka.internals.{AbstractFetcher, KafkaTopicPartition, KafkaTopicPartitionState}
+import org.apache.flink.streaming.connectors.kafka.internals.{AbstractFetcher, KafkaFetcher, KafkaTopicPartition, KafkaTopicPartitionState}
 import org.apache.flink.streaming.runtime.tasks.ProcessingTimeService
 import org.apache.flink.util.SerializedValue
 import org.apache.kafka.clients.consumer.ConsumerConfig
