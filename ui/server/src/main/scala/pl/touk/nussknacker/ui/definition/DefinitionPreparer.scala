@@ -115,7 +115,7 @@ object DefinitionPreparer {
           )
         }.toList)
     } else {
-      NodeGroup("subprocessDefinition", List(
+      NodeGroup("fragmentDefinition", List(
         NodeToAdd("input", "input", SubprocessInputDefinition("", List()), readCategories),
         NodeToAdd("output", "output", SubprocessOutputDefinition("", "output", List.empty), readCategories)
       ))

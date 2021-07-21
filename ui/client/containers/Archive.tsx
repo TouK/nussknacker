@@ -32,13 +32,13 @@ const ElementsRenderer: RowsRenderer = ({processes}) => processes.map(process =>
 const sortable = ["name", "category", "modifyDate", "createdAt", "createdBy", "subprocess", "actionDate", "actionUser"]
 const filterable: Filterable = ["name", "processCategory", "createdBy"]
 const columns = [
-  {key: "name", label: "Process name"},
+  {key: "name", label: "Scenario name"},
   {key: "category", label: "Category"},
   {key: "createdBy", label: "Created by"},
   {key: "createdAt", label: "Created at"},
   {key: "actionDate", label: "Archived at"},
   {key: "actionUser", label: "Archived by"},
-  {key: "subprocess", label: "Subprocess"},
+  {key: "subprocess", label: "Fragment"},
   {key: "view", label: "View"},
 ]
 
