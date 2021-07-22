@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import shapeless.syntax.typeable._
 
 import scala.reflect.ClassTag
-
+                  
 object ProcessDefinitionExtractor {
 
   // Extracts details of types (e.g. field definitions for variable suggestions) of extracted objects definitions (see extractObjectWithMethods).
@@ -53,7 +53,7 @@ object ProcessDefinitionExtractor {
 
     val signalsDefs = ObjectWithMethodDef.forMap(signals, ProcessObjectDefinitionExtractor.signals, nodesConfig).map { case (signalName, signalSender) =>
       val transformers = customStreamTransformersDefs.filter { case (_, transformerDef) =>
-         transformerDef.annotations.flatMap(_.cast[SignalTransformer]).exists(_.signalClass() == signalSender.obj.getClass)
+          transformerDef.annotations.flatMap(_.cast[SignalTransformer]).exists(_.signalClass() == signalSender.obj.getClass)
       }.keySet
       (signalName, (signalSender, transformers))
     }
