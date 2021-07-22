@@ -164,6 +164,7 @@ object SingleSideJoinTransformerSpec {
 
     override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig =
       super.expressionConfig(processObjectDependencies).copy(globalProcessVariables = Map("AGG" -> WithCategories(new AggregateHelper)))
+        .copy(disableMethodExecutionForUnknown = false)
   }
 
   case class OneRecord(key: String, timeHours: Int, value: Int) {

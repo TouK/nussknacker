@@ -99,7 +99,7 @@ class SpelExpressionGenSpec extends FunSuite with ScalaCheckDrivenPropertyChecks
   private def validate(expr: String, a: Any, b: Any): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val parser = SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(Map.empty), enableSpelForceCompile = false, strictTypeChecking = true,
       List.empty, SpelExpressionParser.Standard, strictMethodsChecking = true, staticMethodInvocationsChecking = false, TypeDefinitionSet.empty,
-      disableMethodExecutionForUnknown = false, dynamicPropertyAccessAllowed = false)(ClassExtractionSettings.Default)
+      methodExecutionForUnknownAllowed = true, dynamicPropertyAccessAllowed = false)(ClassExtractionSettings.Default)
     implicit val nodeId: NodeId = NodeId("fooNode")
     val validationContext = ValidationContext.empty
       .withVariable("a", Typed.fromInstance(a), paramName = None).toOption.get
