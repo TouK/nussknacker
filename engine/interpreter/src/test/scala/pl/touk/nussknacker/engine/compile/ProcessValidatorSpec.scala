@@ -107,7 +107,8 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .id("process1")
       .exceptionHandler()
       .source("id1", "sourceWithUnknown")
-      .filter("filter1", "#input.imaginaryMethod")
+      .filter("filter1", "#input.imaginary")
+      .filter("filter2", "#input.imaginaryMethod()")
       .sink("id2", "#input", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinition)
@@ -127,7 +128,8 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .id("process1")
       .exceptionHandler()
       .source("id1", "sourceWithUnknown")
-      .filter("filter1", "#input.imaginaryMethod")
+      .filter("filter1", "#input.imaginary")
+      .filter("filter2", "#input.imaginaryMethod()")
       .sink("id2", "#input", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinitionCopy)

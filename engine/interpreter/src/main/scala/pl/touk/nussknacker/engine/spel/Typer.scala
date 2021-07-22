@@ -306,7 +306,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
   private def extractProperty(e: PropertyOrFieldReference, t: TypingResult): ValidatedNel[ExpressionParseError, TypingResult] = t match {
     case Unknown =>
       if(disableMethodExecutionForUnknown)
-        invalid("Property access on Unknown type is blocked")
+        invalid("Property access on Unknown is not allowed")
       else
         Valid(Unknown)
     case s: SingleTypingResult =>
@@ -323,7 +323,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     context.stack match {
       case _ :: tail =>
         typeChildren(validationContext, node, context.copy(stack = tail)) { typedParams =>
-          TypeMethodReference(reference.getName, context.stack, typedParams, typeDefinitionSet, disableMethodExecutionForUnknown) match {
+          TypeMethodReference(reference.getName, context.stack.head, typedParams, typeDefinitionSet, disableMethodExecutionForUnknown) match {
             case Right(typingResult) => Valid(typingResult)
             case Left(errorMsg) => if(strictMethodsChecking) invalid(errorMsg) else Valid(Unknown)
           }
