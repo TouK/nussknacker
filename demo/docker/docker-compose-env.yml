@@ -129,7 +129,7 @@ services:
 
   grafana:
     container_name: nussknacker_grafana
-    image: grafana/grafana:${GRAFANA_VERSION-6.6.2}
+    image: grafana/grafana:${GRAFANA_VERSION-8.0.6}
     volumes:
       - ./grafana:/etc/grafana/provisioning
       - ./grafana/dashboards:/var/lib/grafana/dashboards
