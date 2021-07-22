@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import shapeless.syntax.typeable._
 
 import scala.reflect.ClassTag
-                  
+
 object ProcessDefinitionExtractor {
 
   // Extracts details of types (e.g. field definitions for variable suggestions) of extracted objects definitions (see extractObjectWithMethods).
