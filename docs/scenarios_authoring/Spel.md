@@ -1,4 +1,5 @@
-# Expressions and types
+# Spell Cheat Sheet
+## Expressions and types
 
 Expressions used in Nussknacker are primarily written using SpEL (Spring Expression language) - simple, yet powerful expression language. 
 SpEL is based on Java ([reference documentation](https://docs.spring.io/spring-framework/docs/current/reference/html/core.html#expressions)), but 
@@ -137,7 +138,7 @@ There are a few notable exceptions:
 | `true AND false` | false	| boolean |
 | `true && false` | false	| boolean |
 | `true OR false` | true	| boolean |
-| `true OR false` | true	| boolean |
+| `true || false` | true	| boolean |
 | `2 > 1 ? 'a' : 'b'` |	"a"	| String |
 | `2 < 1 ? 'a' : 'b'` |	"b"	| String |
 | `#nonNullVar == null ? 'Unkown' : 'Success'` |	"Success" | String |
