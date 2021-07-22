@@ -2,6 +2,7 @@ import marshmallow as ma
 from flask import Flask
 from flask.views import MethodView
 from flask_smorest import Api, Blueprint
+import random
 
 class Customer:
     def __init__(self, id, name, category):
@@ -36,12 +37,24 @@ blp = Blueprint(
 class CustomerById(MethodView):
 
     @blp.response(200, CustomerSchema)
+    @blp.alt_response(404, 'NotFoundErrorResponse')
+    @blp.alt_response(500, 'SomethingIsWrong')
     @blp.doc(operationId='getCustomer')
     def get(self, customer_id):
-        if customer_id == 10:
-            return Customer(customer_id, "John Doe", "SILVER")
+        #Well, python is not very reliable language :P
+        if random.randrange(10) == 0:
+            return "Unexpected failure!", 500
+        idstr = str(customer_id)
+        customers = {
+            "1": Customer(customer_id, "John Doe", "STANDARD"),
+            "2": Customer(customer_id, "Robert Wright", "GOLD"),
+            "3": Customer(customer_id, "Юрий Шевчук", "PLATINUM"),
+            "4": Customer(customer_id, "Иосиф Кобзон", "STANDARD")
+        }
+        if idstr in customers:
+            return customers[idstr]
         else:
-            return Customer(customer_id, "Robert Wright", "GOLD")
+            return "Not found", 404
 
 api.register_blueprint(blp)
 

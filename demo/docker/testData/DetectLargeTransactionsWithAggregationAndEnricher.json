@@ -14,11 +14,11 @@
       "groups" : [
       ],
       "properties" : {
-
+        
       }
     },
     "subprocessVersions" : {
-
+      
     }
   },
   "exceptionHandlerRef" : {
@@ -71,64 +71,162 @@
             "additionalFields" : {
               "description" : null,
               "layoutData" : {
-                "x" : 0,
+                "x" : 360,
                 "y" : 360
               }
             },
             "type" : "Filter"
           },
           {
-            "id" : "send for audit",
-            "ref" : {
-              "typ" : "kafka-registry-typed-json-raw",
+            "id" : "customer data",
+            "service" : {
+              "id" : "getCustomer",
               "parameters" : [
                 {
-                  "name" : "Topic",
+                  "name" : "customer_id",
                   "expression" : {
                     "language" : "spel",
-                    "expression" : "'processedEvents'"
-                  }
-                },
-                {
-                  "name" : "Schema version",
-                  "expression" : {
-                    "language" : "spel",
-                    "expression" : "'latest'"
-                  }
-                },
-                {
-                  "name" : "Value validation mode",
-                  "expression" : {
-                    "language" : "spel",
-                    "expression" : "'strict'"
-                  }
-                },
-                {
-                  "name" : "Key",
-                  "expression" : {
-                    "language" : "spel",
-                    "expression" : ""
-                  }
-                },
-                {
-                  "name" : "Value",
-                  "expression" : {
-                    "language" : "spel",
-                    "expression" : "#input"
+                    "expression" : "#input.clientId"
                   }
                 }
               ]
             },
-            "endResult" : null,
-            "isDisabled" : null,
+            "output" : "customerData",
             "additionalFields" : {
               "description" : null,
               "layoutData" : {
-                "x" : 0,
+                "x" : 360,
                 "y" : 540
               }
             },
-            "type" : "Sink"
+            "type" : "Enricher"
+          },
+          {
+            "defaultNext" : [
+              {
+                "id" : "send for audit",
+                "ref" : {
+                  "typ" : "kafka-registry-typed-json-raw",
+                  "parameters" : [
+                    {
+                      "name" : "Topic",
+                      "expression" : {
+                        "language" : "spel",
+                        "expression" : "'processedEvents'"
+                      }
+                    },
+                    {
+                      "name" : "Schema version",
+                      "expression" : {
+                        "language" : "spel",
+                        "expression" : "'latest'"
+                      }
+                    },
+                    {
+                      "name" : "Value validation mode",
+                      "expression" : {
+                        "language" : "spel",
+                        "expression" : "'strict'"
+                      }
+                    },
+                    {
+                      "name" : "Key",
+                      "expression" : {
+                        "language" : "spel",
+                        "expression" : ""
+                      }
+                    },
+                    {
+                      "name" : "Value",
+                      "expression" : {
+                        "language" : "spel",
+                        "expression" : "#input"
+                      }
+                    }
+                  ]
+                },
+                "endResult" : null,
+                "isDisabled" : null,
+                "additionalFields" : {
+                  "description" : null,
+                  "layoutData" : {
+                    "x" : 180,
+                    "y" : 900
+                  }
+                },
+                "type" : "Sink"
+              }
+            ],
+            "nexts" : [
+              {
+                "expression" : {
+                  "language" : "spel",
+                  "expression" : "#category == \"STANDARD\""
+                },
+                "nodes" : [
+                  {
+                    "id" : "alert large transaction",
+                    "ref" : {
+                      "typ" : "kafka-registry-typed-json",
+                      "parameters" : [
+                        {
+                          "name" : "Topic",
+                          "expression" : {
+                            "language" : "spel",
+                            "expression" : "'alerts'"
+                          }
+                        },
+                        {
+                          "name" : "Schema version",
+                          "expression" : {
+                            "language" : "spel",
+                            "expression" : "'latest'"
+                          }
+                        },
+                        {
+                          "name" : "Key",
+                          "expression" : {
+                            "language" : "spel",
+                            "expression" : ""
+                          }
+                        },
+                        {
+                          "name" : "message",
+                          "expression" : {
+                            "language" : "spel",
+                            "expression" : "'Client: ' + #input.clientId + ' has exceeded limit for single transaction, value: ' + #input.amount"
+                          }
+                        }
+                      ]
+                    },
+                    "endResult" : null,
+                    "isDisabled" : null,
+                    "additionalFields" : {
+                      "description" : null,
+                      "layoutData" : {
+                        "x" : 540,
+                        "y" : 900
+                      }
+                    },
+                    "type" : "Sink"
+                  }
+                ]
+              }
+            ],
+            "id" : "category",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "#customerData.category"
+            },
+            "exprVal" : "category",
+            "additionalFields" : {
+              "description" : null,
+              "layoutData" : {
+                "x" : 360,
+                "y" : 720
+              }
+            },
+            "type" : "Switch"
           }
         ],
         [
@@ -176,7 +274,7 @@
             "additionalFields" : {
               "description" : null,
               "layoutData" : {
-                "x" : 360,
+                "x" : 0,
                 "y" : 360
               }
             },
@@ -194,7 +292,7 @@
             "additionalFields" : {
               "description" : null,
               "layoutData" : {
-                "x" : 360,
+                "x" : 0,
                 "y" : 540
               }
             },
@@ -240,8 +338,8 @@
             "additionalFields" : {
               "description" : null,
               "layoutData" : {
-                "x" : 360,
-                "y" : 721
+                "x" : 0,
+                "y" : 720
               }
             },
             "type" : "Sink"
