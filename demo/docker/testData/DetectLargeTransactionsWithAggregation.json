@@ -27,7 +27,7 @@
   },
   "nodes" : [
     {
-      "id" : "kafka-registry-typed-json",
+      "id" : "bank-transactions",
       "ref" : {
         "typ" : "kafka-registry-typed-json",
         "parameters" : [
