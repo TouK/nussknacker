@@ -20,7 +20,6 @@ class TypeMethodReference(methodName: String, invocationTarget: TypingResult, ca
         typeFromClazzDefinitions(extractClazzDefinitions(nestedTypes))
       case Unknown =>
         if(disableMethodExecutionForUnknown) Left("Method invocation on Unknown is not allowed") else Right(Unknown)
-      case _ => Right(Unknown)
     }
 
   private def extractClazzDefinitions(typedClasses: Set[SingleTypingResult])(implicit settings: ClassExtractionSettings): List[ClazzDefinition] =

@@ -321,9 +321,9 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
   private def extractMethodReference(reference: MethodReference, validationContext: ValidationContext, node: SpelNode, context: TypingContext, typeDefinitionSet: TypeDefinitionSet) = {
     context.stack match {
-      case _ :: tail =>
-        typeChildren(validationContext, node, context.copy(stack = tail)) { typedParams =>
-          TypeMethodReference(reference.getName, context.stack.head, typedParams, typeDefinitionSet, disableMethodExecutionForUnknown) match {
+      case head :: tail =>
+      typeChildren(validationContext, node, context.copy(stack = tail)) { typedParams =>
+          TypeMethodReference(reference.getName, head, typedParams, typeDefinitionSet, disableMethodExecutionForUnknown) match {
             case Right(typingResult) => Valid(typingResult)
             case Left(errorMsg) => if(strictMethodsChecking) invalid(errorMsg) else Valid(Unknown)
           }
