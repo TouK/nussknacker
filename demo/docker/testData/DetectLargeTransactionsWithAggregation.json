@@ -148,7 +148,7 @@
                 "name" : "aggregator",
                 "expression" : {
                   "language" : "spel",
-                  "expression" : "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).SUM"
+                  "expression" : "#AGG.sum"
                 }
               },
               {
