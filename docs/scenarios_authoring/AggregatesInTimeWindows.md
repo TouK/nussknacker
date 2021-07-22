@@ -63,11 +63,13 @@ Let’s map the above statement on the parameters of the Nussknacker Aggregate c
 
 **output** - name of the variable which will hold the result of the aggregator.
 
-**keyBy** - equivalent of the GROUP BY in SQL; a result of the aggregator will be computed for each distinct keyBy value found by Nussknacker in the time window. Whenever an event with aggregate is emitted, the `#key` variable will be available containing value of this field.
+**groupBy** - equivalent of the GROUP BY in SQL; a result of the aggregator will be computed for each distinct groupBy value found by Nussknacker in the time window. Whenever an event with aggregate is emitted, the `#key` variable will be available containing value of this field. 
 
-**aggregateBy** - this is an input to the aggregator; for each event  with the same keyBy value which qualiffies to the time window, the aggregateBy expression will be evaluated, fed to the aggregator and the aggregate will be updated.
+> Historically Nussknacker used term *keyBy* instead of *groupBy*. Some of the screen shots used in the documentation may still use label *keyBy*.
 
-| keyBy | aggregateBy  | aggregator | result*  |
+**aggregateBy** - this is an input to the aggregator; for each event  with the same groupBy value which qualiffies to the time window, the aggregateBy expression will be evaluated, fed to the aggregator and the aggregate will be updated.
+
+| groupBy | aggregateBy  | aggregator | result*  |
 |-------|--------------|------------|----------------------------------------------------------|
 |`#input.subscriberId` |`#input.value`| Sum | <p>`6000.0` for subscriberId = 1 </p> `200.0` for subscriberId = 2 |
 |`#input.subscriberId` |`1L`| Sum | <p>`3` for subscriberId = 1 </p> `1` for subscriberId = 2 |
