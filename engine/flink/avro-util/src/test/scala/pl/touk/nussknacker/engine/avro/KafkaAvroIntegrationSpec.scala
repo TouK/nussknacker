@@ -250,7 +250,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
     pushMessage(PaymentV2.recordWithData, topicConfig.input)
     val env = flinkMiniCluster.createExecutionEnvironment()
     registrar.register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty, DeploymentData.empty)
-    val executionResult = env.executeAndWaitForStart(process.id)
+    val executionResult = env.execute(process.id)
     env.waitForJobState(executionResult.getJobID, process.id, ExecutionState.FAILED, ExecutionState.CANCELED)()
   }
 
