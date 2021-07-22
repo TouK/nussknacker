@@ -11,8 +11,8 @@ This document is intended for those who will use Nussknacker Designer to configu
 
 ## Events 
 Nussknacker nodes process events; once the node finishes processing of the event it hands it over to the next node in the flow for processing. Filter, Split, Switch nodes behave exactly like this. 
-Typically events processed by Nussknacker come from Kafka topics;  Knussknacker source components are used to read events from Kafka topic and inject them into Knussknacker scenarios. 
-There are cases though when a node can produce a new event, a Tumbling-window component being a good example. 
+Typically events processed by Nussknacker come from Kafka topics;  Nussknacker source components are used to read events from Kafka topic and inject them into Nussknacker scenarios. 
+There are cases though when a node can produce a new event, a Tumbling-window or and Session-window component being good examples. 
 
 ## Notion of time
 
@@ -31,7 +31,7 @@ Kafka records produced by Nussknacker sinks have timestamp of event (in the sens
 * We use bound of order watermark generator, with configurable amount of lateness (see [configuration] for details) 
 
 ### Aggregations, window processing 
-A Tumbling-window is an interesting case, because when the aggregate is emitted, it is emitted as a new event. Its timestamp is equal to the time of the timer that generated it, not system time of the moment when it happened. See [Aggregates in Time Windows](AggregatesInTimeWindows#tumbling-window) or more details.
+If a new event triggered by e.g. tumbling time window, its timestamp is equal to the time of the timer that generated it, not system time of the moment when it happened. See [Aggregates in Time Windows](AggregatesInTimeWindows#tumbling-window) or more details.
 
 
 ## SpEL
@@ -72,59 +72,11 @@ In some contexts data type conversions may be necessary - conversion functions a
 
 ## Variables
 
-Nussknacer uses variables as containers for data; they can be referred to in SpEL expressions. Variables have to be declared; a `variable` or `mapVariable` component is used for this. Once declared, a hash sign `"#"` is used to refer to a variable.
+Nussknacer uses variables as containers for data; they can be referred to in SpEL expressions. Variables have to be declared; a `variable` or `mapVariable` component are used for this. Once declared, a hash sign `"#"` is used to refer to a variable.
 
-There are three predefined variables: `#input`, `#inputMeta` and `#meta`. If the event which arrived to some node originally came from the Kafka topic, the data carried in the event record are accessible in the `#input` variable. The `#inputMeta `and `#meta` variables are discussed further down in this document, 
+There are three predefined variables: `#input`, `#inputMeta` and `#meta`. 
 
-
-### Variable component
-
-A Variable component is used to declare a new variable; in the simplest form a variable declaration looks like in the example  below. As the event was read from the Kafka topic, the `#input` variable stores its content and  its value is assigned to a newly declared `myFirstVariable` variable. 
-
-
-![what is this about](img/variableDeclarationInScenario.png "Scenario with variable declaration")
-
-
-As you can see in the `variable` configuration form below, Nussknacker inferred the data type of the `#input` variable from the information already available to Nussknacker. 
-
-![alt_text](img/variableDeclarationForm.png "Variable declaration form")
-
-
-In the next example `#input` variable is used to create an expression returning a boolean value. If the input Kafka topic contains json objects and they contain `operation` field, the value of this field can be obtained in the following way: 
-
-
-`#input.operation` 
-
-Note that internally Nussknacker converts JSON’s object into SpEL’s map. 
-
-
-
-![alt_text](img/simpleExpression.png "image_tooltip")
-
-
-
-### mapVariable 
-
-The specialized `mapVariable` component can be used to declare a map variable (object in JSON)
-
-
-![alt_text](img/mapVariableMapForm.png "mapVariable form")
-
-
-The same can be achieved using a plain `Variable` component, just make sure to write a valid SpEL expression. 
-
-
-![alt_text](img/mapVariableBasicForm.png "mapVariable declaration using a plan Variable component")
-
-
-
-## #inputMeta and #meta variables
-
-#inputMeta and #meta variables are predefined variables which carry meta information about event and the scenario:
-
-**#inputMeta **- carries meta information about the currently processed event. Consult Kafka [documentation](https://kafka.apache.org/24/javadoc/org/apache/kafka/clients/consumer/ConsumerRecord.html) for the exact meaning of those elements. The following meta information elements are available in #inputMeta:
-
-
+If the event which arrived to some node originally came from the Kafka topic, the data carried in the event record are available in the `#input` variable. The metadata associated with this event are available in `#inputMeta` variable. The following meta information fields are available in `#inputMeta`:
 * headers 
 * key
 * leaderEpoch
@@ -133,10 +85,12 @@ The same can be achieved using a plain `Variable` component, just make sure to w
 * timestamp 
 * timestampType 
 * topic. 
+Consult Kafka [documentation](https://kafka.apache.org/24/javadoc/org/apache/kafka/clients/consumer/ConsumerRecord.html) for the exact meaning of those fields. 
 
-**#meta** - carries meta information about the currently executed scenario. The following meta information elements are available:
+
+The `#meta` variable carries meta information about the currently executed scenario. The following meta information elements are available:
 
 * processName -name of the Nussknacker scenario
 * properties  
 
- 
+Check [Basic Nodes](BasicNodes#Variable-component) page for examples how to use variables. 

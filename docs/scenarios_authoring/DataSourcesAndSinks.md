@@ -13,7 +13,7 @@
 
 ### Concepts
 
-Kafka topics are native streaming data input to Nussknacker and the native output where results of Nussknacker scenarios processing are placed. In Nussknacker terminology input topics are called _sources_, output topics are called _sinks_. This section discusses Kafka based  source and sink components. There are a couple different types of source and sinks components available in Nussknacker, the main difference is in how the information on the data schema is provided to Nussnacker. 
+Kafka topics are native streaming data input to Nussknacker and the native output where results of Nussknacker scenarios processing are placed. In Nussknacker terminology input topics are called _sources_, output topics are called _sinks_. This section discusses Kafka based  source and sink components. There are a couple different types of source and sinks components available in Nussknacker, the main difference is in how the information on the data schema is provided to Nussknacker. 
 
 It is not uncommon that  programs that write events to Kafka topics  (“producers”) and programs that read events from Kafka topics (“consumers”) are implemented by different people. If consumers are to understand what producers put into the topic, in one way or another  they need to agree between themselves the data schema - the format and data types of the data transported over Kafka topics. Depending on the method used to share data schema definition, Nussknacker will or will not be able to determine what data is in the event and help (or not) with field names and data type related validation of SpEL expressions. Each method of sharing data schema definitions has related sink and source components in Nussknacker.
 
@@ -133,7 +133,7 @@ The disadvantage of using Kafka-typed-json as a data source is that whenever the
 
 ### No type information + JSON serialization
 
-There is only one component in this group -  Kafka-json sourVRce. The content of the JSON formatted Kafka event does not need to be declared in Nussknacker Designer. The values of the JSON object can still be accessed using the `#input.field-name `notation, however no hints will be available and no validations related to field names and their data types will be performed. 
+There is only one component in this group -  Kafka-json source. The content of the JSON formatted Kafka event does not need to be declared in Nussknacker Designer. The values of the JSON object can still be accessed using the `#input.field-name `notation, however no hints will be available and no validations related to field names and their data types will be performed. 
 
 
 ### Summary and comparison

@@ -1,10 +1,49 @@
 # Basic Nodes
 
-Node works with a data stream. It can produce, fetch, send, collect data or organize data flow. Each node has at least two parameters: `Name` and `Description`. Name has to be unique in a scenario. Description is a narrative of your choice.  
+Nodes work with a data stream. They can produce, fetch, send, collect data or organize data flow. Each node has at least two parameters: `Name` and `Description`. Name has to be unique in a scenario. Description is a narrative of your choice.  
 
 Most of the nodes, with source and sink nodes being notable exceptions, have input and at least one output flow.
 
 Sinks and filters can be disabled by selecting `Disable` checkbox. 
+
+
+## Variable component
+
+A Variable component is used to declare a new variable; in the simplest form a variable declaration looks like in the example  below. As the event was read from the Kafka topic, the `#input` variable stores its content and  its value is assigned to a newly declared `myFirstVariable` variable. 
+
+
+![what is this about](img/variableDeclarationInScenario.png "Scenario with variable declaration")
+
+
+As you can see in the `variable` configuration form below, Nussknacker inferred the data type of the `#input` variable from the information already available to Nussknacker. 
+
+![alt_text](img/variableDeclarationForm.png "Variable declaration form")
+
+
+In the next example `#input` variable is used to create an expression returning a boolean value. If the input Kafka topic contains json objects and they contain `operation` field, the value of this field can be obtained in the following way: 
+
+
+`#input.operation` 
+
+Note that internally Nussknacker converts JSON’s object into SpEL’s map. 
+
+
+
+![alt_text](img/simpleExpression.png "image_tooltip")
+
+
+## mapVariable 
+
+The specialized `mapVariable` component can be used to declare a map variable (object in JSON)
+
+
+![alt_text](img/mapVariableMapForm.png "mapVariable form")
+
+
+The same can be achieved using a plain `Variable` component, just make sure to write a valid SpEL expression. 
+
+
+![alt_text](img/mapVariableBasicForm.png "mapVariable declaration using a plan Variable component")
 
 ## Filter 
    
@@ -59,8 +98,7 @@ Union merges multiple branches into one stream. For each incoming branch two par
 - key - it's value should be of type `String`, definex how elements from branches will be matched together
 - value - this is the output value which will be put the field with name the same as branch id
 
-Union node defines new stream which is union of both branches. In this new stream there is only one variable, it's name
-is defined by 'Output' parameter, it's value is: 
+Union node defines new stream which is union of all branches. In this new stream there is only one variable; it's name is defined by 'Output' parameter; it's value is: 
 ```$json
 {
   "key": `value of key expression for given event`,
