@@ -203,39 +203,21 @@
           {
             "id" : "alert",
             "ref" : {
-              "typ" : "kafka-registry-typed-json",
+              "typ" : "kafka-json",
               "parameters" : [
                 {
-                  "name" : "Topic",
+                  "name" : "topic",
                   "expression" : {
                     "language" : "spel",
                     "expression" : "'alerts'"
                   }
-                },
-                {
-                  "name" : "Schema version",
-                  "expression" : {
-                    "language" : "spel",
-                    "expression" : "'latest'"
-                  }
-                },
-                {
-                  "name" : "Key",
-                  "expression" : {
-                    "language" : "spel",
-                    "expression" : ""
-                  }
-                },
-                {
-                  "name" : "message",
-                  "expression" : {
-                    "language" : "spel",
-                    "expression" : "'Client: ' + #input.clientId + ' has exceeded limit, total amount: ' + #aggregated"
-                  }
                 }
               ]
             },
-            "endResult" : null,
+            "endResult" : {
+              "language" : "spel",
+              "expression" : "'Client: ' + #input.clientId + ' has exceeded limit, total amount: ' + #aggregated"
+            },
             "isDisabled" : null,
             "additionalFields" : {
               "description" : null,
