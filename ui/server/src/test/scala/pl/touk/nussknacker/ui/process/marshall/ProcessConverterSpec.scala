@@ -32,7 +32,6 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataPr
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.validation
 
 class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenPropertyChecks {
 
