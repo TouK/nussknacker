@@ -105,7 +105,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   private def typeDefinitionSetWithDefaultClasses: TypeDefinitionSet = {
 
     def createTestClazzDefinitionFromClassNames(className: String) =
-      TypeInfos.ClazzDefinition(TypedClass(ClassUtils.primitiveToWrapper(ClassUtils.getClass(className)), Nil), Map.empty)
+      TypeInfos.ClazzDefinition(TypedClass(ClassUtils.primitiveToWrapper(ClassUtils.getClass(className)), Nil), Map.empty, Map.empty)
 
     TypeDefinitionSet(Set(
       createTestClazzDefinitionFromClassNames("java.lang.String"),

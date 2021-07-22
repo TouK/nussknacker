@@ -104,7 +104,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
       "scalaList" -> List(MethodInfo(List(), Typed.fromDetailedType[List[String]], None, varArgs = false)),
       "javaMap" -> List(MethodInfo(List(), Typed.fromDetailedType[java.util.Map[String, String]], None, varArgs = false)),
       "toString" -> List(MethodInfo(List(), Typed[String], None, varArgs = false))
-    )))
+    ), Map.empty))
 
   }
 
@@ -115,7 +115,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
       "normalField" -> List(MethodInfo(List(), Typed[String], None, varArgs = false)),
       "normalParam" -> List(MethodInfo(List(), Typed[String], None, varArgs = false)),
       "toString" -> List(MethodInfo(List(), Typed[String], None, varArgs = false))
-    )))
+    ), Map.empty))
   }
 
   test("should skip toString method when HideToString implemented") {

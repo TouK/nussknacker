@@ -17,7 +17,7 @@ object EspTypeUtils {
 
   def clazzDefinition(clazz: Class[_])
                      (implicit settings: ClassExtractionSettings): ClazzDefinition =
-    ClazzDefinition(Typed.typedClass(clazz), extractPublicMethodsAndFields(clazz, staticMethodsAndFields = false))
+    ClazzDefinition(Typed.typedClass(clazz), extractPublicMethodsAndFields(clazz, staticMethodsAndFields = false), extractPublicMethodsAndFields(clazz, staticMethodsAndFields = true))
 
   private def extractPublicMethodsAndFields(clazz: Class[_], staticMethodsAndFields: Boolean)
                                            (implicit settings: ClassExtractionSettings): Map[String, List[MethodInfo]] = {

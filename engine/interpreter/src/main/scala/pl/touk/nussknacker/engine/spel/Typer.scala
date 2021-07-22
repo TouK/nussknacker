@@ -262,7 +262,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
         if (staticMethodInvocationsChecking) {
           typeDefinitionSet.validateTypeReference(e, evaluationContextPreparer.prepareEvaluationContext(Context(""), Map.empty))
-            .map(_ => toResult(Unknown))
+            .map(typedClass => toResult(TypedClass(classOf[Class[_]], List(typedClass))))
         } else {
           valid(Unknown)
         }

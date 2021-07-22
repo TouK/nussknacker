@@ -109,10 +109,6 @@ object ClassExtractionSettings {
     List(
       // We want to hide all technical methods in every class, toString can be useful so we will leave it
       AllMethodNamesPredicate(classOf[DumpCaseClass], Set(ToStringMethod)),
-      // Static members can be unexpected when someone think about real objects
-      ClassMemberPredicate(ClassPredicate { case _ => true }, {
-        case m => Modifier.isStatic(m.getModifiers)
-      }),
       // Arrays are not supported for now
       ClassMemberPredicate(ClassPredicate { case _ => true }, {
         case m: Method => m.getReturnType.isArray
