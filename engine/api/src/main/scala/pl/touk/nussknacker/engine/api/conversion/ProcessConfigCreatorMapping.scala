@@ -42,7 +42,8 @@ object ProcessConfigCreatorMapping {
           optimizeCompilation = jec.isOptimizeCompilation,
           strictTypeChecking = jec.isStrictTypeChecking,
           dictionaries = jec.getDictionaries.asScala.toMap,
-          hideMetaVariable = jec.isHideMetaVariable
+          hideMetaVariable = jec.isHideMetaVariable,
+          disableMethodExecutionForUnknown = jec.isDisableMethodExecutionForUnknown
         )
       }
       override def buildInfo(): Map[String, String] = {

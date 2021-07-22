@@ -49,6 +49,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     Map("sampleEnricher" -> ObjectDefinition(List.empty, Typed[SimpleRecord], List()), "withParamsService" -> ObjectDefinition(List(Parameter[String]("par1")),
       Typed[SimpleRecord], List())),
     Map("source" -> ObjectDefinition(List.empty, Typed[SimpleRecord], List()),
+        "sourceWithUnknown" -> ObjectDefinition(List.empty, Unknown, List()),
         "sourceWithParam" -> ObjectDefinition(List(Parameter[Any]("param")), Typed[SimpleRecord], List()),
         "typedMapSource" -> ObjectDefinition(List(Parameter[TypedObjectDefinition]("type")), Typed[TypedMap], List())
     ),
@@ -93,10 +94,51 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     ObjectDefinition.noParam,
     ExpressionDefinition(
       Map("processHelper" -> ObjectDefinition(List(), Typed(ProcessHelper.getClass), List("cat1"), SingleNodeConfig.zero)),
-      List.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false, strictMethodsChecking = true, staticMethodInvocationsChecking = true
+      List.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, dictionaries = Map.empty,
+      hideMetaVariable = false, strictMethodsChecking = true, staticMethodInvocationsChecking = true, disableMethodExecutionForUnknown = false
     ),
     ClassExtractionSettings.Default
   )
+
+
+  test("enable method execution for Unknown") {
+
+    val correctProcess = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "sourceWithUnknown")
+      .filter("filter1", "#input.imaginary")
+      .filter("filter2", "#input.imaginaryMethod()")
+      .sink("id2", "#input", "sink")
+
+    val compilationResult = validate(correctProcess, baseDefinition)
+
+    compilationResult.result should matchPattern {
+      case Valid(_) =>
+    }
+  }
+
+  test("disable method execution for Unknown") {
+
+    val baseDefinitionCopy = baseDefinition.copy(
+      expressionConfig = baseDefinition.expressionConfig.copy(
+        disableMethodExecutionForUnknown = true))
+
+    val correctProcess = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "sourceWithUnknown")
+      .filter("filter1", "#input.imaginary")
+      .filter("filter2", "#input.imaginaryMethod()")
+      .sink("id2", "#input", "sink")
+
+    val compilationResult = validate(correctProcess, baseDefinitionCopy)
+
+    compilationResult.result should matchPattern {
+      case Invalid(NonEmptyList(ExpressionParseError(_, _, _, _), _)) =>
+    }
+
+  }
 
   test("Validation of Type Reference using accessible class, success scenario") {
 

@@ -29,13 +29,15 @@ public class ExpressionConfig implements Serializable {
 
     private final boolean hideMetaVariable;
 
-    public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<WithCategories<String>> globalImports, List<Class<?>> additionalClasses) {
-        this(globalProcessVariables, globalImports, additionalClasses, new LanguageConfiguration(List$.MODULE$.empty()), true, true, Collections.emptyMap(), false);
+    private final boolean disableMethodExecutionForUnknown;
+
+    public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<WithCategories<String>> globalImports,  List<Class<?>> additionalClasses) {
+        this(globalProcessVariables, globalImports, additionalClasses, new LanguageConfiguration(List$.MODULE$.empty()), true, true, Collections.emptyMap(), false, true);
     }
 
     public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<WithCategories<String>> globalImports,
                             List<Class<?>> additionalClasses, LanguageConfiguration languages, boolean optimizeCompilation, boolean strictTypeChecking,
-                            Map<String, WithCategories<DictDefinition>> dictionaries, boolean hideMetaVariable) {
+                            Map<String, WithCategories<DictDefinition>> dictionaries, boolean hideMetaVariable, boolean disableMethodExecutionForUnknown) {
         this.globalProcessVariables = globalProcessVariables;
         this.globalImports = globalImports;
         this.additionalClasses = additionalClasses;
@@ -44,6 +46,7 @@ public class ExpressionConfig implements Serializable {
         this.strictTypeChecking = strictTypeChecking;
         this.dictionaries = dictionaries;
         this.hideMetaVariable = hideMetaVariable;
+        this.disableMethodExecutionForUnknown = disableMethodExecutionForUnknown;
     }
 
     public Map<String, WithCategories<Object>> getGlobalProcessVariables() {
@@ -78,6 +81,10 @@ public class ExpressionConfig implements Serializable {
         return hideMetaVariable;
     }
 
+    public boolean isDisableMethodExecutionForUnknown() {
+        return disableMethodExecutionForUnknown;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -90,12 +97,14 @@ public class ExpressionConfig implements Serializable {
                 Objects.equals(additionalClasses, that.additionalClasses) &&
                 Objects.equals(languages, that.languages) &&
                 Objects.equals(dictionaries, that.dictionaries) &&
-                Objects.equals(hideMetaVariable, that.hideMetaVariable);
+                Objects.equals(hideMetaVariable, that.hideMetaVariable) &&
+                Objects.equals(disableMethodExecutionForUnknown, that.disableMethodExecutionForUnknown);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(globalProcessVariables, globalImports, additionalClasses, languages, optimizeCompilation, strictTypeChecking, dictionaries, hideMetaVariable);
+        return Objects.hash(globalProcessVariables, globalImports, additionalClasses, languages, optimizeCompilation,
+                strictTypeChecking, dictionaries, hideMetaVariable, disableMethodExecutionForUnknown);
     }
 
 }
