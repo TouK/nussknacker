@@ -15,7 +15,6 @@ import {NkThemeProvider} from "./containers/theme"
 import history from "./history"
 import "./i18n"
 import configureStore from "./store/configureStore"
-import "./stylesheets/notifications.styl"
 
 const {store, persistor} = configureStore()
 const rootContainer = document.createElement(`div`)
