@@ -80,7 +80,7 @@
           {
             "id" : "save to kafka",
             "ref" : {
-              "typ" : "kafka-registry-typed-json",
+              "typ" : "kafka-registry-typed-json-raw",
               "parameters" : [
                 {
                   "name" : "Topic",
@@ -97,6 +97,13 @@
                   }
                 },
                 {
+                  "name" : "Value validation mode",
+                  "expression" : {
+                    "language" : "spel",
+                    "expression" : "'strict'"
+                  }
+                },
+                {
                   "name" : "Key",
                   "expression" : {
                     "language" : "spel",
@@ -104,17 +111,10 @@
                   }
                 },
                 {
-                  "name" : "clientId",
+                  "name" : "Value",
                   "expression" : {
                     "language" : "spel",
-                    "expression" : "#input.clientId"
-                  }
-                },
-                {
-                  "name" : "amount",
-                  "expression" : {
-                    "language" : "spel",
-                    "expression" : "#input.amount"
+                    "expression" : "#input"
                   }
                 }
               ]
@@ -203,27 +203,45 @@
           {
             "id" : "alert",
             "ref" : {
-              "typ" : "kafka-json",
+              "typ" : "kafka-registry-typed-json",
               "parameters" : [
                 {
-                  "name" : "topic",
+                  "name" : "Topic",
                   "expression" : {
                     "language" : "spel",
                     "expression" : "'alerts'"
                   }
+                },
+                {
+                  "name" : "Schema version",
+                  "expression" : {
+                    "language" : "spel",
+                    "expression" : "'latest'"
+                  }
+                },
+                {
+                  "name" : "Key",
+                  "expression" : {
+                    "language" : "spel",
+                    "expression" : ""
+                  }
+                },
+                {
+                  "name" : "message",
+                  "expression" : {
+                    "language" : "spel",
+                    "expression" : "'Client: ' + #input.clientId + ' has exceeded limit, total amount: ' + #aggregated"
+                  }
                 }
               ]
             },
-            "endResult" : {
-              "language" : "spel",
-              "expression" : "'Client: ' + #input.clientId + ' has exceeded limit, total amount: ' + #aggregated"
-            },
+            "endResult" : null,
             "isDisabled" : null,
             "additionalFields" : {
               "description" : null,
               "layoutData" : {
                 "x" : 360,
-                "y" : 720
+                "y" : 721
               }
             },
             "type" : "Sink"
