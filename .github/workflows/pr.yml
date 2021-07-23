@@ -275,7 +275,7 @@ jobs:
         shell: bash
         env:
           NUSSKNACKER_VERSION: ${{ env.NUSSKNACKER_VERSION }}
-        run: cd ./demo/docker && ./testQuickstart.sh
+        run: ./demo/docker/testQuickstart.sh
       - name: Store test results
         if: always()
         uses: actions/upload-artifact@v2
