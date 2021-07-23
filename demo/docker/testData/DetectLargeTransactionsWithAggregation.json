@@ -27,7 +27,7 @@
   },
   "nodes" : [
     {
-      "id" : "kafka-registry-typed-json",
+      "id" : "bank-transactions",
       "ref" : {
         "typ" : "kafka-registry-typed-json",
         "parameters" : [
@@ -80,7 +80,7 @@
           {
             "id" : "save to kafka",
             "ref" : {
-              "typ" : "kafka-registry-typed-json",
+              "typ" : "kafka-registry-typed-json-raw",
               "parameters" : [
                 {
                   "name" : "Topic",
@@ -97,6 +97,13 @@
                   }
                 },
                 {
+                  "name" : "Value validation mode",
+                  "expression" : {
+                    "language" : "spel",
+                    "expression" : "'strict'"
+                  }
+                },
+                {
                   "name" : "Key",
                   "expression" : {
                     "language" : "spel",
@@ -104,17 +111,10 @@
                   }
                 },
                 {
-                  "name" : "clientId",
+                  "name" : "Value",
                   "expression" : {
                     "language" : "spel",
-                    "expression" : "#input.clientId"
-                  }
-                },
-                {
-                  "name" : "amount",
-                  "expression" : {
-                    "language" : "spel",
-                    "expression" : "#input.amount"
+                    "expression" : "#input"
                   }
                 }
               ]
@@ -148,7 +148,7 @@
                 "name" : "aggregator",
                 "expression" : {
                   "language" : "spel",
-                  "expression" : "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateHelper).SUM"
+                  "expression" : "#AGG.sum"
                 }
               },
               {
@@ -169,7 +169,7 @@
                 "name" : "emitWhenEventLeft",
                 "expression" : {
                   "language" : "spel",
-                  "expression" : "true"
+                  "expression" : "false"
                 }
               }
             ],
@@ -241,7 +241,7 @@
               "description" : null,
               "layoutData" : {
                 "x" : 360,
-                "y" : 720
+                "y" : 721
               }
             },
             "type" : "Sink"

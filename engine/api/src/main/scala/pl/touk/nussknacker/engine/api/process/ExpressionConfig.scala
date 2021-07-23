@@ -16,7 +16,8 @@ case class ExpressionConfig(globalProcessVariables: Map[String, WithCategories[A
                             dictionaries: Map[String, WithCategories[DictDefinition]] = Map.empty,
                             hideMetaVariable: Boolean = false,
                             strictMethodsChecking: Boolean = true,
-                            staticMethodInvocationsChecking: Boolean = false
+                            staticMethodInvocationsChecking: Boolean = false,
+                            disableMethodExecutionForUnknown: Boolean = false
                            )
 
 object ExpressionConfig {

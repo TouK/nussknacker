@@ -76,29 +76,30 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   private def parseWithDicts[T: TypeTag](expr: String, context: Context = ctx, dictionaries: Map[String, DictDefinition]): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val validationCtx = ValidationContext(
       context.variables.mapValuesNow(Typed.fromInstance))
-    parse(expr, validationCtx, dictionaries, Standard, strictMethodsChecking = true, staticMethodInvocationsChecking = true)
+    parse(expr, validationCtx, dictionaries, Standard, strictMethodsChecking = true, staticMethodInvocationsChecking = true, disableMethodExecutionForUnknown = false)
   }
 
   private def parseWithoutStrictMethodsChecking[T: TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val validationCtx = ValidationContext(context.variables.mapValuesNow(Typed.fromInstance))
-    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = false, staticMethodInvocationsChecking = true)
+    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = false, staticMethodInvocationsChecking = true, disableMethodExecutionForUnknown = false)
   }
 
   private def parse[T: TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val validationCtx = ValidationContext(
       context.variables.mapValuesNow(Typed.fromInstance))
-    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = true, staticMethodInvocationsChecking = true)
+    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = true, staticMethodInvocationsChecking = true, disableMethodExecutionForUnknown = false)
   }
 
   private def parse[T: TypeTag](expr: String, validationCtx: ValidationContext): ValidatedNel[ExpressionParseError, TypedExpression] = {
-    parse(expr, validationCtx, Map.empty, Standard, strictMethodsChecking = true, staticMethodInvocationsChecking = true)
+    parse(expr, validationCtx, Map.empty, Standard, strictMethodsChecking = true, staticMethodInvocationsChecking = true, disableMethodExecutionForUnknown = false)
   }
 
   private def parse[T: TypeTag](expr: String, validationCtx: ValidationContext, dictionaries: Map[String, DictDefinition],
-                                flavour: Flavour, strictMethodsChecking: Boolean, staticMethodInvocationsChecking: Boolean): ValidatedNel[ExpressionParseError, TypedExpression] = {
+                                flavour: Flavour, strictMethodsChecking: Boolean, staticMethodInvocationsChecking: Boolean, disableMethodExecutionForUnknown: Boolean): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val imports = List(SampleValue.getClass.getPackage.getName)
     SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(dictionaries), enableSpelForceCompile = true,
-      strictTypeChecking = true, imports, flavour, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking = true, typeDefinitionSetWithDefaultClasses)(ClassExtractionSettings.Default).parse(expr, validationCtx, Typed.fromDetailedType[T])
+      strictTypeChecking = true, imports, flavour, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking = true,
+      typeDefinitionSetWithDefaultClasses,  disableMethodExecutionForUnknown = disableMethodExecutionForUnknown)(ClassExtractionSettings.Default).parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 
   private def typeDefinitionSetWithDefaultClasses: TypeDefinitionSet = {
