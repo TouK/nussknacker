@@ -149,7 +149,7 @@
     "@types/color": "^3.0.1",
     "@types/dagre": "^0.7.44",
     "@types/enzyme": "^3.10.9",
-    "@types/jest": "^26.0.23",
+    "@types/jest": "^26.0.24",
     "@types/jquery": "^3.5.5",
     "@types/jsonwebtoken": "^8.5.4",
     "@types/kefir": "^3.8.6",
