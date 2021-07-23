@@ -4,7 +4,7 @@ import {v4 as uuid4} from "uuid"
 import InlinedSvgs from "../../assets/icons/InlinedSvgs"
 import HeaderIcon from "./HeaderIcon"
 import NodeErrorsLinkSection from "./NodeErrorsLinkSection"
-import {useTranslation} from "react-i18next"
+import i18next from "i18next"
 
 export default class Errors extends React.Component {
 
@@ -62,27 +62,26 @@ export default class Errors extends React.Component {
     const invalidEndNodeIds = nodeIds.filter(nodeId => nodeErrors[nodeId].some(error => error.message === "Invalid end of scenario"))
     const otherNodeErrorIds = _.difference(nodeIds, _.concat(looseNodeIds, invalidEndNodeIds))
     const errorsOnTop = this.errorsOnTopPresent(otherNodeErrorIds, propertiesErrors)
-    const {t} = useTranslation()
 
     return (
       <div className={"node-error-tips"}>
         <div className={"node-error-links"}>
           <NodeErrorsLinkSection
             nodeIds={_.concat(otherNodeErrorIds, _.isEmpty(propertiesErrors) ? [] : "properties")}
-            message={t("errors.errorsIn", "Errors in: ")}
+            message={i18next.t("errors.errorsIn", "Errors in: ")}
             showDetails={showDetails}
             currentProcess={currentProcess}
           />
           <NodeErrorsLinkSection
             nodeIds={looseNodeIds}
-            message={t("errors.looseNodes", "Loose nodes: ")}
+            message={i18next.t("errors.looseNodes", "Loose nodes: ")}
             showDetails={showDetails}
             currentProcess={currentProcess}
             className={errorsOnTop ? "error-secondary-container" : null}
           />
           <NodeErrorsLinkSection
             nodeIds={invalidEndNodeIds}
-            message={t("errors.invalidScenarioEnd", "Invalid end of scenario: ")}
+            message={i18next.t("errors.invalidScenarioEnd", "Invalid end of scenario: ")}
             showDetails={showDetails}
             currentProcess={currentProcess}
             className={errorsOnTop ? "error-secondary-container" : null}

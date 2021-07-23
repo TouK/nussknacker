@@ -135,7 +135,7 @@ class HttpService {
 
         return response
       })
-    promise.catch((error) => this.addError(i18next.t("notification.error.cannotFindChosenVersion", "Cannot find chosen versions"), error, true))
+    promise.catch((error) => this.addError(i18next.t("notification.error.cannotFindChosenVersions", "Cannot find chosen versions"), error, true))
     return promise
   }
 

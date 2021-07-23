@@ -5,6 +5,7 @@ on:
       - master
       - staging
       - fixes/*
+      - release/*
   push:
     branches:
       - master
