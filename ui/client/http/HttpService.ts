@@ -178,7 +178,7 @@ class HttpService {
 
   fetchProcessToolbarsConfiguration(processId) {
     const promise = api.get<WithId<ToolbarsConfig>>(`/processes/${processId}/toolbars`)
-    promise.catch(error => this.addError("Cannot fetch process toolbars configuration", error))
+    promise.catch(error => this.addError("Cannot fetch toolbars configuration", error))
     return promise
   }
 
@@ -196,7 +196,7 @@ class HttpService {
 
   deploy(processId, comment?) {
     return api.post(`/processManagement/deploy/${processId}`, comment).then(() => {
-      this.addInfo(`Process ${processId} was deployed`)
+      this.addInfo(`Scenario ${processId} was deployed`)
       return {isSuccess: true}
     }).catch(error => {
       return this.addError(`Failed to deploy ${processId}`, error, true).then(() => {
@@ -224,7 +224,7 @@ class HttpService {
 
   cancel(processId, comment?) {
     return api.post(`/processManagement/cancel/${processId}`, comment)
-      .then(() => this.addInfo(`Process ${processId} was canceled`))
+      .then(() => this.addInfo(`Scenario ${processId} was canceled`))
       .catch(error => this.addError(`Failed to cancel ${processId}`, error, true))
   }
 
@@ -269,7 +269,7 @@ class HttpService {
         return true
       })
       .catch((error) => {
-        return this.addError("Failed to change process name:", error, true).then(() => false)
+        return this.addError("Failed to change scenario name:", error, true).then(() => false)
       })
   }
 
@@ -322,7 +322,7 @@ class HttpService {
     const data = {dateFrom: dateFrom, dateTo: dateTo}
     const promise = api.get(`/processCounts/${processId}`, {params: data})
 
-    promise.catch(error => this.addError("Cannot fetch process counts", error, true))
+    promise.catch(error => this.addError("Cannot fetch scenario counts", error, true))
     return promise
   }
 
@@ -340,17 +340,17 @@ class HttpService {
 
   archiveProcess(processId) {
     return api.post(`/archive/${processId}`)
-      .catch(error => this.addError("Failed to archive process", error, true))
+      .catch(error => this.addError("Failed to archive scenario", error, true))
   }
 
   unArchiveProcess(processId) {
     return api.post(`/unarchive/${processId}`)
-      .catch(error => this.addError("Failed to unarchive process", error, true))
+      .catch(error => this.addError("Failed to unarchive scenario", error, true))
   }
 
   createProcess(processId, processCategory, isSubprocess) {
     return api.post(`/processes/${processId}/${processCategory}?isSubprocess=${isSubprocess}`)
-      .catch(error => this.addError("Failed to create process:", error, true))
+      .catch(error => this.addError("Failed to create scenario:", error, true))
   }
 
   importProcess(processId, file) {
@@ -374,7 +374,7 @@ class HttpService {
     const path = remoteEnv ? "remoteEnvironment" : "processes"
 
     return api.get(`/${path}/${processId}/${thisVersion}/compare/${otherVersion}`, {params: {businessView}})
-      .catch(error => this.addError("Cannot compare processes", error, true))
+      .catch(error => this.addError("Cannot compare scenarios", error, true))
   }
 
   fetchRemoteVersions(processId) {
