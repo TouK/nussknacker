@@ -11,7 +11,7 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{ExpressionConfig, LanguageConfiguration, ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceFactory.NoParamSourceFactory
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
@@ -138,6 +138,8 @@ object UnionWithMemoTransformerSpec {
     override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
       ConfigurableExceptionHandlerFactory(processObjectDependencies)
 
+    override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig =
+      super.expressionConfig(processObjectDependencies).copy(disableMethodExecutionForUnknown = false)
   }
 
   case class OneRecord(key: String, timeHours: Int, value: Int) {
