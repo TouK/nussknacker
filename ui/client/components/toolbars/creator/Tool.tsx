@@ -31,7 +31,7 @@ export default function Tool(props: OwnProps): JSX.Element {
   const {theme} = useNkTheme()
 
   return (
-    <div className="tool" ref={drag}>
+    <div className="tool" ref={drag} data-testid={`component:${label}`}>
       <div className="toolWrapper">
         <img src={icon} alt={`node icon`} className="toolIcon"/>
         <Highlighter

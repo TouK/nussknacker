@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es5",
     "lib": ["es5", "dom"],
-    "types": ["cypress", "cypress-file-upload", "cypress-plugin-snapshots"],
+    "types": ["cypress", "cypress-file-upload", "cypress-plugin-snapshots", "@4tw/cypress-drag-drop"],
     "resolveJsonModule": true
   },
   "include": [
