@@ -118,6 +118,10 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     parseOrFail[String]("T(java.lang.String).copyValueOf({'t', 'e', 's', 't'})").evaluateSync[String](ctx) should equal("test")
   }
 
+  test("evaluate static method call on validated class Long") {
+    parseOrFail[Int]("T(java.lang.Long).compare(2L, 1L)").evaluateSync[Int](ctx) should equal(1)
+  }
+
   test("evaluate static method call on unvalidated class") {
     parse[Any]("T(java.lang.System).exit()") shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("class java.lang.System is not allowed to be passed as TypeReference")))
   }

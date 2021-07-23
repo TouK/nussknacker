@@ -262,7 +262,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
         if (staticMethodInvocationsChecking) {
           typeDefinitionSet.validateTypeReference(e, evaluationContextPreparer.prepareEvaluationContext(Context(""), Map.empty))
-            .map(typedClass => toResult(TypedClass(classOf[Class[_]], List(typedClass))))
+            .map(typedClass => toResult(TypedElement(typedClass, staticContext = true)))
         } else {
           valid(Unknown)
         }
@@ -319,11 +319,15 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         Valid(Typed(l.toSet))
   }
 
-  private def extractMethodReference(reference: MethodReference, validationContext: ValidationContext, node: SpelNode, context: TypingContext, typeDefinitionSet: TypeDefinitionSet) = {
+  private def extractMethodReference(reference: MethodReference, validationContext: ValidationContext, node: SpelNode, context: TypingContext, isStatic: Boolean) = {
+    val isStatic = context.stack.headOption match {
+      case Some(typedElement: TypedElement) => typedElement.staticContext
+      case _ => false
+    }
     context.stack match {
       case head :: tail =>
       typeChildren(validationContext, node, context.copy(stack = tail)) { typedParams =>
-          TypeMethodReference(reference.getName, head, typedParams, typeDefinitionSet, disableMethodExecutionForUnknown) match {
+          TypeMethodReference(reference.getName, head, typedParams, isStatic, disableMethodExecutionForUnknown) match {
             case Right(typingResult) => Valid(typingResult)
             case Left(errorMsg) => if(strictMethodsChecking) invalid(errorMsg) else Valid(Unknown)
           }
