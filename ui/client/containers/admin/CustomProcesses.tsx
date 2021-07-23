@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string */
 import React from "react"
 import {Td, Tr} from "reactable"
 import Date from "../../components/common/Date"
@@ -10,6 +9,7 @@ import {Page} from "../Page"
 import {Filterable, getProcessState, ProcessesList, RowsRenderer} from "../ProcessesList"
 import {CancelIcon} from "./CancelIcon"
 import {DeployIcon} from "./DeployIcon"
+import {useTranslation} from "react-i18next"
 
 const ElementsRenderer: RowsRenderer = ({processes, getProcesses, statuses}) => {
   const processState = getProcessState(statuses)
@@ -36,17 +36,20 @@ const ElementsRenderer: RowsRenderer = ({processes, getProcesses, statuses}) => 
 
 const sortable = ["name", "category", "modifyDate", "createdAt"]
 const filterable: Filterable = ["name", "processCategory"]
-const columns = [
-  {key: "name", label: "Process name"},
-  {key: "category", label: "Category"},
-  {key: "createdAt", label: "Created at"},
-  {key: "modifyDate", label: "Last modification"},
-  {key: "status", label: "Status"},
-  {key: "deploy", label: "Deploy"},
-  {key: "cancel", label: "Cancel"},
-]
+
 
 export function CustomProcesses(): JSX.Element {
+  const {t} = useTranslation()
+
+  const columns = [
+    {key: "name", label: t("customScenario.name", "Name")},
+    {key: "category", label: t("customScenario.category", "Category")},
+    {key: "createdAt", label: t("customScenario.createdAt", "Created at")},
+    {key: "modifyDate", label: t("customScenario.modifyDate", "Last modification")},
+    {key: "status", label: t("customScenario.status", "Status")},
+    {key: "deploy", label: t("customScenario.deploy", "Deploy")},
+    {key: "cancel", label: t("customScenario.cancel", "Cancel")},
+  ]
 
   return (
     <Page className={tabStyles.tabContentPage}>
@@ -67,7 +70,7 @@ export function CustomProcesses(): JSX.Element {
 }
 
 export const CustomProcessesTabData = {
-  header: "Custom Processes",
+  header: "Custom scenarios",
   key: "custom-processes",
   Component: CustomProcesses,
 }
