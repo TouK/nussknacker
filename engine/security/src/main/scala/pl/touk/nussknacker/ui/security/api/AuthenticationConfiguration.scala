@@ -11,7 +11,6 @@ import pl.touk.nussknacker.ui.security.api.Permission.Permission
 trait AuthenticationConfiguration {
   def name: String
   def usersFile: URI
-  def anonymousUserRole: Option[String]
 
   val userConfig: Config = ConfigFactoryExt.parseUri(usersFile, getClass.getClassLoader)
 
