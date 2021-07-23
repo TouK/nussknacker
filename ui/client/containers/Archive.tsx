@@ -11,6 +11,7 @@ import {ProcessesTabData} from "./Processes"
 import {Filterable, ProcessesList, RowsRenderer} from "./ProcessesList"
 import tabStyles from "../components/tabs/processTabs.styl"
 import {SearchItem} from "./TableFilters"
+import {useTranslation} from "react-i18next";
 
 const ElementsRenderer: RowsRenderer = ({processes}) => processes.map(process => (
   <Tr className="row-hover" key={process.name}>
@@ -31,18 +32,21 @@ const ElementsRenderer: RowsRenderer = ({processes}) => processes.map(process =>
 
 const sortable = ["name", "category", "modifyDate", "createdAt", "createdBy", "subprocess", "actionDate", "actionUser"]
 const filterable: Filterable = ["name", "processCategory", "createdBy"]
-const columns = [
-  {key: "name", label: "Scenario name"},
-  {key: "category", label: "Category"},
-  {key: "createdBy", label: "Created by"},
-  {key: "createdAt", label: "Created at"},
-  {key: "actionDate", label: "Archived at"},
-  {key: "actionUser", label: "Archived by"},
-  {key: "subprocess", label: "Fragment"},
-  {key: "view", label: "View"},
-]
 
 function Archive() {
+  const {t} = useTranslation()
+  const columns = [
+    {key: "name", label: t("archiveList.name", "Name")},
+    {key: "category", label: t("archiveList.category", "Category")},
+    {key: "createdBy", label: t("archiveList.createdBy", "Created by")},
+    {key: "createdAt", label: t("archiveList.createdAt", "Created at")},
+    {key: "actionDate", label: t("archiveList.archivedAt", "Archived at")},
+    {key: "actionUser", label: t("archiveList.archivedBy", "Archived by")},
+    {key: "subprocess", label: t("archiveList.subprocess", "Fragment")},
+    {key: "view", label: t("archiveList.view", "View")},
+  ]
+
+
   return (
     <Page className={tabStyles.tabContentPage}>
       <ProcessesList
