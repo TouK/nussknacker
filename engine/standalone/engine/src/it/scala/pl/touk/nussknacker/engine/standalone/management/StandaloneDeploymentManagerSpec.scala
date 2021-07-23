@@ -20,7 +20,6 @@ import pl.touk.nussknacker.test.VeryPatientScalaFutures
 class StandaloneDeploymentManagerSpec extends FunSuite with VeryPatientScalaFutures with Matchers {
 
   test("it should parse test data and test standalone process") {
-
     val config = ScalaMajorVersionConfig.configWithScalaMajorVersion(ConfigFactory.parseResources("standalone.conf"))
     val modelData = StandaloneDeploymentManagerProvider
       .defaultTypeConfig(config).toModelData
@@ -38,7 +37,6 @@ class StandaloneDeploymentManagerSpec extends FunSuite with VeryPatientScalaFutu
     val results = manager.test(ProcessName("test1"), process, TestData("{\"field1\": \"a\", \"field2\": \"b\"}"), _ => null).futureValue
 
     results.nodeResults("sink") should have length 1
-
   }
 
 }

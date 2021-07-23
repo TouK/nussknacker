@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.modelconfig
 
 import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.modelconfig.ModelConfigLoader.defaultModelConfigResource
-import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 
 object ModelConfigLoader {
 
