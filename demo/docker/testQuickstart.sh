@@ -2,6 +2,8 @@
 
 set -e
 
+cd "$(dirname $0)"
+
 echo "Starting docker containers.."
 
 #just in case
