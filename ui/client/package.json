@@ -155,7 +155,7 @@
     "@types/kefir": "^3.8.6",
     "@types/loadable__component": "^5.13.3",
     "@types/lodash": "^4.14.171",
-    "@types/react": "^17.0.12",
+    "@types/react": "^17.0.14",
     "@types/react-beautiful-dnd": "^13.1.1",
     "@types/react-bootstrap": "^0.32.25",
     "@types/react-custom-scrollbars": "^4.0.8",
