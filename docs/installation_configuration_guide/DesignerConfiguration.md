@@ -44,7 +44,7 @@ The table below presents most important options, or the ones that have Nussknack
 
 Each scenario can have link to grafana dashboard. In [docker setup](https://github.com/TouK/nussknacker/tree/staging/demo/docker/grafana) we 
 provide `nussknacker-scenario` dashboard. 
-You can modify/configure own, the only assumption that we make is that [variable](https://grafana.com/docs/grafana/latest/variables/) is used to display metrics for particular scenario.
+You can modify/configure own, the only assumption that we make is that [variable](https://grafana.com/docs/grafana/latest/variables/) `processName` is used to display metrics for particular scenario.
 
 Each scenario type can have different dashboard, this is configured by 
 `metricsSettings.processingTypeToDashboard` settings. If no mapping is configured, `metricsSettings.defaultDashboard` is used.
@@ -176,11 +176,12 @@ rules: [
 
 #### Encrypted hashes
 
-Encryption of passwords uses BCrypt algorithm. You can generate sample hash using command:
+Encryption of passwords uses BCrypt algorithm. You can generate sample hash using command: 
 
 ```
 python -c 'import bcrypt; print(bcrypt.hashpw("password".encode("utf8"), bcrypt.gensalt(rounds=12, prefix="2a")))'
 ```
+If you don't have bcrypt installed, use `pip install bcrypt`. 
 
 Be aware that usage of BCrypt hashes will cause significant CPU overhead for processing of each http request, because we
 don't have sessions and all requests are authenticated. To avoid this overhead you can configure cashing of hashes using
@@ -247,7 +248,7 @@ For the `profileFormat` one of `oidc` or `github` is supported by default.
 Subconfigs `accessTokenParams`, `accessTokenRequestContentType`, `authorizeParams`, `headers` are optional and every
 field from any of the subconfigs is optional and could be provided separately.
 
-By default access token request is sent using `application/json` content type, to use change it (eg.
+By default access token request is sent using `application/json` content type, to change it (eg.
 to `application/x-www-form-urlencoded`) use `accessTokenRequestContentType` config.
 
 Subconfig `jwt` is also optional. However, if it is present and `enabled` is set to
