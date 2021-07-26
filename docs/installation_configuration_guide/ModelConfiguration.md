@@ -1,13 +1,10 @@
 # Model configuration
 
-This part of configuration defines how to configure the executor (e.g. Flink job) and its components for a given scenario type. It is processed not only at the designer but also passed to the execution engine (e.g. Flink), that’s why it’s parsed and processed a bit differently. 
+This part of configuration defines how to configure the executor (e.g. Flink job) and its components for a given scenario type. It is processed not only at the designer but also passed to the execution engine (e.g. Flink), that’s why it’s parsed and processed a bit differently: 
 
-* Defaults can be defined in `defaultModeConfig.conf. `Standard deployment (e.g. with docker sample) has it [here/link]
-* `defaultModelConfig.conf` is resolved both on designer and on execution engine (e.g. on Flink). That’s why all environment variables used there have to be defined also on all Flink hosts!
-* Some components can use special mechanism which resolve and add additional configuration during deployment, which is then passed to the execution engine. Example: OpenAPI...
-* Defaults
-* Configuration reload
-* Configuration resolved within designer vs configuration resolved during execution
+* Defaults can be defined in `defaultModelConfig.conf. `Standard deployment (e.g. with docker sample) has it [here/link]
+* defaultModelConfig.conf is currently resolved both on designer (to extract information about types of data or during scenario testing) and on execution engine (e.g. on Flink). That’s why all environment variables used there have to be defined also on all Flink hosts (!). This is a technical limitation and may change in the future.
+* Some Components can use a special mechanism which resolves and adds additional configuration during deployment, which is then passed to the execution engine. Such configuration is read and resolved only at the designer. Example: OpenAPI enrichers need to read its definition from external sites - so e.g. Flink cluster does not have to have access to the site with the definition. 
 
 ## Common settings settings 
 
