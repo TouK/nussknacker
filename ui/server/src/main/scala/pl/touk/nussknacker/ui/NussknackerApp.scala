@@ -11,14 +11,13 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
-import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.ui.api._
-import pl.touk.nussknacker.ui.config.{AnalyticsConfig, ConfigWithDefaults, FeatureTogglesConfig}
+import pl.touk.nussknacker.ui.config.{AnalyticsConfig, UiConfigLoader, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerFactory
@@ -210,14 +209,14 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
   }
 }
 
-object NussknackerAppInitializer extends NussknackerAppInitializer(ConfigFactoryExt.load(classLoader = getClass.getClassLoader))
+object NussknackerAppInitializer extends NussknackerAppInitializer(UiConfigLoader.parseUnresolved(classLoader = getClass.getClassLoader))
 
 class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLogging {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
-  protected val config: Config = ConfigWithDefaults(baseUnresolvedConfig)
+  protected val config: Config = UiConfigLoader.load(baseUnresolvedConfig, getClass.getClassLoader)
 
   protected implicit val system: ActorSystem = ActorSystem("nussknacker-ui", config)
   protected implicit val materializer: ActorMaterializer = ActorMaterializer()
@@ -304,5 +303,5 @@ class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLoggin
 }
 
 object NussknackerApp extends App {
-  new NussknackerAppInitializer(ConfigFactoryExt.load(classLoader = getClass.getClassLoader)).init(NusskanckerDefaultAppRouter)
+  NussknackerAppInitializer.init(NusskanckerDefaultAppRouter)
 }
