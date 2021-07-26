@@ -31,8 +31,6 @@ class StandardRemoteEnvironmentSpec extends FlatSpec with Matchers with PatientS
       batchSize = 100
     )
 
-    override def targetEnvironmentId = "targetTestEnv"
-
     override implicit val materializer = ActorMaterializer()
 
     override def testModelMigrations: TestModelMigrations = ???

@@ -30,8 +30,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait RemoteEnvironment {
 
-  def targetEnvironmentId: String
-
   def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[Long],
               businessView: Boolean = false)(implicit ec: ExecutionContext) : Future[Either[EspError, Map[String, Difference]]]
 
@@ -61,7 +59,6 @@ class HttpRemoteEnvironment(httpConfig: HttpRemoteEnvironmentConfig,
                            (implicit as: ActorSystem, val materializer: Materializer, ec: ExecutionContext) extends StandardRemoteEnvironment {
   override val config: StandardRemoteEnvironmentConfig = httpConfig.remoteConfig
 
-  override def targetEnvironmentId: String = httpConfig.targetEnvironmentId
 
   val http = Http()
 
@@ -71,7 +68,7 @@ class HttpRemoteEnvironment(httpConfig: HttpRemoteEnvironmentConfig,
   }
 }
 
-case class StandardRemoteEnvironmentConfig(uri: String, batchSize: Int)
+case class StandardRemoteEnvironmentConfig(uri: String, batchSize: Int = 10)
 
 //TODO: extract interface to remote environment?
 trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironment {
