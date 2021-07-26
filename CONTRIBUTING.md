@@ -17,3 +17,14 @@ Below you can find out some hints how to achieve that:
 - Be careful with `ClassTag`/`TypeTag` - should be always option to pass simple `Class[_]` or sth similar
 - Prefer methods intead of function members (def foo: (T) => R)
 - Avoid using AnyVal if the class is in API that will be used from Java
+
+## Changelog
+            
+All significant changes should be added to [Changelog](docs/Changelog.md). All changes which break API compatibility 
+should be added to [Migration guide](docs/MigrationGuide.md)
+
+## Keeping documentation up to date
+
+New features, components should have appropriate [Documentation](docs). In particular, all settings 
+should be documented (with type, default values etc.) in appropriate sections of 
+[configuration guide](docs/installation_configuration_guide/Configuration.md).
