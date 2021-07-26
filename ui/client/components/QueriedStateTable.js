@@ -8,7 +8,7 @@ import ActionsUtils from "../actions/ActionsUtils"
 import {DATE_FORMAT} from "../config"
 import HttpService from "../http/HttpService"
 import {ButtonWithFocus, InputWithFocus, SelectWithFocus} from "./withFocus"
-import {useTranslation} from "react-i18next"
+import { withTranslation } from 'react-i18next';
 
 class QueriedStateTable extends React.Component {
 
@@ -25,7 +25,7 @@ class QueriedStateTable extends React.Component {
   }
 
   render() {
-    const {t} = useTranslation()
+    const t = this.props.t
 
     const queryFormRender = () => {
       let queryButtonTooltip
@@ -55,7 +55,6 @@ class QueriedStateTable extends React.Component {
           </div>
           <div className="esp-form-row">
             <p>{t("queriedState.title.key", "Key (optional)")}</p>
-            <p>Key (optional)</p>
             <InputWithFocus value={this.state.key} onChange={(e) => this.setState({key: e.target.value})}/>
             <ButtonWithFocus
               type="button"
@@ -151,4 +150,4 @@ function mapState(state) {
   }
 }
 
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(QueriedStateTable)
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(withTranslation()(QueriedStateTable))
