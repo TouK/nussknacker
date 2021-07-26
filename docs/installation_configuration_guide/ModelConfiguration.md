@@ -173,7 +173,7 @@ additionalPropertiesConfig {
   ...
 }
 ```
-Configure is similar to [component configuration](#configuration-of-ui-attributes-of-components)
+Configuration is similar to [component configuration](#configuration-of-ui-attributes-of-components)
 
 
 ## Kafka configuration
