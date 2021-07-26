@@ -1049,6 +1049,9 @@ lazy val ui = (project in file("ui/server"))
         "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
         "com.whisk" %% "docker-testkit-scalatest" % "0.9.8" % "test",
         "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.8" % "test",
+
+        // It is needed for purpose of accessing to savepoints via minio in development run
+        "org.apache.flink" % "flink-s3-fs-hadoop" % flinkV % "provided",
       )
     }
   )

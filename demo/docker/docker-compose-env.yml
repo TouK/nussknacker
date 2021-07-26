@@ -94,12 +94,13 @@ services:
       - zookeeper
       - kafka
       - influxdb
+      - minio
+      - minio_create_flink_bucket
     volumes:
       - ./flink/flink-conf.yaml:/tmp/flink-conf.yaml
       - ./flink/flink-entrypoint.sh:/flink-entrypoint.sh
       # can be removed unless you use database enricher
       - ./flink/postgresql-42.2.19.jar:/opt/flink/lib/postgresql-42.2.19.jar
-      - nussknacker_storage_flink:/opt/flink/data
 
   taskmanager:
     container_name: nussknacker_taskmanager
@@ -115,10 +116,10 @@ services:
       - kafka
       - jobmanager
       - influxdb
+      - minio
     volumes:
       - ./flink/flink-conf.yaml:/tmp/flink-conf.yaml
       - ./flink/flink-entrypoint.sh:/flink-entrypoint.sh
-      - nussknacker_storage_flink:/opt/flink/data
       # can be removed unless you use database enricher
       - ./flink/postgresql-42.2.19.jar:/opt/flink/lib/postgresql-42.2.19.jar
     ulimits:
@@ -126,6 +127,29 @@ services:
       nofile:
         soft: 70000
         hard: 70000
+
+  # minio is used as a distributed fs for flink's savepoints. Currently we have only one TM in this setup, but savepoints
+  # are accessed only by Nussknacker during state verification mechanism
+  minio:
+    container_name: nussknacker_minio
+    image: minio/minio
+    ports:
+      - "9000:9000"
+    command: server /data
+    environment:
+      MINIO_ACCESS_KEY: "flink_access_key"
+      MINIO_SECRET_KEY: "flink_secret_key"
+    volumes:
+      - nussknacker_storage_minio:/data
+
+  minio_create_flink_bucket:
+    container_name: nussknacker_minio_create_flink_bucket
+    image: minio/mc
+    command: mb forflink/flink
+    depends_on:
+      - minio
+    volumes:
+      - ./minio/config.json:/root/.mc/config.json
 
   grafana:
     container_name: nussknacker_grafana
@@ -169,5 +193,5 @@ volumes:
   nussknacker_storage_zookeeper_datalog:
   nussknacker_storage_zookeeper_data:
   nussknacker_storage_kafka_data:
-  nussknacker_storage_flink:
   nussknacker_storage_influxdb:
+  nussknacker_storage_minio:

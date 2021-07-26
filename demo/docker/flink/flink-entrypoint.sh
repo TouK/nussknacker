@@ -9,6 +9,10 @@ cp ${FLINK_HOME}/opt/flink-queryable-state-runtime*.jar ${FLINK_HOME}/lib
 #/tmp/flink-conf.yaml is mounted to outside file, we cannot mount it directly to flink conf dir as flink entrypoint moves config files
 cp /tmp/flink-conf.yaml ${FLINK_HOME}/conf/flink-conf.yaml
 
+# we need to copy this plugin to make minio working
+mkdir ${FLINK_HOME}/plugins/s3-fs-hadoop
+cp ${FLINK_HOME}/opt/flink-s3-fs-hadoop*.jar ${FLINK_HOME}/plugins/s3-fs-hadoop/
+
 mkdir -p "$DATA_DIR/checkpoints" "$DATA_DIR/savepoints" "$DATA_DIR/storage" "$DATA_DIR/logs"
 chown -R ${USER}:${GROUP} ${DATA_DIR}
 chmod -R 777 ${DATA_DIR}

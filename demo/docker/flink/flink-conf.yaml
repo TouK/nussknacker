@@ -67,11 +67,14 @@ high-availability: zookeeper
 high-availability.zookeeper.quorum: zookeeper:2181
 high-availability.zookeeper.path.root: /demo
 high-availability.cluster-id: nussknacker
-high-availability.storageDir: file:///opt/flink/data/storage
+high-availability.storageDir: s3://flink/ha
 
-state.backend: filesystem
-state.checkpoints.dir: file:///opt/flink/data/checkpoints
-state.savepoints.dir: file:///opt/flink/data/savepoints
+s3.access-key: flink_access_key
+s3.secret-key: flink_secret_key
+s3.endpoint: http://minio:9000
+s3.path.style.access: true
+state.checkpoints.dir: s3://flink/checkpoints
+state.savepoints.dir: s3://flink/savepoints
 
 #Below are base settings for rocksdb metrics, that can be used for grafana dashboards
 state.backend.rocksdb.metrics.estimate-num-keys: true
