@@ -584,7 +584,7 @@ Currently, you can only configure secondary environment if it uses BASIC authent
 
 ## Scenario type, categories
 
-Every process has to belong to a group called category. For example, in one Nussknacker installation you can have
+Every process has to belong to a group called `category` . For example, in one Nussknacker installation you can have
 processes detecting frauds, and those implementing marketing campaigns. Category configuration looks like this:
 
 ```
@@ -600,4 +600,3 @@ For each category you have to define its scenario type (`streaming` in examples 
 
 See [example](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L33) 
 from development config to configure multiple scenario types.
-
