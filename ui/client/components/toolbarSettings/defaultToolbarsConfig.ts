@@ -58,7 +58,7 @@ export function defaultToolbarsConfig(isSubprocess: boolean, isArchived: boolean
       },
       {
         id: "process-panel",
-        title: "process",
+        title: "scenario",
         buttons: processPanelButtons,
       },
       {

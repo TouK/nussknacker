@@ -5,6 +5,7 @@ import ActionsUtils from "../actions/ActionsUtils"
 import QueriedStateTable from "../components/QueriedStateTable"
 import {InputWithFocus, SelectWithFocus} from "../components/withFocus"
 import HttpService from "../http/HttpService"
+import i18next from "i18next"
 
 //this needs some love
 export class Signals extends React.Component {
@@ -34,9 +35,9 @@ export class Signals extends React.Component {
     const currentSignal = this.findSignal(this.state.signalType)
     let sendSignalButtonTooltip
     if (_.isEmpty(this.state.signalType)) {
-      sendSignalButtonTooltip = "Signal type is not selected"
+      sendSignalButtonTooltip = i18next.t("signals.notSelected.tooltip.type", "Signal type is not selected")
     } else if (_.isEmpty(this.state.processId)) {
-      sendSignalButtonTooltip = "Process id is not selected"
+      sendSignalButtonTooltip = i18next.t("signals.notSelected.tooltip.scenario", "Scenario is not selected")
     }
     //fixme simplify this view as in QueriedStateTable
     return (
@@ -45,7 +46,7 @@ export class Signals extends React.Component {
           <div className="node-table">
             <div className="node-table-body">
               <div className="node-row">
-                <div className="node-label">Signal type</div>
+                <div className="node-label">{i18next.t("signals.type", "Signal type")}</div>
                 <div className="node-value">
                   <SelectWithFocus
                     className="node-input"
@@ -64,7 +65,7 @@ export class Signals extends React.Component {
                 </div>
               </div>
               <div className="node-row">
-                <div className="node-label">Process id</div>
+                <div className="node-label">{i18next.t("signals.scenario", "Scenario")}</div>
                 <div className="node-value">
                   <SelectWithFocus className="node-input" onChange={(e) => this.setState({processId: e.target.value})}>
                     {(currentSignal.availableProcesses || [])
@@ -94,9 +95,7 @@ export class Signals extends React.Component {
               disabled={_.isEmpty(this.state.signalType) || _.isEmpty(this.state.processId)}
               title={sendSignalButtonTooltip}
               onClick={this.sendSignal.bind(this, this.state.signalType, this.state.processId, this.state.signalParams)}
-            >Send
-              signal
-            </button>
+            >{i18next.t("signals.send.button", "Send signal")}</button>
           </div>
         </div>
         <hr/>

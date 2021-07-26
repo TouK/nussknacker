@@ -54,7 +54,7 @@ class NodeDetailsModal extends React.Component {
           this.setState({...this.state, subprocessContent: response.data.json})
         })
       } else {
-        console.warn("Displaying subprocesses is available only in Chromium based browser.")
+        console.warn("Displaying fragments is available only in Chromium based browser.")
       }
     }
   }

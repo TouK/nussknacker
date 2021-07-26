@@ -13,9 +13,11 @@ import {Filterable, getProcessState, ProcessesList, RowsRenderer} from "./Proces
 import tabStyles from "../components/tabs/processTabs.styl"
 import {SearchItem} from "./TableFilters"
 import ProcessLastAction from "../components/Process/ProcessLastAction"
+import {useTranslation} from "react-i18next"
 
 const ElementsRenderer: RowsRenderer = ({processes, statuses}) => {
   const processState = getProcessState(statuses)
+
   return processes.map((process, index) => {
     return (
       <Tr key={index} className="row-hover">
@@ -51,19 +53,21 @@ const ElementsRenderer: RowsRenderer = ({processes, statuses}) => {
 
 const sortable = ["name", "category", "modifyDate", "createdAt", "createdBy", "lastAction"]
 const filterable: Filterable = ["name", "processCategory", "createdBy"]
-const columns = [
-  {key: "name", label: "Name"},
-  {key: "category", label: "Category"},
-  {key: "createdBy", label: "Created by"},
-  {key: "createdAt", label: "Created at"},
-  {key: "modifyDate", label: "Last modification"},
-  {key: "lastAction", label: "Last action"},
-  {key: "status", label: "Status"},
-  {key: "edit", label: "Edit"},
-  {key: "metrics", label: "Metrics"},
-]
 
 function Processes() {
+  const {t} = useTranslation()
+  const columns = [
+    {key: "name", label: t("processList.name", "Name")},
+    {key: "category", label: t("processList.category", "Category")},
+    {key: "createdBy", label: t("processList.createdBy", "Created by")},
+    {key: "createdAt", label: t("processList.createdAt", "Created at")},
+    {key: "modifyDate", label: t("processList.modifyDate", "Last modification")},
+    {key: "lastAction", label: t("processList.lastAction", "Last action")},
+    {key: "status", label: t("processList.status", "Status")},
+    {key: "edit", label: t("processList.edit", "Edit")},
+    {key: "metrics", label: t("processList.metrics", "Metrics")},
+  ]
+
   return (
     <Page className={tabStyles.tabContentPage}>
       <ProcessesList

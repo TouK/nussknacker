@@ -8,6 +8,7 @@ import ActionsUtils from "../actions/ActionsUtils"
 import {DATE_FORMAT} from "../config"
 import HttpService from "../http/HttpService"
 import {ButtonWithFocus, InputWithFocus, SelectWithFocus} from "./withFocus"
+import { withTranslation } from 'react-i18next';
 
 class QueriedStateTable extends React.Component {
 
@@ -24,17 +25,19 @@ class QueriedStateTable extends React.Component {
   }
 
   render() {
+    const t = this.props.t
+
     const queryFormRender = () => {
       let queryButtonTooltip
       if (_.isEmpty(this.selectedQueryName())) {
-        queryButtonTooltip = "Query name is not selected"
+        queryButtonTooltip = t("queriedState.notSelected.tooltip.query", "Query name is not selected")
       } else if (_.isEmpty(this.selectedProcessId())) {
-        queryButtonTooltip = "Process id is not selected"
+        queryButtonTooltip = t("queriedState.notSelected.tooltip.scenario", "Scenario is not selected")
       }
       return (
         <div>
           <div className="esp-form-row">
-            <p>Query name</p>
+            <p>{t("queriedState.title.queryName", "Query name")}</p>
             <SelectWithFocus
               value={this.selectedQueryName()}
               onChange={(e) => this.setState({queryName: e.target.value, processId: this.processesForQueryName(e.target.value)[0]})}
@@ -44,14 +47,14 @@ class QueriedStateTable extends React.Component {
             </SelectWithFocus>
           </div>
           <div className="esp-form-row">
-            <p>Process id</p>
+            <p>{t("queriedState.title.scenarioName", "Scenario name")}</p>
             <SelectWithFocus value={this.selectedProcessId()} onChange={(e) => this.setState({processId: e.target.value})}>
               {this.processesForQueryName(this.selectedQueryName()).map((processId, index) => (
                 <option key={index} value={processId}>{processId}</option>))}
             </SelectWithFocus>
           </div>
           <div className="esp-form-row">
-            <p>Key (optional)</p>
+            <p>{t("queriedState.title.key", "Key (optional)")}</p>
             <InputWithFocus value={this.state.key} onChange={(e) => this.setState({key: e.target.value})}/>
             <ButtonWithFocus
               type="button"
@@ -59,7 +62,7 @@ class QueriedStateTable extends React.Component {
               disabled={_.isEmpty(this.selectedQueryName()) || _.isEmpty(this.selectedProcessId())}
               title={queryButtonTooltip}
               onClick={this.queryState.bind(this, this.selectedProcessId(), this.selectedQueryName(), this.state.key)}
-            >Query</ButtonWithFocus>
+            >{t("queriedState.query.button", "Query")}</ButtonWithFocus>
           </div>
         </div>
       )
@@ -147,4 +150,4 @@ function mapState(state) {
   }
 }
 
-export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(QueriedStateTable)
+export default connect(mapState, ActionsUtils.mapDispatchWithEspActions)(withTranslation()(QueriedStateTable))
