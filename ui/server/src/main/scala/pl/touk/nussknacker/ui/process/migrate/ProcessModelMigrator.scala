@@ -16,7 +16,8 @@ case class MigrationResult(process: CanonicalProcess, migrationsApplied: List[Pr
 
   def toUpdateAction(processId: ProcessId): UpdateProcessAction = UpdateProcessAction(processId,
     GraphProcess(ProcessMarshaller.toJson(process).noSpaces),
-    s"Migrations applied: ${migrationsApplied.map(_.description).mkString(", ")}"
+    s"Migrations applied: ${migrationsApplied.map(_.description).mkString(", ")}",
+    true
   )
 
 }
@@ -27,20 +28,25 @@ class ProcessModelMigrator(migrations: ProcessingTypeDataProvider[ProcessMigrati
     for {
       migrations <- migrations.forType(processDetails.processingType)
       displayable <- processDetails.json
-    } yield migrateWithMigrations(migrations, ProcessConverter.fromDisplayable(displayable), processDetails.modelVersion)
+      migrated <- migrateWithMigrations(migrations, ProcessConverter.fromDisplayable(displayable), processDetails.modelVersion)
+    } yield migrated
   }
 
   private def migrateWithMigrations(migrations: ProcessMigrations, process: CanonicalProcess, modelVersion: Option[Int])
-    : MigrationResult = {
+    : Option[MigrationResult] = {
 
     val migrationsToApply = migrations.processMigrations.toList.sortBy(_._1).dropWhile {
       case (migrationNumber, _) => migrationNumber <= modelVersion.getOrElse(0)
     }.map(_._2)
 
-    val resultProcess = migrationsToApply.foldLeft(process) {
-      case (processToConvert, migration) => migration.migrateProcess(processToConvert)
+    if(migrationsToApply.isEmpty) None
+    else {
+      val resultProcess = migrationsToApply.foldLeft(process) {
+        case (processToConvert, migration) => migration.migrateProcess(processToConvert)
+      }
+      Some(MigrationResult(resultProcess, migrationsToApply))
     }
-    MigrationResult(resultProcess, migrationsToApply)
+
   }
 
 

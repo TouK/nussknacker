@@ -206,7 +206,7 @@ class DBFetchingProcessRepositorySpec
   private def updateProcess(processVersion: ProcessVersionEntityData): ProcessUpdated = {
     processVersion.json shouldBe 'defined
     val json = processVersion.json.get
-    val action = UpdateProcessAction(ProcessId(processVersion.processId), GraphProcess(json), "")
+    val action = UpdateProcessAction(ProcessId(processVersion.processId), GraphProcess(json), "", false)
 
     val processUpdated = repositoryManager.runInTransaction(writingRepo.updateProcess(action)).futureValue
     processUpdated shouldBe 'right
