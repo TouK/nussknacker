@@ -12,7 +12,7 @@ trait AuthenticationConfiguration {
   def name: String
   def usersFile: URI
 
-  val userConfig: Config = ConfigFactoryExt.parseUri(usersFile)
+  val userConfig: Config = ConfigFactoryExt.parseUri(usersFile, getClass.getClassLoader)
 
   lazy val users: List[ConfigUser] = AuthenticationConfiguration.getUsers(userConfig)
 }
@@ -30,7 +30,7 @@ object AuthenticationConfiguration {
 
   def getUsers(config: Config): List[ConfigUser] = config.as[List[ConfigUser]](usersConfigurationPath)
 
-  def getRules(usersFile: URI): List[ConfigRule] = ConfigFactoryExt.parseUri(usersFile).as[List[ConfigRule]](rulesConfigurationPath)
+  def getRules(usersFile: URI): List[ConfigRule] = ConfigFactoryExt.parseUri(usersFile, getClass.getClassLoader).as[List[ConfigRule]](rulesConfigurationPath)
   def getRules(config: Config): List[ConfigRule] = getRules(config.as[URI](usersConfigPath))
 
   case class ConfigUser(identity: String,

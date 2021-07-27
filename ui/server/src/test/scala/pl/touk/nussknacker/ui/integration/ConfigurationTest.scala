@@ -2,21 +2,38 @@ package pl.touk.nussknacker.ui.integration
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
-import pl.touk.nussknacker.ui.config.ConfigWithDefaults
+import pl.touk.nussknacker.ui.config.UiConfigLoader
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
+
+import java.net.URI
+import java.nio.file.Files
+import java.util.UUID
 
 class ConfigurationTest extends FunSuite with Matchers {
 
-  private val globalConfig = ConfigWithScalaVersion.config
+  // warning: can't be val - uses ConfigFactory.load which breaks "should preserve config overrides" test
+  private def globalConfig = ConfigWithScalaVersion.config
 
-  private val modelData: ModelData = ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig).toModelData
+  private def modelData: ModelData = ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig).toModelData
 
-  private val modelDataConfig = modelData.processConfig
+  private lazy val modelDataConfig = modelData.processConfig
+
+  private def classLoader = {
+    getClass.getClassLoader
+  }
 
   test("defaultConfig works") {
-    ConfigWithDefaults(globalConfig).getString("db.driver") shouldBe "org.hsqldb.jdbc.JDBCDriver"
-    ConfigWithDefaults(globalConfig).getString("attachmentsPath") shouldBe "/tmp/attachments"
+    UiConfigLoader.load(globalConfig, classLoader).getString("db.driver") shouldBe "org.hsqldb.jdbc.JDBCDriver"
+    UiConfigLoader.load(globalConfig, classLoader).getString("attachmentsPath") shouldBe "/tmp/attachments"
   }
+
+  test("should be possible to config entries defined in default ui config from passed config") {
+    val configUri = writeToTemp("foo: ${storageDir}") // storageDir is defined inside defaultUiConfig.conf
+
+    val loadedConfig = UiConfigLoader.load(UiConfigLoader.parseUnresolved(List(configUri), classLoader), classLoader)
+    loadedConfig.getString("foo") shouldEqual "./storage"
+  }
+
 
   test("defaultConfig is not accessible from model") {
     modelDataConfig.hasPath("db.driver") shouldBe false
@@ -40,6 +57,27 @@ class ConfigurationTest extends FunSuite with Matchers {
     modelDataConfig.getString("duplicatedSignalsTopic") shouldBe "nk.signals"
   }
 
+  // The same mechanism is used with config.override_with_env_var
+  // This test must be run separately because ConfigFactory.load() in other tests breaks it
+  ignore("should preserve config overrides") {
+    val randomPropertyName = UUID.randomUUID().toString
+
+    val content =
+      s"""
+         |"$randomPropertyName": default
+         |""".stripMargin
+    val conf1 = writeToTemp(content)
+
+    val result = try {
+      System.setProperty(randomPropertyName, "I win!")
+      UiConfigLoader.load(UiConfigLoader.parseUnresolved(List(conf1), classLoader), classLoader)
+    } finally {
+      System.getProperties.remove(randomPropertyName)
+    }
+
+    result.getString(randomPropertyName) shouldBe "I win!"
+  }
+
   //to be able to run this test:
   //add -Dconfig.override_with_env_vars=true to VM parameters
   //set env variable: CONFIG_FORCE_scenarioTypes_streaming_modelConfig_testProperty=testValue
@@ -48,5 +86,11 @@ class ConfigurationTest extends FunSuite with Matchers {
     modelData.inputConfigDuringExecution.config.getString("testProperty") shouldBe "testValue"
   }
 
+  def writeToTemp(content: String): URI = {
+    val temp = Files.createTempFile("ConfigurationTest", ".conf")
+    temp.toFile.deleteOnExit()
+    Files.writeString(temp, content)
+    temp.toUri
+  }
 
 }
