@@ -100,6 +100,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     ClassExtractionSettings.Default
   )
 
+  //todo: implement a test after modifying valid static methods list so there is a valid static method returning a Boolean
 
   test("enable method execution for Unknown") {
 

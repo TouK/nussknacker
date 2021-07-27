@@ -110,16 +110,21 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     TypeDefinitionSet(Set(
       createTestClazzDefinitionFromClassNames("java.lang.String"),
       createTestClazzDefinitionFromClassNames("java.lang.Long"),
+      createTestClazzDefinitionFromClassNames("java.lang.Integer"),
       createTestClazzDefinitionFromClassNames("pl.touk.nussknacker.engine.spel.SampleGlobalObject")
     ))
   }
 
-  test("evaluate static method call on validated class String") {
-    parseOrFail[String]("T(java.lang.String).copyValueOf({'t', 'e', 's', 't'})").evaluateSync[String](ctx) should equal("test")
+  test("evaluate call on non-existing static method of validated class String") {
+    parse[Any]("T(java.lang.String).copyValueOf({'t', 'e', 's', 't'})") shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Unknown method 'copyValueOf' in String")))
+  }
+
+  test("evaluate static method call on validated class Integer") {
+    parseOrFail[Int]("T(java.lang.Integer).min(1, 2)").evaluateSync[Int](ctx) should equal(1)
   }
 
   test("evaluate static method call on validated class Long") {
-    parseOrFail[Int]("T(java.lang.Long).compare(2L, 1L)").evaluateSync[Int](ctx) should equal(1)
+    parseOrFail[Long]("T(java.lang.Long).compare(2L, 1L)").evaluateSync[Int](ctx) should equal(1)
   }
 
   test("evaluate static method call on unvalidated class") {
