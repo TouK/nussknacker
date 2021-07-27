@@ -75,7 +75,7 @@
       "type" : "Filter"
     },
     {
-      "id" : "save to kafka",
+      "id" : "send for audit",
       "ref" : {
         "typ" : "kafka-registry-typed-json-raw",
         "parameters" : [
