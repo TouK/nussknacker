@@ -47,7 +47,11 @@ class TypeMethodReference(methodName: String, invocationTarget: TypingResult, ca
   private def validateMethodsNonEmpty(clazzDefinitions: List[ClazzDefinition]): Either[Option[String], List[MethodInfo]] = {
     def displayableType = clazzDefinitions.map(k => k.clazzName).map(_.display).mkString(", ")
     def isClass = clazzDefinitions.map(k => k.clazzName).exists(_.canBeSubclassOf(Typed[Class[_]]))
-    clazzDefinitions.flatMap(_.methods.get(methodName).toList.flatten) match {
+
+    val clazzMethods =
+      if(isStatic) clazzDefinitions.flatMap(_.staticMethods.get(methodName).toList.flatten)
+      else clazzDefinitions.flatMap(_.methods.get(methodName).toList.flatten)
+    clazzMethods match {
       //Static method can be invoked - we cannot find them ATM
       case Nil if isClass => Left(None)
       case Nil => Left(Some(s"Unknown method '$methodName' in $displayableType"))
