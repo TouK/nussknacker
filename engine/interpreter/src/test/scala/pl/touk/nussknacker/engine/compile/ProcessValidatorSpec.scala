@@ -199,6 +199,40 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   }
 
+  test("Validation for dynamic property access when on") {
+    val correctProcess = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "source")
+      .filter("filter1", "#input.plainValue == 1")
+      .filter("filter2", "#input['plainValue'] == 1")
+      .sink("id2", "#input", "sink")
+
+    val compilationResult = validate(correctProcess, baseDefinition)
+
+    compilationResult.result should matchPattern {
+      case Valid(_) =>
+    }
+  }
+
+
+  test("Validation for dynamic property access when off") {
+
+    val correctProcess = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "source")
+      .filter("filter1", "#input.plainValue == 1")
+      .filter("filter2", "#input['plainValue'] == 1")
+      .sink("id2", "#input", "sink")
+
+    val compilationResult = validate(correctProcess, baseDefinition)
+
+    compilationResult.result should matchPattern {
+      case Invalid(NonEmptyList(ExpressionParseError(_, _, _, _), _)) =>
+    }
+  }
+
   test("validated with success") {
     val correctProcess = EspProcessBuilder
       .id("process1")
