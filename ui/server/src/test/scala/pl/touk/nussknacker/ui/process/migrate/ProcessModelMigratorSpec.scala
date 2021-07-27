@@ -34,6 +34,16 @@ class ProcessModelMigratorSpec extends FlatSpec with BeforeAndAfterEach with Pat
     processor shouldBe ServiceRef(ProcessTestData.otherExistingServiceId, List())
   }
 
+  it should "migration should not return empty migration result" in {
+
+    val migrationResultOpt: Option[MigrationResult] = migrateByVersionsOpt(Some(1), 1)
+
+    migrationResultOpt.map(o => println(o.toUpdateAction(ProcessId(1L))))
+
+    migrationResultOpt shouldNot be('defined)
+
+  }
+
   it should "migrate processes to new versions only if migrations not applied" in {
 
     val migrationResult: MigrationResult = migrateByVersions(Some(1), 1, 2)
@@ -46,9 +56,11 @@ class ProcessModelMigratorSpec extends FlatSpec with BeforeAndAfterEach with Pat
   }
 
   private def migrateByVersions(startFrom: Option[Int], migrations: Int*) : MigrationResult =
-    migrator(migrations: _*).migrateProcess(
-      ProcessTestData.toDetails(ProcessTestData.validDisplayableProcess.toDisplayable).copy(modelVersion = startFrom)).get
+    migrateByVersionsOpt(startFrom, migrations: _*).get
 
+  private def migrateByVersionsOpt(startFrom: Option[Int], migrations: Int*) : Option[MigrationResult] =
+    migrator(migrations: _*).migrateProcess(
+      ProcessTestData.toDetails(ProcessTestData.validDisplayableProcess.toDisplayable).copy(modelVersion = startFrom))
 
   private def extractProcessor(migrationResult: MigrationResult) = {
     val service = for {
