@@ -14,10 +14,11 @@ case class MigrationResult(process: CanonicalProcess, migrationsApplied: List[Pr
 
   def id : String = process.metaData.id
 
-  def toUpdateAction(processId: ProcessId): UpdateProcessAction = UpdateProcessAction(processId,
-    GraphProcess(ProcessMarshaller.toJson(process).noSpaces),
-    s"Migrations applied: ${migrationsApplied.map(_.description).mkString(", ")}",
-    true
+  def toUpdateAction(processId: ProcessId): UpdateProcessAction = UpdateProcessAction(
+    id = processId,
+    deploymentData = GraphProcess(ProcessMarshaller.toJson(process).noSpaces),
+    comment = s"Migrations applied: ${migrationsApplied.map(_.description).mkString(", ")}",
+    increaseVersionWhenJsonNotChanged = true
   )
 
 }

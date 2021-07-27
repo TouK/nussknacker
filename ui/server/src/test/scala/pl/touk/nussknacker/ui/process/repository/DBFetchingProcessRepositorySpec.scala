@@ -197,7 +197,7 @@ class DBFetchingProcessRepositorySpec
 
   }
 
-  test("should generate new process version id on forceIncreaseVersion action param") {
+  test("should generate new process version id on increaseVersionWhenJsonNotChanged action param") {
 
     val processName = ProcessName("processName")
     val now = LocalDateTime.now()
@@ -213,7 +213,7 @@ class DBFetchingProcessRepositorySpec
     latestProcessVersion.id shouldBe 1
     updateProcess(latestProcessVersion.copy(json = someJson), false).newVersion.get.id shouldBe 2
     //without force
-    updateProcess(latestProcessVersion.copy(json = someJson), false).newVersion shouldNot be('defined)
+    updateProcess(latestProcessVersion.copy(json = someJson), false).newVersion shouldBe empty
     //now with force
     updateProcess(latestProcessVersion.copy(json = someJson), true).newVersion.get.id shouldBe 3
 
@@ -225,10 +225,10 @@ class DBFetchingProcessRepositorySpec
     ).nonEmpty
   }
 
-  private def updateProcess(processVersion: ProcessVersionEntityData, forceIncreaseVersion: Boolean): ProcessUpdated = {
+  private def updateProcess(processVersion: ProcessVersionEntityData, increaseVersionWhenJsonNotChanged: Boolean): ProcessUpdated = {
     processVersion.json shouldBe 'defined
     val json = processVersion.json.get
-    val action = UpdateProcessAction(ProcessId(processVersion.processId), GraphProcess(json), "", forceIncreaseVersion)
+    val action = UpdateProcessAction(ProcessId(processVersion.processId), GraphProcess(json), "", increaseVersionWhenJsonNotChanged)
 
     val processUpdated = repositoryManager.runInTransaction(writingRepo.updateProcess(action)).futureValue
     processUpdated shouldBe 'right

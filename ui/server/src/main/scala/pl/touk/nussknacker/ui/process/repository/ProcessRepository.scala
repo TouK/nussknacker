@@ -33,7 +33,7 @@ object ProcessRepository {
   def create(dbConfig: DbConfig, modelData: ProcessingTypeDataProvider[ModelData]): DBProcessRepository =
     new DBProcessRepository(dbConfig, modelData.mapValues(_.migrations.version))
 
-  case class UpdateProcessAction(id: ProcessId, deploymentData: ProcessDeploymentData, comment: String, forceIncreaseVersion: Boolean)
+  case class UpdateProcessAction(id: ProcessId, deploymentData: ProcessDeploymentData, comment: String, increaseVersionWhenJsonNotChanged: Boolean)
 
   case class CreateProcessAction(processName: ProcessName, category: String, processDeploymentData: ProcessDeploymentData, processingType: ProcessingType, isSubprocess: Boolean)
 
@@ -96,7 +96,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
       newCommentAction(ProcessId(version.processId), version.id, updateProcessAction.comment)
     }
 
-    updateProcessInternal(updateProcessAction.id, updateProcessAction.deploymentData, updateProcessAction.forceIncreaseVersion).flatMap {
+    updateProcessInternal(updateProcessAction.id, updateProcessAction.deploymentData, updateProcessAction.increaseVersionWhenJsonNotChanged).flatMap {
       // Comment should be added via ProcessService not to mix this repository responsibility.
       case updateProcessRes@Right(ProcessUpdated(_, Some(newVersion))) =>
         addNewCommentToVersion(newVersion).map(_ => updateProcessRes)
@@ -106,7 +106,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
     }
   }
 
-  private def updateProcessInternal(processId: ProcessId, processDeploymentData: ProcessDeploymentData, forceIncreaseVersion: Boolean)(implicit loggedUser: LoggedUser): DB[XError[ProcessUpdated]] = {
+  private def updateProcessInternal(processId: ProcessId, processDeploymentData: ProcessDeploymentData, increaseVersionWhenJsonNotChanged: Boolean)(implicit loggedUser: LoggedUser): DB[XError[ProcessUpdated]] = {
     val (maybeJson, maybeMainClass) = processDeploymentData match {
       case GraphProcess(json) => (Some(json), None)
       case CustomProcess(mainClass) => (None, Some(mainClass))
@@ -130,7 +130,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
     //TODO: after we move Json type to GraphProcess we should clean up this pattern matching
     def versionToInsert(latestProcessVersion: Option[ProcessVersionEntityData], processingType: ProcessingType) =
       (latestProcessVersion, maybeJson) match {
-        case (Some(version), _) if isLastVersionContainsSameJson(version, maybeJson) && version.mainClass == maybeMainClass && !forceIncreaseVersion =>
+        case (Some(version), _) if isLastVersionContainsSameJson(version, maybeJson) && version.mainClass == maybeMainClass && !increaseVersionWhenJsonNotChanged =>
           Right(None)
         case (versionOpt, Some(json)) =>
           normalizeJsonString(json)

@@ -38,9 +38,7 @@ class ProcessModelMigratorSpec extends FlatSpec with BeforeAndAfterEach with Pat
 
     val migrationResultOpt: Option[MigrationResult] = migrateByVersionsOpt(Some(1), 1)
 
-    migrationResultOpt.map(o => println(o.toUpdateAction(ProcessId(1L))))
-
-    migrationResultOpt shouldNot be('defined)
+    migrationResultOpt shouldBe empty
 
   }
 
