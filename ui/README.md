@@ -22,7 +22,7 @@ You can do all steps at once with ```buildServer.sh``` script
     * Environment variables: 
 ```AUTHENTICATION_USERS_FILE=../../../nussknacker-dist/src/universal/conf/users.conf;MANAGEMENT_MODEL_DIR=../../../engine/flink/management/sample/target/scala-2.12;GENERIC_MODEL_DIR=../../../engine/flink/generic/target/scala-2.12;STANDALONE_MODEL_DIR=../../../engine/standalone/engine/sample/target/scala-2.12```
 If you want to connect to infrastructure in docker you need to set on end of line also:
-```;FLINK_REST_URL=http://localhost:3031;FLINK_QUERYABLE_STATE_PROXY_URL=localhost:3063;FLINK_ROCKSDB_CHECKPOINT_DATA_URI=s3://flink/rocksdb-checkpoints;SCHEMA_REGISTRY_URL=http://localhost:3082;KAFKA_ADDRESS=localhost:3032```
+```;FLINK_REST_URL=http://localhost:3031;FLINK_QUERYABLE_STATE_PROXY_URL=localhost:3063;FLINK_ROCKSDB_CHECKPOINT_DATA_URI=file:///opt/flink/data/rocksdb-checkpoints;SCHEMA_REGISTRY_URL=http://localhost:3082;KAFKA_ADDRESS=localhost:3032```
     * Module classpath:  nussknacker-ui (this is ```ui/server``` folder) 
     * "Included dependencies with "Provided" scope" should be checked, so that Flink DeploymentManager is included in the classpath
     
