@@ -305,7 +305,6 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
   }
 
   test("listeners should count only incoming events to nodes") {
-    CountingNodesListener.reset
     val process = EspProcessBuilder.id("proc1")
       .exceptionHandler()
       .source("id", "input")
@@ -313,9 +312,10 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
       .customNodeNoOutput("custom", "customFilter", "input" -> "#input.id", "stringVal" -> "'terefere'")
       .processorEnd("proc2", "logService", "all" -> "#input.id")
     val data = List(SimpleRecord("terefere", 3, "a", new Date(0)), SimpleRecord("kuku", 3, "b", new Date(0)))
-    processInvoker.invokeWithSampleData(process, data)
 
-    CountingNodesListener.nodesEntered shouldBe List("id", "testVar", "custom", "proc2", "id", "testVar", "custom")
+    CountingNodesListener.listen {
+      processInvoker.invokeWithSampleData(process, data)
+    } shouldBe List("id", "testVar", "custom", "proc2", "id", "testVar", "custom")
   }
 
 }

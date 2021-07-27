@@ -825,14 +825,19 @@ object SampleNodes {
   }
 
   object CountingNodesListener extends EmptyProcessListener {
-    var nodesEntered: List[String] = Nil
+    @volatile private var nodesEntered: List[String] = Nil
+    @volatile private var listening = false
 
-    def reset: Unit = {
+    def listen(body: => Unit): List[String] = {
       nodesEntered = Nil
+      listening = true
+      body
+      listening = false
+      nodesEntered
     }
 
     override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit = {
-      nodesEntered = nodesEntered ::: nodeId :: Nil
+      if(listening) nodesEntered = nodesEntered ::: nodeId :: Nil
     }
   }
 
