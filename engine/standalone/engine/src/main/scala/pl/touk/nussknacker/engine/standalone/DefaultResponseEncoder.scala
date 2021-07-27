@@ -15,7 +15,7 @@ import scala.util.control.NonFatal
 
 object DefaultResponseEncoder extends ResponseEncoder[Any] {
 
-  val bestEffortEncoder = BestEffortJsonEncoder(failOnUnkown = true)
+  val bestEffortEncoder = BestEffortJsonEncoder(failOnUnkown = true, getClass.getClassLoader)
 
   override def toJsonResponse(input: Any, result: List[Any]): GenericResultType[Json] =
     result.map(toJsonOrError).sequence.right.map(Encoder[List[Json]].apply)

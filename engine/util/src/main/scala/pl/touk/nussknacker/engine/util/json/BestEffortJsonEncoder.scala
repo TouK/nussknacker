@@ -8,12 +8,12 @@ import io.circe.java8.time
 import io.circe.java8.time._
 import pl.touk.nussknacker.engine.api.{ArgonautCirce, DisplayJson}
 import pl.touk.nussknacker.engine.util.Implicits._
+import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
 import java.util.UUID
 import scala.collection.JavaConverters._
-import scala.util.Try
 
-case class BestEffortJsonEncoder(failOnUnkown: Boolean, highPriority: PartialFunction[Any, Json] = Map()) {
+case class BestEffortJsonEncoder(failOnUnkown: Boolean, classLoader: ClassLoader, highPriority: PartialFunction[Any, Json] = Map()) {
 
   private val safeString = safeJson[String](fromString)
   private val safeLong = safeJson[Long](fromLong)
@@ -26,9 +26,9 @@ case class BestEffortJsonEncoder(failOnUnkown: Boolean, highPriority: PartialFun
 
   val circeEncoder: Encoder[Any] = Encoder.encodeJson.contramap(encode)
 
-  private val optionalEncoders = OptionalEncoders.optionalEncoders(this)
+  private val optionalEncoders = ScalaServiceLoader.load[ToJsonEncoder](classLoader).map(_.encoder(this))
 
-  def encode(obj: Any): Json = highPriority.orElse(optionalEncoders).applyOrElse(obj, (any: Any) =>
+  def encode(obj: Any): Json = optionalEncoders.foldLeft(highPriority)(_.orElse(_)).applyOrElse(obj, (any: Any) =>
     any match {
       case null => Null
       case Some(a) => encode(a)
@@ -73,21 +73,6 @@ case class BestEffortJsonEncoder(failOnUnkown: Boolean, highPriority: PartialFun
 
 }
 
-//special care should be taken when implementing optional encoders: access to classes from optional dependencies
-//should be performed only after checking via hasClass that dependency is present on classpath
-object OptionalEncoders {
-
-  private def hasClass(name: String): Boolean = Try(getClass.getClassLoader.loadClass(name)).isSuccess
-
-  private def avroEncoder(encoder: BestEffortJsonEncoder): PartialFunction[Any, Json] = if (hasClass("org.apache.avro.generic.GenericRecord")) {
-    case e: org.apache.avro.generic.GenericRecord =>
-      val map = e.getSchema.getFields.asScala.map(_.name()).map(n => n -> e.get(n)).toMap
-      encoder.encode(map)
-  } else {
-    Map()
-  }
-
-  //in the future we can add other encoders
-  def optionalEncoders(encoder: BestEffortJsonEncoder): PartialFunction[Any, Json] = avroEncoder(encoder)
-
+trait ToJsonEncoder {
+  def encoder(encoder: BestEffortJsonEncoder): PartialFunction[Any, Json]
 }

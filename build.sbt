@@ -699,7 +699,6 @@ lazy val util = (project in engine("util")).
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "com.iheart" %% "ficus" % ficusV,
         "io.circe" %% "circe-java8" % circeJava8V,
-        "org.apache.avro" % "avro" % avroV % Optional
       )
     }
   ).dependsOn(api, testUtil % "test")
