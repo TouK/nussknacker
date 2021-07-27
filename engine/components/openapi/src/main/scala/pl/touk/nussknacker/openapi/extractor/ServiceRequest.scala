@@ -47,7 +47,7 @@ private class ServiceRequest(rootUrl: URL, swaggerService: SwaggerService, input
   }
 
   def apply: SwaggerRequestType = {
-    val encoder = BestEffortJsonEncoder(failOnUnkown = false)
+    val encoder = BestEffortJsonEncoder(failOnUnkown = false, getClass.getClassLoader)
 
     //FIXME: lepsza obsluga (rozpoznawanie multi headers, itp...)
     val headers: List[Header] = swaggerService.parameters.collect { case paramDef@HeaderParameter(value, _) =>

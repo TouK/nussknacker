@@ -154,7 +154,7 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
 
   private def collectSinkResults(runId: TestRunId, results: List[InterpretationResultType]): Unit = {
     //FIXME: testDataOutput is ignored here!
-    val bestEffortJsonEncoder = BestEffortJsonEncoder(failOnUnkown = false)
+    val bestEffortJsonEncoder = BestEffortJsonEncoder(failOnUnkown = false, getClass.getClassLoader)
     val encodeFunction = (out: Any) => bestEffortJsonEncoder.encode(out).fold(
       "null",
       _.toString,

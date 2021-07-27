@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 object ComplexObject {
 
-  private val encoder = BestEffortJsonEncoder(failOnUnkown = false)
+  private val encoder = BestEffortJsonEncoder(failOnUnkown = false, getClass.getClassLoader)
 
   private implicit val mapEncoder: Encoder[Map[String, Any]] = Encoder.instance[Map[String, Any]](encoder.encode)
 }

@@ -90,7 +90,8 @@ object ManagementResources {
         case None => Json.obj("pretty" -> displayableJson)
         case Some(original) => Json.obj("original" -> safeString(original), "pretty" -> displayableJson)
       }
-    case a => Json.obj("pretty" -> BestEffortJsonEncoder(failOnUnkown = false).circeEncoder.apply(a))
+    case null => Json.Null
+    case a => Json.obj("pretty" -> BestEffortJsonEncoder(failOnUnkown = false, a.getClass.getClassLoader).circeEncoder.apply(a))
   }
 
 

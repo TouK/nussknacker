@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.kafka.source
 
+import io.circe.generic.semiauto.deriveEncoder
+import io.circe.{Encoder, Json, KeyEncoder, ObjectEncoder}
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.TypeSerializer
@@ -8,8 +10,10 @@ import org.apache.flink.api.scala.typeutils.{CaseClassTypeInfo, ScalaCaseClassSe
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetection, TypingResultAwareTypeInformationCustomisation}
+import pl.touk.nussknacker.engine.util.json.{BestEffortJsonEncoder, ToJsonEncoder}
 
 import scala.collection.immutable.ListMap
+import scala.jdk.CollectionConverters.mapAsScalaMapConverter
 
 /**
   * InputMeta represents kafka event metadata. It is based on [[org.apache.kafka.clients.consumer.ConsumerRecord]].
@@ -98,4 +102,17 @@ class InputMetaTypeInformationCustomisation extends TypingResultAwareTypeInforma
       InputMeta.typeInformation(originalDetection.forType(a.fields(InputMeta.keyParameterName)))
   }
 
+}
+
+class InputMetaToJson extends ToJsonEncoder {
+
+  private implicit val timeEncoder: Encoder[TimestampType] = Encoder.instance(k => io.circe.Json.fromString(k.toString))
+
+  private implicit def mapEncoder[K: KeyEncoder, V: Encoder]: Encoder[java.util.Map[K, V]] = Encoder[Map[K, V]].contramap(_.asScala.toMap)
+
+  private val forJsonKey: Encoder[InputMeta[Json]] = deriveEncoder
+
+  override def encoder(encoder: BestEffortJsonEncoder): PartialFunction[Any, Json] = {
+    case a: InputMeta[_] => forJsonKey(a.copy(key = encoder.encode(a.key)))
+  }
 }

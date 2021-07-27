@@ -30,14 +30,17 @@ class ServiceRoutes(modelDataMap: ProcessingTypeDataProvider[ModelData])
   import ServiceRoutes._
 
   private implicit val encoder: Encoder[ServiceQuery.QueryResult] = {
-    val resultEncoder: Encoder[Any] = BestEffortJsonEncoder(failOnUnkown = false).circeEncoder
+
     //FIXME: semi-auto like below does not work :/
     //implicit val queryResult: Encoder[QueryServiceResult] = io.circe.generic.semiauto.deriveEncoder[QueryServiceResult]
     //io.circe.generic.semiauto.deriveEncoder[ServiceQuery.QueryResult]
     new Encoder[QueryResult] {
-      override def apply(a: QueryResult): Json = Json.obj(
-        "result" -> resultEncoder(a.result),
-        "collectedResults" -> Json.fromValues(a.collectedResults.map(r => Json.obj("name" -> Json.fromString(r.name), "result" -> resultEncoder(r.result)))))
+      override def apply(a: QueryResult): Json = {
+        val resultEncoder: Encoder[Any] = BestEffortJsonEncoder(failOnUnkown = false, a.result.getClass.getClassLoader).circeEncoder
+        Json.obj(
+          "result" -> resultEncoder(a.result),
+          "collectedResults" -> Json.fromValues(a.collectedResults.map(r => Json.obj("name" -> Json.fromString(r.name), "result" -> resultEncoder(r.result)))))
+      }
     }
   }
 
