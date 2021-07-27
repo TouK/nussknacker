@@ -9,8 +9,9 @@
       <env name="DEVELOPMENT_MODE" value="true" />
       <env name="GRAFANA_URL" value="http://localhost:8081/grafana" />
       <env name="FLINK_REST_URL" value="http://localhost:3031" />
-      <env name="FLINK_QUERYABLE_STATE_PROXY" value="localhost:3063" />
-      <env name="FLINK_ROCKSDB_CHECKPOINT_DATA_URI" value="file:///opt/flink/data/rocksdb-checkpoints" />
+      <env name="FLINK_QUERYABLE_STATE_PROXY_URL" value="localhost:3063" />
+      <env name="FLINK_ROCKSDB_CHECKPOINT_DATA_URI" value="s3://flink/rocksdb-checkpoints" />
+      <env name="SCHEMA_REGISTRY_URL" value="http://localhost:3082" />
     </envs>
     <option name="INCLUDE_PROVIDED_SCOPE" value="true" />
     <option name="MAIN_CLASS_NAME" value="pl.touk.nussknacker.ui.NussknackerApp" />
