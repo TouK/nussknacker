@@ -215,7 +215,10 @@ class DBProcessService(managerActor: ActorRef,
             val json = ProcessMarshaller.toJson(substituted).noSpaces
             GraphProcess(json)
           }
-          processUpdated <- EitherT(repositoryManager.runInTransaction(processRepository.updateProcess(UpdateProcessAction(processIdWithName.id, deploymentData, action.comment, false))))
+          processUpdated <- EitherT(repositoryManager
+            .runInTransaction(processRepository
+              .updateProcess(UpdateProcessAction(processIdWithName.id, deploymentData, action.comment, increaseVersionWhenJsonNotChanged = false))
+            ))
         } yield UpdateProcessResponse(
           processUpdated.newVersion.map(toProcessResponse(processIdWithName.name, _)),
           validation

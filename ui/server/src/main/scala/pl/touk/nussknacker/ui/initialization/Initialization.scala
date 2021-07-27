@@ -124,7 +124,9 @@ class TechnicalProcessUpdate(customProcesses: Map[String, String], repository: D
           case Some(processId) =>
             fetchingProcessRepository.fetchLatestProcessVersion[Unit](processId).flatMap {
               case Some(version) if version.user == Initialization.nussknackerUser.username =>
-                repository.updateProcess(UpdateProcessAction(processId, deploymentData, "External update", false)).map(_.right.map(_ => ()))
+                repository
+                  .updateProcess(UpdateProcessAction(processId, deploymentData, "External update", increaseVersionWhenJsonNotChanged = false))
+                  .map(_.right.map(_ => ()))
               case latestVersion => logger.info(s"Scenario $processId not updated. DB version is: \n${latestVersion.flatMap(_.json).getOrElse("")}\n " +
                 s" and version from file is: \n$deploymentData")
                 DBIOAction.successful(Right(()))
