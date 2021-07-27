@@ -174,7 +174,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         }
 
       case e: MethodReference =>
-        extractMethodReference(e, validationContext, node, current)
+        extractMethodReference(e, validationContext, node, current, disableMethodExecutionForUnknown)
 
       case e: OpEQ => checkEqualityLikeOperation(validationContext, e, current)
       case e: OpNE => checkEqualityLikeOperation(validationContext, e, current)
@@ -320,17 +320,18 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         Valid(Typed(l.toSet))
   }
 
-  private def extractMethodReference(reference: MethodReference, validationContext: ValidationContext, node: SpelNode, context: TypingContext, isStatic: Boolean) = {
-    val isStatic = context.stack.headOption match {
-      case Some(TypingResultWithContext(_, staticContext)) => staticContext
-      case _ => false
-    }
+  private def extractMethodReference(reference: MethodReference, validationContext: ValidationContext, node: SpelNode, context: TypingContext, disableMethodExecutionForUnknown: Boolean) = {
+
     context.stack match {
       case head :: tail =>
-      typeChildren(validationContext, node, context.copy(stack = tail)) { typedParams =>
+        val isStatic = head match {
+          case TypingResultWithContext(_, staticContext) => staticContext
+          case _ => false
+        }
+        typeChildren(validationContext, node, context.copy(stack = tail)) { typedParams =>
           TypeMethodReference(reference.getName, head.typingResult, typedParams.map(_.typingResult), isStatic, disableMethodExecutionForUnknown) match {
             case Right(typingResult) => Valid(TypingResultWithContext(typingResult))
-            case Left(errorMsg) => if(strictMethodsChecking) invalid(errorMsg) else Valid(TypingResultWithContext(Unknown))
+            case Left(errorMsg) => if (strictMethodsChecking) invalid(errorMsg) else Valid(TypingResultWithContext(Unknown))
           }
         }
       case Nil =>
