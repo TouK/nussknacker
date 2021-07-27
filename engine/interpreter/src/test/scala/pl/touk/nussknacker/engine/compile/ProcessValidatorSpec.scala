@@ -199,7 +199,11 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   }
 
-  test("Validation for dynamic property access when on") {
+  test("Validation for dynamic property access when available") {
+    val baseDefinitionCopy = baseDefinition.copy(
+      expressionConfig = baseDefinition.expressionConfig.copy(
+        disableDynamicPropertyAccess = false))
+
     val correctProcess = EspProcessBuilder
       .id("process1")
       .exceptionHandler()
@@ -208,7 +212,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .filter("filter2", "#input['plainValue'] == 1")
       .sink("id2", "#input", "sink")
 
-    val compilationResult = validate(correctProcess, baseDefinition)
+    val compilationResult = validate(correctProcess, baseDefinitionCopy)
 
     compilationResult.result should matchPattern {
       case Valid(_) =>
@@ -216,7 +220,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   }
 
 
-  test("Validation for dynamic property access when off") {
+  test("Validation for dynamic property access when disabled") {
 
     val correctProcess = EspProcessBuilder
       .id("process1")
@@ -565,7 +569,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .exceptionHandler()
       .source("id1", "source")
       .buildVariable("bv1", "doesExist", "v1" -> "42")
-      .filter("sampleFilter", "#doesExist['v1'] + #doesNotExist1 + #doesNotExist2 > 10")
+      .filter("sampleFilter", "#doesExist.v1 + #doesNotExist1 + #doesNotExist2 > 10")
       .emptySink("id2", "sink")
     validate(process, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(
