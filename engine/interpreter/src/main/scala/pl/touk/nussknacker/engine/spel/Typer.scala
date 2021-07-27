@@ -38,7 +38,8 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
                           staticMethodInvocationsChecking: Boolean,
                           typeDefinitionSet: TypeDefinitionSet,
                           evaluationContextPreparer: EvaluationContextPreparer,
-                          disableMethodExecutionForUnknown: Boolean
+                          disableMethodExecutionForUnknown: Boolean,
+                          disableDynamicPropertyAccess: Boolean
                          )(implicit settings: ClassExtractionSettings) extends LazyLogging {
 
   import ast.SpelAst._
@@ -134,7 +135,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
           case TypingResultWithContext(TypedClass(clazz, param :: Nil), _) :: Nil if clazz.isAssignableFrom(classOf[java.util.List[_]]) => valid(param)
           case TypingResultWithContext(TypedClass(clazz, keyParam :: valueParam :: Nil), _):: Nil if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) => valid(valueParam)
           case TypingResultWithContext((d: TypedDict), _) :: Nil => dictTyper.typeDictValue(d, e).map(typ => toResult(typ))
-          case _ => valid(Unknown)
+          case _ => if(disableDynamicPropertyAccess) invalid("Dynamic property access is disabled") else valid(Unknown)
         }
 
       case e: BooleanLiteral => valid(Typed[Boolean])
@@ -397,7 +398,8 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     Invalid(NonEmptyList.of(ExpressionParseError(message)))
 
   def withDictTyper(dictTyper: SpelDictTyper) =
-    new Typer(classLoader, commonSupertypeFinder, dictTyper, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking, typeDefinitionSet,  evaluationContextPreparer, disableMethodExecutionForUnknown)
+    new Typer(classLoader, commonSupertypeFinder, dictTyper, strictMethodsChecking = strictMethodsChecking,
+      staticMethodInvocationsChecking, typeDefinitionSet,  evaluationContextPreparer, disableMethodExecutionForUnknown, disableDynamicPropertyAccess)
 
 }
 

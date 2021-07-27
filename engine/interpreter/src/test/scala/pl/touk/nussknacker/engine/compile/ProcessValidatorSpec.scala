@@ -93,9 +93,9 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     Map.empty,
     ObjectDefinition.noParam,
     ExpressionDefinition(
-      Map("processHelper" -> ObjectDefinition(List(), Typed(ProcessHelper.getClass), List("cat1"), SingleNodeConfig.zero)),
-      List.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, dictionaries = Map.empty,
-      hideMetaVariable = false, strictMethodsChecking = true, staticMethodInvocationsChecking = true, disableMethodExecutionForUnknown = false
+      Map("processHelper" -> ObjectDefinition(List(), Typed(ProcessHelper.getClass), List("cat1"), SingleNodeConfig.zero)), List.empty, List.empty,
+      LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false,
+      strictMethodsChecking = true, staticMethodInvocationsChecking = true, disableMethodExecutionForUnknown = false, disableDynamicPropertyAccess = true
     ),
     ClassExtractionSettings.Default
   )

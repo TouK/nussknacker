@@ -31,13 +31,17 @@ public class ExpressionConfig implements Serializable {
 
     private final boolean disableMethodExecutionForUnknown;
 
+    private final boolean disableDynamicPropertyAccess;
+
     public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<WithCategories<String>> globalImports,  List<Class<?>> additionalClasses) {
-        this(globalProcessVariables, globalImports, additionalClasses, new LanguageConfiguration(List$.MODULE$.empty()), true, true, Collections.emptyMap(), false, true);
+        this(globalProcessVariables, globalImports, additionalClasses, new LanguageConfiguration(List$.MODULE$.empty()), true,
+                true, Collections.emptyMap(), false, true, true);
     }
 
     public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<WithCategories<String>> globalImports,
                             List<Class<?>> additionalClasses, LanguageConfiguration languages, boolean optimizeCompilation, boolean strictTypeChecking,
-                            Map<String, WithCategories<DictDefinition>> dictionaries, boolean hideMetaVariable, boolean disableMethodExecutionForUnknown) {
+                            Map<String, WithCategories<DictDefinition>> dictionaries, boolean hideMetaVariable, boolean disableMethodExecutionForUnknown,
+                            boolean disableDynamicPropertyAccess) {
         this.globalProcessVariables = globalProcessVariables;
         this.globalImports = globalImports;
         this.additionalClasses = additionalClasses;
@@ -47,6 +51,7 @@ public class ExpressionConfig implements Serializable {
         this.dictionaries = dictionaries;
         this.hideMetaVariable = hideMetaVariable;
         this.disableMethodExecutionForUnknown = disableMethodExecutionForUnknown;
+        this.disableDynamicPropertyAccess = disableDynamicPropertyAccess;
     }
 
     public Map<String, WithCategories<Object>> getGlobalProcessVariables() {
@@ -85,6 +90,10 @@ public class ExpressionConfig implements Serializable {
         return disableMethodExecutionForUnknown;
     }
 
+    public boolean isDisableDynamicPropertyAccess() {
+        return disableDynamicPropertyAccess;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -98,13 +107,14 @@ public class ExpressionConfig implements Serializable {
                 Objects.equals(languages, that.languages) &&
                 Objects.equals(dictionaries, that.dictionaries) &&
                 Objects.equals(hideMetaVariable, that.hideMetaVariable) &&
-                Objects.equals(disableMethodExecutionForUnknown, that.disableMethodExecutionForUnknown);
+                Objects.equals(disableMethodExecutionForUnknown, that.disableMethodExecutionForUnknown) &&
+                Objects.equals(disableDynamicPropertyAccess, that.disableDynamicPropertyAccess);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(globalProcessVariables, globalImports, additionalClasses, languages, optimizeCompilation,
-                strictTypeChecking, dictionaries, hideMetaVariable, disableMethodExecutionForUnknown);
+                strictTypeChecking, dictionaries, hideMetaVariable, disableMethodExecutionForUnknown, disableDynamicPropertyAccess);
     }
 
 }
