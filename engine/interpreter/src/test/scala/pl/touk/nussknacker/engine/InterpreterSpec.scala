@@ -138,7 +138,7 @@ class InterpreterSpec extends FunSuite with Matchers {
       })))
 
       override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = super.expressionConfig(processObjectDependencies)
-        .copy(languages = LanguageConfiguration(List(LiteralExpressionParser)))
+        .copy(languages = LanguageConfiguration(List(LiteralExpressionParser)), disableDynamicPropertyAccess = false)
     }
 
     val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, api.process.ProcessObjectDependencies(ConfigFactory.empty(), ObjectNamingProvider(getClass.getClassLoader)))

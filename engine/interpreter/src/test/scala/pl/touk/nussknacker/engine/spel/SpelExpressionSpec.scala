@@ -87,10 +87,9 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   }
 
   private def parse[T: TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard): ValidatedNel[ExpressionParseError, TypedExpression] = {
-    val validationCtx = ValidationContext(
-      context.variables.mapValuesNow(Typed.fromInstance))
+    val validationCtx = ValidationContext(context.variables.mapValuesNow(Typed.fromInstance))
     parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = true, staticMethodInvocationsChecking = true,
-      disableMethodExecutionForUnknown = false, disableDynamicPropertyAccess = true)
+      disableMethodExecutionForUnknown = false, disableDynamicPropertyAccess = false)
   }
 
   private def parse[T: TypeTag](expr: String, validationCtx: ValidationContext): ValidatedNel[ExpressionParseError, TypedExpression] = {
