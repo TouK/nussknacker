@@ -34,8 +34,7 @@ public class ExpressionConfig implements Serializable {
     private final boolean disableDynamicPropertyAccess;
 
     public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<WithCategories<String>> globalImports,  List<Class<?>> additionalClasses) {
-        this(globalProcessVariables, globalImports, additionalClasses, new LanguageConfiguration(List$.MODULE$.empty()), true,
-                true, Collections.emptyMap(), false, true, true);
+        this(globalProcessVariables, globalImports, additionalClasses, new LanguageConfiguration(List$.MODULE$.empty()), true, true, Collections.emptyMap(), false, true, true);
     }
 
     public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<WithCategories<String>> globalImports,
