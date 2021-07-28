@@ -29,27 +29,22 @@ class ProcessModelMigrator(migrations: ProcessingTypeDataProvider[ProcessMigrati
     for {
       migrations <- migrations.forType(processDetails.processingType)
       displayable <- processDetails.json
-      migrated <- migrateWithMigrations(migrations, ProcessConverter.fromDisplayable(displayable), processDetails.modelVersion)
-    } yield migrated
+      migrationsToApply = findMigrationsToApply(migrations, processDetails.modelVersion) if !migrationsToApply.isEmpty
+    } yield migrateWithMigrations(ProcessConverter.fromDisplayable(displayable), migrationsToApply)
   }
 
-  private def migrateWithMigrations(migrations: ProcessMigrations, process: CanonicalProcess, modelVersion: Option[Int])
-    : Option[MigrationResult] = {
-
-    val migrationsToApply = migrations.processMigrations.toList.sortBy(_._1).dropWhile {
+  private def findMigrationsToApply(migrations: ProcessMigrations, modelVersion: Option[Int]): List[ProcessMigration] = {
+    migrations.processMigrations.toList.sortBy(_._1).dropWhile {
       case (migrationNumber, _) => migrationNumber <= modelVersion.getOrElse(0)
     }.map(_._2)
-
-    if(migrationsToApply.isEmpty) None
-    else {
-      val resultProcess = migrationsToApply.foldLeft(process) {
-        case (processToConvert, migration) => migration.migrateProcess(processToConvert)
-      }
-      Some(MigrationResult(resultProcess, migrationsToApply))
-    }
-
   }
 
+  private def migrateWithMigrations(process: CanonicalProcess, migrationsToApply: List[ProcessMigration]): MigrationResult = {
+    val resultProcess = migrationsToApply.foldLeft(process) {
+      case (processToConvert, migration) => migration.migrateProcess(processToConvert)
+    }
+    MigrationResult(resultProcess, migrationsToApply)
+  }
 
 }
 
