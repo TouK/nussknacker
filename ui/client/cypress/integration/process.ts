@@ -77,7 +77,7 @@ describe("Process", () => {
       cy.visitNewProcess(seed, "testProcess")
     })
 
-    it("should allow drag model", () => {
+    it("should allow drag node", () => {
       cy.get("[title='toggle left panel']").click()
       cy.get("[title='toggle right panel']").click()
       cy.get("[model-id=dynamicService]")
@@ -85,6 +85,16 @@ describe("Process", () => {
         .trigger("mousedown")
         .trigger("mousemove", {clientX: 100, clientY: 100})
         .trigger("mouseup", {force: true})
+      cy.get("#graphContainer").toMatchImageSnapshot()
+    })
+
+    it("should allow drag component and drop on edge", () => {
+      cy.get("[title='toggle right panel']").click()
+      cy.contains("custom")
+        .should("be.visible").click()
+      cy.get("[data-testid='component:customFilter']")
+        .should("be.visible")
+        .drag("#graphContainer", {x: 600, y: 400, position: "right", force: true})
       cy.get("#graphContainer").toMatchImageSnapshot()
     })
 
