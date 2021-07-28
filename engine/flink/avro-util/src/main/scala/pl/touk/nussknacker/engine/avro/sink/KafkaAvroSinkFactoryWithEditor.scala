@@ -56,6 +56,12 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
           NextParameters(valueParam.toParameters, state = Some(state))
         }
       }.valueOr(e => FinalResults(context, e.toList))
+    case TransformationStep
+      (
+        (`topicParamName`, _) ::
+        (SchemaVersionParamName, _) ::
+        (SinkKeyParamName, _) :: Nil, state
+      ) => FinalResults(context, Nil, state)
   }
 
   protected def finalParamStep(context: ValidationContext)(implicit nodeId: NodeId): NodeTransformationDefinition = {
