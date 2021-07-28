@@ -141,6 +141,46 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   }
 
+  test("Validation of Type Reference using accessible class and method, failure because static method doesn't return boolean") {
+
+    val typeReferenceWithValidClass = "T(Long).compare(2L, 1L)"
+
+    val testProcess =
+      EspProcessBuilder
+        .id("TypeReferenceClassValidationSuccess")
+        .exceptionHandler()
+        .source("source1", "source")
+        .filter("filter1", typeReferenceWithValidClass)
+        .sink("id1", "#input", "sink")
+
+    val compilationResult = validate(testProcess, baseDefinition)
+
+    compilationResult.result should matchPattern {
+      case Invalid(NonEmptyList(ExpressionParseError(_, _, _, _), _)) =>
+    }
+
+  }
+
+  test("Validation of Type Reference using accessible class with not validated method") {
+
+    val typeReferenceWithValidClass = "T(String).copyValueOf('test')"
+
+    val testProcess =
+      EspProcessBuilder
+        .id("TypeReferenceClassValidationSuccess")
+        .exceptionHandler()
+        .source("source1", "source")
+        .filter("filter1", typeReferenceWithValidClass)
+        .sink("id1", "#input", "sink")
+
+    val compilationResult = validate(testProcess, baseDefinition)
+
+    compilationResult.result should matchPattern {
+      case Invalid(NonEmptyList(ExpressionParseError(_, _, _, _), _)) =>
+    }
+
+  }
+
   test("Validation of Type Reference using inaccessible class, failure scenario") {
 
     val typeReferenceWithValidClass = "T(System).exit()"

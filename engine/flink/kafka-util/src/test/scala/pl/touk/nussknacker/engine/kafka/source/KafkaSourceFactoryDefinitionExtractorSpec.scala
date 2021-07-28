@@ -18,12 +18,12 @@ class KafkaSourceFactoryDefinitionExtractorSpec extends KafkaSourceFactoryProces
         "partOne" -> List(MethodInfo(Nil, Typed[String], None, varArgs = false)),
         "partTwo" -> List(MethodInfo(Nil, Typed[Long], None, varArgs = false)),
         "toString" -> List(MethodInfo(Nil, Typed[String], None, varArgs = false))
-      )),
+      ), Map.empty),
       ClazzDefinition(TypedClass(classOf[SampleValue],Nil), Map(
         "id" -> List(MethodInfo(Nil, Typed[String], None, varArgs = false)),
         "field" -> List(MethodInfo(Nil, Typed[String], None, varArgs = false)),
         "toString" -> List(MethodInfo(Nil, Typed[String], None, varArgs = false))
-      ))
+      ), Map.empty)
     )
   }
 
