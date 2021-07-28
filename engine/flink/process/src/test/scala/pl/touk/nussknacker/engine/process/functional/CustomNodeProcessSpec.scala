@@ -310,12 +310,15 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
       .source("id", "input")
       .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'")
       .customNodeNoOutput("custom", "customFilter", "input" -> "#input.id", "stringVal" -> "'terefere'")
-      .processorEnd("proc2", "logService", "all" -> "#input.id")
+      .split("split",
+        GraphBuilder.emptySink("out", "monitor"),
+        GraphBuilder.endingCustomNode("custom-ending", None, "optionalEndingCustom", "param" -> "'param'")
+      )
     val data = List(SimpleRecord("terefere", 3, "a", new Date(0)), SimpleRecord("kuku", 3, "b", new Date(0)))
 
     CountingNodesListener.listen {
       processInvoker.invokeWithSampleData(process, data)
-    } shouldBe List("id", "testVar", "custom", "proc2", "id", "testVar", "custom")
+    } shouldBe List("id", "testVar", "custom", "split", "out", "custom-ending", "id", "testVar", "custom")
   }
 
 }
