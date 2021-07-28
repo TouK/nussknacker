@@ -4,6 +4,7 @@ import {v4 as uuid4} from "uuid"
 import InlinedSvgs from "../../assets/icons/InlinedSvgs"
 import HeaderIcon from "./HeaderIcon"
 import NodeErrorsLinkSection from "./NodeErrorsLinkSection"
+import i18next from "i18next"
 
 export default class Errors extends React.Component {
 
@@ -55,8 +56,10 @@ export default class Errors extends React.Component {
   nodeErrorsTips = (propertiesErrors, nodeErrors) => {
     const {showDetails, currentProcess} = this.props
     const nodeIds = Object.keys(nodeErrors)
+
+    //TODO: this is dependent on messages from BE. Should be unified to proper resource bundle :/
     const looseNodeIds = nodeIds.filter(nodeId => nodeErrors[nodeId].some(error => error.message === "Loose node"))
-    const invalidEndNodeIds = nodeIds.filter(nodeId => nodeErrors[nodeId].some(error => error.message === "Invalid end of process"))
+    const invalidEndNodeIds = nodeIds.filter(nodeId => nodeErrors[nodeId].some(error => error.message === "Invalid end of scenario"))
     const otherNodeErrorIds = _.difference(nodeIds, _.concat(looseNodeIds, invalidEndNodeIds))
     const errorsOnTop = this.errorsOnTopPresent(otherNodeErrorIds, propertiesErrors)
 
@@ -65,20 +68,20 @@ export default class Errors extends React.Component {
         <div className={"node-error-links"}>
           <NodeErrorsLinkSection
             nodeIds={_.concat(otherNodeErrorIds, _.isEmpty(propertiesErrors) ? [] : "properties")}
-            message={"Errors in: "}
+            message={i18next.t("errors.errorsIn", "Errors in: ")}
             showDetails={showDetails}
             currentProcess={currentProcess}
           />
           <NodeErrorsLinkSection
             nodeIds={looseNodeIds}
-            message={"Loose nodes: "}
+            message={i18next.t("errors.looseNodes", "Loose nodes: ")}
             showDetails={showDetails}
             currentProcess={currentProcess}
             className={errorsOnTop ? "error-secondary-container" : null}
           />
           <NodeErrorsLinkSection
             nodeIds={invalidEndNodeIds}
-            message={"Invalid end of process: "}
+            message={i18next.t("errors.invalidScenarioEnd", "Invalid end of scenario: ")}
             showDetails={showDetails}
             currentProcess={currentProcess}
             className={errorsOnTop ? "error-secondary-container" : null}

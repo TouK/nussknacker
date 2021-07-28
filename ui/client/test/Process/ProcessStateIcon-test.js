@@ -15,7 +15,7 @@ const processState = {
   icon: "/states/stopping-success.svg",
   startTime: null,
   status: {type: "StoppedStateStatus", name: "CANCELED"},
-  tooltip: "The process has been successfully cancelled."
+  tooltip: "The scenario has been successfully cancelled."
 }
 
 const noDataProcessState = {

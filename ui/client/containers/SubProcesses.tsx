@@ -36,16 +36,18 @@ const ElementsRenderer: RowsRenderer = ({processes}) => processes.map(process =>
 
 const sortable = ["name", "category", "modifyDate", "createdAt", "createdBy"]
 const filterable: Filterable = ["name", "processCategory", "createdBy"]
-const columns = [
-  {key: "name", label: "Name"},
-  {key: "category", label: "Category"},
-  {key: "createdBy", label: "Created by"},
-  {key: "createdAt", label: "Created at"},
-  {key: "modifyDate", label: "Last modification"},
-  {key: "edit", label: "Edit"},
-]
+
 
 function SubProcesses() {
+  const {t} = useTranslation()
+  const columns = [
+    {key: "name", label: t("fragmentList.name", "Name")},
+    {key: "category", label: t("fragmentList.category", "Category")},
+    {key: "createdBy", label: t("fragmentList.createdBy", "Created by")},
+    {key: "createdAt", label: t("fragmentList.createdAt", "Created at")},
+    {key: "modifyDate", label: t("fragmentList.modifyDate", "Last modification")},
+    {key: "edit", label: t("fragmentList.edit", "Edit")},
+  ]
   return (
     <Page className={tabStyles.tabContentPage}>
       <ProcessesList
