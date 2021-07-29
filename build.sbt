@@ -267,7 +267,8 @@ val sttpV = "2.2.9"
 
 lazy val commonDockerSettings = {
   Seq(
-    dockerBaseImage := "openjdk:11-jdk-slim",
+    //we use openjdk:11-jdk because openjdk:11-jdk-slim lacks /usr/local/openjdk-11/lib/libfontmanager.so file necessary during pdf export
+    dockerBaseImage := "openjdk:11-jdk",
     dockerUsername := dockerUserName,
     dockerUpdateLatest := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
     dockerAliases := {
