@@ -20,7 +20,7 @@ on:
 env:
   #we use this variable in ciRunSbt.sh
   #NOTE: for publishing we use different settings, we don't use ciRunSbt.sh there
-  CROSS_BUILD: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/fixes') }}
+  CROSS_BUILD: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/fixes') || startsWith(github.ref, 'refs/heads/release') }}
 
 jobs:
   build:
