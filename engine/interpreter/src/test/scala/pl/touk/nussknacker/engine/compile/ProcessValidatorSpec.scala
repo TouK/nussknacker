@@ -95,7 +95,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     ExpressionDefinition(
       Map("processHelper" -> ObjectDefinition(List(), Typed(ProcessHelper.getClass), List("cat1"), SingleNodeConfig.zero)), List.empty, List.empty,
       LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false,
-      strictMethodsChecking = true, staticMethodInvocationsChecking = true, disableMethodExecutionForUnknown = false, disableDynamicPropertyAccess = true
+      strictMethodsChecking = true, staticMethodInvocationsChecking = true, disableMethodExecutionForUnknown = false, dynamicPropertyAccessAllowed = false
     ),
     ClassExtractionSettings.Default
   )
@@ -202,7 +202,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   test("Valid dynamic property access when available") {
     val baseDefinitionCopy = baseDefinition.copy(
       expressionConfig = baseDefinition.expressionConfig.copy(
-        disableDynamicPropertyAccess = false))
+        dynamicPropertyAccessAllowed = true))
 
     val correctProcess = EspProcessBuilder
       .id("process1")

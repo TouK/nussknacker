@@ -87,7 +87,7 @@ object ProcessDefinitionExtractor {
         expressionConfig.strictMethodsChecking,
         expressionConfig.staticMethodInvocationsChecking,
         expressionConfig.disableMethodExecutionForUnknown,
-        expressionConfig.disableDynamicPropertyAccess
+        expressionConfig.dynamicPropertyAccessAllowed
       ), settings)
   }
 
@@ -155,7 +155,7 @@ object ProcessDefinitionExtractor {
       definition.expressionConfig.strictMethodsChecking,
       definition.expressionConfig.staticMethodInvocationsChecking,
       definition.expressionConfig.disableMethodExecutionForUnknown,
-      definition.expressionConfig.disableDynamicPropertyAccess
+      definition.expressionConfig.dynamicPropertyAccessAllowed
     )
     ProcessDefinition(
       definition.services.mapValuesNow(_.objectDefinition),
@@ -173,6 +173,6 @@ object ProcessDefinitionExtractor {
                                                         languages: LanguageConfiguration, optimizeCompilation: Boolean, strictTypeChecking: Boolean,
                                                         dictionaries: Map[String, DictDefinition], hideMetaVariable: Boolean, strictMethodsChecking: Boolean,
                                                         staticMethodInvocationsChecking: Boolean, disableMethodExecutionForUnknown: Boolean,
-                                                        disableDynamicPropertyAccess: Boolean)
+                                                        dynamicPropertyAccessAllowed: Boolean)
 
 }
