@@ -7,7 +7,7 @@ import CommentContent from "./CommentContent"
 import CommentInput from "./CommentInput"
 import Date from "./common/Date"
 import {NkButton} from "./NkButton"
-import {ListSeparator} from "./toolbars/details/ListSeparator"
+import {ListSeparator} from "./common/ListSeparator"
 
 class ProcessComments extends React.Component {
 

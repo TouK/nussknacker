@@ -35,7 +35,6 @@ object ToolbarPanelTypeConfig extends Enumeration {
   val AttachmentsPanel: Value = Value("attachments-panel")
   val ProcessInfoPanel: Value = Value("process-info-panel")
   val ButtonsPanel: Value = Value("buttons-panel")
-  val DetailsPanel: Value = Value("details-panel")
 
   //Some of panels require buttons not empty list param, this method verify that..
   def requiresButtonsParam(`type`: ToolbarPanelType): Boolean =

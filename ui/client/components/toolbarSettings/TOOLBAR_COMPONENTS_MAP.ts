@@ -5,7 +5,6 @@ import {AttachmentsPanel} from "../toolbars/AttachmentsPanel"
 import {CommentsPanel} from "../toolbars/CommentsPanel"
 import {CreatorPanel} from "../toolbars/creator/CreatorPanel"
 import {DefaultToolbarPanel, ToolbarPanelProps} from "../toolbarComponents/DefaultToolbarPanel"
-import DetailsPanel from "../toolbars/details/DetailsPanel"
 import ProcessInfo from "../toolbars/status/ProcessInfo"
 import {UserSettingsPanel} from "../toolbars/UserSettingsPanel"
 import {VersionsPanel} from "../toolbars/VersionsPanel"
@@ -17,7 +16,6 @@ export const TOOLBAR_COMPONENTS_MAP: Record<string, ComponentType<ToolbarPanelPr
   "process-info-panel": ProcessInfo,
 
   // no buttons at all
-  "details-panel": DetailsPanel,
   "tips-panel": TipsPanel,
   "creator-panel": CreatorPanel,
   "versions-panel": VersionsPanel,

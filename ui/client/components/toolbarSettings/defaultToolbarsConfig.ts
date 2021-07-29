@@ -81,7 +81,6 @@ export function defaultToolbarsConfig(isSubprocess: boolean, isArchived: boolean
             {type: BuiltinButtonTypes.ungroup},
           ],
       },
-      {id: "details-panel"},
     ],
     [ToolbarsSide.TopLeft]: [
       {id: "tips-panel"},

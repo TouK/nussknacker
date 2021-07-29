@@ -296,7 +296,6 @@ processToolbarConfig {
           { type: "ungroup" }
         ]
       }
-      { type: "details-panel" }
     ]
   }
 }
