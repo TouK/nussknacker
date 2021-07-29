@@ -162,7 +162,7 @@
                 "name" : "windowLength",
                 "expression" : {
                   "language" : "spel",
-                  "expression" : "T(java.time.Duration).parse('P1D')"
+                  "expression" : "T(java.time.Duration).parse('PT1M')"
                 }
               },
               {
