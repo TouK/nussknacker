@@ -208,8 +208,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .id("process1")
       .exceptionHandler()
       .source("id1", "source")
-      .filter("filter1", "#input.plainValue == 1")
-      .filter("filter2", "#input['plainValue'] == 1")
+      .filter("filter1", "#input['plainValue'] == 1")
       .sink("id2", "#input", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinitionCopy)
@@ -220,19 +219,18 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   }
 
 
-  test("Valid dynamic property access when disabled") {
+  test("Invalid dynamic property access when disabled") {
     val correctProcess = EspProcessBuilder
       .id("process1")
       .exceptionHandler()
       .source("id1", "source")
-      .filter("filter1", "#input.plainValue == 1")
-      .filter("filter2", "#input['plainValue'] == 1")
+      .filter("filter1", "#input['plainValue'] == 1")
       .sink("id2", "#input", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinition)
 
     compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Dynamic property access is not allowed", "filter2", Some(DefaultExpressionId), _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("Dynamic property access is not allowed", "filter1", Some(DefaultExpressionId), _), _)) =>
     }
   }
 
