@@ -41,20 +41,18 @@ class DefinitionResources(modelDataProvider: ProcessingTypeDataProvider[ModelDat
       processingTypeDataProvider.forType(processingType).map { processingTypeData =>
         //TODO maybe always return data for all subprocesses versions instead of fetching just one-by-one?
         pathEndOrSingleSlash {
-          post { // POST - because there is sending complex subprocessVersions parameter
-            entity(as[Map[String, Long]]) { subprocessVersions =>
-              parameter('isSubprocess.as[Boolean]) { (isSubprocess) =>
-                val subprocesses = subprocessRepository.loadSubprocesses(subprocessVersions)
-                complete(
-                  UIProcessObjectsFactory.prepareUIProcessObjects(
-                    processingTypeData.modelData,
-                    processingTypeData.deploymentManager,
-                    user,
-                    subprocesses,
-                    isSubprocess,
-                    processCategoryService)
-                )
-              }
+          get {
+            parameter('isSubprocess.as[Boolean]) { (isSubprocess) =>
+              val subprocesses = subprocessRepository.loadSubprocesses(Map.empty)
+              complete(
+                UIProcessObjectsFactory.prepareUIProcessObjects(
+                  processingTypeData.modelData,
+                  processingTypeData.deploymentManager,
+                  user,
+                  subprocesses,
+                  isSubprocess,
+                  processCategoryService)
+              )
             }
           }
         } ~ dictResources.route(processingTypeData.modelData)

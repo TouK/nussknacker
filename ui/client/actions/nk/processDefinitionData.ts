@@ -17,7 +17,7 @@ type ProcessingType = string
 
 export function fetchProcessDefinition(processingType: ProcessingType, isSubprocess: boolean): ThunkAction {
   return (dispatch) => {
-    return HttpService.fetchProcessDefinitionData(processingType, isSubprocess, {}).then(
+    return HttpService.fetchProcessDefinitionData(processingType, isSubprocess).then(
       (response) => dispatch(processDefinitionData(response.data))
     )
   }

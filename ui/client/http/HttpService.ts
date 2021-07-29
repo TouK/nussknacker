@@ -122,8 +122,8 @@ class HttpService {
     return api.get<UserData>("/user")
   }
 
-  fetchProcessDefinitionData(processingType, isSubprocess, data) {
-    const promise = api.post(`/processDefinitionData/${processingType}?isSubprocess=${isSubprocess}`, data)
+  fetchProcessDefinitionData(processingType, isSubprocess) {
+    const promise = api.get(`/processDefinitionData/${processingType}?isSubprocess=${isSubprocess}`)
       .then(response => {
         // This is a walk-around for having part of node template (branch parameters) outside of itself.
         // See note in DefinitionPreparer on backend side. // TODO remove it after API refactor

@@ -321,8 +321,8 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   def getUser(isAdmin: Boolean): RouteTestResult =
     Get("/user") ~> routeWithPermissions(usersRoute, isAdmin)
 
-  def getProcessDefinitionData(processingType: String, subprocessVersions: Json): RouteTestResult = {
-    Post(s"/processDefinitionData/$processingType?isSubprocess=false", toEntity(subprocessVersions)) ~> withPermissions(definitionResources, testPermissionRead)
+  def getProcessDefinitionData(processingType: String): RouteTestResult = {
+    Get(s"/processDefinitionData/$processingType?isSubprocess=false") ~> withPermissions(definitionResources, testPermissionRead)
   }
 
   def getProcessDefinitionServices: RouteTestResult = {
