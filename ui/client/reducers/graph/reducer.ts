@@ -15,7 +15,6 @@ import {
   prepareNewNodesWithLayout,
   updateAfterNodeIdChange,
   updateAfterNodeDelete,
-  removeSubprocessVersionForLastSubprocess,
   canGroupSelection,
   createEdge,
   adjustBranchParametersAfterDisconnect,
@@ -155,16 +154,11 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
     case "DELETE_NODES": {
       const stateAfterDelete = action.ids.reduce((state, idToDelete) => {
         const stateAfterNodeDelete = updateAfterNodeDelete(state, idToDelete)
-        const newSubprocessVersions = removeSubprocessVersionForLastSubprocess(stateAfterNodeDelete.processToDisplay, idToDelete)
         const processToDisplay = GraphUtils.deleteNode(stateAfterNodeDelete.processToDisplay, idToDelete)
         return {
           ...stateAfterNodeDelete,
           processToDisplay: {
             ...processToDisplay,
-            properties: {
-              ...processToDisplay.properties,
-              subprocessVersions: newSubprocessVersions,
-            },
           },
         }
       }, state)
