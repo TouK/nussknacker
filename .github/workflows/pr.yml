@@ -4,7 +4,6 @@ on:
     branches:
       - master
       - staging
-      - fixes/*
       - release/*
   push:
     branches:
@@ -13,14 +12,13 @@ on:
       - demo
       - preview/*
       - release/*
-      - fixes/*
     #TODO: currently release is done manually, we don't want to run this pipeline on released version, to avoid accidental pushes
     tags-ignore:
       - '**'
 env:
   #we use this variable in ciRunSbt.sh
   #NOTE: for publishing we use different settings, we don't use ciRunSbt.sh there
-  CROSS_BUILD: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/fixes') || startsWith(github.ref, 'refs/heads/release') }}
+  CROSS_BUILD: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release') }}
 
 jobs:
   build:
@@ -293,7 +291,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build, tests, crossCompile, integrationTests, slowTests, frontendTests, dockerTest]
     #TODO: should we publish everything on all those branches?
-    if: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/fixes') || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
+    if: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
