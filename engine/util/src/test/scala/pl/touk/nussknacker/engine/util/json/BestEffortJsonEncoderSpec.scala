@@ -1,18 +1,18 @@
 package pl.touk.nussknacker.engine.util.json
 
-import java.time.{LocalDate, LocalDateTime, LocalTime, OffsetDateTime, ZoneId, ZoneOffset, ZonedDateTime}
-import java.util
+import io.circe.Json
 import io.circe.Json._
-import org.apache.avro.SchemaBuilder
-import org.apache.avro.generic.GenericRecordBuilder
 import org.scalatest.{FunSpec, Matchers}
+import pl.touk.nussknacker.test.ClassLoaderWithServices
 
+import java.time._
+import java.util
 import java.util.UUID
 import scala.collection.immutable.{ListMap, ListSet}
 
 class BestEffortJsonEncoderSpec extends FunSpec with Matchers {
 
-  val encoder = BestEffortJsonEncoder(failOnUnkown = true, getClass.getClassLoader)
+  private val encoder = BestEffortJsonEncoder.defaultForTests
 
   it("should encode simple elements as a json") {
     encoder.encode(1) shouldEqual fromLong(1)
@@ -69,14 +69,35 @@ class BestEffortJsonEncoderSpec extends FunSpec with Matchers {
     encoder.encode(map) shouldEqual obj("key1" -> fromLong(1), "key2" -> fromString("value"))
   }
 
-  it("should encode generic record") {
-    val schema =
-      SchemaBuilder.builder().record("test").fields()
-        .requiredString("field1")
-        .requiredLong("field2").endRecord()
+  it("should use custom encoders from classloader") {
 
-    val genRec = new GenericRecordBuilder(schema).set("field1", "a").set("field2", 11).build()
-    encoder.encode(genRec) shouldEqual obj("field1" -> fromString("a"), "field2" -> fromLong(11))
+    ClassLoaderWithServices.withCustomServices(List(classOf[ToJsonEncoder] -> classOf[CustomJsonEncoder1],
+      classOf[ToJsonEncoder] -> classOf[CustomJsonEncoder2])) { classLoader =>
+      val encoder = BestEffortJsonEncoder(failOnUnkown = true, classLoader)
+
+      encoder.encode(Map("custom1" ->
+        CustomClassToEncode(Map("custom2" -> new NestedClassToEncode)))) shouldBe obj("custom1" ->
+          obj("customEncode" -> obj("custom2" -> fromString("value"))))
+    }
+
   }
 
 }
+
+class CustomJsonEncoder1 extends ToJsonEncoder {
+
+  override def encoder(encoder: BestEffortJsonEncoder): PartialFunction[Any, Json] = {
+    case CustomClassToEncode(value) => obj("customEncode" -> encoder.encode(value))
+  }
+}
+
+class CustomJsonEncoder2 extends ToJsonEncoder {
+
+  override def encoder(encoder: BestEffortJsonEncoder): PartialFunction[Any, Json] = {
+    case _: NestedClassToEncode => fromString("value")
+  }
+}
+
+case class CustomClassToEncode(value: Any)
+
+class NestedClassToEncode

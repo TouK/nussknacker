@@ -7,8 +7,13 @@ For detailed instructions how to migrate to the newest version please see [migra
 
 Nussknacker versions
 ====================
+     
+0.5.0 (Not released yet)
+------------------------
+* [#1968](https://github.com/TouK/nussknacker/pull/1968) `BestEffortJsonEncoder` uses `ServiceLoader` mechanism to
+load additional encoders.
 
-0.4.0 (not released yet) 
+0.4.0 
 ------------------------
 * More precise TypeInformation generation
     * [#1338](https://github.com/TouK/nussknacker/pull/1338) Defining TypeInformation based on TypingResult

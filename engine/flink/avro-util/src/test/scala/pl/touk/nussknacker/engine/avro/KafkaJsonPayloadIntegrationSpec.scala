@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, Sc
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 class KafkaJsonPayloadIntegrationSpec extends FunSuite with KafkaAvroSpecMixin with BeforeAndAfter {
 
@@ -47,7 +48,7 @@ class KafkaJsonPayloadIntegrationSpec extends FunSuite with KafkaAvroSpecMixin w
     val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "#input")
     val process = createAvroProcess(sourceParam, sinkParam)
 
-    runAndVerifyResult(process, topicConfig, PaymentV1.exampleData, SimpleKafkaJsonSerializer.encoder.encode(PaymentV1.exampleData))
+    runAndVerifyResult(process, topicConfig, PaymentV1.exampleData, BestEffortJsonEncoder.defaultForTests.encode(PaymentV1.exampleData))
   }
 
   test("should read and write json of specific record via avro schema") {
@@ -57,7 +58,7 @@ class KafkaJsonPayloadIntegrationSpec extends FunSuite with KafkaAvroSpecMixin w
     val process = createAvroProcess(sourceParam, sinkParam)
 
     val givenObj = GeneratedAvroClassSampleSchema.specificRecord
-    val expectedJson = SimpleKafkaJsonSerializer.encoder.encode(givenObj)
+    val expectedJson = BestEffortJsonEncoder.defaultForTests.encode(givenObj)
 
     runAndVerifyResult(process, topicConfig, givenObj, expectedJson, useSpecificAvroReader = true)
   }

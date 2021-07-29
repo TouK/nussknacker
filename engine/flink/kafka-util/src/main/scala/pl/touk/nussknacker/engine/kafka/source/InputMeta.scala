@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.kafka.source
 
 import io.circe.generic.semiauto.deriveEncoder
-import io.circe.{Encoder, Json, KeyEncoder, ObjectEncoder}
+import io.circe.{Encoder, Json}
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.TypeSerializer
@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDete
 import pl.touk.nussknacker.engine.util.json.{BestEffortJsonEncoder, ToJsonEncoder}
 
 import scala.collection.immutable.ListMap
-import scala.jdk.CollectionConverters.mapAsScalaMapConverter
 
 /**
   * InputMeta represents kafka event metadata. It is based on [[org.apache.kafka.clients.consumer.ConsumerRecord]].
@@ -106,9 +105,9 @@ class InputMetaTypeInformationCustomisation extends TypingResultAwareTypeInforma
 
 class InputMetaToJson extends ToJsonEncoder {
 
-  private implicit val timeEncoder: Encoder[TimestampType] = Encoder.instance(k => io.circe.Json.fromString(k.toString))
+  import pl.touk.nussknacker.engine.api.CirceUtil.codecs._
 
-  private implicit def mapEncoder[K: KeyEncoder, V: Encoder]: Encoder[java.util.Map[K, V]] = Encoder[Map[K, V]].contramap(_.asScala.toMap)
+  private implicit val timeEncoder: Encoder[TimestampType] = Encoder.instance(k => io.circe.Json.fromString(k.toString))
 
   private val forJsonKey: Encoder[InputMeta[Json]] = deriveEncoder
 

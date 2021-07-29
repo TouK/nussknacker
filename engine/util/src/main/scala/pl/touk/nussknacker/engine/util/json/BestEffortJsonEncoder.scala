@@ -13,6 +13,12 @@ import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import java.util.UUID
 import scala.collection.JavaConverters._
 
+object BestEffortJsonEncoder {
+
+  val defaultForTests: BestEffortJsonEncoder = BestEffortJsonEncoder(failOnUnkown = true, getClass.getClassLoader)
+
+}
+
 case class BestEffortJsonEncoder(failOnUnkown: Boolean, classLoader: ClassLoader, highPriority: PartialFunction[Any, Json] = Map()) {
 
   private val safeString = safeJson[String](fromString)
