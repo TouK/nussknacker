@@ -16,8 +16,7 @@
         "numberOfThreads": "1",
         "environment": "test"
       }
-    },
-    "subprocessVersions": {}
+    }
   },
   "exceptionHandlerRef": {
     "parameters": []

@@ -375,7 +375,6 @@ export class NodeDetailsContent extends React.Component {
         )
       case "Properties":
         const type = this.props.node.typeSpecificProperties.type
-        const commonFields = this.subprocessVersionFields()
         //fixme move this configuration to some better place?
         const fields = type === "StreamMetaData" ?
           [
@@ -456,7 +455,7 @@ export class NodeDetailsContent extends React.Component {
         const hasExceptionHandlerParams = this.state.editedNode.exceptionHandler.parameters.length > 0
         return (
           <div className="node-table-body">
-            {[this.idField(), ...fields, ...commonFields, ...additionalFields]}
+            {[this.idField(), ...fields, ...additionalFields]}
             {hasExceptionHandlerParams ?
               (
                 <div className="node-row">
@@ -490,21 +489,6 @@ export class NodeDetailsContent extends React.Component {
           </div>
         )
     }
-  }
-
-  subprocessVersionFields() {
-    return [
-      //TODO this should be nice looking selectbox
-      this.doCreateField(
-        "plain-textarea",
-        "Subprocess Versions",
-        "subprocessVersions",
-        JsonUtils.tryStringify(this.state.editedNode.subprocessVersions || {}),
-        (newValue) => this.setNodeDataAt("subprocessVersions", JsonUtils.tryParse(newValue)),
-        null,
-        false,
-        "subprocess-versions",
-      )]
   }
 
   sourceSinkCommon(toAppend, fieldErrors) {
@@ -715,13 +699,12 @@ export class NodeDetailsContent extends React.Component {
       case "Split":
         return ["id"]
       case "Properties": {
-        const commonFields = "subprocessVersions"
         const fields = this.props.node.typeSpecificProperties.type === "StreamMetaData" ?
           ["parallelism", "checkpointIntervalInSeconds", "spillStateToDisk", "useAsyncInterpretation"] :
           ["path"]
         const additionalFields = Object.entries(this.props.additionalPropertiesConfig).map(([fieldName, fieldConfig]) => fieldName)
         const exceptionHandlerFields = this.state.editedNode.exceptionHandler.parameters.map(param => param.name)
-        return _.concat(commonFields, fields, additionalFields, exceptionHandlerFields)
+        return _.concat(fields, additionalFields, exceptionHandlerFields)
       }
       default:
         return []
