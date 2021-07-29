@@ -13,15 +13,14 @@ import scala.util.Try
 import scala.xml.Elem
 import scala.xml.transform.{RewriteRule, RuleTransformer}
 
-val scala211 = "2.11.12"
 // Warning: Flink doesn't work correctly with 2.12.11
 // Warning: 2.12.13 + crossVersion break sbt-scoverage: https://github.com/scoverage/sbt-scoverage/issues/319
 val scala212 = "2.12.10"
-lazy val supportedScalaVersions = List(scala212, scala211)
+lazy val supportedScalaVersions = List(scala212)
 
 // Silencer must be compatible with exact scala version - see compatibility matrix: https://search.maven.org/search?q=silencer-plugin
 // Silencer 1.7.x require Scala 2.12.11 (see warning above)
-// Silencer (and all '@silent' annotations) can be removed after we drop support for Scala 2.11
+// Silencer (and all '@silent' annotations) can be removed after we can upgrade to 2.12.13...
 // https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
 val silencerV_2_12 = "1.6.0"
 val silencerV = "1.7.0"
@@ -164,10 +163,9 @@ lazy val commonSettings =
         "-language:postfixOps",
         "-language:existentials",
         "-Ypartial-unification",
-        "-target:jvm-1.8"
-        // switch to release option after removing scala 2.11 support (not available on scala 2.11 compiler)
-//        "-release",
-//        "8"
+        "-target:jvm-1.8",
+        "-release",
+        "8"
       ),
       javacOptions := Seq(
         "-Xlint:deprecation",
@@ -399,7 +397,7 @@ lazy val engineStandalone = (project in engine("standalone/engine")).
         "io.dropwizard.metrics5" % "metrics-core" % dropWizardV)
     },
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
-      standaloneSample / Compile / assembly 
+      standaloneSample / Compile / assembly
     ).value,
   ).
   dependsOn(interpreter % "provided", standaloneApi, httpUtils % "provided", testUtil % "it,test", standaloneUtil % "test")
@@ -575,10 +573,6 @@ lazy val interpreter = (project in engine("interpreter")).
   settings(commonSettings).
   settings(
     name := "nussknacker-interpreter",
-    //We hit https://github.com/scala/bug/issues/7046 in strange places during doc generation.
-    //Shortly, we should stop building for 2.11, for now we just skip scaladoc for 2.11 here...
-    Compile / doc/ sources :=
-           forScalaVersion(scalaVersion.value, (Compile / sources).value, (2, 11) -> Nil),
     libraryDependencies ++= {
       Seq(
         "org.springframework" % "spring-expression" % springV,

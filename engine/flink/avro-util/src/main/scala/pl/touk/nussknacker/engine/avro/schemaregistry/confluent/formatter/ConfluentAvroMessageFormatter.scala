@@ -37,7 +37,7 @@ private[confluent] class ConfluentAvroMessageFormatter(schemaRegistryClient: Sch
       val writer = createDatumWriter(record, schema, useSchemaReflection = false)
       writer.write(record, encoder)
       encoder.flush()
-      val str = bos.toString(StandardCharsets.UTF_8)
+      val str = bos.toString(StandardCharsets.UTF_8.name())
       // assume the output of encoder is correct or throw Exception trying
       io.circe.parser.parse(str).right.get
     } catch {
