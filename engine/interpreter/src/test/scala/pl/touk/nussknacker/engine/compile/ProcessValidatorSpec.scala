@@ -141,62 +141,62 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   }
 
-  test("Validation of Type Reference using accessible class and method, failure because static method doesn't return boolean") {
+  test("Validation of Type Reference using accessible class and method, static method doesn't return boolean") {
 
-    val typeReferenceWithValidClass = "T(Long).compare(2L, 1L)"
+    val filterPredicateExpression = "T(Long).compare(2L, 1L)"
 
     val testProcess =
       EspProcessBuilder
         .id("TypeReferenceClassValidationSuccess")
         .exceptionHandler()
         .source("source1", "source")
-        .filter("filter1", typeReferenceWithValidClass)
+        .filter("filter1", filterPredicateExpression)
         .sink("id1", "#input", "sink")
 
     val compilationResult = validate(testProcess, baseDefinition)
 
     compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError(_, _, _, _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("Bad expression type, expected: Boolean, found: Integer", "filter1", Some(DefaultExpressionId), "T(Long).compare(2L, 1L)"), _)) =>
     }
 
   }
 
   test("Validation of Type Reference using accessible class with not validated method") {
 
-    val typeReferenceWithValidClass = "T(String).copyValueOf('test')"
+    val filterPredicateExpression = "T(String).copyValueOf('test')"
 
     val testProcess =
       EspProcessBuilder
         .id("TypeReferenceClassValidationSuccess")
         .exceptionHandler()
         .source("source1", "source")
-        .filter("filter1", typeReferenceWithValidClass)
+        .filter("filter1", filterPredicateExpression)
         .sink("id1", "#input", "sink")
 
     val compilationResult = validate(testProcess, baseDefinition)
 
     compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError(_, _, _, _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("Unknown method 'copyValueOf' in String", "filter1", Some(DefaultExpressionId), "T(String).copyValueOf('test')"), _)) =>
     }
 
   }
 
   test("Validation of Type Reference using inaccessible class, failure scenario") {
 
-    val typeReferenceWithValidClass = "T(System).exit()"
+    val filterPredicateExpression = "T(System).exit()"
 
     val testProcess =
       EspProcessBuilder
         .id("TypeReferenceClassValidationFailure")
         .exceptionHandler()
         .source("source1", "source")
-        .filter("filter1", typeReferenceWithValidClass)
+        .filter("filter1", filterPredicateExpression)
         .sink("id1", "#input", "sink")
 
     val compilationResult = validate(testProcess, baseDefinition)
 
     compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError(_, _, _, _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError("class java.lang.System is not allowed to be passed as TypeReference", "filter1", Some(DefaultExpressionId), "T(System).exit()"), _)) =>
     }
 
   }
