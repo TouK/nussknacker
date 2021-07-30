@@ -32,7 +32,7 @@ class TyperSpec extends FunSuite with Matchers {
   private val strictTypeChecking = false
   private val strictMethodsChecking = false
   private val staticMethodInvocationsChecking = false
-  private val methodExecutionForUnknownAllowed = true
+  private val methodExecutionForUnknownAllowed = false
   private val dynamicPropertyAccessAllowed = false
   private val classResolutionStrategy = SupertypeClassResolutionStrategy.Union
   private val commonSupertypeFinder = new CommonSupertypeFinder(classResolutionStrategy, strictTypeChecking)

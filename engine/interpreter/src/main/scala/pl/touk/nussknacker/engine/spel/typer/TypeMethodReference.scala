@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodI
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 object TypeMethodReference {
-  def apply(methodName: String, invocationTarget: TypingResult, params: List[TypingResult], isStatic: Boolean, disableMethodExecutionForUnknown: Boolean)(implicit settings: ClassExtractionSettings): Either[String, TypingResult] =
+  def apply(methodName: String, invocationTarget: TypingResult, params: List[TypingResult], isStatic: Boolean, methodExecutionForUnknownAllowed: Boolean)(implicit settings: ClassExtractionSettings): Either[String, TypingResult] =
     new TypeMethodReference(methodName, invocationTarget, params, isStatic, methodExecutionForUnknownAllowed).call
 }
 
