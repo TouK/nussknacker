@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 //TODO: Move it to sink package
 object sinks {
 
-  private val encoder = BestEffortJsonEncoder(failOnUnkown = false)
+  private val encoder = BestEffortJsonEncoder(failOnUnkown = false, getClass.getClassLoader)
 
   class GenericKafkaJsonSink(processObjectDependencies: ProcessObjectDependencies)
     extends KafkaSinkFactory(GenericJsonSerialization, processObjectDependencies)

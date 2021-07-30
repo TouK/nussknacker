@@ -19,16 +19,16 @@ object ClassLoaderWithServices {
     try {
       val servicesDir = tempDir.resolve("META-INF/services")
       servicesDir.toFile.mkdirs()
-      services.foreach { case (interface, implementation) =>
+      services.groupBy(_._1).foreach { case (interface, implementations) =>
         val file = servicesDir.resolve(interface.getName)
-        Files.write(file, implementation.getName.getBytes)
+        Files.write(file, implementations.map(_._2.getName).mkString("\n").getBytes)
         filesToDelete.append(file)
       }
       filesToDelete.append(servicesDir, servicesDir.getParent, tempDir)
       action(loader)
     } finally {
       loader.close()
-      filesToDelete.foreach(Files.delete)
+      filesToDelete.foreach(Files.deleteIfExists)
     }
 
 
