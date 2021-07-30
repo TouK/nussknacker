@@ -267,7 +267,8 @@ val sttpV = "2.2.9"
 
 lazy val commonDockerSettings = {
   Seq(
-    dockerBaseImage := "openjdk:11-jdk-slim",
+    //we use openjdk:11-jdk because openjdk:11-jdk-slim lacks /usr/local/openjdk-11/lib/libfontmanager.so file necessary during pdf export
+    dockerBaseImage := "openjdk:11-jdk",
     dockerUsername := dockerUserName,
     dockerUpdateLatest := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
     dockerAliases := {
@@ -472,6 +473,7 @@ lazy val flinkDeploymentManager = (project in engine("flink/management")).
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
+        "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % flinkScope,
         //TODO: move to testcontainers, e.g. https://ci.apache.org/projects/flink/flink-docs-master/api/java/org/apache/flink/tests/util/flink/FlinkContainer.html
         "com.whisk" %% "docker-testkit-scalatest" % "0.9.0" % "it,test",
         "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.0" % "it,test"

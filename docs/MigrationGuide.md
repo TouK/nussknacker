@@ -3,7 +3,7 @@
 
 To see biggest differences please consult the [changelog](Changelog.md).
 
-## In version 0.4.0 (not released yet) 
+## In version 0.4.0
 
 * [#1845](https://github.com/TouK/nussknacker/pull/1845)
   `AuthenticatorData` has been renamed to `AuthenticationResources` and changed into a trait, `apply` construction has
