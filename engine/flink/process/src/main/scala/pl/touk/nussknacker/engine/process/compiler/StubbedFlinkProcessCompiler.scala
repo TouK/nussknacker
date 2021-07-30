@@ -19,9 +19,10 @@ import shapeless.syntax.typeable._
 abstract class StubbedFlinkProcessCompiler(process: EspProcess,
                                            creator: ProcessConfigCreator,
                                            processConfig: Config,
+                                           diskStateBackendSupport: Boolean,
                                            objectNaming: ObjectNaming,
                                            runMode: RunMode)
-  extends FlinkProcessCompiler(creator, processConfig, diskStateBackendSupport = false, objectNaming, runMode) {
+  extends FlinkProcessCompiler(creator, processConfig, diskStateBackendSupport, objectNaming, runMode) {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 

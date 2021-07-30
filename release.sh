@@ -5,6 +5,9 @@ set -e
 if [[ "$BACKPORT" == "true" ]]; then
   echo "Backport release - 'latest' tag won't be updated on docker"
   dockerUpdateLatest="false"
+elif [[ "$RC" == "true" ]]; then
+  echo "Release Candidate - 'latest' tag won't be updated on docker"
+  dockerUpdateLatest="false"
 else
   echo "Normal release - 'latest' tag will be updated on docker"
   dockerUpdateLatest="true"
@@ -25,9 +28,10 @@ echo "Executing: JAVA_OPTS=\"$JAVA_OPTS_VAL\" sbt \"$ARGS\""
 JAVA_OPTS="$JAVA_OPTS_VAL" ./sbtwrapper -DdockerUpLatest=${dockerUpdateLatest} "$ARGS"
 
 if [[ "$BACKPORT" == "true" ]]; then
-  echo "Backport release - Skipping updating docs (by push to master)"
+  echo "Backport release - Skipping updating master"
+elif [[ "$RC" == "true" ]]; then
+  echo "Release Candidate - Skipping updating master"
 else
-  echo "Normal release - Updating docs (by push to master)"
+  echo "Normal release - Updating master"
   git push origin HEAD:master -f 
 fi
-

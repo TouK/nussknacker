@@ -8,7 +8,7 @@ For detailed instructions how to migrate to the newest version please see [migra
 Nussknacker versions
 ====================
 
-0.4.0 (not released yet) 
+0.4.0
 ------------------------
 * More precise TypeInformation generation
     * [#1338](https://github.com/TouK/nussknacker/pull/1338) Defining TypeInformation based on TypingResult

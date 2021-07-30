@@ -189,11 +189,33 @@ class DBFetchingProcessRepositorySpec
     val latestProcessVersion = fetchLatestProcessVersion(processName)
     latestProcessVersion.id shouldBe latestVersionId
 
-    val ProcessUpdated(oldVersionInfoOpt, newVersionInfoOpt) = updateProcess(latestProcessVersion.copy(json = Some("{}")))
+    val ProcessUpdated(oldVersionInfoOpt, newVersionInfoOpt) = updateProcess(latestProcessVersion.copy(json = Some("{}")), false)
     oldVersionInfoOpt shouldBe 'defined
     oldVersionInfoOpt.get.id shouldBe latestVersionId
     newVersionInfoOpt shouldBe 'defined
     newVersionInfoOpt.get.id shouldBe (latestVersionId + 1)
+
+  }
+
+  test("should generate new process version id on increaseVersionWhenJsonNotChanged action param") {
+
+    val processName = ProcessName("processName")
+    val now = LocalDateTime.now()
+    val someJson = Some("{}")
+    val espProcess = EspProcessBuilder.id(processName.value)
+      .exceptionHandler()
+      .source("s", "")
+      .emptySink("s2", "")
+
+    saveProcess(espProcess, now)
+
+    val latestProcessVersion = fetchLatestProcessVersion(processName)
+    latestProcessVersion.id shouldBe 1
+    updateProcess(latestProcessVersion.copy(json = someJson), false).newVersion.get.id shouldBe 2
+    //without force
+    updateProcess(latestProcessVersion.copy(json = someJson), false).newVersion shouldBe empty
+    //now with force
+    updateProcess(latestProcessVersion.copy(json = someJson), true).newVersion.get.id shouldBe 3
 
   }
 
@@ -203,10 +225,10 @@ class DBFetchingProcessRepositorySpec
     ).nonEmpty
   }
 
-  private def updateProcess(processVersion: ProcessVersionEntityData): ProcessUpdated = {
+  private def updateProcess(processVersion: ProcessVersionEntityData, increaseVersionWhenJsonNotChanged: Boolean): ProcessUpdated = {
     processVersion.json shouldBe 'defined
     val json = processVersion.json.get
-    val action = UpdateProcessAction(ProcessId(processVersion.processId), GraphProcess(json), "")
+    val action = UpdateProcessAction(ProcessId(processVersion.processId), GraphProcess(json), "", increaseVersionWhenJsonNotChanged)
 
     val processUpdated = repositoryManager.runInTransaction(writingRepo.updateProcess(action)).futureValue
     processUpdated shouldBe 'right

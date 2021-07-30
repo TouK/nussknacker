@@ -21,8 +21,8 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
                                collectingListener: ResultsCollectingListener,
                                process: EspProcess,
                                testData: TestData, executionConfig: ExecutionConfig,
-                               objectNaming: ObjectNaming) extends StubbedFlinkProcessCompiler(process, creator, inputConfigDuringExecution, objectNaming, RunMode.Test) {
-
+                               objectNaming: ObjectNaming)
+  extends StubbedFlinkProcessCompiler(process, creator, inputConfigDuringExecution, diskStateBackendSupport = false, objectNaming, RunMode.Test) {
 
   override protected def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
     List(collectingListener) ++ super.listeners(processObjectDependencies)

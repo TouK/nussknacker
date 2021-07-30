@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import _ from "lodash"
+import {isEmpty, isEqual, omit, flatten, transform, pickBy, indexOf, keys, find, map, concat, mapValues, flatMap, reduce, get} from "lodash"
 import {NodeResults, TypingResult} from "../types"
 
 class ProcessUtils {
@@ -7,12 +7,14 @@ class ProcessUtils {
   nothingToSave = (state) => {
     const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails
     const processToDisplay = state.graphReducer.processToDisplay
-    return !_.isEmpty(fetchedProcessDetails) ? _.isEqual(fetchedProcessDetails.json, processToDisplay) : true
+    //TODO: validationResult should be removed from processToDisplay...
+    const omitValidation = (details) => omit(details, ['validationResult'])
+    return !isEmpty(fetchedProcessDetails) ? isEqual(omitValidation(fetchedProcessDetails.json), omitValidation(processToDisplay)) : true
   }
 
   canExport = (state) => {
     const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails
-    return _.isEmpty(fetchedProcessDetails) ? false : !_.isEmpty(fetchedProcessDetails.json.nodes)
+    return isEmpty(fetchedProcessDetails) ? false : !isEmpty(fetchedProcessDetails.json.nodes)
   }
 
   //fixme maybe return hasErrors flag from backend?
@@ -21,7 +23,7 @@ class ProcessUtils {
   }
 
   extractInvalidNodes = (invalidNodes) => {
-    return _.flatten(Object.keys(invalidNodes || {}).map((key, idx) => invalidNodes[key].map((error) => {
+    return flatten(Object.keys(invalidNodes || {}).map((key, idx) => invalidNodes[key].map((error) => {
       return {error: error, key: key}
     })))
   }
@@ -34,12 +36,12 @@ class ProcessUtils {
 
   hasNoWarnings = (process) => {
     const warnings = (process.validationResult || {}).warnings
-    return _.isEmpty(warnings) || Object.keys(warnings.invalidNodes || {}).length == 0
+    return isEmpty(warnings) || Object.keys(warnings.invalidNodes || {}).length == 0
   }
 
   hasNoPropertiesErrors = process => {
     const result = (process.validationResult || {}).errors || {}
-    return _.isEmpty(result.processPropertiesErrors)
+    return isEmpty(result.processPropertiesErrors)
   }
 
   //see BranchEndDefinition.artificialNodeId
@@ -51,7 +53,7 @@ class ProcessUtils {
   findVariablesForBranches = (nodeResults: NodeResults) => (nodeId) => {
     //we find all nodes matching pattern encoding branch and edge and extract branch id
     const escapedNodeId = this.escapeNodeIdForRegexp(nodeId)
-    return _.transform(nodeResults || {}, function(result, nodeResult, key: string) {
+    return transform(nodeResults || {}, function(result, nodeResult, key: string) {
       const branch = key.match(new RegExp(`^\\$edge-(.*)-${escapedNodeId}$`))
       if (branch && branch.length > 1) {
         result[branch[1]] = nodeResult.variableTypes
@@ -67,22 +69,22 @@ class ProcessUtils {
     const variablesFromValidation = process?.validationResult?.nodeResults?.[nodeId]?.variableTypes
     const variablesForNode = variablesFromValidation || this._findVariablesBasedOnGraph(nodeId, process, processDefinition)
     const variablesToHideForParam = parameterDefinition?.variablesToHide || []
-    const withoutVariablesToHide =  _.pickBy(variablesForNode, (va, key) => !variablesToHideForParam.includes(key))
+    const withoutVariablesToHide =  pickBy(variablesForNode, (va, key) => !variablesToHideForParam.includes(key))
     const additionalVariablesForParam = parameterDefinition?.additionalVariables || {}
     const variables = {...withoutVariablesToHide, ...additionalVariablesForParam}
     //Filtering by category - we show variables only with the same category as process, removing these which are in blackList
-    return _.pickBy(variables, (va, key) => _.indexOf(globalVariablesWithMismatchCategory, key) === -1)
+    return pickBy(variables, (va, key) => indexOf(globalVariablesWithMismatchCategory, key) === -1)
   }
 
   //It's not pretty but works.. This should be done at backend with properly category hierarchy
   _findGlobalVariablesWithMismatchCategory = (globalVariables, processCategory) => {
-    return _.keys(_.pickBy(globalVariables, variable => _.indexOf(variable.categories, processCategory) === -1))
+    return keys(pickBy(globalVariables, variable => indexOf(variable.categories, processCategory) === -1))
   }
 
   //FIXME: handle source/sink/exceptionHandler properly here - we don't want to use #input etc here!
   _findVariablesBasedOnGraph = (nodeId, process, processDefinition) => {
-    const filteredGlobalVariables = _.pickBy(processDefinition.globalVariables, variable => variable.returnType !== null)
-    const globalVariables = _.mapValues(filteredGlobalVariables, (v) => {
+    const filteredGlobalVariables = pickBy(processDefinition.globalVariables, variable => variable.returnType !== null)
+    const globalVariables = mapValues(filteredGlobalVariables, (v) => {
       return v.returnType
     })
     const variablesDefinedBeforeNode = this._findVariablesDeclaredBeforeNode(nodeId, process, processDefinition)
@@ -94,26 +96,26 @@ class ProcessUtils {
 
   _findVariablesDeclaredBeforeNode = (nodeId, process, processDefinition) => {
     const previousNodes = this._findPreviousNodes(nodeId, process)
-    const variablesDefinedBeforeNodeList = _.flatMap(previousNodes, (nodeId) => {
+    const variablesDefinedBeforeNodeList = flatMap(previousNodes, (nodeId) => {
       return this._findVariablesDefinedInProcess(nodeId, process, processDefinition)
     })
     return this._listOfObjectsToObject(variablesDefinedBeforeNodeList)
   }
 
   _listOfObjectsToObject = (list) => {
-    return _.reduce(list, (memo, current) => {
+    return reduce(list, (memo, current) => {
       return {...memo, ...current}
     }, {})
   }
 
   _findVariablesDefinedInProcess = (nodeId, process, processDefinition) => {
-    const node = _.find(process.nodes, (node) => node.id === nodeId)
+    const node = find(process.nodes, (node) => node.id === nodeId)
     const nodeObjectTypeDefinition = this.findNodeObjectTypeDefinition(node, processDefinition)
-    const clazzName = _.get(nodeObjectTypeDefinition, "returnType")
+    const clazzName = get(nodeObjectTypeDefinition, "returnType")
     const unknown = {type: "Unknown", refClazzName: "java.lang.Object"}
     switch (node.type) {
       case "Source": {
-        return _.isEmpty(clazzName) ? [] : [{input: clazzName}]
+        return isEmpty(clazzName) ? [] : [{input: clazzName}]
       }
       case "SubprocessInputDefinition": {
         return node.parameters.map(param => ({[param.name]: param.typ}))
@@ -125,7 +127,7 @@ class ProcessUtils {
       case "Join": {
         const outputVariableName = node.outputVar
         const outputClazz = clazzName
-        return _.isEmpty(outputClazz) ? [] : [{[outputVariableName]: outputClazz}]
+        return isEmpty(outputClazz) ? [] : [{[outputVariableName]: outputClazz}]
       }
       case "VariableBuilder": {
         return [{[node.varName]: unknown}]
@@ -151,21 +153,21 @@ class ProcessUtils {
     const nodeDefinitionId = this.findNodeDefinitionId(node)
     switch (node.type) {
       case "Source": {
-        return _.get(processDefinition, `sourceFactories[${nodeDefinitionId}]`)
+        return get(processDefinition, `sourceFactories[${nodeDefinitionId}]`)
       }
       case "Sink": {
-        return _.get(processDefinition, `sinkFactories[${nodeDefinitionId}]`)
+        return get(processDefinition, `sinkFactories[${nodeDefinitionId}]`)
       }
       case "Enricher":
       case "Processor": {
-        return _.get(processDefinition, `services[${nodeDefinitionId}]`)
+        return get(processDefinition, `services[${nodeDefinitionId}]`)
       }
       case "Join":
       case "CustomNode": {
-        return _.get(processDefinition, `customStreamTransformers[${nodeDefinitionId}]`)
+        return get(processDefinition, `customStreamTransformers[${nodeDefinitionId}]`)
       }
       case "SubprocessInput": {
-        return _.get(processDefinition, `subprocessInputs[${nodeDefinitionId}]`)
+        return get(processDefinition, `subprocessInputs[${nodeDefinitionId}]`)
       }
       default: {
         return {}
@@ -175,7 +177,7 @@ class ProcessUtils {
 
   //TODO: this should be done without these switches..
   findNodeDefinitionId = (node) => {
-    switch (_.get(node, "type")) {
+    switch (get(node, "type")) {
       case "Source":
       case "Sink": {
         return node.ref.typ
@@ -208,19 +210,19 @@ class ProcessUtils {
     return this.findNodeDefinitionId(node) || this.getNodeBaseTypeCamelCase(node) || "$properties"
   }
 
-  humanReadableType = (typingResult: TypingResult): string => _.isEmpty(typingResult) ? null : typingResult.display
+  humanReadableType = (typingResult: TypingResult): string => isEmpty(typingResult) ? null : typingResult.display
 
   _findPreviousNodes = (nodeId, process) => {
-    const nodeEdge = _.find(process.edges, (edge) => _.isEqual(edge.to, nodeId))
-    if (_.isEmpty(nodeEdge)) {
+    const nodeEdge = find(process.edges, (edge) => isEqual(edge.to, nodeId))
+    if (isEmpty(nodeEdge)) {
       return []
     } else {
       const previousNodes = this._findPreviousNodes(nodeEdge.from, process)
-      return _.concat([nodeEdge.from], previousNodes)
+      return concat([nodeEdge.from], previousNodes)
     }
   }
 
-  prepareFilterCategories = (categories, loggedUser) => _.map((categories || []).filter(c => loggedUser.canRead(c)), (e) => {
+  prepareFilterCategories = (categories, loggedUser) => map((categories || []).filter(c => loggedUser.canRead(c)), (e) => {
     return {
       value: e,
       label: e,
