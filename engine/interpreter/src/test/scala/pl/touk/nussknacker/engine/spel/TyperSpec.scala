@@ -12,20 +12,21 @@ import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, Su
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.expression.PositionRange
+import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class TyperSpec extends FunSuite with Matchers {
 
   test("simple expression") {
     typeExpression("#x + 2", "x" -> 2) shouldBe Valid(CollectedTypingResult(Map(
-      PositionRange(0, 2) -> Typed[Integer],
-      PositionRange(3, 4) -> Typed[Integer],
-      PositionRange(5, 6) -> Typed[Integer]
-    ), Typed[Integer]))
+      PositionRange(0, 2) -> TypingResultWithContext(Typed[Integer]),
+      PositionRange(3, 4) -> TypingResultWithContext(Typed[Integer]),
+      PositionRange(5, 6) -> TypingResultWithContext(Typed[Integer])
+    ), TypingResultWithContext(Typed[Integer])))
   }
 
   test("template") {
-    typeTemplate("result: #{#x + 2}", "x" -> 2) shouldBe Valid(CollectedTypingResult(Map.empty, Typed[String]))
+    typeTemplate("result: #{#x + 2}", "x" -> 2) shouldBe Valid(CollectedTypingResult(Map.empty, TypingResultWithContext(Typed[String])))
   }
 
   private val strictTypeChecking = false

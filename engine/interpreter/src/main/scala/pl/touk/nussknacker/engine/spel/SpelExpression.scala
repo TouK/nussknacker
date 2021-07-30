@@ -139,7 +139,7 @@ class SpelExpressionParser(parser: org.springframework.expression.spel.standard.
       baseParse(original).andThen { parsed =>
         validator.validate(parsed, ctx, expectedType).map((_, parsed))
       }.map { case (combinedResult, parsed) =>
-        TypedExpression(expression(ParsedSpelExpression(original, () => baseParse(original), parsed), expectedType), combinedResult.finalResult, combinedResult.typingInfo)
+        TypedExpression(expression(ParsedSpelExpression(original, () => baseParse(original), parsed), expectedType), combinedResult.finalResult.typingResult, combinedResult.typingInfo)
       }
     }
   }

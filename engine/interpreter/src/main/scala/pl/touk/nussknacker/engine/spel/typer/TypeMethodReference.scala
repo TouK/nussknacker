@@ -7,11 +7,11 @@ import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodI
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 object TypeMethodReference {
-  def apply(methodName: String, invocationTarget: TypingResult, params: List[TypingResult], typeDefinitionSet: TypeDefinitionSet, disableMethodExecutionForUnknown: Boolean)(implicit settings: ClassExtractionSettings): Either[String, TypingResult] =
-    new TypeMethodReference(methodName, invocationTarget, params, typeDefinitionSet, disableMethodExecutionForUnknown).call
+  def apply(methodName: String, invocationTarget: TypingResult, params: List[TypingResult], isStatic: Boolean, disableMethodExecutionForUnknown: Boolean)(implicit settings: ClassExtractionSettings): Either[String, TypingResult] =
+    new TypeMethodReference(methodName, invocationTarget, params, isStatic, disableMethodExecutionForUnknown).call
 }
 
-class TypeMethodReference(methodName: String, invocationTarget: TypingResult, calledParams: List[TypingResult], typeDefinitionSet: TypeDefinitionSet, disableMethodExecutionForUnknown: Boolean) {
+class TypeMethodReference(methodName: String, invocationTarget: TypingResult, calledParams: List[TypingResult], isStatic: Boolean, disableMethodExecutionForUnknown: Boolean) {
   def call(implicit settings: ClassExtractionSettings): Either[String, TypingResult] =
     invocationTarget match {
       case tc: SingleTypingResult =>
@@ -47,7 +47,11 @@ class TypeMethodReference(methodName: String, invocationTarget: TypingResult, ca
   private def validateMethodsNonEmpty(clazzDefinitions: List[ClazzDefinition]): Either[Option[String], List[MethodInfo]] = {
     def displayableType = clazzDefinitions.map(k => k.clazzName).map(_.display).mkString(", ")
     def isClass = clazzDefinitions.map(k => k.clazzName).exists(_.canBeSubclassOf(Typed[Class[_]]))
-    clazzDefinitions.flatMap(_.methods.get(methodName).toList.flatten) match {
+
+    val clazzMethods =
+      if(isStatic) clazzDefinitions.flatMap(_.staticMethods.get(methodName).toList.flatten)
+      else clazzDefinitions.flatMap(_.methods.get(methodName).toList.flatten)
+    clazzMethods match {
       //Static method can be invoked - we cannot find them ATM
       case Nil if isClass => Left(None)
       case Nil => Left(Some(s"Unknown method '$methodName' in $displayableType"))
