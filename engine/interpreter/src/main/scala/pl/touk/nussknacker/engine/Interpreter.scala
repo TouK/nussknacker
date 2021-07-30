@@ -57,7 +57,12 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
 
   private def interpretNode(node: Node, ctx: Context): F[List[InterpretationResult]] = {
     implicit val nodeImplicit: Node = node
-    listeners.foreach(_.nodeEntered(node.id, ctx, metaData))
+    node match {
+      // We do not invoke listener 'nodeEntered' here for nodes which are wrapped in PartRef by ProcessSplitter.
+      // These are handled in interpretNext method
+      case CustomNode(_,_) | EndingCustomNode(_) | Sink(_, _, _, _) =>
+      case _ => listeners.foreach(_.nodeEntered(node.id, ctx, metaData))
+    }
     node match {
       case Source(_, next) =>
         interpretNext(next, ctx)
@@ -154,11 +159,14 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
     }
   }
 
-  private def interpretNext(next: Next, ctx: Context): F[List[InterpretationResult]] =
-    next match {
-      case NextNode(node) => tryToInterpretNode(node, ctx)
-      case PartRef(ref) => monad.pure(List(InterpretationResult(NextPartReference(ref), outputValue(ctx), ctx)))
+  private def interpretNext(next: Next, ctx: Context): F[List[InterpretationResult]] = next match {
+    case NextNode(node) =>
+      tryToInterpretNode(node, ctx)
+    case pr@PartRef(ref) => {
+      listeners.foreach(_.nodeEntered(pr.id, ctx, metaData))
+      monad.pure(List(InterpretationResult(NextPartReference(ref), outputValue(ctx), ctx)))
     }
+  }
 
   //hmm... is this OK?
   private def outputValue(ctx: Context): Any =

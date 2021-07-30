@@ -19,7 +19,6 @@ export type NodeType = {
   },
   branchParameters?: $TodoType,
   branchParametersTemplate?: $TodoType,
-  subprocessVersions?: $TodoType,
   ref?: $TodoType,
   varName?: string,
   value?: $TodoType,

@@ -148,19 +148,6 @@ export function addNodesWithLayout(state: GraphState, {nodes, layout}: ReturnTyp
   }
 }
 
-export function removeSubprocessVersionForLastSubprocess(processToDisplay: Process, idToDelete: NodeId) {
-  const subprocessVersions = processToDisplay.properties.subprocessVersions
-  const nodeToDelete = processToDisplay.nodes.find(n => n.id === idToDelete)
-  if (nodeToDelete?.type === "SubprocessInput") {
-    const subprocessId = nodeToDelete.ref?.id
-    const allSubprocessNodes = processToDisplay.nodes.filter(n => n.ref?.id === subprocessId)
-    const isLastOne = allSubprocessNodes.length === 1
-    return isLastOne ? omit(subprocessVersions, subprocessId) : subprocessVersions
-  } else {
-    return subprocessVersions
-  }
-}
-
 export function createEdge(
   fromNode: NodeType,
   toNode: NodeType,

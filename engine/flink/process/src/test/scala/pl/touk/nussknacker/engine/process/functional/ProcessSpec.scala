@@ -225,7 +225,7 @@ class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
         .source("id", "input")
         .processor("processor1", "eagerLifecycleService", "name" -> "'1'")
         //just to test we open also in different process parts
-        .customNodeNoOutput("custom", "customFilter", "groupBy" -> "''", "stringVal" -> "''")
+        .customNodeNoOutput("custom", "customFilter", "input" -> "''", "stringVal" -> "''")
         .processor("processor2", "eagerLifecycleService", "name" -> "'2'")
         .processorEnd("enricher", "lifecycleService")
 

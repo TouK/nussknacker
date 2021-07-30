@@ -68,7 +68,7 @@ class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHo
     }(patience, implicitly[Position])
   }
 
-  //
+  //Protected, to be overridden in Flink < 1.13 compatibility layer
   protected def assertJobInitialized(executionGraph: AccessExecutionGraph): Assertion = {
     assert(executionGraph.getState != JobStatus.INITIALIZING)
   }

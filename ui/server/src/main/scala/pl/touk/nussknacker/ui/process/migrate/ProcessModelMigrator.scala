@@ -14,9 +14,11 @@ case class MigrationResult(process: CanonicalProcess, migrationsApplied: List[Pr
 
   def id : String = process.metaData.id
 
-  def toUpdateAction(processId: ProcessId): UpdateProcessAction = UpdateProcessAction(processId,
-    GraphProcess(ProcessMarshaller.toJson(process).noSpaces),
-    s"Migrations applied: ${migrationsApplied.map(_.description).mkString(", ")}"
+  def toUpdateAction(processId: ProcessId): UpdateProcessAction = UpdateProcessAction(
+    id = processId,
+    deploymentData = GraphProcess(ProcessMarshaller.toJson(process).noSpaces),
+    comment = s"Migrations applied: ${migrationsApplied.map(_.description).mkString(", ")}",
+    increaseVersionWhenJsonNotChanged = true
   )
 
 }
@@ -27,22 +29,22 @@ class ProcessModelMigrator(migrations: ProcessingTypeDataProvider[ProcessMigrati
     for {
       migrations <- migrations.forType(processDetails.processingType)
       displayable <- processDetails.json
-    } yield migrateWithMigrations(migrations, ProcessConverter.fromDisplayable(displayable), processDetails.modelVersion)
+      migrationsToApply = findMigrationsToApply(migrations, processDetails.modelVersion) if !migrationsToApply.isEmpty
+    } yield migrateWithMigrations(ProcessConverter.fromDisplayable(displayable), migrationsToApply)
   }
 
-  private def migrateWithMigrations(migrations: ProcessMigrations, process: CanonicalProcess, modelVersion: Option[Int])
-    : MigrationResult = {
-
-    val migrationsToApply = migrations.processMigrations.toList.sortBy(_._1).dropWhile {
+  private def findMigrationsToApply(migrations: ProcessMigrations, modelVersion: Option[Int]): List[ProcessMigration] = {
+    migrations.processMigrations.toList.sortBy(_._1).dropWhile {
       case (migrationNumber, _) => migrationNumber <= modelVersion.getOrElse(0)
     }.map(_._2)
+  }
 
+  private def migrateWithMigrations(process: CanonicalProcess, migrationsToApply: List[ProcessMigration]): MigrationResult = {
     val resultProcess = migrationsToApply.foldLeft(process) {
       case (processToConvert, migration) => migration.migrateProcess(processToConvert)
     }
     MigrationResult(resultProcess, migrationsToApply)
   }
-
 
 }
 

@@ -2,8 +2,14 @@
 # Migration guide
 
 To see biggest differences please consult the [changelog](Changelog.md).
+   
+## In version 0.5.0 (Not released yet)
 
-## In version 0.4.0 (not released yet) 
+* [#1439](https://github.com/TouK/nussknacker/pull/1439) Upgrade do Flink 1.13.
+  * `TimeCharacteristic` is deprecated, and should be handled automatically by Flink, see `TimeCharacteristicCompatibility` for details. 
+  * `UserClassLoader` was removed, use appropriate Flink objects or context ClassLoader. 
+
+## In version 0.4.0
 
 * [#1845](https://github.com/TouK/nussknacker/pull/1845)
   `AuthenticatorData` has been renamed to `AuthenticationResources` and changed into a trait, `apply` construction has
@@ -156,10 +162,7 @@ To see biggest differences please consult the [changelog](Changelog.md).
   * [#1917](https://github.com/TouK/nussknacker/pull/1917) configuration of `engineConfig` to `deploymentConfig`                           
   * [#1921](https://github.com/TouK/nussknacker/pull/1921) `ProcessManager` to `DeploymentManager`                           
   * [#1927](https://github.com/TouK/nussknacker/pull/1927) Rename `outer-join` to `single-side-join`
-
-* [#1439](https://github.com/TouK/nussknacker/pull/1439) Upgrade do Flink 1.12.
-  * `TimeCharacteristic` is deprecated, and should be handled automatically by Flink, see `TimeCharacteristicCompatibility` for details. 
-  * `UserClassLoader` was removed, use appropriate Flink objects or context ClassLoader.          
+   
           
 ## In version 0.3.0
 

@@ -48,8 +48,7 @@ class Visualization extends React.Component {
       this.props.actions.displayProcessActivity(this.props.match.params.processId)
       this.props.actions.fetchProcessDefinition(
         details.fetchedProcessDetails.processingType,
-        _.get(details, "fetchedProcessDetails.json.properties.isSubprocess"),
-        this.props.subprocessVersions,
+        _.get(details, "fetchedProcessDetails.json.properties.isSubprocess")
       ).then(() => {
         this.setState({dataResolved: true})
         this.showModalDetailsIfNeeded(details.fetchedProcessDetails.json)
@@ -160,7 +159,6 @@ function mapState(state) {
     processToDisplay,
     processDefinitionData: getProcessDefinitionData(state),
     fetchedProcessDetails: getFetchedProcessDetails(state),
-    subprocessVersions: _.get(processToDisplay, "properties.subprocessVersions"),
     graphLoading: state.graphReducer.graphLoading,
     allModalsClosed: areAllModalsClosed(state),
     nothingToSave: ProcessUtils.nothingToSave(state),

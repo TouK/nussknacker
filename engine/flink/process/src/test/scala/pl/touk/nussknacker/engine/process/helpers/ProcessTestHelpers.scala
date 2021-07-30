@@ -102,7 +102,7 @@ object ProcessTestHelpers {
       "nodePassingStateToImplementation" -> WithCategories(NodePassingStateToImplementation)
     )
 
-    override def listeners(processObjectDependencies: ProcessObjectDependencies) = List()
+    override def listeners(processObjectDependencies: ProcessObjectDependencies) = List(CountingNodesListener)
 
     override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
       ExceptionHandlerFactory.noParams(_ => RecordingExceptionHandler)

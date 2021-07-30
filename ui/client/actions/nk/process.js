@@ -86,9 +86,8 @@ export function clearProcess() {
 export function calculateProcessAfterChange(process, before, after) {
   return dispatch => {
     if (NodeUtils.nodeIsProperties(after)) {
-      const subprocessVersions = after.subprocessVersions || process.properties.subprocessVersions
       return dispatch(
-        fetchProcessDefinition(process.processingType, process.properties.isSubprocess, subprocessVersions),
+        fetchProcessDefinition(process.processingType, process.properties.isSubprocess),
       ).then((processDef) => {
         const processWithNewSubprocessSchema = alignSubprocessesWithSchema(process, processDef.processDefinitionData)
         const {id, ...properties} = after
