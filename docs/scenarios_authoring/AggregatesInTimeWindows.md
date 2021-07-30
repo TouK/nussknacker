@@ -65,26 +65,40 @@ Let’s map the above statement on the parameters of the Nussknacker Aggregate c
 
 **groupBy** - equivalent of the GROUP BY in SQL; a result of the aggregator will be computed for each distinct groupBy value found by Nussknacker in the time window. Whenever an event with aggregate is emitted, the `#key` variable will be available containing value of this field. 
 
-> Historically Nussknacker used term *keyBy* instead of *groupBy*. Some of the screen shots used in the documentation may still use label *keyBy*.
-
 **aggregateBy** - this is an input to the aggregator; for each event  with the same groupBy value which qualiffies to the time window, the aggregateBy expression will be evaluated, fed to the aggregator and the aggregate will be updated.
 
-| groupBy | aggregateBy  | aggregator | result*  |
-|-------|--------------|------------|----------------------------------------------------------|
-|`#input.subscriberId` |`#input.value`| Sum | <p>`6000.0` for subscriberId = 1 </p> `200.0` for subscriberId = 2 |
-|`#input.subscriberId` |`1L`| Sum | <p>`3` for subscriberId = 1 </p> `1` for subscriberId = 2 |
-|`#input.subscriberId` |`{“tid”: #input.transactionId, “val”: #input.value}`| List |<p>`{{“tid”:11, “val”: 500.0},{“tid”:13, “val”: 5000.0},{“tid”:14, “val”: 1000.0}}` for subscriberId = 1 </p> `{{“tid”:12, “val”: 2000.0}}` for subscriberId = 2 |
+| groupBy               | aggregateBy                                          | aggregator   | result*                                                                                                                                                          |
+|-----------            | --------------                                       | ------------ | ----------------------------------------------------------                                                                                                       |
+| `#input.subscriberId` | `#input.value`                                       | Sum          | <p>`6000.0` for subscriberId = 1 </p> `200.0` for subscriberId = 2                                                                                               |
+| `#input.subscriberId` | `1L`                                                 | Sum          | <p>`3` for subscriberId = 1 </p> `1` for subscriberId = 2                                                                                                        |
+| `#input.subscriberId` | `{“tid”: #input.transactionId, “val”: #input.value}` | List         | <p>`{{“tid”:11, “val”: 500.0},{“tid”:13, “val”: 5000.0},{“tid”:14, “val”: 1000.0}}` for subscriberId = 1 </p> `{{“tid”:12, “val”: 2000.0}}` for subscriberId = 2 |
 
-\*result is held in the variable configured in the `output` field.
+
+*result is held in the variable configured in the `output` field.
+
+## Common behaviour
+Components which produce aggregates in time windows process multiple events; a question may arise about the contents of the variables when the window is closed.
+Presence of `#input` and `#inputMeta` variables depends on configuration of the `emitWhenEventLeft` parameter. `#key` parameter is added for every aggregation type and holds a key which is used in `groupBy` 
+
+| aggregationType   | emitWhenEventLeft | extra variables          |
+|------------------ | ----------------- | ---------                |
+| sliding           | false             | #input, #inputMeta, #key |
+| sliding           | true              | #key                     |
+| tumbling, session | not configurable  | #key                     |
 
 
 ## Tumbling-window
 
 Parameters specific to the Tumbling-window:
 
-**windowLength **- just length of the tumbling window
+**windowLength** - just length of the tumbling window
 
 **emitWhen** - determines when the event with the result of the aggregation will be emitted. 
+
+Possible values are:
+- On each event
+- After window closes
+- After window closes, also when no event for key - we produce extra zero aggregate for each key when no data arrived
 
 In the example below, a sum of field `#input.transfer` will be computed  in the 7 day window separately for every subscriber (for every distinct value of subscriberId) and an event will be emitted after the 7 day window closes.
 
@@ -106,16 +120,17 @@ Parameters specific to the Sliding window:
 
 Parameters specific to the session window:
 
-**endSessionCondition **- the session window  can close not only on timeout; it will also close when the expression entered in this field will evaluate to true. Set it to `false` if the only way to close the window is through session timeout.
+**endSessionCondition** - the session window can close not only on timeout; it will also close when the expression entered in this field will evaluate to true. Set it to `false` if the only way to close the window is through session timeout.
 
 **sessionTimeout**- session window will close after this time since the last event.
 
 **emitWhen** - determines when the event with the result of the aggregation will be emitted. 
 
+Possible values are:
+- `On each event` - Window won't be emitted on end, but after each event. This would be useful e.g. when we want to have daily (i.e. for current day) aggregate for each incoming event, but we're not interested in daily summary on each midnight
+- `After session end`
 
 ## Single-side-join
-
-> We have decided to change some terms we use to refer to concepts or parts of Nussknacker. One of the changes we made is to change the name of the Outer-join component to Single-side-join. Because the Nussknacker Designer GUI has not been updated yet, the old name of the component is shown on the picture. Once we refactor Nussknacker Designer, we will update this page accordingly.
 
 Single-side-join component is conceptually similar to components computing aggregates in time windows, so it is convenient to discuss it here. Conceptually Single-side-join is an equivalent of the [left (or right) join](https://www.w3schools.com/sql/sql_join.asp) . In SQL case, the left join returns all records from the left table, and the matched records from the right table. In Nussknacker's case the Single-side-join will join two ‘branches’ of a scenario - the Main branch and the Joined branch and will **return exactly as many events as there were in the Main branch**. Even if no events will be matched in the Joined branch, an event will be emitted, with the value corresponding to the aggregator selected - null for List and Set, 0 for Sum, null for Min and Max. **The time window boundaries will be determined by the event coming from the main branch** and will be in the range of \[main-branch-event-event-time, main-branch-event-event-time + windowLength\].
 
@@ -136,3 +151,4 @@ There are couple fine points to make here:
 
 * The time window (of 1 day in our case) will be started upon arrival of the (first) event with the given `#input.subscriber` value.
 * The `#input` variable used in the aggregateBy field holds the content of the event “arriving” from the Joined branch. This variable will be available downstream. 
+* The `#outputVar` will available on the output of the outer-join aggregate

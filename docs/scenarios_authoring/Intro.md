@@ -40,16 +40,16 @@ Configuring Nussknacker nodes to a large degree is about using SpEL; knowledge o
 
 SpEL [Spring Expression Language](https://docs.spring.io/spring-framework/docs/3.2.x/spring-framework-reference/html/expressions.html) is a powerful expression language that supports querying and manipulating data objects. What exactly does the term _expression _mean and why SpEL is an _expression language_? In programming language terminology, an _expression_ is a combination of values and functions that are combined to create a new value. SpEL allows to write expressions only; therefore it is an expression language. Couple examples:
 
-| Expression  |	Result | Type   |
-| ------------|--------|--------|
-| 'Hello World' | "Hello World" |	String |
-| true 	      |true	   | Boolean |
-| {1,2,3,4}     |  a list of integers from 1 to 4	| List[Integer] |
-| {john:300, alex:400}  |a map (name-value collection) | Map[String, Integer] |
-|  2 > 1  | true	| boolean |
-|  2 > 1 ? 'a' : 'b'  |	"a"	| String |
-|  42 + 2       | 44     | Integer|
-|  'AA' + 'BB'  | "AABB" | String |
+| Expression           | Result                         | Type                 |
+| ------------         | --------                       | --------             |
+| 'Hello World'        | "Hello World"                  | String               |
+| true                 | true                           | Boolean              |
+| {1,2,3,4}            | a list of integers from 1 to 4 | List[Integer]        |
+| {john:300, alex:400} | a map (name-value collection)  | Map[String, Integer] |
+| 2 > 1                | true                           | boolean              |
+| 2 > 1 ? 'a' : 'b'    | "a"                            | String               |
+| 42 + 2               | 44                             | Integer              |
+| 'AA' + 'BB'          | "AABB"                         | String               |
 
 SpEL is used in Nussknacker to access data processed by a node and expand node's configuration capabilities. Some examples:
 
@@ -90,7 +90,7 @@ Consult Kafka [documentation](https://kafka.apache.org/24/javadoc/org/apache/kaf
 
 The `#meta` variable carries meta information about the currently executed scenario. The following meta information elements are available:
 
-* processName -name of the Nussknacker scenario
+* processName - name of the Nussknacker scenario
 * properties  
 
 Check [Basic Nodes](BasicNodes#Variable-component) page for examples how to use variables. 
