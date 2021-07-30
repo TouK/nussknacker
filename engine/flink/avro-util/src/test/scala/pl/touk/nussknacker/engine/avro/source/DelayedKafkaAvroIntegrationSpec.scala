@@ -30,7 +30,7 @@ class DelayedKafkaAvroIntegrationSpec extends FunSuite with KafkaAvroSpecMixin w
       ConfluentSchemaRegistryProvider(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
 
     override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig =
-      super.expressionConfig(processObjectDependencies).copy(disableMethodExecutionForUnknown = false)
+      super.expressionConfig(processObjectDependencies).copy(methodExecutionForUnknownAllowed = false)
   }
 
   override protected def schemaRegistryClient: MockSchemaRegistryClient = schemaRegistryMockClient

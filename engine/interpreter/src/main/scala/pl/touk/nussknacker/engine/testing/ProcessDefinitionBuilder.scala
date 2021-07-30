@@ -37,7 +37,7 @@ object ProcessDefinitionBuilder {
       definition.expressionConfig.hideMetaVariable,
       definition.expressionConfig.strictMethodsChecking,
       definition.expressionConfig.staticMethodInvocationsChecking,
-      definition.expressionConfig.disableMethodExecutionForUnknown,
+      definition.expressionConfig.methodExecutionForUnknownAllowed,
       definition.expressionConfig.dynamicPropertyAccessAllowed
     )
 

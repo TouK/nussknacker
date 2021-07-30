@@ -100,11 +100,11 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   private def parse[T: TypeTag](expr: String, validationCtx: ValidationContext, dictionaries: Map[String, DictDefinition],
                                 flavour: Flavour, strictMethodsChecking: Boolean, staticMethodInvocationsChecking: Boolean,
-                                disableMethodExecutionForUnknown: Boolean, dynamicPropertyAccessAllowed: Boolean): ValidatedNel[ExpressionParseError, TypedExpression] = {
+                                methodExecutionForUnknownAllowed: Boolean, dynamicPropertyAccessAllowed: Boolean): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val imports = List(SampleValue.getClass.getPackage.getName)
     SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(dictionaries), enableSpelForceCompile = true, strictTypeChecking = true,
       imports, flavour, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking = true, typeDefinitionSetWithDefaultClasses,
-      disableMethodExecutionForUnknown = disableMethodExecutionForUnknown, dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed)(ClassExtractionSettings.Default).parse(expr, validationCtx, Typed.fromDetailedType[T])
+      methodExecutionForUnknownAllowed = methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed)(ClassExtractionSettings.Default).parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 
   private def typeDefinitionSetWithDefaultClasses: TypeDefinitionSet = {

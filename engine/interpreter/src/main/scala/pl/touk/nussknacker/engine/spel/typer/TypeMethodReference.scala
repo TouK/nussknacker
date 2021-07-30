@@ -8,10 +8,10 @@ import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 object TypeMethodReference {
   def apply(methodName: String, invocationTarget: TypingResult, params: List[TypingResult], isStatic: Boolean, disableMethodExecutionForUnknown: Boolean)(implicit settings: ClassExtractionSettings): Either[String, TypingResult] =
-    new TypeMethodReference(methodName, invocationTarget, params, isStatic, disableMethodExecutionForUnknown).call
+    new TypeMethodReference(methodName, invocationTarget, params, isStatic, methodExecutionForUnknownAllowed).call
 }
 
-class TypeMethodReference(methodName: String, invocationTarget: TypingResult, calledParams: List[TypingResult], isStatic: Boolean, disableMethodExecutionForUnknown: Boolean) {
+class TypeMethodReference(methodName: String, invocationTarget: TypingResult, calledParams: List[TypingResult], isStatic: Boolean, methodExecutionForUnknownAllowed: Boolean) {
   def call(implicit settings: ClassExtractionSettings): Either[String, TypingResult] =
     invocationTarget match {
       case tc: SingleTypingResult =>
@@ -19,7 +19,7 @@ class TypeMethodReference(methodName: String, invocationTarget: TypingResult, ca
       case TypedUnion(nestedTypes) =>
         typeFromClazzDefinitions(extractClazzDefinitions(nestedTypes))
       case Unknown =>
-        if(disableMethodExecutionForUnknown) Left("Method invocation on Unknown is not allowed") else Right(Unknown)
+        if(methodExecutionForUnknownAllowed) Right(Unknown) else Left("Method invocation on Unknown is not allowed")
     }
 
   private def extractClazzDefinitions(typedClasses: Set[SingleTypingResult])(implicit settings: ClassExtractionSettings): List[ClazzDefinition] =

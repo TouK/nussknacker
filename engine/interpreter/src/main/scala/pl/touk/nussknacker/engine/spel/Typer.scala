@@ -38,7 +38,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
                           staticMethodInvocationsChecking: Boolean,
                           typeDefinitionSet: TypeDefinitionSet,
                           evaluationContextPreparer: EvaluationContextPreparer,
-                          disableMethodExecutionForUnknown: Boolean,
+                          methodExecutionForUnknownAllowed: Boolean,
                           dynamicPropertyAccessAllowed: Boolean
                          )(implicit settings: ClassExtractionSettings) extends LazyLogging {
 
@@ -320,10 +320,10 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
   private def extractProperty(e: PropertyOrFieldReference, t: TypingResult): ValidatedNel[ExpressionParseError, TypingResult] = t match {
     case Unknown =>
-      if(disableMethodExecutionForUnknown)
-        invalid("Property access on Unknown is not allowed")
-      else
+      if(methodExecutionForUnknownAllowed)
         Valid(Unknown)
+      else
+        invalid("Property access on Unknown is not allowed")
     case s: SingleTypingResult =>
       extractSingleProperty(e)(s)
     case TypedUnion(possible) =>
@@ -340,7 +340,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case head :: tail =>
         val isStatic = head.staticContext
         typeChildren(validationContext, node, context.copy(stack = tail)) { typedParams =>
-          TypeMethodReference(reference.getName, head.typingResult, typedParams.map(_.typingResult), isStatic, disableMethodExecutionForUnknown) match {
+          TypeMethodReference(reference.getName, head.typingResult, typedParams.map(_.typingResult), isStatic, methodExecutionForUnknownAllowed) match {
             case Right(typingResult) => Valid(TypingResultWithContext(typingResult))
             case Left(errorMsg) => if (strictMethodsChecking) invalid(errorMsg) else Valid(TypingResultWithContext(Unknown))
           }
@@ -415,7 +415,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
   def withDictTyper(dictTyper: SpelDictTyper) =
     new Typer(classLoader, commonSupertypeFinder, dictTyper, strictMethodsChecking = strictMethodsChecking,
-      staticMethodInvocationsChecking, typeDefinitionSet,  evaluationContextPreparer, disableMethodExecutionForUnknown, dynamicPropertyAccessAllowed)
+      staticMethodInvocationsChecking, typeDefinitionSet,  evaluationContextPreparer, methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed)
 
 }
 
