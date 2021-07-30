@@ -8,6 +8,7 @@ import ReleaseTransformations._
 import pl.project13.scala.sbt.JmhPlugin
 import pl.project13.scala.sbt.JmhPlugin._
 
+import scala.language.postfixOps
 import scala.util.Try
 import scala.xml.Elem
 import scala.xml.transform.{RewriteRule, RuleTransformer}
@@ -73,7 +74,7 @@ lazy val publishSettings = Seq(
         sonatypePublishToBundle.value
     }
   },
-  publishArtifact in Test := false,
+  Test / publishArtifact := false,
   //We don't put scm information here, it will be added by release plugin and if scm provided here is different than the one from scm
   //we'll end up with two scm sections and invalid pom...
   pomExtra in Global := {
@@ -120,15 +121,16 @@ def standaloneMergeStrategy: String => MergeStrategy = {
 
 lazy val SlowTests = config("slow") extend Test
 
+val scalaTestReports = Tests.Argument(TestFrameworks.ScalaTest, "-u", "target/surefire-reports", "-oFGD")
+
 val slowTestsSettings =
   inConfig(SlowTests)(Defaults.testTasks) ++ Seq(
-    testOptions in SlowTests := Seq(
+    SlowTests / testOptions := Seq(
       Tests.Argument(TestFrameworks.ScalaTest, "-n", "org.scalatest.tags.Slow"),
       scalaTestReports
     )
   )
 
-val scalaTestReports = Tests.Argument(TestFrameworks.ScalaTest, "-u", "target/surefire-reports", "-oFGD")
 val ignoreSlowTests = Tests.Argument(TestFrameworks.ScalaTest, "-l", "org.scalatest.tags.Slow")
 
 def forScalaVersion[T](version: String, default: T, specific: ((Int, Int), T)*): T = {
@@ -140,15 +142,15 @@ def forScalaVersion[T](version: String, default: T, specific: ((Int, Int), T)*):
 lazy val commonSettings =
   publishSettings ++
     Seq(
-      test in assembly := {},
+      assembly / test := {},
       licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
       crossScalaVersions := supportedScalaVersions,
       scalaVersion  := scala212,
       resolvers ++= Seq(
         "confluent" at "https://packages.confluent.io/maven"
       ),
-      testOptions in Test ++= Seq(scalaTestReports, ignoreSlowTests),
-      testOptions in IntegrationTest += scalaTestReports,
+      Test / testOptions ++= Seq(scalaTestReports, ignoreSlowTests),
+      IntegrationTest / testOptions += scalaTestReports,
       addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
       // We can't use addCompilerPlugin because it not support usage of scalaVersion.value
       libraryDependencies += compilerPlugin("com.github.ghik" % "silencer-plugin" % forScalaVersion(scalaVersion.value,
@@ -179,7 +181,7 @@ lazy val commonSettings =
       coverageMinimum := 60,
       coverageFailOnMinimum := false,
       //problem with scaladoc of api: https://github.com/scala/bug/issues/10134
-      scalacOptions in (Compile, doc) -= "-Xfatal-warnings",
+      Compile /doc / scalacOptions -= "-Xfatal-warnings",
       libraryDependencies ++= Seq(
         "com.github.ghik" % "silencer-lib" % (CrossVersion.partialVersion(scalaVersion.value) match {
           case Some((2, 12)) => silencerV_2_12
@@ -267,7 +269,8 @@ val sttpV = "2.2.9"
 
 lazy val commonDockerSettings = {
   Seq(
-    dockerBaseImage := "openjdk:11-jdk-slim",
+    //we use openjdk:11-jdk because openjdk:11-jdk-slim lacks /usr/local/openjdk-11/lib/libfontmanager.so file necessary during pdf export
+    dockerBaseImage := "openjdk:11-jdk",
     dockerUsername := dockerUserName,
     dockerUpdateLatest := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
     dockerAliases := {
@@ -310,22 +313,22 @@ lazy val distDockerSettings = {
       "flink" -> flinkV
     ),
     dockerExposedVolumes := Seq(s"$workingDir/storage", s"$workingDir/data"),
-    defaultLinuxInstallLocation in Docker := workingDir
+    Docker / defaultLinuxInstallLocation := workingDir
   )
 }
 
 val publishAssemblySettings = List(
-  artifact in (Compile, assembly) := {
-    val art = (artifact in (Compile, assembly)).value
+  Compile /assembly / artifact := {
+    val art = (Compile / assembly / artifact).value
     art.withClassifier(Some("assembly"))
-  }, addArtifact(artifact in (Compile, assembly), assembly)
+  }, addArtifact(Compile /assembly / artifact, assembly)
 )
 
 def assemblySettings(assemblyName: String, includeScala: Boolean): List[Def.SettingsDefinition] = List(
-  assemblyJarName in assembly := assemblyName,
-  assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = includeScala, level = Level.Info),
-  assemblyMergeStrategy in assembly := modelMergeStrategy,
-  test in assembly := {}
+  assembly / assemblyJarName := assemblyName,
+  assembly / assemblyOption := (assembly / assemblyOption).value.copy(includeScala = includeScala, level = Level.Info),
+  assembly / assemblyMergeStrategy := modelMergeStrategy,
+  assembly / test := {}
 )
 
 def assemblySampleSettings(assemblyName: String): List[Def.SettingsDefinition]
@@ -336,20 +339,20 @@ lazy val dist = {
     .settings(commonSettings)
     .enablePlugins(SbtNativePackager, JavaServerAppPackaging)
     .settings(
-      packageName in Universal := ("nussknacker" + "-" + version.value),
-      Keys.compile in Compile := (Keys.compile in Compile).dependsOn(
-        (assembly in Compile) in generic,
-        (assembly in Compile) in flinkDeploymentManager,
-        (assembly in Compile) in engineStandalone,
-        (assembly in Compile) in openapi,
-        (assembly in Compile) in sql,
+      Universal / packageName := ("nussknacker" + "-" + version.value),
+      Compile / Keys.compile := (Compile / Keys.compile).dependsOn(
+        generic / Compile / assembly,
+        flinkDeploymentManager / Compile / assembly,
+        engineStandalone / Compile / assembly,
+        openapi / Compile / assembly,
+        sql / Compile / assembly,
       ).value,
-      mappings in Universal ++= Seq(
-        (crossTarget in generic).value / "genericModel.jar" -> "model/genericModel.jar",
-        (crossTarget in flinkDeploymentManager).value / "nussknacker-flink-manager.jar" -> "managers/nussknacker-flink-manager.jar",
-        (crossTarget in engineStandalone).value / "nussknacker-standalone-manager.jar" -> "managers/nussknacker-standalone-manager.jar",
-        (crossTarget in openapi).value / "openapi.jar" -> "components/openapi.jar",
-        (crossTarget in sql).value / "sql.jar" -> "components/sql.jar"
+      Universal / mappings ++= Seq(
+        (generic / crossTarget).value / "genericModel.jar" -> "model/genericModel.jar",
+        (flinkDeploymentManager / crossTarget).value / "nussknacker-flink-manager.jar" -> "managers/nussknacker-flink-manager.jar",
+        (engineStandalone / crossTarget).value / "nussknacker-standalone-manager.jar" -> "managers/nussknacker-standalone-manager.jar",
+        (openapi / crossTarget).value / "openapi.jar" -> "components/openapi.jar",
+        (sql / crossTarget).value / "sql.jar" -> "components/sql.jar"
       ),
       /* //FIXME: figure out how to filter out only for .tgz, not for docker
       mappings in Universal := {
@@ -360,23 +363,23 @@ lazy val dist = {
         }
       },*/
       publishArtifact := false,
-      SettingsHelper.makeDeploymentSettings(Universal, packageZipTarball in Universal, "tgz")
+      SettingsHelper.makeDeploymentSettings(Universal, Universal / packageZipTarball, "tgz")
     )
     .settings(distDockerSettings)
     .dependsOn(ui)
   if (addDevModel) {
     module
       .settings(
-        Keys.compile in Compile := (Keys.compile in Compile).dependsOn(
-          (assembly in Compile) in flinkManagementSample,
-          (assembly in Compile) in standaloneSample
+        Compile / Keys.compile := (Compile / Keys.compile).dependsOn(
+          flinkManagementSample / Compile / assembly,
+          standaloneSample / Compile / assembly
         ).value,
-        mappings in Universal += {
-          val genericModel = (crossTarget in flinkManagementSample).value / "managementSample.jar"
+        Universal / mappings += {
+          val genericModel = (flinkManagementSample / crossTarget).value / "managementSample.jar"
           genericModel -> "model/managementSample.jar"
         },
-        mappings in Universal += {
-          val demoModel = (crossTarget in standaloneSample).value / s"standaloneSample.jar"
+        Universal / mappings += {
+          val demoModel = (standaloneSample / crossTarget).value / s"standaloneSample.jar"
           demoModel -> "model/standaloneSample.jar"
         }
       )
@@ -400,8 +403,8 @@ lazy val engineStandalone = (project in engine("standalone/engine")).
       Seq(
         "io.dropwizard.metrics5" % "metrics-core" % dropWizardV)
     },
-    Keys.test in IntegrationTest := (Keys.test in IntegrationTest).dependsOn(
-      (assembly in Compile) in standaloneSample
+    IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
+      standaloneSample / Compile / assembly 
     ).value,
   ).
   dependsOn(interpreter % "provided", standaloneApi, httpUtils % "provided", testUtil % "it,test", standaloneUtil % "test")
@@ -416,7 +419,7 @@ lazy val standaloneDockerSettings = {
       standaloneManagementPort
     ),
     dockerExposedVolumes := Seq(s"$workingDir/storage"),
-    defaultLinuxInstallLocation in Docker := workingDir,
+    Docker / defaultLinuxInstallLocation := workingDir,
     packageName := standaloneDockerPackageName,
     dockerLabels := Map(
       "version" -> version.value,
@@ -431,8 +434,8 @@ lazy val standaloneApp = (project in engine("standalone/app")).
   enablePlugins(SbtNativePackager, JavaServerAppPackaging).
   settings(
     name := "nussknacker-standalone-app",
-    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = true, level = Level.Info),
-    assemblyMergeStrategy in assembly := standaloneMergeStrategy,
+    assembly / assemblyOption := (assembly / assemblyOption).value.copy(includeScala = true, level = Level.Info),
+    assembly / assemblyMergeStrategy := standaloneMergeStrategy,
     libraryDependencies ++= {
       Seq(
         "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
@@ -457,13 +460,13 @@ lazy val flinkDeploymentManager = (project in engine("flink/management")).
   settings(assemblySettings("nussknacker-flink-manager.jar", includeScala = false): _*).
   settings(
     name := "nussknacker-flink-manager",
-    Keys.test in IntegrationTest := (Keys.test in IntegrationTest).dependsOn(
-      (assembly in Compile) in flinkManagementSample,
-      (assembly in Compile) in managementJavaSample
+    IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
+      flinkManagementSample / Compile / assembly,
+      managementJavaSample / Compile / assembly
     ).value,
 
     //flink cannot run tests and deployment concurrently
-    parallelExecution in IntegrationTest := false,
+    IntegrationTest / parallelExecution := false,
     libraryDependencies ++= {
       Seq(
         "org.typelevel" %% "cats-core" % catsV % "provided",
@@ -472,6 +475,7 @@ lazy val flinkDeploymentManager = (project in engine("flink/management")).
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
+        "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % flinkScope,
         //TODO: move to testcontainers, e.g. https://ci.apache.org/projects/flink/flink-docs-master/api/java/org/apache/flink/tests/util/flink/FlinkContainer.html
         "com.whisk" %% "docker-testkit-scalatest" % "0.9.0" % "it,test",
         "com.whisk" %% "docker-testkit-impl-spotify" % "0.9.0" % "it,test"
@@ -578,8 +582,8 @@ lazy val interpreter = (project in engine("interpreter")).
     name := "nussknacker-interpreter",
     //We hit https://github.com/scala/bug/issues/7046 in strange places during doc generation.
     //Shortly, we should stop building for 2.11, for now we just skip scaladoc for 2.11 here...
-    sources in doc in Compile :=
-           forScalaVersion(scalaVersion.value, (sources in Compile).value, (2, 11) -> Nil),
+    Compile / doc/ sources :=
+           forScalaVersion(scalaVersion.value, (Compile / sources).value, (2, 11) -> Nil),
     libraryDependencies ++= {
       Seq(
         "org.springframework" % "spring-expression" % springV,
@@ -608,9 +612,9 @@ lazy val benchmarks = (project in engine("benchmarks")).
       )
     },
     // To avoid Intellij message that jmh generated classes are shared between main and test
-    classDirectory in Jmh := (classDirectory in Test).value,
-    dependencyClasspath in Jmh := (dependencyClasspath in Test).value,
-    generateJmhSourcesAndResources in Jmh := (generateJmhSourcesAndResources in Jmh).dependsOn(compile in Test).value,
+    Jmh / classDirectory := (Test / classDirectory).value,
+    Jmh / dependencyClasspath := (Test / dependencyClasspath).value,
+    Jmh / generateJmhSourcesAndResources := (Jmh / generateJmhSourcesAndResources).dependsOn(Test / compile).value,
   ).dependsOn(interpreter, avroFlinkUtil, flinkModelUtil, process, testUtil % "test")
 
 
@@ -997,14 +1001,14 @@ lazy val ui = (project in file("ui/server"))
   .settings(
     name := "nussknacker-ui",
     buildUi :=  {
-      runNpm("run build", "Client build failed", (crossTarget in compile).value)
+      runNpm("run build", "Client build failed", (compile / crossTarget).value)
     },
-    parallelExecution in ThisBuild := false,
-    Keys.test in SlowTests := (Keys.test in SlowTests).dependsOn(
-      (assembly in Compile) in flinkManagementSample
+    ThisBuild / parallelExecution := false,
+    SlowTests / test := (SlowTests / test).dependsOn(
+      flinkManagementSample / Compile / assembly
     ).value,
-    Keys.test in Test := (Keys.test in Test).dependsOn(
-      (assembly in Compile) in flinkManagementSample
+    Test / test := (Test / test).dependsOn(
+      flinkManagementSample / Compile / assembly
     ).value,
     /*
       We depend on buildUi in packageBin and assembly to be make sure fe files will be included in jar and fajar
@@ -1012,13 +1016,13 @@ lazy val ui = (project in file("ui/server"))
       make compilation v. long. This is not too nice, but so far only alternative is to put buildUi outside sbt and
       use bash to control when it's done - and this can lead to bugs and edge cases (release, dist/docker, dist/tgz, assembly...)
      */
-    packageBin in Compile := (packageBin in Compile).dependsOn(
+    Compile / packageBin := (Compile / packageBin).dependsOn(
       buildUi
     ).value,
     assembly in ThisScope := (assembly in ThisScope).dependsOn(
       buildUi
     ).value,
-    assemblyMergeStrategy in assembly := uiMergeStrategy,
+    assembly / assemblyMergeStrategy := uiMergeStrategy,
     libraryDependencies ++= {
       Seq(
         "com.typesafe.akka" %% "akka-http" % akkaHttpV,
@@ -1112,7 +1116,7 @@ lazy val root = (project in file("."))
   .settings(
     // crossScalaVersions must be set to Nil on the aggregating project
     releaseCrossBuild := true,
-    skip in publish := true,
+    publish / skip := true,
     releaseProcess := Seq[ReleaseStep](
       checkSnapshotDependencies,
       inquireVersions,

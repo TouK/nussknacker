@@ -19,13 +19,13 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   it("should handle missing scenario type") {
-    getProcessDefinitionData("foo", Map.empty[String, Long].asJson) ~> check {
+    getProcessDefinitionData("foo") ~> check {
       status shouldBe StatusCodes.NotFound
     }
   }
 
   it("should return definition data for existing scenario type") {
-    getProcessDefinitionData(existingProcessingType, Map.empty[String, Long].asJson) ~> check {
+    getProcessDefinitionData(existingProcessingType) ~> check {
       status shouldBe StatusCodes.OK
 
       val noneReturnType = responseAs[Json].hcursor
@@ -38,7 +38,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
   }
 
   it("should return definition data for allowed classes") {
-    getProcessDefinitionData(existingProcessingType, Map.empty[String, Long].asJson) ~> check {
+    getProcessDefinitionData(existingProcessingType) ~> check {
       status shouldBe StatusCodes.OK
 
       val typesInformation = responseAs[Json].hcursor
@@ -111,7 +111,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
     saveSubProcess(displayableSubProcess)(succeed)
     saveProcess(processName, processWithSubProcess.process)(succeed)
 
-    getProcessDefinitionData(existingProcessingType, Map.empty[String, Long].asJson) ~> check {
+    getProcessDefinitionData(existingProcessingType) ~> check {
       status shouldBe StatusCodes.OK
 
       val response = responseAs[Json].hcursor
@@ -327,7 +327,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
   }
 
   it("return info about validator based on param fixed value editor for additional properties") {
-    getProcessDefinitionData(existingProcessingType, Map.empty[String, Long].asJson) ~> check {
+    getProcessDefinitionData(existingProcessingType) ~> check {
       status shouldBe StatusCodes.OK
 
       val validators: Json = responseAs[Json].hcursor
@@ -356,7 +356,7 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
   }
 
   it("return default value based on editor possible values") {
-    getProcessDefinitionData(existingProcessingType, Map.empty[String, Long].asJson) ~> check {
+    getProcessDefinitionData(existingProcessingType) ~> check {
       status shouldBe StatusCodes.OK
 
       val defaultExpression: Json = responseAs[Json].hcursor

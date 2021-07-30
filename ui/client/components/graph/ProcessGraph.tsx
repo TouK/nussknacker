@@ -21,7 +21,9 @@ const spec = {
   drop: (props, monitor, component: Graph) => {
     const clientOffset = monitor.getClientOffset()
     const relOffset = component.processGraphPaper.clientToLocalPoint(clientOffset)
-    component.addNode(monitor.getItem(), relOffset)
+    // to make node horizontally aligned
+    const nodeInputRelOffset = relOffset.offset(-235, -30)
+    component.addNode(monitor.getItem(), nodeInputRelOffset)
     setLinksHovered(component.graph)
   },
   hover: (props, monitor, component: Graph) => {

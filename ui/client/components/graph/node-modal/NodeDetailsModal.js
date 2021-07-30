@@ -45,12 +45,11 @@ class NodeDetailsModal extends React.Component {
   }
 
   componentDidMount() {
-    const {nodeToDisplay, showNodeDetailsModal, businessView, subprocessVersions} = this.props
+    const {nodeToDisplay, showNodeDetailsModal, businessView} = this.props
     const isChromium = !!window.chrome
     if (nodeToDisplay && this.state.subprocessContent === null && showNodeDetailsModal && NodeUtils.nodeType(nodeToDisplay) === "SubprocessInput") {
       if (isChromium) { //Subprocesses work only in Chromium, there is problem with jonint and SVG
-        const subprocessVersion = subprocessVersions[nodeToDisplay.ref.id]
-        HttpService.fetchProcessDetails(nodeToDisplay.ref.id, subprocessVersion, businessView).then((response) => {
+        HttpService.fetchProcessDetails(nodeToDisplay.ref.id, null, businessView).then((response) => {
           this.setState({...this.state, subprocessContent: response.data.json})
         })
       } else {
@@ -245,7 +244,6 @@ function mapState(state) {
     nodeToDisplay: nodeToDisplay,
     nodeSettings: _.get(processDefinitionData.nodesConfig, ProcessUtils.findNodeConfigName(nodeToDisplay)) || {},
     processId: state.graphReducer.processToDisplay.id,
-    subprocessVersions: state.graphReducer.processToDisplay.properties.subprocessVersions,
     nodeErrors: errors,
     processToDisplay: state.graphReducer.processToDisplay,
     readOnly: !state.settings.loggedUser.canWrite(processCategory) ||

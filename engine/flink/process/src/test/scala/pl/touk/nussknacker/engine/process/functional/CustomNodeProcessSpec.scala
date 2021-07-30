@@ -219,7 +219,7 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
       .exceptionHandler()
       .source("id", "input")
       .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'")
-      .customNodeNoOutput("custom", "customFilter", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
+      .customNodeNoOutput("custom", "customFilter", "input" -> "#input.id", "stringVal" -> "'terefere'")
       .processorEnd("proc2", "logService", "all" -> "#input.id")
 
     val data = List(SimpleRecord("terefere", 3, "a", new Date(0)), SimpleRecord("kuku", 3, "b", new Date(0)))
@@ -235,7 +235,7 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
       .exceptionHandler()
       .source("id", "input")
       .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'")
-      .customNodeNoOutput("custom", "customFilterContextTransformation", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
+      .customNodeNoOutput("custom", "customFilterContextTransformation", "input" -> "#input.id", "stringVal" -> "'terefere'")
       .processorEnd("proc2", "logService", "all" -> "#input.id")
 
     val data = List(SimpleRecord("terefere", 3, "a", new Date(0)), SimpleRecord("kuku", 3, "b", new Date(0)))
@@ -304,5 +304,21 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
     MockService.data shouldBe List("1")
   }
 
+  test("listeners should count only incoming events to nodes") {
+    val process = EspProcessBuilder.id("proc1")
+      .exceptionHandler()
+      .source("id", "input")
+      .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'")
+      .customNodeNoOutput("custom", "customFilter", "input" -> "#input.id", "stringVal" -> "'terefere'")
+      .split("split",
+        GraphBuilder.emptySink("out", "monitor"),
+        GraphBuilder.endingCustomNode("custom-ending", None, "optionalEndingCustom", "param" -> "'param'")
+      )
+    val data = List(SimpleRecord("terefere", 3, "a", new Date(0)), SimpleRecord("kuku", 3, "b", new Date(0)))
+
+    CountingNodesListener.listen {
+      processInvoker.invokeWithSampleData(process, data)
+    } shouldBe List("id", "testVar", "custom", "split", "out", "custom-ending", "id", "testVar", "custom")
+  }
 
 }

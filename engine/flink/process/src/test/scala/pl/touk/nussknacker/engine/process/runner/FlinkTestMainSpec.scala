@@ -122,13 +122,10 @@ class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAn
     val nodeResults = results.nodeResults
 
     nodeResults("id") shouldBe List(nodeResult(0, "input" -> input), nodeResult(1, "input" -> input2))
-
-    val resultsAfterCid = List(
+    nodeResults("cid") shouldBe List(nodeResult(0, "input" -> input), nodeResult(1, "input" -> input2))
+    nodeResults("out") shouldBe List(
       nodeResult(0, "input" -> input, "out" -> aggregate),
       nodeResult(1, "input" -> input2, "out" -> aggregate2))
-
-    nodeResults("cid") shouldBe resultsAfterCid
-    nodeResults("out") shouldBe resultsAfterCid
 
     val invocationResults = results.invocationResults
 
