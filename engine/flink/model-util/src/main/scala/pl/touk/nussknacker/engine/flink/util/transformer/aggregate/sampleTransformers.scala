@@ -65,12 +65,12 @@ object sampleTransformers {
                 @DualEditor(simpleEditor = new SimpleEditor(
                   `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
                   possibleValues = Array(
-                    new LabeledExpression(label = "First", expression = "#AGG.firST"),
-                    new LabeledExpression(label = "Last",  expression = "#AGG.lasT"),
+                    new LabeledExpression(label = "First", expression = "#AGG.first"),
+                    new LabeledExpression(label = "Last",  expression = "#AGG.last"),
                     new LabeledExpression(label = "Min",   expression = "#AGG.min"),
                     new LabeledExpression(label = "Max",   expression = "#AGG.max"),
                     new LabeledExpression(label = "Sum",   expression = "#AGG.sum"),
-                    new LabeledExpression(label = "List",  expression = "#AGG.lisT"),
+                    new LabeledExpression(label = "List",  expression = "#AGG.list"),
                     new LabeledExpression(label = "Set",   expression = "#AGG.set"),
                     new LabeledExpression(label = "ApproximateSetCardinality", expression = "#AGG.approxCardinality")
                   )), defaultMode = DualEditorMode.SIMPLE) aggregator: Aggregator,
