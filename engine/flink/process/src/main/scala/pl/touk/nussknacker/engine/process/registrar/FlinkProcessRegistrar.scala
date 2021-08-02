@@ -61,8 +61,7 @@ class FlinkProcessRegistrar(compileProcess: (EspProcess, ProcessVersion, Deploym
 
   protected def isRemoteEnv(env: StreamExecutionEnvironment): Boolean = env.getJavaEnv.isInstanceOf[RemoteStreamEnvironment]
 
-  //In remote env we assume FlinkProcessRegistrar is loaded via userClassloader. If this is not the case,
-  //this method should be overloaded
+  //In remote env we assume FlinkProcessRegistrar is loaded via userClassloader
   protected def usingRightClassloader(env: StreamExecutionEnvironment)(action: ClassLoader => Unit): Unit = {
     if (!isRemoteEnv(env)) {
       val flinkLoaderSimulation = streamExecutionEnvPreparer.flinkClassLoaderSimulation

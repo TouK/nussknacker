@@ -6,7 +6,7 @@ To see biggest differences please consult the [changelog](Changelog.md).
 ## In version 0.5.0 (Not released yet)
 
 * [#1439](https://github.com/TouK/nussknacker/pull/1439) Upgrade do Flink 1.13.
-  * `TimeCharacteristic` is deprecated, and should be handled automatically by Flink, see `TimeCharacteristicCompatibility` for details. 
+  * `setTimeCharacteristic` is deprecated, and should be handled automatically by Flink. 
   * `UserClassLoader` was removed, use appropriate Flink objects or context ClassLoader. 
 
 ## In version 0.4.0
