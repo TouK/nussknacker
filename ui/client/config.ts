@@ -11,6 +11,7 @@
 const publicUrl: URL | null = __webpack_public_path__ ? new URL(__webpack_public_path__?.replace(/static\/$/, "")) : null
 const href = publicUrl?.href.replace(/\/$/, "") || ""
 
+export const BASE_ORIGIN = publicUrl?.origin
 export const BASE_PATH = publicUrl?.pathname || "/"
 export const API_URL = `${href}/api`
 export const BACKEND_STATIC_URL = __DEV__ ? `${href}/be-static/` : __webpack_public_path__
