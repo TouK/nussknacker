@@ -299,6 +299,7 @@ lazy val distDockerSettings = {
     dockerEntrypoint := Seq(s"$workingDir/bin/nussknacker-entrypoint.sh", dockerPort.toString),
     dockerExposedPorts := Seq(dockerPort),
     dockerEnvVars := Map(
+      // TODO: move to defaultUiConfig.conf as a one place for defining defaults
       "AUTHENTICATION_METHOD" -> "BasicAuth",
       "AUTHENTICATION_USERS_FILE" -> "./conf/users.conf",
       "AUTHENTICATION_HEADERS_ACCEPT" -> "application/json",
