@@ -11,8 +11,6 @@ import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParamet
 import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
-import pl.touk.nussknacker.engine.flink.util.TimeCharacteristicCompatibility
-
 
 /**
   * Source with typical source stream trasformations:
@@ -37,7 +35,6 @@ trait FlinkIntermediateRawSource[Raw] extends ExplicitUidInOperatorsSupport { se
   val contextInitializer: FlinkContextInitializer[Raw] = new BasicFlinkContextInitializer[Raw]
 
   def prepareSourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext, sourceFunction: SourceFunction[Raw]): DataStream[Context] = {
-    TimeCharacteristicCompatibility.defineCharacteristicByAssigner(env, timestampAssigner)
 
     //1. add source and 2. set UID
     val rawSourceWithUid = setUidToNodeIdIfNeed(flinkNodeContext, env
