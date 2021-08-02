@@ -140,7 +140,7 @@
     "@cypress/code-coverage": "^3.9.7",
     "@4tw/cypress-drag-drop": "^1.6.0",
     "@hot-loader/react-dom": "^17.0.1",
-    "@touk/federated-types": "1.0.0",
+    "@touk/federated-types": "1.1.0",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.4.3",
     "@svgr/webpack": "^5.5.0",
     "@testing-library/dom": "^7.31.0",
