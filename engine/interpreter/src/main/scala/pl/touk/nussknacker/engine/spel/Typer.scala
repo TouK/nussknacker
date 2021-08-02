@@ -103,6 +103,16 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         throw new SpelCompilationException(node, e)
     }
 
+    def processIndexer(e: Indexer, stack: List[TypingResult]): NodeTypingResult = {
+      stack match {
+        case TypedClass(clazz, param :: Nil) :: Nil if clazz.isAssignableFrom(classOf[java.util.List[_]]) => valid(param)
+        case TypedClass(clazz, keyParam :: valueParam :: Nil) :: Nil if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) => valid(valueParam)
+        case (d: TypedDict) :: Nil => dictTyper.typeDictValue(d, e).map(toResult)
+        case TypedTaggedValue(underlying, _) :: Nil => processIndexer(e, underlying.objType :: Nil)
+        case _ => if(dynamicPropertyAccessAllowed) valid(Unknown) else invalid("Dynamic property access is not allowed")
+      }
+    }
+
     catchUnexpectedErrors(node match {
 
       case e: Assign => invalid("Value modifications are not supported")
