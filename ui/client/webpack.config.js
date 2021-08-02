@@ -148,6 +148,10 @@ module.exports = {
       // it's also good method to connect all places where `name` is needed.
       ...federationConfig,
       shared: {
+        ...require("./package.json").dependencies,
+        "@material-ui/core": {
+          singleton: true,
+        },
         react: {
           eager: true,
           singleton: true,
