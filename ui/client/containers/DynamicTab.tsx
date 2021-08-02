@@ -33,7 +33,7 @@ const IframeTab = ({tab}: {tab: DynamicTabData}) => (
   <iframe
     src={queryString.stringifyUrl({url: tab?.url, query: {iframe: true}})}
     width="100%"
-    height={window.innerHeight}
+    height="100%"
     frameBorder="0"
   />
 )
