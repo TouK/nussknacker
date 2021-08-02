@@ -3,6 +3,7 @@ import React, {memo} from "react"
 import ErrorBoundary from "../components/common/ErrorBoundary"
 import {ExternalModule, splitUrl, useExternalLib} from "./ExternalLib"
 import {ModuleString, ModuleUrl} from "./ExternalLib/types"
+import {MuiThemeProvider} from "./muiThemeProvider"
 
 export type DynamicTabData = {
   name: string,
@@ -21,11 +22,13 @@ const RemoteTabComponent = ({scope}: {scope: ModuleString}) => {
 const RemoteModuleTab = (props: {url: ModuleUrl}) => {
   const [url, scope] = splitUrl(props.url)
   return (
-    <ExternalModule url={url}>
-      <ErrorBoundary>
-        <RemoteTabComponent scope={scope}/>
-      </ErrorBoundary>
-    </ExternalModule>
+    <MuiThemeProvider seed={scope}>
+      <ExternalModule url={url}>
+        <ErrorBoundary>
+          <RemoteTabComponent scope={scope}/>
+        </ErrorBoundary>
+      </ExternalModule>
+    </MuiThemeProvider>
   )
 }
 
