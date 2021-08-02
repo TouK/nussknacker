@@ -103,12 +103,12 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         throw new SpelCompilationException(node, e)
     }
 
-    def processIndexer(e: Indexer, stack: List[TypingResult]): NodeTypingResult = {
+    def indexerValidator(e: Indexer, stack: List[TypingResultWithContext]): NodeTypingResult = {
       stack match {
-        case TypedClass(clazz, param :: Nil) :: Nil if clazz.isAssignableFrom(classOf[java.util.List[_]]) => valid(param)
-        case TypedClass(clazz, keyParam :: valueParam :: Nil) :: Nil if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) => valid(valueParam)
-        case (d: TypedDict) :: Nil => dictTyper.typeDictValue(d, e).map(toResult)
-        case TypedTaggedValue(underlying, _) :: Nil => processIndexer(e, underlying.objType :: Nil)
+        case TypingResultWithContext(TypedClass(clazz, param :: Nil), _) :: Nil if clazz.isAssignableFrom(classOf[java.util.List[_]]) => valid(param)
+        case TypingResultWithContext(TypedClass(clazz, keyParam :: valueParam :: Nil), _):: Nil if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) => valid(valueParam)
+        case TypingResultWithContext(d: TypedDict, _) :: Nil => dictTyper.typeDictValue(d, e).map(typ => toResult(typ))
+        case TypingResultWithContext(TypedTaggedValue(underlying, _), _) :: Nil => indexerValidator(e, TypingResultWithContext(underlying.objType) :: Nil)
         case _ => if(dynamicPropertyAccessAllowed) valid(Unknown) else invalid("Dynamic property access is not allowed")
       }
     }
@@ -140,13 +140,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       //TODO: what should be here?
       case e: Identifier => valid(Unknown)
       //TODO: what should be here?
-      case e: Indexer =>
-        current.stack match {
-          case TypingResultWithContext(TypedClass(clazz, param :: Nil), _) :: Nil if clazz.isAssignableFrom(classOf[java.util.List[_]]) => valid(param)
-          case TypingResultWithContext(TypedClass(clazz, keyParam :: valueParam :: Nil), _):: Nil if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) => valid(valueParam)
-          case TypingResultWithContext((d: TypedDict), _) :: Nil => dictTyper.typeDictValue(d, e).map(typ => toResult(typ))
-          case _ => if(dynamicPropertyAccessAllowed) valid(Unknown) else invalid("Dynamic property access is not allowed")
-        }
+      case e: Indexer => indexerValidator(e, current.stack)
 
       case e: BooleanLiteral => valid(Typed[Boolean])
       case e: IntLiteral => valid(Typed[java.lang.Integer])
