@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.process.api
 
 import org.apache.flink.api.common.state.ValueStateDescriptor
-import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.util.Collector
@@ -26,7 +25,6 @@ class EvictableStateTest extends FlatSpec with Matchers with BeforeAndAfter with
 
     val env = StreamExecutionEnvironment.createLocalEnvironment(1, FlinkTestConfiguration.configuration())
     env.enableCheckpointing(500)
-    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
 
     env.addSource(StaticSource)
       .keyBy(_ => "staticKey")

@@ -95,7 +95,9 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
       case JobStatus.RECONCILING | JobStatus.CREATED | JobStatus.SUSPENDED => FlinkStateStatus.Running
       case JobStatus.FAILING => FlinkStateStatus.Failing
       case JobStatus.FAILED => FlinkStateStatus.Failed
+      case JobStatus.INITIALIZING => FlinkStateStatus.DuringDeploy
     }
+
   }
 
   //TODO: cache by jobId?

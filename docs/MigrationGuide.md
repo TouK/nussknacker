@@ -2,6 +2,12 @@
 # Migration guide
 
 To see biggest differences please consult the [changelog](Changelog.md).
+   
+## In version 0.5.0 (Not released yet)
+
+* [#1439](https://github.com/TouK/nussknacker/pull/1439) Upgrade do Flink 1.13.
+  * `setTimeCharacteristic` is deprecated, and should be handled automatically by Flink. 
+  * `UserClassLoader` was removed, use appropriate Flink objects or context ClassLoader. 
 
 ## In version 0.4.0
 
@@ -156,7 +162,8 @@ To see biggest differences please consult the [changelog](Changelog.md).
   * [#1917](https://github.com/TouK/nussknacker/pull/1917) configuration of `engineConfig` to `deploymentConfig`                           
   * [#1921](https://github.com/TouK/nussknacker/pull/1921) `ProcessManager` to `DeploymentManager`                           
   * [#1927](https://github.com/TouK/nussknacker/pull/1927) Rename `outer-join` to `single-side-join`
-
+   
+          
 ## In version 0.3.0
 
 * [#1313](https://github.com/TouK/nussknacker/pull/1313) Kafka Avro API passes `KafkaConfig` during `TypeInformation` determining

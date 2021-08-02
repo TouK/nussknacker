@@ -9,7 +9,8 @@ import pl.touk.nussknacker.test.WithDataList
 trait SinkForType[T] extends BasicFlinkSink with WithDataList[T] with Serializable {
 
   override def toFlinkFunction: SinkFunction[Any] = new SinkFunction[Any] {
-    override def invoke(value: Any, context: Context[_]): Unit = {
+
+    override def invoke(value: Any, context: Context): Unit = {
       add(value.asInstanceOf[T])
     }
   }

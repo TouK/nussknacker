@@ -13,6 +13,10 @@ Nussknacker versions
 * [#1968](https://github.com/TouK/nussknacker/pull/1968) `BestEffortJsonEncoder` uses `ServiceLoader` mechanism to
 load additional encoders.
 
+0.5.0 (not released yet)
+------------------------
+* [#1439](https://github.com/TouK/nussknacker/pull/1439) Upgrade to Flink 1.13
+
 0.4.0
 ------------------------
 * More precise TypeInformation generation
@@ -68,9 +72,6 @@ load additional encoders.
   * [#1911](https://github.com/TouK/nussknacker/pull/1911) Rename `process` to `scenario`, `subprocess` to `fragment` in messages at backend and some test cases names                                                        
   * [#1921](https://github.com/TouK/nussknacker/pull/1921) `ProcessManager` to `DeploymentManager`                           
   * [#1927](https://github.com/TouK/nussknacker/pull/1927) Rename `outer-join` to `single-side-join`
-
-0.3.1 (not released yet) 
-------------------------
 * Performance fixes:
     * [#1330](https://github.com/TouK/nussknacker/pull/1330) Multiple times parsing expressions in map/product LazyParameter
     * [#1331](https://github.com/TouK/nussknacker/pull/1331) LoggingListener caches loggers

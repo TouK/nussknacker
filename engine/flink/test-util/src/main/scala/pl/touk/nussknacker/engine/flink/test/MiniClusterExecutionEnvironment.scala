@@ -1,15 +1,16 @@
 package pl.touk.nussknacker.engine.flink.test
 
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.api.common.{JobExecutionResult, JobID}
+import org.apache.flink.api.common.{JobExecutionResult, JobID, JobStatus}
 import org.apache.flink.configuration._
 import org.apache.flink.runtime.execution.ExecutionState
+import org.apache.flink.runtime.executiongraph.AccessExecutionGraph
 import org.apache.flink.runtime.jobgraph.JobGraph
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.graph.StreamGraph
 import org.apache.flink.util.OptionalFailure
 import org.scalactic.source.Position
-import org.scalatest.Matchers
+import org.scalatest.{Assertion, Matchers}
 import org.scalatest.concurrent.Eventually
 import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolder.AdditionalEnvironmentConfig
 
@@ -58,11 +59,18 @@ class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHo
 
   def waitForJobState(jobID: JobID, name: String, expectedState: ExecutionState*)(patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience): Unit = {
     Eventually.eventually {
+
       val executionGraph = flinkMiniClusterHolder.getExecutionGraph(jobID).get()
+      assertJobInitialized(executionGraph)
       val executionVertices = executionGraph.getAllExecutionVertices.asScala
       val notRunning = executionVertices.filterNot(v => expectedState.contains(v.getExecutionState))
       assert(notRunning.isEmpty, s"Some vertices of $name are still not running: ${notRunning.map(rs => s"${rs.getTaskNameWithSubtaskIndex} - ${rs.getExecutionState}")}")
     }(patience, implicitly[Position])
+  }
+
+  //Protected, to be overridden in Flink < 1.13 compatibility layer
+  protected def assertJobInitialized(executionGraph: AccessExecutionGraph): Assertion = {
+    assert(executionGraph.getState != JobStatus.INITIALIZING)
   }
 
   override def execute(streamGraph: StreamGraph): JobExecutionResult = {
