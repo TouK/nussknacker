@@ -55,4 +55,8 @@ export default class User {
   isWriter(): boolean {
     return this.isAdmin || this.permissions.includes("Write")
   }
+
+  hasGlobalPermission(name: string): boolean {
+    return this.isAdmin || this.globalPermissions[name]
+  }
 }

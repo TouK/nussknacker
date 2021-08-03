@@ -20,25 +20,12 @@ class UserResources(processCategoryService: ProcessCategoryService)(implicit ec:
     }
 }
 
-@JsonCodec case class GlobalPermissions private(adminTab: Boolean)
-
-object GlobalPermissions {
-  val ALL = apply(GlobalPermission.ALL_PERMISSIONS.toList)
-
-  def apply(permissions: List[GlobalPermission]): GlobalPermissions = {
-    permissions.foldLeft(GlobalPermissions(false)) {
-      case (acc, GlobalPermission.AdminTab) => acc.copy(adminTab = true)
-      case (acc, _) => acc
-    }
-  }
-}
-
 @JsonCodec case class DisplayableUser private(id: String,
                                               username: String,
                                               isAdmin: Boolean,
                                               categories: List[String],
                                               categoryPermissions: Map[String, List[String]],
-                                              globalPermissions: GlobalPermissions)
+                                              globalPermissions: List[GlobalPermission])
 
 object DisplayableUser {
   import pl.touk.nussknacker.engine.util.Implicits._
@@ -50,15 +37,15 @@ object DisplayableUser {
       username = username,
       categories = allCategories.sorted,
       categoryPermissions = categoryPermissions.mapValuesNow(_.map(_.toString).toList.sorted),
-      globalPermissions = GlobalPermissions(globalPermissions)
+      globalPermissions = globalPermissions
     )
     case AdminUser(id, username) => new DisplayableUser(
       id = id,
       isAdmin = true,
       username = username,
       categories = allCategories.sorted,
-      categoryPermissions = allCategories.map(category => category -> Permission.ALL_PERMISSIONS.map(_.toString).toList.sorted).toMap,
-      globalPermissions = GlobalPermissions.ALL
+      categoryPermissions = Map.empty,
+      globalPermissions = Nil
     )
   }
 }

@@ -3,13 +3,11 @@ import {useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"
 import {NavLink} from "react-router-dom"
 import {ReactComponent as NussknackerLogo} from "../assets/img/nussknacker-logo.svg"
-import {AdminPage} from "../containers/AdminPage"
 import {CustomTabPath} from "../containers/CustomTab"
-import {ProcessesTabData} from "../containers/Processes"
-import {Signals} from "../containers/Signals"
-import {getCustomTabs} from "../reducers/selectors/settings"
+import {getTabs} from "../reducers/selectors/settings"
 import {Flex} from "./common/Flex"
 import {ButtonWithFocus} from "./withFocus"
+import User from "../common/models/User";
 
 type MenuItemData = {
   path: string,
@@ -32,8 +30,8 @@ function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Di
   return [value, setValue]
 }
 
-function mapDynamicItems({name, id}: {name: string, id: string}) {
-  return {show: true, path: `${CustomTabPath}/${id}`, title: name}
+function mapDynamicItems({title, id}: {title: string, id: string}) {
+  return {show: true, path: `${CustomTabPath}/${id}`, title: title}
 }
 
 function createMenuItem({show, path, title}: MenuItemData): JSX.Element {
@@ -48,32 +46,21 @@ type Props = {
   appPath: string,
   rightElement?: ReactNode,
   leftElement?: ReactNode,
-  loggedUser: $TodoType,
-  featuresSettings: $TodoType,
+  loggedUser: User,
 }
 
 const Spacer = () => <Flex flex={1}/>
 
 export function MenuBar({appPath, rightElement = null, leftElement = null, ...props}: Props) {
-  const {loggedUser, featuresSettings} = props
-  const showSignals = featuresSettings.signals
-  const showAdmin = loggedUser.globalPermissions.adminTab
-  const customTabs = useSelector(getCustomTabs)
+  const {loggedUser} = props
+  const tabs = useSelector(getTabs)
 
   const [expanded, setExpanded] = useStateWithRevertTimeout(false)
   const {t} = useTranslation()
 
   function buildMenu() {
-    const defaultMenuItems: MenuItemData[] = [
-      {show: true, path: ProcessesTabData.path, title: t("menu.processes", "Scenarios")},
-      {show: showSignals, path: Signals.path, title: t("menu.signals", "Signals")},
-      {show: showAdmin, path: AdminPage.path, title: t("menu.adminPage", "Admin")},
-    ]
 
-    const menuItems = defaultMenuItems.concat(
-      customTabs.map(mapDynamicItems),
-    ).map(createMenuItem)
-
+    const menuItems = tabs.filter(tab => tab.requiredPermission !== null || loggedUser.hasGlobalPermission(tab.requiredPermission)).map(mapDynamicItems).map(createMenuItem)
     return (
       <ul id="menu-items" onClick={() => setExpanded(false)}>
         {menuItems}

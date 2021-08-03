@@ -10,7 +10,6 @@ type MetricsType = {
 type FeaturesSettings = {
   counts: boolean,
   attachments: boolean,
-  signals: boolean,
   search: { url: string },
   metrics: MetricsType,
   remoteEnvironment: { targetEnvironmentId: string },

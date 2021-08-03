@@ -14,7 +14,7 @@ export enum AuthStrategy {
 }
 
 export interface FeaturesSettings {
-  customTabs?: DynamicTabData[],
+  tabs?: DynamicTabData[],
   remoteEnvironment?,
   counts?,
   environmentAlert?,

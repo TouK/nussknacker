@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.security.api
 
 import java.net.URI
-
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigUser
