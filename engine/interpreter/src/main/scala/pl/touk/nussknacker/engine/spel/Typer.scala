@@ -109,6 +109,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         case TypingResultWithContext(TypedClass(clazz, keyParam :: valueParam :: Nil), _):: Nil if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) => valid(valueParam)
         case TypingResultWithContext(d: TypedDict, _) :: Nil => dictTyper.typeDictValue(d, e).map(toResult)
         case TypingResultWithContext(TypedTaggedValue(underlying, _), _) :: Nil => typeIndexer(e, TypingResultWithContext(underlying.objType) :: Nil)
+        case TypingResultWithContext(TypedUnion(possibleTypes), _) :: Nil => valid(Typed.apply(possibleTypes))
         case _ => if(dynamicPropertyAccessAllowed) valid(Unknown) else invalid("Dynamic property access is not allowed")
       }
     }
