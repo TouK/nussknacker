@@ -12,7 +12,7 @@ CONFIG_FILE=${CONFIG_FILE-${2-"$CONF_DIR/application.conf"}}
 LOGBACK_FILE=${LOGBACK_FILE-${3-"$CONF_DIR/docker-logback.xml"}}
 
 WORKING_DIR=${WORKING_DIR:-${NUSSKNACKER_DIR}}
-export STORAGE_DIR="${STORAGE_DIR:-$NUSSKNACKER_DIR/storage}"
+export STORAGE_DIR="${STORAGE_DIR:-WORKING_DIR/storage}"
 
 mkdir -p ${STORAGE_DIR}/db
 
