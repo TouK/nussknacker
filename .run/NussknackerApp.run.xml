@@ -2,22 +2,24 @@
   <configuration default="false" name="NussknackerApp" type="Application" factoryName="Application">
     <option name="ALTERNATIVE_JRE_PATH" value="1.8" />
     <envs>
+      <env name="NUSSKNACKER_LOG_LEVEL" value="DEBUG" />
       <env name="AUTHENTICATION_USERS_FILE" value="../../../nussknacker-dist/src/universal/conf/users.conf" />
       <env name="MANAGEMENT_MODEL_DIR" value="../../../engine/flink/management/sample/target/scala-2.12" />
       <env name="GENERIC_MODEL_DIR" value="../../../engine/flink/generic/target/scala-2.12" />
       <env name="STANDALONE_MODEL_DIR" value="../../../engine/standalone/engine/sample/target/scala-2.12" />
-      <env name="DEVELOPMENT_MODE" value="true" />
-      <env name="GRAFANA_URL" value="http://localhost:8081/grafana" />
       <env name="FLINK_REST_URL" value="http://localhost:3031" />
       <env name="FLINK_QUERYABLE_STATE_PROXY_URL" value="localhost:3063" />
       <env name="FLINK_ROCKSDB_CHECKPOINT_DATA_URI" value="file:///opt/flink/data/rocksdb-checkpoints" />
       <env name="FLINK_SHOULD_VERIFY_BEFORE_DEPLOY" value="false" />
+      <env name="KAFKA_ADDRESS" value="localhost:3032" />
       <env name="SCHEMA_REGISTRY_URL" value="http://localhost:3082" />
+      <env name="GRAFANA_URL" value="http://localhost:8081/grafana" />
+      <env name="COUNTS_URL" value="http://localhost:3086/query" />
     </envs>
     <option name="INCLUDE_PROVIDED_SCOPE" value="true" />
     <option name="MAIN_CLASS_NAME" value="pl.touk.nussknacker.ui.NussknackerApp" />
     <module name="nussknacker-ui" />
-    <option name="VM_PARAMETERS" value="-Dnussknacker.config.locations=../../../nussknacker-dist/src/universal/conf/dev-application.conf -Dlogback.configurationFile=../logback-dev.xml" />
+    <option name="VM_PARAMETERS" value="-Dnussknacker.config.locations=../../../nussknacker-dist/src/universal/conf/dev-application.conf -Dlogback.configurationFile=../../../nussknacker-dist/src/universal/conf/logback.xml" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/ui/server/work" />
     <extension name="coverage">
       <pattern>

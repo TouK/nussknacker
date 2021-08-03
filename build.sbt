@@ -293,19 +293,13 @@ lazy val commonDockerSettings = {
 }
 
 lazy val distDockerSettings = {
-  val workingDir = "/opt/nussknacker"
+  val nussknackerDir = "/opt/nussknacker"
 
   commonDockerSettings ++ Seq(
-    dockerEntrypoint := Seq(s"$workingDir/bin/nussknacker-entrypoint.sh", dockerPort.toString),
+    dockerEntrypoint := Seq(s"$nussknackerDir/bin/nussknacker-entrypoint.sh"),
     dockerExposedPorts := Seq(dockerPort),
     dockerEnvVars := Map(
-      // TODO: move to defaultUiConfig.conf as a one place for defining defaults
-      "AUTHENTICATION_METHOD" -> "BasicAuth",
-      "AUTHENTICATION_USERS_FILE" -> "./conf/users.conf",
-      "AUTHENTICATION_HEADERS_ACCEPT" -> "application/json",
-      "OAUTH2_RESPONSE_TYPE" -> "code",
-      "OAUTH2_GRANT_TYPE" -> "authorization_code",
-      "OAUTH2_SCOPE" -> "read:user",
+      "HTTP_PORT" -> dockerPort.toString
     ),
     packageName := dockerPackageName,
     dockerLabels := Map(
@@ -313,8 +307,8 @@ lazy val distDockerSettings = {
       "scala" -> scalaVersion.value,
       "flink" -> flinkV
     ),
-    dockerExposedVolumes := Seq(s"$workingDir/storage", s"$workingDir/data"),
-    Docker / defaultLinuxInstallLocation := workingDir
+    dockerExposedVolumes := Seq(s"$nussknackerDir/storage", s"$nussknackerDir/data"),
+    Docker / defaultLinuxInstallLocation := nussknackerDir
   )
 }
 

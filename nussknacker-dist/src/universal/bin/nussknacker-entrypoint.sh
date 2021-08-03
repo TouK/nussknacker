@@ -8,19 +8,18 @@ LIB_DIR="$NUSSKNACKER_DIR/lib"
 MANAGERS_DIR="$NUSSKNACKER_DIR/managers"
 
 CLASSPATH=${CLASSPATH:-$LIB_DIR/*:$MANAGERS_DIR/*}
-CONFIG_FILE=${CONFIG_FILE-${2-"$CONF_DIR/application.conf"}}
-LOGBACK_FILE=${LOGBACK_FILE-${3-"$CONF_DIR/docker-logback.xml"}}
+CONFIG_FILE=${CONFIG_FILE-"$CONF_DIR/application.conf"}
+LOGBACK_FILE=${LOGBACK_FILE-"$CONF_DIR/docker-logback.xml"}
 
-WORKING_DIR=${WORKING_DIR:-${NUSSKNACKER_DIR}}
-export STORAGE_DIR="${STORAGE_DIR:-WORKING_DIR/storage}"
+WORKING_DIR=${WORKING_DIR:-$NUSSKNACKER_DIR}
+
+export AUTHENTICATION_USERS_FILE=${AUTHENTICATION_USERS_FILE:-$CONF_DIR/users.conf}
+export STORAGE_DIR="${STORAGE_DIR:-$WORKING_DIR/storage}"
 
 mkdir -p ${STORAGE_DIR}/db
-
 chmod -R ug+wr ${STORAGE_DIR}
 
-echo "Nussknacker up and running with" \
-     "CONFIG: $CONFIG_FILE," \
-     "LOG: $LOGBACK_FILE"
+echo "Starting Nussknacker"
 
 exec java $JDK_JAVA_OPTIONS -Dlogback.configurationFile="$LOGBACK_FILE" \
           -Dnussknacker.config.locations="$CONFIG_FILE" -Dconfig.override_with_env_vars=true \
