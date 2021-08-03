@@ -116,6 +116,9 @@ Each user has id and set of permissions for every process category. There are fo
 * Write - user can modify/add new processes in category
 * Deploy - user can deploy or cancel processes in given category
 
+You can set a role assigned to an anonymous user with the `anonymousUserRole` setting in the `authentication` section in the configuration.
+When no value is provided (default), no anonymous access will be granted.
+
 ### Global permissions
 
 In addition to permission system oriented around processes' categories we provide additional set of permissions. This
@@ -135,6 +138,7 @@ Currently supported permissions:
 authentication: {
   method: "BasicAuth"
   usersFile: "conf/users.conf"
+  anonymousUserRole: "Reader" //optionally
 }
 ```
 

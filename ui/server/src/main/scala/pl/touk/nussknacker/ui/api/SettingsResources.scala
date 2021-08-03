@@ -6,8 +6,6 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.security.CertificatesAndKeys
-import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
 
 import scala.concurrent.ExecutionContext
 
@@ -72,7 +70,7 @@ class SettingsResources(config: FeatureTogglesConfig,
 
 @JsonCodec case class AnalyticsSettings(engine: String, url: String, siteId: String)
 
-@JsonCodec case class AuthenticationSettings(backend: String)
+@JsonCodec case class AuthenticationSettings(provider: String)
 
 @JsonCodec case class ProcessStateSettings(icons: Map[String, Map[String, String]], tooltips: Map[String, Map[String, String]])
 

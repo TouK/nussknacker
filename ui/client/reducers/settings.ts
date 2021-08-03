@@ -7,10 +7,10 @@ import {WithId} from "../types/common"
 import {ToolbarsConfig} from "../components/toolbarSettings/types"
 import {ToolbarsSide} from "./toolbars"
 
-export enum AuthBackends {
-  BASIC = "BasicAuth",
+export enum AuthStrategy {
+  BROWSER = "Browser",
   OAUTH2 = "OAuth2",
-  OTHER = "Other",
+  REMOTE = "Remote", // Perhaps this should be named "Federated", "External" or "Module"?
 }
 
 export interface FeaturesSettings {
@@ -33,16 +33,23 @@ export type SettingsState = {
 }
 
 export type BaseAuthenticationSettings = {
-  backend?: string
+  provider?: string
+  strategy?: string
 }
 
-export type AuthenticationSettings = BaseAuthenticationSettings | RemoteAuthenticationSettings | OAuth2Settings
+export type AuthenticationSettings = BaseAuthenticationSettings | BrowserAuthenticationSettings | RemoteAuthenticationSettings | OAuth2Settings
+
+export type BrowserAuthenticationSettings = {
+  strategy: AuthStrategy.BROWSER
+} & BaseAuthenticationSettings
 
 export type RemoteAuthenticationSettings = {
+  strategy: AuthStrategy.REMOTE
   moduleUrl?: string,
 } & BaseAuthenticationSettings
 
 export type OAuth2Settings = {
+  strategy: AuthStrategy.OAUTH2
   authorizeUrl?: string,
   jwtAuthServerPublicKey?: string,
   jwtIdTokenNonceVerificationRequired?: boolean,
