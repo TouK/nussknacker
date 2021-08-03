@@ -270,11 +270,11 @@ jobs:
           cd ui/client
           npx wait-on $CYPRESS_BASE_URL && npm run test:e2e
           docker kill nussknacker_e2e_fe
-      - name: Test quickstart
-        shell: bash
-        env:
-          NUSSKNACKER_VERSION: ${{ env.NUSSKNACKER_VERSION }}
-        run: ./demo/docker/testQuickstart.sh
+#      - name: Test quickstart
+#        shell: bash
+#        env:
+#          NUSSKNACKER_VERSION: ${{ env.NUSSKNACKER_VERSION }}
+#        run: ./demo/docker/testQuickstart.sh
       - name: Store test results
         if: always()
         uses: actions/upload-artifact@v2
