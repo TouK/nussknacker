@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.sql.db.schema
 
 import java.sql.Connection
+import java.util
+import java.util.Arrays.asList
 
 class DbMetaDataProvider(getConnection: () => Connection) {
 
@@ -23,9 +25,27 @@ class DbMetaDataProvider(getConnection: () => Connection) {
       } finally statement.close()
     } finally conn.close()
   }
+
+  def getSchemaDefinition(): SchemaDefinition = {
+    val connection = getConnection()
+    val tables = connection.getMetaData.getTables(null, "PUBLIC", "%", Array("TABLE").map(_.toString))
+    val results = new util.ArrayList[String]()
+    val columnNameIndex = 3
+    while (tables.next()) {
+      val str: String = tables.getString(columnNameIndex)
+      results add str
+    }
+    SchemaDefinition(results)
+  }
 }
 
 case class DialectMetaData(identifierQuote: String)
+
+case class SchemaDefinition(tables: java.util.List[String])
+
+object SchemaDefinition {
+  def empty(): SchemaDefinition = SchemaDefinition(asList())
+}
 
 class SqlDialect(metaData: DialectMetaData) {
 

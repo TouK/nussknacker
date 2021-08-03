@@ -3,15 +3,14 @@ package pl.touk.nussknacker.sql.service
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, Parameter, StringParameterEditor}
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 import pl.touk.nussknacker.sql.db.query.{QueryArgument, QueryArguments, SingleResultStrategy}
-import pl.touk.nussknacker.sql.db.schema.TableDefinition
+import pl.touk.nussknacker.sql.db.schema.{SchemaDefinition, TableDefinition}
+import pl.touk.nussknacker.sql.service.DatabaseLookupEnricher.TableParamName
 import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher.{CacheTTLParam, CacheTTLParamName, TransformationState}
-
 
 object DatabaseLookupEnricher {
 
@@ -20,9 +19,6 @@ object DatabaseLookupEnricher {
   final val KeyColumnParamName: String = "Key column"
 
   final val KeyValueParamName: String = "Key value"
-
-  final val TableParam: Parameter = Parameter(TableParamName, Typed[String])
-    .copy(editor = Some(DualParameterEditor(simpleEditor = StringParameterEditor, defaultMode = DualEditorMode.RAW)))
 
   private def keyColumnParam(tableDef: TableDefinition): Parameter = {
     val columnNameValues = tableDef.columnDefs.map(column => FixedExpressionValue(s"'${column.name}'", column.name))
@@ -42,6 +38,18 @@ object DatabaseLookupEnricher {
 
 class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig) extends DatabaseQueryEnricher(dBPoolConfig) {
 
+  protected def tableParam(): Parameter = {
+    val schemaMetaData = try {
+      dbMetaDataProvider.getSchemaDefinition()
+    } catch {
+      case e: Exception => SchemaDefinition.empty()
+    }
+
+    import scala.collection.JavaConverters._
+    val possibleTables: List[FixedExpressionValue] = schemaMetaData.tables.asScala.toList.map(table => FixedExpressionValue(s"'$table'", table))
+    Parameter(TableParamName, Typed[String]).copy(editor = Some(FixedValuesParameterEditor(possibleTables)))
+  }
+
   import DatabaseLookupEnricher._
 
   override protected val queryArgumentsExtractor: (Int, Map[String, Any]) => QueryArguments =
@@ -49,7 +57,11 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig) extends DatabaseQueryEn
       QueryArguments(
         QueryArgument(index = 1, value = params(KeyValueParamName)) :: Nil)
 
-  override def initialParameters: List[Parameter] = TableParam :: CacheTTLParam :: Nil
+  override def initialParameters: List[Parameter] = {
+    tableParam() :: CacheTTLParam :: Nil
+  }
+
+  protected def handleExceptionInInitialParameters: List[Parameter] = Nil
 
   protected def tableParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])
                               (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition = {
