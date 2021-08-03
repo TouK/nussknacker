@@ -17,15 +17,22 @@ As a base image we uses `openjdk:11-jdk`. See [Open JDK's Docker hub](https://hu
 
 ### Properties
 
-Available Nussknacker image properties:
+Available Nussknacker image properties below.
+
+Docker only:
 
 | Property name  | Type     | Default value | Description
-| -------------- | -------- | ------------- | -------------
+| -------------- | -------- | ------------- | -----------
 | NUSSKNACKER_CONFIG_FILE | string | /opt/nussknacker/conf/application.conf | Location of application configuration. Can be used multiple comma separated list of files. They will be merged in order, via HOCON fallback mechanism
 | NUSSKNACKER_LOG_FILE | string | /opt/nussknacker/conf/docker-logback.xml | Location of logging configuration
 | NUSSKNACKER_APPLICATION_APP | string | pl.touk.nussknacker.ui.NussknackerApp | Name of class of Nussknacker application 
 | DAEMON_USER | string | daemon |
 | DAEMON_GROUP | string | daemon |
+
+Properties available also in standalone setup: 
+
+| Property name  | Type     | Default value | Description
+| -------------- | -------- | ------------- | -----------
 | STORAGE_DIR | string | ./storage | Location of HSQLDB database storage
 | DB_URL | string | jdbc:hsqldb:file:${STORAGE_DIR}/db;sql.syntax_ora=true | Database URL 
 | DB_DRIVER | string | org.hsqldb.jdbc.JDBCDriver | Database driver class name
@@ -66,17 +73,17 @@ Available Nussknacker image properties:
 
 ### File structure
 
-| Location | Configuration method | Description
+| Location | Usage in configuration | Description
 | -------- | -------------------- | -----------
-| /opt/nussknacker/storage | STORAGE_DIR property | Location of HSQLDB database
-| /opt/nussknacker/conf/application.conf | NUSSKNACKER_CONFIG_FILE property | Location of Nussknacker configuration. Can be overwritten or used next to other custom configuration. See NUSSKNACKER_CONFIG_FILE for details
-| /opt/nussknacker/conf/docker-logback.xml | NUSSKNACKER_LOG_FILE property | Location of logging configuration. Can be overwritten to specify other logger logging levels
-| /opt/nussknacker/conf/users.conf | AUTHENTICATION_USERS_FILE property | Location of Nussknacker Component Providers
-| /opt/nussknacker/model/genericModel.jar | MODEL_CLASS_PATH property | JAR with generic model (base components library)
-| /opt/nussknacker/components | MODEL_CLASS_PATH property | Directory with Nussknacker Component Provider JARS
+| /opt/nussknacker/storage | Configured by STORAGE_DIR property | Location of HSQLDB database
+| /opt/nussknacker/conf/application.conf | Configured by NUSSKNACKER_CONFIG_FILE property | Location of Nussknacker configuration. Can be overwritten or used next to other custom configuration. See NUSSKNACKER_CONFIG_FILE for details
+| /opt/nussknacker/conf/docker-logback.xml | Configured by NUSSKNACKER_LOG_FILE property | Location of logging configuration. Can be overwritten to specify other logger logging levels
+| /opt/nussknacker/conf/users.conf | Configured by AUTHENTICATION_USERS_FILE property | Location of Nussknacker Component Providers
+| /opt/nussknacker/model/genericModel.jar | Used in MODEL_CLASS_PATH property | JAR with generic model (base components library)
+| /opt/nussknacker/components | Can be used in MODEL_CLASS_PATH property | Directory with Nussknacker Component Provider JARS
 | /opt/nussknacker/lib | | Directory with Nussknacker base libraries
 | /opt/nussknacker/managers | | Directory with Nussknacker Deployment Managers
-| /opt/flink/data/savepoints | configured on Flink's side | Location that will be used for savepoints state verification. Should be shared between Flink's TaskManagers and Nussknacker
+| /opt/flink/data/savepoints | Configured on Flink's side | Location that will be used for savepoints state verification. Should be shared between Flink's TaskManagers and Nussknacker
 
 ### Kubernetes - Helm chart
 

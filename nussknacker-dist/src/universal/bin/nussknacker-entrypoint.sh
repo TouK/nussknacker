@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 NUSSKNACKER_DIR=`dirname "$0" | xargs -I{} readlink -f {}/..`
-export STORAGE_DIR="$NUSSKNACKER_DIR/storage"
+export STORAGE_DIR="${STORAGE_DIR:-$NUSSKNACKER_DIR/storage}"
 CONF_DIR="$NUSSKNACKER_DIR/conf"
 LIB_DIR="$NUSSKNACKER_DIR/lib"
 MANAGERS_DIR="$NUSSKNACKER_DIR/managers"
@@ -12,7 +12,6 @@ APPLICATION_APP=${NUSSKNACKER_APPLICATION_APP-${4-"pl.touk.nussknacker.ui.Nusskn
 USER=${DAEMON_USER-${5-"daemon"}}
 GROUP=${DAEMON_GROUP-${6-"daemon"}}
 
-mkdir -p ${STORAGE_DIR}/logs
 mkdir -p ${STORAGE_DIR}/db
 
 #chown -R ${USER}:${GROUP} ${STORAGE_DIR}
