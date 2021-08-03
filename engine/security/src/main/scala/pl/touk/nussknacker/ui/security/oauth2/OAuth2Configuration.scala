@@ -29,7 +29,8 @@ case class OAuth2Configuration(usersFile: URI,
                                headers: Map[String, String] = Map.empty,
                                authorizationHeader: String = HeaderNames.Authorization,
                                accessTokenRequestContentType: String = MediaType.ApplicationJson.toString(),
-                               defaultTokenExpirationTime: FiniteDuration = FiniteDuration(1, HOURS)
+                               defaultTokenExpirationTime: FiniteDuration = FiniteDuration(1, HOURS),
+                               anonymousUserRole: Option[String] = None
                               ) extends AuthenticationConfiguration {
   override def name: String = OAuth2Configuration.name
 
