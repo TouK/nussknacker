@@ -4,22 +4,25 @@ set -e
 
 RUN_IN_BACKGROUND=${RUN_IN_BACKGROUND:-false}
 
-PARENT_DIR=`dirname "$0" | xargs -I{} readlink -f {}/..`
-CONF_DIR="$PARENT_DIR/conf"
-LIB_DIR="$PARENT_DIR/lib"
-MANAGERS_DIR="$PARENT_DIR/managers"
+NUSSKNACKER_DIR=`dirname "$0" | xargs -I{} readlink -f {}/..`
+CONF_DIR="$NUSSKNACKER_DIR/conf"
+LIB_DIR="$NUSSKNACKER_DIR/lib"
+MANAGERS_DIR="$NUSSKNACKER_DIR/managers"
 
 CLASSPATH=${CLASSPATH:-$LIB_DIR/*:$MANAGERS_DIR/*}
 CONFIG_FILE=${CONFIG_FILE:-$CONF_DIR/application.conf}
 LOGBACK_FILE=${LOGBACK_FILE:-$CONF_DIR/logback.xml}
 
-WORKING_DIR=${WORKING_DIR:-${PARENT_DIR}}
+WORKING_DIR=${WORKING_DIR:-${NUSSKNACKER_DIR}}
+# TODO: Make this configurable and use it in logback.xml
 LOGS_DIR="$WORKING_DIR/logs"
+# TODO: Rename to something more meaningful
 LOG_FILE="$LOGS_DIR/frontend.log"
 PID_FILE="$WORKING_DIR/frontend.pid"
 
 export STORAGE_DIR=${STORAGE_DIR:-$WORKING_DIR/storage}
 
+# TODO: Move to ui/runServer.sh
 if [[ "${USE_DOCKER_ENV}" == "true" ]]; then
   echo "Using envirnoment from docker"
   export DEVELOPMENT_MODE="true"
@@ -33,10 +36,11 @@ else
   # PROXY_URL is not set up so we assume that CORS should be enabled
   export DEVELOPMENT_MODE="true"
   export GRAFANA_URL=${GRAFANA_URL:-http://localhost:3000}
-  export KIBANA_URL=${KIBANA_URL:-http://localhost:5601}
   export FLINK_REST_URL=${FLINK_REST_URL:-http://localhost:8081}
   export FLINK_QUERYABLE_STATE_PROXY_URL=${FLINK_QUERYABLE_STATE_PROXY_URL:-localhost:9069}
   export KAFKA_ADDRESS=${KAFKA_ADDRESS:-localhost:9092}
+  # Port is other then default (8081) to avoid collision with Flink REST API
+  export SCHEMA_REGISTRY_URL=${SCHEMA_REGISTRY_URL:-http://localhost:8082}
 fi
 
 export AUTHENTICATION_USERS_FILE=${AUTHENTICATION_USERS_FILE:-$CONF_DIR/users.conf}
