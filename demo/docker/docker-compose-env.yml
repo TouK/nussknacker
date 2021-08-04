@@ -7,6 +7,8 @@ services:
     image: influxdb:${INFLUXDB_VERSION-1.8.4-alpine}
     environment:
       INFLUXDB_DB: esp
+    ports:
+      - "8086:8086"
     volumes:
       - ./influxdb/influxdb.conf:/etc/influxdb/influxdb.conf
       - nussknacker_storage_influxdb:/var/lib/influxdb

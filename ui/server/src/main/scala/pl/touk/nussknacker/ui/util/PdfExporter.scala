@@ -3,9 +3,8 @@ package pl.touk.nussknacker.ui.util
 import java.io._
 import java.net.URI
 import java.nio.charset.StandardCharsets
-import java.time.ZoneId
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.sax.SAXResult
 import javax.xml.transform.stream.StreamSource
@@ -23,13 +22,16 @@ import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
 
+import java.time.chrono.ChronoLocalDateTime
 import scala.xml.{Elem, NodeSeq, XML}
 
 object PdfExporter extends LazyLogging {
 
-  val fopFactory = new FopConfParser(getClass.getResourceAsStream("/fop/config.xml"),
+  implicit val localDateOrdering: Ordering[LocalDateTime] = Ordering.by(identity[ChronoLocalDateTime[_]])
+
+  private val fopFactory = new FopConfParser(getClass.getResourceAsStream("/fop/config.xml"),
     new URI("http://touk.pl"), ResourceResolverFactory.createDefaultResourceResolver).getFopFactoryBuilder.build
-  val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+  private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
   def exportToPdf(svg: String, processDetails: ProcessDetails, processActivity: ProcessActivity, displayableProcess: DisplayableProcess): Array[Byte] = {
 
@@ -154,7 +156,7 @@ object PdfExporter extends LazyLogging {
             <block/>
           </table-cell>
         } else
-          processActivity.comments.sortBy(c => DateUtils.toMillis(c.createDate)).map { comment =>
+          processActivity.comments.sortBy(_.createDate).map { comment =>
             <table-row>
               <table-cell border="1pt solid black" padding-left="1pt">
                 <block>
@@ -314,7 +316,7 @@ object PdfExporter extends LazyLogging {
           </table-row>
         </table-header>
         <table-body>
-          {processActivity.attachments.sortBy(c => DateUtils.toMillis(c.createDate)).map(attachment =>
+          {processActivity.attachments.sortBy(_.createDate).map(attachment =>
             <table-row>
 
               <table-cell border="1pt solid black" padding-left="1pt">

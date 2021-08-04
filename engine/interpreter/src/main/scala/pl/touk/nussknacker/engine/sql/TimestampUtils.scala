@@ -9,8 +9,4 @@ object TimestampUtils {
     Timestamp.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant)
   }
 
-  def toLocalDateTime(t: Timestamp): LocalDateTime = {
-    LocalDateTime.ofInstant(t.toInstant, ZoneId.systemDefault())
-  }
-
 }

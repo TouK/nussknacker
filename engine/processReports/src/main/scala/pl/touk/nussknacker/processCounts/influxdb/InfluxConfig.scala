@@ -2,7 +2,7 @@ package pl.touk.nussknacker.processCounts.influxdb
 
 case class InfluxConfig(influxUrl: String, user: Option[String], password: Option[String],
                         database: String,
-                        queryMode: QueryMode.Value = QueryMode.OnlySingleDifference,
+                        queryMode: QueryMode.Value = QueryMode.OnlySumOfDifferences,
                         metricsConfig: Option[MetricsConfig])
 
 case class MetricsConfig(sourceCountMetric: String = "source_count",

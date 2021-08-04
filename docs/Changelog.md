@@ -12,6 +12,7 @@ Nussknacker versions
 ------------------------
 * [#1968](https://github.com/TouK/nussknacker/pull/1968) `BestEffortJsonEncoder` uses `ServiceLoader` mechanism to
 load additional encoders.
+* [#2003](https://github.com/TouK/nussknacker/pull/2003) Counts use epoch milli on backend.
 
 0.5.0 (not released yet)
 ------------------------

@@ -1,51 +1,55 @@
 package pl.touk.nussknacker.ui.api
 
-import java.time.LocalDateTime
-
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.{Directives, _}
+import akka.http.scaladsl.server._
+import akka.http.scaladsl.unmarshalling.Unmarshaller
+import akka.stream.Materializer
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.syntax._
+import pl.touk.nussknacker.processCounts._
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.processreport.{ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.DateUtils
-import pl.touk.nussknacker.processCounts._
 
+import java.time.{Instant, OffsetDateTime, ZonedDateTime}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 class ProcessReportResources(countsReporter: CountsReporter, processCounter: ProcessCounter, val processRepository: FetchingProcessRepository[Future])
                             (implicit val ec: ExecutionContext) extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives {
 
+  private implicit val offsetDateTimeToInstant: Unmarshaller[String, Instant] = new Unmarshaller[String, Instant] {
+    override def apply(value: String)(implicit ec: ExecutionContext, materializer: Materializer): Future[Instant] = {
+      Future.fromTry(Try(OffsetDateTime.parse(value).toInstant))
+    }
+  }
+
   def securedRoute(implicit loggedUser: LoggedUser): Route = {
     path("processCounts" / Segment) { processName =>
-      (get & processId(processName)) { processId =>
-        parameterMap { parameters =>
-          val request = prepareRequest(parameters)
-          complete {
-            processRepository.fetchLatestProcessDetailsForProcessId[DisplayableProcess](processId.id).flatMap[ToResponseMarshallable] {
-              case Some(process) =>
-                process.json match {
-                  case Some(displayable) => computeCounts(displayable, request)
-                  case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Counts unavailable for this scenario"))
-                }
-              case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found"))
-            }
+      (get & processId(processName) & parameters('dateFrom.as[Option[Instant]], 'dateTo.as[Option[Instant]])) { (processId, dateFrom, dateTo) =>
+        val request = prepareRequest(dateFrom, dateTo)
+        complete {
+          processRepository.fetchLatestProcessDetailsForProcessId[DisplayableProcess](processId.id).flatMap[ToResponseMarshallable] {
+            case Some(process) =>
+              process.json match {
+                case Some(displayable) => computeCounts(displayable, request)
+                case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Counts unavailable for this scenario"))
+              }
+            case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found"))
           }
         }
       }
     }
   }
 
-  private def prepareRequest(parameters: Map[String, String]): CountsRequest = {
-    def getAsDate(paramName: String) = parameters.get(paramName).filterNot(_.isEmpty).map(DateUtils.parseDateTime)
-    val dateTo = getAsDate("dateTo")
-      .filterNot(_.isAfter(LocalDateTime.now()))
-      .getOrElse(LocalDateTime.now())
-    getAsDate("dateFrom") match {
+  private def prepareRequest(dateFromO: Option[Instant], dateToO: Option[Instant]): CountsRequest = {
+    val dateTo = dateToO
+      .filterNot(_.isAfter(Instant.now()))
+      .getOrElse(Instant.now())
+    dateFromO match {
       case Some(dateFrom) =>
         RangeCount(dateFrom, dateTo)
       case None =>
@@ -62,7 +66,7 @@ class ProcessReportResources(countsReporter: CountsReporter, processCounter: Pro
   }
 
 
-  private def computeFinalCounts(displayable: DisplayableProcess, nodeCountFunction: String => Option[Long]) : ToResponseMarshallable = {
+  private def computeFinalCounts(displayable: DisplayableProcess, nodeCountFunction: String => Option[Long]): ToResponseMarshallable = {
     val computedCounts = processCounter.computeCounts(ProcessConverter.fromDisplayable(displayable),
       nodeId => nodeCountFunction(nodeId).map(count => RawCount(count, 0)))
     computedCounts.asJson

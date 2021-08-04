@@ -9,12 +9,11 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessId => ApiProc
 import pl.touk.nussknacker.restmodel.ProcessType
 import pl.touk.nussknacker.restmodel.process.ProcessId
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessShapeFetchStrategy, _}
-import pl.touk.nussknacker.ui.db.DbConfig
+import pl.touk.nussknacker.ui.db.{DateUtils, DbConfig}
 import pl.touk.nussknacker.ui.db.entity._
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.DateUtils
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds

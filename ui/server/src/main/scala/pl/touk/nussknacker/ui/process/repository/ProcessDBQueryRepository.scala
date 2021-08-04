@@ -1,16 +1,14 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import java.sql.Timestamp
-
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.process.ProcessId
-import pl.touk.nussknacker.restmodel.processdetails.{ProcessAction, ProcessVersion, ProcessShapeFetchStrategy}
+import pl.touk.nussknacker.restmodel.processdetails.{ProcessAction, ProcessShapeFetchStrategy, ProcessVersion}
 import pl.touk.nussknacker.ui.app.BuildInfo
-import pl.touk.nussknacker.ui.db.EspTables
+import pl.touk.nussknacker.ui.db.{DateUtils, EspTables}
 import pl.touk.nussknacker.ui.db.entity._
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser, Permission}
-import pl.touk.nussknacker.ui.util.DateUtils
 import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 
 import scala.concurrent.ExecutionContext

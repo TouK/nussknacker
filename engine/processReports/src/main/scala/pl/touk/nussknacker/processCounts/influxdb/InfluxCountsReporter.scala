@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.processCounts.influxdb
 
-import java.time.LocalDateTime
-
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
@@ -9,6 +7,7 @@ import pl.touk.nussknacker.processCounts._
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client.{NothingT, SttpBackend}
 
+import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
 /*
@@ -26,7 +25,7 @@ class InfluxCountsReporter(env: String, config: InfluxConfig)(implicit backend: 
 
   override def close(): Unit = influxGenerator.close()
 
-  private def prepareRangeCounts(processId: String, fromDate: LocalDateTime, toDate: LocalDateTime)(implicit ec: ExecutionContext): Future[Map[String, Long]] = {
+  private def prepareRangeCounts(processId: String, fromDate: Instant, toDate: Instant)(implicit ec: ExecutionContext): Future[Map[String, Long]] = {
 
     influxGenerator.detectRestarts(processId, fromDate, toDate, metricsConfig).flatMap { restarts =>
       (restarts, config.queryMode) match {
