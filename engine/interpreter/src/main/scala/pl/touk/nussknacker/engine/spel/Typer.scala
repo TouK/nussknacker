@@ -103,13 +103,47 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         throw new SpelCompilationException(node, e)
     }
 
-    def typeIndexer(e: Indexer, stack: List[TypingResultWithContext]): NodeTypingResult = {
+//    def typeUnion(e: Indexer, stack: Set[SingleTypingResult]): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+//      var valvalval = stack.map(x => typeIndexer(e, TypingResultWithContext(x.objType) :: Nil))
+//      valvalval += invalid("Dynamic property access is not allowed")
+//      var valvalvalList = valvalval.toList
+//
+//      val seq: ValidatedNel[ExpressionParseError, List[CollectedTypingResult]] =  valvalvalList.sequence
+//      val res = seq.map(x => x.map(y => y.finalResult.typingResult).toSet).map(Typed.apply)
+//      val res2: Validated[NonEmptyList[ExpressionParseError], CollectedTypingResult] = res.map(d=> TypingResultWithContext(d)).map(CollectedTypingResult.withEmptyIntermediateResults)
+//      res2
+//    }
+
+//      var ssss: Validated[NonEmptyList[ExpressionParseError], List[TypingResultWithContext]] = valvalval.toList.sequence.map(x => x.map(y => y.finalResult))
+//      typeIndexer(e, set)
+      //      var ssss2: Validated[NonEmptyList[ExpressionParseError], List[TypingResultWithContext]] = ssss.map(x => x.map(y => y.finalResult))
+
+//      if(valvalval.exists(element => element.isInstanceOf[Invalid[_]] ))
+//        invalid("Dynamic property access is not allowed")
+//      else
+//        valid(Unknown)
+
+//      if(valvalval.exists(element => element : ValidatedNel[_,_] )) valid(Unknown) else invalid("Dynamic property access is not allowed")
+
+//      else invalid("Dynamic property access is not allowed")
+//      valvalval match {
+//        case x :: rest => valid(x)
+//        case _ => invalid("Dynamic property access is not allowed")
+//      }
+
+//      valvalval match {
+//        case xd : ValidatedNel[_,_] :: rest => valid(xd)
+//      }
+//    }
+
+    def typeIndexer(e: Indexer, stack: List[TypingResultWithContext]): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
       stack match {
         case TypingResultWithContext(TypedClass(clazz, param :: Nil), _) :: Nil if clazz.isAssignableFrom(classOf[java.util.List[_]]) => valid(param)
         case TypingResultWithContext(TypedClass(clazz, keyParam :: valueParam :: Nil), _):: Nil if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) => valid(valueParam)
         case TypingResultWithContext(d: TypedDict, _) :: Nil => dictTyper.typeDictValue(d, e).map(toResult)
+//        case TypingResultWithContext(TypedUnion(possibleTypes), _) :: Nil => if(possibleTypes.map(x => typeIndexer(e, TypingResultWithContext(x.objType) :: Nil)).contains(classOf(ValidatedNel))) valid(Unknown) else invalid("Dynamic property access is not allowed")
+        case TypingResultWithContext(TypedUnion(possibleTypes), _) :: Nil => valid(Unknown)//typeUnion(e, possibleTypes)
         case TypingResultWithContext(TypedTaggedValue(underlying, _), _) :: Nil => typeIndexer(e, TypingResultWithContext(underlying.objType) :: Nil)
-        case TypingResultWithContext(TypedUnion(possibleTypes), _) :: Nil => valid(Typed.apply(possibleTypes))
         case _ => if(dynamicPropertyAccessAllowed) valid(Unknown) else invalid("Dynamic property access is not allowed")
       }
     }

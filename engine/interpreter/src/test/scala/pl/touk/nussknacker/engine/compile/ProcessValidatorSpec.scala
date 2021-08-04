@@ -234,6 +234,21 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     }
   }
 
+  test("valid TypedUnion") {
+    val correctProcess = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "source")
+      .filter("filter1", "{{\"\"}, {0}}[0][0] == 0 ")
+      .sink("id2", "#input", "sink")
+
+    val compilationResult = validate(correctProcess, baseDefinition)
+
+    compilationResult.result should matchPattern {
+      case Valid(_) =>
+    }
+  }
+
   test("validated with success") {
     val correctProcess = EspProcessBuilder
       .id("process1")
