@@ -15,9 +15,28 @@ STANDALONE_ENGINE_JAR=$PROJECT_BASE_DIR/engine/standalone/engine/target/scala-${
 export CLASSPATH="../target/scala-${SCALA_VERSION}/nussknacker-ui-assembly.jar:$FLINK_ENGINE_JAR:$STANDALONE_ENGINE_JAR"
 DIST_BASE_DIR="$PROJECT_BASE_DIR/nussknacker-dist/src/universal"
 export CONFIG_FILE="$DIST_BASE_DIR/conf/dev-application.conf"
+export NUSSKNACKER_LOG_LEVEL=DEBUG
 
 export MANAGEMENT_MODEL_DIR="$PROJECT_BASE_DIR/engine/flink/management/sample/target/scala-${SCALA_VERSION}"
 export GENERIC_MODEL_DIR="$PROJECT_BASE_DIR/engine/flink/generic/target/scala-${SCALA_VERSION}"
 export STANDALONE_MODEL_DIR="$PROJECT_BASE_DIR/engine/standalone/engine/sample/target/scala-${SCALA_VERSION}"
+
+USE_DOCKER_ENV=${USE_DOCKER_ENV:-true}
+
+if [[ "${USE_DOCKER_ENV}" == "true" ]]; then
+  echo "Using environment from docker"
+  # See https://github.com/TouK/nussknacker-quickstart/blob/main/docker-compose-env.yml - mapped port from docker
+  export FLINK_REST_URL="http://localhost:3031"
+  export FLINK_QUERYABLE_STATE_PROXY_URL="localhost:3063"
+  export FLINK_ROCKSDB_CHECKPOINT_DATA_URI="file:///opt/flink/data/rocksdb-checkpoints"
+  export FLINK_SHOULD_VERIFY_BEFORE_DEPLOY=${FLINK_SHOULD_VERIFY_BEFORE_DEPLOY:-false}
+  # Addresses that should be visible from Flink
+  export KAFKA_ADDRESS="localhost:3032"
+  export SCHEMA_REGISTRY_URL="http://localhost:3082"
+  export GRAFANA_URL="http://localhost:8081/grafana"
+  export COUNTS_URL="http://localhost:3086/query"
+else
+  echo "Using local environment"
+fi
 
 $DIST_BASE_DIR/bin/run.sh
