@@ -63,7 +63,7 @@ else
   exit 1
 fi
 
-CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://admin:admin@localhost:8081/api/processCounts/DetectLargeTransactions?dateFrom=2021-03-02+00:00:00&dateTo=2021-03-03+00:00:00")
+CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://admin:admin@localhost:8081/api/processCounts/DetectLargeTransactions?dateFrom=1628028000000&dateTo=1628114399999")
 if [[ $CODE == 200 ]]; then
   echo "Counts queried"
 else

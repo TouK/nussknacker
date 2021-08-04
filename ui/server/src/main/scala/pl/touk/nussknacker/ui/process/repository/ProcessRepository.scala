@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.process.repository
 
-import java.time.LocalDateTime
-
+import java.time.Instant
 import cats.data._
 import cats.syntax.either._
 import com.typesafe.scalalogging.LazyLogging
@@ -10,7 +9,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, ProcessDeploymentData}
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError._
-import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
+import pl.touk.nussknacker.ui.db.{DateUtils, DbConfig, EspTables}
 import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -22,9 +21,9 @@ import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvi
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository._
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessUpdated, UpdateProcessAction}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.DateUtils
 import slick.dbio.DBIOAction
 
+import java.sql.Timestamp
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.higherKinds
 
@@ -72,7 +71,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
       id = -1L, name = action.processName.value, processCategory = action.category,
       description = None, processType = ProcessType.fromDeploymentData(action.processDeploymentData),
       processingType = action.processingType, isSubprocess = action.isSubprocess, isArchived = false,
-      createdAt = DateUtils.toTimestamp(now), createdBy = loggedUser.username)
+      createdAt = Timestamp.from(now), createdBy = loggedUser.username)
 
     val insertNew = processesTable.returning(processesTable.map(_.id)).into { case (entity, newId) => entity.copy(id = newId) }
 
@@ -119,7 +118,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
     }
 
     def createProcessVersionEntityData(id: Long, processingType: ProcessingType, json: Option[String], maybeMainClass: Option[String]) = ProcessVersionEntityData(
-      id = id + 1, processId = processId.value, json =json, mainClass = maybeMainClass, createDate = DateUtils.toTimestamp(now),
+      id = id + 1, processId = processId.value, json =json, mainClass = maybeMainClass, createDate = Timestamp.from(now),
       user = loggedUser.username, modelVersion = modelVersion.forType(processingType)
     )
 
@@ -225,5 +224,5 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
   }
 
   //to override in tests
-  protected def now: LocalDateTime = LocalDateTime.now()
+  protected def now: Instant = Instant.now()
 }

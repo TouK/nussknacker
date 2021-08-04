@@ -14,7 +14,7 @@ export function displayProcessCounts(processCounts: ProcessCounts): $TodoType {
 export function fetchAndDisplayProcessCounts(processName: string, from: Moment, to: Moment): ThunkAction<Promise<void>> {
   return (dispatch) => HttpService.fetchProcessCounts(
     processName,
-    from ? from.format(DATE_FORMAT) : null,
-    to ? to.format(DATE_FORMAT) : null,
+    from ? from.valueOf() : null,
+    to ? to.valueOf() : null,
   ).then((response) => dispatch(displayProcessCounts(response.data)))
 }

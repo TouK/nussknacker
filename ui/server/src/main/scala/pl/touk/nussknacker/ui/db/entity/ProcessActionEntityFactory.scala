@@ -2,10 +2,9 @@ package pl.touk.nussknacker.ui.db.entity
 
 import java.sql.Timestamp
 import java.time.LocalDateTime
-
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.ui.util.DateUtils
+import pl.touk.nussknacker.ui.db.DateUtils
 import slick.ast.BaseTypedType
 import slick.jdbc.{JdbcProfile, JdbcType}
 import slick.lifted.{ForeignKeyQuery, ProvenShape, TableQuery => LTableQuery}

@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.process.repository
 
-import java.time.LocalDateTime
-
+import java.time.{Instant, LocalDateTime}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.GraphProcess
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -37,9 +36,9 @@ class DBFetchingProcessRepositorySpec
   private val repositoryManager = RepositoryManager.createDbRepositoryManager(db)
 
   private val writingRepo = new DBProcessRepository(db, mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> 0)) {
-    override protected def now: LocalDateTime = currentTime
+    override protected def now: Instant = currentTime
   }
-  private var currentTime : LocalDateTime = LocalDateTime.now()
+  private var currentTime : Instant = Instant.now()
 
   private val fetching = DBFetchingProcessRepository.create(db)
 
@@ -57,7 +56,7 @@ class DBFetchingProcessRepositorySpec
         .exceptionHandler()
         .source("s", "")
         .emptySink("sink", ""),
-        LocalDateTime.now(),
+        Instant.now(),
         category = cat
       )
     }
@@ -81,7 +80,7 @@ class DBFetchingProcessRepositorySpec
       .exceptionHandler()
       .source("s", "")
       .emptySink("s2", ""),
-      LocalDateTime.now()
+      Instant.now()
     )
     saveProcess(EspProcessBuilder
       .id(oldName2.value)
@@ -89,7 +88,7 @@ class DBFetchingProcessRepositorySpec
       .exceptionHandler()
       .source("s", "")
       .emptySink("s2", ""),
-      LocalDateTime.now()
+      Instant.now()
     )
 
     processExists(oldName) shouldBe true
@@ -123,7 +122,7 @@ class DBFetchingProcessRepositorySpec
       .exceptionHandler()
       .source("s", "")
       .emptySink("s2", ""),
-      LocalDateTime.now()
+      Instant.now()
     )
     processExists(newName) shouldBe false
 
@@ -148,7 +147,7 @@ class DBFetchingProcessRepositorySpec
       .exceptionHandler()
       .source("s", "")
       .emptySink("s2", ""),
-      LocalDateTime.now()
+      Instant.now()
     )
     saveProcess(EspProcessBuilder
       .id(existingName.value)
@@ -156,7 +155,7 @@ class DBFetchingProcessRepositorySpec
       .exceptionHandler()
       .source("s", "")
       .emptySink("s2", ""),
-      LocalDateTime.now()
+      Instant.now()
     )
 
     processExists(oldName) shouldBe true
@@ -169,7 +168,7 @@ class DBFetchingProcessRepositorySpec
 
     val processName = ProcessName("processName")
     val latestVersionId = 4
-    val now = LocalDateTime.now()
+    val now = Instant.now()
     val espProcess = EspProcessBuilder
       .id(processName.value)
       .exceptionHandler()
@@ -200,7 +199,7 @@ class DBFetchingProcessRepositorySpec
   test("should generate new process version id on increaseVersionWhenJsonNotChanged action param") {
 
     val processName = ProcessName("processName")
-    val now = LocalDateTime.now()
+    val now = Instant.now()
     val someJson = Some("{}")
     val espProcess = EspProcessBuilder.id(processName.value)
       .exceptionHandler()
@@ -235,7 +234,7 @@ class DBFetchingProcessRepositorySpec
     processUpdated.right.get
   }
 
-  private def saveProcess(espProcess: EspProcess, now: LocalDateTime, category: String = "") = {
+  private def saveProcess(espProcess: EspProcess, now: Instant, category: String = "") = {
     val json = ProcessMarshaller.toJson(ProcessCanonizer.canonize(espProcess)).noSpaces
     currentTime = now
     val action = CreateProcessAction(ProcessName(espProcess.id), category, GraphProcess(json), TestProcessingTypes.Streaming, false)

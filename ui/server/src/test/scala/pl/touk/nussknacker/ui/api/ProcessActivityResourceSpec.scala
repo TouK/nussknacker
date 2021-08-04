@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, StatusCodes}
-import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
@@ -9,16 +8,19 @@ import org.apache.commons.io.FileUtils
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository.ProcessActivity
-import pl.touk.nussknacker.ui.util.{DateUtils, MultipartUtils}
+import pl.touk.nussknacker.ui.util.MultipartUtils
 
+import java.time.LocalDateTime
+import java.time.chrono.ChronoLocalDateTime
 import scala.language.higherKinds
 
 class ProcessActivityResourceSpec extends FlatSpec with ScalatestRouteTest with Matchers with PatientScalaFutures with BeforeAndAfterEach with EspItTest with FailFastCirceSupport {
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
+
+  private implicit val localDateOrdering: Ordering[LocalDateTime] = Ordering.by(identity[ChronoLocalDateTime[_]])
 
   it should "add and remove comment in process activity" in {
     val processToSave = ProcessTestData.sampleDisplayableProcess
@@ -80,8 +82,8 @@ class ProcessActivityResourceSpec extends FlatSpec with ScalatestRouteTest with 
         getActivity(ProcessName(processToSave.id)) ~> check {
           val processActivity = responseAs[ProcessActivity]
           processActivity.attachments.size shouldBe 2
-          val attachmentsOrdered = processActivity.attachments.sortBy(a => DateUtils.toMillis(a.createDate))
-          val (attachment1, attachment2) = (attachmentsOrdered(0), attachmentsOrdered(1))
+          val attachmentsOrdered = processActivity.attachments.sortBy(_.createDate)
+          val (attachment1, attachment2) = (attachmentsOrdered.head, attachmentsOrdered(1))
           getAttachment(processToSave.id, attachment1.id) { responseAs[String] shouldBe fileContent1 }
           getAttachment(processToSave.id, attachment2.id) { responseAs[String] shouldBe fileContent2 }
         }
@@ -89,8 +91,8 @@ class ProcessActivityResourceSpec extends FlatSpec with ScalatestRouteTest with 
     }
   }
 
-  def getAttachment(processId: String, attachmentId: Long)(testCode: => Assertion) = {
-    Get(s"/processes/${processId}/1/activity/attachments/${attachmentId}") ~> attachmentsRouteWithAllPermissions ~> check {
+  private def getAttachment(processId: String, attachmentId: Long)(testCode: => Assertion) = {
+    Get(s"/processes/$processId/1/activity/attachments/$attachmentId") ~> attachmentsRouteWithAllPermissions ~> check {
       testCode
     }
   }

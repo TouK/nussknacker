@@ -1,5 +1,4 @@
-/* eslint-disable i18next/no-literal-string */
-import moment, {MomentInput} from "moment"
+import moment from "moment"
 import React, {useCallback, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
@@ -8,20 +7,18 @@ import {getProcessId} from "../../../reducers/selectors/graph"
 import "../../../stylesheets/visualization.styl"
 import Dialogs from "../Dialogs"
 import GenericModalDialog from "../GenericModalDialog"
-import {Picker} from "./Picker"
+import {Picker, PickerInput} from "./Picker"
 import {CountsRanges} from "./CountsRanges"
 
 interface State {
-  from: Date,
-  to: Date,
+  from: PickerInput,
+  to: PickerInput,
 }
 
 const initState = (): State => {
-  const nowMidnight = moment().startOf("day")
-  const yesterdayMidnight = moment().subtract(1, "days").startOf("day")
   return {
-    from: yesterdayMidnight.toDate(),
-    to: nowMidnight.toDate(),
+    from: moment().startOf("day"),
+    to: moment().endOf("day"),
   }
 }
 
@@ -37,26 +34,26 @@ function CalculateCountsDialog(): JSX.Element {
     await dispatch(fetchAndDisplayProcessCounts(processId, moment(from), moment(to)))
   }, [processId, from, to])
 
-  const setFrom = useCallback((date: MomentInput) => {
-    const from = moment(date).toDate()
+  const setFrom = useCallback((from: PickerInput) => {
     setState(current => ({...current, from}))
   }, [])
 
-  const setTo = useCallback((date: MomentInput) => {
-    const to = moment(date).toDate()
+  const setTo = useCallback((to: PickerInput) => {
     setState(current => ({...current, to}))
   }, [])
 
-  const setRange = useCallback((value: [MomentInput, MomentInput]) => {
-    const [from, to] = value.map(v => moment(v).toDate())
+  const setRange = useCallback((value: [PickerInput, PickerInput]) => {
+    const [from, to] = value
     setState(current => ({...current, from, to}))
   }, [])
 
+  const isValid = (input: PickerInput) => moment(input).isValid()
   return (
     <GenericModalDialog
       init={init}
       confirm={confirm}
       type={Dialogs.types.calculateCounts}
+      okBtnConfig={{disabled: !(isValid(from) && isValid(to)) }}
       header={t("calculateCounts.title", "counts")}
     >
       <Picker

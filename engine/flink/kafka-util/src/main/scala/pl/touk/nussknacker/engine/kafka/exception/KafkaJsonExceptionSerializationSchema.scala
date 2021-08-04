@@ -47,7 +47,7 @@ object KafkaExceptionInfo {
       Option(exceptionInfo.throwable.input),
       optional(exceptionInfo.context, config.includeInputEvent).map(_.toString),
       serializeStackTrace(config.stackTraceLengthLimit, exceptionInfo.throwable),
-      exceptionInfo.throwable.timestamp.atZone(ZoneId.systemDefault()).toInstant.toEpochMilli,
+      exceptionInfo.throwable.timestamp.toEpochMilli,
       optional(hostName, config.includeHost),
       config.additionalParams
     )

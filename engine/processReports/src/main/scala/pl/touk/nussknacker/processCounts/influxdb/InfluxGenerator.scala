@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.processCounts.influxdb
 
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDateTime, ZoneId, ZonedDateTime}
-
+import java.time.{Instant, ZonedDateTime}
 import sttp.client.{NothingT, SttpBackend}
 import com.typesafe.scalalogging.LazyLogging
 
@@ -16,7 +15,7 @@ private[influxdb] class InfluxGenerator(config: InfluxConfig, env: String)(impli
 
   private val influxClient = new SimpleInfluxClient(config)
 
-  def queryBySingleDifference(processName: String, dateFrom: Option[LocalDateTime], dateTo: LocalDateTime, config: MetricsConfig): Future[Map[String, Long]] = {
+  def queryBySingleDifference(processName: String, dateFrom: Option[Instant], dateTo: Instant, config: MetricsConfig): Future[Map[String, Long]] = {
     val pointInTimeQuery = new PointInTimeQuery(influxClient.query, processName, env, config)
 
     for {
@@ -28,19 +27,19 @@ private[influxdb] class InfluxGenerator(config: InfluxConfig, env: String)(impli
     }
   }
 
-  def queryBySumOfDifferences(processName: String, dateFrom: LocalDateTime, dateTo: LocalDateTime, config: MetricsConfig): Future[Map[String, Long]] = {
+  def queryBySumOfDifferences(processName: String, dateFrom: Instant, dateTo: Instant, config: MetricsConfig): Future[Map[String, Long]] = {
     val query = s"""select sum(diff) as count from (SELECT non_negative_difference("${config.countField}") AS diff
      FROM "${config.nodeCountMetric}"
      WHERE ${config.envTag} = '$env' AND ${config.processTag} = '$processName'
-     AND time > ${toEpochSeconds(dateFrom)}s AND time < ${toEpochSeconds(dateTo)}s
+     AND time > ${dateFrom.getEpochSecond}s AND time < ${dateTo.getEpochSecond}s
      GROUP BY ${config.nodeIdTag}, ${config.slotTag}) group by ${config.nodeIdTag}"""
      InfluxGenerator.retrieveOnlyResultFromActionValueQuery(config, influxClient.query, query)
   }
 
 
-  def detectRestarts(processName: String, dateFrom: LocalDateTime, dateTo: LocalDateTime, config: MetricsConfig): Future[List[LocalDateTime]] = {
-    val from = toEpochSeconds(dateFrom)
-    val to = toEpochSeconds(dateTo)
+  def detectRestarts(processName: String, dateFrom: Instant, dateTo: Instant, config: MetricsConfig): Future[List[Instant]] = {
+    val from = dateFrom.getEpochSecond
+    val to = dateTo.getEpochSecond
     val queryString =
       s"""SELECT diff FROM (
          |  SELECT difference(${config.countField}) as diff FROM "${config.sourceCountMetric}" WHERE
@@ -51,15 +50,15 @@ private[influxdb] class InfluxGenerator(config: InfluxConfig, env: String)(impli
     }
   }
 
-  private def readRestartsFromSourceCounts(sourceCounts: InfluxSeries) : List[LocalDateTime] = {
+  private def readRestartsFromSourceCounts(sourceCounts: InfluxSeries) : List[Instant] = {
     val restarts = sourceCounts.values.collect {
       case (date:String)::(derivative:BigDecimal)::Nil => parseInfluxDate(date)
     }
     restarts
   }
 
-  private def parseInfluxDate(date:String) : LocalDateTime =
-    ZonedDateTime.parse(date, DateTimeFormatter.ISO_ZONED_DATE_TIME).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime
+  private def parseInfluxDate(date:String) : Instant =
+    ZonedDateTime.parse(date, DateTimeFormatter.ISO_ZONED_DATE_TIME).toInstant
 
   def close(): Unit = {
     influxClient.close()
@@ -69,10 +68,6 @@ private[influxdb] class InfluxGenerator(config: InfluxConfig, env: String)(impli
 }
 
 object InfluxGenerator extends LazyLogging {
-
-  private[influxdb] def toEpochSeconds(d: LocalDateTime): Long = {
-    d.atZone(ZoneId.systemDefault()).toInstant.toEpochMilli / 1000
-  }
 
   //see InfluxGeneratorSpec for influx return format...
   def retrieveOnlyResultFromActionValueQuery(config: MetricsConfig, invokeQuery: String => Future[List[InfluxSeries]], queryString: String)(implicit ec: ExecutionContext): Future[Map[String, Long]] = {
@@ -97,13 +92,13 @@ object InfluxGenerator extends LazyLogging {
     //two hour window is for possible delays in sending metrics from taskmanager to jobmanager (or upd sending problems...)
     //it's VERY unclear how large it should be. If it's too large, we may overlap with end and still generate
     //bad results...
-    def query(date: LocalDateTime): Future[Map[String, Long]] = {
+    def query(date: Instant): Future[Map[String, Long]] = {
       def query(timeCondition: String, aggregateFunction: String) =
         s"""select ${config.nodeIdTag} as nodeId, $aggregateFunction(${config.countField}) as count
            | from "${config.nodeCountMetric}" where ${config.processTag} = '$processName'
            | and $timeCondition and ${config.envTag} = '$env' group by ${config.slotTag}, ${config.nodeIdTag} fill(0)""".stripMargin
 
-      val around = toEpochSeconds(date)
+      val around = date.getEpochSecond
       for {
         valuesBefore <- retrieveOnlyResultFromActionValueQuery(config, invokeQuery, query(timeCondition = s"time <= ${around}s and time > ${around}s - 1h", aggregateFunction = "last"))
         valuesAfter <- retrieveOnlyResultFromActionValueQuery(config, invokeQuery, query(timeCondition = s"time >= ${around}s and time < ${around}s + 1h", aggregateFunction = "first"))

@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.db.entity
 
+import pl.touk.nussknacker.ui.db.DateUtils
+
 import java.sql.Timestamp
 import java.time.LocalDateTime
-
-import pl.touk.nussknacker.ui.util.DateUtils
 import slick.ast.ColumnOption.PrimaryKey
 import slick.jdbc.JdbcProfile
 import slick.lifted.{TableQuery => LTableQuery}
