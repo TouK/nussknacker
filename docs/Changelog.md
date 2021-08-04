@@ -10,12 +10,11 @@ Nussknacker versions
      
 0.5.0 (Not released yet)
 ------------------------
+* [#1439](https://github.com/TouK/nussknacker/pull/1439) Upgrade to Flink 1.13
 * [#1968](https://github.com/TouK/nussknacker/pull/1968) `BestEffortJsonEncoder` uses `ServiceLoader` mechanism to
 load additional encoders.
-
-0.5.0 (not released yet)
-------------------------
-* [#1439](https://github.com/TouK/nussknacker/pull/1439) Upgrade to Flink 1.13
+* [#1993](https://github.com/TouK/nussknacker/pull/1993) Demo was moved to https://github.com/TouK/nussknacker-quickstart. 
+Some additional refactors done: logback configuration enhancements, simpler run.sh script, removed docker defaults from default configs.
 
 0.4.0
 ------------------------

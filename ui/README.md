@@ -1,7 +1,14 @@
-# Running UI app to develop/debug Nussknacker
+# Running UI with embedded model and stubbed DeploymentManager
 
-Points below describe setup of running Nussknacker UI during development of Nussknacker itself.
-If you want to run UI to develop/debug your own model, please skip to last section.
+You can run Nussknacker UI with your model in IDE via
+helper class `LocalNussknackerWithSingleModel`. To use it, add `nussknacker-ui` module to
+test classpath and prepare class similar to `RunGenericModelLocally`.
+It can be run from e.g. Intellij without special configuration and it will run sample
+Nussknacker UI config with your model.
+
+# Running UI with full integration environment on docker
+
+If you want to run Nussknacker UI with full integration environment (flink, kafka etc.) follow steps below
 
 ## Building required modules to run from shell/IDE
 
@@ -10,48 +17,29 @@ Before running either from console or from IDE you have to manually build:
 - custom models (```assemblySamples``` in sbt - not needed if running from IDE with stubbed DeploymentManager, see below)
 - DeploymentManager(s) (```assemblyDeploymentManagers``` in sbt - not needed if running from IDE with stubbed DeploymentManager, see below)
 - UI (```ui/assembly``` in sbt, not needed if you want to use FE development mode)
-You can do all steps at once with ```buildServer.sh``` script
+
+## Running integration environment
+- Clone https://github.com/TouK/nussknacker-quickstart repository
+- Run `docker-compose -f docker-compose-env.yml up -d`
+
+## Running from command line
+
+Run: `./runServer.sh`
 
 ## Running from IntelliJ:
-1. Find class `pl.touk.nussknacker.ui.NussknackerApp`
-2. Edit run [configuration](https://www.jetbrains.com/help/idea/run-debug-configurations.html) or use existing stored automatically loaded from `./run/NussknackerApp.run.xml`
 
-    * Main class:         pl.touk.nussknacker.ui.NussknackerApp
-    * VM options:         -Dnussknacker.config.locations=../../../nussknacker-dist/src/universal/conf/dev-application.conf -Dlogback.configurationFile=../logback-dev.xml
-    * Working directory:  should be set to ui/server/work
-    * Environment variables: 
-```AUTHENTICATION_USERS_FILE=../../../nussknacker-dist/src/universal/conf/users.conf;MANAGEMENT_MODEL_DIR=../../../engine/flink/management/sample/target/scala-2.12;GENERIC_MODEL_DIR=../../../engine/flink/generic/target/scala-2.12;STANDALONE_MODEL_DIR=../../../engine/standalone/engine/sample/target/scala-2.12```
-If you want to connect to infrastructure in docker you need to set on end of line also:
-```;FLINK_REST_URL=http://localhost:3031;FLINK_QUERYABLE_STATE_PROXY_URL=localhost:3063;FLINK_ROCKSDB_CHECKPOINT_DATA_URI=file:///opt/flink/data/rocksdb-checkpoints;FLINK_SHOULD_VERIFY_BEFORE_DEPLOY=false;SCHEMA_REGISTRY_URL=http://localhost:3082;KAFKA_ADDRESS=localhost:3032```
-    * Module classpath:  nussknacker-ui (this is ```ui/server``` folder) 
-    * "Included dependencies with "Provided" scope" should be checked, so that Flink DeploymentManager is included in the classpath
-    
-If you want to build ui and have access to it from served application, you can execute:
+Run existing configuration `NussknackerApp` automatically loaded from `./run/NussknackerApp.run.xml`
+
+## Access to service
+Service should be available at ~~http://localhost:8080/api~~
+
+# Troubleshooting
+
+1. If you want to build ui and have access to it from served application, you can execute:
 ```
 sbt buildUi
 ```
 It will produce static assets in `./ui/server/target/scala-XXX/classes/web/static/` that make them accessible via http://localhost:8080/
 
-If you want to test verification mechanism, you need to make directory with savepoints available from your dev host. You can use `./bindSavepointsDirLocally.sh` script for that. Also you need to turn `FLINK_SHOULD_VERIFY_BEFORE_DEPLOY` flag on in environment variables 
-
-## Running backend for frontend development from cmd
-If you want to run backend only for front-end development, please run `./runServer.sh`
-
-## Running full env (for integration tests)
-* Go to docker/demo and run `docker-compose -f docker-compose-env.yml up -d` - runs full env with kafka / flink / etc..
-* Run nussknacker by IntelliJ or `USE_DOCKER_ENV=true ./runServer.sh`
- 
-## Access to service
- Service should be available at ~~http://localhost:8080/api~~
-
-# Running UI to develop/debug additional models with stubbed DeploymentManager
-
-If you want to run Nussknacker UI to see if your model behaves correctly (e.g. if dynamic parameters are OK),
-you don't have to follow steps above. You also don't have to build model jar and put it in
-docker container or on filesystem.
-
-You can run Nussknacker UI with your model in IDE via 
-helper class `LocalNussknackerWithSingleModel`. To use it, add `nussknacker-ui` module to 
-test classpath and prepare class similar to `RunGenericModelLocally`. 
-It can be run from e.g. Intellij without special configuration and it will run sample 
-Nussknacker UI config with your model.
+2. If you want to test verification mechanism, you need to make directory with savepoints available from your dev host. You can use `./bindSavepointsDirLocally.sh` script for that.
+   At the end you need to turn `FLINK_SHOULD_VERIFY_BEFORE_DEPLOY` flag on in environment variables.

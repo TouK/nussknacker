@@ -1,30 +1,26 @@
 #!/usr/bin/env bash
 
+set -e
+
 NUSSKNACKER_DIR=`dirname "$0" | xargs -I{} readlink -f {}/..`
-export STORAGE_DIR="$NUSSKNACKER_DIR/storage"
 CONF_DIR="$NUSSKNACKER_DIR/conf"
 LIB_DIR="$NUSSKNACKER_DIR/lib"
 MANAGERS_DIR="$NUSSKNACKER_DIR/managers"
 
-CONFIG_FILE=${NUSSKNACKER_CONFIG_FILE-${2-"$CONF_DIR/application.conf"}}
-LOG_FILE=${NUSSKNACKER_LOG_FILE-${3-"$CONF_DIR/docker-logback.xml"}}
-APPLICATION_APP=${NUSSKNACKER_APPLICATION_APP-${4-"pl.touk.nussknacker.ui.NussknackerApp"}}
-USER=${DAEMON_USER-${5-"daemon"}}
-GROUP=${DAEMON_GROUP-${6-"daemon"}}
+CLASSPATH=${CLASSPATH:-$LIB_DIR/*:$MANAGERS_DIR/*}
+CONFIG_FILE=${CONFIG_FILE-"$CONF_DIR/application.conf"}
+LOGBACK_FILE=${LOGBACK_FILE-"$CONF_DIR/docker-logback.xml"}
 
-mkdir -p ${STORAGE_DIR}/logs
+WORKING_DIR=${WORKING_DIR:-$NUSSKNACKER_DIR}
+
+export AUTHENTICATION_USERS_FILE=${AUTHENTICATION_USERS_FILE:-$CONF_DIR/users.conf}
+export STORAGE_DIR="${STORAGE_DIR:-$WORKING_DIR/storage}"
+
 mkdir -p ${STORAGE_DIR}/db
-
-#chown -R ${USER}:${GROUP} ${STORAGE_DIR}
 chmod -R ug+wr ${STORAGE_DIR}
 
-echo "Nussknacker up and running with" \
-     "CONFIG: $CONFIG_FILE," \
-     "LOG: $LOG_FILE," \
-     "APP: $APPLICATION_APP," \
-     "USER: $USER," \
-     "GROUP: $GROUP."
+echo "Starting Nussknacker"
 
-exec java $JDK_JAVA_OPTIONS -Dlogback.configurationFile="$LOG_FILE" \
+exec java $JDK_JAVA_OPTIONS -Dlogback.configurationFile="$LOGBACK_FILE" \
           -Dnussknacker.config.locations="$CONFIG_FILE" -Dconfig.override_with_env_vars=true \
-          -cp "$LIB_DIR/*:$MANAGERS_DIR/*" "$APPLICATION_APP"
+          -cp "$CLASSPATH" "pl.touk.nussknacker.ui.NussknackerApp"
