@@ -11,10 +11,12 @@ import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client.{NothingT, SttpBackend}
 
-import java.time.{LocalDateTime, ZoneId}
+import java.time.Duration._
+import java.time.Instant
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.language.implicitConversions
 
 class InfluxCountsReporterSpec extends FunSuite with ForAllTestContainer with TableDrivenPropertyChecks with VeryPatientScalaFutures with Matchers {
 
@@ -22,9 +24,14 @@ class InfluxCountsReporterSpec extends FunSuite with ForAllTestContainer with Ta
 
   override val container: InfluxDBContainer = InfluxDBContainer()
 
-  private val startTime = LocalDateTime.now()
+  private val startTime = Instant.now()
 
-  private val zoneId = ZoneId.systemDefault()
+  private implicit class RichInstant(instant: Instant) {
+    def plusHours(count: Int): Instant = instant.plus(ofHours(count))
+    def plusMinutes(count: Int): Instant = instant.plus(ofMinutes(count))
+    def minusHours(count: Int): Instant = instant.minus(ofHours(count))
+    def minusMinutes(count: Int): Instant = instant.minus(ofMinutes(count))
+  }
 
   private val env = "testEnv"
 
@@ -101,7 +108,7 @@ class InfluxCountsReporterSpec extends FunSuite with ForAllTestContainer with Ta
   }
 
   private def forQueryModes(queryModes: Set[QueryMode.Value])(fun: QueryMode.Value => Assertion): Unit = {
-    forAll(Table[QueryMode.Value]("mode", (queryModes.toArray):_*))(fun)
+    forAll(Table[QueryMode.Value]("mode", queryModes.toArray:_*))(fun)
   }
 
   class InfluxData(config: MetricsConfig) {
@@ -118,13 +125,13 @@ class InfluxCountsReporterSpec extends FunSuite with ForAllTestContainer with Ta
     def writePointForCount(processName: String,
                            nodeName: String,
                            value: Long,
-                           time: LocalDateTime,
+                           time: Instant,
                            slot: Int = 0): Unit = {
       def savePoint(measurement: String): Unit = {
         influxDB.write(Point
           .measurement(measurement)
           .addField(config.countField, value)
-          .time(time.atZone(zoneId).toInstant.toEpochMilli, TimeUnit.MILLISECONDS)
+          .time(time.toEpochMilli, TimeUnit.MILLISECONDS)
           .tag(config.envTag, env)
           .tag(config.nodeIdTag, nodeName)
           .tag(config.processTag, processName)

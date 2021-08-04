@@ -1,4 +1,4 @@
-import {MomentInput} from "moment"
+import {Moment, MomentInput} from "moment"
 import React from "react"
 import DateTimePicker from "react-datetime"
 
@@ -10,7 +10,9 @@ const datePickerStyle = {
 const dateFormat = "YYYY-MM-DD"
 const timeFormat = "HH:mm:ss"
 
-type PickerProps = {label: string, onChange: (date: MomentInput) => void, value: Date}
+export type PickerInput = Moment | string
+
+type PickerProps = {label: string, onChange: (date: PickerInput) => void, value: PickerInput }
 
 export function Picker({label, onChange, value}: PickerProps): JSX.Element {
   return (

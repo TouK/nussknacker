@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.processCounts.influxdb
 
-import java.time.LocalDateTime
-
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.test.PatientScalaFutures
 
+import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -18,7 +17,7 @@ class InfluxGeneratorSpec extends FunSuite with Matchers with PatientScalaFuture
 
     val pointInTimeQuery = new PointInTimeQuery(_ => Future.successful(sampleInfluxOutput), "process1", "test", MetricsConfig())
 
-    pointInTimeQuery.query(LocalDateTime.now()).futureValue shouldBe Map(
+    pointInTimeQuery.query(Instant.now()).futureValue shouldBe Map(
       "start" -> (552855221L + 557871409L),
       "end" -> (412793677L + 414963365L)
     )

@@ -8,32 +8,23 @@ import {getProcessId} from "../../../reducers/selectors/graph"
 import {CountsRangesButtons, Range} from "./CountsRangesButtons"
 
 function predefinedRanges(t: TFunction<string>): Range[] {
+
+  const forDay = (name: string, moment: () => Moment): Range => ({
+    name: name,
+    from: () => moment().startOf("day"),
+    to: () => moment().endOf("day"),
+  })
+
   return [
     {
       name: t("calculateCounts.range.lastHour", "Last hour"),
-      from: () => moment().subtract(1, "hour").startOf("minute"),
-      to: () => moment().add(1, "day").startOf("day"),
+      from: () => moment().subtract(1, "hour"),
+      to: () => moment(),
     },
-    {
-      name: t("calculateCounts.range.today", "Today"),
-      from: () => moment().startOf("day"),
-      to: () => moment().add(1, "day").startOf("day"),
-    },
-    {
-      name: t("calculateCounts.range.yesterday", "Yesterday"),
-      from: () => moment().subtract(1, "day").startOf("day"),
-      to: () => moment().startOf("day"),
-    },
-    {
-      name: t("calculateCounts.range.dayBeforeYesterday", "Day before yesterday"),
-      from: () => moment().subtract(2, "days").startOf("day"),
-      to: () => moment().subtract(1, "day").startOf("day"),
-    },
-    {
-      name: t("calculateCounts.range.thisDayLastWeek", "This day last week"),
-      from: () => moment().subtract(8, "days").startOf("day"),
-      to: () => moment().subtract(7, "days").startOf("day"),
-    },
+    forDay(t("calculateCounts.range.today", "Today"), () => moment()),
+    forDay(t("calculateCounts.range.yesterday", "Yesterday"), () => moment().subtract(1, "day")),
+    forDay(t("calculateCounts.range.dayBeforeYesterday", "Day before yesterday"), () => moment().subtract(2, "day")),
+    forDay(t("calculateCounts.range.thisDayLastWeek", "This day last week"), () => moment().subtract(7, "day")),
   ]
 }
 
