@@ -10,6 +10,10 @@ Each user has id and set of permissions for every process category. There are fo
 * Write - user can modify/add new processes in category
 * Deploy - user can deploy or cancel processes in given category
 
+If the selected `AuthenticationProvider` allows so, you can set a role assigned to an anonymous user 
+with the `anonymousUserRole` setting in the `authentication` section in the configuration.
+When no value is provided (default), no anonymous access will be granted.
+
 ## Global permissions
 In addition to permission system oriented around processes' categories we provide additional set of permissions.
 This feature is designed to control access to components that have no category attached or it doesn't make sense for them to have one.
@@ -24,6 +28,7 @@ Currently supported permissions:
 authentication: {
   method: "BasicAuth"
   usersFile: "conf/users.conf"
+  anonymousUserRole: "Reader" //optionally 
 }
 ```
 
@@ -248,12 +253,21 @@ print(bcrypt.hashpw("password_to_encode".encode("utf8"), bcrypt.gensalt(rounds =
 
 In order to implement authentication provider you have to implement trait: 
 ```java
-trait AuthenticatorFactory {
-  def createAuthenticator(config: Config, classLoader: ClassLoader): AuthenticationDirective[LoggedUser]
+trait AuthenticationProvider {
+  def createAuthenticationResources(config: Config, classLoader: ClassLoader)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): AuthenticationResources
 }
 ```
 
-It is based on `AuthenticationDirective` of Akka Http. Implementation must be put on Nussknacker classpath (Note: **not** in jar with model)
+It should create an `AuthenticationResources` implementation containing an `AuthenticationDirective` of Akka Http 
+and a `Route` serving frontend settings. The settings must select one of the three authentication handling strategies 
+in the frontend: 
+- Browser - handled by the web browser itself like for example in the case of Basic Auth
+- OAuth2
+- Remote - requires a separate federated module
+
+If you are willing to permit anonymous access the resources class should also implement the `AnonymousAccess` trait.
+
+Your implementation classes must be put on Nussknacker's classpath (Note: **not** in jar with model)
 You must also register your implementation using Java's ServiceLoader mechanism - that is, you have to provide
 file `META-INF/services/pl.touk.nussknacker.ui.security.api.AuthenticatorFactory` containing fully qualified name of implementation of `AuthenticatorFactory`.
 Please note that there can be **only** one implementation on the classpath. 

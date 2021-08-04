@@ -8,8 +8,8 @@ import java.net.URI
 import scala.concurrent.duration._
 
 case class BasicAuthenticationConfiguration(usersFile: URI,
-                                            cachingHashes: Option[CachingHashesConfig]) extends AuthenticationConfiguration {
-
+                                            cachingHashes: Option[CachingHashesConfig],
+                                            anonymousUserRole: Option[String] = None) extends AuthenticationConfiguration {
   override def name: String = BasicAuthenticationConfiguration.name
 
   def cachingHashesOrDefault: CachingHashesConfig = cachingHashes.getOrElse(CachingHashesConfig.defaultConfig)

@@ -5,28 +5,29 @@ import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusC
 import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
 import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
-import pl.touk.nussknacker.ui.security.api.{AuthenticatedUser, AuthenticationResources}
+import pl.touk.nussknacker.ui.security.api.{AnonymousAccess, AuthenticatedUser, AuthenticationResources, FrontendStrategySettings}
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class OAuth2AuthenticationResources(realm: String, service: OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData], configuration: OAuth2Configuration)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT])
-  extends AuthenticationResources with Directives with LazyLogging with FailFastCirceSupport {
+  extends AuthenticationResources with Directives with LazyLogging with AnonymousAccess {
 
   override val name: String = configuration.name
 
-  override val frontendSettings: ToResponseMarshallable = OAuth2AuthenticationSettings(
+  override val frontendStrategySettings: FrontendStrategySettings = FrontendStrategySettings.OAuth2(
     configuration.authorizeUrl.map(_.toString),
     configuration.authSeverPublicKey.map(CertificatesAndKeys.textualRepresentationOfPublicKey),
     configuration.idTokenNonceVerificationRequired,
     configuration.implicitGrantEnabled
   )
 
-  override def authenticate(): AuthenticationDirective[AuthenticatedUser] = {
+  val anonymousUserRole: Option[String] = configuration.anonymousUserRole
+
+  override def authenticateReally(): AuthenticationDirective[AuthenticatedUser] = {
     SecurityDirectives.authenticateOAuth2Async(
       authenticator = OAuth2Authenticator(configuration, service),
       realm = realm
@@ -64,8 +65,3 @@ class OAuth2AuthenticationResources(realm: String, service: OAuth2Service[Authen
 }
 
 @JsonCodec case class Oauth2AuthenticationResponse(accessToken: String, tokenType: String)
-
-@JsonCodec case class OAuth2AuthenticationSettings(authorizeUrl: Option[String],
-                                                   jwtAuthServerPublicKey: Option[String],
-                                                   jwtIdTokenNonceVerificationRequired: Boolean,
-                                                   implicitGrantEnabled: Boolean)
