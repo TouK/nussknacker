@@ -38,7 +38,7 @@ Majority of parameters are shared among all the three window types implemented i
 
 Parameters taken by the nodes used to configure aggregates in time windows are easiest explained by the analogy to the SQL statement with a GROUP BY clause and an aggregating function: 
 
-```
+```sql
 SELECT AGGREGATOR_FUNCTION(COLUMN_A)
 FROM TABLE T
 GROUP BY COLUMN_B, COLUMN_C
@@ -68,7 +68,7 @@ Let’s map the above statement on the parameters of the Nussknacker Aggregate c
 **aggregateBy** - this is an input to the aggregator; for each event  with the same groupBy value which qualiffies to the time window, the aggregateBy expression will be evaluated, fed to the aggregator and the aggregate will be updated.
 
 | groupBy               | aggregateBy                                          | aggregator   | result*                                                                                                                                                          |
-|-----------            | --------------                                       | ------------ | ----------------------------------------------------------                                                                                                       |
+| -----------           | --------------                                       | ------------ | ----------------------------------------------------------                                                                                                       |
 | `#input.subscriberId` | `#input.value`                                       | Sum          | <p>`6000.0` for subscriberId = 1 </p> `200.0` for subscriberId = 2                                                                                               |
 | `#input.subscriberId` | `1L`                                                 | Sum          | <p>`3` for subscriberId = 1 </p> `1` for subscriberId = 2                                                                                                        |
 | `#input.subscriberId` | `{“tid”: #input.transactionId, “val”: #input.value}` | List         | <p>`{{“tid”:11, “val”: 500.0},{“tid”:13, “val”: 5000.0},{“tid”:14, “val”: 1000.0}}` for subscriberId = 1 </p> `{{“tid”:12, “val”: 2000.0}}` for subscriberId = 2 |
@@ -78,20 +78,32 @@ Let’s map the above statement on the parameters of the Nussknacker Aggregate c
 
 ## Common behaviour
 Components which produce aggregates in time windows process multiple events; a question may arise about the contents of the variables when the window is closed.
-Presence of `#input` and `#inputMeta` variables depends on configuration of the `emitWhenEventLeft` parameter. `#key` parameter is added for every aggregation type and holds a key which is used in `groupBy` 
+Presence of variables defined before aggregation (e.g. `#input`, `#inputMeta`) depends on configuration of the `emitWhenEventLeft` parameter. `#key` parameter is added for every aggregation type and holds a key which is used in `groupBy` 
 
-| aggregationType   | emitWhenEventLeft | extra variables          |
-|------------------ | ----------------- | ---------                |
-| sliding           | false             | #input, #inputMeta, #key |
-| sliding           | true              | #key                     |
-| tumbling, session | not configurable  | #key                     |
+| aggregationType    | emitWhenEventLeft | extra variables          |
+| ------------------ | ----------------- | ---------                |
+| sliding            | false             | #input, #inputMeta, #key |
+| sliding            | true              | #key                     |
+| tumbling, session  | not configurable  | #key                     |
+
+Additionally, considering aggregations comes concept of **_window length_**. Windows are chunked into multiple parts called **_state_**. States store events within specific _**time period**_ unit which is the smallest composite of the _**window length**_. 
+We call this time period unit a **_resolution_**. One can think of how big this resolution should be? Resolution can be 1 hour or 1 second meaning you will store lots of events under single window or will have lots of windows composed of fewer events.
+Small resolutions cost more - in our case more memory and disk usage by RocksDB whereas high resolution does not give proper insight into what's happening.
+In Nussknacker we chose 60 seconds resolution since it's good trade of between performance and cost.
+
+| aggregationType    | resolution        |
+| ------------------ | ----------------- |
+| sliding            | 60 seconds        |
+| session            | 60 seconds        |
+| Single-side-join   | 60 seconds        |
+| tumbling           | windowLength      |
 
 
 ## Tumbling-window
 
 Parameters specific to the Tumbling-window:
 
-**windowLength** - just length of the tumbling window
+**windowLength** - length of the tumbling window
 
 **emitWhen** - determines when the event with the result of the aggregation will be emitted. 
 
@@ -111,7 +123,7 @@ In our implementation of the sliding window the aggregation computation is trigg
 
 Parameters specific to the Sliding window:
 
-**windowLength** - just length of the sliding window
+**windowLength** - length of the sliding window
 
 **emitWhenEventLeft** - the aggregate computation can be also triggered when an event leaves the window. This means that the aggregate is computed taking into account all the *subsequent* events which qualify into the sliding window. 
 
@@ -127,7 +139,7 @@ Parameters specific to the session window:
 **emitWhen** - determines when the event with the result of the aggregation will be emitted. 
 
 Possible values are:
-- `On each event` - Window won't be emitted on end, but after each event. This would be useful e.g. when we want to have daily (i.e. for current day) aggregate for each incoming event, but we're not interested in daily summary on each midnight
+- `On each event` - Window won't be emitted on end, but after each event. This would be useful e.g. when we want to know values of aggregations while session is in progress, but we're not interested in specific event ending the session.
 - `After session end`
 
 ## Single-side-join
