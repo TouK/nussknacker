@@ -80,16 +80,16 @@ Let’s map the above statement on the parameters of the Nussknacker Aggregate c
 Components which produce aggregates in time windows process multiple events; a question may arise about the contents of the variables when the window is closed.
 Presence of variables defined before aggregation (e.g. `#input`, `#inputMeta`) depends on configuration of the `emitWhenEventLeft` parameter. `#key` parameter is added for every aggregation type and holds a key which is used in `groupBy` 
 
-| aggregationType    | emitWhenEventLeft | extra variables          |
+| aggregationType    | emitWhenEventLeft | variables                |
 | ------------------ | ----------------- | ---------                |
 | sliding            | false             | #input, #inputMeta, #key |
 | sliding            | true              | #key                     |
 | tumbling, session  | not configurable  | #key                     |
 
-Additionally, considering aggregations comes concept of **_window length_**. Windows are chunked into multiple parts called **_state_**. States store events within specific _**time period**_ unit which is the smallest composite of the _**window length**_. 
-We call this time period unit a **_resolution_**. One can think of how big this resolution should be? Resolution can be 1 hour or 1 second meaning you will store lots of events under single window or will have lots of windows composed of fewer events.
+Additionally, considering aggregations comes concept of **_window length_** inside which we store events within specific _**time period**_ unit. 
+We call this time period unit a **_resolution_**.
 Small resolutions cost more - in our case more memory and disk usage by RocksDB whereas high resolution does not give proper insight into what's happening.
-In Nussknacker we chose 60 seconds resolution since it's good trade of between performance and cost.
+In Nussknacker we chose 60 seconds resolution since it's good tradeoff between performance and cost.
 
 | aggregationType    | resolution        |
 | ------------------ | ----------------- |
