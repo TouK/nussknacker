@@ -172,11 +172,12 @@ module.exports = {
     new WebpackShellPluginNext({
       onAfterDone: {
         scripts: [
-          `npm run make-types`,
+          `npx make-federated-types --outputDir .federated-types`,
           // this .tgz with types for exposed modules lands in public root
           // and could be downloaded by remote side (e.g. `webpack-remote-types-plugin`).
+          `mkdir -p "${outputPath}"`,
           `tar -C .federated-types -czf "${path.join(outputPath, `${federationConfig.name}-dts.tgz`)}" .`,
-          `rm -rf .federated-types/*`,
+          `rm -rf .federated-types`,
         ],
         swallowError: true,
       },
