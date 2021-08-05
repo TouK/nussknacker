@@ -233,10 +233,8 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       case Invalid(NonEmptyList(ExpressionParseError("Dynamic property access is not allowed", "filter1", Some(DefaultExpressionId), _), _)) =>
     }
   }
-/*
 
- */
-  test("valid TypedUnion") {
+  test("valid TypedUnion while indexing") {
     val correctProcess = EspProcessBuilder
       .id("process1")
       .exceptionHandler()
@@ -250,9 +248,6 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       case Valid(_) =>
     }
   }
-  /*
-
-   */
 
   test("validated with success") {
     val correctProcess = EspProcessBuilder

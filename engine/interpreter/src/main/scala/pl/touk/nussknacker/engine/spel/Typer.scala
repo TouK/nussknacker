@@ -103,25 +103,21 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         throw new SpelCompilationException(node, e)
     }
 
-    def typeUnion(e: Indexer, stack: Set[SingleTypingResult]): NodeTypingResult= {
-      val validatedUnion = stack.map(x => typeIndexer(e, x.objType :: Nil))
-//      validatedUnion += invalid("Dynamic property access is not allowed")
-      val validatedUnionList = validatedUnion.toList
+    def typeUnion(e: Indexer, possibleTypes: Set[SingleTypingResult]): NodeTypingResult = {
+      val typedPossibleTypes = possibleTypes.map(possibleType => typeIndexer(e, possibleType :: Nil)).toList
 
-      val seq: ValidatedNel[ExpressionParseError, List[CollectedTypingResult]] =  validatedUnionList.sequence
-      val res: Validated[NonEmptyList[ExpressionParseError], TypingResult] = seq.map(_.map(_.finalResult.typingResult).toSet).map(typingResults => Typed.apply(typingResults))
-      val res2: Validated[NonEmptyList[ExpressionParseError], CollectedTypingResult] = res.map(TypingResultWithContext(_)).map(CollectedTypingResult.withEmptyIntermediateResults)
-      res2
-//      res
+      val typingResult = typedPossibleTypes.sequence.map(_.map(_.finalResult.typingResult).toSet).map(typingResults => Typed.apply(typingResults))
+      typingResult.map(toResult)
     }
 
-    def typeIndexer(e: Indexer, stack: List[TypingResult]): NodeTypingResult = {
-      stack match {
+    @tailrec
+    def typeIndexer(e: Indexer, typingResults: List[TypingResult]): NodeTypingResult = {
+      typingResults match {
         case TypedClass(clazz, param :: Nil) :: Nil if clazz.isAssignableFrom(classOf[java.util.List[_]]) => valid(param)
         case TypedClass(clazz, keyParam :: valueParam :: Nil) :: Nil if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) => valid(valueParam)
         case (d: TypedDict) :: Nil => dictTyper.typeDictValue(d, e).map(toResult)
         case TypedUnion(possibleTypes) :: Nil => typeUnion(e, possibleTypes)
-        case TypedTaggedValue(underlying, _) :: Nil => typeIndexer(e, underlying.objType :: Nil)
+        case TypedTaggedValue(underlying, _) :: Nil => typeIndexer(e, underlying :: Nil)
         case _ => if(dynamicPropertyAccessAllowed) valid(Unknown) else invalid("Dynamic property access is not allowed")
       }
     }
