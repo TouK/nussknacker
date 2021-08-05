@@ -104,20 +104,20 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     }
 
     def typeUnion(e: Indexer, possibleTypes: Set[SingleTypingResult]): NodeTypingResult = {
-      val typedPossibleTypes = possibleTypes.map(possibleType => typeIndexer(e, possibleType :: Nil)).toList
+      val typedPossibleTypes = possibleTypes.map(possibleType => typeIndexer(e, possibleType)).toList
 
       val typingResult = typedPossibleTypes.sequence.map(_.map(_.finalResult.typingResult).toSet).map(typingResults => Typed.apply(typingResults))
       typingResult.map(toResult)
     }
 
     @tailrec
-    def typeIndexer(e: Indexer, typingResults: List[TypingResult]): NodeTypingResult = {
-      typingResults match {
-        case TypedClass(clazz, param :: Nil) :: Nil if clazz.isAssignableFrom(classOf[java.util.List[_]]) => valid(param)
-        case TypedClass(clazz, keyParam :: valueParam :: Nil) :: Nil if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) => valid(valueParam)
-        case (d: TypedDict) :: Nil => dictTyper.typeDictValue(d, e).map(toResult)
-        case TypedUnion(possibleTypes) :: Nil => typeUnion(e, possibleTypes)
-        case TypedTaggedValue(underlying, _) :: Nil => typeIndexer(e, underlying :: Nil)
+    def typeIndexer(e: Indexer, typingResult: TypingResult): NodeTypingResult = {
+      typingResult match {
+        case TypedClass(clazz, param :: Nil) if clazz.isAssignableFrom(classOf[java.util.List[_]]) => valid(param)
+        case TypedClass(clazz, keyParam :: valueParam :: Nil) if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) => valid(valueParam)
+        case d: TypedDict => dictTyper.typeDictValue(d, e).map(toResult)
+        case TypedUnion(possibleTypes) => typeUnion(e, possibleTypes)
+        case TypedTaggedValue(underlying, _) => typeIndexer(e, underlying)
         case _ => if(dynamicPropertyAccessAllowed) valid(Unknown) else invalid("Dynamic property access is not allowed")
       }
     }
@@ -149,7 +149,10 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       //TODO: what should be here?
       case e: Identifier => valid(Unknown)
       //TODO: what should be here?
-      case e: Indexer => typeIndexer(e, current.stack.map(_.typingResult))
+      case e: Indexer => current.stack.headOption match {
+        case None => invalid("Cannot do indexing here")
+        case Some(result) => typeIndexer(e, result.typingResult)
+      }
 
       case e: BooleanLiteral => valid(Typed[Boolean])
       case e: IntLiteral => valid(Typed[java.lang.Integer])
