@@ -149,9 +149,6 @@ module.exports = {
       ...federationConfig,
       shared: {
         ...require("./package.json").dependencies,
-        "@material-ui/core": {
-          singleton: true,
-        },
         react: {
           eager: true,
           singleton: true,
