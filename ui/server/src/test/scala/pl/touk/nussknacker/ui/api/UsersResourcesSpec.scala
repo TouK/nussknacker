@@ -4,6 +4,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
+import io.circe.Json.fromString
 import org.scalatest._
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -16,23 +17,21 @@ class UsersResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastC
     getUser(isAdmin = false) ~> check {
       status shouldBe StatusCodes.OK
       responseAs[Json] shouldBe Json.obj(
-        "id" -> Json.fromString("1"),
-        "username" -> Json.fromString("user"),
+        "id" -> fromString("1"),
+        "username" -> fromString("user"),
         "isAdmin" -> Json.fromBoolean(false),
         "categories" -> Json.arr(
-          List("Category1", "Category2", "ReqRes", "TESTCAT", "TESTCAT2").map(Json.fromString): _*
+          List("Category1", "Category2", "ReqRes", "TESTCAT", "TESTCAT2").map(fromString): _*
         ),
         "categoryPermissions" -> Json.obj(
           "TESTCAT" -> Json.arr(
-            List("Deploy", "Read", "Write").map(Json.fromString): _*
+            List("Deploy", "Read", "Write").map(fromString): _*
           ),
           "TESTCAT2" -> Json.arr(
-            List("Deploy", "Read", "Write").map(Json.fromString): _*
+            List("Deploy", "Read", "Write").map(fromString): _*
           )
         ),
-        "globalPermissions" -> Json.obj(
-          "adminTab" -> Json.fromBoolean(false)
-        )
+        "globalPermissions" -> Json.arr(fromString("CustomFixedPermission"))
       )
     }
   }
@@ -41,32 +40,14 @@ class UsersResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastC
     getUser(isAdmin = true) ~> check {
       status shouldBe StatusCodes.OK
       responseAs[Json] shouldBe Json.obj(
-        "id" -> Json.fromString("1"),
-        "username" -> Json.fromString("admin"),
+        "id" -> fromString("1"),
+        "username" -> fromString("admin"),
         "isAdmin" -> Json.fromBoolean(true),
         "categories" -> Json.arr(
-          List("Category1", "Category2", "ReqRes", "TESTCAT", "TESTCAT2").map(Json.fromString): _*
+          List("Category1", "Category2", "ReqRes", "TESTCAT", "TESTCAT2").map(fromString): _*
         ),
-        "categoryPermissions" -> Json.obj(
-          "Category2" -> Json.arr(
-            List("Deploy", "Read", "Write").map(Json.fromString): _*
-          ),
-          "ReqRes" -> Json.arr(
-            List("Deploy", "Read", "Write").map(Json.fromString): _*
-          ),
-          "Category1" -> Json.arr(
-            List("Deploy", "Read", "Write").map(Json.fromString): _*
-          ),
-          "TESTCAT" -> Json.arr(
-            List("Deploy", "Read", "Write").map(Json.fromString): _*
-          ),
-          "TESTCAT2" -> Json.arr(
-            List("Deploy", "Read", "Write").map(Json.fromString): _*
-          )
-        ),
-        "globalPermissions" -> Json.obj(
-          "adminTab" -> Json.fromBoolean(true)
-        )
+        "categoryPermissions" -> Json.obj(),
+        "globalPermissions" -> Json.arr()
       )
     }
   }

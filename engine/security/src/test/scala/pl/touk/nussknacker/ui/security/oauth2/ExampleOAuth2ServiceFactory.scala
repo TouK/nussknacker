@@ -1,20 +1,16 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
-import java.net.URI
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
-import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigRule
-import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
-import pl.touk.nussknacker.ui.security.api.Permission.Permission
-import pl.touk.nussknacker.ui.security.api.{AuthenticatedUser, AuthenticationConfiguration, GlobalPermission, LoggedUser, Permission}
+import pl.touk.nussknacker.ui.security.api.{AuthenticatedUser, AuthenticationConfiguration}
 import pl.touk.nussknacker.ui.security.oauth2.ExampleOAuth2ServiceFactory.{TestAccessTokenResponse, TestProfileResponse}
 import sttp.client.{NothingT, SttpBackend}
 
 import java.io.File
+import java.net.URI
 import scala.concurrent.duration.{Deadline, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
-
 
 class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse], configuration: OAuth2Configuration)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]) extends OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData] with LazyLogging {
 
@@ -24,12 +20,6 @@ class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestA
 
   def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(AuthenticatedUser, Option[Deadline])] =
     clientApi.profileRequest(accessToken).map{ prf: TestProfileResponse =>
-      LoggedUser(
-        id = prf.uid,
-        username = prf.email,
-        isAdmin = ExampleOAuth2ServiceFactory.isAdmin(prf.clearance.roles),
-        globalPermissions = ExampleOAuth2ServiceFactory.getGlobalPermissions(prf.clearance.roles)
-      )
       AuthenticatedUser(
         prf.uid,
         username = prf.email,
@@ -44,32 +34,6 @@ class ExampleOAuth2ServiceFactory extends OAuth2ServiceFactory {
 }
 
 object ExampleOAuth2ServiceFactory {
-  import cats.instances.all._
-  import cats.syntax.semigroup._
-
-  def getPermissions(roles: List[String], portals: List[String]): Map[String, Set[Permission]] = {
-    val matched = if (isAdmin(roles)) Permission.ALL_PERMISSIONS else getOnlyMatchingRoles(roles).toSet
-    portals.map(_ -> matched).map(List(_).toMap).foldLeft(Map.empty[String, Set[Permission]])(_ |+| _)
-  }
-
-  def isAdmin(roles: List[String]): Boolean =
-    roles.contains(TestPermissionResponse.Admin.toString)
-
-  def hasAccessAdminTab(roles: List[String]): Boolean =
-    roles.contains(TestPermissionResponse.AdminTab.toString)
-
-  def getOnlyMatchingRoles(roles: List[String]): List[Permission.Value] =
-    roles.flatMap(TestPermissionResponse.mapToNkPermission)
-
-  def getGlobalPermissions(roles: List[String]): List[GlobalPermission] = {
-    if (isAdmin(roles)) {
-      GlobalPermission.ALL_PERMISSIONS.toList
-    } else if (hasAccessAdminTab(roles)) {
-      List.apply(GlobalPermission.AdminTab)
-    } else {
-      List.empty
-    }
-  }
 
   def apply(): ExampleOAuth2ServiceFactory = new ExampleOAuth2ServiceFactory()
 
@@ -94,24 +58,6 @@ object ExampleOAuth2ServiceFactory {
     )
 
   val testRules: List[AuthenticationConfiguration.ConfigRule] = AuthenticationConfiguration.getRules(testConfig.usersFile)
-
-  object TestPermissionResponse extends Enumeration {
-    type PermissionTest = Value
-    val Reader = Value("Reader")
-    val Writer = Value("Writer")
-    val Deployer = Value("Deployer")
-    val Admin = Value("Admin")
-    val AdminTab = Value("AdminTab")
-
-    val mappedPermissions = Map(
-      Reader.toString -> Permission.Read,
-      Writer.toString -> Permission.Write,
-      Deployer.toString -> Permission.Deploy
-    )
-
-    def mapToNkPermission(role: String): Option[Permission] =
-      mappedPermissions.get(role)
-  }
 
   @ConfiguredJsonCodec case class TestAccessTokenResponse(@JsonKey("access_token") accessToken: String, @JsonKey("token_type") tokenType: String) extends OAuth2AuthorizationData {
     val expirationPeriod: Option[FiniteDuration] = None

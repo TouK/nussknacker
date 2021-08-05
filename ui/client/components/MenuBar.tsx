@@ -10,6 +10,7 @@ import {Signals} from "../containers/Signals"
 import {getCustomTabs} from "../reducers/selectors/settings"
 import {Flex} from "./common/Flex"
 import {ButtonWithFocus} from "./withFocus"
+import User from "../common/models/User";
 
 type MenuItemData = {
   path: string,
@@ -57,7 +58,7 @@ const Spacer = () => <Flex flex={1}/>
 export function MenuBar({appPath, rightElement = null, leftElement = null, ...props}: Props) {
   const {loggedUser, featuresSettings} = props
   const showSignals = featuresSettings.signals
-  const showAdmin = loggedUser.globalPermissions.adminTab
+  const showAdmin = loggedUser.hasGlobalPermission("AdminTab");
   const customTabs = useSelector(getCustomTabs)
 
   const [expanded, setExpanded] = useStateWithRevertTimeout(false)
