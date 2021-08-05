@@ -4,7 +4,7 @@ import {flatMap, uniq} from "lodash"
 type Permission = "Read" | "Write" | "Deploy"
 type PermissionCategory = string
 type CategoryPermissions = Record<PermissionCategory, Permission[]>
-type GlobalPermissions = Record<string, boolean>
+type GlobalPermissions = string[]
 
 export type UserData = {
   permissions: Permission[],
@@ -57,6 +57,6 @@ export default class User {
   }
 
   hasGlobalPermission(name: string): boolean {
-    return this.isAdmin || this.globalPermissions[name]
+    return this.isAdmin || this.globalPermissions.includes(name)
   }
 }

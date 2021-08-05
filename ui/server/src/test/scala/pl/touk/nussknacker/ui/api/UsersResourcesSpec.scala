@@ -4,7 +4,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
-import io.circe.Json.fromString
+import io.circe.Json._
 import org.scalatest._
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -16,22 +16,22 @@ class UsersResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastC
   test("fetch user info") {
     getUser(isAdmin = false) ~> check {
       status shouldBe StatusCodes.OK
-      responseAs[Json] shouldBe Json.obj(
+      responseAs[Json] shouldBe obj(
         "id" -> fromString("1"),
         "username" -> fromString("user"),
-        "isAdmin" -> Json.fromBoolean(false),
-        "categories" -> Json.arr(
+        "isAdmin" -> fromBoolean(false),
+        "categories" -> arr(
           List("Category1", "Category2", "ReqRes", "TESTCAT", "TESTCAT2").map(fromString): _*
         ),
-        "categoryPermissions" -> Json.obj(
-          "TESTCAT" -> Json.arr(
+        "categoryPermissions" -> obj(
+          "TESTCAT" -> arr(
             List("Deploy", "Read", "Write").map(fromString): _*
           ),
-          "TESTCAT2" -> Json.arr(
+          "TESTCAT2" -> arr(
             List("Deploy", "Read", "Write").map(fromString): _*
           )
         ),
-        "globalPermissions" -> Json.arr(fromString("CustomFixedPermission"))
+        "globalPermissions" -> arr(fromString("CustomFixedPermission"))
       )
     }
   }
@@ -39,15 +39,15 @@ class UsersResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastC
   test("fetch admin info") {
     getUser(isAdmin = true) ~> check {
       status shouldBe StatusCodes.OK
-      responseAs[Json] shouldBe Json.obj(
+      responseAs[Json] shouldBe obj(
         "id" -> fromString("1"),
         "username" -> fromString("admin"),
-        "isAdmin" -> Json.fromBoolean(true),
-        "categories" -> Json.arr(
+        "isAdmin" -> fromBoolean(true),
+        "categories" -> arr(
           List("Category1", "Category2", "ReqRes", "TESTCAT", "TESTCAT2").map(fromString): _*
         ),
-        "categoryPermissions" -> Json.obj(),
-        "globalPermissions" -> Json.arr()
+        "categoryPermissions" -> obj(),
+        "globalPermissions" -> arr()
       )
     }
   }

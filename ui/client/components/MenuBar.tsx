@@ -60,7 +60,7 @@ export function MenuBar({appPath, rightElement = null, leftElement = null, ...pr
 
   function buildMenu() {
 
-    const menuItems = tabs.filter(tab => tab.requiredPermission !== null || loggedUser.hasGlobalPermission(tab.requiredPermission)).map(mapDynamicItems).map(createMenuItem)
+    const menuItems = tabs.filter(tab => tab.requiredPermission === null || loggedUser.hasGlobalPermission(tab.requiredPermission)).map(mapDynamicItems).map(createMenuItem)
     return (
       <ul id="menu-items" onClick={() => setExpanded(false)}>
         {menuItems}
