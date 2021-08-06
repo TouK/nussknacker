@@ -106,9 +106,9 @@ module.exports = {
       "/api": {
         target: process.env.BACKEND_DOMAIN,
         changeOrigin: true,
-        onProxyRes: (proxyRes, req, res) => {
+        onProxyRes: (proxyRes, req) => {
           if (req.headers?.origin) {
-            res.setHeader("Access-Control-Allow-Origin", req.headers.origin)
+            proxyRes.headers["Access-Control-Allow-Origin"] = req.headers.origin
           }
         },
       },
