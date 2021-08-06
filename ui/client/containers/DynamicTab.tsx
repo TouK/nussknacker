@@ -4,14 +4,18 @@ import ErrorBoundary from "../components/common/ErrorBoundary"
 import {ExternalModule, splitUrl, useExternalLib} from "./ExternalLib"
 import {ModuleString, ModuleUrl} from "./ExternalLib/types"
 import {MuiThemeProvider} from "./muiThemeProvider"
+import {Redirect} from "react-router";
 
 export type DynamicTabData = {
-  name: string,
+  title: string,
   id: string,
   // expected:
   //  * url of working app - to include in iframe
   //  * url ({module}/{path}@{host}/{remoteEntry}.js) of hosted remoteEntry js file (module federation) with default exported react component - included as component
+  //  * url of internal route in NK
   url: string,
+  requiredPermission?: string,
+  type: "Local" | "IFrame" | "Remote"
 }
 
 const RemoteTabComponent = ({scope}: {scope: ModuleString}) => {
@@ -32,9 +36,9 @@ const RemoteModuleTab = (props: {url: ModuleUrl}) => {
   )
 }
 
-const IframeTab = ({tab}: {tab: DynamicTabData}) => (
+const IframeTab = ({url}: {url: string}) => (
   <iframe
-    src={queryString.stringifyUrl({url: tab?.url, query: {iframe: true}})}
+    src={queryString.stringifyUrl({url: url, query: {iframe: true}})}
     width="100%"
     height="100%"
     frameBorder="0"
@@ -42,7 +46,9 @@ const IframeTab = ({tab}: {tab: DynamicTabData}) => (
 )
 
 export const DynamicTab = memo(function DynamicComponent({tab}: {tab: DynamicTabData}): JSX.Element {
-  return tab?.url.match(/.js$/) ?
-    <RemoteModuleTab url={tab.url}/> :
-    <IframeTab tab={tab}/>
+  switch (tab.type) {
+    case "Remote": return <RemoteModuleTab url={tab.url}/>
+    case "Local": return <Redirect to={tab.url}/>
+    case "IFrame": return <IframeTab url={tab.url}/>
+  }
 })

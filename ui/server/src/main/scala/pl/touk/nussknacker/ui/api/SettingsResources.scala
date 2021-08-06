@@ -2,15 +2,14 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.server.{Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.engine.api.CirceUtil._
 
 import scala.concurrent.ExecutionContext
 
 class SettingsResources(config: FeatureTogglesConfig,
-                        typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData],
                         authenticationMethod: String,
                         analyticsConfig: Option[AnalyticsConfig])(implicit ec: ExecutionContext)
   extends Directives with FailFastCirceSupport with RouteWithoutUser {
@@ -26,9 +25,8 @@ class SettingsResources(config: FeatureTogglesConfig,
             environmentAlert = config.environmentAlert,
             commentSettings = config.commentSettings,
             deploySettings = config.deploySettings,
-            customTabs = config.customTabs,
+            tabs = config.tabs,
             intervalTimeSettings = config.intervalTimeSettings,
-            signals = signalsSupported,
             attachments = config.attachments.isDefined
           )
 
@@ -42,20 +40,29 @@ class SettingsResources(config: FeatureTogglesConfig,
       }
     }
 
-  private val signalsSupported: Boolean = {
-    typeToConfig.all.exists { case (_, processingTypeData) =>
-      processingTypeData.supportsSignals
-    }
-  }
 }
 
-@JsonCodec case class MetricsSettings(url: String, defaultDashboard: String, processingTypeToDashboard: Option[Map[String,String]])
+@JsonCodec case class MetricsSettings(url: String, defaultDashboard: String, processingTypeToDashboard: Option[Map[String, String]])
+
 @JsonCodec case class RemoteEnvironmentConfig(targetEnvironmentId: String)
+
 @JsonCodec case class EnvironmentAlert(content: String, cssClass: String)
+
 @JsonCodec case class CommentSettings(matchExpression: String, link: String)
+
 @JsonCodec case class DeploySettings(requireComment: Boolean)
+
 @JsonCodec case class IntervalTimeSettings(processes: Int, healthCheck: Int)
-@JsonCodec case class CustomTabs(name: String, url: String, id: String)
+
+object TopTabType extends Enumeration {
+
+  implicit val decoder: Decoder[TopTabType.Value] = Decoder.enumDecoder(TopTabType)
+  implicit val encoder: Encoder[TopTabType.Value] = Encoder.enumEncoder(TopTabType)
+
+  val Local, Remote, IFrame = Value
+}
+
+@JsonCodec case class TopTab(id: String, title: String, `type`: TopTabType.Value, url: String, requiredPermission: Option[String])
 
 @JsonCodec case class ToggleFeaturesOptions(counts: Boolean,
                                             metrics: Option[MetricsSettings],
@@ -63,10 +70,9 @@ class SettingsResources(config: FeatureTogglesConfig,
                                             environmentAlert: Option[EnvironmentAlert],
                                             commentSettings: Option[CommentSettings],
                                             deploySettings: Option[DeploySettings],
-                                            customTabs: Option[List[CustomTabs]],
+                                            tabs: Option[List[TopTab]],
                                             intervalTimeSettings: IntervalTimeSettings,
-                                            attachments: Boolean,
-                                            signals: Boolean)
+                                            attachments: Boolean)
 
 @JsonCodec case class AnalyticsSettings(engine: String, url: String, siteId: String)
 

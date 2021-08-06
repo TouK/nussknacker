@@ -17,7 +17,8 @@ case class ExpressionConfig(globalProcessVariables: Map[String, WithCategories[A
                             hideMetaVariable: Boolean = false,
                             strictMethodsChecking: Boolean = true,
                             staticMethodInvocationsChecking: Boolean = false,
-                            disableMethodExecutionForUnknown: Boolean = false
+                            disableMethodExecutionForUnknown: Boolean = false,
+                            dynamicPropertyAccessAllowed: Boolean = false
                            )
 
 object ExpressionConfig {

@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
+
+set -e
+
 #TODO maybe use sbt-native-packager scripts generator?
 
 NUSSKNACKER_DIR=`dirname "$0" | xargs -I{} readlink -f {}/..`
-PID_FILE="$NUSSKNACKER_DIR/frontend.pid"
+PID_FILE="$NUSSKNACKER_DIR/nussknacker-designer.pid"
 
 if [ -a $PID_FILE ]
 then

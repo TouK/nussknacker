@@ -74,20 +74,20 @@ Counts are based on InfluxDB metrics, stored in ```nodeCount``` measurement by d
 If you have custom metrics settings which result in different fields or tags (e.g. you have different telegraf configuration), you can configure required values
 with the settings presented below:
 
-| Parameter name                                 | Importance | Type                                                                      | Default value        | Description                                                                                                                                   |
-| --------------                                 | ---------- | ----                                                                      | -------------        | -----------                                                                                                                                   |
-| countsSettings.influxUrl                       | Medium     | string                                                                    |                      | Main InfluxDB query endpoint (e.g. http://influx:8086/query). It should be accessible from Nussknacker Designer server, not from user browser |
-| countsSettings.database                        | Medium     | string                                                                    |                      |                                                                                                                                               |
-| countsSettings.user                            | Medium     | string                                                                    |                      |                                                                                                                                               |
-| countsSettings.password                        | Medium     | string                                                                    |                      |                                                                                                                                               |
-| countsSettings.queryMode                       | Low        | OnlySingleDifference / OnlySumOfDifferences / SumOfDifferencesForRestarts | OnlySingleDifference |                                                                                                                                               |
-| countsSettings.metricsConfig.sourceCountMetric | Low        | string                                                                    | source_count         |                                                                                                                                               |
-| countsSettings.metricsConfig.nodeCountMetric   | Low        | string                                                                    | nodeCount            |                                                                                                                                               |
-| countsSettings.metricsConfig.nodeIdTag         | Low        | string                                                                    | nodeId               |                                                                                                                                               |
-| countsSettings.metricsConfig.slotTag           | Low        | string                                                                    | slot                 |                                                                                                                                               |
-| countsSettings.metricsConfig.processTag        | Low        | string                                                                    | process              |                                                                                                                                               |
-| countsSettings.metricsConfig.countField        | Low        | string                                                                    | count                |                                                                                                                                               |
-| countsSettings.metricsConfig.envTag            | Low        | string                                                                    | env                  |                                                                                                                                               |
+| Parameter name                                 | Importance | Type                                                                      | Default value               | Description                                                                                                                                   |
+| --------------                                 | ---------- | ----                                                                      | -------------               | -----------                                                                                                                                   |
+| countsSettings.influxUrl                       | Medium     | string                                                                    |                             | Main InfluxDB query endpoint (e.g. http://influx:8086/query). It should be accessible from Nussknacker Designer server, not from user browser |
+| countsSettings.database                        | Medium     | string                                                                    |                             |                                                                                                                                               |
+| countsSettings.user                            | Medium     | string                                                                    |                             |                                                                                                                                               |
+| countsSettings.password                        | Medium     | string                                                                    |                             |                                                                                                                                               |
+| countsSettings.queryMode                       | Low        | OnlySingleDifference / OnlySumOfDifferences / SumOfDifferencesForRestarts | SumOfDifferencesForRestarts |                                                                                                                                               |
+| countsSettings.metricsConfig.sourceCountMetric | Low        | string                                                                    | source_count                |                                                                                                                                               |
+| countsSettings.metricsConfig.nodeCountMetric   | Low        | string                                                                    | nodeCount                   |                                                                                                                                               |
+| countsSettings.metricsConfig.nodeIdTag         | Low        | string                                                                    | nodeId                      |                                                                                                                                               |
+| countsSettings.metricsConfig.slotTag           | Low        | string                                                                    | slot                        |                                                                                                                                               |
+| countsSettings.metricsConfig.processTag        | Low        | string                                                                    | process                     |                                                                                                                                               |
+| countsSettings.metricsConfig.countField        | Low        | string                                                                    | count                       |                                                                                                                                               |
+| countsSettings.metricsConfig.envTag            | Low        | string                                                                    | env                         |                                                                                                                                               |
 
 ## Deployment settings
 
@@ -535,19 +535,35 @@ processToolbarConfig {
 }
 ```
 
-### Custom tabs
+### Main menu configuration
                       
-Custom tabs (in main menu bar, in addition to Processes, Metrics etc.) can be added with following configuration:
-
-```json
- customTabs: [
+Tabs (in main menu bar, such as Scenarios etc.) can be configured in the following way:
+```
+ tabs: ${tabs} [
   {
-    "id": "kibana",
-    "name": "Kibana",
-    "url": "http://myKibana.org/kibana"
+    id: "kibana",
+    title: "Kibana",
+    url: "http://myKibana.org/kibana",
+    type: "IFrame",
+    requiredPermission: "AdminTab"
   }
 ]
 ```
+By default, only `Scenarios` tab is configured.
+
+| Parameter name     | Type                | Description                                                |
+| --------------     | ----                | -----------                                                |
+| id                 | string              | Unique identifier                                          |
+| title              | string              | Title appearing in UI                                      |
+| type               | IFrame/Local/Remote | Type of tab (see below for explanation)                    |
+| url                | string              | URL of the tab                                             |
+| requiredPermission | string              | Optional parameter, name of [Global Permission](#security) |
+                                       
+The types of tabs can be as follows (see `dev-application.conf` for some examples):
+- IFrame - contents of the url parameter will be embedded as IFrame
+- Local - redirect to Designer page (`/admin`, `/signals`, `/processes` etc., see [code](https://github.com/TouK/nussknacker/blob/staging/ui/client/containers/NussknackerApp.tsx#L118)
+  for other options)
+- Remote - [module federation](https://webpack.js.org/concepts/module-federation/) can be used to embed external tabs, url should be in form: `{module}/{path}@{host}/{remoteEntry}.js`  
 
 ## Environment configuration
 

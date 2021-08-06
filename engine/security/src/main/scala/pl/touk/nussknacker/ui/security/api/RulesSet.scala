@@ -18,11 +18,7 @@ class RulesSet(rules: List[ConfigRule], allCategories: List[String]) {
   }
 
   def globalPermissions: List[GlobalPermission] = {
-    if (isAdmin) {
-      GlobalPermission.ALL_PERMISSIONS.toList
-    } else {
-      rules.flatMap(_.globalPermissions).distinct
-    }
+    rules.flatMap(_.globalPermissions).distinct
   }
 
   def isAdmin: Boolean = rules.exists(rule => rule.isAdmin)

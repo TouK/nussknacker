@@ -38,7 +38,8 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
                           staticMethodInvocationsChecking: Boolean,
                           typeDefinitionSet: TypeDefinitionSet,
                           evaluationContextPreparer: EvaluationContextPreparer,
-                          disableMethodExecutionForUnknown: Boolean
+                          disableMethodExecutionForUnknown: Boolean,
+                          dynamicPropertyAccessAllowed: Boolean
                          )(implicit settings: ClassExtractionSettings) extends LazyLogging {
 
   import ast.SpelAst._
@@ -102,6 +103,25 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         throw new SpelCompilationException(node, e)
     }
 
+    def typeUnion(e: Indexer, possibleTypes: Set[SingleTypingResult]): NodeTypingResult = {
+      val typedPossibleTypes = possibleTypes.map(possibleType => typeIndexer(e, possibleType)).toList
+
+      val typingResult = typedPossibleTypes.sequence.map(_.map(_.finalResult.typingResult).toSet).map(typingResults => Typed.apply(typingResults))
+      typingResult.map(toResult)
+    }
+
+    @tailrec
+    def typeIndexer(e: Indexer, typingResult: TypingResult): NodeTypingResult = {
+      typingResult match {
+        case TypedClass(clazz, param :: Nil) if clazz.isAssignableFrom(classOf[java.util.List[_]]) => valid(param)
+        case TypedClass(clazz, keyParam :: valueParam :: Nil) if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) => valid(valueParam)
+        case d: TypedDict => dictTyper.typeDictValue(d, e).map(toResult)
+        case TypedUnion(possibleTypes) => typeUnion(e, possibleTypes)
+        case TypedTaggedValue(underlying, _) => typeIndexer(e, underlying)
+        case _ => if(dynamicPropertyAccessAllowed) valid(Unknown) else invalid("Dynamic property access is not allowed")
+      }
+    }
+
     catchUnexpectedErrors(node match {
 
       case e: Assign => invalid("Value modifications are not supported")
@@ -129,13 +149,10 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       //TODO: what should be here?
       case e: Identifier => valid(Unknown)
       //TODO: what should be here?
-      case e: Indexer =>
-        current.stack match {
-          case TypingResultWithContext(TypedClass(clazz, param :: Nil), _) :: Nil if clazz.isAssignableFrom(classOf[java.util.List[_]]) => valid(param)
-          case TypingResultWithContext(TypedClass(clazz, keyParam :: valueParam :: Nil), _):: Nil if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) => valid(valueParam)
-          case TypingResultWithContext((d: TypedDict), _) :: Nil => dictTyper.typeDictValue(d, e).map(typ => toResult(typ))
-          case _ => valid(Unknown)
-        }
+      case e: Indexer => current.stack.headOption match {
+        case None => invalid("Cannot do indexing here")
+        case Some(result) => typeIndexer(e, result.typingResult)
+      }
 
       case e: BooleanLiteral => valid(Typed[Boolean])
       case e: IntLiteral => valid(Typed[java.lang.Integer])
@@ -397,7 +414,8 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     Invalid(NonEmptyList.of(ExpressionParseError(message)))
 
   def withDictTyper(dictTyper: SpelDictTyper) =
-    new Typer(classLoader, commonSupertypeFinder, dictTyper, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking, typeDefinitionSet,  evaluationContextPreparer, disableMethodExecutionForUnknown)
+    new Typer(classLoader, commonSupertypeFinder, dictTyper, strictMethodsChecking = strictMethodsChecking,
+      staticMethodInvocationsChecking, typeDefinitionSet,  evaluationContextPreparer, disableMethodExecutionForUnknown, dynamicPropertyAccessAllowed)
 
 }
 

@@ -4,7 +4,7 @@ import {flatMap, uniq} from "lodash"
 type Permission = "Read" | "Write" | "Deploy"
 type PermissionCategory = string
 type CategoryPermissions = Record<PermissionCategory, Permission[]>
-type GlobalPermissions = Record<string, boolean>
+type GlobalPermissions = string[]
 
 export type UserData = {
   permissions: Permission[],
@@ -54,5 +54,9 @@ export default class User {
 
   isWriter(): boolean {
     return this.isAdmin || this.permissions.includes("Write")
+  }
+
+  hasGlobalPermission(name: string): boolean {
+    return this.isAdmin || this.globalPermissions.includes(name)
   }
 }

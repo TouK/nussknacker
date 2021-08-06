@@ -2,14 +2,14 @@ import {defaultsDeep} from "lodash"
 import React, {useMemo} from "react"
 import {useSelector} from "react-redux"
 import {useRouteMatch} from "react-router"
-import {getCustomTabs} from "../reducers/selectors/settings"
 import {darkTheme} from "./darkTheme"
+import {getTabs} from "../reducers/selectors/settings"
 import {DynamicTab} from "./DynamicTab"
 import NotFound from "./errors/NotFound"
 import {NkThemeProvider} from "./theme"
 
 export function CustomTab(): JSX.Element {
-  const customTabs = useSelector(getCustomTabs)
+  const customTabs = useSelector(getTabs)
   const {params} = useRouteMatch<{id: string}>()
   const tab = useMemo(
     () => customTabs.find(tab => tab.id == params.id),

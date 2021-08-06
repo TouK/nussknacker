@@ -126,7 +126,6 @@ export class Signals extends React.Component {
 }
 
 Signals.path = `/signals`
-Signals.header = "Signals"
 
 function mapState(state) {
   return {

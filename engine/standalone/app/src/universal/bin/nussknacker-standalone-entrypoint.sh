@@ -6,7 +6,7 @@ CONF_DIR="$NUSSKNACKER_DIR/conf"
 LIB_DIR="$NUSSKNACKER_DIR/lib"
 MODELS_DIR="$NUSSKNACKER_DIR/models"
 
-CONFIG_FILE=${NUSSKNACKER_CONFIG_FILE-${2-"$CONF_DIR/application.conf"}}
+CONFIG_FILE=${CONFIG_FILE-${2-"$CONF_DIR/application.conf"}}
 LOG_FILE=${NUSSKNACKER_LOG_FILE-${3-"$CONF_DIR/docker-logback.xml"}}
 APPLICATION_APP=${NUSSKNACKER_APPLICATION_APP-${4-"pl.touk.nussknacker.engine.standalone.http.StandaloneHttpApp"}}
 USER=${DAEMON_USER-${5-"daemon"}}

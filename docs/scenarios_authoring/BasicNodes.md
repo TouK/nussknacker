@@ -120,11 +120,12 @@ subsequent events from any branch during `stateTimeout`. Produced object has val
 
 ![previous_value_window](img/previous_value_window.png)
 
-Previousvalue stores arbitrary value for the given key. This element has two parameters:
-- keyBy - expression defining key for which we compute aggregate, e.g. `#input.userId`
+`previousValue` stores arbitrary value for the given key. This element has two parameters:
+- groupBy - expression defining key for which we compute aggregate, e.g. `#input.userId`
 - value - stored value
 
 For example, given stream of events which contain users with their current location, when we set 
-- keyBy is `#input.userId`
+- groupBy is `#input.userId`
 - value is `#input.location`
+
 then the value of output variable is the previous location for current user. If this is the first appearance of this user, **current** location will be returned.
