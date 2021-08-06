@@ -37,18 +37,29 @@ Released versions are available at [GitHub](https://github.com/TouK/nussknacker/
 ### Prerequisites
 
 We assume that `java` (recommended version is JDK 11) is on path. 
-           
+
+Please note that default environment variable configuration assumes that Flink, InfluxDB, Kafka
+and Schema registry are running on `localhost` with their default ports configured. 
+See [environment variables](#environment-variables) section for the details.
+Also, `GRAFANA_URL` is set to `/grafana`, which assumes that reverse proxy like [NGINX](https://github.com/TouK/nussknacker-quickstart/tree/main/nginx) is used
+to access both Designer and Grafana. For other setups you should change this value to absolute Grafana URL.
+
+`WORKING_DIR` environment variable is used as base place where Nussknacker stores its data such as:
+- logs
+- embedded database files
+- scenario attachments
+
 ### Startup script
                      
 We provide following scripts:
-- `run.sh` - to run in foreground
-- `run-daemonized.sh` - to run in background
+- `run.sh` - to run in foreground, it's also suitable to use it for systemd service
+- `run-daemonized.sh` - to run in background, we are using `nussknacker-designer.pid` to store PID of running process
 
 ### Logging
 
 We use [Logback](http://logback.qos.ch/manual/configuration.html) for logging configuration. 
 By default, the logs are placed in `${NUSSKNACKER_DIR}/logs`, with sensible rollback configuration.  
-Please remember that these are logs of Nussknacker Designer, to see/configure logs of other compoenents (e.g. Flink)
+Please remember that these are logs of Nussknacker Designer, to see/configure logs of other components (e.g. Flink)
 please consult their documentation. 
 
 ### Systemd considerations
