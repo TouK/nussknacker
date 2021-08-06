@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.ui.security.api
 
-object GlobalPermission extends Enumeration {
-  type GlobalPermission = Value
-  val AdminTab = Value("AdminTab")
+object GlobalPermission {
 
-  final val ALL_PERMISSIONS = Set(AdminTab)
+  type GlobalPermission = String
+
 }

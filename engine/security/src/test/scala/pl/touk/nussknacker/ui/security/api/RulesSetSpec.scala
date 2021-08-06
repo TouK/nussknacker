@@ -65,9 +65,11 @@ class RulesSetSpec  extends FunSuite with Matchers with TableDrivenPropertyCheck
   }
 
   test("global permissions") {
+    val adminTab = "AdminTab"
+
     val userRule = emptyRule.copy(role = "userRole")
     val adminRule = emptyRule.copy(role = "adminRole", isAdmin = true)
-    val userRuleWithAdminTab = emptyRule.copy(role = "userRoleWithAdminTab", globalPermissions = GlobalPermission.AdminTab :: Nil)
+    val userRuleWithAdminTab = emptyRule.copy(role = "userRoleWithAdminTab", globalPermissions = adminTab :: Nil)
 
     val rules = List(userRule, adminRule, userRuleWithAdminTab)
     val table = Table[List[String], List[ConfigRule], List[GlobalPermission]](
@@ -75,12 +77,9 @@ class RulesSetSpec  extends FunSuite with Matchers with TableDrivenPropertyCheck
       (Nil, Nil, Nil),
       (List("unknown role"), rules, Nil),
       (List(userRule.role), rules, Nil),
-      (List(userRuleWithAdminTab.role), rules, GlobalPermission.AdminTab :: Nil),
-      (List(adminRule.role), rules, GlobalPermission.ALL_PERMISSIONS.toList),
-      (List(userRule.role, adminRule.role), rules, GlobalPermission.ALL_PERMISSIONS.toList),
-      (List(userRuleWithAdminTab.role, adminRule.role), rules, GlobalPermission.ALL_PERMISSIONS.toList),
-      (List(userRule.role, userRuleWithAdminTab.role), rules, GlobalPermission.AdminTab :: Nil),
-      (List(userRule.role, adminRule.role, userRuleWithAdminTab.role), rules, GlobalPermission.AdminTab :: Nil)
+      (List(userRuleWithAdminTab.role), rules, adminTab :: Nil),
+      (List(userRule.role, userRuleWithAdminTab.role), rules, adminTab :: Nil),
+      (List(userRule.role, adminRule.role, userRuleWithAdminTab.role), rules, adminTab :: Nil)
     )
     forAll(table) { (roles: List[String], rules: List[ConfigRule], permissions: List[GlobalPermission]) =>
       val rulesSet = RulesSet.getOnlyMatchingRules(roles, rules, List.empty)

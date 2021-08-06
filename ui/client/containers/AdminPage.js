@@ -63,7 +63,6 @@ export class AdminPage extends React.Component {
 }
 
 AdminPage.path = `/admin`
-AdminPage.header = "Admin"
 
 const enhance = compose(
   withRouter,

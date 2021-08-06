@@ -9,7 +9,7 @@ export const getSettings = (state: RootState): SettingsState => state.settings
 
 export const getAuthenticationSettings = createSelector(getSettings, s => s.authenticationSettings)
 export const getFeatureSettings = createSelector(getSettings, s => s.featuresSettings)
-export const getCustomTabs = createSelector(getFeatureSettings, (s): DynamicTabData[] => s.customTabs || [])
+export const getTabs = createSelector(getFeatureSettings, (s): DynamicTabData[] => s.tabs || [])
 export const getLoggedUser = createSelector(getSettings, s => s.loggedUser)
 export const getProcessDefinitionData = createSelector(getSettings, s => s.processDefinitionData || {} as ProcessDefinitionData)
 export const getFilterCategories = createSelector(getLoggedUser, u => ProcessUtils.prepareFilterCategories(u.categories, u) || [])
