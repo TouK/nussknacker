@@ -163,9 +163,10 @@ lazy val commonSettings =
         "-language:postfixOps",
         "-language:existentials",
         "-Ypartial-unification",
+        //Scala 2.12 does not support target > 8
         "-target:jvm-1.8",
         "-release",
-        "8"
+        "11"
       ),
       javacOptions := Seq(
         "-Xlint:deprecation",

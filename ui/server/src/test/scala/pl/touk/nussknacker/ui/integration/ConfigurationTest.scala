@@ -6,7 +6,6 @@ import pl.touk.nussknacker.ui.config.UiConfigLoader
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import java.net.URI
-import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Files
 import java.util.UUID
 
@@ -90,7 +89,7 @@ class ConfigurationTest extends FunSuite with Matchers {
   def writeToTemp(content: String): URI = {
     val temp = Files.createTempFile("ConfigurationTest", ".conf")
     temp.toFile.deleteOnExit()
-    Files.write(temp, content.getBytes(StandardCharsets.UTF_8))
+    Files.writeString(temp, content)
     temp.toUri
   }
 
