@@ -26,17 +26,17 @@ they are usually `java.lang` (primitives), `java.util` (List, Map) and `java.tim
 
 ### Basic (primitive data types)
 
-| Java type  | JSON    | Avro    | Comment     |
-| ---------- | ------- | ------- | ----------- |
-| null       | null    | null    |             |
-| String     | string  | string  | UTF-8       |
-| Boolean    | boolean | boolean |             |
-| Integer    | number  | int     | 32bit       |
-| Long       | number  | long    | 64bit       |
-| Float      | number  | float   | single precision |
-| Double     | number  | double  | double precision |
+| Java type  | JSON    | Avro                     | Comment                                    |
+| ---------- | ------- | -------                  | -----------                                |
+| null       | null    | null                     |                                            |
+| String     | string  | string                   | UTF-8                                      |
+| Boolean    | boolean | boolean                  |                                            |
+| Integer    | number  | int                      | 32bit                                      |
+| Long       | number  | long                     | 64bit                                      |
+| Float      | number  | float                    | single precision                           |
+| Double     | number  | double                   | double precision                           |
 | BigDecimal | number  | bytes or fixed + decimal | enable computation without rounding errors |
-| UUID       | string  | string + uuid | uuid |
+| UUID       | string  | string + uuid            | uuid                                       |
 
 More information about how to declare each type in Avro you can find in [Avro ducumentation](http://avro.apache.org/docs/current/spec.html#schemas), 
 especially about [Avro logical types](http://avro.apache.org/docs/current/spec.html#Logical+Types).
@@ -92,15 +92,15 @@ Conversions of different types of dates are handled either by
 The following table mapping of types, possible JSON representation (no standard here though) and 
 mapping of AVRO types (`int + date` means `int` type with `date` logical type):
 
-| Java type      | JSON    | Avro                        | Sample                     | Comment                |
-| -------------- | ------- | --------------------------- | -------------------------- | ---------------------- |
-| LocalDate      | string  | int + date                  | 2021-05-17                 | Timezone is not stored |
-| LocalTime      | string  | int + time-millis or long + time-micros | 07:34:00.12345 | Timezone is not stored |
-| LocalDateTime  | string  | not supported yet           | 2021-05-17T07:34:00        | Timezone is not stored |
-| ZonedDateTime  | string  | long + timestamp-millis or timestamp-micros (not supported in sources) | 2021-05-17T07:34:00+02:00 |  |
-| OffsetDateTime | string  | long + timestamp-millis or timestamp-micros (not supported in sources) | 2021-05-17T07:34:00+02:00 |  |
-| Instant        | number  | long + timestamp-millis or timestamp-micros | 2021-05-17T05:34:00Z | Timestamp (millis since 1970-01-01) in human readable format |
-| Long           | number  | long, long + local-timestamp-millis or local-timestamp-micros | 123456789 | Raw timestamp (millis since 1970-01-01) |
+| Java type      | JSON    | Avro                                                                   | Sample                     | Comment                                                      |
+| -------------- | ------- | ---------------------------                                            | -------------------------- | ----------------------                                       |
+| LocalDate      | string  | int + date                                                             | 2021-05-17                 | Timezone is not stored                                       |
+| LocalTime      | string  | int + time-millis or long + time-micros                                | 07:34:00.12345             | Timezone is not stored                                       |
+| LocalDateTime  | string  | not supported yet                                                      | 2021-05-17T07:34:00        | Timezone is not stored                                       |
+| ZonedDateTime  | string  | long + timestamp-millis or timestamp-micros (not supported in sources) | 2021-05-17T07:34:00+02:00  |                                                              |
+| OffsetDateTime | string  | long + timestamp-millis or timestamp-micros (not supported in sources) | 2021-05-17T07:34:00+02:00  |                                                              |
+| Instant        | number  | long + timestamp-millis or timestamp-micros                            | 2021-05-17T05:34:00Z       | Timestamp (millis since 1970-01-01) in human readable format |
+| Long           | number  | long, long + local-timestamp-millis or local-timestamp-micros          | 123456789                  | Raw timestamp (millis since 1970-01-01)                      |
 
 # SpEL syntax
 
@@ -113,38 +113,38 @@ There are a few notable exceptions:
 - Strings can be quoted with either `'` or `"`
 - Field names in records do not to be quoted (e.g. `{name: "John"}` is valid SpEL, but not valid JSON)
 
-| Expression  |	Result | Type   |
-| ------------|--------|--------|
-|`'Hello World'`| "Hello World" |	String |
-|`true`	      |true	   | Boolean |
-|`null`	      | null   | Null    |
-|`{1,2,3,4}`    |  a list of integers from 1 to 4	| List[Integer] |
-|`{john:300, alex:400}` |a map (name-value collection) | Map[String, Integer] |
-| `#input` | variable | |                                         
+| Expression             | Result                         | Type                 |
+| ------------           | --------                       | --------             |
+| `'Hello World'`        | "Hello World"                  | String               |
+| `true`                 | true                           | Boolean              |
+| `null`                 | null                           | Null                 |
+| `{1,2,3,4}`            | a list of integers from 1 to 4 | List[Integer]        |
+| `{john:300, alex:400}` | a map (name-value collection)  | Map[String, Integer] |
+| `#input`               | variable                       |                      |
                                     
 ## Arithmetic Operators
 
-| Expression  |	Result | Type   |
-| ------------|--------|--------|
-| `42 + 2`      | 44     | Integer|
-| `'AA' + 'BB'` | "AABB" | String |
+| Expression    | Result   | Type     |
+| ------------  | -------- | -------- |
+| `42 + 2`      | 44       | Integer  |
+| `'AA' + 'BB'` | "AABB"   | String   |
 
 ## Conditional Operators
 
-| Expression  |	Result | Type   |
-| ------------|--------|--------|
-| `2 == 2` | true	| boolean |
-| `2 > 1` | true	| boolean |
-| `true AND false` | false	| boolean |
-| `true && false` | false	| boolean |
-| `true OR false` | true	| boolean |
-| `true || false` | true	| boolean |
-| `2 > 1 ? 'a' : 'b'` |	"a"	| String |
-| `2 < 1 ? 'a' : 'b'` |	"b"	| String |
-| `#nonNullVar == null ? 'Unkown' : 'Success'` |	"Success" | String |
-| `#nullVar == null ? 'Unknown' : 'Success'` | "Unknown" | String |
-| `#nullVar?:'Unknown'` | "Unknown" | String |
-| `'john'?:'Unknown'` | "john" | String |
+| Expression                                   | Result    | Type     |      |         |
+| ------------                                 | --------  | -------- |      |         |
+| `2 == 2`                                     | true      | boolean  |      |         |
+| `2 > 1`                                      | true      | boolean  |      |         |
+| `true AND false`                             | false     | boolean  |      |         |
+| `true && false`                              | false     | boolean  |      |         |
+| `true OR false`                              | true      | boolean  |      |         |
+| `true                                        |           | false`   | true | boolean |
+| `2 > 1 ? 'a' : 'b'`                          | "a"       | String   |      |         |
+| `2 < 1 ? 'a' : 'b'`                          | "b"       | String   |      |         |
+| `#nonNullVar == null ? 'Unkown' : 'Success'` | "Success" | String   |      |         |
+| `#nullVar == null ? 'Unknown' : 'Success'`   | "Unknown" | String   |      |         |
+| `#nullVar?:'Unknown'`                        | "Unknown" | String   |      |         |
+| `'john'?:'Unknown'`                          | "john"    | String   |      |         |
 
 ## Method invocations
 
@@ -152,26 +152,26 @@ As Nussknacker uses Java types, some objects are more than data containers - the
 that can be invoked on them. Method parameters are passed in parentheses, usually parameter details 
 are shown in code completion hints.
 
-| Expression                 | Result     | Type |
-| -------------------------- | ---------- | ---- |
-| `'someValue.substring(4)`  | "Value"  | String |
-| `'someValue'.length()`     | 9        | Integer|
+| Expression                 | Result     | Type    |
+| -------------------------- | ---------- | ----    |
+| `'someValue.substring(4)`  | "Value"    | String  |
+| `'someValue'.length()`     | 9          | Integer |
 
 ## Accessing elements of a list or a record
 
-| Expression  |	Result | Type   |
-| ------------|--------|--------|
-|`{1,2,3,4}[0]` | 1 | Integer |
-|`{jan:300, alex:400}[alex]` | a value of field 'alex', which is 400	| Integer |
+| Expression                  | Result                                | Type     |
+| ------------                | --------                              | -------- |
+| `{1,2,3,4}[0]`              | 1                                     | Integer  |
+| `{jan:300, alex:400}[alex]` | a value of field 'alex', which is 400 | Integer  |
 
 ## Filtering lists
                           
 Special variable `#this` is used to operate on single element of list.
 
-| Expression  |	Result | Type   |
-| ------------|--------|--------|
-|`{1,2,3,4}.?[#this ge 3]` |{3, 4}|	List[Integer] |
-|`#usersList.?[#this.firstName == 'john']`	| {'john doe'}	| List[String] |
+| Expression                                | Result       | Type          |
+| ------------                              | --------     | --------      |
+| `{1,2,3,4}.?[#this ge 3]`                 | {3, 4}       | List[Integer] |
+| `#usersList.?[#this.firstName == 'john']` | {'john doe'} | List[String]  |
 
 ## Mapping lists
 
@@ -185,12 +185,12 @@ person2 = name: "John"; age: 24
 listOfPersons = {person1, person2}
 ```
 
-| Expression  |	Result | Type   |
-| ------------|--------|--------|
-|`{1,2,3,4}.![#this * 2]` | {2, 4, 6, 8} | List[Integer] |
-|`#listOfPersons.![#this.name]` | {'Alex', 'John'} | List[String] |
-|`#listOfPersons.![#this.age]` | {42, 24} | List[Integer] |
-|`#listOfPersons.![7]` | {7, 7}	| List[Integer] |
+| Expression                     | Result           | Type          |
+| ------------                   | --------         | --------      |
+| `{1,2,3,4}.![#this * 2]`       | {2, 4, 6, 8}     | List[Integer] |
+| `#listOfPersons.![#this.name]` | {'Alex', 'John'} | List[String]  |
+| `#listOfPersons.![#this.age]`  | {42, 24}         | List[Integer] |
+| `#listOfPersons.![7]`          | {7, 7}           | List[Integer] |
 
 ## Safe navigation
 
@@ -198,10 +198,10 @@ When you access nested structure, you have to take care of null fields, otherwis
 error. SpEL provides helpful safe navigation operator, it's basically shorthand for conditional operator:
 `#someVar?.b` means `#someVar != null ? #someVar.b : null`
 
-| Expression  |	Result | Type   |
-| ------------|--------|--------|
-|`null.someField`	| java.lang.NullPointerException | java.lang.NullPointerException
-|`null?.someField`	| null	| Null
+| Expression        | Result                         | Type                           |
+| ------------      | --------                       | --------                       |
+| `null.someField`  | java.lang.NullPointerException | java.lang.NullPointerException |
+| `null?.someField` | null                           | Null                           |
 
 ## Invoking static methods
 
@@ -210,33 +210,33 @@ of some of them due to security reasons. Invoking static methods is advanced fun
 to incomprehensible expressions, also code completions will not work with many of them. 
 If you need to invoke the same method in many places, probably the best solution is to create additional helper.
 
-| Expression  |	Result | Type   |
-| ------------|--------|--------|
-|`T(java.lang.Math).PI`	| 3.14159..	| Double |
+| Expression             | Result    | Type     |
+| ------------           | --------  | -------- |
+| `T(java.lang.Math).PI` | 3.14159.. | Double   |
 
 ## Chaining with dot
-| Expression  |	Result | Type   |
-| ------------|--------|--------|
-|`{1, 2, 3, 4}.?[#this > 1].![#this > 2 ? #this * 2 : #this]` | {2, 6, 8} | Double |
+| Expression                                                   | Result    | Type     |
+| ------------                                                 | --------  | -------- |
+| `{1, 2, 3, 4}.?[#this > 1].![#this > 2 ? #this * 2 : #this]` | {2, 6, 8} | Double   |
 
 ## Type conversions
 
-| Expression  |	Result | Type   |
-| ------------|--------|--------|
-|`#NUMERIC.toNumber('42')`	| 42 | Number
-|`#NUMERIC.toNumber('42').toString()`	| '42'	| String |
-|`'' + 42`	| '42' | String
-|`#DATE.parseToTimestamp('2018-10-23T12:12:13+00:00')`	| 1540296720000	| Long
-|`#DATE.parseToLocalDate('2018-10-23T12:12:13+00:00')`| 2018-10-23T12:12:13+00:00	| LocalDateTime
+| Expression                                            | Result                    | Type          |
+| ------------                                          | --------                  | --------      |
+| `#NUMERIC.toNumber('42')`                             | 42                        | Number        |
+| `#NUMERIC.toNumber('42').toString()`                  | '42'                      | String        |
+| `'' + 42`                                             | '42'                      | String        |
+| `#DATE.parseToTimestamp('2018-10-23T12:12:13+00:00')` | 1540296720000             | Long          |
+| `#DATE.parseToLocalDate('2018-10-23T12:12:13+00:00')` | 2018-10-23T12:12:13+00:00 | LocalDateTime |
 
 
 ## Built-in helpers 
 
-| Helper | Functions |
-| -------|-----------|
-| `GEO`  | Simple distance measurements | 
-| `NUMERIC`| Number parsing |
-| `CONV` | General conversion functions |
-| `DATE` | Date operations (parsing, printing) | 
-| `UTIL` | Various utilities (e.g. identifier generation) |
-| `AGG` | Aggregator functions |
+| Helper    | Functions                                      |
+| -------   | -----------                                    |
+| `GEO`     | Simple distance measurements                   |
+| `NUMERIC` | Number parsing                                 |
+| `CONV`    | General conversion functions                   |
+| `DATE`    | Date operations (parsing, printing)            |
+| `UTIL`    | Various utilities (e.g. identifier generation) |
+| `AGG`     | Aggregator functions                           |

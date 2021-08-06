@@ -2,14 +2,12 @@
 
 ## Kafka topics as input and output to Nussknacker scenarios
 
-
 ### Prerequisites
 
 * [Role of Schema Registry](/about/TypicalImplementation)
 * [Confluent Schema Registry](https://docs.confluent.io/platform/current/schema-registry/index.html)
 * [Kafka topic key](https://kafka.apache.org/intro)
 * [Flink keyed state](https://ci.apache.org/projects/flink/flink-docs-master/docs/concepts/stateful-stream-processing/#keyed-state)
-
 
 ### Concepts
 
@@ -24,7 +22,7 @@ Another aspect differentiating source and sink components is data serialization.
 * Avro serialization
 * JSON serialization
 
-Therefore it is important to understand how the data in the incoming Kafka topic are serialized; similarly, how data should be serialized in the result (output) Kafka topic. Serialization is relevant only for source and sink components. 
+Therefore, it is important to understand how the data in the incoming Kafka topic are serialized; similarly, how data should be serialized in the result (output) Kafka topic. Serialization is relevant only for source and sink components. 
 
 Below, source and sink components are presented in groups with identical approaches to data typing and serialization. The table summarizing different types of source and sink components is at the end of this page. 
 
@@ -138,12 +136,12 @@ There is only one component in this group -  Kafka-json source. The content of t
 
 ### Summary and comparison
 
-| Nussknacker source / sink component | Schema description | Data serialization format | Data types supported| Limitations   | Advantages                | 
-|-------------------------------------|--------------------|--------------------------|---------------------|----------------|---------------------------|  
-| Schema Registry + Avro serialization | Avro in Confluent Schema Registry | Avro |Avro supported | Slightly more involving initially because of Schema Registry| <p> Hints and data type related validations </p> Maintainability  |  
-| Schema Registry + JSON serialization| Avro in Confluent Schema Registry|JSON |Avro supported |  Slightly more involving initially because of Schema Registry| <p> Hints and data type related validations </p> Maintainability | 
-| Manually typed + JSON serialization  | Declared inside  Kafka-typed-json component | JSON | Common between Java and JSON| <p> May become difficult to maintain </p> No validation of input data at runtime |Hints during authoring |  
-| No type information + JSON serialization| none | JSON | Common between Java and JSON | No hints and data type related validations | Good for JSON objects whose structure is not known at design time |  
+| Nussknacker source / sink component      | Schema description                          | Data serialization format  | Data types supported         | Limitations                                                                      | Advantages                                                        |
+|--------------------------------------    | --------------------                        | -------------------------- | ---------------------        | ----------------                                                                 | ---------------------------                                       |
+| Schema Registry + Avro serialization     | Avro in Confluent Schema Registry           | Avro                       | Avro supported               | Slightly more involving initially because of Schema Registry                     | <p> Hints and data type related validations </p> Maintainability  |
+| Schema Registry + JSON serialization     | Avro in Confluent Schema Registry           | JSON                       | Avro supported               | Slightly more involving initially because of Schema Registry                     | <p> Hints and data type related validations </p> Maintainability  |
+| Manually typed + JSON serialization      | Declared inside  Kafka-typed-json component | JSON                       | Common between Java and JSON | <p> May become difficult to maintain </p> No validation of input data at runtime | Hints during authoring                                            |
+| No type information + JSON serialization | none                                        | JSON                       | Common between Java and JSON | No hints and data type related validations                                       | Good for JSON objects whose structure is not known at design time |
 
  
 
