@@ -32,15 +32,18 @@ export COUNTS_URL=${COUNTS_URL:-http://localhost:8086/query}
 mkdir -p $LOGS_DIR
 cd $WORKING_DIR
 
-set -x
+
 if [[ "${RUN_IN_BACKGROUND}" == "true" ]]; then
   echo "Starting Nussknacker in background"
   export CONSOLE_THRESHOLD_LEVEL=OFF
+  set -x
   exec java $JDK_JAVA_OPTIONS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dnussknacker.config.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.ui.NussknackerApp >> $LOG_FILE 2>&1 &
+  set +x
   echo $! > $PID_FILE
   echo "Nussknacker up and running"
 else
   echo "Starting Nussknacker"
+  set -x
   exec java $JDK_JAVA_OPTIONS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dnussknacker.config.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.ui.NussknackerApp
+  set +x
 fi
-set +x
