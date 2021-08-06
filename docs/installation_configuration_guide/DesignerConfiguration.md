@@ -535,19 +535,35 @@ processToolbarConfig {
 }
 ```
 
-### Custom tabs
+### Main menu configuration
                       
-Custom tabs (in main menu bar, in addition to Processes, Metrics etc.) can be added with following configuration:
-
-```json
- customTabs: [
+Tabs (in main menu bar, such as Scenarios etc.) can be configured in the following way:
+```
+ tabs: ${tabs} [
   {
-    "id": "kibana",
-    "name": "Kibana",
-    "url": "http://myKibana.org/kibana"
+    id: "kibana",
+    title: "Kibana",
+    url: "http://myKibana.org/kibana",
+    type: "IFrame",
+    requiredPermission: "AdminTab"
   }
 ]
 ```
+By default, only `Scenarios` tab is configured.
+
+| Parameter name     | Type                | Description                                                |
+| --------------     | ----                | -----------                                                |
+| id                 | string              | Unique identifier                                          |
+| title              | string              | Title appearing in UI                                      |
+| type               | IFrame/Local/Remote | Type of tab (see below for explanation)                    |
+| url                | string              | URL of the tab                                             |
+| requiredPermission | string              | Optional parameter, name of [Global Permission](#security) |
+                                       
+The types of tabs can be as follows (see `dev-application.conf` for some examples):
+- IFrame - contents of the url parameter will be embedded as IFrame
+- Local - redirect to Designer page (`/admin`, `/signals`, `/processes` etc., see [code](https://github.com/TouK/nussknacker/blob/staging/ui/client/containers/NussknackerApp.tsx#L118)
+  for other options)
+- Remote - [module federation](https://webpack.js.org/concepts/module-federation/) can be used to embed external tabs, url should be in form: `{module}/{path}@{host}/{remoteEntry}.js`  
 
 ## Environment configuration
 
