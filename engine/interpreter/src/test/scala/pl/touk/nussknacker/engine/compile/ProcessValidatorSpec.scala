@@ -93,9 +93,9 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     Map.empty,
     ObjectDefinition.noParam,
     ExpressionDefinition(
-      Map("processHelper" -> ObjectDefinition(List(), Typed(ProcessHelper.getClass), List("cat1"), SingleNodeConfig.zero)),
-      List.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, dictionaries = Map.empty,
-      hideMetaVariable = false, strictMethodsChecking = true, staticMethodInvocationsChecking = true, disableMethodExecutionForUnknown = false
+      Map("processHelper" -> ObjectDefinition(List(), Typed(ProcessHelper.getClass), List("cat1"), SingleNodeConfig.zero)), List.empty, List.empty,
+      LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false,
+      strictMethodsChecking = true, staticMethodInvocationsChecking = true, disableMethodExecutionForUnknown = false, dynamicPropertyAccessAllowed = false
     ),
     ClassExtractionSettings.Default
   )
@@ -197,6 +197,56 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       case Invalid(NonEmptyList(ExpressionParseError("class java.lang.System is not allowed to be passed as TypeReference", "filter1", Some(DefaultExpressionId), "T(System).exit()"), _)) =>
     }
 
+  }
+
+  test("Valid dynamic property access when available") {
+    val baseDefinitionCopy = baseDefinition.copy(
+      expressionConfig = baseDefinition.expressionConfig.copy(
+        dynamicPropertyAccessAllowed = true))
+
+    val correctProcess = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "source")
+      .filter("filter1", "#input['plainValue'] == 1")
+      .sink("id2", "#input", "sink")
+
+    val compilationResult = validate(correctProcess, baseDefinitionCopy)
+
+    compilationResult.result should matchPattern {
+      case Valid(_) =>
+    }
+  }
+
+
+  test("Invalid dynamic property access when disabled") {
+    val correctProcess = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "source")
+      .filter("filter1", "#input['plainValue'] == 1")
+      .sink("id2", "#input", "sink")
+
+    val compilationResult = validate(correctProcess, baseDefinition)
+
+    compilationResult.result should matchPattern {
+      case Invalid(NonEmptyList(ExpressionParseError("Dynamic property access is not allowed", "filter1", Some(DefaultExpressionId), _), _)) =>
+    }
+  }
+
+  test("valid TypedUnion while indexing") {
+    val correctProcess = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "source")
+      .filter("filter1", "{{\"\"}, {0}}[0][0] == 0 ")
+      .sink("id2", "#input", "sink")
+
+    val compilationResult = validate(correctProcess, baseDefinition)
+
+    compilationResult.result should matchPattern {
+      case Valid(_) =>
+    }
   }
 
   test("validated with success") {
@@ -531,7 +581,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .exceptionHandler()
       .source("id1", "source")
       .buildVariable("bv1", "doesExist", "v1" -> "42")
-      .filter("sampleFilter", "#doesExist['v1'] + #doesNotExist1 + #doesNotExist2 > 10")
+      .filter("sampleFilter", "#doesExist.v1 + #doesNotExist1 + #doesNotExist2 > 10")
       .emptySink("id2", "sink")
     validate(process, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(

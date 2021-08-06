@@ -209,7 +209,8 @@ object SpelExpressionParser extends LazyLogging {
               strictMethodsChecking: Boolean,
               staticMethodInvocationsChecking: Boolean,
               typeDefinitionSet: TypeDefinitionSet,
-              disableMethodExecutionForUnknown: Boolean)
+              disableMethodExecutionForUnknown: Boolean,
+              dynamicPropertyAccessAllowed: Boolean)
              (implicit classExtractionSettings: ClassExtractionSettings): SpelExpressionParser = {
     val functions = Map(
       "today" -> classOf[LocalDate].getDeclaredMethod("now"),
@@ -227,7 +228,7 @@ object SpelExpressionParser extends LazyLogging {
     val commonSupertypeFinder = new CommonSupertypeFinder(classResolutionStrategy, strictTypeChecking)
     val evaluationContextPreparer = new EvaluationContextPreparer(classLoader, imports, propertyAccessors, functions)
     val validator = new SpelExpressionValidator(new Typer(classLoader, commonSupertypeFinder, new KeysDictTyper(dictRegistry),
-      strictMethodsChecking, staticMethodInvocationsChecking, typeDefinitionSet, evaluationContextPreparer, disableMethodExecutionForUnknown))
+      strictMethodsChecking, staticMethodInvocationsChecking, typeDefinitionSet, evaluationContextPreparer, disableMethodExecutionForUnknown, dynamicPropertyAccessAllowed))
     new SpelExpressionParser(parser, validator, dictRegistry, enableSpelForceCompile, flavour, evaluationContextPreparer)
   }
 
