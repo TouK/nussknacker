@@ -47,7 +47,7 @@ object DatabaseQueryEnricher {
   case class TransformationState(query: String,
                                  argsCount: Int,
                                  tableDef: TableDefinition,
-                                 strategy: QueryResultStrategy,
+                                 strategy: QueryResultStrategy
                                 ) {
     val outputType: TypingResult = strategy.resultType(tableDef)
   }

@@ -45,8 +45,7 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig) extends DatabaseQueryEn
       case e: Exception => SchemaDefinition.empty()
     }
 
-    import scala.collection.JavaConverters._
-    val possibleTables: List[FixedExpressionValue] = schemaMetaData.tables.asScala.toList.map(table => FixedExpressionValue(s"'$table'", table))
+    val possibleTables: List[FixedExpressionValue] = schemaMetaData.tables.map(table => FixedExpressionValue(s"'$table'", table))
     Parameter(TableParamName, Typed[String]).copy(editor = Some(FixedValuesParameterEditor(possibleTables)))
   }
 
