@@ -101,12 +101,12 @@ class HttpService {
     return api.get<SettingsData>("/settings")
   }
 
-  fetchSettingsWithAuth() {
+  fetchSettingsWithAuth(): Promise<SettingsData & {authentication: AuthenticationSettings}> {
     return this.fetchSettings()
       .then(({data}) => {
         const {provider} = data.authentication
         const settings = data
-        return this.fetchAuthenticationSettings<AuthenticationSettings>(provider)
+        return this.fetchAuthenticationSettings(provider)
           .then(({data}) => {
             return {
               ...settings,
@@ -409,8 +409,8 @@ class HttpService {
     return api.get<T>(`/authentication/oauth2?code=${authorizeCode}`)
   }
 
-  fetchAuthenticationSettings<T>(authenticationProvider: string) {
-    return api.get<T>(`/authentication/${authenticationProvider.toLowerCase()}/settings`)
+  fetchAuthenticationSettings(authenticationProvider: string) {
+    return api.get<AuthenticationSettings>(`/authentication/${authenticationProvider.toLowerCase()}/settings`)
   }
 
   async fetchProcessesNames() {

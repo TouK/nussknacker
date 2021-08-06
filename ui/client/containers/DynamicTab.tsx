@@ -3,6 +3,7 @@ import React, {memo} from "react"
 import ErrorBoundary from "../components/common/ErrorBoundary"
 import {ExternalModule, splitUrl, useExternalLib} from "./ExternalLib"
 import {ModuleString, ModuleUrl} from "./ExternalLib/types"
+import {MuiThemeProvider} from "./muiThemeProvider"
 import {Redirect} from "react-router";
 
 export type DynamicTabData = {
@@ -25,11 +26,13 @@ const RemoteTabComponent = ({scope}: {scope: ModuleString}) => {
 const RemoteModuleTab = (props: {url: ModuleUrl}) => {
   const [url, scope] = splitUrl(props.url)
   return (
-    <ExternalModule url={url}>
-      <ErrorBoundary>
-        <RemoteTabComponent scope={scope}/>
-      </ErrorBoundary>
-    </ExternalModule>
+    <MuiThemeProvider seed={scope}>
+      <ExternalModule url={url}>
+        <ErrorBoundary>
+          <RemoteTabComponent scope={scope}/>
+        </ErrorBoundary>
+      </ExternalModule>
+    </MuiThemeProvider>
   )
 }
 
@@ -37,7 +40,7 @@ const IframeTab = ({url}: {url: string}) => (
   <iframe
     src={queryString.stringifyUrl({url: url, query: {iframe: true}})}
     width="100%"
-    height={window.innerHeight}
+    height="100%"
     frameBorder="0"
   />
 )

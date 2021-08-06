@@ -1,5 +1,6 @@
 import {lazy} from "@loadable/component"
 import React, {PropsWithChildren, useMemo} from "react"
+import {SuspenseSpinner} from "../../components/SuspenseSpinner"
 import {LibContextProvider} from "./store"
 import {createScript, loadComponent, splitUrl} from "./tools"
 import {Module, ModuleUrl} from "./types"
@@ -21,12 +22,14 @@ export function ExternalModule<M extends Module>({children, url}: PropsWithChild
   }), [scriptUrl, scope, module])
 
   return (
-    <LoadedLib>
-      {(lib: M) => (
-        <LibContextProvider<M> lib={lib} scope={context}>
-          {children}
-        </LibContextProvider>
-      )}
-    </LoadedLib>
+    <SuspenseSpinner>
+      <LoadedLib>
+        {(lib: M) => (
+          <LibContextProvider<M> lib={lib} scope={context}>
+            {children}
+          </LibContextProvider>
+        )}
+      </LoadedLib>
+    </SuspenseSpinner>
   )
 }

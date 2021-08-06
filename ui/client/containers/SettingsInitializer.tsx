@@ -15,7 +15,7 @@ export function SettingsProvider({children}: PropsWithChildren<unknown>): JSX.El
         dispatch(assignSettings(settings))
       })
       .catch((error) => setData(() => {
-        throw new Error(error)
+        throw error
       }))
   }, [dispatch])
 
