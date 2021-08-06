@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.config
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ValueReader
+import pl.touk.nussknacker.engine.util.config.FicusReaders
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.process.migrate.HttpRemoteEnvironmentConfig
 
@@ -13,7 +14,7 @@ case class FeatureTogglesConfig(development: Boolean,
                                 environmentAlert:Option[EnvironmentAlert],
                                 commentSettings: Option[CommentSettings],
                                 deploySettings: Option[DeploySettings],
-                                customTabs: Option[List[CustomTabs]],
+                                tabs: Option[List[TopTab]],
                                 intervalTimeSettings: IntervalTimeSettings,
                                 attachments: Option[String])
 
@@ -32,7 +33,9 @@ object FeatureTogglesConfig extends LazyLogging{
     val remoteEnvironment = parseOptionalConfig[HttpRemoteEnvironmentConfig](config, "secondaryEnvironment")
     val commentSettings = parseOptionalConfig[CommentSettings](config, "commentSettings")
     val deploySettings = parseOptionalConfig[DeploySettings](config, "deploySettings")
-    val customTabs = parseOptionalConfig[List[CustomTabs]](config, "customTabs")
+
+    implicit val tabDecoder: ValueReader[TopTab] = FicusReaders.forDecoder
+    val tabs = parseOptionalConfig[List[TopTab]](config, "tabs")
     val attachments = parseOptionalConfig[String](config, "attachmentsPath")
     val intervalTimeSettings = config.as[IntervalTimeSettings]("intervalTimeSettings")
 
@@ -43,7 +46,7 @@ object FeatureTogglesConfig extends LazyLogging{
       counts = counts,
       commentSettings = commentSettings,
       deploySettings = deploySettings,
-      customTabs = customTabs,
+      tabs = tabs,
       intervalTimeSettings = intervalTimeSettings,
       environmentAlert = environmentAlert,
       attachments = attachments

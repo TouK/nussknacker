@@ -170,7 +170,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     //TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings
     val apiResourcesWithoutAuthentication: List[Route] = List(
-      new SettingsResources(featureTogglesConfig, typeToConfig, authenticationResources.name, analyticsConfig).publicRoute(),
+      new SettingsResources(featureTogglesConfig, authenticationResources.name, analyticsConfig).publicRoute(),
       appResources.publicRoute(),
       authenticationResources.routeWithPathPrefix
     )

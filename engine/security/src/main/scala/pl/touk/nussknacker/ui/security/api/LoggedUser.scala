@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.security.api
 
-import com.typesafe.config.Config
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigRule
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.Permission.Permission
