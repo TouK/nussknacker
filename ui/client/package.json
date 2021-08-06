@@ -18,7 +18,7 @@
     "start:backend-docker": "npm run clean-translations && start-server-and-test start-backend:docker http-get://localhost:8080/static/main.html start",
     "start:backend-staging": "npm run clean-translations && BACKEND_DOMAIN=https://staging.nussknacker.io webpack serve",
     "start:backend-demo": "npm run clean-translations && BACKEND_DOMAIN=https://demo.nussknacker.io webpack serve",
-    "start-backend:docker": "docker run -i -p 8080:8080 -e CONFIG_FORCE_scenarioTypes_streaming_deploymentConfig_type=stub -e NUSSKNACKER_CONFIG_FILE=/opt/nussknacker/conf/dev-application.conf --pull always -P touk/nussknacker:staging-latest",
+    "start-backend:docker": "docker run -i -p 8080:8080 -e CONFIG_FORCE_scenarioTypes_streaming_deploymentConfig_type=stub -e CONFIG_FILE=/opt/nussknacker/conf/dev-application.conf --pull always -P touk/nussknacker:staging-latest",
     "pretest": "npm run check",
     "test:unit": "jest",
     "test:e2e": "cypress run",
