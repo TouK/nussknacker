@@ -33,7 +33,7 @@
     "make-types": "make-federated-types --outputDir ./.federated-types"
   },
   "dependencies": {
-    "@babel/eslint-parser": "^7.14.7",
+    "@babel/eslint-parser": "^7.15.0",
     "@juggle/resize-observer": "^3.3.1",
     "@loadable/component": "^5.15.0",
     "@material-ui/core": "4.12.3",
