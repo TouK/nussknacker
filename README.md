@@ -16,7 +16,7 @@ Talk to us on our [mailing list](https://groups.google.com/forum/#!forum/nusskna
 
 ## Scala compatibility
 
-Currently we do support Scala 2.11 and 2.12, we cross publish versions.
+Currently we do support Scala 2.12, we will cross publish when Flink supports Scala >= 2.13.
 
 ## Flink compatibility
 
