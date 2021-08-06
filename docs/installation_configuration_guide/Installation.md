@@ -62,27 +62,6 @@ By default, the logs are placed in `${NUSSKNACKER_DIR}/logs`, with sensible roll
 Please remember that these are logs of Nussknacker Designer, to see/configure logs of other components (e.g. Flink)
 please consult their documentation. 
 
-### Systemd considerations
-                                 
-Nussknacker Designer can easily be run as systemd service. Below we give sample configuration:
-
-```
-[Unit]
-Description=Nussknacker Designer
-
-[Service]
-Environment='STDOUT=/opt/nussknacker/logs/nussknacker/nussknacker.out'
-Environment='JDK_JAVA_OPTIONS=-Dcom.sun.management.jmxremote.port=9999 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false'
-ExecStart=/bin/sh -c "/opt/nussknacker/bin/run.sh >> ${STDOUT} 2>&1"
-Restart=always
-RestartSec=3
-TimeoutStopSec=10
-User=nussknacker
-
-[Install]
-WantedBy=default.target
-```
-
 ## Additional components 
 
 Nussknacker designer is not enough to be able to create and deploy scenarios. 
