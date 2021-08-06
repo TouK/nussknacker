@@ -92,7 +92,9 @@ object UIProcessObjectsFactory {
   private def prepareClazzDefinition(definition: ClazzDefinition): UIClazzDefinition = {
     // TODO: present all overloaded methods on FE
     val methodsWithHighestArity = definition.methods.mapValues(_.maxBy(_.parameters.size))
-    UIClazzDefinition(definition.clazzName, methodsWithHighestArity)
+    val staticMethodsWithHighestArity = definition.staticMethods.mapValues(_.maxBy(_.parameters.size))
+
+    UIClazzDefinition(definition.clazzName, methodsWithHighestArity, staticMethodsWithHighestArity)
   }
 
   private def fetchSubprocessInputs(subprocessesDetails: Set[SubprocessDetails],
