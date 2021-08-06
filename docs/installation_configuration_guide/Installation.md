@@ -62,17 +62,19 @@ By default, the logs are placed in `${NUSSKNACKER_DIR}/logs`, with sensible roll
 Please remember that these are logs of Nussknacker Designer, to see/configure logs of other components (e.g. Flink)
 please consult their documentation. 
 
-## Additional components 
+## Configuration of additional applications
 
-Nussknacker designer is not enough to be able to create and deploy scenarios. 
-Please see diagram of components of typical Nussknacker deployment:
+
+Typical Nussknacker deployment includes Nussknacker Designer and a few additional applications: 
 
 ![Nussknacker components](./img/components.png "Nussknacker components")
-                                                                   
-The [quickstart](https://github.com/TouK/nussknacker-quickstart) contains `docker-compose` based 
-sample installation of all needed components (and a few that are needed for the demo).
+                  
+Some of them need to be configured properly to be fully integrated with Nussknacker.   
 
-If you want to install them from the scratch or use already install at your organisation pay attention to:
+The [quickstart](https://github.com/TouK/nussknacker-quickstart) contains `docker-compose` based 
+sample installation of all needed applications (and a few more that are needed for the demo).
+
+If you want to install them from the scratch or use already installed at your organisation pay attention to:
 - Metrics setup (please see quickstart for reference):
     - Configuration of metric reporter in Flink setup
     - Telegraf's configuration - some metric tags and names need to be cleaned
