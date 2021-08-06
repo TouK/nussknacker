@@ -19,8 +19,8 @@ Before running either from console or from IDE you have to manually build:
 - UI (```ui/assembly``` in sbt, not needed if you want to use FE development mode)
 
 ## Running integration environment
-- Clone https://github.com/TouK/nussknacker-quickstart repository
-- Run `docker-compose -f docker-compose-env.yml up -d`
+- Clone https://github.com/TouK/nussknacker-quickstart repository next to nussknacker repo (be aware that run scripts base on relative dir)
+- Run `docker-compose -f docker-compose-env.yml -f docker-compose-custom.yml up -d`
 
 ## Running from command line
 

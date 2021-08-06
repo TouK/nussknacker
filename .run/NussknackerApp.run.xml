@@ -15,11 +15,12 @@
       <env name="SCHEMA_REGISTRY_URL" value="http://localhost:3082" />
       <env name="GRAFANA_URL" value="http://localhost:8081/grafana" />
       <env name="COUNTS_URL" value="http://localhost:3086/query" />
+      <env name="OPENAPI_SERVICE_URL" value="http://localhost:5000" />
     </envs>
     <option name="INCLUDE_PROVIDED_SCOPE" value="true" />
     <option name="MAIN_CLASS_NAME" value="pl.touk.nussknacker.ui.NussknackerApp" />
     <module name="nussknacker-ui" />
-    <option name="VM_PARAMETERS" value="-Dnussknacker.config.locations=../../../nussknacker-dist/src/universal/conf/dev-application.conf -Dlogback.configurationFile=../../../nussknacker-dist/src/universal/conf/logback.xml" />
+    <option name="VM_PARAMETERS" value="-Dnussknacker.config.locations=../../../nussknacker-dist/src/universal/conf/dev-application.conf,../../../../nussknacker-quickstart/nussknacker/nussknacker.conf -Dlogback.configurationFile=../../../nussknacker-dist/src/universal/conf/logback.xml" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/ui/server/work" />
     <extension name="coverage">
       <pattern>

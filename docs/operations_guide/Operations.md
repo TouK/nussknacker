@@ -194,7 +194,7 @@ Below we describe endpoints that return general information about the Nussknacke
   "buildTime": "2021-07-09T14:39:57.858134",
   "version": "0.3.1-staging-2021-07-09-2931-360bcb1b775e384de9cf2d11af15fcbbca72eb02-SNAPSHOT",
   "processingType": {
-    "streaming-generic": {
+    "streaming": {
       "name": "generic",
       "version": "0.3.1-staging-2021-07-09-2931-360bcb1b775e384de9cf2d11af15fcbbca72eb02-SNAPSHOT",
       "buildTime": "2021-07-09T14:39:57.858134",
