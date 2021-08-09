@@ -7,7 +7,7 @@ export type CloseModalsAction = {
 
 export function closeModals(): CloseModalsAction {
   history.replace({
-    pathname: window.location.pathname,
+    pathname: history.location.pathname,
     search: VisualizationUrl.setAndPreserveLocationParams({
       edgeId: null,
       nodeId: null,
