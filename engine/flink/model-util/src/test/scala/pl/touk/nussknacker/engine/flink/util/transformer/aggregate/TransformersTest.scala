@@ -430,7 +430,6 @@ class Creator(input: List[TestRecord]) extends EmptyProcessConfigCreator {
 
   override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig
     = super.expressionConfig(processObjectDependencies).copy(globalProcessVariables = Map("AGG"-> WithCategories(new AggregateHelper)))
-    .copy(methodExecutionForUnknownAllowed = false)
 
   override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory
     = ConfigurableExceptionHandlerFactory(processObjectDependencies)

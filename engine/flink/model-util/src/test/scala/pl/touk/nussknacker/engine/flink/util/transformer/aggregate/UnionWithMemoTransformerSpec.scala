@@ -138,8 +138,6 @@ object UnionWithMemoTransformerSpec {
     override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
       ConfigurableExceptionHandlerFactory(processObjectDependencies)
 
-    override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig =
-      super.expressionConfig(processObjectDependencies).copy(methodExecutionForUnknownAllowed = false)
   }
 
   case class OneRecord(key: String, timeHours: Int, value: Int) {

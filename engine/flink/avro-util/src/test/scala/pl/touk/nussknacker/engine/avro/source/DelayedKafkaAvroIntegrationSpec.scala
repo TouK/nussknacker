@@ -28,9 +28,6 @@ class DelayedKafkaAvroIntegrationSpec extends FunSuite with KafkaAvroSpecMixin w
   private lazy val creator: ProcessConfigCreator = new DelayedAvroProcessConfigCreator {
     override protected def createSchemaRegistryProvider: SchemaRegistryProvider =
       ConfluentSchemaRegistryProvider(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
-
-    override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig =
-      super.expressionConfig(processObjectDependencies).copy(methodExecutionForUnknownAllowed = false)
   }
 
   override protected def schemaRegistryClient: MockSchemaRegistryClient = schemaRegistryMockClient

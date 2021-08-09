@@ -59,13 +59,14 @@ class LazyParameterSpec extends FunSuite with Matchers {
     val fun = lazyParameterInterpreter.syncInterpretationFunction(mappedParam)
     fun(Context(""))
     fun(Context(""))
+
     invoked shouldEqual 1
   }
 
   private def prepareInterpreter = {
     val exprDef = ExpressionDefinition(Map.empty, List.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false,
       strictTypeChecking = true, Map.empty, hideMetaVariable = false, strictMethodsChecking = true, staticMethodInvocationsChecking = false,
-      methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = true)
+      methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false)
     val processDef = ProcessDefinition(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty,
       ObjectWithMethodDef.withEmptyConfig(new NoParamExceptionHandlerFactory(_ => null), ProcessObjectDefinitionExtractor.exceptionHandler), exprDef, ClassExtractionSettings.Default)
     val lazyInterpreterDeps = prepareLazyInterpreterDeps(processDef)
