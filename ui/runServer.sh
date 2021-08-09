@@ -14,8 +14,7 @@ STANDALONE_ENGINE_JAR=$PROJECT_BASE_DIR/engine/standalone/engine/target/scala-${
 
 export CLASSPATH="../target/scala-${SCALA_VERSION}/nussknacker-ui-assembly.jar:$FLINK_ENGINE_JAR:$STANDALONE_ENGINE_JAR"
 DIST_BASE_DIR="$PROJECT_BASE_DIR/nussknacker-dist/src/universal"
-QUICKSTART_DIR="$PROJECT_BASE_DIR/../nussknacker-quickstart"
-export CONFIG_FILE="$DIST_BASE_DIR/conf/dev-application.conf,$QUICKSTART_DIR/nussknacker/nussknacker.conf"
+export CONFIG_FILE="$DIST_BASE_DIR/conf/dev-application.conf"
 export NUSSKNACKER_LOG_LEVEL=DEBUG
 
 export MANAGEMENT_MODEL_DIR="$PROJECT_BASE_DIR/engine/flink/management/sample/target/scala-${SCALA_VERSION}"

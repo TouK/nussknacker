@@ -22,7 +22,7 @@
     <option name="INCLUDE_PROVIDED_SCOPE" value="true" />
     <option name="MAIN_CLASS_NAME" value="pl.touk.nussknacker.ui.NussknackerApp" />
     <module name="nussknacker-ui" />
-    <option name="VM_PARAMETERS" value="-Dnussknacker.config.locations=../../../nussknacker-dist/src/universal/conf/dev-application.conf,../../../../nussknacker-quickstart/nussknacker/nussknacker.conf -Dlogback.configurationFile=../../../nussknacker-dist/src/universal/conf/logback.xml" />
+    <option name="VM_PARAMETERS" value="-Dnussknacker.config.locations=../../../nussknacker-dist/src/universal/conf/dev-application.conf -Dlogback.configurationFile=../../../nussknacker-dist/src/universal/conf/logback.xml" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/ui/server/work" />
     <extension name="coverage">
       <pattern>
