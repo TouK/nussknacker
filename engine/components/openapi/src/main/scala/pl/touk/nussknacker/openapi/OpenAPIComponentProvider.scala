@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.openapi
 
-import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions, ConfigValueFactory}
+import com.typesafe.config.{Config, ConfigFactory, ConfigList, ConfigRenderOptions, ConfigValueFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
 import net.ceedubs.ficus.Ficus._
@@ -17,6 +17,7 @@ import pl.touk.nussknacker.openapi.parser.SwaggerParser
 import java.net.URL
 import java.nio.charset.StandardCharsets
 import scala.jdk.CollectionConverters.seqAsJavaListConverter
+import scala.util.control.NonFatal
 
 class OpenAPIComponentProvider extends ComponentProvider with LazyLogging {
 
@@ -24,14 +25,24 @@ class OpenAPIComponentProvider extends ComponentProvider with LazyLogging {
 
   override def resolveConfigForExecution(config: Config): Config = {
     val openAPIsConfig = config.rootAs[OpenAPIServicesConfig]
+    val serviceConfigs = try {
+      discoverOpenAPIServices(config, openAPIsConfig)
+    } catch {
+      case NonFatal(ex) =>
+        logger.error("OpenAPI service resolution failed. Will be used empty services lists", ex)
+        List.empty
+    }
+    config.withValue("services", ConfigValueFactory.fromIterable(serviceConfigs.asJava))
+  }
+
+  private def discoverOpenAPIServices(config: Config, openAPIsConfig: OpenAPIServicesConfig) = {
     // Warning: openapi specification can be encoded in Unicode (UTF-8, UTF-16, UTF-32)
     val definition = IOUtils.toString(config.as[URL]("url"), StandardCharsets.UTF_8)
     val services = SwaggerParser.parse(definition, openAPIsConfig)
 
     logger.info(s"Discovered OpenAPI: ${services.map(_.name)}")
 
-    val servicesConfig = services.map(service => ConfigFactory.parseString(service.asJson.spaces2).root())
-    config.withValue("services", ConfigValueFactory.fromIterable(servicesConfig.asJava))
+    services.map(service => ConfigFactory.parseString(service.asJson.spaces2).root())
   }
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
