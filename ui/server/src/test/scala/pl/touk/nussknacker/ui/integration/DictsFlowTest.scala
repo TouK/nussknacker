@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.integration
 
 import java.util.UUID
-
 import akka.http.javadsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
@@ -12,6 +11,7 @@ import io.circe.{ACursor, Json}
 import org.scalatest._
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerApp, NussknackerAppInitializer}
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil, TestProcessingTypes}
@@ -27,7 +27,7 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val (mainRoute, _) = NusskanckerDefaultAppRouter.create(
-    system.settings.config,
+    LoadedConfig(system.settings.config, system.settings.config),
     NussknackerAppInitializer.initDb(system.settings.config)
   )
 

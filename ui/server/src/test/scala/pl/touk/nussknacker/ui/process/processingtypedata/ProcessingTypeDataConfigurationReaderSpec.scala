@@ -4,6 +4,7 @@ import com.typesafe
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import org.scalatest.FunSuite
 import org.scalatest.Matchers.{convertToAnyShouldWrapper, include}
+import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
 
 class ProcessingTypeDataConfigurationReaderSpec extends FunSuite {
 
@@ -29,27 +30,25 @@ class ProcessingTypeDataConfigurationReaderSpec extends FunSuite {
   import scala.collection.JavaConverters._
 
   test("should load old processTypes configuration") {
-    val processTypes = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(oldConfiguration)
+    val processTypes = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(LoadedConfig(oldConfiguration, oldConfiguration))
 
     processTypes.size shouldBe 1
     processTypes.keys.take(1) shouldBe Set("streaming")
   }
 
   test("should optionally load scenarioTypes configuration") {
-    val configuration = ConfigFactory.parseMap(Map[String, Any](
+    val unresolvedConfig = ConfigFactory.parseMap(Map[String, Any](
       "scenarioTypes.newStreamingScenario" -> ConfigValueFactory.fromAnyRef(oldConfiguration.getConfig("processTypes.streaming").root())
     ).asJava)
 
-    val config = oldConfiguration.withFallback(configuration).resolve()
-
-    val processTypes = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
+    val processTypes = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(LoadedConfig.load(oldConfiguration.withFallback(unresolvedConfig)))
 
     processTypes.size shouldBe 1
     processTypes.keys.take(1) shouldBe Set("newStreamingScenario")
   }
 
   test("should throw when required configuration is missing") {
-    val configuration = ConfigFactory.parseString(
+    val unresolvedConfig = ConfigFactory.parseString(
       """
         |scenarioTypes {
         |  "streaming" {
@@ -66,24 +65,20 @@ class ProcessingTypeDataConfigurationReaderSpec extends FunSuite {
         |""".stripMargin
     )
 
-    val config = configuration.resolve()
-
     intercept[typesafe.config.ConfigException] {
-      ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
+      ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(LoadedConfig.load(unresolvedConfig))
     }.getMessage should include("No configuration setting found for key 'deploymentConfig.type'")
   }
 
   test("should throw when no configuration is provided") {
-    val configuration = ConfigFactory.parseString(
+    val unresolvedConfig = ConfigFactory.parseString(
       """
         |test {}
         |""".stripMargin
     )
 
-    val config = configuration.resolve()
-
     intercept[RuntimeException] {
-      ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
+      ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(LoadedConfig.load(unresolvedConfig))
     }.getMessage should include("No scenario types configuration provided")
   }
 

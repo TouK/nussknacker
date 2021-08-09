@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValu
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SingleNodeConfig, WithCategories}
+import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
@@ -91,8 +92,8 @@ class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
 
   test("should hide node in hidden category") {
 
-    val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig)
-    val model : ModelData = LocalModelData(typeConfig.modelConfig, new EmptyProcessConfigCreator() {
+    val typeConfig = ProcessingTypeConfig.read(LoadedConfig(ConfigWithScalaVersion.streamingProcessTypeConfig, ConfigWithScalaVersion.streamingProcessTypeConfig))
+    val model : ModelData = LocalModelData(typeConfig.unresolvedModelConfig, new EmptyProcessConfigCreator() {
       override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
         Map(
           "enricher" -> WithCategories(TestService),
@@ -108,8 +109,8 @@ class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
   }
 
   test("should be able to assign generic node to some category") {
-    val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig)
-    val model : ModelData = LocalModelData(typeConfig.modelConfig, new EmptyProcessConfigCreator() {
+    val typeConfig = ProcessingTypeConfig.read(LoadedConfig(ConfigWithScalaVersion.streamingProcessTypeConfig, ConfigWithScalaVersion.streamingProcessTypeConfig))
+    val model : ModelData = LocalModelData(typeConfig.unresolvedModelConfig, new EmptyProcessConfigCreator() {
       override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
         Map(
           "someGenericNode" -> WithCategories(SampleGenericNodeTransformation).withNodeConfig(SingleNodeConfig.zero.copy(category = Some("someCategory")))

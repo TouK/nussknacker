@@ -6,12 +6,12 @@ import pl.touk.nussknacker.engine.modelconfig.{InputConfigDuringExecution, Model
 
 class SampleModelConfigLoader extends ModelConfigLoader {
 
-  override def resolveInputConfigDuringExecution(inputConfig: Config, configWithDefaults: Config, classLoader: ClassLoader): InputConfigDuringExecution = {
-    val withExtractors = ComponentExtractor(classLoader).loadAdditionalConfig(inputConfig, configWithDefaults)
+  override def resolveInputConfigDuringExecution(inputConfig: Config, resolvedConfigWithDefaults: Config, classLoader: ClassLoader): InputConfigDuringExecution = {
+    val withExtractors = ComponentExtractor(classLoader).loadAdditionalConfig(inputConfig, resolvedConfigWithDefaults)
     InputConfigDuringExecution(
       withExtractors
         .withValue("configLoadedMs", ConfigValueFactory.fromAnyRef(System.currentTimeMillis()))
-        .withValue("duplicatedSignalsTopic", ConfigValueFactory.fromAnyRef(configWithDefaults.getString("signalsTopic")))
+        .withValue("duplicatedSignalsTopic", ConfigValueFactory.fromAnyRef(resolvedConfigWithDefaults.getString("signalsTopic")))
     )
   }
 

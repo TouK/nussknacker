@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.engine
 
-import java.net.URL
-import com.typesafe.config.Config
-import net.ceedubs.ficus.readers.ValueReader
-import pl.touk.nussknacker.engine.api.{NamedServiceProvider, TypeSpecificData}
+import com.typesafe.config.{Config, ConfigResolveOptions}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
+import pl.touk.nussknacker.engine.api.{NamedServiceProvider, TypeSpecificData}
+import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
+
+import java.net.URL
 
 
 trait DeploymentManagerProvider extends NamedServiceProvider {
@@ -38,23 +39,22 @@ object ProcessingTypeConfig {
 
   import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 
-  implicit val reader: ValueReader[ProcessingTypeConfig] = ValueReader.relative(read)
-
-  def read(config: Config): ProcessingTypeConfig =
+  def read(config: LoadedConfig): ProcessingTypeConfig =
     ProcessingTypeConfig(
-      config.getString("deploymentConfig.type"),
-      config.as[List[URL]]("modelConfig.classPath"),
-      config.getConfig("deploymentConfig"),
-      config.getConfig("modelConfig")
+      config.loadedConfig.getString("deploymentConfig.type"),
+      config.loadedConfig.as[List[URL]]("modelConfig.classPath"),
+      config.loadedConfig.getConfig("deploymentConfig"),
+      // we resolve some variables defined on the root of config, but don't resolve system variables - will be resolved at execution side
+      config.unresolvedConfig.map(_.getConfig("modelConfig")).resolve(ConfigResolveOptions.noSystem().setAllowUnresolved(true))
     )
 }
 
 case class ProcessingTypeConfig(engineType: String,
                                 classPath: List[URL],
                                 deploymentConfig: Config,
-                                modelConfig: Config) {
+                                unresolvedModelConfig: Config) {
 
-  def toModelData: ModelData = ModelData(modelConfig, ModelClassLoader(classPath))
+  def toModelData: ModelData = ModelData(unresolvedModelConfig, ModelClassLoader(classPath))
 
 }
 

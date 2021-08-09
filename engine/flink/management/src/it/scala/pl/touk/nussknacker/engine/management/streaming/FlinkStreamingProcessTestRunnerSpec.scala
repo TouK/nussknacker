@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.management.streaming
 
 import java.util.{Collections, UUID}
-
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{NodeResult, ResultContext, TestData}
@@ -10,6 +9,7 @@ import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
@@ -24,7 +24,7 @@ class FlinkStreamingProcessTestRunnerSpec extends FlatSpec with Matchers with Ve
     .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(Collections.singletonList(classPath)))
 
   it should "run scenario in test mode" in {
-    val deploymentManager = FlinkStreamingDeploymentManagerProvider.defaultDeploymentManager(config)
+    val deploymentManager = FlinkStreamingDeploymentManagerProvider.defaultDeploymentManager(LoadedConfig(config, config))
 
     val processId = UUID.randomUUID().toString
 
@@ -49,7 +49,7 @@ class FlinkStreamingProcessTestRunnerSpec extends FlatSpec with Matchers with Ve
       .source("startProcess", "kafka-transaction")
       .emptySink("endSend", "sendSmsNotExist")
 
-    val deploymentManager = FlinkStreamingDeploymentManagerProvider.defaultDeploymentManager(config)
+    val deploymentManager = FlinkStreamingDeploymentManagerProvider.defaultDeploymentManager(LoadedConfig(config, config))
 
     val processData = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
 

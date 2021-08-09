@@ -7,6 +7,7 @@ import org.scalatest.Suite
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 import pl.touk.nussknacker.engine.management.{DockerTest, FlinkStreamingDeploymentManagerProvider}
+import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
 import scala.concurrent.duration._
@@ -49,6 +50,6 @@ trait StreamingDockerTest extends DockerTest { self: Suite =>
 
   private def kafkaAddress = s"${ipOfContainer(kafkaContainer)}:$KafkaPort"
 
-  protected lazy val deploymentManager: DeploymentManager = FlinkStreamingDeploymentManagerProvider.defaultDeploymentManager(config)
+  protected lazy val deploymentManager: DeploymentManager = FlinkStreamingDeploymentManagerProvider.defaultDeploymentManager(LoadedConfig(config, config))
 
 }

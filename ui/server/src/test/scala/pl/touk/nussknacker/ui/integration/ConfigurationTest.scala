@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.integration
 
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.ui.config.UiConfigLoader
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
@@ -14,7 +15,7 @@ class ConfigurationTest extends FunSuite with Matchers {
   // warning: can't be val - uses ConfigFactory.load which breaks "should preserve config overrides" test
   private def globalConfig = ConfigWithScalaVersion.config
 
-  private def modelData: ModelData = ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig).toModelData
+  private def modelData: ModelData = ProcessingTypeConfig.read(LoadedConfig(ConfigWithScalaVersion.streamingProcessTypeConfig, ConfigWithScalaVersion.streamingProcessTypeConfig)).toModelData
 
   private lazy val modelDataConfig = modelData.processConfig
 
@@ -23,15 +24,15 @@ class ConfigurationTest extends FunSuite with Matchers {
   }
 
   test("defaultConfig works") {
-    UiConfigLoader.load(globalConfig, classLoader).getString("db.driver") shouldBe "org.hsqldb.jdbc.JDBCDriver"
-    UiConfigLoader.load(globalConfig, classLoader).getString("attachmentsPath") shouldBe "/tmp/attachments"
+    UiConfigLoader.load(globalConfig, classLoader).loadedConfig.getString("db.driver") shouldBe "org.hsqldb.jdbc.JDBCDriver"
+    UiConfigLoader.load(globalConfig, classLoader).loadedConfig.getString("attachmentsPath") shouldBe "/tmp/attachments"
   }
 
   test("should be possible to config entries defined in default ui config from passed config") {
     val configUri = writeToTemp("foo: ${storageDir}") // storageDir is defined inside defaultUiConfig.conf
 
-    val loadedConfig = UiConfigLoader.load(UiConfigLoader.parseUnresolved(List(configUri), classLoader), classLoader)
-    loadedConfig.getString("foo") shouldEqual "./storage"
+    val config = UiConfigLoader.load(UiConfigLoader.parseUnresolved(List(configUri), classLoader), classLoader)
+    config.loadedConfig.getString("foo") shouldEqual "./storage"
   }
 
 
@@ -75,7 +76,7 @@ class ConfigurationTest extends FunSuite with Matchers {
       System.getProperties.remove(randomPropertyName)
     }
 
-    result.getString(randomPropertyName) shouldBe "I win!"
+    result.loadedConfig.getString(randomPropertyName) shouldBe "I win!"
   }
 
   //to be able to run this test:

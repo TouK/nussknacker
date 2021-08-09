@@ -11,13 +11,14 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
+import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.ui.api._
-import pl.touk.nussknacker.ui.config.{AnalyticsConfig, UiConfigLoader, FeatureTogglesConfig}
+import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig, UiConfigLoader}
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerFactory
@@ -43,7 +44,7 @@ import scala.concurrent.Future
 
 trait NusskanckerAppRouter extends Directives with LazyLogging {
 
-  def create(config: Config, dbConfig: DbConfig)(implicit system: ActorSystem, materializer: Materializer): (Route, Iterable[AutoCloseable])
+  def create(config: LoadedConfig, dbConfig: DbConfig)(implicit system: ActorSystem, materializer: Materializer): (Route, Iterable[AutoCloseable])
 
 }
 
@@ -55,29 +56,29 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
   import pl.touk.nussknacker.engine.util.config.FicusReaders._
 
   //override this method to e.g. run UI with local model
-  protected def prepareProcessingTypeData(config: Config): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload) = {
+  protected def prepareProcessingTypeData(config: LoadedConfig): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload) = {
     BasicProcessingTypeDataReload.wrapWithReloader(
       () => ProcessingTypeDataReader.loadProcessingTypeData(config)
     )
   }
 
-  override def create(config: Config, dbConfig: DbConfig)(implicit system: ActorSystem, materializer: Materializer): (Route, Iterable[AutoCloseable]) = {
+  override def create(config: LoadedConfig, dbConfig: DbConfig)(implicit system: ActorSystem, materializer: Materializer): (Route, Iterable[AutoCloseable]) = {
     import system.dispatcher
 
     implicit val sttpBackend: SttpBackend[Future, Nothing, NothingT] = AkkaHttpBackend.usingActorSystem(system)
 
-    val testResultsMaxSizeInBytes = config.getOrElse[Int]("testResultsMaxSizeInBytes", 500 * 1024 * 1000)
-    val environment = config.getString("environment")
-    val featureTogglesConfig = FeatureTogglesConfig.create(config)
+    val testResultsMaxSizeInBytes = config.loadedConfig.getOrElse[Int]("testResultsMaxSizeInBytes", 500 * 1024 * 1000)
+    val environment = config.loadedConfig.getString("environment")
+    val featureTogglesConfig = FeatureTogglesConfig.create(config.loadedConfig)
     logger.info(s"Ui config loaded: \nfeatureTogglesConfig: $featureTogglesConfig")
 
     val (typeToConfig, reload) = prepareProcessingTypeData(config)
 
-    val analyticsConfig = AnalyticsConfig(config)
+    val analyticsConfig = AnalyticsConfig(config.loadedConfig)
 
     val modelData = typeToConfig.mapValues(_.modelData)
 
-    val processCategoryService = new ConfigProcessCategoryService(config)
+    val processCategoryService = new ConfigProcessCategoryService(config.loadedConfig)
 
     val managers = typeToConfig.mapValues(_.deploymentManager)
 
@@ -85,7 +86,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val subprocessResolver = new SubprocessResolver(subprocessRepository)
 
     val additionalProperties = modelData.mapValues(_.processConfig.getOrElse[Map[String, AdditionalPropertyConfig]]("additionalPropertiesConfig", Map.empty))
-    val customProcessNodesValidators = modelData.mapValues(CustomProcessValidator(_, config))
+    val customProcessNodesValidators = modelData.mapValues(CustomProcessValidator(_, config.loadedConfig))
     val processValidation = ProcessValidation(modelData, additionalProperties, subprocessResolver, customProcessNodesValidators)
 
     val substitutorsByProcessType = modelData.mapValues(modelData => ProcessDictSubstitutor(modelData.dictServices.dictRegistry))
@@ -98,15 +99,15 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val actionRepository = DbProcessActionRepository.create(dbConfig, modelData)
     val processActivityRepository = new ProcessActivityRepository(dbConfig)
 
-    val authenticationResources = AuthenticationResources(config, getClass.getClassLoader)
-    val authorizationRules = AuthenticationConfiguration.getRules(config)
+    val authenticationResources = AuthenticationResources(config.loadedConfig, getClass.getClassLoader)
+    val authorizationRules = AuthenticationConfiguration.getRules(config.loadedConfig)
 
     val counter = new ProcessCounter(subprocessRepository)
 
-    Initialization.init(modelData.mapValues(_.migrations), dbConfig, environment, config.getAs[Map[String, String]]("customProcesses"))
+    Initialization.init(modelData.mapValues(_.migrations), dbConfig, environment, config.loadedConfig.getAs[Map[String, String]]("customProcesses"))
 
     val processChangeListener = ProcessChangeListenerFactory.serviceLoader(getClass.getClassLoader).create(
-      config,
+      config.loadedConfig,
       NussknackerServices(new PullProcessRepository(processRepository))
     )
 
@@ -116,10 +117,10 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val managementActor = system.actorOf(ManagementActor.props(managers, processRepository, actionRepository, subprocessResolver, processChangeListener), "management")
     val processService = new DBProcessService(managementActor, systemRequestTimeout, newProcessPreparer, processCategoryService, processResolving, dbRepositoryManager, processRepository, actionRepository, writeProcessRepository)
 
-    val configProcessToolbarService = new ConfigProcessToolbarService(config, processCategoryService.getAllCategories)
+    val configProcessToolbarService = new ConfigProcessToolbarService(config.loadedConfig, processCategoryService.getAllCategories)
 
     val processAuthorizer = new AuthorizeProcess(processRepository)
-    val appResources = new AppResources(config, reload, modelData, processRepository, processValidation, processService)
+    val appResources = new AppResources(config.loadedConfig, reload, modelData, processRepository, processValidation, processService)
 
     val countsReporter = featureTogglesConfig.counts.map(prepareCountsReporter(environment, _))
 
@@ -176,7 +177,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     )
 
     //TODO: In the future will be nice to have possibility to pass authenticator.directive to resource and there us it at concrete path resource
-    val webResources = new WebResources(config.getString("http.publicPath"))
+    val webResources = new WebResources(config.loadedConfig.getString("http.publicPath"))
     val route = CorsSupport.cors(featureTogglesConfig.development) {
       pathPrefixTest(!"api") {
         webResources.route
@@ -216,24 +217,24 @@ class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLoggin
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
-  protected val config: Config = UiConfigLoader.load(baseUnresolvedConfig, getClass.getClassLoader)
+  protected val config: LoadedConfig = UiConfigLoader.load(baseUnresolvedConfig, getClass.getClassLoader)
 
-  protected implicit val system: ActorSystem = ActorSystem("nussknacker-ui", config)
+  protected implicit val system: ActorSystem = ActorSystem("nussknacker-ui", config.loadedConfig)
   protected implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   // TODO: switch to general configuration via application.conf when https://github.com/akka/akka-http/issues/55 will be ready
-  val interface: String = config.getString("http.interface")
-  val port: Int = config.getInt("http.port")
+  val interface: String = config.loadedConfig.getString("http.interface")
+  val port: Int = config.loadedConfig.getInt("http.port")
 
   def init(router: NusskanckerAppRouter): (Route, Iterable[AutoCloseable]) = {
-    val db = initDb(config)
+    val db = initDb(config.loadedConfig)
 
     val (route, objectsToClose) = router.create(config, db)
 
     prepareUncaughtExceptionHandler(objectsToClose)
     Runtime.getRuntime.addShutdownHook(new ShutdownHandler(objectsToClose))
 
-    SslConfigParser.sslEnabled(config) match {
+    SslConfigParser.sslEnabled(config.loadedConfig) match {
       case Some(keyStoreConfig) =>
         bindHttps(interface, port, HttpsConnectionContextFactory.createContext(keyStoreConfig), route)
       case None =>

@@ -7,6 +7,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.Authorization
 import akka.stream.{ActorMaterializer, Materializer}
 import org.scalatest._
+import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
 import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerAppInitializer}
 import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, KeyStoreConfig}
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
@@ -22,7 +23,7 @@ class SslBindingSpec extends FlatSpec with Matchers {
     implicit val materializer: Materializer = ActorMaterializer()
 
     val (route, closeables) = NusskanckerDefaultAppRouter.create(
-      system.settings.config,
+      LoadedConfig(system.settings.config, system.settings.config),
       NussknackerAppInitializer.initDb(system.settings.config)
     )
     val keyStoreConfig = KeyStoreConfig(getClass.getResource("/localhost.p12").toURI, "foobar".toCharArray)

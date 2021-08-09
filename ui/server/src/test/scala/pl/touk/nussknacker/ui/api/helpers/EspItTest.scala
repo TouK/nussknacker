@@ -16,11 +16,12 @@ import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig, ProcessingTypeData}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, GraphProcess, ProcessActionType, DeploymentManager}
+import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentManager, GraphProcess, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.{process, processdetails}
 import pl.touk.nussknacker.restmodel.process.ProcessId
@@ -92,7 +93,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   )
 
   val featureTogglesConfig: FeatureTogglesConfig = FeatureTogglesConfig.create(testConfig)
-  val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData] = ProcessingTypeDataReader.loadProcessingTypeData(testConfig)
+  val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData] = ProcessingTypeDataReader.loadProcessingTypeData(LoadedConfig(testConfig, testConfig))
 
   private implicit val user: LoggedUser = TestFactory.adminUser("user")
 
@@ -118,7 +119,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   val processesExportResources = new ProcessesExportResources(fetchingProcessRepository, processActivityRepository, processResolving)
 
-  val processingTypeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig)
+  val processingTypeConfig = ProcessingTypeConfig.read(LoadedConfig(ConfigWithScalaVersion.streamingProcessTypeConfig, ConfigWithScalaVersion.streamingProcessTypeConfig))
   val definitionResources = new DefinitionResources(
     modelDataProvider = mapProcessingTypeDataProvider(existingProcessingType -> processingTypeConfig.toModelData),
     processingTypeDataProvider = mapProcessingTypeDataProvider(existingProcessingType -> ProcessingTypeData.createProcessingTypeData(deploymentManagerProvider, processingTypeConfig)),

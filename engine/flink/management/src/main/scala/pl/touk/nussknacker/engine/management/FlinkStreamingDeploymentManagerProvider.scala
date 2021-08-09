@@ -3,11 +3,12 @@ package pl.touk.nussknacker.engine.management
 import com.typesafe.config.Config
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import pl.touk.nussknacker.engine.ModelData.ClasspathConfig
-import pl.touk.nussknacker.engine.{ModelData, DeploymentManagerProvider, ProcessingTypeConfig}
+import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.api.{StreamMetaData, TypeSpecificData}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.flink.queryablestate.FlinkQueryableClient
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
+import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
 import sttp.client.{NothingT, SttpBackend}
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 
@@ -41,7 +42,7 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
 
 object FlinkStreamingDeploymentManagerProvider {
 
-  def defaultDeploymentManager(config: Config): DeploymentManager = {
+  def defaultDeploymentManager(config: LoadedConfig): DeploymentManager = {
     val typeConfig = ProcessingTypeConfig.read(config)
     new FlinkStreamingDeploymentManagerProvider().createDeploymentManager(typeConfig.toModelData, typeConfig.deploymentConfig)
   }

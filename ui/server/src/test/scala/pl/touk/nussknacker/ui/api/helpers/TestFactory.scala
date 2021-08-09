@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, ProcessVersion, 
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager
+import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
@@ -121,7 +122,9 @@ object TestFactory extends TestPermissions{
     val stopSavepointPath = "savepoints/246-stop-savepoint"
   }
 
-  class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends FlinkDeploymentManager(ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig).toModelData, shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED"){
+  class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends FlinkDeploymentManager(ProcessingTypeConfig.read(
+    LoadedConfig(ConfigWithScalaVersion.streamingProcessTypeConfig, ConfigWithScalaVersion.streamingProcessTypeConfig)).toModelData,
+    shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED"){
 
     import MockDeploymentManager._
 

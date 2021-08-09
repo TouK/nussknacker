@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.engine
 
 import java.util.Collections
-
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{ConfigException, ConfigFactory}
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.modelconfig.{InputConfigDuringExecution, DefaultModelConfigLoader}
+import pl.touk.nussknacker.engine.modelconfig.{DefaultModelConfigLoader, InputConfigDuringExecution, LoadedConfig}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
@@ -49,4 +48,49 @@ class DefaultModelConfigLoaderTest extends FunSuite with Matchers {
     config.hasPath("shouldNotLoad") shouldBe false
 
   }
+
+  test("should not load environment variables before execution") {
+    val config = ConfigFactory.parseString(
+    """deploymentConfig {
+      |  type: fooType
+      |}
+      |modelConfig {
+      |  classPath: []
+      |  systemEnv: ${LANG}
+      |}
+      |""".stripMargin)
+    val processingTypeConfig = ProcessingTypeConfig.read(LoadedConfig.load(config))
+
+    val loader = new DefaultModelConfigLoader
+    val configUsedDuringExecution = loader.resolveInputConfigDuringExecution(processingTypeConfig.unresolvedModelConfig, getClass.getClassLoader)
+
+    a[ConfigException.NotResolved] should be thrownBy {
+      configUsedDuringExecution.config.getString("systemEnv")
+    }
+  }
+
+  test("should be able to use variables defined on root level inside model config") {
+    val config = ConfigFactory.parseString(
+      """rootLevelVariable: foo
+        |
+        |scenarioTypes {
+        |  streaming {
+        |    deploymentConfig {
+        |      type: fooType
+        |    }
+        |    modelConfig {
+        |      classPath: []
+        |      someVariable: ${rootLevelVariable}
+        |    }
+        |  }
+        |}
+        |""".stripMargin)
+    val processingTypeConfig = ProcessingTypeConfig.read(LoadedConfig.load(config).get("scenarioTypes.streaming"))
+
+    val loader = new DefaultModelConfigLoader
+    val configUsedDuringExecution = loader.resolveInputConfigDuringExecution(processingTypeConfig.unresolvedModelConfig, getClass.getClassLoader)
+
+    configUsedDuringExecution.config.getString("someVariable") shouldEqual "foo"
+  }
+
 }

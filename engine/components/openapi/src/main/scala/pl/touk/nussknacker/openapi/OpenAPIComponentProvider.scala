@@ -24,9 +24,11 @@ class OpenAPIComponentProvider extends ComponentProvider with LazyLogging {
   override def providerName: String = "openAPI"
 
   override def resolveConfigForExecution(config: Config): Config = {
-    val openAPIsConfig = config.rootAs[OpenAPIServicesConfig]
+    // we need to use resolved config for service discovery because can be used environment variables e.g. for url
+    val resolvedConfig = config.resolve()
+    val openAPIsConfig = resolvedConfig.rootAs[OpenAPIServicesConfig]
     val serviceConfigs = try {
-      discoverOpenAPIServices(config, openAPIsConfig)
+      discoverOpenAPIServices(resolvedConfig, openAPIsConfig)
     } catch {
       case NonFatal(ex) =>
         logger.error("OpenAPI service resolution failed. Will be used empty services lists", ex)

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.config
 
 import com.typesafe.config.{Config, ConfigFactory}
+import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 
 import java.io.File
@@ -33,9 +34,11 @@ object UiConfigLoader {
     ConfigFactoryExt.parseConfigFallbackChain(resources, classLoader)
   }
 
-  def load(baseUnresolvedConfig: Config, classLoader: ClassLoader): Config = {
+  def load(baseUnresolvedConfig: Config, classLoader: ClassLoader): LoadedConfig = {
     val parsedDefaultUiConfig = ConfigFactory.parseResources(defaultConfigResource)
-    ConfigFactory.load(classLoader, baseUnresolvedConfig.withFallback(parsedDefaultUiConfig))
+    val unresolvedConfigWithDefaults = baseUnresolvedConfig.withFallback(parsedDefaultUiConfig)
+    val loadedConfig = ConfigFactory.load(classLoader, unresolvedConfigWithDefaults)
+    LoadedConfig(loadedConfig, unresolvedConfigWithDefaults)
   }
 
 }

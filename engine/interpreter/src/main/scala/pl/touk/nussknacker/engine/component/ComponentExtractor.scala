@@ -22,9 +22,8 @@ case class ComponentExtractor(classLoader: ClassLoader, nussknackerVersion: Nuss
 
   private lazy val providers = ScalaServiceLoader.load[ComponentProvider](classLoader).map(p => p.providerName -> p).toMap
 
-  private def loadCorrectComponents(config: Config): Map[String, (ComponentProviderConfig, ComponentProvider)] = {
-
-    val componentsConfig = config.getAs[Map[String, ComponentProviderConfig]](componentConfigPath).getOrElse(Map.empty)
+  private def loadCorrectComponents(resolvedConfigWithDefaults: Config): Map[String, (ComponentProviderConfig, ComponentProvider)] = {
+    val componentsConfig = resolvedConfigWithDefaults.getAs[Map[String, ComponentProviderConfig]](componentConfigPath).getOrElse(Map.empty)
     componentsConfig.filterNot(_._2.disabled).map {
       case (name, providerConfig: ComponentProviderConfig) =>
         val providerName = providerConfig.providerType.getOrElse(name)
@@ -41,8 +40,8 @@ case class ComponentExtractor(classLoader: ClassLoader, nussknackerVersion: Nuss
       case (_, (config, provider)) => extractOneProviderConfig(config, provider, processObjectDependencies)
     }.reduceUnique
 
-  def loadAdditionalConfig(inputConfig: Config, configWithDefaults: Config): Config = {
-    val resolvedConfigs = loadCorrectComponents(configWithDefaults).map {
+  def loadAdditionalConfig(inputConfig: Config, resolvedConfigWithDefaults: Config): Config = {
+    val resolvedConfigs = loadCorrectComponents(resolvedConfigWithDefaults).map {
       case (name, (config, provider)) => name -> provider.resolveConfigForExecution(config.config)
     }
     resolvedConfigs.foldLeft(inputConfig) {

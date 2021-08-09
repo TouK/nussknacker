@@ -21,10 +21,10 @@ import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 
 object ModelData extends LazyLogging {
 
-  def apply(inputConfig: Config, modelClassLoader: ModelClassLoader) : ModelData = {
+  def apply(unresolvedInputConfig: Config, modelClassLoader: ModelClassLoader) : ModelData = {
     logger.debug("Loading model data from: " + modelClassLoader)
     ClassLoaderModelData(
-      modelConfigLoader => modelConfigLoader.resolveInputConfigDuringExecution(inputConfig, modelClassLoader.classLoader),
+      modelConfigLoader => modelConfigLoader.resolveInputConfigDuringExecution(unresolvedInputConfig, modelClassLoader.classLoader),
       modelClassLoader)
   }
 

@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.definition.SignalDispatcher
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
 import scala.concurrent.duration._
@@ -246,7 +247,7 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
     val signalsTopic = s"esp.signal-${UUID.randomUUID()}"
     val configWithSignals = config
       .withValue("modelConfig.signals.topic", ConfigValueFactory.fromAnyRef(signalsTopic))
-    val flinkModelData = ProcessingTypeConfig.read(configWithSignals).toModelData
+    val flinkModelData = ProcessingTypeConfig.read(LoadedConfig(configWithSignals, configWithSignals)).toModelData
 
     val consumer = kafkaClient.createConsumer()
     SignalDispatcher.dispatchSignal(flinkModelData)("removeLockSignal", "test-process", Map("lockId" -> "test-lockId"))

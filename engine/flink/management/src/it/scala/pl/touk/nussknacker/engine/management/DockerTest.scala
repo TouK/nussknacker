@@ -4,7 +4,6 @@ import java.io.File
 import java.nio.file.attribute.{PosixFilePermission, PosixFilePermissions}
 import java.nio.file.{Files, Path}
 import java.util.Collections
-
 import com.spotify.docker.client.{DefaultDockerClient, DockerClient}
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
@@ -16,6 +15,7 @@ import org.apache.commons.io.{FileUtils, IOUtils}
 import org.scalatest.Suite
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.api.deployment.User
+import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.test.ExtremelyPatientScalaFutures
 
@@ -103,7 +103,7 @@ trait DockerTest extends DockerTestKit with ExtremelyPatientScalaFutures with La
     .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(Collections.singletonList(classPath)))
     .withFallback(additionalConfig)
 
-  def processingTypeConfig: ProcessingTypeConfig = ProcessingTypeConfig.read(config)
+  def processingTypeConfig: ProcessingTypeConfig = ProcessingTypeConfig.read(LoadedConfig(config, config))
 
   protected def classPath: String
 
