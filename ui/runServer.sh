@@ -16,6 +16,7 @@ export CLASSPATH="../target/scala-${SCALA_VERSION}/nussknacker-ui-assembly.jar:$
 DIST_BASE_DIR="$PROJECT_BASE_DIR/nussknacker-dist/src/universal"
 export CONFIG_FILE="$DIST_BASE_DIR/conf/dev-application.conf"
 export NUSSKNACKER_LOG_LEVEL=DEBUG
+export CONSOLE_THRESHOLD_LEVEL=DEBUG
 
 export MANAGEMENT_MODEL_DIR="$PROJECT_BASE_DIR/engine/flink/management/sample/target/scala-${SCALA_VERSION}"
 export GENERIC_MODEL_DIR="$PROJECT_BASE_DIR/engine/flink/generic/target/scala-${SCALA_VERSION}"

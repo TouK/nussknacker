@@ -3,6 +3,7 @@
     <option name="ALTERNATIVE_JRE_PATH" value="1.8" />
     <envs>
       <env name="NUSSKNACKER_LOG_LEVEL" value="DEBUG" />
+      <env name="CONSOLE_THRESHOLD_LEVEL" value="DEBUG" />
       <env name="AUTHENTICATION_USERS_FILE" value="../../../nussknacker-dist/src/universal/conf/users.conf" />
       <env name="MANAGEMENT_MODEL_DIR" value="../../../engine/flink/management/sample/target/scala-2.12" />
       <env name="GENERIC_MODEL_DIR" value="../../../engine/flink/generic/target/scala-2.12" />
