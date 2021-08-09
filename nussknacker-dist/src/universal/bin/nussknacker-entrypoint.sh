@@ -6,6 +6,7 @@ NUSSKNACKER_DIR=`dirname "$0" | xargs -I{} readlink -f {}/..`
 CONF_DIR="$NUSSKNACKER_DIR/conf"
 LIB_DIR="$NUSSKNACKER_DIR/lib"
 MANAGERS_DIR="$NUSSKNACKER_DIR/managers"
+export COMPONENTS_DIR="$NUSSKNACKER_DIR/components"
 
 CLASSPATH=${CLASSPATH:-$LIB_DIR/*:$MANAGERS_DIR/*}
 CONFIG_FILE=${CONFIG_FILE-"$CONF_DIR/application.conf"}
