@@ -36,7 +36,7 @@ export type ToggleCustomActionAction = {
 export function displayModalNodeDetails(node: NodeType, readonly: boolean, eventInfo: EventInfo): ThunkAction {
   return (dispatch) => {
     history.replace({
-      pathname: window.location.pathname,
+      pathname: history.location.pathname,
       search: VisualizationUrl.setAndPreserveLocationParams({
         nodeId: node.id,
         edgeId: null,
@@ -61,7 +61,7 @@ export function displayModalEdgeDetails(edge: Edge): ThunkAction {
   return dispatch => {
     if (isEdgeEditable(edge)) {
       history.replace({
-        pathname: window.location.pathname,
+        pathname: history.location.pathname,
         search: VisualizationUrl.setAndPreserveLocationParams({
           nodeId: null,
           edgeId: NodeUtils.edgeId(edge),

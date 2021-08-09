@@ -10,6 +10,7 @@ import {AWithFocus, SelectWithFocus} from "../../components/withFocus"
 import HttpService from "../../http/HttpService"
 import "../../stylesheets/processes.styl"
 import BaseAdminTab from "./BaseAdminTab"
+import {processNodeUrl} from "../../common/VisualizationUrl";
 
 class SearchComponents extends BaseAdminTab {
   constructor(props) {
@@ -99,7 +100,7 @@ class SearchComponents extends BaseAdminTab {
                 <Tr key={idx}>
                   <Td column="processName">{row.processName}</Td>
                   <Td column="nodeId">
-                    <AWithFocus target="_blank" href={VisualizationUrl.visualizationUrl(row.processName, row.nodeId)}>
+                    <AWithFocus target="_blank" href={VisualizationUrl.processNodeUrl(row.processName, row.nodeId)}>
                       {row.nodeId}
                     </AWithFocus>
                   </Td>
