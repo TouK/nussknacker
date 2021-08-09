@@ -1,10 +1,8 @@
-# Installation and configuration guide
-
-Nussknacker relies on several open source components like Flink or Kafka, 
-which need to be installed together with Nussknacker. This document focuses on the configuration of Nussknacker and its integrations with those components; pls refer to Kafka, Flink, ... , 
-documentation for details on how to configure them for optimal performance .
-      
 # Installation
+
+Nussknacker relies on several open source components like Flink or Kafka,
+which need to be installed together with Nussknacker. This document focuses on the configuration of Nussknacker and its integrations with those components; pls refer to Kafka, Flink, ... ,
+documentation for details on how to configure them for optimal performance .
 
 ## Docker based installation
                     
