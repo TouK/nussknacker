@@ -122,9 +122,9 @@ object TestFactory extends TestPermissions{
     val stopSavepointPath = "savepoints/246-stop-savepoint"
   }
 
-  class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends FlinkDeploymentManager(ProcessingTypeConfig.read(
-    LoadedConfig(ConfigWithScalaVersion.streamingProcessTypeConfig, ConfigWithScalaVersion.streamingProcessTypeConfig)).toModelData,
-    shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED"){
+  class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends FlinkDeploymentManager(
+    ProcessingTypeConfig.read(LoadedConfig(ConfigWithScalaVersion.streamingProcessTypeConfig, ConfigWithScalaVersion.streamingProcessTypeConfig)).toModelData,
+    shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED") {
 
     import MockDeploymentManager._
 

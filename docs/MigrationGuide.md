@@ -8,6 +8,8 @@ To see biggest differences please consult the [changelog](Changelog.md).
 * [#1439](https://github.com/TouK/nussknacker/pull/1439) Upgrade do Flink 1.13.
   * `setTimeCharacteristic` is deprecated, and should be handled automatically by Flink. 
   * `UserClassLoader` was removed, use appropriate Flink objects or context ClassLoader. 
+* [#2027](https://github.com/TouK/nussknacker/pull/2027) `ComponentProvider.resolveConfigForExecution` now takes `LoadedConfig(loadedConfig, unresolvedConfig)`.
+  Loaded on designer side data are in `loadedConfig`, in `unresolvedConfig` are data that should be returned (can be enriched first)
 
 ## In version 0.4.0
 

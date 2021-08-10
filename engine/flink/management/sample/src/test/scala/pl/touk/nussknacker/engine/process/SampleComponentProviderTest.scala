@@ -46,8 +46,7 @@ class SampleComponentProviderTest extends FunSuite with FlinkSpec with Matchers 
     super.beforeAll()
     val loader = new SampleModelConfigLoader()
     val configDuringExecution = loader.resolveInputConfigDuringExecution(config, getClass.getClassLoader)
-    val resolvedConfig = loader.resolveConfig(configDuringExecution, getClass.getClassLoader)
-    val modelData = LocalModelData(resolvedConfig, configCreator, objectNaming = new TestObjectNaming)
+    val modelData = LocalModelData(configDuringExecution.config, configCreator, objectNaming = new TestObjectNaming)
     registrar = process.registrar.FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
   }
 
