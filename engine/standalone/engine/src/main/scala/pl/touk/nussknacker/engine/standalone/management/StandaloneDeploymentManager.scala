@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.standalone.management
 
 import java.util.concurrent.TimeUnit
-
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
@@ -10,23 +9,19 @@ import pl.touk.nussknacker.engine.ModelData.ClasspathConfig
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessObjectDependencies, RunMode, SourceTestSupport}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, RunMode, SourceTestSupport}
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.definition._
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.testmode.SinkInvocationCollector
+import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, SinkInvocationCollector, TestDataPreparer, TestRunId, TestServiceInvocationCollector}
 import pl.touk.nussknacker.engine.standalone.StandaloneProcessInterpreter
 import pl.touk.nussknacker.engine.standalone.api.{StandaloneContextPreparer, StandaloneDeploymentData}
 import pl.touk.nussknacker.engine.standalone.api.types._
 import pl.touk.nussknacker.engine.standalone.metrics.NoOpMetricsProvider
-import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestRunId, TestServiceInvocationCollector}
 import pl.touk.nussknacker.engine.util.Implicits.SourceIsReleasable
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.engine.{ModelData, _}
@@ -116,12 +111,9 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
   import ExecutionContext.Implicits.global
 
   def runTest[T](variableEncoder: Any => T): TestResults[T] = {
-    val creator = modelData.configCreator
-    val processObjectDependencies = ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming)
-
-    val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(creator, processObjectDependencies)
-
     val collectingListener = ResultsCollectingListenerHolder.registerRun(variableEncoder)
+    val parsedTestData = new TestDataPreparer(modelData).prepareDataForTest(process, testData)
+
 
     //in tests we don't send metrics anywhere
     val testContext = new StandaloneContextPreparer(NoOpMetricsProvider)
@@ -135,13 +127,11 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
       case Invalid(errors) => throw new IllegalArgumentException("Error during interpreter preparation: " + errors.toList.mkString(", "))
     }
 
-    val parsedTestData = readTestData(definitions, standaloneInterpreter.source)
-
     try {
       val processVersion = ProcessVersion.empty.copy(processName = ProcessName("snapshot version")) // testing process may be unreleased, so it has no version
       val deploymentData = DeploymentData.empty
       standaloneInterpreter.open(JobData(process.metaData, processVersion, deploymentData))
-      val results = Await.result(Future.sequence(parsedTestData.map(standaloneInterpreter.invokeToResult(_, None))), timeout)
+      val results = Await.result(Future.sequence(parsedTestData.samples.map(standaloneInterpreter.invokeToResult(_, None))), timeout)
       collectSinkResults(collectingListener.runId, results)
       collectExceptions(collectingListener, results)
       collectingListener.results
@@ -176,17 +166,6 @@ class StandaloneTestMain(testData: TestData, process: EspProcess, modelData: Mod
     exceptions.flatMap(_.toList).foreach(listener.exceptionThrown)
   }
 
-
-  private def readTestData(definitions: ProcessDefinition[ObjectWithMethodDef], sourceObj: api.process.Source[Any]): List[Any] = {
-    //FIXME: asInstanceOf, should be proper handling of SubprocessInputDefinition
-    val sourceType = process.roots.head.data.asInstanceOf[Source].ref.typ
-    val testDataParser = sourceObj
-      .cast[SourceTestSupport[_]](Typeable.simpleTypeable(classOf[SourceTestSupport[_]]))
-      .map(_.testDataParser)
-      .getOrElse(throw new IllegalArgumentException(s"Source $sourceType cannot be tested"))
-    val parsedTestData = testDataParser.parseTestData(testData.testData)
-    parsedTestData
-  }
 
 }
 

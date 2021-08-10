@@ -598,12 +598,20 @@ Currently, you can only configure secondary environment if it uses BASIC authent
 | secondaryEnvironment.password               | Medium     | string                                                              |               | Password of the user that should be used for migration/comparison                                                                                                                                       |
 | secondaryEnvironment.targetEnvironmentId    | Low        | string                                                              |               | Name of the secondary environment (used mainly for messages for user)                                                                                                                                   |
 
+## Testing 
+
+| Parameter name                    | Importance | Type   | Default value | Description                                           |
+| --------------                    | ---------- | ----   | ------------- | -----------                                           |
+| testDataSettings.maxSampleCount   | Medium     | string | 20            | Limits number of samples for tests from file          |
+| testDataSettings.testDataMaxBytes | Low        | string | 200000        | Limits size of test input for tests from file         |
+| testDataSettings.resultsMaxBytes  | Low        | string | 50000000      | Limits size of returned test data for tests from file |
+
+
 ## Other configuration options
 
 | Parameter name                   | Importance | Type    | Default value         | Description                                                                                   |
 | --------------                   | ---------- | ----    | -------------         | -----------                                                                                   |
 | attachmentsPath                  | Medium     | string  | ./storage/attachments | Place where scenario attachments are stored                                                   |
-| testResultsMaxSizeInBytes        | Low        | int     | 500MB                 | Limits size of returned test data for tests from file                                         |
 | analytics.engine                 | Low        | Matomo  |                       | Currently only available analytics engine is [Matomo](https://matomo.org/)                    |
 | analytics.url                    | Low        | string  |                       | URL of Matomo server                                                                          |
 | analytics.siteId                 | Low        | string  |                       | [Site id](https://matomo.org/faq/general/faq_19212/)                                          |

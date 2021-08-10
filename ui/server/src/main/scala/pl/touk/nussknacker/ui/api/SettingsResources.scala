@@ -27,7 +27,8 @@ class SettingsResources(config: FeatureTogglesConfig,
             deploySettings = config.deploySettings,
             tabs = config.tabs,
             intervalTimeSettings = config.intervalTimeSettings,
-            attachments = config.attachments.isDefined
+            attachments = config.attachments.isDefined,
+            testDataSettings = config.testDataSettings,
           )
 
           val authenticationSettings = AuthenticationSettings(
@@ -54,6 +55,8 @@ class SettingsResources(config: FeatureTogglesConfig,
 
 @JsonCodec case class IntervalTimeSettings(processes: Int, healthCheck: Int)
 
+@JsonCodec case class TestDataSettings(maxSamplesCount: Int, testDataMaxBytes: Int, resultsMaxBytes: Int)
+
 object TopTabType extends Enumeration {
 
   implicit val decoder: Decoder[TopTabType.Value] = Decoder.enumDecoder(TopTabType)
@@ -72,6 +75,7 @@ object TopTabType extends Enumeration {
                                             deploySettings: Option[DeploySettings],
                                             tabs: Option[List[TopTab]],
                                             intervalTimeSettings: IntervalTimeSettings,
+                                            testDataSettings: TestDataSettings,
                                             attachments: Boolean)
 
 @JsonCodec case class AnalyticsSettings(engine: String, url: String, siteId: String)
@@ -83,3 +87,4 @@ object TopTabType extends Enumeration {
 @JsonCodec case class UISettings(features: ToggleFeaturesOptions,
                                  authentication: AuthenticationSettings,
                                  analytics: Option[AnalyticsSettings])
+

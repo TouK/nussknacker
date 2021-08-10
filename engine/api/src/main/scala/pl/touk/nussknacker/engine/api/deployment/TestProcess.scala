@@ -7,10 +7,10 @@ import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 
 object TestProcess {
 
-  case class TestData(testData: Array[Byte])
+  case class TestData(testData: Array[Byte], rowLimit: Int)
 
   object TestData {
-    def apply(s: String): TestData = new TestData(s.getBytes(StandardCharsets.UTF_8))
+    def newLineSeparated(s: String*): TestData = new TestData(s.mkString("\n").getBytes(StandardCharsets.UTF_8), s.length)
   }
 
   case class TestResults[T](nodeResults: Map[String, List[NodeResult[T]]],

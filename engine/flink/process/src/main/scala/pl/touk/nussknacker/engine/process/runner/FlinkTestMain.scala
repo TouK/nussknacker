@@ -1,19 +1,18 @@
 package pl.touk.nussknacker.engine.process.runner
 
+import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
-import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.testmode.ResultsCollectingListener
+import pl.touk.nussknacker.engine.testmode.{ParsedTestData, ResultsCollectingListener, ResultsCollectingListenerHolder, TestDataPreparer}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.TestFlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
-import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 
 object FlinkTestMain extends FlinkRunner {
 
@@ -34,9 +33,10 @@ class FlinkTestMain(val modelData: ModelData,
 
   def runTest[T](variableEncoder: Any => T): TestResults[T] = {
     val env = createEnv
+    val parsedTestData = new TestDataPreparer(modelData).prepareDataForTest(process, testData)
     val collectingListener = ResultsCollectingListenerHolder.registerRun(variableEncoder)
     try {
-      val registrar: FlinkProcessRegistrar = prepareRegistrar(env, collectingListener)
+      val registrar: FlinkProcessRegistrar = prepareRegistrar(env.getConfig, collectingListener, parsedTestData)
       registrar.register(env, process, processVersion, deploymentData, Option(collectingListener.runId))
       execute(env, SavepointRestoreSettings.none())
       collectingListener.results
@@ -45,14 +45,14 @@ class FlinkTestMain(val modelData: ModelData,
     }
   }
 
-  protected def prepareRegistrar[T](env: StreamExecutionEnvironment, collectingListener: ResultsCollectingListener): FlinkProcessRegistrar = {
+  protected def prepareRegistrar[T](config: ExecutionConfig, collectingListener: ResultsCollectingListener, parsedTestData: ParsedTestData): FlinkProcessRegistrar = {
     FlinkProcessRegistrar(new TestFlinkProcessCompiler(
       modelData.configCreator,
       modelData.processConfig,
       collectingListener,
       process,
-      testData,
-      env.getConfig,
+      parsedTestData,
+      config,
       modelData.objectNaming),
       ExecutionConfigPreparer.defaultChain(modelData))
   }

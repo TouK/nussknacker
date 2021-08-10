@@ -41,7 +41,7 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
     val results = StandaloneTestMain.run(
       processJson = marshall(process),
       modelData = modelData,
-      testData = new TestData(input.getBytes(StandardCharsets.UTF_8)), variableEncoder = identity)
+      testData = new TestData(input.getBytes(StandardCharsets.UTF_8), 10), variableEncoder = identity)
 
     results.nodeResults("filter1").toSet shouldBe Set(
       NodeResult(ResultContext("proc1-0", Map("input" -> Request1("a","b")))),
@@ -83,7 +83,7 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
     val results = StandaloneTestMain.run(
       processJson = marshall(process),
       modelData = modelData,
-      testData = new TestData(input.getBytes(StandardCharsets.UTF_8)), variableEncoder = identity)
+      testData = new TestData(input.getBytes(StandardCharsets.UTF_8), 10), variableEncoder = identity)
 
     results.invocationResults("occasionallyThrowFilter").toSet shouldBe Set(ExpressionInvocationResult("proc1-1", "expression", true))
     results.exceptions should have size 1
@@ -105,7 +105,7 @@ class StandaloneTestMainSpec extends FunSuite with Matchers with BeforeAndAfterE
     val results = StandaloneTestMain.run(
       processJson = marshall(process),
       modelData = modelData,
-      testData = new TestData(input.getBytes(StandardCharsets.UTF_8)), variableEncoder = identity)
+      testData = new TestData(input.getBytes(StandardCharsets.UTF_8), 10), variableEncoder = identity)
 
     results.nodeResults("endNodeIID").toSet shouldBe Set(
       NodeResult(ResultContext("proc1-0", Map("input" -> Request1("a","b"))))

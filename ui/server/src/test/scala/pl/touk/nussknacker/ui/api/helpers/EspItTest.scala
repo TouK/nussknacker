@@ -138,12 +138,12 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   def deployRoute(requireComment: Boolean = false) = new ManagementResources(
     processCounter = new ProcessCounter(TestFactory.sampleSubprocessRepository),
     managementActor = managementActor,
-    testResultsMaxSizeInBytes = 500 * 1024 * 1000,
     processAuthorizer = processAuthorizer,
     processRepository = fetchingProcessRepository,
     deploySettings = Some(DeploySettings(requireComment = requireComment)),
     processResolving = processResolving,
-    processService = processService
+    processService = processService,
+    testDataSettings = TestDataSettings(5, 1000, 100000)
   )
   val attachmentService = new ProcessAttachmentService(attachmentsPath, processActivityRepository)
   val processActivityRoute = new ProcessActivityResource(processActivityRepository, fetchingProcessRepository, processAuthorizer)

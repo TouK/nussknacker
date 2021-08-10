@@ -34,7 +34,7 @@ class StandaloneDeploymentManagerSpec extends FunSuite with VeryPatientScalaFutu
         .processor("processor", "processorService")
         .emptySink("sink", "response-sink"))).noSpaces
 
-    val results = manager.test(ProcessName("test1"), process, TestData("{\"field1\": \"a\", \"field2\": \"b\"}"), _ => null).futureValue
+    val results = manager.test(ProcessName("test1"), process, TestData.newLineSeparated("{\"field1\": \"a\", \"field2\": \"b\"}"), _ => null).futureValue
 
     results.nodeResults("sink") should have length 1
   }

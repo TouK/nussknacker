@@ -18,7 +18,7 @@ import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{ExceptionResult, ExpressionInvocationResult, MockedResult, NodeResult, ResultContext, TestData, TestResults}
 import pl.touk.nussknacker.engine.api.DisplayJson
 import pl.touk.nussknacker.ui.process.{ProcessService, deployment => uideployment}
-import pl.touk.nussknacker.engine.api.deployment.{CustomActionError, CustomActionFailure, CustomActionInvalidStatus, CustomActionNonExisting, CustomActionNotImplemented, CustomActionResult, ProcessActionType, SavepointResult}
+import pl.touk.nussknacker.engine.api.deployment.{CustomActionError, CustomActionFailure, CustomActionInvalidStatus, CustomActionNonExisting, CustomActionNotImplemented, CustomActionResult, SavepointResult}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
@@ -42,9 +42,9 @@ object ManagementResources {
 
   def apply(processCounter: ProcessCounter,
             managementActor: ActorRef,
-            testResultsMaxSizeInBytes: Int,
             processAuthorizator: AuthorizeProcess,
-            processRepository: FetchingProcessRepository[Future], featuresOptions: FeatureTogglesConfig,
+            processRepository: FetchingProcessRepository[Future],
+            featuresOptions: FeatureTogglesConfig,
             processResolving: UIProcessResolving,
             processService: ProcessService)
            (implicit ec: ExecutionContext,
@@ -52,7 +52,7 @@ object ManagementResources {
     new ManagementResources(
       processCounter,
       managementActor,
-      testResultsMaxSizeInBytes,
+      featuresOptions.testDataSettings,
       processAuthorizator,
       processRepository,
       featuresOptions.deploySettings,
@@ -75,6 +75,7 @@ object ManagementResources {
       case TestResults(nodeResults, invocationResults, mockedResults, exceptions, _) => Json.obj(
         "nodeResults" -> nodeResults.asJson,
         "invocationResults" -> invocationResults.asJson,
+        
         "mockedResults" -> mockedResults.asJson,
         "exceptions" -> exceptions.asJson
       )
@@ -99,7 +100,7 @@ object ManagementResources {
 
 class ManagementResources(processCounter: ProcessCounter,
                           val managementActor: ActorRef,
-                          testResultsMaxSizeInBytes: Int,
+                          testDataSettings: TestDataSettings,
                           val processAuthorizer: AuthorizeProcess,
                           val processRepository: FetchingProcessRepository[Future],
                           deploySettings: Option[DeploySettings],
@@ -187,25 +188,13 @@ class ManagementResources(processCounter: ProcessCounter,
       path("processManagement" / "test" / Segment) { processName =>
         (post & processId(processName)) { processId =>
           canDeploy(processId) {
-            //There is bug in akka-http in formFields, so we use custom toStrict method
-            //issue: https://github.com/akka/akka/issues/19506
-            //workaround: https://gist.github.com/rklaehn/d4d3ee43443b0f4741fb#file-uploadhandlertostrict-scala
-            toStrict(5.second) {
-              formFields('testData.as[Array[Byte]], 'processJson) { (testData, displayableProcessJson) =>
-                complete {
+            formFields('testData.as[Array[Byte]], 'processJson) { (testData, displayableProcessJson) =>
+              complete {
+                if (testData.length > testDataSettings.testDataMaxBytes) {
+                  HttpResponse(StatusCodes.BadRequest, entity = "Too large test request")
+                } else {
                   performTest(processId, testData, displayableProcessJson).flatMap { results =>
-                    try {
-                      Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
-                    }
-                    catch {
-                      //TODO There is some classloading issue here in Nussknacker that causes `results.asJson` throw NoClassDefFoundError
-                      //We don't want to kill whole application in this case so we catch it. As soon as bug is fixed, we should remove this try/catch clause.
-                      //Akka-http ExceptionHandler catches only NonFatal exceptions, so we cannot use it here...
-                      //There is a test case for it in BaseFlowTest class
-                      case t: NoClassDefFoundError =>
-                        logger.error("Error during performing test", t)
-                        Future.failed(t)
-                    }
+                    Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
                   }.recover(EspErrorToHttp.errorToHttp)
                 }
               }
@@ -246,7 +235,7 @@ class ManagementResources(processCounter: ProcessCounter,
         val validationResult = processResolving.validateBeforeUiResolving(process)
         val canonical = processResolving.resolveExpressions(process, validationResult.typingInfo)
         val canonicalJson = ProcessMarshaller.toJson(canonical).spaces2
-        (managementActor ? Test(id, canonicalJson, TestData(testData), user, ManagementResources.testResultsVariableEncoder)).mapTo[TestResults[Json]].flatMap { results =>
+        (managementActor ? Test(id, canonicalJson, TestData(testData, 10), user, ManagementResources.testResultsVariableEncoder)).mapTo[TestResults[Json]].flatMap { results =>
           assertTestResultsAreNotTooBig(results)
         }.map { results =>
           ResultsWithCounts(ManagementResources.testResultsEncoder(results), computeCounts(canonical, results))
@@ -257,9 +246,10 @@ class ManagementResources(processCounter: ProcessCounter,
   }
 
   private def assertTestResultsAreNotTooBig(testResults: TestResults[Json]): Future[TestResults[Json]] = {
+    val resultsMaxBytes = testDataSettings.resultsMaxBytes
     val testDataResultApproxByteSize = RamUsageEstimator.sizeOf(testResults)
-    if (testDataResultApproxByteSize > testResultsMaxSizeInBytes) {
-      logger.info(s"Test data limit exceeded. Approximate test data size: $testDataResultApproxByteSize, but limit is: $testResultsMaxSizeInBytes")
+    if (testDataResultApproxByteSize > resultsMaxBytes) {
+      logger.info(s"Test data limit exceeded. Approximate test data size: $testDataResultApproxByteSize, but limit is: $resultsMaxBytes")
       Future.failed(new RuntimeException("Too much test data. Please decrease test input data size."))
     } else {
       Future.successful(testResults)
@@ -271,23 +261,6 @@ class ManagementResources(processCounter: ProcessCounter,
       key -> RawCount(nresults.size.toLong, results.exceptions.find(_.nodeId.contains(key)).size.toLong)
     }
     processCounter.computeCounts(canonical, counts.get)
-  }
-
-  private def toStrict(timeout: FiniteDuration): Directive[Unit] = {
-    def toStrict0(inner: Unit ⇒ Route): Route = {
-      val result: RequestContext ⇒ Future[RouteResult] = c ⇒ {
-        // call entity.toStrict (returns a future)
-        c.request.entity.toStrict(timeout).flatMap { strict ⇒
-          // modify the context with the strictified entity
-          val c1 = c.withRequest(c.request.withEntity(strict))
-          // call the inner route with the modified context
-          inner(())(c1)
-        }
-      }
-      result
-    }
-
-    Directive[Unit](toStrict0)
   }
 
   private def convertSavepointResultToResponse(future: Future[Any]) = {

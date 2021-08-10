@@ -7,6 +7,7 @@ import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironm
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, KafkaDeserializationSchema}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.process.TestDataGenerator
 import pl.touk.nussknacker.engine.api.test.TestDataParser
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
@@ -59,9 +60,9 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
   }
 
   override def testDataParser: TestDataParser[T] = new TestDataParser[T] {
-    override def parseTestData(merged: Array[Byte]): List[T] = {
+    override def parseTestData(merged: TestData): List[T] = {
       val topic = topics.head
-      recordFormatter.parseDataForTest(topic, merged).map {deserializeTestData(topic, _)}
+      recordFormatter.parseDataForTest(topic, merged.testData).map {deserializeTestData(topic, _)}
     }
   }
 

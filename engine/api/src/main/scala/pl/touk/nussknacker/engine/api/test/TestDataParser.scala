@@ -1,34 +1,43 @@
 package pl.touk.nussknacker.engine.api.test
 
+import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
+
 import java.nio.charset.StandardCharsets
 
 trait TestDataParser[+T] {
-  def parseTestData(data: Array[Byte]) : List[T]
+
+  def parseTestData(data: TestData) : List[T]
+
 }
 
-trait NewLineSplittedTestDataParser[T] extends TestDataParser[T] {
-
-  def parseElement(testElement: String): T
-  override def parseTestData(data: Array[Byte]): List[T] = {
-    TestParsingUtils.newLineSplit.splitData(data).map(s => parseElement(new String(s, StandardCharsets.UTF_8)))
-  }
-}
-
-trait EmptyLineSplittedTestDataParser[T] extends TestDataParser[T] {
+trait SplittingDataParser[T] extends TestDataParser[T] {
 
   def parseElement(testElement: String): T
 
-  override def parseTestData(data: Array[Byte]): List[T] = {
-    TestParsingUtils.emptyLineSplit.splitData(data).map(s => parseElement(new String(s, StandardCharsets.UTF_8)))
+  protected def split: TestDataSplit
+
+  override def parseTestData(data: TestData): List[T] = {
+    split.splitData(data.testData).map(s => parseElement(new String(s, StandardCharsets.UTF_8)))
   }
+}
+
+trait NewLineSplittedTestDataParser[T] extends SplittingDataParser[T] {
+
+  protected val split: TestDataSplit = TestParsingUtils.newLineSplit
+
+}
+
+trait EmptyLineSplittedTestDataParser[T] extends SplittingDataParser[T] {
+
+  protected val split: TestDataSplit = TestParsingUtils.emptyLineSplit
 
 }
 
 object TestParsingUtils {
 
-  def newLineSplit : TestDataSplit = SimpleTestDataSplit("\n")
+  val newLineSplit : TestDataSplit = SimpleTestDataSplit("\n")
 
-  def emptyLineSplit : TestDataSplit = SimpleTestDataSplit("\n\n")
+  val emptyLineSplit : TestDataSplit = SimpleTestDataSplit("\n\n")
 
 }
 
