@@ -1,9 +1,9 @@
 name: Benchmarks
 
 on:
-  push:
   schedule:
-    - cron: '20 * * * *'
+    - cron: '40 * * * *'
+  push:
 
 jobs:
   build:
