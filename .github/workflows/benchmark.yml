@@ -1,21 +1,11 @@
 name: Benchmarks
 
-on:
-  schedule:
-    # Starts every 5 minutes
-    - cron:  '0/5 * * * *'
-
-
-defaults:
-  run:
-    working-directory: engine/benchmarks
+on: [push]
 
 jobs:
-  build:
+  my-job:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Starting benchmarks
+      - name: Run benchmarks
         shell: bash
-        run: |
-          sbt benchmarks/jmh:run -i 8 -wi 3 -f1 -t2 .SampleSpelBenchmark
+        run: ./ciRunSbt.sh benchmarks/jmh:run -i 8 -wi 3 -f1 -t2 .SampleSpelBenchmark
