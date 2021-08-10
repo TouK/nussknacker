@@ -25,11 +25,11 @@ case class MigrationResult(process: CanonicalProcess, migrationsApplied: List[Pr
 
 class ProcessModelMigrator(migrations: ProcessingTypeDataProvider[ProcessMigrations]) {
 
-  def migrateProcess(processDetails: ProcessDetails) : Option[MigrationResult] = {
+  def migrateProcess(processDetails: ProcessDetails, skipEmptyMigrations: Boolean) : Option[MigrationResult] = {
     for {
       migrations <- migrations.forType(processDetails.processingType)
       displayable <- processDetails.json
-      migrationsToApply = findMigrationsToApply(migrations, processDetails.modelVersion) if !migrationsToApply.isEmpty
+      migrationsToApply = findMigrationsToApply(migrations, processDetails.modelVersion) if migrationsToApply.nonEmpty || !skipEmptyMigrations
     } yield migrateWithMigrations(ProcessConverter.fromDisplayable(displayable), migrationsToApply)
   }
 
