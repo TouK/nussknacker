@@ -54,3 +54,24 @@ class SampleSpelBenchmark {
   }
 }
 
+class ForTest(x: Integer, y: Integer) {
+  def test(): String = {
+    Math.floorMod(x,y).toString
+  }
+
+}
+
+@State(Scope.Thread)
+class SampleSpelBenchmarkForTest {
+
+  private val setup = new ForTest(10000,20000)
+
+
+  @Benchmark
+  @BenchmarkMode(Array(Mode.AverageTime))
+  @OutputTimeUnit(TimeUnit.MICROSECONDS)
+  def benchmark(): AnyRef = {
+    setup.test()
+  }
+}
+
