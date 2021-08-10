@@ -108,7 +108,7 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
                                     (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
     classDefinition.methods.values.flatten.flatMap { kl =>
       clazzAndItsChildrenDefinitionIfNotCollectedSoFar(kl.refClazz)(collectedSoFar, path.pushSegment(MethodReturnType(kl)))
-      // TODO verify if parameters are needed and if they are not, remove this
+      // TODO verify if parameters are need and if they are not, remove this
 //        ++ kl.parameters.flatMap(p => clazzAndItsChildrenDefinition(p.refClazz)(collectedSoFar, path.pushSegment(MethodParameter(p))))
     }.toSet ++
     classDefinition.staticMethods.values.flatten.flatMap { kl =>

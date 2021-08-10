@@ -93,7 +93,6 @@ object UIProcessObjectsFactory {
     // TODO: present all overloaded methods on FE
     val methodsWithHighestArity = definition.methods.mapValues(_.maxBy(_.parameters.size))
     val staticMethodsWithHighestArity = definition.staticMethods.mapValues(_.maxBy(_.parameters.size))
-
     UIClazzDefinition(definition.clazzName, methodsWithHighestArity, staticMethodsWithHighestArity)
   }
 

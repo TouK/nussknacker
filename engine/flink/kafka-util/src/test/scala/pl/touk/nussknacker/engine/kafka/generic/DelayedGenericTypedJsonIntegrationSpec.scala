@@ -110,7 +110,7 @@ class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec wit
         s"$TimestampFieldParamName" -> s"${timestampField}",
         s"$DelayParameterName" -> s"${delay}"
       )
-      .sink("out", "T(java.lang.System).currentTimeMillis()", "sinkForLongs")
+      .sink("out", "T(java.time.Instant).now().toEpochMilli()", "sinkForLongs")
   }
 
   private def runAndVerify(topic: String, process: EspProcess, givenObj: AnyRef): Unit = {
@@ -144,4 +144,8 @@ class DelayedGenericProcessConfigCreator extends EmptyProcessConfigCreator {
     ExceptionHandlerFactory.noParams(_ => recordingExceptionHandler)
 
   protected def defaultCategory[T](obj: T): WithCategories[T] = WithCategories(obj, "TestDelayedSource")
+
+  override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
+    super.expressionConfig(processObjectDependencies).copy(additionalClasses = List(classOf[Instant]))
+  }
 }
