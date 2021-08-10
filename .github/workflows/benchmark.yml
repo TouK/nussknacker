@@ -3,6 +3,7 @@ name: Benchmarks
 on:
   schedule:
     - cron: '0 0 * * *'
+  push:
 
 jobs:
   build:
@@ -27,4 +28,4 @@ jobs:
           java-version: "openjdk@1.11"
       - name: Run benchmarks
         shell: bash
-        run: ./ciRunSbt.sh benchmarks/jmh:run -i 8 -wi 3 -f1 -t2 .SampleSpelBenchmark -rf csv
+        run: ./ciRunSbt.sh benchmarks/jmh:run -i 1 -wi 1 -f1 -t2 .SampleSpelBenchmark -rf csv
