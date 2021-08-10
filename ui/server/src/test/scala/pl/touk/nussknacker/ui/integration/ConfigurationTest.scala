@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.integration
 
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
+import pl.touk.nussknacker.engine.api.config.LoadedConfig
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.ui.config.UiConfigLoader
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion

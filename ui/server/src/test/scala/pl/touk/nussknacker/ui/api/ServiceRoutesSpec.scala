@@ -12,7 +12,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
 import io.circe.Decoder
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
-import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
+import pl.touk.nussknacker.engine.api.config.LoadedConfig
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.{QueryResult, ServiceInvocationException, ServiceNotFoundException}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 

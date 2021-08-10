@@ -4,7 +4,7 @@ import com.typesafe
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import org.scalatest.FunSuite
 import org.scalatest.Matchers.{convertToAnyShouldWrapper, include}
-import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
+import pl.touk.nussknacker.engine.api.config.LoadedConfig
 
 class ProcessingTypeDataConfigurationReaderSpec extends FunSuite {
 

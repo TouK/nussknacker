@@ -1,6 +1,6 @@
-package pl.touk.nussknacker.engine.modelconfig
+package pl.touk.nussknacker.engine.api.config
 
-import com.typesafe.config.{Config, ConfigResolveOptions}
+import com.typesafe.config.{Config, ConfigFactory, ConfigResolveOptions}
 
 /**
   * This class holds both resolved (loaded) config and unresolved version. It is useful in case when you want to
@@ -11,12 +11,12 @@ case class LoadedConfig(loadedConfig: Config, unresolvedConfig: UnresolvedConfig
   import scala.collection.JavaConverters._
 
   def get(path: String): LoadedConfig = {
-    LoadedConfig(loadedConfig.getConfig(path), unresolvedConfig.map(_.getConfig(path)))
+    LoadedConfig(loadedConfig.getConfig(path), unresolvedConfig.relative(path))
   }
 
   def getOpt(path: String): Option[LoadedConfig] = {
     if (loadedConfig.hasPath(path)) {
-      Some(LoadedConfig(loadedConfig.getConfig(path), unresolvedConfig.map(_.getConfig(path))))
+      Some(LoadedConfig(loadedConfig.getConfig(path), unresolvedConfig.relative(path)))
     } else {
       None
     }
@@ -25,7 +25,7 @@ case class LoadedConfig(loadedConfig: Config, unresolvedConfig: UnresolvedConfig
   def entries: Map[String, LoadedConfig] = {
     loadedConfig.root().asScala.map {
       case (key, _) =>
-        key -> LoadedConfig(loadedConfig.getConfig(key), unresolvedConfig.map(_.getConfig(key)))
+        key -> LoadedConfig(loadedConfig.getConfig(key), unresolvedConfig.relative(key))
     }.toMap
   }
 
@@ -33,7 +33,7 @@ case class LoadedConfig(loadedConfig: Config, unresolvedConfig: UnresolvedConfig
 
 case class UnresolvedConfig(config: Config, resolutionSource: Config) {
 
-  def map(f: Config => Config): UnresolvedConfig = copy(f(config))
+  def relative(path: String): UnresolvedConfig = copy(if (config.hasPath(path)) config.getConfig(path) else ConfigFactory.empty())
 
   def resolve(options: ConfigResolveOptions): Config =
     config.resolveWith(resolutionSource, options)

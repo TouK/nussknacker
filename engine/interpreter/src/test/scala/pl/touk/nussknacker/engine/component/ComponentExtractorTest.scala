@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.component
 
-import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
+import com.typesafe.config.{Config, ConfigException, ConfigFactory, ConfigValueFactory}
 import com.vdurmont.semver4j.Semver
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.modelconfig.DefaultModelConfigLoader
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.test.ClassLoaderWithServices
 import net.ceedubs.ficus.Ficus._
+import pl.touk.nussknacker.engine.api.config.LoadedConfig
 
 import scala.concurrent.Future
 import scala.collection.JavaConverters._
@@ -60,14 +61,35 @@ class ComponentExtractorTest extends FunSuite with Matchers {
     }.getMessage should include("is not compatible with NussknackerVersion(1.2.3)")
   }
 
+  test("should not resolve environment variables during loading of additional components") {
+    val config = prepareExtractorAndConfig[Service](ConfigFactory.parseString(
+      """components {
+        |  dynamic {
+        |    providerType: dynamicTest
+        |    valueCount: 1
+        |    systemEnv: ${LANG}
+        |  }
+        |}
+        |""".stripMargin), ComponentExtractor(_))._2.config
+
+    a[ConfigException.NotResolved] should be thrownBy {
+      val systemEnv = config.getString("components.dynamic.systemEnv")
+      systemEnv
+    }
+  }
+
+
   private def extractComponents[T <: Component](map: (String, Any)*): Map[String, WithCategories[T]] =
     extractComponents(map.toMap, ComponentExtractor(_))
 
   private def extractComponents[T <: Component](map: Map[String, Any], makeExtractor: ClassLoader => ComponentExtractor): Map[String, WithCategories[T]] = {
+    val (extractor, resolvedConfig) = prepareExtractorAndConfig(fromMap(map.toSeq: _*), makeExtractor)
+    extractor.extract(ProcessObjectDependencies(resolvedConfig.config, DefaultNamespacedObjectNaming)).mapValues(k => k.copy(value = k.value.asInstanceOf[T]))
+  }
+
+  private def prepareExtractorAndConfig[T <: Component](config: Config, makeExtractor: ClassLoader => ComponentExtractor) = {
     ClassLoaderWithServices.withCustomServices(List((classOf[ComponentProvider], classOf[DynamicProvider])), getClass.getClassLoader) { cl =>
-      val extractor = makeExtractor(cl)
-      val resolved = loader.resolveInputConfigDuringExecution(fromMap(map.toSeq: _*), cl)
-      extractor.extract(ProcessObjectDependencies(resolved.config, DefaultNamespacedObjectNaming)).mapValues(k => k.copy(value = k.value.asInstanceOf[T]))
+      (makeExtractor(cl), loader.resolveInputConfigDuringExecution(config, cl))
     }
   }
 
@@ -84,9 +106,9 @@ class DynamicProvider extends ComponentProvider {
 
   override def providerName: String = "dynamicTest"
 
-  override def resolveConfigForExecution(config: Config): Config = {
-    val number = config.getAs[Int]("valueCount").getOrElse(0)
-    config.withValue("values", ConfigValueFactory.fromIterable((1 to number).map(i => s"v$i").asJava))
+  override def resolveConfigForExecution(config: LoadedConfig): Config = {
+    val number = config.loadedConfig.getAs[Int]("valueCount").getOrElse(0)
+    config.unresolvedConfig.config.withValue("values", ConfigValueFactory.fromIterable((1 to number).map(i => s"v$i").asJava))
   }
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {

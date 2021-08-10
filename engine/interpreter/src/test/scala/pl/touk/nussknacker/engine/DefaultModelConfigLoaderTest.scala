@@ -3,7 +3,8 @@ package pl.touk.nussknacker.engine
 import java.util.Collections
 import com.typesafe.config.{ConfigException, ConfigFactory}
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.modelconfig.{DefaultModelConfigLoader, InputConfigDuringExecution, LoadedConfig}
+import pl.touk.nussknacker.engine.api.config.LoadedConfig
+import pl.touk.nussknacker.engine.modelconfig.{DefaultModelConfigLoader, InputConfigDuringExecution}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 

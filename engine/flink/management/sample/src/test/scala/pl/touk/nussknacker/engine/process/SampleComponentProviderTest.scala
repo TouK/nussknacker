@@ -44,8 +44,10 @@ class SampleComponentProviderTest extends FunSuite with FlinkSpec with Matchers 
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    val loadedConfig = new SampleModelConfigLoader().resolveInputConfigDuringExecution(config, getClass.getClassLoader)
-    val modelData = LocalModelData(loadedConfig.config, configCreator, objectNaming = new TestObjectNaming)
+    val loader = new SampleModelConfigLoader()
+    val configDuringExecution = loader.resolveInputConfigDuringExecution(config, getClass.getClassLoader)
+    val resolvedConfig = loader.resolveConfig(configDuringExecution, getClass.getClassLoader)
+    val modelData = LocalModelData(resolvedConfig, configCreator, objectNaming = new TestObjectNaming)
     registrar = process.registrar.FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
   }
 

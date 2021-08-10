@@ -4,6 +4,7 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
+import pl.touk.nussknacker.engine.api.config.LoadedConfig
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.sql.service.{DatabaseLookupEnricher, DatabaseQueryEnricher}
 
@@ -11,7 +12,7 @@ class DatabaseEnricherComponentProvider extends ComponentProvider {
 
   override val providerName: String = "databaseEnricher"
 
-  override def resolveConfigForExecution(config: Config): Config = config
+  override def resolveConfigForExecution(config: LoadedConfig): Config = config.unresolvedConfig.config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
     val componentConfig = config.getConfig("config")

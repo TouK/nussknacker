@@ -7,6 +7,7 @@ import net.ceedubs.ficus.Ficus._
 import org.apache.commons.io.IOUtils
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
+import pl.touk.nussknacker.engine.api.config.LoadedConfig
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
 import pl.touk.nussknacker.openapi.OpenAPIsConfig._
@@ -23,18 +24,16 @@ class OpenAPIComponentProvider extends ComponentProvider with LazyLogging {
 
   override def providerName: String = "openAPI"
 
-  override def resolveConfigForExecution(config: Config): Config = {
-    // we need to use resolved config for service discovery because can be used environment variables e.g. for url
-    val resolvedConfig = config.resolve()
-    val openAPIsConfig = resolvedConfig.rootAs[OpenAPIServicesConfig]
+  override def resolveConfigForExecution(config: LoadedConfig): Config = {
+    val openAPIsConfig = config.loadedConfig.rootAs[OpenAPIServicesConfig]
     val serviceConfigs = try {
-      discoverOpenAPIServices(resolvedConfig, openAPIsConfig)
+      discoverOpenAPIServices(config.loadedConfig, openAPIsConfig)
     } catch {
       case NonFatal(ex) =>
         logger.error("OpenAPI service resolution failed. Will be used empty services lists", ex)
         List.empty
     }
-    config.withValue("services", ConfigValueFactory.fromIterable(serviceConfigs.asJava))
+    config.unresolvedConfig.config.withValue("services", ConfigValueFactory.fromIterable(serviceConfigs.asJava))
   }
 
   private def discoverOpenAPIServices(config: Config, openAPIsConfig: OpenAPIServicesConfig) = {

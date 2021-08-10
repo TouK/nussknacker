@@ -2,13 +2,13 @@ package pl.touk.nussknacker.ui.definition
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.config.LoadedConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SingleNodeConfig, WithCategories}
-import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}

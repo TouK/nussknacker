@@ -70,7 +70,7 @@ case class ClassLoaderModelData private(private val resolveInputConfigDuringExec
   override def objectNaming: ObjectNaming = ObjectNamingProvider(modelClassLoader.classLoader)
 }
 
-trait ModelData extends AutoCloseable {
+trait ModelData extends AutoCloseable with LazyLogging {
 
   def migrations: ProcessMigrations
 
@@ -105,7 +105,11 @@ trait ModelData extends AutoCloseable {
 
   def inputConfigDuringExecution: InputConfigDuringExecution
 
-  lazy val processConfig: Config = modelConfigLoader.resolveConfig(inputConfigDuringExecution, modelClassLoader.classLoader)
+  lazy val processConfig: Config = {
+    val config = modelConfigLoader.resolveConfig(inputConfigDuringExecution, modelClassLoader.classLoader)
+    logger.debug(s"Resolved process config: $config")
+    config
+  }
 
   def close(): Unit = {
     dictServices.close()

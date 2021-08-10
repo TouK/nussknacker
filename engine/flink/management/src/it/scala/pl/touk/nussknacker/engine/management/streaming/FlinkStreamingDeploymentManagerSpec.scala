@@ -9,6 +9,7 @@ import io.circe.Json
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
+import pl.touk.nussknacker.engine.api.config.LoadedConfig
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentData, GraphProcess}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
@@ -17,7 +18,6 @@ import pl.touk.nussknacker.engine.definition.SignalDispatcher
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
 import scala.concurrent.duration._

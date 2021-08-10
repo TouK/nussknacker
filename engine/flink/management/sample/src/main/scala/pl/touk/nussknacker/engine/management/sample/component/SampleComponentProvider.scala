@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.management.sample.component
 import com.typesafe.config.{Config, ConfigValueFactory}
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
+import pl.touk.nussknacker.engine.api.config.LoadedConfig
 import pl.touk.nussknacker.engine.api.definition.{Parameter, ServiceWithExplicitMethod}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
@@ -18,9 +19,9 @@ class SampleComponentProvider extends ComponentProvider {
 
   override def providerName: String = "dynamicTest"
 
-  override def resolveConfigForExecution(config: Config): Config = {
-    val number = config.getAs[Int]("valueCount").getOrElse(0)
-    config.withValue("values", ConfigValueFactory.fromIterable((1 to number).map(i => s"v$i").asJava))
+  override def resolveConfigForExecution(config: LoadedConfig): Config = {
+    val number = config.loadedConfig.getAs[Int]("valueCount").getOrElse(0)
+    config.unresolvedConfig.config.withValue("values", ConfigValueFactory.fromIterable((1 to number).map(i => s"v$i").asJava))
   }
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {

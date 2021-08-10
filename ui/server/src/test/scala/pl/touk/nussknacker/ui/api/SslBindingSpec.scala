@@ -7,7 +7,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.Authorization
 import akka.stream.{ActorMaterializer, Materializer}
 import org.scalatest._
-import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
+import pl.touk.nussknacker.engine.api.config.LoadedConfig
 import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerAppInitializer}
 import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, KeyStoreConfig}
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion

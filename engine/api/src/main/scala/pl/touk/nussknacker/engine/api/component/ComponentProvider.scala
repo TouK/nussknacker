@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.api.component
 import com.typesafe.config.{Config, ConfigFactory}
 import com.vdurmont.semver4j.Semver
 import net.ceedubs.ficus.readers.{ArbitraryTypeReader, ValueReader}
+import pl.touk.nussknacker.engine.api.config.LoadedConfig
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.version.BuildInfo
 
@@ -57,7 +58,9 @@ trait ComponentProvider {
 
   //in some cases e.g. external model/service registry we don't want to resolve registry settings
   //on engine/executor side (e.g. on Flink it can be in different network location, or have lower HA guarantees), @see ModelConfigLoader
-  def resolveConfigForExecution(config: Config): Config
+  //this methods takes LoadedConfig which holds loaded on designer side config and unresolved config which can be enriched
+  //with additional data and returned
+  def resolveConfigForExecution(config: LoadedConfig): Config
 
   def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition]
 

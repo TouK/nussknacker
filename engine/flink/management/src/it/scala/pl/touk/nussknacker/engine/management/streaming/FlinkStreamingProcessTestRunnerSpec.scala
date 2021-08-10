@@ -3,13 +3,13 @@ package pl.touk.nussknacker.engine.management.streaming
 import java.util.{Collections, UUID}
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.api.config.LoadedConfig
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{NodeResult, ResultContext, TestData}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 

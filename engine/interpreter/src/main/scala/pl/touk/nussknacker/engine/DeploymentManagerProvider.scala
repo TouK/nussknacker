@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine
 
 import com.typesafe.config.{Config, ConfigResolveOptions}
+import pl.touk.nussknacker.engine.api.config.LoadedConfig
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.api.{NamedServiceProvider, TypeSpecificData}
-import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
 import java.net.URL
@@ -45,7 +45,7 @@ object ProcessingTypeConfig {
       config.loadedConfig.as[List[URL]]("modelConfig.classPath"),
       config.loadedConfig.getConfig("deploymentConfig"),
       // we resolve some variables defined on the root of config, but don't resolve system variables - will be resolved at execution side
-      config.unresolvedConfig.map(_.getConfig("modelConfig")).resolve(ConfigResolveOptions.noSystem().setAllowUnresolved(true))
+      config.unresolvedConfig.relative("modelConfig").resolve(ConfigResolveOptions.noSystem().setAllowUnresolved(true))
     )
 }
 

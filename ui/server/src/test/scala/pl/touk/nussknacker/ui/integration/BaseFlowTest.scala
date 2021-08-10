@@ -12,6 +12,7 @@ import io.circe.{Decoder, Json}
 import org.apache.commons.io.FileUtils
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.StreamMetaData
+import pl.touk.nussknacker.engine.api.config.LoadedConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.RedundantParameters
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralParameterValidator, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.process.{ParameterConfig, SingleNodeConfig}
@@ -23,7 +24,6 @@ import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{SubprocessInputDefinition, SubprocessOutputDefinition}
-import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.restmodel.definition.UiAdditionalPropertyConfig
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge

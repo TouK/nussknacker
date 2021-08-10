@@ -4,10 +4,10 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.whisk.docker.{ContainerLink, DockerContainer, DockerReadyChecker}
 import org.scalatest.Suite
+import pl.touk.nussknacker.engine.api.config.LoadedConfig
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 import pl.touk.nussknacker.engine.management.{DockerTest, FlinkStreamingDeploymentManagerProvider}
-import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
 import scala.concurrent.duration._

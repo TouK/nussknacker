@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.config
 
 import com.typesafe.config.{Config, ConfigFactory}
-import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
+import pl.touk.nussknacker.engine.api.config.LoadedConfig
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 
 import java.io.File

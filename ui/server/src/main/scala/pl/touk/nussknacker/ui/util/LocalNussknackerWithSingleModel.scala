@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.util
 import com.typesafe.config.ConfigValueFactory._
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.commons.io.FileUtils
-import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
+import pl.touk.nussknacker.engine.api.config.LoadedConfig
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, ProcessingTypeData}
 import pl.touk.nussknacker.ui.process.processingtypedata.{BasicProcessingTypeDataReload, MapBasedProcessingTypeDataProvider, ProcessingTypeDataProvider, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerAppInitializer}

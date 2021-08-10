@@ -14,8 +14,8 @@ import com.whisk.docker.{ContainerLink, DockerContainer, DockerFactory, DockerRe
 import org.apache.commons.io.{FileUtils, IOUtils}
 import org.scalatest.Suite
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
+import pl.touk.nussknacker.engine.api.config.LoadedConfig
 import pl.touk.nussknacker.engine.api.deployment.User
-import pl.touk.nussknacker.engine.modelconfig.LoadedConfig
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.test.ExtremelyPatientScalaFutures
 

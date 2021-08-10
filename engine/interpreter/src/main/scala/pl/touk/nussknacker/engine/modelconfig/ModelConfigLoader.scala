@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.modelconfig
 
-import com.typesafe.config.{Config, ConfigFactory, ConfigResolveOptions, ConfigResolver}
+import com.typesafe.config.{Config, ConfigFactory}
+import pl.touk.nussknacker.engine.api.config.LoadedConfig
 import pl.touk.nussknacker.engine.modelconfig.ModelConfigLoader.defaultModelConfigResource
 
 object ModelConfigLoader {
@@ -32,14 +33,14 @@ abstract class ModelConfigLoader extends Serializable {
     * @return config part that is later passed to a running process (see e.g. FlinkProcessCompiler)
     */
   def resolveInputConfigDuringExecution(inputConfig: Config, classLoader: ClassLoader): InputConfigDuringExecution = {
-    resolveInputConfigDuringExecution(inputConfig, resolveConfigUsingDefaults(inputConfig, classLoader), classLoader)
+    resolveInputConfigDuringExecution(LoadedConfig(resolveConfigUsingDefaults(inputConfig, classLoader), inputConfig), classLoader)
   }
 
   /**
     * Same as [[resolveInputConfigDuringExecution]] but with provided param configWithDefaults containing inputConfig
     * with resolved default values.
     */
-  protected def resolveInputConfigDuringExecution(inputConfig: Config, resolvedConfigWithDefaults: Config, classLoader: ClassLoader): InputConfigDuringExecution
+  protected def resolveInputConfigDuringExecution(inputConfig: LoadedConfig, classLoader: ClassLoader): InputConfigDuringExecution
 
   /**
     * Resolves full config used inside [[pl.touk.nussknacker.engine.api.process.ProcessConfigCreator]]. Invoked both
