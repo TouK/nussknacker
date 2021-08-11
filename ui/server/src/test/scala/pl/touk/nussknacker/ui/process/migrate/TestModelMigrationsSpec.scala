@@ -119,6 +119,24 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
     getFirst[SubprocessInput](processMigrationResult).ref.parameters shouldBe List(evaluatedparam.Parameter("param42", "'foo'"))
   }
 
+  test("should migrate scenario with fragment which does not require any migrations") {
+    val testMigration = newTestModelMigrations(new TestMigrations(8))
+    val subprocess = ProcessTestData.toValidatedDisplayable(ProcessCanonizer.uncanonize(ProcessTestData.sampleSubprocessOneOut).getOrElse(null))
+    val process =
+      ProcessTestData.toValidatedDisplayable(EspProcessBuilder
+        .id("fooProcess")
+        .exceptionHandler()
+        .source("source", existingSourceFactory)
+        .subprocessOneOut("subprocess", subprocess.id, "output", "param1" -> "'foo'")
+        .emptySink("sink", existingSinkFactory))
+
+    val results = testMigration.testMigrations(List(ProcessTestData.toDetails(process)), List(ProcessTestData.toDetails(subprocess).copy(modelVersion = Some(10))))
+
+    val processMigrationResult = results.find(_.converted.id == process.id).get
+    processMigrationResult.newErrors.isOk shouldBe true
+    processMigrationResult.converted.validationResult.isOk shouldBe true
+  }
+
   private def getFirst[T: ClassTag](result: TestMigrationResult): T = {
     result.converted.nodes.collectFirst { case t: T => t }.get
   }
