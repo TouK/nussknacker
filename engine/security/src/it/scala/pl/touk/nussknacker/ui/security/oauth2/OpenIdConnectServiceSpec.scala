@@ -32,7 +32,8 @@ class OpenIdConnectServiceSpec extends FunSuite with ForAllTestContainer with Ma
   test("Basic OpenIDConnect flow") {
 
     val config = oauth2Conf
-    val open = OpenIdConnectService(config)
+    // TODO: Change to JWT then token caching will not be required.
+    val open = new CachingOAuth2Service(OpenIdConnectService(config), config)
 
     //we emulate FE part
     val loginResult = keyCloakLogin(config)
