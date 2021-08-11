@@ -7,7 +7,7 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.util.Implicits.SourceIsReleasable
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
-import pl.touk.nussknacker.ui.security.oauth2.ProfileFormat.ProfileFormat
+import pl.touk.nussknacker.ui.security.oauth2.ProfileFormat.{OIDC, ProfileFormat}
 import sttp.model.{HeaderNames, MediaType, Uri}
 
 import scala.concurrent.duration.{FiniteDuration, HOURS}
@@ -19,10 +19,10 @@ case class OAuth2Configuration(usersFile: URI,
                                clientSecret: String,
                                clientId: String,
                                profileUri: URI,
-                               profileFormat: Option[ProfileFormat],
+                               profileFormat: Option[ProfileFormat] = Some(OIDC),
                                accessTokenUri: URI,
                                redirectUri: URI,
-                               implicitGrantEnabled: Boolean,
+                               implicitGrantEnabled: Boolean = false,
                                jwt: Option[JwtConfiguration],
                                accessTokenParams: Map[String, String] = Map.empty,
                                authorizeParams: Map[String, String] = Map.empty,
@@ -72,6 +72,8 @@ trait JwtConfiguration {
   def authServerPublicKey: PublicKey
 
   def idTokenNonceVerificationRequired: Boolean
+
+  def audience: Option[String]
 }
 
 object JwtConfiguration {
@@ -85,6 +87,7 @@ object JwtConfiguration {
 
   private case class JwtConfig(accessTokenIsJwt: Boolean = false,
                                userinfoFromIdToken: Boolean = false,
+                               audience: Option[String],
                                publicKey: Option[String],
                                publicKeyFile: Option[String],
                                certificate: Option[String],

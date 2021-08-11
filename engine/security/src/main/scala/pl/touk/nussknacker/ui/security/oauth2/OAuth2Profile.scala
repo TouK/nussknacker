@@ -9,10 +9,10 @@ trait OAuth2Profile[ProfileResponse] {
 object OAuth2Profile {
   val defaultUserRole = "User"
 
-  def getUserRoles(email: Option[String], configuration: OAuth2Configuration, defaults: List[String] = List(defaultUserRole)): List[String] =
+  def getUserRoles(identity: String, configuration: OAuth2Configuration, defaults: List[String] = List(defaultUserRole)): List[String] =
     configuration
       .users
-      .find(us => email.exists(_.toLowerCase.equals(us.identity.toLowerCase)))
+      .find(us => identity.equals(us.identity))
       .map(_.roles ++ defaults)
       .getOrElse(defaults)
 }

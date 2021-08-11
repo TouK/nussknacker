@@ -1,8 +1,10 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
+import cats.data.NonEmptyList.one
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2AccessTokenRejection, OAuth2CompoundException}
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.duration.{Deadline, FiniteDuration}
@@ -20,15 +22,24 @@ class BaseOAuth2Service[
     }
   }
 
-  def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Deadline])] =
-    clientApi.profileRequest(accessToken).map((_, None))
+  final def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Deadline])] =
+    for {
+      deadline <- introspectAccessToken(accessToken)
+      userInfo <- obtainUserInfo(accessToken)
+    } yield (userInfo, deadline)
+
+  protected def introspectAccessToken(accessToken: String): Future[Option[Deadline]] =
+    Future.failed(OAuth2CompoundException(one(OAuth2AccessTokenRejection("The access token cannot be validated"))))
+
+  protected def obtainUserInfo(accessToken: String): Future[UserInfoData] =
+    clientApi.profileRequest(accessToken)
 }
 
 @ConfiguredJsonCodec case class DefaultOAuth2AuthorizationData
 (
   @JsonKey("access_token") accessToken: String,
   @JsonKey("token_type") tokenType: String,
-  @JsonKey("refresh_token") refreshToken: Option[String],
+  @JsonKey("refresh_token") refreshToken: Option[String] = None,
   @JsonKey("expires_in") expirationPeriod: Option[FiniteDuration] = None
 ) extends OAuth2AuthorizationData
 

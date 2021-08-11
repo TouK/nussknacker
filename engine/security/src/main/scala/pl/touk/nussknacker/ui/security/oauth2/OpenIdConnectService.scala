@@ -5,8 +5,9 @@ import io.circe.Decoder
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
 import sttp.client.{NothingT, SttpBackend}
 
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{Deadline, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Success
 
 trait OpenIdConnectAuthorizationData extends OAuth2AuthorizationData {
   val idToken: Option[String]
@@ -26,13 +27,15 @@ class OpenIdConnectService[
   protected val useIdToken: Boolean = configuration.jwt.exists(_.userinfoFromIdToken)
 
   override def obtainAuthorizationAndUserInfo(authorizationCode: String): Future[(AuthorizationData, Option[UserData])] = {
-    clientApi.accessTokenRequest(authorizationCode).flatMap { authorization =>
-      val userInfoFromIdToken: Option[UserData] =
-        authorization.idToken.filter(_ => useIdToken).flatMap(introspectToken[UserData])
-      userInfoFromIdToken.map(Future(_))
-        .getOrElse(clientApi.profileRequest(authorization.accessToken))
-        .map(userInfo => (authorization, Some(userInfo)))
-    }
+    clientApi.accessTokenRequest(authorizationCode)
+      .andThen { case Success(authorization) if accessTokenIsJwt => introspectAccessToken(authorization.accessToken) }
+      .flatMap { authorization =>
+        (if (useIdToken) {
+          introspectJwtToken[UserData](authorization.idToken.get)
+        } else {
+          clientApi.profileRequest(authorization.accessToken)
+        }).map(userInfo => (authorization, Some(userInfo)))
+      }
   }
 }
 
@@ -40,7 +43,7 @@ class OpenIdConnectService[
 (
   @JsonKey("access_token") accessToken: String,
   @JsonKey("token_type") tokenType: String,
-  @JsonKey("refresh_token") refreshToken: Option[String],
+  @JsonKey("refresh_token") refreshToken: Option[String] = None,
   @JsonKey("expires_in") expirationPeriod: Option[FiniteDuration] = None,
   @JsonKey("id_token") idToken: Option[String] = None
 ) extends OpenIdConnectAuthorizationData
