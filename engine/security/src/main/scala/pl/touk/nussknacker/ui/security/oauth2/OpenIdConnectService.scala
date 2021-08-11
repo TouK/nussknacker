@@ -30,11 +30,13 @@ class OpenIdConnectService[
     clientApi.accessTokenRequest(authorizationCode)
       .andThen { case Success(authorization) if accessTokenIsJwt => introspectAccessToken(authorization.accessToken) }
       .flatMap { authorization =>
-        (if (useIdToken) {
-          introspectJwtToken[UserData](authorization.idToken.get)
-        } else {
-          clientApi.profileRequest(authorization.accessToken)
-        }).map(userInfo => (authorization, Some(userInfo)))
+        val eventualUserInfo =
+          if (useIdToken) {
+            introspectJwtToken[UserData](authorization.idToken.get)
+          } else {
+            clientApi.profileRequest(authorization.accessToken)
+          }
+        eventualUserInfo.map(userInfo => (authorization, Some(userInfo)))
       }
   }
 }

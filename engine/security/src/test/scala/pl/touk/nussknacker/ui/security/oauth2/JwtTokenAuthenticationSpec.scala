@@ -23,28 +23,26 @@ class JwtTokenAuthenticationSpec extends FunSpec with Matchers with ScalatestRou
   implicit val clock: Clock = Clock.systemUTC()
 
   private val keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair()
+  private val userinfoUri = Uri(URI.create("http://authorization.server/userinfo"))
+  private val audience = "http://nussknacker"
 
   private val config = ConfigFactory.parseString(
-    s"""
-        authentication: {
-          method: "OAuth2"
-          usersFile: "classpath:oauth2-users.conf"
-          authorizeUri: "http://ignored"
-          clientSecret: "ignored"
-          clientId: "ignored"
-          profileUri: "http://authorization.server/userinfo"
-          accessTokenUri: "http://authorization.server/token"
-          redirectUri: "http://ignored"
-          jwt: {
-            accessTokenIsJwt: true
-            publicKey: "${Base64.getEncoder.encodeToString(keyPair.getPublic.getEncoded)}"
-            audience: "http://nussknacker"
-          }
-        }
-      """.stripMargin)
-
-  private val userinfoUri = Uri(URI.create(config.getString("authentication.profileUri")))
-  private val audience = config.getString("authentication.jwt.audience")
+    s"""authentication: {
+       |  method: "OAuth2"
+       |  usersFile: "classpath:oauth2-users.conf"
+       |  authorizeUri: "http://ignored"
+       |  clientSecret: "ignored"
+       |  clientId: "ignored"
+       |  profileUri: "${userinfoUri}"
+       |  profileFormat: "oidc"
+       |  accessTokenUri: "http://authorization.server/token"
+       |  redirectUri: "http://ignored"
+       |  jwt: {
+       |    accessTokenIsJwt: true
+       |    publicKey: "${Base64.getEncoder.encodeToString(keyPair.getPublic.getEncoded)}"
+       |    audience: "${audience}"
+       |  }
+       |}""".stripMargin)
 
   private val validAccessToken = JwtCirce.encode(JwtClaim().about("admin").to(audience).expiresIn(180), keyPair.getPrivate, JwtAlgorithm.RS256)
   private val accessTokenWithInvalidAudience = JwtCirce.encode(JwtClaim().about("admin").to("invalid").expiresIn(180), keyPair.getPrivate, JwtAlgorithm.RS256)

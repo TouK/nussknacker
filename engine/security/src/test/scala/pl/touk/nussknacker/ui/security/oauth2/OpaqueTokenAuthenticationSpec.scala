@@ -16,22 +16,21 @@ import java.net.URI
 
 class OpaqueTokenAuthenticationSpec extends FunSpec with Matchers with ScalatestRouteTest with Directives with FailFastCirceSupport {
 
-  private val config = ConfigFactory.parseString(
-    s"""
-        authentication: {
-          method: "OAuth2"
-          usersFile: "classpath:oauth2-users.conf"
-          authorizeUri: "http://ignored"
-          clientSecret: "ignored"
-          clientId: "ignored"
-          profileUri: "http://authorization.server/userinfo"
-          accessTokenUri: "http://authorization.server/token"
-          redirectUri: "http://ignored"
-        }
-      """.stripMargin)
+  private val tokenUri = Uri(URI.create("http://authorization.server/token"))
+  private val userinfoUri = Uri(URI.create("http://authorization.server/userinfo"))
 
-  private val tokenUri = Uri(URI.create(config.getString("authentication.accessTokenUri")))
-  private val userinfoUri = Uri(URI.create(config.getString("authentication.profileUri")))
+  private val config = ConfigFactory.parseString(
+    s"""authentication: {
+       |  method: "OAuth2"
+       |  usersFile: "classpath:oauth2-users.conf"
+       |  authorizeUri: "http://ignored"
+       |  clientSecret: "ignored"
+       |  clientId: "ignored"
+       |  profileUri: "${userinfoUri}"
+       |  profileFormat: "oidc"
+       |  accessTokenUri: "${tokenUri}"
+       |  redirectUri: "http://ignored"
+       |}""".stripMargin)
 
   private val validAccessToken = "aValidAccessToken"
   implicit private val testingBackend: RecordingSttpBackend = new RecordingSttpBackend(SttpBackendStub.asynchronousFuture[Nothing]
