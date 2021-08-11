@@ -248,6 +248,8 @@ object TypeInfos {
     def getPropertyOrFieldType(methodName: String): Option[TypingResult] = {
       val filtered = methods.get(methodName).toList
         .flatMap(_.filter(_.parameters.isEmpty))
+        .map(_.refClazz) ++ staticMethods.get(methodName).toList
+        .flatMap(_.filter(_.parameters.isEmpty))
         .map(_.refClazz)
       filtered match {
         case Nil => None

@@ -21,6 +21,8 @@ import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
+import java.time.Instant
+
 class DelayedKafkaAvroIntegrationSpec extends FunSuite with KafkaAvroSpecMixin with BeforeAndAfter  {
 
   private lazy val creator: ProcessConfigCreator = new DelayedAvroProcessConfigCreator {
@@ -100,7 +102,7 @@ class DelayedKafkaAvroIntegrationSpec extends FunSuite with KafkaAvroSpecMixin w
         s"$TimestampFieldParamName" -> s"${timestampField}",
         s"$DelayParameterName" -> s"${delay}"
       )
-      .sink("out", "T(java.lang.System).currentTimeMillis()", "sinkForLongs")
+      .sink("out", "T(java.time.Instant).now().toEpochMilli()", "sinkForLongs")
   }
 
 }
@@ -122,4 +124,7 @@ class DelayedAvroProcessConfigCreator extends KafkaAvroTestProcessConfigCreator 
     )
   }
 
+  override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
+    super.expressionConfig(processObjectDependencies).copy(additionalClasses = List(classOf[Instant]))
+  }
 }

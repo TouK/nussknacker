@@ -38,7 +38,7 @@ package object definition {
       customStreamTransformers ++ signalsWithTransformers ++ globalVariables ++ subprocessInputs
   }
 
-  @JsonCodec(encodeOnly = true) case class UIClazzDefinition(clazzName: TypingResult, methods: Map[String, MethodInfo])
+  @JsonCodec(encodeOnly = true) case class UIClazzDefinition(clazzName: TypingResult, methods: Map[String, MethodInfo], staticMethods: Map[String, MethodInfo])
 
   @JsonCodec(encodeOnly = true) case class UIParameter(name: String,
                                                        typ: TypingResult,
