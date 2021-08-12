@@ -10,19 +10,21 @@ export type NodeType = {
   isSubprocess?: boolean,
   isDisabled?: boolean,
   additionalFields?: {
-    description: $TodoType,
+    description: string,
     layoutData?: LayoutData,
     groups?: GroupType[],
     properties: {
       layout?: string,
     },
   },
+  parameters?: Parameter[],
   branchParameters?: $TodoType,
   branchParametersTemplate?: $TodoType,
   ref?: $TodoType,
   varName?: string,
   value?: $TodoType,
   fields?: Array<Field>,
+  outputName?: string
 }
 
 export type Field = {

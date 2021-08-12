@@ -2,6 +2,7 @@ import {Edge} from "./edge"
 import {NodeType} from "./node"
 import {ValidationResult} from "./validation"
 import {EditorProps} from "../components/graph/node-modal/editors/expression/Editor"
+import {TypingResult} from "./definition";
 
 export type Process = {
   id: string,
@@ -45,4 +46,13 @@ export type ProcessDefinitionData = {
   processDefinition?: $TodoType,
   customActions?: Array<CustomAction>,
   defaultAsyncInterpretation?: boolean,
+}
+
+export type ProcessDefinition = {
+  typesInformation: ClassDefinition[]
+}
+
+export type ClassDefinition = {
+  clazzName: TypingResult,
+  methods: Record<string, $TodoType>
 }
