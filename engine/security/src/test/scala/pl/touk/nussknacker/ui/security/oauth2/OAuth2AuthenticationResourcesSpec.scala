@@ -46,7 +46,7 @@ class OAuth2AuthenticationResourcesSpec extends FunSpec with Matchers with Scala
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespond(""" {"access_token": "AH4k6h6KuYaLGfTCdbPayK8HzfM4atZm", "token_type": "Bearer", "refresh_token": "yFLU8w5VZtqjYrdpD5K9s27JZdJuCRrL"} """)
       .whenRequestMatches(_.uri.equals(Uri(config.profileUri)))
-      .thenRespond(""" { "id": "1", "email": "some@email.com" } """)
+      .thenRespond(""" { "id": "1", "login": "aUser", "email": "some@email.com" } """)
 
 
     new OAuth2AuthenticationResources(realm, DefaultOAuth2ServiceFactory.service(config), config)

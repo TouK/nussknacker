@@ -14,7 +14,7 @@ trait OAuth2AuthorizationData {
 }
 
 trait OAuth2Service[+UserInfoData, +AuthorizationData <: OAuth2AuthorizationData] {
-  def obtainAuthorizationAndUserInfo(authorizationCode: String): Future[(AuthorizationData, Option[UserInfoData])]
+  def obtainAuthorizationAndUserInfo(authorizationCode: String): Future[(AuthorizationData, UserInfoData)]
   def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Deadline])]
 }
 

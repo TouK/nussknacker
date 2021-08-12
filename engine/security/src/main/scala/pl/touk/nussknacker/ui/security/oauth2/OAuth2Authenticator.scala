@@ -4,7 +4,7 @@ import akka.http.scaladsl.server.directives.Credentials.Provided
 import akka.http.scaladsl.server.directives.{Credentials, SecurityDirectives}
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.ui.security.api.{AuthenticatedUser, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -24,7 +24,10 @@ class OAuth2Authenticator(configuration: OAuth2Configuration, service: OAuth2Ser
 
   private[oauth2] def authenticate(token: String): Future[Option[AuthenticatedUser]] =
     service.checkAuthorizationAndObtainUserinfo(token).map(prf => Option(prf._1)).recover {
-      case OAuth2ErrorHandler(_) => Option.empty // Expired or non-exists token - user not authenticated
+      case OAuth2ErrorHandler(ex) => {
+        logger.debug("Access token rejected:", ex)
+        Option.empty // Expired or non-exists token - user not authenticated
+      }
     }
 }
 

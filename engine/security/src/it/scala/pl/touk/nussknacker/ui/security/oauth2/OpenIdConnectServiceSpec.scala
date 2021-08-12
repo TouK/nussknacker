@@ -32,14 +32,15 @@ class OpenIdConnectServiceSpec extends FunSuite with ForAllTestContainer with Ma
   test("Basic OpenIDConnect flow") {
 
     val config = oauth2Conf
-    val open = OpenIdConnectService(config)
+    // TODO: Change to JWT then token caching will not be required.
+    val open = new CachingOAuth2Service(OpenIdConnectService(config), config)
 
     //we emulate FE part
     val loginResult = keyCloakLogin(config)
     val authorizationCode = uri"${loginResult.header("Location").get}".params.get("code").get
 
     val (authData, userData) = open.obtainAuthorizationAndUserInfo(authorizationCode).futureValue
-    userData.get.name shouldBe Some("Jan Kowalski")
+    userData.name shouldBe Some("Jan Kowalski")
 
     val profile = open.checkAuthorizationAndObtainUserinfo(authData.accessToken).futureValue
     profile._1.name shouldBe Some("Jan Kowalski")

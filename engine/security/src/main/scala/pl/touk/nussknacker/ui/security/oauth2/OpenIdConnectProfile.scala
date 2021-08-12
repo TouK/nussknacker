@@ -3,12 +3,12 @@ package pl.touk.nussknacker.ui.security.oauth2
 import java.time.LocalDate
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
 import io.circe.java8.time.{JavaTimeDecoders, JavaTimeEncoders}
-import pl.touk.nussknacker.ui.security.api.{AuthenticatedUser, LoggedUser, RulesSet}
+import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2Profile.getUserRoles
 
 import scala.concurrent.duration.Deadline
 
-@ConfiguredJsonCodec case class OpenIdConnectUserInfo
+@ConfiguredJsonCodec(decodeOnly = true) case class OpenIdConnectUserInfo
 (
   // Although the `sub` field is optional claim for a JWT, it becomes mandatory in OIDC context,
   // hence Some[] overrides here Option[] from JwtStandardClaims.
@@ -35,7 +35,7 @@ import scala.concurrent.duration.Deadline
   @JsonKey("updated_at") updatedAt: Option[Deadline],
 
   @JsonKey("iss") issuer: Option[String],
-  @JsonKey("aud") audition: Option[List[String]],
+  @JsonKey("aud") audience: Option[Either[List[String], String]],
 
   // All the following are set only when the userinfo is from an ID token
   @JsonKey("exp") expirationTime: Option[Deadline],
@@ -46,13 +46,13 @@ import scala.concurrent.duration.Deadline
   val notBefore: Option[Deadline] = None
 }
 
-object OpenIdConnectUserInfo extends EpochSecondsCodecs with JavaTimeDecoders with JavaTimeEncoders {
+object OpenIdConnectUserInfo extends EpochSecondsCodecs with JavaTimeDecoders with JavaTimeEncoders with EitherCodecs {
   implicit val config: Configuration = Configuration.default
 }
 
 object OpenIdConnectProfile extends OAuth2Profile[OpenIdConnectUserInfo] {
   def getAuthenticatedUser(profile: OpenIdConnectUserInfo, configuration: OAuth2Configuration): AuthenticatedUser = {
-    val userRoles = getUserRoles(profile.email, configuration)
+    val userRoles = getUserRoles(profile.subject.get, configuration)
     val username = profile.preferredUsername.orElse(profile.nickname).orElse(profile.subject).get
     AuthenticatedUser(id = profile.subject.get, username = username, userRoles)
   }

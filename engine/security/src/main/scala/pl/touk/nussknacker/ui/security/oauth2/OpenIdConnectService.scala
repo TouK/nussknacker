@@ -13,25 +13,23 @@ trait OpenIdConnectAuthorizationData extends OAuth2AuthorizationData {
 }
 
 class OpenIdConnectService[
-  UserData: Decoder,
+  UserData <: JwtStandardClaims: Decoder,
   AuthorizationData <: OpenIdConnectAuthorizationData : Decoder,
-  JwtClaims <: JwtStandardClaims : Decoder
+  AccessTokenClaims <: JwtStandardClaims : Decoder
 ](clientApi: OAuth2ClientApi[UserData, AuthorizationData],
   configuration: OAuth2Configuration)
  (implicit ec: ExecutionContext)
-  extends JwtOAuth2Service[UserData, AuthorizationData, JwtClaims](
+  extends JwtOAuth2Service[UserData, AuthorizationData, AccessTokenClaims](
     clientApi, configuration)
     with LazyLogging {
 
   protected val useIdToken: Boolean = configuration.jwt.exists(_.userinfoFromIdToken)
 
-  override def obtainAuthorizationAndUserInfo(authorizationCode: String): Future[(AuthorizationData, Option[UserData])] = {
-    clientApi.accessTokenRequest(authorizationCode).flatMap { authorization =>
-      val userInfoFromIdToken: Option[UserData] =
-        authorization.idToken.filter(_ => useIdToken).flatMap(introspectToken[UserData])
-      userInfoFromIdToken.map(Future(_))
-        .getOrElse(clientApi.profileRequest(authorization.accessToken))
-        .map(userInfo => (authorization, Some(userInfo)))
+  override protected def obtainUserInfo(authorization: AuthorizationData): Future[UserData] = {
+    if (useIdToken) {
+      introspectJwtToken[UserData](authorization.idToken.get)
+    } else {
+      super.obtainUserInfo(authorization)
     }
   }
 }
@@ -40,7 +38,7 @@ class OpenIdConnectService[
 (
   @JsonKey("access_token") accessToken: String,
   @JsonKey("token_type") tokenType: String,
-  @JsonKey("refresh_token") refreshToken: Option[String],
+  @JsonKey("refresh_token") refreshToken: Option[String] = None,
   @JsonKey("expires_in") expirationPeriod: Option[FiniteDuration] = None,
   @JsonKey("id_token") idToken: Option[String] = None
 ) extends OpenIdConnectAuthorizationData
