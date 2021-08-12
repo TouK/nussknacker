@@ -12,7 +12,7 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "1.0.1")
 
 addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.2")
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.5.2")
+addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.1")
 
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.5.1")
 
