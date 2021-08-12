@@ -70,6 +70,13 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     }
   }
 
+  private def parseOrFailWithMethodExecutionForUnknown[T:TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard) : Expression = {
+    parseWithMethodExecutionForUnknown(expr, context, flavour) match {
+      case Valid(e) => e.expression
+      case Invalid(err) => throw new ParseException(err.map(_.message).toList.mkString, -1)
+    }
+  }
+
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
@@ -78,6 +85,13 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
       context.variables.mapValuesNow(Typed.fromInstance))
     parse(expr, validationCtx, dictionaries, Standard, strictMethodsChecking = true, staticMethodInvocationsChecking = true, methodExecutionForUnknownAllowed = false,
       dynamicPropertyAccessAllowed = false)
+  }
+
+  private def parseWithMethodExecutionForUnknown[T: TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard): ValidatedNel[ExpressionParseError, TypedExpression] = {
+    val validationCtx = ValidationContext(
+      context.variables.mapValuesNow(Typed.fromInstance))
+    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = true, staticMethodInvocationsChecking = true, methodExecutionForUnknownAllowed = true,
+        dynamicPropertyAccessAllowed = true)
   }
 
   private def parseWithoutStrictMethodsChecking[T: TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard): ValidatedNel[ExpressionParseError, TypedExpression] = {
@@ -89,7 +103,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   private def parse[T: TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val validationCtx = ValidationContext(
       context.variables.mapValuesNow(Typed.fromInstance))
-    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = true, staticMethodInvocationsChecking = true, methodExecutionForUnknownAllowed = true,
+    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = true, staticMethodInvocationsChecking = true, methodExecutionForUnknownAllowed = false,
       dynamicPropertyAccessAllowed = true)
   }
 
@@ -293,7 +307,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   test("stop validation when property of Any/Object type found") {
     val ctxWithVar = ctx.withVariable("obj", SampleValue(11))
-    parse[Any]("#obj.anyObject.anyPropertyShouldValidate", ctxWithVar) shouldBe 'valid
+    parseWithMethodExecutionForUnknown[Any]("#obj.anyObject.anyPropertyShouldValidate", ctxWithVar) shouldBe 'valid
   }
 
   test("allow empty expression") {
@@ -502,7 +516,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   test("resolve imported package") {
     val givenValue = 123
-    parseOrFail[Int](s"new SampleValue($givenValue, '').value").evaluateSync[Int](ctx) should equal(givenValue)
+    parseOrFailWithMethodExecutionForUnknown[Int](s"new SampleValue($givenValue, '').value").evaluateSync[Int](ctx) should equal(givenValue)
   }
 
   test("parse typed map with existing field") {

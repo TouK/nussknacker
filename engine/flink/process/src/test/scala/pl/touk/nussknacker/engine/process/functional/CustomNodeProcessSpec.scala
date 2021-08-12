@@ -46,7 +46,7 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
     val data = List(SimpleRecord("1", 3, "a", new Date(0)))
 
     //without certain hack (see SpelHack & SpelMapHack) this throws exception.
-    processInvoker.invokeWithSampleData(process, data)
+    processInvoker.invokeWithSampleDataPrepared(process, ProcessTestHelpers.prepareCreatorWithUnknown(data))
   }
 
   test("fire alert when aggregate threshold exceeded") {
