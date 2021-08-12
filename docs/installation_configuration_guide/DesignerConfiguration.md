@@ -222,6 +222,7 @@ authentication: {
   jwt {
     accessTokenIsJwt: ${?OAUTH2_ACCESS_TOKEN_IS_JWT} (default: false)
     userinfoFromIdToken: ${?OAUTH2_USERINFO_FROM_ID_TOKEN} (default: false)
+    audience: ${?OAUTH2_JWT_AUDIENCE}
     publicKey: ${?OAUTH2_JWT_AUTH_SERVER_PUBLIC_KEY}
     publicKeyFile: ${?OAUTH2_JWT_AUTH_SERVER_PUBLIC_KEY_FILE}
     certificate: ${?OAUTH2_JWT_AUTH_SERVER_CERTIFICATE}
@@ -256,8 +257,14 @@ By default access token request is sent using `application/json` content type, t
 to `application/x-www-form-urlencoded`) use `accessTokenRequestContentType` config.
 
 Subconfig `jwt` is also optional. However, if it is present and `enabled` is set to
-true, `idTokenNonceVerificationRequired` and one of the `publicKey`, `publicKeyFile`, `certificate`, `certificateFile`
+true, the `audience` and one of the `publicKey`, `publicKeyFile`, `certificate`, `certificateFile`, 
 fields have to be provided.
+
+Access tokens are introspected only once and then stored in a cache for the expiration time.
+When using JWT, an incoming access token is validated against its signature and `aud`(audience) claim.
+Otherwise, a token is considered valid when it allows a `profileUri` (e.g. `/userinfo`)  query.
+No token refreshing nor revoking is implemented.
+
 
 #### Remarks:
 

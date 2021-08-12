@@ -14,9 +14,11 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse], configuration: OAuth2Configuration)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]) extends OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData] with LazyLogging {
 
-
-  def obtainAuthorizationAndUserInfo(authorizationCode: String): Future[(OAuth2AuthorizationData, Option[AuthenticatedUser])] =
-    clientApi.accessTokenRequest(authorizationCode).map((_, None))
+  def obtainAuthorizationAndUserInfo(authorizationCode: String): Future[(OAuth2AuthorizationData, AuthenticatedUser)] =
+    for {
+      accessTokenResponse <- clientApi.accessTokenRequest(authorizationCode)
+      authenticatedUser <- checkAuthorizationAndObtainUserinfo(accessTokenResponse.accessToken).map(_._1)
+    } yield (accessTokenResponse, authenticatedUser)
 
   def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(AuthenticatedUser, Option[Deadline])] =
     clientApi.profileRequest(accessToken).map{ prf: TestProfileResponse =>

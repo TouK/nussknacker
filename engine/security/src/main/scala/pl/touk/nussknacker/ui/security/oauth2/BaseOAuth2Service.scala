@@ -16,10 +16,11 @@ class BaseOAuth2Service[
 ](protected val clientApi: OAuth2ClientApi[UserInfoData, AuthorizationData])
  (implicit ec: ExecutionContext) extends OAuth2Service[UserInfoData, AuthorizationData] with LazyLogging {
 
-  def obtainAuthorizationAndUserInfo(authorizationCode: String): Future[(AuthorizationData, Option[UserInfoData])] = {
-    clientApi.accessTokenRequest(authorizationCode).flatMap { authorizationData =>
-      clientApi.profileRequest(authorizationData.accessToken).map(Some(_)).map((authorizationData, _))
-    }
+  final def obtainAuthorizationAndUserInfo(authorizationCode: String): Future[(AuthorizationData, UserInfoData)] = {
+    for {
+      authorizationData <- obtainAuthorization(authorizationCode)
+      userInfo <- obtainUserInfo(authorizationData)
+    } yield (authorizationData, userInfo)
   }
 
   final def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Deadline])] =
@@ -28,8 +29,25 @@ class BaseOAuth2Service[
       userInfo <- obtainUserInfo(accessToken)
     } yield (userInfo, deadline)
 
-  protected def introspectAccessToken(accessToken: String): Future[Option[Deadline]] =
+  protected def obtainAuthorization(authorizationCode: String): Future[AuthorizationData] =
+    clientApi.accessTokenRequest(authorizationCode)
+
+  /*
+  Override this method in a subclass making use of signed tokens or an introspection endpoint
+  or use a CachingOAuthService wrapper so that only previously-stored (immediately after retrieval) tokens are accepted
+  or do both.
+  */
+  protected def introspectAccessToken(accessToken: String): Future[Option[Deadline]] = {
     Future.failed(OAuth2CompoundException(one(OAuth2AccessTokenRejection("The access token cannot be validated"))))
+  }
+
+  /*
+  OAuth2 itself is not an authentication framework. However, we can treat it so. All we need is a restricted resource
+  that provides information about a user only with his valid access token.
+  The following two methods shall call such a resource.
+   */
+  protected def obtainUserInfo(authorizationData: AuthorizationData): Future[UserInfoData] =
+    obtainUserInfo(authorizationData.accessToken)
 
   protected def obtainUserInfo(accessToken: String): Future[UserInfoData] =
     clientApi.profileRequest(accessToken)

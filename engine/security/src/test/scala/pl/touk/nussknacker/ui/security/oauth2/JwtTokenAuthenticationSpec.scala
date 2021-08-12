@@ -50,6 +50,7 @@ class JwtTokenAuthenticationSpec extends FunSpec with Matchers with ScalatestRou
   implicit private val testingBackend: RecordingSttpBackend = new RecordingSttpBackend(SttpBackendStub.asynchronousFuture[Nothing]
     .whenRequestMatches(_.uri.equals(userinfoUri))
     .thenRespond(s""" { "sub": "admin" } """))
+     // See classpath:oauth2-users.conf for the roles defined for user admin.
 
   private val classLoader = getClass.getClassLoader
 

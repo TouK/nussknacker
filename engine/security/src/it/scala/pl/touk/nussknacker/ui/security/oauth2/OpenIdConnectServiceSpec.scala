@@ -40,7 +40,7 @@ class OpenIdConnectServiceSpec extends FunSuite with ForAllTestContainer with Ma
     val authorizationCode = uri"${loginResult.header("Location").get}".params.get("code").get
 
     val (authData, userData) = open.obtainAuthorizationAndUserInfo(authorizationCode).futureValue
-    userData.get.name shouldBe Some("Jan Kowalski")
+    userData.name shouldBe Some("Jan Kowalski")
 
     val profile = open.checkAuthorizationAndObtainUserinfo(authData.accessToken).futureValue
     profile._1.name shouldBe Some("Jan Kowalski")

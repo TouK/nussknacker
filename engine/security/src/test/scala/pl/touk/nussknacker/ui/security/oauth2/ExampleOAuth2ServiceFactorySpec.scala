@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.security.oauth2
 import io.circe.Json
 import org.scalatest.{FlatSpec, Matchers, Suite}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.security.oauth2.ExampleOAuth2ServiceFactory.TestAccessTokenResponse
+import pl.touk.nussknacker.ui.security.oauth2.ExampleOAuth2ServiceFactory.{TestAccessTokenResponse, TestProfileClearanceResponse, TestProfileResponse}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2CompoundException, OAuth2ServerError}
 import sttp.client.Response
 import sttp.client.testing.SttpBackendStub
@@ -28,23 +28,22 @@ class ExampleOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
     ExampleOAuth2ServiceFactory.service(config)
   }
 
-  def createDefaultServiceMock(body: Json, uri: URI) = {
+  it should ("properly parse data from authentication") in {
+    val tokenResponse = TestAccessTokenResponse(accessToken = "9IDpWSEYetSNRX41", tokenType = "Bearer")
+    val userInfo = TestProfileResponse("some@e.mail", "uid", TestProfileClearanceResponse(List("User")))
     implicit val testingBackend = SttpBackendStub
       .asynchronousFuture
-      .whenRequestMatches(_.uri.equals(Uri(uri)))
-      .thenRespond(body.toString)
+      .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
+      .thenRespond(tokenResponse.asJson.toString)
+      .whenRequestMatches(_.uri.equals(Uri(config.profileUri)))
+      .thenRespond(userInfo.asJson.toString)
+    val service = ExampleOAuth2ServiceFactory.service(config)
 
-      ExampleOAuth2ServiceFactory.service(config)
-  }
-
-  it should ("properly parse data from authentication") in {
-    val body = TestAccessTokenResponse(accessToken = "9IDpWSEYetSNRX41", tokenType = "Bearer")
-    val service = createDefaultServiceMock(body.asJson, config.accessTokenUri)
     val (data, _) = service.obtainAuthorizationAndUserInfo("6V1reBXblpmfjRJP").futureValue
 
     data shouldBe a[OAuth2AuthorizationData]
-    data.accessToken shouldBe body.accessToken
-    data.tokenType shouldBe body.tokenType
+    data.accessToken shouldBe tokenResponse.accessToken
+    data.tokenType shouldBe tokenResponse.tokenType
   }
 
   it should ("handling BadRequest response from authenticate request") in {

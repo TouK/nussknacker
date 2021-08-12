@@ -5,39 +5,32 @@ import io.circe.Decoder
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
 import sttp.client.{NothingT, SttpBackend}
 
-import scala.concurrent.duration.{Deadline, FiniteDuration}
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Success
 
 trait OpenIdConnectAuthorizationData extends OAuth2AuthorizationData {
   val idToken: Option[String]
 }
 
 class OpenIdConnectService[
-  UserData: Decoder,
+  UserData <: JwtStandardClaims: Decoder,
   AuthorizationData <: OpenIdConnectAuthorizationData : Decoder,
-  JwtClaims <: JwtStandardClaims : Decoder
+  AccessTokenClaims <: JwtStandardClaims : Decoder
 ](clientApi: OAuth2ClientApi[UserData, AuthorizationData],
   configuration: OAuth2Configuration)
  (implicit ec: ExecutionContext)
-  extends JwtOAuth2Service[UserData, AuthorizationData, JwtClaims](
+  extends JwtOAuth2Service[UserData, AuthorizationData, AccessTokenClaims](
     clientApi, configuration)
     with LazyLogging {
 
   protected val useIdToken: Boolean = configuration.jwt.exists(_.userinfoFromIdToken)
 
-  override def obtainAuthorizationAndUserInfo(authorizationCode: String): Future[(AuthorizationData, Option[UserData])] = {
-    clientApi.accessTokenRequest(authorizationCode)
-      .andThen { case Success(authorization) if accessTokenIsJwt => introspectAccessToken(authorization.accessToken) }
-      .flatMap { authorization =>
-        val eventualUserInfo =
-          if (useIdToken) {
-            introspectJwtToken[UserData](authorization.idToken.get)
-          } else {
-            clientApi.profileRequest(authorization.accessToken)
-          }
-        eventualUserInfo.map(userInfo => (authorization, Some(userInfo)))
-      }
+  override protected def obtainUserInfo(authorization: AuthorizationData): Future[UserData] = {
+    if (useIdToken) {
+      introspectJwtToken[UserData](authorization.idToken.get)
+    } else {
+      super.obtainUserInfo(authorization)
+    }
   }
 }
 

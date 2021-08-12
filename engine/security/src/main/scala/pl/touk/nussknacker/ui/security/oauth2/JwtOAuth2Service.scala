@@ -10,6 +10,7 @@ import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2AccessTo
 
 import scala.concurrent.duration.Deadline
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Success
 
 trait JwtStandardClaims {
   val issuer: Option[String]
@@ -24,7 +25,7 @@ trait JwtStandardClaims {
 class JwtOAuth2Service[
   UserInfoData: Decoder,
   AuthorizationData <: OAuth2AuthorizationData : Decoder,
-  JwtClaims <: JwtStandardClaims : Decoder
+  AccessTokenClaims <: JwtStandardClaims : Decoder
 ](clientApi: OAuth2ClientApi[UserInfoData, AuthorizationData],
   configuration: OAuth2Configuration)
  (implicit ec: ExecutionContext)
@@ -45,7 +46,7 @@ class JwtOAuth2Service[
   override def introspectAccessToken(accessToken: String): Future[Option[Deadline]] = {
     if (accessTokenIsJwt) {
       Future(accessToken)
-        .flatMap(accessToken => introspectJwtToken[JwtClaims](accessToken))
+        .flatMap(accessToken => introspectJwtToken[AccessTokenClaims](accessToken))
         .flatMap(claims =>
           if (claims.audience.exists(_.contains(tokenAudience.get)))
             Future.successful(claims.expirationTime)
@@ -56,6 +57,10 @@ class JwtOAuth2Service[
       super.introspectAccessToken(accessToken)
     }
   }
+
+  override protected def obtainAuthorization(authorizationCode: String): Future[AuthorizationData] =
+    clientApi.accessTokenRequest(authorizationCode)
+      .andThen { case Success(authorization) if accessTokenIsJwt => introspectAccessToken(authorization.accessToken) }
 }
 
 @ConfiguredJsonCodec(decodeOnly = true) case class DefaultJwtAccessToken
