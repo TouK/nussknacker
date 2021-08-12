@@ -13,7 +13,7 @@ case object PreviousValueTransformer extends CustomStreamTransformer with Explic
   type Value = AnyRef
 
   @MethodToInvoke(returnType = classOf[Value])
-  def execute(@ParamName("gropuBy") groupBy: LazyParameter[CharSequence],
+  def execute(@ParamName("groupBy") groupBy: LazyParameter[CharSequence],
               @ParamName("value") value: LazyParameter[Value])
   = FlinkCustomStreamTransformation((start: DataStream[Context], ctx: FlinkCustomNodeContext) =>
     setUidToNodeIdIfNeed(ctx,

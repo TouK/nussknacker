@@ -4,9 +4,10 @@ import Moment from "moment"
 import * as  queryString from "query-string"
 import {ParseOptions} from "query-string"
 import {NodeId} from "../types"
+import {BASE_PATH} from "../config";
 
-export const visualizationBasePath = `/visualization`
-export const visualizationPath = `${visualizationBasePath}/:processId`
+export const visualizationBasePath = `visualization`
+export const visualizationPath = `/${visualizationBasePath}/:processId`
 
 function nodeIdPart(nodeId): string {
   return `?nodeId=${encodeURIComponent(nodeId)}`
@@ -26,8 +27,14 @@ function fromTimestampOrDate(tsOrDate) {
   return Moment(tsOrDate)
 }
 
-export function visualizationUrl(processName: string, nodeId?: NodeId, edgeId?: NodeId) {
+export function processNodeUrl(processName: string, nodeId: NodeId) {
   const baseUrl = `${visualizationBasePath}/${encodeURIComponent(processName)}`
+  const nodeIdUrlPart = nodeIdPart(nodeId)
+  return BASE_PATH + baseUrl + nodeIdUrlPart
+}
+
+export function visualizationUrl(processName: string, nodeId?: NodeId, edgeId?: NodeId) {
+  const baseUrl = `/${visualizationBasePath}/${encodeURIComponent(processName)}`
   const nodeIdUrlPart = nodeId && edgeId == null ? nodeIdPart(nodeId) : ""
   const edgeIdUrlPart = edgeId && nodeId == null ? edgeIdPart(edgeId) : ""
   return baseUrl + nodeIdUrlPart + edgeIdUrlPart

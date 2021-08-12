@@ -58,7 +58,7 @@ class ProcessModelMigratorSpec extends FlatSpec with BeforeAndAfterEach with Pat
 
   private def migrateByVersionsOpt(startFrom: Option[Int], migrations: Int*) : Option[MigrationResult] =
     migrator(migrations: _*).migrateProcess(
-      ProcessTestData.toDetails(ProcessTestData.validDisplayableProcess.toDisplayable).copy(modelVersion = startFrom))
+      ProcessTestData.toDetails(ProcessTestData.validDisplayableProcess.toDisplayable).copy(modelVersion = startFrom), skipEmptyMigrations = true)
 
   private def extractProcessor(migrationResult: MigrationResult) = {
     val service = for {
