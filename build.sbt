@@ -284,7 +284,8 @@ lazy val commonDockerSettings = {
       val latestBranch = Some(currentBranch + "-latest")
 
       List(dockerVersion, updateLatest, latestBranch, dockerTagName)
-        .map(tag => alias.withTag(tag.map(sanitize)))
+        .flatten
+        .map(tag => alias.withTag(Some(sanitize(tag))))
         .distinct
     }
   )
