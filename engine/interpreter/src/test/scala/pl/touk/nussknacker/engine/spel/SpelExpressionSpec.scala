@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.spel
 
-import java.math.BigDecimal
+import java.math.{BigDecimal, BigInteger}
 import java.text.ParseException
 import java.time.{LocalDate, LocalDateTime}
 import java.util
@@ -123,8 +123,13 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
       createTestClazzDefinitionFromClassNames("java.lang.String"),
       createTestClazzDefinitionFromClassNames("java.lang.Long"),
       createTestClazzDefinitionFromClassNames("java.lang.Integer"),
+      createTestClazzDefinitionFromClassNames("java.math.BigInteger"),
       createTestClazzDefinitionFromClassNames("pl.touk.nussknacker.engine.spel.SampleGlobalObject")
     ))
+  }
+
+  test("for debugging MethodResolver in OptimizedEvaluationContext") {
+    parseOrFail[Any]("T(java.math.BigInteger).valueOf(1L)").evaluateSync[Int](ctx) should equal(BigInteger.ONE)
   }
 
   test("evaluate call on non-existing static method of validated class String") {

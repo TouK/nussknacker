@@ -138,9 +138,9 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   }
 
-  test("Validation of Type Reference using accessible class and method, static method doesn't return boolean") {
+  test("Validation of Type Reference using allowed class and method") {
 
-    val filterPredicateExpression = "T(Long).compare(2L, 1L)"
+    val filterPredicateExpression = "T(java.math.BigInteger).valueOf(1L) == 1"
 
     val testProcess =
       EspProcessBuilder
@@ -153,7 +153,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val compilationResult = validate(testProcess, baseDefinition)
 
     compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Bad expression type, expected: Boolean, found: Integer", "filter1", Some(DefaultExpressionId), "T(Long).compare(2L, 1L)"), _)) =>
+      case Valid(_) =>
     }
 
   }
