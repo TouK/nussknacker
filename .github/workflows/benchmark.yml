@@ -1,8 +1,9 @@
 name: Benchmarks
 on:
   schedule:
+#   Cron uses UTC - now this time is 00:00, during winter it won't be
     - cron: '0 22 * * *'
-  push:
+#  push:
 jobs:
   benchmarks:
     name: Benchmarks
