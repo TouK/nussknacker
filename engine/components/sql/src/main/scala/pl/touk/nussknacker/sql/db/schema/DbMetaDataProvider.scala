@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.sql.db.schema
 
-import java.sql.{Connection, DatabaseMetaData}
+import java.sql.Connection
 
 class DbMetaDataProvider(getConnection: () => Connection) {
 
@@ -28,7 +28,7 @@ class DbMetaDataProvider(getConnection: () => Connection) {
     val connection = getConnection()
     try {
       val metaData = connection.getMetaData
-      val tables = metaData.getTables(null, getSchemaName(metaData), "%", Array("TABLE").map(_.toString))
+      val tables = metaData.getTables(null, connection.getSchema, "%", Array("TABLE", "VIEW", "SYNONYM").map(_.toString))
       var results = List[String]()
       val columnNameIndex = 3
       while (tables.next()) {
@@ -37,16 +37,6 @@ class DbMetaDataProvider(getConnection: () => Connection) {
       }
       SchemaDefinition(results)
     } finally connection.close()
-  }
-
-  private def getSchemaName(metaData: DatabaseMetaData): String = {
-    val resultSet = metaData.getSchemas
-    val schemaNameIndex = 2
-    //todo here we take the first schema, make it configurable in the future
-    if (resultSet.next())
-      resultSet.getString(schemaNameIndex)
-    else
-      null
   }
 }
 

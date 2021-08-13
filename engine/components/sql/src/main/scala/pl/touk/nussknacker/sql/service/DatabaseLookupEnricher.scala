@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.sql.service
 
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
@@ -11,6 +12,8 @@ import pl.touk.nussknacker.sql.db.query.{QueryArgument, QueryArguments, SingleRe
 import pl.touk.nussknacker.sql.db.schema.{SchemaDefinition, TableDefinition}
 import pl.touk.nussknacker.sql.service.DatabaseLookupEnricher.TableParamName
 import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher.{CacheTTLParam, CacheTTLParamName, TransformationState}
+
+import scala.util.control.NonFatal
 
 object DatabaseLookupEnricher {
 
@@ -36,13 +39,15 @@ object DatabaseLookupEnricher {
   }
 }
 
-class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig) extends DatabaseQueryEnricher(dBPoolConfig) {
+class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig) extends DatabaseQueryEnricher(dBPoolConfig) with LazyLogging {
 
   protected def tableParam(): Parameter = {
     val schemaMetaData = try {
       dbMetaDataProvider.getSchemaDefinition()
     } catch {
-      case e: Exception => SchemaDefinition.empty()
+      case NonFatal(e) =>
+        logger.warn(s"Cannot fetch schema metadata for ${dBPoolConfig.url}", e)
+        SchemaDefinition.empty()
     }
 
     val possibleTables: List[FixedExpressionValue] = schemaMetaData.tables.map(table => FixedExpressionValue(s"'$table'", table))
