@@ -22,7 +22,7 @@ Currently Nussknacker supports following databases:
 * PostgreSQL
 
 Please
-check [Slick documentation]([https://scala-slick.org/doc/3.1.0/api/index.html#slick.jdbc.JdbcBackend$DatabaseFactoryDef@forConfig(String,Config,Driver,ClassLoader):Database](https://scala-slick.org/doc/3.1.0/api/index.html#slick.jdbc.JdbcBackend$DatabaseFactoryDef@forConfig(String,Config,Driver,ClassLoader):Database))
+check [Slick documentation](https://scala-slick.org/doc/3.1.0/api/index.html#slick.jdbc.JdbcBackend$DatabaseFactoryDef@forConfig(String,Config,Driver,ClassLoader):Database))
 for detailed list of configuration options.
 
 The table below presents most important options, or the ones that have Nussknacker specific defaults.
@@ -587,7 +587,7 @@ Currently, you can only configure secondary environment if it uses BASIC authent
 
 | Parameter name                              | Importance | Type                                                                | Default value | Description                                                                                                                                                                                                 |
 | --------------                              | ---------- | ----                                                                | ------------- | -----------                                                                                                                                                                                                 |
-| environment                                 | Medium     | string                                                              |               | Used mainly for metrics configuration. Please note: it **has** to be consistent with [tag configuration of metrics](https://github.com/TouK/nussknacker/blob/staging/demo/docker/telegraf/telegraf.conf#L6) |
+| environment                                 | Medium     | string                                                              |               | Used mainly for metrics configuration. Please note: it **has** to be consistent with [tag configuration of metrics](https://github.com/TouK/nussknacker-quickstart/blob/main/telegraf/telegraf.conf#L6) |
 | environmentAlert.content                    | Low        | string                                                              |               | Human readable name of environment, to display in UI                                                                                                                                                        |
 | environmentAlert.cssClass                   | Low        | indicator-green / indicator-blue / indicator-yellow / indicator-red |               | Color of environment indicator                                                                                                                                                                              |
 | secondaryEnvironment.remoteConfig.uri       | Medium     | string                                                              |               | URL of Nussknacker REST API e.g. `http://secondary.host:8080/api`                                                                                                                                           |
