@@ -16,6 +16,7 @@ of HTTP method, path and parameters (to provide some level of uniqueness)
 - We use `externalDocs.url` to extract documentation link
 
 Table below describes data types that OpenAPI integration handles:
+
 | OpenAPI Type  | OpenAPI Format | Type in Nussknacker |
 | ------------- | -------------- | ------------------- |
 | boolean       |                | Boolean             |
