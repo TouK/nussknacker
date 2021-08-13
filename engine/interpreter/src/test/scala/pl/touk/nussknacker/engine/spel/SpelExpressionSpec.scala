@@ -70,13 +70,6 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     }
   }
 
-  private def parseOrFailWithMethodExecutionForUnknown[T:TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard) : Expression = {
-    parseWithMethodExecutionForUnknown(expr, context, flavour) match {
-      case Valid(e) => e.expression
-      case Invalid(err) => throw new ParseException(err.map(_.message).toList.mkString, -1)
-    }
-  }
-
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
@@ -516,7 +509,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   test("resolve imported package") {
     val givenValue = 123
-    parseOrFailWithMethodExecutionForUnknown[Int](s"new SampleValue($givenValue, '').value").evaluateSync[Int](ctx) should equal(givenValue)
+    parseOrFail[SampleValue](s"new SampleValue($givenValue, '')").evaluateSync[SampleValue](ctx) should equal(SampleValue(givenValue))
   }
 
   test("parse typed map with existing field") {

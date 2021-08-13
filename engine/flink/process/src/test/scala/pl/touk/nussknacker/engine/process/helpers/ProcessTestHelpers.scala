@@ -25,22 +25,6 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
 
   object processInvoker {
 
-    def invokeWithSampleDataPrepared(process: EspProcess,
-                             creator: ProcessConfigCreator,
-                             config: Config = ConfigFactory.load(),
-                             processVersion: ProcessVersion = ProcessVersion.empty,
-                             parallelism: Int = 1): Unit = {
-      val env = flinkMiniCluster.createExecutionEnvironment()
-      val modelData = LocalModelData(config, creator)
-      FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
-        .register(new StreamExecutionEnvironment(env), process, processVersion, DeploymentData.empty)
-
-      MockService.clear()
-      SinkForStrings.clear()
-      SinkForInts.clear()
-      env.executeAndWaitForFinished(process.id)()
-    }
-
     def invokeWithSampleData(process: EspProcess,
                              data: List[SimpleRecord],
                              processVersion: ProcessVersion = ProcessVersion.empty,
@@ -78,11 +62,6 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
 
 object ProcessTestHelpers {
   def prepareCreator(data: List[SimpleRecord], config: Config): ProcessConfigCreator = new ProcessBaseTestHelpers(data)
-
-  def prepareCreatorWithUnknown(data: List[SimpleRecord]): ProcessBaseTestHelpers = new ProcessBaseTestHelpers(data) {
-    override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig =
-      super.expressionConfig(processObjectDependencies).copy(methodExecutionForUnknownAllowed = true)
-  }
 }
 
 class ProcessBaseTestHelpers(data: List[SimpleRecord]) extends ProcessConfigCreator {
