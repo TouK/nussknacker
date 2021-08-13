@@ -1,5 +1,27 @@
 # Configuration 
 
+## Configuration areas
+
+Nussknacker configuration is divided into several configuration areas, each area addressing a specific aspect of using Nussknacker:
+
+* [Designer](https://docs.nussknacker.io/about/GLOSSARY#nussknacker-designer) configuration
+* Scenario Types configuration, comprising of:
+    * [Deployment manager](https://docs.nussknacker.io/about/GLOSSARY#deployment-manager) / [Executor](https://docs.nussknacker.io/about/GLOSSARY#executor) configuration
+    * [Model](https://docs.nussknacker.io/about/GLOSSARY#executor) configuration
+
+Designer configuration  contains all settings for Nussknacker Designer - e.g. web application ports, security, various UI settings. 
+
+One Nussknacker Designer deployment may be used to create various Scenario Types which:
+                          
+* can be deployed with various [Deployment Managers](DeploymentManagerConfiguration.md)  to e.g. different Flink clusters 
+* Use different components and [Model configurations](ModelConfiguration.md) 
+
+See [development configuration](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L33) (used to test various Nussknacker features) for an example of configuration with more than one Scenario Type.
+
+Diagram below presents main relationships between configuration areas.
+
+![Configuration areas](img/configuration_areas.png "configuration areas")
+
 
 ## Hocon - configuration format
 
@@ -10,31 +32,7 @@ Following Nussknacker specific rules apply:
 * `nussknacker.config.locations `system property (`CONFIG_FILE `environment variable for Docker image) defines location of configuration files (separated by comma). The files are read in order, entries from later files can override the former (using HoCon fallback mechanism) - see docker demo for example:
     * [setting multiple configuration files](https://github.com/TouK/nussknacker/blob/staging/demo/docker/docker-compose.yml#L12)
     * [file with configuration override](https://github.com/TouK/nussknacker/blob/staging/demo/docker/nussknacker/nussknacker.conf)
-* [defaultUiConfig.conf](https://github.com/TouK/nussknacker/blob/staging/ui/server/src/main/resources/defaultUiConfig.conf) contains defaults for Nussknacker designer
+* [defaultUiConfig.conf](https://github.com/TouK/nussknacker/blob/staging/ui/server/src/main/resources/defaultUiConfig.conf) contains defaults for Nussknacker Designer
 * `config.override_with_env_vars` is set to true, so it’s possible to override settings with env variables
 
-It’s important to remember that model configuration is prepared a bit differently. Please read [Model configuration](ModelConfiguration.md) for the details. 
-
-
-## Configuration areas
-
-Nussknacker configuration is divided into several configuration areas, each area addressing a specific aspect of using Nussknacker:
-
-* Designer configuration
-* Scenario types configuration
-    * Deployment manager/executor configuration
-    * Model configuration
-
-[Designer configuration](DesignerConfiguration.md)  contains all settings for Nussknacker designer - e.g. web application ports, security, various UI settings. 
-
-One Nussknacker designer deployment may be used to create various Scenario types which:
-                          
-* Deployed with various [deployment managers](DeploymentManagerConfiguration.md)  to e.g. different Flink clusters 
-* Using different components and [model configurations](ModelConfiguration.md) 
-
-See [development configuration](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L33) (used to test various Nussknacker features) for an example of configuration with more than one scenario type.
-
-Diagram below presents main relationships between configuration areas.
-
-![Configuration areas](img/configuration_areas.png "configuration areas")
-
+It’s important to remember that Model configuration is prepared a bit differently. Please read [Model configuration](ModelConfiguration.md) for the details. 
