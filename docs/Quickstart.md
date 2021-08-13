@@ -25,7 +25,7 @@ Now you are ready to check your newly created environment
 
 ## Defining a new process
 
-> We have decided to change some terms we use to refer to concepts or parts of Nussknacker. One of the changes we made is to replace term *process* with term *[scenario](Glossary#scenario)*. Because the Nussknacker Designer version used in this demo still uses *process* term, the description below consistently uses term *process*. Once we refactor Nussknacker Designer, we will update this page accordingly.
+> We have decided to change some terms we use to refer to concepts or parts of Nussknacker. One of the changes we made is to replace term *process* with term *[scenario](/about/GLOSSARY#scenario)*. Because the Nussknacker Designer version used in this demo still uses *process* term, the description below consistently uses term *process*. Once we refactor Nussknacker Designer, we will update this page accordingly.
 
 * Go to [Nussknacker](http://localhost:8081/)
 * Click 'Create new process' button - name it 'DetectLargeTransactions'
