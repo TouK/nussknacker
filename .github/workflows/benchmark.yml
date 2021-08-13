@@ -1,9 +1,8 @@
 name: Benchmarks
 on:
   schedule:
-#   Cron uses UTC - now this time is 00:00, during winter it won't be
     - cron: '0 22 * * *'
-#  push:
+  push:
 jobs:
   benchmarks:
     name: Benchmarks
@@ -16,7 +15,7 @@ jobs:
         with:
           java-version: "openjdk@1.11"
       - name: Run benchmarks
-        run: sbt "benchmarks/jmh:run -i 8 -wi 3 -f1 -t2 .SampleSpelBenchmark -rf csv"
+        run: sbt "benchmarks/jmh:run -i 8 -wi 3 -f1 -t1 -rf csv"
       - name: Store benchmark results
         uses: actions/upload-artifact@v2
         with:
