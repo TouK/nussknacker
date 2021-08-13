@@ -58,8 +58,8 @@ class JwtOAuth2Service[
     }
   }
 
-  override protected def obtainAuthorization(authorizationCode: String): Future[AuthorizationData] =
-    clientApi.accessTokenRequest(authorizationCode)
+  override protected def obtainAuthorization(authorizationCode: String, redirectUri: String): Future[AuthorizationData] =
+    clientApi.accessTokenRequest(authorizationCode, redirectUri)
       .andThen { case Success(authorization) if accessTokenIsJwt => introspectAccessToken(authorization.accessToken) }
 }
 

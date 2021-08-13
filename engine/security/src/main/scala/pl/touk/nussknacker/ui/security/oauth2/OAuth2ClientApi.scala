@@ -16,12 +16,12 @@ class OAuth2ClientApi[ProfileResponse: Decoder, AccessTokenResponse: Decoder]
 (implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT]) extends LazyLogging {
   import io.circe.syntax._
 
-  def accessTokenRequest(authorizationCode: String): Future[AccessTokenResponse] = {
+  def accessTokenRequest(authorizationCode: String, redirectUri: String): Future[AccessTokenResponse] = {
     val payload: Map[String, String] = Map(
       "client_id" -> configuration.clientId,
       "client_secret" -> configuration.clientSecret,
       "code" -> authorizationCode,
-      "redirect_uri" -> configuration.redirectUrl
+      "redirect_uri" -> redirectUri
     ) ++ configuration.accessTokenParams
 
     var request =

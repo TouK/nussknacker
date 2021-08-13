@@ -32,7 +32,7 @@ class OAuth2ClientApiSpec extends FlatSpec with Matchers with BeforeAndAfter wit
       config.copy(accessTokenRequestContentType = MediaType.ApplicationXWwwFormUrlencoded.toString())
     )
 
-    client.accessTokenRequest("6V1reBXblpmfjRJP").futureValue
+    client.accessTokenRequest("6V1reBXblpmfjRJP", "http://ignored").futureValue
 
     val request = testingBackend.allInteractions.head._1
     inside(request.body) {
@@ -47,7 +47,7 @@ class OAuth2ClientApiSpec extends FlatSpec with Matchers with BeforeAndAfter wit
       config.copy(accessTokenRequestContentType = MediaType.ApplicationJson.toString())
     )
 
-    client.accessTokenRequest("6V1reBXblpmfjRJP").futureValue
+    client.accessTokenRequest("6V1reBXblpmfjRJP", "http://ignored").futureValue
 
     val request = testingBackend.allInteractions.head._1
     inside(request.body) {

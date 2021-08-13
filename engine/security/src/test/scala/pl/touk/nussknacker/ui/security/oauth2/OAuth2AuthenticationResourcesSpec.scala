@@ -53,7 +53,7 @@ class OAuth2AuthenticationResourcesSpec extends FunSpec with Matchers with Scala
   }
 
   def authenticationOauth2(resource: OAuth2AuthenticationResources, authorizationCode: String) = {
-    Get(s"/authentication/oauth2?code=$authorizationCode") ~> routes(resource)
+    Get(s"/authentication/oauth2?code=$authorizationCode&redirect_uri=http://some.url/") ~> routes(resource)
   }
 
   it("should return 400 for wrong authorize token") {

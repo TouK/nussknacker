@@ -21,7 +21,7 @@ case class OAuth2Configuration(usersFile: URI,
                                profileUri: URI,
                                profileFormat: Option[ProfileFormat],
                                accessTokenUri: URI,
-                               redirectUri: URI,
+                               redirectUri: Option[URI],
                                implicitGrantEnabled: Boolean = false,
                                jwt: Option[JwtConfiguration],
                                accessTokenParams: Map[String, String] = Map.empty,
@@ -34,14 +34,14 @@ case class OAuth2Configuration(usersFile: URI,
                               ) extends AuthenticationConfiguration {
   override def name: String = OAuth2Configuration.name
 
-  def authorizeUrl: Option[URI] = Option(Uri(authorizeUri).params(Map(
-    "client_id" -> clientId,
-    "redirect_uri" -> redirectUrl
-  ) ++ authorizeParams).toJavaUri)
+  def authorizeUrl: Option[URI] = Option(
+    Uri(authorizeUri)
+      .param("client_id", clientId)
+      .param("redirect_uri", redirectUri.map(_.toString))
+      .params(authorizeParams))
+    .map(_.toJavaUri)
 
   def authSeverPublicKey: Option[PublicKey] = Option.empty
-
-  def redirectUrl: String = redirectUri.toString
 
   def idTokenNonceVerificationRequired: Boolean = jwt.exists(_.idTokenNonceVerificationRequired)
 }

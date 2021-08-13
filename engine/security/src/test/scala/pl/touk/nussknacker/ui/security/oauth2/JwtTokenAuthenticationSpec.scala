@@ -36,7 +36,6 @@ class JwtTokenAuthenticationSpec extends FunSpec with Matchers with ScalatestRou
        |  profileUri: "${userinfoUri}"
        |  profileFormat: "oidc"
        |  accessTokenUri: "http://authorization.server/token"
-       |  redirectUri: "http://ignored"
        |  jwt: {
        |    accessTokenIsJwt: true
        |    publicKey: "${Base64.getEncoder.encodeToString(keyPair.getPublic.getEncoded)}"

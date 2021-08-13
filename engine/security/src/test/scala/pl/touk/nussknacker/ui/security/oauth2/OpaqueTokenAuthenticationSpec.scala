@@ -29,7 +29,6 @@ class OpaqueTokenAuthenticationSpec extends FunSpec with Matchers with Scalatest
        |  profileUri: "${userinfoUri}"
        |  profileFormat: "oidc"
        |  accessTokenUri: "${tokenUri}"
-       |  redirectUri: "http://ignored"
        |}""".stripMargin)
 
   private val validAccessToken = "aValidAccessToken"
@@ -63,7 +62,7 @@ class OpaqueTokenAuthenticationSpec extends FunSpec with Matchers with Scalatest
   }
 
   it("should permit an authorized user to a restricted resource") {
-    Get("/authentication/oauth2?code=test") ~> authenticationResources.routeWithPathPrefix ~> check {
+    Get("/authentication/oauth2?code=test&redirect_uri=http://ignored/") ~> authenticationResources.routeWithPathPrefix ~> check {
       status shouldEqual StatusCodes.OK
       val accessToken = responseAs[Oauth2AuthenticationResponse].accessToken
       Get("/config").addCredentials(HttpCredentials.createOAuth2BearerToken(accessToken)) ~> testRoute ~> check {
