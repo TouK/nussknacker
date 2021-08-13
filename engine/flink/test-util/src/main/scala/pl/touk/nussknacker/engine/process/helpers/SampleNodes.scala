@@ -415,7 +415,7 @@ object SampleNodes {
 
     override def canBeEnding: Boolean = true
 
-    @MethodToInvoke
+    @MethodToInvoke(returnType = classOf[String])
     def execute(@ParamName("param") @Nullable param: LazyParameter[String]) =
       FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
         val afterMap = start.map(context.lazyParameterHelper.lazyMapFunction[AnyRef](param))

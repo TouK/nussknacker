@@ -95,33 +95,15 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     ExpressionDefinition(
       Map("processHelper" -> ObjectDefinition(List(), Typed(ProcessHelper.getClass), List("cat1"), SingleNodeConfig.zero)), List.empty, List.empty,
       LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false,
-      strictMethodsChecking = true, staticMethodInvocationsChecking = true, disableMethodExecutionForUnknown = false, dynamicPropertyAccessAllowed = false
+      strictMethodsChecking = true, staticMethodInvocationsChecking = true, methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false
     ),
     ClassExtractionSettings.Default
   )
 
   test("enable method execution for Unknown") {
-
-    val correctProcess = EspProcessBuilder
-      .id("process1")
-      .exceptionHandler()
-      .source("id1", "sourceWithUnknown")
-      .filter("filter1", "#input.imaginary")
-      .filter("filter2", "#input.imaginaryMethod()")
-      .sink("id2", "#input", "sink")
-
-    val compilationResult = validate(correctProcess, baseDefinition)
-
-    compilationResult.result should matchPattern {
-      case Valid(_) =>
-    }
-  }
-
-  test("disable method execution for Unknown") {
-
     val baseDefinitionCopy = baseDefinition.copy(
       expressionConfig = baseDefinition.expressionConfig.copy(
-        disableMethodExecutionForUnknown = true))
+        methodExecutionForUnknownAllowed = true))
 
     val correctProcess = EspProcessBuilder
       .id("process1")
@@ -134,7 +116,24 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val compilationResult = validate(correctProcess, baseDefinitionCopy)
 
     compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError(_, _, _, _), _)) =>
+      case Valid(_) =>
+    }
+  }
+
+  test("disable method execution for Unknown") {
+
+    val correctProcess = EspProcessBuilder
+      .id("process1")
+      .exceptionHandler()
+      .source("id1", "sourceWithUnknown")
+      .filter("filter1", "#input.imaginary")
+      .filter("filter2", "#input.imaginaryMethod()")
+      .sink("id2", "#input", "sink")
+
+    val compilationResult = validate(correctProcess, baseDefinition)
+
+    compilationResult.result should matchPattern {
+      case Invalid(NonEmptyList(ExpressionParseError("Property access on Unknown is not allowed", "filter1", Some(DefaultExpressionId), _), _)) =>
     }
 
   }

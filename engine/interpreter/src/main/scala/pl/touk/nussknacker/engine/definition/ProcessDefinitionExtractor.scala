@@ -86,7 +86,7 @@ object ProcessDefinitionExtractor {
         expressionConfig.hideMetaVariable,
         expressionConfig.strictMethodsChecking,
         expressionConfig.staticMethodInvocationsChecking,
-        expressionConfig.disableMethodExecutionForUnknown,
+        expressionConfig.methodExecutionForUnknownAllowed,
         expressionConfig.dynamicPropertyAccessAllowed
       ), settings)
   }
@@ -154,7 +154,7 @@ object ProcessDefinitionExtractor {
       definition.expressionConfig.hideMetaVariable,
       definition.expressionConfig.strictMethodsChecking,
       definition.expressionConfig.staticMethodInvocationsChecking,
-      definition.expressionConfig.disableMethodExecutionForUnknown,
+      definition.expressionConfig.methodExecutionForUnknownAllowed,
       definition.expressionConfig.dynamicPropertyAccessAllowed
     )
     ProcessDefinition(
@@ -172,7 +172,7 @@ object ProcessDefinitionExtractor {
   case class ExpressionDefinition[+T <: ObjectMetadata](globalVariables: Map[String, T], globalImports: List[String], additionalClasses: List[Class[_]],
                                                         languages: LanguageConfiguration, optimizeCompilation: Boolean, strictTypeChecking: Boolean,
                                                         dictionaries: Map[String, DictDefinition], hideMetaVariable: Boolean, strictMethodsChecking: Boolean,
-                                                        staticMethodInvocationsChecking: Boolean, disableMethodExecutionForUnknown: Boolean,
+                                                        staticMethodInvocationsChecking: Boolean, methodExecutionForUnknownAllowed: Boolean,
                                                         dynamicPropertyAccessAllowed: Boolean)
 
 }
