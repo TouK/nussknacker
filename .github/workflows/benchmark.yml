@@ -1,8 +1,7 @@
 name: Benchmarks
 on:
   schedule:
-    - cron: '0 22 * * *'
-  push:
+    - cron: '0 23 * * *'
 jobs:
   benchmarks:
     name: Benchmarks
