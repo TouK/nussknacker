@@ -7,23 +7,35 @@ import HttpService from "../../../http/HttpService"
 import {OAuth2Settings} from "../../../reducers/settings"
 import {AuthErrorCodes} from "../AuthErrorCodes"
 import {Strategy, StrategyConstructor} from "../Strategy"
+import {BASE_PATH} from "../../../config";
 
 export const OAuth2Strategy: StrategyConstructor = class OAuth2Strategy implements Strategy {
   private onError?: (error: AuthErrorCodes) => void
+  private readonly redirectUri: string | null // null means it's been configured in the BE and it's not evaluated here
+  private readonly authorizeUrl: URL
 
   constructor(
     private settings: OAuth2Settings,
     onError?: (error: AuthErrorCodes) => void,
-  ) { this.onError = onError }
+  ) {
+    this.onError = onError
+    this.authorizeUrl = new URL(this.settings.authorizeUrl)
+    if (this.authorizeUrl.searchParams.has("redirect_uri")) {
+      this.redirectUri = null
+    } else {
+      this.redirectUri = window.location.origin + BASE_PATH
+      this.authorizeUrl.searchParams.append("redirect_uri", this.redirectUri)
+    }
+  }
 
-  redirectToAuthorizeUrl(authorizeUrl: string): void {
+  redirectToAuthorizeUrl(): void {
     SystemUtils.saveNonce(nanoid())
-    window.location.replace(`${authorizeUrl}&nonce=${SystemUtils.getNonce()}`)
+    window.location.replace(`${this.authorizeUrl.toString()}&nonce=${SystemUtils.getNonce()}`)
   }
 
   inteceptor(error?: {response?: {status?: AuthErrorCodes}}): Promise<unknown> {
     if (error?.response?.status === AuthErrorCodes.HTTP_UNAUTHORIZED_CODE) {
-      this.redirectToAuthorizeUrl(this.settings.authorizeUrl)
+      this.redirectToAuthorizeUrl()
     }
     return Promise.resolve()
   }
@@ -32,7 +44,7 @@ export const OAuth2Strategy: StrategyConstructor = class OAuth2Strategy implemen
     const {hash, search} = window.location
     const queryParams = queryString.parse(search)
     if (queryParams.code) {
-      return HttpService.fetchOAuth2AccessToken<{accessToken: string}>(queryParams.code)
+      return HttpService.fetchOAuth2AccessToken<{accessToken: string}>(queryParams.code, this.redirectUri)
         .then(response => {
           SystemUtils.setAuthorizationToken(response.data.accessToken)
           return response
@@ -48,7 +60,7 @@ export const OAuth2Strategy: StrategyConstructor = class OAuth2Strategy implemen
 
     const queryHashParams = queryString.parse(hash)
     if (queryHashParams.access_token && this.settings.implicitGrantEnabled) {
-      if (!this.verifyTokens(this.settings, queryHashParams)) {
+      if (!this.verifyTokens(queryHashParams)) {
         return Promise.reject("token not verified")
       } else {
         SystemUtils.setAuthorizationToken(queryHashParams.access_token)
@@ -60,7 +72,7 @@ export const OAuth2Strategy: StrategyConstructor = class OAuth2Strategy implemen
       return Promise.resolve()
     }
 
-    this.redirectToAuthorizeUrl(this.settings.authorizeUrl)
+    this.redirectToAuthorizeUrl()
     return Promise.reject()
   }
 
@@ -68,13 +80,13 @@ export const OAuth2Strategy: StrategyConstructor = class OAuth2Strategy implemen
     this.onError = callback
   }
 
-  private verifyTokens(settings: OAuth2Settings, queryHashParams): boolean {
-    if (settings.jwtAuthServerPublicKey) {
+  private verifyTokens(queryHashParams): boolean {
+    if (this.settings.jwtAuthServerPublicKey) {
       const verifyAccessToken = () => {
         try {
-          return jwt.verify(queryHashParams.access_token, settings.jwtAuthServerPublicKey) !== null
+          return jwt.verify(queryHashParams.access_token, this.settings.jwtAuthServerPublicKey) !== null
         } catch (error) {
-          this.handleJwtError(error, settings)
+          this.handleJwtError(error)
           return false
         }
       }
@@ -82,12 +94,12 @@ export const OAuth2Strategy: StrategyConstructor = class OAuth2Strategy implemen
       if (accessTokenVerificationResult) {
         if (queryHashParams.id_token) {
           try {
-            return jwt.verify(queryHashParams.id_token, settings.jwtAuthServerPublicKey, {nonce: SystemUtils.getNonce()}) !== null
+            return jwt.verify(queryHashParams.id_token, this.settings.jwtAuthServerPublicKey, {nonce: SystemUtils.getNonce()}) !== null
           } catch (error) {
-            this.handleJwtError(error, settings)
+            this.handleJwtError(error)
             return false
           }
-        } else if (settings.jwtIdTokenNonceVerificationRequired === true) {
+        } else if (this.settings.jwtIdTokenNonceVerificationRequired === true) {
           // eslint-disable-next-line i18next/no-literal-string
           console.warn("jwt.idTokenNonceVerificationRequired=true but id_token missing in the auth server response")
           this.onError(AuthErrorCodes.ACCESS_TOKEN_CODE)
@@ -100,10 +112,10 @@ export const OAuth2Strategy: StrategyConstructor = class OAuth2Strategy implemen
     }
   }
 
-  private handleJwtError(error: jwt.JsonWebTokenError, settings: OAuth2Settings) {
+  private handleJwtError(error: jwt.JsonWebTokenError) {
     console.warn(error)
     if (error.name === "TokenExpiredError") {
-      this.redirectToAuthorizeUrl(settings.authorizeUrl)
+      this.redirectToAuthorizeUrl()
     } else {
       this.onError(AuthErrorCodes.ACCESS_TOKEN_CODE)
       return Promise.reject()

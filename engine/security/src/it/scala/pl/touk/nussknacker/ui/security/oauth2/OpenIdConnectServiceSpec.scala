@@ -39,7 +39,7 @@ class OpenIdConnectServiceSpec extends FunSuite with ForAllTestContainer with Ma
     val loginResult = keyCloakLogin(config)
     val authorizationCode = uri"${loginResult.header("Location").get}".params.get("code").get
 
-    val (authData, userData) = open.obtainAuthorizationAndUserInfo(authorizationCode).futureValue
+    val (authData, userData) = open.obtainAuthorizationAndUserInfo(authorizationCode, config.redirectUri.map(_.toString).get).futureValue
     userData.name shouldBe Some("Jan Kowalski")
 
     val profile = open.checkAuthorizationAndObtainUserinfo(authData.accessToken).futureValue
@@ -76,7 +76,7 @@ class OpenIdConnectServiceSpec extends FunSuite with ForAllTestContainer with Ma
       profileUri = uri"$baseUrl/userinfo".toJavaUri,
       profileFormat = None,
       accessTokenUri = uri"$baseUrl/token".toJavaUri,
-      redirectUri = new URI("http://localhost:1234"),
+      redirectUri = Some(URI.create("http://localhost:1234")),
       implicitGrantEnabled = false,
       jwt = None,
       accessTokenRequestContentType = MediaType.ApplicationXWwwFormUrlencoded.toString(),
