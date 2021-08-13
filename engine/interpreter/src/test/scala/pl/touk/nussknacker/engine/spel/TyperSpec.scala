@@ -32,13 +32,13 @@ class TyperSpec extends FunSuite with Matchers {
   private val strictTypeChecking = false
   private val strictMethodsChecking = false
   private val staticMethodInvocationsChecking = false
-  private val disableMethodExecutionForUnknown = false
+  private val methodExecutionForUnknownAllowed = false
   private val dynamicPropertyAccessAllowed = false
   private val classResolutionStrategy = SupertypeClassResolutionStrategy.Union
   private val commonSupertypeFinder = new CommonSupertypeFinder(classResolutionStrategy, strictTypeChecking)
   private val dict = new SimpleDictRegistry(Map.empty)
   private val typer = new Typer(this.getClass.getClassLoader, commonSupertypeFinder, new KeysDictTyper(dict), strictMethodsChecking, staticMethodInvocationsChecking,
-    TypeDefinitionSet.empty, evaluationContextPreparer = null, disableMethodExecutionForUnknown, dynamicPropertyAccessAllowed)(ClassExtractionSettings.Default)
+    TypeDefinitionSet.empty, evaluationContextPreparer = null, methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed)(ClassExtractionSettings.Default)
   private val parser = new org.springframework.expression.spel.standard.SpelExpressionParser()
 
   private def typeExpression(expr: String, variables: (String, Any)*): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {

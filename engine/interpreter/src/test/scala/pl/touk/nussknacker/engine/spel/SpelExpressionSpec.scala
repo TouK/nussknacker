@@ -76,35 +76,42 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   private def parseWithDicts[T: TypeTag](expr: String, context: Context = ctx, dictionaries: Map[String, DictDefinition]): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val validationCtx = ValidationContext(
       context.variables.mapValuesNow(Typed.fromInstance))
-    parse(expr, validationCtx, dictionaries, Standard, strictMethodsChecking = true, staticMethodInvocationsChecking = true, disableMethodExecutionForUnknown = false,
+    parse(expr, validationCtx, dictionaries, Standard, strictMethodsChecking = true, staticMethodInvocationsChecking = true, methodExecutionForUnknownAllowed = false,
       dynamicPropertyAccessAllowed = false)
+  }
+
+  private def parseWithMethodExecutionForUnknown[T: TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard): ValidatedNel[ExpressionParseError, TypedExpression] = {
+    val validationCtx = ValidationContext(
+      context.variables.mapValuesNow(Typed.fromInstance))
+    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = true, staticMethodInvocationsChecking = true, methodExecutionForUnknownAllowed = true,
+        dynamicPropertyAccessAllowed = true)
   }
 
   private def parseWithoutStrictMethodsChecking[T: TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val validationCtx = ValidationContext(context.variables.mapValuesNow(Typed.fromInstance))
-    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = false, staticMethodInvocationsChecking = true, disableMethodExecutionForUnknown = false,
+    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = false, staticMethodInvocationsChecking = true, methodExecutionForUnknownAllowed = false,
       dynamicPropertyAccessAllowed = false)
   }
 
   private def parse[T: TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val validationCtx = ValidationContext(
       context.variables.mapValuesNow(Typed.fromInstance))
-    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = true, staticMethodInvocationsChecking = true, disableMethodExecutionForUnknown = false,
+    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = true, staticMethodInvocationsChecking = true, methodExecutionForUnknownAllowed = false,
       dynamicPropertyAccessAllowed = true)
   }
 
   private def parse[T: TypeTag](expr: String, validationCtx: ValidationContext): ValidatedNel[ExpressionParseError, TypedExpression] = {
-    parse(expr, validationCtx, Map.empty, Standard, strictMethodsChecking = true, staticMethodInvocationsChecking = true, disableMethodExecutionForUnknown = false,
+    parse(expr, validationCtx, Map.empty, Standard, strictMethodsChecking = true, staticMethodInvocationsChecking = true, methodExecutionForUnknownAllowed = false,
       dynamicPropertyAccessAllowed = false)
   }
 
   private def parse[T: TypeTag](expr: String, validationCtx: ValidationContext, dictionaries: Map[String, DictDefinition],
                                 flavour: Flavour, strictMethodsChecking: Boolean, staticMethodInvocationsChecking: Boolean,
-                                disableMethodExecutionForUnknown: Boolean, dynamicPropertyAccessAllowed: Boolean): ValidatedNel[ExpressionParseError, TypedExpression] = {
+                                methodExecutionForUnknownAllowed: Boolean, dynamicPropertyAccessAllowed: Boolean): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val imports = List(SampleValue.getClass.getPackage.getName)
     SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(dictionaries), enableSpelForceCompile = true, strictTypeChecking = true,
       imports, flavour, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking = true, typeDefinitionSetWithDefaultClasses,
-      disableMethodExecutionForUnknown = disableMethodExecutionForUnknown, dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed)(ClassExtractionSettings.Default).parse(expr, validationCtx, Typed.fromDetailedType[T])
+      methodExecutionForUnknownAllowed = methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed)(ClassExtractionSettings.Default).parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 
   private def typeDefinitionSetWithDefaultClasses: TypeDefinitionSet = {
@@ -293,7 +300,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   test("stop validation when property of Any/Object type found") {
     val ctxWithVar = ctx.withVariable("obj", SampleValue(11))
-    parse[Any]("#obj.anyObject.anyPropertyShouldValidate", ctxWithVar) shouldBe 'valid
+    parseWithMethodExecutionForUnknown[Any]("#obj.anyObject.anyPropertyShouldValidate", ctxWithVar) shouldBe 'valid
   }
 
   test("allow empty expression") {
@@ -502,7 +509,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   test("resolve imported package") {
     val givenValue = 123
-    parseOrFail[Int](s"new SampleValue($givenValue, '').value").evaluateSync[Int](ctx) should equal(givenValue)
+    parseOrFail[SampleValue](s"new SampleValue($givenValue, '')").evaluateSync[SampleValue](ctx) should equal(SampleValue(givenValue))
   }
 
   test("parse typed map with existing field") {

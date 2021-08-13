@@ -1,5 +1,6 @@
 # Configuration 
 
+
 ## Configuration areas
 
 Nussknacker configuration is divided into several configuration areas, each area addressing a specific aspect of using Nussknacker:
