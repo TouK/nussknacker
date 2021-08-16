@@ -6,9 +6,8 @@ import cats.data.Validated.{Invalid, Valid}
 import java.lang.reflect.Method
 import java.util
 import java.util.Collections
-
 import org.springframework.core.convert.TypeDescriptor
-import org.springframework.expression.{EvaluationContext, MethodExecutor, MethodResolver, PropertyAccessor}
+import org.springframework.expression.{EvaluationContext, EvaluationException, MethodExecutor, MethodResolver, PropertyAccessor}
 import org.springframework.expression.spel.support.{ReflectiveMethodExecutor, ReflectiveMethodResolver, StandardEvaluationContext, StandardTypeLocator}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.spel.OmitAnnotationsMethodExecutor

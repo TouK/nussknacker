@@ -128,8 +128,12 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     ))
   }
 
-  test("for debugging MethodResolver in OptimizedEvaluationContext") {
+  test("blocking blacklisted in runtime, not allowed package") {
     parseOrFail[Any]("T(java.math.BigInteger).valueOf(1L)").evaluateSync[Int](ctx) should equal(BigInteger.ONE)
+  }
+
+  test("blocking blacklisted in runtime, allowed reference") {
+    parseOrFail[Any]("T(java.lang.Long).valueOf(1L)").evaluateSync[Int](ctx) should equal(1L)
   }
 
   test("evaluate call on non-existing static method of validated class String") {
@@ -138,10 +142,6 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   test("evaluate static method call on validated class Integer") {
     parseOrFail[Int]("T(java.lang.Integer).min(1, 2)").evaluateSync[Int](ctx) should equal(1)
-  }
-
-  test("evaluate static method call on validated class Long") {
-    parseOrFail[Long]("T(java.lang.Long).compare(2L, 1L)").evaluateSync[Int](ctx) should equal(1)
   }
 
   test("evaluate static method call on unvalidated class") {
