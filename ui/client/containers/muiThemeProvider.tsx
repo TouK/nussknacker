@@ -1,5 +1,4 @@
-import {createGenerateClassName, StylesProvider} from "@material-ui/core"
-import {ThemeProvider} from "@material-ui/styles"
+import {createGenerateClassName, StylesProvider, ThemeProvider} from "@material-ui/core/styles"
 import React, {useMemo} from "react"
 import {useMuiTheme} from "./useMuiTheme"
 
