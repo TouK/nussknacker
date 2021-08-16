@@ -131,20 +131,20 @@ There are a few notable exceptions:
 
 ## Conditional Operators
 
-| Expression                                   | Result    | Type     |      |         |
-| ------------                                 | --------  | -------- |      |         |
-| `2 == 2`                                     | true      | boolean  |      |         |
-| `2 > 1`                                      | true      | boolean  |      |         |
-| `true AND false`                             | false     | boolean  |      |         |
-| `true && false`                              | false     | boolean  |      |         |
-| `true OR false`                              | true      | boolean  |      |         |
-| `true                                        |           | false`   | true | boolean |
-| `2 > 1 ? 'a' : 'b'`                          | "a"       | String   |      |         |
-| `2 < 1 ? 'a' : 'b'`                          | "b"       | String   |      |         |
-| `#nonNullVar == null ? 'Unkown' : 'Success'` | "Success" | String   |      |         |
-| `#nullVar == null ? 'Unknown' : 'Success'`   | "Unknown" | String   |      |         |
-| `#nullVar?:'Unknown'`                        | "Unknown" | String   |      |         |
-| `'john'?:'Unknown'`                          | "john"    | String   |      |         |
+| Expression                                   | Result    | Type     |
+| ------------                                 | --------  | -------- |
+| `2 == 2`                                     | true      | boolean  |
+| `2 > 1`                                      | true      | boolean  |
+| `true AND false`                             | false     | boolean  |
+| `true && false`                              | false     | boolean  |
+| `true OR false`                              | true      | boolean  |
+| <code>true &#124;&#124; false</code>         | true      | boolean  |
+| `2 > 1 ? 'a' : 'b'`                          | "a"       | String   |
+| `2 < 1 ? 'a' : 'b'`                          | "b"       | String   |
+| `#nonNullVar == null ? 'Unkown' : 'Success'` | "Success" | String   |
+| `#nullVar == null ? 'Unknown' : 'Success'`   | "Unknown" | String   |
+| `#nullVar?:'Unknown'`                        | "Unknown" | String   |
+| `'john'?:'Unknown'`                          | "john"    | String   |
 
 ## Method invocations
 
