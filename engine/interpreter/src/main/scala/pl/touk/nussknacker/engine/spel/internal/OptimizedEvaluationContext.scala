@@ -1,8 +1,5 @@
 package pl.touk.nussknacker.engine.spel.internal
 
-import cats.data.{NonEmptyList, Validated}
-import cats.data.Validated.{Invalid, Valid}
-
 import java.lang.reflect.Method
 import java.util
 import java.util.Collections
@@ -10,11 +7,10 @@ import org.springframework.core.convert.TypeDescriptor
 import org.springframework.expression.{EvaluationContext, EvaluationException, MethodExecutor, MethodResolver, PropertyAccessor}
 import org.springframework.expression.spel.support.{ReflectiveMethodExecutor, ReflectiveMethodResolver, StandardEvaluationContext, StandardTypeLocator}
 import pl.touk.nussknacker.engine.api.Context
-import pl.touk.nussknacker.engine.spel.OmitAnnotationsMethodExecutor
+import pl.touk.nussknacker.engine.spel.{OmitAnnotationsMethodExecutor, SpelExpressionEvaluationException}
 import pl.touk.nussknacker.engine.api.process.SpelExpressionBlacklist
 
 import scala.collection.JavaConverters._
-import scala.util.matching.Regex
 
 class EvaluationContextPreparer(classLoader: ClassLoader,
                                 expressionImports: List[String],
@@ -46,7 +42,7 @@ class EvaluationContextPreparer(classLoader: ClassLoader,
         case Some(_) => true
         case None => false
       }) match {
-      case Some(_) => throw new EvaluationException(s"Method ${methodName} of ${classFullName} is not allowed in this context")
+      case Some(_) => throw new EvaluationException(s"Method ${methodName} of class ${classFullName} is not allowed to be passed as a spel expression")
       case _ =>
     }
   }

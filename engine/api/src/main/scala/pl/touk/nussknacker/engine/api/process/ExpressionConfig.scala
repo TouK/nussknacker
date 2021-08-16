@@ -44,6 +44,8 @@ object SpelExpressionBlacklist {
       "^(java.lang.System).*$".r,
       "^(java.net).*$".r,
       "^(java.io).*$".r,
-      "^(java.nio).*$".r
+      "^(java.nio).*$".r,
+      "^(java.lang.invoke).*$".r,
+      "^(java.lang.reflect).*$".r
     ))
 }
