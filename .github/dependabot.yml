@@ -13,3 +13,7 @@ updates:
       - "ui"
       - "dependencies"
     open-pull-requests-limit: 5
+    ignore:
+      # ignore all patch updates
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
