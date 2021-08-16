@@ -4,7 +4,7 @@ import _ from 'lodash'
 const subprocessProcessDefinitionData = {
   nodesToAdd: [
     {
-      name: "subprocesses",
+      name: "fragments",
       possibleNodes: [
         {
           type: "subprocess", label: "subproc1", node: {
