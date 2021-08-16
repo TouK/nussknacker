@@ -5,7 +5,7 @@
 
 Nussknacker configuration is divided into several configuration areas, each area addressing a specific aspect of using Nussknacker:
 
-* [Designer](about/GLOSSARY#nussknacker-designer) configuration
+* [Designer](/about/GLOSSARY#nussknacker-designer) configuration
 * Scenario Types configuration, comprising of:
     * [Deployment manager](/about/GLOSSARY#deployment-manager) / [Executor](/about/GLOSSARY#executor) configuration
     * [Model](/about/GLOSSARY#executor) configuration
