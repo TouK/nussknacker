@@ -5,7 +5,7 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.conversion.ProcessConfigCreatorMapping
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory.NoParamExceptionHandlerFactory
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, ProcessObjectDependencies, SpelExpressionBlacklist}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter, MetaData, StreamMetaData}
@@ -66,7 +66,7 @@ class LazyParameterSpec extends FunSuite with Matchers {
   private def prepareInterpreter = {
     val exprDef = ExpressionDefinition(Map.empty, List.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false,
       strictTypeChecking = true, Map.empty, hideMetaVariable = false, strictMethodsChecking = true, staticMethodInvocationsChecking = false,
-      methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false)
+      methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false, SpelExpressionBlacklist.default)
     val processDef = ProcessDefinition(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty,
       ObjectWithMethodDef.withEmptyConfig(new NoParamExceptionHandlerFactory(_ => null), ProcessObjectDefinitionExtractor.exceptionHandler), exprDef, ClassExtractionSettings.Default)
     val lazyInterpreterDeps = prepareLazyInterpreterDeps(processDef)

@@ -35,7 +35,7 @@ object LanguageConfiguration {
 case class LanguageConfiguration(expressionParsers: List[ExpressionParser])
 
 
-case class SpelExpressionBlacklist(typeDefinitions: Set[Regex])
+case class SpelExpressionBlacklist(blacklistedPatterns: Set[Regex])
 
 object SpelExpressionBlacklist {
 

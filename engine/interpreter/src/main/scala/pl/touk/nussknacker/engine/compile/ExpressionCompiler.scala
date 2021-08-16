@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, Pro
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParser, TypedExpression, TypedExpressionMap}
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SpelExpressionBlacklist}
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectMetadata
@@ -43,10 +43,10 @@ object ExpressionCompiler {
     val defaultParsers = Seq(
       SpelExpressionParser.default(loader, dictRegistry, optimizeCompilation, expressionConfig.strictTypeChecking, expressionConfig.globalImports,
         SpelExpressionParser.Standard, expressionConfig.strictMethodsChecking, expressionConfig.staticMethodInvocationsChecking,
-        typeDefinitionSet, expressionConfig.methodExecutionForUnknownAllowed, expressionConfig.dynamicPropertyAccessAllowed)(settings),
+        typeDefinitionSet, expressionConfig.methodExecutionForUnknownAllowed, expressionConfig.dynamicPropertyAccessAllowed, expressionConfig.spelExpressionBlacklist)(settings),
       SpelExpressionParser.default(loader, dictRegistry, optimizeCompilation, expressionConfig.strictTypeChecking, expressionConfig.globalImports,
         SpelExpressionParser.Template, expressionConfig.strictMethodsChecking, expressionConfig.staticMethodInvocationsChecking,
-        typeDefinitionSet, expressionConfig.methodExecutionForUnknownAllowed, expressionConfig.dynamicPropertyAccessAllowed)(settings),
+        typeDefinitionSet, expressionConfig.methodExecutionForUnknownAllowed, expressionConfig.dynamicPropertyAccessAllowed, expressionConfig.spelExpressionBlacklist)(settings),
       SqlExpressionParser)
     val parsersSeq = defaultParsers ++ expressionConfig.languages.expressionParsers
     val parsers = parsersSeq.map(p => p.languageId -> p).toMap

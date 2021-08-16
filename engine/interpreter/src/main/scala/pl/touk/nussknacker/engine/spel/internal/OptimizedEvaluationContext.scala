@@ -19,7 +19,8 @@ import scala.util.matching.Regex
 class EvaluationContextPreparer(classLoader: ClassLoader,
                                 expressionImports: List[String],
                                 propertyAccessors: Seq[PropertyAccessor],
-                                expressionFunctions: Map[String, Method]) {
+                                expressionFunctions: Map[String, Method],
+                                spelExpressionBlacklist: SpelExpressionBlacklist) {
 
   //this method is evaluated for *each* expression evaluation, we want to extract as much as possible to fields in this class
   def prepareEvaluationContext(ctx: Context, globals: Map[String, Any]): EvaluationContext = {
@@ -36,13 +37,11 @@ class EvaluationContextPreparer(classLoader: ClassLoader,
     expressionImports.foreach(registerImport)
   }
 
-  private val mockPackageBlackList: Set[Regex] = Set("^(java.lang.System).*$".r, "^(java.math).*$".r)
-
   private def blockBlacklisted(targetObject: scala.Any, methodName: String): Unit = {
     //todo: get blacklist from ExpressionConfig
 
     val classFullName = targetObject.asInstanceOf[Class[_]].getName
-    mockPackageBlackList.find(blackListRegex =>
+    spelExpressionBlacklist.blacklistedPatterns.find(blackListRegex =>
       blackListRegex.findFirstMatchIn(classFullName) match {
         case Some(_) => true
         case None => false

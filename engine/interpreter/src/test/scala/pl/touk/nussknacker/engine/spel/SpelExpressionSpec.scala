@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
 import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, TypedExpression}
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SpelExpressionBlacklist}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.definition.TypeInfos
@@ -76,7 +76,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   private def parseWithDicts[T: TypeTag](expr: String, context: Context = ctx, dictionaries: Map[String, DictDefinition]): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val validationCtx = ValidationContext(
       context.variables.mapValuesNow(Typed.fromInstance))
-    parse(expr, validationCtx, dictionaries, Standard, strictMethodsChecking = true, staticMethodInvocationsChecking = true, methodExecutionForUnknownAllowed = false,
+    parse(expr, validationCtx, dictionaries, Standard, strictMethodsChecking = true, methodExecutionForUnknownAllowed = false,
       dynamicPropertyAccessAllowed = false)
   }
 
@@ -89,32 +89,42 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   private def parseWithoutStrictMethodsChecking[T: TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val validationCtx = ValidationContext(context.variables.mapValuesNow(Typed.fromInstance))
-    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = false, staticMethodInvocationsChecking = true, methodExecutionForUnknownAllowed = false,
+    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = false, methodExecutionForUnknownAllowed = false,
       dynamicPropertyAccessAllowed = false)
   }
 
   private def parse[T: TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val validationCtx = ValidationContext(
       context.variables.mapValuesNow(Typed.fromInstance))
-    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = true, staticMethodInvocationsChecking = true, methodExecutionForUnknownAllowed = false,
+    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = true, methodExecutionForUnknownAllowed = false,
       dynamicPropertyAccessAllowed = true)
   }
 
   private def parse[T: TypeTag](expr: String, validationCtx: ValidationContext): ValidatedNel[ExpressionParseError, TypedExpression] = {
-    parse(expr, validationCtx, Map.empty, Standard, strictMethodsChecking = true, staticMethodInvocationsChecking = true, methodExecutionForUnknownAllowed = false,
+    parse(expr, validationCtx, Map.empty, Standard, strictMethodsChecking = true, methodExecutionForUnknownAllowed = false,
       dynamicPropertyAccessAllowed = false)
   }
 
   private def parse[T: TypeTag](expr: String, validationCtx: ValidationContext, dictionaries: Map[String, DictDefinition],
-                                flavour: Flavour, strictMethodsChecking: Boolean, staticMethodInvocationsChecking: Boolean,
+                                flavour: Flavour, strictMethodsChecking: Boolean,
                                 methodExecutionForUnknownAllowed: Boolean, dynamicPropertyAccessAllowed: Boolean): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val imports = List(SampleValue.getClass.getPackage.getName)
     SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(dictionaries), enableSpelForceCompile = true, strictTypeChecking = true,
-      imports, flavour, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking = true, typeDefinitionSetWithDefaultClasses,
-      methodExecutionForUnknownAllowed = methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed)(ClassExtractionSettings.Default).parse(expr, validationCtx, Typed.fromDetailedType[T])
+      imports, flavour, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking = true, typeDefinitionSetWithCustomClasses,
+      methodExecutionForUnknownAllowed = methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed, spelExpressionBlacklistWithCustomPatterns)(ClassExtractionSettings.Default).parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 
-  private def typeDefinitionSetWithDefaultClasses: TypeDefinitionSet = {
+  private def spelExpressionBlacklistWithCustomPatterns: SpelExpressionBlacklist = {
+    SpelExpressionBlacklist(Set(
+      "^(java.math).*$".r,
+      "^(java.lang.System).*$".r,
+      "^(java.net).*$".r,
+      "^(java.io).*$".r,
+      "^(java.nio).*$".r
+    ))
+  }
+
+  private def typeDefinitionSetWithCustomClasses: TypeDefinitionSet = {
 
     def createTestClazzDefinitionFromClassNames(className: String) =
       TypeInfos.ClazzDefinition(TypedClass(ClassUtils.primitiveToWrapper(ClassUtils.getClass(className)), Nil), Map.empty, Map.empty)
