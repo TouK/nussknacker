@@ -240,7 +240,7 @@
     "ua-parser-js": "^0.7.28",
     "wait-on": "^6.0.0",
     "webpack": "5.47.1",
-    "webpack-cli": "^4.7.2",
+    "webpack-cli": "^4.8.0",
     "webpack-dev-server": "^3.11.2",
     "webpack-remote-types-plugin": "^0.2.5",
     "webpack-shell-plugin-next": "^2.2.2"
