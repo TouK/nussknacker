@@ -139,7 +139,6 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   }
 
   test("blocking blacklisted in runtime, not allowed package") {
-
     a[SpelExpressionEvaluationException] should be thrownBy {
       parseOrFail[BigInteger]("T(java.math.BigInteger).valueOf(1L)").evaluateSync[BigInteger](ctx) should equal(BigInteger.ONE)
     }

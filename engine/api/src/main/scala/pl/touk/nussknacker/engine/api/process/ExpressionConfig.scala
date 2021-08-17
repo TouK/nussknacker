@@ -41,11 +41,15 @@ object SpelExpressionBlacklist {
 
   val default: SpelExpressionBlacklist = SpelExpressionBlacklist(
     Set(
-      "^(java.lang.System).*$".r,
-      "^(java.net).*$".r,
-      "^(java.io).*$".r,
-      "^(java.nio).*$".r,
-      "^(java.lang.invoke).*$".r,
-      "^(java.lang.reflect).*$".r
+      "(org.springframework)".r,
+      "(java.lang.System)".r,
+      "(java.lang.Thread)".r,
+      "(java.lang.Runtime)".r,
+      "(java.lang.invoke)".r,
+      "(java.lang.reflect)".r,
+      "(java.net)".r,
+      "(java.io)".r,
+      "(java.nio)".r,
+      "(exec\\()".r,
     ))
 }

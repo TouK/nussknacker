@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.marshall
 import cats.data.NonEmptyList
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, SpelExpressionBlacklist}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder
@@ -42,7 +42,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
       Map("sourceRef" -> ObjectDefinition.noParam), Map(), Map(), Map(), ObjectDefinition.noParam,
       ExpressionDefinition(Map.empty, List.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true,
         Map.empty, hideMetaVariable = false, strictMethodsChecking = true, staticMethodInvocationsChecking = false,
-        methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false), ClassExtractionSettings.Default)
+        methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false, SpelExpressionBlacklist.default), ClassExtractionSettings.Default)
     val validator =  ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition), new SimpleDictRegistry(Map.empty))
     new ProcessValidation(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> validator), mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map()), sampleResolver, emptyProcessingTypeDataProvider)
   }

@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, TypedExpression}
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SpelExpressionBlacklist}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedDict}
 import pl.touk.nussknacker.engine.avro.schema.{PaymentV1, PaymentV2}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
@@ -220,7 +220,7 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
   private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, TypedExpression] = {
     SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(Map(dictId -> EmbeddedDictDefinition(Map("key1" -> "value1")))), enableSpelForceCompile = true,
       strictTypeChecking = true, Nil, Standard, strictMethodsChecking = true, staticMethodInvocationsChecking = false, TypeDefinitionSet.empty, methodExecutionForUnknownAllowed = false,
-      dynamicPropertyAccessAllowed = false)(ClassExtractionSettings.Default).parse(expr, validationCtx, Typed.fromDetailedType[T])
+      dynamicPropertyAccessAllowed = false, SpelExpressionBlacklist.default)(ClassExtractionSettings.Default).parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 
   private def wrapWithRecordSchema(fieldsDefinition: String) =

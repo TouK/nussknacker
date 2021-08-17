@@ -34,9 +34,13 @@ class EvaluationContextPreparer(classLoader: ClassLoader,
   }
 
   private def blockBlacklisted(targetObject: scala.Any, methodName: String): Unit = {
-    //todo: get blacklist from ExpressionConfig
 
-    val classFullName = targetObject.asInstanceOf[Class[_]].getName
+    val classFullName =
+      targetObject match {
+        case targetClass: Class[_] => targetClass.getName
+        case _ => targetObject.getClass.getName
+      }
+
     spelExpressionBlacklist.blacklistedPatterns.find(blackListRegex =>
       blackListRegex.findFirstMatchIn(classFullName) match {
         case Some(_) => true
@@ -58,9 +62,7 @@ class EvaluationContextPreparer(classLoader: ClassLoader,
 
         methodExecutorNoAnnotations
       }
-
     }
-
     Collections.singletonList(mr)
   }
 
