@@ -1,3 +1,6 @@
+---
+sidebar_position: 3
+---
 # Deployment manager configuration
 
 Configuration of deployment manager, which is responsible for communication with scenario executor (e.g. FLink). 

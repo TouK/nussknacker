@@ -1,3 +1,6 @@
+---
+sidebar_position: 5
+---
 # Model configuration
 
 This part of configuration defines how to configure the executor (e.g. Flink job) and its components for a given scenario type. It is processed not only at the designer but also passed to the execution engine (e.g. Flink), that’s why it’s parsed and processed a bit differently: 
@@ -230,5 +233,6 @@ Important thing to remember is that Kafka server addresses/schema registry addre
   }
 ```
 
-* [OpenAPI](../components/OpenAPI.md)
-* [SQL](../components/Sql.md)
+### Extra components providers 
+
+You can read about list of extra components in [Extra components](ExtraComponents.md) section
