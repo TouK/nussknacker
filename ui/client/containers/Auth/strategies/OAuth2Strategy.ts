@@ -48,7 +48,7 @@ export const OAuth2Strategy: StrategyConstructor = class OAuth2Strategy implemen
     const {hash, search} = window.location
     const queryParams = queryString.parse(search)
     if (queryParams.code) {
-      return HttpService.fetchOAuth2AccessToken<{accessToken: string}>(queryParams.code, this.redirectUri)
+      return HttpService.fetchOAuth2AccessToken<{accessToken: string}>(this.settings.provider, queryParams.code, this.redirectUri)
         .then(response => {
           SystemUtils.setAuthorizationToken(response.data.accessToken)
           return response

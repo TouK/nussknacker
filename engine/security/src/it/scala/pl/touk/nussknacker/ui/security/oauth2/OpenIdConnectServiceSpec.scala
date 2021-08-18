@@ -6,10 +6,10 @@ import org.apache.commons.lang3.StringEscapeUtils
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
+import pl.touk.nussknacker.ui.security.oidc.{OidcAuthenticationConfiguration, OidcService}
 import sttp.client.asynchttpclient.WebSocketHandler
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client.{SttpBackend, _}
-import sttp.model.MediaType
 
 import java.net.URI
 import scala.concurrent.Future
@@ -26,20 +26,21 @@ class OpenIdConnectServiceSpec extends FunSuite with ForAllTestContainer with Ma
 
   private implicit val backend: SttpBackend[Future, Nothing, WebSocketHandler] = AsyncHttpClientFutureBackend()
 
-  private def baseUrl: String = s"${container.container.getAuthServerUrl}/realms/$realmId/protocol/openid-connect"
+  private def baseUrl: String = s"${container.container.getAuthServerUrl}/realms/$realmId"
 
 
   test("Basic OpenIDConnect flow") {
 
     val config = oauth2Conf
     // TODO: Change to JWT then token caching will not be required.
-    val open = new CachingOAuth2Service(OpenIdConnectService(config), config)
+    //  However, with the current configuration KeyCloak access tokens seem not to contain the AUD claim.
+    val open = new CachingOAuth2Service(new OidcService(config), config.oAuth2Configuration)
 
     //we emulate FE part
-    val loginResult = keyCloakLogin(config)
+    val loginResult = keyCloakLogin(config.oAuth2Configuration)
     val authorizationCode = uri"${loginResult.header("Location").get}".params.get("code").get
 
-    val (authData, userData) = open.obtainAuthorizationAndUserInfo(authorizationCode, config.redirectUri.map(_.toString).get).futureValue
+    val (authData, userData) = open.obtainAuthorizationAndUserInfo(authorizationCode, config.redirectUri.get.toString).futureValue
     userData.name shouldBe Some("Jan Kowalski")
 
     val profile = open.checkAuthorizationAndObtainUserinfo(authData.accessToken).futureValue
@@ -66,29 +67,14 @@ class OpenIdConnectServiceSpec extends FunSuite with ForAllTestContainer with Ma
       .send().futureValue
   }
 
-  private def oauth2Conf: OAuth2Configuration = {
-
-    OAuth2Configuration(
+  private def oauth2Conf: OidcAuthenticationConfiguration =
+    OidcAuthenticationConfiguration(
       usersFile = new URI("classpath://users.conf"),
-      authorizeUri = uri"$baseUrl/auth".toJavaUri,
-      clientSecret = realmClientSecret,
+      issuer = uri"$baseUrl".toJavaUri,
       clientId = realmClientId,
-      profileUri = uri"$baseUrl/userinfo".toJavaUri,
-      profileFormat = None,
-      accessTokenUri = uri"$baseUrl/token".toJavaUri,
+      clientSecret = Some(realmClientSecret),
       redirectUri = Some(URI.create("http://localhost:1234")),
-      implicitGrantEnabled = false,
-      jwt = None,
-      accessTokenRequestContentType = MediaType.ApplicationXWwwFormUrlencoded.toString(),
-      accessTokenParams = Map(
-        "grant_type" -> "authorization_code"
-      ), authorizeParams = Map(
-        "scope" -> "openid profile email",
-        "response_type" -> "code"
-      )
-    )
-  }
-
+    ).withDiscovery
 }
 
 class KeyCloakScalaContainer() extends SingleContainer[KeycloakContainer] {

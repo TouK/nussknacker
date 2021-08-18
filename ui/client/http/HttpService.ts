@@ -405,8 +405,8 @@ class HttpService {
       .catch(error => this.addError(i18next.t("notification.error.failedToSendSignal", "Failed to send signal"), error))
   }
 
-  fetchOAuth2AccessToken<T>(authorizeCode: string | string[], redirectUri: string | null) {
-    return api.get<T>(`/authentication/oauth2?code=${authorizeCode}` + (redirectUri ? `&redirect_uri=${redirectUri}` : ""))
+  fetchOAuth2AccessToken<T>(provider: string, authorizeCode: string | string[], redirectUri: string | null) {
+    return api.get<T>(`/authentication/${provider.toLowerCase()}?code=${authorizeCode}` + (redirectUri ? `&redirect_uri=${redirectUri}` : ""))
   }
 
   fetchAuthenticationSettings(authenticationProvider: string) {

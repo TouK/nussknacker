@@ -28,6 +28,7 @@ class OpenIdConnectService[
   override protected def obtainUserInfo(authorization: AuthorizationData): Future[UserData] = {
     if (useIdToken) {
       introspectJwtToken[UserData](authorization.idToken.get)
+        .filter(_.audienceAsList == List(configuration.clientId))
     } else {
       super.obtainUserInfo(authorization)
     }

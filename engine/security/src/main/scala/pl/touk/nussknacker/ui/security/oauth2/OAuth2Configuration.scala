@@ -7,7 +7,7 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.util.Implicits.SourceIsReleasable
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
-import pl.touk.nussknacker.ui.security.oauth2.ProfileFormat.{OIDC, ProfileFormat}
+import pl.touk.nussknacker.ui.security.oauth2.ProfileFormat.ProfileFormat
 import sttp.model.{HeaderNames, MediaType, Uri}
 
 import scala.concurrent.duration.{FiniteDuration, HOURS}
@@ -69,7 +69,7 @@ trait JwtConfiguration {
 
   def userinfoFromIdToken: Boolean
 
-  def authServerPublicKey: PublicKey
+  def authServerPublicKey: Option[PublicKey]
 
   def idTokenNonceVerificationRequired: Boolean
 
@@ -93,7 +93,7 @@ object JwtConfiguration {
                                certificate: Option[String],
                                certificateFile: Option[String],
                                idTokenNonceVerificationRequired: Boolean = false) extends JwtConfiguration {
-    def authServerPublicKey: PublicKey = {
+    def authServerPublicKey: Some[PublicKey] = {
       val charset: Charset = StandardCharsets.UTF_8
 
       def getContent(content: Option[String], file: Option[String]): Option[String] =
@@ -102,8 +102,9 @@ object JwtConfiguration {
         })
 
       getContent(publicKey, publicKeyFile).map(CertificatesAndKeys.publicKeyFromString(_, charset)) orElse
-        getContent(certificate, certificateFile).map(CertificatesAndKeys.publicKeyFromStringCertificate(_, charset)) getOrElse {
-        throw new Exception("one of the: 'publicKey', 'publicKeyFile', 'certificate', 'certificateFile' fields should be provided in the authentication.jwt configuration")
+        getContent(certificate, certificateFile).map(CertificatesAndKeys.publicKeyFromStringCertificate(_, charset)) match {
+        case x@Some(_) => x
+        case _ => throw new Exception("one of the: 'publicKey', 'publicKeyFile', 'certificate', 'certificateFile' fields should be provided in the authentication.jwt configuration")
       }
     }
   }
