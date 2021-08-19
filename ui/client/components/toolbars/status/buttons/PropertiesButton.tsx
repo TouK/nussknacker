@@ -1,46 +1,32 @@
-import React, {useCallback} from "react"
+import React, {useCallback, useMemo} from "react"
 import {useTranslation} from "react-i18next"
-import {useDispatch, useSelector} from "react-redux"
-import {displayModalNodeDetails} from "../../../../actions/nk"
+import {useSelector} from "react-redux"
 import {events} from "../../../../analytics/TrackingEvents"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/properties.svg"
 import {getProcessToDisplay, getProcessUnsavedNewName, hasError, hasPropertiesErrors} from "../../../../reducers/selectors/graph"
-import {GroupNodeType, NodeType} from "../../../../types"
 import {useWindows} from "../../../../windowManager"
-import {WindowKind} from "../../../../windowManager/WindowKind"
 import NodeUtils from "../../../graph/NodeUtils"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 import {ToolbarButtonProps} from "../../types"
 
 function PropertiesButton(props: ToolbarButtonProps): JSX.Element {
   const {t} = useTranslation()
-  const dispatch = useDispatch()
+  const {editNode} = useWindows()
   const {disabled} = props
-
   const processToDisplay = useSelector(getProcessToDisplay)
   const name = useSelector(getProcessUnsavedNewName)
   const propertiesErrors = useSelector(hasPropertiesErrors)
   const errors = useSelector(hasError)
-  const {open} = useWindows()
+
+  const processProperties = useMemo(() => NodeUtils.getProcessProperties(processToDisplay, name), [name, processToDisplay])
+  const eventInfo = useMemo(() => ({
+    category: events.categories.rightPanel,
+    name: t("panels.actions.edit-properties.dialog", "properties"),
+  }), [t])
 
   const onClick = useCallback(
-    () => {
-      const processProperties = NodeUtils.getProcessProperties(processToDisplay, name)
-      const eventInfo = {
-        category: events.categories.rightPanel,
-        name: t("panels.actions.edit-properties.dialog", "properties"),
-      }
-
-      open<NodeType | GroupNodeType>({
-        title: processProperties.id,
-        kind: WindowKind.editNode,
-        isModal: false,
-        meta: processProperties,
-      })
-
-      dispatch(displayModalNodeDetails(processProperties, false, eventInfo))
-    },
-    [dispatch, name, open, processToDisplay, t],
+    () => editNode(processProperties, false, eventInfo),
+    [editNode, eventInfo, processProperties],
   )
 
   return (

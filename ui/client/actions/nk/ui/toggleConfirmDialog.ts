@@ -21,17 +21,6 @@ export function toggleConfirmDialog(
     if (!isEmpty(event)) {
       dispatch(reportEvent(event))
     }
-
-    // dispatch(openWindow<ConfirmDialogData>({
-    //   title: text,
-    //   kind: WindowKind.confirm,
-    //   // TODO: get rid of meta
-    //   meta: {
-    //     onConfirmCallback: action,
-    //     text,
-    //     confirmText,
-    //     denyText,
-    //   },
-    // }))
+    return action()
   }
 }

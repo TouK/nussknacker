@@ -1,7 +1,7 @@
-import React, {useCallback} from "react"
-import {useDispatch} from "react-redux"
-import {displayModalEdgeDetails, displayModalNodeDetails, EventInfo} from "../actions/nk"
-import {Edge, NodeType} from "../types"
+import React from "react"
+import {useSelector} from "react-redux"
+import {getFetchedProcessDetails} from "../reducers/selectors/graph"
+import {useWindows} from "../windowManager"
 import Visualization from "./Visualization"
 
 export interface VisualizationProps {
@@ -10,12 +10,16 @@ export interface VisualizationProps {
 
 // Visualization wrapped to make partial (for now) refactor to TS and hooks
 export default function VisualizationWrapped(props: VisualizationProps): JSX.Element {
-  const dispatch = useDispatch()
-  const showModalEdgeDetails = useCallback((edge: Edge) => dispatch(displayModalEdgeDetails(edge)), [dispatch])
-  const showModalNodeDetails = useCallback((node: NodeType, readonly?: boolean, eventInfo?: EventInfo) => dispatch(displayModalNodeDetails(
-    node,
-    readonly,
-    eventInfo,
-  )), [dispatch])
-  return <Visualization {...props} showModalNodeDetails={showModalNodeDetails} showModalEdgeDetails={showModalEdgeDetails}/>
+  const {editNode, editEdge} = useWindows()
+
+  const fetchedProcessDetails = useSelector(getFetchedProcessDetails)
+
+  return (
+    <Visualization
+      showModalNodeDetails={editNode}
+      showModalEdgeDetails={editEdge}
+      fetchedProcessDetails={fetchedProcessDetails}
+      {...props}
+    />
+  )
 }

@@ -1,6 +1,5 @@
 import * as VisualizationUrl from "../../common/VisualizationUrl"
 import history from "../../history"
-import {ThunkAction} from "../reduxTypes"
 
 export type CloseModalsAction = {
   type: "CLOSE_MODALS",
@@ -15,8 +14,7 @@ export function closeModals(): CloseModalsAction {
     }),
   })
 
-    return dispatch({
-      type: "CLOSE_MODALS",
-    })
+  return {
+    type: "CLOSE_MODALS",
   }
 }

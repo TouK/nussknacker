@@ -1,10 +1,11 @@
 import React, {useCallback, useState} from "react"
 import {useDispatch, useSelector} from "react-redux"
 import {createSelector} from "reselect"
-import {addComment, deleteComment, toggleConfirmDialog} from "../actions/nk"
+import {addComment, ConfirmDialogData, deleteComment, toggleConfirmDialog} from "../actions/nk"
 import * as DialogMessages from "../common/DialogMessages"
 import {getProcessId, getProcessVersionId} from "../reducers/selectors/graph"
 import {getFeatureSettings, getLoggedUser} from "../reducers/selectors/settings"
+import {useWindows, WindowKind} from "../windowManager"
 import CommentContent from "./CommentContent"
 import CommentInput from "./CommentInput"
 import Date from "./common/Date"
@@ -27,6 +28,8 @@ function ProcessComments(): JSX.Element {
   const capabilities = useSelector(getCapabilities)
   const commentSettings = useSelector(getCommentSettings)
 
+  const {open} = useWindows()
+
   const _addComment = useCallback(async () => {
     setPending(true)
     await dispatch(addComment(processId, processVersionId, comment))
@@ -35,11 +38,27 @@ function ProcessComments(): JSX.Element {
   }, [dispatch, processId, processVersionId, comment])
 
   const _deleteComment = useCallback((comment) => {
-    dispatch(toggleConfirmDialog(true, DialogMessages.deleteComment(), async () => {
+    const text = DialogMessages.deleteComment()
+    const confirmText = "DELETE"
+    const denyText = "NO"
+    const action = () => {
       setPending(true)
-      await dispatch(deleteComment(processId, comment.id))
-      setPending(false)
-    }, "DELETE", "NO"))
+      open<ConfirmDialogData>({
+        title: text,
+        kind: WindowKind.confirm,
+        // TODO: get rid of meta
+        meta: {
+          onConfirmCallback: async () => {
+            await dispatch(deleteComment(processId, comment.id))
+            setPending(false)
+          },
+          text,
+          confirmText,
+          denyText,
+        },
+      })
+    }
+    dispatch(toggleConfirmDialog(text, action, confirmText, denyText))
   }, [dispatch, processId])
 
   const onInputChange = useCallback((e) => setComment(e.target.value), [])

@@ -139,7 +139,6 @@ class Visualization extends React.Component {
               <Graph
                 ref={this.graphRef}
                 capabilities={this.props.capabilities}
-                showModalNodeDetails={this.props.showModalNodeDetails}
                 showModalEdgeDetails={this.props.showModalEdgeDetails}
               />
             ) :

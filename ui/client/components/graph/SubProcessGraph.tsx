@@ -4,7 +4,7 @@ import {compose} from "redux"
 import ActionsUtils from "../../actions/ActionsUtils"
 import * as LayoutUtils from "../../reducers/layoutUtils"
 import {getNodeId} from "../../reducers/selectors/graph"
-import {commonState, Graph, subprocessParent} from "./Graph"
+import {commonState, subprocessParent} from "./Graph"
 import GraphWrapped from "./GraphWrapped"
 
 function mapSubprocessState(state, props) {

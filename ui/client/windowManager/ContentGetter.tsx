@@ -30,6 +30,7 @@ export const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) =
       return <GenerateTestDataDialog {...props}/>
     case WindowKind.compareVersions:
       return <CompareVersionsDialog {...props}/>
+
     case WindowKind.customAction:
       return <CustomActionDialog {...props}/>
     case WindowKind.confirm:
@@ -38,6 +39,8 @@ export const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) =
       return <NodeDetails {...props}/>
     case WindowKind.viewNode:
       return <NodeDetails {...props} readOnly/>
+    case WindowKind.editEdge:
+    //   return <EdgeDetails {...props}/>
     default:
       return (
         <WindowContent {...props}>
