@@ -205,15 +205,14 @@ export class Graph extends React.Component {
     return magnetT && NodeUtils.canMakeLink(from, to, this.props.processToDisplay, this.props.processDefinitionData, previousEdge)
   }
 
-  disconnectPreviousEdge = (previousEdge) => {
-    const nodeIds = previousEdge.split("-").slice(0, 2)
-    if (this.graphContainsEdge(nodeIds)) {
-      this.props.actions.nodesDisconnected(...nodeIds)
+  disconnectPreviousEdge = (from, to) => {
+    if (this.graphContainsEdge(from, to)) {
+      this.props.actions.nodesDisconnected(from, to)
     }
   }
 
-  graphContainsEdge(nodeIds) {
-    return this.props.processToDisplay.edges.some(edge => edge.from === nodeIds[0] && edge.to === nodeIds[1])
+  graphContainsEdge(from, to) {
+    return this.props.processToDisplay.edges.some(edge => edge.from === from && edge.to === to)
   }
 
   handleInjectBetweenNodes = (middleMan) => {

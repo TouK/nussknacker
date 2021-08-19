@@ -208,9 +208,7 @@ class NodeUtils {
 
     const to = this.getNodeById(toId, process)
     const from = this.getNodeById(fromId, process)
-    const alreadyHasLink = process.edges.find(edge => edge.from == fromId || edge.to == toId)
     return fromId !== toId &&
-      (!alreadyHasLink) &&
       this._canHaveMoreInputs(to, nodeInputs, processDefinitionData) &&
       this._canHaveMoreOutputs(from, nodeOutputs, processDefinitionData)
   }

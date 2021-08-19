@@ -1,5 +1,6 @@
 export enum Events {
   LINK_CONNECT = "link:connect",
+  LINK_DISCONNECT = "link:disconnect",
   LINK_MOUSEOVER = "link:mouseover",
   CELL_POINTERUP = "cell:pointerup",
   CELL_POINTERDOWN = "cell:pointerdown",

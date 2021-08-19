@@ -80,10 +80,12 @@ export function createPaper(): dia.Paper {
       this.handleInjectBetweenNodes(cell.model)
     })
     .on(Events.LINK_CONNECT, (cell) => {
-      this.disconnectPreviousEdge(cell.model.id)
       this.props.actions.nodesConnected(
         cell.sourceView.model.attributes.nodeData,
         cell.targetView.model.attributes.nodeData,
       )
+    })
+    .on(Events.LINK_DISCONNECT, (cell) => {
+      this.disconnectPreviousEdge(cell.model.attributes.edgeData.from, cell.model.attributes.edgeData.to)
     })
 }
