@@ -1,9 +1,8 @@
-import PropTypes from "prop-types"
 import React from "react"
 import InlinedSvgs from "../../assets/icons/InlinedSvgs"
 import ValidTip from "./ValidTip"
 
-export default function ValidTips(props) {
+export default function ValidTips(props: {hasNeitherErrorsNorWarnings?: boolean, testing?: boolean}): JSX.Element {
   const {hasNeitherErrorsNorWarnings, testing} = props
 
   return (
@@ -12,8 +11,4 @@ export default function ValidTips(props) {
       {testing && <ValidTip icon={InlinedSvgs.testingMode} message={"Testing mode enabled"}/>}
     </React.Fragment>
   )
-}
-
-ValidTips.propTypes = {
-  testing: PropTypes.bool.isRequired,
 }
