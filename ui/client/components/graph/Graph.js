@@ -124,12 +124,19 @@ export class Graph extends React.Component {
       }
     })
 
+    //we want to inject node during 'Drag and Drop' from graph paper
     this.graph.on(Events.ADD, (cell) => {
-      this.handleInjectBetweenNodes(cell)
-      setLinksHovered(this.graph)
+      if (this.isNotLink(cell)) {
+        this.handleInjectBetweenNodes(cell)
+        setLinksHovered(this.graph)
+      }
     })
 
     this.panAndZoom.fitSmallAndLargeGraphs()
+  }
+
+  isNotLink(cell) {
+    return cell.attributes.type !== "link";
   }
 
   canAddNode(node) {
