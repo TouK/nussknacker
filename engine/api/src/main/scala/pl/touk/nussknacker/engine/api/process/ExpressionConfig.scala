@@ -20,7 +20,7 @@ case class ExpressionConfig(globalProcessVariables: Map[String, WithCategories[A
                             hideMetaVariable: Boolean = false,
                             strictMethodsChecking: Boolean = true,
                             staticMethodInvocationsChecking: Boolean = true,
-                            methodExecutionForUnknownAllowed: Boolean = true,
+                            methodExecutionForUnknownAllowed: Boolean = false,
                             dynamicPropertyAccessAllowed: Boolean = false,
                             spelExpressionBlacklist: SpelExpressionBlacklist = SpelExpressionBlacklist.default
                            )
@@ -34,5 +34,3 @@ object LanguageConfiguration {
 }
 
 case class LanguageConfiguration(expressionParsers: List[ExpressionParser])
-
-

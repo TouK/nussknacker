@@ -58,7 +58,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   private def parseOrFailWithoutStaticInvocationChecking[T:TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard) : Expression = {
 
-    parse(expr, context, flavour, staticMethodInvocationsChecking = false) match {
+    parse(expr, context, flavour, staticMethodInvocationsChecking = false, methodExecutionForUnknownAllowed = true) match {
       case Valid(e) => e.expression
       case Invalid(err) => throw new ParseException(err.map(_.message).toList.mkString, -1)
     }
@@ -101,10 +101,10 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
       dynamicPropertyAccessAllowed = false)
   }
 
-  private def parse[T: TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard, staticMethodInvocationsChecking: Boolean = true): ValidatedNel[ExpressionParseError, TypedExpression] = {
+  private def parse[T: TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard, staticMethodInvocationsChecking: Boolean = true, methodExecutionForUnknownAllowed: Boolean = false): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val validationCtx = ValidationContext(
       context.variables.mapValuesNow(Typed.fromInstance))
-    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = true, staticMethodInvocationsChecking, methodExecutionForUnknownAllowed = false,
+    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = true, staticMethodInvocationsChecking, methodExecutionForUnknownAllowed,
       dynamicPropertyAccessAllowed = true)
   }
 
@@ -123,12 +123,12 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   }
 
   private def spelExpressionBlacklistWithCustomPatterns: SpelExpressionBlacklist = {
-    SpelExpressionBlacklist(Set(
-      "(java\\.lang\\.System)".r,
-      "(java\\.lang\\.reflect)".r,
-      "(java\\.lang\\.net)".r,
-      "(java\\.lang\\.io)".r,
-      "(java\\.lang\\.nio)".r,
+    SpelExpressionBlacklist(Map(
+      "system" -> "(java\\.lang\\.System)".r,
+      "reflect" -> "(java\\.lang\\.reflect)".r,
+      "net" -> "(java\\.lang\\.net)".r,
+      "io" -> "(java\\.lang\\.io)".r,
+      "nio" -> "(java\\.lang\\.nio)".r,
     ))
   }
 
@@ -138,7 +138,6 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
       TypeInfos.ClazzDefinition(TypedClass(ClassUtils.primitiveToWrapper(ClassUtils.getClass(className)), Nil), Map.empty, Map.empty)
 
     TypeDefinitionSet(Set(
-      createTestClazzDefinitionFromClassNames("java.lang.System"),
       createTestClazzDefinitionFromClassNames("java.lang.String"),
       createTestClazzDefinitionFromClassNames("java.lang.Long"),
       createTestClazzDefinitionFromClassNames("java.lang.Integer"),

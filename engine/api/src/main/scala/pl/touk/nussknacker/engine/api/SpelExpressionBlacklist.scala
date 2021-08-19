@@ -4,7 +4,6 @@ import pl.touk.nussknacker.engine.api.exception.BlacklistedPatternInvocationExce
 
 import scala.util.matching.Regex
 
-
 object SpelExpressionBlacklist {
 
   val default: SpelExpressionBlacklist = SpelExpressionBlacklist(

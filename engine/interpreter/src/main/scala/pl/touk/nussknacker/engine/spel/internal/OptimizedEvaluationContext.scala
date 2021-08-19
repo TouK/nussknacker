@@ -4,10 +4,10 @@ import java.lang.reflect.Method
 import java.util
 import java.util.Collections
 import org.springframework.core.convert.TypeDescriptor
-import org.springframework.expression.{EvaluationContext, EvaluationException, MethodExecutor, MethodResolver, PropertyAccessor}
+import org.springframework.expression.{EvaluationContext, MethodExecutor, MethodResolver, PropertyAccessor}
 import org.springframework.expression.spel.support.{ReflectiveMethodExecutor, ReflectiveMethodResolver, StandardEvaluationContext, StandardTypeLocator}
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionBlacklist}
-import pl.touk.nussknacker.engine.spel.{OmitAnnotationsMethodExecutor}
+import pl.touk.nussknacker.engine.spel.OmitAnnotationsMethodExecutor
 
 import scala.collection.JavaConverters._
 
@@ -31,7 +31,7 @@ class EvaluationContextPreparer(classLoader: ClassLoader,
   private val locator: StandardTypeLocator = new StandardTypeLocator(classLoader) {
     expressionImports.foreach(registerImport)
   }
-  //todo: check if changing scala.any to object created problems
+
   private val optimizedMethodResolvers: java.util.List[MethodResolver] = {
     val mr = new ReflectiveMethodResolver {
       override def resolve(context: EvaluationContext, targetObject: Object, name: String, argumentTypes: util.List[TypeDescriptor]): MethodExecutor = {
