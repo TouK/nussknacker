@@ -1,25 +1,3 @@
-package pl.touk.nussknacker.engine.benchmarks.spel
-
-import org.openjdk.jmh.annotations._
-
-import java.util.concurrent.TimeUnit
-
-
-@State(Scope.Thread)
-class SpelSecurityBlacklistBenchmark {
-
-  private val setup = new SpelBenchmarkSetup("T(java.math.BigInteger).valueOf(1L)", Map.empty)
-
-  @Benchmark
-  @BenchmarkMode(Array(Mode.AverageTime))
-  @OutputTimeUnit(TimeUnit.MICROSECONDS)
-  def benchmark(): AnyRef = {
-    setup.test()
-  }
-}
-
-
-
 /**
   * BEFORE ADDING BLACKLISTED BLOCKING IN RUNTIME
 [info] # Warmup Iteration   1: 0.140 us/op
@@ -63,5 +41,29 @@ class SpelSecurityBlacklistBenchmark {
 [info] Benchmark                                 Mode  Cnt  Score   Error  Units
 [info] SpelSecurityBlacklistBenchmark.benchmark  avgt    8  0.176 ± 0.047  us/op
   */
+
+
+
+
+
+package pl.touk.nussknacker.engine.benchmarks.spel
+
+import org.openjdk.jmh.annotations._
+
+import java.util.concurrent.TimeUnit
+
+@State(Scope.Thread)
+class SpelSecurityBlacklistBenchmark {
+
+  private val setup = new SpelBenchmarkSetup("T(java.math.BigInteger).valueOf(1L)", Map.empty)
+
+  @Benchmark
+  @BenchmarkMode(Array(Mode.AverageTime))
+  @OutputTimeUnit(TimeUnit.MICROSECONDS)
+  def benchmark(): AnyRef = {
+    setup.test()
+  }
+}
+
 
 

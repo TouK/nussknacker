@@ -11,12 +11,12 @@ import org.springframework.expression.common.{CompositeStringExpression, Literal
 import org.springframework.expression.spel.ast.SpelNodeImpl
 import org.springframework.expression.spel.{SpelCompilerMode, SpelEvaluationException, SpelParserConfiguration, standard}
 import pl.touk.nussknacker.engine.{TypeDefinitionSet, api}
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.{Context, SpelExpressionBlacklist}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, ExpressionParser, TypedExpression}
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SpelExpressionBlacklist}
+import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult}
@@ -51,7 +51,8 @@ final case class ParsedSpelExpression(original: String, parser: () => Validated[
     try {
       value()
     } catch {
-      case e: SpelEvaluationException if Option(e.getCause).exists(_.isInstanceOf[ClassCastException]) =>
+      case e: SpelEvaluationException
+        if Option(e.getCause).exists(_.isInstanceOf[ClassCastException]) =>
         logger.warn("Error during expression evaluation '{}': {}. Trying to compile", original, e.getMessage)
         forceParse()
         value()

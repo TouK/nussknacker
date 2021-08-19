@@ -5,10 +5,10 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.conversion.ProcessConfigCreatorMapping
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory.NoParamExceptionHandlerFactory
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, ProcessObjectDependencies, SpelExpressionBlacklist}
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter, MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter, MetaData, SpelExpressionBlacklist, StreamMetaData}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ExpressionDefinition, ProcessDefinition}

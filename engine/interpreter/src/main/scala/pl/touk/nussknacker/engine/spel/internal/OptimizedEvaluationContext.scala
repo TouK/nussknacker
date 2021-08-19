@@ -6,9 +6,8 @@ import java.util.Collections
 import org.springframework.core.convert.TypeDescriptor
 import org.springframework.expression.{EvaluationContext, EvaluationException, MethodExecutor, MethodResolver, PropertyAccessor}
 import org.springframework.expression.spel.support.{ReflectiveMethodExecutor, ReflectiveMethodResolver, StandardEvaluationContext, StandardTypeLocator}
-import pl.touk.nussknacker.engine.api.Context
-import pl.touk.nussknacker.engine.spel.{OmitAnnotationsMethodExecutor, SpelExpressionEvaluationException}
-import pl.touk.nussknacker.engine.api.process.SpelExpressionBlacklist
+import pl.touk.nussknacker.engine.api.{Context, SpelExpressionBlacklist}
+import pl.touk.nussknacker.engine.spel.{OmitAnnotationsMethodExecutor}
 
 import scala.collection.JavaConverters._
 
@@ -32,35 +31,15 @@ class EvaluationContextPreparer(classLoader: ClassLoader,
   private val locator: StandardTypeLocator = new StandardTypeLocator(classLoader) {
     expressionImports.foreach(registerImport)
   }
-
-  private def blockBlacklisted(targetObject: scala.Any, methodName: String): Unit = {
-
-    val classFullName =
-      targetObject match {
-        case targetClass: Class[_] => targetClass.getName
-        case _ => targetObject.getClass.getName
-      }
-
-    spelExpressionBlacklist.blacklistedPatterns.find(blackListRegex =>
-      blackListRegex.findFirstMatchIn(classFullName) match {
-        case Some(_) => true
-        case None => false
-      }) match {
-      case Some(_) => throw new EvaluationException(s"Method ${methodName} of class ${classFullName} is not allowed to be passed as a spel expression")
-      case _ =>
-    }
-  }
-
+  //todo: check if changing scala.any to object created problems
   private val optimizedMethodResolvers: java.util.List[MethodResolver] = {
     val mr = new ReflectiveMethodResolver {
-      override def resolve(context: EvaluationContext, targetObject: scala.Any, name: String, argumentTypes: util.List[TypeDescriptor]): MethodExecutor = {
+      override def resolve(context: EvaluationContext, targetObject: Object, name: String, argumentTypes: util.List[TypeDescriptor]): MethodExecutor = {
         val methodExecutor = super.resolve(context, targetObject, name, argumentTypes).asInstanceOf[ReflectiveMethodExecutor]
 
-        blockBlacklisted(targetObject, name)
+        spelExpressionBlacklist.blockBlacklisted(targetObject, name)
 
-        val methodExecutorNoAnnotations = new OmitAnnotationsMethodExecutor(methodExecutor)
-
-        methodExecutorNoAnnotations
+        new OmitAnnotationsMethodExecutor(methodExecutor)
       }
     }
     Collections.singletonList(mr)

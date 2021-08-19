@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.process
 
+import pl.touk.nussknacker.engine.api.SpelExpressionBlacklist
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.expression.ExpressionParser
 
@@ -19,7 +20,7 @@ case class ExpressionConfig(globalProcessVariables: Map[String, WithCategories[A
                             hideMetaVariable: Boolean = false,
                             strictMethodsChecking: Boolean = true,
                             staticMethodInvocationsChecking: Boolean = true,
-                            methodExecutionForUnknownAllowed: Boolean = false,
+                            methodExecutionForUnknownAllowed: Boolean = true,
                             dynamicPropertyAccessAllowed: Boolean = false,
                             spelExpressionBlacklist: SpelExpressionBlacklist = SpelExpressionBlacklist.default
                            )
@@ -35,21 +36,3 @@ object LanguageConfiguration {
 case class LanguageConfiguration(expressionParsers: List[ExpressionParser])
 
 
-case class SpelExpressionBlacklist(blacklistedPatterns: Set[Regex])
-
-object SpelExpressionBlacklist {
-
-  val default: SpelExpressionBlacklist = SpelExpressionBlacklist(
-    Set(
-      "(org.springframework)".r,
-      "(java.lang.System)".r,
-      "(java.lang.Thread)".r,
-      "(java.lang.Runtime)".r,
-      "(java.lang.invoke)".r,
-      "(java.lang.reflect)".r,
-      "(java.net)".r,
-      "(java.io)".r,
-      "(java.nio)".r,
-      "(exec\\()".r,
-    ))
-}

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.marshall
 import cats.data.NonEmptyList
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration, SpelExpressionBlacklist}
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder

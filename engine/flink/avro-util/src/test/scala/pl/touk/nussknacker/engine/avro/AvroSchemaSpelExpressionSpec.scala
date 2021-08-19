@@ -7,12 +7,13 @@ import org.apache.avro.generic.GenericData.EnumSymbol
 import org.apache.avro.generic.GenericRecord
 import org.scalatest.{FunSpec, Matchers}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
+import pl.touk.nussknacker.engine.api.SpelExpressionBlacklist
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, TypedExpression}
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, SpelExpressionBlacklist}
+import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedDict}
 import pl.touk.nussknacker.engine.avro.schema.{PaymentV1, PaymentV2}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
