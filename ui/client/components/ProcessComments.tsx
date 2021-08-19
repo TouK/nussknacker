@@ -33,7 +33,7 @@ function ProcessComments(): JSX.Element {
   }, [dispatch, processId, processVersionId, comment])
 
   const _deleteComment = useCallback((comment) => {
-    dispatch(toggleConfirmDialog(DialogMessages.deleteComment(), async () => {
+    dispatch(toggleConfirmDialog(true, DialogMessages.deleteComment(), async () => {
       setPending(true)
       await dispatch(deleteComment(processId, comment.id))
       setPending(false)
