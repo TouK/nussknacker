@@ -1,10 +1,10 @@
 import * as H from "history"
 import React, {useCallback, useEffect, useRef} from "react"
-import {useDispatch, useSelector} from "react-redux"
+import {useSelector} from "react-redux"
 import {Prompt} from "react-router"
-import {toggleConfirmDialog} from "../actions/nk"
 import * as DialogMessages from "../common/DialogMessages"
 import {isPristine} from "../reducers/selectors/graph"
+import {useWindows} from "../windowManager"
 
 interface RouteLeavingGuardProps {
   when?: boolean,
@@ -15,7 +15,6 @@ export function RouteLeavingGuard(props: RouteLeavingGuardProps): JSX.Element {
   const {when, navigate} = props
   const lastLocation = useRef(null)
   const confirmedNavigation = useRef(false)
-  const dispatch = useDispatch()
 
   const closeModal = useCallback(() => {
     confirmedNavigation.current = false
@@ -30,12 +29,19 @@ export function RouteLeavingGuard(props: RouteLeavingGuardProps): JSX.Element {
     closeModal()
   }, [closeModal, lastLocation, navigate])
 
+  const {confirm} = useWindows()
+
   const showModal = useCallback(
     (location) => {
       lastLocation.current = location
-      dispatch(toggleConfirmDialog(DialogMessages.unsavedProcessChanges(), () => handleConfirmNavigationClick(), "DISCARD", "NO"))
+      confirm({
+        text: DialogMessages.unsavedProcessChanges(),
+        onConfirmCallback: handleConfirmNavigationClick,
+        confirmText: "DISCARD",
+        denyText: "NO",
+      })
     },
-    [dispatch, handleConfirmNavigationClick],
+    [confirm, handleConfirmNavigationClick],
   )
 
   const handleBlockedNavigation = useCallback((nextLocation: H.Location, action: H.Action) => {

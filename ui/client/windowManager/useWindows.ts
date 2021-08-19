@@ -1,7 +1,9 @@
 import {useWindowManager, WindowId, WindowType} from "@touk/window-manager"
+import {isEmpty} from "lodash"
 import {useCallback} from "react"
 import {useDispatch} from "react-redux"
-import {displayModalEdgeDetails, displayModalNodeDetails, reportEvent} from "../actions/nk"
+import {displayModalEdgeDetails, displayModalNodeDetails, EventInfo, reportEvent} from "../actions/nk"
+import {ConfirmDialogData} from "../components/modals/GenericConfirmDialog"
 import {Edge, GroupNodeType, NodeType} from "../types"
 import {WindowKind} from "./WindowKind"
 
@@ -42,5 +44,18 @@ export function useWindows(parent?: WindowId) {
     dispatch(displayModalEdgeDetails(edge))
   }, [dispatch, open])
 
-  return {open, editNode, editEdge}
+  const confirm = useCallback((data: ConfirmDialogData, event?: EventInfo) => {
+    if (!isEmpty(event)) {
+      dispatch(reportEvent(event))
+    }
+
+    open<ConfirmDialogData>({
+      title: data.text,
+      kind: WindowKind.confirm,
+      // TODO: get rid of meta
+      meta: {confirmText: "Yes", denyText: "No", ...data},
+    })
+  }, [dispatch, open])
+
+  return {open, confirm, editNode, editEdge}
 }

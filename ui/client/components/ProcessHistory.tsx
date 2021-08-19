@@ -1,10 +1,11 @@
-import React, {useCallback, useMemo, useState} from "react"
+import React, {useCallback, useMemo} from "react"
 import {Scrollbars} from "react-custom-scrollbars"
 import {useDispatch, useSelector} from "react-redux"
-import {fetchProcessToDisplay, toggleConfirmDialog} from "../actions/nk"
+import {fetchProcessToDisplay} from "../actions/nk"
 import {unsavedProcessChanges} from "../common/DialogMessages"
 import {getFetchedProcessDetails, isSaveDisabled} from "../reducers/selectors/graph"
 import styles from "../stylesheets/processHistory.styl"
+import {useWindows} from "../windowManager"
 import {HistoryItem, VersionType} from "./HistoryItem"
 import {ProcessVersionType} from "./Process/types"
 
@@ -22,11 +23,13 @@ export function ProcessHistoryComponent(props: {isReadOnly?: boolean}): JSX.Elem
     dispatch(fetchProcessToDisplay(name, version.processVersionId))
   }, [dispatch, name])
 
+  const {confirm} = useWindows()
+
   const changeVersion = useCallback(
     (version: ProcessVersionType) => props.isReadOnly || nothingToSave ?
       doChangeVersion(version) :
-      dispatch(toggleConfirmDialog(unsavedProcessChanges(), () => doChangeVersion(version), "DISCARD", "NO", null)),
-    [dispatch, doChangeVersion, nothingToSave, props.isReadOnly],
+      confirm({text: unsavedProcessChanges(), onConfirmCallback: () => doChangeVersion(version), confirmText: "DISCARD", denyText: "NO"}),
+    [confirm, doChangeVersion, nothingToSave, props.isReadOnly],
   )
 
   return (

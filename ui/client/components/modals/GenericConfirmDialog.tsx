@@ -2,11 +2,20 @@ import {WindowButtonProps, WindowContentProps} from "@touk/window-manager"
 import {css, cx} from "emotion"
 import React, {PropsWithChildren, useMemo} from "react"
 import {useTranslation} from "react-i18next"
-import {ConfirmDialogData} from "../../actions/nk"
-import {PromptContent} from "../../windowManager"
-import {WindowKind} from "../../windowManager/WindowKind"
+import {PromptContent, WindowKind} from "../../windowManager"
 
-export function GenericConfirmDialog({children, ...props}: PropsWithChildren<WindowContentProps<WindowKind, ConfirmDialogData>>): JSX.Element {
+export interface ConfirmDialogData {
+  text: string,
+  confirmText?: string,
+  denyText?: string,
+  //TODO: get rid of callbacks in store
+  onConfirmCallback: () => void,
+}
+
+export function GenericConfirmDialog({
+  children,
+  ...props
+}: PropsWithChildren<WindowContentProps<WindowKind, ConfirmDialogData>>): JSX.Element {
   // TODO: get rid of meta
   const {meta} = props.data
 

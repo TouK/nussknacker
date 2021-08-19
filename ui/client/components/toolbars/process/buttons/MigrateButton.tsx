@@ -1,27 +1,45 @@
 import {isEmpty} from "lodash"
-import React from "react"
-import {RootState} from "../../../../reducers/index"
-import {connect} from "react-redux"
+import React, {useCallback} from "react"
+import {useTranslation} from "react-i18next"
+import {useSelector} from "react-redux"
+import {events} from "../../../../analytics/TrackingEvents"
+import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/migrate.svg"
 import * as DialogMessages from "../../../../common/DialogMessages"
 import HttpService from "../../../../http/HttpService"
-import {events} from "../../../../analytics/TrackingEvents"
-import {toggleConfirmDialog} from "../../../../actions/nk/ui/toggleConfirmDialog"
-import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
+import {getProcessId, getProcessVersionId, isMigrationPossible} from "../../../../reducers/selectors/graph"
 import {getFeatureSettings} from "../../../../reducers/selectors/settings"
-import {isMigrationPossible, getProcessVersionId, getProcessId} from "../../../../reducers/selectors/graph"
-import {useTranslation} from "react-i18next"
-import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/migrate.svg"
+import {useWindows} from "../../../../windowManager"
+import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 import {ToolbarButtonProps} from "../../types"
 
-type Props = StateProps & ToolbarButtonProps
+type Props = ToolbarButtonProps
 
 function MigrateButton(props: Props) {
   const {
-    processId, migrationPossible, featuresSettings,
-    versionId, toggleConfirmDialog, disabled,
+    disabled,
   } = props
+  const processId = useSelector(getProcessId)
+  const versionId = useSelector(getProcessVersionId)
+  const featuresSettings = useSelector(getFeatureSettings)
+  const migrationPossible = useSelector(isMigrationPossible)
+
   const available = !disabled && migrationPossible
   const {t} = useTranslation()
+  const {confirm} = useWindows()
+
+  const onClick = useCallback(() => confirm(
+    {
+      text: DialogMessages.migrate(processId, featuresSettings.remoteEnvironment.targetEnvironmentId),
+      onConfirmCallback: () => HttpService.migrateProcess(processId, versionId),
+      confirmText: t("panels.actions.process-migrate.yes", "Yes"),
+      denyText: t("panels.actions.process-migrate.no", "No"),
+    },
+    {
+      category: events.categories.rightPanel,
+      action: events.actions.buttonClick,
+      name: `migrate`,
+    },
+  ), [confirm, featuresSettings.remoteEnvironment.targetEnvironmentId, processId, t, versionId])
 
   if (isEmpty(featuresSettings?.remoteEnvironment)) {
     return null
@@ -33,31 +51,9 @@ function MigrateButton(props: Props) {
       name={t("panels.actions.process-migrate.button", "migrate")}
       icon={<Icon/>}
       disabled={!available}
-      onClick={() => toggleConfirmDialog(
-        DialogMessages.migrate(processId, featuresSettings.remoteEnvironment.targetEnvironmentId),
-        () => HttpService.migrateProcess(processId, versionId),
-        t("panels.actions.process-migrate.yes", "Yes"),
-        t("panels.actions.process-migrate.no", "No"),
-        {
-          category: events.categories.rightPanel,
-          action: events.actions.buttonClick,
-          name: "migrate", // eslint-disable-line i18next/no-literal-string
-        },
-      )}
+      onClick={onClick}
     />
   )
 }
 
-const mapState = (state: RootState) => ({
-  processId: getProcessId(state),
-  versionId: getProcessVersionId(state),
-  featuresSettings: getFeatureSettings(state),
-  migrationPossible: isMigrationPossible(state),
-})
-
-const mapDispatch = {
-  toggleConfirmDialog,
-}
-type StateProps = typeof mapDispatch & ReturnType<typeof mapState>
-
-export default connect(mapState, mapDispatch)(MigrateButton)
+export default MigrateButton
