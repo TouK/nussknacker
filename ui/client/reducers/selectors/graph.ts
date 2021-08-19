@@ -61,7 +61,7 @@ export const isMigrationPossible = createSelector(
 export const isCancelPossible = createSelector(getFetchedProcessState, state => ProcessStateUtils.canCancel(state))
 export const isArchivePossible = createSelector(getFetchedProcessState, state => ProcessStateUtils.canArchive(state))
 export const getTestCapabilities = createSelector(getGraph, g => g.testCapabilities || {})
-const getTestResults = createSelector(getGraph, g => g.testResults)
+export const getTestResults = createSelector(getGraph, g => g.testResults)
 export const getProcessCounts = createSelector(getGraph, getUserSettings, (g, s) => {
   const counts = g.processCounts || {} as ProcessCounts
   return mapValues(counts, (c) => ({...c, all: s["node.shortCounts"] ? millify(c.all) : c.all.toLocaleString()}))

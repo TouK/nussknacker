@@ -33,7 +33,7 @@ export type ToggleCustomActionAction = {
   customAction: CustomAction,
 }
 
-export function displayModalNodeDetails(node: NodeType, readonly: boolean, eventInfo: EventInfo): ThunkAction {
+export function displayModalNodeDetails(node: NodeType, readonly?: boolean, eventInfo?: EventInfo): ThunkAction {
   return (dispatch) => {
     history.replace({
       pathname: history.location.pathname,
