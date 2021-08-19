@@ -188,16 +188,29 @@ describe("can make link", () => {
     expect(NodeUtils.canMakeLink("variable", "source2", createSimpleProcess([{"from": "source1", "to": "variable"}]), simpleProcessDefinition())).toEqual(false)
   })
 
-  it("cannot make more than 2 connections for Filter", () => {
+  it("cannot make more than 2 links for Filter", () => {
     //filter has limit of two
     let baseEdges = [{"from": "source1", "to": "filter1"}]
     expect(NodeUtils.canMakeLink("filter1", "sink", createSimpleProcess(baseEdges), simpleProcessDefinition()))
       .toEqual(true)
     expect(NodeUtils.canMakeLink("filter1", "variable", createSimpleProcess([...baseEdges, {"from": "filter1", "to": "sink"}]), simpleProcessDefinition()))
       .toEqual(true)
-    //3'rd connection is impossible
+    //creating 3'rd link is impossible
     expect(NodeUtils.canMakeLink("filter1", "sink2", createSimpleProcess([...baseEdges, {"from": "filter1", "to": "sink"}, {"from": "filter1", "to": "variable"}]), simpleProcessDefinition()))
       .toEqual(false)
+  })
+
+  it("can edit link if Filter if fully linked", () => {
+    //filter has limit of two
+    let baseEdges = [{"from": "source1", "to": "filter1"}]
+    let previousEdge = {from: "filter", to: "variable"}
+    expect(NodeUtils.canMakeLink("filter1", "sink", createSimpleProcess(baseEdges), simpleProcessDefinition()))
+      .toEqual(true)
+    expect(NodeUtils.canMakeLink("filter1", "variable", createSimpleProcess([...baseEdges, {"from": "filter1", "to": "sink"}]), simpleProcessDefinition()))
+      .toEqual(true)
+    //editing 2'rd link is possible
+    expect(NodeUtils.canMakeLink("filter1", "sink2", createSimpleProcess([...baseEdges, {"from": "filter1", "to": "sink"}, {"from": "filter1", "to": "variable"}]), simpleProcessDefinition(), previousEdge))
+      .toEqual(true)
   })
 })
 

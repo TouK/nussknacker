@@ -191,10 +191,11 @@ export class Graph extends React.Component {
     return await prepareSvg(this._exportGraphOptions)
   }
 
-  validateConnection = (cellViewS, magnetS, cellViewT, magnetT) => {
+  validateConnection = (cellViewS, magnetS, cellViewT, magnetT, end, linkView) => {
     const from = cellViewS.model.id
     const to = cellViewT.model.id
-    return magnetT && NodeUtils.canMakeLink(from, to, this.props.processToDisplay, this.props.processDefinitionData)
+    const previousEdge = linkView.model.attributes.edgeData || {}
+    return magnetT && NodeUtils.canMakeLink(from, to, this.props.processToDisplay, this.props.processDefinitionData, previousEdge)
   }
 
   disconnectPreviousEdge = (previousEdge) => {
