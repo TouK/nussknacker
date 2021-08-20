@@ -23,13 +23,6 @@ object SpelExpressionBlacklist {
 
 case class SpelExpressionBlacklist(blacklistedPatterns: Map[String, Regex]) {
 
-  private def getClassNameFromObject(targetObject: Object): String = {
-    targetObject match {
-      case targetClass: Class[_] => targetClass.getName
-      case _: Object => targetObject.getClass.getName
-    }
-  }
-
   def blockBlacklisted(targetObject: Object, methodName: String): Unit = {
     val classFullName = getClassNameFromObject(targetObject)
     blacklistedPatterns.find(blackListed =>
@@ -37,6 +30,13 @@ case class SpelExpressionBlacklist(blacklistedPatterns: Map[String, Regex]) {
         case Some(_) => throw BlacklistedPatternInvocationException(s"Method ${methodName} of class ${classFullName} is not allowed to be passed as a spel expression")
         case None => false
       })
+  }
+
+  private def getClassNameFromObject(targetObject: Object): String = {
+    targetObject match {
+      case targetClass: Class[_] => targetClass.getName
+      case _: Object => targetObject.getClass.getName
+    }
   }
 }
 
