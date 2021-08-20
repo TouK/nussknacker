@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.{NodeTypingInfo, ProcessValidator}
 import pl.touk.nussknacker.engine.graph.node.{Disableable, NodeData, Source, SubprocessInputDefinition}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, EdgeType}
 import pl.touk.nussknacker.restmodel.validation.CustomProcessValidator
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
@@ -125,13 +126,19 @@ class ProcessValidation(validators: ProcessingTypeDataProvider[ProcessValidator]
   }
 
   private def validateEdgeUniqueness(displayableProcess: DisplayableProcess): ValidationResult = {
-    val edgeUniquenessErrors = displayableProcess.edges
-      .groupBy(_.from).map { case (from, edges) =>
-      from -> edges.groupBy(_.edgeType).collect { case (Some(eType), list) if list.size > 1 =>
-        PrettyValidationErrors.nonuniqeEdge(uiValidationError, eType)
-      }.toList
-    }.filterNot(_._2.isEmpty)
+    val edgesByFrom = displayableProcess.edges.groupBy(_.from)
 
+    def findNonUniqueEdge(edgesFromNode: List[Edge]) = {
+      val nonUniqueByType = edgesFromNode.groupBy(_.edgeType).collect { case (Some(eType), list) if list.size > 1 =>
+        PrettyValidationErrors.nonuniqeEdgeType(uiValidationError, eType)
+      }
+      val nonUniqueByTarget = edgesFromNode.groupBy(_.to).collect { case (to, list) if list.size > 1 =>
+        PrettyValidationErrors.nonuniqeEdge(uiValidationError, to)
+      }
+      (nonUniqueByType ++ nonUniqueByTarget).toList
+    }
+
+    val edgeUniquenessErrors = edgesByFrom.map { case (from, edges) => from -> findNonUniqueEdge(edges) }.filterNot(_._2.isEmpty)
     ValidationResult.errors(edgeUniquenessErrors, List(), List())
   }
 

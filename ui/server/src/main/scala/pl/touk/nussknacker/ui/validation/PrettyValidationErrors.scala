@@ -71,7 +71,7 @@ object PrettyValidationErrors {
   }
 
   def noValidatorKnown(typ: ProcessingTypeData.ProcessingType): NodeValidationError = {
-    NodeValidationError(typ.toString, s"No validator available for $typ", "No validator for scenario type - please check configuration", fieldName = None,
+    NodeValidationError(typ, s"No validator available for $typ", "No validator for scenario type - please check configuration", fieldName = None,
       errorType = NodeValidationErrorType.RenderNotAllowed)
   }
 
@@ -85,9 +85,14 @@ object PrettyValidationErrors {
       errorType = NodeValidationErrorType.RenderNotAllowed)
   }
 
-  def nonuniqeEdge(typ: String, etype: EdgeType): NodeValidationError = {
+  def nonuniqeEdgeType(typ: String, etype: EdgeType): NodeValidationError = {
     NodeValidationError(typ, "Edges are not unique",
       s"Node has duplicate outgoing edges of type: $etype, it cannot be saved properly", fieldName = None, errorType = NodeValidationErrorType.SaveNotAllowed)
+  }
+
+  def nonuniqeEdge(typ: String, target: String): NodeValidationError = {
+    NodeValidationError(typ, "Edges are not unique",
+      s"Node has duplicate outgoing edges to: $target, it cannot be saved properly", fieldName = None, errorType = NodeValidationErrorType.SaveNotAllowed)
   }
 
   def looseNode(typ: String): NodeValidationError = {
