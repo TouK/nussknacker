@@ -31,12 +31,6 @@ class EdgeDetailsModal extends React.Component {
     }
   }
 
-  componentWillReceiveProps(props) {
-    this.setState({
-      editedEdge: props.edge,
-    })
-  }
-
   componentDidUpdate(prevProps) {
     const {edge} = this.props
     if (!_.isEqual(prevProps.edge, edge)) {
@@ -88,7 +82,11 @@ class EdgeDetailsModal extends React.Component {
       .edgesForNode(fromNode, this.props.processDefinitionData).edges.find(e => e.type === edgeTypeValue)
     const newEdge = {
       ...this.state.editedEdge,
-      edgeType: defaultEdgeType,
+      edgeType: {
+        type: defaultEdgeType.type,
+        //we want to preserve previously edited (in state) value of expression condition
+        condition: this.state.editedEdge.edgeType.condition,
+      },
     }
     this.setState({editedEdge: newEdge})
   }
