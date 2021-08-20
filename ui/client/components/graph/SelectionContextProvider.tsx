@@ -2,16 +2,7 @@ import React, {createContext, PropsWithChildren, useCallback, useContext, useEff
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
 import {useDebouncedCallback} from "use-debounce"
-import {
-  copySelection,
-  cutSelection,
-  deleteNodes,
-  deleteSelection,
-  layout,
-  nodesWithEdgesAdded,
-  pasteSelection,
-  selectAll,
-} from "../../actions/nk"
+import {copySelection, cutSelection, deleteNodes, deleteSelection, nodesWithEdgesAdded, pasteSelection, selectAll,} from "../../actions/nk"
 import {error, success} from "../../actions/notificationActions"
 import {redo, undo} from "../../actions/undoRedoActions"
 import {events} from "../../analytics/TrackingEvents"
@@ -67,7 +58,8 @@ function useClipboardPermission(): boolean | string {
   const checkClipboard = useCallback(async () => {
     try {
       setText(await navigator.clipboard.readText())
-    } catch {}
+    } catch {
+    }
   }, [])
 
   // if possible monitor clipboard for new content on each render
@@ -171,14 +163,13 @@ export default function SelectionContextProvider(props: PropsWithChildren<{ past
     const selection = parse(clipboardText)
     if (selection) {
       const {x, y} = props.pastePosition()
-      const nodesWithPositions = selection.nodes.map((node, ix) => ({node, position: {x: x + 60, y: y + ix * 180}}))
+      const nodesWithPositions = selection.nodes.map((node, ix) => ({node, position: {x: node?.additionalFields?.layoutData?.x + x, y: node?.additionalFields?.layoutData?.y + y}}))
       dispatch(nodesWithEdgesAdded(nodesWithPositions, selection.edges))
       dispatch(success(t("userActions.paste.success", {
         defaultValue: "Pasted node",
         defaultValue_plural: "Pasted {{count}} nodes",
         count: selection.nodes.length,
       })))
-      dispatch(layout(() => graphGetter()?.forceLayout()))
     } else {
       dispatch(error(t("userActions.paste.failed", "Cannot paste content from clipboard")))
     }
