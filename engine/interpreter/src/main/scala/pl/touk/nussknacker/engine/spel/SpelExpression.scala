@@ -11,7 +11,7 @@ import org.springframework.expression.common.{CompositeStringExpression, Literal
 import org.springframework.expression.spel.ast.SpelNodeImpl
 import org.springframework.expression.spel.{SpelCompilerMode, SpelEvaluationException, SpelParserConfiguration, standard}
 import pl.touk.nussknacker.engine.{TypeDefinitionSet, api}
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.{Context, SpelExpressionBlacklist}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
@@ -51,7 +51,8 @@ final case class ParsedSpelExpression(original: String, parser: () => Validated[
     try {
       value()
     } catch {
-      case e: SpelEvaluationException if Option(e.getCause).exists(_.isInstanceOf[ClassCastException]) =>
+      case e: SpelEvaluationException
+        if Option(e.getCause).exists(_.isInstanceOf[ClassCastException]) =>
         logger.warn("Error during expression evaluation '{}': {}. Trying to compile", original, e.getMessage)
         forceParse()
         value()
@@ -210,7 +211,8 @@ object SpelExpressionParser extends LazyLogging {
               staticMethodInvocationsChecking: Boolean,
               typeDefinitionSet: TypeDefinitionSet,
               methodExecutionForUnknownAllowed: Boolean,
-              dynamicPropertyAccessAllowed: Boolean)
+              dynamicPropertyAccessAllowed: Boolean,
+              spelExpressionBlacklist: SpelExpressionBlacklist)
              (implicit classExtractionSettings: ClassExtractionSettings): SpelExpressionParser = {
     val functions = Map(
       "today" -> classOf[LocalDate].getDeclaredMethod("now"),
@@ -226,7 +228,7 @@ object SpelExpressionParser extends LazyLogging {
 
     val classResolutionStrategy = if (strictTypeChecking) SupertypeClassResolutionStrategy.Intersection else SupertypeClassResolutionStrategy.Union
     val commonSupertypeFinder = new CommonSupertypeFinder(classResolutionStrategy, strictTypeChecking)
-    val evaluationContextPreparer = new EvaluationContextPreparer(classLoader, imports, propertyAccessors, functions)
+    val evaluationContextPreparer = new EvaluationContextPreparer(classLoader, imports, propertyAccessors, functions, spelExpressionBlacklist)
     val validator = new SpelExpressionValidator(new Typer(classLoader, commonSupertypeFinder, new KeysDictTyper(dictRegistry),
       strictMethodsChecking, staticMethodInvocationsChecking, typeDefinitionSet, evaluationContextPreparer, methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed))
     new SpelExpressionParser(parser, validator, dictRegistry, enableSpelForceCompile, flavour, evaluationContextPreparer)

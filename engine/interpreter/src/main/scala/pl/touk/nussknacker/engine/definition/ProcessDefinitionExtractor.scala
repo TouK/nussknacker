@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, QueryableStateNames, Service}
+import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, QueryableStateNames, Service, SpelExpressionBlacklist}
 import pl.touk.nussknacker.engine.component.ComponentExtractor
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import shapeless.syntax.typeable._
@@ -87,7 +87,8 @@ object ProcessDefinitionExtractor {
         expressionConfig.strictMethodsChecking,
         expressionConfig.staticMethodInvocationsChecking,
         expressionConfig.methodExecutionForUnknownAllowed,
-        expressionConfig.dynamicPropertyAccessAllowed
+        expressionConfig.dynamicPropertyAccessAllowed,
+        expressionConfig.spelExpressionBlacklist
       ), settings)
   }
 
@@ -155,7 +156,8 @@ object ProcessDefinitionExtractor {
       definition.expressionConfig.strictMethodsChecking,
       definition.expressionConfig.staticMethodInvocationsChecking,
       definition.expressionConfig.methodExecutionForUnknownAllowed,
-      definition.expressionConfig.dynamicPropertyAccessAllowed
+      definition.expressionConfig.dynamicPropertyAccessAllowed,
+      definition.expressionConfig.spelExpressionBlacklist
     )
     ProcessDefinition(
       definition.services.mapValuesNow(_.objectDefinition),
@@ -173,6 +175,6 @@ object ProcessDefinitionExtractor {
                                                         languages: LanguageConfiguration, optimizeCompilation: Boolean, strictTypeChecking: Boolean,
                                                         dictionaries: Map[String, DictDefinition], hideMetaVariable: Boolean, strictMethodsChecking: Boolean,
                                                         staticMethodInvocationsChecking: Boolean, methodExecutionForUnknownAllowed: Boolean,
-                                                        dynamicPropertyAccessAllowed: Boolean)
+                                                        dynamicPropertyAccessAllowed: Boolean, spelExpressionBlacklist: SpelExpressionBlacklist)
 
 }

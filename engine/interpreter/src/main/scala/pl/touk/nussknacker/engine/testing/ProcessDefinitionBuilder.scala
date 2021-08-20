@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.testing
 
+import pl.touk.nussknacker.engine.api.SpelExpressionBlacklist
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
-import pl.touk.nussknacker.engine.api.process.LanguageConfiguration
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef, StandardObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
@@ -18,7 +18,7 @@ object ProcessDefinitionBuilder {
       ExpressionDefinition(Map.empty, List.empty, List.empty, languages = LanguageConfiguration(List.empty),
         optimizeCompilation = true, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false,
         strictMethodsChecking = true, staticMethodInvocationsChecking = false, methodExecutionForUnknownAllowed = false,
-        dynamicPropertyAccessAllowed = false), ClassExtractionSettings.Default)
+        dynamicPropertyAccessAllowed = false, SpelExpressionBlacklist.default), ClassExtractionSettings.Default)
 
   def withEmptyObjects(definition: ProcessDefinition[ObjectDefinition]): ProcessDefinition[ObjectWithMethodDef] = {
 
@@ -38,7 +38,8 @@ object ProcessDefinitionBuilder {
       definition.expressionConfig.strictMethodsChecking,
       definition.expressionConfig.staticMethodInvocationsChecking,
       definition.expressionConfig.methodExecutionForUnknownAllowed,
-      definition.expressionConfig.dynamicPropertyAccessAllowed
+      definition.expressionConfig.dynamicPropertyAccessAllowed,
+      definition.expressionConfig.spelExpressionBlacklist
     )
 
     ProcessDefinition(
