@@ -12,6 +12,7 @@ object SpelExpressionBlacklist {
       "system" -> "(java\\.lang\\.System)".r,
       "thread" -> "(java\\.lang\\.Thread)".r,
       "runtime" -> "(java\\.lang\\.Runtime)".r,
+      "processBuilder" -> "(java\\.lang\\.ProcessBuilder)".r,
       "invoke" -> "(java\\.lang\\.invoke)".r,
       "reflect" -> "(java\\.lang\\.reflect)".r,
       "net" -> "(java\\.net)".r,

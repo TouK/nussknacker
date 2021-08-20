@@ -15,20 +15,6 @@ class SpelExpressionBlacklistSpec extends FunSuite with Matchers {
   val spelExpressionBlacklist: SpelExpressionBlacklist = SpelExpressionBlacklist.default
   val blacklistedPatterns: Map[String, Regex] = spelExpressionBlacklist.blacklistedPatterns
 
-  val testExpressionSet: Set[String] = Set(
-    "qwe",
-    "org.springframework.expression.spel.standard.SpelExpressionParser",
-    "java.lang.System",
-    "java.lang.Thread",
-    "java.lang.Runtime",
-    "java.lang.invoke",
-    "java.lang.reflect",
-    "java.net.URL",
-    "java.io.File",
-    "java.nio.DoubleBuffer.allocate(1024)",
-    "exec()"
-  )
-
   private def getClassFromName(className: String): Class[_] = {
     ClassUtils.getClass(className)
   }
@@ -51,6 +37,11 @@ class SpelExpressionBlacklistSpec extends FunSuite with Matchers {
   test("Regex pattern matching test, java.lang.Runtime") {
     val inputExpression = "java.lang.Runtime.getRuntime()"
     blacklistedPatterns("runtime").findFirstIn(inputExpression) shouldEqual Some("java.lang.Runtime")
+  }
+
+  test("Regex pattern matching test, java.lang.ProcessBuilder") {
+    val inputExpression = "new java.lang.ProcessBuilder()"
+    blacklistedPatterns("processBuilder").findFirstIn(inputExpression) shouldEqual Some("java.lang.ProcessBuilder")
   }
 
   test("Regex pattern matching test, java.lang.invoke") {
@@ -106,6 +97,12 @@ class SpelExpressionBlacklistSpec extends FunSuite with Matchers {
     a[BlacklistedPatternInvocationException] should be thrownBy {
       val testClass: Class[_] = getClassFromName("java.lang.System")
       spelExpressionBlacklist.blockBlacklisted(testClass, "exit()")
+    }
+  }
+
+  test("Blocking usage of class java.lang.ProcessBuilder, executed on instance") {
+    a[BlacklistedPatternInvocationException] should be thrownBy {
+      spelExpressionBlacklist.blockBlacklisted(new ProcessBuilder("help"), "start()")
     }
   }
 
