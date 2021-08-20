@@ -31,21 +31,6 @@ class EdgeDetailsModal extends React.Component {
     }
   }
 
-  // uncommenting this function makes switch restore prop condition rather that restore one in state
-  // componentWillReceiveProps(props) {
-  //   let newState = {
-  //     editedEdge: {
-  //       from: props.edge.from,
-  //       to: props.edge.to,
-  //       edgeType: {
-  //         type: this.state.editedEdge.edgeType.type,
-  //         condition: props.edge.edgeType.condition,
-  //       }
-  //     },
-  //   }
-  //   this.setState(newState)
-  // }
-
   componentDidUpdate(prevProps) {
     const {edge} = this.props
     if (!_.isEqual(prevProps.edge, edge)) {
