@@ -1,20 +1,36 @@
 import _ from "lodash"
 import React from "react"
-import {v4 as uuid4} from "uuid"
 import {ExpressionLang} from "./editors/expression/types"
-import {errorValidator, mandatoryValueValidator} from "./editors/Validators"
+import {Error, errorValidator, mandatoryValueValidator} from "./editors/Validators"
 import LabeledInput from "./editors/field/LabeledInput"
 import LabeledTextarea from "./editors/field/LabeledTextarea"
 import Map from "./editors/map/Map"
 import MapVariable from "./MapVariable"
+import {NodeType, TypedObjectTypingResult, VariableTypes} from "../../../types";
 
-const SubprocessOutputDefinition = ({isMarked, node, removeElement, addElement, onChange, readOnly, showValidation, errors, renderFieldLabel}) => {
+type Props = {
+  isMarked: (paths: string) => boolean,
+  node: NodeType,
+  removeElement: (namespace: string, ix: number) => void,
+  addElement: (property: $TodoType, element: $TodoType) => void,
+  onChange: (propToMutate: $TodoType, newValue: $TodoType, defaultValue?: $TodoType) => void,
+  readOnly?: boolean,
+  showValidation: boolean,
+  errors: Array<Error>,
+  variableTypes: VariableTypes,
+  renderFieldLabel: (label: string) => React.ReactNode,
+  expressionType?: TypedObjectTypingResult,
+}
+
+const SubprocessOutputDefinition = (props: Props) => {
+
+  const { onChange, renderFieldLabel, node, isMarked, readOnly, showValidation, errors, removeElement, variableTypes } = props
 
   const addField = () => {
-    addElement("fields", {name: "", uuid: uuid4(), expression: {expression: "", language: ExpressionLang.SpEL}})
+    props.addElement("fields", {name: "", expression: {expression: "", language: ExpressionLang.SpEL}})
   }
 
-  const onInputChange = (path, event) => onChange(path, event.target.value)
+  const onInputChange = (path, event) => props.onChange(path, event.target.value)
 
   return (
     <div className="node-table-body node-variable-builder-body">
@@ -50,6 +66,7 @@ const SubprocessOutputDefinition = ({isMarked, node, removeElement, addElement, 
         showValidation={showValidation}
         showSwitch={false}
         errors={errors}
+        variableTypes={variableTypes}
       />
 
       <LabeledTextarea
@@ -64,7 +81,6 @@ const SubprocessOutputDefinition = ({isMarked, node, removeElement, addElement, 
   )
 }
 
-SubprocessOutputDefinition.propTypes = MapVariable.propTypes
 SubprocessOutputDefinition.defaultProps = MapVariable.defaultProps
 SubprocessOutputDefinition.availableFields = (_node_) => {
   return ["id", "outputName"]

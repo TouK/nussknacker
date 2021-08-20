@@ -41,6 +41,7 @@ const Map = (props: Props) => {
           {
             fieldsWithTypeInfo.map((field, index) => (
               <MapRow
+                //should be enough to avoid unnecessary render
                 key={index}
                 field={field}
                 showValidation={showValidation}

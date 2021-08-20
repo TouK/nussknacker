@@ -31,8 +31,8 @@ const FieldsSelect = (props) => {
               const currentOption = _.find(options, (item) => _.isEqual(field.typ.refClazzName, item.value)) || {label: field.typ.refClazzName, value: field.typ.refClazzName}
               return (
                 <MovableRow
-                  id={field.uuid}
-                  key={field.uuid}
+                  //should be enough to avoid unnecessary render, 
+                  key={index}
                   field={field}
                   index={index}
                   changeName={(name) => onChange(`${paths}.name`, name)}
@@ -69,6 +69,7 @@ FieldsSelect.propTypes = {
   readOnly: PropTypes.bool,
   removeField: PropTypes.func.isRequired,
   showValidation: PropTypes.bool.isRequired,
+  toogleCloseOnEsc: PropTypes.func.isRequired
 }
 
 export default FieldsSelect
