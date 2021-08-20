@@ -31,11 +31,20 @@ class EdgeDetailsModal extends React.Component {
     }
   }
 
-  componentWillReceiveProps(props) {
-    this.setState({
-      editedEdge: props.edge,
-    })
-  }
+  // uncommenting this function makes switch restore prop condition rather that restore one in state
+  // componentWillReceiveProps(props) {
+  //   let newState = {
+  //     editedEdge: {
+  //       from: props.edge.from,
+  //       to: props.edge.to,
+  //       edgeType: {
+  //         type: this.state.editedEdge.edgeType.type,
+  //         condition: props.edge.edgeType.condition,
+  //       }
+  //     },
+  //   }
+  //   this.setState(newState)
+  // }
 
   componentDidUpdate(prevProps) {
     const {edge} = this.props
@@ -88,7 +97,11 @@ class EdgeDetailsModal extends React.Component {
       .edgesForNode(fromNode, this.props.processDefinitionData).edges.find(e => e.type === edgeTypeValue)
     const newEdge = {
       ...this.state.editedEdge,
-      edgeType: defaultEdgeType,
+      edgeType: {
+        type: defaultEdgeType.type,
+        //we want to preserve previously edited (in state) value of expression condition
+        condition: this.state.editedEdge.edgeType.condition,
+      },
     }
     this.setState({editedEdge: newEdge})
   }
