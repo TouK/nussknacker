@@ -51,7 +51,6 @@ export class NodeDetailsContent extends React.Component {
     if (this.props.isEditMode) {
       this.updateNodeDataIfNeeded(node)
     }
-    this.generateUUID("fields", "parameters")
   }
 
   nodeDefinitionByName(node) {
@@ -65,15 +64,6 @@ export class NodeDetailsContent extends React.Component {
     this.parameterDefinitions = props.dynamicParameterDefinitions ? props.dynamicParameterDefinitions : nodeObjectDetails?.parameters
     const hasNoReturn = nodeObjectDetails == null || nodeObjectDetails.returnType == null
     this.showOutputVar = hasNoReturn === false || hasNoReturn === true && props.node.outputVar
-  }
-
-  generateUUID(...properties) {
-    properties.forEach((property) => {
-      if (_.has(this.state.editedNode, property)) {
-        let elements = _.get(this.state.editedNode, property)
-        elements.map((el) => el.uuid = el.uuid || uuid4())
-      }
-    })
   }
 
   //TODO: get rid of this method as deprecated in React
