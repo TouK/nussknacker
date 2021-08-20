@@ -2,6 +2,7 @@ import {WindowContentProps} from "@touk/window-manager"
 import {DebugButtons} from "@touk/window-manager/esm/debug"
 import React from "react"
 import {AddProcessDialog} from "../components/AddProcessDialog"
+import {EdgeDetails} from "../components/graph/node-modal/edge/EdgeDetails"
 import {NodeDetails} from "../components/graph/node-modal/NodeDetails"
 import {CountsDialog} from "../components/modals/CalculateCounts"
 import {CompareVersionsDialog} from "../components/modals/CompareVersionsDialog"
@@ -40,7 +41,7 @@ export const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) =
     case WindowKind.viewNode:
       return <NodeDetails {...props} readOnly/>
     case WindowKind.editEdge:
-    //   return <EdgeDetails {...props}/>
+      return <EdgeDetails {...props}/>
     default:
       return (
         <WindowContent {...props}>

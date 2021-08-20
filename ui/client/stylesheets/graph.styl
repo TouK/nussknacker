@@ -273,7 +273,8 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
       flex-wrap nowrap
     .node-label
       color modalLabelTextColor
-      width labelWidth
+      flex-basis 20%
+      max-width 20em
       display inline-block
       vertical-align sub
       margin-top 9px
@@ -296,7 +297,8 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
         border 1px solid okColor
         padding 5px
     .node-value
-      width: 95% - labelWidth
+      flex 1
+      flex-basis 60%
       display: inline-block
       color: #686868
       textarea
@@ -317,9 +319,6 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
       &.partly-hidden
         textarea
           height 100px !important
-      &.node-value-select
-        .switchable
-          width: 100% - 40px
       &.node-value-type-select
         width: 100%
         max-height: 35
@@ -662,10 +661,11 @@ body .modalButton
     margin-left 10px
     cursor grab
   .node-value
-    &.field
-      width: calc(70% - 34px)
+    &.fieldName
+      flex-basis 30%
+      max-width 20em
     &.fieldRemove
-      width: 7%
+      flex 0
 
 .branch-parameter-row
   margin-top 0

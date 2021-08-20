@@ -136,7 +136,7 @@ export class Graph extends React.Component {
   }
 
   isNotLink(cell) {
-    return cell.attributes.type !== "link";
+    return cell.attributes.type !== "link"
   }
 
   canAddNode(node) {
@@ -332,7 +332,7 @@ export class Graph extends React.Component {
       if (nodeDataId) {
         const nodeData = this.getNodeData(cellView.model)
         const prefixedNodeId = this.props.nodeIdPrefixForSubprocessTests + nodeDataId
-        this.props.showModalNodeDetails({...nodeData, id: prefixedNodeId}, this.props.readonly)
+        this.props.openNodeWindow({...nodeData, id: prefixedNodeId}, this.props.readonly)
       }
 
       if (cellView.model.attributes.edgeData) {

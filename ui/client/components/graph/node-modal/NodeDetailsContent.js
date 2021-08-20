@@ -751,6 +751,7 @@ function mapState(state, props) {
   //see NodeDetailsModal - we pass own state in props.node, so we cannot just rely on props.node.id
   const originalNodeId = props.originalNodeId || props.node?.id
   const nodeResult = mainProcess?.validationResult?.nodeResults?.[originalNodeId]
+  const nodeDetails = state.nodeDetails[originalNodeId] || {}
   return {
     additionalPropertiesConfig: processDefinitionData.additionalPropertiesConfig || {},
     processDefinitionData: processDefinitionData,
@@ -760,11 +761,11 @@ function mapState(state, props) {
     findAvailableBranchVariables: findAvailableBranchVariables,
     findAvailableVariables: findAvailableVariables,
     originalNodeId: originalNodeId,
-    currentErrors: state.nodeDetails.validationPerformed ? state.nodeDetails.validationErrors : props.nodeErrors,
-    dynamicParameterDefinitions: state.nodeDetails.validationPerformed ? state.nodeDetails.parameters :
+    currentErrors: nodeDetails.validationPerformed ? nodeDetails.validationErrors : props.nodeErrors,
+    dynamicParameterDefinitions: nodeDetails.validationPerformed ? nodeDetails.parameters :
       //for some cases e.g. properties parameters is undefined, we replace it with null no to care about undefined in comparisons
       state.graphReducer.processToDisplay?.validationResult?.nodeResults?.[originalNodeId]?.parameters || null,
-    expressionType: state.nodeDetails.expressionType,
+    expressionType: nodeDetails.expressionType,
     nodeTypingInfo: nodeResult?.typingInfo,
   }
 }

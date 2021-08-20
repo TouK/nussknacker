@@ -1,12 +1,11 @@
 import {Action} from "../actions/reduxTypes"
-import {ValidationData} from "../actions/nk"
-import {NodeValidationError, UIParameter, TypingResult} from "../types"
+import {NodeValidationError, TypingResult, UIParameter} from "../types"
 
 export type NodeDetailsState = {
-    parameters? : UIParameter[],
-    expressionType?: TypingResult,
-    validationErrors: NodeValidationError[],
-    validationPerformed: boolean,
+  parameters?: UIParameter[],
+  expressionType?: TypingResult,
+  validationErrors: NodeValidationError[],
+  validationPerformed: boolean,
 }
 
 const initialState: NodeDetailsState = {
@@ -17,13 +16,16 @@ const initialState: NodeDetailsState = {
 export function reducer(state: NodeDetailsState = initialState, action: Action): NodeDetailsState {
   switch (action.type) {
     case "NODE_VALIDATION_UPDATED": {
-      const {validationData} = action
+      const {validationData, nodeId} = action
       return {
         ...state,
-        validationErrors: validationData.validationErrors,
-        parameters: validationData.parameters,
-        expressionType: validationData.expressionType,
-        validationPerformed: validationData.validationPerformed,
+        [nodeId]: {
+          ...state[nodeId],
+          validationErrors: validationData.validationErrors,
+          parameters: validationData.parameters,
+          expressionType: validationData.expressionType,
+          validationPerformed: validationData.validationPerformed,
+        },
       }
     }
     //TODO: do we need to react on other actions?

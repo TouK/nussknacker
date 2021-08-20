@@ -1,18 +1,29 @@
 import {useWindowManager, WindowId, WindowType} from "@touk/window-manager"
-import {isEmpty} from "lodash"
+import {defaults, isEmpty} from "lodash"
 import {useCallback} from "react"
 import {useDispatch} from "react-redux"
-import {displayModalEdgeDetails, displayModalNodeDetails, EventInfo, reportEvent} from "../actions/nk"
+import {EventInfo, reportEvent} from "../actions/nk"
+import {isEdgeEditable} from "../common/EdgeUtils"
+import * as VisualizationUrl from "../common/VisualizationUrl"
+import NodeUtils from "../components/graph/NodeUtils"
 import {ConfirmDialogData} from "../components/modals/GenericConfirmDialog"
+import history from "../history"
 import {Edge, GroupNodeType, NodeType} from "../types"
 import {WindowKind} from "./WindowKind"
+
+function setQueryParams(params: Partial<Record<"edgeId" | "nodeId", string | string[]>>) {
+  history.replace({
+    pathname: history.location.pathname,
+    search: VisualizationUrl.setAndPreserveLocationParams(params),
+  })
+}
 
 export function useWindows(parent?: WindowId) {
   const wm = useWindowManager(parent)
   const dispatch = useDispatch()
 
   const open = useCallback(<M extends any = never>(windowData: Partial<WindowType<WindowKind, M>> = {}) => {
-    const {id, title} = wm.open(windowData)
+    const {id, title} = wm.open({isResizable: false, ...windowData})
     dispatch(reportEvent({
       category: "window_manager",
       action: "window_open",
@@ -20,28 +31,35 @@ export function useWindows(parent?: WindowId) {
     }))
   }, [dispatch, wm])
 
-  const editNode = useCallback(<N extends NodeType | GroupNodeType>(
-    node: N,
+  const openNodeWindow = useCallback((
+    node: NodeType | GroupNodeType,
     readonly?: boolean,
-    eventInfo?: {name: string, category: string},
   ) => {
-    // open<N>({
-    //   title: node.id,
-    //   kind: readonly ? WindowKind.viewNode : WindowKind.editNode,
-    //   meta: node,
-    // })
+    setQueryParams({nodeId: node.id, edgeId: null})
 
-    dispatch(displayModalNodeDetails(node, readonly, eventInfo))
+    open({
+      title: node.id,
+      isResizable: true,
+      kind: readonly ? WindowKind.viewNode : WindowKind.editNode,
+      meta: node,
+    })
+
+    // dispatch(displayModalNodeDetails(node))
   }, [dispatch, open])
 
-  const editEdge = useCallback(<E extends Edge>(edge: E) => {
-    // open<E>({
-    //   title: `${edge.from} -> ${edge.to}`,
-    //   kind: WindowKind.editEdge,
-    //   meta: edge,
-    // })
+  const editEdge = useCallback((edge: Edge) => {
+    if (isEdgeEditable(edge)) {
+      setQueryParams({nodeId: null, edgeId: NodeUtils.edgeId(edge)})
 
-    dispatch(displayModalEdgeDetails(edge))
+      open({
+        title: `${edge.from} -> ${edge.to}`,
+        isResizable: true,
+        kind: WindowKind.editEdge,
+        meta: edge,
+      })
+    }
+
+    // dispatch(displayModalEdgeDetails(edge))
   }, [dispatch, open])
 
   const confirm = useCallback((data: ConfirmDialogData, event?: EventInfo) => {
@@ -49,13 +67,12 @@ export function useWindows(parent?: WindowId) {
       dispatch(reportEvent(event))
     }
 
-    open<ConfirmDialogData>({
+    open({
       title: data.text,
       kind: WindowKind.confirm,
-      // TODO: get rid of meta
-      meta: {confirmText: "Yes", denyText: "No", ...data},
+      meta: defaults(data, {confirmText: "Yes", denyText: "No"}),
     })
   }, [dispatch, open])
 
-  return {open, confirm, editNode, editEdge}
+  return {open, confirm, openNodeWindow, editEdge}
 }

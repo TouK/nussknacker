@@ -3,7 +3,6 @@ import {WindowContentProps} from "@touk/window-manager"
 import {css, cx} from "emotion"
 import _ from "lodash"
 import React from "react"
-import Scrollbars from "react-custom-scrollbars"
 import {connect} from "react-redux"
 import {formatAbsolutely} from "../../common/DateUtils"
 import * as JsonUtils from "../../common/JsonUtils"
@@ -117,17 +116,7 @@ class VersionsForm extends React.Component<Props, State> {
                   </SelectWithFocus>
                 </div>
                 {this.state.currentDiffId ?
-                  (
-                    <Scrollbars
-                      hideTracksWhenNotNeeded={true}
-                      autoHeightMin={"100px"}
-                      autoHeight
-                      autoHeightMax={"390px"}
-                      renderThumbVertical={props => <div {...props} className="thumbVertical"/>}
-                    >
-                      {this.printDiff(this.state.currentDiffId)}
-                    </Scrollbars>
-                  ) :
+                  this.printDiff(this.state.currentDiffId) :
                   null}
               </div>
             ) :

@@ -1,5 +1,4 @@
 import "ladda/dist/ladda.min.css"
-import {cloneDeep, set} from "lodash"
 import React, {useCallback, useEffect, useMemo, useState} from "react"
 import Draggable from "react-draggable"
 import LaddaButton from "react-ladda"
@@ -7,57 +6,41 @@ import Modal from "react-modal"
 import {useDispatch, useSelector} from "react-redux"
 import {closeModals, editEdge} from "../../../actions/nk"
 import {isEdgeEditable} from "../../../common/EdgeUtils"
-import NkModalStyles from "../../../common/NkModalStyles"
-import ProcessUtils from "../../../common/ProcessUtils"
-import {getEdgeToDisplay, getProcessCategory, getProcessToDisplay} from "../../../reducers/selectors/graph"
+import {getEdgeToDisplay, getProcessToDisplay} from "../../../reducers/selectors/graph"
 import {getCapabilities} from "../../../reducers/selectors/other"
-import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
 import {isEdgeDetailsModalVisible} from "../../../reducers/selectors/ui"
-import {EdgeType} from "../../../types"
 import {ButtonWithFocus} from "../../withFocus"
-import NodeUtils from "../NodeUtils"
-import EdgeDetailsContent from "./EdgeDetailsContent"
+import {Details} from "./edge/Details"
+import {EdgeDetailsModalHeader} from "./edge/EdgeDetailsModalHeader"
 
 //TODO: this is still pretty switch-specific.
 function EdgeDetailsModal(): JSX.Element {
   const edge = useSelector(getEdgeToDisplay)
   const processToDisplay = useSelector(getProcessToDisplay)
-  const processDefinitionData = useSelector(getProcessDefinitionData)
-  const processCategory = useSelector(getProcessCategory)
   const {write} = useSelector(getCapabilities)
   const showModal = useSelector(isEdgeDetailsModalVisible)
 
-  const nodeId = edge.from
   const readOnly = !write
-
-  const variableTypes = useMemo(() => {
-    const findAvailableVariables = ProcessUtils.findAvailableVariables(
-      processDefinitionData,
-      processCategory,
-      processToDisplay,
-    )
-    return findAvailableVariables(nodeId, undefined)
-  }, [nodeId, processCategory, processDefinitionData, processToDisplay])
 
   const dispatch = useDispatch()
 
-  const [state, setState] = useState({
-    pendingRequest: false,
-    editedEdge: edge,
-  })
+  const [editedEdge, setEditedEdge] = useState(edge)
+  const [pending, setPending] = useState(false)
+
+  const isOpen = useMemo(() => isEdgeEditable(edge) && showModal, [edge, showModal])
 
   useEffect(() => {
-    setState(s => ({...s, editedEdge: edge}))
-  }, [edge])
+    isOpen && setEditedEdge(edge)
+  }, [edge, isOpen])
 
   const closeModal = useCallback(() => dispatch(closeModals()), [dispatch])
 
   const performEdgeEdit = useCallback(async () => {
-    setState(s => ({...s, pendingRequest: true}))
-    await dispatch(editEdge(processToDisplay, edge, state.editedEdge))
-    setState(s => ({...s, pendingRequest: false}))
+    setPending(true)
+    await dispatch(editEdge(processToDisplay, edge, editedEdge))
+    setPending(false)
     closeModal()
-  }, [closeModal, dispatch, edge, processToDisplay, state.editedEdge])
+  }, [closeModal, dispatch, edge, processToDisplay, editedEdge])
 
   const updateEdgeProp = useCallback((prop, value) => {
     const editedEdge = cloneDeep(state.editedEdge)
@@ -91,7 +74,7 @@ function EdgeDetailsModal(): JSX.Element {
             key="1"
             title="Apply edge details"
             className="modalButton pull-right modalConfirmButton"
-            loading={state.pendingRequest}
+            loading={pending}
             data-style="zoom-in"
             onClick={performEdgeEdit}
           >
@@ -100,10 +83,7 @@ function EdgeDetailsModal(): JSX.Element {
         ) :
         null,
     ]
-  }, [closeModal, performEdgeEdit, readOnly, state.pendingRequest])
-
-  const isOpen = useMemo(() => isEdgeEditable(edge) && showModal, [edge, showModal])
-  const titleStyles = NkModalStyles.headerStyles("#2D8E54", "white")
+  }, [closeModal, pending, performEdgeEdit, readOnly])
 
   return (
     <div className="objectModal">
@@ -115,20 +95,12 @@ function EdgeDetailsModal(): JSX.Element {
         <div className="draggable-container">
           <Draggable bounds="parent" handle=".modal-draggable-handle">
             <div className="espModal">
-              <div className="modalHeader">
-                <div className="edge-modal-title modal-draggable-handle" style={titleStyles}>
-                  <span>edge</span>
-                </div>
-              </div>
+              <EdgeDetailsModalHeader />
               <div className="modalContentDark edge-details">
-                <EdgeDetailsContent
-                  changeEdgeTypeValue={changeEdgeTypeValue}
-                  updateEdgeProp={updateEdgeProp}
-                  readOnly={readOnly}
-                  edge={state.editedEdge}
-                  showValidation={true}
-                  showSwitch={true}
-                  variableTypes={variableTypes}
+                <Details
+                  edge={editedEdge}
+                  onChange={setEditedEdge}
+                  processToDisplay={processToDisplay}
                 />
               </div>
               <div className="modalFooter">

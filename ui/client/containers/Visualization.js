@@ -68,7 +68,7 @@ class Visualization extends React.Component {
 
       if (nodes.length) {
         nodes.forEach(node => {
-          this.props.showModalNodeDetails(node)
+          this.props.openNodeWindow(node)
         })
       } else {
         this.props.history.replace({search: VisualizationUrl.setAndPreserveLocationParams({nodeId: null})})

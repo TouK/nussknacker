@@ -1,15 +1,9 @@
 import {get} from "lodash"
 import {createSelector} from "reselect"
 import ProcessUtils from "../../../../common/ProcessUtils"
-import {
-  getGraph,
-  isArchived,
-  getNodeToDisplay,
-  getProcessCategory,
-  getProcessToDisplay,
-  isBusinessView,
-} from "../../../../reducers/selectors/graph"
-import {getLoggedUser, getProcessDefinitionData} from "../../../../reducers/selectors/settings"
+import {getGraph, getNodeToDisplay, getProcessToDisplay, isBusinessView} from "../../../../reducers/selectors/graph"
+import {getCapabilities} from "../../../../reducers/selectors/other"
+import {getProcessDefinitionData} from "../../../../reducers/selectors/settings"
 
 export const getErrors = createSelector(
   getProcessToDisplay,
@@ -27,14 +21,6 @@ export const getNodeSettings = createSelector(
   (process, node) => get(process.nodesConfig, ProcessUtils.findNodeConfigName(node)) || {},
 )
 
-export const getReadOnly = createSelector(
-  getGraph,
-  getProcessCategory,
-  getLoggedUser,
-  isBusinessView,
-  isArchived,
-  (graph, category, user, isBusinessView, isArchived) => graph.nodeToDisplayReadonly ||
-    !user.canWrite(category) ||
-    isBusinessView ||
-    isArchived,
-)
+export const getReadOnly = createSelector(getGraph, getCapabilities, isBusinessView, (graph, capabilities, isBusinessView) => {
+  return graph.nodeToDisplayReadonly || !capabilities.write || isBusinessView
+})

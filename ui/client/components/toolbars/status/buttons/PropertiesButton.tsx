@@ -1,7 +1,6 @@
 import React, {useCallback, useMemo} from "react"
 import {useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"
-import {events} from "../../../../analytics/TrackingEvents"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/properties.svg"
 import {getProcessToDisplay, getProcessUnsavedNewName, hasError, hasPropertiesErrors} from "../../../../reducers/selectors/graph"
 import {useWindows} from "../../../../windowManager"
@@ -11,7 +10,7 @@ import {ToolbarButtonProps} from "../../types"
 
 function PropertiesButton(props: ToolbarButtonProps): JSX.Element {
   const {t} = useTranslation()
-  const {editNode} = useWindows()
+  const {openNodeWindow} = useWindows()
   const {disabled} = props
   const processToDisplay = useSelector(getProcessToDisplay)
   const name = useSelector(getProcessUnsavedNewName)
@@ -19,14 +18,10 @@ function PropertiesButton(props: ToolbarButtonProps): JSX.Element {
   const errors = useSelector(hasError)
 
   const processProperties = useMemo(() => NodeUtils.getProcessProperties(processToDisplay, name), [name, processToDisplay])
-  const eventInfo = useMemo(() => ({
-    category: events.categories.rightPanel,
-    name: t("panels.actions.edit-properties.dialog", "properties"),
-  }), [t])
 
   const onClick = useCallback(
-    () => editNode(processProperties, false, eventInfo),
-    [editNode, eventInfo, processProperties],
+    () => openNodeWindow(processProperties),
+    [openNodeWindow, processProperties],
   )
 
   return (

@@ -2,16 +2,17 @@ import {WindowButtonProps, WindowContentProps} from "@touk/window-manager"
 import React, {useCallback, useEffect, useMemo, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
-import {collapseGroup, editGroup, editNode, expandGroup} from "../../../actions/nk"
+import {closeModals, collapseGroup, editGroup, editNode, expandGroup} from "../../../actions/nk"
 import {getProcessToDisplay} from "../../../reducers/selectors/graph"
 import {getExpandedGroups} from "../../../reducers/selectors/groups"
 import {GroupNodeType, NodeType} from "../../../types"
-import {WindowContent,WindowKind} from "../../../windowManager"
+import {WindowContent, WindowKind} from "../../../windowManager"
 import NodeUtils from "../NodeUtils"
 import {ChildrenElement} from "./node/ChildrenElement"
 import {ContentWrapper} from "./node/ContentWrapper"
 import {getReadOnly} from "./node/selectors"
 import {SubprocessContent} from "./node/SubprocessContent"
+import NodeDetailsModalHeader from "./NodeDetailsModalHeader"
 
 export function NodeDetails(props: WindowContentProps<WindowKind, NodeType | GroupNodeType> & {readOnly?: boolean}): JSX.Element {
   const processToDisplay = useSelector(getProcessToDisplay)
@@ -30,7 +31,11 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType | Gro
 
   const dispatch = useDispatch()
 
-  const performNodeEdit = async () => {
+  useEffect(() => () => {
+    dispatch(closeModals())
+  }, [dispatch])
+
+  const performNodeEdit = useCallback(async () => {
     const action = NodeUtils.nodeIsGroup(editedNode) ?
       //TODO: try to get rid of this.state.editedNode, passing state of NodeDetailsContent via onChange is not nice...
       editGroup(processToDisplay, nodeToDisplay.id, editedNode) :
@@ -38,7 +43,7 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType | Gro
 
     await dispatch(action)
     props.close()
-  }
+  }, [editedNode, processToDisplay, nodeToDisplay, dispatch, props])
 
   const expandedGroups = useSelector(getExpandedGroups)
 
@@ -81,9 +86,17 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType | Gro
     [applyButtonData, cancelButtonData, groupToggleButtonData],
   )
 
+  const components = useMemo(() => {
+    const HeaderTitle = () => <NodeDetailsModalHeader node={props.data.meta}/>
+    return {HeaderTitle}
+  }, [props.data.meta])
+
   return (
-    <WindowContent {...props} buttons={buttons}>
-      {/*<NodeDetailsModalHeader node={nodeToDisplay}/>*/}
+    <WindowContent
+      {...props}
+      buttons={buttons}
+      components={components}
+    >
       <ContentWrapper>
         <ChildrenElement
           editedNode={editedNode}

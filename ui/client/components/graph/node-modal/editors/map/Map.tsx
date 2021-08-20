@@ -1,8 +1,8 @@
 import React from "react"
-import {ButtonWithFocus} from "../../../../withFocus"
-import MapRow from "./MapRow"
 import {Field, TypedObjectTypingResult, VariableTypes} from "../../../../../types"
+import {ButtonWithFocus} from "../../../../withFocus"
 import {Error} from "../Validators"
+import MapRow from "./MapRow"
 
 type Props = {
   fields: Array<Field>,
@@ -58,16 +58,18 @@ const Map = (props: Props) => {
             ))
           }
           {
-            readOnly ? null : (
-              <div>
-                <ButtonWithFocus
-                  onClick={addField}
-                  className="addRemoveButton"
-                  title="Add field"
-                >+
-                </ButtonWithFocus>
-              </div>
-            )}
+            readOnly ?
+              null :
+              (
+                <div>
+                  <ButtonWithFocus
+                    onClick={addField}
+                    className="addRemoveButton"
+                    title="Add field"
+                  >+
+                  </ButtonWithFocus>
+                </div>
+              )}
         </div>
       </div>
     </div>

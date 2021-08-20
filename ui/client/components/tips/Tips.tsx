@@ -14,12 +14,12 @@ import ValidTips from "./ValidTips"
 import Warnings from "./Warnings"
 
 export default function Tips(): JSX.Element {
-  const {editNode} = useWindows()
+  const {openNodeWindow} = useWindows()
 
   const showDetails = useCallback((event, node) => {
     event.preventDefault()
-    editNode(node)
-  }, [editNode])
+    openNodeWindow(node)
+  }, [openNodeWindow])
 
   const currentProcess = useSelector(getProcessToDisplay)
   const {isToolTipsHighlighted: isHighlighted} = useSelector(getUi)
