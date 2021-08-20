@@ -1,4 +1,5 @@
 import {createSelector} from "reselect"
+import {MetricsType} from "../../actions/nk"
 import ProcessUtils from "../../common/ProcessUtils"
 import {DynamicTabData} from "../../containers/DynamicTab"
 import {ProcessDefinitionData} from "../../types"
@@ -15,5 +16,5 @@ export const getProcessDefinitionData = createSelector(getSettings, s => s.proce
 export const getFilterCategories = createSelector(getLoggedUser, u => ProcessUtils.prepareFilterCategories(u.categories, u) || [])
 export const getBaseIntervalTime = createSelector(getFeatureSettings, settings => settings?.intervalTimeSettings?.processes || 15000)
 export const getHealthcheckIntervalTime = createSelector(getFeatureSettings, settings => settings?.intervalTimeSettings?.healthCheck || 40000)
-export const getMetricsSettings = createSelector(getFeatureSettings, settings => settings?.metrics || {})
+export const getMetricsSettings = createSelector(getFeatureSettings, settings => settings?.metrics || {} as MetricsType)
 export const getCustomActions = createSelector(getProcessDefinitionData, def => def.customActions || [])

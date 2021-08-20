@@ -1,13 +1,14 @@
+import {DynamicTabData} from "../../containers/DynamicTab"
 import {AuthenticationSettings} from "../../reducers/settings"
 import {UnknownRecord} from "../../types/common"
 
-type MetricsType = {
+export type MetricsType = {
   url: string,
   defaultDashboard: string,
   processingTypeToDashboard: UnknownRecord,
 }
 
-type FeaturesSettings = {
+export type FeaturesSettings = {
   counts: boolean,
   attachments: boolean,
   search: { url: string },
@@ -17,6 +18,7 @@ type FeaturesSettings = {
   commentSettings: { matchExpression: string, link: string },
   intervalTimeSettings: { processes: number, healthCheck: number },
   deploySettings: $TodoType,
+  tabs: DynamicTabData[],
 }
 
 type EngineData = {
