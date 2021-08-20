@@ -1,7 +1,10 @@
 package pl.touk.nussknacker.engine.api.process
 
+import pl.touk.nussknacker.engine.api.SpelExpressionBlacklist
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.expression.ExpressionParser
+
+import scala.util.matching.Regex
 
 //TODO: how to make this config less spel-centric?, move globalImports and optimizeCompilation to spel configuration
 case class ExpressionConfig(globalProcessVariables: Map[String, WithCategories[AnyRef]],
@@ -18,7 +21,8 @@ case class ExpressionConfig(globalProcessVariables: Map[String, WithCategories[A
                             strictMethodsChecking: Boolean = true,
                             staticMethodInvocationsChecking: Boolean = true,
                             methodExecutionForUnknownAllowed: Boolean = false,
-                            dynamicPropertyAccessAllowed: Boolean = false
+                            dynamicPropertyAccessAllowed: Boolean = false,
+                            spelExpressionBlacklist: SpelExpressionBlacklist = SpelExpressionBlacklist.default
                            )
 
 object ExpressionConfig {

@@ -1,25 +1,26 @@
 package pl.touk.nussknacker.engine.benchmarks.spel
 
-import java.util.concurrent.TimeUnit
 import cats.data.Validated.{Invalid, Valid}
 import org.openjdk.jmh.annotations._
 import pl.touk.nussknacker.engine.TypeDefinitionSet
-import pl.touk.nussknacker.engine.api.{Context, SpelExpressionBlacklist}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
+import pl.touk.nussknacker.engine.api.{Context, SpelExpressionBlacklist}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
+import java.util.concurrent.TimeUnit
+
 /* This is helper class for testing SpEL expressions, see SampleSpelBenchmark for usage */
-class SpelBenchmarkSetup(expression: String, vars: Map[String, AnyRef]) {
+class SpelSecurityBenchmarkSetup(expression: String, vars: Map[String, AnyRef]) {
 
   private val expressionDefinition = ExpressionDefinition(globalVariables = Map(), globalImports = Nil, additionalClasses = List(),
     languages = LanguageConfiguration.default, optimizeCompilation = true, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false,
-    strictMethodsChecking = true, staticMethodInvocationsChecking = true, methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false,
+    strictMethodsChecking = true, staticMethodInvocationsChecking = false, methodExecutionForUnknownAllowed = true, dynamicPropertyAccessAllowed = false,
     SpelExpressionBlacklist.default)
 
   private val expressionCompiler = ExpressionCompiler.withOptimization(
@@ -41,17 +42,4 @@ class SpelBenchmarkSetup(expression: String, vars: Map[String, AnyRef]) {
 
 }
 
-
-@State(Scope.Thread)
-class SampleSpelBenchmark {
-
-  private val setup = new SpelBenchmarkSetup("#input.substring(0, 3)", Map("input" -> "one"))
-
-  @Benchmark
-  @BenchmarkMode(Array(Mode.AverageTime))
-  @OutputTimeUnit(TimeUnit.MICROSECONDS)
-  def benchmark(): AnyRef = {
-    setup.test()
-  }
-}
 
