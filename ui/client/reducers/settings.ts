@@ -27,6 +27,7 @@ export type SettingsState = {
 export type BaseAuthenticationSettings = {
   provider?: string,
   strategy?: string,
+  anonymousAccessAllowed?: boolean,
 }
 
 export type AuthenticationSettings = BaseAuthenticationSettings | BrowserAuthenticationSettings | RemoteAuthenticationSettings | OAuth2Settings

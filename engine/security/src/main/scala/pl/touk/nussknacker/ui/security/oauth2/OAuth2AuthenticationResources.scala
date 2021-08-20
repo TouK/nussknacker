@@ -25,7 +25,8 @@ class OAuth2AuthenticationResources(realm: String, service: OAuth2Service[Authen
     configuration.authorizeUrl.map(_.toString),
     configuration.authSeverPublicKey.map(CertificatesAndKeys.textualRepresentationOfPublicKey),
     configuration.idTokenNonceVerificationRequired,
-    configuration.implicitGrantEnabled
+    configuration.implicitGrantEnabled,
+    configuration.anonymousUserRole.isDefined
   )
 
   val anonymousUserRole: Option[String] = configuration.anonymousUserRole
