@@ -119,7 +119,7 @@ class Visualization extends React.Component {
 
   getPastePosition = () => {
     const paper = this.getGraphInstance()?.processGraphPaper
-    return paper?.model.getBBox()?.topRight() || {x: 300, y: 100}
+    return paper?.getArea()?.center() || {x: 300, y: 100}
   }
 
   getGraphInstance = () => this.graphRef.current?.getDecoratedComponentInstance()
