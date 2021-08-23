@@ -17,7 +17,7 @@ const getAnimationClass = (disabled?: boolean) => css({
 export class PanZoomPlugin {
   private cursorMask: CursorMask
   private instance: SvgPanZoom.Instance
-  private animationClassHolder = document.body
+  private animationClassHolder: HTMLElement
 
   constructor(paper: dia.Paper) {
     this.cursorMask = new CursorMask()
@@ -32,7 +32,8 @@ export class PanZoomPlugin {
       maxZoom: 500,
     })
 
-    document.querySelector(".svg-pan-zoom_viewport").addEventListener("transitionend", () => {
+    this.animationClassHolder = document.querySelector(".svg-pan-zoom_viewport").parentElement
+    this.animationClassHolder.addEventListener("transitionend", () => {
       this.setAnimationClass({enabled: true})
     })
 
@@ -68,10 +69,8 @@ export class PanZoomPlugin {
   }
 
   private setAnimationClass({enabled}: {enabled: boolean}) {
-    this.animationClassHolder.classList.replace(
-      getAnimationClass(!enabled),
-      getAnimationClass(enabled),
-    )
+    this.animationClassHolder.classList.add(getAnimationClass(enabled))
+    this.animationClassHolder.classList.remove(getAnimationClass(!enabled))
   }
 
   get zoom(): number {
