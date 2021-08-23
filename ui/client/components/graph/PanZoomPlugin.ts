@@ -1,28 +1,39 @@
+import {css} from "emotion"
 import {dia} from "jointjs"
 import {debounce} from "lodash"
 import svgPanZoom from "svg-pan-zoom"
 import {CursorMask} from "./CursorMask"
 import {Events} from "./joint-events"
 
-type EventData = { panStart?: { x: number, y: number, touched?: boolean } }
+type EventData = {panStart?: {x: number, y: number, touched?: boolean}}
 type Event = JQuery.MouseEventBase<any, EventData>
+
+const getAnimationClass = (disabled?: boolean) => css({
+  ".svg-pan-zoom_viewport": {
+    transition: disabled ? "none" : `transform .5s cubic-bezier(0.86, 0, 0.07, 1)`,
+  },
+})
 
 export class PanZoomPlugin {
   private cursorMask: CursorMask
   private instance: SvgPanZoom.Instance
+  private animationClassHolder = document.body
 
   constructor(paper: dia.Paper) {
     this.cursorMask = new CursorMask()
     this.instance = svgPanZoom(paper.svg, {
-      viewportSelector: ".svg-pan-zoom_viewport",
       fit: false,
       contain: false,
       zoomScaleSensitivity: 0.4,
       controlIconsEnabled: false,
       panEnabled: false,
       dblClickZoomEnabled: false,
-      minZoom: 0.05,
-      maxZoom: 5,
+      minZoom: 0.005,
+      maxZoom: 500,
+    })
+
+    document.querySelector(".svg-pan-zoom_viewport").addEventListener("transitionend", () => {
+      this.setAnimationClass({enabled: true})
     })
 
     paper.on(Events.BLANK_POINTERDOWN, (event: Event, x, y) => {
@@ -56,6 +67,13 @@ export class PanZoomPlugin {
     })
   }
 
+  private setAnimationClass({enabled}: {enabled: boolean}) {
+    this.animationClassHolder.classList.replace(
+      getAnimationClass(!enabled),
+      getAnimationClass(enabled),
+    )
+  }
+
   get zoom(): number {
     return this.instance.getZoom()
   }
@@ -66,11 +84,14 @@ export class PanZoomPlugin {
   }
 
   fitSmallAndLargeGraphs = debounce((): void => {
-    this.instance.updateBBox()
+    this.setAnimationClass({enabled: false})
+    this.instance.zoom(1)
     this.instance.resize()
+    this.instance.updateBBox()
     this.instance.fit()
     const {realZoom} = this.instance.getSizes()
-    const toZoomBy = realZoom > 1.2 ? 1 / realZoom : 0.8 //the bigger zoom, the further we get
+    const number = 1 / realZoom
+    const toZoomBy = realZoom > 1.2 ? number : 0.8 //the bigger zoom, the further we get
     this.instance.zoomBy(toZoomBy)
     this.instance.center()
   }, 200)
