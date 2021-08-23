@@ -1,3 +1,7 @@
+---
+sidebar_position: 6
+---
+
 # Subprocesses
 
 Subprocesses are a way to share fragments of logic. 
