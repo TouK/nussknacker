@@ -22,7 +22,7 @@ class SpelExpressionExcludeListSpec extends FunSuite with Matchers {
   private def testRegexPattern(inputExpression: String,
                                testedPattern: Regex,
                                expectedResult: String) = {
-    if (!excludedPatterns.contains(testedPattern))
+    if (!excludedPatterns.map(excluded => excluded.regex).contains(testedPattern.regex))
       throw new NoSuchElementException("Pattern not found in ExcludeList")
     testedPattern.findFirstIn(inputExpression) shouldEqual Some(expectedResult)
   }
@@ -30,87 +30,86 @@ class SpelExpressionExcludeListSpec extends FunSuite with Matchers {
   test("Regex pattern matching test, element not found in list of excluded patterns") {
 
     val inputExpression = "org.springframework.expression.spel.standard.SpelExpressionParser"
-    val testedPattern = "(org.springframework)".r
+    val testedPattern = "org.springframework".r
     val expectedResult = "org.springframework"
     a[NoSuchElementException] should be thrownBy {
       testRegexPattern(inputExpression, testedPattern, expectedResult)
     }
-
   }
 
   test("Regex pattern matching test, org.springframework") {
     val inputExpression = "org.springframework.expression.spel.standard.SpelExpressionParser"
-    val testedPattern = "(org\\.springframework)".r
+    val testedPattern = "org\\.springframework".r
     val expectedResult = "org.springframework"
     testRegexPattern(inputExpression, testedPattern, expectedResult)
   }
 
   test("Regex pattern matching test, java.lang.System") {
     val inputExpression = "java.lang.System.exit()"
-    val testedPattern = "(java\\.lang\\.System)".r
+    val testedPattern = "java\\.lang\\.System".r
     val expectedResult = "java.lang.System"
     testRegexPattern(inputExpression, testedPattern, expectedResult)
   }
 
   test("Regex pattern matching test, java.lang.Thread") {
     val inputExpression = "java.lang.Thread.currentThread()"
-    val testedPattern = "(java\\.lang\\.Thread)".r
+    val testedPattern = "java\\.lang\\.Thread".r
     val expectedResult = "java.lang.Thread"
     testRegexPattern(inputExpression, testedPattern, expectedResult)
   }
 
   test("Regex pattern matching test, java.lang.Runtime") {
     val inputExpression = "java.lang.Runtime.getRuntime()"
-    val testedPattern = "(java\\.lang\\.Runtime)".r
+    val testedPattern = "java\\.lang\\.Runtime".r
     val expectedResult = "java.lang.Runtime"
     testRegexPattern(inputExpression, testedPattern, expectedResult)
   }
 
   test("Regex pattern matching test, java.lang.ProcessBuilder") {
     val inputExpression = "new java.lang.ProcessBuilder()"
-    val testedPattern = "(java\\.lang\\.ProcessBuilder)".r
+    val testedPattern = "java\\.lang\\.ProcessBuilder".r
     val expectedResult = "java.lang.ProcessBuilder"
     testRegexPattern(inputExpression, testedPattern, expectedResult)
   }
 
   test("Regex pattern matching test, java.lang.invoke") {
     val inputExpression = "java.lang.invoke.MethodHandles.lookup()"
-    val testedPattern = "(java\\.lang\\.invoke)".r
+    val testedPattern = "java\\.lang\\.invoke".r
     val expectedResult = "java.lang.invoke"
     testRegexPattern(inputExpression, testedPattern, expectedResult)
   }
 
   test("Regex pattern matching test, java.lang.reflect") {
     val inputExpression = "java.lang.reflect.Method.classModifiers()"
-    val testedPattern = "(java\\.lang\\.reflect)".r
+    val testedPattern = "java\\.lang\\.reflect".r
     val expectedResult = "java.lang.reflect"
     testRegexPattern(inputExpression, testedPattern, expectedResult)
   }
 
   test("Regex pattern matching test, java.net") {
     val inputExpression = "java.net.URLConnection.getURL()"
-    val testedPattern = "(java\\.net)".r
+    val testedPattern = "java\\.net".r
     val expectedResult = "java.net"
     testRegexPattern(inputExpression, testedPattern, expectedResult)
   }
 
   test("Regex pattern matching test, java.io") {
     val inputExpression = "java.io.File.listRoots()"
-    val testedPattern = "(java\\.io)".r
+    val testedPattern = "java\\.io".r
     val expectedResult = "java.io"
     testRegexPattern(inputExpression, testedPattern, expectedResult)
   }
 
   test("Regex pattern matching test, java.nio") {
     val inputExpression = "java.nio.DoubleBuffer.allocate(1024)"
-    val testedPattern = "(java\\.nio)".r
+    val testedPattern = "java\\.nio".r
     val expectedResult = "java.nio"
     testRegexPattern(inputExpression, testedPattern, expectedResult)
   }
 
   test("Regex pattern matching test, exec") {
     val inputExpression = "Runtime.getRuntime().exec("
-    val testedPattern = "(exec\\()".r
+    val testedPattern = "exec\\(".r
     val expectedResult = "exec("
     testRegexPattern(inputExpression, testedPattern, expectedResult)
   }

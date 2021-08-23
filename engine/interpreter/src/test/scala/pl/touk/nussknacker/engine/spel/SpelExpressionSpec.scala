@@ -124,11 +124,11 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   private def spelExpressionExcludeListWithCustomPatterns: SpelExpressionExcludeList = {
     SpelExpressionExcludeList(List(
-      "(java\\.lang\\.System)".r,
-      "(java\\.lang\\.reflect)".r,
-      "(java\\.lang\\.net)".r,
-      "(java\\.lang\\.io)".r,
-      "(java\\.lang\\.nio)".r,
+      "java\\.lang\\.System".r,
+      "java\\.lang\\.reflect".r,
+      "java\\.lang\\.net".r,
+      "java\\.lang\\.io".r,
+      "java\\.lang\\.nio".r
     ))
   }
 

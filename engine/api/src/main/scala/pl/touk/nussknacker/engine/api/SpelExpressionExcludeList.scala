@@ -8,17 +8,17 @@ object SpelExpressionExcludeList {
 
   val default: SpelExpressionExcludeList = SpelExpressionExcludeList(
     List(
-      "(org\\.springframework)".r,
-      "(java\\.lang\\.System)".r,
-      "(java\\.lang\\.Thread)".r,
-      "(java\\.lang\\.Runtime)".r,
-      "(java\\.lang\\.ProcessBuilder)".r,
-      "(java\\.lang\\.invoke)".r,
-      "(java\\.lang\\.reflect)".r,
-      "(java\\.net)".r,
-      "(java\\.io)".r,
-      "(java\\.nio)".r,
-      "(exec\\()".r,
+      "org\\.springframework".r,
+      "java\\.lang\\.System".r,
+      "java\\.lang\\.Thread".r,
+      "java\\.lang\\.Runtime".r,
+      "java\\.lang\\.ProcessBuilder".r,
+      "java\\.lang\\.invoke".r,
+      "java\\.lang\\.reflect".r,
+      "java\\.net".r,
+      "java\\.io".r,
+      "java\\.nio".r,
+      "exec\\(".r
     ))
 }
 
