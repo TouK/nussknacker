@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string */
 import "ladda/dist/ladda.min.css"
 import {cloneDeep, set} from "lodash"
 import React, {useCallback, useEffect, useMemo, useState} from "react"
@@ -14,12 +13,13 @@ import {getEdgeToDisplay, getProcessCategory, getProcessToDisplay} from "../../.
 import {getCapabilities} from "../../../reducers/selectors/other"
 import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
 import {isEdgeDetailsModalVisible} from "../../../reducers/selectors/ui"
+import {EdgeType} from "../../../types"
 import {ButtonWithFocus} from "../../withFocus"
 import NodeUtils from "../NodeUtils"
 import EdgeDetailsContent from "./EdgeDetailsContent"
 
 //TODO: this is still pretty switch-specific.
-function EdgeDetailsModal() {
+function EdgeDetailsModal(): JSX.Element {
   const edge = useSelector(getEdgeToDisplay)
   const processToDisplay = useSelector(getProcessToDisplay)
   const processDefinitionData = useSelector(getProcessDefinitionData)
@@ -65,7 +65,7 @@ function EdgeDetailsModal() {
     setState(s => ({...s, editedEdge: newEdge}))
   }, [state.editedEdge])
 
-  const changeEdgeTypeValue = useCallback((edgeTypeValue) => {
+  const changeEdgeTypeValue = useCallback((edgeTypeValue: EdgeType) => {
     const fromNode = NodeUtils.getNodeById(edge.from, processToDisplay)
     const defaultEdgeType = NodeUtils
       .edgesForNode(fromNode, processDefinitionData).edges.find(e => e.type === edgeTypeValue)
