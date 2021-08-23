@@ -5,6 +5,9 @@ on:
       - master
       - staging
       - release/*
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   push:
     branches:
       - master
