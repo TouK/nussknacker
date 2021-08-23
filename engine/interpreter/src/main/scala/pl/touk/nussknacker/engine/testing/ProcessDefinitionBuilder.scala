@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.testing
 
-import pl.touk.nussknacker.engine.api.SpelExpressionBlacklist
+import pl.touk.nussknacker.engine.api.SpelExpressionExcludeList
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
@@ -18,7 +18,7 @@ object ProcessDefinitionBuilder {
       ExpressionDefinition(Map.empty, List.empty, List.empty, languages = LanguageConfiguration(List.empty),
         optimizeCompilation = true, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false,
         strictMethodsChecking = true, staticMethodInvocationsChecking = false, methodExecutionForUnknownAllowed = false,
-        dynamicPropertyAccessAllowed = false, SpelExpressionBlacklist.default), ClassExtractionSettings.Default)
+        dynamicPropertyAccessAllowed = false, SpelExpressionExcludeList.default), ClassExtractionSettings.Default)
 
   def withEmptyObjects(definition: ProcessDefinition[ObjectDefinition]): ProcessDefinition[ObjectWithMethodDef] = {
 
@@ -39,7 +39,7 @@ object ProcessDefinitionBuilder {
       definition.expressionConfig.staticMethodInvocationsChecking,
       definition.expressionConfig.methodExecutionForUnknownAllowed,
       definition.expressionConfig.dynamicPropertyAccessAllowed,
-      definition.expressionConfig.spelExpressionBlacklist
+      definition.expressionConfig.spelExpressionExcludeList
     )
 
     ProcessDefinition(

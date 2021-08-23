@@ -6,7 +6,7 @@ import java.util.Collections
 import org.springframework.core.convert.TypeDescriptor
 import org.springframework.expression.{EvaluationContext, MethodExecutor, MethodResolver, PropertyAccessor}
 import org.springframework.expression.spel.support.{ReflectiveMethodExecutor, ReflectiveMethodResolver, StandardEvaluationContext, StandardTypeLocator}
-import pl.touk.nussknacker.engine.api.{Context, SpelExpressionBlacklist}
+import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.spel.OmitAnnotationsMethodExecutor
 
 import scala.collection.JavaConverters._
@@ -15,7 +15,7 @@ class EvaluationContextPreparer(classLoader: ClassLoader,
                                 expressionImports: List[String],
                                 propertyAccessors: Seq[PropertyAccessor],
                                 expressionFunctions: Map[String, Method],
-                                spelExpressionBlacklist: SpelExpressionBlacklist) {
+                                spelExpressionExcludeList: SpelExpressionExcludeList) {
 
   //this method is evaluated for *each* expression evaluation, we want to extract as much as possible to fields in this class
   def prepareEvaluationContext(ctx: Context, globals: Map[String, Any]): EvaluationContext = {
@@ -37,7 +37,7 @@ class EvaluationContextPreparer(classLoader: ClassLoader,
       override def resolve(context: EvaluationContext, targetObject: Object, name: String, argumentTypes: util.List[TypeDescriptor]): MethodExecutor = {
         val methodExecutor = super.resolve(context, targetObject, name, argumentTypes).asInstanceOf[ReflectiveMethodExecutor]
 
-        spelExpressionBlacklist.blockBlacklisted(targetObject, name)
+        spelExpressionExcludeList.blockExcluded(targetObject, name)
 
         new OmitAnnotationsMethodExecutor(methodExecutor)
       }

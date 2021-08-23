@@ -11,7 +11,7 @@ import org.apache.avro.generic.GenericData
 import org.apache.commons.lang3.ClassUtils
 import org.scalatest.{EitherValues, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
-import pl.touk.nussknacker.engine.api.{Context, SpelExpressionBlacklist}
+import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
@@ -119,16 +119,16 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     val imports = List(SampleValue.getClass.getPackage.getName)
     SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(dictionaries), enableSpelForceCompile = true, strictTypeChecking = true,
       imports, flavour, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking = staticMethodInvocationsChecking, typeDefinitionSetWithCustomClasses,
-      methodExecutionForUnknownAllowed = methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed, spelExpressionBlacklistWithCustomPatterns)(ClassExtractionSettings.Default).parse(expr, validationCtx, Typed.fromDetailedType[T])
+      methodExecutionForUnknownAllowed = methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed, spelExpressionExcludeListWithCustomPatterns)(ClassExtractionSettings.Default).parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 
-  private def spelExpressionBlacklistWithCustomPatterns: SpelExpressionBlacklist = {
-    SpelExpressionBlacklist(Map(
-      "system" -> "(java\\.lang\\.System)".r,
-      "reflect" -> "(java\\.lang\\.reflect)".r,
-      "net" -> "(java\\.lang\\.net)".r,
-      "io" -> "(java\\.lang\\.io)".r,
-      "nio" -> "(java\\.lang\\.nio)".r,
+  private def spelExpressionExcludeListWithCustomPatterns: SpelExpressionExcludeList = {
+    SpelExpressionExcludeList(List(
+      "(java\\.lang\\.System)".r,
+      "(java\\.lang\\.reflect)".r,
+      "(java\\.lang\\.net)".r,
+      "(java\\.lang\\.io)".r,
+      "(java\\.lang\\.nio)".r,
     ))
   }
 
@@ -147,23 +147,23 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
     ))
   }
 
-  test("blocking blacklisted reflect in runtime, without previous static validation") {
+  test("blocking excluded reflect in runtime, without previous static validation") {
     a[SpelExpressionEvaluationException] should be thrownBy {
       parseOrFailWithoutStaticInvocationChecking[Any]("T(java.lang.reflect.Modifier).classModifiers()").evaluateSync[Any](ctx)
     }
   }
 
-  test("blocking blacklisted System in runtime, without previous static validation") {
+  test("blocking excluded System in runtime, without previous static validation") {
     a[SpelExpressionEvaluationException] should be thrownBy {
       parseOrFailWithoutStaticInvocationChecking[Any]("T(System).exit()").evaluateSync[Any](ctx)
     }
   }
 
-  test("blocking blacklisted in runtime, without previous static validation, allowed class and package") {
+  test("blocking excluded in runtime, without previous static validation, allowed class and package") {
       parseOrFailWithoutStaticInvocationChecking[BigInteger]("T(java.math.BigInteger).valueOf(1L)").evaluateSync[BigInteger](ctx) should equal(BigInteger.ONE)
   }
 
-  test("blocking blacklisted in runtime, allowed reference") {
+  test("blocking excluded in runtime, allowed reference") {
     parseOrFail[Long]("T(java.lang.Long).valueOf(1L)").evaluateSync[Long](ctx) should equal(1L)
   }
 
