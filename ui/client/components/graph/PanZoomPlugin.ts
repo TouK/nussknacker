@@ -33,9 +33,9 @@ export class PanZoomPlugin {
     })
 
     this.animationClassHolder = document.querySelector(".svg-pan-zoom_viewport").parentElement
-    this.animationClassHolder.addEventListener("transitionend", () => {
-      this.setAnimationClass({enabled: true})
-    })
+    this.animationClassHolder.addEventListener("transitionend", debounce(() => {
+      this.setAnimationClass({enabled: false})
+    }, 500))
 
     paper.on(Events.BLANK_POINTERDOWN, (event: Event, x, y) => {
       const isModified = event.shiftKey || event.ctrlKey || event.altKey || event.metaKey
@@ -69,8 +69,8 @@ export class PanZoomPlugin {
   }
 
   private setAnimationClass({enabled}: {enabled: boolean}) {
-    this.animationClassHolder.classList.add(getAnimationClass(enabled))
-    this.animationClassHolder.classList.remove(getAnimationClass(!enabled))
+    this.animationClassHolder.classList.remove(getAnimationClass(enabled))
+    this.animationClassHolder.classList.add(getAnimationClass(!enabled))
   }
 
   get zoom(): number {
@@ -83,7 +83,7 @@ export class PanZoomPlugin {
   }
 
   fitSmallAndLargeGraphs = debounce((): void => {
-    this.setAnimationClass({enabled: false})
+    this.setAnimationClass({enabled: true})
     this.instance.zoom(1)
     this.instance.resize()
     this.instance.updateBBox()
