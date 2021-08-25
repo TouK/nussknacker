@@ -11,12 +11,12 @@ export type MetricsType = {
 export type FeaturesSettings = {
   counts: boolean,
   attachments: boolean,
-  search: {url: string},
+  search: { url: string },
   metrics: MetricsType,
-  remoteEnvironment: {targetEnvironmentId: string},
-  environmentAlert: {content: string, cssClass: string},
-  commentSettings: {matchExpression: string, link: string},
-  intervalTimeSettings: {processes: number, healthCheck: number},
+  remoteEnvironment: { targetEnvironmentId: string },
+  environmentAlert: { content: string, cssClass: string },
+  commentSettings: { matchExpression: string, link: string },
+  intervalTimeSettings: { processes: number, healthCheck: number },
   deploySettings: $TodoType,
   tabs: DynamicTabData[],
 }
