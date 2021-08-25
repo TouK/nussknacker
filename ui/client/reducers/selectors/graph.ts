@@ -75,6 +75,5 @@ export const getVersions = createSelector(getFetchedProcessDetails, details => d
 export const hasOneVersion = createSelector(getVersions, h => h.length <= 1)
 export const getAdditionalFields = createSelector(getProcessToDisplay, p => p.properties?.additionalFields)
 
-export const getEdgeToDisplay = createSelector(getGraph, state => state.edgeToDisplay)
 export const getLayout = createSelector(getGraph, state => state.layout || [])
 export const getNodeId = createSelector(getNodeToDisplay, node => node.id)

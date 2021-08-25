@@ -3,6 +3,7 @@ import {defaults, isEmpty} from "lodash"
 import {useCallback} from "react"
 import {useDispatch} from "react-redux"
 import {EventInfo, reportEvent} from "../actions/nk"
+
 import {isEdgeEditable} from "../common/EdgeUtils"
 import * as VisualizationUrl from "../common/VisualizationUrl"
 import NodeUtils from "../components/graph/NodeUtils"
@@ -44,8 +45,7 @@ export function useWindows(parent?: WindowId) {
       meta: node,
     })
 
-    // dispatch(displayModalNodeDetails(node))
-  }, [dispatch, open])
+  }, [open])
 
   const editEdge = useCallback((edge: Edge) => {
     if (isEdgeEditable(edge)) {
@@ -58,9 +58,7 @@ export function useWindows(parent?: WindowId) {
         meta: edge,
       })
     }
-
-    // dispatch(displayModalEdgeDetails(edge))
-  }, [dispatch, open])
+  }, [open])
 
   const confirm = useCallback((data: ConfirmDialogData, event?: EventInfo) => {
     if (!isEmpty(event)) {

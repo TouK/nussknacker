@@ -4,12 +4,11 @@ import {UiState} from "../ui"
 
 export const getUi = (state: RootState): UiState => state.ui
 
-export const isEdgeDetailsModalVisible = createSelector(getUi, ui => !!ui.showEdgeDetailsModal)
-export const isNodeDetailsModalVisible = createSelector(getUi, ui => !!ui.showNodeDetailsModal)
+//TODO: check if needed then connect to right place
+export const isNodeDetailsModalVisible = createSelector(getUi, ui => false)
 
 export const areAllModalsClosed = createSelector(
   isNodeDetailsModalVisible,
-  isEdgeDetailsModalVisible,
-  (node, edge) => !(node || edge),
+  (node) => !node,
 )
 

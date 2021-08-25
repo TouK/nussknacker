@@ -1,5 +1,5 @@
 import {DefaultContent, DefaultContentProps} from "@touk/window-manager"
-import {css} from "emotion"
+import {css, cx} from "emotion"
 import React, {PropsWithChildren} from "react"
 import {useNkTheme} from "../containers/theme"
 import {getWindowColors} from "./getWindowColors"
@@ -10,7 +10,8 @@ export function WindowContent({classnames, ...props}: PropsWithChildren<DefaultC
     <DefaultContent
       {...props}
       classnames={{
-        header: getWindowColors(props.data.kind),
+        header: cx(getWindowColors(props.data.kind)),
+        headerButtons: css({fontSize: 15}),
         footer: css({
           justifyContent: "flex-end",
           background: theme.colors.secondaryBackground,

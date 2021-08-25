@@ -1,8 +1,8 @@
 import {includes} from "lodash"
 import React, {useCallback} from "react"
-import {Edge, EdgeType} from "../../../types"
-import BaseModalContent from "./BaseModalContent"
-import EditableEditor from "./editors/EditableEditor"
+import {Edge, EdgeType} from "../../../../types"
+import BaseModalContent from "../BaseModalContent"
+import EditableEditor from "../editors/EditableEditor"
 
 interface Props {
   edge: Edge,

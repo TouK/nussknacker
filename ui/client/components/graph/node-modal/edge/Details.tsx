@@ -6,7 +6,7 @@ import {getCapabilities} from "../../../../reducers/selectors/other"
 import {getProcessDefinitionData} from "../../../../reducers/selectors/settings"
 import {Edge, EdgeType, Process} from "../../../../types"
 import NodeUtils from "../../NodeUtils"
-import EdgeDetailsContent from "../EdgeDetailsContent"
+import EdgeDetailsContent from "./EdgeDetailsContent"
 
 export function Details({
   edge,

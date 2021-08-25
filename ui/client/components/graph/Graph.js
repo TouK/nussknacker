@@ -1,4 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
+import {css} from "emotion"
 import {dia} from "jointjs"
 import "jointjs/dist/joint.css"
 import _, {cloneDeep, debounce, isEqual, sortBy} from "lodash"
@@ -12,11 +13,8 @@ import {updateNodeCounts} from "./EspNode/element"
 import {FocusableDiv} from "./focusable"
 import {createPaper, directedLayout, drawGraph, isBackgroundObject, isGroupElement, isModelElement} from "./GraphPartialsInTS"
 import styles from "./graphTheme.styl"
-
 import * as GraphUtils from "./GraphUtils"
 import {Events} from "./joint-events"
-import EdgeDetailsModal from "./node-modal/EdgeDetailsModal"
-import NodeDetailsModal from "./node-modal/NodeDetailsModal"
 import NodeUtils from "./NodeUtils"
 import {PanZoomPlugin} from "./PanZoomPlugin"
 import {RangeSelectPlugin, SelectionMode} from "./RangeSelectPlugin"
@@ -436,9 +434,10 @@ export class Graph extends React.Component {
 
   render() {
     const toRender = (
-      <div id="graphContainer" style={{padding: this.props.padding}}>
-        {this.props.showNodeDetailsModal ? <NodeDetailsModal/> : null}
-        {!_.isEmpty(this.props.edgeToDisplay) ? <EdgeDetailsModal/> : null}
+      <div
+        id="graphContainer"
+        className={css({".Page > &": {padding: this.props.padding, overflow: "hidden", width: "100%", height: "100%"}})}
+      >
         <FocusableDiv ref={this.espGraphRef} id={this.props.divId}/>
       </div>
     )

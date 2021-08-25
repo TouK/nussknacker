@@ -1,6 +1,6 @@
 import {Layout} from "../../actions/nk"
 import {ProcessStateType, ProcessType} from "../../components/Process/types"
-import {NodeType, Process, GroupType, Edge, GroupNodeType} from "../../types"
+import {GroupNodeType, NodeType, Process} from "../../types"
 
 export type ProcessCounts = Record<string, {
   errors: number,
@@ -20,7 +20,6 @@ export type GraphState = {
   layout: Layout,
   testCapabilities?: $TodoType,
   testResults: $TodoType,
-  edgeToDisplay: Edge,
   processCounts: ProcessCounts,
   unsavedNewName: string | null,
 }

@@ -15,7 +15,7 @@ interface Props {
   updateNodeState: (node: NodeType | GroupNodeType) => void,
 }
 
-export function ChildrenElement({children, ...props}: PropsWithChildren<Props>): JSX.Element {
+export function NodeGroupContent({children, ...props}: PropsWithChildren<Props>): JSX.Element {
   const {editedNode, readOnly, currentNodeId, updateNodeState} = props
   const nodeErrors = useSelector(getErrors)
   const testResults = useSelector(getTestResults)

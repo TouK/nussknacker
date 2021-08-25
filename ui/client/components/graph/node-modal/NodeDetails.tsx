@@ -8,8 +8,8 @@ import {getExpandedGroups} from "../../../reducers/selectors/groups"
 import {GroupNodeType, NodeType} from "../../../types"
 import {WindowContent, WindowKind} from "../../../windowManager"
 import NodeUtils from "../NodeUtils"
-import {ChildrenElement} from "./node/ChildrenElement"
 import {ContentWrapper} from "./node/ContentWrapper"
+import {NodeGroupContent} from "./node/NodeGroupContent"
 import {getReadOnly} from "./node/selectors"
 import {SubprocessContent} from "./node/SubprocessContent"
 import NodeDetailsModalHeader from "./NodeDetailsModalHeader"
@@ -98,7 +98,7 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType | Gro
       components={components}
     >
       <ContentWrapper>
-        <ChildrenElement
+        <NodeGroupContent
           editedNode={editedNode}
           readOnly={readOnly}
           currentNodeId={nodeToDisplay.id}
@@ -107,7 +107,7 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType | Gro
           {NodeUtils.nodeIsSubprocess(nodeToDisplay) && (
             <SubprocessContent nodeToDisplay={nodeToDisplay} currentNodeId={nodeToDisplay.id}/>
           )}
-        </ChildrenElement>
+        </NodeGroupContent>
       </ContentWrapper>
     </WindowContent>
   )

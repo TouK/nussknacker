@@ -4,7 +4,6 @@ import {connect} from "react-redux"
 import {compose} from "redux"
 import ActionsUtils from "../../actions/ActionsUtils"
 import {
-  getEdgeToDisplay,
   getFetchedProcessDetails,
   getLayout,
   getNodeToDisplay,
@@ -46,7 +45,6 @@ function mapState(state) {
     fetchedProcessDetails: getFetchedProcessDetails(state),
     nodeToDisplay: getNodeToDisplay(state),
     processCounts: getProcessCounts(state),
-    edgeToDisplay: getEdgeToDisplay(state),
     layout: getLayout(state),
     expandedGroups: getExpandedGroups(state),
     showNodeDetailsModal: isNodeDetailsModalVisible(state),
