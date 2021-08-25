@@ -8,7 +8,7 @@ import {getProcessToDisplay} from "../../../../reducers/selectors/graph"
 import {getExpandedGroups} from "../../../../reducers/selectors/groups"
 import {GroupNodeType, NodeType} from "../../../../types"
 import {WindowContent, WindowKind} from "../../../../windowManager"
-import {removeQueryParams, setQueryParams} from "../../../../windowManager/useWindows"
+import {replaceWindowsQueryParams} from "../../../../windowManager/useWindows"
 import ErrorBoundary from "../../../common/ErrorBoundary"
 import NodeUtils from "../../NodeUtils"
 import NodeDetailsModalHeader from "../NodeDetailsModalHeader"
@@ -33,9 +33,10 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType | Gro
   const dispatch = useDispatch()
 
   useEffect(() => {
-    setQueryParams({nodeId: nodeToDisplay.id})
-    return () => removeQueryParams({nodeId: nodeToDisplay.id})
-  }, [nodeToDisplay.id])
+  const nodeId = nodeToDisplay.id
+    replaceWindowsQueryParams({nodeId})
+    return () => replaceWindowsQueryParams({}, {nodeId})
+  }, [nodeToDisplay])
 
   const performNodeEdit = useCallback(async () => {
     const action = NodeUtils.nodeIsGroup(editedNode) ?

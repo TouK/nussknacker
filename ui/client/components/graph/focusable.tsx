@@ -19,14 +19,15 @@ export const GraphPaperContainer = forwardRef<HTMLDivElement, ContainerProps>(({
   const options = useMemo(() => ({
     onResize: debounce(({entry}) => {
       onResize?.(entry.contentRect)
-    }, 500),
+    }, 100),
   }
   ), [onResize])
 
   const {observe} = useSizeWithRef(forwardedRef, options)
 
   const styles = css({
-    minHeight: 200,
+    minHeight: 300,
+    minWidth: 300,
     ".Page > &": {
       overflow: "hidden",
       width: "100%",

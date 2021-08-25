@@ -16,7 +16,7 @@ export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwar
     <Graph
       ref={forwardedRef}
       {...props}
-      openNodeWindow={openNodeWindow}
+      showModalNodeDetails={openNodeWindow}
       showModalEdgeDetails={editEdge}
     />
   )

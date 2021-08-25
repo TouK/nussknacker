@@ -17,6 +17,7 @@ import {getCapabilities} from "../reducers/selectors/other"
 import {getProcessDefinitionData} from "../reducers/selectors/settings"
 
 import "../stylesheets/visualization.styl"
+import {parseWindowsQueryParams} from "../windowManager/useWindows"
 import {BindKeyboardShortcuts} from "./BindKeyboardShortcuts"
 import {darkTheme} from "./darkTheme"
 import {NkThemeProvider} from "./theme"
@@ -67,16 +68,15 @@ class Visualization extends React.Component {
   }
 
   showModalDetailsIfNeeded(process) {
-    const {showModalEdgeDetails, openNodeWindow, history} = this.props
-    const {nodeId, edgeId} = VisualizationUrl.extractWindowsParams()
+    const {showModalEdgeDetails, showModalNodeDetails, history} = this.props
+    const params = parseWindowsQueryParams({nodeId: [], edgeId: []})
 
-    const nodes = nodeId.map(id => NodeUtils.getNodeById(id, process)).filter(Boolean)
-    nodes.forEach(openNodeWindow)
+    const nodes = params.nodeId.map(id => NodeUtils.getNodeById(id, process)).filter(Boolean)
+    nodes.forEach(showModalNodeDetails)
 
-    const edges = edgeId.map(id => NodeUtils.getEdgeById(id, process)).filter(Boolean)
+    const edges = params.edgeId.map(id => NodeUtils.getEdgeById(id, process)).filter(Boolean)
     edges.forEach(showModalEdgeDetails)
 
-    console.log(nodes, edges)
     history.replace({
       search: VisualizationUrl.setAndPreserveLocationParams({
         nodeId: nodes.map(node => node.id),

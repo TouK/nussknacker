@@ -27,6 +27,8 @@ export class Graph extends React.Component {
     processToDisplay: PropTypes.object.isRequired,
     loggedUser: PropTypes.object.isRequired,
     connectDropTarget: PropTypes.func,
+    showModalNodeDetails: PropTypes.func.isRequired,
+    showModalEdgeDetails: PropTypes.func.isRequired,
   }
   redrawing = false
   directedLayout = directedLayout.bind(this)
@@ -328,7 +330,7 @@ export class Graph extends React.Component {
       if (nodeDataId) {
         const nodeData = this.getNodeData(cellView.model)
         const prefixedNodeId = this.props.nodeIdPrefixForSubprocessTests + nodeDataId
-        this.props.openNodeWindow({...nodeData, id: prefixedNodeId}, this.props.readonly)
+        this.props.showModalNodeDetails({...nodeData, id: prefixedNodeId}, this.props.readonly)
       }
 
       if (cellView.model.attributes.edgeData) {

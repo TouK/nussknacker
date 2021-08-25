@@ -1,22 +1,13 @@
 /* eslint-disable i18next/no-literal-string */
-import {omitBy, uniq, without} from "lodash"
+import {omitBy} from "lodash"
 import Moment from "moment"
 import * as  queryString from "query-string"
 import {ParseOptions} from "query-string"
 import {BASE_PATH} from "../config"
 import {NodeId} from "../types"
-import {ensureArray} from "./arrayUtils"
 
 export const visualizationBasePath = `visualization`
 export const visualizationPath = `/${visualizationBasePath}/:processId`
-
-function nodeIdPart(nodeId): string {
-  return `?nodeId=${encodeURIComponent(nodeId)}`
-}
-
-function edgeIdPart(edgeId): string {
-  return `?edgeId=${encodeURIComponent(edgeId)}`
-}
 
 function fromTimestampOrDate(tsOrDate) {
   const asInt = parseInt(tsOrDate)
@@ -28,28 +19,9 @@ function fromTimestampOrDate(tsOrDate) {
   return Moment(tsOrDate)
 }
 
-export function processNodeUrl(processName: string, nodeId: NodeId) {
+export function visualizationUrl(processName: string, nodeId?: NodeId): string {
   const baseUrl = `${visualizationBasePath}/${encodeURIComponent(processName)}`
-  const nodeIdUrlPart = nodeIdPart(nodeId)
-  return BASE_PATH + baseUrl + nodeIdUrlPart
-}
-
-export function visualizationUrl(processName: string, nodeId?: NodeId, edgeId?: NodeId) {
-  const baseUrl = `/${visualizationBasePath}/${encodeURIComponent(processName)}`
-  const nodeIdUrlPart = nodeId && edgeId == null ? nodeIdPart(nodeId) : ""
-  const edgeIdUrlPart = edgeId && nodeId == null ? edgeIdPart(edgeId) : ""
-  return baseUrl + nodeIdUrlPart + edgeIdUrlPart
-}
-
-export function extractWindowsParams(
-  append?: Partial<Record<"edgeId" | "nodeId", string | string[]>>,
-  remove?: Partial<Record<"edgeId" | "nodeId", string | string[]>>,
-): {edgeId: string[], nodeId: string[]} {
-  const {edgeId, nodeId} = queryString.parse(window.location.search, {arrayFormat: defaultArrayFormat})
-  return {
-    nodeId: without(uniq(ensureArray(nodeId).concat(append?.nodeId).filter(Boolean)), ...ensureArray(remove?.nodeId)),
-    edgeId: without(uniq(ensureArray(edgeId).concat(append?.edgeId).filter(Boolean)), ...ensureArray(remove?.edgeId)),
-  }
+  return BASE_PATH + baseUrl + queryString.stringify({nodeId})
 }
 
 export function extractCountParams(queryParams) {

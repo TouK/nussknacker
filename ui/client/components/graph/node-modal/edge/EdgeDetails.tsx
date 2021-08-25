@@ -6,7 +6,7 @@ import {editEdge} from "../../../../actions/nk"
 import {getProcessToDisplay} from "../../../../reducers/selectors/graph"
 import {Edge} from "../../../../types"
 import {WindowContent, WindowKind} from "../../../../windowManager"
-import {removeQueryParams, setQueryParams} from "../../../../windowManager/useWindows"
+import {replaceWindowsQueryParams} from "../../../../windowManager/useWindows"
 import ErrorBoundary from "../../../common/ErrorBoundary"
 import NodeUtils from "../../NodeUtils"
 import {ContentSize} from "../node/ContentSize"
@@ -22,8 +22,8 @@ export function EdgeDetails(props: WindowContentProps<WindowKind, Edge>): JSX.El
 
   useEffect(() => {
     const edgeId = NodeUtils.edgeId(edgeToDisplay)
-    setQueryParams({edgeId})
-    return () => removeQueryParams({edgeId})
+    replaceWindowsQueryParams({edgeId})
+    return () => replaceWindowsQueryParams({}, {edgeId})
   }, [edgeToDisplay])
 
   const performEdgeEdit = useCallback(async () => {
