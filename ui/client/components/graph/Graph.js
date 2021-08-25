@@ -1,16 +1,16 @@
 /* eslint-disable i18next/no-literal-string */
-import {css} from "emotion"
 import {dia} from "jointjs"
 import "jointjs/dist/joint.css"
 import _, {cloneDeep, debounce, isEqual, sortBy} from "lodash"
 import PropTypes from "prop-types"
 import React from "react"
+import {findDOMNode} from "react-dom"
 import {getProcessCategory, getSelectionState} from "../../reducers/selectors/graph"
 import {getLoggedUser, getProcessDefinitionData} from "../../reducers/selectors/settings"
 import "../../stylesheets/graph.styl"
 import {filterDragHovered, setLinksHovered} from "./dragHelpers"
 import {updateNodeCounts} from "./EspNode/element"
-import {FocusableDiv} from "./focusable"
+import {GraphPaperContainer} from "./focusable"
 import {createPaper, directedLayout, drawGraph, isBackgroundObject, isGroupElement, isModelElement} from "./GraphPartialsInTS"
 import styles from "./graphTheme.styl"
 import * as GraphUtils from "./GraphUtils"
@@ -27,8 +27,6 @@ export class Graph extends React.Component {
     processToDisplay: PropTypes.object.isRequired,
     loggedUser: PropTypes.object.isRequired,
     connectDropTarget: PropTypes.func,
-    width: PropTypes.string,
-    height: PropTypes.string,
   }
   redrawing = false
   directedLayout = directedLayout.bind(this)
@@ -433,16 +431,20 @@ export class Graph extends React.Component {
   }
 
   render() {
-    const toRender = (
-      <div
-        id="graphContainer"
-        className={css({".Page > &": {padding: this.props.padding, overflow: "hidden", width: "100%", height: "100%"}})}
-      >
-        <FocusableDiv ref={this.espGraphRef} id={this.props.divId}/>
-      </div>
+    const {connectDropTarget, divId, processToDisplay} = this.props
+    return (
+      <GraphPaperContainer
+        ref={instance => {
+          this.espGraphRef.current = instance
+          if (connectDropTarget) {
+            const node = findDOMNode(instance)
+            connectDropTarget(node)
+          }
+        }}
+        onResize={processToDisplay.properties.isSubprocess ? () => this.panAndZoom.fitSmallAndLargeGraphs() : null}
+        id={divId}
+      />
     )
-
-    return this.props.connectDropTarget ? this.props.connectDropTarget(toRender) : toRender
   }
 }
 

@@ -2,7 +2,6 @@ import React, {useEffect, useState} from "react"
 import {useSelector} from "react-redux"
 import HttpService from "../../../../http/HttpService"
 import {getProcessCounts, getProcessToDisplay, isBusinessView} from "../../../../reducers/selectors/graph"
-import cssVariables from "../../../../stylesheets/_variables.styl"
 import {NodeId, SubprocessNodeType} from "../../../../types"
 import ErrorBoundary from "../../../common/ErrorBoundary"
 import {ProcessType} from "../../../Process/types"
@@ -40,7 +39,6 @@ export function SubprocessContent({
         <BareGraph
           processCounts={subprocessCounts}
           processToDisplay={subprocessContent}
-          height={`${parseInt(cssVariables.modalContentMaxHeight) / 3}px`}
         />
       )}
     </ErrorBoundary>

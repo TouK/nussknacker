@@ -1,18 +1,19 @@
 import {WindowButtonProps, WindowContentProps} from "@touk/window-manager"
+import {css} from "emotion"
 import React, {useCallback, useEffect, useMemo, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
-import {closeModals, collapseGroup, editGroup, editNode, expandGroup} from "../../../../actions/nk"
+import {collapseGroup, editGroup, editNode, expandGroup} from "../../../../actions/nk"
 import {getProcessToDisplay} from "../../../../reducers/selectors/graph"
 import {getExpandedGroups} from "../../../../reducers/selectors/groups"
 import {GroupNodeType, NodeType} from "../../../../types"
 import {WindowContent, WindowKind} from "../../../../windowManager"
+import {removeQueryParams, setQueryParams} from "../../../../windowManager/useWindows"
+import ErrorBoundary from "../../../common/ErrorBoundary"
 import NodeUtils from "../../NodeUtils"
 import NodeDetailsModalHeader from "../NodeDetailsModalHeader"
-import {ContentWrapper} from "./ContentWrapper"
 import {NodeGroupContent} from "./NodeGroupContent"
 import {getReadOnly} from "./selectors"
-import {SubprocessContent} from "./SubprocessContent"
 
 export function NodeDetails(props: WindowContentProps<WindowKind, NodeType | GroupNodeType> & {readOnly?: boolean}): JSX.Element {
   const processToDisplay = useSelector(getProcessToDisplay)
@@ -31,9 +32,10 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType | Gro
 
   const dispatch = useDispatch()
 
-  useEffect(() => () => {
-    dispatch(closeModals())
-  }, [dispatch])
+  useEffect(() => {
+    setQueryParams({nodeId: nodeToDisplay.id})
+    return () => removeQueryParams({nodeId: nodeToDisplay.id})
+  }, [nodeToDisplay.id])
 
   const performNodeEdit = useCallback(async () => {
     const action = NodeUtils.nodeIsGroup(editedNode) ?
@@ -96,19 +98,18 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType | Gro
       {...props}
       buttons={buttons}
       components={components}
+      classnames={{
+        content: css({minHeight: "100%", display: "flex", ">div":{flex: 1}}),
+      }}
     >
-      <ContentWrapper>
+      <ErrorBoundary>
         <NodeGroupContent
           editedNode={editedNode}
           readOnly={readOnly}
           currentNodeId={nodeToDisplay.id}
           updateNodeState={setEditedNode}
-        >
-          {NodeUtils.nodeIsSubprocess(nodeToDisplay) && (
-            <SubprocessContent nodeToDisplay={nodeToDisplay} currentNodeId={nodeToDisplay.id}/>
-          )}
-        </NodeGroupContent>
-      </ContentWrapper>
+        />
+      </ErrorBoundary>
     </WindowContent>
   )
 }

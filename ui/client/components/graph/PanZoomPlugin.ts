@@ -32,7 +32,7 @@ export class PanZoomPlugin {
       maxZoom: 500,
     })
 
-    this.animationClassHolder = document.querySelector(".svg-pan-zoom_viewport").parentElement
+    this.animationClassHolder = paper.el
     this.animationClassHolder.addEventListener("transitionend", debounce(() => {
       this.setAnimationClass({enabled: false})
     }, 500))
@@ -94,11 +94,13 @@ export class PanZoomPlugin {
     this.instance.center()
   }, 200)
 
-  zoomIn = () => {
+  zoomIn = (): void => {
+    this.setAnimationClass({enabled: true})
     this.instance.zoomIn()
   }
 
-  zoomOut = () => {
+  zoomOut = (): void => {
+    this.setAnimationClass({enabled: true})
     this.instance.zoomOut()
   }
 }

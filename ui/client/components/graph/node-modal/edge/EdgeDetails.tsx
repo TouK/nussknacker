@@ -2,11 +2,14 @@ import {WindowButtonProps, WindowContentProps} from "@touk/window-manager"
 import React, {useCallback, useEffect, useMemo, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
-import {closeModals, editEdge} from "../../../../actions/nk"
+import {editEdge} from "../../../../actions/nk"
 import {getProcessToDisplay} from "../../../../reducers/selectors/graph"
 import {Edge} from "../../../../types"
 import {WindowContent, WindowKind} from "../../../../windowManager"
-import {ContentWrapper} from "../node/ContentWrapper"
+import {removeQueryParams, setQueryParams} from "../../../../windowManager/useWindows"
+import ErrorBoundary from "../../../common/ErrorBoundary"
+import NodeUtils from "../../NodeUtils"
+import {ContentSize} from "../node/ContentSize"
 import {Details} from "./Details"
 import {EdgeDetailsModalHeader} from "./EdgeDetailsModalHeader"
 
@@ -14,16 +17,19 @@ export function EdgeDetails(props: WindowContentProps<WindowKind, Edge>): JSX.El
   const {t} = useTranslation()
   const dispatch = useDispatch()
   const processToDisplay = useSelector(getProcessToDisplay)
-  const [edge, setEdge] = useState(props.data.meta)
+  const edgeToDisplay = props.data.meta
+  const [edge, setEdge] = useState(edgeToDisplay)
 
-  useEffect(() => () => {
-    dispatch(closeModals())
-  }, [dispatch])
+  useEffect(() => {
+    const edgeId = NodeUtils.edgeId(edgeToDisplay)
+    setQueryParams({edgeId})
+    return () => removeQueryParams({edgeId})
+  }, [edgeToDisplay])
 
   const performEdgeEdit = useCallback(async () => {
-    await dispatch(editEdge(processToDisplay, props.data.meta, edge))
+    await dispatch(editEdge(processToDisplay, edgeToDisplay, edge))
     props.close()
-  }, [dispatch, edge, processToDisplay, props])
+  }, [dispatch, edge, edgeToDisplay, processToDisplay, props])
 
   const cancelButtonData = useMemo(
     () => ({title: t("dialog.button.cancel", "cancel"), action: () => props.close()}),
@@ -53,9 +59,11 @@ export function EdgeDetails(props: WindowContentProps<WindowKind, Edge>): JSX.El
       buttons={buttons}
       components={components}
     >
-      <ContentWrapper>
-        <Details edge={edge} onChange={setEdge} processToDisplay={processToDisplay}/>
-      </ContentWrapper>
+      <ErrorBoundary>
+        <ContentSize>
+          <Details edge={edge} onChange={setEdge} processToDisplay={processToDisplay}/>
+        </ContentSize>
+      </ErrorBoundary>
     </WindowContent>
   )
 }

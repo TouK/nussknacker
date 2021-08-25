@@ -48,7 +48,7 @@ describe("Process", () => {
     it("should import JSON and save", () => {
       cy.intercept("PUT", "/api/processes/*").as("save")
       cy.contains(/is not deployed/i).should("be.visible")
-      cy.get("#graphContainer").toMatchImageSnapshot()
+      cy.get("#nk-graph-main").toMatchImageSnapshot()
 
       cy.intercept("POST", "/api/processes/import/*").as("import")
       cy.fixture("testProcess").then(json => {
@@ -68,7 +68,7 @@ describe("Process", () => {
       cy.wait("@save").its("response.statusCode").should("eq", 200)
       cy.contains(/^ok$/i).should("not.exist")
       cy.contains(/was saved$/i).should("be.visible")
-      cy.get("#graphContainer").wait(200).toMatchImageSnapshot()
+      cy.get("#nk-graph-main").wait(200).toMatchImageSnapshot()
     })
   })
 
@@ -85,7 +85,7 @@ describe("Process", () => {
         .trigger("mousedown")
         .trigger("mousemove", {clientX: 100, clientY: 100})
         .trigger("mouseup", {force: true})
-      cy.get("#graphContainer").toMatchImageSnapshot()
+      cy.get("#nk-graph-main").toMatchImageSnapshot()
     })
 
     it("should allow drag component and drop on edge", () => {
@@ -94,8 +94,8 @@ describe("Process", () => {
         .should("be.visible").click()
       cy.get("[data-testid='component:customFilter']")
         .should("be.visible")
-        .drag("#graphContainer", {x: 600, y: 400, position: "right", force: true})
-      cy.get("#graphContainer").toMatchImageSnapshot()
+        .drag("#nk-graph-main", {x: 600, y: 400, position: "right", force: true})
+      cy.get("#nk-graph-main").toMatchImageSnapshot()
     })
 
     it("should have counts button and modal", () => {

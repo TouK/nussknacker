@@ -1,10 +1,10 @@
 /* eslint-disable i18next/no-literal-string */
-import {omitBy} from "lodash"
+import {omitBy, uniq, without} from "lodash"
 import Moment from "moment"
 import * as  queryString from "query-string"
 import {ParseOptions} from "query-string"
-import {NodeId} from "../types"
 import {BASE_PATH} from "../config"
+import {NodeId} from "../types"
 import {ensureArray} from "./arrayUtils"
 
 export const visualizationBasePath = `visualization`
@@ -41,12 +41,15 @@ export function visualizationUrl(processName: string, nodeId?: NodeId, edgeId?: 
   return baseUrl + nodeIdUrlPart + edgeIdUrlPart
 }
 
-export function extractVisualizationParams(search, arrayFormat = defaultArrayFormat) {
-  const queryParams = queryString.parse(search, {arrayFormat})
-  const nodeId = ensureArray(queryParams.nodeId)
-  const edgeId = ensureArray(queryParams.edgeId)
-
-  return {nodeId, edgeId}
+export function extractWindowsParams(
+  append?: Partial<Record<"edgeId" | "nodeId", string | string[]>>,
+  remove?: Partial<Record<"edgeId" | "nodeId", string | string[]>>,
+): {edgeId: string[], nodeId: string[]} {
+  const {edgeId, nodeId} = queryString.parse(window.location.search, {arrayFormat: defaultArrayFormat})
+  return {
+    nodeId: without(uniq(ensureArray(nodeId).concat(append?.nodeId).filter(Boolean)), ...ensureArray(remove?.nodeId)),
+    edgeId: without(uniq(ensureArray(edgeId).concat(append?.edgeId).filter(Boolean)), ...ensureArray(remove?.edgeId)),
+  }
 }
 
 export function extractCountParams(queryParams) {
@@ -67,9 +70,8 @@ export function normalizeParams<T extends Record<any, any>>(object: T) {
 
 export function setAndPreserveLocationParams<T extends Record<string, unknown>>(params: T, arrayFormat = defaultArrayFormat): string {
   const queryParams = queryString.parse(window.location.search, {arrayFormat, parseNumbers: true})
-  const resultParams = omitBy(Object.assign({}, queryParams, params), (e) => {
-    return e == null || e === "" || e === 0 || e === []
-  })
+  const merged = {...queryParams, ...params}
+  const resultParams = omitBy(merged, (value) => !value || value === [])
 
   return queryString.stringify(resultParams, {arrayFormat})
 }

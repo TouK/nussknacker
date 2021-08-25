@@ -1,4 +1,4 @@
-import _, {defaultsDeep, isEmpty} from "lodash"
+import {defaultsDeep, isEmpty} from "lodash"
 import React from "react"
 import {connect} from "react-redux"
 import ActionsUtils from "../actions/ActionsUtils"
@@ -21,70 +21,68 @@ import {BindKeyboardShortcuts} from "./BindKeyboardShortcuts"
 import {darkTheme} from "./darkTheme"
 import {NkThemeProvider} from "./theme"
 
+const PROCESS_STATE_INTERVAL_TIME = 10000
+
 class Visualization extends React.Component {
 
+  graphRef = React.createRef()
+  processStateIntervalId = null
+
   state = {
-    processStateIntervalTime: 10000,
-    processStateIntervalId: null,
     dataResolved: false,
   }
 
-  constructor(props) {
-    super(props)
-    this.graphRef = React.createRef()
+  componentDidUpdate(prevProps) {
+    if (prevProps.businessView !== this.props.businessView) {
+      this.setBusinessView(this.props.businessView)
+    }
   }
 
   componentDidMount() {
-    this.fetchProcessDetails().then(async (details) => {
-      await this.props.actions.loadProcessToolbarsConfiguration(this.props.match.params.processId)
-      this.props.actions.displayProcessActivity(this.props.match.params.processId)
-      this.props.actions.fetchProcessDefinition(
-        details.fetchedProcessDetails.processingType,
-        _.get(details, "fetchedProcessDetails.json.properties.isSubprocess"),
-      ).then(() => {
-        this.setState({dataResolved: true})
-        this.showModalDetailsIfNeeded(details.fetchedProcessDetails.json)
-        this.showCountsIfNeeded(details.fetchedProcessDetails.json)
-      })
+    const {match, location, actions} = this.props
+
+    const {params: {processId}} = match
+    const businessView = VisualizationUrl.extractBusinessViewParams(location.search)
+    this.setBusinessView()
+    this.fetchProcessDetails().then(async ({fetchedProcessDetails: {json, processingType, isSubprocess, isArchived}}) => {
+      await actions.loadProcessToolbarsConfiguration(processId)
+      actions.displayProcessActivity(processId)
+      await actions.fetchProcessDefinition(processingType, json.properties?.isSubprocess)
+      this.setState({dataResolved: true})
+      this.showModalDetailsIfNeeded(json)
+      this.showCountsIfNeeded(json)
 
       //We don't need load state for subproces and archived process..
-      if (this.props.fetchedProcessDetails.isSubprocess === false && this.props.fetchedProcessDetails.isArchived === false) {
-        this.fetchProcessState()
-        this.state.processStateIntervalId = setInterval(
-          () => this.fetchProcessState(),
-          this.state.processStateIntervalTime,
-        )
+      if (!isSubprocess && !isArchived) {
+        this.startFetchStateInterval(PROCESS_STATE_INTERVAL_TIME)
       }
     }).catch((error) => {
-      this.props.actions.handleHTTPError(error)
+      actions.handleHTTPError(error)
     })
   }
 
+  startFetchStateInterval(time) {
+    this.fetchProcessState()
+    this.processStateIntervalId = setInterval(() => this.fetchProcessState(), time)
+  }
+
   showModalDetailsIfNeeded(process) {
-    const {nodeId, edgeId} = VisualizationUrl.extractVisualizationParams(this.props.location.search)
-    if (nodeId.length) {
-      const nodes = nodeId.map(i => NodeUtils.getNodeById(i, process)).filter(Boolean)
+    const {showModalEdgeDetails, openNodeWindow, history} = this.props
+    const {nodeId, edgeId} = VisualizationUrl.extractWindowsParams()
 
-      if (nodes.length) {
-        nodes.forEach(node => {
-          this.props.openNodeWindow(node)
-        })
-      } else {
-        this.props.history.replace({search: VisualizationUrl.setAndPreserveLocationParams({nodeId: null})})
-      }
-    }
+    const nodes = nodeId.map(id => NodeUtils.getNodeById(id, process)).filter(Boolean)
+    nodes.forEach(openNodeWindow)
 
-    if (edgeId.length) {
-      const edges = edgeId.map(e => NodeUtils.getEdgeById(e, process)).filter(Boolean)
+    const edges = edgeId.map(id => NodeUtils.getEdgeById(id, process)).filter(Boolean)
+    edges.forEach(showModalEdgeDetails)
 
-      if (edges.length) {
-        edges.forEach(edge => {
-          this.props.showModalEdgeDetails(edge)
-        })
-      } else {
-        this.props.history.replace({search: VisualizationUrl.setAndPreserveLocationParams({edgeId: null})})
-      }
-    }
+    console.log(nodes, edges)
+    history.replace({
+      search: VisualizationUrl.setAndPreserveLocationParams({
+        nodeId: nodes.map(node => node.id),
+        edgeId: edges.map(NodeUtils.edgeId),
+      }),
+    })
   }
 
   showCountsIfNeeded(process) {
@@ -96,7 +94,8 @@ class Visualization extends React.Component {
   }
 
   componentWillUnmount() {
-    clearInterval(this.state.processStateIntervalId)
+    clearInterval(this.processStateIntervalId)
+    this.props.closeModals()
     this.props.actions.clearProcess()
   }
 

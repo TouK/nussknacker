@@ -6,17 +6,21 @@ import {EventInfo, reportEvent} from "../actions/nk"
 
 import {isEdgeEditable} from "../common/EdgeUtils"
 import * as VisualizationUrl from "../common/VisualizationUrl"
-import NodeUtils from "../components/graph/NodeUtils"
 import {ConfirmDialogData} from "../components/modals/GenericConfirmDialog"
 import history from "../history"
 import {Edge, GroupNodeType, NodeType} from "../types"
 import {WindowKind} from "./WindowKind"
 
-function setQueryParams(params: Partial<Record<"edgeId" | "nodeId", string | string[]>>) {
-  history.replace({
-    pathname: history.location.pathname,
-    search: VisualizationUrl.setAndPreserveLocationParams(params),
-  })
+export function setQueryParams(params: Partial<Record<"edgeId" | "nodeId", string | string[]>>) {
+  const params1 = VisualizationUrl.extractWindowsParams(params)
+  const search = VisualizationUrl.setAndPreserveLocationParams(params1)
+  history.replace({search})
+}
+
+export function removeQueryParams(params: Partial<Record<"edgeId" | "nodeId", string | string[]>>) {
+  const params1 = VisualizationUrl.extractWindowsParams({}, params)
+  const search = VisualizationUrl.setAndPreserveLocationParams(params1)
+  history.replace({search})
 }
 
 export function useWindows(parent?: WindowId) {
@@ -36,12 +40,9 @@ export function useWindows(parent?: WindowId) {
     node: NodeType | GroupNodeType,
     readonly?: boolean,
   ) => {
-    setQueryParams({nodeId: node.id, edgeId: null})
-
     open({
       title: node.id,
       isResizable: true,
-      isModal: !readonly,
       kind: readonly ? WindowKind.viewNode : WindowKind.editNode,
       meta: node,
     })
@@ -50,8 +51,6 @@ export function useWindows(parent?: WindowId) {
 
   const editEdge = useCallback((edge: Edge) => {
     if (isEdgeEditable(edge)) {
-      setQueryParams({nodeId: null, edgeId: NodeUtils.edgeId(edge)})
-
       open({
         title: `${edge.from} -> ${edge.to}`,
         isResizable: true,
@@ -73,5 +72,5 @@ export function useWindows(parent?: WindowId) {
     })
   }, [dispatch, open])
 
-  return {open, confirm, openNodeWindow, editEdge}
+  return {open, confirm, openNodeWindow, editEdge, close: wm.closeAll}
 }
