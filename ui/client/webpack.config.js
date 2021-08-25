@@ -92,7 +92,7 @@ module.exports = {
     historyApiFallback: {
       index: "/main.html",
     },
-    overlay: {errors: true, warnings: false},
+    overlay: {errors: false, warnings: false},
     hot: true,
     host: "0.0.0.0",
     disableHostCheck: true,
