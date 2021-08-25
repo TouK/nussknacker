@@ -11,7 +11,6 @@ import {
   getProcessToDisplay,
 } from "../../reducers/selectors/graph"
 import {getExpandedGroups} from "../../reducers/selectors/groups"
-import {isNodeDetailsModalVisible} from "../../reducers/selectors/ui"
 import {setLinksHovered} from "./dragHelpers"
 import {commonState, Graph} from "./Graph"
 import GraphWrapped from "./GraphWrapped"
@@ -47,7 +46,6 @@ function mapState(state) {
     processCounts: getProcessCounts(state),
     layout: getLayout(state),
     expandedGroups: getExpandedGroups(state),
-    showNodeDetailsModal: isNodeDetailsModalVisible(state),
   }
 }
 

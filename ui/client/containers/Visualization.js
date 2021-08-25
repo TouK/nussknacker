@@ -16,7 +16,6 @@ import {getFetchedProcessDetails, getProcessToDisplay} from "../reducers/selecto
 import {getCapabilities} from "../reducers/selectors/other"
 import {getProcessDefinitionData} from "../reducers/selectors/settings"
 
-import {areAllModalsClosed} from "../reducers/selectors/ui"
 import "../stylesheets/visualization.styl"
 import {BindKeyboardShortcuts} from "./BindKeyboardShortcuts"
 import {darkTheme} from "./darkTheme"
@@ -126,7 +125,7 @@ class Visualization extends React.Component {
 
         <GraphProvider graph={this.getGraphInstance}>
           <SelectionContextProvider pastePosition={this.getPastePosition}>
-            <BindKeyboardShortcuts disabled={!this.props.allModalsClosed}/>
+            <BindKeyboardShortcuts/>
             <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
               <Toolbars isReady={this.state.dataResolved}/>
             </NkThemeProvider>
@@ -159,8 +158,6 @@ function mapState(state) {
     processDefinitionData: getProcessDefinitionData(state),
     fetchedProcessDetails: getFetchedProcessDetails(state),
     graphLoading: state.graphReducer.graphLoading,
-    //TODO: add windowmanager check
-    allModalsClosed: areAllModalsClosed(state),
     nothingToSave: ProcessUtils.nothingToSave(state),
     capabilities: getCapabilities(state),
   }

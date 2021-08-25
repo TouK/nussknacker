@@ -41,6 +41,7 @@ export function useWindows(parent?: WindowId) {
     open({
       title: node.id,
       isResizable: true,
+      isModal: !readonly,
       kind: readonly ? WindowKind.viewNode : WindowKind.editNode,
       meta: node,
     })
