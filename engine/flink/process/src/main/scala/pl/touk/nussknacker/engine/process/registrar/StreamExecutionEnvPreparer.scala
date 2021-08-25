@@ -47,7 +47,7 @@ class DefaultStreamExecutionEnvPreparer(checkpointConfig: Option[CheckpointConfi
     configureCheckpoints(env, streamMetaData)
 
     (rocksDBStateBackendConfig, streamMetaData.spillStateToDisk) match {
-      case (Some(config), Some(true)) =>
+      case (Some(config), Some(true)) if config.enable =>
         logger.info("Using RocksDB state backend")
         configureRocksDBBackend(env, config)
       case (None, Some(true)) =>

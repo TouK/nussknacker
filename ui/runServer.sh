@@ -34,7 +34,6 @@ if [[ "${USE_DOCKER_ENV}" == "true" ]]; then
   # See https://github.com/TouK/nussknacker-quickstart/blob/main/docker-compose-env.yml - mapped port from docker
   export FLINK_REST_URL="http://localhost:3031"
   export FLINK_QUERYABLE_STATE_PROXY_URL="localhost:3063"
-  export FLINK_ROCKSDB_CHECKPOINT_DATA_URI="file:///opt/flink/data/rocksdb-checkpoints"
   export FLINK_SHOULD_VERIFY_BEFORE_DEPLOY=${FLINK_SHOULD_VERIFY_BEFORE_DEPLOY:-false}
   # Addresses that should be visible from Flink
   export KAFKA_ADDRESS="localhost:3032"
