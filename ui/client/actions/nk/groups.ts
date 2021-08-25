@@ -78,6 +78,18 @@ export type EditGroupAction = {
   newGroup: GroupNodeType,
 }
 
+export function editGroup(process: Process, oldGroupId: GroupId, newGroup: GroupNodeType): ThunkAction {
+  return async (dispatch) => {
+    const newProcess = NodeUtils.editGroup(process, oldGroupId, newGroup)
+    await dispatch(validateProcess(newProcess))
+    return dispatch({
+      type: "EDIT_GROUP",
+      oldGroupId: oldGroupId,
+      newGroup: newGroup,
+    })
+  }
+}
+
 export function validateProcess(process: Process): ThunkAction {
   return async (dispatch) => {
     dispatch({
@@ -89,18 +101,6 @@ export function validateProcess(process: Process): ThunkAction {
         type: "VALIDATION_RESULT",
         validationResult: data,
       })
-    })
-  }
-}
-
-export function editGroup(process: Process, oldGroupId: GroupId, newGroup: GroupNodeType): ThunkAction {
-  return async (dispatch) => {
-    const newProcess = NodeUtils.editGroup(process, oldGroupId, newGroup)
-    await dispatch(validateProcess(newProcess))
-    return dispatch({
-      type: "EDIT_GROUP",
-      oldGroupId: oldGroupId,
-      newGroup: newGroup,
     })
   }
 }
