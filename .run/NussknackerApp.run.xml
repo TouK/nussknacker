@@ -12,7 +12,6 @@
       <env name="SQL_COMPONENT_DIR" value="../../../engine/components/sql/target/scala-2.12" />
       <env name="FLINK_REST_URL" value="http://localhost:3031" />
       <env name="FLINK_QUERYABLE_STATE_PROXY_URL" value="localhost:3063" />
-      <env name="FLINK_ROCKSDB_CHECKPOINT_DATA_URI" value="file:///opt/flink/data/rocksdb-checkpoints" />
       <env name="FLINK_SHOULD_VERIFY_BEFORE_DEPLOY" value="false" />
       <env name="KAFKA_ADDRESS" value="localhost:3032" />
       <env name="SCHEMA_REGISTRY_URL" value="http://localhost:3082" />

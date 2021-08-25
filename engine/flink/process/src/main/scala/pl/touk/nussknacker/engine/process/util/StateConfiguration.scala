@@ -15,7 +15,9 @@ object StateConfiguration {
 
   }
 
-  case class RocksDBStateBackendConfig(checkpointDataUri: String,
+  case class RocksDBStateBackendConfig(enable: Boolean,
+                                       // For purpose of Flink version before 1.13
+                                       @deprecated checkpointDataUri: Option[String],
                                        dbStoragePath: Option[String],
                                        incrementalCheckpoints: Boolean = true)
 
