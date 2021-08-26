@@ -13,7 +13,7 @@ export function SubprocessContent({
   currentNodeId,
 }: { nodeToDisplay: SubprocessNodeType, currentNodeId: NodeId }): JSX.Element {
   const businessView = useSelector(isBusinessView)
-  const processToDisplay = useSelector(getProcessToDisplay)
+  const {properties: {subprocessVersions}} = useSelector(getProcessToDisplay)
   const processCounts = useSelector(getProcessCounts)
 
   const [subprocessContent, setSubprocessContent] = useState<ProcessType>(null)
@@ -21,14 +21,13 @@ export function SubprocessContent({
   useEffect(
     () => {
       if (NodeUtils.nodeIsSubprocess(nodeToDisplay)) {
-        const subprocessVersions = processToDisplay.properties.subprocessVersions
         const subprocessVersion = subprocessVersions[nodeToDisplay.ref.id]
         HttpService.fetchProcessDetails(nodeToDisplay.ref.id, subprocessVersion, businessView).then(response => {
           setSubprocessContent(response.data.json)
         })
       }
     },
-    [businessView, nodeToDisplay, processToDisplay],
+    [businessView, nodeToDisplay, subprocessVersions],
   )
 
   const subprocessCounts = (processCounts[currentNodeId] || {}).subprocessCounts || {}

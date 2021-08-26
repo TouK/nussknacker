@@ -4,6 +4,7 @@ import React, {useCallback, useEffect, useMemo, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
 import {collapseGroup, editGroup, editNode, expandGroup} from "../../../../actions/nk"
+import {visualizationUrl} from "../../../../common/VisualizationUrl"
 import {getProcessToDisplay} from "../../../../reducers/selectors/graph"
 import {getExpandedGroups} from "../../../../reducers/selectors/groups"
 import {GroupNodeType, NodeType} from "../../../../types"
@@ -17,7 +18,7 @@ import {getReadOnly} from "./selectors"
 
 export function NodeDetails(props: WindowContentProps<WindowKind, NodeType | GroupNodeType> & {readOnly?: boolean}): JSX.Element {
   const processToDisplay = useSelector(getProcessToDisplay)
-  const readOnly = useSelector(getReadOnly)
+  const readOnly = useSelector(s => getReadOnly(s, props.readOnly))
 
   const {data: {meta: nodeToDisplay}} = props
 
@@ -33,7 +34,7 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType | Gro
   const dispatch = useDispatch()
 
   useEffect(() => {
-  const nodeId = nodeToDisplay.id
+    const nodeId = nodeToDisplay.id
     replaceWindowsQueryParams({nodeId})
     return () => replaceWindowsQueryParams({}, {nodeId})
   }, [nodeToDisplay])
@@ -71,12 +72,25 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType | Gro
   const groupToggleButtonData: WindowButtonProps | null = useMemo(
     () => NodeUtils.nodeIsGroup(editedNode) ?
       {
-        title: expanded ? "Collapse" : "Expand",
+        title: expanded ? t("dialog.button.group.collapse", "collapse") : t("dialog.button.group.expand", "expand"),
         action: () => toggleGroup(),
       } :
       null
     ,
-    [editedNode, expanded, toggleGroup],
+    [editedNode, expanded, t, toggleGroup],
+  )
+
+  const openSubprocessButtonData: WindowButtonProps | null = useMemo(
+    () => NodeUtils.nodeIsSubprocess(editedNode) ?
+      {
+        title: t("dialog.button.fragment.edit", "edit fragment"),
+        action: () => {
+          window.open(visualizationUrl(editedNode.id))
+        },
+      } :
+      null
+    ,
+    [editedNode, t],
   )
 
   const cancelButtonData = useMemo(
@@ -85,8 +99,8 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType | Gro
   )
 
   const buttons: WindowButtonProps[] = useMemo(
-    () => [groupToggleButtonData, cancelButtonData, applyButtonData].filter(Boolean),
-    [applyButtonData, cancelButtonData, groupToggleButtonData],
+    () => [openSubprocessButtonData, groupToggleButtonData, cancelButtonData, applyButtonData].filter(Boolean),
+    [applyButtonData, cancelButtonData, groupToggleButtonData, openSubprocessButtonData],
   )
 
   const components = useMemo(() => {

@@ -1,7 +1,7 @@
 import {get} from "lodash"
 import {createSelector} from "reselect"
 import ProcessUtils from "../../../../common/ProcessUtils"
-import {getGraph, getNodeToDisplay, getProcessToDisplay, isBusinessView} from "../../../../reducers/selectors/graph"
+import {getNodeToDisplay, getProcessToDisplay, isBusinessView} from "../../../../reducers/selectors/graph"
 import {getCapabilities} from "../../../../reducers/selectors/other"
 import {getProcessDefinitionData} from "../../../../reducers/selectors/settings"
 
@@ -21,6 +21,10 @@ export const getNodeSettings = createSelector(
   (process, node) => get(process.nodesConfig, ProcessUtils.findNodeConfigName(node)) || {},
 )
 
-export const getReadOnly = createSelector(getGraph, getCapabilities, isBusinessView, (graph, capabilities, isBusinessView) => {
-  return graph.nodeToDisplayReadonly || !capabilities.write || isBusinessView
-})
+export const getReadOnly = createSelector(
+  (state, fromProps?: boolean) => fromProps,
+  // _ needed for wierd reselect typings ;)
+  (state, _) => getCapabilities(state),
+  (state, _) => isBusinessView(state),
+  (fromProps, capabilities, isBusinessView) => fromProps || !capabilities.write || isBusinessView,
+)

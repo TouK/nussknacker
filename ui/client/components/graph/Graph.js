@@ -29,6 +29,7 @@ export class Graph extends React.Component {
     connectDropTarget: PropTypes.func,
     showModalNodeDetails: PropTypes.func.isRequired,
     showModalEdgeDetails: PropTypes.func.isRequired,
+    isSubprocess: PropTypes.bool,
   }
   redrawing = false
   directedLayout = directedLayout.bind(this)
@@ -310,7 +311,12 @@ export class Graph extends React.Component {
   }
 
   changeLayoutIfNeeded = () => {
-    const {layout, actions} = this.props
+    const {layout, actions, isSubprocess} = this.props
+
+    if (isSubprocess) {
+      return
+    }
+
     const elements = this.graph.getElements().filter(isModelElement)
     const newLayout = sortBy(
       elements.map(el => {
@@ -433,7 +439,7 @@ export class Graph extends React.Component {
   }
 
   render() {
-    const {connectDropTarget, divId, processToDisplay} = this.props
+    const {connectDropTarget, divId, isSubprocess} = this.props
     return (
       <GraphPaperContainer
         ref={instance => {
@@ -443,7 +449,7 @@ export class Graph extends React.Component {
             connectDropTarget(node)
           }
         }}
-        onResize={processToDisplay.properties.isSubprocess ? () => this.panAndZoom.fitSmallAndLargeGraphs() : null}
+        onResize={isSubprocess ? () => this.panAndZoom.fitSmallAndLargeGraphs() : null}
         id={divId}
       />
     )

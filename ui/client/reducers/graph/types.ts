@@ -15,7 +15,6 @@ export type GraphState = {
   fetchedProcessDetails?: ProcessType,
   processToDisplay?: Process,
   nodeToDisplay?: NodeType | GroupNodeType,
-  nodeToDisplayReadonly?: boolean,
   selectionState?: string[],
   layout: Layout,
   testCapabilities?: $TodoType,

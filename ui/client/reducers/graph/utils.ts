@@ -1,9 +1,9 @@
-import {cloneDeep, map, omit, reject, without, zipWith} from "lodash"
+import {cloneDeep, map, reject, without, zipWith} from "lodash"
 import {Layout, NodePosition, NodesWithPositions} from "../../actions/nk"
 import ProcessUtils from "../../common/ProcessUtils"
 import {ExpressionLang} from "../../components/graph/node-modal/editors/expression/types"
 import NodeUtils from "../../components/graph/NodeUtils"
-import {Edge, EdgeType, GroupNodeType, GroupType, NodeId, NodeType, Process, ProcessDefinitionData} from "../../types"
+import {Edge, EdgeType, GroupNodeType, NodeId, NodeType, Process, ProcessDefinitionData} from "../../types"
 import {GraphState} from "./types"
 
 function isConnectedTo(...nodeIds: NodeId[]) {
@@ -68,11 +68,10 @@ export function canGroupSelection(state: GraphState): boolean {
   return isGraphConnected(selectionState, edges)
 }
 
-export function displayOrGroup(state: GraphState, node: NodeType, readonly = false): GraphState {
+export function displayOrGroup(state: GraphState, node: NodeType): GraphState {
   return {
     ...state,
     nodeToDisplay: node,
-    nodeToDisplayReadonly: readonly,
   }
 }
 

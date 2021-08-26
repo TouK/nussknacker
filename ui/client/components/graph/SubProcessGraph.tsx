@@ -15,6 +15,7 @@ function mapSubprocessState(state, props) {
     // eslint-disable-next-line i18next/no-literal-string
     divId: "nk-graph-subprocess",
     readonly: true,
+    isSubprocess: true,
     singleClickNodeDetailsEnabled: false,
     nodeIdPrefixForSubprocessTests: `${getNodeId(state)}-`, //TODO where should it be?
   }
