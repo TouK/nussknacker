@@ -18,6 +18,7 @@ class OidcAuthenticationProvider extends AuthenticationProvider {
 
   override def createAuthenticationResources(config: Config, classLoader: ClassLoader)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): OAuth2AuthenticationResources = {
     new OidcAuthenticationResources(
+      name,
       realm,
       config.as[OidcAuthenticationConfiguration](authenticationConfigPath).withDiscovery
     )

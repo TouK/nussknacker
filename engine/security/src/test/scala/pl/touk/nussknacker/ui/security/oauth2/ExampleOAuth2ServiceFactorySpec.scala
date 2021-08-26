@@ -30,7 +30,7 @@ class ExampleOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
 
   it should ("properly parse data from authentication") in {
     val tokenResponse = TestAccessTokenResponse(accessToken = "9IDpWSEYetSNRX41", tokenType = "Bearer")
-    val userInfo = TestProfileResponse("some@e.mail", "uid", TestProfileClearanceResponse(List("User")))
+    val userInfo = TestProfileResponse("some@e.mail", "uid", TestProfileClearanceResponse(Set("User")))
     implicit val testingBackend = SttpBackendStub
       .asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))

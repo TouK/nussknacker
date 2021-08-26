@@ -1,7 +1,10 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
+import io.circe.Decoder
+
 import java.time.LocalDate
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
+import io.circe.generic.extras.semiauto.deriveDecoder
 import io.circe.java8.time.{JavaTimeDecoders, JavaTimeEncoders}
 import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2Profile.getUserRoles
@@ -40,19 +43,35 @@ import scala.concurrent.duration.Deadline
   // All the following are set only when the userinfo is from an ID token
   @JsonKey("exp") expirationTime: Option[Deadline],
   @JsonKey("iat") issuedAt: Option[Deadline],
-  @JsonKey("auth_time") authenticationTime: Option[Deadline]
+  @JsonKey("auth_time") authenticationTime: Option[Deadline],
+
+  // Not a standard but convenient claim that can be used by a few Authorization Server implementations.
+  // The key name is taken from the rolesClaim field in the configuration.
+  roles: Set[String] = Set.empty
 ) extends JwtStandardClaims {
   val jwtId: Option[String] = None
   val notBefore: Option[Deadline] = None
 }
 
 object OpenIdConnectUserInfo extends EpochSecondsCodecs with JavaTimeDecoders with JavaTimeEncoders with EitherCodecs {
-  implicit val config: Configuration = Configuration.default
+  implicit val config: Configuration = Configuration.default.withDefaults
+
+  lazy val decoder: Decoder[OpenIdConnectUserInfo] = deriveDecoder[OpenIdConnectUserInfo]
+  def decoderWithCustomRolesClaim(rolesClaim: String): Decoder[OpenIdConnectUserInfo] =
+    decoder.prepare {
+      _.withFocus(_.mapObject { jsonObject =>
+        jsonObject.apply(rolesClaim).map(jsonObject.add("roles", _).remove(rolesClaim))
+          .getOrElse(jsonObject.remove("roles"))
+      })
+    }
+  def decoderWithCustomRolesClaim(rolesClaim: Option[String]): Decoder[OpenIdConnectUserInfo] = rolesClaim.map(decoderWithCustomRolesClaim).getOrElse(decoder)
 }
 
 object OpenIdConnectProfile extends OAuth2Profile[OpenIdConnectUserInfo] {
   def getAuthenticatedUser(profile: OpenIdConnectUserInfo, configuration: OAuth2Configuration): AuthenticatedUser = {
-    val userRoles = getUserRoles(profile.subject.get, configuration)
+    val userRoles =
+      profile.roles ++
+      getUserRoles(profile.subject.get, configuration)
     val username = profile.preferredUsername.orElse(profile.nickname).orElse(profile.subject).get
     AuthenticatedUser(id = profile.subject.get, username = username, userRoles)
   }

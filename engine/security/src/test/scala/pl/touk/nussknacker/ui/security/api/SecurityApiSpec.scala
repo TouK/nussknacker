@@ -78,7 +78,7 @@ private object Auth {
       }
     }
   }
-  val someAdmin = Some(AuthenticatedUser("1", "admin", Nil))
+  val someAdmin = Some(AuthenticatedUser("1", "admin", Set.empty))
 
   def authenticator(cookie: HttpCookiePair)(implicit ec: ExecutionContext): Future[Option[AuthenticatedUser]] = {
     Future {

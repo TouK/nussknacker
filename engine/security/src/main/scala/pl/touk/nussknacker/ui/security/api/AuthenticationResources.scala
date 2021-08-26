@@ -41,7 +41,7 @@ trait AnonymousAccess extends Directives {
   }
 
   def authenticate(): Directive1[AuthenticatedUser] = {
-    anonymousUserRole.map(role => AuthenticatedUser("anonymous", "anonymous", List(role)))
+    anonymousUserRole.map(role => AuthenticatedUser("anonymous", "anonymous", Set(role)))
       .map(authenticateOrPermitAnonymously)
       .getOrElse(authenticateReally())
 

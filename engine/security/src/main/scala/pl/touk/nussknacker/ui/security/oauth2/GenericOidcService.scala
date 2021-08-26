@@ -18,7 +18,7 @@ trait OidcAuthorizationData extends OAuth2AuthorizationData {
   */
 class GenericOidcService[
   UserData <: JwtStandardClaims: Decoder,
-  AuthorizationData <: OidcAuthorizationData : Decoder,
+  AuthorizationData <: OidcAuthorizationData,
   AccessTokenClaims <: JwtStandardClaims : Decoder
 ](clientApi: OAuth2ClientApi[UserData, AuthorizationData],
   configuration: OAuth2Configuration)
