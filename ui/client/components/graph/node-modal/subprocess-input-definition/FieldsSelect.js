@@ -31,7 +31,7 @@ const FieldsSelect = (props) => {
               const currentOption = _.find(options, (item) => _.isEqual(field.typ.refClazzName, item.value)) || {label: field.typ.refClazzName, value: field.typ.refClazzName}
               return (
                 <MovableRow
-                  //should be enough to avoid unnecessary render, 
+                  //should be enough to avoid unnecessary render,
                   key={index}
                   field={field}
                   index={index}
@@ -47,11 +47,13 @@ const FieldsSelect = (props) => {
             })
           }
           {
-            readOnly ? null : (
-              <div>
-                <ButtonWithFocus className="addRemoveButton" title="Add field" onClick={() => addField()}>+</ButtonWithFocus>
-              </div>
-            )}
+            readOnly ?
+              null :
+              (
+                <div>
+                  <ButtonWithFocus className="addRemoveButton" title="Add field" onClick={() => addField()}>+</ButtonWithFocus>
+                </div>
+              )}
         </div>
       </div>
     </div>
@@ -69,7 +71,7 @@ FieldsSelect.propTypes = {
   readOnly: PropTypes.bool,
   removeField: PropTypes.func.isRequired,
   showValidation: PropTypes.bool.isRequired,
-  toogleCloseOnEsc: PropTypes.func.isRequired
+  toogleCloseOnEsc: PropTypes.func.isRequired,
 }
 
 export default FieldsSelect

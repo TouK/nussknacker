@@ -68,25 +68,27 @@ function RowSelect(props) {
         />
       </div>
       {
-        readOnly ? null : (
-          <div
-            className="node-value fieldRemove"
-            draggable={true}
-            onDragStart={(event) => {
-              event.preventDefault()
-              event.stopPropagation()
-            }}
-          >
-            <ButtonWithFocus
-              className="addRemoveButton"
-              title="Remove field"
-              onClick={() => {
-                remove()
+        readOnly ?
+          null :
+          (
+            <div
+              className="node-value fieldRemove"
+              draggable={true}
+              onDragStart={(event) => {
+                event.preventDefault()
+                event.stopPropagation()
               }}
-            >-
-            </ButtonWithFocus>
-          </div>
-        )}
+            >
+              <ButtonWithFocus
+                className="addRemoveButton"
+                title="Remove field"
+                onClick={() => {
+                  remove()
+                }}
+              >-
+              </ButtonWithFocus>
+            </div>
+          )}
       <SvgDiv svgFile={"handlebars.svg"} className={"handle-bars"}/>
     </div>,
   ))
