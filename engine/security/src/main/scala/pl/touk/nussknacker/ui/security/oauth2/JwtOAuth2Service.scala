@@ -24,8 +24,8 @@ trait JwtStandardClaims {
 }
 
 class JwtOAuth2Service[
-  UserInfoData: Decoder,
-  AuthorizationData <: OAuth2AuthorizationData : Decoder,
+  UserInfoData,
+  AuthorizationData <: OAuth2AuthorizationData,
   AccessTokenClaims <: JwtStandardClaims : Decoder
 ](clientApi: OAuth2ClientApi[UserInfoData, AuthorizationData],
   configuration: OAuth2Configuration)

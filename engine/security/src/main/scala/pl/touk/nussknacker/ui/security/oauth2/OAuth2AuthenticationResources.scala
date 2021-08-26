@@ -14,12 +14,10 @@ import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class OAuth2AuthenticationResources(realm: String, service: OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData], configuration: OAuth2Configuration)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT])
+class OAuth2AuthenticationResources(override val name: String, realm: String, service: OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData], configuration: OAuth2Configuration)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT])
   extends AuthenticationResources with Directives with LazyLogging with AnonymousAccess {
 
   import pl.touk.nussknacker.engine.util.Implicits.RichIterable
-
-  override val name: String = configuration.name
 
   override val frontendStrategySettings: FrontendStrategySettings = FrontendStrategySettings.OAuth2(
     configuration.authorizeUrl.map(_.toString),

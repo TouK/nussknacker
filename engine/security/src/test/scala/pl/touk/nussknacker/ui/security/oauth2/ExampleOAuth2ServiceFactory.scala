@@ -72,5 +72,5 @@ object ExampleOAuth2ServiceFactory {
 
   @JsonCodec case class TestProfileResponse(email: String, uid: String, clearance: TestProfileClearanceResponse)
   @JsonCodec case class TestTokenIntrospectionResponse(exp: Option[Long])
-  @JsonCodec case class TestProfileClearanceResponse(roles: List[String])
+  @JsonCodec case class TestProfileClearanceResponse(roles: Set[String])
 }

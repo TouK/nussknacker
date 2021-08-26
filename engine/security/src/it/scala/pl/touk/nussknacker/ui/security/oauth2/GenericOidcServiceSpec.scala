@@ -34,17 +34,25 @@ class GenericOidcServiceSpec extends FunSuite with ForAllTestContainer with Matc
     val config = oauth2Conf
     // TODO: Change to JWT then token caching will not be required.
     //  However, with the current configuration KeyCloak access tokens seem not to contain the AUD claim.
-    val open = new CachingOAuth2Service(new OidcService(config), config.oAuth2Configuration)
+    val open = new CachingOAuth2Service(
+      new UserMappingOAuth2Service(
+        new OidcService(config),
+        (userInfo: OpenIdConnectUserInfo) => OpenIdConnectProfile.getAuthenticatedUser(userInfo, config.oAuth2Configuration)
+      ),
+      config.oAuth2Configuration
+    )
 
     //we emulate FE part
     val loginResult = keyCloakLogin(config.oAuth2Configuration)
     val authorizationCode = uri"${loginResult.header("Location").get}".params.get("code").get
 
     val (authData, userData) = open.obtainAuthorizationAndUserInfo(authorizationCode, config.redirectUri.get.toString).futureValue
-    userData.name shouldBe Some("Jan Kowalski")
+    userData.username shouldBe "user1"
+    userData.roles should contain ("ARole")
 
     val profile = open.checkAuthorizationAndObtainUserinfo(authData.accessToken).futureValue
-    profile._1.name shouldBe Some("Jan Kowalski")
+    profile._1.username shouldBe "user1"
+    profile._1.roles should contain ("ARole")
   }
 
   //We emulate keycloak login form :)
@@ -69,11 +77,12 @@ class GenericOidcServiceSpec extends FunSuite with ForAllTestContainer with Matc
 
   private def oauth2Conf: OidcAuthenticationConfiguration =
     OidcAuthenticationConfiguration(
-      usersFile = new URI("classpath://users.conf"),
+      usersFile = new URI("classpath:users.conf"),
       issuer = uri"$baseUrl".toJavaUri,
       clientId = realmClientId,
       clientSecret = Some(realmClientSecret),
       redirectUri = Some(URI.create("http://localhost:1234")),
+      rolesClaim = Some("http://namespace/roles")
     ).withDiscovery
 }
 

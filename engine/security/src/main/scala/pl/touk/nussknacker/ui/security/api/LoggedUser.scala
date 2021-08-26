@@ -15,7 +15,7 @@ sealed trait LoggedUser {
 
 object LoggedUser {
   def apply(authenticatedUser: AuthenticatedUser, rules: List[ConfigRule], processCategories: List[String]): LoggedUser = {
-    val rulesSet = RulesSet.getOnlyMatchingRules(authenticatedUser.roles, rules, processCategories)
+    val rulesSet = RulesSet.getOnlyMatchingRules(authenticatedUser.roles.toList, rules, processCategories)
     apply(id = authenticatedUser.id, username = authenticatedUser.username, rulesSet = rulesSet)
   }
 

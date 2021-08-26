@@ -11,8 +11,8 @@ import scala.concurrent.duration.{Deadline, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 
 class BaseOAuth2Service[
-  UserInfoData: Decoder,
-  AuthorizationData <: OAuth2AuthorizationData : Decoder
+  UserInfoData,
+  AuthorizationData <: OAuth2AuthorizationData
 ](protected val clientApi: OAuth2ClientApi[UserInfoData, AuthorizationData])
  (implicit ec: ExecutionContext) extends OAuth2Service[UserInfoData, AuthorizationData] with LazyLogging {
 

@@ -19,8 +19,8 @@ case class OidcAuthenticationConfiguration(usersFile: URI,
                                            clientId: String,
                                            clientSecret: Option[String],
                                            redirectUri: Option[URI] = None,
-                                           accessTokenIsJwt: Boolean = false,
                                            audience: Option[String] = None,
+                                           scope: String = "openid profile",
 
                                            // The following values are used for overriding the ones obtained
                                            // from the OIDC Discovery or in case it is not supported at all.
@@ -28,33 +28,35 @@ case class OidcAuthenticationConfiguration(usersFile: URI,
                                            authorizationEndpoint: Option[URI] = None,
                                            tokenEndpoint: Option[URI] = None,
                                            userinfoEndpoint: Option[URI] = None,
-                                           jwksUri: Option[URI] = None
+                                           jwksUri: Option[URI] = None,
+
+                                           rolesClaim: Option[String] = None,
                                           ) extends URIExtensions {
 
   lazy val oAuth2Configuration: OAuth2Configuration = OAuth2Configuration(
-    usersFile = this.usersFile,
-    authorizeUri = this.authorizationEndpoint.map(resolveAgainstIssuer)
+    usersFile = usersFile,
+    authorizeUri = authorizationEndpoint.map(resolveAgainstIssuer)
       .getOrElse(throw new NoSuchElementException("An authorizationEndpoint must provided or OIDC Discovery available")),
-    clientSecret = this.clientSecret
+    clientSecret = clientSecret
       .getOrElse(throw new NoSuchElementException("PKCE not yet supported, provide a client secret")),
-    clientId = this.clientId,
-    profileUri = this.userinfoEndpoint.map(resolveAgainstIssuer)
+    clientId = clientId,
+    profileUri = userinfoEndpoint.map(resolveAgainstIssuer)
       .getOrElse(throw new NoSuchElementException("An userinfoEndpoint must provided or OIDC Discovery available")),
     profileFormat = Some(OIDC),
-    accessTokenUri = this.tokenEndpoint.map(resolveAgainstIssuer)
+    accessTokenUri = tokenEndpoint.map(resolveAgainstIssuer)
       .getOrElse(throw new NoSuchElementException("A tokenEndpoint must provided or OIDC Discovery available")),
     redirectUri = redirectUri,
     jwt = Some(new JwtConfiguration {
-      def accessTokenIsJwt: Boolean = OidcAuthenticationConfiguration.this.accessTokenIsJwt
+      def accessTokenIsJwt: Boolean = OidcAuthenticationConfiguration.this.audience.isDefined
       def userinfoFromIdToken: Boolean = true
       def audience: Option[String] = OidcAuthenticationConfiguration.this.audience
       def authServerPublicKey: Option[PublicKey] = None
       def idTokenNonceVerificationRequired: Boolean = false
     }),
-    authorizeParams = Map("response_type" -> "code", "scope" -> "openid"),
+    authorizeParams = Map("response_type" -> "code", "scope" -> scope),
     accessTokenParams = Map("grant_type" -> "authorization_code"),
     accessTokenRequestContentType = MediaType.ApplicationXWwwFormUrlencoded.toString(),
-    anonymousUserRole = this.anonymousUserRole
+    anonymousUserRole = anonymousUserRole
   )
 
   lazy val jwkProvider: JwkProvider = new JwkProviderBuilder(
