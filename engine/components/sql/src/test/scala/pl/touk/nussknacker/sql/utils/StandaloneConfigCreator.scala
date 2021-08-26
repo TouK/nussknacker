@@ -6,12 +6,17 @@ import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.ComponentProvider
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.standalone.api.StandaloneSinkWithParameters
 import pl.touk.nussknacker.engine.standalone.utils.JsonStandaloneSourceFactory
+import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
+import pl.touk.nussknacker.sql.DatabaseEnricherComponentProvider
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 import pl.touk.nussknacker.sql.service.DatabaseLookupEnricher
+
+import scala.collection.immutable
 
 //TODO: extract to separate, standalone tests module
 class StandaloneConfigCreator extends EmptyProcessConfigCreator {
@@ -24,10 +29,11 @@ class StandaloneConfigCreator extends EmptyProcessConfigCreator {
   }
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = {
-    val enricherDbPoolConfig = processObjectDependencies.config.as[DBPoolConfig]("sqlEnricherDbPool")
-    Map(
-      "sql-lookup-enricher" -> WithCategories(new DatabaseLookupEnricher(enricherDbPoolConfig), Category)
-    )
+    val componentProviders = ScalaServiceLoader.load[ComponentProvider](getClass.getClassLoader)
+
+    componentProviders.flatMap(_.create(processObjectDependencies.config, processObjectDependencies))
+      .map(component => component.name -> WithCategories(component.component.asInstanceOf[Service]))
+      .toMap
   }
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {

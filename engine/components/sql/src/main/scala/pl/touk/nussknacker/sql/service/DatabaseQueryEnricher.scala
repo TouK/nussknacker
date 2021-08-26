@@ -11,9 +11,8 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.sql.db.pool.{DBPoolConfig, HikariDataSourceFactory}
 import pl.touk.nussknacker.sql.db.query._
-import pl.touk.nussknacker.sql.db.schema._
+import pl.touk.nussknacker.sql.db.schema.{DbParameterMetaData, JdbcMetaDataProvider, SqlDialect, TableDefinition}
 
-import java.sql.DriverManager
 import java.time.Duration
 import java.time.temporal.ChronoUnit
 
@@ -58,7 +57,7 @@ TODO:
 1. Named parameters. Maybe we can make use of Spring's NamedJdbcParameterTemplate?
 2. Typed parameters - currently we type them as Objects/Unknowns
 */
-class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig) extends EagerService
+class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvider: JdbcMetaDataProvider) extends EagerService
   with Lifecycle with SingleInputGenericNodeTransformation[ServiceInvoker] with LazyLogging {
 
   import DatabaseQueryEnricher._
@@ -67,11 +66,7 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig) extends EagerService
 
   protected var dataSource: HikariDataSource = _
 
-  // This service creates connection on their own instead of using dataSource because dataSource is for purpose of invoker and we don't want to open it
-  // on validation (contextTransformation) phase. Also we don't have lifecycle management of objects created only in validation phase.
-  protected val dbMetaDataProvider = new DbMetaDataProvider(() => DriverManager.getConnection(dbPoolConfig.url, dbPoolConfig.username, dbPoolConfig.password))
-
-  protected lazy val sqlDialect = new SqlDialect(dbMetaDataProvider.getDialectMetaData())
+  protected lazy val sqlDialect = new SqlDialect(dbMetaDataProvider.getDialectMetaData)
 
   override val nodeDependencies: List[NodeDependency] = OutputVariableNameDependency :: metaData :: Nil
 

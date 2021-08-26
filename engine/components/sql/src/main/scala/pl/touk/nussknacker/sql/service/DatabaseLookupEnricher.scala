@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 import pl.touk.nussknacker.sql.db.query.{QueryArgument, QueryArguments, SingleResultStrategy}
-import pl.touk.nussknacker.sql.db.schema.{SchemaDefinition, TableDefinition}
+import pl.touk.nussknacker.sql.db.schema.{JdbcMetaDataProvider, SchemaDefinition, TableDefinition}
 import pl.touk.nussknacker.sql.service.DatabaseLookupEnricher.TableParamName
 import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher.{CacheTTLParam, CacheTTLParamName, TransformationState}
 
@@ -39,7 +39,7 @@ object DatabaseLookupEnricher {
   }
 }
 
-class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig) extends DatabaseQueryEnricher(dBPoolConfig) with LazyLogging {
+class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: JdbcMetaDataProvider) extends DatabaseQueryEnricher(dBPoolConfig, dbMetaDataProvider) with LazyLogging {
 
   protected def tableParam(): Parameter = {
     val schemaMetaData = try {

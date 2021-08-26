@@ -2,7 +2,7 @@ package pl.touk.nussknacker.sql.service
 
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.sql.db.query.ResultSetStrategy
-import pl.touk.nussknacker.sql.db.schema.TableDefinition
+import pl.touk.nussknacker.sql.db.schema.{JdbcMetaDataProviderFactory, TableDefinition}
 import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher.CacheTTLParamName
 import pl.touk.nussknacker.sql.utils.BaseDatabaseQueryEnricherTest
 
@@ -18,7 +18,7 @@ class DatabaseQueryEnricherWithCacheTest extends BaseDatabaseQueryEnricherTest {
     "INSERT INTO persons (id, name) VALUES (1, 'John')"
   )
 
-  override val service = new DatabaseQueryEnricher(dbConf)
+  override val service = new DatabaseQueryEnricher(dbConf, new JdbcMetaDataProviderFactory().getMetaDataProvider(dbConf))
 
   test("DatabaseQueryEnricher#implementation with cache") {
     val query = "select * from persons where id = ?"

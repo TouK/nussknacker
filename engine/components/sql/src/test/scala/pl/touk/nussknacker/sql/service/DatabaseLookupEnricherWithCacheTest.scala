@@ -2,7 +2,7 @@ package pl.touk.nussknacker.sql.service
 
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.sql.db.query.ResultSetStrategy
-import pl.touk.nussknacker.sql.db.schema.TableDefinition
+import pl.touk.nussknacker.sql.db.schema.{JdbcMetaDataProviderFactory, TableDefinition}
 import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher.CacheTTLParamName
 import pl.touk.nussknacker.sql.utils.BaseDatabaseQueryEnricherTest
 
@@ -13,7 +13,7 @@ class DatabaseLookupEnricherWithCacheTest extends BaseDatabaseQueryEnricherTest 
   import scala.collection.JavaConverters._
   import scala.concurrent.duration._
 
-  override val service = new DatabaseLookupEnricher(dbConf)
+  override val service = new DatabaseLookupEnricher(dbConf, new JdbcMetaDataProviderFactory().getMetaDataProvider(dbConf))
 
   override val prepareDbDDLs: List[String] = List(
     "CREATE TABLE persons (id INT, name VARCHAR(40));",

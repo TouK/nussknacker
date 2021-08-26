@@ -20,14 +20,28 @@ class DatabaseLookupStandaloneProcessTest extends FunSuite with Matchers with St
     "CREATE TABLE persons_lower (\"id\" INT, \"name\" VARCHAR(40));",
     "INSERT INTO persons_lower VALUES (1, 'John')"
   )
-  private val config = ConfigFactory.parseMap(Map(
-    "sqlEnricherDbPool" -> Map(
-      "driverClassName" -> dbConf.driverClassName,
-      "username" -> dbConf.username,
-      "password" -> dbConf.password,
-      "url" -> dbConf.url
+
+  private val dbPoolConfig: Map[String, String] = Map(
+    "driverClassName" -> dbConf.driverClassName,
+    "username" -> dbConf.username,
+    "password" -> dbConf.password,
+    "url" -> dbConf.url
+  )
+
+  private val config = ConfigFactory.parseMap(
+    Map(
+      "config" -> Map(
+        "databaseLookupEnricher" -> Map(
+          "name" -> "sql-lookup-enricher",
+          "dbPool" -> dbPoolConfig.asJava
+        ).asJava,
+        "databaseQueryEnricher" -> Map(
+          "name" -> "sql-query-enricher",
+          "dbPool" -> dbPoolConfig.asJava
+        ).asJava
+      ).asJava
     ).asJava
-  ).asJava)
+  )
 
   override val modelData: LocalModelData = LocalModelData(config, new StandaloneConfigCreator)
 

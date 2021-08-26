@@ -4,10 +4,10 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.OutputVariableNameValue
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor}
-import pl.touk.nussknacker.engine.api.typed.{TypedMap, typing}
+import pl.touk.nussknacker.engine.api.typed.TypedMap
+import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 import pl.touk.nussknacker.sql.db.query.ResultSetStrategy
-import pl.touk.nussknacker.sql.db.schema.TableDefinition
-import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher.TransformationState
+import pl.touk.nussknacker.sql.db.schema.{JdbcMetaDataProvider, JdbcMetaDataProviderFactory, TableDefinition}
 import pl.touk.nussknacker.sql.utils.BaseDatabaseQueryEnricherTest
 
 import scala.concurrent.Await
@@ -17,12 +17,18 @@ class DatabaseLookupEnricherTest extends BaseDatabaseQueryEnricherTest {
   import scala.collection.JavaConverters._
   import scala.concurrent.duration._
 
-  override val service = new DatabaseLookupEnricher(dbConf)
-
   override val prepareDbDDLs: List[String] = List(
     "CREATE TABLE persons (id INT, name VARCHAR(40));",
     "INSERT INTO persons (id, name) VALUES (1, 'John')"
   )
+
+  private val notExistingDbUrl = s"jdbc:hsqldb:mem:dummy"
+
+  private val unknownDbUrl = s"jdbc:hsqldb:mem:dummy"
+
+  private def provider: DBPoolConfig => JdbcMetaDataProvider = (conf: DBPoolConfig) => new JdbcMetaDataProviderFactory().getMetaDataProvider(conf)
+
+  override val service = new DatabaseLookupEnricher(dbConf, provider(dbConf))
 
   test("DatabaseLookupEnricher#implementation without cache") {
     val query = "select * from persons where id = ?"
@@ -62,7 +68,8 @@ class DatabaseLookupEnricherTest extends BaseDatabaseQueryEnricherTest {
   }
 
   test("should return empty list for not existing database") {
-    val serviceWithNotExistingDatabase = new DatabaseLookupEnricher(dbConf.copy(url = s"jdbc:hsqldb:mem:dummy"))
+    val newConfig = dbConf.copy(url = notExistingDbUrl)
+    val serviceWithNotExistingDatabase = new DatabaseLookupEnricher(newConfig, provider(newConfig))
     implicit val nodeId: NodeId = NodeId("dummy")
     val definition = serviceWithNotExistingDatabase.contextTransformation(ValidationContext(), List(OutputVariableNameValue("dummy")))
     val result: serviceWithNotExistingDatabase.TransformationStepResult = definition(serviceWithNotExistingDatabase.TransformationStep(List(), None))
@@ -73,7 +80,8 @@ class DatabaseLookupEnricherTest extends BaseDatabaseQueryEnricherTest {
   }
 
   test("should return empty list for unknown database") {
-    val serviceWithNotExistingDatabase = new DatabaseLookupEnricher(dbConf.copy(url = "dummy"))
+    val newConfig = dbConf.copy(url = unknownDbUrl)
+    val serviceWithNotExistingDatabase = new DatabaseLookupEnricher(newConfig, provider(newConfig))
     implicit val nodeId: NodeId = NodeId("dummy")
     val definition = serviceWithNotExistingDatabase.contextTransformation(ValidationContext(), List(OutputVariableNameValue("dummy")))
     val result: serviceWithNotExistingDatabase.TransformationStepResult = definition(serviceWithNotExistingDatabase.TransformationStep(List(), None))

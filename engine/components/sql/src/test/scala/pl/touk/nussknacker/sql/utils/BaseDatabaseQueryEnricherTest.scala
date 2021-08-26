@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.sql.utils
 
+import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
@@ -9,6 +10,7 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.process.RunMode
 import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
+import scala.collection.JavaConverters._
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher
 
@@ -25,6 +27,17 @@ trait BaseDatabaseQueryEnricherTest extends FunSuite with Matchers with BeforeAn
   val jobData: JobData = JobData(MetaData("", StreamMetaData()), ProcessVersion.empty, DeploymentData.empty)
 
   val service: Lifecycle
+
+  private val dbPoolConfig: Map[String, String] = Map(
+    "driverClassName" -> dbConf.driverClassName,
+    "username" -> dbConf.username,
+    "password" -> dbConf.password,
+    "url" -> dbConf.url
+  )
+
+  val dbEnricherConfig: Config = ConfigFactory.load()
+    .withValue("name", ConfigValueFactory.fromAnyRef("db-enricher"))
+    .withValue("dbPool", ConfigValueFactory.fromMap(dbPoolConfig.asJava))
 
   protected def returnType(service: DatabaseQueryEnricher, state: DatabaseQueryEnricher.TransformationState): typing.TypingResult = {
     val varName = "varName1"
