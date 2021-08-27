@@ -16,7 +16,7 @@ describe("ProcessAttachments suite", () => {
 
     //when
     const mountedProcessAttachments = mount(
-      <ProcessAttachments attachments={attachments} processId={processId} processVersionId={processVersionId} t={key => key}/>
+      <ProcessAttachments attachments={attachments} processId={processId} processVersionId={processVersionId} t={key => key} capabilities={{write: true}}/>
     )
     //then
     expect(mountedProcessAttachments.find('.download-attachment').length).toBe(3)
