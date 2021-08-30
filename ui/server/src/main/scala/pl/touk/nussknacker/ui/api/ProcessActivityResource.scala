@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.api
 
-
 import java.io.File
 
 import akka.http.scaladsl.model.MediaTypes.`application/json`
@@ -18,8 +17,11 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ProcessActivityResource(processActivityRepository: ProcessActivityRepository, val processRepository: FetchingProcessRepository[Future])
-                             (implicit val ec: ExecutionContext, mat: Materializer) extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives {
+class ProcessActivityResource(processActivityRepository: ProcessActivityRepository,
+                              val processRepository: FetchingProcessRepository[Future],
+                              val processAuthorizer: AuthorizeProcess)
+                             (implicit val ec: ExecutionContext, mat: Materializer)
+  extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives with AuthorizeProcessDirectives {
 
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] =
     Unmarshaller.byteArrayUnmarshaller
@@ -33,32 +35,41 @@ class ProcessActivityResource(processActivityRepository: ProcessActivityReposito
       }
     } ~ path("processes" / Segment / LongNumber / "activity" / "comments") { (processName, versionId) =>
       (post & processId(processName)) { processId =>
-        entity(as[Array[Byte]]) { commentBytes =>
-          complete {
-            val comment = new String(commentBytes, java.nio.charset.Charset.forName("UTF-8"))
-            processActivityRepository.addComment(processId.id, versionId, comment)
+        canWrite(processId) {
+          entity(as[Array[Byte]]) { commentBytes =>
+            complete {
+              val comment = new String(commentBytes, java.nio.charset.Charset.forName("UTF-8"))
+              processActivityRepository.addComment(processId.id, versionId, comment)
+            }
           }
         }
       }
     } ~ path("processes" / Segment / "activity" / "comments" / LongNumber) { (processName, commentId) =>
       (delete & processId(processName)) { processId =>
-        complete {
-          processActivityRepository.deleteComment(commentId)
+        canWrite(processId) {
+          complete {
+            processActivityRepository.deleteComment(commentId)
+          }
         }
       }
     }
   }
 }
 
-class AttachmentResources(attachmentService: ProcessAttachmentService, val processRepository: FetchingProcessRepository[Future])
-                         (implicit val ec: ExecutionContext, mat: Materializer) extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives {
+class AttachmentResources(attachmentService: ProcessAttachmentService,
+                          val processRepository: FetchingProcessRepository[Future],
+                          val processAuthorizer: AuthorizeProcess)
+                         (implicit val ec: ExecutionContext, mat: Materializer)
+  extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives with AuthorizeProcessDirectives {
 
   def securedRoute(implicit user: LoggedUser) : Route = {
     path("processes" / Segment / LongNumber / "activity" / "attachments") { (processName, versionId) =>
       (post & processId(processName)) { processId =>
-        fileUpload("attachment") { case (metadata, byteSource) =>
-          complete {
-            attachmentService.saveAttachment(processId.id, versionId, metadata.fileName, byteSource)
+        canWrite(processId) {
+          fileUpload("attachment") { case (metadata, byteSource) =>
+            complete {
+              attachmentService.saveAttachment(processId.id, versionId, metadata.fileName, byteSource)
+            }
           }
         }
       }
