@@ -1,15 +1,20 @@
 package pl.touk.nussknacker.engine.management.sample
 
-import java.util.Properties
+import com.github.ghik.silencer.silent
 
+import java.util.Properties
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
 import pl.touk.nussknacker.engine.flink.util.FlinkArgsDecodeHack
 
+import scala.annotation.nowarn
+
 object CustomProcess {
 
+  @silent("deprecated")
+  @nowarn("cat=deprecation")
   def main(argsWithHack: Array[String]) : Unit = {
     val args =  FlinkArgsDecodeHack.prepareProgramArgs(argsWithHack)
 

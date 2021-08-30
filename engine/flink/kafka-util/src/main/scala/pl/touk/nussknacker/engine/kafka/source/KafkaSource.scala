@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.source
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
@@ -18,6 +19,7 @@ import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.source.KafkaSource.defaultMaxOutOfOrdernessMillis
 
 import java.time.Duration
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 
 class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
@@ -49,6 +51,8 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
     createFlinkSource(consumerGroupId)
   }
 
+  @silent("deprecated")
+  @nowarn("cat=deprecation")
   protected def createFlinkSource(consumerGroupId: String): SourceFunction[T] = {
     new FlinkKafkaConsumer[T](topics.asJava, deserializationSchema, KafkaUtils.toProperties(kafkaConfig, Some(consumerGroupId)))
   }
