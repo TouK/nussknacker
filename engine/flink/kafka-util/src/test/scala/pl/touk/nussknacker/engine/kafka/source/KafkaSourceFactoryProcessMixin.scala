@@ -31,7 +31,7 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
 
   protected var registrar: FlinkProcessRegistrar = _
 
-  protected  lazy val creator: ProcessConfigCreator = new KafkaSourceFactoryProcessConfigCreator(kafkaConfig)
+  protected  lazy val creator: ProcessConfigCreator = new KafkaSourceFactoryProcessConfigCreator()
 
   protected lazy val processDefinition: ProcessDefinitionExtractor.ProcessDefinition[DefinitionExtractor.ObjectWithMethodDef] =
     ProcessDefinitionExtractor.extractObjectWithMethods(creator,
@@ -99,7 +99,7 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
   protected def createProcess(topic: String,
                               sourceType: SourceType.Value,
                               customVariables: Map[String, String] = Map.empty,
-                              topicParamValue: String => String = topic => s"'${topic}'"
+                              topicParamValue: String => String = topic => s"'$topic'"
                              ): EspProcess = {
     //should check and recognize all variables based on #input and #inputMeta
     val inputVariables = Map("id" ->" #input.id", "field" -> "#input.field")
@@ -120,14 +120,14 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
     val checkAllVariables = inputVariables ++ metaVariables ++ keyVariables ++ headerVariables ++ customVariables
 
     val process = EspProcessBuilder
-      .id(s"proc-${topic}")
+      .id(s"proc-$topic")
       .exceptionHandler()
       .source("procSource", sourceType.toString, KafkaSourceFactory.TopicParamName -> topicParamValue(topic))
 
     val processWithVariables = checkAllVariables
       .foldRight(process.asInstanceOf[GraphBuilder[EspProcess]])( (variable, builder) =>
         variable match {
-          case (id, expression) => builder.buildSimpleVariable(s"id${id}", s"name${id}", expression)
+          case (id, expression) => builder.buildSimpleVariable(s"id$id", s"name$id", expression)
         }
       )
 

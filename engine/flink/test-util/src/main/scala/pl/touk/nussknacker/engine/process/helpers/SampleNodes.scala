@@ -10,8 +10,10 @@ import org.apache.flink.api.common.functions.{FilterFunction, MapFunction}
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.co.RichCoMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
+import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator}
 import org.apache.flink.streaming.api.scala.{DataStream, _}
 import org.apache.flink.streaming.api.windowing.time.Time
+import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation._
@@ -315,6 +317,19 @@ object SampleNodes {
               .map(new JoinExprBranchFunction(valueByBranchId, flinkContext.lazyParameterHelper))
           }
         })
+
+  }
+
+  object ExtractAndTransformTimestamp extends CustomStreamTransformer {
+
+    @MethodToInvoke(returnType = classOf[Long])
+    def methodToInvoke(@ParamName("timestampToSet") timestampToSet: Long): FlinkCustomStreamTransformation
+      = FlinkCustomStreamTransformation(_.transform("collectTimestamp",
+        new AbstractStreamOperator[ValueWithContext[AnyRef]] with OneInputStreamOperator[Context, ValueWithContext[AnyRef]] {
+          override def processElement(element: StreamRecord[Context]): Unit = {
+            output.collect(new StreamRecord[ValueWithContext[AnyRef]](ValueWithContext(element.getTimestamp.underlying(), element.getValue), timestampToSet))
+          }
+        }))
 
   }
 
