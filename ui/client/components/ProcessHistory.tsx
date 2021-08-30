@@ -3,7 +3,7 @@ import {Scrollbars} from "react-custom-scrollbars"
 import {useDispatch, useSelector} from "react-redux"
 import {fetchProcessToDisplay, toggleConfirmDialog} from "../actions/nk"
 import {unsavedProcessChanges} from "../common/DialogMessages"
-import {getFetchedProcessDetails, isBusinessView, isSaveDisabled} from "../reducers/selectors/graph"
+import {getFetchedProcessDetails, isSaveDisabled} from "../reducers/selectors/graph"
 import styles from "../stylesheets/processHistory.styl"
 import {HistoryItem, VersionType} from "./HistoryItem"
 import {ProcessVersionType} from "./Process/types"
@@ -11,7 +11,6 @@ import {ProcessVersionType} from "./Process/types"
 export function ProcessHistoryComponent(props: {isReadOnly?: boolean}): JSX.Element {
   const {history = [], lastDeployedAction, name, processVersionId} = useSelector(getFetchedProcessDetails)
   const nothingToSave = useSelector(isSaveDisabled)
-  const businessView = useSelector(isBusinessView)
   const selectedVersion = useMemo(
     () => history.find(v => v.processVersionId === processVersionId),
     [history, processVersionId],
@@ -20,8 +19,8 @@ export function ProcessHistoryComponent(props: {isReadOnly?: boolean}): JSX.Elem
   const dispatch = useDispatch()
 
   const doChangeVersion = useCallback((version: ProcessVersionType) => {
-    dispatch(fetchProcessToDisplay(name, version.processVersionId, businessView))
-  }, [dispatch, name, businessView])
+    dispatch(fetchProcessToDisplay(name, version.processVersionId))
+  }, [dispatch, name])
 
   const changeVersion = useCallback(
     (version: ProcessVersionType) => props.isReadOnly || nothingToSave ?

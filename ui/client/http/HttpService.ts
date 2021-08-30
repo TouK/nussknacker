@@ -168,9 +168,9 @@ class HttpService {
     return api.get<ProcessType[]>("/customProcesses")
   }
 
-  fetchProcessDetails(processId, versionId?, businessView?) {
+  fetchProcessDetails(processId, versionId?) {
     const url = versionId ? `/processes/${processId}/${versionId}` : `/processes/${processId}`
-    return api.get(url, {params: {businessView}})
+    return api.get(url)
   }
 
   fetchProcessesStates() {
@@ -282,8 +282,8 @@ class HttpService {
       .catch(error => this.addError(i18next.t("notification.error.failedToExport", "Failed to export"), error))
   }
 
-  exportProcessToPdf(processId, versionId, data, businessView) {
-    return api.post(`/processesExport/pdf/${processId}/${versionId}`, data, {responseType: "blob", params: {businessView}})
+  exportProcessToPdf(processId, versionId, data) {
+    return api.post(`/processesExport/pdf/${processId}/${versionId}`, data, {responseType: "blob"})
       .then(response => FileSaver.saveAs(response.data, `${processId}-${versionId}.pdf`))
       .catch(error => this.addError(i18next.t("notification.error.failedToExportPdf", "Failed to export PDF"), error))
   }
@@ -376,10 +376,10 @@ class HttpService {
       .catch(error => this.addError(i18next.t("notification.error.failedToTest", "Failed to test"), error, true))
   }
 
-  compareProcesses(processId, thisVersion, otherVersion, businessView, remoteEnv) {
+  compareProcesses(processId, thisVersion, otherVersion, remoteEnv) {
     const path = remoteEnv ? "remoteEnvironment" : "processes"
 
-    return api.get(`/${path}/${processId}/${thisVersion}/compare/${otherVersion}`, {params: {businessView}})
+    return api.get(`/${path}/${processId}/${thisVersion}/compare/${otherVersion}`)
       .catch(error => this.addError(i18next.t("notification.error.cannotCompare", "Cannot compare scenarios"), error, true))
   }
 

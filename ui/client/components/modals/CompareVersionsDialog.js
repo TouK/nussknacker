@@ -12,7 +12,6 @@ import NodeDetailsContent from "../graph/node-modal/NodeDetailsContent"
 import {SelectWithFocus} from "../withFocus"
 import Dialogs from "./Dialogs"
 import GenericModalDialog from "./GenericModalDialog"
-import {isBusinessView} from "../../reducers/selectors/graph"
 
 //TODO: handle displaying groups
 //TODO: handle different textarea heights
@@ -40,7 +39,7 @@ class CompareVersionsDialog extends React.Component {
 
   loadVersion(versionId) {
     if (versionId) {
-      HttpService.compareProcesses(this.props.processId, this.props.version, this.versionToPass(versionId), this.props.businessView, this.isRemote(versionId)).then(
+      HttpService.compareProcesses(this.props.processId, this.props.version, this.versionToPass(versionId), this.isRemote(versionId)).then(
         (response) => this.setState({difference: response.data, otherVersion: versionId, currentDiffId: null}),
       )
     } else {
@@ -221,7 +220,6 @@ function mapState(state) {
     processDefinitionData: state.settings.processDefinitionData,
     otherEnvironment: _.get(state.settings, "featuresSettings.remoteEnvironment.targetEnvironmentId"),
     versions: _.get(state.graphReducer, "fetchedProcessDetails.history", []),
-    businessView: isBusinessView(state),
   }
 }
 

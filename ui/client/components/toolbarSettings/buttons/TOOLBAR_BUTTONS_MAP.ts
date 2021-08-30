@@ -25,7 +25,6 @@ import CountsButton from "../../toolbars/test/buttons/CountsButton"
 import FromFileButton from "../../toolbars/test/buttons/FromFileButton"
 import GenerateButton from "../../toolbars/test/buttons/GenerateButton"
 import HideButton from "../../toolbars/test/buttons/HideButton"
-import BusinessViewSwitch from "../../toolbars/view/buttons/BusinessViewSwitch"
 import {ResetViewButton} from "../../toolbars/view/buttons/ResetViewButton"
 import {ZoomInButton} from "../../toolbars/view/buttons/ZoomInButton"
 import {ZoomOutButton} from "../../toolbars/view/buttons/ZoomOutButton"
@@ -41,7 +40,6 @@ export const TOOLBAR_BUTTONS_MAP: ToolbarButtonsMap = {
   [BuiltinButtonTypes.processSave]: SaveButton,
   [BuiltinButtonTypes.processDeploy]: DeployButton,
   [BuiltinButtonTypes.processCancel]: CancelDeployButton,
-  [BuiltinButtonTypes.viewBusinessView]: BusinessViewSwitch,
   [BuiltinButtonTypes.viewZoomIn]: ZoomInButton,
   [BuiltinButtonTypes.viewZoomOut]: ZoomOutButton,
   [BuiltinButtonTypes.viewReset]: ResetViewButton,

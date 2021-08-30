@@ -13,7 +13,6 @@ export type GraphState = {
   processStateLoaded: boolean,
   fetchedProcessDetails?: ProcessType,
   processToDisplay?: Process,
-  businessView: boolean,
   nodeToDisplay?: NodeType | GroupType,
   nodeToDisplayReadonly?: boolean,
   selectionState?: string[],

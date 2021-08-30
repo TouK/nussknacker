@@ -23,7 +23,6 @@ export const getProcessState = createSelector(getGraph, d => d?.processState)
 export const isLatestProcessVersion = createSelector(getFetchedProcessDetails, d => d?.isLatestVersion)
 export const isSubprocess = createSelector(getProcessToDisplay, p => p.properties?.isSubprocess)
 export const isArchived = createSelector(getFetchedProcessDetails, p => p?.isArchived)
-export const isBusinessView = createSelector(getGraph, g => g.businessView)
 export const isPristine = (state: RootState): boolean => ProcessUtils.nothingToSave(state) && !isProcessRenamed(state)
 export const hasError = createSelector(getProcessToDisplay, p => !ProcessUtils.hasNoErrors(p))
 export const hasPropertiesErrors = createSelector(getProcessToDisplay, p => !ProcessUtils.hasNoPropertiesErrors(p))
@@ -47,8 +46,8 @@ export const getFetchedProcessState = createSelector(
 )
 
 export const isSaveDisabled = createSelector(
-  [isPristine, isLatestProcessVersion, isBusinessView],
-  (pristine, latest, businessView) => pristine && latest || businessView,
+  [isPristine, isLatestProcessVersion],
+  (pristine, latest) => pristine && latest,
 )
 export const isDeployPossible = createSelector(
   [isSaveDisabled, hasError, getFetchedProcessState, isSubprocess],

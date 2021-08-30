@@ -201,13 +201,11 @@ class ProcessesResources(
                     .map(toResponseEither[ValidationResult])
                 }
               }
-            } ~ parameter('businessView ? false) { businessView =>
-              get {
-                complete {
-                  processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId.id, businessView).map[ToResponseMarshallable] {
-                    case Some(process) => validateAndReverseResolve(enrichDetailsWithProcessState(process), businessView) // todo: we should really clearly separate backend objects from ones returned to the front
-                    case None => HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found")
-                  }
+            } ~ get {
+              complete {
+                processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId.id).map[ToResponseMarshallable] {
+                  case Some(process) => validateAndReverseResolve(enrichDetailsWithProcessState(process)) // todo: we should really clearly separate backend objects from ones returned to the front
+                  case None => HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found")
                 }
               }
             }
@@ -227,12 +225,10 @@ class ProcessesResources(
           }
         } ~ path("processes" / Segment / LongNumber) { (processName, versionId) =>
           (get & processId(processName)) { processId =>
-            parameter('businessView ? false) { businessView =>
-              complete {
-                processRepository.fetchProcessDetailsForId[CanonicalProcess](processId.id, versionId, businessView).map[ToResponseMarshallable] {
-                  case Some(process) => validateAndReverseResolve(process, businessView) // todo: we should really clearly separate backend objects from ones returned to the front
-                  case None => HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found")
-                }
+            complete {
+              processRepository.fetchProcessDetailsForId[CanonicalProcess](processId.id, versionId).map[ToResponseMarshallable] {
+                case Some(process) => validateAndReverseResolve(process) // todo: we should really clearly separate backend objects from ones returned to the front
+                case None => HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found")
               }
             }
           }
@@ -281,12 +277,10 @@ class ProcessesResources(
           }
         } ~ path("processes" / Segment / LongNumber / "compare" / LongNumber) { (processName, thisVersion, otherVersion) =>
           (get & processId(processName)) { processId =>
-            parameter('businessView ? false) { businessView =>
-              complete {
-                withJson(processId.id, thisVersion, businessView) { thisDisplayable =>
-                  withJson(processId.id, otherVersion, businessView) { otherDisplayable =>
-                    ProcessComparator.compare(thisDisplayable, otherDisplayable)
-                  }
+            complete {
+              withJson(processId.id, thisVersion) { thisDisplayable =>
+                withJson(processId.id, otherVersion) { otherDisplayable =>
+                  ProcessComparator.compare(thisDisplayable, otherDisplayable)
                 }
               }
             }
@@ -338,9 +332,9 @@ class ProcessesResources(
   private def deploymentManager(processingType: ProcessingType): Option[DeploymentManager] =
     typeToConfig.forType(processingType).map(_.deploymentManager)
 
-  private def withJson(processId: ProcessId, version: Long, businessView: Boolean)
+  private def withJson(processId: ProcessId, version: Long)
                       (process: DisplayableProcess => ToResponseMarshallable)(implicit user: LoggedUser): ToResponseMarshallable
-  = processRepository.fetchProcessDetailsForId[DisplayableProcess](processId, version, businessView).map { maybeProcess =>
+  = processRepository.fetchProcessDetailsForId[DisplayableProcess](processId, version).map { maybeProcess =>
       maybeProcess.flatMap(_.json) match {
         case Some(displayable) => process(displayable)
         case None => HttpResponse(status = StatusCodes.NotFound, entity = s"Scenario $processId in version $version not found"): ToResponseMarshallable
@@ -348,14 +342,14 @@ class ProcessesResources(
   }
 
   private def validateAndReverseResolveAll(processDetails: Future[List[BaseProcessDetails[CanonicalProcess]]]) : Future[List[ValidatedProcessDetails]] = {
-    processDetails.flatMap(all => Future.sequence(all.map(validateAndReverseResolve(_, businessView = false))))
+    processDetails.flatMap(all => Future.sequence(all.map(validateAndReverseResolve)))
   }
 
-  private def validateAndReverseResolve(processDetails: BaseProcessDetails[CanonicalProcess], businessView: Boolean): Future[ValidatedProcessDetails] = {
+  private def validateAndReverseResolve(processDetails: BaseProcessDetails[CanonicalProcess]): Future[ValidatedProcessDetails] = {
     val validatedDetails = processDetails.mapProcess { canonical: CanonicalProcess =>
       val processingType = processDetails.processingType
       val validationResult = processResolving.validateBeforeUiReverseResolving(canonical, processingType)
-      processResolving.reverseResolveExpressions(canonical, processingType, businessView, validationResult)
+      processResolving.reverseResolveExpressions(canonical, processingType, validationResult)
     }
     Future.successful(validatedDetails)
   }

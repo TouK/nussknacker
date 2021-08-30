@@ -13,11 +13,11 @@ class PullProcessRepository(fetchingProcessRepository: FetchingProcessRepository
 
   override def fetchLatestProcessDetailsForProcessId[PS: ProcessShapeFetchStrategy](id: process.ProcessId)
                                                                                    (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Option[BaseProcessDetails[PS]]] =
-    fetchingProcessRepository.fetchLatestProcessDetailsForProcessId(id = id, businessView = false)
+    fetchingProcessRepository.fetchLatestProcessDetailsForProcessId(id = id)
 
   override def fetchProcessDetailsForId[PS: ProcessShapeFetchStrategy](processId: process.ProcessId, versionId: Long)
                                                                       (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Option[BaseProcessDetails[PS]]] =
-    fetchingProcessRepository.fetchProcessDetailsForId(processId, versionId, businessView = false)
+    fetchingProcessRepository.fetchProcessDetailsForId(processId, versionId)
 
   override def fetchProcessDetailsForName[PS: ProcessShapeFetchStrategy](processName: ProcessName, versionId: Long)
                                                                         (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Option[BaseProcessDetails[PS]]] = for {

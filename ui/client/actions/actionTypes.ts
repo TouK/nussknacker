@@ -5,7 +5,6 @@ export type ActionTypes =
   | "TOGGLE_LEFT_PANEL"
   | "TOGGLE_RIGHT_PANEL"
   | "LAYOUT"
-  | "BUSINESS_VIEW_CHANGED"
   | "GROUP"
   | "UNGROUP"
   | "EXPAND_GROUP"

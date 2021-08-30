@@ -34,7 +34,6 @@ const emptyGraphState: GraphState = {
   selectionState: [],
   processCounts: {},
   testResults: null,
-  businessView: false,
   processState: null,
   processStateLoaded: false,
   unsavedNewName: null,
@@ -74,18 +73,15 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
       }
     }
     case "DISPLAY_PROCESS": {
-      const {fetchedProcessDetails, businessView} = action
+      const {fetchedProcessDetails} = action
       const processToDisplay = fetchedProcessDetails.json
       return {
         ...state,
         processToDisplay,
         fetchedProcessDetails,
-        businessView,
         graphLoading: false,
         nodeToDisplay: processToDisplay.properties,
-        layout: !businessView ?
-          LayoutUtils.fromMeta(processToDisplay):
-          [],
+        layout: LayoutUtils.fromMeta(processToDisplay),
       }
     }
     case "LOADING_FAILED": {
@@ -348,7 +344,7 @@ const undoableReducer = undoable(reducer, {
   ignoreInitialState: true,
   undoType: "UNDO",
   redoType: "REDO",
-  clearHistoryType: ["BUSINESS_VIEW_CHANGED", "CLEAR"],
+  clearHistoryType: ["CLEAR"],
   filter: combineFilters(
     excludeAction([
       "USER_TRACKING",

@@ -30,8 +30,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait RemoteEnvironment {
 
-  def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[Long],
-              businessView: Boolean = false)(implicit ec: ExecutionContext) : Future[Either[EspError, Map[String, Difference]]]
+  def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[Long])(implicit ec: ExecutionContext) : Future[Either[EspError, Map[String, Difference]]]
 
   def processVersions(processName: ProcessName)(implicit ec: ExecutionContext) : Future[List[ProcessVersion]]
 
@@ -84,16 +83,16 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   implicit def materializer: Materializer
 
   override def processVersions(processName: ProcessName)(implicit ec: ExecutionContext): Future[List[ProcessVersion]] =
-    invokeJson[ProcessDetails](HttpMethods.GET, List("processes", processName.value), Query(("businessView", true.toString))).map { result =>
+    invokeJson[ProcessDetails](HttpMethods.GET, List("processes", processName.value)).map { result =>
       result.fold(_ => List(), _.history)
     }
 
   protected def request(path: Uri, method: HttpMethod, request: MessageEntity): Future[HttpResponse]
 
-  override def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[Long], businessView: Boolean = false)(implicit ec: ExecutionContext) : Future[Either[EspError, Map[String, Difference]]] = {
+  override def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[Long])(implicit ec: ExecutionContext) : Future[Either[EspError, Map[String, Difference]]] = {
     val id = localProcess.id
     (for {
-      process <- EitherT(fetchProcessVersion(id, remoteProcessVersion, businessView))
+      process <- EitherT(fetchProcessVersion(id, remoteProcessVersion))
       compared <- EitherT.fromEither[Future](compareProcess(id, localProcess)(process))
     } yield compared).value
   }
@@ -148,9 +147,9 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     invokeJson[List[BasicProcess]](HttpMethods.GET, List("processes"))
   }
 
-  private def fetchProcessVersion(id: String, remoteProcessVersion: Option[Long], businessView: Boolean)
+  private def fetchProcessVersion(id: String, remoteProcessVersion: Option[Long])
                                  (implicit ec: ExecutionContext): Future[Either[EspError, ProcessDetails]] = {
-    invokeJson[ProcessDetails](HttpMethods.GET, List("processes", id) ++ remoteProcessVersion.map(_.toString).toList, Query(("businessView", businessView.toString)))
+    invokeJson[ProcessDetails](HttpMethods.GET, List("processes", id) ++ remoteProcessVersion.map(_.toString).toList, Query())
   }
 
   private def fetchProcessesDetails(names: List[ProcessName])(implicit ec: ExecutionContext) = EitherT {

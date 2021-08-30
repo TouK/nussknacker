@@ -35,7 +35,6 @@ export function defaultToolbarsConfig(isSubprocess: boolean, isArchived: boolean
         id: "view-panel",
         title: "view",
         buttons: [
-          {type: BuiltinButtonTypes.viewBusinessView},
           {type: BuiltinButtonTypes.viewZoomIn},
           {type: BuiltinButtonTypes.viewZoomOut},
           {type: BuiltinButtonTypes.viewReset},
