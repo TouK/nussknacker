@@ -1,4 +1,4 @@
-FROM flink:1.13.1-scala_${scala.major.version}-java11
+FROM flink:1.14.0-scala_${scala.major.version}-java11
 
 COPY entrypointWithIP.sh /
 COPY conf.yml /

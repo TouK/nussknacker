@@ -225,7 +225,7 @@ lazy val commonSettings =
     )
 
 val akkaV = "2.5.21" //same version as in Flink
-val flinkV = "1.13.1"
+val flinkV = "1.14.0"
 val avroV = "1.9.2" // for java time logical types conversions purpose
 //we should use max(version used by confluent, version used by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
 //however, we stick to 2.4.1, as it's last version supported by scala 2.11 (we use kafka server in tests...)
@@ -501,7 +501,8 @@ lazy val flinkPeriodicDeploymentManager = (project in engine("flink/management/p
         "com.typesafe.slick" %% "slick-hikaricp" % slickV % "provided, test",
         "org.hsqldb" % "hsqldb" % hsqldbV % "test",
         "org.flywaydb" % "flyway-core" % flywayV % "provided",
-        "com.cronutils" % "cron-utils" % cronParserV
+        "com.cronutils" % "cron-utils" % cronParserV,
+        "com.typesafe.akka" %% "akka-actor" % akkaV,
       )
     }
   ).dependsOn(flinkDeploymentManager,
@@ -528,8 +529,8 @@ lazy val flinkManagementSample = (project in engine("flink/management/sample")).
         "com.cronutils" % "cron-utils" % cronParserV,
         "javax.validation" % "validation-api" % javaxValidationApiV,
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
-        "org.apache.flink" %% "flink-queryable-state-runtime" % flinkV % "test",
-        "org.apache.flink" %% "flink-runtime" % flinkV % "compile" classifier "tests"
+        "org.apache.flink" % "flink-queryable-state-runtime" % flinkV % "test",
+        "org.apache.flink" % "flink-runtime" % flinkV % "compile" classifier "tests"
       )
     }
   ).
@@ -573,9 +574,8 @@ lazy val process = (project in engine("flink/process")).
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
-        "org.apache.flink" %% "flink-runtime" % flinkV % "provided",
-        "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided",
-        "org.hsqldb" % "hsqldb" % hsqldbV % "test",
+        "org.apache.flink" % "flink-runtime" % flinkV % "provided",
+        "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
       )
     }
   ).dependsOn(flinkUtil, interpreter, flinkTestUtil % "test")
@@ -607,7 +607,7 @@ lazy val benchmarks = (project in engine("benchmarks")).
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV,
-        "org.apache.flink" %% "flink-runtime" % flinkV
+        "org.apache.flink" % "flink-runtime" % flinkV
       )
     },
     // To avoid Intellij message that jmh generated classes are shared between main and test
@@ -667,7 +667,7 @@ lazy val kafkaFlinkUtil = (project in engine("flink/kafka-util")).
     name := "nussknacker-kafka-flink-util",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" %% s"flink-connector-kafka" % flinkV,
+        "org.apache.flink" %% "flink-connector-kafka" % flinkV,
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
@@ -759,7 +759,7 @@ lazy val flinkTestUtil = (project in engine("flink/test-util")).
           //we use logback in NK
           ExclusionRule("org.apache.logging.log4j", "log4j-slf4j-impl")
         ),
-        "org.apache.flink" %% "flink-runtime" % flinkV % "compile" classifier "tests",
+        "org.apache.flink" % "flink-runtime" % flinkV % "compile" classifier "tests",
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV
       )
     }
@@ -1092,7 +1092,7 @@ lazy val bom = (project in file("bom"))
     libraryDependencies ++= (dependencyOverrides.value ++ Seq(
       "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
       "org.apache.flink" %% "flink-streaming-java" % flinkV % "provided",
-      "org.apache.flink" %% "flink-runtime" % flinkV % "provided",
+      "org.apache.flink" % "flink-runtime" % flinkV % "provided",
       "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
     ))
   ).dependsOn(modules.map(k => k:ClasspathDep[ProjectReference]):_*)

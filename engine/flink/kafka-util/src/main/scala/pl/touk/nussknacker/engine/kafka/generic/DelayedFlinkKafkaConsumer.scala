@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.generic
 
+import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.metrics.MetricGroup
@@ -20,6 +21,7 @@ import java.time.temporal.ChronoUnit
 import java.{lang, time, util}
 import java.util.Properties
 import java.util.function.Consumer
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 
 object DelayedFlinkKafkaConsumer {
@@ -49,6 +51,8 @@ object DelayedFlinkKafkaConsumer {
 
 }
 
+@silent("deprecated")
+@nowarn("cat=deprecation")
 class DelayedFlinkKafkaConsumer[T](topics: List[PreparedKafkaTopic],
                                    schema: KafkaDeserializationSchema[T],
                                    props: Properties,
