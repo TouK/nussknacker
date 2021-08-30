@@ -9,17 +9,16 @@ import {displayProcessActivity} from "./displayProcessActivity"
 import {displayProcessCounts} from "./displayProcessCounts"
 import {fetchProcessDefinition} from "./processDefinitionData"
 import {reportEvent} from "./reportEvent"
-import {businessViewChanged} from "./ui/layout"
 
-export function fetchProcessToDisplay(processId, versionId, businessView) {
+export function fetchProcessToDisplay(processId, versionId) {
   return (dispatch) => {
     dispatch({
       type: "PROCESS_LOADING",
     })
 
-    return HttpService.fetchProcessDetails(processId, versionId, businessView).then((response) => {
+    return HttpService.fetchProcessDetails(processId, versionId).then((response) => {
       displayTestCapabilites(response.data.json, response.data.processingType)(dispatch)
-      return dispatch(displayProcess(response.data, businessView))
+      return dispatch(displayProcess(response.data))
     })
   }
 }
@@ -40,13 +39,11 @@ function displayTestCapabilites(processDetails) {
   }
 }
 
-function displayProcess(processDetails, businessView) {
+function displayProcess(processDetails) {
   return dispatch => {
-    dispatch(businessViewChanged(businessView))
     return dispatch({
       type: "DISPLAY_PROCESS",
       fetchedProcessDetails: processDetails,
-      businessView,
     })
   }
 }

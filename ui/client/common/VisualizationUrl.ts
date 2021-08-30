@@ -47,11 +47,6 @@ export function extractVisualizationParams(search) {
   return {nodeId, edgeId}
 }
 
-export function extractBusinessViewParams(search) {
-  const queryParams = queryString.parse(search, {parseBooleans: true})
-  return queryParams.businessView || false
-}
-
 export function extractCountParams(queryParams) {
   if (queryParams.from || queryParams.to) {
     const from = queryParams.from ? fromTimestampOrDate(queryParams.from) : null

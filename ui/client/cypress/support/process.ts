@@ -32,7 +32,7 @@ function createTestProcess(name?: string, fixture?: string, category = "Category
 function visitNewProcess(name?: string, fixture?: string, category?: string) {
   cy.intercept("GET", "/api/processes/*").as("fetch")
   return cy.createTestProcess(name, fixture, category).then(processName => {
-    cy.visit(`/visualization/${processName}?businessView=false`)
+    cy.visit(`/visualization/${processName}`)
     cy.wait("@fetch").its("response.statusCode").should("eq", 200)
     return cy.wrap(processName)
   })

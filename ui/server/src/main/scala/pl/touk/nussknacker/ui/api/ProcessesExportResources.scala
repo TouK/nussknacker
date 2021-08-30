@@ -39,19 +39,17 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository[
     } ~ path("processesExport" / Segment / LongNumber) { (processName, versionId) =>
       (get & processId(processName)) { processId =>
         complete {
-          processRepository.fetchProcessDetailsForId[DisplayableProcess](processId.id, versionId, businessView = false).map {
+          processRepository.fetchProcessDetailsForId[DisplayableProcess](processId.id, versionId).map {
             exportProcess
           }
         }
       }
     } ~ path("processesExport" / "pdf" / Segment / LongNumber) { (processName, versionId) =>
-      parameter('businessView ? false) { businessView =>
-        (post & processId(processName)) { processId =>
-          entity(as[String]) { svg =>
-            complete {
-              processRepository.fetchProcessDetailsForId[DisplayableProcess](processId.id, versionId, businessView).flatMap { process =>
-                processActivityRepository.findActivity(processId).map(exportProcessToPdf(svg, process, _))
-              }
+      (post & processId(processName)) { processId =>
+        entity(as[String]) { svg =>
+          complete {
+            processRepository.fetchProcessDetailsForId[DisplayableProcess](processId.id, versionId).flatMap { process =>
+              processActivityRepository.findActivity(processId).map(exportProcessToPdf(svg, process, _))
             }
           }
         }

@@ -10,7 +10,6 @@ import {
   getNodeToDisplay,
   getProcessCounts,
   getProcessToDisplay,
-  isBusinessView,
 } from "../../reducers/selectors/graph"
 import {getExpandedGroups} from "../../reducers/selectors/groups"
 import {isNodeDetailsModalVisible} from "../../reducers/selectors/ui"
@@ -41,7 +40,7 @@ function mapState(state) {
     padding: 0,
     singleClickNodeDetailsEnabled: true,
     nodeIdPrefixForSubprocessTests: "",
-    readonly: isBusinessView(state),
+    readonly: false,
     processToDisplay: getProcessToDisplay(state),
     fetchedProcessDetails: getFetchedProcessDetails(state),
     nodeToDisplay: getNodeToDisplay(state),
