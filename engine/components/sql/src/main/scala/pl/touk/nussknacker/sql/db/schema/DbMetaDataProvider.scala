@@ -23,9 +23,30 @@ class DbMetaDataProvider(getConnection: () => Connection) {
       } finally statement.close()
     } finally conn.close()
   }
+
+  def getSchemaDefinition(): SchemaDefinition = {
+    val connection = getConnection()
+    try {
+      val metaData = connection.getMetaData
+      val tables = metaData.getTables(null, connection.getSchema, "%", Array("TABLE", "VIEW", "SYNONYM").map(_.toString))
+      var results = List[String]()
+      val columnNameIndex = 3
+      while (tables.next()) {
+        val str: String = tables.getString(columnNameIndex)
+        results = results :+ str
+      }
+      SchemaDefinition(results)
+    } finally connection.close()
+  }
 }
 
 case class DialectMetaData(identifierQuote: String)
+
+case class SchemaDefinition(tables: List[String])
+
+object SchemaDefinition {
+  def empty(): SchemaDefinition = SchemaDefinition(List())
+}
 
 class SqlDialect(metaData: DialectMetaData) {
 

@@ -19,6 +19,7 @@
       <env name="GRAFANA_URL" value="http://localhost:8081/grafana" />
       <env name="COUNTS_URL" value="http://localhost:3086/query" />
       <env name="OPENAPI_SERVICE_URL" value="http://localhost:5000" />
+      <env name="SQL_ENRICHER_URL" value="localhost:5432" />
     </envs>
     <option name="INCLUDE_PROVIDED_SCOPE" value="true" />
     <option name="MAIN_CLASS_NAME" value="pl.touk.nussknacker.ui.NussknackerApp" />
