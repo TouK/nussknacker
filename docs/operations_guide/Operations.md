@@ -549,7 +549,7 @@ What’s more, increasing parallelism above the count of partitions of the Kafka
 
 
 
-* Make sure to configure RocksDB properly (e.g. checkpointDir)
+* Make sure to configure RocksDB properly (e.g. `rocksdb.enable`)
 * Configure restart strategy and error handler
   * By default scenarios are not restarted, so that errors do not go unnoticed
   * Kafka exception handler should be used in production - configure error topic, with long enough retention
