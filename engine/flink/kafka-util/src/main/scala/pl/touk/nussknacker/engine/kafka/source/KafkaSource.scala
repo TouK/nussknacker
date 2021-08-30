@@ -9,9 +9,9 @@ import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.TestDataGenerator
 import pl.touk.nussknacker.engine.api.test.TestDataParser
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkIntermediateRawSource, FlinkSource, FlinkSourceTestSupport}
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, TimestampWatermarkHandler}
-import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrderPreviousElementAssigner
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializer, FlinkCustomNodeContext, FlinkIntermediateRawSource, FlinkSource, FlinkSourceTestSupport}
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
+import pl.touk.nussknacker.engine.flink.util.timestamp.{BoundedOutOfOrderPreviousElementAssigner, BoundedOutOfOrdernessPunctuatedExtractor}
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.source.KafkaSource.defaultMaxOutOfOrdernessMillis
 
@@ -81,6 +81,18 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
   }
 
 }
+
+class ConsumerRecordBasedKafkaSource[K, V](preparedTopics: List[PreparedKafkaTopic],
+                     kafkaConfig: KafkaConfig,
+                     deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
+                     timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
+                     formatter: RecordFormatter,
+                     override val contextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]]) extends KafkaSource[ConsumerRecord[K, V]](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter) {
+
+      override def timestampAssignerForTest: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]] = timestampAssigner.orElse(Some(
+        StandardTimestampWatermarkHandler.afterEachEvent[ConsumerRecord[K, V]](_.timestamp())
+      ))
+    }
 
 object KafkaSource {
   val defaultMaxOutOfOrdernessMillis = 60000

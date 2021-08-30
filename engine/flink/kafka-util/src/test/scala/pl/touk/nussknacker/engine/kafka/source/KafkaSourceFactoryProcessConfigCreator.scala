@@ -2,28 +2,31 @@ package pl.touk.nussknacker.engine.kafka.source
 
 import io.circe.{Decoder, Encoder}
 import org.apache.kafka.common.serialization.StringDeserializer
+import pl.touk.nussknacker.engine.api.CustomStreamTransformer
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordToJsonFormatterFactory
+import pl.touk.nussknacker.engine.kafka.generic.sources.GenericJsonSourceFactory
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryMixin.{SampleKey, SampleValue, createDeserializer}
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryProcessConfigCreator._
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactoryProcessMixin.recordingExceptionHandler
-import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForStrings
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{ExtractAndTransformTimestamp, SinkForStrings}
 import pl.touk.nussknacker.engine.process.helpers.SinkForType
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
 import scala.reflect.ClassTag
 
-
-class KafkaSourceFactoryProcessConfigCreator(kafkaConfig: KafkaConfig) extends EmptyProcessConfigCreator {
+class KafkaSourceFactoryProcessConfigCreator extends EmptyProcessConfigCreator {
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = {
+    val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config)
     Map(
       "kafka-jsonKeyJsonValueWithMeta" -> defaultCategory(KafkaConsumerRecordSourceHelper.jsonKeyValueWithMeta[SampleKey, SampleValue](processObjectDependencies, kafkaConfig)),
       "kafka-jsonValueWithMeta" -> defaultCategory(KafkaConsumerRecordSourceHelper.jsonValueWithMeta[SampleValue](processObjectDependencies, kafkaConfig)),
-      "kafka-jsonValueWithMeta-withException" -> defaultCategory(KafkaConsumerRecordSourceHelper.jsonValueWithMetaWithException[SampleValue](processObjectDependencies, kafkaConfig))
+      "kafka-jsonValueWithMeta-withException" -> defaultCategory(KafkaConsumerRecordSourceHelper.jsonValueWithMetaWithException[SampleValue](processObjectDependencies, kafkaConfig)),
+      "kafka-GenericJsonSourceFactory" -> defaultCategory(new GenericJsonSourceFactory(processObjectDependencies))
     )
   }
 
@@ -33,6 +36,10 @@ class KafkaSourceFactoryProcessConfigCreator(kafkaConfig: KafkaConfig) extends E
       "sinkForInputMeta" -> defaultCategory(SinkFactory.noParam(SinkForInputMeta)),
       "sinkForSimpleJsonRecord" -> defaultCategory(SinkFactory.noParam(SinkForSampleValue))
     )
+  }
+
+  override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = {
+    Map("extractAndTransformTimestamp" -> defaultCategory(ExtractAndTransformTimestamp))
   }
 
   override def exceptionHandlerFactory(processObjectDependencies: ProcessObjectDependencies): ExceptionHandlerFactory =
