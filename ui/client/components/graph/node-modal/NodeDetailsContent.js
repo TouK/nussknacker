@@ -5,7 +5,6 @@ import {connect} from "react-redux"
 import {v4 as uuid4} from "uuid"
 import ActionsUtils from "../../../actions/ActionsUtils"
 import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
-import * as JsonUtils from "../../../common/JsonUtils"
 import ProcessUtils from "../../../common/ProcessUtils"
 import TestResultUtils from "../../../common/TestResultUtils"
 import {getProcessCategory} from "../../../reducers/selectors/graph"
@@ -51,6 +50,7 @@ export class NodeDetailsContent extends React.Component {
     if (this.props.isEditMode) {
       this.updateNodeDataIfNeeded(node)
     }
+    this.generateUUID("fields", "parameters")
   }
 
   nodeDefinitionByName(node) {
@@ -64,6 +64,14 @@ export class NodeDetailsContent extends React.Component {
     this.parameterDefinitions = props.dynamicParameterDefinitions ? props.dynamicParameterDefinitions : nodeObjectDetails?.parameters
     const hasNoReturn = nodeObjectDetails == null || nodeObjectDetails.returnType == null
     this.showOutputVar = hasNoReturn === false || hasNoReturn === true && props.node.outputVar
+  }
+
+  generateUUID(...properties) {
+    properties.forEach((property) => {
+      if (_.has(this.state.editedNode, property)) {
+        _.get(this.state.editedNode, property, []).forEach((el) => el.uuid = el.uuid || uuid4())
+      }
+    })
   }
 
   //TODO: get rid of this method as deprecated in React
@@ -115,17 +123,19 @@ export class NodeDetailsContent extends React.Component {
 
   removeElement = (property, index) => {
     if (_.has(this.state.editedNode, property)) {
-      _.get(this.state.editedNode, property).splice(index, 1)
+      const node = _.cloneDeep(this.state.editedNode)
+      _.get(node, property).splice(index, 1)
 
-      this.updateNodeState(this.state.editedNode, this.state.unusedParameters)
+      this.updateNodeState(node, this.state.unusedParameters)
     }
   }
 
   addElement = (property, element) => {
     if (_.has(this.state.editedNode, property)) {
-      _.get(this.state.editedNode, property).push(element)
+      const node = _.cloneDeep(this.state.editedNode)
+      _.get(node, property).push(element)
 
-      this.updateNodeState(this.state.editedNode, this.state.unusedParameters)
+      this.updateNodeState(node, this.state.unusedParameters)
     }
   }
 
@@ -166,7 +176,6 @@ export class NodeDetailsContent extends React.Component {
             readOnly={!this.props.isEditMode}
             removeElement={this.removeElement}
             showValidation={showValidation}
-            errors={fieldErrors}
             renderFieldLabel={this.renderFieldLabel}
           />
         )
@@ -182,6 +191,9 @@ export class NodeDetailsContent extends React.Component {
             readOnly={!this.props.isEditMode}
             showValidation={showValidation}
             errors={fieldErrors}
+
+            variableTypes={variableTypes}
+            expressionType={this.props.expressionType || this.props.nodeTypingInfo && {fields: this.props.nodeTypingInfo}}
           />
         )
       case "Filter":
@@ -312,7 +324,6 @@ export class NodeDetailsContent extends React.Component {
       case "VariableBuilder":
         return (
           <MapVariable
-            varNameLabel={"Variable Name"}
             renderFieldLabel={this.renderFieldLabel}
             removeElement={this.removeElement}
             onChange={this.setNodeDataAt}
@@ -555,7 +566,7 @@ export class NodeDetailsContent extends React.Component {
   }
 
   isMarked = (path) => {
-    return _.includes(this.props.pathsToMark, path)
+    return this.props.pathsToMark?.some(toMark => _.startsWith(toMark, path))
   }
 
   toggleTestResult = (fieldName) => {
@@ -600,8 +611,15 @@ export class NodeDetailsContent extends React.Component {
     const value = newValue == null && defaultValue != undefined ? defaultValue : newValue
     const node = _.cloneDeep(this.state.editedNode)
 
-    _.set(node, propToMutate, value)
-    this.updateNodeState(node, this.state.unusedParameters)
+    // _.set(node, propToMutate, value)
+    this.setState(
+      ({editedNode}) => {
+        return {editedNode: _.set(_.cloneDeep(editedNode), propToMutate, value)}
+      },
+      () => {
+        this.props.onChange(this.state.editedNode)
+      },
+    )
   }
 
   updateNodeState = (node, unusedParameters) => {
@@ -654,7 +672,7 @@ export class NodeDetailsContent extends React.Component {
         return ["id"]
       }
       case "SubprocessOutputDefinition":
-        return ["id", "outputName"]
+        return SubprocessOutputDefinition.availableFields(this.state.editedNode)
       case "Filter":
         return ["id", DEFAULT_EXPRESSION_ID]
       case "Enricher":

@@ -1,85 +1,49 @@
 import _ from "lodash"
-import React from "react"
+import React, {useCallback, useMemo} from "react"
 import {useSelector} from "react-redux"
 import ProcessUtils from "../../../../common/ProcessUtils"
-import {Error, mandatoryValueValidator} from "../editors/Validators"
-import LabeledInput from "../editors/field/LabeledInput"
-import LabeledTextarea from "../editors/field/LabeledTextarea"
-import FieldsSelect from "./FieldsSelect"
-import {NodeType, TypedObjectTypingResult, VariableTypes} from "../../../../types";
 import {getProcessDefinitionData} from "../../../../reducers/selectors/settings"
+import {Field} from "../../../../types"
+import {MapVariableProps} from "../MapVariable"
+import {NodeCommonDetailsDefinition} from "../NodeCommonDetailsDefinition"
+import FieldsSelect from "./FieldsSelect"
 
-type Props = {
-  isMarked: (paths: string) => boolean,
-  node: NodeType,
-  removeElement: (namespace: string, ix: number) => void,
-  addElement: (property: $TodoType, element: $TodoType) => void,
-  onChange: (propToMutate: $TodoType, newValue: $TodoType, defaultValue?: $TodoType) => void,
-  readOnly?: boolean,
-  showValidation: boolean,
-  errors: Array<Error>,
-  variableTypes: VariableTypes,
-  renderFieldLabel: (label: string) => React.ReactNode,
-  expressionType?: TypedObjectTypingResult,
-  toogleCloseOnEsc: () => void,
-}
+type Props<F extends Field> = MapVariableProps<F>
 
-export default function SubprocessInputDefinition(props: Props): JSX.Element {
+export default function SubprocessInputDefinition<F extends Field>(props: Props<F>): JSX.Element {
+  const {removeElement, addElement, variableTypes, expressionType, ...passProps} = props
+  const {isMarked, node, onChange, readOnly, showValidation} = passProps
 
-  const {addElement, isMarked, node, onChange, readOnly, removeElement, showValidation, renderFieldLabel} = props
-
-
-  const typeOptions = (useSelector(getProcessDefinitionData)?.processDefinition?.typesInformation || []).map(type => ({
+  const definitionData = useSelector(getProcessDefinitionData)
+  const typeOptions = useMemo(() => (definitionData?.processDefinition?.typesInformation || []).map(type => ({
     value: type.clazzName.refClazzName,
     label: ProcessUtils.humanReadableType(type.clazzName),
-  }))
-  const orderedTypeOptions = _.orderBy(typeOptions, (item) => [item.label, item.value], ["asc"])
+  })), [definitionData?.processDefinition?.typesInformation])
 
-  const defaultTypeOption = _.find(typeOptions, {label: "String"}) || _.head(typeOptions)
+  const orderedTypeOptions = useMemo(() => _.orderBy(typeOptions, (item) => [item.label, item.value], ["asc"]), [typeOptions])
 
-  const onInputChange = (path, event) => onChange(path, event.target.value)
+  const defaultTypeOption = useMemo(() => _.find(typeOptions, {label: "String"}) || _.head(typeOptions), [typeOptions])
 
-  const addField = () => {
+  const addField = useCallback(() => {
     addElement("parameters", {name: "", typ: {refClazzName: defaultTypeOption.value}})
-  }
+  }, [addElement, defaultTypeOption.value])
+
+  const fields = useMemo(() => node.parameters || [], [node.parameters])
 
   return (
-    <div className="node-table-body">
-      <LabeledInput
-        renderFieldLabel={() => renderFieldLabel("Name")}
-        value={node.id}
-        onChange={(event) => onInputChange("id", event)}
-        isMarked={isMarked("id")}
-        readOnly={readOnly}
-        showValidation={showValidation}
-        validators={[mandatoryValueValidator]}
-      />
-
+    <NodeCommonDetailsDefinition {...passProps}>
       <FieldsSelect
         label="Parameters"
         onChange={onChange}
         addField={addField}
         removeField={removeElement}
         namespace={"parameters"}
-        fields={node.parameters || []}
+        fields={fields}
         options={orderedTypeOptions}
-        isMarked={index => isMarked(`parameters[${index}].name`) || isMarked(`parameters[${index}].typ.refClazzName`)}
-        toogleCloseOnEsc={props.toogleCloseOnEsc}
+        isMarked={isMarked}
         showValidation={showValidation}
         readOnly={readOnly}
       />
-
-      <LabeledTextarea
-        renderFieldLabel={() => renderFieldLabel("Description")}
-        value={_.get(node, "additionalFields.description", "")}
-        className={"node-input"}
-        onChange={(event) => onInputChange("additionalFields.description", event)}
-        isMarked={isMarked("additionalFields.description")}
-        readOnly={readOnly}
-      />
-
-      {/*placeholder for Select drop-down menu*/}
-      <div className="drop-down-menu-placeholder"/>
-    </div>
+    </NodeCommonDetailsDefinition>
   )
 }

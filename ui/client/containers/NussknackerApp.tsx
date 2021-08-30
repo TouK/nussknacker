@@ -9,7 +9,6 @@ import {Redirect, Route, RouteComponentProps} from "react-router"
 import {matchPath, withRouter} from "react-router-dom"
 import {compose} from "redux"
 import {urlChange} from "../actions/nk"
-import DragArea from "../components/DragArea"
 import {MenuBar} from "../components/MenuBar"
 import ProcessBackButton from "../components/Process/ProcessBackButton"
 import {getFeatureSettings} from "../reducers/selectors/settings"
@@ -106,25 +105,23 @@ export class NussknackerApp extends React.Component<Props, State> {
           <div className="hide">{JSON.stringify(__GIT__)}</div>
           {this.renderMenu()}
           <main>
-            <DragArea>
-              <ErrorHandler>
-                <TransitionRouteSwitch>
-                  <Route path={`/$debug`} component={DebugButtons} exact/>
-                  <Route
-                    path={[ProcessesTabData.path, SubProcessesTabData.path, ArchiveTabData.path]}
-                    component={ProcessTabs}
-                    exact
-                  />
-                  <Route path={Visualization.path} component={VisualizationWrapped} exact/>
-                  <Route path={Metrics.path} component={Metrics} exact/>
-                  <Route path={Signals.path} component={Signals} exact/>
-                  <Route path={AdminPage.path} component={NkAdminPage} exact/>
-                  <Route path={`${CustomTabPath}/:id`} component={CustomTab} exact/>
-                  <Redirect from={this.path} to={ProcessesTabData.path} exact/>
-                  <Route component={NotFound}/>
-                </TransitionRouteSwitch>
-              </ErrorHandler>
-            </DragArea>
+            <ErrorHandler>
+              <TransitionRouteSwitch>
+                <Route path={`/$debug`} component={DebugButtons} exact/>
+                <Route
+                  path={[ProcessesTabData.path, SubProcessesTabData.path, ArchiveTabData.path]}
+                  component={ProcessTabs}
+                  exact
+                />
+                <Route path={Visualization.path} component={VisualizationWrapped} exact/>
+                <Route path={Metrics.path} component={Metrics} exact/>
+                <Route path={Signals.path} component={Signals} exact/>
+                <Route path={AdminPage.path} component={NkAdminPage} exact/>
+                <Route path={`${CustomTabPath}/:id`} component={CustomTab} exact/>
+                <Redirect from={this.path} to={ProcessesTabData.path} exact/>
+                <Route component={NotFound}/>
+              </TransitionRouteSwitch>
+            </ErrorHandler>
           </main>
         </div>
       ) :

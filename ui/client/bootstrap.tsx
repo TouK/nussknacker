@@ -7,6 +7,7 @@ import {Provider} from "react-redux"
 import {Router} from "react-router-dom"
 import {PersistGate} from "redux-persist/integration/react"
 import ErrorBoundary from "./components/common/ErrorBoundary"
+import DragArea from "./components/DragArea"
 import LoaderSpinner from "./components/Spinner"
 import {darkTheme} from "./containers/darkTheme"
 import Notifications from "./containers/Notifications"
@@ -26,28 +27,30 @@ document.body.appendChild(rootContainer)
 Modal.setAppElement(rootContainer)
 
 const Root = () => (
-  <Suspense fallback={<LoaderSpinner show/>}>
-    <ErrorBoundary>
-      <Provider store={store}>
-        <PersistGate loading={null} persistor={persistor}>
-          <Router history={history}>
-            <SettingsProvider>
-              <NussknackerInitializer>
-                <Notifications/>
-                <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
-                  <WindowManagerProvider theme={darkTheme} contentGetter={contentGetter}>
-                    <NkThemeProvider>
-                      <NkApp/>
-                    </NkThemeProvider>
-                  </WindowManagerProvider>
-                </NkThemeProvider>
-              </NussknackerInitializer>
-            </SettingsProvider>
-          </Router>
-        </PersistGate>
-      </Provider>
-    </ErrorBoundary>
-  </Suspense>
+  <DragArea>
+    <Suspense fallback={<LoaderSpinner show/>}>
+      <ErrorBoundary>
+        <Provider store={store}>
+          <PersistGate loading={null} persistor={persistor}>
+            <Router history={history}>
+              <SettingsProvider>
+                <NussknackerInitializer>
+                  <Notifications/>
+                  <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
+                    <WindowManagerProvider theme={darkTheme} contentGetter={contentGetter}>
+                      <NkThemeProvider>
+                        <NkApp/>
+                      </NkThemeProvider>
+                    </WindowManagerProvider>
+                  </NkThemeProvider>
+                </NussknackerInitializer>
+              </SettingsProvider>
+            </Router>
+          </PersistGate>
+        </Provider>
+      </ErrorBoundary>
+    </Suspense>
+  </DragArea>
 )
 
 ReactDOM.render(<Root/>, rootContainer)
