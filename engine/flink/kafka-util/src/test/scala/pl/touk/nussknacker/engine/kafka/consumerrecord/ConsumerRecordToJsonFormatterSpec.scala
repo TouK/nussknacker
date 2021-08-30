@@ -46,7 +46,7 @@ class ConsumerRecordToJsonFormatterSpec extends FunSuite with Matchers with Kafk
   }
 
   test("should raise exception when key is expected and empty") {
-    val (sampleKeyBytes, sampleValueBytes) = serializeKeyValue(Some(sampleKey), sampleValue)
+    val (_, sampleValueBytes) = serializeKeyValue(Some(sampleKey), sampleValue)
     val givenObj = new ConsumerRecord[Array[Byte], Array[Byte]](topic, 11, 22L, Array.emptyByteArray, sampleValueBytes)
     intercept[Exception] {
       val resultBytes = sampleKeyValueFormatter.prepareGeneratedTestData(List(givenObj))

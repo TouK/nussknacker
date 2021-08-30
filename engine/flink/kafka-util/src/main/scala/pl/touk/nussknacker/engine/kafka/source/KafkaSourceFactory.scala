@@ -1,17 +1,17 @@
 package pl.touk.nussknacker.engine.kafka.source
 
 import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializer, FlinkSource, FlinkSourceFactory}
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
-import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchemaFactory
-import pl.touk.nussknacker.engine.kafka._
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerParameter, DefinedSingleParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
-import pl.touk.nussknacker.engine.api.definition.{WithExplicitTypesToExtract, _}
+import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializer, FlinkSource, FlinkSourceFactory}
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
+import pl.touk.nussknacker.engine.kafka._
+import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceFactoryState
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 
@@ -156,11 +156,8 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](deserializationSchemaFactory:
                              deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
                              timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
                              formatter: RecordFormatter,
-                             flinkContextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]]): FlinkSource[ConsumerRecord[K, V]] = {
-    new KafkaSource[ConsumerRecord[K, V]](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter) {
-      override val contextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]] = flinkContextInitializer
-    }
-  }
+                             flinkContextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]]): FlinkSource[ConsumerRecord[K, V]] =
+    new ConsumerRecordBasedKafkaSource[K, V](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, flinkContextInitializer)
 
   /**
     * Basic implementation of definition of single topic parameter.
