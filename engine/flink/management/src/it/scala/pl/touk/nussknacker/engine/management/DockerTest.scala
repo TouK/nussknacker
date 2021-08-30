@@ -66,7 +66,7 @@ trait DockerTest extends DockerTestKit with ExtremelyPatientScalaFutures with La
     val savepointDir = prepareVolumeDir()
     baseFlink("jobmanager")
       .withCommand("jobmanager")
-      .withEnv(s"SAVEPOINT_DIR_NAME=${savepointDir.getFileName}")
+      .withEnv(s"SAVEPOINT_DIR_NAME=${savepointDir.getFileName}", s"TASK_MANAGER_NUMBER_OF_TASK_SLOTS=$taskManagerSlotCount")
       .withReadyChecker(DockerReadyChecker.LogLineContains("Recover all persisted job graphs").looped(5, 1 second))
       .withLinks(ContainerLink(zookeeperContainer, "zookeeper"))
       .withVolumes(List(VolumeMapping(savepointDir.toString, savepointDir.toString, rw = true)))

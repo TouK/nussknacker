@@ -6,8 +6,6 @@ high-availability.zookeeper.path.root: /flink
 high-availability.cluster-id: docker-test
 high-availability.storageDir: file:///tmp/storage
 parallelism.default: 1
-#FIXME: reversing flink default order
-classloader.resolve-order: parent-first
 
 taskmanager.memory.jvm-metaspace.size: 512m
 taskmanager.numberOfTaskSlots: <configured_by_flink_entrypoint>

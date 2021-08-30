@@ -132,7 +132,7 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
     val savepointPath = new URI(savepointPathFuture.futureValue)
     Paths.get(savepointPath).startsWith(savepointDir) shouldBe true
 
-    cancel(processId)
+    cancelProcess(processId)
 
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId), Some(savepointPath.toString))
 
@@ -140,7 +140,7 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
 
     messages shouldBe List("List(One element)", "List(One element, One element)")
 
-    cancel(processId)
+    cancelProcess(processId)
   }
 
   test("should stop scenario and deploy it using savepoint") {
