@@ -69,7 +69,6 @@ object ToolbarButtonConfigType extends Enumeration {
   val TestCounts: Value = Value("test-counts")
   val TestHide: Value = Value("test-hide")
 
-  val ViewBusinessView: Value = Value("view-business-view")
   val ViewZoomIn: Value = Value("view-zoom-in")
   val ViewZoomOut: Value = Value("view-zoom-out")
   val ViewReset: Value = Value("view-reset")

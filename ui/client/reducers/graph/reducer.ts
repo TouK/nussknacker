@@ -344,7 +344,7 @@ const undoableReducer = undoable(reducer, {
   ignoreInitialState: true,
   undoType: "UNDO",
   redoType: "REDO",
-  clearHistoryType: ["BUSINESS_VIEW_CHANGED", "CLEAR"],
+  clearHistoryType: ["CLEAR"],
   filter: combineFilters(
     excludeAction([
       "USER_TRACKING",
