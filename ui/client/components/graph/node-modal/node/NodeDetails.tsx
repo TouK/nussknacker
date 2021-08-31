@@ -70,6 +70,7 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType | Gro
 
   const toggleGroup = useCallback(() => {
     dispatch(expanded ? collapseGroup(editedNode.id) : expandGroup(editedNode.id))
+    props.close()
   }, [dispatch, editedNode, expanded])
 
   const groupToggleButtonData: WindowButtonProps | null = useMemo(

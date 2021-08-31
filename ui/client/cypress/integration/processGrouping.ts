@@ -11,6 +11,7 @@ describe("Process", () => {
 
   beforeEach(() => {
     cy.visitNewProcess(NAME, "testProcess2", `Default`)
+    cy.contains("layout").click()
     cy.get("#nk-graph-main svg", {timeout: 20000}).as("graph")
   })
 
@@ -80,11 +81,11 @@ describe("Process", () => {
       cy.get("@groupButton").should("be.enabled").click()
 
       cy.get("[model-id*=source-filter].joint-type-esp-group").dblclick()
-      cy.get("[data-testid=node-modal]").should("be.visible")
+      cy.get("[data-testid=window]").should("be.visible")
         .contains(/^expand/i).should("be.enabled").click()
 
       cy.get("[model-id*=source-filter].joint-type-basic-rect").dblclick("top")
-      cy.get("[data-testid=node-modal]").should("be.visible")
+      cy.get("[data-testid=window]").should("be.visible")
         .contains(/^collapse/i).should("be.enabled").click()
     })
   })

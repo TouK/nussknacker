@@ -20,7 +20,7 @@ describe("Process", () => {
       cy.intercept("PUT", "/api/processes/*").as("save")
 
       cy.contains(/^properties/i).should("be.enabled").click()
-      cy.get("[data-testid=node-modal]").should("be.visible").find("input").first().click().type("-renamed")
+      cy.get("[data-testid=window]").should("be.visible").find("input").first().click().type("-renamed")
       cy.contains(/^apply/i).should("be.enabled").click()
 
       cy.contains(/^save/i).should("be.enabled").click()
@@ -35,14 +35,14 @@ describe("Process", () => {
     it("should open properites from tips panel", () => {
       cy.viewport("macbook-15")
       cy.contains(/^properties/i).should("be.enabled").click()
-      cy.get("[data-testid=node-modal]").should("be.visible").find("input").within(inputs => {
+      cy.get("[data-testid=window]").should("be.visible").find("input").within(inputs => {
         cy.wrap(inputs).first().click().type("-renamed")
         //this is idx of "Max events", which should be int
         cy.wrap(inputs).eq(6).click().type("wrong data")
       })
       cy.contains(/^apply/i).should("be.enabled").click()
       cy.contains(/^tips.*errors in/i).contains(/^properties/i).should("be.visible").click()
-      cy.get("[data-testid=node-modal]").toMatchImageSnapshot()
+      cy.get("[data-testid=window]").toMatchImageSnapshot()
     })
 
     it("should import JSON and save", () => {
@@ -78,6 +78,7 @@ describe("Process", () => {
     })
 
     it("should allow drag node", () => {
+      cy.contains("layout").click()
       cy.get("[title='toggle left panel']").click()
       cy.get("[title='toggle right panel']").click()
       cy.get("[model-id=dynamicService]")
@@ -89,6 +90,7 @@ describe("Process", () => {
     })
 
     it("should allow drag component and drop on edge", () => {
+      cy.contains("layout").click()
       cy.get("[title='toggle right panel']").click()
       cy.contains("custom")
         .should("be.visible").click()
@@ -142,13 +144,13 @@ describe("Process", () => {
 
     it("should display some node details in modal", () => {
       cy.get("[model-id=dynamicService]").should("be.visible").trigger("dblclick")
-      cy.get("[data-testid=node-modal]").should("be.visible").toMatchImageSnapshot()
-      cy.get("[data-testid=node-modal]").contains(/^cancel$/i).click()
+      cy.get("[data-testid=window]").should("be.visible").toMatchImageSnapshot()
+      cy.get("[data-testid=window]").contains(/^cancel$/i).click()
       cy.get("[model-id=boundedSource]").should("be.visible").trigger("dblclick")
-      cy.get("[data-testid=node-modal]").should("be.visible").toMatchImageSnapshot()
-      cy.get("[data-testid=node-modal]").contains(/^cancel$/i).click()
+      cy.get("[data-testid=window]").should("be.visible").toMatchImageSnapshot()
+      cy.get("[data-testid=window]").contains(/^cancel$/i).click()
       cy.get("[model-id=sendSms]").should("be.visible").trigger("dblclick")
-      cy.get("[data-testid=node-modal]").should("be.visible").toMatchImageSnapshot()
+      cy.get("[data-testid=window]").should("be.visible").toMatchImageSnapshot()
     })
   })
 })

@@ -22,7 +22,7 @@ export class PanZoomPlugin {
   constructor(paper: dia.Paper) {
     this.cursorMask = new CursorMask()
     this.instance = svgPanZoom(paper.svg, {
-      fit: true,
+      fit: false,
       contain: false,
       zoomScaleSensitivity: 0.4,
       controlIconsEnabled: false,
@@ -91,7 +91,7 @@ export class PanZoomPlugin {
     this.instance.updateBBox()
     this.instance.fit()
     const {realZoom} = this.instance.getSizes()
-    const toZoomBy = realZoom > 1.2 ? 1 / realZoom : 0.8 //the bigger zoom, the further we get
+    const toZoomBy = realZoom > 1.2 ? 1 / realZoom : 0.78  //the bigger zoom, the further we get
     this.instance.zoomBy(toZoomBy)
     this.instance.center()
   }, 100)
