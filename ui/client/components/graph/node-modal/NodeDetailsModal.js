@@ -67,7 +67,7 @@ class NodeDetailsModal extends React.Component {
   }
 
   closeModal = () => {
-    V(this.props.graphRef.defs).append(arrowMarker)
+    // V(this.props.graphRef.defs).append(arrowMarker)
     this.props.actions.closeModals()
   }
 
