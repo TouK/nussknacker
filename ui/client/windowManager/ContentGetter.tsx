@@ -1,5 +1,5 @@
 import {WindowContentProps} from "@touk/window-manager"
-import {DebugButtons} from "@touk/window-manager/esm/debug"
+import {DebugButtons} from "@touk/window-manager/cjs/debug"
 import React from "react"
 import {AddProcessDialog} from "../components/AddProcessDialog"
 import {EdgeDetails} from "../components/graph/node-modal/edge/EdgeDetails"

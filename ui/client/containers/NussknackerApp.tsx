@@ -1,4 +1,4 @@
-import {DebugButtons} from "@touk/window-manager/esm/debug"
+import {DebugButtons} from "@touk/window-manager/cjs/debug"
 import {UnregisterCallback} from "history"
 import _ from "lodash"
 import * as queryString from "query-string"
