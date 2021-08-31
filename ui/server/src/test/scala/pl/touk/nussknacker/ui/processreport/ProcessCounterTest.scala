@@ -88,8 +88,7 @@ class ProcessCounterTest extends FunSuite with Matchers {
     computed shouldBe Map(
       "source1" -> NodeCount(50, 0),
       "filter1" -> NodeCount(40, 9),
-      "sink11" -> NodeCount(30, 8),
-      "gr1" -> NodeCount(40, 9)
+      "sink11" -> NodeCount(30, 8)
     )
   }
 

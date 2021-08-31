@@ -83,25 +83,6 @@ class ProcessValidationSpec extends FunSuite with Matchers {
       )
     }
 
-  test("check for duplicates) groups") {
-    val process = createProcess(
-      List(
-        Source("in", SourceRef("barSource", List())),
-        Variable("var", "var1", Expression("spel", "0")),
-        Sink("out", SinkRef("barSink", List()))
-      ),
-      List(
-        Edge("in", "var", None),
-        Edge("var", "out", None)
-      )
-    )
-
-
-    val result = validator.validate(process)
-
-    result.errors.globalErrors shouldBe List(PrettyValidationErrors.duplicatedNodeIds(validator.uiValidationError, List("in")))
-  }
-
   test("check for loose nodes") {
     val process = createProcess(
       List(
