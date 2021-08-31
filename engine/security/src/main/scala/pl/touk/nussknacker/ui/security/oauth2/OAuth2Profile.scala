@@ -7,9 +7,7 @@ trait OAuth2Profile[ProfileResponse] {
 }
 
 object OAuth2Profile {
-  val defaultUserRole = "User"
-
-  def getUserRoles(identity: String, configuration: OAuth2Configuration, defaults: List[String] = List(defaultUserRole)): List[String] =
+  def getUserRoles(identity: String, configuration: OAuth2Configuration, defaults: Set[String] = Set.empty): Set[String] =
     configuration
       .users
       .find(us => identity.equals(us.identity))
