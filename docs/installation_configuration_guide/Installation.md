@@ -51,6 +51,19 @@ to access both Designer and Grafana. For other setups you should change this val
 - embedded database files
 - scenario attachments
 
+## Systemd service
+
+You can set up Nussknacker as a systemd service using our example unit file.
+
+1. Download distribution as described in [Binary package installation](#Binary package installation)
+2. Unzip it to `/opt/nussknacker`   
+3. `sudo cp /opt/nussknacker/bin/nussknacker.service /lib/systemd/system/nussknacker.service`
+4. `sudo systemctl daemon-reload`
+5. `sudo systemctl enable nussknacker.service`
+6. `sudo systemctl start nussknacker.service`
+
+You can check Nussknacker logs with `sudo journalctl -u nussknacker.service` command.
+
 ### Startup script
                      
 We provide following scripts:
