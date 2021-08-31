@@ -1,8 +1,10 @@
 import {WindowButtonProps, WindowContentProps} from "@touk/window-manager"
+import {css} from "emotion"
 import React, {useCallback, useEffect, useMemo, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
 import {editEdge} from "../../../../actions/nk"
+import {useNkTheme} from "../../../../containers/theme"
 import {getProcessToDisplay} from "../../../../reducers/selectors/graph"
 import {Edge} from "../../../../types"
 import {WindowContent, WindowKind} from "../../../../windowManager"
@@ -36,12 +38,15 @@ export function EdgeDetails(props: WindowContentProps<WindowKind, Edge>): JSX.El
     [props, t],
   )
 
+  const {theme} = useNkTheme()
+
   const readOnly = false
   const applyButtonData: WindowButtonProps | null = useMemo(
     () => !readOnly ?
       {
         title: t("dialog.button.apply", "apply"),
         action: () => performEdgeEdit(),
+        classname: css({background: theme.colors.accent}),
       } :
       null,
     [performEdgeEdit, readOnly, t],
