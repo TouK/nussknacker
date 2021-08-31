@@ -352,6 +352,7 @@ const undoableReducer = undoable(reducer, {
   filter: combineFilters(
     excludeAction([
       "USER_TRACKING",
+      "VALIDATION_RESULT",
       //this actions triggers "LAYOUT_CHANGED" which is stored in history
       "GROUP", "EXPAND_GROUP", "COLLAPSE_GROUP",
     ]),
