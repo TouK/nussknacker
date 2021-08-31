@@ -33,18 +33,10 @@ class Visualization extends React.Component {
     dataResolved: false,
   }
 
-  componentDidUpdate(prevProps) {
-    if (prevProps.businessView !== this.props.businessView) {
-      this.setBusinessView(this.props.businessView)
-    }
-  }
-
   componentDidMount() {
-    const {match, location, actions} = this.props
+    const {match, actions} = this.props
 
     const {params: {processId}} = match
-    const businessView = VisualizationUrl.extractBusinessViewParams(location.search)
-    this.setBusinessView()
     this.fetchProcessDetails().then(async ({fetchedProcessDetails: {json, processingType, isSubprocess, isArchived}}) => {
       await actions.loadProcessToolbarsConfiguration(processId)
       actions.displayProcessActivity(processId)

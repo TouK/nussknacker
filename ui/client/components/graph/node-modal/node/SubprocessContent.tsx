@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react"
 import {useSelector} from "react-redux"
 import HttpService from "../../../../http/HttpService"
-import {getProcessCounts, getProcessToDisplay, isBusinessView} from "../../../../reducers/selectors/graph"
+import {getProcessCounts, getProcessToDisplay} from "../../../../reducers/selectors/graph"
 import {NodeId, SubprocessNodeType} from "../../../../types"
 import ErrorBoundary from "../../../common/ErrorBoundary"
 import {ProcessType} from "../../../Process/types"
@@ -12,7 +12,6 @@ export function SubprocessContent({
   nodeToDisplay,
   currentNodeId,
 }: { nodeToDisplay: SubprocessNodeType, currentNodeId: NodeId }): JSX.Element {
-  const businessView = useSelector(isBusinessView)
   const {properties: {subprocessVersions}} = useSelector(getProcessToDisplay)
   const processCounts = useSelector(getProcessCounts)
 
@@ -22,12 +21,12 @@ export function SubprocessContent({
     () => {
       if (NodeUtils.nodeIsSubprocess(nodeToDisplay)) {
         const subprocessVersion = subprocessVersions[nodeToDisplay.ref.id]
-        HttpService.fetchProcessDetails(nodeToDisplay.ref.id, subprocessVersion, businessView).then(response => {
+        HttpService.fetchProcessDetails(nodeToDisplay.ref.id, subprocessVersion).then(response => {
           setSubprocessContent(response.data.json)
         })
       }
     },
-    [businessView, nodeToDisplay, subprocessVersions],
+    [nodeToDisplay, subprocessVersions],
   )
 
   const subprocessCounts = (processCounts[currentNodeId] || {}).subprocessCounts || {}

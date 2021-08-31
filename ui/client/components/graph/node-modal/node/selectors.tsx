@@ -1,7 +1,7 @@
 import {get} from "lodash"
 import {createSelector} from "reselect"
 import ProcessUtils from "../../../../common/ProcessUtils"
-import {getNodeToDisplay, getProcessToDisplay, isBusinessView} from "../../../../reducers/selectors/graph"
+import {getNodeToDisplay, getProcessToDisplay} from "../../../../reducers/selectors/graph"
 import {getCapabilities} from "../../../../reducers/selectors/other"
 import {getProcessDefinitionData} from "../../../../reducers/selectors/settings"
 
@@ -25,6 +25,5 @@ export const getReadOnly = createSelector(
   (state, fromProps?: boolean) => fromProps,
   // _ needed for wierd reselect typings ;)
   (state, _) => getCapabilities(state),
-  (state, _) => isBusinessView(state),
-  (fromProps, capabilities, isBusinessView) => fromProps || !capabilities.write || isBusinessView,
+  (fromProps, capabilities) => fromProps || !capabilities.write,
 )
