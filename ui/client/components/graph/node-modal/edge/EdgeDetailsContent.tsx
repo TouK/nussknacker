@@ -7,17 +7,17 @@ import EditableEditor from "../editors/EditableEditor"
 interface Props {
   edge: Edge,
   readOnly?: boolean,
-  changeEdgeTypeValue: (type: EdgeType) => void,
+  changeEdgeTypeValue: (type: EdgeType["type"]) => void,
+  changeEdgeTypeCondition: (condition: EdgeType["condition"]["expression"]) => void,
   showValidation?: boolean,
   showSwitch?: boolean,
-  updateEdgeProp,
   variableTypes,
   edgeErrors?,
   pathsToMark?,
 }
 
 export default function EdgeDetailsContent(props: Props): JSX.Element | null {
-  const {edge, edgeErrors, readOnly, updateEdgeProp, showValidation, showSwitch, changeEdgeTypeValue, variableTypes, pathsToMark} = props
+  const {edge, edgeErrors, readOnly, changeEdgeTypeCondition, showValidation, showSwitch, changeEdgeTypeValue, variableTypes, pathsToMark} = props
 
   const isMarked = useCallback((path) => includes(pathsToMark, path), [pathsToMark])
   const renderFieldLabel = useCallback((label) => <div className="node-label">{label}</div>, [])
@@ -56,7 +56,7 @@ export default function EdgeDetailsContent(props: Props): JSX.Element | null {
             isMarked={isMarked("edgeType.condition.expression")}
             showValidation={showValidation}
             showSwitch={showSwitch}
-            onValueChange={(newValue) => updateEdgeProp("edgeType.condition.expression", newValue)}
+            onValueChange={changeEdgeTypeCondition}
           />
         </BaseModalContent>
       )

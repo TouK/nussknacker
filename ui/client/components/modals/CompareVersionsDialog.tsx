@@ -191,7 +191,7 @@ class VersionsForm extends React.Component<Props, State> {
           showValidation={false}
           showSwitch={false}
           changeEdgeTypeValue={() => {return}}
-          updateEdgeProp={() => {return}}
+          changeEdgeTypeCondition={() => {return}}
           pathsToMark={pathsToMark}
           variableTypes={{}}
         />

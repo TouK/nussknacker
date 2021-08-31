@@ -49,7 +49,7 @@ export function EdgeDetails(props: WindowContentProps<WindowKind, Edge>): JSX.El
         classname: css({background: theme.colors.accent}),
       } :
       null,
-    [performEdgeEdit, readOnly, t],
+    [performEdgeEdit, readOnly, t, theme.colors.accent],
   )
 
   const buttons: WindowButtonProps[] = useMemo(

@@ -6,6 +6,7 @@ import {getCapabilities} from "../../../../reducers/selectors/other"
 import {getProcessDefinitionData} from "../../../../reducers/selectors/settings"
 import {Edge, EdgeType, Process} from "../../../../types"
 import NodeUtils from "../../NodeUtils"
+import {ExpressionObj} from "../editors/expression/types"
 import EdgeDetailsContent from "./EdgeDetailsContent"
 
 export function Details({
@@ -29,21 +30,21 @@ export function Details({
     return findAvailableVariables(nodeId, undefined)
   }, [nodeId, processCategory, processDefinitionData, processToDisplay])
 
-  const updateEdgeProp = useCallback((prop, value) => {
-    onChange({...edge, [prop]: value})
-  }, [onChange, edge])
-
-  const changeEdgeTypeValue = useCallback((edgeTypeValue: EdgeType) => {
+  const changeEdgeTypeValue = useCallback((edgeTypeValue: EdgeType["type"]) => {
     const fromNode = NodeUtils.getNodeById(edge.from, processToDisplay)
-    const defaultEdgeType = NodeUtils
+    const defaultEdgeType: EdgeType = NodeUtils
       .edgesForNode(fromNode, processDefinitionData).edges.find(e => e.type === edgeTypeValue)
-    updateEdgeProp("edgeType", defaultEdgeType)
-  }, [edge.from, processDefinitionData, processToDisplay, updateEdgeProp])
+    onChange({...edge, edgeType: defaultEdgeType})
+  }, [edge, onChange, processDefinitionData, processToDisplay])
+
+  const changeEdgeTypeCondition = useCallback((expression: ExpressionObj["expression"]) => {
+    onChange({...edge, edgeType: {...edge.edgeType, condition: {...edge.edgeType.condition, expression}}})
+  }, [edge, onChange])
 
   return (
     <EdgeDetailsContent
       changeEdgeTypeValue={changeEdgeTypeValue}
-      updateEdgeProp={updateEdgeProp}
+      changeEdgeTypeCondition={changeEdgeTypeCondition}
       readOnly={readOnly}
       edge={edge}
       showValidation={true}
