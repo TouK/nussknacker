@@ -71,16 +71,6 @@ export function defaultToolbarsConfig(isSubprocess: boolean, isArchived: boolean
           {type: BuiltinButtonTypes.testHide},
         ],
       },
-      {
-        id: "group-panel",
-        title: "group",
-        buttons: isArchived ?
-          [] :
-          [
-            {type: BuiltinButtonTypes.group},
-            {type: BuiltinButtonTypes.ungroup},
-          ],
-      },
     ],
     [ToolbarsSide.TopLeft]: [
       {id: "tips-panel"},

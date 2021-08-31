@@ -6,8 +6,6 @@ export type ActionTypes =
   | "TOGGLE_RIGHT_PANEL"
   | "LAYOUT"
   | "BUSINESS_VIEW_CHANGED"
-  | "GROUP"
-  | "UNGROUP"
   | "EXPAND_GROUP"
   | "COLLAPSE_GROUP"
   | "COLLAPSE_ALL_GROUPS"

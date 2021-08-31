@@ -5,8 +5,6 @@ import LayoutButton from "../../toolbars/edit/buttons/LayoutButton"
 import PasteButton from "../../toolbars/edit/buttons/PasteButton"
 import RedoButton from "../../toolbars/edit/buttons/RedoButton"
 import UndoButton from "../../toolbars/edit/buttons/UndoButton"
-import {GroupButton} from "../../toolbars/group/buttons/GroupButton"
-import {UngroupButton} from "../../toolbars/group/buttons/UngroupButton"
 import ArchiveButton from "../../toolbars/process/buttons/ArchiveButton"
 import {ArchiveToggleButton} from "../../toolbars/process/buttons/ArchiveToggleButton"
 import CompareButton from "../../toolbars/process/buttons/CompareButton"
@@ -64,8 +62,6 @@ export const TOOLBAR_BUTTONS_MAP: ToolbarButtonsMap = {
   [BuiltinButtonTypes.testGenerate]: GenerateButton,
   [BuiltinButtonTypes.testCounts]: CountsButton,
   [BuiltinButtonTypes.testHide]: HideButton,
-  [BuiltinButtonTypes.group]: GroupButton,
-  [BuiltinButtonTypes.ungroup]: UngroupButton,
   [CustomButtonTypes.customAction]: ActionButton,
   [CustomButtonTypes.customLink]: LinkButton,
 }

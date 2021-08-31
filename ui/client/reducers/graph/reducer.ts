@@ -272,24 +272,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         processCounts: null,
       }
     }
-    case "GROUP": {
-      return canGroupSelection(state) ?
-        {
-          ...state,
-          processToDisplay: NodeUtils.createGroup(state.processToDisplay, state.selectionState),
-          layout: [],
-          selectionState: [],
-        } :
-        state
-    }
-    case "UNGROUP": {
-      return {
-        ...state,
-        processToDisplay: NodeUtils.ungroup(state.processToDisplay, action.groupToRemove),
-        nodeToDisplay: state.processToDisplay.properties,
-        selectionState: [],
-      }
-    }
     case "EXPAND_GROUP":
     case "COLLAPSE_ALL_GROUPS":
     case "COLLAPSE_GROUP": {
@@ -353,7 +335,7 @@ const undoableReducer = undoable(reducer, {
     excludeAction([
       "USER_TRACKING",
       //this actions triggers "LAYOUT_CHANGED" which is stored in history
-      "GROUP", "EXPAND_GROUP", "COLLAPSE_GROUP",
+      "EXPAND_GROUP", "COLLAPSE_GROUP",
     ]),
     (action, nextState, prevState) => {
       const keys = [

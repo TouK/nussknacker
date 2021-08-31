@@ -21,8 +21,6 @@ function withReportEvent(name: string, action: Action): ThunkAction {
   }
 }
 
-export const groupSelected = () => withReportEvent("group", {type: "GROUP"})
-
 const delay = (t = 0) => new Promise(resolve => {setTimeout(resolve, t)})
 
 export function ungroupSelected(): ThunkAction {

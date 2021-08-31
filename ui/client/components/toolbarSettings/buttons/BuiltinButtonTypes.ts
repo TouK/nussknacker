@@ -8,8 +8,6 @@ export enum BuiltinButtonTypes {
   editPaste = "edit-paste",
   editDelete = "edit-delete",
   editLayout = "edit-layout",
-  group = "group",
-  ungroup = "ungroup",
   processProperties = "process-properties",
   processCompare = "process-compare",
   processMigrate = "process-migrate",
