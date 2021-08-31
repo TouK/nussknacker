@@ -70,8 +70,12 @@ function EdgeDetailsModal(): JSX.Element {
     const defaultEdgeType = NodeUtils
       .edgesForNode(fromNode, processDefinitionData).edges.find(e => e.type === edgeTypeValue)
     const newEdge = {
-      ...this.state.editedEdge,
-      edgeType: defaultEdgeType,
+      ...state.editedEdge,
+      edgeType: {
+        ...defaultEdgeType,
+        //we want to preserve previously edited (in state) value of expression condition
+        condition: state.editedEdge.edgeType.condition,
+      },
     }
     setState(s => ({...s, editedEdge: newEdge}))
   }, [edge.from, processDefinitionData, processToDisplay])
