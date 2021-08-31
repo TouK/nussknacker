@@ -18,7 +18,7 @@ class NodeDataCodecSpec extends FunSuite with Matchers {
     val process = DisplayableProcess("", ProcessProperties(
       StreamMetaData(), ExceptionHandlerRef(List()),
       false,
-      Some(ProcessAdditionalFields(Some("a"), Set(), Map("field1" -> "value1"))), Map()
+      Some(ProcessAdditionalFields(Some("a"), Map("field1" -> "value1"))), Map()
     ), List(
       SubprocessInputDefinition("proc1", List(SubprocessParameter("param1", SubprocessClazzRef[String]))),
       CustomNode("id", Some("out1"), "typ1", List(Parameter("name1", Expression("spel", "11"))),

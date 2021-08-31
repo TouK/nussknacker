@@ -43,7 +43,7 @@ class NewProcessPreparer(definitions: ProcessingTypeDataProvider[ProcessDefiniti
   private def defaultAdditionalFields(processingType: ProcessingType): Option[ProcessAdditionalFields] = {
     Option(defaultProperties(processingType))
       .filter(_.nonEmpty)
-      .map(properties => ProcessAdditionalFields(None, Set.empty, properties = properties))
+      .map(properties => ProcessAdditionalFields(None, properties = properties))
   }
 
   private def defaultProperties(processingType: ProcessingType): Map[String, String] = additionalFields.forTypeUnsafe(processingType)

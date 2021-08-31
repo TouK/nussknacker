@@ -106,7 +106,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
 
 
   test("return variable type information for process that cannot be canonized") {
-    val meta = MetaData("process", metaData, additionalFields = Some(ProcessAdditionalFields(None, Set.empty, Map.empty)))
+    val meta = MetaData("process", metaData, additionalFields = Some(ProcessAdditionalFields(None, Map.empty)))
     val process = ValidatedDisplayableProcess(
       meta.id,
       ProcessProperties(meta.typeSpecificData, ExceptionHandlerRef(List()), subprocessVersions = Map.empty),
