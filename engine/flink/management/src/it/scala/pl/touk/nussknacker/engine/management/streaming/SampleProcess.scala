@@ -9,9 +9,9 @@ object SampleProcess {
 
   import spel.Implicits._
 
-  def prepareProcess(id: String) : EspProcess = {
-    EspProcessBuilder
-      .id(id)
+  def prepareProcess(id: String, parallelism: Option[Int] = None) : EspProcess = {
+    val baseProcessBuilder = EspProcessBuilder.id(id)
+    parallelism.map(baseProcessBuilder.parallelism).getOrElse(baseProcessBuilder)
       .exceptionHandler()
       .source("startProcess", "kafka-transaction")
       .filter("nightFilter", "true", endWithMessage("endNight", "Odrzucenie noc"))

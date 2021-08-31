@@ -10,3 +10,4 @@ parallelism.default: 1
 classloader.resolve-order: parent-first
 
 taskmanager.memory.jvm-metaspace.size: 512m
+taskmanager.numberOfTaskSlots: <configured_by_flink_entrypoint>

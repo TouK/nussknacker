@@ -10,7 +10,7 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentData, DeploymentId, ExternalDeploymentId, ProcessState, SavepointResult, StateStatus, User}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{ExecutionConfig, GetSavepointStatusResponse, JarsResponse, JobConfig, JobOverview, JobsResponse, RunResponse, SavepointOperation, SavepointStatus, SavepointTriggerResponse, UploadJarResponse}
+import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{ExecutionConfig, GetSavepointStatusResponse, JarsResponse, JobConfig, JobOverview, JobTasksOverview, JobsResponse, RunResponse, SavepointOperation, SavepointStatus, SavepointTriggerResponse, UploadJarResponse}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -117,7 +117,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     )
 
   test("continue on timeout exception") {
-    statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name()))
+    statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name(), baseTasksOverview().copy(failed = 1)))
 
     createManager(statuses, acceptDeploy = true, exceptionOnDeploy = Some(new TimeoutException("tooo looong")))
       .deploy(
@@ -129,7 +129,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
   }
 
   test("not continue on random exception exception") {
-    statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name()))
+    statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name(), baseTasksOverview().copy(failed = 1)))
     val manager = createManager(statuses, acceptDeploy = true, exceptionOnDeploy = Some(new NoRouteToHostException("heeelo?")))
 
     Await.ready(manager.deploy(
@@ -141,21 +141,21 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
   }
 
   test("refuse to deploy if process is failing") {
-    statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RESTARTING.name()))
+    statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RESTARTING.name(), baseTasksOverview()))
 
     createManager(statuses).deploy(ProcessVersion(1, ProcessName("p1"), "user", None), defaultDeploymentData,
       CustomProcess("nothing"), None).failed.futureValue.getMessage shouldBe "Job p1 cannot be deployed, status: Restarting"
   }
 
   test("allow deploy if process is failed") {
-    statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name()))
+    statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name(), baseTasksOverview().copy(failed = 1)))
 
     createManager(statuses, acceptDeploy = true).deploy(ProcessVersion(1, ProcessName("p1"), "user", None), defaultDeploymentData,
       CustomProcess("nothing"), None).futureValue shouldBe Some(ExternalDeploymentId(returnedJobId))
   }
 
   test("allow deploy and make savepoint if process is running") {
-    statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name()))
+    statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name(), baseTasksOverview().copy(running = 1)))
 
     createManager(statuses, acceptDeploy = true, acceptSavepoint = true).deploy(ProcessVersion(1, ProcessName("p1"), "user", None), defaultDeploymentData,
       CustomProcess("nothing"), None).futureValue shouldBe Some(ExternalDeploymentId(returnedJobId))
@@ -186,7 +186,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
         JobStatus.SUSPENDED.name(),
         JobStatus.RECONCILING.name()
     )
-    statuses = cancellableStatuses.map(status => JobOverview(UUID.randomUUID().toString, s"process_$status", 10L, 10L, status))
+    statuses = cancellableStatuses.map(status => JobOverview(UUID.randomUUID().toString, s"process_$status", 10L, 10L, status, baseTasksOverview()))
 
     val (manager, history)  = createManagerWithHistory(statuses)
 
@@ -204,7 +204,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
       JobStatus.RUNNING.name(),
       JobStatus.FAILED.name()
     )
-    statuses = jobStatuses.map(status => JobOverview(UUID.randomUUID().toString, "test", 10L, 10L, status))
+    statuses = jobStatuses.map(status => JobOverview(UUID.randomUUID().toString, "test", 10L, 10L, status, baseTasksOverview()))
 
     val (manager, history)  = createManagerWithHistory(statuses)
 
@@ -216,7 +216,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
 
 
   test("allow cancel but do not sent cancel request if process is failed") {
-    statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name()))
+    statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name(), baseTasksOverview().copy(failed = 1)))
     val (manager, history) = createManagerWithHistory(statuses, acceptCancel = false)
 
     manager.cancel(ProcessName("p1"), User("test_id", "Jack")).futureValue shouldBe (())
@@ -224,7 +224,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
   }
 
   test("return failed status if two jobs running") {
-    statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name()), JobOverview("1111", "p1", 30L, 30L, JobStatus.RUNNING.name()))
+    statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name(), baseTasksOverview().copy(running = 1)), JobOverview("1111", "p1", 30L, 30L, JobStatus.RUNNING.name(), baseTasksOverview().copy(running = 1)))
 
     val manager = createManager(statuses)
     manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(processState(
@@ -233,7 +233,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
   }
 
   test("return failed status if two in non-terminal state") {
-    statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name()), JobOverview("1111", "p1", 30L, 30L, JobStatus.RESTARTING.name()))
+    statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name(), baseTasksOverview().copy(running = 1)), JobOverview("1111", "p1", 30L, 30L, JobStatus.RESTARTING.name(), baseTasksOverview()))
 
     val manager = createManager(statuses)
     manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(processState(
@@ -242,7 +242,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
   }
 
   test("return running status if cancelled job has last-modification date later then running job") {
-    statuses = List(JobOverview("2343", "p1", 20L, 10L, JobStatus.RUNNING.name()), JobOverview("1111", "p1", 30L, 5L, JobStatus.CANCELED.name()))
+    statuses = List(JobOverview("2343", "p1", 20L, 10L, JobStatus.RUNNING.name(), baseTasksOverview().copy(running = 1)), JobOverview("1111", "p1", 30L, 5L, JobStatus.CANCELED.name(), baseTasksOverview().copy(canceled = 1)))
 
     val manager = createManager(statuses)
     manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(processState(
@@ -251,7 +251,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
   }
 
   test("return last terminal state if not running") {
-    statuses = List(JobOverview("2343", "p1", 40L, 10L, JobStatus.FINISHED.name()), JobOverview("1111", "p1", 35L, 30L, JobStatus.FINISHED.name()))
+    statuses = List(JobOverview("2343", "p1", 40L, 10L, JobStatus.FINISHED.name(), baseTasksOverview().copy(finished = 1)), JobOverview("1111", "p1", 35L, 30L, JobStatus.FINISHED.name(), baseTasksOverview().copy(finished = 1)))
 
     val manager = createManager(statuses)
     manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(processState(
@@ -261,7 +261,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
   }
 
   test("return non-terminal state if not running") {
-    statuses = List(JobOverview("2343", "p1", 40L, 10L, JobStatus.FINISHED.name()), JobOverview("1111", "p1", 35L, 30L, JobStatus.RESTARTING.name()))
+    statuses = List(JobOverview("2343", "p1", 40L, 10L, JobStatus.FINISHED.name(), baseTasksOverview().copy(finished = 1)), JobOverview("1111", "p1", 35L, 30L, JobStatus.RESTARTING.name(), baseTasksOverview()))
 
     val manager = createManager(statuses)
     manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(processState(
@@ -275,8 +275,8 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     val version = 15L
     val user = "user1"
 
-    statuses = List(JobOverview(jid, processName.value, 40L, 10L, JobStatus.FINISHED.name()),
-      JobOverview("1111", "p1", 35L, 30L, JobStatus.FINISHED.name()))
+    statuses = List(JobOverview(jid, processName.value, 40L, 10L, JobStatus.FINISHED.name(), baseTasksOverview().copy(finished = 1)),
+      JobOverview("1111", "p1", 35L, 30L, JobStatus.FINISHED.name(), baseTasksOverview().copy(finished = 1)))
     //Flink seems to be using strings also for Configuration.setLong
     configs = Map(jid -> Map("versionId" -> fromString(version.toString), "user" -> fromString(user)))
 
@@ -295,8 +295,9 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
   }
 
   private def buildRunningJobOverview(processName: ProcessName): JobOverview = {
-    JobOverview(jid = "1111", name = processName.value, `last-modification` = System.currentTimeMillis(), `start-time` = System.currentTimeMillis(), state = JobStatus.RUNNING.name())
+    JobOverview(jid = "1111", name = processName.value, `last-modification` = System.currentTimeMillis(), `start-time` = System.currentTimeMillis(), state = JobStatus.RUNNING.name(), baseTasksOverview().copy(running = 1))
   }
+  private def baseTasksOverview(total: Int = 1): JobTasksOverview = JobTasksOverview(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
   private def buildFinishedSavepointResponse(savepointPath: String): GetSavepointStatusResponse = {
     GetSavepointStatusResponse(status = SavepointStatus("COMPLETED"), operation = Some(SavepointOperation(location = Some(savepointPath), `failure-cause` = None)))
