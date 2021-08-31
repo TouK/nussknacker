@@ -1,4 +1,4 @@
-import React from "react"
+import React, {useMemo} from "react"
 import {Field} from "../../../../../types"
 import {mandatoryValueValidator} from "../Validators"
 import {MapCommonProps, TypedField} from "./Map"
@@ -12,6 +12,7 @@ interface MapRowProps<F extends Field> extends MapCommonProps {
 
 export default function MapRow<F extends TypedField>({field, path, ...props}: MapRowProps<F>): JSX.Element {
   const {readOnly, showValidation, isMarked, onChange, errors, variableTypes} = props
+  const validators = useMemo(() => [mandatoryValueValidator], [])
   return (
     <>
       <MapKey
@@ -20,7 +21,7 @@ export default function MapRow<F extends TypedField>({field, path, ...props}: Ma
         isMarked={isMarked(`${path}.name`)}
         onChange={(value) => onChange(`${path}.name`, value)}
         value={field.name}
-        validators={[mandatoryValueValidator]}
+        validators={validators}
         autofocus={false}
       />
       <MapValue

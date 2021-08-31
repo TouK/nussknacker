@@ -1,6 +1,5 @@
 import React, {PropsWithChildren} from "react"
-import {ButtonWithFocus} from "../../../withFocus"
-import {useFieldsContext} from "./NodeRowFields"
+import {AddButton} from "./AddButton"
 
 interface FieldsControlProps {
   readOnly?: boolean,
@@ -8,14 +7,11 @@ interface FieldsControlProps {
 
 export function FieldsControl(props: PropsWithChildren<FieldsControlProps>): JSX.Element {
   const {readOnly, children} = props
-  const {add} = useFieldsContext()
   return (
     <div className="fieldsControl">
       {children}
       {!readOnly && (
-        <div>
-          <ButtonWithFocus className="addRemoveButton" title="Add field" onClick={add}>+</ButtonWithFocus>
-        </div>
+        <AddButton/>
       )}
     </div>
   )

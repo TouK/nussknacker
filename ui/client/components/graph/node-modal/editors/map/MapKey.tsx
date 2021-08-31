@@ -1,4 +1,4 @@
-import React, {useState} from "react"
+import React from "react"
 import {NodeValue} from "../../subprocess-input-definition/NodeValue"
 import Input from "../field/Input"
 import {Validator} from "../Validators"
@@ -15,7 +15,6 @@ interface MapKeyProps {
 
 export default function MapKey(props: MapKeyProps): JSX.Element {
   const {value, autofocus, isMarked, showValidation, validators, readOnly, onChange} = props
-  const [state, setState] = useState(value)
   return (
     <NodeValue className="fieldName">
       <Input

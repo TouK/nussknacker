@@ -1,11 +1,12 @@
 import {css, cx} from "emotion"
 import React, {useCallback, useEffect, useState} from "react"
+import {DraggableProvidedDragHandleProps} from "react-beautiful-dnd"
 import {ReactComponent as Handlebars} from "../../../../assets/img/handlebars.svg"
 import {useNkTheme} from "../../../../containers/theme"
 
 const grabbing = css({"*": {cursor: "grabbing !important"}})
 
-export function DragHandle({active}: {active?: boolean}): JSX.Element {
+export const DragHandle: React.FC<{active?: boolean, provided: DraggableProvidedDragHandleProps}> = ({active, provided}): JSX.Element => {
   const [isActive, setActive] = useState(false)
   const {theme} = useNkTheme()
   useEffect(() => {setActive(active)}, [active])
@@ -15,12 +16,22 @@ export function DragHandle({active}: {active?: boolean}): JSX.Element {
   const onMouseUp = useCallback(() => setActive(false), [])
 
   return (
-    <Handlebars
-      onMouseDown={onMouseDown}
-      onMouseUp={onMouseUp}
-      className={cx("handle-bars", css({
-        g: {fill: isActive ? theme.colors.accent : theme.colors.primary},
-      }))}
-    />
+    <div
+      {...provided}
+      className={css({
+        outline: "none",
+        ":focus": {
+          filter: `drop-shadow(0px 0px 3px ${theme.colors.accent})`,
+        },
+      })}
+    >
+      <Handlebars
+        onMouseDown={onMouseDown}
+        onMouseUp={onMouseUp}
+        className={cx("handle-bars", css({
+          g: {fill: isActive ? theme.colors.accent : theme.colors.primary},
+        }))}
+      />
+    </div>
   )
 }

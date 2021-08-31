@@ -1,13 +1,12 @@
 import {isEqual} from "lodash"
-import React, {PropsWithChildren, useCallback, useMemo} from "react"
+import React, {useCallback, useMemo} from "react"
 import {Parameter} from "../../../../types"
 import MapKey from "../editors/map/MapKey"
 import {mandatoryValueValidator} from "../editors/Validators"
 import {DndItems} from "./DndItems"
 import {FieldsRow} from "./FieldsRow"
-import {Items} from "./Items"
 import {NodeRowFields} from "./NodeRowFields"
-import {RowSelect} from "./RowSelect"
+import {TypeSelect} from "./TypeSelect"
 
 export interface Option {
   value: string,
@@ -28,10 +27,6 @@ interface FieldsSelectProps {
   showValidation?: boolean,
 }
 
-function Input({value, onChange2}: {value: any, onChange2: (e) => void}) {
-  return <input type="text" value={value} onChange={onChange2}/>
-}
-
 function FieldsSelect(props: FieldsSelectProps): JSX.Element {
   const {addField, fields, label, onChange, namespace, options, readOnly, removeField, isMarked, showValidation} = props
 
@@ -43,48 +38,39 @@ function FieldsSelect(props: FieldsSelectProps): JSX.Element {
     return foundValue || fallbackValue
   }, [options])
 
-  const Component = useMemo(
-    () => function Component({index, item, children}: PropsWithChildren<{index: number, item}>) {
-      const path = useMemo(() => `${namespace}[${index}]`, [index])
-
-      const changeName = useCallback(value => {
-        onChange(`${path}.name`, value)
-      }, [path])
-
-      const changeValue = useCallback(value => {
-        onChange(`${path}.typ.refClazzName`, value)
-      }, [path])
-
+  const Item = useCallback(
+    ({index, item}: {index: number, item}) => {
+      const path = `${namespace}[${index}]`
       return (
-        <>
-          <FieldsRow index={index}>
-            <MapKey
-              readOnly={readOnly}
-              showValidation={showValidation}
-              isMarked={isMarked(`${path}.name`)}
-              onChange={changeName}
-              value={item.name}
-              validators={validators}
-              autofocus={false}
-            />
-            <RowSelect
-              index={index}
-              changeValue={changeValue}
-              value={getCurrentOption(item)}
-              isMarked={() => isMarked(`${path}.typ.refClazzName`)}
-              options={options}
-            />
-          </FieldsRow>
-          {children}
-        </>
+        <FieldsRow index={index}>
+          <MapKey
+            readOnly={readOnly}
+            showValidation={showValidation}
+            isMarked={isMarked(`${path}.name`)}
+            onChange={value => onChange(`${path}.name`, value)}
+            value={item.name}
+            validators={validators}
+            autofocus={false}
+          />
+          <TypeSelect
+            readOnly={readOnly}
+            onChange={value => onChange(`${path}.typ.refClazzName`, value)}
+            value={getCurrentOption(item)}
+            isMarked={isMarked(`${path}.typ.refClazzName`)}
+            options={options}
+          />
+        </FieldsRow>
       )
     },
     [getCurrentOption, isMarked, namespace, onChange, options, readOnly, showValidation, validators],
   )
 
-  const onChange1 = useCallback(value => onChange(namespace, value), [namespace, onChange])
+  const changeOrder = useCallback(value => onChange(namespace, value), [namespace, onChange])
 
-  const items = useMemo(() => fields.map((item, index) => ({item, el: <Component key={index} index={index} item={item}/>})), [Component, fields])
+  const items = useMemo(
+    () => fields.map((item, index) => ({item, el: <Item key={index} index={index} item={item}/>})),
+    [Item, fields],
+  )
 
   return (
     <NodeRowFields
@@ -94,8 +80,7 @@ function FieldsSelect(props: FieldsSelectProps): JSX.Element {
       onFieldRemove={removeField}
       readOnly={readOnly}
     >
-      <DndItems items={items} onChange={onChange1}/>
-      <Items items={items}/>
+      <DndItems disabled={readOnly} items={items} onChange={changeOrder}/>
     </NodeRowFields>
   )
 }

@@ -1,3 +1,4 @@
+import {isEqual} from "lodash"
 import React from "react"
 import {Expression, VariableTypes} from "../../../../../types"
 import {NodeValue} from "../../subprocess-input-definition/NodeValue"
@@ -16,7 +17,7 @@ interface MapValueProps {
   validationLabelInfo?: string,
 }
 
-export default function MapValue(props: MapValueProps): JSX.Element {
+export default React.memo(function MapValue(props: MapValueProps): JSX.Element {
   const {value, isMarked, showValidation, readOnly, onChange, errors, variableTypes, validationLabelInfo} = props
 
   return (
@@ -35,4 +36,4 @@ export default function MapValue(props: MapValueProps): JSX.Element {
       />
     </NodeValue>
   )
-}
+}, isEqual)

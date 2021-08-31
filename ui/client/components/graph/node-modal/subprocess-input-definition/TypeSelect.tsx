@@ -1,15 +1,18 @@
 import React, {useCallback, useState} from "react"
 import Select from "react-select"
 import styles from "../../../../stylesheets/select.styl"
-import {Option} from "./FieldsSelect"
 import {NodeValue} from "./NodeValue"
 
+export interface Option {
+  value: string,
+  label: string,
+}
+
 interface RowSelectProps {
-  index: number,
-  changeValue: (value: string) => void,
+  onChange: (value: string) => void,
   options: Option[],
   readOnly?: boolean,
-  isMarked: (i: number) => boolean,
+  isMarked?: boolean,
   value: Option,
 }
 
@@ -35,34 +38,31 @@ function useCaptureEsc() {
   return {setCaptureEsc, preventEsc}
 }
 
-export function RowSelect({
-  index,
+export function TypeSelect({
   isMarked,
   options,
   readOnly,
   value,
-  changeValue,
+  onChange,
 }: RowSelectProps): JSX.Element {
   const {setCaptureEsc, preventEsc} = useCaptureEsc()
 
   return (
-    <>
-      <NodeValue className="field" marked={isMarked(index)} onKeyDown={preventEsc}>
-        <Select
-          className="node-value node-value-select node-value-type-select"
-          classNamePrefix={styles.nodeValueSelect}
-          isDisabled={readOnly}
-          maxMenuHeight={190}
-          onMenuOpen={() => setCaptureEsc(true)}
-          onMenuClose={() => setCaptureEsc(false)}
-          options={options}
-          value={value}
-          onChange={(option) => changeValue(option.value)}
-          styles={{menuPortal: (base) => ({...base, zIndex: 9999})}}
-          menuPortalTarget={document.body}
-        />
-      </NodeValue>
-    </>
+    <NodeValue className="field" marked={isMarked} onKeyDown={preventEsc}>
+      <Select
+        className="node-value node-value-select node-value-type-select"
+        classNamePrefix={styles.nodeValueSelect}
+        isDisabled={readOnly}
+        maxMenuHeight={190}
+        onMenuOpen={() => setCaptureEsc(true)}
+        onMenuClose={() => setCaptureEsc(false)}
+        options={options}
+        value={value}
+        onChange={(option) => onChange(option.value)}
+        styles={{menuPortal: (base) => ({...base, zIndex: 9999})}}
+        menuPortalTarget={document.body}
+      />
+    </NodeValue>
   )
 }
 
