@@ -184,8 +184,10 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         apiResourcesWithoutAuthentication.reduce(_ ~ _)
       } ~ authenticationResources.authenticate() { authenticatedUser =>
         pathPrefix("api") {
-          val loggedUser = LoggedUser(authenticatedUser, authorizationRules, processCategoryService.getAllCategories)
-          apiResourcesWithAuthentication.map(_.securedRoute(loggedUser)).reduce(_ ~ _)
+          authorize(authenticatedUser.roles.nonEmpty) {
+            val loggedUser = LoggedUser(authenticatedUser, authorizationRules, processCategoryService.getAllCategories)
+            apiResourcesWithAuthentication.map(_.securedRoute(loggedUser)).reduce(_ ~ _)
+          }
         }
       }
     }
