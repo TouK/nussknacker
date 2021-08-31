@@ -435,11 +435,8 @@ export class Graph extends React.Component {
   }
 
   render() {
-    console.log(this.props.isSubprocess)
-    const graphId = this.props.isSubprocess !== undefined ? "subgraphContainer" : "graphContainer"
-    // const graphId = Math.floor(Math.random() * 999999)
     const toRender = (
-      <div id={graphId} style={{padding: this.props.padding}}>
+      <div id="graphContainer" style={{padding: this.props.padding}}>
         {this.props.showNodeDetailsModal ? <NodeDetailsModal graphRef={this.processGraphPaper}/> : null}
         {!_.isEmpty(this.props.edgeToDisplay) ? <EdgeDetailsModal/> : null}
         <FocusableDiv ref={this.espGraphRef} id={this.props.divId}/>

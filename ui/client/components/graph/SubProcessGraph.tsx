@@ -23,4 +23,4 @@ function mapSubprocessState(state, props) {
 
 export const SubProcessGraph = compose(
   connect(mapSubprocessState, ActionsUtils.mapDispatchWithEspActions),
-)(props => <Graph {...props} isSubprocess={true}/>)
+)(props => <Graph {...props}/>)

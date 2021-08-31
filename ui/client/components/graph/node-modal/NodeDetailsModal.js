@@ -67,7 +67,10 @@ class NodeDetailsModal extends React.Component {
   }
 
   closeModal = () => {
-    // V(this.props.graphRef.defs).append(arrowMarker)
+    //main graph and subgraph in modal are somehow connected, paper.defs are already empty Graph.componentWillUnmount
+    //we simply add the arrowMarker here
+    //if you'll find better solution please change it accordingly
+    V(this.props.graphRef.defs).append(arrowMarker)
     this.props.actions.closeModals()
   }
 
