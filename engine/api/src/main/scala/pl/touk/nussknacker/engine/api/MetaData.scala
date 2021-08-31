@@ -12,23 +12,19 @@ import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValue
 import scala.concurrent.duration.Duration
 
 case class ProcessAdditionalFields(description: Option[String],
-                                   groups: Set[Group],
                                    properties: Map[String, String])
 
 object ProcessAdditionalFields {
 
   //TODO: is this currently needed?
   private case class OptionalProcessAdditionalFields(description: Option[String],
-                                     groups: Option[Set[Group]],
                                      properties: Option[Map[String, String]])
 
   implicit val circeDecoder: Decoder[ProcessAdditionalFields]
-  = deriveDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.groups.getOrElse(Set()), opp.properties.getOrElse(Map())))
+  = deriveDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map())))
 
   implicit val circeEncoder: Encoder[ProcessAdditionalFields] = deriveEncoder
 }
-
-@JsonCodec case class Group(id: String, nodes: Set[String], expanded: Option[Boolean], layoutData: Option[LayoutData])
 
 @JsonCodec case class LayoutData(x: Long, y: Long)
 

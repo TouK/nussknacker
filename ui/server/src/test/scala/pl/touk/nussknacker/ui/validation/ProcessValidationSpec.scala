@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
-import pl.touk.nussknacker.engine.api.{Group, MetaData, ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.compile.ProcessValidator
@@ -93,8 +93,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
       List(
         Edge("in", "var", None),
         Edge("var", "out", None)
-      ),
-      groups = Set(Group("in", Set("in", "var1"), None, None))
+      )
     )
 
 
@@ -437,7 +436,6 @@ private object ProcessValidationSpec {
       ),
       List(Edge("inID", "custom", None), Edge("custom", "out", None)),
       TestProcessingTypes.Streaming,
-      Set.empty,
       additionalProperties
     )
   }
@@ -445,9 +443,9 @@ private object ProcessValidationSpec {
   def createProcess(nodes: List[NodeData],
                     edges: List[Edge],
                     `type`: ProcessingTypeData.ProcessingType = TestProcessingTypes.Streaming,
-                    groups: Set[Group] = Set(), additionalFields: Map[String, String] = Map()) = {
+                    additionalFields: Map[String, String] = Map()) = {
     DisplayableProcess("test", ProcessProperties(StreamMetaData(),
-      ExceptionHandlerRef(List()), subprocessVersions = Map.empty, additionalFields = Some(ProcessAdditionalFields(None, groups, additionalFields))), nodes, edges, `type`)
+      ExceptionHandlerRef(List()), subprocessVersions = Map.empty, additionalFields = Some(ProcessAdditionalFields(None, additionalFields))), nodes, edges, `type`)
   }
 
   def mockProcessValidationAndProcess(process: DisplayableProcess,

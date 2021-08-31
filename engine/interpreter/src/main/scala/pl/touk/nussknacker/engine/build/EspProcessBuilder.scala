@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.build
 
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.{Group, MetaData, ProcessAdditionalFields, StandaloneMetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StandaloneMetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder.Creator
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -27,10 +27,9 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
     new ProcessMetaDataBuilder(metaData.copy(subprocessVersions = subprocessVersions))
 
   def additionalFields(description: Option[String] = None,
-                       groups: Set[Group] = Set.empty,
                        properties: Map[String, String] = Map.empty) =
     new ProcessMetaDataBuilder(metaData.copy(
-      additionalFields = Some(ProcessAdditionalFields(description, groups, properties)))
+      additionalFields = Some(ProcessAdditionalFields(description, properties)))
     )
 
   def exceptionHandler(params: (String, Expression)*) =

@@ -154,15 +154,10 @@ class ProcessValidation(validators: ProcessingTypeDataProvider[ProcessValidator]
   }
 
   private def validateDuplicates(displayable: DisplayableProcess): ValidationResult = {
-    val groupIds = displayable.metaData.additionalFields
-      .flatMap(a => a.cast[ProcessAdditionalFields])
-      .toList
-      .flatMap(_.groups)
-      .map(_.id)
     val nodeIds = displayable.nodes.map(_.id)
 
     //in theory it would be possible to have group named like one of nodes inside, but it's not worth complicating logic...
-    val duplicates = (groupIds ++ nodeIds).groupBy(identity).filter(_._2.size > 1).keys.toList
+    val duplicates = (nodeIds).groupBy(identity).filter(_._2.size > 1).keys.toList
 
     if (duplicates.isEmpty) {
       ValidationResult.success

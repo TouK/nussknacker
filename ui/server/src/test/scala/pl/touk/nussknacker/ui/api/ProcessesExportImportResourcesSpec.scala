@@ -77,7 +77,7 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
   test("export process in new version") {
     val description = "alamakota"
     val processToSave = ProcessTestData.sampleDisplayableProcess
-    val processWithDescription = processToSave.copy(properties = processToSave.properties.copy(additionalFields = Some(ProcessAdditionalFields(Some(description), Set.empty, Map.empty))))
+    val processWithDescription = processToSave.copy(properties = processToSave.properties.copy(additionalFields = Some(ProcessAdditionalFields(Some(description), Map.empty))))
 
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK

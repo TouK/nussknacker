@@ -142,7 +142,6 @@ class ProcessComparatorSpec extends FunSuite with Matchers {
       exceptionHandler = ExceptionHandlerRef(Nil),
       additionalFields = Some(ProcessAdditionalFields(
         description,
-        Set.empty,
         properties
       )),
       subprocessVersions = Map.empty
