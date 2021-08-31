@@ -2,7 +2,7 @@ import _ from "lodash"
 import React from "react"
 import Dropzone from "react-dropzone"
 import {WithTranslation, withTranslation} from "react-i18next"
-import {connect} from "react-redux"
+import {connect, useSelector} from "react-redux"
 import {mapDispatchWithEspActions} from "../actions/ActionsUtils"
 import InlinedSvgs from "../assets/icons/InlinedSvgs"
 import {UnknownRecord} from "../types/common"
@@ -11,6 +11,7 @@ import HttpService from "../http/HttpService"
 import {RootState} from "../reducers/index"
 import Date from "./common/Date"
 import {FocusOutline, InputWithFocus} from "./withFocus"
+import {getCapabilities} from "../reducers/selectors/other"
 
 type State = { pendingRequest: boolean }
 
@@ -56,22 +57,25 @@ export class ProcessAttachments extends React.Component<Props, State> {
             </div>
           ))}
         </ul>
-        <FocusOutline className="add-attachments">
-          <Dropzone onDrop={this.addAttachment}>
-            {({getRootProps, getInputProps}) => (
-              <FocusOutline className="attachments-container" {...getRootProps()}>
-                <FocusOutline
-                  className={"attachment-drop-zone attachment-button"}
-                  dangerouslySetInnerHTML={{__html: InlinedSvgs.buttonUpload_1}}
-                />
-                <div className="attachment-button-text">
-                  <span>{t("attachments.buttonText", "drop or choose a file")}</span>
-                </div>
-                <InputWithFocus {...getInputProps()}/>
-              </FocusOutline>
-            )}
-          </Dropzone>
-        </FocusOutline>
+        {
+          this.props.capabilities.write ?
+            <FocusOutline className="add-attachments">
+              <Dropzone onDrop={this.addAttachment}>
+                {({getRootProps, getInputProps}) => (
+                  <FocusOutline className="attachments-container" {...getRootProps()}>
+                    <FocusOutline
+                      className={"attachment-drop-zone attachment-button"}
+                      dangerouslySetInnerHTML={{__html: InlinedSvgs.buttonUpload_1}}
+                    />
+                    <div className="attachment-button-text">
+                      <span>{t("attachments.buttonText", "drop or choose a file")}</span>
+                    </div>
+                    <InputWithFocus {...getInputProps()}/>
+                  </FocusOutline>
+                )}
+              </Dropzone>
+            </FocusOutline> : null
+        }
       </div>
     )
   }
@@ -82,6 +86,7 @@ function mapState(state: RootState) {
     attachments: state.processActivity.attachments,
     processId: _.get(state.graphReducer, "fetchedProcessDetails.id"),
     processVersionId: _.get(state.graphReducer, "fetchedProcessDetails.processVersionId"),
+    capabilities: getCapabilities(state),
   }
 }
 

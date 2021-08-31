@@ -146,9 +146,9 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     processService = processService
   )
   val attachmentService = new ProcessAttachmentService(attachmentsPath, processActivityRepository)
-  val processActivityRoute = new ProcessActivityResource(processActivityRepository, fetchingProcessRepository)
+  val processActivityRoute = new ProcessActivityResource(processActivityRepository, fetchingProcessRepository, processAuthorizer)
   val processActivityRouteWithAllPermissions: Route = withAllPermissions(processActivityRoute)
-  val attachmentsRoute = new AttachmentResources(attachmentService, fetchingProcessRepository)
+  val attachmentsRoute = new AttachmentResources(attachmentService, fetchingProcessRepository, processAuthorizer)
   val attachmentsRouteWithAllPermissions: Route = withAllPermissions(attachmentsRoute)
 
   def createProcessRequest(processName: ProcessName)(callback: StatusCode => Assertion): Assertion = {
@@ -362,7 +362,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   }
 
   def getProcessDetails(processId: ProcessId): processdetails.BaseProcessDetails[Unit] =
-    fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId, false).futureValue.get
+    fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId).futureValue.get
 
   def prepareDeploy(id: process.ProcessId): Future[ProcessActionEntityData] =
     actionRepository.markProcessAsDeployed(id, 1, "stream", Some("Deploy comment"))

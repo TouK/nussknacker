@@ -1132,5 +1132,6 @@ lazy val root = (project in file("."))
     )
   )
 
+addCommandAlias("assemblyComponents", ";sql/assembly;openapi/assembly")
 addCommandAlias("assemblySamples", ";flinkManagementSample/assembly;standaloneSample/assembly;generic/assembly")
 addCommandAlias("assemblyDeploymentManagers", ";flinkDeploymentManager/assembly;engineStandalone/assembly")

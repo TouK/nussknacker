@@ -30,9 +30,9 @@ export function exportProcessToJSON(process, versionId) {
   }
 }
 
-export function exportProcessToPdf(processId, versionId, data, businessView) {
+export function exportProcessToPdf(processId, versionId, data) {
   return (dispatch) => {
-    HttpService.exportProcessToPdf(processId, versionId, data, businessView)
+    HttpService.exportProcessToPdf(processId, versionId, data)
 
     dispatch(reportEvent({
       category: "right_panel",

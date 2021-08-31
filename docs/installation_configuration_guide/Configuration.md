@@ -33,7 +33,7 @@ We use HoCon (see [introduction](https://github.com/lightbend/config#using-hocon
 
 Following Nussknacker specific rules apply:
 
-* `nussknacker.config.locations `system property (`CONFIG_FILE `environment variable for Docker image) defines location of configuration files (separated by comma). The files are read in order, entries from later files can override the former (using HoCon fallback mechanism) - see docker demo for example:
+* `nussknacker.config.locations` system property (`CONFIG_FILE `environment variable for Docker image) defines location of configuration files (separated by comma). The files are read in order, entries from later files can override the former (using HoCon fallback mechanism) - see docker demo for example:
     * [setting multiple configuration files](https://github.com/TouK/nussknacker-quickstart/blob/main/docker-compose.yml#L12)
     * [file with configuration override](https://github.com/TouK/nussknacker-quickstart/blob/main/nussknacker/nussknacker.conf)
 * [defaultUiConfig.conf](https://github.com/TouK/nussknacker/blob/staging/ui/server/src/main/resources/defaultUiConfig.conf) contains defaults for Nussknacker Designer

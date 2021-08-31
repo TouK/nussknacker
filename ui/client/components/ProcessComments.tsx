@@ -10,6 +10,7 @@ import CommentInput from "./CommentInput"
 import Date from "./common/Date"
 import {ListSeparator} from "./common/ListSeparator"
 import {NkButton} from "./NkButton"
+import {getCapabilities} from "../reducers/selectors/other"
 
 const getComments = state => state.processActivity?.comments || []
 const getCommentSettings = createSelector(getFeatureSettings, f => f.commentSettings || {})
@@ -23,6 +24,7 @@ function ProcessComments(): JSX.Element {
   const processId = useSelector(getProcessId)
   const processVersionId = useSelector(getProcessVersionId)
   const loggedUser = useSelector(getLoggedUser)
+  const capabilities = useSelector(getCapabilities)
   const commentSettings = useSelector(getCommentSettings)
 
   const _addComment = useCallback(async () => {
@@ -64,15 +66,18 @@ function ProcessComments(): JSX.Element {
           </div>
         ))}
       </ul>
-      <div className="add-comment-panel">
-        <CommentInput onChange={onInputChange.bind(this)} value={comment}/>
-        <NkButton
-          type="button"
-          className="add-comment"
-          onClick={_addComment}
-          disabled={pending || comment == ""}
-        >Add</NkButton>
-      </div>
+      {
+        capabilities.write ?
+          <div className="add-comment-panel">
+            <CommentInput onChange={onInputChange.bind(this)} value={comment}/>
+            <NkButton
+              type="button"
+              className="add-comment"
+              onClick={_addComment}
+              disabled={pending || comment == ""}
+            >Add</NkButton>
+          </div> : null
+      }
     </div>
   )
 }

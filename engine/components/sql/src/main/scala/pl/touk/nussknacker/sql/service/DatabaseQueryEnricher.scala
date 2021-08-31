@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.sql.service
 
+import com.typesafe.scalalogging.LazyLogging
 import com.zaxxer.hikari.HikariDataSource
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, NodeId}
@@ -9,8 +10,8 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.sql.db.pool.{DBPoolConfig, HikariDataSourceFactory}
-import pl.touk.nussknacker.sql.db.query.{QueryArgument, QueryArguments, QueryArgumentsExtractor, QueryResultStrategy, ResultSetStrategy, SingleResultStrategy}
-import pl.touk.nussknacker.sql.db.schema.{DbMetaDataProvider, DbParameterMetaData, SqlDialect, TableDefinition}
+import pl.touk.nussknacker.sql.db.query._
+import pl.touk.nussknacker.sql.db.schema._
 
 import java.sql.DriverManager
 import java.time.Duration
@@ -46,7 +47,8 @@ object DatabaseQueryEnricher {
   case class TransformationState(query: String,
                                  argsCount: Int,
                                  tableDef: TableDefinition,
-                                 strategy: QueryResultStrategy) {
+                                 strategy: QueryResultStrategy
+                                ) {
     val outputType: TypingResult = strategy.resultType(tableDef)
   }
 }
@@ -57,7 +59,7 @@ TODO:
 2. Typed parameters - currently we type them as Objects/Unknowns
 */
 class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig) extends EagerService
-  with Lifecycle with SingleInputGenericNodeTransformation[ServiceInvoker] {
+  with Lifecycle with SingleInputGenericNodeTransformation[ServiceInvoker] with LazyLogging {
 
   import DatabaseQueryEnricher._
 
@@ -100,8 +102,7 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig) extends EagerService
 
   protected def initialStep(context: ValidationContext, dependencies: List[NodeDependencyValue])
                            (implicit nodeId: NodeId): NodeTransformationDefinition = {
-    case TransformationStep(Nil, _) =>
-      NextParameters(initialParameters)
+    case TransformationStep(Nil, _) => NextParameters(parameters = initialParameters)
   }
 
   protected def queryParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])
@@ -140,7 +141,7 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig) extends EagerService
                                     (implicit nodeId: ProcessCompilationError.NodeId): NodeTransformationDefinition =
     initialStep(context, dependencies) orElse
       queryParamStep(context, dependencies) orElse
-        finalStep(context, dependencies)
+      finalStep(context, dependencies)
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[TransformationState]): ServiceInvoker = {
     val state = finalState.get

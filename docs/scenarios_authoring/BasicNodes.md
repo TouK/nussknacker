@@ -1,3 +1,7 @@
+---
+sidebar_position: 2
+---
+
 # Basic Nodes
 
 Nodes work with a data stream. They can produce, fetch, send, collect data or organize data flow. Each node has at least two parameters: `Name` and `Description`. Name has to be unique in a scenario. Description is a narrative of your choice.  

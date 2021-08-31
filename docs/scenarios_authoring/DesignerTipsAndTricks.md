@@ -1,3 +1,7 @@
+---
+sidebar_position: 5
+---
+
 # Designer Tips and Tricks
 
 

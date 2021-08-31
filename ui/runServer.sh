@@ -26,6 +26,7 @@ export OPENAPI_COMPONENT_DIR="$PROJECT_BASE_DIR/engine/components/openapi/target
 export SQL_COMPONENT_DIR="$PROJECT_BASE_DIR/engine/components/sql/target/scala-${SCALA_VERSION}"
 
 export OPENAPI_SERVICE_URL="http://localhost:5000"
+export SQL_ENRICHER_URL="localhost:5432"
 
 USE_DOCKER_ENV=${USE_DOCKER_ENV:-true}
 

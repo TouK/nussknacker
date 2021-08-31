@@ -11,7 +11,7 @@ import ActionsUtils from "../../../actions/ActionsUtils"
 import ProcessUtils from "../../../common/ProcessUtils"
 import TestResultUtils from "../../../common/TestResultUtils"
 import HttpService from "../../../http/HttpService"
-import {getProcessCounts, isBusinessView} from "../../../reducers/selectors/graph"
+import {getProcessCounts} from "../../../reducers/selectors/graph"
 import {getExpandedGroups} from "../../../reducers/selectors/groups"
 import {isNodeDetailsModalVisible} from "../../../reducers/selectors/ui"
 import cssVariables from "../../../stylesheets/_variables.styl"
@@ -45,11 +45,11 @@ class NodeDetailsModal extends React.Component {
   }
 
   componentDidMount() {
-    const {nodeToDisplay, showNodeDetailsModal, businessView} = this.props
+    const {nodeToDisplay, showNodeDetailsModal} = this.props
     const isChromium = !!window.chrome
     if (nodeToDisplay && this.state.subprocessContent === null && showNodeDetailsModal && NodeUtils.nodeType(nodeToDisplay) === "SubprocessInput") {
       if (isChromium) { //Subprocesses work only in Chromium, there is problem with jonint and SVG
-        HttpService.fetchProcessDetails(nodeToDisplay.ref.id, null, businessView).then((response) => {
+        HttpService.fetchProcessDetails(nodeToDisplay.ref.id, null).then((response) => {
           this.setState({...this.state, subprocessContent: response.data.json})
         })
       } else {
@@ -247,7 +247,6 @@ function mapState(state) {
     nodeErrors: errors,
     processToDisplay: state.graphReducer.processToDisplay,
     readOnly: !state.settings.loggedUser.canWrite(processCategory) ||
-      isBusinessView(state) ||
       state.graphReducer.nodeToDisplayReadonly ||
       _.get(state, "graphReducer.fetchedProcessDetails.isArchived") ||
       false,
@@ -256,8 +255,6 @@ function mapState(state) {
     processDefinitionData: processDefinitionData,
     expandedGroups: getExpandedGroups(state),
     processCounts: getProcessCounts(state),
-    businessView: isBusinessView(state),
-
   }
 }
 

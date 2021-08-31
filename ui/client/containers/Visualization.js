@@ -12,7 +12,7 @@ import SelectionContextProvider from "../components/graph/SelectionContextProvid
 import RouteLeavingGuard from "../components/RouteLeavingGuard"
 import SpinnerWrapper from "../components/SpinnerWrapper"
 import Toolbars from "../components/toolbars/Toolbars"
-import {getFetchedProcessDetails, getProcessToDisplay, isBusinessView} from "../reducers/selectors/graph"
+import {getFetchedProcessDetails, getProcessToDisplay} from "../reducers/selectors/graph"
 import {getCapabilities} from "../reducers/selectors/other"
 import {getProcessDefinitionData} from "../reducers/selectors/settings"
 import {areAllModalsClosed} from "../reducers/selectors/ui"
@@ -34,16 +34,8 @@ class Visualization extends React.Component {
     this.graphRef = React.createRef()
   }
 
-  componentDidUpdate(prevProps) {
-    if (prevProps.businessView !== this.props.businessView) {
-      this.setBusinessView(this.props.businessView)
-    }
-  }
-
   componentDidMount() {
-    const businessView = VisualizationUrl.extractBusinessViewParams(this.props.location.search)
-    this.setBusinessView(businessView)
-    this.fetchProcessDetails(businessView).then(async (details) => {
+    this.fetchProcessDetails().then(async (details) => {
       await this.props.actions.loadProcessToolbarsConfiguration(this.props.match.params.processId)
       this.props.actions.displayProcessActivity(this.props.match.params.processId)
       this.props.actions.fetchProcessDefinition(
@@ -90,12 +82,6 @@ class Visualization extends React.Component {
     }
   }
 
-  setBusinessView(businessView) {
-    if (businessView != null) {
-      this.props.actions.businessViewChanged(businessView)
-    }
-  }
-
   showCountsIfNeeded(process) {
     const countParams = VisualizationUrl.extractCountParams(this.props.location.search)
     if (countParams) {
@@ -109,10 +95,9 @@ class Visualization extends React.Component {
     this.props.actions.clearProcess()
   }
 
-  fetchProcessDetails = (businessView) => this.props.actions.fetchProcessToDisplay(
+  fetchProcessDetails = () => this.props.actions.fetchProcessToDisplay(
     this.props.match.params.processId,
     undefined,
-    businessView,
   )
 
   fetchProcessState = () => this.props.actions.loadProcessState(this.props.fetchedProcessDetails?.id)
@@ -163,7 +148,6 @@ function mapState(state) {
     allModalsClosed: areAllModalsClosed(state),
     nothingToSave: ProcessUtils.nothingToSave(state),
     capabilities: getCapabilities(state),
-    businessView: isBusinessView(state),
   }
 }
 

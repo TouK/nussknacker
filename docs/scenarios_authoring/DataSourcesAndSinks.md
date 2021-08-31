@@ -1,3 +1,7 @@
+---
+sidebar_position: 3
+---
+
 # Data sources and sinks
 
 ## Kafka topics as input and output to Nussknacker scenarios

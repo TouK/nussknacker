@@ -35,6 +35,10 @@ export const OAuth2Strategy: StrategyConstructor = class OAuth2Strategy implemen
 
   inteceptor(error?: {response?: {status?: AuthErrorCodes}}): Promise<unknown> {
     if (error?.response?.status === AuthErrorCodes.HTTP_UNAUTHORIZED_CODE) {
+      if (SystemUtils.hasAccessToken()) {
+        // this is needed to avoid errors on stale token
+        SystemUtils.clearAuthorizationToken()
+      }
       this.redirectToAuthorizeUrl()
     }
     return Promise.resolve()
@@ -68,7 +72,7 @@ export const OAuth2Strategy: StrategyConstructor = class OAuth2Strategy implemen
       }
     }
 
-    if (SystemUtils.hasAccessToken()) {
+    if (SystemUtils.hasAccessToken() || this.settings.anonymousAccessAllowed) {
       return Promise.resolve()
     }
 
