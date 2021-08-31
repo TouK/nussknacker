@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.source
 
+import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
@@ -15,6 +16,7 @@ import pl.touk.nussknacker.engine.flink.util.timestamp.{BoundedOutOfOrderPreviou
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.source.KafkaSource.defaultMaxOutOfOrdernessMillis
 
+import java.time.Duration
 import scala.collection.JavaConverters._
 
 class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
@@ -66,13 +68,8 @@ class KafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[T]] = timestampAssigner
 
   override def timestampAssigner: Option[TimestampWatermarkHandler[T]] = Some(
-    passedAssigner.getOrElse(
-      new LegacyTimestampWatermarkHandler[T](
-        new BoundedOutOfOrderPreviousElementAssigner[T](
-          kafkaConfig.defaultMaxOutOfOrdernessMillis.getOrElse(defaultMaxOutOfOrdernessMillis)
-        )
-      )
-    )
+    passedAssigner.getOrElse(new StandardTimestampWatermarkHandler[T](WatermarkStrategy
+      .forBoundedOutOfOrderness(Duration.ofMillis(kafkaConfig.defaultMaxOutOfOrdernessMillis.getOrElse(defaultMaxOutOfOrdernessMillis)))))
   )
 
   protected def deserializeTestData(topic: String, record: ConsumerRecord[Array[Byte], Array[Byte]]): T = {

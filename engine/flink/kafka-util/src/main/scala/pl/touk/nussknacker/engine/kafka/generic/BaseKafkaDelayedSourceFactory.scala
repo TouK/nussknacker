@@ -9,6 +9,8 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, Record
 import pl.touk.nussknacker.engine.kafka.source.{ConsumerRecordBasedKafkaSource, KafkaSource}
 import pl.touk.nussknacker.engine.kafka.source.KafkaSource.defaultMaxOutOfOrdernessMillis
 
+import java.time.Duration
+
 /**
   * `createDelayedKafkaSource` is used to create KafkaSource with specified delay.
   * It is used by experimental delayed sources, that unlike delay component, do not use state to keep track of delayed events.
@@ -34,12 +36,6 @@ trait BaseKafkaDelayedSourceFactory {
   }
 
   protected def prepareTimestampAssigner[K, V](kafkaConfig: KafkaConfig, extract: (ConsumerRecord[K, V], Long) => Long): TimestampWatermarkHandler[ConsumerRecord[K, V]] = {
-    new LegacyTimestampWatermarkHandler[ConsumerRecord[K, V]](
-      new BoundedOutOfOrderPreviousElementAssigner[ConsumerRecord[K, V]](
-        kafkaConfig.defaultMaxOutOfOrdernessMillis.getOrElse(defaultMaxOutOfOrdernessMillis)
-      ) {
-        override def extractTimestamp(element: ConsumerRecord[K, V], previousElementTimestamp: Long): Long = extract(element, previousElementTimestamp)
-      }
-    )
+    StandardTimestampWatermarkHandler.boundedOutOfOrderness(extract, Duration.ofMillis(kafkaConfig.defaultMaxOutOfOrdernessMillis.getOrElse(defaultMaxOutOfOrdernessMillis)))
   }
 }
