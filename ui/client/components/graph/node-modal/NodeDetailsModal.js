@@ -22,6 +22,8 @@ import {SubProcessGraph as BareGraph} from "../SubProcessGraph"
 import NodeDetailsContent from "./NodeDetailsContent"
 import NodeDetailsModalHeader from "./NodeDetailsModalHeader"
 import NodeGroupDetailsContent from "./NodeGroupDetailsContent"
+import {V} from "jointjs"
+import {arrowMarker} from "../arrowMarker"
 
 class NodeDetailsModal extends React.Component {
 
@@ -65,6 +67,7 @@ class NodeDetailsModal extends React.Component {
   }
 
   closeModal = () => {
+    V(this.props.graphRef.defs).append(arrowMarker)
     this.props.actions.closeModals()
   }
 
