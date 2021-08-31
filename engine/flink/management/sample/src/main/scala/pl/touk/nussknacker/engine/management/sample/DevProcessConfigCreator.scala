@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.management.sample
 
+import com.cronutils.model.definition.CronDefinitionBuilder
+
 import java.time.LocalDateTime
 import com.typesafe.config.Config
 import io.circe.{Decoder, Encoder}
@@ -195,7 +197,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     )
 
     val additionalClasses = List(
-      classOf[ReturningTestCaseClass]
+      classOf[ReturningTestCaseClass],
+      classOf[CronDefinitionBuilder]
     )
 
     ExpressionConfig(
