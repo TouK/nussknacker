@@ -68,6 +68,60 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
     result should equal(Some(process))
   }
 
+  it should "marshall and unmarshall to same scenario with additional fields" in {
+    val processAdditionalFields = Table(
+      "processAditionalFields",
+      ProcessAdditionalFields(description = Some("process description"), properties = Map("customProperty" -> "customPropertyValue")),
+      ProcessAdditionalFields(description = None, properties = Map("customProperty" -> "customPropertyValue")),
+      ProcessAdditionalFields(description = Some("process description"), properties = Map("customProperty" -> "customPropertyValue")),
+      ProcessAdditionalFields(description = Some("process description"), properties = Map.empty),
+      ProcessAdditionalFields(description = None, properties = Map.empty)
+    )
+
+    forAll(processAdditionalFields) { additionalFields =>
+      val process = EspProcessBuilder
+        .id("process1")
+        .additionalFields(additionalFields.description, additionalFields.properties)
+        .exceptionHandler()
+        .source("a", "")
+        .processorEnd("d", "dService", "p1" -> "expr3")
+
+      val result = marshallAndUnmarshall(process)
+
+      result should equal(Some(process))
+    }
+  }
+
+  it should "unmarshall with known process additional fields" in {
+    val marshalledAndUnmarshalledFields = Table(
+      ("marshalled", "unmarshalled"),
+      ("""{ "description" : "process description", "groups" : [ { "id" : "4", "nodes" : [ "10", "20" ] } ], "properties" : { "customProperty" : "customPropertyValue" } }""",
+        ProcessAdditionalFields(description = Some("process description"), properties = Map("customProperty" -> "customPropertyValue"))),
+      ("""{ "groups" : [ { "id" : "4", "nodes" : [ "10", "20" ] } ], "description" : "process description", "properties" : { "customProperty" : "customPropertyValue" } }""",
+        ProcessAdditionalFields(description = Some("process description"), properties = Map("customProperty" -> "customPropertyValue"))),
+      ("""{ "groups" : [ { "id" : "4", "nodes" : [ "10", "20" ] } ], "properties" : { "customProperty" : "customPropertyValue" } }""",
+        ProcessAdditionalFields(description = None, properties = Map("customProperty" -> "customPropertyValue"))),
+      ("""{ "description" : "process description", "groups" : [], "properties" : { "customProperty" : "customPropertyValue" } }""",
+        ProcessAdditionalFields(description = Some("process description"), properties = Map("customProperty" -> "customPropertyValue"))),
+      ("""{ "description" : "process description", "properties" : { "customProperty" : "customPropertyValue" } }""",
+        ProcessAdditionalFields(description = Some("process description"), properties = Map("customProperty" -> "customPropertyValue"))),
+      ("""{ "description" : "process description", "groups" : [ { "id" : "4", "nodes" : [ "10", "20" ] } ] }""",
+        ProcessAdditionalFields(description = Some("process description"), properties = Map.empty)),
+      ("""{ "description" : "process description", "groups" : [ { "id" : "4", "nodes" : [ "10", "20" ] } ], "properties": {} }""",
+        ProcessAdditionalFields(description = Some("process description"), properties = Map.empty))
+    )
+
+    forAll(marshalledAndUnmarshalledFields) { (marshalled: String, unmarshaled: ProcessAdditionalFields) =>
+      val processJson = buildProcessJsonWithAdditionalFields(processAdditionalFields = Some(marshalled))
+
+      inside(ProcessMarshaller.fromJson(processJson)) { case Valid(process) =>
+        process.metaData.id shouldBe "custom"
+        process.metaData.additionalFields shouldBe Some(unmarshaled)
+      }
+    }
+  }
+
+
   it should "unmarshall with known node additional fields" in {
     val processJson = buildProcessJsonWithAdditionalFields(nodeAdditionalFields = Some("""{ "description": "single node description"}"""))
 
