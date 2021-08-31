@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.compile.validationHelpers.{DynamicParameterJoi
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.{CustomNode, Filter, NodeData, Processor, Sink, Source, Variable, VariableBuilder}
+import pl.touk.nussknacker.engine.graph.node.{CustomNode, Filter, NodeData, Processor, Sink, Source, SubprocessOutputDefinition, Variable, VariableBuilder}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
@@ -182,6 +182,15 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
   test("should return inferred type for variable builder output") {
      inside(
       validate(VariableBuilder("var1", "var1", List(Field("field1", "42L"), Field("field2", "'some string'")), None), ValidationContext(Map.empty))
+    ) {
+      case ValidationPerformed(Nil, None, Some(TypedObjectTypingResult(fields, _, _))) =>
+        fields.mapValues(_.display) shouldBe Map("field1" -> "Long", "field2" -> "String")
+    }
+  }
+
+  test("should return inferred type for fragment definition output") {
+     inside(
+      validate(SubprocessOutputDefinition("var1", "var1", List(Field("field1", "42L"), Field("field2", "'some string'")), None), ValidationContext(Map.empty))
     ) {
       case ValidationPerformed(Nil, None, Some(TypedObjectTypingResult(fields, _, _))) =>
         fields.mapValues(_.display) shouldBe Map("field1" -> "Long", "field2" -> "String")
