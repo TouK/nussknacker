@@ -23,7 +23,6 @@ interface State {
   difference: unknown,
 }
 
-//TODO: handle displaying groups
 //TODO: handle different textarea heights
 class VersionsForm extends React.Component<Props, State> {
 

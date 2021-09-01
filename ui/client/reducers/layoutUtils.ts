@@ -4,13 +4,9 @@ import {NodeType, Process} from "../types"
 import {Reducer} from "../actions/reduxTypes"
 
 export function fromMeta(process: Process): Layout {
-  const nodesLayout = process.nodes
+  return process.nodes
     .filter(({additionalFields}) => additionalFields?.layoutData)
     .map(({id, additionalFields}) => ({id, position: additionalFields.layoutData}))
-  const groupsLayout = (process.properties?.additionalFields?.groups || [])
-    .filter(g => g?.layoutData)
-    .map(({id, layoutData}) => ({id, position: layoutData}))
-  return [...nodesLayout, ...groupsLayout]
 }
 
 export const nodes: Reducer<NodeType[]> = (nodes, action) => {

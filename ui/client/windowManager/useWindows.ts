@@ -11,7 +11,7 @@ import {useUserSettings} from "../common/userSettings"
 import {defaultArrayFormat, setAndPreserveLocationParams} from "../common/VisualizationUrl"
 import {ConfirmDialogData} from "../components/modals/GenericConfirmDialog"
 import history from "../history"
-import {Edge, GroupNodeType, NodeType} from "../types"
+import {Edge, NodeType} from "../types"
 import {WindowKind} from "./WindowKind"
 
 export function parseWindowsQueryParams<P extends Record<string, string | string[]>>(append: P, remove?: P): Record<string, string[]> {
@@ -49,7 +49,7 @@ export function useWindows(parent?: WindowId) {
   }, [dispatch, settings, wm])
 
   const openNodeWindow = useCallback((
-    node: NodeType | GroupNodeType,
+    node: NodeType,
     readonly?: boolean,
   ) => {
     open({

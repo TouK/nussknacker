@@ -3,72 +3,11 @@ import {Layout, NodePosition, NodesWithPositions} from "../../actions/nk"
 import ProcessUtils from "../../common/ProcessUtils"
 import {ExpressionLang} from "../../components/graph/node-modal/editors/expression/types"
 import NodeUtils from "../../components/graph/NodeUtils"
-import {Edge, EdgeType, GroupNodeType, NodeId, NodeType, Process, ProcessDefinitionData} from "../../types"
+import {Edge, EdgeType, NodeId, NodeType, Process, ProcessDefinitionData} from "../../types"
 import {GraphState} from "./types"
 
-function isConnectedTo(...nodeIds: NodeId[]) {
-  return (edge: Edge) => {
-    return nodeIds.find(id => edge.from === id || edge.to === id)
-  }
-}
 
-function graphDFS(edges: Record<NodeId, NodeId[]>) {
-  const [startNode] = Object.keys(edges)
-  const queue = [startNode]
-  const visited = [startNode]
-  while (queue.length) {
-    const current = queue.pop()
-    edges[current]
-      .filter(node => !visited.includes(node))
-      .forEach(node => {
-        visited.push(node)
-        queue.push(node)
-      })
-  }
-  return visited
-}
-
-function isGraphConnected(nodes: NodeId[], edges: Edge[]): boolean {
-  const connections = Object.fromEntries(nodes.map(nodeId => [
-    nodeId,
-    edges
-      .filter(isConnectedTo(nodeId))
-      .filter(isConnectedTo(...without(nodes, nodeId)))
-      .map(({from, to}) => nodeId === from ? to : from),
-  ]))
-  return graphDFS(connections).length === nodes.length
-}
-
-function getSelectedNodes(state: GraphState): NodeType[] {
-  const {processToDisplay, selectionState = []} = state
-  return NodeUtils.nodesWithGroups(processToDisplay).filter(n => selectionState.includes(n.id))
-}
-
-export function getSelectedGroups(state: GraphState): GroupNodeType[] {
-  return getSelectedNodes(state).filter(NodeUtils.nodeIsGroup)
-}
-
-function nodeInGroup(state: GraphState) {
-  const groups = NodeUtils.getAllGroups(state.processToDisplay)
-  return node => !!groups.find(g => g.nodes.includes(node))
-}
-
-export function canGroupSelection(state: GraphState): boolean {
-  const {processToDisplay: {edges}, selectionState = []} = state
-
-  if (selectionState.length < 2) {
-    return false
-  }
-
-  const containsGroup = getSelectedGroups(state).length
-  if (containsGroup || selectionState.some(nodeInGroup(state))) {
-    return false
-  }
-
-  return isGraphConnected(selectionState, edges)
-}
-
-export function displayOrGroup(state: GraphState, node: NodeType): GraphState {
+export function displayNode(state: GraphState, node: NodeType): GraphState {
   return {
     ...state,
     nodeToDisplay: node,
@@ -81,9 +20,8 @@ export function updateLayoutAfterNodeIdChange(layout: Layout, oldId: NodeId, new
 
 export function updateAfterNodeIdChange(layout: Layout, process: Process, oldId: NodeId, newId: NodeId) {
   const newLayout = updateLayoutAfterNodeIdChange(layout, oldId, newId)
-  const withGroupsUpdated = NodeUtils.updateGroupsAfterNodeIdChange(process, oldId, newId)
   return {
-    processToDisplay: withGroupsUpdated,
+    processToDisplay: process,
     layout: newLayout,
   }
 }
@@ -91,7 +29,10 @@ export function updateAfterNodeIdChange(layout: Layout, process: Process, oldId:
 export function updateAfterNodeDelete(state: GraphState, idToDelete: NodeId) {
   return {
     ...state,
-    processToDisplay: NodeUtils.updateGroupsAfterNodeDelete(state.processToDisplay, idToDelete),
+    processToDisplay: {
+      ...state.processToDisplay,
+      nodes: state.processToDisplay.nodes.filter((n) => n.id !== idToDelete)
+    },
     layout: state.layout.filter(n => n.id !== idToDelete),
   }
 }

@@ -1,7 +1,6 @@
 import NodeUtils from "../../components/graph/NodeUtils"
 import {getProcessToDisplay} from "../../reducers/selectors/graph"
 import {ThunkAction} from "../reduxTypes"
-import {ungroupSelected} from "./groups"
 import {deleteNodes} from "./node"
 import {reportEvent} from "./reportEvent"
 
@@ -76,7 +75,6 @@ export function deleteSelection(selectionState: string[], event: Event): ThunkAc
       name: "delete",
     }))
 
-    dispatch(ungroupSelected())
     dispatch(deleteNodes(selectedNodes))
 
     return dispatch({
@@ -113,7 +111,7 @@ export function selectAll(): ThunkAction {
   return (dispatch, getState) => {
     const state = getState()
     const process = getProcessToDisplay(state)
-    const nodeIds = NodeUtils.nodesWithGroups(process).map(n => n.id)
+    const nodeIds = process.nodes.map(n => n.id)
     dispatch(resetSelection(...nodeIds))
   }
 }

@@ -265,6 +265,9 @@
   },
   "nyc": {
     "report-dir": "cypress-coverage",
-    "reporter": ["html", "json"]
+    "reporter": [
+      "html",
+      "json"
+    ]
   }
 }

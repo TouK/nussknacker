@@ -34,8 +34,8 @@ function validate(processId: string, request: ValidationRequest, dispatch: Thunk
 const debouncedValidate = debounce(validate, 500)
 
 export function updateNodeData(processId: string, variableTypes: VariableTypes, branchVariableTypes: Record<string, VariableTypes>, nodeData: NodeType, processProperties: PropertiesType): ThunkAction {
-  //groups and Properties are "special types" which are not compatible with NodeData in BE
-  if (nodeData.type && nodeData.type !== "_group" && nodeData.type !== "Properties") {
+  //Properties are "special types" which are not compatible with NodeData in BE
+  if (nodeData.type && nodeData.type !== "Properties") {
     return (dispatch) => debouncedValidate(processId, {
       nodeData, variableTypes, processProperties, branchVariableTypes}, dispatch)
   } else {

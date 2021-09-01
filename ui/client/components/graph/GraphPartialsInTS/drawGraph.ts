@@ -2,9 +2,8 @@
 import {dia} from "jointjs"
 import {isEqual} from "lodash"
 import {Layout} from "../../../actions/nk"
-import {ProcessCounts} from "../../../reducers/graph"
 import {Process, ProcessDefinitionData} from "../../../types"
-import {boundingRect, makeElement, makeLink} from "../EspNode"
+import {makeElement, makeLink} from "../EspNode"
 import NodeUtils from "../NodeUtils"
 import {redraw} from "./redraw"
 import {updateLayout} from "./updateLayout"
@@ -24,15 +23,13 @@ export function drawGraph(
 
   const nodesWithGroups = NodeUtils.nodesFromProcess(process)
   const edgesWithGroups = NodeUtils.edgesFromProcess(process)
-  const groups = NodeUtils.getExpandedGroups(process)
 
   const nodes = nodesWithGroups.map(makeElement(processDefinitionData))
   const edges = edgesWithGroups.map(makeLink)
-  const boundingRects = groups.map(boundingRect(nodes, layout, nodesWithGroups))
 
   performance.mark("nodes, links & bounding")
 
-  const cells = [...boundingRects, ...nodes, ...edges]
+  const cells = [...nodes, ...edges]
 
   const currentCells = graph.getCells()
   const currentIds = currentCells.map(c => c.id)
@@ -49,9 +46,6 @@ export function drawGraph(
 
   _updateLayout(layout)
   performance.mark("layout")
-
-  boundingRects.forEach(rect => rect.toBack())
-  performance.mark("boundingRects")
 
   this.redrawing = false
   performance.mark("redrawing done")

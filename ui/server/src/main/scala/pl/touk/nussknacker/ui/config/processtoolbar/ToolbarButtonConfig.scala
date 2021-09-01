@@ -61,9 +61,6 @@ object ToolbarButtonConfigType extends Enumeration {
   val ProcessArchive: Value = Value("process-archive")
   val ProcessUnarchive: Value = Value("process-unarchive")
 
-  val Group: Value = Value("group")
-  val Ungroup: Value = Value("ungroup")
-
   val TestFromFile: Value = Value("test-from-file")
   val TestGenerate: Value = Value("test-generate")
   val TestCounts: Value = Value("test-counts")

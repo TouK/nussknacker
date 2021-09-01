@@ -132,7 +132,7 @@ export default function SelectionContextProvider(props: PropsWithChildren<{ past
       } else {
         dispatch(error(t(
           "userActions.copy.failed",
-          "Can not copy selected content. It should contain only plain nodes without groups",
+          "Can not copy selected content. It should contain only plain nodes",
         )))
       }
 
