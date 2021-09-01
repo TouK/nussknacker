@@ -10,11 +10,7 @@ export const getSettings = (state: RootState): SettingsState => state.settings
 
 export const getAuthenticationSettings = createSelector(getSettings, (s): AuthenticationSettings => s.authenticationSettings)
 export const getFeatureSettings = createSelector(getSettings, s => s.featuresSettings)
-// export const getTabs = createSelector(getFeatureSettings, (s): DynamicTabData[] => s.tabs || [])
-export const getTabs = createSelector(getFeatureSettings, (s): DynamicTabData[] => s.tabs.concat([
-  {id: "iframe", type: "IFrame", title: "*IFRAME*", url: "http://localhost:5001"},
-  {id: "module", type: "Remote", title: "*MODULE*", url: "example/nkTab@http://localhost:5001/remoteEntry.js"},
-]))
+export const getTabs = createSelector(getFeatureSettings, (s): DynamicTabData[] => s.tabs || [])
 export const getTargetEnvironmentId = createSelector(getFeatureSettings, s => s?.remoteEnvironment?.targetEnvironmentId)
 export const getLoggedUser = createSelector(getSettings, s => s.loggedUser)
 export const getProcessDefinitionData = createSelector(getSettings, s => s.processDefinitionData || {} as ProcessDefinitionData)
