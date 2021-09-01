@@ -14,7 +14,7 @@ import sttp.client.{SttpBackend, _}
 import java.net.URI
 import scala.concurrent.Future
 
-class OpenIdConnectServiceSpec extends FunSuite with ForAllTestContainer with Matchers with VeryPatientScalaFutures {
+class GenericOidcServiceSpec extends FunSuite with ForAllTestContainer with Matchers with VeryPatientScalaFutures {
 
   private val realmClientSecret = "123456789"
 

@@ -15,7 +15,7 @@ class OAuth2ClientApiSpec extends FlatSpec with Matchers with BeforeAndAfter wit
 
   val config = ExampleOAuth2ServiceFactory.testConfig
 
-  val body = DefaultOpenIdConnectAuthorizationData(accessToken = "9IDpWSEYetSNRX41", tokenType = "Bearer", refreshToken = None)
+  val body = DefaultOidcAuthorizationData(accessToken = "9IDpWSEYetSNRX41", tokenType = "Bearer", refreshToken = None)
 
   implicit val testingBackend = new RecordingSttpBackend(
     SttpBackendStub.asynchronousFuture
@@ -28,7 +28,7 @@ class OAuth2ClientApiSpec extends FlatSpec with Matchers with BeforeAndAfter wit
   }
 
   it should ("send access token request in urlencoded") in {
-    val client = new OAuth2ClientApi[GitHubProfileResponse, DefaultOpenIdConnectAuthorizationData](
+    val client = new OAuth2ClientApi[GitHubProfileResponse, DefaultOidcAuthorizationData](
       config.copy(accessTokenRequestContentType = MediaType.ApplicationXWwwFormUrlencoded.toString())
     )
 
@@ -43,7 +43,7 @@ class OAuth2ClientApiSpec extends FlatSpec with Matchers with BeforeAndAfter wit
   }
 
   it should ("send access token request as json") in {
-    val client = new OAuth2ClientApi[GitHubProfileResponse, DefaultOpenIdConnectAuthorizationData](
+    val client = new OAuth2ClientApi[GitHubProfileResponse, DefaultOidcAuthorizationData](
       config.copy(accessTokenRequestContentType = MediaType.ApplicationJson.toString())
     )
 
