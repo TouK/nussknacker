@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.engine.flink.api.timestampwatermark
 
-import java.time.Duration
-
 import com.github.ghik.silencer.silent
-import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, WatermarkStrategy}
+import org.apache.flink.api.common.eventtime._
 import org.apache.flink.streaming.api.functions.{AssignerWithPeriodicWatermarks, AssignerWithPunctuatedWatermarks, TimestampAssigner}
 import org.apache.flink.streaming.api.scala.DataStream
 
+import java.time.Duration
 import scala.annotation.nowarn
 
 trait TimestampWatermarkHandler[T] extends Serializable {
@@ -29,12 +28,33 @@ class StandardTimestampWatermarkHandler[T](strategy: WatermarkStrategy[T]) exten
 
 object StandardTimestampWatermarkHandler {
 
+  //cannot use scala function as lambda, as it is not serializable...
   def timestampAssigner[T](extract: T => Long): SerializableTimestampAssigner[T] = new SerializableTimestampAssigner[T] {
     override def extractTimestamp(element: T, recordTimestamp: Long): Long = extract(element)
   }
 
+  //cannot use scala function as lambda, as it is not serializable...
+  def timestampAssignerWithTimestamp[T](extract: (T, Long) => Long): SerializableTimestampAssigner[T] = new SerializableTimestampAssigner[T] {
+    override def extractTimestamp(element: T, recordTimestamp: Long): Long = extract(element, recordTimestamp)
+  }
+
+  def boundedOutOfOrderness[T](extract: (T, Long) => Long, maxOutOfOrderness: Duration): TimestampWatermarkHandler[T] = {
+    val assigner: SerializableTimestampAssigner[T] = (element: T, timestamp: Long) => extract(element, timestamp)
+    new StandardTimestampWatermarkHandler(WatermarkStrategy.forBoundedOutOfOrderness(maxOutOfOrderness)
+      .withTimestampAssigner(assigner))
+  }
+
   def boundedOutOfOrderness[T](extract: T => Long, maxOutOfOrderness: Duration): TimestampWatermarkHandler[T] = {
     new StandardTimestampWatermarkHandler(WatermarkStrategy.forBoundedOutOfOrderness(maxOutOfOrderness).withTimestampAssigner(timestampAssigner(extract)))
+  }
+
+  def afterEachEvent[T](extract: T => Long): TimestampWatermarkHandler[T] = {
+    new StandardTimestampWatermarkHandler[T](WatermarkStrategy.forGenerator((_: WatermarkGeneratorSupplier.Context) => new WatermarkGenerator[T] {
+      override def onEvent(event: T, eventTimestamp: Long, output: WatermarkOutput): Unit = {
+        output.emitWatermark(new Watermark(eventTimestamp))
+      }
+      override def onPeriodicEmit(output: WatermarkOutput): Unit = {}
+    }).withTimestampAssigner(timestampAssigner(extract)))
   }
 
 }
