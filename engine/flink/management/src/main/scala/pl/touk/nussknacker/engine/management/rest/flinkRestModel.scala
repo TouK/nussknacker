@@ -41,7 +41,10 @@ object flinkRestModel {
   @JsonCodec(decodeOnly = true) case class JobsResponse(jobs: List[JobOverview])
 
   //NOTE: Flink <1.10 compatibility - JobStatus changed package, so we use String here
-  @JsonCodec(decodeOnly = true) case class JobOverview(jid: String, name: String, `last-modification`: Long, `start-time`: Long, state: String)
+  @JsonCodec(decodeOnly = true) case class JobOverview(jid: String, name: String, `last-modification`: Long, `start-time`: Long, state: String, tasks: JobTasksOverview)
+
+  @JsonCodec(decodeOnly = true) case class JobTasksOverview(total: Int, created: Int, scheduled: Int, deploying: Int, running: Int, finished: Int,
+                                                            canceling: Int, canceled: Int, failed: Int, reconciling: Int, initializing: Int)
 
   @JsonCodec(decodeOnly = true) case class JobConfig(jid: String, `execution-config`: ExecutionConfig)
 

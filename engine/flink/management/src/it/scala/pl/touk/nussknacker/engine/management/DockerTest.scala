@@ -41,7 +41,7 @@ trait DockerTest extends DockerTestKit with ExtremelyPatientScalaFutures with La
     val dir = Files.createTempDirectory("forDockerfile")
     val dirFile = dir.toFile
 
-    List("Dockerfile", "entrypointWithIP.sh", "conf.yml", "docker-entrypoint.sh").foreach { file =>
+    List("Dockerfile", "entrypointWithIP.sh", "conf.yml").foreach { file =>
       val resource = IOUtils.toString(getClass.getResourceAsStream(s"/docker/$file"))
       val withVersionReplaced = resource.replace("${scala.major.version}", ScalaMajorVersionConfig.scalaMajorVersion)
       FileUtils.writeStringToFile(new File(dirFile, file), withVersionReplaced)
@@ -55,6 +55,7 @@ trait DockerTest extends DockerTestKit with ExtremelyPatientScalaFutures with La
   val KafkaPort = 9092
   val ZookeeperDefaultPort = 2181
   val FlinkJobManagerRestPort = 8081
+  val taskManagerSlotCount = 8
 
   lazy val zookeeperContainer =
     DockerContainer("wurstmeister/zookeeper:3.4.6", name = Some("zookeeper"))
@@ -65,7 +66,7 @@ trait DockerTest extends DockerTestKit with ExtremelyPatientScalaFutures with La
     val savepointDir = prepareVolumeDir()
     baseFlink("jobmanager")
       .withCommand("jobmanager")
-      .withEnv("JOB_MANAGER_RPC_ADDRESS_COMMAND=grep $HOSTNAME /etc/hosts | awk '{print $1}'", s"SAVEPOINT_DIR_NAME=${savepointDir.getFileName}")
+      .withEnv(s"SAVEPOINT_DIR_NAME=${savepointDir.getFileName}")
       .withReadyChecker(DockerReadyChecker.LogLineContains("Recover all persisted job graphs").looped(5, 1 second))
       .withLinks(ContainerLink(zookeeperContainer, "zookeeper"))
       .withVolumes(List(VolumeMapping(savepointDir.toString, savepointDir.toString, rw = true)))
@@ -82,6 +83,7 @@ trait DockerTest extends DockerTestKit with ExtremelyPatientScalaFutures with La
     ) ++ additionalLinks
     baseFlink("taskmanager")
       .withCommand("taskmanager")
+      .withEnv(s"TASK_MANAGER_NUMBER_OF_TASK_SLOTS=$taskManagerSlotCount")
       .withReadyChecker(DockerReadyChecker.LogLineContains("Successful registration at resource manager").looped(5, 1 second))
       .withLinks(links :_*)
       .withVolumes(volumes)
