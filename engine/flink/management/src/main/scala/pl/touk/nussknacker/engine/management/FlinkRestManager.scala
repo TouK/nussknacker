@@ -101,6 +101,9 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
   }
 
   protected def ensureTasksRunning(overview: JobOverview): Boolean = {
+    // We sum running and finished tasks because for batch jobs some tasks can be already finished but the others are still running.
+    // We don't handle correctly case when job creates some tasks lazily e.g. in batch case. Without knowledge about what
+    // kind of job is deployed, we don't know if it is such case or it is just a streaming job which is not fully running yet
     overview.tasks.running + overview.tasks.finished == overview.tasks.total
   }
 
