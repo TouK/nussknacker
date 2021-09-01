@@ -37,8 +37,8 @@ class TestFromFileSpec extends FunSuite with Matchers with LazyLogging {
 
     val process = EspProcessBuilder.id("test").exceptionHandler()
       .source(
-        "start", "kafka-GenericJsonSourceFactory", TopicParamName -> s"'$topic'",
-      ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L")
+        "start", "kafka-GenericJsonSourceFactory", TopicParamName -> s"'$topic'")
+      .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L")
       .emptySink("end", "sinkForInputMeta")
 
     val consumerRecord = new InputMetaToJson()

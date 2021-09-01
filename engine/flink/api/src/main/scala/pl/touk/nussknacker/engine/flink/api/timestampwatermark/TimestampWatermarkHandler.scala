@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.engine.flink.api.timestampwatermark
 
-import java.time.Duration
 import com.github.ghik.silencer.silent
-import org.apache.flink.api.common.eventtime
-import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, TimestampAssignerSupplier, Watermark, WatermarkGenerator, WatermarkGeneratorSupplier, WatermarkOutput, WatermarkStrategy}
+import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, Watermark, WatermarkGenerator, WatermarkGeneratorSupplier, WatermarkOutput, WatermarkStrategy}
 import org.apache.flink.streaming.api.functions.{AssignerWithPeriodicWatermarks, AssignerWithPunctuatedWatermarks, TimestampAssigner}
 import org.apache.flink.streaming.api.scala.DataStream
 
+import java.time.Duration
 import scala.annotation.nowarn
 
 trait TimestampWatermarkHandler[T] extends Serializable {
@@ -44,11 +43,13 @@ object StandardTimestampWatermarkHandler {
   }
 
   def afterEachEvent[T](extract: T => Long): TimestampWatermarkHandler[T] = {
-    new StandardTimestampWatermarkHandler[T](WatermarkStrategy.forGenerator((_: WatermarkGeneratorSupplier.Context) => new WatermarkGenerator[T] {
-      override def onEvent(event: T, eventTimestamp: Long, output: WatermarkOutput): Unit = {
-        output.emitWatermark(new Watermark(eventTimestamp))
+    new StandardTimestampWatermarkHandler[T](WatermarkStrategy.forGenerator(new WatermarkGeneratorSupplier[T] {
+      override def createWatermarkGenerator(context: WatermarkGeneratorSupplier.Context): WatermarkGenerator[T] = new WatermarkGenerator[T] {
+        override def onEvent(event: T, eventTimestamp: Long, output: WatermarkOutput): Unit = {
+          output.emitWatermark(new Watermark(eventTimestamp))
+        }
+        override def onPeriodicEmit(output: WatermarkOutput): Unit = {}
       }
-      override def onPeriodicEmit(output: WatermarkOutput): Unit = {}
     }).withTimestampAssigner(timestampAssigner(extract)))
   }
 
