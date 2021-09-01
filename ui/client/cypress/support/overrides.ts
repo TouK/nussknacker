@@ -18,6 +18,13 @@ declare global {
 
       toMatchExactImageSnapshot(): Chainable<null>,
     }
+
+    //looks like it should be available
+    //used in with drag from @4tw/cypress-drag-drop to force drop position
+    interface ClickOptions {
+      x: number,
+      y: number,
+    }
   }
 }
 

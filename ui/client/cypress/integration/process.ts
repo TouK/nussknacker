@@ -96,7 +96,7 @@ describe("Process", () => {
         .should("be.visible").click()
       cy.get("[data-testid='component:customFilter']")
         .should("be.visible")
-        .drag("#nk-graph-main", {x: 600, y: 400, position: "right", force: true})
+        .drag("#nk-graph-main", {x: 580, y: 450, position: "right", force: true})
       cy.get("#nk-graph-main").toMatchImageSnapshot()
     })
 
