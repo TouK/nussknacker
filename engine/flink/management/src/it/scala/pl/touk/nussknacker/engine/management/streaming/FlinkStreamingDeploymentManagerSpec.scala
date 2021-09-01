@@ -40,7 +40,7 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
 
     processVersion(ProcessName(processId)) shouldBe Some(version)
 
-    cancel(processId)
+    cancelProcess(processId)
   }
 
   //manual test because it is hard to make it automatic
@@ -68,7 +68,7 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
     deployProcessAndWaitIfRunning(process, empty(process.id))
     Thread.sleep(2000)
 
-    cancel(processId)
+    cancelProcess(processId)
   }
 
   //this is for the case where e.g. we manually cancel flink job, or it fail and didn't restart...
@@ -126,7 +126,7 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
 
     messages shouldBe List("List(One element)", "List(One element, One element)")
 
-    cancel(processId)
+    cancelProcess(processId)
   }
 
   test("snapshot state and be able to deploy using it") {
@@ -178,7 +178,7 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
 
     messagesFromTopic(outTopic, 2) shouldBe List("List(One element)", "List(One element, One element)")
 
-    cancel(processId)
+    cancelProcess(processId)
   }
 
   test("fail to redeploy if old is incompatible") {
@@ -199,7 +199,7 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
 
     exception.getMessage shouldBe "State is incompatible, please stop scenario and start again with clean state"
 
-    cancel(processId)
+    cancelProcess(processId)
   }
 
   ignore("fail to redeploy if old state with mapAggregator is incompatible") {
@@ -220,7 +220,7 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
 
     exception.getMessage shouldBe "State is incompatible, please stop scenario and start again with clean state"
 
-    cancel(processId)
+    cancelProcess(processId)
   }
 
   def empty(processId: String): ProcessVersion = ProcessVersion.empty.copy(processName = ProcessName(processId))
@@ -236,7 +236,7 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
       jobStatus.map(_.status.isRunning) shouldBe Some(true)
     }
 
-    cancel(processId)
+    cancelProcess(processId)
   }
 
   test("extract scenario definition") {
@@ -265,34 +265,6 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
       .consume(outTopic)
       .map(_.message()).map(new String(_, StandardCharsets.UTF_8))
       .take(count).toList
-  }
-
-  private def deployProcessAndWaitIfRunning(process: EspProcess, processVersion: ProcessVersion, savepointPath : Option[String] = None) = {
-    val marshaled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
-    assert(deploymentManager.deploy(processVersion, defaultDeploymentData, GraphProcess(marshaled), savepointPath).isReadyWithin(100 seconds))
-    eventually {
-
-      val jobStatus = deploymentManager.findJobStatus(ProcessName(process.id)).futureValue
-      logger.debug(s"Waiting for deploy: ${process.id}, $jobStatus")
-
-      jobStatus.map(_.status.name) shouldBe Some(FlinkStateStatus.Running.name)
-      jobStatus.map(_.status.isRunning) shouldBe Some(true)
-    }
-  }
-
-  private def cancel(processId: String): Unit = {
-    assert(deploymentManager.cancel(ProcessName(processId), user = userToAct).isReadyWithin(10 seconds))
-    eventually {
-      val runningJobs = deploymentManager
-        .findJobStatus(ProcessName(processId))
-        .futureValue
-        .filter(_.status.isRunning)
-
-      logger.debug(s"waiting for jobs: $processId, $runningJobs")
-      if (runningJobs.nonEmpty) {
-        throw new IllegalStateException("Job still exists")
-      }
-    }
   }
 
   private def processVersion(processId: ProcessName): Option[ProcessVersion] =

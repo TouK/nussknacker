@@ -18,8 +18,6 @@ class FlinkStreamingDeploymentManagerSlotsCountSpec extends FunSuite with Matche
 
   override val taskManagerSlotCount: Int = 1
 
-  private val defaultDeploymentData = DeploymentData.empty
-
   // manual test because it takes a while to verify that
   ignore("deploy scenario with too low task manager slots counts") {
     val processId = "processTestingTMSlots"
@@ -30,13 +28,8 @@ class FlinkStreamingDeploymentManagerSlotsCountSpec extends FunSuite with Matche
       deployProcess(process, version)
       continuouslyHaveStateStatus(process.id, FlinkStateStatus.DuringDeploy, 10, 1 second)
     } finally {
-      cancel(processId)
+      cancelProcess(processId)
     }
-  }
-
-  private def deployProcess(process: EspProcess, processVersion: ProcessVersion) = {
-    val marshaled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
-    assert(deploymentManager.deploy(processVersion, defaultDeploymentData, GraphProcess(marshaled), None).isReadyWithin(100 seconds))
   }
 
   private def continuouslyHaveStateStatus(processId: String, expectedStatus: StateStatus, attempts: Int, checkInterval: FiniteDuration): Unit = {
@@ -47,21 +40,6 @@ class FlinkStreamingDeploymentManagerSlotsCountSpec extends FunSuite with Matche
       jobStatus.map(_.status.name) shouldBe Some(expectedStatus.name)
       if (attempt != attempts - 1) {
         Thread.sleep(checkInterval.toMillis)
-      }
-    }
-  }
-
-  private def cancel(processId: String): Unit = {
-    assert(deploymentManager.cancel(ProcessName(processId), user = userToAct).isReadyWithin(10 seconds))
-    eventually {
-      val runningJobs = deploymentManager
-        .findJobStatus(ProcessName(processId))
-        .futureValue
-        .filter(_.status.isRunning)
-
-      logger.debug(s"waiting for jobs: $processId, $runningJobs")
-      if (runningJobs.nonEmpty) {
-        throw new IllegalStateException("Job still exists")
       }
     }
   }

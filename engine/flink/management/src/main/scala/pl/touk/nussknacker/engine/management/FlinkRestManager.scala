@@ -87,7 +87,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
   protected def mapJobStatus(overview: JobOverview): StateStatus = {
     toJobStatus(overview) match {
       case JobStatus.RUNNING if ensureTasksRunning(overview) => FlinkStateStatus.Running
-      case s if isDuringDeploy(s) => FlinkStateStatus.DuringDeploy
+      case s if checkDuringDeployForNotRunningJob(s) => FlinkStateStatus.DuringDeploy
       case JobStatus.FINISHED => FlinkStateStatus.Finished
       case JobStatus.RESTARTING => FlinkStateStatus.Restarting
       case JobStatus.CANCELED => FlinkStateStatus.Canceled
@@ -107,7 +107,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
     overview.tasks.running + overview.tasks.finished == overview.tasks.total
   }
 
-  protected def isDuringDeploy(s: JobStatus): Boolean = {
+  protected def checkDuringDeployForNotRunningJob(s: JobStatus): Boolean = {
     // Flink return running status even if some tasks are scheduled or initializing
     s == JobStatus.RUNNING || s == JobStatus.INITIALIZING
   }

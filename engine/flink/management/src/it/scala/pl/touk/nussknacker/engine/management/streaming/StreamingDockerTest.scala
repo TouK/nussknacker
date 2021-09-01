@@ -1,17 +1,21 @@
 package pl.touk.nussknacker.engine.management.streaming
 
-import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import com.typesafe.config.{Config, ConfigFactory}
 import com.whisk.docker.{ContainerLink, DockerContainer, DockerReadyChecker}
-import org.scalatest.Suite
-import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
+import org.scalatest.{Assertion, Matchers, Suite}
+import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, DeploymentManager, GraphProcess}
+import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
+import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaClient
-import pl.touk.nussknacker.engine.management.{DockerTest, FlinkStreamingDeploymentManagerProvider}
-import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
+import pl.touk.nussknacker.engine.management.{DockerTest, FlinkStateStatus, FlinkStreamingDeploymentManagerProvider}
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 import scala.concurrent.duration._
 
-trait StreamingDockerTest extends DockerTest { self: Suite =>
+trait StreamingDockerTest extends DockerTest with Matchers { self: Suite =>
 
   protected var kafkaClient: KafkaClient = _
 
@@ -50,5 +54,36 @@ trait StreamingDockerTest extends DockerTest { self: Suite =>
   private def kafkaAddress = s"${ipOfContainer(kafkaContainer)}:$KafkaPort"
 
   protected lazy val deploymentManager: DeploymentManager = FlinkStreamingDeploymentManagerProvider.defaultDeploymentManager(config)
+
+  protected def deployProcessAndWaitIfRunning(process: EspProcess, processVersion: ProcessVersion, savepointPath : Option[String] = None): Assertion = {
+    deployProcess(process, processVersion, savepointPath)
+    eventually {
+      val jobStatus = deploymentManager.findJobStatus(ProcessName(process.id)).futureValue
+      logger.debug(s"Waiting for deploy: ${process.id}, $jobStatus")
+
+      jobStatus.map(_.status.name) shouldBe Some(FlinkStateStatus.Running.name)
+      jobStatus.map(_.status.isRunning) shouldBe Some(true)
+    }
+  }
+
+  protected def deployProcess(process: EspProcess, processVersion: ProcessVersion, savepointPath : Option[String] = None): Assertion = {
+    val marshaled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
+    assert(deploymentManager.deploy(processVersion, DeploymentData.empty, GraphProcess(marshaled), savepointPath).isReadyWithin(100 seconds))
+  }
+
+  protected def cancelProcess(processId: String): Unit = {
+    assert(deploymentManager.cancel(ProcessName(processId), user = userToAct).isReadyWithin(10 seconds))
+    eventually {
+      val runningJobs = deploymentManager
+        .findJobStatus(ProcessName(processId))
+        .futureValue
+        .filter(_.status.isRunning)
+
+      logger.debug(s"waiting for jobs: $processId, $runningJobs")
+      if (runningJobs.nonEmpty) {
+        throw new IllegalStateException("Job still exists")
+      }
+    }
+  }
 
 }
