@@ -5,7 +5,7 @@ import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
 import {collapseGroup, editGroup, editNode, expandGroup} from "../../../../actions/nk"
 import {visualizationUrl} from "../../../../common/VisualizationUrl"
-import {useNkTheme} from "../../../../containers/theme"
+import {alpha, tint, useNkTheme} from "../../../../containers/theme"
 import {getProcessToDisplay} from "../../../../reducers/selectors/graph"
 import {getExpandedGroups} from "../../../../reducers/selectors/groups"
 import {GroupNodeType, NodeType} from "../../../../types"
@@ -60,7 +60,20 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType | Gro
       {
         title: t("dialog.button.apply", "apply"),
         action: () => performNodeEdit(),
-        classname: css({background: theme.colors.accent}),
+        classname: css({
+          //increase (x4) specificity over ladda
+          "&&&&": {
+            backgroundColor: theme.colors.accent,
+            ":hover": {
+              backgroundColor: tint(theme.colors.accent, .25),
+            },
+            "&[disabled], &[data-loading]": {
+              "&, &:hover": {
+                backgroundColor: alpha(theme.colors.accent, .5),
+              },
+            },
+          },
+        }),
       } :
       null,
     [performNodeEdit, readOnly, t],
@@ -71,7 +84,7 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType | Gro
   const toggleGroup = useCallback(() => {
     dispatch(expanded ? collapseGroup(editedNode.id) : expandGroup(editedNode.id))
     props.close()
-  }, [dispatch, editedNode, expanded])
+  }, [dispatch, editedNode.id, expanded, props])
 
   const groupToggleButtonData: WindowButtonProps | null = useMemo(
     () => NodeUtils.nodeIsGroup(editedNode) ?

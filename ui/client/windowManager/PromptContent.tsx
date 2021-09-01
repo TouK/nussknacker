@@ -2,6 +2,7 @@ import {DefaultContent, DefaultContentProps} from "@touk/window-manager"
 import {css} from "emotion"
 import React, {PropsWithChildren, useMemo} from "react"
 import {useNkTheme} from "../containers/theme"
+import {LaddaButton} from "./LaddaButton"
 
 const HeaderPlaceholder = () => <header>{/*grid placeholder*/}</header>
 
@@ -17,7 +18,11 @@ export function PromptContent(props: PropsWithChildren<DefaultContentProps>): JS
     return {...props.classnames, content}
   }, [props.classnames, theme.spacing.baseUnit])
 
-  const components = useMemo(() => ({...props.components, Header: HeaderPlaceholder}), [props.components])
+  const components = useMemo(() => ({
+    FooterButton: LaddaButton,
+    ...props.components,
+    Header: HeaderPlaceholder,
+  }), [props.components])
 
   return (
     <DefaultContent

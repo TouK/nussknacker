@@ -13,8 +13,12 @@ const {
   sucessColor: sucess,
 } = vars
 
-function tint(base: string, amount = 0) {
+export function tint(base: string, amount = 0) {
   return Color(base).mix(Color("white"), amount).hsl().string()
+}
+
+export function alpha(base: string, amount = 1) {
+  return Color(base).alpha(amount).hsl().string()
 }
 
 export function tintPrimary(base) {
