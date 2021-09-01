@@ -86,9 +86,8 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
   //NOTE: Flink <1.10 compatibility - protected to make it easier to work with Flink 1.9, JobStatus changed package, so we use String in case class
   protected def mapJobStatus(overview: JobOverview): StateStatus = {
     toJobStatus(overview) match {
-      case JobStatus.RUNNING if overview.tasks.running == overview.tasks.total => FlinkStateStatus.Running
-      // Flink return running status even if some tasks are scheduled or initializing
-      case JobStatus.RUNNING => FlinkStateStatus.DuringDeploy
+      case JobStatus.RUNNING if ensureTasksRunning(overview) => FlinkStateStatus.Running
+      case s if isDuringDeploy(s) => FlinkStateStatus.DuringDeploy
       case JobStatus.FINISHED => FlinkStateStatus.Finished
       case JobStatus.RESTARTING => FlinkStateStatus.Restarting
       case JobStatus.CANCELED => FlinkStateStatus.Canceled
@@ -97,9 +96,17 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
       case JobStatus.RECONCILING | JobStatus.CREATED | JobStatus.SUSPENDED => FlinkStateStatus.Running
       case JobStatus.FAILING => FlinkStateStatus.Failing
       case JobStatus.FAILED => FlinkStateStatus.Failed
-      case JobStatus.INITIALIZING => FlinkStateStatus.DuringDeploy
     }
 
+  }
+
+  protected def ensureTasksRunning(overview: JobOverview): Boolean = {
+    overview.tasks.running + overview.tasks.finished == overview.tasks.total
+  }
+
+  protected def isDuringDeploy(s: JobStatus): Boolean = {
+    // Flink return running status even if some tasks are scheduled or initializing
+    s == JobStatus.RUNNING || s == JobStatus.INITIALIZING
   }
 
   //TODO: cache by jobId?

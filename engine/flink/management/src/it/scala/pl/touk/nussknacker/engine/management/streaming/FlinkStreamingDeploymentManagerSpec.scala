@@ -230,9 +230,11 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
 
     assert(deploymentManager.deploy(empty(processId), defaultDeploymentData, CustomProcess("pl.touk.nussknacker.engine.management.sample.CustomProcess"), None).isReadyWithin(100 seconds))
 
-    val jobStatus = deploymentManager.findJobStatus(ProcessName(processId)).futureValue
-    jobStatus.map(_.status.name) shouldBe Some(FlinkStateStatus.Running.name)
-    jobStatus.map(_.status.isRunning) shouldBe Some(true)
+    eventually {
+      val jobStatus = deploymentManager.findJobStatus(ProcessName(processId)).futureValue
+      jobStatus.map(_.status.name) shouldBe Some(FlinkStateStatus.Running.name)
+      jobStatus.map(_.status.isRunning) shouldBe Some(true)
+    }
 
     cancel(processId)
   }
