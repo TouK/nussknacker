@@ -11,9 +11,7 @@ describe("Process", () => {
 
   beforeEach(() => {
     cy.visitNewProcess(NAME, "testProcess")
-    cy.contains("layout").click()
-    cy.get("#nk-graph-main svg", {timeout: 20000}).as("graph")
-    cy.wait(500)
+    cy.get("#esp-graph svg", {timeout: 20000}).as("graph")
   })
 
   describe("mouse drag", () => {
