@@ -3,8 +3,10 @@ import {defaults} from "lodash"
 import {defaultLink} from "../EspNode/link"
 import {Events} from "../joint-events"
 import {isBackgroundObject} from "./cellUtils"
+import {arrowMarker} from "../arrowMarker"
 
-function getPaper(opts: dia.Paper.Options, canWrite: boolean, arrowMarker: Vectorizer) {
+function getPaper(opts: dia.Paper.Options, canWrite: boolean) {
+  const uniqueArrowMarker = arrowMarker.clone()
   const paper = new dia.Paper({
     ...opts,
     height: "100%",
@@ -28,7 +30,7 @@ function getPaper(opts: dia.Paper.Options, canWrite: boolean, arrowMarker: Vecto
       }
     },
     linkPinning: false,
-    defaultLink: defaultLink(arrowMarker),
+    defaultLink: defaultLink(uniqueArrowMarker),
     linkView: dia.LinkView.extend({
       options: defaults<dia.LinkView.Options, dia.LinkView.Options>({
         shortLinkLength: 60,
@@ -39,7 +41,7 @@ function getPaper(opts: dia.Paper.Options, canWrite: boolean, arrowMarker: Vecto
       }, dia.LinkView.prototype.options),
     }),
   })
-  V(paper.defs).append(arrowMarker)
+  V(paper.defs).append(uniqueArrowMarker)
   paper.options.defaultRouter = {
     name: `manhattan`,
     args: {
@@ -56,11 +58,13 @@ function getPaper(opts: dia.Paper.Options, canWrite: boolean, arrowMarker: Vecto
       radius: 60,
     },
   }
-
+  //we pass it via attributes to drawGraph so that same arrowMarker id is used
+  paper.attributes = {}
+  paper.attributes["arrowMarker"] = uniqueArrowMarker
   return paper
 }
 
-export function createPaper(arrowMarker: Vectorizer): dia.Paper {
+export function createPaper(): dia.Paper {
   const canWrite = this.props.loggedUser.canWrite(this.props.processCategory) && !this.props.readonly
   const paper = getPaper(
     {
@@ -70,7 +74,6 @@ export function createPaper(arrowMarker: Vectorizer): dia.Paper {
       validateConnection: this.validateConnection,
     },
     canWrite,
-    arrowMarker,
   )
 
   return paper

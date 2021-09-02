@@ -12,7 +12,6 @@ export function drawGraph(
   process: Process,
   layout: Layout,
   processDefinitionData: ProcessDefinitionData,
-  arrowMarker: Vectorizer,
 ): void {
   const graph: dia.Graph = this.graph
   const directedLayout = this.directedLayout
@@ -26,7 +25,7 @@ export function drawGraph(
   const edgesWithGroups = NodeUtils.edgesFromProcess(process)
 
   const nodes = nodesWithGroups.map(makeElement(processDefinitionData))
-  const edges = edgesWithGroups.map(value => makeLink(value, arrowMarker))
+  const edges = edgesWithGroups.map(value => makeLink(value, this.processGraphPaper.attributes["arrowMarker"]))
 
   performance.mark("nodes, links & bounding")
 

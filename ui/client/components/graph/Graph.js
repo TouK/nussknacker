@@ -20,7 +20,6 @@ import {PanZoomPlugin} from "./PanZoomPlugin"
 import {RangeSelectPlugin, SelectionMode} from "./RangeSelectPlugin"
 import "./svg-export/export.styl"
 import {prepareSvg} from "./svg-export/prepareSvg"
-import {arrowMarker} from "./arrowMarker"
 
 export class Graph extends React.Component {
 
@@ -45,7 +44,6 @@ export class Graph extends React.Component {
     super(props)
 
     this.graph = new dia.Graph()
-    this.arrowMarker = arrowMarker.clone()
     this.graph.on(Events.REMOVE, (e, f) => {
       if (e.isLink() && !this.redrawing) {
         this.props.actions.nodesDisconnected(e.attributes.source.id, e.attributes.target.id)
@@ -85,13 +83,12 @@ export class Graph extends React.Component {
   }
 
   componentDidMount() {
-    this.processGraphPaper = this.createPaper(this.arrowMarker)
+    this.processGraphPaper = this.createPaper()
     this.processGraphPaper.freeze()
     this.drawGraph(
       this.props.processToDisplay,
       this.props.layout,
       this.props.processDefinitionData,
-      this.arrowMarker,
     )
     this.processGraphPaper.unfreeze()
     this._prepareContentForExport()
@@ -162,7 +159,6 @@ export class Graph extends React.Component {
         nextProps.processToDisplay,
         nextProps.layout,
         nextProps.processDefinitionData,
-        this.arrowMarker,
       )
     }
 
@@ -446,5 +442,3 @@ export function commonState(state) {
     selectionState: getSelectionState(state),
   }
 }
-
-export const subprocessParent = "modal-content"
