@@ -1,11 +1,10 @@
-import {dia, V} from "jointjs"
+import {dia, V, Vectorizer} from "jointjs"
 import {defaults} from "lodash"
-import {arrowMarker} from "../arrowMarker"
 import {defaultLink} from "../EspNode/link"
 import {Events} from "../joint-events"
 import {isBackgroundObject} from "./cellUtils"
 
-function getPaper(opts: dia.Paper.Options, canWrite: boolean) {
+function getPaper(opts: dia.Paper.Options, canWrite: boolean, arrowMarker: Vectorizer) {
   const paper = new dia.Paper({
     ...opts,
     height: "100%",
@@ -29,7 +28,7 @@ function getPaper(opts: dia.Paper.Options, canWrite: boolean) {
       }
     },
     linkPinning: false,
-    defaultLink: defaultLink,
+    defaultLink: defaultLink(arrowMarker),
     linkView: dia.LinkView.extend({
       options: defaults<dia.LinkView.Options, dia.LinkView.Options>({
         shortLinkLength: 60,
@@ -61,7 +60,7 @@ function getPaper(opts: dia.Paper.Options, canWrite: boolean) {
   return paper
 }
 
-export function createPaper(): dia.Paper {
+export function createPaper(arrowMarker: Vectorizer): dia.Paper {
   const canWrite = this.props.loggedUser.canWrite(this.props.processCategory) && !this.props.readonly
   const paper = getPaper(
     {
@@ -71,6 +70,7 @@ export function createPaper(): dia.Paper {
       validateConnection: this.validateConnection,
     },
     canWrite,
+    arrowMarker,
   )
 
   return paper

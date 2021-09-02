@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import {dia} from "jointjs"
+import {dia, Vectorizer} from "jointjs"
 import {isEqual} from "lodash"
 import {Layout} from "../../../actions/nk"
 import {Process, ProcessDefinitionData} from "../../../types"
@@ -12,6 +12,7 @@ export function drawGraph(
   process: Process,
   layout: Layout,
   processDefinitionData: ProcessDefinitionData,
+  arrowMarker: Vectorizer,
 ): void {
   const graph: dia.Graph = this.graph
   const directedLayout = this.directedLayout
@@ -25,7 +26,7 @@ export function drawGraph(
   const edgesWithGroups = NodeUtils.edgesFromProcess(process)
 
   const nodes = nodesWithGroups.map(makeElement(processDefinitionData))
-  const edges = edgesWithGroups.map(makeLink)
+  const edges = edgesWithGroups.map(value => makeLink(value, arrowMarker))
 
   performance.mark("nodes, links & bounding")
 
