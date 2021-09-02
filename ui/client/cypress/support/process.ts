@@ -34,7 +34,6 @@ function visitNewProcess(name?: string, fixture?: string, category?: string) {
   return cy.createTestProcess(name, fixture, category).then(processName => {
     cy.visit(`/visualization/${processName}?businessView=false`)
     cy.wait("@fetch").its("response.statusCode").should("eq", 200)
-    cy.wait(500)
     return cy.wrap(processName)
   })
 }
