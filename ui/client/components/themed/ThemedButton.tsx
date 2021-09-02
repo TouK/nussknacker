@@ -2,7 +2,7 @@ import Color from "color"
 import {css, cx} from "emotion"
 import React from "react"
 import {useNkTheme} from "../../containers/theme"
-import bootstrapStyles from "../../stylesheets/bootstrap.styl"
+import {bootstrapStyles} from "../../styles"
 import {ButtonProps, ButtonWithFocus} from "../withFocus"
 
 export const ThemedButton = ({className, ...props}: ButtonProps) => {

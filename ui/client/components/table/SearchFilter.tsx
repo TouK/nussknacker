@@ -17,8 +17,10 @@ export function AddonIcon(props: {className?: string, svg: string}): JSX.Element
 export function SearchIcon(props: {isEmpty?: boolean}): JSX.Element {
   const {theme} = useNkTheme()
   const styles = css({
-    ".icon-fill": {
-      fill: props.isEmpty ? theme.colors.secondaryColor : theme.colors.accent,
+    svg: {
+      ".icon-fill": {
+        fill: props.isEmpty ? theme.colors.secondaryColor : theme.colors.accent,
+      },
     },
   })
   return <AddonIcon svg="search.svg" className={styles}/>

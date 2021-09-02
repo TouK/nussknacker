@@ -72,7 +72,7 @@ class ProcessUtils {
     const withoutVariablesToHide =  pickBy(variablesForNode, (va, key) => !variablesToHideForParam.includes(key))
     const additionalVariablesForParam = parameterDefinition?.additionalVariables || {}
     const variables = {...withoutVariablesToHide, ...additionalVariablesForParam}
-    //Filtering by category - we show variables only with the same category as process, removing these which are in blackList
+    //Filtering by category - we show variables only with the same category as process, removing these which are in excludeList
     return pickBy(variables, (va, key) => indexOf(globalVariablesWithMismatchCategory, key) === -1)
   }
 

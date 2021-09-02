@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializer, FlinkSource}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.EspDeserializationSchema
-import pl.touk.nussknacker.engine.kafka.consumerrecord.FixedValueDeserializationSchemaFactory
+import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordToJsonFormatterFactory, FixedValueDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.generic.KafkaDelayedSourceFactory._
 import pl.touk.nussknacker.engine.kafka.generic.KafkaTypedSourceFactory._
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
@@ -36,11 +36,13 @@ object sources {
 
   import collection.JavaConverters._
 
+  private def jsonFormatterFactory = new ConsumerRecordToJsonFormatterFactory[Json, Json]()
+
   class GenericJsonSourceFactory(processObjectDependencies: ProcessObjectDependencies) extends KafkaSourceFactory[String, java.util.Map[_, _]](
-    new FixedValueDeserializationSchemaFactory(JsonMapDeserialization), None, FixedRecordFormatterFactoryWrapper(JsonRecordFormatter), processObjectDependencies)
+    new FixedValueDeserializationSchemaFactory(JsonMapDeserialization), None, jsonFormatterFactory, processObjectDependencies)
 
   class GenericTypedJsonSourceFactory(processObjectDependencies: ProcessObjectDependencies) extends KafkaSourceFactory[String, TypedMap](
-    new FixedValueDeserializationSchemaFactory(JsonTypedMapDeserialization), None, FixedRecordFormatterFactoryWrapper(JsonRecordFormatter), processObjectDependencies) {
+    new FixedValueDeserializationSchemaFactory(JsonTypedMapDeserialization), None, jsonFormatterFactory, processObjectDependencies) {
 
     override protected def prepareInitialParameters: List[Parameter] = super.prepareInitialParameters ++ List(
       TypeParameter

@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformat
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.ExtractAndTransformTimestamp
 import pl.touk.nussknacker.engine.process.helpers.SinkForType
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 
@@ -53,7 +54,7 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
   }
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = {
-    Map("extractAndTransformTimestmp" -> defaultCategory(ExtractAndTransformTimestamp))
+    Map("extractAndTransformTimestamp" -> defaultCategory(ExtractAndTransformTimestamp))
   }
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
@@ -70,19 +71,6 @@ class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreator {
   protected def defaultCategory[T](obj: T): WithCategories[T] = WithCategories(obj, "TestAvro")
 
   protected def createSchemaRegistryProvider: SchemaRegistryProvider = ConfluentSchemaRegistryProvider()
-
-}
-
-object ExtractAndTransformTimestamp extends CustomStreamTransformer {
-
-  @MethodToInvoke(returnType = classOf[Long])
-  def methodToInvoke(@ParamName("timestampToSet") timestampToSet: Long): FlinkCustomStreamTransformation
-    = FlinkCustomStreamTransformation(_.transform("collectTimestamp",
-      new AbstractStreamOperator[ValueWithContext[AnyRef]] with OneInputStreamOperator[Context, ValueWithContext[AnyRef]] {
-        override def processElement(element: StreamRecord[Context]): Unit = {
-          output.collect(new StreamRecord[ValueWithContext[AnyRef]](ValueWithContext(element.getTimestamp.underlying(), element.getValue), timestampToSet))
-        }
-      }))
 
 }
 

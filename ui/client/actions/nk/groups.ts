@@ -4,7 +4,7 @@ import HttpService from "../../http/HttpService"
 import {getSelectedGroups} from "../../reducers/graph/utils"
 import {getGraph} from "../../reducers/selectors/graph"
 import {getGroups} from "../../reducers/selectors/groups"
-import {GroupId, GroupType, NodeId, Process, ValidationResult} from "../../types"
+import {GroupId, GroupNodeType, GroupType, NodeId, Process} from "../../types"
 import {Action, ThunkAction} from "../reduxTypes"
 import {reportEvent} from "./reportEvent"
 import {resetSelection} from "./selection"
@@ -21,7 +21,7 @@ function withReportEvent(name: string, action: Action): ThunkAction {
   }
 }
 
-export const groupSelected = () => withReportEvent("group", {type: "GROUP"})
+export const groupSelected = () => withReportEvent(`group`, {type: "GROUP"})
 
 const delay = (t = 0) => new Promise(resolve => {setTimeout(resolve, t)})
 
@@ -75,19 +75,31 @@ export function collapseAllGroups(): Action {
 export type EditGroupAction = {
   type: "EDIT_GROUP",
   oldGroupId: GroupId,
-  newGroup: GroupType,
-  validationResult: ValidationResult,
+  newGroup: GroupNodeType,
 }
 
-export function editGroup(process: Process, oldGroupId: GroupId, newGroup: GroupType): ThunkAction {
-  return (dispatch) => {
+export function editGroup(process: Process, oldGroupId: GroupId, newGroup: GroupNodeType): ThunkAction {
+  return async (dispatch) => {
     const newProcess = NodeUtils.editGroup(process, oldGroupId, newGroup)
-    return HttpService.validateProcess(newProcess).then((response) => {
+    await dispatch(validateProcess(newProcess))
+    return dispatch({
+      type: "EDIT_GROUP",
+      oldGroupId: oldGroupId,
+      newGroup: newGroup,
+    })
+  }
+}
+
+export function validateProcess(process: Process): ThunkAction {
+  return async (dispatch) => {
+    dispatch({
+      type: "VALIDATION_STARTED",
+      process,
+    })
+    return HttpService.validateProcess(process).then(({data}) => {
       dispatch({
-        type: "EDIT_GROUP",
-        oldGroupId: oldGroupId,
-        newGroup: newGroup,
-        validationResult: response.data,
+        type: "VALIDATION_RESULT",
+        validationResult: data,
       })
     })
   }

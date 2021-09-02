@@ -11,8 +11,9 @@ describe("Expression suggester", () => {
 
   it("should display colorfull and sorted completions", () => {
     cy.visitNewProcess(seed, "variables")
+    cy.contains("layout").click()
     cy.get("[model-id=kafka-string]").trigger("dblclick")
-    cy.get("[data-testid=node-modal]").as("modal")
+    cy.get("[data-testid=window]").as("modal")
     cy.get("[title=Expression]").next().find(".ace_editor").as("input")
     cy.get("@input").click().type(".")
     cy.get("@modal").toMatchExactImageSnapshot()

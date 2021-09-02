@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.avro
 
+import cats.Id
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.Writer
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
@@ -118,7 +119,7 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
 
   override def initialParameters: List[Parameter] = {
     implicit val nodeId: NodeId = NodeId("")
-    val topic = getTopicParam.value
+    val topic: Id[Parameter] = getTopicParam.value
     topic :: getVersionParam(Nil) :: paramsDeterminedAfterSchema
   }
 
@@ -129,7 +130,7 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
 
   // override it if you use other parameter name for topic
   protected val topicParamName: String = TopicParamName
-  
+
 }
 
 object KafkaAvroBaseTransformer {

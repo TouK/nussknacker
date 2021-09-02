@@ -5,6 +5,7 @@ export type ValidationResult = {
     validationWarnings: ValidationWarnings[],
     nodeResults: NodeResults,
     errors?: ValidationErrors,
+    warnings?,
 }
 
 export type NodeResults = Record<string, NodeTypingData>

@@ -15,11 +15,11 @@
     width: 100%
     height 100%
 
-#esp-graph
+#nk-graph-main
   height: 100% !important
   @extend .baseEspGraph;
 
-#esp-graph-subprocess
+#nk-graph-subprocess
   width: 100% !important
   @extend .baseEspGraph;
   #svg-pan-zoom-controls
@@ -109,38 +109,19 @@ espCheckbox(checkboxWidth)
   padding: 0px
   border: 2px solid modalBorder
   box-shadow: 0 0 8px 0 rgba(0,0,0,0.2)
-  .confirmationButtons
-    text-align center
-    button
-      margin-top 80px
-      margin-bottom 10px
-      margin-left 0px
-    button:first-child
-      margin-right 20px
-    button:nth-child(2)
-      margin-left 20px
 
 .draggable-container
   position absolute
-  top 10px
-  bottom 10px
-  left 10px
-  right 10px
+  top 0
+  bottom 0
+  left 0
+  right 0
   display flex
   justify-content center
 
 .ReactModal__Content, ReactModal__Content--after-open
   background none !important
   border none !important
-
-.confirmationModal
-  width 575px
-  font-size 18px
-  font-weight lighter
-  text-align center
-  p
-    margin-top 30px
-
 
 .compareModal
   max-width 1000
@@ -241,7 +222,6 @@ espCheckbox(checkboxWidth)
 
 modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modalInputTextColor,processesHoverColor,hrColor,modalInputBkgColor)
   overflow auto
-  background-color: modalBkgColor
   clear both
   labelWidth = 20%
   .warning
@@ -266,7 +246,8 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
       flex-wrap nowrap
     .node-label
       color modalLabelTextColor
-      width labelWidth
+      flex-basis 20%
+      max-width 20em
       display inline-block
       vertical-align sub
       margin-top 9px
@@ -289,7 +270,8 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
         border 1px solid okColor
         padding 5px
     .node-value
-      width: 95% - labelWidth
+      flex 1
+      flex-basis 60%
       display: inline-block
       color: #686868
       textarea
@@ -310,9 +292,6 @@ modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modal
       &.partly-hidden
         textarea
           height 100px !important
-      &.node-value-select
-        .switchable
-          width: 100% - 40px
       &.node-value-type-select
         width: 100%
         max-height: 35
@@ -479,7 +458,7 @@ espPanelButton()
   :nth-of-type(2)
     color: errorColor
 
-.modalButton
+body .modalButton
   espButtonBase()
   width: 120px;
   height 30px
@@ -489,10 +468,6 @@ espPanelButton()
   margin-left 10px
   &:disabled
     background: labelBkgColor
-
-.ladda-button
-  padding 0
-  outline: none
 
 .error
   background-color: #FBB03B
@@ -654,15 +629,16 @@ espPanelButton()
     width: 28%
     margin-right 5px
   .handle-bars
-    height 24px
-    width 24px
-    margin-left 10px
+    height 35px
+    width 12px
+    margin-left 6px
     cursor grab
   .node-value
-    &.field
-      width: calc(70% - 34px)
+    &.fieldName
+      flex-basis 30%
+      max-width 20em
     &.fieldRemove
-      width: 7%
+      flex 0
 
 .branch-parameter-row
   margin-top 0

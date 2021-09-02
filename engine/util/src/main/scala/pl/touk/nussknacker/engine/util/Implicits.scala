@@ -71,4 +71,11 @@ object Implicits {
   implicit object SourceIsReleasable extends Releasable[scala.io.Source] {
     def release(resource: scala.io.Source): Unit = resource.close()
   }
+
+  implicit class RichIterable[T](iterable: Iterable[T]) {
+    def exactlyOne: Option[T] = iterable match {
+      case head :: Nil => Some(head)
+      case _ => None
+    }
+  }
 }

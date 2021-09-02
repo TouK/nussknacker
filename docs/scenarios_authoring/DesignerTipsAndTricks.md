@@ -1,9 +1,13 @@
+---
+sidebar_position: 5
+---
+
 # Designer Tips and Tricks
 
 
 ## Prerequisites
 
-Please try [Nussknacker demo](/quickstart/Demo) to quickly understand how to move around Nussknacker Designer and create a simple scenario.
+Please try [Nussknacker demo](/quickstart/demo) to quickly understand how to move around Nussknacker Designer and create a simple scenario.
 
 
 ### Tips and Tricks

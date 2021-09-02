@@ -15,7 +15,7 @@ object geo {
     val dLat = (current.lat - other.lat).toRadians
     val dLon = (current.lon - other.lon).toRadians
 
-    import math._
+    import scala.math._
 
     val a = pow(sin(dLat / 2), 2) + pow(sin(dLon / 2), 2) * cos(current.lon.toRadians) * cos(other.lat.toRadians)
     val c = 2 * asin(sqrt(a))

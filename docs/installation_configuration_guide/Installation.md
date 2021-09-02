@@ -6,7 +6,7 @@ sidebar_position: 1
 
 Nussknacker relies on several open source components like Flink or Kafka,
 which need to be installed together with Nussknacker. This document focuses on the configuration of Nussknacker and its integrations with those components; pls refer to Kafka, Flink, ... ,
-documentation for details on how to configure them for optimal performance .
+documentation for details on how to configure them for optimal performance.
 
 ## Docker based installation
                     
@@ -58,6 +58,44 @@ We provide following scripts:
 - `run-daemonized.sh` - to run in background, we are using `nussknacker-designer.pid` to store PID of running process
 
 ### Logging
+
+## Systemd service
+
+You can set up Nussknacker as a systemd service using our example unit file.
+
+1. Download distribution as described in [Binary package installation](Installation#Binary package installation)
+2. Unzip it to `/opt/nussknacker`
+3. `sudo touch /lib/systemd/system/nussknacker.service`
+4. edit `/lib/systemd/system/nussknacker.service` file and add write content of [Systemd unit file](Installation#Systemd-unit-file)
+5. `sudo systemctl daemon-reload`
+6. `sudo systemctl enable nussknacker.service`
+7. `sudo systemctl start nussknacker.service`
+
+You can check Nussknacker logs with `sudo journalctl -u nussknacker.service` command.
+
+### Systemd-unit-file
+```unit file (systemd)
+[Unit]
+Description=Nussknacker
+
+StartLimitBurst=5
+StartLimitIntervalSec=600
+
+[Service]
+SyslogIdentifier=%N
+
+WorkingDirectory=/opt/nussknacker
+ExecStart=/opt/nussknacker/bin/run.sh
+RuntimeDirectory=%N
+RuntimeDirectoryPreserve=restart
+
+SuccessExitStatus=143
+Restart=always
+RestartSec=60
+
+[Install]
+WantedBy=default.target
+```
 
 We use [Logback](http://logback.qos.ch/manual/configuration.html) for logging configuration. 
 By default, the logs are placed in `${NUSSKNACKER_DIR}/logs`, with sensible rollback configuration.  
@@ -115,7 +153,7 @@ Available Nussknacker image environment variables below. $NUSSKNACKER_DIR is a p
 | AUTHENTICATION_HEADERS_ACCEPT     | string          | application/json                                       |                                                                                                                                                       |
 | FLINK_REST_URL                    | string          | http://localhost:8081                                  | URL to Flink's REST API - used for scenario's deployment                                                                                              |
 | FLINK_QUERYABLE_STATE_PROXY_URL   | string          | localhost:9069                                         | URL to Flink's queryable state proxy service - can by used by custom components that exposes theirs state via queryable state API                     |
-| FLINK_ROCKSDB_CHECKPOINT_DATA_URI | string          |                                                        | URL to Flink's rocksdb checkpoints - should be on some distributed filesystem visible by all Flink TaskManagers                                       |
+| FLINK_ROCKSDB_ENABLE              | boolean         | true                                                   | Enable RocksDB state backend support                                     |
 | KAFKA_ADDRESS                     | string          | localhost:9092                                         | Kafka address used by kafka components (sources, sinks) for messaging                                                                                 |
 | SCHEMA_REGISTRY_URL               | string          | http://localhost:8082                                  | Address of Confluent Schema registry used for storing of data model                                                                                   |
 | GRAFANA_URL                       | string          | /grafana                                               | URL to Grafana. Is used on client (browser) site. Should be relative to Nussknacker URL to avoid CORS configuration need                              |

@@ -103,6 +103,7 @@ def modelMergeStrategy: String => MergeStrategy = {
 }
 
 def uiMergeStrategy: String => MergeStrategy = {
+  case PathList(ps@_*) if ps.last == "module-info.class" => MergeStrategy.discard
   case PathList(ps@_*) if ps.last == "NumberUtils.class" => MergeStrategy.first //TODO: shade Spring EL?
   case PathList("org", "apache", "commons", "logging", _ @ _*) => MergeStrategy.first //TODO: shade Spring EL?
   case PathList(ps@_*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first //Netty has buildTime here, which is different for different modules :/
@@ -217,7 +218,12 @@ lazy val commonSettings =
         "io.netty" % "netty-handler" % nettyV,
         "io.netty" % "netty-codec" % nettyV,
         "io.netty" % "netty-transport-native-epoll" % nettyV,
-      )
+
+        // Jackson is used by openapi and jwks-rsa
+        "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonV,
+        "com.fasterxml.jackson.core" % "jackson-core" % jacksonV,
+        "com.fasterxml.jackson.core" % "jackson-databind" % jacksonV,
+       )
     )
 
 val akkaV = "2.5.21" //same version as in Flink
@@ -235,7 +241,7 @@ val argonautV = "6.2.1"
 val circeV = "0.11.2"
 val circeJava8V = "0.11.1"
 val jwtCirceV = "4.0.0"
-val jacksonV = "2.9.2"
+val jacksonV = "2.11.3"
 val catsV = "1.5.0"
 val scalaParsersV = "1.0.4"
 val slf4jV = "1.7.30"
@@ -756,7 +762,7 @@ lazy val flinkTestUtil = (project in engine("flink/test-util")).
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV
       )
     }
-  ).dependsOn(testUtil, queryableState, flinkUtil)
+  ).dependsOn(testUtil, queryableState, flinkUtil, interpreter)
 
 lazy val standaloneUtil = (project in engine("standalone/util")).
   settings(commonSettings).
@@ -835,6 +841,7 @@ lazy val security = (project in engine("security")).
         "io.circe" %% "circe-core" % circeV,
         "com.pauldijou" %% "jwt-circe" % jwtCirceV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
+        "com.auth0" % "jwks-rsa" % "0.19.0", // a tool library for reading a remote JWK store, not an Auth0 service dependency
         "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
         "com.github.dasniko" % "testcontainers-keycloak" % "1.6.0" % "it,test"
       )
@@ -1132,5 +1139,6 @@ lazy val root = (project in file("."))
     )
   )
 
+addCommandAlias("assemblyComponents", ";sql/assembly;openapi/assembly")
 addCommandAlias("assemblySamples", ";flinkManagementSample/assembly;standaloneSample/assembly;generic/assembly")
 addCommandAlias("assemblyDeploymentManagers", ";flinkDeploymentManager/assembly;engineStandalone/assembly")

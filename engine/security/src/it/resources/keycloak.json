@@ -110,6 +110,20 @@
             "access.token.claim": "false",
             "userinfo.token.claim": "true"
           }
+        },
+        {
+          "name": "client roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-client-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "foo",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "claim.name": "http://namespace/roles",
+            "jsonType.label": "String",
+            "multivalued": "true"
+          }
         }
       ],
       "useTemplateConfig": false,
@@ -141,7 +155,7 @@
       ],
       "groups": ["test1"],
       "clientRoles": {
-        "account": []
+        "test-client": [ "ARole" ]
       }
     }
   ]

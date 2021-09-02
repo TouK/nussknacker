@@ -86,7 +86,8 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
   //NOTE: Flink <1.10 compatibility - protected to make it easier to work with Flink 1.9, JobStatus changed package, so we use String in case class
   protected def mapJobStatus(overview: JobOverview): StateStatus = {
     toJobStatus(overview) match {
-      case JobStatus.RUNNING => FlinkStateStatus.Running
+      case JobStatus.RUNNING if ensureTasksRunning(overview) => FlinkStateStatus.Running
+      case s if checkDuringDeployForNotRunningJob(s) => FlinkStateStatus.DuringDeploy
       case JobStatus.FINISHED => FlinkStateStatus.Finished
       case JobStatus.RESTARTING => FlinkStateStatus.Restarting
       case JobStatus.CANCELED => FlinkStateStatus.Canceled
@@ -95,9 +96,20 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
       case JobStatus.RECONCILING | JobStatus.CREATED | JobStatus.SUSPENDED => FlinkStateStatus.Running
       case JobStatus.FAILING => FlinkStateStatus.Failing
       case JobStatus.FAILED => FlinkStateStatus.Failed
-      case JobStatus.INITIALIZING => FlinkStateStatus.DuringDeploy
     }
 
+  }
+
+  protected def ensureTasksRunning(overview: JobOverview): Boolean = {
+    // We sum running and finished tasks because for batch jobs some tasks can be already finished but the others are still running.
+    // We don't handle correctly case when job creates some tasks lazily e.g. in batch case. Without knowledge about what
+    // kind of job is deployed, we don't know if it is such case or it is just a streaming job which is not fully running yet
+    overview.tasks.running + overview.tasks.finished == overview.tasks.total
+  }
+
+  protected def checkDuringDeployForNotRunningJob(s: JobStatus): Boolean = {
+    // Flink return running status even if some tasks are scheduled or initializing
+    s == JobStatus.RUNNING || s == JobStatus.INITIALIZING
   }
 
   //TODO: cache by jobId?

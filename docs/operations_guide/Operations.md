@@ -44,7 +44,7 @@ In particular, one must not forget that the Flink connector (when checkpoints ar
 
 
 * Commits offsets to Kafka only during checkpoint - so offsets returned by Kafka almost always will not be correct .
-* Ignores offsets in Kafka when it’s started with the checkpointed state - topic offsets are also saved in the checkpointed state.
+* Ignore offsets in Kafka when it’s started with the checkpointed state - topic offsets are also saved in the checkpointed state.
 
 
 ### Metrics architecture
@@ -74,18 +74,18 @@ It’s possible to configure Nussknacker installation to use other metrics setup
 Nussknacker assumes that the Flink Session Cluster is used (it should be possible to write own, custom `DeploymentManager` to deploy with Job/Application mode, 
 but this is out of scope of this guide).
 
-It usually happens (especially for large deployments) that the Flink cluster used with Nusssknacker has quite a lot of jobs (each representing one scenario), many of them are quite small in terms of needed resources - this is different to usual Flink setup, where a cluster has one or few jobs.
+It usually happens (especially for large deployments) that the Flink cluster used with Nussknacker has quite a lot of jobs (each representing one scenario), many of them are quite small in terms of needed resources - this is different to usual Flink setup, where a cluster has one or few jobs.
 
 Below we give a few tips on how to configure your cluster. Some of the configuration options are given as an example in our demo config, but you always should adjust them to the parameters of your machines and to typical workloads.
 
 
 #### Memory parameters
 
-Flink memory configuration is pretty complex, [https://ci.apache.org/projects/flink/flink-docs-stable/docs/deployment/memory/mem_setup/](https://ci.apache.org/projects/flink/flink-docs-master/docs/deployment/memory/mem_setup/) - please see the official documentation for the details. Nussknacker-specific settings:
+Flink's memory configuration is pretty complex, [https://ci.apache.org/projects/flink/flink-docs-stable/docs/deployment/memory/mem_setup/](https://ci.apache.org/projects/flink/flink-docs-master/docs/deployment/memory/mem_setup/) - please see the official documentation for the details. Nussknacker-specific settings:
 
 
 
-* Metaspace size should be fairly large both on jobmanagers and taskmanagers - for typical deployments with around 20-30 scenarios value around 1GB should be enough.
+* Metaspace size should be fairly large both on jobmanagers and taskmanagers - for typical deployments with around 20-30 scenarios value around 1 GB should be enough.
 * Heap size on jobmanagers should also be larger than typical Flink deployment
 
 
@@ -107,7 +107,7 @@ For Nussknacker there are additional tips/things to consider:
 #### Other
 
 * `cluster.evenly-spread-out-slots: true` - this setting is important, because with many jobs deployed on cluster it may happen that nodes (taskmanagers) will be unevenly loaded, which can lead to performance degradation. If this happens, sometimes the easiest solution is to restart jobmanager, so that all the jobs will be partitioned again (this usually happens after restarts of some of the taskmanagers).
-* `akka.framesize` - consider increasing the value if you experience frequent timeouts on deployment (for large scenario and complex components >100MB can be necessary)
+* `akka.framesize` - consider increasing the value if you experience frequent timeouts on deployment (for large scenario and complex components > 100 MB can be necessary)
 * `classloader.resolve-order` - Nussknacker has some problems with child-first classloading, it can happen especially when 
   using custom components. Sometimes it can be necessary to set this setting to `parent-first` (see [Flink documentation](https://ci.apache.org/projects/flink/flink-docs-stable/docs/ops/debugging/debugging_classloading/#inverted-class-loading-and-classloader-resolution-order) for in-depth explanation)
 
@@ -211,7 +211,7 @@ Below we describe endpoints that return general information about the Nussknacke
 * `/api/app/healthCheck/process/validation GET`
   * 200 - if all scenarios are valid
   * 500 - list of not-valid scenarios
-* `/api/app/config GET` (requires admin permissions) - serialized configuration of Nussknacker Designer and components (NOTE: configuration returned by this endpoint does not have all [substitutions](https://github.com/lightbend/config/blob/master/HOCON.md#substitutions) resolved, e.g. some some environmental variables will not be returned)
+* `/api/app/config GET` (requires admin permissions) - serialized configuration of Nussknacker Designer and components (NOTE: configuration returned by this endpoint does not have all [substitutions](https://github.com/lightbend/config/blob/master/HOCON.md#substitutions) resolved, e.g. some environmental variables will not be returned)
 * `/api/app/processingtype/reload POST` (requires admin permissions) - reload configuration of models. Used mostly if you use custom components which have dynamic configuration (e.g. list of components depend on external registry, like MLFlow or OpenAPI)
 
 
@@ -219,7 +219,7 @@ Below we describe endpoints that return general information about the Nussknacke
 
 | Problem                                                                                                                                                                                                                                                                                                                                                                         | Possible causes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | --------                                                                                                                                                                                                                                                                                                                                                                        | -----------------                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| Jobmanager / taskmanager keeps restarting with `java.lang.OutOfMemoryError: Metaspace` in logs                                                                                                                                                                                                                                                                                  | Observe metaspace usage metrics. <br/> If metaspace grows together with the number of running Flink jobs - adding metaspace may help (see [link] e.g. `taskmanager/jobmanager.memory.jvm-metaspace.size`).<br/> If the metaspace usage grows after redeploymens/restart of one job - it’s probably a classloading leak. Possible root cause can be JDBC driver lib in model classpath (please check [link] how to configure them properly, [Flink documentation](https://ci.apache.org/projects/flink/flink-docs-stable/docs/ops/debugging/debugging_classloading/#unloading-of-dynamically-loaded-classes-in-user-code) also provides some references, this error usually has to be resolved by fixing configuration) |
+| Jobmanager / taskmanager keeps restarting with `java.lang.OutOfMemoryError: Metaspace` in logs                                                                                                                                                                                                                                                                                  | Observe metaspace usage metrics. <br/> If metaspace grows together with the number of running Flink jobs - adding metaspace may help (see [link] e.g. `taskmanager/jobmanager.memory.jvm-metaspace.size`).<br/> If the metaspace usage grows after redeployments/restart of one job - it’s probably a classloading leak. Possible root cause can be JDBC driver lib in model classpath (please check [link] how to configure them properly, [Flink documentation](https://ci.apache.org/projects/flink/flink-docs-stable/docs/ops/debugging/debugging_classloading/#unloading-of-dynamically-loaded-classes-in-user-code) also provides some references, this error usually has to be resolved by fixing configuration) |
 | Jobmanager does not start, in JobManager logs lines similar to: <code>2021-06-29 12:40:19,666 ERROR org.apache.flink.util.FlinkRuntimeException: Could not recover job with job id 874e811511becea2e085f57cdb12c1c1.<br/>...<br/>Caused by: java.io.FileNotFoundException: /opt/flink/data/storage/nussknacker/submittedJobGraph7f8076051052 (No such file or directory)</code> | In HA config, Flink stores job info both in ZooKeeper and on a filesystem. This error usually means that they are out of sync. Usually it’s necessary to remove nodes in Zookeeper manually (connect to Zookeeper, e.g. run zkClient, check `high-availability.zookeeper.path.root` config setting to find exact location)                                                                                                                                                                                                                                                                                                                                                                                             |
 
 ## Scenarios - monitoring and troubleshooting
@@ -274,7 +274,7 @@ Things to note:
 
 
 * If the state is incompatible, or for some reason it’s not possible to create a savepoint or use it, the only way to proceed is to cancel the scenario and start from a clean state.
-* Currently it’s not possible to fix state incompatibilities via UI. Experienced users can try to take savepoint, fix it via Flink State API and restore using Nussknacker REST API (see below)
+* Currently, it’s not possible to fix state incompatibilities via UI. Experienced users can try to take savepoint, fix it via Flink State API and restore using Nussknacker REST API (see below)
 
 
 ##### Cancel
@@ -285,7 +285,7 @@ This action is available also during some of the ‘Problem’ scenario states -
 
 Please note that Kafka offsets that were committed during the latest checkpoint are not deleted, so after deploying scenario once more, Kafka consumers will start from those offsets.
 
-Currently it’s not possible to stop a scenario while it is saving state (i.e. doing snapshot), it is possible using Nussknacker REST API (see below)
+Currently, it’s not possible to stop a scenario while it is saving state (i.e. doing snapshot), it is possible using Nussknacker REST API (see below)
 
 
 #### Deployment REST API
@@ -322,7 +322,7 @@ One of the crucial aspects of running production streaming processes is monitori
 Flink exposes many metrics for each of the jobs, you can read about them in detail [here](https://ci.apache.org/projects/flink/flink-docs-release-1.13/docs/ops/metrics/#system-metrics).
 
 
-Most of them are quite technical and they do not show data from nodes of the Nussknacker scenario. Nussknacker adds a couple of its own metrics, described in the table below:
+Most of them are quite technical, and they do not show data from nodes of the Nussknacker scenario. Nussknacker adds a couple of its own metrics, described in the table below:
 
 #### Metric types                     
                    
@@ -423,7 +423,7 @@ When you see errors in monitoring, like on screen below:
 ![Scenario errors](img/scenario_errors.png "typical errors")
 
 
-it means that there were failures during scenario execution - most often they are caused by errors during SpeL expression evaluation, which couldn’t be detected during validation.
+it means that there were failures during scenario execution - most often they are caused by errors during SpeL expression evaluation, which couldn't be detected during validation.
 
 The most common problems are:
 
@@ -446,7 +446,7 @@ To see the exact error you can look at (depending on the configuration of the Ex
 
 
 
-* Contents of configured errors topic on Kafka:
+* Contents of configured errors' topic on Kafka:
 
 
 ```
@@ -503,7 +503,7 @@ You can check the size of state in Grafana, in the scenario dashboard (this is t
 
 ##### Tuning RocksDB and checkpoints
 
-For specific scenarios it may be necessary to tune RocksDB global settings. Currently Nussknacker does not allow for setting RocksDB configuration per scenario - you can only configure cluster-wide settings.
+For specific scenarios it may be necessary to tune RocksDB global settings. Currently, Nussknacker does not allow for setting RocksDB configuration per scenario - you can only configure cluster-wide settings.
 
 If checkpoints are taking a long time, increasing the checkpoint interval setting (in scenario properties) may help - checkpoints will be taken less frequently.
 
@@ -547,11 +547,9 @@ What’s more, increasing parallelism above the count of partitions of the Kafka
 
 ##### Nussknacker configuration
 
-
-
-* Make sure to configure RocksDB properly (e.g. checkpointDir)
+* Make sure to configure RocksDB properly (e.g. `rocksdb.enable`)
 * Configure restart strategy and error handler
-  * By default scenarios are not restarted, so that errors do not go unnoticed
+  * By default, scenarios are not restarted, so that errors do not go unnoticed
   * Kafka exception handler should be used in production - configure error topic, with long enough retention
 * Check if Nussknacker has access to all needed services:
   * Flink REST API

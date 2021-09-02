@@ -23,9 +23,9 @@ export const getProcessState = createSelector(getGraph, d => d?.processState)
 export const isLatestProcessVersion = createSelector(getFetchedProcessDetails, d => d?.isLatestVersion)
 export const isSubprocess = createSelector(getProcessToDisplay, p => p.properties?.isSubprocess)
 export const isArchived = createSelector(getFetchedProcessDetails, p => p?.isArchived)
-export const isBusinessView = createSelector(getGraph, g => g.businessView)
 export const isPristine = (state: RootState): boolean => ProcessUtils.nothingToSave(state) && !isProcessRenamed(state)
 export const hasError = createSelector(getProcessToDisplay, p => !ProcessUtils.hasNoErrors(p))
+export const hasWarnings = createSelector(getProcessToDisplay, p => !ProcessUtils.hasNoWarnings(p))
 export const hasPropertiesErrors = createSelector(getProcessToDisplay, p => !ProcessUtils.hasNoPropertiesErrors(p))
 export const getNodeToDisplay = createSelector(getGraph, g => g.nodeToDisplay)
 export const getSelectionState = createSelector(getGraph, g => g.selectionState)
@@ -47,8 +47,8 @@ export const getFetchedProcessState = createSelector(
 )
 
 export const isSaveDisabled = createSelector(
-  [isPristine, isLatestProcessVersion, isBusinessView],
-  (pristine, latest, businessView) => pristine && latest || businessView,
+  [isPristine, isLatestProcessVersion],
+  (pristine, latest) => pristine && latest,
 )
 export const isDeployPossible = createSelector(
   [isSaveDisabled, hasError, getFetchedProcessState, isSubprocess],
@@ -61,7 +61,7 @@ export const isMigrationPossible = createSelector(
 export const isCancelPossible = createSelector(getFetchedProcessState, state => ProcessStateUtils.canCancel(state))
 export const isArchivePossible = createSelector(getFetchedProcessState, state => ProcessStateUtils.canArchive(state))
 export const getTestCapabilities = createSelector(getGraph, g => g.testCapabilities || {})
-const getTestResults = createSelector(getGraph, g => g.testResults)
+export const getTestResults = createSelector(getGraph, g => g.testResults)
 export const getProcessCounts = createSelector(getGraph, getUserSettings, (g, s) => {
   const counts = g.processCounts || {} as ProcessCounts
   return mapValues(counts, (c) => ({...c, all: s["node.shortCounts"] ? millify(c.all) : c.all.toLocaleString()}))
@@ -71,9 +71,9 @@ export const getShowRunProcessDetails = createSelector(
   (testResults, processCounts) => testResults || processCounts,
 )
 
-export const hasOneVersion = createSelector(getFetchedProcessDetails, details => (details?.history || []).length <= 1)
+export const getVersions = createSelector(getFetchedProcessDetails, details => details?.history || [])
+export const hasOneVersion = createSelector(getVersions, h => h.length <= 1)
 export const getAdditionalFields = createSelector(getProcessToDisplay, p => p.properties?.additionalFields)
 
-export const getEdgeToDisplay = createSelector(getGraph, state => state.edgeToDisplay)
 export const getLayout = createSelector(getGraph, state => state.layout || [])
 export const getNodeId = createSelector(getNodeToDisplay, node => node.id)

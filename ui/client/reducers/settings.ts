@@ -1,3 +1,4 @@
+import {FeaturesSettings} from "../actions/nk"
 import {Action} from "../actions/reduxTypes"
 import User from "../common/models/User"
 import {DEV_TOOLBARS} from "../components/toolbarSettings/DEV_TOOLBARS"
@@ -13,18 +14,9 @@ export enum AuthStrategy {
   REMOTE = "Remote", // Perhaps this should be named "Federated", "External" or "Module"?
 }
 
-export interface FeaturesSettings {
-  tabs?: DynamicTabData[],
-  remoteEnvironment?,
-  counts?,
-  environmentAlert?,
-  intervalTimeSettings?,
-  metrics?,
-}
-
 export type SettingsState = {
   loggedUser: Partial<User>,
-  featuresSettings: FeaturesSettings,
+  featuresSettings: Partial<FeaturesSettings>,
   authenticationSettings: AuthenticationSettings,
   analyticsSettings: $TodoType,
   processDefinitionData: ProcessDefinitionData,
@@ -33,23 +25,24 @@ export type SettingsState = {
 }
 
 export type BaseAuthenticationSettings = {
-  provider?: string
-  strategy?: string
+  provider?: string,
+  strategy?: string,
+  anonymousAccessAllowed?: boolean,
 }
 
 export type AuthenticationSettings = BaseAuthenticationSettings | BrowserAuthenticationSettings | RemoteAuthenticationSettings | OAuth2Settings
 
 export type BrowserAuthenticationSettings = {
-  strategy: AuthStrategy.BROWSER
+  strategy: AuthStrategy.BROWSER,
 } & BaseAuthenticationSettings
 
 export type RemoteAuthenticationSettings = {
-  strategy: AuthStrategy.REMOTE
+  strategy: AuthStrategy.REMOTE,
   moduleUrl?: string,
 } & BaseAuthenticationSettings
 
 export type OAuth2Settings = {
-  strategy: AuthStrategy.OAUTH2
+  strategy: AuthStrategy.OAUTH2,
   authorizeUrl?: string,
   jwtAuthServerPublicKey?: string,
   jwtIdTokenNonceVerificationRequired?: boolean,

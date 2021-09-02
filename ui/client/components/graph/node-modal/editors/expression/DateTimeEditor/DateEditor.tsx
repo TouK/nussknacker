@@ -6,7 +6,7 @@ import {DatepickerEditor, DatepickerEditorProps} from "./DatepickerEditor"
 import {FormatterType, spelFormatters, typeFormatters} from "../Formatter"
 import moment from "moment"
 
-const dateFormat = "DD-MM-YYYY"
+const dateFormat = "YYYY-MM-DD"
 const isParseable = (expression: ExpressionObj): boolean => {
   const date = spelFormatters[FormatterType.Date].decode(expression.expression)
   return date && moment(date, dateFormat).isValid()

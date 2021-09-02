@@ -15,6 +15,6 @@ trait SinkForType[T] extends BasicFlinkSink with WithDataList[T] with Serializab
     }
   }
 
-  override def testDataOutput: Option[Any => String] = None
+  override def testDataOutput: Option[Any => String] = Some(_.toString)
 
 }

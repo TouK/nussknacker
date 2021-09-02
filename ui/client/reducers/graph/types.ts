@@ -1,10 +1,11 @@
 import {Layout} from "../../actions/nk"
 import {ProcessStateType, ProcessType} from "../../components/Process/types"
-import {NodeType, Process, GroupType, Edge} from "../../types"
+import {GroupNodeType, NodeType, Process} from "../../types"
 
 export type ProcessCounts = Record<string, {
   errors: number,
   all: number,
+  subprocessCounts?: $TodoType,
 }>
 
 export type GraphState = {
@@ -13,14 +14,11 @@ export type GraphState = {
   processStateLoaded: boolean,
   fetchedProcessDetails?: ProcessType,
   processToDisplay?: Process,
-  businessView: boolean,
-  nodeToDisplay?: NodeType | GroupType,
-  nodeToDisplayReadonly?: boolean,
+  nodeToDisplay?: NodeType | GroupNodeType,
   selectionState?: string[],
   layout: Layout,
   testCapabilities?: $TodoType,
   testResults: $TodoType,
-  edgeToDisplay: Edge,
   processCounts: ProcessCounts,
   unsavedNewName: string | null,
 }

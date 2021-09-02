@@ -3,19 +3,11 @@ import {omitBy} from "lodash"
 import Moment from "moment"
 import * as  queryString from "query-string"
 import {ParseOptions} from "query-string"
+import {BASE_PATH} from "../config"
 import {NodeId} from "../types"
-import {BASE_PATH} from "../config";
 
 export const visualizationBasePath = `visualization`
 export const visualizationPath = `/${visualizationBasePath}/:processId`
-
-function nodeIdPart(nodeId): string {
-  return `?nodeId=${encodeURIComponent(nodeId)}`
-}
-
-function edgeIdPart(edgeId): string {
-  return `?edgeId=${encodeURIComponent(edgeId)}`
-}
 
 function fromTimestampOrDate(tsOrDate) {
   const asInt = parseInt(tsOrDate)
@@ -27,29 +19,9 @@ function fromTimestampOrDate(tsOrDate) {
   return Moment(tsOrDate)
 }
 
-export function processNodeUrl(processName: string, nodeId: NodeId) {
+export function visualizationUrl(processName: string, nodeId?: NodeId): string {
   const baseUrl = `${visualizationBasePath}/${encodeURIComponent(processName)}`
-  const nodeIdUrlPart = nodeIdPart(nodeId)
-  return BASE_PATH + baseUrl + nodeIdUrlPart
-}
-
-export function visualizationUrl(processName: string, nodeId?: NodeId, edgeId?: NodeId) {
-  const baseUrl = `/${visualizationBasePath}/${encodeURIComponent(processName)}`
-  const nodeIdUrlPart = nodeId && edgeId == null ? nodeIdPart(nodeId) : ""
-  const edgeIdUrlPart = edgeId && nodeId == null ? edgeIdPart(edgeId) : ""
-  return baseUrl + nodeIdUrlPart + edgeIdUrlPart
-}
-
-export function extractVisualizationParams(search) {
-  const queryParams = queryString.parse(search)
-  const nodeId = queryParams.nodeId
-  const edgeId = queryParams.edgeId
-  return {nodeId, edgeId}
-}
-
-export function extractBusinessViewParams(search) {
-  const queryParams = queryString.parse(search, {parseBooleans: true})
-  return queryParams.businessView || false
+  return BASE_PATH + baseUrl + queryString.stringify({nodeId})
 }
 
 export function extractCountParams(queryParams) {
@@ -68,11 +40,10 @@ export function normalizeParams<T extends Record<any, any>>(object: T) {
   return queryString.parse(queryString.stringify(object, {arrayFormat: defaultArrayFormat})) as Record<keyof T, string>
 }
 
-export function setAndPreserveLocationParams(params, arrayFormat = defaultArrayFormat): string {
-  const queryParams = queryString.parse(window.location.search, {arrayFormat})
-  const resultParams = omitBy(Object.assign({}, queryParams, params), (e) => {
-    return e == null || e === "" || e === 0
-  })
+export function setAndPreserveLocationParams<T extends Record<string, unknown>>(params: T, arrayFormat = defaultArrayFormat): string {
+  const queryParams = queryString.parse(window.location.search, {arrayFormat, parseNumbers: true})
+  const merged = {...queryParams, ...params}
+  const resultParams = omitBy(merged, (value) => !value || value === [])
 
   return queryString.stringify(resultParams, {arrayFormat})
 }

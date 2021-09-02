@@ -37,7 +37,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
   import spel.Implicits._
   import ProcessValidationSpec._
 
-  test("check for notunique edges") {
+  test("check for notunique edge types") {
     val process = createProcess(
       List(
         Source("in", SourceRef("barSource", List())),
@@ -58,9 +58,30 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     val result = validator.validate(process)
 
     result.errors.invalidNodes shouldBe Map(
-      "subIn" -> List(PrettyValidationErrors.nonuniqeEdge(validator.uiValidationError, EdgeType.SubprocessOutput("out2")))
+      "subIn" -> List(PrettyValidationErrors.nonuniqeEdgeType(validator.uiValidationError, EdgeType.SubprocessOutput("out2")))
     )
   }
+
+  test("check for notunique edges") {
+      val process = createProcess(
+        List(
+          Source("in", SourceRef("barSource", List())),
+          SubprocessInput("subIn", SubprocessRef("sub1", List())),
+          Sink("out2", SinkRef("barSink", List())),
+        ),
+        List(
+          Edge("in", "subIn", None),
+          Edge("subIn", "out2", Some(EdgeType.SubprocessOutput("out1"))),
+          Edge("subIn", "out2", Some(EdgeType.SubprocessOutput("out2"))),
+        )
+      )
+
+      val result = validator.validate(process)
+
+      result.errors.invalidNodes shouldBe Map(
+        "subIn" -> List(PrettyValidationErrors.nonuniqeEdge(validator.uiValidationError, "out2"))
+      )
+    }
 
   test("check for duplicates) groups") {
     val process = createProcess(

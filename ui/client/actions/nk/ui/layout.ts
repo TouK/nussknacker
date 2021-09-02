@@ -53,16 +53,3 @@ export function layout(graphLayoutFunction: GraphLayoutFunction): ThunkAction {
   }
 }
 
-export function businessViewChanged(value: boolean) {
-  history.replace({
-    pathname: history.location.pathname,
-    search: VisualizationUrl.setAndPreserveLocationParams({
-      businessView: value,
-    }),
-  })
-
-  return {
-    type: "BUSINESS_VIEW_CHANGED",
-    businessView: value,
-  }
-}

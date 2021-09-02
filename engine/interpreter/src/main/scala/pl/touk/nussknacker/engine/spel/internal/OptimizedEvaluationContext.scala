@@ -3,11 +3,10 @@ package pl.touk.nussknacker.engine.spel.internal
 import java.lang.reflect.Method
 import java.util
 import java.util.Collections
-
 import org.springframework.core.convert.TypeDescriptor
 import org.springframework.expression.{EvaluationContext, MethodExecutor, MethodResolver, PropertyAccessor}
 import org.springframework.expression.spel.support.{ReflectiveMethodExecutor, ReflectiveMethodResolver, StandardEvaluationContext, StandardTypeLocator}
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.spel.OmitAnnotationsMethodExecutor
 
 import scala.collection.JavaConverters._
@@ -15,7 +14,8 @@ import scala.collection.JavaConverters._
 class EvaluationContextPreparer(classLoader: ClassLoader,
                                 expressionImports: List[String],
                                 propertyAccessors: Seq[PropertyAccessor],
-                                expressionFunctions: Map[String, Method]) {
+                                expressionFunctions: Map[String, Method],
+                                spelExpressionExcludeList: SpelExpressionExcludeList) {
 
   //this method is evaluated for *each* expression evaluation, we want to extract as much as possible to fields in this class
   def prepareEvaluationContext(ctx: Context, globals: Map[String, Any]): EvaluationContext = {
@@ -34,8 +34,11 @@ class EvaluationContextPreparer(classLoader: ClassLoader,
 
   private val optimizedMethodResolvers: java.util.List[MethodResolver] = {
     val mr = new ReflectiveMethodResolver {
-      override def resolve(context: EvaluationContext, targetObject: scala.Any, name: String, argumentTypes: util.List[TypeDescriptor]): MethodExecutor = {
+      override def resolve(context: EvaluationContext, targetObject: Object, name: String, argumentTypes: util.List[TypeDescriptor]): MethodExecutor = {
         val methodExecutor = super.resolve(context, targetObject, name, argumentTypes).asInstanceOf[ReflectiveMethodExecutor]
+
+        spelExpressionExcludeList.blockExcluded(targetObject, name)
+
         new OmitAnnotationsMethodExecutor(methodExecutor)
       }
     }

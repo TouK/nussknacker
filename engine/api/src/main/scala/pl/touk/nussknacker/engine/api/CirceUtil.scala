@@ -4,6 +4,8 @@ import java.nio.charset.StandardCharsets
 import io.circe
 import io.circe.{Decoder, Encoder, KeyEncoder}
 import io.circe.generic.extras.Configuration
+
+import java.net.URI
 import scala.jdk.CollectionConverters.mapAsScalaMapConverter
 
 object CirceUtil {
@@ -33,6 +35,8 @@ object CirceUtil {
   object codecs {
 
     implicit def jMapEncoder[K: KeyEncoder, V: Encoder]: Encoder[java.util.Map[K, V]] = Encoder[Map[K, V]].contramap(_.asScala.toMap)
+    implicit lazy val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
+    implicit lazy val uriEncoder: Encoder[URI] = Encoder.encodeString.contramap(_.toString)
 
   }
 }

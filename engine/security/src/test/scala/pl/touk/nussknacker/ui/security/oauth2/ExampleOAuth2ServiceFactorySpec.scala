@@ -30,7 +30,7 @@ class ExampleOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
 
   it should ("properly parse data from authentication") in {
     val tokenResponse = TestAccessTokenResponse(accessToken = "9IDpWSEYetSNRX41", tokenType = "Bearer")
-    val userInfo = TestProfileResponse("some@e.mail", "uid", TestProfileClearanceResponse(List("User")))
+    val userInfo = TestProfileResponse("some@e.mail", "uid", TestProfileClearanceResponse(Set("User")))
     implicit val testingBackend = SttpBackendStub
       .asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
@@ -39,7 +39,7 @@ class ExampleOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
       .thenRespond(userInfo.asJson.toString)
     val service = ExampleOAuth2ServiceFactory.service(config)
 
-    val (data, _) = service.obtainAuthorizationAndUserInfo("6V1reBXblpmfjRJP").futureValue
+    val (data, _) = service.obtainAuthorizationAndUserInfo("6V1reBXblpmfjRJP", "http://ignored").futureValue
 
     data shouldBe a[OAuth2AuthorizationData]
     data.accessToken shouldBe tokenResponse.accessToken
@@ -48,14 +48,14 @@ class ExampleOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
 
   it should ("handling BadRequest response from authenticate request") in {
     val service = createErrorOAuth2Service(config.accessTokenUri, StatusCode.BadRequest)
-    service.obtainAuthorizationAndUserInfo("6V1reBXblpmfjRJP").recover {
+    service.obtainAuthorizationAndUserInfo("6V1reBXblpmfjRJP", "http://ignored").recover {
       case OAuth2ErrorHandler(_) => succeed
     }.futureValue
   }
 
   it should ("should InternalServerError response from authenticate request") in {
     val service = createErrorOAuth2Service(config.accessTokenUri, StatusCode.InternalServerError)
-    service.obtainAuthorizationAndUserInfo("6V1reBXblpmfjRJP").recover {
+    service.obtainAuthorizationAndUserInfo("6V1reBXblpmfjRJP", "http://ignored").recover {
       case ex@OAuth2CompoundException(errors) => errors.toList.collectFirst {
         case _: OAuth2ServerError => succeed
       }.getOrElse(throw ex)

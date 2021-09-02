@@ -136,7 +136,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
           typeToConfig = typeToConfig
         ),
         new ProcessesExportResources(processRepository, processActivityRepository, processResolving),
-        new ProcessActivityResource(processActivityRepository, processRepository),
+        new ProcessActivityResource(processActivityRepository, processRepository, processAuthorizer),
         ManagementResources(counter, managementActor, testResultsMaxSizeInBytes,
           processAuthorizer, processRepository, featureTogglesConfig, processResolving, processService),
         new ValidationResources(processResolving),
@@ -157,7 +157,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
           .map(reporter => new ProcessReportResources(reporter, counter, processRepository)),
         featureTogglesConfig.attachments
           .map(path => new ProcessAttachmentService(path, processActivityRepository))
-          .map(service => new AttachmentResources(service, processRepository)),
+          .map(service => new AttachmentResources(service, processRepository, processAuthorizer)),
         Some(new QueryableStateResources(
           typeToConfig = typeToConfig,
           processRepository = processRepository,
@@ -184,8 +184,10 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         apiResourcesWithoutAuthentication.reduce(_ ~ _)
       } ~ authenticationResources.authenticate() { authenticatedUser =>
         pathPrefix("api") {
-          val loggedUser = LoggedUser(authenticatedUser, authorizationRules, processCategoryService.getAllCategories)
-          apiResourcesWithAuthentication.map(_.securedRoute(loggedUser)).reduce(_ ~ _)
+          authorize(authenticatedUser.roles.nonEmpty) {
+            val loggedUser = LoggedUser(authenticatedUser, authorizationRules, processCategoryService.getAllCategories)
+            apiResourcesWithAuthentication.map(_.securedRoute(loggedUser)).reduce(_ ~ _)
+          }
         }
       }
     }

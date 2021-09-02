@@ -13,8 +13,12 @@ const {
   sucessColor: sucess,
 } = vars
 
-function tint(base: string, amount = 0) {
+export function tint(base: string, amount = 0) {
   return Color(base).mix(Color("white"), amount).hsl().string()
+}
+
+export function alpha(base: string, amount = 1) {
+  return Color(base).alpha(amount).hsl().string()
 }
 
 export function tintPrimary(base) {
@@ -73,7 +77,7 @@ export function NkThemeProvider({theme = defaultAppTheme, ...props}: Partial<The
   return <ThemeProvider<NkTheme> theme={theme} {...props}/>
 }
 
-export const useNkTheme = () => {
+export const useNkTheme: () => {withFocus: string, theme: NkTheme} = () => {
   const theme = useTheme<NkTheme>()
 
   const withFocus = useMemo(() => css({

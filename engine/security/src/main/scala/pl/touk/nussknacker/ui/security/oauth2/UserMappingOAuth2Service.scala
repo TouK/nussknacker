@@ -15,8 +15,8 @@ class UserMappingOAuth2Service[UserInfoData: Decoder, AuthorizationData <: OAuth
 (implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT])
   extends OAuth2Service[AuthenticatedUser, AuthorizationData] {
 
-  def obtainAuthorizationAndUserInfo(authorizationCode: String): Future[(AuthorizationData, AuthenticatedUser)] =
-    delegate.obtainAuthorizationAndUserInfo(authorizationCode).map { case (authorization, userInfo) =>
+  def obtainAuthorizationAndUserInfo(authorizationCode: String, redirectUri: String): Future[(AuthorizationData, AuthenticatedUser)] =
+    delegate.obtainAuthorizationAndUserInfo(authorizationCode, redirectUri).map { case (authorization, userInfo) =>
       (authorization, loggedUserFunction(userInfo))
     }
 

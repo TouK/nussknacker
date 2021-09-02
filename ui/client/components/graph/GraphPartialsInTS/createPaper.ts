@@ -1,13 +1,15 @@
 import {dia, V} from "jointjs"
-import {isBackgroundObject} from "./cellUtils"
 import {defaults} from "lodash"
-import {defaultLink} from "../EspNode/link"
 import {arrowMarker} from "../arrowMarker"
+import {defaultLink} from "../EspNode/link"
 import {Events} from "../joint-events"
+import {isBackgroundObject} from "./cellUtils"
 
 function getPaper(opts: dia.Paper.Options, canWrite: boolean) {
   const paper = new dia.Paper({
     ...opts,
+    height: "100%",
+    width: "100%",
     gridSize: 1,
     clickThreshold: 2,
     async: false,
@@ -55,17 +57,15 @@ function getPaper(opts: dia.Paper.Options, canWrite: boolean) {
       radius: 60,
     },
   }
+
   return paper
 }
 
 export function createPaper(): dia.Paper {
   const canWrite = this.props.loggedUser.canWrite(this.props.processCategory) && !this.props.readonly
-  const {height = "100%", width = "100%"} = this.props
   const paper = getPaper(
     {
       async: true,
-      height,
-      width,
       model: this.graph,
       el: this.getEspGraphRef(),
       validateConnection: this.validateConnection,
@@ -74,15 +74,18 @@ export function createPaper(): dia.Paper {
   )
 
   return paper
+    //we want to inject node during 'Drag and Drop' from toolbox
     .on(Events.CELL_POINTERUP, (cell: dia.CellView) => {
       this.changeLayoutIfNeeded()
       this.handleInjectBetweenNodes(cell.model)
     })
     .on(Events.LINK_CONNECT, (cell) => {
-      this.disconnectPreviousEdge(cell.model.id)
       this.props.actions.nodesConnected(
         cell.sourceView.model.attributes.nodeData,
         cell.targetView.model.attributes.nodeData,
       )
+    })
+    .on(Events.LINK_DISCONNECT, (cell) => {
+      this.disconnectPreviousEdge(cell.model.attributes.edgeData.from, cell.model.attributes.edgeData.to)
     })
 }

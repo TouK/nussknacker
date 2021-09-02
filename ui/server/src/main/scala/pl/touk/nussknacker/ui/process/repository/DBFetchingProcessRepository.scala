@@ -103,16 +103,16 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       )}).map(_.toList)
   }
 
-  override def fetchLatestProcessDetailsForProcessId[PS: ProcessShapeFetchStrategy](id: ProcessId, businessView: Boolean)(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[BaseProcessDetails[PS]]] = {
-    run(fetchLatestProcessDetailsForProcessIdQuery(id, businessView))
+  override def fetchLatestProcessDetailsForProcessId[PS: ProcessShapeFetchStrategy](id: ProcessId)(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[BaseProcessDetails[PS]]] = {
+    run(fetchLatestProcessDetailsForProcessIdQuery(id))
   }
 
-  override def fetchProcessDetailsForId[PS: ProcessShapeFetchStrategy](processId: ProcessId, versionId: Long, businessView: Boolean)
+  override def fetchProcessDetailsForId[PS: ProcessShapeFetchStrategy](processId: ProcessId, versionId: Long)
                                                                       (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[BaseProcessDetails[PS]]] = {
     val action = for {
       latestProcessVersion <- OptionT[DB, ProcessVersionEntityData](fetchProcessLatestVersionsQuery(processId)(ProcessShapeFetchStrategy.NotFetch).result.headOption)
       processVersion <- OptionT[DB, ProcessVersionEntityData](fetchProcessLatestVersionsQuery(processId).filter(pv => pv.id === versionId).result.headOption)
-      processDetails <- fetchProcessDetailsForVersion(processVersion, isLatestVersion = latestProcessVersion.id == processVersion.id, businessView = businessView)
+      processDetails <- fetchProcessDetailsForVersion(processVersion, isLatestVersion = latestProcessVersion.id == processVersion.id)
     } yield processDetails
     run(action.value)
   }
@@ -141,22 +141,22 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
   override def fetchProcessingType(processId: ProcessId)(implicit user: LoggedUser, ec: ExecutionContext): F[ProcessingType] = {
     run {
       implicit val fetchStrategy: ProcessShapeFetchStrategy[_] = ProcessShapeFetchStrategy.NotFetch
-      fetchLatestProcessDetailsForProcessIdQuery(processId, businessView = false).flatMap {
+      fetchLatestProcessDetailsForProcessIdQuery(processId).flatMap {
         case None => DBIO.failed(ProcessNotFoundError(processId.value.toString))
         case Some(process) => DBIO.successful(process.processingType)
       }
     }
   }
 
-  private def fetchLatestProcessDetailsForProcessIdQuery[PS: ProcessShapeFetchStrategy](id: ProcessId, businessView: Boolean)
+  private def fetchLatestProcessDetailsForProcessIdQuery[PS: ProcessShapeFetchStrategy](id: ProcessId)
                                                                                        (implicit loggedUser: LoggedUser, ec: ExecutionContext): DB[Option[BaseProcessDetails[PS]]] = {
     (for {
       latestProcessVersion <- OptionT[DB, ProcessVersionEntityData](fetchProcessLatestVersionsQuery(id).result.headOption)
-      processDetails <- fetchProcessDetailsForVersion(latestProcessVersion, isLatestVersion = true, businessView = businessView)
+      processDetails <- fetchProcessDetailsForVersion(latestProcessVersion, isLatestVersion = true)
     } yield processDetails).value
   }
 
-  private def fetchProcessDetailsForVersion[PS: ProcessShapeFetchStrategy](processVersion: ProcessVersionEntityData, isLatestVersion: Boolean, businessView: Boolean)
+  private def fetchProcessDetailsForVersion[PS: ProcessShapeFetchStrategy](processVersion: ProcessVersionEntityData, isLatestVersion: Boolean)
                                                                           (implicit loggedUser: LoggedUser, ec: ExecutionContext) = {
     val id = processVersion.processId
     for {
@@ -174,7 +174,6 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       history = processVersions.map(
         v => ProcessDBQueryRepository.toProcessVersion(v, actions.filter(p => p._1.processVersionId == v.id).toList)
       ),
-      businessView = businessView
     )
   }
 
@@ -184,8 +183,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
                                                                lastDeployedActionData: Option[(ProcessActionEntityData, Option[CommentEntityData])],
                                                                isLatestVersion: Boolean,
                                                                tags: Seq[TagsEntityData] = List.empty,
-                                                               history: Seq[ProcessVersion] = List.empty,
-                                                               businessView: Boolean = false)(implicit loggedUser: LoggedUser): BaseProcessDetails[PS] = {
+                                                               history: Seq[ProcessVersion] = List.empty)(implicit loggedUser: LoggedUser): BaseProcessDetails[PS] = {
     BaseProcessDetails[PS](
       id = process.name, //TODO: replace by Long / ProcessId
       processId = ApiProcessId(process.id), //TODO: Remove it weh we will support Long / ProcessId
@@ -204,17 +202,17 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       modificationDate = DateUtils.toLocalDateTime(processVersion.createDate),
       createdAt = DateUtils.toLocalDateTime(process.createdAt),
       createdBy = process.createdBy,
-      json = processVersion.json.map(jsonString => convertToTargetShape(jsonString, process, businessView)),
+      json = processVersion.json.map(jsonString => convertToTargetShape(jsonString, process)),
       history = history.toList,
       modelVersion = processVersion.modelVersion
     )
   }
 
-  private def convertToTargetShape[PS: ProcessShapeFetchStrategy](json: String, process: ProcessEntityData, businessView: Boolean): PS = {
+  private def convertToTargetShape[PS: ProcessShapeFetchStrategy](json: String, process: ProcessEntityData): PS = {
     val canonical = ProcessConverter.toCanonicalOrDie(json)
     implicitly[ProcessShapeFetchStrategy[PS]] match {
       case ProcessShapeFetchStrategy.FetchCanonical => canonical.asInstanceOf[PS]
-      case ProcessShapeFetchStrategy.FetchDisplayable => ProcessConverter.toDisplayable(canonical, process.processingType, businessView).asInstanceOf[PS]
+      case ProcessShapeFetchStrategy.FetchDisplayable => ProcessConverter.toDisplayable(canonical, process.processingType).asInstanceOf[PS]
       case ProcessShapeFetchStrategy.NotFetch => throw new IllegalArgumentException("Scenario conversion shouldn't be necesary for NotFetch strategy")
     }
   }

@@ -49,7 +49,7 @@ class LoggedUserTest extends FunSuite with Matchers {
       ConfigRule("SecondEditor", categories = List("Second"), permissions = List(Read, Write))
     )
 
-    val authorizedUser = LoggedUser.apply(AuthenticatedUser("userId", "userName", List("FirstDeployer", "SecondEditor")), rules, processCategories)
+    val authorizedUser = LoggedUser.apply(AuthenticatedUser("userId", "userName", Set("FirstDeployer", "SecondEditor")), rules, processCategories)
 
     authorizedUser.can("First", Read) shouldBe true
     authorizedUser.can("First", Deploy) shouldBe true

@@ -1,74 +1,101 @@
-import React, {useCallback, useState} from "react"
+import {WindowButtonProps, WindowContentProps} from "@touk/window-manager"
+import {css, cx} from "emotion"
+import React, {useCallback, useEffect, useMemo, useState} from "react"
+import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
-import {getProcessId} from "../../reducers/selectors/graph"
 import {loadProcessState} from "../../actions/nk"
-import GenericModalDialog from "./GenericModalDialog"
-import Dialogs from "./Dialogs"
 import HttpService from "../../http/HttpService"
-import {getModalDialog} from "../../reducers/selectors/ui"
+import {getProcessId} from "../../reducers/selectors/graph"
+import {CustomAction} from "../../types"
+import {UnknownRecord} from "../../types/common"
+import {WindowContent} from "../../windowManager"
+import {WindowKind} from "../../windowManager/WindowKind"
+import {ChangeableValue} from "../ChangeableValue"
 import {editors} from "../graph/node-modal/editors/expression/Editor"
 import {ExpressionLang} from "../graph/node-modal/editors/expression/types"
 
-function CustomActionDialog(): JSX.Element {
+interface CustomActionFormProps extends ChangeableValue<UnknownRecord> {
+  action: CustomAction,
+}
 
-  const processId = useSelector(getProcessId)
-  const dispatch = useDispatch()
-  const action = useSelector(getModalDialog).customAction
+function CustomActionForm(props: CustomActionFormProps): JSX.Element {
+  const {onChange, action} = props
 
   const empty = (action?.parameters || []).reduce((obj, param) => ({...obj, [param.name]: ""}), {})
 
-  const [mapState, setState] = useState(empty)
+  const [state, setState] = useState(empty)
 
-  //initial state, we want to compute it only once
-  const init = useCallback(() => setState({}), [])
+  const setParam = (name: string) => (value: any) => setState(current => ({...current, [name]: value}))
+
+  useEffect(
+    () => onChange(state),
+    [onChange, state],
+  )
+
+  return (
+    <div className="node-table">
+      {
+        (action?.parameters || []).map(param => {
+          const editorType = param.editor.type
+          const Editor = editors[editorType]
+          const fieldName = param.name
+          return (
+            <div className={"node-row"} key={param.name}>
+              <div className="node-label" title={fieldName}>{fieldName}:</div>
+              <Editor
+                editorConfig={param?.editor}
+                className={"node-value"}
+                validators={[]}
+                formatter={null}
+                expressionInfo={null}
+                onValueChange={setParam(fieldName)}
+                expressionObj={{language: ExpressionLang.String, expression: state[fieldName]}}
+                values={[]}
+                readOnly={false}
+                key={fieldName}
+                showSwitch={false}
+                showValidation={false}
+                variableTypes={{}}
+              />
+            </div>
+          )
+        })
+      }
+    </div>
+  )
+}
+
+export function CustomActionDialog(props: WindowContentProps<WindowKind, CustomAction>): JSX.Element {
+  const processId = useSelector(getProcessId)
+  const dispatch = useDispatch()
+  const action = props.data.meta
+
+  const [value, setValue] = useState<UnknownRecord>()
 
   const confirm = useCallback(async () => {
     await HttpService
-      .customAction(processId, action.name, mapState)
+      .customAction(processId, action.name, value)
       .finally(() => dispatch(loadProcessState(processId)))
-  }, [processId, action, mapState])
+    props.close()
+  }, [processId, action.name, value, props, dispatch])
 
-  const setParam = (name: string) => (value: any) =>  setState(current => ({...current, [name]: value}))
+  const {t} = useTranslation()
+  const buttons: WindowButtonProps[] = useMemo(
+    () => [
+      {title: t("dialog.button.cancel", "cancel"), action: () => props.close()},
+      {title: t("dialog.button.confirm", "confirm"), action: () => confirm()},
+    ],
+    [confirm, props, t],
+  )
 
   return (
-    <GenericModalDialog
-      confirm={confirm}
-      type={Dialogs.types.customAction}
-      init={init}
-      header={action?.name}
-    >
-      <div className="node-table">
-        {
-          (action?.parameters || []).map(param => {
-            const editorType = param.editor.type
-            const Editor = editors[editorType]
-            const fieldName = param.name
-            return (
-              <div className={"node-row"} key={param.name}>
-                <div className="node-label" title={fieldName}>{fieldName}:</div>
-                <Editor
-                  editorConfig={param?.editor}
-                  className={"node-value"}
-                  validators={[]}
-                  formatter={null}
-                  expressionInfo={null}
-                  onValueChange={setParam(fieldName)}
-                  expressionObj={{language: ExpressionLang.String, expression: mapState[fieldName]}}
-                  values={[]}
-                  readOnly={false}
-                  key={fieldName}
-                  showSwitch={false}
-                  showValidation={false}
-                  variableTypes={{}}
-                />
-              </div>
-            )
-          })
-        }
+    <WindowContent {...props} buttons={buttons}>
+      <div className={cx("modalContentDark", css({padding: "1em", minWidth: 600}))}>
+        <CustomActionForm action={action} value={value} onChange={setValue}/>
       </div>
-
-    </GenericModalDialog>
+    </WindowContent>
   )
+
 }
 
 export default CustomActionDialog

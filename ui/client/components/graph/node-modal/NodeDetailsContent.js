@@ -5,28 +5,27 @@ import {connect} from "react-redux"
 import {v4 as uuid4} from "uuid"
 import ActionsUtils from "../../../actions/ActionsUtils"
 import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
-import * as JsonUtils from "../../../common/JsonUtils"
 import ProcessUtils from "../../../common/ProcessUtils"
 import TestResultUtils from "../../../common/TestResultUtils"
-import {allValid, errorValidator, mandatoryValueValidator} from "./editors/Validators"
+import {getProcessCategory} from "../../../reducers/selectors/graph"
 import {InputWithFocus} from "../../withFocus"
 import NodeUtils from "../NodeUtils"
 import MapVariable from "./../node-modal/MapVariable"
-import Variable from "./Variable"
+import AdditionalProperty from "./AdditionalProperty"
 import BranchParameters, {branchErrorFieldName} from "./BranchParameters"
 import ExpressionField from "./editors/expression/ExpressionField"
 import Field from "./editors/field/Field"
+import {allValid, errorValidator, mandatoryValueValidator} from "./editors/Validators"
+import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox"
 import NodeErrors from "./NodeErrors"
 import ParameterList from "./ParameterList"
+import {adjustParameters} from "./ParametersUtils"
 import SubprocessInputDefinition from "./subprocess-input-definition/SubprocessInputDefinition"
+import SubprocessOutputDefinition from "./SubprocessOutputDefinition"
 import TestErrors from "./tests/TestErrors"
 import TestResults from "./tests/TestResults"
 import TestResultsSelect from "./tests/TestResultsSelect"
-import AdditionalProperty from "./AdditionalProperty"
-import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox"
-import SubprocessOutputDefinition from "./SubprocessOutputDefinition"
-import {adjustParameters} from "./ParametersUtils"
-import {getProcessCategory} from "../../../reducers/selectors/graph"
+import Variable from "./Variable"
 
 //move state to redux?
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
@@ -70,8 +69,7 @@ export class NodeDetailsContent extends React.Component {
   generateUUID(...properties) {
     properties.forEach((property) => {
       if (_.has(this.state.editedNode, property)) {
-        let elements = _.get(this.state.editedNode, property)
-        elements.map((el) => el.uuid = el.uuid || uuid4())
+        _.get(this.state.editedNode, property, []).forEach((el) => el.uuid = el.uuid || uuid4())
       }
     })
   }
@@ -125,17 +123,19 @@ export class NodeDetailsContent extends React.Component {
 
   removeElement = (property, index) => {
     if (_.has(this.state.editedNode, property)) {
-      _.get(this.state.editedNode, property).splice(index, 1)
+      const node = _.cloneDeep(this.state.editedNode)
+      _.get(node, property).splice(index, 1)
 
-      this.updateNodeState(this.state.editedNode, this.state.unusedParameters)
+      this.updateNodeState(node, this.state.unusedParameters)
     }
   }
 
   addElement = (property, element) => {
     if (_.has(this.state.editedNode, property)) {
-      _.get(this.state.editedNode, property).push(element)
+      const node = _.cloneDeep(this.state.editedNode)
+      _.get(node, property).push(element)
 
-      this.updateNodeState(this.state.editedNode, this.state.unusedParameters)
+      this.updateNodeState(node, this.state.unusedParameters)
     }
   }
 
@@ -175,10 +175,10 @@ export class NodeDetailsContent extends React.Component {
             isMarked={this.isMarked}
             readOnly={!this.props.isEditMode}
             removeElement={this.removeElement}
-            toogleCloseOnEsc={this.props.toogleCloseOnEsc}
             showValidation={showValidation}
-            errors={fieldErrors}
             renderFieldLabel={this.renderFieldLabel}
+            errors={fieldErrors}
+            variableTypes={variableTypes}
           />
         )
       case "SubprocessOutputDefinition":
@@ -193,6 +193,9 @@ export class NodeDetailsContent extends React.Component {
             readOnly={!this.props.isEditMode}
             showValidation={showValidation}
             errors={fieldErrors}
+
+            variableTypes={variableTypes}
+            expressionType={this.props.expressionType || this.props.nodeTypingInfo && {fields: this.props.nodeTypingInfo}}
           />
         )
       case "Filter":
@@ -323,7 +326,6 @@ export class NodeDetailsContent extends React.Component {
       case "VariableBuilder":
         return (
           <MapVariable
-            varNameLabel={"Variable Name"}
             renderFieldLabel={this.renderFieldLabel}
             removeElement={this.removeElement}
             onChange={this.setNodeDataAt}
@@ -566,7 +568,7 @@ export class NodeDetailsContent extends React.Component {
   }
 
   isMarked = (path) => {
-    return _.includes(this.props.pathsToMark, path)
+    return this.props.pathsToMark?.some(toMark => _.startsWith(toMark, path))
   }
 
   toggleTestResult = (fieldName) => {
@@ -609,10 +611,14 @@ export class NodeDetailsContent extends React.Component {
 
   setNodeDataAt = (propToMutate, newValue, defaultValue) => {
     const value = newValue == null && defaultValue != undefined ? defaultValue : newValue
-    const node = _.cloneDeep(this.state.editedNode)
-
-    _.set(node, propToMutate, value)
-    this.updateNodeState(node, this.state.unusedParameters)
+    this.setState(
+      ({editedNode}) => {
+        return {editedNode: _.set(_.cloneDeep(editedNode), propToMutate, value)}
+      },
+      () => {
+        this.props.onChange(this.state.editedNode)
+      },
+    )
   }
 
   updateNodeState = (node, unusedParameters) => {
@@ -665,7 +671,7 @@ export class NodeDetailsContent extends React.Component {
         return ["id"]
       }
       case "SubprocessOutputDefinition":
-        return ["id", "outputName"]
+        return SubprocessOutputDefinition.availableFields(this.state.editedNode)
       case "Filter":
         return ["id", DEFAULT_EXPRESSION_ID]
       case "Enricher":
@@ -762,6 +768,7 @@ function mapState(state, props) {
   //see NodeDetailsModal - we pass own state in props.node, so we cannot just rely on props.node.id
   const originalNodeId = props.originalNodeId || props.node?.id
   const nodeResult = mainProcess?.validationResult?.nodeResults?.[originalNodeId]
+  const nodeDetails = state.nodeDetails[originalNodeId] || {}
   return {
     additionalPropertiesConfig: processDefinitionData.additionalPropertiesConfig || {},
     processDefinitionData: processDefinitionData,
@@ -771,11 +778,11 @@ function mapState(state, props) {
     findAvailableBranchVariables: findAvailableBranchVariables,
     findAvailableVariables: findAvailableVariables,
     originalNodeId: originalNodeId,
-    currentErrors: state.nodeDetails.validationPerformed ? state.nodeDetails.validationErrors : props.nodeErrors,
-    dynamicParameterDefinitions: state.nodeDetails.validationPerformed ? state.nodeDetails.parameters :
+    currentErrors: nodeDetails.validationPerformed ? nodeDetails.validationErrors : props.nodeErrors,
+    dynamicParameterDefinitions: nodeDetails.validationPerformed ? nodeDetails.parameters :
       //for some cases e.g. properties parameters is undefined, we replace it with null no to care about undefined in comparisons
       state.graphReducer.processToDisplay?.validationResult?.nodeResults?.[originalNodeId]?.parameters || null,
-    expressionType: state.nodeDetails.expressionType,
+    expressionType: nodeDetails.expressionType,
     nodeTypingInfo: nodeResult?.typingInfo,
   }
 }

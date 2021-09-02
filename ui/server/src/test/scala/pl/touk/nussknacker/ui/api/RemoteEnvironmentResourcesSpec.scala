@@ -183,8 +183,7 @@ class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest wi
       Future.successful(Right(()))
     }
 
-    override def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[Long],
-                  businessView: Boolean = false)(implicit ec: ExecutionContext) : Future[Either[EspError, Map[String, ProcessComparator.Difference]]]= {
+    override def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[Long])(implicit ec: ExecutionContext) : Future[Either[EspError, Map[String, ProcessComparator.Difference]]]= {
       compareInvocations = localProcess :: compareInvocations
       Future.successful(mockDifferences.get(localProcess.id).fold[Either[EspError, Map[String, ProcessComparator.Difference]]](Left(RemoteEnvironmentCommunicationError(StatusCodes.NotFound, "")))
         (diffs => Right(diffs)))

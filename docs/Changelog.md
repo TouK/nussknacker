@@ -16,6 +16,7 @@ load additional encoders.
 * [#1439](https://github.com/TouK/nussknacker/pull/1439) Upgrade to Flink 1.13
 * [#1993](https://github.com/TouK/nussknacker/pull/1993) Demo was moved to https://github.com/TouK/nussknacker-quickstart. 
 Some additional refactors done: logback configuration enhancements, simpler run.sh script, removed docker defaults from default configs.
+* [#2105](https://github.com/TouK/nussknacker/pull/2105) Better handling Flink's job initializing state - we report it as a "DURING_DEPLOY" instead of "RUNNING" now
 
 0.4.0
 ------------------------
@@ -238,22 +239,3 @@ configuration should be used from now on.
 0.0.6 (9 Aug 2017)
 ---------
 First open source version :)
-
-
-Compatibility matrix
-====================
-
-Table below contains versions of libraries/apps that can be used with Nussknacker 
-
-|Nussknacker| Flink | Kafka  | InfluxDB | Grafana |
-|-----------|-------|--------|----------|---------|
-| master    |**1.7.2**|0.11.0.2|1.2.0     | 5.4.0   |
-| 0.0.12    |1.7.2  |0.11.0.2| 1.2.0    | 5.4.0   |
-| 0.0.11    |1.6.1  |0.11.0.2| 1.2.0   | 5.4.0  |
-| 0.0.10    |**1.6.1**  |0.11.0.2| 1.2.0    | 5.4.0   |
-| 0.0.9     |1.4.2  |0.11.0.2| 1.2.0        | 5.4.0       |
-| 0.0.8     |1.4.2  |0.11.0.2| 1.2.0    | 4.0.1   |
-| 0.0.7     |1.3.1  |0.9.0.1 | 1.2.0    | 4.0.1   |
-| 0.0.6     |1.3.1  |0.9.0.1 | 1.2.0    | 4.0.1   |
-
-

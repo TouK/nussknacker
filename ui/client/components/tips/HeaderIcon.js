@@ -13,3 +13,4 @@ HeaderIcon.propTypes = {
   icon: PropTypes.string.isRequired,
   className: PropTypes.string,
 }
+

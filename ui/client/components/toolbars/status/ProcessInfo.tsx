@@ -3,7 +3,13 @@ import React, {memo} from "react"
 import {connect} from "react-redux"
 import {SwitchTransition} from "react-transition-group"
 import {RootState} from "../../../reducers"
-import {getFetchedProcessDetails, getProcessState, isProcessStateLoaded, getProcessUnsavedNewName, isProcessRenamed} from "../../../reducers/selectors/graph"
+import {
+  getFetchedProcessDetails,
+  getProcessState,
+  getProcessUnsavedNewName,
+  isProcessRenamed,
+  isProcessStateLoaded,
+} from "../../../reducers/selectors/graph"
 import {getCustomActions} from "../../../reducers/selectors/settings"
 import {UnknownRecord} from "../../../types/common"
 import {CssFade} from "../../CssFade"
@@ -11,9 +17,9 @@ import {descriptionProcessArchived, descriptionSubprocess, descriptionSubprocess
 import ProcessStateIcon, {unknownIcon} from "../../Process/ProcessStateIcon"
 import {ProcessStateType, ProcessType} from "../../Process/types"
 import {CollapsibleToolbar} from "../../toolbarComponents/CollapsibleToolbar"
+import {DefaultToolbarPanel, ToolbarPanelProps} from "../../toolbarComponents/DefaultToolbarPanel"
 import {DragHandle} from "../../toolbarComponents/DragHandle"
 import {ToolbarButtons} from "../../toolbarComponents/ToolbarButtons"
-import {DefaultToolbarPanel, ToolbarPanelProps} from "../../toolbarComponents/DefaultToolbarPanel"
 import {ActionButton} from "../../toolbarSettings/buttons"
 import UrlIcon from "../../UrlIcon"
 

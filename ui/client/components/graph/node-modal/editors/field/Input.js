@@ -1,9 +1,9 @@
+import classNames from "classnames"
 import PropTypes from "prop-types"
 import React from "react"
-import {allValid} from "../Validators"
 import ValidationLabels from "../../../../modals/ValidationLabels"
 import {InputWithFocus} from "../../../../withFocus"
-import classNames from "classnames"
+import {allValid} from "../Validators"
 
 export const Input = (props) => {
   const {
@@ -41,6 +41,7 @@ Input.propTypes = {
     PropTypes.string,
     PropTypes.number,
   ]),
+  autofocus: PropTypes.bool,
   readOnly: PropTypes.bool,
   autoFocus: PropTypes.bool,
   showValidation: PropTypes.bool,

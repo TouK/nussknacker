@@ -263,7 +263,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
       .id("avro-test-timestamp-flink-kafka").parallelism(1).exceptionHandler()
       .source(
         "start", "kafka-avro", TopicParamName -> s"'${topicConfig.input}'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
-      ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestmp",
+      ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp",
       "timestampToSet" -> (timeToSetInProcess.toString + "L"))
       .emptySink(
         "end",
@@ -292,7 +292,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
       .id("avro-test-timestamp-kafka-flink").parallelism(1).exceptionHandler()
       .source(
         "start", "kafka-avro", TopicParamName -> s"'${topicConfig.input}'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
-      ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestmp",
+      ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp",
       "timestampToSet" -> "10000")
       .emptySink(
         "end",

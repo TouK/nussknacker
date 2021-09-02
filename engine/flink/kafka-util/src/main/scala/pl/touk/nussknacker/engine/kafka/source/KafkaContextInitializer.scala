@@ -41,7 +41,9 @@ class KafkaContextInitializer[K, V, DefinedParameter <: BaseDefinedParameter](ke
     new BasicContextInitializingFunction[ConsumerRecord[K, V]](processId, taskName) {
       override def map(input: ConsumerRecord[K, V]): Context = {
         val headers: java.util.Map[String, String] = ConsumerRecordUtils.toMap(input.headers).asJava
-        val inputMeta = InputMeta(input.key, input.topic, input.partition, input.offset, input.timestamp, input.timestampType(), headers, input.leaderEpoch().orElse(null))
+        //null won't be serialized properly
+        val safeLeaderEpoch = input.leaderEpoch().orElse(-1)
+        val inputMeta = InputMeta(input.key, input.topic, input.partition, input.offset, input.timestamp, input.timestampType(), headers, safeLeaderEpoch)
         newContext
           .withVariable(VariableConstants.InputVariableName, input.value)
           .withVariable(VariableConstants.InputMetaVariableName, inputMeta)

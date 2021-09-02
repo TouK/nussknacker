@@ -13,6 +13,7 @@ import {
   Process,
   ProcessDefinitionData,
   PropertiesType,
+  SubprocessNodeType,
   UINodeType,
 } from "../../types"
 import {UnknownRecord} from "../../types/common"
@@ -32,11 +33,15 @@ class NodeUtils {
     return type === "Properties"
   }
 
+  nodeIsSubprocess = (node): node is SubprocessNodeType => {
+    return this.nodeType(node) === "SubprocessInput"
+  }
+
   isPlainNode = (node: UINodeType) => {
     return !_.isEmpty(node) && !this.nodeIsProperties(node) && !this.nodeIsGroup(node)
   }
 
-  nodeIsGroup = (node: UINodeType): node is GroupType => {
+  nodeIsGroup = (node: UINodeType): node is GroupNodeType => {
     return node && this.nodeType(node) === "_group"
   }
 
@@ -116,7 +121,10 @@ class NodeUtils {
 
   getIncomingEdges = (nodeId: NodeId, process: Process): Edge[] => this.edgesFromProcess(process).filter(e => e.to === nodeId)
 
-  getEdgesForConnectedNodes = (nodeIds: NodeId[], process: Process): Edge[] => process.edges?.filter(edge => nodeIds.includes(edge.from) && nodeIds.includes(edge.to))
+  getEdgesForConnectedNodes = (
+    nodeIds: NodeId[],
+    process: Process,
+  ): Edge[] => process.edges?.filter(edge => nodeIds.includes(edge.from) && nodeIds.includes(edge.to))
 
   getAllGroups = (process: Process): GroupType[] => {
     const groups: GroupType[] = process?.properties?.additionalFields?.groups || []
@@ -157,7 +165,7 @@ class NodeUtils {
     )
   }
 
-  editGroup = (process: Process, oldGroupId: NodeId, newGroup) => {
+  editGroup = (process: Process, oldGroupId: NodeId, newGroup: GroupNodeType) => {
     const groupForState: GroupType = {id: newGroup.id, nodes: newGroup.ids, type: "_group"}
     return this._update<Process, GroupType[]>(
       "properties.additionalFields.groups",
@@ -200,9 +208,11 @@ class NodeUtils {
 
   //we don't allow multi outputs other than split, filter, switch and no multiple inputs
   //TODO remove type (Source, Sink) comparisons
-  canMakeLink = (fromId, toId, process, processDefinitionData) => {
+  canMakeLink = (fromId: string, toId: string, process: Process, processDefinitionData: ProcessDefinitionData, previousEdge?: Edge) => {
     const nodeInputs = this._nodeInputs(toId, process)
+    //we do not want to include currently edited edge
     const nodeOutputs = this._nodeOutputs(fromId, process)
+      .filter(e=> e.from !== previousEdge?.from && e.to !== previousEdge?.to)
 
     const to = this.getNodeById(toId, process)
     const from = this.getNodeById(fromId, process)

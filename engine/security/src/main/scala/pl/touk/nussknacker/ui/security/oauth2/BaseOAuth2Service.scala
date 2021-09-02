@@ -11,14 +11,14 @@ import scala.concurrent.duration.{Deadline, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 
 class BaseOAuth2Service[
-  UserInfoData: Decoder,
-  AuthorizationData <: OAuth2AuthorizationData : Decoder
+  UserInfoData,
+  AuthorizationData <: OAuth2AuthorizationData
 ](protected val clientApi: OAuth2ClientApi[UserInfoData, AuthorizationData])
  (implicit ec: ExecutionContext) extends OAuth2Service[UserInfoData, AuthorizationData] with LazyLogging {
 
-  final def obtainAuthorizationAndUserInfo(authorizationCode: String): Future[(AuthorizationData, UserInfoData)] = {
+  final def obtainAuthorizationAndUserInfo(authorizationCode: String, redirectUri: String): Future[(AuthorizationData, UserInfoData)] = {
     for {
-      authorizationData <- obtainAuthorization(authorizationCode)
+      authorizationData <- obtainAuthorization(authorizationCode, redirectUri)
       userInfo <- obtainUserInfo(authorizationData)
     } yield (authorizationData, userInfo)
   }
@@ -29,8 +29,8 @@ class BaseOAuth2Service[
       userInfo <- obtainUserInfo(accessToken)
     } yield (userInfo, deadline)
 
-  protected def obtainAuthorization(authorizationCode: String): Future[AuthorizationData] =
-    clientApi.accessTokenRequest(authorizationCode)
+  protected def obtainAuthorization(authorizationCode: String, redirectUri: String): Future[AuthorizationData] =
+    clientApi.accessTokenRequest(authorizationCode, redirectUri)
 
   /*
   Override this method in a subclass making use of signed tokens or an introspection endpoint

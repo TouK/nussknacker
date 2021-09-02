@@ -16,6 +16,7 @@ trait JwtStandardClaims {
   val issuer: Option[String]
   val subject: Option[String]
   val audience: Option[Either[List[String], String]]
+  final val audienceAsList: List[String] = audience.map(_.fold(identity, List(_))).toList.flatten
   val expirationTime: Option[Deadline]
   val notBefore: Option[Deadline]
   val issuedAt: Option[Deadline]
@@ -23,8 +24,8 @@ trait JwtStandardClaims {
 }
 
 class JwtOAuth2Service[
-  UserInfoData: Decoder,
-  AuthorizationData <: OAuth2AuthorizationData : Decoder,
+  UserInfoData,
+  AuthorizationData <: OAuth2AuthorizationData,
   AccessTokenClaims <: JwtStandardClaims : Decoder
 ](clientApi: OAuth2ClientApi[UserInfoData, AuthorizationData],
   configuration: OAuth2Configuration)
@@ -33,10 +34,10 @@ class JwtOAuth2Service[
     with LazyLogging {
 
   protected val accessTokenIsJwt: Boolean = configuration.jwt.exists(_.accessTokenIsJwt)
-  protected val tokenAudience: Option[String] = configuration.jwt.flatMap(_.audience)
+  protected val requiredAccessTokenAudience: Option[String] = configuration.jwt.flatMap(_.audience)
 
-  protected lazy val jwtValidator: JwtValidator = new JwtValidator(configuration.jwt
-    .map(_.authServerPublicKey).getOrElse(throw new NoSuchElementException("JWT configuration not found")))
+  protected lazy val jwtValidator: JwtValidator = new JwtValidator(_ => configuration.jwt
+    .flatMap(_.authServerPublicKey).getOrElse(throw new NoSuchElementException("JWT configuration not found")))
 
   protected def introspectJwtToken[Claims : Decoder](token: String): Future[Claims] = jwtValidator.introspect[Claims](token) match {
     case Valid(claims) => Future.successful(claims)
@@ -48,7 +49,7 @@ class JwtOAuth2Service[
       Future(accessToken)
         .flatMap(accessToken => introspectJwtToken[AccessTokenClaims](accessToken))
         .flatMap(claims =>
-          if (claims.audience.exists(_.contains(tokenAudience.get)))
+          if (requiredAccessTokenAudience.isEmpty || claims.audienceAsList.exists(requiredAccessTokenAudience.contains))
             Future.successful(claims.expirationTime)
           else
             Future.failed(OAuth2CompoundException(one(OAuth2AccessTokenRejection("Invalid audience claim"))))
@@ -58,8 +59,8 @@ class JwtOAuth2Service[
     }
   }
 
-  override protected def obtainAuthorization(authorizationCode: String): Future[AuthorizationData] =
-    clientApi.accessTokenRequest(authorizationCode)
+  override protected def obtainAuthorization(authorizationCode: String, redirectUri: String): Future[AuthorizationData] =
+    clientApi.accessTokenRequest(authorizationCode, redirectUri)
       .andThen { case Success(authorization) if accessTokenIsJwt => introspectAccessToken(authorization.accessToken) }
 }
 

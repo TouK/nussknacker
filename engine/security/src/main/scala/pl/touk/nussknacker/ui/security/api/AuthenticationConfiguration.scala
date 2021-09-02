@@ -35,7 +35,7 @@ object AuthenticationConfiguration {
   case class ConfigUser(identity: String,
                         password: Option[String],
                         encryptedPassword: Option[String],
-                        roles: List[String])
+                        roles: Set[String])
 
   case class ConfigRule(role: String,
                         isAdmin: Boolean = false,

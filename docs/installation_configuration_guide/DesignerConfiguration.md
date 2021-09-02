@@ -25,7 +25,7 @@ Currently Nussknacker supports following databases:
 * PostgreSQL
 
 Please
-check [Slick documentation](https://scala-slick.org/doc/3.1.0/api/index.html#slick.jdbc.JdbcBackend$DatabaseFactoryDef@forConfig(String,Config,Driver,ClassLoader):Database))
+check [Slick documentation](https://scala-slick.org/doc/3.1.0/api/index.html#slick.jdbc.JdbcBackend$DatabaseFactoryDef@forConfig(String,Config,Driver,ClassLoader):Database)
 for detailed list of configuration options.
 
 The table below presents most important options, or the ones that have Nussknacker specific defaults.
@@ -45,7 +45,7 @@ The table below presents most important options, or the ones that have Nussknack
                                                                      
 ### Metric dashboard
 
-Each scenario can have link to grafana dashboard. In [docker setup](https://github.com/TouK/nussknacker/tree/staging/demo/docker/grafana) we 
+Each scenario can have link to grafana dashboard. In [docker setup](https://github.com/TouK/nussknacker-quickstart/tree/main/grafana) we 
 provide `nussknacker-scenario` dashboard. 
 You can modify/configure own, the only assumption that we make is that [variable](https://grafana.com/docs/grafana/latest/variables/) `processName` is used to display metrics for particular scenario.
 
@@ -482,7 +482,6 @@ processToolbarConfig {
         type: "buttons-panel"
         title: "view"
         buttons: [
-          { type: "view-business-view" }
           { type: "view-zoom-in" }
           { type: "view-zoom-out" }
           { type: "view-reset" }
@@ -625,8 +624,8 @@ categoriesConfig: {
 ```
 
 For each category you have to define its scenario type (`streaming` in examples above). Scenario type configuration consists of two parts:
-- `deploymentConfig` - [deployment manager configuration](DeploymentManagerConfiguration.md)
-- `modelConfig` - [model configuration](ModelConfiguration.md)
+- `deploymentConfig` - [deployment manager configuration](DeploymentManagerConfiguration)
+- `modelConfig` - [model configuration](ModelConfiguration)
 
 See [example](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L33) 
 from development config to configure multiple scenario types.

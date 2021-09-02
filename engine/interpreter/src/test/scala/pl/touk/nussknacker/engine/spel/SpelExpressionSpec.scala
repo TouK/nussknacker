@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.spel
 
-import java.math.BigDecimal
+import java.math.{BigDecimal, BigInteger}
 import java.text.ParseException
 import java.time.{LocalDate, LocalDateTime}
 import java.util
@@ -11,7 +11,7 @@ import org.apache.avro.generic.GenericData
 import org.apache.commons.lang3.ClassUtils
 import org.scalatest.{EitherValues, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
@@ -56,6 +56,14 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   case class Test(id: String, value: Long, children: java.util.List[Test] = List[Test]().asJava, bigValue: BigDecimal = BigDecimal.valueOf(0L))
 
+  private def parseOrFailWithoutStaticInvocationChecking[T:TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard) : Expression = {
+
+    parse(expr, context, flavour, staticMethodInvocationsChecking = false, methodExecutionForUnknownAllowed = true) match {
+      case Valid(e) => e.expression
+      case Invalid(err) => throw new ParseException(err.map(_.message).toList.mkString, -1)
+    }
+  }
+
   private def parseOrFail[T:TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard) : Expression = {
     parse(expr, context, flavour) match {
       case Valid(e) => e.expression
@@ -93,10 +101,10 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
       dynamicPropertyAccessAllowed = false)
   }
 
-  private def parse[T: TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard): ValidatedNel[ExpressionParseError, TypedExpression] = {
+  private def parse[T: TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard, staticMethodInvocationsChecking: Boolean = true, methodExecutionForUnknownAllowed: Boolean = false): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val validationCtx = ValidationContext(
       context.variables.mapValuesNow(Typed.fromInstance))
-    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = true, staticMethodInvocationsChecking = true, methodExecutionForUnknownAllowed = false,
+    parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = true, staticMethodInvocationsChecking, methodExecutionForUnknownAllowed,
       dynamicPropertyAccessAllowed = true)
   }
 
@@ -106,15 +114,25 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   }
 
   private def parse[T: TypeTag](expr: String, validationCtx: ValidationContext, dictionaries: Map[String, DictDefinition],
-                                flavour: Flavour, strictMethodsChecking: Boolean, staticMethodInvocationsChecking: Boolean,
-                                methodExecutionForUnknownAllowed: Boolean, dynamicPropertyAccessAllowed: Boolean): ValidatedNel[ExpressionParseError, TypedExpression] = {
+                                flavour: Flavour, strictMethodsChecking: Boolean, staticMethodInvocationsChecking: Boolean, methodExecutionForUnknownAllowed: Boolean,
+                                dynamicPropertyAccessAllowed: Boolean): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val imports = List(SampleValue.getClass.getPackage.getName)
     SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(dictionaries), enableSpelForceCompile = true, strictTypeChecking = true,
-      imports, flavour, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking = true, typeDefinitionSetWithDefaultClasses,
-      methodExecutionForUnknownAllowed = methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed)(ClassExtractionSettings.Default).parse(expr, validationCtx, Typed.fromDetailedType[T])
+      imports, flavour, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking = staticMethodInvocationsChecking, typeDefinitionSetWithCustomClasses,
+      methodExecutionForUnknownAllowed = methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed, spelExpressionExcludeListWithCustomPatterns)(ClassExtractionSettings.Default).parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 
-  private def typeDefinitionSetWithDefaultClasses: TypeDefinitionSet = {
+  private def spelExpressionExcludeListWithCustomPatterns: SpelExpressionExcludeList = {
+    SpelExpressionExcludeList(List(
+      "java\\.lang\\.System".r,
+      "java\\.lang\\.reflect".r,
+      "java\\.lang\\.net".r,
+      "java\\.lang\\.io".r,
+      "java\\.lang\\.nio".r
+    ))
+  }
+
+  private def typeDefinitionSetWithCustomClasses: TypeDefinitionSet = {
 
     def createTestClazzDefinitionFromClassNames(className: String) =
       TypeInfos.ClazzDefinition(TypedClass(ClassUtils.primitiveToWrapper(ClassUtils.getClass(className)), Nil), Map.empty, Map.empty)
@@ -123,8 +141,30 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
       createTestClazzDefinitionFromClassNames("java.lang.String"),
       createTestClazzDefinitionFromClassNames("java.lang.Long"),
       createTestClazzDefinitionFromClassNames("java.lang.Integer"),
-      createTestClazzDefinitionFromClassNames("pl.touk.nussknacker.engine.spel.SampleGlobalObject")
+      createTestClazzDefinitionFromClassNames("java.math.BigInteger"),
+      createTestClazzDefinitionFromClassNames("pl.touk.nussknacker.engine.spel.SampleGlobalObject"),
+      createTestClazzDefinitionFromClassNames("java.lang.reflect.Modifier")
     ))
+  }
+
+  test("blocking excluded reflect in runtime, without previous static validation") {
+    a[SpelExpressionEvaluationException] should be thrownBy {
+      parseOrFailWithoutStaticInvocationChecking[Any]("T(java.lang.reflect.Modifier).classModifiers()").evaluateSync[Any](ctx)
+    }
+  }
+
+  test("blocking excluded System in runtime, without previous static validation") {
+    a[SpelExpressionEvaluationException] should be thrownBy {
+      parseOrFailWithoutStaticInvocationChecking[Any]("T(System).exit()").evaluateSync[Any](ctx)
+    }
+  }
+
+  test("blocking excluded in runtime, without previous static validation, allowed class and package") {
+      parseOrFailWithoutStaticInvocationChecking[BigInteger]("T(java.math.BigInteger).valueOf(1L)").evaluateSync[BigInteger](ctx) should equal(BigInteger.ONE)
+  }
+
+  test("blocking excluded in runtime, allowed reference") {
+    parseOrFail[Long]("T(java.lang.Long).valueOf(1L)").evaluateSync[Long](ctx) should equal(1L)
   }
 
   test("evaluate call on non-existing static method of validated class String") {
@@ -133,10 +173,6 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   test("evaluate static method call on validated class Integer") {
     parseOrFail[Int]("T(java.lang.Integer).min(1, 2)").evaluateSync[Int](ctx) should equal(1)
-  }
-
-  test("evaluate static method call on validated class Long") {
-    parseOrFail[Long]("T(java.lang.Long).compare(2L, 1L)").evaluateSync[Int](ctx) should equal(1)
   }
 
   test("evaluate static method call on unvalidated class") {

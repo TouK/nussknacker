@@ -1,17 +1,9 @@
+import _ from "lodash"
 import React, {createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
 import {useDebouncedCallback} from "use-debounce"
-import {
-  copySelection,
-  cutSelection,
-  deleteNodes,
-  deleteSelection,
-  layout,
-  nodesWithEdgesAdded,
-  pasteSelection,
-  selectAll,
-} from "../../actions/nk"
+import {copySelection, cutSelection, deleteNodes, deleteSelection, nodesWithEdgesAdded, pasteSelection, selectAll,} from "../../actions/nk"
 import {error, success} from "../../actions/notificationActions"
 import {redo, undo} from "../../actions/undoRedoActions"
 import {events} from "../../analytics/TrackingEvents"
@@ -67,7 +59,8 @@ function useClipboardPermission(): boolean | string {
   const checkClipboard = useCallback(async () => {
     try {
       setText(await navigator.clipboard.readText())
-    } catch {}
+    } catch {
+    }
   }, [])
 
   // if possible monitor clipboard for new content on each render
@@ -167,18 +160,28 @@ export default function SelectionContextProvider(props: PropsWithChildren<{ past
   const parse = useClipboardParse()
   const graphGetter = useGraph()
 
+  function calculatePastedNodePosition(node, pasteX, minNodeX, pasteY, minNodeY, random) {
+    const currentNodePosition = node.additionalFields.layoutData
+    const pasteNodePosition = {x: currentNodePosition.x + pasteX, y: currentNodePosition.y + pasteY }
+    const selectionLayoutNodePosition = {x: pasteNodePosition.x - minNodeX, y: pasteNodePosition.y - minNodeY}
+    const randomizedNodePosition = {x: selectionLayoutNodePosition.x + random, y: selectionLayoutNodePosition.y + random}
+    return randomizedNodePosition
+  }
+
   const [parseInsertNodes] = useDebouncedCallback((clipboardText) => {
     const selection = parse(clipboardText)
     if (selection) {
       const {x, y} = props.pastePosition()
-      const nodesWithPositions = selection.nodes.map((node, ix) => ({node, position: {x: x + 60, y: y + ix * 180}}))
+      const minNodeX: number = _.min(selection.nodes.map((node) => node.additionalFields.layoutData.x))
+      const minNodeY: number = _.min(selection.nodes.map((node) => node.additionalFields.layoutData.y))
+      const random = (Math.floor(Math.random() * 20) + 1)
+      const nodesWithPositions = selection.nodes.map((node, ix) => ({node, position: calculatePastedNodePosition(node, x, minNodeX, y, minNodeY, random)}))
       dispatch(nodesWithEdgesAdded(nodesWithPositions, selection.edges))
       dispatch(success(t("userActions.paste.success", {
         defaultValue: "Pasted node",
         defaultValue_plural: "Pasted {{count}} nodes",
         count: selection.nodes.length,
       })))
-      dispatch(layout(() => graphGetter()?.forceLayout()))
     } else {
       dispatch(error(t("userActions.paste.failed", "Cannot paste content from clipboard")))
     }

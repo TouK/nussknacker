@@ -17,8 +17,8 @@ class CachingOAuth2Service[
     override def expireAfterWriteFn(key: String, value: (UserInfoData, Deadline), now: Deadline): Option[Deadline] = Some(value._2)
   }))
 
-  def obtainAuthorizationAndUserInfo(authorizationCode: String): Future[(AuthorizationData, UserInfoData)] = {
-    delegate.obtainAuthorizationAndUserInfo(authorizationCode).map { case (authorization, userInfo) =>
+  def obtainAuthorizationAndUserInfo(authorizationCode: String, redirectUri: String): Future[(AuthorizationData, UserInfoData)] = {
+    delegate.obtainAuthorizationAndUserInfo(authorizationCode, redirectUri).map { case (authorization, userInfo) =>
       authorizationsCache.put(authorization.accessToken) {
         Future((userInfo, Deadline.now + authorization.expirationPeriod.getOrElse(defaultExpiration)))
       }

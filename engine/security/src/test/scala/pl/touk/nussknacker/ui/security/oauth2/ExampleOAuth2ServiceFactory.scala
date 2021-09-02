@@ -14,9 +14,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse], configuration: OAuth2Configuration)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]) extends OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData] with LazyLogging {
 
-  def obtainAuthorizationAndUserInfo(authorizationCode: String): Future[(OAuth2AuthorizationData, AuthenticatedUser)] =
+  def obtainAuthorizationAndUserInfo(authorizationCode: String, redirectUri: String): Future[(OAuth2AuthorizationData, AuthenticatedUser)] =
     for {
-      accessTokenResponse <- clientApi.accessTokenRequest(authorizationCode)
+      accessTokenResponse <- clientApi.accessTokenRequest(authorizationCode, redirectUri)
       authenticatedUser <- checkAuthorizationAndObtainUserinfo(accessTokenResponse.accessToken).map(_._1)
     } yield (accessTokenResponse, authenticatedUser)
 
@@ -54,7 +54,7 @@ object ExampleOAuth2ServiceFactory {
       URI.create("https://api.github.com/user"),
       Some(ProfileFormat.GITHUB),
       URI.create("https://github.com/login/oauth/access_token"),
-      URI.create("http://demo.nussknacker.pl"),
+      None,
       false,
       None
     )
@@ -72,5 +72,5 @@ object ExampleOAuth2ServiceFactory {
 
   @JsonCodec case class TestProfileResponse(email: String, uid: String, clearance: TestProfileClearanceResponse)
   @JsonCodec case class TestTokenIntrospectionResponse(exp: Option[Long])
-  @JsonCodec case class TestProfileClearanceResponse(roles: List[String])
+  @JsonCodec case class TestProfileClearanceResponse(roles: Set[String])
 }
