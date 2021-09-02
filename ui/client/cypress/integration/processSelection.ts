@@ -12,6 +12,7 @@ describe("Process", () => {
   beforeEach(() => {
     cy.visitNewProcess(NAME, "testProcess")
     cy.get("#esp-graph svg", {timeout: 20000}).as("graph")
+    cy.wait(500)
   })
 
   describe("mouse drag", () => {
