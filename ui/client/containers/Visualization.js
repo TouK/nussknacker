@@ -1,4 +1,4 @@
-import _, {defaultsDeep, isEmpty} from "lodash"
+import {defaultsDeep, isEmpty} from "lodash"
 import React from "react"
 import {connect} from "react-redux"
 import ActionsUtils from "../actions/ActionsUtils"
@@ -15,71 +15,66 @@ import Toolbars from "../components/toolbars/Toolbars"
 import {getFetchedProcessDetails, getProcessToDisplay} from "../reducers/selectors/graph"
 import {getCapabilities} from "../reducers/selectors/other"
 import {getProcessDefinitionData} from "../reducers/selectors/settings"
-import {areAllModalsClosed} from "../reducers/selectors/ui"
+
 import "../stylesheets/visualization.styl"
-import {darkTheme} from "./darkTheme"
+import {parseWindowsQueryParams} from "../windowManager/useWindows"
 import {BindKeyboardShortcuts} from "./BindKeyboardShortcuts"
+import {darkTheme} from "./darkTheme"
 import {NkThemeProvider} from "./theme"
+
+const PROCESS_STATE_INTERVAL_TIME = 10000
 
 class Visualization extends React.Component {
 
+  graphRef = React.createRef()
+  processStateIntervalId = null
+
   state = {
-    processStateIntervalTime: 10000,
-    processStateIntervalId: null,
     dataResolved: false,
   }
 
-  constructor(props) {
-    super(props)
-    this.graphRef = React.createRef()
-  }
-
   componentDidMount() {
-    this.fetchProcessDetails().then(async (details) => {
-      await this.props.actions.loadProcessToolbarsConfiguration(this.props.match.params.processId)
-      this.props.actions.displayProcessActivity(this.props.match.params.processId)
-      this.props.actions.fetchProcessDefinition(
-        details.fetchedProcessDetails.processingType,
-        _.get(details, "fetchedProcessDetails.json.properties.isSubprocess")
-      ).then(() => {
-        this.setState({dataResolved: true})
-        this.showModalDetailsIfNeeded(details.fetchedProcessDetails.json)
-        this.showCountsIfNeeded(details.fetchedProcessDetails.json)
-      })
+    const {match, actions} = this.props
+
+    const {params: {processId}} = match
+    this.fetchProcessDetails().then(async ({fetchedProcessDetails: {json, processingType, isSubprocess, isArchived}}) => {
+      await actions.loadProcessToolbarsConfiguration(processId)
+      actions.displayProcessActivity(processId)
+      await actions.fetchProcessDefinition(processingType, json.properties?.isSubprocess)
+      this.setState({dataResolved: true})
+      this.showModalDetailsIfNeeded(json)
+      this.showCountsIfNeeded(json)
 
       //We don't need load state for subproces and archived process..
-      if (this.props.fetchedProcessDetails.isSubprocess === false && this.props.fetchedProcessDetails.isArchived === false) {
-        this.fetchProcessState()
-        this.state.processStateIntervalId = setInterval(
-          () => this.fetchProcessState(),
-          this.state.processStateIntervalTime,
-        )
+      if (!isSubprocess && !isArchived) {
+        this.startFetchStateInterval(PROCESS_STATE_INTERVAL_TIME)
       }
     }).catch((error) => {
-      this.props.actions.handleHTTPError(error)
+      actions.handleHTTPError(error)
     })
   }
 
+  startFetchStateInterval(time) {
+    this.fetchProcessState()
+    this.processStateIntervalId = setInterval(() => this.fetchProcessState(), time)
+  }
+
   showModalDetailsIfNeeded(process) {
-    const {nodeId, edgeId} = VisualizationUrl.extractVisualizationParams(this.props.location.search)
-    if (nodeId) {
-      const node = NodeUtils.getNodeById(nodeId, process)
+    const {showModalEdgeDetails, showModalNodeDetails, history} = this.props
+    const params = parseWindowsQueryParams({nodeId: [], edgeId: []})
 
-      if (node) {
-        this.props.actions.displayModalNodeDetails(node)
-      } else {
-        this.props.history.replace({search: VisualizationUrl.setAndPreserveLocationParams({nodeId: null})})
-      }
-    }
+    const nodes = params.nodeId.map(id => NodeUtils.getNodeById(id, process)).filter(Boolean)
+    nodes.forEach(showModalNodeDetails)
 
-    if (edgeId) {
-      const edge = NodeUtils.getEdgeById(edgeId, process)
-      if (edge) {
-        this.props.actions.displayModalEdgeDetails(edge)
-      } else {
-        this.props.history.replace({search: VisualizationUrl.setAndPreserveLocationParams({edgeId: null})})
-      }
-    }
+    const edges = params.edgeId.map(id => NodeUtils.getEdgeById(id, process)).filter(Boolean)
+    edges.forEach(showModalEdgeDetails)
+
+    history.replace({
+      search: VisualizationUrl.setAndPreserveLocationParams({
+        nodeId: nodes.map(node => node.id),
+        edgeId: edges.map(NodeUtils.edgeId),
+      }),
+    })
   }
 
   showCountsIfNeeded(process) {
@@ -91,7 +86,8 @@ class Visualization extends React.Component {
   }
 
   componentWillUnmount() {
-    clearInterval(this.state.processStateIntervalId)
+    clearInterval(this.processStateIntervalId)
+    this.props.closeModals()
     this.props.actions.clearProcess()
   }
 
@@ -120,7 +116,7 @@ class Visualization extends React.Component {
 
         <GraphProvider graph={this.getGraphInstance}>
           <SelectionContextProvider pastePosition={this.getPastePosition}>
-            <BindKeyboardShortcuts disabled={!this.props.allModalsClosed}/>
+            <BindKeyboardShortcuts/>
             <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
               <Toolbars isReady={this.state.dataResolved}/>
             </NkThemeProvider>
@@ -128,7 +124,15 @@ class Visualization extends React.Component {
         </GraphProvider>
 
         <SpinnerWrapper isReady={!graphNotReady}>
-          {!isEmpty(this.props.processDefinitionData) ? <Graph ref={this.graphRef} capabilities={this.props.capabilities}/> : null}
+          {!isEmpty(this.props.processDefinitionData) ?
+            (
+              <Graph
+                ref={this.graphRef}
+                capabilities={this.props.capabilities}
+                showModalEdgeDetails={this.props.showModalEdgeDetails}
+              />
+            ) :
+            null}
         </SpinnerWrapper>
       </div>
     )
@@ -145,7 +149,6 @@ function mapState(state) {
     processDefinitionData: getProcessDefinitionData(state),
     fetchedProcessDetails: getFetchedProcessDetails(state),
     graphLoading: state.graphReducer.graphLoading,
-    allModalsClosed: areAllModalsClosed(state),
     nothingToSave: ProcessUtils.nothingToSave(state),
     capabilities: getCapabilities(state),
   }

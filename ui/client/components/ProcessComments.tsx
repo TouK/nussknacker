@@ -1,10 +1,11 @@
 import React, {useCallback, useState} from "react"
 import {useDispatch, useSelector} from "react-redux"
 import {createSelector} from "reselect"
-import {addComment, deleteComment, toggleConfirmDialog} from "../actions/nk"
+import {addComment, deleteComment} from "../actions/nk"
 import * as DialogMessages from "../common/DialogMessages"
 import {getProcessId, getProcessVersionId} from "../reducers/selectors/graph"
 import {getFeatureSettings, getLoggedUser} from "../reducers/selectors/settings"
+import {useWindows} from "../windowManager"
 import CommentContent from "./CommentContent"
 import CommentInput from "./CommentInput"
 import Date from "./common/Date"
@@ -19,6 +20,7 @@ function ProcessComments(): JSX.Element {
   const [comment, setComment] = useState("")
   const [pending, setPending] = useState(false)
   const dispatch = useDispatch()
+  const {confirm} = useWindows()
 
   const comments = useSelector(getComments)
   const processId = useSelector(getProcessId)
@@ -35,12 +37,17 @@ function ProcessComments(): JSX.Element {
   }, [dispatch, processId, processVersionId, comment])
 
   const _deleteComment = useCallback((comment) => {
-    dispatch(toggleConfirmDialog(true, DialogMessages.deleteComment(), async () => {
-      setPending(true)
-      await dispatch(deleteComment(processId, comment.id))
-      setPending(false)
-    }, "DELETE", "NO"))
-  }, [dispatch, processId])
+    setPending(true)
+    confirm({
+      text: DialogMessages.deleteComment(),
+      confirmText: "DELETE",
+      denyText: "NO",
+      onConfirmCallback: async () => {
+        await dispatch(deleteComment(processId, comment.id))
+        setPending(false)
+      },
+    })
+  }, [confirm, dispatch, processId])
 
   const onInputChange = useCallback((e) => setComment(e.target.value), [])
   const isLastComment = useCallback((index) => index + 1 === comments.length, [comments.length])

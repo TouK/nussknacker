@@ -1,22 +1,19 @@
 import React, {useCallback} from "react"
 import {Glyphicon} from "react-bootstrap"
-import {useDispatch} from "react-redux"
-import {toggleConfirmDialog} from "../../actions/nk"
 import * as DialogMessages from "../../common/DialogMessages"
 import ProcessStateUtils from "../../components/Process/ProcessStateUtils"
 import HttpService from "../../http/HttpService"
+import {useWindows} from "../../windowManager"
 
-export function CancelIcon({processState, onCancel, process}: {processState: any, onCancel: () => void, process: any}) {
-  const dispatch = useDispatch()
+export function CancelIcon({processState, onCancel, process}: {processState: any, onCancel: () => void, process: any}): JSX.Element | null {
+  const {confirm} = useWindows()
+
   const cancel = useCallback(
-    () => {
-      dispatch(toggleConfirmDialog(
-        true,
-        DialogMessages.stop(process.name),
-        () => HttpService.cancel(process.name).finally(onCancel),
-      ))
-    },
-    [process.name, onCancel],
+    () => confirm({
+      text: DialogMessages.stop(process.name),
+      onConfirmCallback: () => HttpService.cancel(process.name).finally(onCancel),
+    }),
+    [confirm, process.name, onCancel],
   )
 
   if (!ProcessStateUtils.canCancel(processState)) {

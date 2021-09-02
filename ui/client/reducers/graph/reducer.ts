@@ -1,24 +1,24 @@
 import {concat, isEqual, pick, reject, sortBy, uniq, xor, zipObject} from "lodash"
+import undoable, {combineFilters, excludeAction} from "redux-undo"
+import {Reducer} from "../../actions/reduxTypes"
 import * as GraphUtils from "../../components/graph/GraphUtils"
 import NodeUtils from "../../components/graph/NodeUtils"
+import {reducer as groups} from "../groups"
 import * as LayoutUtils from "../layoutUtils"
 import {nodes} from "../layoutUtils"
 import {mergeReducers} from "../mergeReducers"
-import {reducer as groups} from "../groups"
-import {Reducer} from "../../actions/reduxTypes"
-import undoable, {combineFilters, excludeAction} from "redux-undo"
 import {GraphState} from "./types"
 import {
-  displayOrGroup,
-  updateLayoutAfterNodeIdChange,
   addNodesWithLayout,
-  prepareNewNodesWithLayout,
-  updateAfterNodeIdChange,
-  updateAfterNodeDelete,
+  adjustBranchParametersAfterDisconnect,
   canGroupSelection,
   createEdge,
-  adjustBranchParametersAfterDisconnect,
+  displayOrGroup,
   enrichNodeWithProcessDependentData,
+  prepareNewNodesWithLayout,
+  updateAfterNodeDelete,
+  updateAfterNodeIdChange,
+  updateLayoutAfterNodeIdChange,
 } from "./utils"
 
 //TODO: We should change namespace from graphReducer to currentlyDisplayedProcess
@@ -28,7 +28,6 @@ const emptyGraphState: GraphState = {
   processToDisplay: null,
   fetchedProcessDetails: null,
   nodeToDisplay: null,
-  edgeToDisplay: null,
   layout: [],
   testCapabilities: {},
   selectionState: [],
@@ -100,17 +99,8 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
       }
     }
 
-    case "DISPLAY_MODAL_NODE_DETAILS":
-      return displayOrGroup(state, action.nodeToDisplay, action.nodeToDisplayReadonly)
     case "DISPLAY_NODE_DETAILS":
       return displayOrGroup(state, action.nodeToDisplay)
-
-    case "DISPLAY_MODAL_EDGE_DETAILS": {
-      return {
-        ...state,
-        edgeToDisplay: action.edgeToDisplay,
-      }
-    }
 
     case "EDIT_EDGE": {
       const processToDisplay = GraphUtils.mapProcessWithNewEdge(
@@ -124,7 +114,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
           ...processToDisplay,
           validationResult: action.validationResult,
         },
-        edgeToDisplay: action.after,
       }
     }
     case "EDIT_NODE": {
@@ -299,7 +288,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         ...state,
         processToDisplay: {
           ...NodeUtils.editGroup(state.processToDisplay, action.oldGroupId, action.newGroup),
-          validationResult: action.validationResult,
         },
         nodeToDisplay: action.newGroup,
         layout: updateLayoutAfterNodeIdChange(state.layout, action.oldGroupId, action.newGroup.id),

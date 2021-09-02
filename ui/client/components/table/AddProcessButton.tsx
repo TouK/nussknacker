@@ -1,12 +1,11 @@
-import cn from "classnames"
-import React, {useState} from "react"
-import {useSelector} from "react-redux"
-import {useClashedNames} from "../../containers/hooks/useClashedNames"
-import {getLoggedUser} from "../../reducers/selectors/settings"
-import AddProcessDialog from "../AddProcessDialog"
-import {ThemedButton} from "../themed/ThemedButton"
+import {css, cx} from "emotion"
+import React from "react"
 import {useTranslation} from "react-i18next"
-import {css} from "emotion"
+import {useSelector} from "react-redux"
+import {getLoggedUser} from "../../reducers/selectors/settings"
+import {useWindows} from "../../windowManager"
+import {WindowKind} from "../../windowManager/WindowKind"
+import {ThemedButton} from "../themed/ThemedButton"
 
 type Props = {
   onClick: () => void,
@@ -18,39 +17,40 @@ function AddButton(props: Props) {
   const {onClick, className, title} = props
   const loggedUser = useSelector(getLoggedUser)
 
-  return loggedUser.isWriter() ? (
-    <ThemedButton
-      className={className}
-      onClick={onClick}
-      title={title}
-    >
-      <span className={css({textTransform: "uppercase"})}>
-        {title}
-      </span>
-    </ThemedButton>
-  ) : null
+  return loggedUser.isWriter() ?
+    (
+      <ThemedButton
+        className={className}
+        onClick={onClick}
+        title={title}
+      >
+        <span className={css({textTransform: "uppercase"})}>
+          {title}
+        </span>
+      </ThemedButton>
+    ) :
+    null
 
 }
 
-export function AddProcessButton(props: {isSubprocess: boolean, className?: string}) {
+export function AddProcessButton(props: {isSubprocess: boolean, className?: string}): JSX.Element {
   const {isSubprocess} = props
-  const [addOpened, setAddOpened] = useState(false)
-  const clashedNames = useClashedNames(addOpened)
   const {t} = useTranslation()
 
-  const message = isSubprocess ? t("addProcessButton.subprocess", "Create new fragment") :
+  const message = isSubprocess ?
+    t("addProcessButton.subprocess", "Create new fragment") :
     t("addProcessButton.process", "Create new scenario")
 
+  const {open} = useWindows()
+  const onClick = () => open<{test: number}>({
+    isResizable: true,
+    isModal: true,
+    shouldCloseOnEsc: true,
+    kind: isSubprocess ? WindowKind.addSubProcess : WindowKind.addProcess,
+    title: message,
+  })
+
   return (
-    <>
-      <AddButton className={cn(props.className)} onClick={() => setAddOpened(true)} title={message}/>
-      <AddProcessDialog
-        onClose={() => setAddOpened(false)}
-        isOpen={addOpened}
-        isSubprocess={isSubprocess}
-        message={message}
-        clashedNames={clashedNames}
-      />
-    </>
+    <AddButton className={cx(props.className)} onClick={onClick} title={message}/>
   )
 }

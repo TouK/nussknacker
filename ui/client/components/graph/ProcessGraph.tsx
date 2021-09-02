@@ -4,7 +4,6 @@ import {connect} from "react-redux"
 import {compose} from "redux"
 import ActionsUtils from "../../actions/ActionsUtils"
 import {
-  getEdgeToDisplay,
   getFetchedProcessDetails,
   getLayout,
   getNodeToDisplay,
@@ -12,9 +11,9 @@ import {
   getProcessToDisplay,
 } from "../../reducers/selectors/graph"
 import {getExpandedGroups} from "../../reducers/selectors/groups"
-import {isNodeDetailsModalVisible} from "../../reducers/selectors/ui"
 import {setLinksHovered} from "./dragHelpers"
 import {commonState, Graph} from "./Graph"
+import GraphWrapped from "./GraphWrapped"
 
 const spec = {
   drop: (props, monitor, component: Graph) => {
@@ -36,8 +35,7 @@ function mapState(state) {
   return {
     ...commonState(state),
     // eslint-disable-next-line i18next/no-literal-string
-    divId: "esp-graph",
-    padding: 0,
+    divId: "nk-graph-main",
     singleClickNodeDetailsEnabled: true,
     nodeIdPrefixForSubprocessTests: "",
     readonly: false,
@@ -45,10 +43,8 @@ function mapState(state) {
     fetchedProcessDetails: getFetchedProcessDetails(state),
     nodeToDisplay: getNodeToDisplay(state),
     processCounts: getProcessCounts(state),
-    edgeToDisplay: getEdgeToDisplay(state),
     layout: getLayout(state),
     expandedGroups: getExpandedGroups(state),
-    showNodeDetailsModal: isNodeDetailsModalVisible(state),
   }
 }
 
@@ -57,4 +53,4 @@ export const ProcessGraph = compose(
   DropTarget("element", spec, (connect) => ({connectDropTarget: connect.dropTarget()})),
   //withRef is here so that parent can access methods in graph
   connect(mapState, ActionsUtils.mapDispatchWithEspActions, null, {forwardRef: true}),
-)(Graph)
+)(GraphWrapped)

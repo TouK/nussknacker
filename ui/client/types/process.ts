@@ -31,8 +31,8 @@ export type NodesGroup = {
 export type CustomAction = {
   name: string,
   allowedStateStatusNames: Array<string>,
-  icon: string | null,
-  parameters: Array<CustomActionParameter> | null,
+  icon?: string,
+  parameters?: Array<CustomActionParameter>,
 }
 
 export type CustomActionParameter = {

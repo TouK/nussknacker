@@ -4,19 +4,17 @@ import "jointjs/dist/joint.css"
 import _, {cloneDeep, debounce, isEqual, sortBy} from "lodash"
 import PropTypes from "prop-types"
 import React from "react"
+import {findDOMNode} from "react-dom"
 import {getProcessCategory, getSelectionState} from "../../reducers/selectors/graph"
 import {getLoggedUser, getProcessDefinitionData} from "../../reducers/selectors/settings"
 import "../../stylesheets/graph.styl"
 import {filterDragHovered, setLinksHovered} from "./dragHelpers"
 import {updateNodeCounts} from "./EspNode/element"
-import {FocusableDiv} from "./focusable"
+import {GraphPaperContainer} from "./focusable"
 import {createPaper, directedLayout, drawGraph, isBackgroundObject, isGroupElement, isModelElement} from "./GraphPartialsInTS"
 import styles from "./graphTheme.styl"
-
 import * as GraphUtils from "./GraphUtils"
 import {Events} from "./joint-events"
-import EdgeDetailsModal from "./node-modal/EdgeDetailsModal"
-import NodeDetailsModal from "./node-modal/NodeDetailsModal"
 import NodeUtils from "./NodeUtils"
 import {PanZoomPlugin} from "./PanZoomPlugin"
 import {RangeSelectPlugin, SelectionMode} from "./RangeSelectPlugin"
@@ -29,8 +27,9 @@ export class Graph extends React.Component {
     processToDisplay: PropTypes.object.isRequired,
     loggedUser: PropTypes.object.isRequired,
     connectDropTarget: PropTypes.func,
-    width: PropTypes.string,
-    height: PropTypes.string,
+    showModalNodeDetails: PropTypes.func.isRequired,
+    showModalEdgeDetails: PropTypes.func.isRequired,
+    isSubprocess: PropTypes.bool,
   }
   redrawing = false
   directedLayout = directedLayout.bind(this)
@@ -136,7 +135,7 @@ export class Graph extends React.Component {
   }
 
   isNotLink(cell) {
-    return cell.attributes.type !== "link";
+    return cell.attributes.type !== "link"
   }
 
   canAddNode(node) {
@@ -312,7 +311,12 @@ export class Graph extends React.Component {
   }
 
   changeLayoutIfNeeded = () => {
-    const {layout, actions} = this.props
+    const {layout, actions, isSubprocess} = this.props
+
+    if (isSubprocess) {
+      return
+    }
+
     const elements = this.graph.getElements().filter(isModelElement)
     const newLayout = sortBy(
       elements.map(el => {
@@ -332,11 +336,11 @@ export class Graph extends React.Component {
       if (nodeDataId) {
         const nodeData = this.getNodeData(cellView.model)
         const prefixedNodeId = this.props.nodeIdPrefixForSubprocessTests + nodeDataId
-        this.props.actions.displayModalNodeDetails({...nodeData, id: prefixedNodeId}, this.props.readonly)
+        this.props.showModalNodeDetails({...nodeData, id: prefixedNodeId}, this.props.readonly)
       }
 
       if (cellView.model.attributes.edgeData) {
-        this.props.actions.displayModalEdgeDetails(cellView.model.attributes.edgeData)
+        this.props.showModalEdgeDetails(cellView.model.attributes.edgeData)
       }
     })
 
@@ -435,15 +439,20 @@ export class Graph extends React.Component {
   }
 
   render() {
-    const toRender = (
-      <div id="graphContainer" style={{padding: this.props.padding}}>
-        {this.props.showNodeDetailsModal ? <NodeDetailsModal/> : null}
-        {!_.isEmpty(this.props.edgeToDisplay) ? <EdgeDetailsModal/> : null}
-        <FocusableDiv ref={this.espGraphRef} id={this.props.divId}/>
-      </div>
+    const {connectDropTarget, divId, isSubprocess} = this.props
+    return (
+      <GraphPaperContainer
+        ref={instance => {
+          this.espGraphRef.current = instance
+          if (connectDropTarget) {
+            const node = findDOMNode(instance)
+            connectDropTarget(node)
+          }
+        }}
+        onResize={isSubprocess ? () => this.panAndZoom.fitSmallAndLargeGraphs() : null}
+        id={divId}
+      />
     )
-
-    return this.props.connectDropTarget ? this.props.connectDropTarget(toRender) : toRender
   }
 }
 

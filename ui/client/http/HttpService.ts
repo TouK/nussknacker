@@ -10,7 +10,7 @@ import {AuthenticationSettings} from "../reducers/settings"
 import {WithId} from "../types/common"
 import {ToolbarsConfig} from "../components/toolbarSettings/types"
 import i18next from "i18next"
-import { Moment } from "moment"
+import {Moment} from "moment"
 
 type HealthCheckProcessDeploymentType = {
   status: string,
@@ -323,7 +323,7 @@ class HttpService {
 
   fetchProcessCounts(processId: string, dateFrom: Moment, dateTo: Moment) {
     //we use offset date time instead of timestamp to pass info about user time zone to BE
-    const format = (date: Moment) => date?.format('YYYY-MM-DDTHH:mm:ssZ')
+    const format = (date: Moment) => date?.format("YYYY-MM-DDTHH:mm:ssZ")
 
     const data = {dateFrom: format(dateFrom), dateTo: format(dateTo)}
     const promise = api.get(`/processCounts/${processId}`, {params: data})
@@ -354,7 +354,7 @@ class HttpService {
       .catch(error => this.addError(i18next.t("notification.error.failedToUnArchive", "Failed to unarchive scenario"), error, true))
   }
 
-  createProcess(processId, processCategory, isSubprocess) {
+  createProcess(processId: string, processCategory: string, isSubprocess = false) {
     return api.post(`/processes/${processId}/${processCategory}?isSubprocess=${isSubprocess}`)
       .catch(error => this.addError(i18next.t("notification.error.failedToCreate", "Failed to create scenario:"), error, true))
   }
@@ -379,13 +379,15 @@ class HttpService {
   compareProcesses(processId, thisVersion, otherVersion, remoteEnv) {
     const path = remoteEnv ? "remoteEnvironment" : "processes"
 
-    return api.get(`/${path}/${processId}/${thisVersion}/compare/${otherVersion}`)
-      .catch(error => this.addError(i18next.t("notification.error.cannotCompare", "Cannot compare scenarios"), error, true))
+    const promise = api.get(`/${path}/${processId}/${thisVersion}/compare/${otherVersion}`)
+    promise.catch(error => this.addError(i18next.t("notification.error.cannotCompare", "Cannot compare scenarios"), error, true))
+    return promise
   }
 
   fetchRemoteVersions(processId) {
-    return api.get(`/remoteEnvironment/${processId}/versions`)
-      .catch(error => this.addError(i18next.t("notification.error.failedToGetVersions", "Failed to get versions from second environment"), error))
+    const promise = api.get(`/remoteEnvironment/${processId}/versions`)
+    promise.catch(error => this.addError(i18next.t("notification.error.failedToGetVersions", "Failed to get versions from second environment"), error))
+    return promise
   }
 
   migrateProcess(processId, versionId) {

@@ -1,0 +1,15 @@
+export enum WindowKind {
+  default,
+  confirm,
+  viewNode,
+  editNode,
+  editEdge,
+  addProcess,
+  addSubProcess,
+  saveProcess,
+  deployProcess,
+  calculateCounts,
+  generateTestData,
+  compareVersions,
+  customAction,
+}

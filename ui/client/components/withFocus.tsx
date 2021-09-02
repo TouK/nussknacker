@@ -33,21 +33,35 @@ export function TextAreaWithFocus({
 
 export type ButtonProps = DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement>
 
-export function ButtonWithFocus({className, ...props}: ButtonProps): JSX.Element {
+export function ButtonWithFocus({className, onClick, ...props}: ButtonProps): JSX.Element {
   const {withFocus} = useNkTheme()
   return (
-    <button {...props} className={cx(withFocus, className)}/>
+    <button
+      {...props}
+      className={cx(withFocus, className)}
+      onClick={event => {
+        const {currentTarget} = event
+        onClick(event)
+        setTimeout(() => currentTarget.scrollIntoView({behavior: "smooth", block: "nearest"}))
+      }}
+    />
   )
 }
 
-export function SelectWithFocus({className, ...props}: DetailedHTMLProps<SelectHTMLAttributes<HTMLSelectElement>, HTMLSelectElement>): JSX.Element {
+export function SelectWithFocus({
+  className,
+  ...props
+}: DetailedHTMLProps<SelectHTMLAttributes<HTMLSelectElement>, HTMLSelectElement>): JSX.Element {
   const {withFocus} = useNkTheme()
   return (
     <select {...props} className={cx(withFocus, className)}/>
   )
 }
 
-export function AWithFocus({className, ...props}: DetailedHTMLProps<AnchorHTMLAttributes<HTMLAnchorElement>, HTMLAnchorElement>): JSX.Element {
+export function AWithFocus({
+  className,
+  ...props
+}: DetailedHTMLProps<AnchorHTMLAttributes<HTMLAnchorElement>, HTMLAnchorElement>): JSX.Element {
   const {withFocus} = useNkTheme()
   return (
     <a {...props} className={cx(withFocus, className)}/>

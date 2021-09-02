@@ -1,11 +1,16 @@
-import Enzyme, {mount} from "enzyme"
 import Adapter from "@wojtekmaj/enzyme-adapter-react-17"
+import Enzyme, {mount} from "enzyme"
 import React from "react"
 import {Provider} from "react-redux"
 import configureMockStore from "redux-mock-store"
 import {ProcessHistoryComponent} from "../components/ProcessHistory" //import redux-independent component
 
 const mockStore = configureMockStore()
+jest.mock("../windowManager", () => ({
+  useWindows: jest.fn(() => ({
+    confirm: jest.fn(),
+  })),
+}))
 
 describe("ProcessHistory suite", () => {
   it("should mark latest history entry as current and other as past", () => {

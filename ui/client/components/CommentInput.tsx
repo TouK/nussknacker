@@ -1,19 +1,17 @@
-import React, {ChangeEventHandler, ReactNode} from "react"
+import React, {ChangeEventHandler, DetailedHTMLProps, ReactNode, TextareaHTMLAttributes} from "react"
 import {useTranslation} from "react-i18next"
 import {TextAreaWithFocus} from "./withFocus"
 
-type Props = {
-  onChange: ChangeEventHandler<HTMLTextAreaElement>,
-  value: string | string[] | number,
-}
+type Props = DetailedHTMLProps<TextareaHTMLAttributes<HTMLTextAreaElement>, HTMLTextAreaElement>
 
-const CommentInput = (props: Props): JSX.Element => {
+export const CommentInput = ({onChange, value, ...props}: Props): JSX.Element => {
   const {t} = useTranslation()
   return (
     <TextAreaWithFocus
-      value={props.value || ""}
+      {...props}
+      value={value || ""}
       placeholder={t("commentInput.placeholder", "Write a comment...")}
-      onChange={props.onChange}
+      onChange={onChange}
     />
   )
 }

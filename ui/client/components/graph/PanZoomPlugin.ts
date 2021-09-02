@@ -32,7 +32,10 @@ export class PanZoomPlugin {
       maxZoom: 500,
     })
 
-    this.animationClassHolder = document.querySelector(".svg-pan-zoom_viewport").parentElement
+    //appear animation starting point, fitSmallAndLargeGraphs will set animation end point in componentDidMount
+    this.instance.zoom(0.001)
+
+    this.animationClassHolder = paper.el
     this.animationClassHolder.addEventListener("transitionend", debounce(() => {
       this.setAnimationClass({enabled: false})
     }, 500))
@@ -89,16 +92,18 @@ export class PanZoomPlugin {
     this.instance.updateBBox()
     this.instance.fit()
     const {realZoom} = this.instance.getSizes()
-    const toZoomBy = realZoom > 1.2 ? 1 / realZoom : 0.8 //the bigger zoom, the further we get
+    const toZoomBy = realZoom > 1.2 ? 1 / realZoom : 0.78  //the bigger zoom, the further we get
     this.instance.zoomBy(toZoomBy)
     this.instance.center()
-  }, 200)
+  }, 100)
 
-  zoomIn = () => {
+  zoomIn = (): void => {
+    this.setAnimationClass({enabled: true})
     this.instance.zoomIn()
   }
 
-  zoomOut = () => {
+  zoomOut = (): void => {
+    this.setAnimationClass({enabled: true})
     this.instance.zoomOut()
   }
 }

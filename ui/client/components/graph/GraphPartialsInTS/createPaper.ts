@@ -1,13 +1,15 @@
 import {dia, V} from "jointjs"
-import {isBackgroundObject} from "./cellUtils"
 import {defaults} from "lodash"
-import {defaultLink} from "../EspNode/link"
 import {arrowMarker} from "../arrowMarker"
+import {defaultLink} from "../EspNode/link"
 import {Events} from "../joint-events"
+import {isBackgroundObject} from "./cellUtils"
 
 function getPaper(opts: dia.Paper.Options, canWrite: boolean) {
   const paper = new dia.Paper({
     ...opts,
+    height: "100%",
+    width: "100%",
     gridSize: 1,
     clickThreshold: 2,
     async: false,
@@ -55,17 +57,15 @@ function getPaper(opts: dia.Paper.Options, canWrite: boolean) {
       radius: 60,
     },
   }
+
   return paper
 }
 
 export function createPaper(): dia.Paper {
   const canWrite = this.props.loggedUser.canWrite(this.props.processCategory) && !this.props.readonly
-  const {height = "100%", width = "100%"} = this.props
   const paper = getPaper(
     {
       async: true,
-      height,
-      width,
       model: this.graph,
       el: this.getEspGraphRef(),
       validateConnection: this.validateConnection,

@@ -1,16 +1,16 @@
+import {isEmpty} from "lodash"
 import React from "react"
+import {VariableTypes} from "../../../../types"
 import {UnknownFunction} from "../../../../types/common"
 import {editors, EditorType, simpleEditorValidators} from "./expression/Editor"
-import {isEmpty} from "lodash"
-import {ExpressionLang, ExpressionObj} from "./expression/types"
 import {spelFormatters} from "./expression/Formatter"
-import {VariableTypes} from "../../../../types"
-import {Error} from "./Validators"
+import {ExpressionLang, ExpressionObj} from "./expression/types"
 import {ParamType} from "./types"
+import {Error} from "./Validators"
 
 type Props = {
   expressionObj: ExpressionObj,
-  showSwitch: boolean,
+  showSwitch?: boolean,
   renderFieldLabel?: UnknownFunction,
   fieldLabel?: string,
   readOnly: boolean,
@@ -49,7 +49,7 @@ class EditableEditor extends React.Component<Props, State> {
 
     return (
       <div className={`${rowClassName ? rowClassName : " node-row"}`}>
-        {fieldLabel && renderFieldLabel(fieldLabel)}
+        {fieldLabel && renderFieldLabel?.(fieldLabel)}
         <Editor
           {...this.props}
           editorConfig={param?.editor}

@@ -4,7 +4,7 @@ import {NodeValidationError, PropertiesType, VariableTypes, NodeType, UIParamete
 
 import {debounce} from "lodash"
 
-export type NodeValidationUpdated = { type: "NODE_VALIDATION_UPDATED", validationData: ValidationData}
+export type NodeValidationUpdated = { type: "NODE_VALIDATION_UPDATED", validationData: ValidationData, nodeId: string}
 export type NodeDetailsActions = NodeValidationUpdated
 
 export type ValidationData = {
@@ -21,13 +21,13 @@ type ValidationRequest = {
     processProperties: PropertiesType,
 }
 
-function nodeValidationDataUpdated(validationData: ValidationData): NodeValidationUpdated {
-  return {type: "NODE_VALIDATION_UPDATED", validationData: validationData}
+function nodeValidationDataUpdated(validationData: ValidationData, nodeId: string): NodeValidationUpdated {
+  return {type: "NODE_VALIDATION_UPDATED", validationData, nodeId}
 }
 
 //we don't return ThunkAction here as it would not work correctly with debounce
 function validate(processId: string, request: ValidationRequest, dispatch: ThunkDispatch) {
-  HttpService.validateNode(processId, request).then(data => dispatch(nodeValidationDataUpdated(data.data)))
+  HttpService.validateNode(processId, request).then(data => dispatch(nodeValidationDataUpdated(data.data, request.nodeData.id)))
 }
 
 //TODO: use sth better, how long should be timeout?
@@ -43,4 +43,4 @@ export function updateNodeData(processId: string, variableTypes: VariableTypes, 
   }
 
 }
- 
+

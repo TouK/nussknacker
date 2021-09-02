@@ -1,13 +1,14 @@
 import React from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
-import {loadProcessState} from "../../../../actions/nk/process"
-import {toggleProcessActionDialog} from "../../../../actions/nk/toggleProcessActionDialog"
-import {disableToolTipsHighlight, enableToolTipsHighlight} from "../../../../actions/nk/tooltips"
+import {disableToolTipsHighlight, enableToolTipsHighlight, loadProcessState} from "../../../../actions/nk"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/deploy.svg"
 import HttpService from "../../../../http/HttpService"
 import {getProcessId, hasError, isDeployPossible, isSaveDisabled} from "../../../../reducers/selectors/graph"
 import {getCapabilities} from "../../../../reducers/selectors/other"
+import {useWindows} from "../../../../windowManager"
+import {WindowKind} from "../../../../windowManager/WindowKind"
+import {ToggleProcessActionModalData} from "../../../modals/DeployProcessDialog"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 import {ToolbarButtonProps} from "../../types"
 
@@ -33,17 +34,22 @@ export default function DeployButton(props: ToolbarButtonProps) {
   const deployMouseOver = hasErrors ? () => dispatch(enableToolTipsHighlight()) : null
   const deployMouseOut = hasErrors ? () => dispatch(disableToolTipsHighlight()) : null
 
+  const {open} = useWindows()
+
+  const message = t("panels.actions.deploy.dialog", "Deploy scenario {{name}}", {name: processId})
+  const action = (p, c) => HttpService.deploy(p, c).finally(() => dispatch(loadProcessState(processId)))
+
   return (
     <ToolbarButton
       name={t("panels.actions.deploy.button", "deploy")}
       disabled={!available}
       icon={<Icon/>}
       title={deployToolTip}
-      onClick={() => dispatch(toggleProcessActionDialog(
-        t("panels.actions.deploy.dialog", "Deploy scenario"),
-        (p, c) => HttpService.deploy(p, c).finally(() => dispatch(loadProcessState(processId))),
-        true,
-      ))}
+      onClick={() => open<ToggleProcessActionModalData>({
+        title: message,
+        kind: WindowKind.deployProcess,
+        meta: {action, displayWarnings: true},
+      })}
       onMouseOver={deployMouseOver}
       onMouseOut={deployMouseOut}
     />

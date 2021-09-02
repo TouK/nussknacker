@@ -4,7 +4,8 @@ type Type = "Properties" | "_group" | "SubprocessInput" | string
 
 export type LayoutData = { x: number, y: number }
 
-export type NodeType = {
+//FIXME: something wrong here, process and node mixed?
+export type NodeType<F extends Field = Field> = {
   id: string,
   type: Type,
   isSubprocess?: boolean,
@@ -20,12 +21,15 @@ export type NodeType = {
   parameters?: Parameter[],
   branchParameters?: $TodoType,
   branchParametersTemplate?: $TodoType,
+  subprocessVersions?: $TodoType,
   ref?: $TodoType,
   varName?: string,
   value?: $TodoType,
-  fields?: Array<Field>,
-  outputName?: string
+  fields?: Array<F>,
+  outputName?: string,
 }
+
+export type SubprocessNodeType = NodeType
 
 export type Field = {
   name: string,

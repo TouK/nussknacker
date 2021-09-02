@@ -1,12 +1,12 @@
 import i18next from "i18next"
 import React, {useCallback} from "react"
 import {Scrollbars} from "react-custom-scrollbars"
-import {useDispatch, useSelector} from "react-redux"
+import {useSelector} from "react-redux"
 import {v4 as uuid4} from "uuid"
-import {displayModalNodeDetails} from "../../actions/nk"
 import ProcessUtils from "../../common/ProcessUtils"
 import {getProcessToDisplay, getTestResults} from "../../reducers/selectors/graph"
 import {getUi} from "../../reducers/selectors/ui"
+import {useWindows} from "../../windowManager"
 import {CollapsibleToolbar} from "../toolbarComponents/CollapsibleToolbar"
 import {DragHandle} from "../toolbarComponents/DragHandle"
 import Errors from "./Errors"
@@ -14,12 +14,12 @@ import ValidTips from "./ValidTips"
 import Warnings from "./Warnings"
 
 export default function Tips(): JSX.Element {
-  const dispatch = useDispatch()
+  const {openNodeWindow} = useWindows()
 
   const showDetails = useCallback((event, node) => {
     event.preventDefault()
-    dispatch(displayModalNodeDetails(node))
-  }, [dispatch])
+    openNodeWindow(node)
+  }, [openNodeWindow])
 
   const currentProcess = useSelector(getProcessToDisplay)
   const {isToolTipsHighlighted: isHighlighted} = useSelector(getUi)
