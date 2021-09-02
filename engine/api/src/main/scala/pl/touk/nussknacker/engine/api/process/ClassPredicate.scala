@@ -2,8 +2,9 @@ package pl.touk.nussknacker.engine.api.process
 
 import java.lang.reflect.Member
 import java.util.regex.Pattern
-
 import org.apache.commons.lang3.ClassUtils
+
+import scala.reflect.ClassTag
 
 /**
  * Predicate for classes
@@ -32,14 +33,28 @@ case class ClassPatternPredicate(classPattern: Pattern) extends ClassPredicate {
 
 }
 
+case class BasePackagePredicate(basePackageName: String) extends ClassPredicate {
+  override def matches(clazz: Class[_]): Boolean = clazz.getPackageName.startsWith(basePackageName)
+}
+
+object ExactClassPredicate {
+
+  def apply[T: ClassTag]: ExactClassPredicate = ExactClassPredicate(implicitly[ClassTag[T]].runtimeClass)
+
+}
+
+case class ExactClassPredicate(classes: Class[_]*) extends ClassPredicate {
+  override def matches(clazz: Class[_]): Boolean = classes.contains(clazz)
+}
+
 /**
  * Predicate that matches all superclasses and interfaces based on pattern
- * @param superClassPattern - class name pattern
+ * @param superClassPredicate - class predicate
  */
-case class SuperClassPatternPredicate(superClassPattern: Pattern) extends ClassPredicate {
+case class SuperClassPredicate(superClassPredicate: ClassPredicate) extends ClassPredicate {
 
   def matches(clazz: Class[_]): Boolean =
-    superClasses(clazz).exists(cl => superClassPattern.matcher(cl.getName).matches())
+    superClasses(clazz).exists(cl => superClassPredicate.matches(cl))
 
   private def superClasses(clazz: Class[_]): Seq[Class[_]] = {
     import scala.collection.JavaConverters._

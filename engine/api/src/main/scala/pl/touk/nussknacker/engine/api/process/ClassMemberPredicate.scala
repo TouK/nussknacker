@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.process
 
-import java.lang.reflect.Member
+import java.lang.reflect.{Field, Member, Method}
 import java.util.regex.Pattern
 
 /**
@@ -24,6 +24,17 @@ object ClassMemberPredicate {
 
   }
 
+}
+
+case class ReturnMemberPredicate(returnClassPredicate: ClassPredicate, classPredicate: ClassPredicate = _ => true) extends ClassMemberPredicate {
+
+  override def matchesClass(clazz: Class[_]): Boolean = classPredicate.matches(clazz)
+
+  override def matchesMember(member: Member): Boolean = member match {
+    case m: Method => returnClassPredicate.matches(m.getReturnType)
+    case f: Field => returnClassPredicate.matches(f.getType)
+    case _ => false
+  }
 }
 
 /**

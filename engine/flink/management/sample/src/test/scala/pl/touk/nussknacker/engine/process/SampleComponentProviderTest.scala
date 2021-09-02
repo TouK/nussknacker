@@ -6,6 +6,7 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
@@ -46,6 +47,11 @@ class SampleComponentProviderTest extends FunSuite with FlinkSpec with Matchers 
     super.beforeAll()
     val loadedConfig = new SampleModelConfigLoader().resolveInputConfigDuringExecution(config, getClass.getClassLoader)
     val modelData = LocalModelData(loadedConfig.config, configCreator, objectNaming = new TestObjectNaming)
+
+    val types = ProcessDefinitionExtractor.extractTypes(modelData.processWithObjectsDefinition)
+    println(types.map(_.clazzName.klass.getName).mkString("\n"))
+
+
     registrar = process.registrar.FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
   }
 

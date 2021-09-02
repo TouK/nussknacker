@@ -182,7 +182,7 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
             }
             inside(valueTypeArg) {
               case TypedClass(keyClass, Nil) =>
-                keyClass shouldBe classOf[Int]
+                keyClass shouldBe classOf[java.lang.Integer]
             }
         }
     }

@@ -26,7 +26,7 @@ class TypedFromInstanceTest extends FunSuite with Matchers with LoneElement with
     val fieldTypes = ListMap("a" -> Typed(classOf[java.lang.Integer]), "b" -> Typed(classOf[java.lang.String]))
 
     val data: List[(Object, TypedObjectTypingResult)] = List(
-      (Map("a" -> 1, "b" -> "string"), TypedObjectTypingResult(fieldTypes, TypedClass(classOf[Map[_, _]], List(Typed[String], Unknown)))),
+      (Map("a" -> 1, "b" -> "string"), TypedObjectTypingResult(fieldTypes, Typed.typedClass(classOf[Map[_, _]], List(Typed[String], Unknown)))),
       (Map("a" -> 1, "b" -> "string").asJava, TypedObjectTypingResult(fieldTypes)),
       (TypedMap(Map("a" -> 1, "b" -> "string")), TypedObjectTypingResult(fieldTypes))
     )

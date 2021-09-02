@@ -55,7 +55,7 @@ object InputMeta {
         "offset" -> Typed[java.lang.Long],
         "timestamp" -> Typed[java.lang.Long],
         "timestampType" -> Typed[TimestampType],
-        "headers" -> TypedClass(classOf[java.util.Map[_, _]], List(Typed[String], Typed[String])),
+        "headers" -> Typed.typedClass(classOf[java.util.Map[_, _]], List(Typed[String], Typed[String])),
         "leaderEpoch" -> Typed[Integer]
       ),
       Typed.typedClass[InputMeta[AnyRef]]

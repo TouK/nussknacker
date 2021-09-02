@@ -2,12 +2,11 @@ package pl.touk.nussknacker.engine.types
 
 import java.util
 import java.util.regex.Pattern
-
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ClassMemberPatternPredicate, PropertyFromGetterExtractionStrategy, SuperClassPatternPredicate}
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ClassMemberPatternPredicate, ClassPatternPredicate, PropertyFromGetterExtractionStrategy, SuperClassPredicate}
 import pl.touk.nussknacker.engine.api.{Documentation, Hidden, HideToString, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
@@ -80,11 +79,11 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
       forAll(testClassPatterns) { classPattern =>
         val infos = clazzAndItsChildrenDefinition(List(clazz))(ClassExtractionSettings.Default.copy(excludeClassMemberPredicates =
           ClassExtractionSettings.DefaultExcludedMembers ++ Seq(
-          ClassMemberPatternPredicate(SuperClassPatternPredicate(Pattern.compile(classPattern)), Pattern.compile("ba.*")),
-          ClassMemberPatternPredicate(SuperClassPatternPredicate(Pattern.compile(classPattern)), Pattern.compile("get.*")),
-          ClassMemberPatternPredicate(SuperClassPatternPredicate(Pattern.compile(classPattern)), Pattern.compile("is.*"))
+          ClassMemberPatternPredicate(SuperClassPredicate(ClassPatternPredicate(Pattern.compile(classPattern))), Pattern.compile("ba.*")),
+          ClassMemberPatternPredicate(SuperClassPredicate(ClassPatternPredicate(Pattern.compile(classPattern))), Pattern.compile("get.*")),
+          ClassMemberPatternPredicate(SuperClassPredicate(ClassPatternPredicate(Pattern.compile(classPattern))), Pattern.compile("is.*"))
         )))
-        val sampleClassInfo = infos.find(_.clazzName.asInstanceOf[TypedClass].klass.getName.contains(clazzName)).get
+        val sampleClassInfo = infos.find(_.clazzName.klass.getName.contains(clazzName)).get
 
         sampleClassInfo.methods shouldBe Map(
           "toString" -> List(MethodInfo(List(), Typed[String], None, varArgs = false)),
@@ -187,12 +186,10 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
 
     val table = Table(
       ("method", "methodInfo"),
-      //FIXME: scala 2.11, 2.12 have different behaviour - named parameters are extracted differently :/
-      //("foo", MethodInfo(parameters = List(param[String]("fooParam1")), refClazz = Typed[Long], description = None)),
+      ("foo", List(MethodInfo(parameters = List(param[String]("fooParam1")), refClazz = Typed[Long], description = None, varArgs = false))),
       ("bar", List(MethodInfo(parameters = List(param[Long]("barparam1")), refClazz = Typed[String], description = None, varArgs = false))),
       ("baz", List(MethodInfo(parameters = List(param[String]("bazparam1"), param[Int]("bazparam2")), refClazz = Typed[Long], description = Some(ScalaSampleDocumentedClass.bazDocs), varArgs = false))),
-      //FIXME: scala 2.11, 2.12 have different behaviour - named parameters are extracted differently :/
-      //("qux", MethodInfo(parameters = List(param[String]("quxParam1")), refClazz = Typed[Long], description = Some(ScalaSampleDocumentedClass.quxDocs))),
+      ("qux", List(MethodInfo(parameters = List(param[String]("quxParam1")), refClazz = Typed[Long], description = Some(ScalaSampleDocumentedClass.quxDocs), varArgs = false))),
       ("field1", List(MethodInfo(parameters = List.empty, refClazz = Typed[Long], description = None, varArgs = false))),
       ("field2", List(MethodInfo(parameters = List.empty, refClazz = Typed[Long], description = Some(ScalaSampleDocumentedClass.field2Docs), varArgs = false)))
     )
@@ -231,22 +228,12 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
       val javaMapDef = singleClassDefinition[util.Map[_, _]]().value
       javaMapDef.methods.get(methodName) shouldBe defined
 
-      val scalaMapDef = singleClassDefinition[Map[_, _]]().value
-      scalaMapDef.methods.get(methodName) shouldBe defined
-
     }
     forAll(listMethods) { methodName =>
       val javaListDef = singleClassDefinition[util.List[_]]().value
       javaListDef.methods.get(methodName) shouldBe defined
-
-      val scalaListDef = singleClassDefinition[List[_]]().value
-      scalaListDef.methods.get(methodName) shouldBe defined
     }
 
-    forAll(optionMethods) { methodName =>
-      val scalaOptionDef = singleClassDefinition[Option[_]]().value
-      scalaOptionDef.methods.get(methodName) shouldBe defined
-    }
   }
 
   test("should hide some ugly presented methods") {
