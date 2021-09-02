@@ -59,6 +59,44 @@ We provide following scripts:
 
 ### Logging
 
+## Systemd service
+
+You can set up Nussknacker as a systemd service using our example unit file.
+
+1. Download distribution as described in [Binary package installation](Installation#Binary package installation)
+2. Unzip it to `/opt/nussknacker`
+3. `sudo touch /lib/systemd/system/nussknacker.service`
+4. edit `/lib/systemd/system/nussknacker.service` file and add write content of [Systemd unit file](Installation#Systemd-unit-file)
+5. `sudo systemctl daemon-reload`
+6. `sudo systemctl enable nussknacker.service`
+7. `sudo systemctl start nussknacker.service`
+
+You can check Nussknacker logs with `sudo journalctl -u nussknacker.service` command.
+
+### Systemd-unit-file
+```unit file (systemd)
+[Unit]
+Description=Nussknacker
+
+StartLimitBurst=5
+StartLimitIntervalSec=600
+
+[Service]
+SyslogIdentifier=%N
+
+WorkingDirectory=/opt/nussknacker
+ExecStart=/opt/nussknacker/bin/run.sh
+RuntimeDirectory=%N
+RuntimeDirectoryPreserve=restart
+
+SuccessExitStatus=143
+Restart=always
+RestartSec=60
+
+[Install]
+WantedBy=default.target
+```
+
 We use [Logback](http://logback.qos.ch/manual/configuration.html) for logging configuration. 
 By default, the logs are placed in `${NUSSKNACKER_DIR}/logs`, with sensible rollback configuration.  
 Please remember that these are logs of Nussknacker Designer, to see/configure logs of other components (e.g. Flink)
