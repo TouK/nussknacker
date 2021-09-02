@@ -72,7 +72,7 @@ export class PanZoomPlugin {
   }
 
   private setAnimationClass({enabled}: {enabled: boolean}) {
-    if (window.Cypress) { 
+    if (window["Cypress"]) { 
       return
     }
     this.animationClassHolder.classList.remove(getAnimationClass(enabled))
