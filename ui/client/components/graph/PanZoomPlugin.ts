@@ -32,6 +32,7 @@ export class PanZoomPlugin {
       maxZoom: 500,
     })
 
+    //appear animation starting point, fitSmallAndLargeGraphs will set animation end point in componentDidMount
     this.instance.zoom(0.001)
 
     this.animationClassHolder = paper.el

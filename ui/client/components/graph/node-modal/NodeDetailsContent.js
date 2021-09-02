@@ -177,6 +177,8 @@ export class NodeDetailsContent extends React.Component {
             removeElement={this.removeElement}
             showValidation={showValidation}
             renderFieldLabel={this.renderFieldLabel}
+            errors={fieldErrors}
+            variableTypes={variableTypes}
           />
         )
       case "SubprocessOutputDefinition":
