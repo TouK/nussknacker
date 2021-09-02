@@ -1,5 +1,6 @@
+import {css} from "emotion"
 import moment, {Moment} from "moment"
-import React, {CSSProperties, useEffect, useMemo, useState} from "react"
+import React, {useEffect, useMemo, useState} from "react"
 import {TFunction, useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"
 import {useFeatureFlags} from "../../../common/featureFlags"
@@ -60,12 +61,16 @@ function useDeployHistory(processId: string): Range[] {
   return deploys
 }
 
-const rangesStyle: CSSProperties = {
+const rangesStyle = css({
   display: "flex",
   flexWrap: "wrap",
   justifyContent: "center",
-  padding: "4%",
-}
+  maxWidth: 600,
+  margin: "0 -10px",
+  button: {
+    margin: "10px",
+  },
+})
 
 export function CountsRanges({label, onChange}: RangesProps): JSX.Element {
   const {t} = useTranslation<string>()
@@ -76,8 +81,7 @@ export function CountsRanges({label, onChange}: RangesProps): JSX.Element {
   return (
     <>
       <p>{label}</p>
-
-      <div style={rangesStyle}>
+      <div className={rangesStyle}>
         <CountsRangesButtons ranges={ranges} onChange={onChange} limit={6}/>
       </div>
     </>

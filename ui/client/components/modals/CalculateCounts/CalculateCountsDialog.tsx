@@ -1,5 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import {WindowButtonProps, WindowContentProps} from "@touk/window-manager"
+import {css, cx} from "emotion"
 import moment from "moment"
 import React, {PropsWithChildren, useCallback, useEffect, useMemo, useState} from "react"
 import {useTranslation} from "react-i18next"
@@ -102,7 +103,14 @@ export function CountsDialog({children, ...props}: PropsWithChildren<WindowConte
       buttons={buttons}
       title={t("calculateCounts.title", "counts")}
       classnames={{
-        content: "modalContentDark confirmationModal",
+        content: cx("modalContentDark", css({
+          padding: "0 2em 2em",
+          textAlign: "center",
+          p: {
+            marginTop: "30px",
+          },
+
+        })),
       }}
       {...props}
     >

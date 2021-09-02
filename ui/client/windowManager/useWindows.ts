@@ -7,6 +7,7 @@ import {EventInfo, reportEvent} from "../actions/nk"
 import {ensureArray} from "../common/arrayUtils"
 
 import {isEdgeEditable} from "../common/EdgeUtils"
+import {useUserSettings} from "../common/userSettings"
 import {defaultArrayFormat, setAndPreserveLocationParams} from "../common/VisualizationUrl"
 import {ConfirmDialogData} from "../components/modals/GenericConfirmDialog"
 import history from "../history"
@@ -33,15 +34,19 @@ export function replaceWindowsQueryParams<P extends Record<string, string | stri
 export function useWindows(parent?: WindowId) {
   const wm = useWindowManager(parent)
   const dispatch = useDispatch()
+  const [settings] = useUserSettings()
 
   const open = useCallback(<M extends any = never>(windowData: Partial<WindowType<WindowKind, M>> = {}) => {
-    const {id, title} = wm.open({isResizable: false, ...windowData})
+    const isModal = windowData.isModal === undefined ?
+      !settings["wm.forceDisableModals"] :
+      windowData.isModal && !settings["wm.forceDisableModals"]
+    const {id, title} = wm.open({isResizable: false, ...windowData, isModal})
     dispatch(reportEvent({
       category: "window_manager",
       action: "window_open",
       name: `${title} (${id})`,
     }))
-  }, [dispatch, wm])
+  }, [dispatch, settings, wm])
 
   const openNodeWindow = useCallback((
     node: NodeType | GroupNodeType,
