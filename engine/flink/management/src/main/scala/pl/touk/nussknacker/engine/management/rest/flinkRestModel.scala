@@ -56,6 +56,10 @@ object flinkRestModel {
 
   @JsonCodec(decodeOnly = true) case class JarFile(id: String, name: String)
 
+  @JsonCodec(decodeOnly = true) case class ClusterOverview(`slots-total`: Int, `slots-available`: Int)
+
+  @JsonCodec(decodeOnly = true) case class KeyValueEntry(key: String, value: String)
+
   @JsonCodec case class RunResponse(jobid: String)
 
   @JsonCodec case class FlinkError(errors: List[String])

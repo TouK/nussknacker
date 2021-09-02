@@ -1,15 +1,21 @@
 package pl.touk.nussknacker.engine.management
 
+import cats.data.OptionT
+import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
+import org.apache.flink.configuration.{Configuration, CoreOptions}
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
+import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.{NotEnoughSlotsException, prepareProgramArgs}
+import pl.touk.nussknacker.engine.management.rest.flinkRestModel.ClusterOverview
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 abstract class FlinkDeploymentManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolean, mainClassName: String)
   extends DeploymentManager with LazyLogging {
@@ -22,9 +28,6 @@ abstract class FlinkDeploymentManager(modelData: ModelData, shouldVerifyBeforeDe
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     val processName = processVersion.processName
-
-    import cats.data.OptionT
-    import cats.implicits._
 
     val stoppingResult = for {
       oldJob <- OptionT(findJobStatus(processName))
@@ -39,13 +42,63 @@ abstract class FlinkDeploymentManager(modelData: ModelData, shouldVerifyBeforeDe
       maybeSavePoint
     }
 
-    stoppingResult.value.flatMap { maybeSavepoint =>
-      runProgram(processName,
-        prepareProgramMainClass(processDeploymentData),
-        prepareProgramArgs(modelData.inputConfigDuringExecution.serialized, processVersion, deploymentData, processDeploymentData),
-        savepointPath.orElse(maybeSavepoint))
+    for {
+      maybeSavepoint <- stoppingResult.value
+      _ <- checkExpectedSlotsExceedAvailableSlots(processDeploymentData)
+      runResult <- {
+        runProgram(processName,
+          prepareProgramMainClass(processDeploymentData),
+          prepareProgramArgs(modelData.inputConfigDuringExecution.serialized, processVersion, deploymentData, processDeploymentData),
+          savepointPath.orElse(maybeSavepoint))
+      }
+    } yield runResult
+  }
+
+  private[management] def checkExpectedSlotsExceedAvailableSlots(processDeploymentData: ProcessDeploymentData): Future[Unit] = {
+    val collectedSlotsCheckInputs = for {
+      neededSlots <- determineNeededSlots(processDeploymentData)
+      clusterOverview <- OptionT(getClusterOverview.map(Option(_)))
+    } yield (neededSlots, clusterOverview)
+
+    val checkResult = for {
+      collectedInputs <- OptionT(collectedSlotsCheckInputs.value.recover {
+        case NonFatal(ex) =>
+          logger.warn("Error during collecting inputs needed for available slots checking. Slots checking will be omitted", ex)
+          None
+      })
+      (neededSlots, clusterOverview) = collectedInputs
+      _ <- OptionT(
+        if (neededSlots > clusterOverview.`slots-available`)
+          Future.failed(NotEnoughSlotsException(clusterOverview, neededSlots))
+        else
+          Future.successful(Option(())))
+    } yield ()
+    checkResult.value.map(_ => Unit)
+  }
+
+  private def determineNeededSlots(processDeploymentData: ProcessDeploymentData): OptionT[Future, Int] = {
+    processDeploymentData match {
+      case GraphProcess(processAsJson) =>
+        val process = ProcessMarshaller.fromJson(processAsJson).valueOr(err => throw new IllegalArgumentException(err.msg))
+        process.metaData.typeSpecificData match {
+          case stream: StreamMetaData =>
+            stream.parallelism
+              .map(definedParallelism => OptionT.some[Future](definedParallelism))
+              .getOrElse(OptionT(getJobManagerConfig.map { config =>
+                val defaultParallelism = config.get(CoreOptions.DEFAULT_PARALLELISM)
+                logger.debug(s"Not specified parallelism for process: ${process.metaData.id}, will be used default configured on jobmanager: $defaultParallelism")
+                Option(defaultParallelism)
+              }))
+          case _ => OptionT.none
+        }
+      case CustomProcess(_) =>
+        OptionT.none
     }
   }
+
+  protected def getClusterOverview: Future[ClusterOverview]
+
+  protected def getJobManagerConfig: Future[Configuration]
 
   override def savepoint(processName: ProcessName, savepointDir: Option[String]): Future[SavepointResult] = {
     requireRunningProcess(processName) {
@@ -130,6 +183,14 @@ object FlinkDeploymentManager {
       case CustomProcess(_) =>
         List(processVersion.processName.value, serializedConfig)
     }
+  }
+
+  case class NotEnoughSlotsException(availableSlots: Int, totalSlots: Int, requestedSlots: Int)
+    extends IllegalArgumentException(s"There is not enough free slots on Flink cluster. Available slots: $availableSlots, total: $totalSlots, requested: $requestedSlots")
+
+  object NotEnoughSlotsException {
+    def apply(clusterOverview: ClusterOverview, requestedSlots: Int): NotEnoughSlotsException =
+      NotEnoughSlotsException(availableSlots = clusterOverview.`slots-available`, totalSlots = clusterOverview.`slots-total`, requestedSlots = requestedSlots)
   }
 
 }

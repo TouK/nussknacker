@@ -4,6 +4,7 @@ import java.util.concurrent.atomic.AtomicReference
 import akka.http.scaladsl.server.Route
 import cats.instances.future._
 import db.util.DBIOActionInstances.DB
+import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
@@ -14,6 +15,7 @@ import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, ProcessVersion, 
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager
+import pl.touk.nussknacker.engine.management.rest.flinkRestModel.ClusterOverview
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
@@ -26,6 +28,7 @@ import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
+import java.util.Collections
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Try
@@ -220,6 +223,13 @@ object TestFactory extends TestPermissions{
     override def close(): Unit = {}
 
     override def cancel(name: ProcessName, user: User): Future[Unit] = Future.successful(Unit)
+
+    override protected def getClusterOverview: Future[ClusterOverview] = Future.successful(
+      ClusterOverview(`slots-total` = 1000, `slots-available` = 1000))
+
+    override protected def getJobManagerConfig: Future[Configuration] =
+      Future.successful(Configuration.fromMap(Collections.emptyMap()))
+
   }
 
   class SampleSubprocessRepository(subprocesses: Set[CanonicalProcess]) extends SubprocessRepository {

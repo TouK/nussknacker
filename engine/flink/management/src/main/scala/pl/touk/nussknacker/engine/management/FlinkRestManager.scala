@@ -2,13 +2,14 @@ package pl.touk.nussknacker.engine.management
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.JobStatus
+import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.namespaces.{FlinkUsageKey, NamingContext}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.rest.HttpFlinkClient
-import pl.touk.nussknacker.engine.management.rest.flinkRestModel.JobOverview
+import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{ClusterOverview, JobOverview}
 import sttp.client._
 
 import java.io.File
@@ -167,6 +168,14 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
   override protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     logger.debug(s"Starting to deploy scenario: $processName with savepoint $savepointPath")
     client.runProgram(jarFile, mainClass, args, savepointPath)
+  }
+
+  override protected def getClusterOverview: Future[ClusterOverview] = {
+    client.getClusterOverview
+  }
+
+  override protected def getJobManagerConfig: Future[Configuration] = {
+    client.getJobManagerConfig
   }
 
   override def close(): Unit = Await.result(backend.close(), Duration(10, TimeUnit.SECONDS))
