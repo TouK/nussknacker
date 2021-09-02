@@ -11,7 +11,7 @@ import FieldsSelect from "./FieldsSelect"
 type Props<F extends Field> = MapVariableProps<F>
 
 export default function SubprocessInputDefinition<F extends Field>(props: Props<F>): JSX.Element {
-  const {removeElement, addElement, variableTypes, expressionType, ...passProps} = props
+  const {removeElement, addElement, ...passProps} = props
   const {isMarked, node, onChange, readOnly, showValidation} = passProps
 
   const definitionData = useSelector(getProcessDefinitionData)
