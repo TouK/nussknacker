@@ -162,7 +162,7 @@ class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with St
   test("should stop scenario and deploy it using savepoint") {
     val processId = "stop"
     val outTopic = s"output-$processId"
-    kafkaClient.createTopic(outTopic)
+    kafkaClient.createTopic(outTopic, 1)
     val processEmittingOneElementAfterStart = StatefulSampleProcess.prepareProcess(processId)
 
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
