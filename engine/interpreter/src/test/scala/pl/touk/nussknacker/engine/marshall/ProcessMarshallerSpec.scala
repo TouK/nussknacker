@@ -97,7 +97,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
       ("marshalled", "unmarshalled"),
       ("""{ "description" : "process description", "properties" : { "customProperty" : "customPropertyValue" } }""",
         ProcessAdditionalFields(description = Some("process description"), properties = Map("customProperty" -> "customPropertyValue"))),
-      (""""properties" : { "customProperty" : "customPropertyValue" } }""",
+      ("""{ "properties" : { "customProperty" : "customPropertyValue" } }""",
         ProcessAdditionalFields(description = None, properties = Map("customProperty" -> "customPropertyValue"))),
       ("""{ "description" : "process description", "properties" : { "customProperty" : "customPropertyValue" } }""",
         ProcessAdditionalFields(description = Some("process description"), properties = Map("customProperty" -> "customPropertyValue"))),

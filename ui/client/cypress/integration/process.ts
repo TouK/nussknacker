@@ -80,7 +80,8 @@ describe("Process", () => {
     it("should allow drag node", () => {
       cy.contains("layout").click()
       cy.get("[title='toggle left panel']").click()
-      cy.get("[title='toggle right panel']").click()
+      //Currently with default settings right toggle is not enabled, so we'll stick with unnecessary items on snapshot
+      //cy.get("[title='toggle right panel']").click()
       cy.get("[model-id=dynamicService]")
         .should("be.visible")
         .trigger("mousedown")
@@ -91,7 +92,8 @@ describe("Process", () => {
 
     it("should allow drag component and drop on edge", () => {
       cy.contains("layout").click()
-      cy.get("[title='toggle right panel']").click()
+      //Currently with default settings right toggle is not enabled, so we'll stick with unnecessary items on snapshot
+      //cy.get("[title='toggle right panel']").click()
       cy.contains("custom")
         .should("be.visible").click()
       cy.get("[data-testid='component:customFilter']")
