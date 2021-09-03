@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, GraphProcess}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.NotEnoughSlotsException
+import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.{NotEnoughSlotsException, SlotsBalance}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
@@ -24,7 +24,7 @@ class FlinkStreamingDeploymentManagerSlotsCountSpec extends FunSuite with Matche
     try {
       val marshaled = ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2
       deploymentManager.deploy(version, DeploymentData.empty, GraphProcess(marshaled), None).failed.futureValue shouldEqual
-        NotEnoughSlotsException(taskManagerSlotCount, taskManagerSlotCount, parallelism)
+        NotEnoughSlotsException(taskManagerSlotCount, taskManagerSlotCount, SlotsBalance(0, parallelism))
     } finally {
       cancelProcess(processId)
     }

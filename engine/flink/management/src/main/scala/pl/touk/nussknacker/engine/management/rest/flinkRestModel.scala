@@ -48,7 +48,7 @@ object flinkRestModel {
 
   @JsonCodec(decodeOnly = true) case class JobConfig(jid: String, `execution-config`: ExecutionConfig)
 
-  @JsonCodec(decodeOnly = true) case class ExecutionConfig(`user-config`: Map[String, io.circe.Json])
+  @JsonCodec(decodeOnly = true) case class ExecutionConfig(`job-parallelism`: Int, `user-config`: Map[String, io.circe.Json])
 
   @JsonCodec(decodeOnly = true) case class JarsResponse(files: Option[List[JarFile]])
 

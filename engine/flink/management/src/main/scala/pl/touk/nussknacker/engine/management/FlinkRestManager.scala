@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.namespaces.{FlinkUsageKey, NamingContext}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.management.rest.HttpFlinkClient
+import pl.touk.nussknacker.engine.management.rest.{HttpFlinkClient, flinkRestModel}
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{ClusterOverview, JobOverview}
 import sttp.client._
 
@@ -177,6 +177,9 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
   override protected def getJobManagerConfig: Future[Configuration] = {
     client.getJobManagerConfig
   }
+
+  override protected def getJobConfig(jobId: String): Future[flinkRestModel.ExecutionConfig] =
+    client.getJobConfig(jobId)
 
   override def close(): Unit = Await.result(backend.close(), Duration(10, TimeUnit.SECONDS))
 

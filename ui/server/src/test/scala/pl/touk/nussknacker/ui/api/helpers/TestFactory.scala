@@ -15,7 +15,8 @@ import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, ProcessVersion, 
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.exceptionhandler.ExceptionHandlerRef
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager
-import pl.touk.nussknacker.engine.management.rest.flinkRestModel.ClusterOverview
+import pl.touk.nussknacker.engine.management.rest.flinkRestModel
+import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{ClusterOverview, ExecutionConfig}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
@@ -230,6 +231,8 @@ object TestFactory extends TestPermissions{
     override protected def getJobManagerConfig: Future[Configuration] =
       Future.successful(Configuration.fromMap(Collections.emptyMap()))
 
+    override protected def getJobConfig(jobId: String): Future[flinkRestModel.ExecutionConfig] =
+      Future.successful(ExecutionConfig(1, Map.empty))
   }
 
   class SampleSubprocessRepository(subprocesses: Set[CanonicalProcess]) extends SubprocessRepository {
