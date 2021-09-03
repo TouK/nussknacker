@@ -49,8 +49,7 @@ class ProcessCounter(subprocessRepository: SubprocessRepository) {
       }.toMap
 
     }
-    val valuesWithoutGroups = computeCounts(List())(canonicalProcess.allStartNodes)
-    valuesWithoutGroups
+    computeCounts(List())(canonicalProcess.allStartNodes)
   }
 
   private def getSubprocess(subprocessVersions: Map[String, Long], subprocessId: String): Option[CanonicalProcess] = {

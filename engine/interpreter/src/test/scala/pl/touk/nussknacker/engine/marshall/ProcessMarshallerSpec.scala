@@ -95,19 +95,15 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
   it should "unmarshall with known process additional fields" in {
     val marshalledAndUnmarshalledFields = Table(
       ("marshalled", "unmarshalled"),
-      ("""{ "description" : "process description", "groups" : [ { "id" : "4", "nodes" : [ "10", "20" ] } ], "properties" : { "customProperty" : "customPropertyValue" } }""",
-        ProcessAdditionalFields(description = Some("process description"), properties = Map("customProperty" -> "customPropertyValue"))),
-      ("""{ "groups" : [ { "id" : "4", "nodes" : [ "10", "20" ] } ], "description" : "process description", "properties" : { "customProperty" : "customPropertyValue" } }""",
-        ProcessAdditionalFields(description = Some("process description"), properties = Map("customProperty" -> "customPropertyValue"))),
-      ("""{ "groups" : [ { "id" : "4", "nodes" : [ "10", "20" ] } ], "properties" : { "customProperty" : "customPropertyValue" } }""",
-        ProcessAdditionalFields(description = None, properties = Map("customProperty" -> "customPropertyValue"))),
-      ("""{ "description" : "process description", "groups" : [], "properties" : { "customProperty" : "customPropertyValue" } }""",
-        ProcessAdditionalFields(description = Some("process description"), properties = Map("customProperty" -> "customPropertyValue"))),
       ("""{ "description" : "process description", "properties" : { "customProperty" : "customPropertyValue" } }""",
         ProcessAdditionalFields(description = Some("process description"), properties = Map("customProperty" -> "customPropertyValue"))),
-      ("""{ "description" : "process description", "groups" : [ { "id" : "4", "nodes" : [ "10", "20" ] } ] }""",
+      (""""properties" : { "customProperty" : "customPropertyValue" } }""",
+        ProcessAdditionalFields(description = None, properties = Map("customProperty" -> "customPropertyValue"))),
+      ("""{ "description" : "process description", "properties" : { "customProperty" : "customPropertyValue" } }""",
+        ProcessAdditionalFields(description = Some("process description"), properties = Map("customProperty" -> "customPropertyValue"))),
+      ("""{ "description" : "process description" }""",
         ProcessAdditionalFields(description = Some("process description"), properties = Map.empty)),
-      ("""{ "description" : "process description", "groups" : [ { "id" : "4", "nodes" : [ "10", "20" ] } ], "properties": {} }""",
+      ("""{ "description" : "process description", "properties": {} }""",
         ProcessAdditionalFields(description = Some("process description"), properties = Map.empty))
     )
 

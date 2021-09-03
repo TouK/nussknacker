@@ -69,27 +69,6 @@ class ProcessCounterTest extends FunSuite with Matchers {
       "join1" -> NodeCount(3, 0),
       "end" -> NodeCount(4, 0)
     )
-
-
-  }
-
-  test("compute counts with groups") {
-    val process = ProcessCanonizer.canonize(EspProcessBuilder
-      .id("test").parallelism(1).exceptionHandler()
-      .source("source1", "")
-      .filter("filter1", "")
-      .emptySink("sink11", "")).copy(metaData = MetaData("test", StreamMetaData(), isSubprocess = false,
-        Some(ProcessAdditionalFields(Some(""), Map.empty))))
-    val processCounter = new ProcessCounter(subprocessRepository(Set()))
-
-    val computed = processCounter.computeCounts(process, Map("source1" -> RawCount(50, 0L),
-      "filter1" -> RawCount(40, 9), "sink11" -> RawCount(30, 8)).get)
-
-    computed shouldBe Map(
-      "source1" -> NodeCount(50, 0),
-      "filter1" -> NodeCount(40, 9),
-      "sink11" -> NodeCount(30, 8)
-    )
   }
 
   test("compute counts for fragment") {

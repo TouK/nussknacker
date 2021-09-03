@@ -157,7 +157,7 @@ class ProcessValidation(validators: ProcessingTypeDataProvider[ProcessValidator]
     val nodeIds = displayable.nodes.map(_.id)
 
     //in theory it would be possible to have group named like one of nodes inside, but it's not worth complicating logic...
-    val duplicates = (nodeIds).groupBy(identity).filter(_._2.size > 1).keys.toList
+    val duplicates = nodeIds.groupBy(identity).filter(_._2.size > 1).keys.toList
 
     if (duplicates.isEmpty) {
       ValidationResult.success
