@@ -35,11 +35,11 @@ function makeLabels(label = ""): dia.Link.Label[] {
   }]
 }
 
-export const defaultLink = (arrowMarker: Vectorizer) => new dia.Link({
+export const defaultLink = (arrowMarkerId: string) => new dia.Link({
   markup: "<path class=\"connection\"/><path class=\"connection-wrap\"/><g class=\"marker-vertices\"/><g class=\"marker-arrowheads\"/><g class=\"link-tools\"/>",
   attrs: {
     ".connection": {
-      markerEnd: `url(#${arrowMarker.attr("id")})`,
+      markerEnd: `url(#${arrowMarkerId})`,
     },
     ".link-tools": {
       noExport: true,
@@ -47,10 +47,10 @@ export const defaultLink = (arrowMarker: Vectorizer) => new dia.Link({
   },
 })
 
-export const makeLink = (edge: Edge, arrowMarker: Vectorizer): dia.Link => {
+export const makeLink = (edge: Edge, arrowMarkerId: string): dia.Link => {
   const edgeLabel = NodeUtils.edgeLabel(edge)
   const labels = makeLabels(edgeLabel)
-  const link = defaultLink(arrowMarker) as dia.Link
+  const link = defaultLink(arrowMarkerId) as dia.Link
   return link
     //TODO: some different way to create id? Must be deterministic and unique
     .prop("id", `${edge.from}-${edge.to}-${edgeLabel}`)

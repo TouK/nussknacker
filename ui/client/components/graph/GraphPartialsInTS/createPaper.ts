@@ -30,7 +30,7 @@ function getPaper(opts: dia.Paper.Options, canWrite: boolean) {
       }
     },
     linkPinning: false,
-    defaultLink: defaultLink(uniqueArrowMarker),
+    defaultLink: defaultLink(uniqueArrowMarker.attr("id")),
     linkView: dia.LinkView.extend({
       options: defaults<dia.LinkView.Options, dia.LinkView.Options>({
         shortLinkLength: 60,
@@ -58,9 +58,6 @@ function getPaper(opts: dia.Paper.Options, canWrite: boolean) {
       radius: 60,
     },
   }
-  //we pass it via attributes to drawGraph so that same arrowMarker id is used
-  paper.attributes = {}
-  paper.attributes["arrowMarker"] = uniqueArrowMarker
   return paper
 }
 
