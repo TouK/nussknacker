@@ -19,6 +19,12 @@ export type FeaturesSettings = {
   intervalTimeSettings: { processes: number, healthCheck: number },
   deploySettings: $TodoType,
   tabs: DynamicTabData[],
+  testDataSettings?: TestDataSettings
+}
+
+export type TestDataSettings = {
+  maxSamplesCount: number,
+  testDataMaxBytes: number
 }
 
 type EngineData = {

@@ -281,6 +281,31 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     }
   }
 
+  test("refuses to test if too much data") {
+
+    import pl.touk.nussknacker.engine.spel.Implicits._
+
+    val process = {
+        EspProcessBuilder
+          .id("sampleProcess")
+          .parallelism(1)
+          .exceptionHandler()
+          .source("startProcess", "csv-source")
+          .emptySink("end", "kafka-string", "topic" -> "'end.topic'")
+    }
+
+    saveProcessAndAssertSuccess(process.id, process)
+
+    val displayableProcess = ProcessConverter.toDisplayable(ProcessCanonizer.canonize(process), TestProcessingTypes.Streaming)
+
+    List((1 to 50).mkString("\n"), (1 to 50000).mkString("-")).foreach { tooLargeData =>
+      val multiPart = MultipartUtils.prepareMultiParts("testData" -> tooLargeData, "processJson" -> displayableProcess.asJson.noSpaces)()
+      Post(s"/processManagement/test/${process.id}", multiPart) ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead) ~> check {
+        status shouldEqual StatusCodes.BadRequest
+      }
+    }
+  }
+
   test("execute valid custom action") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     customAction(SampleProcess.process.id, CustomActionRequest("hello")) ~> check {

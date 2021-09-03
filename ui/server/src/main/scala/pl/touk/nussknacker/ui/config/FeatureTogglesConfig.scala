@@ -16,6 +16,7 @@ case class FeatureTogglesConfig(development: Boolean,
                                 deploySettings: Option[DeploySettings],
                                 tabs: Option[List[TopTab]],
                                 intervalTimeSettings: IntervalTimeSettings,
+                                testDataSettings: TestDataSettings,
                                 attachments: Option[String])
 
 object FeatureTogglesConfig extends LazyLogging{
@@ -38,6 +39,7 @@ object FeatureTogglesConfig extends LazyLogging{
     val tabs = parseOptionalConfig[List[TopTab]](config, "tabs")
     val attachments = parseOptionalConfig[String](config, "attachmentsPath")
     val intervalTimeSettings = config.as[IntervalTimeSettings]("intervalTimeSettings")
+    val testDataSettings = config.as[TestDataSettings]("testDataSettings")
 
     FeatureTogglesConfig(
       development = isDevelopmentMode,
@@ -49,7 +51,8 @@ object FeatureTogglesConfig extends LazyLogging{
       tabs = tabs,
       intervalTimeSettings = intervalTimeSettings,
       environmentAlert = environmentAlert,
-      attachments = attachments
+      attachments = attachments,
+      testDataSettings = testDataSettings,
     )
   }
 

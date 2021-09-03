@@ -1,19 +1,17 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCode, StatusCodes}
+import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.ExceptionHandler
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.{Decoder, Encoder, Json}
-import io.circe.generic.JsonCodec
+import io.circe.Encoder
 import pl.touk.nussknacker.ui.process.deployment.ProcessIsBeingDeployed
-import pl.touk.nussknacker.ui.{BadRequestError, EspError, FatalError, IllegalOperationError, NotFoundError}
 import pl.touk.nussknacker.ui.validation.FatalValidationError
+import pl.touk.nussknacker.ui._
 
 import scala.language.implicitConversions
 import scala.util.control.NonFatal
-import scala.util.parsing.json.JSONObject
 
 
 object EspErrorToHttp extends LazyLogging with FailFastCirceSupport {
@@ -36,6 +34,9 @@ object EspErrorToHttp extends LazyLogging with FailFastCirceSupport {
 
   def errorToHttp : PartialFunction[Throwable, HttpResponse] = {
     case e:EspError => espErrorToHttp(e)
+    case ex:IllegalArgumentException =>
+      logger.debug(s"Illegal argument: ${ex.getMessage}", ex)
+      HttpResponse(status = StatusCodes.BadRequest, entity = ex.getMessage)
     case ex =>
       logger.error(s"Unknown error: ${ex.getMessage}", ex)
       HttpResponse(status = StatusCodes.InternalServerError, entity = ex.getMessage)

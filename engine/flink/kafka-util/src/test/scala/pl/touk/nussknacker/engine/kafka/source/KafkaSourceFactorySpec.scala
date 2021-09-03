@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import KafkaSourceFactoryMixin._
+import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.{JsonSerializationSchema, SimpleSerializationSchema}
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceFactoryState
 import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, KafkaSpec}
@@ -29,7 +30,7 @@ class KafkaSourceFactorySpec extends FunSuite with Matchers with KafkaSpec with 
   private def readLastMessage(sourceFactory: KafkaSourceFactory[Any, Any], topic: String, numberOfMessages: Int = 1): List[AnyRef] = {
     val source = createSource(sourceFactory, topic)
     val bytes = source.generateTestData(numberOfMessages)
-    source.testDataParser.parseTestData(bytes)
+    source.testDataParser.parseTestData(TestData(bytes, numberOfMessages))
   }
 
   private def createSource(sourceFactory: KafkaSourceFactory[Any, Any], topic: String): Source[AnyRef] with TestDataGenerator with FlinkSourceTestSupport[AnyRef] with ReturningType = {

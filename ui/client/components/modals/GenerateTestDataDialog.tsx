@@ -7,14 +7,21 @@ import HttpService from "../../http/HttpService"
 import {getProcessId, getProcessToDisplay} from "../../reducers/selectors/graph"
 import "../../stylesheets/visualization.styl"
 import {PromptContent} from "../../windowManager"
-import {literalIntegerValueValidator, mandatoryValueValidator} from "../graph/node-modal/editors/Validators"
+import {
+  literalIntegerValueValidator,
+  mandatoryValueValidator, maximalNumberValidator,
+  minimalNumberValidator
+} from "../graph/node-modal/editors/Validators"
 import {InputWithFocus} from "../withFocus"
 import ValidationLabels from "./ValidationLabels"
+import {getFeatureSettings} from "../../reducers/selectors/settings";
 
 function GenerateTestDataDialog(props: WindowContentProps): JSX.Element {
   const {t} = useTranslation()
   const processId = useSelector(getProcessId)
   const processToDisplay = useSelector(getProcessToDisplay)
+  const maxSize = useSelector(getFeatureSettings).testDataSettings.maxSamplesCount
+
   const [{testSampleSize}, setState] = useState({
     //TODO: current validators work well only for string values
     testSampleSize: "10",
@@ -28,7 +35,7 @@ function GenerateTestDataDialog(props: WindowContentProps): JSX.Element {
     [processId, processToDisplay, props, testSampleSize],
   )
 
-  const validators = [literalIntegerValueValidator, mandatoryValueValidator]
+  const validators = [literalIntegerValueValidator, minimalNumberValidator(0), maximalNumberValidator(maxSize), mandatoryValueValidator]
   const isValid = validators.every(v => v.isValid(testSampleSize))
 
   const buttons: WindowButtonProps[] = useMemo(

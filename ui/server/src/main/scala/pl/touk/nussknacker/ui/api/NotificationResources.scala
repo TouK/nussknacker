@@ -17,8 +17,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 
-class NotificationResources(managementActor: ActorRef,
-                            processRepository: FetchingProcessRepository[Future])
+class NotificationResources(managementActor: ActorRef)
                            (implicit ec: ExecutionContext, mat: Materializer, system: ActorSystem)
   extends Directives
     with LazyLogging

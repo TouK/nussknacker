@@ -115,8 +115,8 @@ const normalizeStringToNumber = (value: string): string => {
 export const minimalNumberValidator = (minimalNumber: number): Validator => ({
   //Blank value should be not validate - we want to chain validators
   isValid: value => isEmpty(value) || Number(normalizeStringToNumber(value)) >= minimalNumber,
-  message: () => i18next.t("minimalNumberValidator.message", `This field value has to be a number greater than or equal to ${minimalNumber}`),
-  description: () => i18next.t("minimalNumberValidator.description", "Please fill field by proper number"),
+  message: () => i18next.t("minNumberValidator.message", "This field value has to be a number lesser than or equal to {{min}}", {min: minimalNumber}),
+  description: () => i18next.t("minNumberValidator.description", "Please fill field by proper number"),
   handledErrorType: HandledErrorType.SmallerThanRequiredParameter,
   validatorType: ValidatorType.Frontend,
 })
@@ -124,8 +124,8 @@ export const minimalNumberValidator = (minimalNumber: number): Validator => ({
 export const maximalNumberValidator = (maximalNumber: number): Validator => ({
   //Blank value should be not validate - we want to chain validators
   isValid: value => isEmpty(value) || Number(normalizeStringToNumber(value)) <= maximalNumber,
-  message: () => i18next.t("maximalNumberValidator.message", `This field value has to be a number lower than or equal to ${maximalNumber}`),
-  description: () => i18next.t("maximalNumberValidator.description", "Please fill field by proper number"),
+  message: () => i18next.t("maxNumberValidator.message", "This field value has to be a number lesser than or equal to {{max}}", {max: maximalNumber}),
+  description: () => i18next.t("maxNumberValidator.description", "Please fill field by proper number"),
   handledErrorType: HandledErrorType.GreaterThanRequiredParameter,
   validatorType: ValidatorType.Frontend,
 })
