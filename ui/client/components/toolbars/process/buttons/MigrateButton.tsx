@@ -7,7 +7,7 @@ import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/migr
 import * as DialogMessages from "../../../../common/DialogMessages"
 import HttpService from "../../../../http/HttpService"
 import {getProcessId, getProcessVersionId, isMigrationPossible} from "../../../../reducers/selectors/graph"
-import {getFeatureSettings} from "../../../../reducers/selectors/settings"
+import {getFeatureSettings, getTargetEnvironmentId} from "../../../../reducers/selectors/settings"
 import {useWindows} from "../../../../windowManager"
 import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 import {ToolbarButtonProps} from "../../types"
@@ -22,19 +22,15 @@ function MigrateButton(props: Props) {
   const versionId = useSelector(getProcessVersionId)
   const featuresSettings = useSelector(getFeatureSettings)
   const migrationPossible = useSelector(isMigrationPossible)
+  const targetEnvironmentId = useSelector(getTargetEnvironmentId)
 
   const available = !disabled && migrationPossible
   const {t} = useTranslation()
   const {confirm} = useWindows()
 
-
-  if (isEmpty(featuresSettings?.remoteEnvironment)) {
-    return null
-  }
-
   const onClick = useCallback(() => confirm(
     {
-      text: DialogMessages.migrate(processId, featuresSettings.remoteEnvironment.targetEnvironmentId),
+      text: DialogMessages.migrate(processId, targetEnvironmentId),
       onConfirmCallback: () => HttpService.migrateProcess(processId, versionId),
       confirmText: t("panels.actions.process-migrate.yes", "Yes"),
       denyText: t("panels.actions.process-migrate.no", "No"),
@@ -44,7 +40,11 @@ function MigrateButton(props: Props) {
       action: events.actions.buttonClick,
       name: `migrate`,
     },
-  ), [confirm, featuresSettings.remoteEnvironment.targetEnvironmentId, processId, t, versionId])
+  ), [confirm, processId, t, targetEnvironmentId, versionId])
+
+  if (isEmpty(featuresSettings?.remoteEnvironment)) {
+    return null
+  }
 
   return (
     <CapabilitiesToolbarButton
