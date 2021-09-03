@@ -27,6 +27,11 @@ function MigrateButton(props: Props) {
   const {t} = useTranslation()
   const {confirm} = useWindows()
 
+
+  if (isEmpty(featuresSettings?.remoteEnvironment)) {
+    return null
+  }
+
   const onClick = useCallback(() => confirm(
     {
       text: DialogMessages.migrate(processId, featuresSettings.remoteEnvironment.targetEnvironmentId),
@@ -40,10 +45,6 @@ function MigrateButton(props: Props) {
       name: `migrate`,
     },
   ), [confirm, featuresSettings.remoteEnvironment.targetEnvironmentId, processId, t, versionId])
-
-  if (isEmpty(featuresSettings?.remoteEnvironment)) {
-    return null
-  }
 
   return (
     <CapabilitiesToolbarButton
