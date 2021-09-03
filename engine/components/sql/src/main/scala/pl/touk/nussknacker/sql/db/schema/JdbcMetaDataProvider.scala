@@ -3,6 +3,7 @@ package pl.touk.nussknacker.sql.db.schema
 import java.sql.Connection
 
 class JdbcMetaDataProvider(getConnection: () => Connection) extends DbMetaDataProvider {
+  private def query(tableName: String) = s"SELECT * FROM $tableName"
 
   def getDialectMetaData(): DialectMetaData = {
     val conn = getConnection()
@@ -12,17 +13,7 @@ class JdbcMetaDataProvider(getConnection: () => Connection) extends DbMetaDataPr
     } finally conn.close()
   }
 
-  def getQueryMetaData(query: String): QueryMetaData = {
-    val conn = getConnection()
-    try {
-      val statement = conn.prepareStatement(query)
-      try {
-        QueryMetaData(
-          TableDefinition(statement.getMetaData),
-          DbParameterMetaData(statement.getParameterMetaData.getParameterCount))
-      } finally statement.close()
-    } finally conn.close()
-  }
+  def getTableMetaData(tableName: String): TableMetaData = getQueryMetaData(query(tableName))
 
   def getSchemaDefinition(): SchemaDefinition = {
     val connection = getConnection()
@@ -38,4 +29,17 @@ class JdbcMetaDataProvider(getConnection: () => Connection) extends DbMetaDataPr
       SchemaDefinition(results)
     } finally connection.close()
   }
+
+  override def getQueryMetaData(query: String): TableMetaData = {
+    val conn = getConnection()
+    try {
+      val statement = conn.prepareStatement(query)
+      try {
+        TableMetaData(
+          TableDefinition(statement.getMetaData),
+          DbParameterMetaData(statement.getParameterMetaData.getParameterCount))
+      } finally statement.close()
+    } finally conn.close()
+  }
+
 }

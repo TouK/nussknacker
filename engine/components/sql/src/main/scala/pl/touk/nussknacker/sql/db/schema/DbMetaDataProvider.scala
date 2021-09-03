@@ -3,7 +3,9 @@ package pl.touk.nussknacker.sql.db.schema
 trait DbMetaDataProvider {
   def getDialectMetaData: DialectMetaData
 
-  def getQueryMetaData(query: String): QueryMetaData
+  def getTableMetaData(tableName: String): TableMetaData
+
+  def getQueryMetaData(query: String): TableMetaData
 
   def getSchemaDefinition(): SchemaDefinition
 }
@@ -24,4 +26,4 @@ class SqlDialect(metaData: DialectMetaData) {
 
 case class DbParameterMetaData(parameterCount: Int)
 
-case class QueryMetaData(tableDefinition: TableDefinition, dbParameterMetaData: DbParameterMetaData)
+case class TableMetaData(tableDefinition: TableDefinition, dbParameterMetaData: DbParameterMetaData)

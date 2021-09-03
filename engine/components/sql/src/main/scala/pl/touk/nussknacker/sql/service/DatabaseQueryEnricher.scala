@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.sql.db.pool.{DBPoolConfig, HikariDataSourceFactory}
 import pl.touk.nussknacker.sql.db.query._
-import pl.touk.nussknacker.sql.db.schema.{DbParameterMetaData, JdbcMetaDataProvider, SqlDialect, TableDefinition}
+import pl.touk.nussknacker.sql.db.schema.{DbMetaDataProvider, DbParameterMetaData, SqlDialect, TableDefinition}
 
 import java.time.Duration
 import java.time.temporal.ChronoUnit
@@ -57,7 +57,7 @@ TODO:
 1. Named parameters. Maybe we can make use of Spring's NamedJdbcParameterTemplate?
 2. Typed parameters - currently we type them as Objects/Unknowns
 */
-class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvider: JdbcMetaDataProvider) extends EagerService
+class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvider: DbMetaDataProvider) extends EagerService
   with Lifecycle with SingleInputGenericNodeTransformation[ServiceInvoker] with LazyLogging {
 
   import DatabaseQueryEnricher._

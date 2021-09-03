@@ -4,21 +4,21 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.sql.db.query.ResultSetStrategy
 import pl.touk.nussknacker.sql.db.schema.{JdbcMetaDataProviderFactory, TableDefinition}
 import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher.CacheTTLParamName
-import pl.touk.nussknacker.sql.utils.BaseDatabaseQueryEnricherTest
+import pl.touk.nussknacker.sql.utils.BaseHsqlQueryEnricherTest
 
 import scala.concurrent.Await
 
-class DatabaseQueryEnricherWithCacheTest extends BaseDatabaseQueryEnricherTest {
+class DatabaseQueryEnricherWithCacheTest extends BaseHsqlQueryEnricherTest {
 
   import scala.collection.JavaConverters._
   import scala.concurrent.duration._
 
-  override val prepareDbDDLs: List[String] = List(
+  override val prepareHsqlDDLs: List[String] = List(
     "CREATE TABLE persons (id INT, name VARCHAR(40));",
     "INSERT INTO persons (id, name) VALUES (1, 'John')"
   )
 
-  override val service = new DatabaseQueryEnricher(dbConf, new JdbcMetaDataProviderFactory().getMetaDataProvider(dbConf))
+  override val service = new DatabaseQueryEnricher(hsqlDbPoolConfig, new JdbcMetaDataProviderFactory().create(hsqlDbPoolConfig))
 
   test("DatabaseQueryEnricher#implementation with cache") {
     val query = "select * from persons where id = ?"

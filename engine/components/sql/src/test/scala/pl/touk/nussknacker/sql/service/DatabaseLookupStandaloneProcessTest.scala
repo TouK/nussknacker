@@ -12,32 +12,30 @@ import pl.touk.nussknacker.sql.utils._
 
 import scala.collection.JavaConverters._
 
-class DatabaseLookupStandaloneProcessTest extends FunSuite with Matchers with StandaloneProcessTest with BeforeAndAfterAll with WithDB {
+class DatabaseLookupStandaloneProcessTest extends FunSuite with Matchers with StandaloneProcessTest with BeforeAndAfterAll with WithHsqlDB {
   override val contextPreparer: StandaloneContextPreparer = new StandaloneContextPreparer(NoOpMetricsProvider)
-  override val prepareDbDDLs: List[String] = List(
+  override val prepareHsqlDDLs: List[String] = List(
     "CREATE TABLE persons (id INT, name VARCHAR(40));",
     "INSERT INTO persons (id, name) VALUES (1, 'John')",
     "CREATE TABLE persons_lower (\"id\" INT, \"name\" VARCHAR(40));",
     "INSERT INTO persons_lower VALUES (1, 'John')"
   )
 
-  private val dbPoolConfig: Map[String, String] = Map(
-    "driverClassName" -> dbConf.driverClassName,
-    "username" -> dbConf.username,
-    "password" -> dbConf.password,
-    "url" -> dbConf.url
-  )
-
   private val config = ConfigFactory.parseMap(
     Map(
-      "config" -> Map(
-        "databaseLookupEnricher" -> Map(
-          "name" -> "sql-lookup-enricher",
-          "dbPool" -> dbPoolConfig.asJava
-        ).asJava,
-        "databaseQueryEnricher" -> Map(
-          "name" -> "sql-query-enricher",
-          "dbPool" -> dbPoolConfig.asJava
+      "components" -> Map(
+        "databaseEnricher" -> Map(
+          "type" -> "databaseEnricher",
+          "config" -> Map(
+            "databaseLookupEnricher" -> Map(
+              "name" -> "sql-lookup-enricher",
+              "dbPool" -> hsqlConfigValues.asJava
+            ).asJava,
+            "databaseQueryEnricher" -> Map(
+              "name" -> "sql-query-enricher",
+              "dbPool" -> hsqlConfigValues.asJava
+            ).asJava
+          ).asJava
         ).asJava
       ).asJava
     ).asJava

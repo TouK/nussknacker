@@ -28,14 +28,6 @@ class StandaloneConfigCreator extends EmptyProcessConfigCreator {
       "request" -> WithCategories(new JsonStandaloneSourceFactory[StandaloneRequest], Category))
   }
 
-  override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = {
-    val componentProviders = ScalaServiceLoader.load[ComponentProvider](getClass.getClassLoader)
-
-    componentProviders.flatMap(_.create(processObjectDependencies.config, processObjectDependencies))
-      .map(component => component.name -> WithCategories(component.component.asInstanceOf[Service]))
-      .toMap
-  }
-
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
     Map(
       "response" -> WithCategories(ResponseSinkFactory, Category))

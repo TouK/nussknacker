@@ -52,7 +52,7 @@ You can have multiple components for multiple various database connections. You 
 ```
 components {
   yourUniqueComponentName: {
-    type: databaseEnricher   #this defines your component type
+    providerType: databaseEnricher   #this defines your component type
     config: {
       databaseQueryEnricher {
         name: "myDatabaseQuery"
