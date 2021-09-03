@@ -29,7 +29,7 @@ describe("Fragment", () => {
     })
   })
 
-  describe.only("used in scenario", () => {
+  describe("used in scenario", () => {
     beforeEach(() => {
       cy.visitNewProcess(seed, "testProcess")
     })
