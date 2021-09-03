@@ -15,7 +15,7 @@ describe("Process", () => {
     cy.get("#nk-graph-main svg", {timeout: 20000}).as("graph")
   })
 
-  describe("mouse drag", () => {
+  describe.skip("mouse drag", () => {
     beforeEach(() => {
       cy.get("[title='toggle left panel']").click()
       //Currently with default settings right toggle is not enabled, so we'll stick with unnecessary items on snapshot
