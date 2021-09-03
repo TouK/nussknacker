@@ -1,46 +1,139 @@
-# Running UI with embedded model and stubbed DeploymentManager
+# Prerequisites
 
-You can run Nussknacker UI with your model in IDE via
-helper class `LocalNussknackerWithSingleModel`. To use it, add `nussknacker-ui` module to
-test classpath and prepare class similar to `RunGenericModelLocally`.
-It can be run from e.g. Intellij without special configuration and it will run sample
-Nussknacker UI config with your model.
+## NodeJS and NPM 
 
-# Running UI with full integration environment on docker
-
-If you want to run Nussknacker UI with full integration environment (flink, kafka etc.) follow steps below
-
-## Building required modules to run from shell/IDE
-
-Before running either from console or from IDE you have to manually build:
-- run `npm ci` in `ui/client` (only if you want to test/compile FE, see `Readme.md` in `ui/client` for more details)
-- custom models (```assemblySamples``` in sbt - not needed if running from IDE with stubbed DeploymentManager, see below)
-- DeploymentManager(s) (```assemblyDeploymentManagers``` in sbt - not needed if running from IDE with stubbed DeploymentManager, see below)
-- UI (```ui/assembly``` in sbt, not needed if you want to use FE development mode)
-
-## Running integration environment
-
-- Clone https://github.com/TouK/nussknacker-quickstart 
-- Run `docker-compose -f docker-compose-env.yml -f docker-compose-custom.yml up -d` inside it
-
-## Running from command line
-
-Run: `./runServer.sh`
-
-## Running from IntelliJ:
-
-Run existing configuration `NussknackerApp` automatically loaded from `./run/NussknackerApp.run.xml`
-
-## Access to service
-Service should be available at ~~http://localhost:8080/api~~
-
-# Troubleshooting
-
-1. If you want to build ui and have access to it from served application, you can execute:
+Make sure you have relatively new nodejs/npm version (see `.nvmrc` for details). To make sure that you use correct version, use:
 ```
-sbt buildUi
+nvm use
 ```
-It will produce static assets in `./ui/server/target/scala-XXX/classes/web/static/` that make them accessible via http://localhost:8080/
 
-2. If you want to test verification mechanism, you need to make directory with savepoints available from your dev host. You can use `./bindSavepointsDirLocally.sh` script for that.
-   At the end you need to turn `FLINK_SHOULD_VERIFY_BEFORE_DEPLOY` flag on in environment variables.
+## Package dependencies
+
+Fetch locked package dependencies using:
+```
+npm ci 
+```
+
+# Run
+
+You have a few options to provide backend for frontend needs. After each "run" command, frontend will be available at http://localhost:3000. 
+Below there are described possible options.
+
+## Using backend started with docker
+
+This option requires docker and connection to docker hub registry. It will use `touk/nussknacker` image in `staging-latest` version.
+```
+npm run start:backend-staging
+```
+
+## Using locally started backend
+
+This option uses backend started at http://localhost:8080 . For more information how to start it, take a look at [Backend instruction](../README.md) 
+```
+npm start
+```
+
+## Using external environment
+
+You can also run frontend connected to external environment like https://demo.nussknacker.io . To do that just invoke:
+```
+npm run start:backend-demo
+```
+For more options take a look at `package.json`
+
+# Tests
+
+## Unit (jest) tests
+
+```
+npm test
+```
+
+### Run tests from IntelliJ
+
+`Jest` should work out of the box, just click play button.
+
+## E2E (cypress) tests
+
+Background: Cypress is a framework for end-to-end frontend tests. It verifies correctness of results using captured image snapshots.
+It runs tests in browser connected to our frontend application at http://localhost:3000. It uses some variables available
+in `cypress.env.json` like credentials.
+
+> WARNING: Image snapshots are **OS** and even **resolution** dependent! Please add image snapshots captured on unified environment.
+
+### Run cypress tests
+
+There are a few ways to run cypress tests.
+
+#### Using cypress devServer
+
+Before this option you should run backend and frontend - take a look at "Run" chapter.
+
+After execution of:
+```
+npm run test:e2e:dev
+```
+you will see cypress devServer. It is useful to see what is done in each test, but it has some drawbacks:
+- "Run all specs" option doesn't work correctly
+- You can't invoke test case separately without changing file with scenario - you have to change "it" -> "xit" to exclude or "it" -> "it.only" to test separately 
+- Produced image snapshots are OS dependent, so you shouldn't use it for purpose of changing captured image snapshots!
+  
+#### Using devServer in CLI
+
+This option is similar to option above, but run all tests in CLI and the same - you shouldn't use it for purpose of changing captured image snapshots!
+```
+npm run test:e2e
+```
+
+#### Using Intellij Idea
+
+Thanks to [Cypress Plugin](https://plugins.jetbrains.com/plugin/13819-cypress-support) you can run tests by just clicking play button.
+If you want to see, what cypress do, you can turn "Headed" mode on.
+
+Just like in options above, you should run backend and frontend before and the same - you shouldn't use it for purpose of changing captured image snapshots!
+
+#### Using unified linux environment 
+
+This is the correct option if you want to add/modify image snapshots and make sure that it was done in deterministic way.
+It runs backend in docker container, frontend connected to this backend and after that it runs cypress tests also in docker container.
+```
+npm run test:e2e:docker
+```
+
+#### Using unified linux environment on already started backend 
+
+This option is similar to above, but it speeds up test loop. You should run once: 
+```
+npm run start:backend-docker
+```
+
+and after that you can run multiple times:
+```
+npm run test:e2e:linux
+```
+
+#### Using unified linux environment with update image snapshots mode enabled
+
+To run cypress test in mode that would update image snapshots, use the same commands as in two options above but with `:update` suffix:
+```
+npm run test:e2e:docker:update
+```
+or:
+```
+npm run test:e2e:linux:update
+```
+
+### Fixing cypress tests
+
+After some changes in frontend it might be needed to rewrite captured image snapshots. The easiest way is to:
+1. Run cypress tests using "Run cypress tests using unified linux environment with update image snapshots mode enabled" method
+2. Review changes in files e.g. using Intellij Idea changes diff
+3. Commit changes or do fixes in scenarios.
+
+# Internationalization
+
+We use `react-i18next` package for internalizations. This mechanism has priority of determinining value for given key (`i18next.t(key, default)`):
+1. label from `translations/$lng/main.json` which is served at `/assets/locales/$lng/main.json` resource
+2. `default` passed as an argument
+
+File `translations/$lng/main.json` is generated in `prebuild` phase based on defaults. During development (`start` scripts) is removed to avoid confusions.
