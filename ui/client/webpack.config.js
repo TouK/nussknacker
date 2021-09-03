@@ -293,12 +293,7 @@ module.exports = {
         exclude: /font/,
         use: [
           "svg-transform-loader",
-          {
-            loader: "svgo-loader",
-            options: {
-              externalConfig: ".svgo.yml",
-            },
-          },
+          "svgo-loader",
         ],
       },
 

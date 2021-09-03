@@ -10,7 +10,7 @@
     "build": "NODE_OPTIONS=--max_old_space_size=4096 NODE_ENV=production webpack --progress && cp -R assets/icons/license dist",
     "check-types": "tsc",
     "lint": "eslint --ext .ts,.tsx,.js,.jsx",
-    "svgo": "svgo --config .svgo.yml",
+    "svgo": "svgo",
     "check": "npm run check-types && npm run lint -- . --rule 'i18next/no-literal-string: warn'",
     "@comment translations json has higher priority than default labels in code, so we remove them before each start script, to make development faster": "",
     "clean-translations": "rm ./translations/* -rf",
@@ -38,7 +38,7 @@
     "@loadable/component": "^5.15.0",
     "@material-ui/core": "4.12.3",
     "@material-ui/styles": "4.11.4",
-    "@touk/window-manager": "^1.1.0",
+    "@touk/window-manager": "^1.2.0",
     "ajv": "^8.6.2",
     "axios": "^0.21.1",
     "bootstrap": "npm:bootstrap-styl@^5.0.9",
@@ -239,7 +239,7 @@
     "stylus": "^0.54.8",
     "stylus-loader": "^6.1.0",
     "svg-transform-loader": "^2.0.13",
-    "svgo": "^2.4.0",
+    "svgo": "^2.5.0",
     "svgo-loader": "^3.0.0",
     "terser-webpack-plugin": "^5.1.4",
     "typescript": "^4.3.5",
@@ -265,6 +265,9 @@
   },
   "nyc": {
     "report-dir": "cypress-coverage",
-    "reporter": ["html", "json"]
+    "reporter": [
+      "html",
+      "json"
+    ]
   }
 }
