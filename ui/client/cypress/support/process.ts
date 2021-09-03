@@ -5,14 +5,17 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Cypress {
     interface Chainable<Subject = any> {
-      createTestProcess: typeof createTestProcess,
+      createTestProcess: typeof createProcess,
       deleteTestProcess: typeof deleteTestProcess,
       getTestProcesses: typeof getTestProcesses,
       deleteAllTestProcesses: typeof deleteAllTestProcesses,
       createTestProcessName: typeof createTestProcessName,
+      createTestFragment: typeof createProcess,
       importTestProcess: typeof importTestProcess,
       visitNewProcess: typeof visitNewProcess,
+      visitNewFragment: typeof visitNewFragment,
       postFormData: typeof postFormData,
+      visitProcess: typeof visitProcess,
     }
   }
 }
@@ -21,20 +24,38 @@ function createTestProcessName(name?: string) {
   return cy.wrap(`${Cypress.env("processNamePrefix")}-${Date.now()}-${name}-test-process`)
 }
 
-function createTestProcess(name?: string, fixture?: string, category = "Category1") {
+function createProcess(name?: string, fixture?: string, category = "Category1", isSubprocess?: boolean) {
   return cy.createTestProcessName(name).then(processName => {
-    const url = `/api/processes/${processName}/${category}`
+    let url = `/api/processes/${processName}/${category}`
+    if (isSubprocess) {
+      url += "?isSubprocess=true"
+    }
     cy.request({method: "POST", url}).its("status").should("equal", 201)
     return fixture ? cy.importTestProcess(processName, fixture) : cy.wrap(processName)
   })
 }
 
+const createTestProcess = (name?: string, fixture?: string, category = "Category1") => createProcess(name, fixture, category)
+
+const createTestFragment = (name?: string, fixture?: string, category = "Category1") => createProcess(name, fixture, category, true)
+
+function visitProcess(processName: string) {
+  cy.visit(`/visualization/${processName}`)
+  cy.wait("@fetch").its("response.statusCode").should("eq", 200)
+  return cy.wrap(processName)
+}
+
 function visitNewProcess(name?: string, fixture?: string, category?: string) {
   cy.intercept("GET", "/api/processes/*").as("fetch")
   return cy.createTestProcess(name, fixture, category).then(processName => {
-    cy.visit(`/visualization/${processName}`)
-    cy.wait("@fetch").its("response.statusCode").should("eq", 200)
-    return cy.wrap(processName)
+    return cy.visitProcess(processName)
+  })
+}
+
+function visitNewFragment(name?: string, fixture?: string, category?: string) {
+  cy.intercept("GET", "/api/processes/*").as("fetch")
+  return cy.createTestFragment(name, fixture, category).then(processName => {
+    return cy.visitProcess(processName)
   })
 }
 
@@ -101,6 +122,9 @@ Cypress.Commands.add("deleteTestProcess", deleteTestProcess)
 Cypress.Commands.add("getTestProcesses", getTestProcesses)
 Cypress.Commands.add("deleteAllTestProcesses", deleteAllTestProcesses)
 Cypress.Commands.add("createTestProcessName", createTestProcessName)
+Cypress.Commands.add("createTestFragment", createTestFragment)
 Cypress.Commands.add("importTestProcess", importTestProcess)
 Cypress.Commands.add("visitNewProcess", visitNewProcess)
+Cypress.Commands.add("visitNewFragment", visitNewFragment)
 Cypress.Commands.add("postFormData", postFormData)
+Cypress.Commands.add("visitProcess", visitProcess)
