@@ -12,6 +12,8 @@ If you want to run Nussknacker UI with full integration environment (flink, kafk
 
 ## Building required modules to run from shell/IDE
 
+
+
 Before running either from console or from IDE you have to manually build:
 - run `npm ci` in `ui/client` (only if you want to test/compile FE, see `Readme.md` in `ui/client` for more details)
 - custom models (```assemblySamples``` in sbt - not needed if running from IDE with stubbed DeploymentManager, see below)
