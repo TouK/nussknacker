@@ -14,6 +14,10 @@ Fetch locked package dependencies using:
 npm ci 
 ```
 
+
+
+
+
 # Run
 
 You have a few options to provide backend for frontend needs. After each "run" command, frontend will be available at http://localhost:3000. 
