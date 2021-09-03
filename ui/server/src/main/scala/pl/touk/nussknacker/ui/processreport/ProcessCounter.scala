@@ -49,9 +49,7 @@ class ProcessCounter(subprocessRepository: SubprocessRepository) {
       }.toMap
 
     }
-    val valuesWithoutGroups = computeCounts(List())(canonicalProcess.allStartNodes)
-    val valuesForGroups: Map[String, NodeCount] = computeValuesForGroups(valuesWithoutGroups, canonicalProcess)
-    valuesWithoutGroups ++ valuesForGroups
+    computeCounts(List())(canonicalProcess.allStartNodes)
   }
 
   private def getSubprocess(subprocessVersions: Map[String, Long], subprocessId: String): Option[CanonicalProcess] = {
@@ -62,16 +60,6 @@ class ProcessCounter(subprocessRepository: SubprocessRepository) {
     subprocess.map(_.canonical)
   }
 
-  private def computeValuesForGroups(valuesWithoutGroups: Map[String, NodeCount], canonicalProcess: CanonicalProcess) = {
-    val groups = canonicalProcess.metaData.additionalFields.flatMap(_.cast[ProcessAdditionalFields]).map(_.groups).getOrElse(Set())
-
-    groups.map { group =>
-      val valuesForGroup = valuesWithoutGroups.filterKeys(nodeId => group.nodes.contains(nodeId))
-      val all = valuesForGroup.values.map(_.all).max
-      val errors = valuesForGroup.values.map(_.errors).max
-      group.id -> NodeCount(all, errors)
-    }.toMap
-  }
 }
 
 

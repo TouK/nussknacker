@@ -1,6 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
 import {dia, shapes, util} from "jointjs"
-import expandIcon from "../../../assets/img/expand.svg"
 import "../graphTheme.styl"
 import {getStringWidth} from "./element"
 import {getRoundedRectPath} from "./getRoundedRectPath"
@@ -74,29 +73,6 @@ const content: dia.MarkupNodeJSON = {
     "font-size": 15,
     "pointer-events": "none",
     "font-weight": 400,
-  },
-}
-
-const expandIconSize = 26
-const groupElements: dia.MarkupNodeJSON = {
-  selector: "groupElements",
-  tagName: "g",
-  children: [
-    {
-      selector: "expand",
-      tagName: "image",
-      className: "expandIcon nodeIcon",
-      attributes: {
-        width: expandIconSize,
-        height: expandIconSize,
-        x: RECT_WIDTH - expandIconSize / 2,
-        y: -expandIconSize / 2,
-        "xlink:href": expandIcon,
-      },
-    },
-  ],
-  attributes: {
-    noExport: "",
   },
 }
 
@@ -211,11 +187,3 @@ export const EspNodeShape = shapes.devs.Model.define(
   protoProps,
 ) as typeof shapes.devs.Model
 
-export const EspGroupShape = shapes.devs.Model.define(
-  `esp.Group`,
-  defaults,
-  {
-    ...protoProps,
-    markup: [...protoProps.markup, groupElements],
-  },
-) as typeof EspNodeShape

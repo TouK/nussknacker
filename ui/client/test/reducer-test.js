@@ -132,48 +132,6 @@ describe("Reducer suite", () => {
     expect(baseStateWithProcess.graphReducer.processToDisplay.id).toEqual(baseProcessState.id)
   })
 
-  it("Should change group id", () => {
-    const result = reduceAll([{
-      type: "EDIT_GROUP",
-      oldGroupId: "acdc",
-      newGroup: {
-        id: "abcde",
-        ids: ["kafka-transaction", "filter"],
-      },
-    }])
-    expect(NodeUtils.getAllGroups(result.graphReducer.processToDisplay)).toEqual(
-      [{
-        id: "abcde",
-        nodes: ["kafka-transaction", "filter"],
-        type: "_group",
-      }],
-    )
-  })
-
-  it("Should be able to add new group", () => {
-    const result = reduceAll([
-      {
-        type: "RESET_SELECTION",
-        nodeIds: ["paramService", "sendSms"]
-      },
-      {
-        type: "GROUP",
-      },
-    ])
-
-    expect(NodeUtils.getAllGroups(result.graphReducer.processToDisplay)).toEqual(
-      [{
-        id: "acdc",
-        nodes: ["kafka-transaction", "filter"],
-      }, {
-        id: "paramService-sendSms",
-        nodes: ["paramService", "sendSms"],
-      },
-      ],
-    )
-
-  })
-
 })
 
 const testNode = {

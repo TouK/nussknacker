@@ -9,7 +9,7 @@ import {setLinksHovered} from "../dragHelpers"
 import {isModelElement} from "../GraphPartialsInTS"
 import {Events} from "../joint-events"
 import NodeUtils from "../NodeUtils"
-import {EspGroupShape, EspNodeShape} from "./esp"
+import {EspNodeShape} from "./esp"
 import {getIconHref} from "./getIconHref"
 
 const maxLineLength = 24
@@ -137,7 +137,7 @@ export function makeElement(processDefinitionData: ProcessDefinitionData): (node
       },
     }
 
-    const element = NodeUtils.nodeIsGroup(node) ? new EspGroupShape(attributes) : new EspNodeShape(attributes)
+    const element = new EspNodeShape(attributes)
 
     element.once(Events.ADD, (e: dia.Element) => {
       // add event listeners after element setup

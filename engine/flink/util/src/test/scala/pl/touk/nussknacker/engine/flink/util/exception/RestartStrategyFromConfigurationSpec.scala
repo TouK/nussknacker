@@ -11,7 +11,7 @@ import scala.jdk.CollectionConverters.mapAsJavaMapConverter
 
 class RestartStrategyFromConfigurationSpec extends FunSuite with Matchers {
 
-  private val meta = MetaData("", StreamMetaData(), additionalFields = Some(ProcessAdditionalFields(description = None, groups = Set.empty,
+  private val meta = MetaData("", StreamMetaData(), additionalFields = Some(ProcessAdditionalFields(description = None,
     properties = Map("myStrategy" -> "oneStrategy", "myOtherStrategy" -> ""))))
 
   test("reads config") {

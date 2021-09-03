@@ -248,7 +248,7 @@ object ProcessTestData {
   val sampleDisplayableProcess = {
     DisplayableProcess(
       id = "fooProcess",
-      properties = ProcessProperties(StreamMetaData(Some(2)), ExceptionHandlerRef(List.empty), false, Some(ProcessAdditionalFields(Some("process description"), Set.empty, Map.empty)), subprocessVersions = Map.empty),
+      properties = ProcessProperties(StreamMetaData(Some(2)), ExceptionHandlerRef(List.empty), false, Some(ProcessAdditionalFields(Some("process description"), Map.empty)), subprocessVersions = Map.empty),
       nodes = List(
         node.Source(
           id = "sourceId",

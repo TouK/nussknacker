@@ -11,7 +11,7 @@ import "../../stylesheets/graph.styl"
 import {filterDragHovered, setLinksHovered} from "./dragHelpers"
 import {updateNodeCounts} from "./EspNode/element"
 import {GraphPaperContainer} from "./focusable"
-import {createPaper, directedLayout, drawGraph, isBackgroundObject, isGroupElement, isModelElement} from "./GraphPartialsInTS"
+import {createPaper, directedLayout, drawGraph, isBackgroundObject, isModelElement} from "./GraphPartialsInTS"
 import styles from "./graphTheme.styl"
 import * as GraphUtils from "./GraphUtils"
 import {Events} from "./joint-events"
@@ -98,7 +98,7 @@ export class Graph extends React.Component {
     new RangeSelectPlugin(this.processGraphPaper)
     this.processGraphPaper.on("rangeSelect:selected", ({elements, mode}) => {
       const nodes = elements
-        .filter(el => isModelElement(el) || isGroupElement(el))
+        .filter(el => isModelElement(el))
         .map(({id}) => id)
       if (mode === SelectionMode.toggle) {
         this.props.actions.toggleSelection(...nodes)
@@ -141,7 +141,6 @@ export class Graph extends React.Component {
   canAddNode(node) {
     return this.props.capabilities.write &&
       NodeUtils.isNode(node) &&
-      !NodeUtils.nodeIsGroup(node) &&
       NodeUtils.isAvailable(node, this.props.processDefinitionData, this.props.processCategory)
   }
 
@@ -154,7 +153,6 @@ export class Graph extends React.Component {
   componentWillUpdate(nextProps, nextState) {
     const processChanged = !isEqual(this.props.processToDisplay, nextProps.processToDisplay) ||
       !isEqual(this.props.layout, nextProps.layout) ||
-      !isEqual(this.props.expandedGroups, nextProps.expandedGroups) ||
       !isEqual(this.props.processDefinitionData, nextProps.processDefinitionData)
     if (processChanged) {
       this.drawGraph(
@@ -224,21 +222,10 @@ export class Graph extends React.Component {
 
       const middleManNode = middleMan.attributes.nodeData
 
-      const sourceNodeData = source.attributes.nodeData
-      const sourceNode = NodeUtils.nodeIsGroup(sourceNodeData) ? _.last(sourceNodeData.nodes) : sourceNodeData
+      const sourceNode = source.attributes.nodeData
+      const targetNode = target.attributes.nodeData
 
-      const targetNodeData = target.attributes.nodeData
-      const targetNode = NodeUtils.nodeIsGroup(targetNodeData) ? _.head(targetNodeData.nodes) : targetNodeData
-
-      if (NodeUtils.nodeIsGroup(middleManNode)) {
-        if (!NodeUtils.groupIncludesOneOfNodes(middleManNode, [sourceNode.id, targetNode.id])) {
-          // TODO: handle inject when group is middleman
-          this.props.notificationActions.info("Injecting group is not possible yet")
-        }
-      } else if (NodeUtils.nodesAreInOneGroup(this.props.processToDisplay, [sourceNode.id, targetNode.id])) {
-        // TODO: handle inject when source and target are in one group
-        this.props.notificationActions.info("Injecting node in group is not possible yet")
-      } else if (GraphUtils.canInjectNode(
+      if (GraphUtils.canInjectNode(
         this.props.processToDisplay,
         sourceNode.id,
         middleMan.id,
@@ -358,16 +345,6 @@ export class Graph extends React.Component {
           this.props.actions.toggleSelection(nodeDataId)
         } else {
           this.props.actions.resetSelection(nodeDataId)
-        }
-
-        //TODO: is this the best place for this? if no, where should it be?
-        const targetClass = _.get(evt, "originalEvent.target.className.baseVal")
-        if (targetClass.includes("collapseIcon") && nodeDataId) {
-          this.props.actions.collapseGroup(nodeDataId)
-        }
-
-        if (targetClass.includes("expandIcon") && nodeDataId) {
-          this.props.actions.expandGroup(nodeDataId)
         }
       })
     }

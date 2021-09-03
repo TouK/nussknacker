@@ -3,21 +3,20 @@ import {css} from "emotion"
 import React, {useCallback, useEffect, useMemo, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
-import {collapseGroup, editGroup, editNode, expandGroup} from "../../../../actions/nk"
+import {editNode} from "../../../../actions/nk"
 import {visualizationUrl} from "../../../../common/VisualizationUrl"
 import {alpha, tint, useNkTheme} from "../../../../containers/theme"
 import {getProcessToDisplay} from "../../../../reducers/selectors/graph"
-import {getExpandedGroups} from "../../../../reducers/selectors/groups"
-import {GroupNodeType, NodeType} from "../../../../types"
+import {NodeType} from "../../../../types"
 import {WindowContent, WindowKind} from "../../../../windowManager"
 import {replaceWindowsQueryParams} from "../../../../windowManager/useWindows"
 import ErrorBoundary from "../../../common/ErrorBoundary"
 import NodeUtils from "../../NodeUtils"
 import NodeDetailsModalHeader from "../NodeDetailsModalHeader"
-import {NodeGroupContent} from "./NodeGroupContent"
 import {getReadOnly} from "./selectors"
+import {NodeGroupContent} from "./NodeGroupContent";
 
-export function NodeDetails(props: WindowContentProps<WindowKind, NodeType | GroupNodeType> & {readOnly?: boolean}): JSX.Element {
+export function NodeDetails(props: WindowContentProps<WindowKind, NodeType> & {readOnly?: boolean}): JSX.Element {
   const processToDisplay = useSelector(getProcessToDisplay)
   const readOnly = useSelector(s => getReadOnly(s, props.readOnly))
 
@@ -41,16 +40,11 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType | Gro
   }, [nodeToDisplay])
 
   const performNodeEdit = useCallback(async () => {
-    const action = NodeUtils.nodeIsGroup(editedNode) ?
-      //TODO: try to get rid of this.state.editedNode, passing state of NodeDetailsContent via onChange is not nice...
-      editGroup(processToDisplay, nodeToDisplay.id, editedNode) :
-      editNode(processToDisplay, nodeToDisplay, editedNode)
-
+    //TODO: try to get rid of this.state.editedNode, passing state of NodeDetailsContent via onChange is not nice...
+    const action = editNode(processToDisplay, nodeToDisplay, editedNode)
     await dispatch(action)
     props.close()
   }, [editedNode, processToDisplay, nodeToDisplay, dispatch, props])
-
-  const expandedGroups = useSelector(getExpandedGroups)
 
   const {t} = useTranslation()
   const {theme} = useNkTheme()
@@ -79,24 +73,6 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType | Gro
     [performNodeEdit, readOnly, t],
   )
 
-  const expanded = expandedGroups.includes(editedNode.id)
-
-  const toggleGroup = useCallback(() => {
-    dispatch(expanded ? collapseGroup(editedNode.id) : expandGroup(editedNode.id))
-    props.close()
-  }, [dispatch, editedNode.id, expanded, props])
-
-  const groupToggleButtonData: WindowButtonProps | null = useMemo(
-    () => NodeUtils.nodeIsGroup(editedNode) ?
-      {
-        title: expanded ? t("dialog.button.group.collapse", "collapse") : t("dialog.button.group.expand", "expand"),
-        action: () => toggleGroup(),
-      } :
-      null
-    ,
-    [editedNode, expanded, t, toggleGroup],
-  )
-
   const openSubprocessButtonData: WindowButtonProps | null = useMemo(
     () => NodeUtils.nodeIsSubprocess(editedNode) ?
       {
@@ -116,8 +92,8 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType | Gro
   )
 
   const buttons: WindowButtonProps[] = useMemo(
-    () => [openSubprocessButtonData, groupToggleButtonData, cancelButtonData, applyButtonData].filter(Boolean),
-    [applyButtonData, cancelButtonData, groupToggleButtonData, openSubprocessButtonData],
+    () => [openSubprocessButtonData, cancelButtonData, applyButtonData].filter(Boolean),
+    [applyButtonData, cancelButtonData, openSubprocessButtonData],
   )
 
   const components = useMemo(() => {

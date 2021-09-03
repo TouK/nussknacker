@@ -1,6 +1,4 @@
-import {GroupType} from "./groups"
-
-type Type = "Properties" | "_group" | "SubprocessInput" | string
+type Type = "Properties" | "SubprocessInput" | string
 
 export type LayoutData = { x: number, y: number }
 
@@ -13,7 +11,6 @@ export type NodeType<F extends Field = Field> = {
   additionalFields?: {
     description: string,
     layoutData?: LayoutData,
-    groups?: GroupType[],
     properties: {
       layout?: string,
     },
@@ -53,4 +50,4 @@ export type PropertiesType = NodeType & {
 
 export type NodeId = NodeType["id"]
 
-export type UINodeType = NodeType | GroupType
+export type UINodeType = NodeType

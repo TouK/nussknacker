@@ -2,8 +2,6 @@ import {concat, isEqual, pick, reject, sortBy, uniq, xor, zipObject} from "lodas
 import undoable, {combineFilters, excludeAction} from "redux-undo"
 import {Reducer} from "../../actions/reduxTypes"
 import * as GraphUtils from "../../components/graph/GraphUtils"
-import NodeUtils from "../../components/graph/NodeUtils"
-import {reducer as groups} from "../groups"
 import * as LayoutUtils from "../layoutUtils"
 import {nodes} from "../layoutUtils"
 import {mergeReducers} from "../mergeReducers"
@@ -11,9 +9,8 @@ import {GraphState} from "./types"
 import {
   addNodesWithLayout,
   adjustBranchParametersAfterDisconnect,
-  canGroupSelection,
   createEdge,
-  displayOrGroup,
+  displayNode,
   enrichNodeWithProcessDependentData,
   prepareNewNodesWithLayout,
   updateAfterNodeDelete,
@@ -100,7 +97,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
     }
 
     case "DISPLAY_NODE_DETAILS":
-      return displayOrGroup(state, action.nodeToDisplay)
+      return displayNode(state, action.nodeToDisplay)
 
     case "EDIT_EDGE": {
       const processToDisplay = GraphUtils.mapProcessWithNewEdge(
@@ -257,42 +254,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         processCounts: null,
       }
     }
-    case "GROUP": {
-      return canGroupSelection(state) ?
-        {
-          ...state,
-          processToDisplay: NodeUtils.createGroup(state.processToDisplay, state.selectionState),
-          layout: [],
-          selectionState: [],
-        } :
-        state
-    }
-    case "UNGROUP": {
-      return {
-        ...state,
-        processToDisplay: NodeUtils.ungroup(state.processToDisplay, action.groupToRemove),
-        nodeToDisplay: state.processToDisplay.properties,
-        selectionState: [],
-      }
-    }
-    case "EXPAND_GROUP":
-    case "COLLAPSE_ALL_GROUPS":
-    case "COLLAPSE_GROUP": {
-      return {
-        ...state,
-        layout: [],
-      }
-    }
-    case "EDIT_GROUP": {
-      return {
-        ...state,
-        processToDisplay: {
-          ...NodeUtils.editGroup(state.processToDisplay, action.oldGroupId, action.newGroup),
-        },
-        nodeToDisplay: action.newGroup,
-        layout: updateLayoutAfterNodeIdChange(state.layout, action.oldGroupId, action.newGroup.id),
-      }
-    }
     case "EXPAND_SELECTION": {
       return {
         ...state,
@@ -322,7 +283,7 @@ const reducer = mergeReducers(
     processToDisplay: {
       nodes,
       properties: {
-        additionalFields: {groups},
+        additionalFields: {},
       },
     },
   },
@@ -337,8 +298,6 @@ const undoableReducer = undoable(reducer, {
     excludeAction([
       "USER_TRACKING",
       "VALIDATION_RESULT",
-      //this actions triggers "LAYOUT_CHANGED" which is stored in history
-      "GROUP", "EXPAND_GROUP", "COLLAPSE_GROUP",
     ]),
     (action, nextState, prevState) => {
       const keys = [

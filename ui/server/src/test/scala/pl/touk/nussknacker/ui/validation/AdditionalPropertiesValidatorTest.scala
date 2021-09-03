@@ -44,7 +44,7 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
 
   test("validate non empty config with required property") {
     val process = ProcessTestData.displayableWithAdditionalFields(Some(
-      ProcessAdditionalFields(None, Set.empty, properties = Map(
+      ProcessAdditionalFields(None, properties = Map(
         "propReq" -> "5"
       ))
     ))
@@ -56,7 +56,7 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
 
   test("validate non empty config without required property") {
     val process = ProcessTestData.displayableWithAdditionalFields(Some(
-      ProcessAdditionalFields(None, Set.empty, properties = Map(
+      ProcessAdditionalFields(None, properties = Map(
         "propOpt" -> "a"
       ))
     ))
@@ -70,7 +70,7 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
 
   test("validate non empty config with empty required property") {
     val process = ProcessTestData.displayableWithAdditionalFields(Some(
-      ProcessAdditionalFields(None, Set.empty, properties = Map(
+      ProcessAdditionalFields(None, properties = Map(
         "propReq" -> ""
       ))
     ))
@@ -86,7 +86,7 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
 
   test("validate regexp config with empty property") {
     val process = ProcessTestData.displayableWithAdditionalFields(Some(
-      ProcessAdditionalFields(None, Set.empty, properties = Map(
+      ProcessAdditionalFields(None, properties = Map(
         "propReq" -> "1",
         "propRegExp" -> ""
       ))
@@ -101,7 +101,7 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
 
   test("validate config with invalid property") {
     val process = ProcessTestData.displayableWithAdditionalFields(Some(
-      ProcessAdditionalFields(None, Set.empty, properties = Map(
+      ProcessAdditionalFields(None, properties = Map(
         "propReq" -> "1",
         "propRegExp" -> "asd"
       ))
@@ -116,7 +116,7 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
 
   test("validate non empty config with required property with wrong type") {
     val process = ProcessTestData.displayableWithAdditionalFields(Some(
-      ProcessAdditionalFields(None, Set.empty, properties = Map(
+      ProcessAdditionalFields(None, properties = Map(
         "propReq" -> "some text"
       ))
     ))
@@ -140,7 +140,7 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
 
   test("validate non empty config with fixed value property with wrong value") {
     val process = ProcessTestData.displayableWithAdditionalFields(Some(
-      ProcessAdditionalFields(None, Set.empty, properties = Map(
+      ProcessAdditionalFields(None, properties = Map(
         optFixedFieldName -> "some text"
       ))
     ))
@@ -158,7 +158,7 @@ class AdditionalPropertiesValidatorTest extends FunSuite with Matchers {
   test("validate non empty config with unknown property") {
     val unknownProperty = "unknown"
     val process = ProcessTestData.displayableWithAdditionalFields(Some(
-      ProcessAdditionalFields(None, Set.empty, properties = Map(
+      ProcessAdditionalFields(None, properties = Map(
         "propReq" -> "5",
         "unknown" -> "some text"
       ))

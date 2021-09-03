@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.processreport
 
 import cats.data.NonEmptyList
 import org.scalatest.{FlatSpec, FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.{Group, MetaData, ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{EspProcessBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
@@ -68,28 +68,6 @@ class ProcessCounterTest extends FunSuite with Matchers {
       "source2" -> NodeCount(2, 0),
       "join1" -> NodeCount(3, 0),
       "end" -> NodeCount(4, 0)
-    )
-
-
-  }
-
-  test("compute counts with groups") {
-    val process = ProcessCanonizer.canonize(EspProcessBuilder
-      .id("test").parallelism(1).exceptionHandler()
-      .source("source1", "")
-      .filter("filter1", "")
-      .emptySink("sink11", "")).copy(metaData = MetaData("test", StreamMetaData(), isSubprocess = false,
-        Some(ProcessAdditionalFields(Some(""), Set(Group("gr1", Set("filter1", "sink11"), None, None)), Map.empty))))
-    val processCounter = new ProcessCounter(subprocessRepository(Set()))
-
-    val computed = processCounter.computeCounts(process, Map("source1" -> RawCount(50, 0L),
-      "filter1" -> RawCount(40, 9), "sink11" -> RawCount(30, 8)).get)
-
-    computed shouldBe Map(
-      "source1" -> NodeCount(50, 0),
-      "filter1" -> NodeCount(40, 9),
-      "sink11" -> NodeCount(30, 8),
-      "gr1" -> NodeCount(40, 9)
     )
   }
 

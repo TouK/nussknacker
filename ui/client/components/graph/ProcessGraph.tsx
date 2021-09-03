@@ -10,7 +10,6 @@ import {
   getProcessCounts,
   getProcessToDisplay,
 } from "../../reducers/selectors/graph"
-import {getExpandedGroups} from "../../reducers/selectors/groups"
 import {setLinksHovered} from "./dragHelpers"
 import {commonState, Graph} from "./Graph"
 import GraphWrapped from "./GraphWrapped"
@@ -44,7 +43,6 @@ function mapState(state) {
     nodeToDisplay: getNodeToDisplay(state),
     processCounts: getProcessCounts(state),
     layout: getLayout(state),
-    expandedGroups: getExpandedGroups(state),
   }
 }
 
