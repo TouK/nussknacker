@@ -47,16 +47,15 @@ abstract class FlinkDeploymentManager(modelData: ModelData, shouldVerifyBeforeDe
       maybeSavepoint <- stoppingResult.value
       // In case of redeploy we double check required slots which is not bad because can be some run between jobs and it is better to check it again
       _ <- checkRequiredSlotsExceedAvailableSlots(processDeploymentData, None)
-      runResult <- {
-        runProgram(processName,
-          prepareProgramMainClass(processDeploymentData),
-          prepareProgramArgs(modelData.inputConfigDuringExecution.serialized, processVersion, deploymentData, processDeploymentData),
-          savepointPath.orElse(maybeSavepoint))
-      }
+      runResult <- runProgram(processName,
+        prepareProgramMainClass(processDeploymentData),
+        prepareProgramArgs(modelData.inputConfigDuringExecution.serialized, processVersion, deploymentData, processDeploymentData),
+        savepointPath.orElse(maybeSavepoint))
     } yield runResult
   }
 
-  private[management] def checkRequiredSlotsExceedAvailableSlots(processDeploymentData: ProcessDeploymentData, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit] = {
+  // public for tests purpose
+  def checkRequiredSlotsExceedAvailableSlots(processDeploymentData: ProcessDeploymentData, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit] = {
     val collectedSlotsCheckInputs = for {
       slotsBalance <- determineSlotsBalance(processDeploymentData, currentlyDeployedJobId)
       clusterOverview <- OptionT(getClusterOverview.map(Option(_)))
@@ -70,7 +69,7 @@ abstract class FlinkDeploymentManager(modelData: ModelData, shouldVerifyBeforeDe
       })
       (slotsBalance, clusterOverview) = collectedInputs
       _ <- OptionT(
-        if (slotsBalance.allocated - slotsBalance.released > clusterOverview.`slots-available`)
+        if (slotsBalance.value > clusterOverview.`slots-available`)
           Future.failed(NotEnoughSlotsException(clusterOverview, slotsBalance))
         else
           Future.successful(Option(())))
@@ -203,7 +202,7 @@ object FlinkDeploymentManager {
   }
 
   case class NotEnoughSlotsException(availableSlots: Int, totalSlots: Int, slotsBalance: SlotsBalance)
-    extends IllegalArgumentException(s"Not enough free slots on Flink cluster. Available slots: $availableSlots, requested: ${Math.max(0, slotsBalance.allocated - slotsBalance.released)}. ${
+    extends IllegalArgumentException(s"Not enough free slots on Flink cluster. Available slots: $availableSlots, requested: ${Math.max(0, slotsBalance.value)}. ${
       if (slotsBalance.allocated > 1)
         "Decrease scenario's parallelism or extend Flink cluster resources"
       else
@@ -215,6 +214,8 @@ object FlinkDeploymentManager {
       NotEnoughSlotsException(availableSlots = clusterOverview.`slots-available`, totalSlots = clusterOverview.`slots-total`, slotsBalance = slotsBalance)
   }
 
-  case class SlotsBalance(released: Int, allocated: Int)
+  case class SlotsBalance(released: Int, allocated: Int) {
+    def value: Int = allocated - released
+  }
 
 }
