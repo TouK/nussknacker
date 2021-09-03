@@ -2,5 +2,5 @@ ui:
 - 'ui/client/**/*'
 
 docs:
-- '**.md'
-- 'docs/**'
+- '**/*.md'
+- 'docs/**/*'
