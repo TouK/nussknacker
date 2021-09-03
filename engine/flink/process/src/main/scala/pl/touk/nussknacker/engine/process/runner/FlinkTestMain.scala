@@ -8,11 +8,11 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentData
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.testmode.{ParsedTestData, ResultsCollectingListener, ResultsCollectingListenerHolder, TestDataPreparer}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.TestFlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
+import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 
 object FlinkTestMain extends FlinkRunner {
 
@@ -33,10 +33,9 @@ class FlinkTestMain(val modelData: ModelData,
 
   def runTest[T](variableEncoder: Any => T): TestResults[T] = {
     val env = createEnv
-    val parsedTestData = new TestDataPreparer(modelData).prepareDataForTest(process, testData)
     val collectingListener = ResultsCollectingListenerHolder.registerRun(variableEncoder)
     try {
-      val registrar: FlinkProcessRegistrar = prepareRegistrar(env.getConfig, collectingListener, parsedTestData)
+      val registrar: FlinkProcessRegistrar = prepareRegistrar(env.getConfig, collectingListener, testData)
       registrar.register(env, process, processVersion, deploymentData, Option(collectingListener.runId))
       execute(env, SavepointRestoreSettings.none())
       collectingListener.results
@@ -45,13 +44,13 @@ class FlinkTestMain(val modelData: ModelData,
     }
   }
 
-  protected def prepareRegistrar[T](config: ExecutionConfig, collectingListener: ResultsCollectingListener, parsedTestData: ParsedTestData): FlinkProcessRegistrar = {
+  protected def prepareRegistrar[T](config: ExecutionConfig, collectingListener: ResultsCollectingListener, testData: TestData): FlinkProcessRegistrar = {
     FlinkProcessRegistrar(new TestFlinkProcessCompiler(
       modelData.configCreator,
       modelData.processConfig,
       collectingListener,
       process,
-      parsedTestData,
+      testData,
       config,
       modelData.objectNaming),
       ExecutionConfigPreparer.defaultChain(modelData))

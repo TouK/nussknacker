@@ -13,6 +13,19 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 
 case class ParsedTestData(samples: List[AnyRef])
 
+object TestDataPreparer {
+
+  def prepareDataForTest(sourceTestSupport: SourceTestSupport[AnyRef], testData: TestData): ParsedTestData = {
+    val testParserForSource = sourceTestSupport.testDataParser
+    val testSamples = testParserForSource.parseTestData(testData)
+    if (testSamples.size > testData.rowLimit) {
+      throw new IllegalArgumentException(s"Too many samples: ${testSamples.size}, limit is: ${testData.rowLimit}")
+    }
+    ParsedTestData(testSamples)
+  }
+
+}
+
 class TestDataPreparer(modelData: ModelData) {
 
   private val nodeCompiler = {
@@ -24,7 +37,7 @@ class TestDataPreparer(modelData: ModelData) {
   }
 
   def prepareDataForTest(espProcess: EspProcess, testData: TestData): ParsedTestData = {
-    val testParserForSource = (espProcess.roots.map(_.data).collect {
+    val sourceTestSupport = (espProcess.roots.map(_.data).collect {
       case e: SourceNodeData => e
     } match {
       case one :: Nil =>
@@ -33,14 +46,11 @@ class TestDataPreparer(modelData: ModelData) {
       case _ =>
         throw new IllegalArgumentException("Currently only one source can be handled")
     }) match {
-      case e: SourceTestSupport[AnyRef@unchecked] => e.testDataParser
+      case e: SourceTestSupport[AnyRef@unchecked] => e
       case other => throw new IllegalArgumentException(s"Source ${other.getClass} cannot be stubbed - it doesn't provide test data parser")
     }
-    val testSamples = testParserForSource.parseTestData(testData)
-    if (testSamples.size > testData.rowLimit) {
-      throw new IllegalArgumentException(s"Too many samples: ${testSamples.size}, limit is: ${testData.rowLimit}")
-    }
-    ParsedTestData(testSamples)
+    TestDataPreparer.prepareDataForTest(sourceTestSupport, testData)
   }
 
 }
+

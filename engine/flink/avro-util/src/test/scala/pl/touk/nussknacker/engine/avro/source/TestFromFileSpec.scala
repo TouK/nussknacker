@@ -56,7 +56,7 @@ class TestFromFileSpec extends FunSuite with Matchers with LazyLogging {
       .mapObject(_.add("key", Null)
       .add("value", obj("city" -> fromString("Lublin"), "street" -> fromString("Lipowa"))))
 
-    val results = run(process, TestData(s"""{"keySchemaId":null,"valueSchemaId":$id,"consumerRecord":${consumerRecord.noSpaces} }"""))
+    val results = run(process, TestData.newLineSeparated(s"""{"keySchemaId":null,"valueSchemaId":$id,"consumerRecord":${consumerRecord.noSpaces} }"""))
 
     val testResultVars = results.nodeResults("end").head.context.variables
     testResultVars.get("extractedTimestamp") shouldBe Some(expectedTimestamp)
