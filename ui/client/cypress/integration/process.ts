@@ -1,8 +1,8 @@
 import {jsonToBlob} from "../support/tools"
 
-const seed = "process"
-
 describe("Process", () => {
+  const seed = "process"
+
   before(() => {
     cy.deleteAllTestProcesses({filter: seed, force: true})
   })
@@ -16,7 +16,7 @@ describe("Process", () => {
       cy.visitNewProcess(seed).as("processName")
     })
 
-    it("should allow rename", () => {
+    it.only("should allow rename", () => {
       cy.intercept("PUT", "/api/processes/*").as("save")
 
       cy.contains(/^properties/i).should("be.enabled").click()
@@ -32,7 +32,7 @@ describe("Process", () => {
       cy.location("href").should("contain", "-renamed")
     })
 
-    it("should open properites from tips panel", () => {
+    it.only("should open properites from tips panel", () => {
       cy.viewport("macbook-15")
       cy.contains(/^properties/i).should("be.enabled").click()
       cy.get("[data-testid=window]").should("be.visible").find("input").within(inputs => {

@@ -1,6 +1,6 @@
-const seed = "creator"
-
 describe("Creator toolbar", () => {
+  const seed = "creator"
+
   before(() => {
     cy.deleteAllTestProcesses({filter: seed})
   })
