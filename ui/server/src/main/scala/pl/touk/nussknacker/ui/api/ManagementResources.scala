@@ -235,7 +235,7 @@ class ManagementResources(processCounter: ProcessCounter,
         val validationResult = processResolving.validateBeforeUiResolving(process)
         val canonical = processResolving.resolveExpressions(process, validationResult.typingInfo)
         val canonicalJson = ProcessMarshaller.toJson(canonical).spaces2
-        (managementActor ? Test(id, canonicalJson, TestData(testData, 10), user, ManagementResources.testResultsVariableEncoder)).mapTo[TestResults[Json]].flatMap { results =>
+        (managementActor ? Test(id, canonicalJson, TestData(testData, testDataSettings.maxSamplesCount), user, ManagementResources.testResultsVariableEncoder)).mapTo[TestResults[Json]].flatMap { results =>
           assertTestResultsAreNotTooBig(results)
         }.map { results =>
           ResultsWithCounts(ManagementResources.testResultsEncoder(results), computeCounts(canonical, results))
