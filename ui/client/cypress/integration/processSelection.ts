@@ -18,7 +18,8 @@ describe("Process", () => {
   describe("mouse drag", () => {
     beforeEach(() => {
       cy.get("[title='toggle left panel']").click()
-      cy.get("[title='toggle right panel']").click()
+      //Currently with default settings right toggle is not enabled, so we'll stick with unnecessary items on snapshot
+      //cy.get("[title='toggle right panel']").click()
     })
 
     it("should allow pan view", () => {
