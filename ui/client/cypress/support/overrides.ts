@@ -1,22 +1,25 @@
 import {defaultsDeep} from "lodash"
 import UAParser from "ua-parser-js"
 
+type ImageSnapshotOptions = Partial<{
+  name: string,
+  imageConfig: Partial<{
+    createDiffImage: boolean,
+    threshold: number,
+    thresholdType: "percent" | "pixel",
+  }>,
+  screenshotConfig: Partial<Cypress.ScreenshotDefaultsOptions>,
+}>
+
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Cypress {
+
     interface Chainable<Subject = any> {
       // fixed wrong original
-      toMatchImageSnapshot(options?: Partial<{
-        name: string,
-        imageConfig: Partial<{
-          createDiffImage: boolean,
-          threshold: number,
-          thresholdType: "percent" | "pixel",
-        }>,
-        screenshotConfig: Partial<ScreenshotDefaultsOptions>,
-      }>): Chainable<null>,
+      toMatchImageSnapshot(options?: ImageSnapshotOptions): Chainable<null>,
 
-      toMatchExactImageSnapshot(): Chainable<null>,
+      toMatchExactImageSnapshot(options?: ImageSnapshotOptions): Chainable<null>,
     }
 
     //looks like it should be available
@@ -28,10 +31,12 @@ declare global {
   }
 }
 
-Cypress.Commands.add("toMatchExactImageSnapshot", {prevSubject: true}, (subject) => cy
+Cypress.Commands.add("toMatchExactImageSnapshot", {prevSubject: true}, (subject, options?) => cy
   .wrap(subject)
   .toMatchImageSnapshot({
+    ...options,
     imageConfig: {
+      ...options?.imageConfig,
       threshold: 0.00001,
     },
   }))
