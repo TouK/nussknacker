@@ -79,6 +79,8 @@ object EspTypeUtils {
           methodsForParams.forall(mi => ret.canBeSubclassOf(mi._2.refClazz))
         }.getOrElse(methodsForParams.minBy(_._2.refClazz.display))
     }.toGroupedMap
+      //we sort only to avoid randomness
+      .mapValuesNow(_.sortBy(_.toString))
   }
 
   // SpEL is able to access getters using property name so you can write `obj.foo` instead of `obj.getFoo`

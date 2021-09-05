@@ -182,7 +182,7 @@ object ClassExtractionSettings {
       // For numeric types, strings an collections, date types we want to see all useful methods - we need this explicitly define here because
       // we have another, more general rule: IncludedStdMembers and both predicates are composed
       ClassMemberPatternPredicate(
-        SuperClassPredicate(ExactClassPredicate(classOf[Number], classOf[Date], classOf[Calendar], classOf[TimeUnit])),
+        SuperClassPredicate(ExactClassPredicate(classOf[java.lang.Boolean], classOf[Number], classOf[Date], classOf[Calendar], classOf[TimeUnit])),
         Pattern.compile(".*")),
       ClassMemberPatternPredicate(
         ClassPatternPredicate(Pattern.compile("java\\.time\\..*")),
