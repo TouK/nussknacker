@@ -236,7 +236,7 @@
     "stream-browserify": "^3.0.0",
     "stream-http": "^3.2.0",
     "style-loader": "^2.0.0",
-    "stylus": "^0.54.8",
+    "stylus": "^0.55.0",
     "stylus-loader": "^6.1.0",
     "svg-transform-loader": "^2.0.13",
     "svgo": "^2.5.0",
