@@ -232,7 +232,7 @@
     "react-scrollbars-custom": "4.0.27",
     "redux-mock-store": "^1.5.4",
     "speed-measure-webpack-plugin": "^1.5.0",
-    "start-server-and-test": "1.13.1",
+    "start-server-and-test": "1.14.0",
     "stream-browserify": "^3.0.0",
     "stream-http": "^3.2.0",
     "style-loader": "^2.0.0",
