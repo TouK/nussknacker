@@ -33,7 +33,7 @@
             "name" : "sql",
             "expression" : {
               "language" : "spel",
-              "expression" : "'SELECT DISTINCT TO_CHAR(SYSDATE,''YYYY-MM-DD'') AS CHAR_DATE, A.SUBSCRIPTION_ID, C.OS, CASE WHEN B.DL_TOTAL_30D IS NULL THEN 0 ELSE\n(ROUND(B.DL_TOTAL_30D / 1024 / 1024)) END AS DL_TOTAL_30D,\n\nFROM CM_CP.V_CAP_PROFILE as A\nLEFT JOIN CM_CP.V_CAP_USAGE_DATA as B ON A.MSISDN = B.MSISDN\nLEFT JOIN CM_CP.V_CAP_D_EQUIPMENT as C ON to_number(A.CURRENT_TAC) = C.TAC\n\nWHERE 1=1 AND ((A.COS_FAMILY_PL = ''Mass'') OR (A.COS_FAMILY_PL = ''Business'' AND A.CUST_VOLUME_SEGMENT = ''SOHO'')) AND A.SERVICE_ACTIVE_FLG = 1 AND A.SUBSCRIPTION_ID IS NOT NULL\n\nSELECT DISTINCT u.id, SELECT(\n    SELECT * FROM user_data WHERE id = 1\n) as data FROM user as u WHERE u.id = 1 LAST u.id'"
+              "expression" : "'SELECT DISTINCT TO_CHAR(SYSDATE,''YYYY-MM-DD'') AS CHAR_DATE, A.CUSTOM_ID, C.DATE, CASE WHEN B.VALUE1 IS NULL THEN 0 ELSE\n(ROUND(B.VALUE1 / 1024 / 1024)) END AS DL_TOTAL_30D,\n\nFROM TOTAL.V_TOTAL_PROFILE as A\nLEFT JOIN TOTAL.V_TOTAL_PROFILE as B ON A.ID = B.ID\nLEFT JOIN TOTAL.V_TOTAL_EQUIPMENT as C ON to_number(A.VALUE) = C.VALUE\n\nWHERE 1=1 AND ((A.TYPE = ''GOLD'') OR (A.TYPE = ''SILVER'' AND A.AGE > 10)) AND A.IS_RUNNING = 1 AND A.CUSTOMER_ID IS NOT NULL\n\nSELECT DISTINCT u.id, SELECT(\n    SELECT * FROM user_data WHERE id = 1\n) as data FROM user as u WHERE u.id = 1 LAST u.id'"
             }
           }
         ]
@@ -59,7 +59,7 @@
               "name" : "sql",
               "expression" : {
                 "language" : "spel",
-                "expression" : "'SELECT DISTINCT\nTO_CHAR(SYSDATE,''YYYY-MM-DD'') AS CHAR_DATE,\nA.SUBSCRIPTION_ID,\nA.SYSDATE_WE,\nA.SYSDATE,\nA.ROUND,\nA.SELECT,\nA.COS_ID,\nA.CHAR_DATE,\nA.AS,\nA.FROM,\nA.ON_CHAR_DATE,\nA.ON_NULL,\nA.NULL,\nA.1,\nA.INSERT,\nA.A,\nA.DATE,\nA.to_number,\nA.IF,\nA.ELSE,\nFROM TEST AS A\nLEFT JOIN TEST B ON A.ID = B.A_ID'"
+                "expression" : "'SELECT DISTINCT\nTO_CHAR(SYSDATE,''YYYY-MM-DD'') AS CHAR_DATE,\nA.CUSTOM_ID,\nA.SYSDATE_WE,\nA.SYSDATE,\nA.ROUND,\nA.SELECT,\nA.COS_ID,\nA.CHAR_DATE,\nA.AS,\nA.FROM,\nA.ON_CHAR_DATE,\nA.ON_NULL,\nA.NULL,\nA.1,\nA.INSERT,\nA.A,\nA.DATE,\nA.to_number,\nA.IF,\nA.ELSE,\nFROM TEST AS A\nLEFT JOIN TEST B ON A.ID = B.A_ID'"
               }
             }
           ]
@@ -84,7 +84,7 @@
               "name" : "sql",
               "expression" : {
                 "language" : "spel",
-                "expression" : "'CASE WHEN B.DL_TOTAL_30D IS NULL THEN 0 ELSE\n(ROUND(B.DL_TOTAL_30D / 1024 / 1024)) END AS DL_TOTAL_30D,\nCASE WHEN B.UL_TOTAL_30D IS NULL THEN 0 ELSE\n(ROUND(B.UL_TOTAL_30D / 1024 / 1024)) END AS UL_TOTAL_30D,\nD.BL_FLAG'"
+                "expression" : "'CASE WHEN B.CUSTOM_ID IS NULL THEN 0 ELSE\n(ROUND(B.CUSTOM_ID / 1024 / 1024)) END AS FLAG2,\nCASE WHEN B.CUSTOM_ID IS NULL THEN 0 ELSE\n(ROUND(B.FLAG2 / 1024 / 1024)) END AS CUSTOM_ID,\nD.FLAG2'"
               }
             }
           ]
