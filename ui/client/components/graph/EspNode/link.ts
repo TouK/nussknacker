@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import {dia, Vectorizer} from "jointjs"
+import {dia} from "jointjs"
 import {Edge} from "../../../types"
 import NodeUtils from "../NodeUtils"
 

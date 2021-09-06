@@ -23,7 +23,6 @@
     "test:unit": "jest",
     "test:e2e": "cypress run",
     "test:e2e:dev": "cypress open",
-    "test:e2e:install": "cypress install",
     "test:e2e:linux": "docker run $([[ $OSTYPE != 'darwin'* ]] && echo --user $(id -u):$(id -g)) --ipc=host --add-host=host.docker.internal:host-gateway -it -v $PWD:/client -w /client cypress/included:6.8.0 --config baseUrl=http://host.docker.internal:3000",
     "test:e2e:docker": "start-server-and-test start:backend-docker http-get://localhost:3000/static/main.html test:e2e:linux",
     "@comment script versions updating image snapshots": "",

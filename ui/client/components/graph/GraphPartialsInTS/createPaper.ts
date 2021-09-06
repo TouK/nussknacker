@@ -1,4 +1,4 @@
-import {dia, V, Vectorizer} from "jointjs"
+import {dia, V} from "jointjs"
 import {defaults} from "lodash"
 import {defaultLink} from "../EspNode/link"
 import {Events} from "../joint-events"
