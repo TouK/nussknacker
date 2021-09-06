@@ -1,6 +1,6 @@
-const NAME = "process-list"
-
 describe("Processes list", () => {
+  const NAME = "process-list"
+
   before(() => {
     cy.deleteAllTestProcesses({filter: NAME, force: true})
     cy.createTestProcessName(NAME).as("processName")

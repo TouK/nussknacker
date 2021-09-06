@@ -1,6 +1,6 @@
-const seed = "sql"
-
 describe("Sql editor", () => {
+  const seed = "sql"
+
   before(() => {
     cy.deleteAllTestProcesses({filter: seed, force: true})
   })

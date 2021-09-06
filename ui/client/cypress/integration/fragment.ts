@@ -1,6 +1,6 @@
-const seed = "fragment"
-
 describe("Fragment", () => {
+  const seed = "fragment"
+
   before(() => {
     cy.deleteAllTestProcesses({filter: seed, force: true})
   })
