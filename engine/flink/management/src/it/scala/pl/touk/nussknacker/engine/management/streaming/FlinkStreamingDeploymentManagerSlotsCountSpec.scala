@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, GraphProcess}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.{NotEnoughSlotsException, SlotsBalance}
+import pl.touk.nussknacker.engine.management.FlinkSlotsChecker.{NotEnoughSlotsException, SlotsBalance}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 

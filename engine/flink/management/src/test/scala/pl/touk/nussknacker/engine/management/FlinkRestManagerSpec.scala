@@ -1,19 +1,13 @@
 package pl.touk.nussknacker.engine.management
 
 import com.typesafe.config.ConfigFactory
-import io.circe.Json
 import io.circe.Json.fromString
 import org.apache.flink.api.common.JobStatus
-import org.apache.flink.configuration.{Configuration, CoreOptions}
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentData, DeploymentId, ExternalDeploymentId, GraphProcess, ProcessState, SavepointResult, StateStatus, User}
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.{NotEnoughSlotsException, SlotsBalance}
-import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{ClusterOverview, ExecutionConfig, GetSavepointStatusResponse, JarsResponse, JobConfig, JobOverview, JobTasksOverview, JobsResponse, KeyValueEntry, RunResponse, SavepointOperation, SavepointStatus, SavepointTriggerResponse, UploadJarResponse}
-import pl.touk.nussknacker.engine.management.streaming.SampleProcess
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -21,13 +15,12 @@ import sttp.client.testing.SttpBackendStub
 import sttp.client.{NothingT, Response, SttpBackend, SttpClientException}
 import sttp.model.{Method, StatusCode}
 
-import java.net.{ConnectException, NoRouteToHostException}
+import java.net.NoRouteToHostException
 import java.util.concurrent.TimeoutException
 import java.util.{Collections, UUID}
 import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
-import scala.util.{Failure, Success, Try}
 
 //TODO move some tests to FlinkHttpClientTest
 class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutures {
@@ -47,8 +40,6 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
 
   private val returnedJobId = "jobId"
 
-  val availableSlotsCount = 1000
-
   private def createManager(statuses: List[JobOverview] = List(),
                             acceptSavepoint: Boolean = false,
                             acceptDeploy: Boolean = false,
@@ -66,9 +57,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
                                        acceptStop: Boolean = false,
                                        acceptCancel: Boolean = true,
                                        statusCode: StatusCode = StatusCode.Ok,
-                                       exceptionOnDeploy: Option[Exception] = None,
-                                       clusterOverviewResult: Try[ClusterOverview] = Success(ClusterOverview(`slots-total` = 1000, `slots-available` = availableSlotsCount)),
-                                       jobManagerConfigResult: Try[Configuration] = Success(Configuration.fromMap(Collections.emptyMap())) // be default used config with all default values
+                                       exceptionOnDeploy: Option[Exception] = None
                                       ): (FlinkRestManager, mutable.Buffer[HistoryEntry])
   = {
     import scala.collection.JavaConverters._
@@ -107,16 +96,6 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
         case (List("jars", "upload"), Method.POST) if acceptDeploy =>
           history.append(HistoryEntry("uploadJar", None))
           UploadJarResponse(uploadedJarPath)
-        case (List("overview"), Method.GET) =>
-          clusterOverviewResult.recoverWith {
-            case ex: Exception => Failure(SttpClientException.defaultExceptionToSttpClientException(ex).get)
-          }.get
-        case (List("jobmanager", "config"), Method.GET) =>
-          jobManagerConfigResult.map(_.toMap.asScala.toList.map {
-            case (key, value) => KeyValueEntry(key, value)
-          }).recoverWith {
-            case ex: Exception => Failure(SttpClientException.defaultExceptionToSttpClientException(ex).get)
-          }.get
       }
       Response(Right(toReturn), statusCode)
     })
@@ -307,48 +286,6 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     manager.findJobStatus(processName).futureValue shouldBe Some(processState(
       manager, ExternalDeploymentId("2343"), FlinkStateStatus.Finished, Some(ProcessVersion(version, processName, user, None)), Some(10L)
     ))
-  }
-
-  test("check available slots count") {
-    val manager = createManagerWithHistory()
-    manager._1.checkRequiredSlotsExceedAvailableSlots(prepareProcessDeploymentData(Some(availableSlotsCount)), None).futureValue
-
-    val requestedSlotsCount = availableSlotsCount + 1
-    manager._1.checkRequiredSlotsExceedAvailableSlots(prepareProcessDeploymentData(Some(requestedSlotsCount)), None).failed.futureValue shouldEqual
-      NotEnoughSlotsException(availableSlotsCount, availableSlotsCount, SlotsBalance(0, requestedSlotsCount))
-  }
-
-  test("take an account of slots that will be released be job that will be cancelled during redeploy") {
-    val manager = createManagerWithHistory()
-    // +1 because someCurrentJobId uses one slot now
-    manager._1.checkRequiredSlotsExceedAvailableSlots(prepareProcessDeploymentData(Some(availableSlotsCount + 1)), Some(ExternalDeploymentId("someCurrentJobId"))).futureValue
-
-    val requestedSlotsCount = availableSlotsCount + 2
-    manager._1.checkRequiredSlotsExceedAvailableSlots(prepareProcessDeploymentData(Some(requestedSlotsCount)),  Some(ExternalDeploymentId("someCurrentJobId"))).failed.futureValue shouldEqual
-      NotEnoughSlotsException(availableSlotsCount, availableSlotsCount, SlotsBalance(1, requestedSlotsCount))
-  }
-
-  test("check available slots count when parallelism is not defined") {
-    val manager = createManagerWithHistory(clusterOverviewResult = Success(ClusterOverview(`slots-total` = 0, `slots-available` = 0)))
-    manager._1.checkRequiredSlotsExceedAvailableSlots(prepareProcessDeploymentData(None), None).failed.futureValue shouldEqual
-      NotEnoughSlotsException(0, 0, SlotsBalance(0, CoreOptions.DEFAULT_PARALLELISM.defaultValue()))
-  }
-
-  test("omit slots checking if flink api returned error during cluster overview") {
-    val manager = createManagerWithHistory(clusterOverviewResult = Failure(new ConnectException("Some connect error")))
-    manager._1.checkRequiredSlotsExceedAvailableSlots(prepareProcessDeploymentData(Some(availableSlotsCount)), None).futureValue
-  }
-
-  test("omit slots checking if flink api returned error during jobmanager config") {
-    val manager = createManagerWithHistory(jobManagerConfigResult = Failure(new ConnectException("Some connect error")))
-    manager._1.checkRequiredSlotsExceedAvailableSlots(prepareProcessDeploymentData(None), None).futureValue
-  }
-
-  private def prepareProcessDeploymentData(parallelism: Option[Int]) = {
-    val processId = "processTestingTMSlots"
-    val process = SampleProcess.prepareProcess(processId, parallelism)
-    val processDeploymentData = GraphProcess(ProcessMarshaller.toJson(ProcessCanonizer.canonize(process)).spaces2)
-    processDeploymentData
   }
 
   private def createManagerWithBackend(backend: SttpBackend[Future, Nothing, NothingT]): FlinkRestManager = {

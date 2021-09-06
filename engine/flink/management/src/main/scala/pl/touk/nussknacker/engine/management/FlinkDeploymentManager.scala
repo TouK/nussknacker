@@ -4,18 +4,14 @@ import cats.data.OptionT
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
-import org.apache.flink.configuration.{Configuration, CoreOptions}
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.TestProcess.{TestData, TestResults}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
-import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.{NotEnoughSlotsException, SlotsBalance, prepareProgramArgs}
-import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{ClusterOverview, ExecutionConfig}
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
 
 abstract class FlinkDeploymentManager(modelData: ModelData, shouldVerifyBeforeDeploy: Boolean, mainClassName: String)
   extends DeploymentManager with LazyLogging {
@@ -54,67 +50,7 @@ abstract class FlinkDeploymentManager(modelData: ModelData, shouldVerifyBeforeDe
     } yield runResult
   }
 
-  // public for tests purpose
-  def checkRequiredSlotsExceedAvailableSlots(processDeploymentData: ProcessDeploymentData, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit] = {
-    val collectedSlotsCheckInputs = for {
-      slotsBalance <- determineSlotsBalance(processDeploymentData, currentlyDeployedJobId)
-      clusterOverview <- OptionT(getClusterOverview.map(Option(_)))
-    } yield (slotsBalance, clusterOverview)
-
-    val checkResult = for {
-      collectedInputs <- OptionT(collectedSlotsCheckInputs.value.recover {
-        case NonFatal(ex) =>
-          logger.warn("Error during collecting inputs needed for available slots checking. Slots checking will be omitted", ex)
-          None
-      })
-      (slotsBalance, clusterOverview) = collectedInputs
-      _ <- OptionT(
-        if (slotsBalance.value > clusterOverview.`slots-available`)
-          Future.failed(NotEnoughSlotsException(clusterOverview, slotsBalance))
-        else
-          Future.successful(Option(())))
-    } yield ()
-    checkResult.value.map(_ => Unit)
-  }
-
-  private def determineSlotsBalance(processDeploymentData: ProcessDeploymentData, currentlyDeployedJobId: Option[ExternalDeploymentId]): OptionT[Future, SlotsBalance] = {
-    processDeploymentData match {
-      case GraphProcess(processAsJson) =>
-        val process = ProcessMarshaller.fromJson(processAsJson).valueOr(err => throw new IllegalArgumentException(err.msg))
-        process.metaData.typeSpecificData match {
-          case stream: StreamMetaData =>
-            val requiredSlotsFuture = for {
-              releasedSlots <- slotsThatWillBeReleasedAfterJobCancel(currentlyDeployedJobId)
-              allocatedSlots <- slotsAllocatedByProcessThatWilBeDeployed(stream, process.metaData.id)
-            } yield Option(SlotsBalance(releasedSlots, allocatedSlots))
-            OptionT(requiredSlotsFuture)
-          case _ => OptionT.none
-        }
-      case CustomProcess(_) =>
-        OptionT.none
-    }
-  }
-  private def slotsThatWillBeReleasedAfterJobCancel(currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Int] = {
-    currentlyDeployedJobId
-      .map(deploymentId => getJobConfig(deploymentId.value).map(_.`job-parallelism`))
-      .getOrElse(Future.successful(0))
-  }
-
-  private def slotsAllocatedByProcessThatWilBeDeployed(stream: StreamMetaData, processId: String): Future[Int] = {
-    stream.parallelism
-      .map(definedParallelism => Future.successful(definedParallelism))
-      .getOrElse(getJobManagerConfig.map { config =>
-        val defaultParallelism = config.get(CoreOptions.DEFAULT_PARALLELISM)
-        logger.debug(s"Not specified parallelism for process: $processId, will be used default configured on jobmanager: $defaultParallelism")
-        defaultParallelism
-      })
-  }
-
-  protected def getClusterOverview: Future[ClusterOverview]
-
-  protected def getJobManagerConfig: Future[Configuration]
-
-  protected def getJobConfig(jobId: String): Future[ExecutionConfig]
+  protected def checkRequiredSlotsExceedAvailableSlots(processDeploymentData: ProcessDeploymentData, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit]
 
   override def savepoint(processName: ProcessName, savepointDir: Option[String]): Future[SavepointResult] = {
     requireRunningProcess(processName) {
@@ -199,23 +135,6 @@ object FlinkDeploymentManager {
       case CustomProcess(_) =>
         List(processVersion.processName.value, serializedConfig)
     }
-  }
-
-  case class NotEnoughSlotsException(availableSlots: Int, totalSlots: Int, slotsBalance: SlotsBalance)
-    extends IllegalArgumentException(s"Not enough free slots on Flink cluster. Available slots: $availableSlots, requested: ${Math.max(0, slotsBalance.value)}. ${
-      if (slotsBalance.allocated > 1)
-        "Decrease scenario's parallelism or extend Flink cluster resources"
-      else
-        "Extend resources of Flink cluster resources"
-    }")
-
-  object NotEnoughSlotsException {
-    def apply(clusterOverview: ClusterOverview, slotsBalance: SlotsBalance): NotEnoughSlotsException =
-      NotEnoughSlotsException(availableSlots = clusterOverview.`slots-available`, totalSlots = clusterOverview.`slots-total`, slotsBalance = slotsBalance)
-  }
-
-  case class SlotsBalance(released: Int, allocated: Int) {
-    def value: Int = allocated - released
   }
 
 }

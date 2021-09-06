@@ -27,6 +27,8 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
 
   private val client = new HttpFlinkClient(config)
 
+  private val slotsChecker = new FlinkSlotsChecker(client)
+
   /*
   It's ok to have many jobs with same name, however:
   - there MUST be at most 1 job in *non-terminal* state with given name
@@ -170,16 +172,9 @@ class FlinkRestManager(config: FlinkConfig, modelData: ModelData, mainClassName:
     client.runProgram(jarFile, mainClass, args, savepointPath)
   }
 
-  override protected def getClusterOverview: Future[ClusterOverview] = {
-    client.getClusterOverview
+  override protected def checkRequiredSlotsExceedAvailableSlots(processDeploymentData: ProcessDeploymentData, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit] = {
+    slotsChecker.checkRequiredSlotsExceedAvailableSlots(processDeploymentData, currentlyDeployedJobId)
   }
-
-  override protected def getJobManagerConfig: Future[Configuration] = {
-    client.getJobManagerConfig
-  }
-
-  override protected def getJobConfig(jobId: String): Future[flinkRestModel.ExecutionConfig] =
-    client.getJobConfig(jobId)
 
   override def close(): Unit = Await.result(backend.close(), Duration(10, TimeUnit.SECONDS))
 
