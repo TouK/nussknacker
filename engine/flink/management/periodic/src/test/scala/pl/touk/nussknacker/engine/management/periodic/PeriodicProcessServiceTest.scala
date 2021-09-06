@@ -103,6 +103,23 @@ class PeriodicProcessServiceTest extends FunSuite
     f.events.toList shouldBe List(FinishedEvent(finished, f.delegateDeploymentManagerStub.jobStatus), ScheduledEvent(scheduled, firstSchedule = false))
   }
 
+  test("handleFinished - should deactivate process if there are no future schedules") {
+    val f = new Fixture
+    val yearNow = LocalDate.now().getYear
+    val cronInPast = CronScheduleProperty(s"0 0 6 6 9 ? ${yearNow - 1}")
+    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed, scheduleProperty = cronInPast)
+    f.delegateDeploymentManagerStub.setStateStatus(FlinkStateStatus.Finished)
+
+    f.periodicProcessService.handleFinished.futureValue
+
+    val processEntity = f.repository.processEntities.loneElement
+    processEntity.active shouldBe false
+    f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Finished
+    // TODO should be false
+    val event = createPeriodicProcessDeployment(processEntity.copy(active = true), f.repository.deploymentEntities.loneElement)
+    f.events.loneElement shouldBe FinishedEvent(event, f.delegateDeploymentManagerStub.jobStatus)
+  }
+
   test("handle first schedule") {
     val f = new Fixture
 
@@ -177,5 +194,9 @@ class PeriodicProcessServiceTest extends FunSuite
 
     intercept[TestFailedException](tryToSchedule(cronInPast)).getCause shouldBe a[PeriodicProcessException]
     intercept[TestFailedException](tryToSchedule(MultipleScheduleProperty(Map("s1" -> cronInPast, "s2" -> cronInPast)))).getCause shouldBe a[PeriodicProcessException]
+  }
+
+  test("getLatestDeployment - should return correct deployment for multiple schedules") {
+
   }
 }

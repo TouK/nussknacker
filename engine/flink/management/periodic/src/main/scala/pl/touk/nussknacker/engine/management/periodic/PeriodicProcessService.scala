@@ -113,7 +113,7 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
       delegateDeploymentManager.findJobStatus(deployedProcess.periodicProcess.processVersion.processName).flatMap { state =>
         handleFinishedAction(deployedProcess, state)
           .flatMap { needsReschedule =>
-            if (needsReschedule) reschedule(deployedProcess, state) else scheduledProcessesRepository.monad.pure(()).emptyCallback
+            if (needsReschedule) reschedule(deployedProcess) else scheduledProcessesRepository.monad.pure(()).emptyCallback
           }.runWithCallbacks
       }
     }
@@ -139,7 +139,7 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
   }
 
   //Mark process as Finished and reschedule - we do it transactionally
-  private def reschedule(deployment: PeriodicProcessDeployment, state: Option[ProcessState]): RepositoryAction[Callback] = {
+  private def reschedule(deployment: PeriodicProcessDeployment): RepositoryAction[Callback] = {
     logger.info(s"Rescheduling ${deployment.display}")
     val process = deployment.periodicProcess
     for {
@@ -150,8 +150,15 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
             handleEvent(ScheduledEvent(data, firstSchedule = false))
           }.emptyCallback
         case Right(None) =>
-          logger.info(s"No next run of ${deployment.display}. Deactivating")
-          deactivateAction(process.processVersion.processName)
+          scheduledProcessesRepository.findScheduled(deployment.periodicProcess.id).flatMap { scheduledDeployments =>
+            if (scheduledDeployments.isEmpty) {
+              logger.info(s"No next run of ${deployment.display}. Deactivating")
+              deactivateAction(process.processVersion.processName)
+            } else {
+              logger.info(s"No next run of ${deployment.display} but there are still ${scheduledDeployments.size} scheduled deployments: ${scheduledDeployments.map(_.display)}")
+              scheduledProcessesRepository.monad.pure(()).emptyCallback
+            }
+          }
         case Left(error) =>
           // This case should not happen. It would mean periodic property was valid when scheduling a process
           // but was made invalid when rescheduling again.
