@@ -1,11 +1,12 @@
 import {dia, V} from "jointjs"
 import {defaults} from "lodash"
-import {arrowMarker} from "../arrowMarker"
 import {defaultLink} from "../EspNode/link"
 import {Events} from "../joint-events"
 import {isBackgroundObject} from "./cellUtils"
+import {arrowMarker} from "../arrowMarker"
 
 function getPaper(opts: dia.Paper.Options, canWrite: boolean) {
+  const uniqueArrowMarker = arrowMarker.clone()
   const paper = new dia.Paper({
     ...opts,
     height: "100%",
@@ -29,7 +30,7 @@ function getPaper(opts: dia.Paper.Options, canWrite: boolean) {
       }
     },
     linkPinning: false,
-    defaultLink: defaultLink,
+    defaultLink: defaultLink(uniqueArrowMarker.attr("id")),
     linkView: dia.LinkView.extend({
       options: defaults<dia.LinkView.Options, dia.LinkView.Options>({
         shortLinkLength: 60,
@@ -40,7 +41,7 @@ function getPaper(opts: dia.Paper.Options, canWrite: boolean) {
       }, dia.LinkView.prototype.options),
     }),
   })
-  V(paper.defs).append(arrowMarker)
+  V(paper.defs).append(uniqueArrowMarker)
   paper.options.defaultRouter = {
     name: `manhattan`,
     args: {
@@ -57,7 +58,6 @@ function getPaper(opts: dia.Paper.Options, canWrite: boolean) {
       radius: 60,
     },
   }
-
   return paper
 }
 

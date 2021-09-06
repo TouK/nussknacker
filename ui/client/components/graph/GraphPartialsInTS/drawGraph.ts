@@ -25,7 +25,7 @@ export function drawGraph(
   const edgesWithGroups = NodeUtils.edgesFromProcess(process)
 
   const nodes = nodesWithGroups.map(makeElement(processDefinitionData))
-  const edges = edgesWithGroups.map(makeLink)
+  const edges = edgesWithGroups.map(value => makeLink(value, [...this.processGraphPaper?.defs?.children].find(def => def.nodeName === "marker")?.id))
 
   performance.mark("nodes, links & bounding")
 

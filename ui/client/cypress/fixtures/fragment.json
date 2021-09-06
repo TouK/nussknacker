@@ -11,14 +11,12 @@
     "isSubprocess" : true,
     "additionalFields" : {
       "description" : null,
-      "groups" : [
-      ],
       "properties" : {
-        
+
       }
     },
     "subprocessVersions" : {
-      
+
     }
   },
   "exceptionHandlerRef" : {
