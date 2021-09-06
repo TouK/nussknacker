@@ -33,7 +33,7 @@
             "name" : "sql",
             "expression" : {
               "language" : "spel",
-              "expression" : "'SELECT\r\n A.SRV_SUBSCRIPTION_ID AS SUBSCRIPTION_ID, \r\n TO_CHAR(A.SYSDATE,''YYYY-MM-DD'') AS CHAR_DATE\r\nFROM\r\n  TEST.TEST_TABLE AS A\r\nWHERE A.DATE_FIELD='+#DATE.nowTimestamp+''"
+              "expression" : "'SELECT\r\n A.CUSTOM_ID AS CUSTOM_ID, \r\n TO_CHAR(A.SYSDATE,''YYYY-MM-DD'') AS CHAR_DATE\r\nFROM\r\n  TEST.TEST_TABLE AS A\r\nWHERE A.DATE_FIELD='+#DATE.nowTimestamp+''"
             }
           }
         ]
