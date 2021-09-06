@@ -16,7 +16,8 @@ load additional encoders.
 * [#1439](https://github.com/TouK/nussknacker/pull/1439) Upgrade to Flink 1.13
 * [#1993](https://github.com/TouK/nussknacker/pull/1993) Demo was moved to https://github.com/TouK/nussknacker-quickstart. 
 Some additional refactors done: logback configuration enhancements, simpler run.sh script, removed docker defaults from default configs.
-* [#2105](https://github.com/TouK/nussknacker/pull/2105) Better handling Flink's job initializing state - we report it as a "DURING_DEPLOY" instead of "RUNNING" now
+* [#2105](https://github.com/TouK/nussknacker/pull/2105) [#2112](https://github.com/TouK/nussknacker/pull/2112)
+Better handling Flink's job deploying - we report job initialization as a "DURING_DEPLOY" instead of "RUNNING" now, and we are checking available slots on Flink before deploy
 
 0.4.0
 ------------------------
