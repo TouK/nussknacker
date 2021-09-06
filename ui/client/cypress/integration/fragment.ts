@@ -27,6 +27,14 @@ describe("Fragment", () => {
     it("should display details in modal", () => {
       cy.get("@window").toMatchImageSnapshot()
     })
+
+    it("should allow adding input parameters", () => {
+      cy.get("@window").contains("+").click()
+      cy.get("[data-testid='fieldsRow:3']").find(".fieldName input").type("xxxx")
+      cy.get("[data-testid='draggable:3'] [role='button']").dndTo("[data-testid='draggable:0']")
+      cy.get("[data-testid='fieldsRow:0']").find(".fieldName input").should("have.value", "xxxx")
+      cy.get("@window").toMatchImageSnapshot()
+    })
   })
 
   describe("used in scenario", () => {
