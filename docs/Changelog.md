@@ -12,6 +12,8 @@ Nussknacker versions
 ------------------------
 * [#2176](https://github.com/TouK/nussknacker/pull/2176) Allow to enrich periodic scenario config on initial schedule and each deployment.
 * [#2179](https://github.com/TouK/nussknacker/pull/2179) Permission allowing for editing scenario on FE, but not saving etc.
+* [#2150](https://github.com/TouK/nussknacker/pull/2150)
+Better handling of multiple schedules in batch periodic engine - fixed running one time scenarios and improved current scenario status reporting.
 
 0.5.0 (Not released yet)
 ------------------------
@@ -26,7 +28,7 @@ Better handling Flink's job deploying - we report job initialization as a "DURIN
 * [#2152](https://github.com/TouK/nussknacker/pull/2152) Possibility to create `SchedulePropertyExtractor` using deployment manager's configuration.
 * [#2133](https://github.com/TouK/nussknacker/pull/2133) SQL Variable is hidden in generic model
 
-0.4.0
+* 0.4.0
 ------------------------
 * More precise TypeInformation generation
     * [#1338](https://github.com/TouK/nussknacker/pull/1338) Defining TypeInformation based on TypingResult
