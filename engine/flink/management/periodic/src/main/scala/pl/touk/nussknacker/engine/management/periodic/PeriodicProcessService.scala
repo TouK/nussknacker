@@ -7,11 +7,11 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.{Deployed, PeriodicProcessDeploymentStatus}
-import pl.touk.nussknacker.engine.management.periodic.model.{DeploymentWithJarData, PeriodicProcessDeployment}
+import pl.touk.nussknacker.engine.management.periodic.model.{DeploymentWithJarData, PeriodicProcessDeployment, PeriodicProcessDeploymentStatus}
 import pl.touk.nussknacker.engine.management.periodic.service._
+
 import java.time.chrono.ChronoLocalDateTime
 import java.time.{Clock, LocalDateTime}
-
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
@@ -209,15 +209,31 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
   }
 
   /**
-    * Returns latest deployment. It can be in any status (consult [[PeriodicProcessDeploymentStatus]]).
-    *
-    * For multiple schedules only the oldest one is returned.
-    */
+   * Returns latest deployment. It can be in any status (consult [[PeriodicProcessDeploymentStatus]]).
+   * For multiple schedules only the effective one is returned.
+   */
   def getLatestDeployment(processName: ProcessName): Future[Option[PeriodicProcessDeployment]] = {
     implicit val localDateOrdering: Ordering[LocalDateTime] = Ordering.by(identity[ChronoLocalDateTime[_]])
-    //TODO: so far we return only one
+
     scheduledProcessesRepository.getLatestDeploymentForEachSchedule(processName)
-      .map(_.sortBy(_.runAt).headOption).run
+      .map(_.sortBy(_.runAt)).run
+      .map {
+        case Nil => None
+        case singleDeployment :: Nil => Some(singleDeployment)
+        case multipleDeployments =>
+          logger.debug("Found multiple deployments: {}", multipleDeployments.map(_.display))
+
+          def first(status: PeriodicProcessDeploymentStatus) =
+            multipleDeployments.find(_.state.status == status)
+
+          def last(status: PeriodicProcessDeploymentStatus) =
+            multipleDeployments.reverse.find(_.state.status == status)
+
+          first(PeriodicProcessDeploymentStatus.Deployed)
+            .orElse(last(PeriodicProcessDeploymentStatus.Failed))
+            .orElse(first(PeriodicProcessDeploymentStatus.Scheduled))
+            .orElse(last(PeriodicProcessDeploymentStatus.Finished))
+      }
   }
 
   def deploy(deployment: PeriodicProcessDeployment): Future[Unit] = {
