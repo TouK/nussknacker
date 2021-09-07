@@ -28,19 +28,19 @@
       "id" : "input",
       "parameters" : [
         {
-          "name" : "111",
+          "name" : "i111",
           "typ" : {
             "refClazzName" : "java.lang.String"
           }
         },
         {
-          "name" : "222",
+          "name" : "i222",
           "typ" : {
             "refClazzName" : "int"
           }
         },
         {
-          "name" : "333",
+          "name" : "i333",
           "typ" : {
             "refClazzName" : "boolean"
           }
@@ -57,20 +57,20 @@
     },
     {
       "id" : "output",
-      "outputName" : "output",
+      "outputName" : "testOutput",
       "fields" : [
         {
-          "name" : "111",
+          "name" : "o111",
           "expression" : {
             "language" : "spel",
             "expression" : "\"aaa\""
           }
         },
         {
-          "name" : "222",
+          "name" : "o222",
           "expression" : {
             "language" : "spel",
-            "expression" : "#DATE.now"
+            "expression" : "#DATE.nowTimestamp"
           }
         }
       ],

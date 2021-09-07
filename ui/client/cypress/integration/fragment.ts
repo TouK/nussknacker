@@ -15,46 +15,42 @@ describe("Fragment", () => {
   })
 
   beforeEach(() => {
+    cy.viewport("macbook-15")
+  })
+
+  it("should allow adding input parameters and display used fragment graph in modal", () => {
     cy.visitNewFragment(seed, "fragment").as("fragmentName")
-  })
+    cy.get("[model-id=input]").should("be.visible").trigger("dblclick")
+    cy.get("[data-testid=window]").should("be.visible").as("window")
+    cy.get("@window").contains("+").click()
+    cy.get("[data-testid='fieldsRow:3']").find(".fieldName input").type("xxxx")
+    cy.get("[data-testid='draggable:3'] [role='button']").dndTo("[data-testid='draggable:0']")
+    cy.get("[data-testid='fieldsRow:0']").find(".fieldName input").should("have.value", "xxxx")
+    cy.get("@window").toMatchImageSnapshot()
+    cy.get("[data-testid=window]").contains(/^apply$/i).click()
+    cy.contains(/^save$/i).click()
+    cy.contains(/^ok$/i).click()
 
-  describe("input", () => {
-    beforeEach(() => {
-      cy.get("[model-id=input]").should("be.visible").trigger("dblclick")
-      cy.get("[data-testid=window]").should("be.visible").as("window")
-    })
+    cy.visitNewProcess(seed, "testProcess")
+    cy.contains(/^layout$/i).click()
 
-    it("should display details in modal", () => {
-      cy.get("@window").toMatchImageSnapshot()
-    })
+    cy.contains("fragments").should("be.visible").click()
+    cy.contains("fragment-test")
+      .last()
+      .should("be.visible")
+      .drag("#nk-graph-main", {x: 800, y: 600, position: "right", force: true})
+    cy.contains(/^layout$/i).click()
 
-    it("should allow adding input parameters", () => {
-      cy.get("@window").contains("+").click()
-      cy.get("[data-testid='fieldsRow:3']").find(".fieldName input").type("xxxx")
-      cy.get("[data-testid='draggable:3'] [role='button']").dndTo("[data-testid='draggable:0']")
-      cy.get("[data-testid='fieldsRow:0']").find(".fieldName input").should("have.value", "xxxx")
-      cy.get("@window").toMatchImageSnapshot()
-    })
-  })
+    cy.get("[model-id$=-fragment-test-process]").should("be.visible").trigger("dblclick")
+    cy.get("#nk-graph-subprocess [model-id='input']").should("be.visible")
+    cy.wait(200)
+    cy.get("[data-testid=window]").toMatchImageSnapshot()
+    cy.get("button[name='close']").click()
 
-  describe("used in scenario", () => {
-    beforeEach(() => {
-      cy.visitNewProcess(seed, "testProcess")
-    })
+    cy.get("#nk-graph-main").toMatchImageSnapshot({screenshotConfig})
 
-    it("should display fragment graph in modal", () => {
-      cy.contains("layout").click()
-      cy.contains("fragments").should("be.visible").click()
-      cy.contains("fragment-test")
-        .should("be.visible")
-        .drag("#nk-graph-main", {x: 580, y: 450, position: "right", force: true})
-
-      cy.contains("layout").click()
-
-      cy.get("[model-id$=-fragment-test-process]").should("be.visible").trigger("dblclick")
-      cy.get("[data-testid=window]").contains(/^cancel$/i).click()
-      cy.get("#nk-graph-main").toMatchImageSnapshot({screenshotConfig})
-    })
-
+    cy.get("[model-id$=sendSms]").should("be.visible").trigger("dblclick")
+    cy.get(".ace_editor").should("be.visible").type("{selectall}#testOutput.")
+    cy.get("[data-testid=window]").toMatchImageSnapshot()
   })
 })
