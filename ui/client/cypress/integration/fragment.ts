@@ -27,7 +27,7 @@ describe("Fragment", () => {
     cy.get("[data-testid='draggable:3'] [role='button']").dndTo("[data-testid='draggable:0']")
     cy.get("[data-testid='fieldsRow:0']").find(".fieldName input").should("have.value", "xxxx")
     cy.get("@window").toMatchImageSnapshot()
-    cy.get("[data-testid=window]").contains(/^apply$/i).click()
+    cy.get("@window").contains(/^apply$/i).click()
     cy.contains(/^save$/i).click()
     cy.contains(/^ok$/i).click()
 
