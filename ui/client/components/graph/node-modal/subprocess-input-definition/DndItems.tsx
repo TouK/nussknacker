@@ -39,6 +39,7 @@ export function DndItems<I>(props: DndListProps<I>): JSX.Element {
           gridTemplateColumns: "1fr auto",
           filter: s.isDragging ? "drop-shadow(0px 2px 6px rgba(0, 0, 0, .5))" : "none",
         })}
+        data-testid={`draggable:${r.source.index}`}
       >
         <DragHandlerContext.Provider value={p.dragHandleProps}>
           {items[r.source.index].el}
