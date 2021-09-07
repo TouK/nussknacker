@@ -15,7 +15,7 @@ describe("Fragment", () => {
   })
 
   beforeEach(() => {
-    cy.viewport("macbook-15")
+    cy.viewport(1600, 1600)
   })
 
   it("should allow adding input parameters and display used fragment graph in modal", () => {
@@ -43,7 +43,7 @@ describe("Fragment", () => {
 
     cy.get("[model-id$=-fragment-test-process]").should("be.visible").trigger("dblclick")
     cy.get("#nk-graph-subprocess [model-id='input']").should("be.visible")
-    cy.wait(200)
+    cy.wait(500)
     cy.get("[data-testid=window]").toMatchImageSnapshot()
     cy.get("button[name='close']").click()
 
