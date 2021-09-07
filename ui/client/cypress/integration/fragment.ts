@@ -15,7 +15,7 @@ describe("Fragment", () => {
   })
 
   beforeEach(() => {
-    cy.viewport(1600, 1600)
+    cy.viewport(1600, 2000)
   })
 
   it("should allow adding input parameters and display used fragment graph in modal", () => {
