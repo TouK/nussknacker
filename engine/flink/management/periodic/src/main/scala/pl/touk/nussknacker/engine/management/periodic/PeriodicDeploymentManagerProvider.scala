@@ -17,15 +17,6 @@ class PeriodicDeploymentManagerProvider(delegate: DeploymentManagerProvider,
                                         additionalDeploymentDataProvider: AdditionalDeploymentDataProvider = DefaultAdditionalDeploymentDataProvider
                                        ) extends DeploymentManagerProvider with LazyLogging {
 
-  @deprecated("Use constructor having schedulePropertyExtractorFactory", since = "1.0.0")
-  def this(delegate: DeploymentManagerProvider,
-           schedulePropertyExtractor: SchedulePropertyExtractor = CronSchedulePropertyExtractor(),
-           enrichDeploymentWithJarDataFactory: EnrichDeploymentWithJarDataFactory = EnrichDeploymentWithJarDataFactory.noOp,
-           listenerFactory: PeriodicProcessListenerFactory = EmptyPeriodicProcessListenerFactory,
-           additionalDeploymentDataProvider: AdditionalDeploymentDataProvider = DefaultAdditionalDeploymentDataProvider) = {
-    this(delegate, schedulePropertyExtractorFactory = _ => schedulePropertyExtractor, enrichDeploymentWithJarDataFactory, listenerFactory, additionalDeploymentDataProvider)
-  }
-
   override def name: String = s"${delegate.name}Periodic"
 
   override def createDeploymentManager(modelData: ModelData, config: Config): DeploymentManager = {
