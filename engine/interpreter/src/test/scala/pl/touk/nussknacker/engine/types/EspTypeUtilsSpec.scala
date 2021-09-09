@@ -31,6 +31,12 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     def futureOfList: Future[java.util.List[SampleClass]] = ???
   }
 
+  case class Top(middle: Middle)
+
+  case class Middle(bottom: Bottom)
+
+  case class Bottom(someInt: Int)
+
   test("should extract generic return type parameters") {
 
     val method = classOf[Returning].getMethod("futureOfList")
@@ -130,6 +136,16 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     forAll(hiddenToStringClasses) { EspTypeUtils.clazzDefinition(_)(ClassExtractionSettings.Default)
       .methods.keys shouldNot contain("toString")
     }
+  }
+
+  test("should break recursive discovery if hidden class found") {
+
+    val extracted = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(Typed[Top]))(ClassExtractionSettings.Default.copy(
+      excludeClassPredicates = ClassExtractionSettings.DefaultExcludedClasses :+ ExactClassPredicate[Middle]
+    ))
+    extracted.find(_.clazzName == Typed[Top]) shouldBe 'defined
+    extracted.find(_.clazzName == Typed[Middle]) shouldBe 'empty
+    extracted.find(_.clazzName == Typed[Bottom]) shouldBe 'empty
   }
 
   class BannedToStringClass extends HideToString
