@@ -13,6 +13,8 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypedClass
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 
+import java.lang.AssertionError
+
 trait ClassExtractionBaseTest extends FunSuite with Matchers {
 
   protected def model: ModelData
@@ -54,7 +56,7 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers {
     types.foreach { clazzDefinition =>
       val clazz = clazzDefinition.clazzName.klass
       withClue(s"$clazz does not match: ") {
-        val decoded = decodedMap(clazz)
+        val decoded = decodedMap.getOrElse(clazz, throw new AssertionError(s"No class $clazz"))
 
         def checkMethods(getMethods: ClazzDefinition => Map[String, List[MethodInfo]]): Unit = {
           val methods = getMethods(clazzDefinition)

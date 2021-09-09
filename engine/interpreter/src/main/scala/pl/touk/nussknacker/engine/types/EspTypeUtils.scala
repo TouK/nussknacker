@@ -60,7 +60,8 @@ object EspTypeUtils {
     def typeResultVisible(str: SingleTypingResult) = !settings.isHidden(str.objType.klass)
     def filterOneMethod(methodInfo: MethodInfo): Boolean = {
       (methodInfo.parameters.map(_.refClazz) :+ methodInfo.refClazz).forall {
-        case e: SingleTypingResult => typeResultVisible(e)
+        //TODO: handle arrays properly in ClassExtractionSettings
+        case e: SingleTypingResult => (methodInfo.varArgs && e.objType.klass.isArray) || typeResultVisible(e)
         case TypedUnion(results) => results.forall(typeResultVisible)
         case _ => true
       }
