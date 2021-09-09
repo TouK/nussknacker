@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.api.process
 import cats.data.NonEmptyList
 import io.circe.{Decoder, Encoder, ObjectEncoder}
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
+import pl.touk.nussknacker.engine.api.typed.supertype.ReturningSingleClassPromotionStrategy
 import pl.touk.nussknacker.engine.api.{Hidden, HideToString}
 
 import java.lang.reflect.{AccessibleObject, Field, Member, Method}
@@ -86,6 +87,7 @@ object ClassExtractionSettings {
       //we want only boxed types
       ClassPredicate { case cl => cl.isPrimitive },
 
+      ExactClassPredicate[ReturningSingleClassPromotionStrategy],
       // We use this type only programmable
       ClassPatternPredicate(Pattern.compile("pl\\.touk\\.nussknacker\\.engine\\.spel\\.SpelExpressionRepr")),
     )
@@ -111,6 +113,7 @@ object ClassExtractionSettings {
 
   lazy val ExcludedTimeClasses = List(
     BasePackagePredicate("java.time.chrono"),
+    BasePackagePredicate("java.time.temporal"),
     BasePackagePredicate("java.time.zone"),
   )
 

@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.types
 
+import io.circe.Decoder
+
 import java.util
 import java.util.regex.Pattern
 import org.scalatest.prop.TableDrivenPropertyChecks._
@@ -20,6 +22,9 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
 
   case class SampleClass(foo: Int, bar: String) extends SampleAbstractClass with SampleInterface {
     def returnContext: Context = null
+    def decoder: Decoder[SampleClass] = null
+    def classParam(parameter: Class[_]): String = null
+
   }
 
   class Returning {
@@ -104,7 +109,6 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     typeUtils.find(_.clazzName == Typed[TestEmbedded]) shouldBe Some(ClazzDefinition(Typed.typedClass[TestEmbedded], Map(
       "string" -> List(MethodInfo(List(), Typed[String], None, varArgs = false)),
       "javaList" -> List(MethodInfo(List(), Typed.fromDetailedType[java.util.List[String]], None, varArgs = false)),
-      "scalaList" -> List(MethodInfo(List(), Typed.fromDetailedType[List[String]], None, varArgs = false)),
       "javaMap" -> List(MethodInfo(List(), Typed.fromDetailedType[java.util.Map[String, String]], None, varArgs = false)),
       "toString" -> List(MethodInfo(List(), Typed[String], None, varArgs = false))
     ), Map.empty))

@@ -24,13 +24,32 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers {
     val parsed =  parse(IOUtils.toString(getClass.getResourceAsStream(outputResource))).right.get
     val decoded = decode(parsed)
 
+    //printFoundClasses(types)
     //println(types.asJson.spaces2)
     checkGeneratedClasses(types, decoded)
   }
 
+  //use for debugging...
+  private def printFoundClasses(types: Set[ClazzDefinition]): String = {
+    types.flatMap { cd =>
+      cd.clazzName :: (cd.methods ++ cd.staticMethods).flatMap(_._2).flatMap(mi => mi.refClazz :: mi.parameters.map(_.refClazz)).toList
+    }.collect {
+      case e: TypedClass => e.klass.getName
+    }.toList.sorted.mkString("\n")
+  }
+
   //We don't do 'types shouldBe decoded' to avoid unreadable messages
   private def checkGeneratedClasses(types: Set[ClazzDefinition], decoded: Set[ClazzDefinition]): Unit = {
-    types.size shouldBe decoded.size
+    val names = types.map(_.clazzName.klass.getName)
+    val decodedNames = types.map(_.clazzName.klass.getName)
+
+    withClue(s"New classes: ${names -- decodedNames} ") {
+      (names -- decodedNames) shouldBe Set.empty
+    }
+    withClue(s"Removed classes: ${decodedNames -- names} ") {
+      (decodedNames -- names) shouldBe Set.empty
+    }
+
     val decodedMap = decoded.map(k => k.clazzName.klass -> k).toMap[Class[_], ClazzDefinition]
     types.foreach { clazzDefinition =>
       val clazz = clazzDefinition.clazzName.klass
