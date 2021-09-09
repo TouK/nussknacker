@@ -7,7 +7,7 @@ import cats.effect.IO
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, VisibleMembersPredicate}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedUnion, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 
@@ -24,11 +24,11 @@ object EspTypeUtils {
     val membersPredicate = settings.visibleMembersPredicate(clazz)
     val methods = extractPublicMethods(clazz, membersPredicate, staticMethodsAndFields)
     val fields = extractPublicFields(clazz, membersPredicate, staticMethodsAndFields).mapValuesNow(List(_))
-    methods ++ fields
+    filterHiddenParameterAndReturnType(methods ++ fields)
   }
 
   private def extractPublicMethods(clazz: Class[_], membersPredicate: VisibleMembersPredicate, staticMethodsAndFields: Boolean)
-                                  (implicit settings: ClassExtractionSettings): (Map[String, List[MethodInfo]]) = {
+                                  (implicit settings: ClassExtractionSettings): Map[String, List[MethodInfo]] = {
     /* From getMethods javadoc: If this {@code Class} object represents an interface then the returned array
            does not contain any implicitly declared methods from {@code Object}.
            The same for primitives - we assume that languages like SpEL will be able to do boxing
@@ -55,6 +55,20 @@ object EspTypeUtils {
     deduplicateMethodsWithGenericReturnType(methodNameAndInfoList)
   }
 
+  //We have to filter here, not in ClassExtractionSettings, as we do e.g. boxed/unboxed mapping on TypedClass level...
+  private def filterHiddenParameterAndReturnType(infos: Map[String, List[MethodInfo]])(implicit settings: ClassExtractionSettings): Map[String, List[MethodInfo]] = {
+    def typeResultVisible(str: SingleTypingResult) = !settings.isHidden(str.objType.klass)
+    def filterOneMethod(methodInfo: MethodInfo): Boolean = {
+      (methodInfo.parameters.map(_.refClazz) :+ methodInfo.refClazz).forall {
+        //TODO: handle arrays properly in ClassExtractionSettings
+        case e: SingleTypingResult => (methodInfo.varArgs && e.objType.klass.isArray) || typeResultVisible(e)
+        case TypedUnion(results) => results.forall(typeResultVisible)
+        case _ => true
+      }
+    }
+    infos.mapValuesNow(methodList => methodList.filter(filterOneMethod)).filter(_._2.nonEmpty)
+  }
+
   /*
     This is tricky case. If we have generic class and concrete subclasses, e.g.
     - ChronoLocalDateTime<D extends ChronoLocalDate>
@@ -70,7 +84,7 @@ object EspTypeUtils {
     groupedByNameAndParameters.toList.map {
       case (_, methodsForParams) =>
         /*
-          we want to find "most specific" class, however suprisingly it's not always possible, because we treat e.g. isLeft and left methods
+          we want to find "most specific" class, however surprisingly it's not always possible, because we treat e.g. isLeft and left methods
           as equal (for javabean-like access) and e.g. in scala Either this is perfectly possible. In case we cannot find most specific
           class we pick arbitrary one (we sort to avoid randomness)
          */
@@ -79,6 +93,8 @@ object EspTypeUtils {
           methodsForParams.forall(mi => ret.canBeSubclassOf(mi._2.refClazz))
         }.getOrElse(methodsForParams.minBy(_._2.refClazz.display))
     }.toGroupedMap
+      //we sort only to avoid randomness
+      .mapValuesNow(_.sortBy(_.toString))
   }
 
   // SpEL is able to access getters using property name so you can write `obj.foo` instead of `obj.getFoo`
@@ -139,7 +155,7 @@ object EspTypeUtils {
   private def extractGenericReturnType(typ: Type): Option[TypingResult] = {
     typ match {
       case t: ParameterizedType if t.getRawType.isInstanceOf[Class[_]] => extractGenericMonadReturnType(t, t.getRawType.asInstanceOf[Class[_]])
-      case t => None
+      case _ => None
     }
   }
 
@@ -169,7 +185,7 @@ object EspTypeUtils {
     typ match {
       case t: Class[_] => Some(Typed(t))
       case t: ParameterizedType if t.getRawType.isInstanceOf[Class[_]] => Some(extractGenericParams(t, t.getRawType.asInstanceOf[Class[_]]))
-      case t => None
+      case _ => None
     }
   }
 

@@ -1,10 +1,16 @@
 package pl.touk.nussknacker.engine.api.process
 
-import java.lang.reflect.{AccessibleObject, Field, Member, Method, Modifier}
-import java.util.regex.Pattern
-
 import cats.data.NonEmptyList
+import io.circe.{Decoder, Encoder, ObjectEncoder}
+import pl.touk.nussknacker.engine.api.definition.ParameterEditor
+import pl.touk.nussknacker.engine.api.typed.supertype.ReturningSingleClassPromotionStrategy
 import pl.touk.nussknacker.engine.api.{Hidden, HideToString}
+
+import java.lang.reflect.{AccessibleObject, Field, Member, Method}
+import java.util
+import java.util.concurrent.TimeUnit
+import java.util.regex.Pattern
+import java.util.{Calendar, Date, Optional, UUID}
 
 /**
   * Settings for class extraction which is done to handle e.g. syntax suggestions in UI
@@ -71,39 +77,62 @@ object ClassExtractionSettings {
 
   lazy val DefaultExcludedClasses: List[ClassPredicate] = ExcludedStdClasses ++ ExcludedExtraClasses
 
-  lazy val ExcludedStdClasses: List[ClassPredicate] =
+  lazy val ExcludedStdClasses: List[ClassPredicate] = ExcludedVoidClasses ++ ExcludedCollectionFunctionalClasses ++ ExcludedTimeClasses ++ 
     List(
-      // Void types
-      ClassPatternPredicate(Pattern.compile("void")),
-      ClassPatternPredicate(Pattern.compile("java\\.lang\\.Void")),
-      ClassPatternPredicate(Pattern.compile("scala\\.Unit.*")),
-      ClassPatternPredicate(Pattern.compile("scala\\.runtime\\.BoxedUnit")),
-
       // In case if someone use it for kind of meta programming
-      ClassPatternPredicate(Pattern.compile("java\\.lang\\.Class")),
-      // In case if someone return function for lazy evaluation purpose
-      ClassPatternPredicate(Pattern.compile("java\\.util\\.function\\..*")),
-      ClassPatternPredicate(Pattern.compile("scala\\.Function.*")),
+      ExactClassPredicate[Class[_]],
 
       // Arrays are not supported for now
       ClassPredicate { case cl => cl.isArray },
+      //we want only boxed types
+      ClassPredicate { case cl => cl.isPrimitive },
 
+      ExactClassPredicate[ReturningSingleClassPromotionStrategy],
       // We use this type only programmable
-      ClassPatternPredicate(Pattern.compile("pl\\.touk\\.nussknacker\\.engine\\.spel\\.SpelExpressionRepr"))
+      ClassPatternPredicate(Pattern.compile("pl\\.touk\\.nussknacker\\.engine\\.spel\\.SpelExpressionRepr")),
     )
+
+  lazy val ExcludedCollectionFunctionalClasses = List(
+    // In case if someone return function for lazy evaluation purpose
+    BasePackagePredicate("java.util.function"),
+    ClassPatternPredicate(Pattern.compile("scala\\.Function.*")),
+    BasePackagePredicate("java.util.stream"),
+    //Scala collections are cumbersome to use with Spel
+    BasePackagePredicate("scala.collection"),
+    ClassPatternPredicate(Pattern.compile("scala\\.Tuple.*")),
+    ExactClassPredicate[Option[_]],
+  )
+
+  lazy val ExcludedVoidClasses = List(
+    // Void types
+    ClassPatternPredicate(Pattern.compile("void")),
+    ClassPatternPredicate(Pattern.compile("java\\.lang\\.Void")),
+    ClassPatternPredicate(Pattern.compile("scala\\.Unit.*")),
+    ClassPatternPredicate(Pattern.compile("scala\\.runtime\\.BoxedUnit"))
+  )
+
+  lazy val ExcludedTimeClasses = List(
+    BasePackagePredicate("java.time.chrono"),
+    BasePackagePredicate("java.time.temporal"),
+    BasePackagePredicate("java.time.zone"),
+  )
 
   lazy val ExcludedExtraClasses: List[ClassPredicate] =
     List(
       // In case if there is some public method with flink's TypeInformation on serialization purpose
-      ClassPatternPredicate(Pattern.compile("org\\.apache\\.flink\\.api\\.common\\.typeinfo\\.TypeInformation")),
+      BasePackagePredicate("org.apache.flink.api.common.typeinfo"),
       // java xml api is not easy to use without additional helpers, so we will skip these classes
-      ClassPatternPredicate(Pattern.compile("javax\\.xml\\..*")),
+      BasePackagePredicate("javax.xml"),
       // Not sure why these below exclusions are TODO describe why they should be here or remove it
-      ClassPatternPredicate(Pattern.compile("dispatch\\..*")),
-      ClassPatternPredicate(Pattern.compile("cats\\..*"))
+      BasePackagePredicate("dispatch"),
+      BasePackagePredicate("cats"),
+      ExactClassPredicate(classOf[Decoder[_]], classOf[Encoder[_]], classOf[ObjectEncoder[_]]),
+      //If cronutils are included to use Cron editor, we don't want quite a lot of unnecessary classes
+      BasePackagePredicate("com.cronutils.model.field")
     )
 
-  lazy val DefaultExcludedMembers: List[ClassMemberPredicate] = CommonExcludedMembers ++ AvroExcludedMembers
+  lazy val DefaultExcludedMembers: List[ClassMemberPredicate] = CommonExcludedMembers ++ AvroExcludedMembers :+ ReturnMemberPredicate(SuperClassPredicate(
+    ExactClassPredicate(classOf[Decoder[_]], classOf[Encoder[_]]))) :+ ReturnMemberPredicate(SuperClassPredicate(ExactClassPredicate[ParameterEditor]))
 
   lazy val CommonExcludedMembers: List[ClassMemberPredicate] =
     List(
@@ -122,16 +151,19 @@ object ClassExtractionSettings {
       }),
       ClassMemberPredicate(ClassPredicate { case cl => classOf[HideToString].isAssignableFrom(cl) }, {
         case m: Method => m.getName == "toString" && m.getParameterCount == 0
+      }),
+      ClassMemberPredicate(ClassPredicate { case cl => cl.isEnum }, {
+        case m: Method => List("declaringClass", "getDeclaringClass").contains(m.getName)
       })
     )
 
   lazy val AvroExcludedMembers: List[ClassMemberPredicate] =
     List(
       ClassMemberPatternPredicate(
-        SuperClassPatternPredicate(Pattern.compile("org\\.apache\\.avro\\.generic\\.IndexedRecord")),
+        SuperClassPredicate(ClassPatternPredicate(Pattern.compile("org\\.apache\\.avro\\.generic\\.IndexedRecord"))),
         Pattern.compile("(get|getSchema|compareTo|put)")),
       ClassMemberPatternPredicate(
-        SuperClassPatternPredicate(Pattern.compile("org\\.apache\\.avro\\.specific\\.SpecificRecordBase")),
+        SuperClassPredicate(ClassPatternPredicate(Pattern.compile("org\\.apache\\.avro\\.specific\\.SpecificRecordBase"))),
         Pattern.compile("(getConverion|getConversion|writeExternal|readExternal|toByteBuffer|set[A-Z].*)"))
     )
 
@@ -153,7 +185,7 @@ object ClassExtractionSettings {
       // For numeric types, strings an collections, date types we want to see all useful methods - we need this explicitly define here because
       // we have another, more general rule: IncludedStdMembers and both predicates are composed
       ClassMemberPatternPredicate(
-        SuperClassPatternPredicate(Pattern.compile("(java\\.lang\\.Number|java\\.util\\.Date|java\\.util\\.Calendar|java\\.util\\.concurrent\\.TimeUnit)")),
+        SuperClassPredicate(ExactClassPredicate(classOf[java.lang.Boolean], classOf[Number], classOf[Date], classOf[Calendar], classOf[TimeUnit])),
         Pattern.compile(".*")),
       ClassMemberPatternPredicate(
         ClassPatternPredicate(Pattern.compile("java\\.time\\..*")),
@@ -162,23 +194,23 @@ object ClassExtractionSettings {
         ClassPatternPredicate(Pattern.compile("scala\\.concurrent\\.duration\\..*")),
         Pattern.compile(".*")),
       ClassMemberPatternPredicate(
-        SuperClassPatternPredicate(Pattern.compile("java\\.lang\\.CharSequence")),
+        SuperClassPredicate(ExactClassPredicate[CharSequence]),
         Pattern.compile(s"charAt|compareTo.*|concat|contains|endsWith|equalsIgnoreCase|isEmpty|lastIndexOf|length|matches|" +
           s"replaceAll|replaceFirst|split|startsWith|substring|toLowerCase|toUpperCase|trim|$ToStringMethod")),
       ClassMemberPatternPredicate(
-        SuperClassPatternPredicate(Pattern.compile("java\\.util\\.Collection")),
+        SuperClassPredicate(ExactClassPredicate[util.Collection[_]]),
         Pattern.compile(s"contains|containsAll|get|getOrDefault|indexOf|isEmpty|size")),
       ClassMemberPatternPredicate(
-        SuperClassPatternPredicate(Pattern.compile("java\\.util\\.Map")),
+        SuperClassPredicate(ExactClassPredicate[util.Map[_, _]]),
         Pattern.compile(s"containsKey|containsValue|get|getOrDefault|isEmpty|size|values|keySet")),
       ClassMemberPatternPredicate(
-        SuperClassPatternPredicate(Pattern.compile("java\\.util\\.Optional")),
+        SuperClassPredicate(ExactClassPredicate[Optional[_]]),
         Pattern.compile(s"get|isPresent|orElse")),
       ClassMemberPatternPredicate(
-        SuperClassPatternPredicate(Pattern.compile("java\\.util\\.UUID")),
+        SuperClassPredicate(ExactClassPredicate[UUID]),
         Pattern.compile(s"clockSequence|getLeastSignificantBits|getMostSignificantBits|node|timestamp|$ToStringMethod|variant|version")),
       ClassMemberPatternPredicate(
-        SuperClassPatternPredicate(Pattern.compile("(scala\\.collection\\.Traversable|scala\\.Option)")),
+        SuperClassPredicate(ExactClassPredicate(classOf[Traversable[_]], classOf[Option[_]])),
         Pattern.compile(s"apply|applyOrElse|contains|get|getOrDefault|indexOf|isDefined|isEmpty|size|values|keys|diff"))
     )
 

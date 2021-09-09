@@ -63,6 +63,10 @@ object PeriodParameterEditor {
   }
 }
 
+/* To use this editor you have to:
+  - add https://github.com/jmrozanec/cron-utils to model classpath
+  - add CronDefinitionBuilder to additional classes in ExpressionConfig
+ */
 case object CronParameterEditor extends SimpleParameterEditor
 
 @JsonCodec case class FixedValuesParameterEditor(possibleValues: List[FixedExpressionValue]) extends SimpleParameterEditor

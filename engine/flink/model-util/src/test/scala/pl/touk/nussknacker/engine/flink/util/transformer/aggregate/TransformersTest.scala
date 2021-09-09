@@ -64,7 +64,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
       TestRecord(id, 0, 1, "a"),
       TestRecord(id, 1, 2, "b"),
       TestRecord(id, 2, 5, "b")))
-    val testProcess = sliding(s"T(${classOf[AggregateHelper].getName}).SUM",
+    val testProcess = sliding("#AGG.sum",
       "#input.eId", emitWhenEventLeft = false)
 
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
@@ -78,7 +78,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
       TestRecord(id, 0, 0, "a"),
       TestRecord(id, 1, 1, "b"),
       TestRecord(id, 2, 0, "b")))
-    val testProcess = sliding(s"T(${classOf[AggregateHelper].getName}).SUM",
+    val testProcess = sliding("#AGG.sum",
       "#input.eId", emitWhenEventLeft = false)
 
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
@@ -92,7 +92,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
       TestRecord(id, 0, 1, "a"),
       TestRecord(id, 1, 2, "b"),
       TestRecord(id, 2, 5, "b")))
-    val testProcess = sliding(s"T(${classOf[AggregateHelper].getName}).SUM",
+    val testProcess = sliding("#AGG.sum",
       "#input.eId", emitWhenEventLeft = false, afterAggregateExpression = "#input.eId")
 
     val nodeResults = runCollectOutputVariables(id, model, testProcess)
@@ -107,7 +107,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
       TestRecord(id, 1, 2, "b"),
       TestRecord(id, 2, 5, "b"),
       TestRecord(id, 1, 1, "b")))
-    val testProcess = sliding(s"T(${classOf[AggregateHelper].getName}).SUM",
+    val testProcess = sliding("#AGG.sum",
       "#input.eId", emitWhenEventLeft = false)
 
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
@@ -122,7 +122,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
       TestRecord(id, 1, 2, ""),
       TestRecord(id, 2, 5, "")
     ))
-    val testProcess = sliding(s"T(${classOf[AggregateHelper].getName}).SUM",
+    val testProcess = sliding("#AGG.sum",
       "#input.eId", emitWhenEventLeft = true)
 
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
@@ -130,7 +130,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
   }
 
   test("emit aggregate when event left the slide should not emit context") {
-    val testProcess = sliding(s"T(${classOf[AggregateHelper].getName}).SUM",
+    val testProcess = sliding("#AGG.sum",
       "#input.eId", emitWhenEventLeft = true, afterAggregateExpression = "#input.eId")
 
     val result = validator.validate(testProcess)
@@ -147,7 +147,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
       TestRecord(id, 0, 1, "a"),
       TestRecord(id, 1, 2, "b"),
       TestRecord(id, 2, 5, "b")))
-    val testProcess = tumbling(s"T(${classOf[AggregateHelper].getName}).SUM",
+    val testProcess = tumbling("#AGG.sum",
       "#input.eId", emitWhen = TumblingWindowTrigger.OnEnd)
 
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
@@ -161,7 +161,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
       TestRecord(id, 0, 1, "a"),
       TestRecord(id, 1, 2, "b"),
       TestRecord(id, 2, 5, "b")))
-    val testProcess = tumbling(s"T(${classOf[AggregateHelper].getName}).LIST",
+    val testProcess = tumbling("#AGG.list",
       "#input.eId", emitWhen = TumblingWindowTrigger.OnEvent)
 
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
@@ -177,7 +177,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
       TestRecord(id, 1, 2, "b"),
       TestRecord(id, 2, 5, "b"),
       TestRecord(id, 1, 1, "b")))
-    val testProcess = tumbling(s"T(${classOf[AggregateHelper].getName}).SUM", "#input.eId", emitWhen = TumblingWindowTrigger.OnEnd)
+    val testProcess = tumbling("#AGG.sum", "#input.eId", emitWhen = TumblingWindowTrigger.OnEnd)
 
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
     aggregateVariables shouldBe List(4, 5)
@@ -190,7 +190,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
       TestRecord(id, 0, 1, "a"),
       TestRecord(id, 1, 2, "b"),
       TestRecord(id, 2, 5, "b")))
-    val testProcess = tumbling(s"T(${classOf[AggregateHelper].getName}).SUM",
+    val testProcess = tumbling("#AGG.sum",
       "#input.eId", emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow)
 
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
@@ -206,7 +206,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
       TestRecord(id, 2, 5, "b"),
       TestRecord(id, 1, 1, "b")
     ))
-    val testProcess = tumbling(s"T(${classOf[AggregateHelper].getName}).SUM",
+    val testProcess = tumbling("#AGG.sum",
       "#input.eId", emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow)
 
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
@@ -229,7 +229,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
       //stop condition
       TestRecord(id, 6, 8, "a")
     ))
-    val testProcess = session(s"T(${classOf[AggregateHelper].getName}).LIST",
+    val testProcess = session("#AGG.list",
       "#input.eId",  SessionWindowTrigger.OnEnd, "#input.str == 'stop'")
 
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
@@ -248,7 +248,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
       //stop condition
       TestRecord(id, 6, 5, "a")
     ))
-    val testProcess = session(s"T(${classOf[AggregateHelper].getName}).LIST",
+    val testProcess = session("#AGG.list",
       "#input.eId", SessionWindowTrigger.OnEvent, "#input.str == 'stop'")
 
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)

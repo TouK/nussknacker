@@ -64,7 +64,7 @@ object SwaggerTyped {
       import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
       TypedObjectTypingResult(elementType.mapValuesNow(typingResult).toList.sortBy(_._1))
     case SwaggerArray(ofType) =>
-      TypedClass(classOf[java.util.List[_]], List(typingResult(ofType)))
+      Typed.typedClass(classOf[java.util.List[_]], List(typingResult(ofType)))
     case SwaggerEnum(_) =>
       Typed.typedClass[String]
     case SwaggerBool =>

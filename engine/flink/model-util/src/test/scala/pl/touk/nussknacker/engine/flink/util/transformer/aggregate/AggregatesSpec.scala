@@ -44,7 +44,7 @@ class AggregatesSpec extends FunSuite with TableDrivenPropertyChecks with Matche
       //when e.g. e == null we want to compare as to Unknown
       case e if e == Typed.empty => Unknown
       //when e.g. e == empty list we want to compare as to Unknown
-      case TypedClass(obj, param :: Nil) if param == Typed.empty => TypedClass(obj, List(Unknown))
+      case TypedClass(obj, param :: Nil) if param == Typed.empty => Typed.typedClass(obj, List(Unknown))
       case a => a
     }
     val canBeSubclassCase = typeFromInstance.canBeSubclassOf(typ)
@@ -64,8 +64,8 @@ class AggregatesSpec extends FunSuite with TableDrivenPropertyChecks with Matche
     val mapAggregator = new MapAggregator(namedAggregators.mapValues(_._1.asInstanceOf[Aggregator]).asJava)
     val input = TypedObjectTypingResult(namedAggregators.mapValues(_._2).toList, objType = Typed.typedClass[JMap[_, _]])
     val el = namedAggregators.mapValues(_._3).asJava
-    val stored = TypedObjectTypingResult(namedAggregators.mapValues(_._4).toList, objType = TypedClass(classOf[Map[_, _]], List(Typed[String], Unknown)))
-    val output = TypedObjectTypingResult(namedAggregators.mapValues(_._5).toList, objType = TypedClass(classOf[JMap[_, _]], List(Typed[String], Unknown)))
+    val stored = TypedObjectTypingResult(namedAggregators.mapValues(_._4).toList, objType = Typed.typedClass(classOf[Map[_, _]], List(Typed[String], Unknown)))
+    val output = TypedObjectTypingResult(namedAggregators.mapValues(_._5).toList, objType = Typed.typedClass(classOf[JMap[_, _]], List(Typed[String], Unknown)))
     checkAggregator(mapAggregator, input, el, stored, output)
   }
 

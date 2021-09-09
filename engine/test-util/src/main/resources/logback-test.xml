@@ -17,6 +17,8 @@
     <logger name="pl.touk.nussknacker.engine.flink.util.async" level="WARN"/>
     <logger name="pl.touk.nussknacker.engine.process.registrar.DefaultStreamExecutionEnvPreparer" level="ERROR"/>
 
+    <logger name="pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.CachedConfluentSchemaRegistryClient" level="OFF"/>
+
     <!-- types info extraction can have significant impact on deployment duration - uncomment this log if you want to measure it -->
 <!--    <logger name="pl.touk.nussknacker.engine.types.TypesInformationExtractor" level="TRACE"/>-->
 

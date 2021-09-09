@@ -14,12 +14,12 @@ class KafkaSourceFactoryDefinitionExtractorSpec extends KafkaSourceFactoryProces
     // It is important that SampleKey and SampleValue are used only by source of that kind,
     // and they must not be returned by other services.
     extractedTypes should contain allOf (
-      ClazzDefinition(TypedClass(classOf[SampleKey],Nil), Map(
+      ClazzDefinition(Typed.typedClass(classOf[SampleKey],Nil), Map(
         "partOne" -> List(MethodInfo(Nil, Typed[String], None, varArgs = false)),
         "partTwo" -> List(MethodInfo(Nil, Typed[Long], None, varArgs = false)),
         "toString" -> List(MethodInfo(Nil, Typed[String], None, varArgs = false))
       ), Map.empty),
-      ClazzDefinition(TypedClass(classOf[SampleValue],Nil), Map(
+      ClazzDefinition(Typed.typedClass(classOf[SampleValue],Nil), Map(
         "id" -> List(MethodInfo(Nil, Typed[String], None, varArgs = false)),
         "field" -> List(MethodInfo(Nil, Typed[String], None, varArgs = false)),
         "toString" -> List(MethodInfo(Nil, Typed[String], None, varArgs = false))

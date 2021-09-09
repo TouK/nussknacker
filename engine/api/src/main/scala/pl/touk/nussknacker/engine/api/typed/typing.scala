@@ -96,6 +96,13 @@ object typing {
 
   }
 
+  object TypedClass {
+
+    //it's vital to have private apply/constructor so that we assure that klass is not primitive nor Any/AnyRef/Object
+    private[typing] def apply(klass: Class[_], params: List[TypingResult]) = new TypedClass(klass, params)
+
+  }
+
   //TODO: make sure parameter list has right size - can be filled with Unknown if needed
   case class TypedClass private[typing] (klass: Class[_], params: List[TypingResult]) extends SingleTypingResult {
 
@@ -115,13 +122,15 @@ object typing {
   object Typed {
 
     //TODO: how to assert in compile time that T != Any, AnyRef, Object?
-    def typedClass[T: ClassTag]: TypedClass = TypedClass(toRuntime[T], Nil)
+    def typedClass[T: ClassTag]: TypedClass = typedClass(toRuntime[T])
 
     //TODO: make it more safe??
-    def typedClass(klass: Class[_]): TypedClass = if (klass == classOf[Any]) {
+    def typedClass(klass: Class[_], parameters: List[TypingResult] = Nil): TypedClass = if (klass == classOf[Any]) {
       throw new IllegalArgumentException("Cannot have typed class of Any, use Unknown")
+    } else if (klass.isPrimitive) {
+      TypedClass(ClassUtils.primitiveToWrapper(klass), parameters)
     } else {
-      TypedClass(klass, Nil)
+      TypedClass(klass, parameters)
     }
 
     def genericTypeClass(klass: Class[_], params: List[TypingResult]): TypingResult = TypedClass(klass, params)
@@ -148,13 +157,13 @@ object typing {
       if (runtimeClass == classOf[Any])
         Unknown
       else
-        TypedClass(runtimeClass, typ.typeArgs.map(fromType))
+        typedClass(runtimeClass, typ.typeArgs.map(fromType))
     }
 
     private def toRuntime[T:ClassTag]: Class[_] = implicitly[ClassTag[T]].runtimeClass
 
     def apply(klass: Class[_]): TypingResult = {
-      if (klass == classOf[Any]) Unknown else TypedClass(klass, Nil)
+      if (klass == classOf[Any]) Unknown else typedClass(klass, Nil)
     }
 
     def taggedDictValue(typ: SingleTypingResult, dictId: String): TypedTaggedValue = tagged(typ, s"dictValue:$dictId")
@@ -167,14 +176,14 @@ object typing {
           Typed.empty
         case map: Map[String@unchecked, _]  =>
           val fieldTypes = typeMapFields(map)
-          TypedObjectTypingResult(fieldTypes, TypedClass(classOf[Map[_, _]], List(Typed[String], Unknown)))
+          TypedObjectTypingResult(fieldTypes, typedClass(classOf[Map[_, _]], List(Typed[String], Unknown)))
         case javaMap: java.util.Map[String@unchecked, _] =>
           val fieldTypes = typeMapFields(javaMap.asScala.toMap)
           TypedObjectTypingResult(fieldTypes)
         case list: List[_] =>
-          TypedClass(obj.getClass, List(unionOfElementTypes(list)))
+          typedClass(obj.getClass, List(unionOfElementTypes(list)))
         case javaList: java.util.List[_] =>
-          TypedClass(obj.getClass, List(unionOfElementTypes(javaList.asScala.toList)))
+          typedClass(obj.getClass, List(unionOfElementTypes(javaList.asScala.toList)))
         case dict: DictInstance =>
           TypedDict(dict.dictId, dict.valueType)
         case other =>

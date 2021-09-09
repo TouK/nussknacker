@@ -135,7 +135,7 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   private def typeDefinitionSetWithCustomClasses: TypeDefinitionSet = {
 
     def createTestClazzDefinitionFromClassNames(className: String) =
-      TypeInfos.ClazzDefinition(TypedClass(ClassUtils.primitiveToWrapper(ClassUtils.getClass(className)), Nil), Map.empty, Map.empty)
+      TypeInfos.ClazzDefinition(Typed.typedClass(ClassUtils.primitiveToWrapper(ClassUtils.getClass(className)), Nil), Map.empty, Map.empty)
 
     TypeDefinitionSet(Set(
       createTestClazzDefinitionFromClassNames("java.lang.String"),
@@ -746,12 +746,18 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
     invokeAndCheck("false.toString", "false")
     invokeAndCheck("false.toString()", "false")
+
     invokeAndCheck("false.booleanValue", false)
     invokeAndCheck("false.booleanValue()", false)
 
     //not primitives, just to make sure toString works on other objects...
     invokeAndCheck("{}.toString", "[]")
     invokeAndCheck("#obj.id.toString", "1")
+  }
+
+  test("should find and invoke primitive parameters correctly") {
+    parseOrFail[String]("#processHelper.methodWithPrimitiveParams(1, 2, false)", ctxWithGlobal)
+      .evaluateSync[String](ctxWithGlobal) shouldBe "1 2 false"
   }
 
 }
@@ -779,6 +785,8 @@ object SampleGlobalObject {
   def stringList(arg: java.util.List[String]): Int = arg.size()
   def toAny(value: Any): Any = value
   def stringOnStringMap: java.util.Map[String, String] = Map("key1" -> "value1", "key2" -> "value2").asJava
+
+  def methodWithPrimitiveParams(int: Int, long: Long, bool: Boolean): String = s"$int $long $bool"
 }
 
 class SampleObjectWithGetMethod(map: Map[String, Any]) {
