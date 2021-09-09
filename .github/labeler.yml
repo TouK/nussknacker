@@ -1,0 +1,8 @@
+ui:
+- 'ui/client/*'
+- 'ui/client/**/*'
+
+docs:
+- '**/*.md'
+- 'docs/*'
+- 'docs/**/*'

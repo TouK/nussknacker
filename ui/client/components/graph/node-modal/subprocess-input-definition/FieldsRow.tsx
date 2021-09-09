@@ -8,7 +8,7 @@ export function FieldsRow({index, children}: PropsWithChildren<{index: number}>)
   const {readOnly, remove} = useFieldsContext()
   const onClick = useCallback(() => remove(index), [index, remove])
   return (
-    <NodeRow className="movable-row">
+    <NodeRow className="movable-row" data-testid={`fieldsRow:${index}`}>
       {children}
       {!readOnly && (
         <NodeValue className="fieldRemove">

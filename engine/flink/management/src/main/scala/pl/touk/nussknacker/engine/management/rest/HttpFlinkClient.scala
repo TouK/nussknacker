@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.management.rest
 
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.deployment.{ExternalDeploymentId, SavepointResult}
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
@@ -13,6 +14,7 @@ import sttp.model.StatusCode
 
 import java.io.File
 import java.util.concurrent.TimeoutException
+import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
 
 class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future, Nothing, NothingT], ec: ExecutionContext) extends FlinkClient with LazyLogging {
@@ -196,6 +198,23 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
         .recoverWith(recoverWithMessage("deploy scenario"))
     }
 
+  }
+
+  def getClusterOverview: Future[ClusterOverview] = {
+    basicRequest
+      .get(flinkUrl.path("overview"))
+      .response(asJson[ClusterOverview])
+      .send()
+      .flatMap(SttpJson.failureToFuture)
+  }
+
+  def getJobManagerConfig: Future[Configuration] = {
+    basicRequest
+      .get(flinkUrl.path("jobmanager", "config"))
+      .response(asJson[List[KeyValueEntry]])
+      .send()
+      .flatMap(SttpJson.failureToFuture)
+      .map(list => Configuration.fromMap(list.map(e => e.key -> e.value).toMap.asJava))
   }
 
   private def handleUnitResponse(action: String)(response: Response[Either[String, String]]): Future[Unit] = (response.code, response.body) match {

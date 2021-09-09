@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.management
 
+import cats.data.OptionT
+import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.ModelData
@@ -23,9 +25,6 @@ abstract class FlinkDeploymentManager(modelData: ModelData, shouldVerifyBeforeDe
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, processDeploymentData: ProcessDeploymentData, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     val processName = processVersion.processName
 
-    import cats.data.OptionT
-    import cats.implicits._
-
     val stoppingResult = for {
       oldJob <- OptionT(findJobStatus(processName))
       deploymentId <- OptionT.fromOption[Future](oldJob.deploymentId)
@@ -33,19 +32,25 @@ abstract class FlinkDeploymentManager(modelData: ModelData, shouldVerifyBeforeDe
         Future.failed(new IllegalStateException(s"Job ${processName.value} cannot be deployed, status: ${oldJob.status.name}")) else Future.successful(Some(())))
       //when it's failed we don't need savepoint...
       if oldJob.isDeployed
+      _ <- OptionT(checkRequiredSlotsExceedAvailableSlots(processDeploymentData, Some(deploymentId)).map(Option(_)))
       maybeSavePoint <- OptionT.liftF(stopSavingSavepoint(processVersion, deploymentId, processDeploymentData))
     } yield {
       logger.info(s"Deploying $processName. Saving savepoint finished")
       maybeSavePoint
     }
 
-    stoppingResult.value.flatMap { maybeSavepoint =>
-      runProgram(processName,
+    for {
+      maybeSavepoint <- stoppingResult.value
+      // In case of redeploy we double check required slots which is not bad because can be some run between jobs and it is better to check it again
+      _ <- checkRequiredSlotsExceedAvailableSlots(processDeploymentData, None)
+      runResult <- runProgram(processName,
         prepareProgramMainClass(processDeploymentData),
         prepareProgramArgs(modelData.inputConfigDuringExecution.serialized, processVersion, deploymentData, processDeploymentData),
         savepointPath.orElse(maybeSavepoint))
-    }
+    } yield runResult
   }
+
+  protected def checkRequiredSlotsExceedAvailableSlots(processDeploymentData: ProcessDeploymentData, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit]
 
   override def savepoint(processName: ProcessName, savepointDir: Option[String]): Future[SavepointResult] = {
     requireRunningProcess(processName) {

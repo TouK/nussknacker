@@ -1,0 +1,89 @@
+{
+  "metaData" : {
+    "id" : "testfragment",
+    "typeSpecificData" : {
+      "parallelism" : null,
+      "spillStateToDisk" : true,
+      "useAsyncInterpretation" : null,
+      "checkpointIntervalInSeconds" : null,
+      "type" : "StreamMetaData"
+    },
+    "isSubprocess" : true,
+    "additionalFields" : {
+      "description" : null,
+      "properties" : {
+
+      }
+    },
+    "subprocessVersions" : {
+
+    }
+  },
+  "exceptionHandlerRef" : {
+    "parameters" : [
+    ]
+  },
+  "nodes" : [
+    {
+      "id" : "input",
+      "parameters" : [
+        {
+          "name" : "i111",
+          "typ" : {
+            "refClazzName" : "java.lang.String"
+          }
+        },
+        {
+          "name" : "i222",
+          "typ" : {
+            "refClazzName" : "int"
+          }
+        },
+        {
+          "name" : "i333",
+          "typ" : {
+            "refClazzName" : "boolean"
+          }
+        }
+      ],
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 0
+        }
+      },
+      "type" : "SubprocessInputDefinition"
+    },
+    {
+      "id" : "output",
+      "outputName" : "testOutput",
+      "fields" : [
+        {
+          "name" : "o111",
+          "expression" : {
+            "language" : "spel",
+            "expression" : "\"aaa\""
+          }
+        },
+        {
+          "name" : "o222",
+          "expression" : {
+            "language" : "spel",
+            "expression" : "#DATE.nowTimestamp"
+          }
+        }
+      ],
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 360,
+          "y" : 0
+        }
+      },
+      "type" : "SubprocessOutputDefinition"
+    }
+  ],
+  "additionalBranches" : [
+  ]
+}

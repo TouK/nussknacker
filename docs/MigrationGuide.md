@@ -10,6 +10,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `UserClassLoader` was removed, use appropriate Flink objects or context ClassLoader. 
   * RocksDB configuration is turned on by `rocksdb.enable` instead of `rocksdb.checkpointDataUri` which is not used now. 
 * [#2133](https://github.com/TouK/nussknacker/pull/2133) SQL Variable is hidden in generic model, please look at comment in `defaultModelConfig.conf`
+* [#2152](https://github.com/TouK/nussknacker/pull/2152) `schedulePropertyExtractor` parameter of `PeriodicDeploymentManagerProvider`
+  was changed to a factory, replace with a lambda creating the original property extractor.
 
 ## In version 0.4.0
 

@@ -6,16 +6,16 @@ import pl.touk.nussknacker.engine.api.TypeSpecificData
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.management.FlinkConfig
-import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, DefaultAdditionalDeploymentDataProvider, EmptyListener, EmptyPeriodicProcessListenerFactory, PeriodicProcessListener, PeriodicProcessListenerFactory}
+import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, DefaultAdditionalDeploymentDataProvider, EmptyPeriodicProcessListenerFactory, PeriodicProcessListenerFactory}
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
-import pl.touk.nussknacker.engine.{ModelData, DeploymentManagerProvider}
+import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData}
 
 class PeriodicDeploymentManagerProvider(delegate: DeploymentManagerProvider,
-                                     schedulePropertyExtractor: SchedulePropertyExtractor = CronSchedulePropertyExtractor(),
-                                     enrichDeploymentWithJarDataFactory: EnrichDeploymentWithJarDataFactory = EnrichDeploymentWithJarDataFactory.noOp,
-                                     listenerFactory: PeriodicProcessListenerFactory = EmptyPeriodicProcessListenerFactory,
-                                     additionalDeploymentDataProvider: AdditionalDeploymentDataProvider = DefaultAdditionalDeploymentDataProvider
-                                    ) extends DeploymentManagerProvider with LazyLogging {
+                                        schedulePropertyExtractorFactory: SchedulePropertyExtractorFactory = _ => CronSchedulePropertyExtractor(),
+                                        enrichDeploymentWithJarDataFactory: EnrichDeploymentWithJarDataFactory = EnrichDeploymentWithJarDataFactory.noOp,
+                                        listenerFactory: PeriodicProcessListenerFactory = EmptyPeriodicProcessListenerFactory,
+                                        additionalDeploymentDataProvider: AdditionalDeploymentDataProvider = DefaultAdditionalDeploymentDataProvider
+                                       ) extends DeploymentManagerProvider with LazyLogging {
 
   override def name: String = s"${delegate.name}Periodic"
 
@@ -29,7 +29,7 @@ class PeriodicDeploymentManagerProvider(delegate: DeploymentManagerProvider,
     val flinkConfig = config.rootAs[FlinkConfig]
     PeriodicDeploymentManager(
       delegate = delegateDeploymentManager,
-      schedulePropertyExtractor = schedulePropertyExtractor,
+      schedulePropertyExtractorFactory = schedulePropertyExtractorFactory,
       enrichDeploymentWithJarDataFactory = enrichDeploymentWithJarDataFactory,
       periodicBatchConfig = periodicBatchConfig,
       flinkConfig = flinkConfig,

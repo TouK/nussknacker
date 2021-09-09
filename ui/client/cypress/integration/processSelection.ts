@@ -1,6 +1,11 @@
-const NAME = "processSelection"
-
 describe("Process", () => {
+  const NAME = "processSelection"
+  const screenshotConfig = {
+    blackout: [
+      ".graphPage > :not(#nk-graph-main) > div",
+    ],
+  }
+
   before(() => {
     cy.deleteAllTestProcesses({filter: NAME, force: true})
   })
@@ -15,11 +20,9 @@ describe("Process", () => {
     cy.get("#nk-graph-main svg", {timeout: 20000}).as("graph")
   })
 
-  describe.skip("mouse drag", () => {
+  describe("mouse drag", () => {
     beforeEach(() => {
       cy.get("[title='toggle left panel']").click()
-      //Currently with default settings right toggle is not enabled, so we'll stick with unnecessary items on snapshot
-      //cy.get("[title='toggle right panel']").click()
     })
 
     it("should allow pan view", () => {
@@ -28,7 +31,7 @@ describe("Process", () => {
         .trigger("mousemove", 200, 100, {force: true})
         .trigger("mouseup", {force: true})
         .wait(200)
-        .toMatchExactImageSnapshot()
+        .toMatchExactImageSnapshot({screenshotConfig})
     })
 
     it("should select only fully covered (to right)", () => {
@@ -36,10 +39,10 @@ describe("Process", () => {
         .trigger("keydown", {key: "Meta"})
         .trigger("mousedown", 300, 100, {metaKey: true, force: true})
         .trigger("mousemove", 700, 500, {metaKey: true, force: true})
-        .toMatchExactImageSnapshot()
+        .toMatchExactImageSnapshot({screenshotConfig})
       cy.get("@graph")
         .trigger("mouseup", {force: true})
-        .toMatchExactImageSnapshot()
+        .toMatchExactImageSnapshot({screenshotConfig})
     })
 
     it("should select partially covered (to left)", () => {
@@ -47,10 +50,10 @@ describe("Process", () => {
         .trigger("keydown", {key: "Meta"})
         .trigger("mousedown", 700, 100, {metaKey: true, force: true})
         .trigger("mousemove", 500, 500, {metaKey: true, force: true})
-        .toMatchExactImageSnapshot()
+        .toMatchExactImageSnapshot({screenshotConfig})
       cy.get("@graph")
         .trigger("mouseup", {force: true})
-        .toMatchExactImageSnapshot()
+        .toMatchExactImageSnapshot({screenshotConfig})
     })
 
     it("should switch modes, append and inverse select with shift", () => {
@@ -58,19 +61,19 @@ describe("Process", () => {
         .trigger("keydown", {key: "Meta"})
         .trigger("mousedown", 700, 100, {metaKey: true, force: true})
         .trigger("mousemove", 500, 400, {metaKey: true, force: true})
-        .toMatchExactImageSnapshot()
+        .toMatchExactImageSnapshot({screenshotConfig})
       cy.get("@graph")
         .trigger("mouseup", {force: true})
         .trigger("keyup", {key: "Meta"})
-        .toMatchExactImageSnapshot()
+        .toMatchExactImageSnapshot({screenshotConfig})
       cy.get("@graph")
         .trigger("keydown", {key: "Shift"})
         .trigger("mousedown", 700, 150, {shiftKey: true, force: true})
         .trigger("mousemove", 500, 550, {shiftKey: true, force: true})
-        .toMatchExactImageSnapshot()
+        .toMatchExactImageSnapshot({screenshotConfig})
       cy.get("@graph")
         .trigger("mouseup", {force: true})
-        .toMatchExactImageSnapshot()
+        .toMatchExactImageSnapshot({screenshotConfig})
     })
   })
 })

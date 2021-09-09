@@ -1,16 +1,13 @@
 package pl.touk.nussknacker.engine.management
 
-import java.net.NoRouteToHostException
-import java.util.concurrent.TimeoutException
 import com.typesafe.config.ConfigFactory
-import io.circe.Json
 import io.circe.Json.fromString
 import org.apache.flink.api.common.JobStatus
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{CustomProcess, DeploymentData, DeploymentId, ExternalDeploymentId, ProcessState, SavepointResult, StateStatus, User}
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{ExecutionConfig, GetSavepointStatusResponse, JarsResponse, JobConfig, JobOverview, JobTasksOverview, JobsResponse, RunResponse, SavepointOperation, SavepointStatus, SavepointTriggerResponse, UploadJarResponse}
+import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -18,10 +15,12 @@ import sttp.client.testing.SttpBackendStub
 import sttp.client.{NothingT, Response, SttpBackend, SttpClientException}
 import sttp.model.{Method, StatusCode}
 
+import java.net.NoRouteToHostException
+import java.util.concurrent.TimeoutException
 import java.util.{Collections, UUID}
 import scala.collection.mutable
-import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
 //TODO move some tests to FlinkHttpClientTest
 class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutures {
@@ -30,7 +29,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
 
   private var statuses: List[JobOverview] = List()
 
-  private var configs: Map[String, Map[String, Json]] = Map()
+  private var configs: Map[String, ExecutionConfig] = Map()
 
   private val uploadedJarPath = "file"
 
@@ -51,12 +50,15 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
 
   private case class HistoryEntry(operation: String, jobId: Option[String])
 
+
   private def createManagerWithHistory(statuses: List[JobOverview] = List(),
-                            acceptSavepoint: Boolean = false,
-                            acceptDeploy: Boolean = false,
-                            acceptStop: Boolean = false,
-                            acceptCancel: Boolean = true,
-                            statusCode: StatusCode = StatusCode.Ok, exceptionOnDeploy: Option[Exception] = None): (FlinkRestManager, mutable.Buffer[HistoryEntry])
+                                       acceptSavepoint: Boolean = false,
+                                       acceptDeploy: Boolean = false,
+                                       acceptStop: Boolean = false,
+                                       acceptCancel: Boolean = true,
+                                       statusCode: StatusCode = StatusCode.Ok,
+                                       exceptionOnDeploy: Option[Exception] = None
+                                      ): (FlinkRestManager, mutable.Buffer[HistoryEntry])
   = {
     import scala.collection.JavaConverters._
     val history: mutable.Buffer[HistoryEntry] = Collections.synchronizedList(new java.util.ArrayList[HistoryEntry]()).asScala
@@ -67,7 +69,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
           JobsResponse(statuses)
         case (List("jobs", jobId, "config"), Method.GET) =>
           history.append(HistoryEntry("config", Some(jobId)))
-          JobConfig(jobId, ExecutionConfig(configs.getOrElse(jobId, Map())))
+          JobConfig(jobId, configs.getOrElse(jobId, ExecutionConfig(`job-parallelism` = 1, `user-config` = Map.empty)))
         case (List("jobs", jobId), Method.PATCH) if acceptCancel =>
           history.append(HistoryEntry("cancel", Some(jobId)))
           ()
@@ -278,7 +280,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     statuses = List(JobOverview(jid, processName.value, 40L, 10L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)),
       JobOverview("1111", "p1", 35L, 30L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)))
     //Flink seems to be using strings also for Configuration.setLong
-    configs = Map(jid -> Map("versionId" -> fromString(version.toString), "user" -> fromString(user)))
+    configs = Map(jid -> ExecutionConfig(1, Map("versionId" -> fromString(version.toString), "user" -> fromString(user))))
 
     val manager = createManager(statuses)
     manager.findJobStatus(processName).futureValue shouldBe Some(processState(

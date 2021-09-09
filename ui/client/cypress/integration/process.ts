@@ -1,8 +1,13 @@
 import {jsonToBlob} from "../support/tools"
 
-const seed = "process"
-
 describe("Process", () => {
+  const seed = "process"
+  const screenshotConfig = {
+    blackout: [
+      ".graphPage > :not(#nk-graph-main) > div",
+    ],
+  }
+
   before(() => {
     cy.deleteAllTestProcesses({filter: seed, force: true})
   })
@@ -80,26 +85,22 @@ describe("Process", () => {
     it("should allow drag node", () => {
       cy.contains("layout").click()
       cy.get("[title='toggle left panel']").click()
-      //Currently with default settings right toggle is not enabled, so we'll stick with unnecessary items on snapshot
-      //cy.get("[title='toggle right panel']").click()
       cy.get("[model-id=dynamicService]")
         .should("be.visible")
         .trigger("mousedown")
         .trigger("mousemove", {clientX: 100, clientY: 100})
         .trigger("mouseup", {force: true})
-      cy.get("#nk-graph-main").toMatchImageSnapshot()
+      cy.get("#nk-graph-main").toMatchImageSnapshot({screenshotConfig})
     })
 
     it("should allow drag component and drop on edge", () => {
       cy.contains("layout").click()
-      //Currently with default settings right toggle is not enabled, so we'll stick with unnecessary items on snapshot
-      //cy.get("[title='toggle right panel']").click()
       cy.contains("custom")
         .should("be.visible").click()
       cy.get("[data-testid='component:customFilter']")
         .should("be.visible")
         .drag("#nk-graph-main", {x: 580, y: 450, position: "right", force: true})
-      cy.get("#nk-graph-main").toMatchImageSnapshot()
+      cy.get("#nk-graph-main").toMatchImageSnapshot({screenshotConfig})
     })
 
     it("should have counts button and modal", () => {

@@ -1,6 +1,6 @@
-const seed = "suggester"
-
 describe("Expression suggester", () => {
+  const seed = "suggester"
+
   before(() => {
     cy.deleteAllTestProcesses({filter: seed, force: true})
   })

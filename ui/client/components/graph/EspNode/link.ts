@@ -2,7 +2,6 @@
 import {dia} from "jointjs"
 import {Edge} from "../../../types"
 import NodeUtils from "../NodeUtils"
-import {arrowMarker} from "../arrowMarker"
 
 const LINK_TEXT_COLOR = "#686868"
 const LINK_COLOR = "#F5F5F5"
@@ -36,11 +35,11 @@ function makeLabels(label = ""): dia.Link.Label[] {
   }]
 }
 
-export const defaultLink = new dia.Link({
+export const defaultLink = (arrowMarkerId: string) => new dia.Link({
   markup: "<path class=\"connection\"/><path class=\"connection-wrap\"/><g class=\"marker-vertices\"/><g class=\"marker-arrowheads\"/><g class=\"link-tools\"/>",
   attrs: {
     ".connection": {
-      markerEnd: `url(#${arrowMarker.attr("id")})`,
+      markerEnd: `url(#${arrowMarkerId})`,
     },
     ".link-tools": {
       noExport: true,
@@ -48,10 +47,10 @@ export const defaultLink = new dia.Link({
   },
 })
 
-export const makeLink = (edge: Edge): dia.Link => {
+export const makeLink = (edge: Edge, arrowMarkerId: string): dia.Link => {
   const edgeLabel = NodeUtils.edgeLabel(edge)
   const labels = makeLabels(edgeLabel)
-  const link = defaultLink.clone() as dia.Link
+  const link = defaultLink(arrowMarkerId) as dia.Link
   return link
     //TODO: some different way to create id? Must be deterministic and unique
     .prop("id", `${edge.from}-${edge.to}-${edgeLabel}`)

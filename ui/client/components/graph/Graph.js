@@ -442,5 +442,3 @@ export function commonState(state) {
     selectionState: getSelectionState(state),
   }
 }
-
-export const subprocessParent = "modal-content"
