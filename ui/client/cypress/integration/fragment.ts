@@ -17,9 +17,6 @@ describe("Fragment", {
     cy.deleteAllTestProcesses({filter: seed})
   })
 
-  beforeEach(() => {
-  })
-
   it("should allow adding input parameters and display used fragment graph in modal", () => {
     cy.visitNewFragment(seed, "fragment").as("fragmentName")
     cy.get("[model-id=input]").should("be.visible").trigger("dblclick")
