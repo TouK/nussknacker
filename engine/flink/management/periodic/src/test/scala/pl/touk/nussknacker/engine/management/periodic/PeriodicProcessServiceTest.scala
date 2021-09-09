@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository.createPeriodicProcessDeployment
 import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeployment, PeriodicProcessDeploymentStatus}
-import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, DeployedEvent, FailedEvent, FinishedEvent, PeriodicProcessEvent, PeriodicProcessListener, ScheduledEvent}
+import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, DeployedEvent, FailedEvent, FinishedEvent, PeriodicProcessEvent, PeriodicProcessListener, ProcessConfigEnricher, ScheduledEvent}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.time.temporal.{ChronoField, ChronoUnit, TemporalField}
@@ -43,7 +43,9 @@ class PeriodicProcessServiceTest extends FunSuite
       new AdditionalDeploymentDataProvider {
         override def prepareAdditionalData(runDetails: PeriodicProcessDeployment): Map[String, String] =
           additionalData + ("runId" -> runDetails.id.value.toString)
-      }, Clock.systemDefaultZone()
+      },
+      ProcessConfigEnricher.identity,
+      Clock.systemDefaultZone()
     )
   }
 

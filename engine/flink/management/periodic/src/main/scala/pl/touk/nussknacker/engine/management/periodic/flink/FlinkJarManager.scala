@@ -5,9 +5,9 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentData, ExternalDeploymentId, GraphProcess}
 import pl.touk.nussknacker.engine.management.periodic.model.DeploymentWithJarData
-import pl.touk.nussknacker.engine.management.periodic.{EnrichDeploymentWithJarData, JarManager, PeriodicBatchConfig, model}
+import pl.touk.nussknacker.engine.management.periodic.{JarManager, PeriodicBatchConfig, model}
 import pl.touk.nussknacker.engine.management.rest.{FlinkClient, HttpFlinkClient}
-import pl.touk.nussknacker.engine.management.{FlinkConfig, FlinkModelJar, FlinkDeploymentManager, FlinkStreamingRestManager}
+import pl.touk.nussknacker.engine.management.{FlinkConfig, FlinkDeploymentManager, FlinkModelJar, FlinkStreamingRestManager}
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 import sttp.client.{NothingT, SttpBackend}
 
@@ -18,15 +18,13 @@ import scala.concurrent.{ExecutionContext, Future}
 private[periodic] object FlinkJarManager {
   def apply(flinkConfig: FlinkConfig,
             periodicBatchConfig: PeriodicBatchConfig,
-            modelData: ModelData,
-            enrichDeploymentWithJarData: EnrichDeploymentWithJarData)
+            modelData: ModelData)
            (implicit backend: SttpBackend[Future, Nothing, NothingT], ec: ExecutionContext): JarManager = {
     new FlinkJarManager(
       flinkClient = new HttpFlinkClient(flinkConfig),
       jarsDir = Paths.get(periodicBatchConfig.jarsDir),
       modelConfig = modelData.inputConfigDuringExecution,
-      createCurrentModelJarFile = new FlinkModelJar().buildJobJar(modelData),
-      enrichDeploymentWithJarData = enrichDeploymentWithJarData
+      createCurrentModelJarFile = new FlinkModelJar().buildJobJar(modelData)
     )
   }
 }
@@ -35,8 +33,7 @@ private[periodic] object FlinkJarManager {
 private[periodic] class FlinkJarManager(flinkClient: FlinkClient,
                                         jarsDir: Path,
                                         modelConfig: InputConfigDuringExecution,
-                                        createCurrentModelJarFile: => File,
-                                        enrichDeploymentWithJarData: EnrichDeploymentWithJarData)
+                                        createCurrentModelJarFile: => File)
   extends JarManager with LazyLogging {
 
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -46,14 +43,13 @@ private[periodic] class FlinkJarManager(flinkClient: FlinkClient,
   override def prepareDeploymentWithJar(processVersion: ProcessVersion,
                                         processJson: String): Future[DeploymentWithJarData] = {
     logger.info(s"Prepare deployment for scenario: $processVersion")
-    copyJarToLocalDir(processVersion).flatMap { jarFileName =>
-      val deploymentWithJarData = model.DeploymentWithJarData(
+    copyJarToLocalDir(processVersion).map { jarFileName =>
+      DeploymentWithJarData(
         processVersion = processVersion,
         processJson = processJson,
         modelConfig = modelConfig.serialized,
         jarFileName = jarFileName
       )
-      enrichDeploymentWithJarData(deploymentWithJarData)
     }
   }
 
