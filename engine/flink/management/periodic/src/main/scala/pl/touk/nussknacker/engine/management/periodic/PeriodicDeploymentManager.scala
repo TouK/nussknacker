@@ -1,10 +1,8 @@
 package pl.touk.nussknacker.engine.management.periodic
 
-import java.time.{Clock, LocalDateTime, ZoneOffset}
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.management.periodic.db.{DbInitializer, SlickPeriodicProcessesRepository}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
@@ -12,20 +10,22 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.periodic.Utils._
+import pl.touk.nussknacker.engine.management.periodic.db.{DbInitializer, SlickPeriodicProcessesRepository}
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
 import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeployment, PeriodicProcessDeploymentStatus}
-import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, PeriodicProcessListener, PeriodicProcessListenerFactory}
+import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, PeriodicProcessListenerFactory}
 import slick.jdbc
 import slick.jdbc.JdbcProfile
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client.{NothingT, SttpBackend}
 
+import java.time.{Clock, LocalDateTime, ZoneOffset}
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 object PeriodicDeploymentManager {
   def apply(delegate: DeploymentManager,
-            schedulePropertyExtractor: SchedulePropertyExtractor,
+            schedulePropertyExtractorFactory: SchedulePropertyExtractorFactory,
             enrichDeploymentWithJarDataFactory: EnrichDeploymentWithJarDataFactory,
             periodicBatchConfig: PeriodicBatchConfig,
             flinkConfig: FlinkConfig,
@@ -56,7 +56,7 @@ object PeriodicDeploymentManager {
       Await.ready(backend.close(), 10 seconds)
       ()
     }
-    new PeriodicDeploymentManager(delegate, service, schedulePropertyExtractor, toClose)
+    new PeriodicDeploymentManager(delegate, service, schedulePropertyExtractorFactory(originalConfig), toClose)
   }
 }
 
