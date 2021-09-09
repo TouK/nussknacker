@@ -19,6 +19,7 @@ Some additional refactors done: logback configuration enhancements, simpler run.
 * [#2105](https://github.com/TouK/nussknacker/pull/2105) [#2112](https://github.com/TouK/nussknacker/pull/2112)
 Better handling Flink's job deploying - we report job initialization as a "DURING_DEPLOY" instead of "RUNNING" now, and we are checking available slots on Flink before deploy
 * [#2152](https://github.com/TouK/nussknacker/pull/2152) Possibility to create `SchedulePropertyExtractor` using deployment manager's configuration.
+* [#2133](https://github.com/TouK/nussknacker/pull/2133) SQL Variable is hidden in generic model
 
 0.4.0
 ------------------------
