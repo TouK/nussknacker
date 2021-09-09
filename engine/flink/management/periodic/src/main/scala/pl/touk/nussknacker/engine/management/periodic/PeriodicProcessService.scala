@@ -210,29 +210,35 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
 
   /**
    * Returns latest deployment. It can be in any status (consult [[PeriodicProcessDeploymentStatus]]).
-   * For multiple schedules only the effective one is returned.
+   * For multiple schedules only single schedule is returned in the following order:
+   * <ol>
+   * <li>If there are any deployed scenarios, then the first one is returned. Please be aware that deployment of previous
+   * schedule could fail.</li>
+   * <li>If there are any failed scenarios, then the last one is returned. We want to inform user, that some deployments
+   * failed and the scenario should be rescheduled/retried manually.
+   * <li>If there are any scheduled scenarios, then the first one to be run is returned.
+   * <li>If there are any finished scenarios, then the last one is returned. It should not happen because the scenario
+   * should be deactivated earlier.
+   * </ol>
    */
   def getLatestDeployment(processName: ProcessName): Future[Option[PeriodicProcessDeployment]] = {
     implicit val localDateOrdering: Ordering[LocalDateTime] = Ordering.by(identity[ChronoLocalDateTime[_]])
 
     scheduledProcessesRepository.getLatestDeploymentForEachSchedule(processName)
       .map(_.sortBy(_.runAt)).run
-      .map {
-        case Nil => None
-        case singleDeployment :: Nil => Some(singleDeployment)
-        case multipleDeployments =>
-          logger.debug("Found multiple deployments: {}", multipleDeployments.map(_.display))
+      .map { deployments =>
+        logger.debug("Found deployments: {}", deployments.map(_.display))
 
-          def first(status: PeriodicProcessDeploymentStatus) =
-            multipleDeployments.find(_.state.status == status)
+        def first(status: PeriodicProcessDeploymentStatus) =
+          deployments.find(_.state.status == status)
 
-          def last(status: PeriodicProcessDeploymentStatus) =
-            multipleDeployments.reverse.find(_.state.status == status)
+        def last(status: PeriodicProcessDeploymentStatus) =
+          deployments.reverse.find(_.state.status == status)
 
-          first(PeriodicProcessDeploymentStatus.Deployed)
-            .orElse(last(PeriodicProcessDeploymentStatus.Failed))
-            .orElse(first(PeriodicProcessDeploymentStatus.Scheduled))
-            .orElse(last(PeriodicProcessDeploymentStatus.Finished))
+        first(PeriodicProcessDeploymentStatus.Deployed)
+          .orElse(last(PeriodicProcessDeploymentStatus.Failed))
+          .orElse(first(PeriodicProcessDeploymentStatus.Scheduled))
+          .orElse(last(PeriodicProcessDeploymentStatus.Finished))
       }
   }
 

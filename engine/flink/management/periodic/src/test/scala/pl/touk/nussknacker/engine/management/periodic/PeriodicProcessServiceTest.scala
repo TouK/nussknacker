@@ -28,7 +28,6 @@ class PeriodicProcessServiceTest extends FunSuite
   with OptionValues
   with ScalaFutures
   with PatientScalaFutures
-  with OptionValues
   with TableDrivenPropertyChecks {
 
   import org.scalatest.LoneElement._
