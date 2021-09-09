@@ -1,4 +1,7 @@
-describe("Fragment", () => {
+describe("Fragment", {
+  viewportHeight: 1000,
+  viewportWidth: 1440,
+}, () => {
   const seed = "fragment"
   const screenshotConfig = {
     blackout: [
@@ -12,10 +15,6 @@ describe("Fragment", () => {
 
   after(() => {
     cy.deleteAllTestProcesses({filter: seed})
-  })
-
-  beforeEach(() => {
-    cy.viewport(1440, 1000)
   })
 
   it("should allow adding input parameters and display used fragment graph in modal", () => {
