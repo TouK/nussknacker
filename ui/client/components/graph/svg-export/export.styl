@@ -1,9 +1,7 @@
-@require "../graphTheme.styl"
-
 linkColor = #B3B3B3
 
 .graph-export
-    [no-export]
+    [no-export], [noExport]
     .connection-wrap
     .marker-arrowheads
         display none
@@ -16,5 +14,8 @@ linkColor = #B3B3B3
             stroke linkColor
             fill none
 
+        .connection
         .joint-port-body
+        &.joint-type-esp-model rect
             stroke-width 2px
+
