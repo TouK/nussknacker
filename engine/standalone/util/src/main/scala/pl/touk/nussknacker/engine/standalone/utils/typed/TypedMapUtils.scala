@@ -1,7 +1,8 @@
-package pl.touk.nussknacker.engine.standalone.utils.typing
+package pl.touk.nussknacker.engine.standalone.utils.typed
 
 import io.circe.{Json, JsonObject}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
+
 import scala.collection.JavaConverters._
 
 object TypedMapUtils {

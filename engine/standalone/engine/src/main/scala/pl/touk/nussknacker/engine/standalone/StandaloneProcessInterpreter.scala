@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.standalone
 
 import cats.Id
-import java.util.concurrent.atomic.AtomicLong
 
+import java.util.concurrent.atomic.AtomicLong
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{EitherT, NonEmptyList, Validated, ValidatedNel, Writer, WriterT}
+import io.circe.Json
 import pl.touk.nussknacker.engine.Interpreter.{FutureShape, InterpreterShape}
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, UnsupportedPart}
@@ -25,10 +26,10 @@ import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.standalone.api.types._
 import pl.touk.nussknacker.engine.standalone.api._
 import pl.touk.nussknacker.engine.standalone.metrics.InvocationMetrics
+import pl.touk.nussknacker.engine.standalone.openapi.StandaloneOpenApiGenerator
 import pl.touk.nussknacker.engine.{ModelData, compiledgraph}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Using.Releasable
 import scala.util.control.NonFatal
 
 object StandaloneProcessInterpreter {
@@ -251,6 +252,21 @@ case class StandaloneProcessInterpreter(source: StandaloneSource[Any],
         })
 
       }
+    }
+  }
+
+  def produceOpenApiDefinition(): Option[Json] = {
+    for {
+      sourceDefinition <- source.openApiDefinition
+      responseDefinition = Json.Null
+    } yield {
+      StandaloneOpenApiGenerator.generateScenarioDefinition(
+        id,
+        sourceDefinition.definition,
+        responseDefinition,
+        sourceDefinition.description,
+        sourceDefinition.tags
+      )
     }
   }
 
