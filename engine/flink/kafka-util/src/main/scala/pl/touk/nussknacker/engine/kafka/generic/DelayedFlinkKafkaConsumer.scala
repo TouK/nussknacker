@@ -25,7 +25,7 @@ class DelayedFlinkKafkaConsumer[T](topics: List[PreparedKafkaTopic],
                                    schema: KafkaDeserializationSchema[T],
                                    config: KafkaConfig,
                                    consumerGroupId: String,
-                                   delay: Long,
+                                   delayProvider: DelayCalculator,
                                    timestampAssigner: Option[TimestampWatermarkHandler[T]])
   extends FlinkKafkaConsumer[T](topics.map(_.prepared).asJava, schema, KafkaUtils.toProperties(config, Some(consumerGroupId))) {
 
@@ -55,7 +55,7 @@ class DelayedFlinkKafkaConsumer[T](topics: List[PreparedKafkaTopic],
       properties,
       pollTimeout,
       useMetrics,
-      delay,
+      delayProvider,
       timestampAssigner
     )
   }
@@ -78,7 +78,7 @@ class DelayedKafkaFetcher[T](sourceContext: SourceFunction.SourceContext[T],
                              kafkaProperties: Properties,
                              pollTimeout: lang.Long,
                              useMetrics: Boolean,
-                             delay: Long,
+                             delayProvider: DelayCalculator,
                              timestampAssigner: Option[TimestampWatermarkHandler[T]]) extends KafkaFetcher[T](sourceContext, assignedPartitionsWithInitialOffsets, watermarkStrategy,
   processingTimeProvider, autoWatermarkInterval, userCodeClassLoader, taskNameWithSubtasks, deserializer, kafkaProperties, pollTimeout, metricGroup, consumerMetricGroup, useMetrics) with LazyLogging {
   import DelayedKafkaFetcher._
@@ -104,20 +104,20 @@ class DelayedKafkaFetcher[T](sourceContext: SourceFunction.SourceContext[T],
       }
     })
 
-    var latency = processingTimeProvider.getCurrentProcessingTime - maxEventTimestamp
+    var currentDelay = 0L
+    val delay = delayProvider.calculateDelay(processingTimeProvider.getCurrentProcessingTime, maxEventTimestamp)
+    while (delay > currentDelay) {
+      val remainingDelay = delay - currentDelay
+      val sleepTime = Math.min(maxSleepTime, remainingDelay)
 
-    while (delay > latency) {
-      val eventDelay = delay - latency
-      val sleepTime = Math.min(maxSleepTime, eventDelay)
-
-      val logMessage = s"Sleeping for $sleepTime ms of total $eventDelay ms for ${records.size()} events. Max event timestamp is $maxEventTimestamp, fetcher delay is $delay."
+      val logMessage = s"Sleeping for $sleepTime ms of total $remainingDelay ms for ${records.size()} events. Max event timestamp is $maxEventTimestamp, fetcher delay is $delay."
 
       if (sleepTime >= maxSleepTime) {
         logger.info(logMessage)
       }
 
       Thread.sleep(sleepTime)
-      latency += sleepTime
+      currentDelay += sleepTime
     }
 
     super.emitRecordsWithTimestamps(records, partitionState, offset, kafkaEventTimestamp)
