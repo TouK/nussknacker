@@ -23,10 +23,10 @@ type OwnProps = {
 export default function Tool(props: OwnProps): JSX.Element {
   const {label, nodeModel, highlight} = props
   const icon = useToolIcon(nodeModel)
-  const [collectedProps, drag] = useDrag({
-    item: {...cloneDeep(nodeModel), id: label, type: DndTypes.ELEMENT},
-    begin: () => ({...cloneDeep(nodeModel), id: label}),
-  })
+  const [collectedProps, drag] = useDrag(() => ({
+    type: DndTypes.ELEMENT,
+    item: {...cloneDeep(nodeModel), id: label},
+  }))
 
   const {theme} = useNkTheme()
 
