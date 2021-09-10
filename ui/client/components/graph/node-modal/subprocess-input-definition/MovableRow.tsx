@@ -19,12 +19,10 @@ export function MovableRow(props: PropsWithChildren<MovableRowProps>): JSX.Eleme
   const {index, moveItem, children} = props
   const ref = useRef(null)
 
-  const [{isDragging}, drag, preview] = useDrag({
-    item: {type: TYPE, index},
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
-  })
+  const [{isDragging}, drag, preview] = useDrag(() => ({
+    type: TYPE,
+    item: {index},
+  }))
 
   const [{handlerId}, drop] = useDrop({
     accept: TYPE,
