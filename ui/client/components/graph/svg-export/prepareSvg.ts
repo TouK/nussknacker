@@ -65,7 +65,7 @@ function hasDisplay(el: Element) {
 
 const removeHiddenNodes = (root: SVGElement) => Array
   // TODO: find better way
-  .from(root.querySelectorAll<SVGGraphicsElement>("svg > g [style*='display'], svg > g [class]"))
+  .from(root.querySelectorAll<SVGGraphicsElement>("svg > g [style*='display'], svg > g [class], [noexport]"))
   .filter(el => !hasSize(el) || !hasDisplay(el))
   .filter((el, i, all) => !all.includes(el.ownerSVGElement))
   .forEach(el => el.remove())
