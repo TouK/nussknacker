@@ -139,8 +139,16 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         case Nil => valid(Unknown)
       }
 
-      //TODO: what should be here?
-      case e: ConstructorReference => fixed(TypingResultWithContext(Unknown))
+      case e: ConstructorReference => withTypedChildren { _ =>
+        val className = e.getChild(0).toStringAST
+        val classToUse = Try(evaluationContextPreparer.prepareEvaluationContext(Context(""), Map.empty).getTypeLocator.findType(className)).toOption
+        //TODO: validate constructor parameters...
+        val clazz = classToUse.flatMap(kl => typeDefinitionSet.typeDefinitions.find(_.clazzName.klass == kl).map(_.clazzName))
+        clazz match {
+          case Some(typedClass) => Valid(TypingResultWithContext(typedClass))
+          case None => invalid(s"Cannot create instance of unknown class $classToUse")
+        }
+      }
 
       case e: Elvis => withTypedChildren(l => Valid(TypingResultWithContext(Typed(l.map(_.typingResult).toSet))))
       //TODO: what should be here?
@@ -185,7 +193,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
           values.map(typeNode(validationContext, _, current.withoutIntermediateResults)).sequence.andThen { typedValues =>
             withCombinedIntermediate(typedValues, current) { typedValues =>
               val typ = TypedObjectTypingResult(literalKeys.zip(typedValues.map(_.typingResult)))
-              Valid(TypedNode(node,TypingResultWithContext(typ)))
+              Valid(TypedNode(node, TypingResultWithContext(typ)))
             }
           }
         }

@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.management.sample
 
+import com.cronutils.model.CronType
 import com.cronutils.model.definition.CronDefinitionBuilder
+import com.cronutils.parser.CronParser
 
 import java.time.LocalDateTime
 import com.typesafe.config.Config
@@ -125,7 +127,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "multipleParamsService" -> categories(MultipleParamsService)
       .withNodeConfig(SingleNodeConfig.zero.copy(
         params = Some(Map(
-          "foo" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("test", "test")))), None, None),
+          "foo" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))), None, None),
           "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None),
           "baz" -> ParameterConfig(None, Some(StringParameterEditor), None, None)
         )))
@@ -198,7 +200,9 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
     val additionalClasses = List(
       classOf[ReturningTestCaseClass],
-      classOf[CronDefinitionBuilder]
+      classOf[CronDefinitionBuilder],
+      classOf[CronType],
+      classOf[CronParser]
     )
 
     ExpressionConfig(

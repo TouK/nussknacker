@@ -108,7 +108,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
         ),
         "multipleParamsService" -> SingleNodeConfig(
           Some(Map(
-            "foo" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("test", "test")))), None, None),
+            "foo" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))), None, None),
             "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None),
             "baz" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))), None, None)
           )),
