@@ -51,7 +51,7 @@ class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest w
     Post("/service/streaming/enricher", entity) ~> serviceRoutes.securedRoute ~> check {
       status shouldEqual StatusCodes.OK
       val result = entityAs[io.circe.Json]
-      result.asObject.flatMap(_.apply("result")).flatMap(_.asString).getOrElse("") shouldEqual "RichObject(parameterValue,123,Some(rrrr))" //TODO: should be JSON
+      result.asObject.flatMap(_.apply("result")).flatMap(_.asString).getOrElse("") shouldEqual "RichObject(parameterValue,123,Optional[rrrr])" //TODO: should be JSON
     }
   }
   test("display valuable error message for invalid spell expression") {
