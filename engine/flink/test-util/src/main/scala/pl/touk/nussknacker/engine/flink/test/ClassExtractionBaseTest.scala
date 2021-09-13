@@ -13,8 +13,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypedClass
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 
-import java.lang.AssertionError
-
 trait ClassExtractionBaseTest extends FunSuite with Matchers {
 
   protected def model: ModelData
