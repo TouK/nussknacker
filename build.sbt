@@ -498,6 +498,7 @@ lazy val flinkPeriodicDeploymentManager = (project in engine("flink/management/p
         "org.typelevel" %% "cats-core" % catsV % "provided",
         "com.typesafe.slick" %% "slick" % slickV % "provided",
         "com.typesafe.slick" %% "slick-hikaricp" % slickV % "provided, test",
+        "org.hsqldb" % "hsqldb" % hsqldbV % "test",
         "org.flywaydb" % "flyway-core" % flywayV % "provided",
         "com.cronutils" % "cron-utils" % cronParserV
       )
@@ -572,7 +573,8 @@ lazy val process = (project in engine("flink/process")).
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
         "org.apache.flink" %% "flink-runtime" % flinkV % "provided",
-        "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided"
+        "org.apache.flink" %% "flink-statebackend-rocksdb" % flinkV % "provided",
+        "org.hsqldb" % "hsqldb" % hsqldbV % "test",
       )
     }
   ).dependsOn(flinkUtil, interpreter, flinkTestUtil % "test")
@@ -587,7 +589,10 @@ lazy val interpreter = (project in engine("interpreter")).
         //needed by scala-compiler for spring-expression...
         "com.google.code.findbugs" % "jsr305" % "3.0.2",
         "javax.validation" % "validation-api" % javaxValidationApiV,
-        "org.hsqldb" % "hsqldb" % hsqldbV,
+        //needed for SQLVariable, including in interpreter can cause metaspace leak in Flink via DriverManager
+        //TODO: handle properly via Flinks RuntimeContext.registerUserCodeClassLoaderReleaseHookIfAbsent
+        //(it can be a bit tricky, as e.g. during tests in designer we *don't* want to do it...)
+        "org.hsqldb" % "hsqldb" % hsqldbV % "provided, optional",
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "org.apache.avro" % "avro" % avroV % "test",
         "org.scalacheck" %% "scalacheck" % scalaCheckV % "test",
@@ -957,7 +962,8 @@ lazy val sql = (project in component("sql")).
     libraryDependencies ++= Seq(
       "com.zaxxer" % "HikariCP" % "4.0.3",
       "org.apache.flink" %% "flink-streaming-scala" % flinkV % Provided,
-      "org.scalatest" %% "scalatest" % scalaTestV % "it,test"
+      "org.scalatest" %% "scalatest" % scalaTestV % "it,test",
+      "org.hsqldb" % "hsqldb" % hsqldbV % "it,test",
     ),
   ).dependsOn(api % Provided, process % Provided, engineStandalone % Provided, standaloneUtil % Provided, httpUtils % Provided, flinkTestUtil % "it,test", kafkaTestUtil % "it,test")
 
