@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.avro.KafkaAvroBaseTransformer.SinkValueParamNa
 
 
 class AvroSinkValueTest extends FunSuite with Matchers {
-  private implicit val nodeId = NodeId("")
+  private implicit val nodeId: NodeId = NodeId("")
 
   test("sink params to AvroSinkRecordValue") {
     val recordSchema = SchemaBuilder
@@ -34,12 +34,14 @@ class AvroSinkValueTest extends FunSuite with Matchers {
 
     val sinkParam = AvroSinkValueParameter(recordSchema).valueOr(e => fail(e.toString))
 
-    val fields = AvroSinkValue.applyUnsafe(sinkParam, parameterValues)
+    val fields: Map[String, AvroSinkValue] = AvroSinkValue.applyUnsafe(sinkParam, parameterValues)
       .asInstanceOf[AvroSinkRecordValue]
-      .fields
+      .fields.toMap
 
     fields("a").asInstanceOf[AvroSinkSingleValue].value shouldBe value
-    fields("b").asInstanceOf[AvroSinkRecordValue].fields("c").asInstanceOf[AvroSinkSingleValue].value shouldBe value
+
+    val b: Map[String, AvroSinkValue] = fields("b").asInstanceOf[AvroSinkRecordValue].fields.toMap
+    b("c").asInstanceOf[AvroSinkSingleValue].value shouldBe value
   }
 
   test("sink params to AvroSinkSingleValue") {
