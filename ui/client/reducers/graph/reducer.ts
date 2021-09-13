@@ -1,3 +1,4 @@
+/* eslint-disable i18next/no-literal-string */
 import {concat, isEqual, pick, reject, sortBy, uniq, xor, zipObject} from "lodash"
 import undoable, {combineFilters, excludeAction} from "redux-undo"
 import {Reducer} from "../../actions/reduxTypes"
@@ -15,7 +16,6 @@ import {
   prepareNewNodesWithLayout,
   updateAfterNodeDelete,
   updateAfterNodeIdChange,
-  updateLayoutAfterNodeIdChange,
 } from "./utils"
 
 //TODO: We should change namespace from graphReducer to currentlyDisplayedProcess
@@ -293,14 +293,15 @@ const undoableReducer = undoable(reducer, {
   ignoreInitialState: true,
   undoType: "UNDO",
   redoType: "REDO",
-  clearHistoryType: ["CLEAR"],
+  clearHistoryType: ["CLEAR", "PROCESS_LOADING"],
   filter: combineFilters(
     excludeAction([
       "USER_TRACKING",
       "VALIDATION_RESULT",
+      "DISPLAY_PROCESS",
     ]),
     (action, nextState, prevState) => {
-      const keys = [
+      const keys: Array<keyof GraphState> = [
         "fetchedProcessDetails",
         "processToDisplay",
         "unsavedNewName",
