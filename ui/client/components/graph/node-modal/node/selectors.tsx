@@ -25,5 +25,5 @@ export const getReadOnly = createSelector(
   (state, fromProps?: boolean) => fromProps,
   // _ needed for wierd reselect typings ;)
   (state, _) => getCapabilities(state),
-  (fromProps, capabilities) => fromProps || !capabilities.write,
+  (fromProps, capabilities) => fromProps || !capabilities.editFrontend,
 )

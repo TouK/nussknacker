@@ -139,7 +139,7 @@ export class Graph extends React.Component {
   }
 
   canAddNode(node) {
-    return this.props.capabilities.write &&
+    return this.props.capabilities.editFrontend &&
       NodeUtils.isNode(node) &&
       NodeUtils.isAvailable(node, this.props.processDefinitionData, this.props.processCategory)
   }
