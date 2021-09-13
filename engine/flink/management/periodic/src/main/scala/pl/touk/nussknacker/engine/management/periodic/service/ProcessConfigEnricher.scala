@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.management.periodic.service
 
-import com.typesafe.config.Config
-import com.typesafe.sslconfig.util.EnrichedConfig
-import pl.touk.nussknacker.engine.api.deployment.DeploymentData
+import com.typesafe.config.{Config, ConfigFactory}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeployment
 import pl.touk.nussknacker.engine.management.periodic.service.ProcessConfigEnricher.{DeployData, EnrichedProcessConfig, InitialScheduleData}
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -22,11 +23,30 @@ trait ProcessConfigEnricher {
 
 object ProcessConfigEnricher {
 
-  case class InitialScheduleData(processJson: String, modelConfigJson: String)
+  trait ProcessConfigEnricherInputData {
+    def processJson: String
+    def modelConfigJson: String
 
-  case class DeployData(processJson: String, modelConfigJson: String, deployment: PeriodicProcessDeployment)
+    def canonicalProcess: CanonicalProcess = {
+      ProcessMarshaller.fromJson(processJson).valueOr(err => throw new IllegalArgumentException(err.msg))
+    }
+
+    def modelConfig: Config = {
+      ConfigFactory.parseString(modelConfigJson)
+    }
+  }
+
+  case class InitialScheduleData(processJson: String, modelConfigJson: String) extends ProcessConfigEnricherInputData
+
+  case class DeployData(processJson: String, modelConfigJson: String, deployment: PeriodicProcessDeployment) extends ProcessConfigEnricherInputData
 
   case class EnrichedProcessConfig(configJson: String)
+
+  object EnrichedProcessConfig {
+    def apply(config: Config): EnrichedProcessConfig = {
+      EnrichedProcessConfig(InputConfigDuringExecution.serialize(config))
+    }
+  }
 
   def identity: ProcessConfigEnricher = new ProcessConfigEnricher {
     override def onInitialSchedule(initialScheduleData: InitialScheduleData): Future[EnrichedProcessConfig] = Future.successful(EnrichedProcessConfig(initialScheduleData.modelConfigJson))
