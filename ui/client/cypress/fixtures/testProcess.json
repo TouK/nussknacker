@@ -1,119 +1,123 @@
 {
-  "metaData": {
-    "id": "e2e-1612884598459-process-test-process",
-    "typeSpecificData": {
-      "parallelism": 1,
-      "spillStateToDisk": true,
-      "useAsyncInterpretation": null,
-      "checkpointIntervalInSeconds": null,
-      "type": "StreamMetaData"
+  "metaData" : {
+    "id" : "e2e-1631287138427-process-test-process",
+    "typeSpecificData" : {
+      "parallelism" : 1,
+      "spillStateToDisk" : true,
+      "useAsyncInterpretation" : null,
+      "checkpointIntervalInSeconds" : null,
+      "type" : "StreamMetaData"
     },
-    "isSubprocess": false,
-    "additionalFields": {
-      "description": null,
-      "groups": [],
-      "properties": {
-        "numberOfThreads": "1",
-        "environment": "test"
+    "isSubprocess" : false,
+    "additionalFields" : {
+      "description" : null,
+      "properties" : {
+        "numberOfThreads" : "1",
+        "environment" : "test"
       }
+    },
+    "subprocessVersions" : {
+
     }
   },
-  "exceptionHandlerRef": {
-    "parameters": []
+  "exceptionHandlerRef" : {
+    "parameters" : [
+    ]
   },
-  "nodes": [
+  "nodes" : [
     {
-      "id": "boundedSource",
-      "ref": {
-        "typ": "boundedSource",
-        "parameters": [
+      "id" : "boundedSource",
+      "ref" : {
+        "typ" : "boundedSource",
+        "parameters" : [
           {
-            "name": "elements",
-            "expression": {
-              "language": "spel",
-              "expression": "{'', 'b'}"
+            "name" : "elements",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "{'', 'b'}"
             }
           }
         ]
       },
-      "additionalFields": {
-        "description": null,
-        "layoutData": {
-          "x": 0,
-          "y": 0
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 0
         }
       },
-      "type": "Source"
+      "type" : "Source"
     },
     {
-      "id": "enricher",
-      "service": {
-        "id": "enricher",
-        "parameters": [
+      "id" : "enricher",
+      "service" : {
+        "id" : "enricher",
+        "parameters" : [
           {
-            "name": "param",
-            "expression": {
-              "language": "spel",
-              "expression": "'default value'"
+            "name" : "param",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'default value'"
             }
           },
           {
-            "name": "tariffType",
-            "expression": {
-              "language": "spel",
-              "expression": "T(pl.touk.nussknacker.engine.management.sample.TariffType).NORMAL"
+            "name" : "tariffType",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "T(pl.touk.nussknacker.engine.management.sample.TariffType).NORMAL"
             }
           }
         ]
       },
-      "output": "output",
-      "additionalFields": {
-        "description": null,
-        "layoutData": {
-          "x": 0,
-          "y": 135
+      "output" : "output",
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 180
         }
       },
-      "type": "Enricher"
+      "type" : "Enricher"
     },
     {
-      "id": "dynamicService",
-      "service": {
-        "id": "dynamicService",
-        "parameters": [
+      "id" : "dynamicService",
+      "service" : {
+        "id" : "dynamicService",
+        "parameters" : [
         ]
       },
-      "isDisabled": null,
-      "additionalFields": {
-        "description": null,
-        "layoutData": {
-          "x": 0,
-          "y": 270
+      "isDisabled" : null,
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 360
         }
       },
-      "type": "Processor"
+      "type" : "Processor"
     },
     {
-      "id": "sendSms",
-      "ref": {
-        "typ": "sendSms",
-        "parameters": [
+      "id" : "sendSms",
+      "ref" : {
+        "typ" : "sendSms",
+        "parameters" : [
         ]
       },
-      "endResult": {
-        "language": "spel",
-        "expression": "#input"
+      "endResult" : {
+        "language" : "spel",
+        "expression" : "#input"
       },
-      "isDisabled": null,
-      "additionalFields": {
-        "description": null,
-        "layoutData": {
-          "x": 0,
-          "y": 405
+      "isDisabled" : null,
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 540
         }
       },
-      "type": "Sink"
+      "type" : "Sink"
     }
   ],
-  "additionalBranches": []
+  "additionalBranches" : [
+  ]
 }
