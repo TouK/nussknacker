@@ -93,7 +93,7 @@ describe("Process", () => {
       cy.get("#nk-graph-main").toMatchImageSnapshot({screenshotConfig})
     })
 
-    it.only("should allow drag component and drop on edge", () => {
+    it("should allow drag component and drop on edge", () => {
       cy.contains("layout").click()
       cy.contains("custom")
         .should("be.visible").click()
