@@ -29,11 +29,12 @@ abstract class BaseKafkaAvroSinkFactory extends SinkFactory {
                            nodeId: NodeId): FlinkSink = {
     //This is a bit redundant, since we already validate during creation
     val schemaData = schemaDeterminer.determineSchemaUsedInTyping.valueOr(SchemaDeterminerErrorHandler.handleSchemaRegistryErrorAndThrowException)
-    validateValueType(value.returnType, schemaData.schema, validationMode).valueOr(err => throw new CustomNodeValidationException(err.message, err.paramName, null))
+    val returnType = value.returnType
+    validateValueType(returnType, schemaData.schema, validationMode).valueOr(err => throw new CustomNodeValidationException(err.message, err.paramName, null))
     val schemaUsedInRuntime = schemaDeterminer.toRuntimeSchema(schemaData)
 
     val clientId = s"${processMetaData.id}-${preparedTopic.prepared}"
-    new KafkaAvroSink(preparedTopic, version, key, AvroSinkSingleValue(value), kafkaConfig, serializationSchemaFactory,
+    new KafkaAvroSink(preparedTopic, version, key, AvroSinkSingleValue(value, returnType), kafkaConfig, serializationSchemaFactory,
       schemaData.serializableSchema, schemaUsedInRuntime.map(_.serializableSchema), clientId, validationMode)
   }
 

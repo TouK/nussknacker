@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.avro.sink
 
 import pl.touk.nussknacker.engine.api.LazyParameter
+import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectTypingResult, TypingResult}
 
 object AvroSinkValue {
   case class InvalidSinkValue(parameterName: String)
@@ -10,12 +11,12 @@ object AvroSinkValue {
     sinkParameter match {
       case AvroSinkSingleValueParameter(param) =>
         val value = parameterValues(param.name)
-        AvroSinkSingleValue(toLazyParameter(value, param.name))
+        AvroSinkSingleValue(toLazyParameter(value, param.name), param.typ)
 
       case AvroSinkRecordParameter(paramFields) =>
         val fields = paramFields.map { case (fieldName, sinkParam) =>
           (fieldName, applyUnsafe(sinkParam, parameterValues))
-        }.toMap
+        }
         AvroSinkRecordValue(fields)
     }
 
@@ -30,10 +31,19 @@ object AvroSinkValue {
 /*
   Intermediate object which helps with mapping Avro sink editor structure to Avro message (see AvroSinkValueParameter)
  */
-sealed trait AvroSinkValue
+sealed trait AvroSinkValue {
 
-case class AvroSinkSingleValue(value: LazyParameter[AnyRef])
+  def typingResult: TypingResult
+}
+
+case class AvroSinkSingleValue(value: LazyParameter[AnyRef], typingResult: TypingResult)
   extends AvroSinkValue
 
-case class AvroSinkRecordValue(fields: Map[String, AvroSinkValue])
-  extends AvroSinkValue
+case class AvroSinkRecordValue(fields: List[(String, AvroSinkValue)])
+  extends AvroSinkValue {
+
+  val typingResult: TypedObjectTypingResult = {
+    val fieldsTyping = fields.map { case (fieldName, value) => (fieldName, value.typingResult)}
+    TypedObjectTypingResult(fieldsTyping)
+  }
+}
