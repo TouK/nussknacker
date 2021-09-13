@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.definition.TypeInfos
+import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.types.{GeneratedAvroClass, JavaClassWithVarargs}
@@ -28,6 +29,7 @@ import pl.touk.nussknacker.engine.types.{GeneratedAvroClass, JavaClassWithVararg
 import scala.collection.JavaConverters._
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
+import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
 class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
@@ -134,17 +136,17 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
 
   private def typeDefinitionSetWithCustomClasses: TypeDefinitionSet = {
 
-    def createTestClazzDefinitionFromClassNames(className: String) =
-      TypeInfos.ClazzDefinition(Typed.typedClass(ClassUtils.primitiveToWrapper(ClassUtils.getClass(className)), Nil), Map.empty, Map.empty)
-
-    TypeDefinitionSet(Set(
-      createTestClazzDefinitionFromClassNames("java.lang.String"),
-      createTestClazzDefinitionFromClassNames("java.lang.Long"),
-      createTestClazzDefinitionFromClassNames("java.lang.Integer"),
-      createTestClazzDefinitionFromClassNames("java.math.BigInteger"),
-      createTestClazzDefinitionFromClassNames("pl.touk.nussknacker.engine.spel.SampleGlobalObject"),
-      createTestClazzDefinitionFromClassNames("java.lang.reflect.Modifier")
-    ))
+    val typingResults = Set(
+      Typed.typedClass[String],
+      Typed.typedClass[java.lang.Long],
+      Typed.typedClass[java.lang.Integer],
+      Typed.typedClass[java.math.BigInteger],
+      Typed.typedClass[java.math.MathContext],
+      Typed.typedClass[java.math.BigDecimal],
+      Typed.typedClass[SampleValue],
+      Typed.typedClass(Class.forName("pl.touk.nussknacker.engine.spel.SampleGlobalObject"))
+    )
+    TypeDefinitionSet(typingResults.map(ClazzDefinition(_, Map.empty, Map.empty)))
   }
 
   test("blocking excluded reflect in runtime, without previous static validation") {
@@ -758,6 +760,14 @@ class SpelExpressionSpec extends FunSuite with Matchers with EitherValues {
   test("should find and invoke primitive parameters correctly") {
     parseOrFail[String]("#processHelper.methodWithPrimitiveParams(1, 2, false)", ctxWithGlobal)
       .evaluateSync[String](ctxWithGlobal) shouldBe "1 2 false"
+  }
+
+  test("should type and evaluate constructor for known types") {
+    parseOrFail[Double]("new java.math.BigDecimal(\"1.2345\", new java.math.MathContext(2)).doubleValue", ctx)
+      .evaluateSync[Double](ctx) shouldBe 1.2
+  }
+  test("should not validate constructor of unknown type") {
+    parse[Any]("new unknown.className(233)", ctx) shouldBe 'invalid
   }
 
 }
