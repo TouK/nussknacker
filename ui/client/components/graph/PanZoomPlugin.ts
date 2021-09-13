@@ -1,6 +1,6 @@
 import {css} from "emotion"
 import {dia} from "jointjs"
-import {debounce} from "lodash"
+import {debounce, throttle} from "lodash"
 import svgPanZoom from "svg-pan-zoom"
 import {CursorMask} from "./CursorMask"
 import {Events} from "./joint-events"
@@ -72,7 +72,7 @@ export class PanZoomPlugin {
   }
 
   private setAnimationClass({enabled}: {enabled: boolean}) {
-    if (window["Cypress"]) { 
+    if (window["Cypress"]) {
       return
     }
     this.animationClassHolder.classList.remove(getAnimationClass(enabled))
@@ -100,13 +100,12 @@ export class PanZoomPlugin {
     this.instance.center()
   }, 100)
 
-  zoomIn = (): void => {
+  zoomIn = throttle((): void => {
     this.setAnimationClass({enabled: true})
     this.instance.zoomIn()
-  }
+  }, 500)
 
-  zoomOut = (): void => {
+  zoomOut = throttle((): void => {
     this.setAnimationClass({enabled: true})
     this.instance.zoomOut()
-  }
-}
+  }, 500)}

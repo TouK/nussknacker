@@ -93,13 +93,19 @@ describe("Process", () => {
       cy.get("#nk-graph-main").toMatchImageSnapshot({screenshotConfig})
     })
 
-    it("should allow drag component and drop on edge", () => {
+    it.only("should allow drag component and drop on edge", () => {
       cy.contains("layout").click()
       cy.contains("custom")
         .should("be.visible").click()
       cy.get("[data-testid='component:customFilter']")
         .should("be.visible")
         .drag("#nk-graph-main", {x: 580, y: 450, position: "right", force: true})
+      cy.get("#nk-graph-main").toMatchImageSnapshot({screenshotConfig})
+      cy.contains(/^save$/i).click()
+      cy.get("[data-testid=window]").contains(/^ok$/i).click()
+      cy.get("[data-testid=window]").should("not.exist")
+      cy.get("#nk-graph-main").should("be.visible")
+      cy.wait(100)
       cy.get("#nk-graph-main").toMatchImageSnapshot({screenshotConfig})
     })
 
