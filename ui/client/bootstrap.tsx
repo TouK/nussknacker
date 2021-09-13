@@ -25,10 +25,10 @@ rootContainer.id = "root"
 document.body.appendChild(rootContainer)
 
 const Root = () => (
-  <DragArea>
-    <Suspense fallback={<LoaderSpinner show/>}>
-      <ErrorBoundary>
-        <Provider store={store}>
+  <Suspense fallback={<LoaderSpinner show/>}>
+    <ErrorBoundary>
+      <Provider store={store}>
+        <DragArea>
           <PersistGate loading={null} persistor={persistor}>
             <Router history={history}>
               <SettingsProvider>
@@ -45,10 +45,10 @@ const Root = () => (
               </SettingsProvider>
             </Router>
           </PersistGate>
-        </Provider>
-      </ErrorBoundary>
-    </Suspense>
-  </DragArea>
+        </DragArea>
+      </Provider>
+    </ErrorBoundary>
+  </Suspense>
 )
 
 ReactDOM.render(<Root/>, rootContainer)

@@ -8,13 +8,14 @@ import {getFetchedProcessDetails, getLayout, getNodeToDisplay, getProcessCounts,
 import {setLinksHovered} from "./dragHelpers"
 import {commonState, Graph} from "./Graph"
 import GraphWrapped from "./GraphWrapped"
+import {RECT_HEIGHT, RECT_WIDTH} from "./EspNode/esp"
 
 const spec = {
   drop: (props, monitor, component: Graph) => {
     const clientOffset = monitor.getClientOffset()
     const relOffset = component.processGraphPaper.clientToLocalPoint(clientOffset)
     // to make node horizontally aligned
-    const nodeInputRelOffset = relOffset.offset(-235, -30)
+    const nodeInputRelOffset = relOffset.offset(RECT_WIDTH * -.8, RECT_HEIGHT * -.5)
     component.addNode(monitor.getItem(), mapValues(nodeInputRelOffset, Math.round))
     setLinksHovered(component.graph)
   },
