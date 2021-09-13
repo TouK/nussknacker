@@ -9,6 +9,7 @@ import scala.concurrent.Future
 class JarManagerStub extends JarManager {
 
   var deployWithJarFuture: Future[Option[ExternalDeploymentId]] = Future.successful(None)
+  var lastDeploymentWithJarData: Option[DeploymentWithJarData] = None
 
   override def prepareDeploymentWithJar(processVersion: ProcessVersion, processJson: String): Future[DeploymentWithJarData] = {
     Future.successful(
@@ -16,7 +17,10 @@ class JarManagerStub extends JarManager {
     )
   }
 
-  override def deployWithJar(deploymentWithJarData: DeploymentWithJarData, deploymentData: DeploymentData): Future[Option[ExternalDeploymentId]] = deployWithJarFuture
+  override def deployWithJar(deploymentWithJarData: DeploymentWithJarData, deploymentData: DeploymentData): Future[Option[ExternalDeploymentId]] = {
+    lastDeploymentWithJarData = Some(deploymentWithJarData)
+    deployWithJarFuture
+  }
 
   override def deleteJar(jarFileName: String): Future[Unit] = Future.successful(())
 }
