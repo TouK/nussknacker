@@ -39,7 +39,7 @@ package object openapi {
   //TODO: content type?
   @JsonCodec final case class SwaggerService(name: String,
                                              categories: List[String],
-                                             documentation: String,
+                                             documentation: Option[String],
                                              pathParts: List[PathPart],
                                              parameters: List[SwaggerParameter],
                                              responseSwaggerType: Option[SwaggerTyped],
