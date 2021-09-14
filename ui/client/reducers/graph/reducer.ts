@@ -37,6 +37,7 @@ const emptyGraphState: GraphState = {
 
 const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
   switch (action.type) {
+    case "PROCESS_FETCH":
     case "PROCESS_LOADING": {
       return {
         ...state,
@@ -293,12 +294,13 @@ const undoableReducer = undoable(reducer, {
   ignoreInitialState: true,
   undoType: "UNDO",
   redoType: "REDO",
-  clearHistoryType: ["CLEAR", "PROCESS_LOADING"],
+  clearHistoryType: ["CLEAR", "PROCESS_FETCH"],
   filter: combineFilters(
     excludeAction([
       "USER_TRACKING",
       "VALIDATION_RESULT",
       "DISPLAY_PROCESS",
+      "UPDATE_IMPORTED_PROCESS",
     ]),
     (action, nextState, prevState) => {
       const keys: Array<keyof GraphState> = [
