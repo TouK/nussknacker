@@ -28,7 +28,7 @@ Better handling Flink's job deploying - we report job initialization as a "DURIN
 * [#2152](https://github.com/TouK/nussknacker/pull/2152) Possibility to create `SchedulePropertyExtractor` using deployment manager's configuration.
 * [#2133](https://github.com/TouK/nussknacker/pull/2133) SQL Variable is hidden in generic model
 
-* 0.4.0
+0.4.0
 ------------------------
 * More precise TypeInformation generation
     * [#1338](https://github.com/TouK/nussknacker/pull/1338) Defining TypeInformation based on TypingResult
