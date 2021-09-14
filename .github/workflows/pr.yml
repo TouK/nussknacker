@@ -273,15 +273,21 @@ jobs:
           cd ui/client
           npx wait-on $CYPRESS_BASE_URL && npm run test:e2e
           docker kill nussknacker_e2e_fe
-      - name: Store test results
-        if: always()
+      - name: Store test videos
         uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: e2e-test-videos
+          path: ui/client/cypress/videos/
+          if-no-files-found: ignore
+      - name: Store test results
+        uses: actions/upload-artifact@v2
+        if: failure()
         with:
           name: e2e-test-results
           path: |
             ui/client/cypress/**/__image_snapshots__/
             ui/client/cypress/screenshots/
-            ui/client/cypress/videos/
           if-no-files-found: ignore
 
 #TODO: extract to different workflow?
