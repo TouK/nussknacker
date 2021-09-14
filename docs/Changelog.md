@@ -8,6 +8,10 @@ For detailed instructions how to migrate to the newest version please see [migra
 Nussknacker versions
 ====================
      
+1.1.0 (Not released yet)
+------------------------
+* [#2176](https://github.com/TouK/nussknacker/pull/2176) Allow to enrich periodic scenario config on initial schedule and each deployment.
+
 0.5.0 (Not released yet)
 ------------------------
 * [#1968](https://github.com/TouK/nussknacker/pull/1968) `BestEffortJsonEncoder` uses `ServiceLoader` mechanism to

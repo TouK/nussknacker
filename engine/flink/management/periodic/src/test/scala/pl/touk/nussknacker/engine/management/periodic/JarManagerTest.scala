@@ -34,9 +34,8 @@ class JarManagerTest extends FunSuite
     new FlinkJarManager(
       flinkClient = new FlinkClientStub,
       jarsDir = jarsDir,
-      modelConfig = InputConfigDuringExecution(ConfigFactory.empty()),
-      createCurrentModelJarFile = currentModelJarFile,
-      enrichDeploymentWithJarData = EnrichDeploymentWithJarData.noOp
+      inputConfigDuringExecution = InputConfigDuringExecution(ConfigFactory.empty()),
+      createCurrentModelJarFile = currentModelJarFile
     )
   }
 

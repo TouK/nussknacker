@@ -4,11 +4,14 @@ import cats.{Id, Monad}
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.management.periodic
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository.createPeriodicProcessDeployment
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.model._
 import pl.touk.nussknacker.engine.management.periodic.{model, _}
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 import java.time.chrono.ChronoLocalDateTime
 import java.time.{LocalDateTime, ZoneId}
@@ -31,14 +34,21 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
   override def run[T](action: Id[T]): Future[T] = Future.successful(action)
 
   def addActiveProcess(processName: ProcessName, deploymentStatus: PeriodicProcessDeploymentStatus): Unit = {
+    import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
 
     val id = PeriodicProcessId(Random.nextLong())
     processEntities += PeriodicProcessEntity(
       id = id,
       processName = processName.value,
       processVersionId = 1,
-      processJson = "{}",
-      modelConfig = "",
+      processJson = ProcessMarshaller.toJson(ProcessCanonizer.canonize(
+        EspProcessBuilder
+          .id(processName.value)
+          .exceptionHandler()
+          .source("start", "source")
+          .sink("end", "#input", "KafkaSink")
+      )).noSpaces,
+      inputConfigDuringExecutionJson = "{}",
       jarFileName = "",
       scheduleProperty = CronScheduleProperty("0 0 * * * ?").asInstanceOf[periodic.ScheduleProperty].asJson.noSpaces,
       active = true,
@@ -71,7 +81,7 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
       processName = deploymentWithJarData.processVersion.processName.value,
       processVersionId = deploymentWithJarData.processVersion.versionId,
       processJson = deploymentWithJarData.processJson,
-      modelConfig = deploymentWithJarData.modelConfig,
+      inputConfigDuringExecutionJson = deploymentWithJarData.inputConfigDuringExecutionJson,
       jarFileName = deploymentWithJarData.jarFileName,
       scheduleProperty = scheduleProperty.asJson.noSpaces,
       active = true,
@@ -140,7 +150,7 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
     model.DeploymentWithJarData(
       processVersion = processVersion,
       processJson = processEntity.processJson,
-      modelConfig = processEntity.modelConfig,
+      inputConfigDuringExecutionJson = processEntity.inputConfigDuringExecutionJson,
       jarFileName = processEntity.jarFileName
     )
   }

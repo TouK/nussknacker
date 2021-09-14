@@ -23,7 +23,7 @@ trait PeriodicProcessesTableFactory {
 
     def processJson: Rep[String] = column[String]("process_json", NotNull)
 
-    def modelConfig: Rep[String] = column[String]("model_config", NotNull)
+    def inputConfigDuringExecutionJson: Rep[String] = column[String]("input_config_during_execution", NotNull)
 
     def jarFileName: Rep[String] = column[String]("jar_file_name", NotNull)
 
@@ -33,7 +33,7 @@ trait PeriodicProcessesTableFactory {
 
     def createdAt: Rep[LocalDateTime] = column[LocalDateTime]("created_at", NotNull)
 
-    override def * : ProvenShape[PeriodicProcessEntity] = (id, processName, processVersionId, processJson, modelConfig, jarFileName, scheduleProperty, active, createdAt) <>
+    override def * : ProvenShape[PeriodicProcessEntity] = (id, processName, processVersionId, processJson, inputConfigDuringExecutionJson, jarFileName, scheduleProperty, active, createdAt) <>
       ((PeriodicProcessEntity.apply _).tupled, PeriodicProcessEntity.unapply)
   }
 
@@ -45,7 +45,7 @@ case class PeriodicProcessEntity(id: PeriodicProcessId,
                                  processName: String,
                                  processVersionId: Long,
                                  processJson: String,
-                                 modelConfig: String,
+                                 inputConfigDuringExecutionJson: String,
                                  jarFileName: String,
                                  scheduleProperty: String,
                                  active: Boolean,

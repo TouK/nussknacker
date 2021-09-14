@@ -1,31 +1,45 @@
 package pl.touk.nussknacker.engine.management.periodic
 
+import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.exceptions.TestFailedException
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.build.EspProcessBuilder
+import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository.createPeriodicProcessDeployment
 import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeployment, PeriodicProcessDeploymentStatus}
-import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, DeployedEvent, FailedEvent, FinishedEvent, PeriodicProcessEvent, PeriodicProcessListener, ScheduledEvent}
+import pl.touk.nussknacker.engine.management.periodic.service.ProcessConfigEnricher.EnrichedProcessConfig
+import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, DeployedEvent, FailedEvent, FinishedEvent, PeriodicProcessEvent, PeriodicProcessListener, ProcessConfigEnricher, ScheduledEvent}
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.test.PatientScalaFutures
 
-import java.time.temporal.{ChronoField, ChronoUnit, TemporalField}
-import java.time.{Clock, Instant, LocalDate}
+import java.time.temporal.ChronoField
+import java.time.{Clock, LocalDate}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
 class PeriodicProcessServiceTest extends FunSuite
   with Matchers
+  with OptionValues
   with ScalaFutures
   with PatientScalaFutures {
 
   import org.scalatest.LoneElement._
+  import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
   private val processName = ProcessName("test")
+  private val processJson = ProcessMarshaller.toJson(ProcessCanonizer.canonize(
+    EspProcessBuilder
+      .id(processName.value)
+      .exceptionHandler()
+      .source("start", "source")
+      .sink("end", "#input", "KafkaSink")
+  )).noSpaces
 
   class Fixture {
     val repository = new db.InMemPeriodicProcessesRepository
@@ -43,7 +57,17 @@ class PeriodicProcessServiceTest extends FunSuite
       new AdditionalDeploymentDataProvider {
         override def prepareAdditionalData(runDetails: PeriodicProcessDeployment): Map[String, String] =
           additionalData + ("runId" -> runDetails.id.value.toString)
-      }, Clock.systemDefaultZone()
+      },
+      new ProcessConfigEnricher {
+        override def onInitialSchedule(initialScheduleData: ProcessConfigEnricher.InitialScheduleData): Future[ProcessConfigEnricher.EnrichedProcessConfig] = {
+          Future.successful(EnrichedProcessConfig(initialScheduleData.inputConfigDuringExecution.withValue("processName", ConfigValueFactory.fromAnyRef(initialScheduleData.canonicalProcess.metaData.id))))
+        }
+
+        override def onDeploy(deployData: ProcessConfigEnricher.DeployData): Future[ProcessConfigEnricher.EnrichedProcessConfig] = {
+          Future.successful(EnrichedProcessConfig(deployData.inputConfigDuringExecution.withValue("runAt", ConfigValueFactory.fromAnyRef(deployData.deployment.runAt.toString))))
+        }
+      },
+      Clock.systemDefaultZone()
     )
   }
 
@@ -82,10 +106,11 @@ class PeriodicProcessServiceTest extends FunSuite
   test("handle first schedule") {
     val f = new Fixture
 
-    f.periodicProcessService.schedule(CronScheduleProperty("0 0 * * * ?"), ProcessVersion.empty, "{}").futureValue
+    f.periodicProcessService.schedule(CronScheduleProperty("0 0 * * * ?"), ProcessVersion.empty, processJson).futureValue
 
     val processEntity = f.repository.processEntities.loneElement
     processEntity.active shouldBe true
+    ConfigFactory.parseString(processEntity.inputConfigDuringExecutionJson).getString("processName") shouldBe processName.value
     val deploymentEntity = f.repository.deploymentEntities.loneElement
     deploymentEntity.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
 
@@ -116,9 +141,11 @@ class PeriodicProcessServiceTest extends FunSuite
 
     f.periodicProcessService.deploy(toSchedule).futureValue
 
-    f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Deployed
+    val deploymentEntity = f.repository.deploymentEntities.loneElement
+    deploymentEntity.status shouldBe PeriodicProcessDeploymentStatus.Deployed
+    ConfigFactory.parseString(f.jarManagerStub.lastDeploymentWithJarData.value.inputConfigDuringExecutionJson).getString("runAt") shouldBe deploymentEntity.runAt.toString
 
-    val expectedDetails = createPeriodicProcessDeployment(f.repository.processEntities.loneElement, f.repository.deploymentEntities.loneElement)
+    val expectedDetails = createPeriodicProcessDeployment(f.repository.processEntities.loneElement, deploymentEntity)
     f.events.toList shouldBe List(DeployedEvent(expectedDetails, None))
 
   }
@@ -143,7 +170,7 @@ class PeriodicProcessServiceTest extends FunSuite
     val cronInFuture = CronScheduleProperty(s"0 0 6 6 9 ? ${yearNow + 1}")
     val cronInPast = CronScheduleProperty(s"0 0 6 6 9 ? ${yearNow - 1}")
 
-    def tryToSchedule(schedule: ScheduleProperty): Unit = f.periodicProcessService.schedule(schedule, ProcessVersion.empty, "{}").futureValue
+    def tryToSchedule(schedule: ScheduleProperty): Unit = f.periodicProcessService.schedule(schedule, ProcessVersion.empty, processJson).futureValue
 
     tryToSchedule(cronInFuture) shouldBe (())
     tryToSchedule(MultipleScheduleProperty(Map("s1" -> cronInFuture, "s2" -> cronInPast))) shouldBe (())

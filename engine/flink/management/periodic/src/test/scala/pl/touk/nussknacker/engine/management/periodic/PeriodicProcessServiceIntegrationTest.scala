@@ -52,7 +52,10 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
           case k if failListener => throw new Exception(s"$k was ordered to fail")
           case k => events.append(k)
         }
-      }, DefaultAdditionalDeploymentDataProvider, fixedClock(currentTime)
+      },
+      DefaultAdditionalDeploymentDataProvider,
+      ProcessConfigEnricher.identity,
+      fixedClock(currentTime)
     )
   }
 

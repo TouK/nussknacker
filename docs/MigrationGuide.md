@@ -12,6 +12,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#2133](https://github.com/TouK/nussknacker/pull/2133) SQL Variable is hidden in generic model, please look at comment in `defaultModelConfig.conf`
 * [#2152](https://github.com/TouK/nussknacker/pull/2152) `schedulePropertyExtractor` parameter of `PeriodicDeploymentManagerProvider`
   was changed to a factory, replace with a lambda creating the original property extractor.
+* [#2176](https://github.com/TouK/nussknacker/pull/2176) `EnrichDeploymentWithJarDataFactory` was replaced with `ProcessConfigEnricher`.
 
 ## In version 0.4.0
 
