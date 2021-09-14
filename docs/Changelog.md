@@ -8,6 +8,10 @@ For detailed instructions how to migrate to the newest version please see [migra
 Nussknacker versions
 ====================
      
+0.4.2
+-----------------------
+* [#2191](https://github.com/TouK/nussknacker/pull/2191) KafkaAvroSink performance fix
+
 0.4.1
 ------------------------
 * [#1968](https://github.com/TouK/nussknacker/pull/1968) `BestEffortJsonEncoder` uses `ServiceLoader` mechanism to
