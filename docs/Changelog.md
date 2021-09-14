@@ -8,6 +8,10 @@ For detailed instructions how to migrate to the newest version please see [migra
 Nussknacker versions
 ====================
      
+1.1.0 (Not released yet)
+------------------------
+* [#2176](https://github.com/TouK/nussknacker/pull/2176) Allow to enrich periodic scenario config on initial schedule and each deployment.
+
 0.5.0 (Not released yet)
 ------------------------
 * [#1968](https://github.com/TouK/nussknacker/pull/1968) `BestEffortJsonEncoder` uses `ServiceLoader` mechanism to
@@ -20,7 +24,6 @@ Some additional refactors done: logback configuration enhancements, simpler run.
 Better handling Flink's job deploying - we report job initialization as a "DURING_DEPLOY" instead of "RUNNING" now, and we are checking available slots on Flink before deploy
 * [#2152](https://github.com/TouK/nussknacker/pull/2152) Possibility to create `SchedulePropertyExtractor` using deployment manager's configuration.
 * [#2133](https://github.com/TouK/nussknacker/pull/2133) SQL Variable is hidden in generic model
-* [#2176](https://github.com/TouK/nussknacker/pull/2176) Allow to enrich periodic scenario config on initial schedule and each deployment.
 
 0.4.0
 ------------------------
