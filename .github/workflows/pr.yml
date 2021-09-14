@@ -262,13 +262,14 @@ jobs:
           addDevModel: true
         shell: bash
         #Doc generation is rather costly, we don't want it in test image creation
-        run: |
-          echo "version in ThisBuild := \"${{ env.NUSSKNACKER_VERSION }}\"" > version.sbt && sbt "set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" standaloneApp/docker:publishLocal dist/docker:publishLocal
-          docker run -d -p 8083:8080 -e COUNTS_URL=http://localhost -e SCHEMA_REGISTRY_URL=http://dummy:8888 -e KAFKA_ADDRESS=dummy:9092 -e OPENAPI_SERVICE_URL=http://dummy:5000 -e SQL_ENRICHER_URL=dummy:5432 -e CONFIG_FORCE_scenarioTypes_streaming__dev_deploymentConfig_type=stub -e CONFIG_FILE=/opt/nussknacker/conf/dev-application.conf --name nussknacker_e2e_fe touk/nussknacker:$NUSSKNACKER_VERSION
-      - name: FE tests e2e
-        uses: cypress-io/github-action@v2
+        run: echo "version in ThisBuild := \"${{ env.NUSSKNACKER_VERSION }}\"" > version.sbt && sbt "set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" standaloneApp/docker:publishLocal dist/docker:publishLocal
+      - name: Run docker
         env:
           NUSSKNACKER_VERSION: ${{ env.NUSSKNACKER_VERSION }}
+        shell: bash
+        run: docker run -d -p 8083:8080 -e COUNTS_URL=http://localhost -e SCHEMA_REGISTRY_URL=http://dummy:8888 -e KAFKA_ADDRESS=dummy:9092 -e OPENAPI_SERVICE_URL=http://dummy:5000 -e SQL_ENRICHER_URL=dummy:5432 -e CONFIG_FORCE_scenarioTypes_streaming__dev_deploymentConfig_type=stub -e CONFIG_FILE=/opt/nussknacker/conf/dev-application.conf --name nussknacker_e2e_fe touk/nussknacker:$NUSSKNACKER_VERSION
+      - name: FE tests e2e
+        uses: cypress-io/github-action@v2
         with:
           wait-on: 'http://localhost:8083'
           working-directory: ui/client
