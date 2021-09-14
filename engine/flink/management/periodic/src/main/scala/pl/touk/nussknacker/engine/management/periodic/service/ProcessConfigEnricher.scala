@@ -14,6 +14,10 @@ import scala.concurrent.{ExecutionContext, Future}
  * Use to enrich scenario config e.g. with a schedule name that can be later exposed as a global variable.
  * Other use case could be fetching some data specific for a scenario to be used later when starting job on Flink cluster.
  *
+ * Please note config to enrich is not final scenario config. This config is only passed to Flink during deployment.
+ * Consult [[pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution]] and
+ * [[pl.touk.nussknacker.engine.modelconfig.ModelConfigLoader]] for details.
+ *
  * Config enriched on initial schedule is passed to onDeploy method.
  */
 trait ProcessConfigEnricher {
@@ -25,22 +29,22 @@ object ProcessConfigEnricher {
 
   trait ProcessConfigEnricherInputData {
     def processJson: String
-    def modelConfigJson: String
+    def inputConfigDuringExecutionJson: String
 
     def canonicalProcess: CanonicalProcess = {
       ProcessMarshaller.fromJson(processJson).valueOr(err => throw new IllegalArgumentException(err.msg))
     }
 
-    def modelConfig: Config = {
-      ConfigFactory.parseString(modelConfigJson)
+    def inputConfigDuringExecution: Config = {
+      ConfigFactory.parseString(inputConfigDuringExecutionJson)
     }
   }
 
-  case class InitialScheduleData(processJson: String, modelConfigJson: String) extends ProcessConfigEnricherInputData
+  case class InitialScheduleData(processJson: String, inputConfigDuringExecutionJson: String) extends ProcessConfigEnricherInputData
 
-  case class DeployData(processJson: String, modelConfigJson: String, deployment: PeriodicProcessDeployment) extends ProcessConfigEnricherInputData
+  case class DeployData(processJson: String, inputConfigDuringExecutionJson: String, deployment: PeriodicProcessDeployment) extends ProcessConfigEnricherInputData
 
-  case class EnrichedProcessConfig(configJson: String)
+  case class EnrichedProcessConfig(inputConfigDuringExecutionJson: String)
 
   object EnrichedProcessConfig {
     def apply(config: Config): EnrichedProcessConfig = {
@@ -49,9 +53,9 @@ object ProcessConfigEnricher {
   }
 
   def identity: ProcessConfigEnricher = new ProcessConfigEnricher {
-    override def onInitialSchedule(initialScheduleData: InitialScheduleData): Future[EnrichedProcessConfig] = Future.successful(EnrichedProcessConfig(initialScheduleData.modelConfigJson))
+    override def onInitialSchedule(initialScheduleData: InitialScheduleData): Future[EnrichedProcessConfig] = Future.successful(EnrichedProcessConfig(initialScheduleData.inputConfigDuringExecutionJson))
 
-    override def onDeploy(deployData: DeployData): Future[EnrichedProcessConfig] = Future.successful(EnrichedProcessConfig(deployData.modelConfigJson))
+    override def onDeploy(deployData: DeployData): Future[EnrichedProcessConfig] = Future.successful(EnrichedProcessConfig(deployData.inputConfigDuringExecutionJson))
   }
 }
 

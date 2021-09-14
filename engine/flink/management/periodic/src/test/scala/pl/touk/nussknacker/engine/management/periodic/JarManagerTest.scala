@@ -8,7 +8,6 @@ import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
-import pl.touk.nussknacker.engine.management.periodic.service.ProcessConfigEnricher
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -35,7 +34,7 @@ class JarManagerTest extends FunSuite
     new FlinkJarManager(
       flinkClient = new FlinkClientStub,
       jarsDir = jarsDir,
-      modelConfig = InputConfigDuringExecution(ConfigFactory.empty()),
+      inputConfigDuringExecution = InputConfigDuringExecution(ConfigFactory.empty()),
       createCurrentModelJarFile = currentModelJarFile
     )
   }

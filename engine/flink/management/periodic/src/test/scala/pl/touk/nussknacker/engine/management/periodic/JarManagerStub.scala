@@ -13,7 +13,7 @@ class JarManagerStub extends JarManager {
 
   override def prepareDeploymentWithJar(processVersion: ProcessVersion, processJson: String): Future[DeploymentWithJarData] = {
     Future.successful(
-      model.DeploymentWithJarData(processVersion = processVersion, processJson = processJson, modelConfig = "", jarFileName = "")
+      model.DeploymentWithJarData(processVersion = processVersion, processJson = processJson, inputConfigDuringExecutionJson = "", jarFileName = "")
     )
   }
 

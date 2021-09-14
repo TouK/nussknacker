@@ -23,7 +23,7 @@ private[periodic] object FlinkJarManager {
     new FlinkJarManager(
       flinkClient = new HttpFlinkClient(flinkConfig),
       jarsDir = Paths.get(periodicBatchConfig.jarsDir),
-      modelConfig = modelData.inputConfigDuringExecution,
+      inputConfigDuringExecution = modelData.inputConfigDuringExecution,
       createCurrentModelJarFile = new FlinkModelJar().buildJobJar(modelData)
     )
   }
@@ -32,7 +32,7 @@ private[periodic] object FlinkJarManager {
 // Used by [[PeriodicProcessService]].
 private[periodic] class FlinkJarManager(flinkClient: FlinkClient,
                                         jarsDir: Path,
-                                        modelConfig: InputConfigDuringExecution,
+                                        inputConfigDuringExecution: InputConfigDuringExecution,
                                         createCurrentModelJarFile: => File)
   extends JarManager with LazyLogging {
 
@@ -47,7 +47,7 @@ private[periodic] class FlinkJarManager(flinkClient: FlinkClient,
       DeploymentWithJarData(
         processVersion = processVersion,
         processJson = processJson,
-        modelConfig = modelConfig.serialized,
+        inputConfigDuringExecutionJson = inputConfigDuringExecution.serialized,
         jarFileName = jarFileName
       )
     }
@@ -66,7 +66,7 @@ private[periodic] class FlinkJarManager(flinkClient: FlinkClient,
     val processVersion = deploymentWithJarData.processVersion
     logger.info(s"Deploying scenario ${processVersion.processName.value}, version id: ${processVersion.versionId} and jar: ${deploymentWithJarData.jarFileName}")
     val jarFile = jarsDir.resolve(deploymentWithJarData.jarFileName).toFile
-    val args = FlinkDeploymentManager.prepareProgramArgs(deploymentWithJarData.modelConfig,
+    val args = FlinkDeploymentManager.prepareProgramArgs(deploymentWithJarData.inputConfigDuringExecutionJson,
       processVersion,
       deploymentData,
       GraphProcess(deploymentWithJarData.processJson))

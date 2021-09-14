@@ -69,8 +69,8 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
     logger.info("Scheduling periodic scenario: {} on {}", processVersion, scheduleDates)
     for {
       deploymentWithJarData <- jarManager.prepareDeploymentWithJar(processVersion, processJson)
-      enrichedProcessConfig <- processConfigEnricher.onInitialSchedule(ProcessConfigEnricher.InitialScheduleData(deploymentWithJarData.processJson, deploymentWithJarData.modelConfig))
-      enrichedDeploymentWithJarData = deploymentWithJarData.copy(modelConfig = enrichedProcessConfig.configJson)
+      enrichedProcessConfig <- processConfigEnricher.onInitialSchedule(ProcessConfigEnricher.InitialScheduleData(deploymentWithJarData.processJson, deploymentWithJarData.inputConfigDuringExecutionJson))
+      enrichedDeploymentWithJarData = deploymentWithJarData.copy(inputConfigDuringExecutionJson = enrichedProcessConfig.inputConfigDuringExecutionJson)
       _ <- initialSchedule(scheduleProperty, scheduleDates, enrichedDeploymentWithJarData)
     } yield ()
   }
@@ -222,8 +222,8 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
     val deploymentAction = for {
       _ <- Future.successful(logger.info("Deploying scenario {} for deployment id {}", deploymentWithJarData.processVersion, id))
       enrichedProcessConfig <- processConfigEnricher.onDeploy(
-        ProcessConfigEnricher.DeployData(deploymentWithJarData.processJson, deploymentWithJarData.modelConfig, deployment))
-      enrichedDeploymentWithJarData = deploymentWithJarData.copy(modelConfig = enrichedProcessConfig.configJson)
+        ProcessConfigEnricher.DeployData(deploymentWithJarData.processJson, deploymentWithJarData.inputConfigDuringExecutionJson, deployment))
+      enrichedDeploymentWithJarData = deploymentWithJarData.copy(inputConfigDuringExecutionJson = enrichedProcessConfig.inputConfigDuringExecutionJson)
       externalDeploymentId <- jarManager.deployWithJar(enrichedDeploymentWithJarData, deploymentData)
     } yield externalDeploymentId
     deploymentAction

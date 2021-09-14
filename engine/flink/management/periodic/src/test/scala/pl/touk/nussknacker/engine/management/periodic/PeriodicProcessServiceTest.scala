@@ -60,11 +60,11 @@ class PeriodicProcessServiceTest extends FunSuite
       },
       new ProcessConfigEnricher {
         override def onInitialSchedule(initialScheduleData: ProcessConfigEnricher.InitialScheduleData): Future[ProcessConfigEnricher.EnrichedProcessConfig] = {
-          Future.successful(EnrichedProcessConfig(initialScheduleData.modelConfig.withValue("processName", ConfigValueFactory.fromAnyRef(initialScheduleData.canonicalProcess.metaData.id))))
+          Future.successful(EnrichedProcessConfig(initialScheduleData.inputConfigDuringExecution.withValue("processName", ConfigValueFactory.fromAnyRef(initialScheduleData.canonicalProcess.metaData.id))))
         }
 
         override def onDeploy(deployData: ProcessConfigEnricher.DeployData): Future[ProcessConfigEnricher.EnrichedProcessConfig] = {
-          Future.successful(EnrichedProcessConfig(deployData.modelConfig.withValue("runAt", ConfigValueFactory.fromAnyRef(deployData.deployment.runAt.toString))))
+          Future.successful(EnrichedProcessConfig(deployData.inputConfigDuringExecution.withValue("runAt", ConfigValueFactory.fromAnyRef(deployData.deployment.runAt.toString))))
         }
       },
       Clock.systemDefaultZone()
@@ -110,7 +110,7 @@ class PeriodicProcessServiceTest extends FunSuite
 
     val processEntity = f.repository.processEntities.loneElement
     processEntity.active shouldBe true
-    ConfigFactory.parseString(processEntity.modelConfig).getString("processName") shouldBe processName.value
+    ConfigFactory.parseString(processEntity.inputConfigDuringExecutionJson).getString("processName") shouldBe processName.value
     val deploymentEntity = f.repository.deploymentEntities.loneElement
     deploymentEntity.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
 
@@ -143,7 +143,7 @@ class PeriodicProcessServiceTest extends FunSuite
 
     val deploymentEntity = f.repository.deploymentEntities.loneElement
     deploymentEntity.status shouldBe PeriodicProcessDeploymentStatus.Deployed
-    ConfigFactory.parseString(f.jarManagerStub.lastDeploymentWithJarData.value.modelConfig).getString("runAt") shouldBe deploymentEntity.runAt.toString
+    ConfigFactory.parseString(f.jarManagerStub.lastDeploymentWithJarData.value.inputConfigDuringExecutionJson).getString("runAt") shouldBe deploymentEntity.runAt.toString
 
     val expectedDetails = createPeriodicProcessDeployment(f.repository.processEntities.loneElement, deploymentEntity)
     f.events.toList shouldBe List(DeployedEvent(expectedDetails, None))

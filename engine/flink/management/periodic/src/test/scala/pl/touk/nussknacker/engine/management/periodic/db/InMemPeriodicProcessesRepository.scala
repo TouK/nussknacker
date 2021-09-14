@@ -48,7 +48,7 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
           .source("start", "source")
           .sink("end", "#input", "KafkaSink")
       )).noSpaces,
-      modelConfig = "{}",
+      inputConfigDuringExecutionJson = "{}",
       jarFileName = "",
       scheduleProperty = CronScheduleProperty("0 0 * * * ?").asInstanceOf[periodic.ScheduleProperty].asJson.noSpaces,
       active = true,
@@ -81,7 +81,7 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
       processName = deploymentWithJarData.processVersion.processName.value,
       processVersionId = deploymentWithJarData.processVersion.versionId,
       processJson = deploymentWithJarData.processJson,
-      modelConfig = deploymentWithJarData.modelConfig,
+      inputConfigDuringExecutionJson = deploymentWithJarData.inputConfigDuringExecutionJson,
       jarFileName = deploymentWithJarData.jarFileName,
       scheduleProperty = scheduleProperty.asJson.noSpaces,
       active = true,
@@ -150,7 +150,7 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
     model.DeploymentWithJarData(
       processVersion = processVersion,
       processJson = processEntity.processJson,
-      modelConfig = processEntity.modelConfig,
+      inputConfigDuringExecutionJson = processEntity.inputConfigDuringExecutionJson,
       jarFileName = processEntity.jarFileName
     )
   }

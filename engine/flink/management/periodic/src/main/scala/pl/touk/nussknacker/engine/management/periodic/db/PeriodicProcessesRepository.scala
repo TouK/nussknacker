@@ -35,7 +35,7 @@ object PeriodicProcessesRepository {
     PeriodicProcess(processEntity.id, model.DeploymentWithJarData(
       processVersion = processVersion,
       processJson = processEntity.processJson,
-      modelConfig = processEntity.modelConfig,
+      inputConfigDuringExecutionJson = processEntity.inputConfigDuringExecutionJson,
       jarFileName = processEntity.jarFileName
     ), scheduleProperty, processEntity.active, processEntity.createdAt)
   }
@@ -103,7 +103,7 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
       processName = deploymentWithJarData.processVersion.processName.value,
       processVersionId = deploymentWithJarData.processVersion.versionId,
       processJson = deploymentWithJarData.processJson,
-      modelConfig = deploymentWithJarData.modelConfig,
+      inputConfigDuringExecutionJson = deploymentWithJarData.inputConfigDuringExecutionJson,
       jarFileName = deploymentWithJarData.jarFileName,
       scheduleProperty = scheduleProperty.asJson.noSpaces,
       active = true,
