@@ -3,7 +3,7 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
    
-## In version 0.5.0 (Not released yet)
+## In version 1.0.0 (Not released yet)
 
 * [#1439](https://github.com/TouK/nussknacker/pull/1439) [#2090](https://github.com/TouK/nussknacker/pull/2090) Upgrade do Flink 1.13.
   * `setTimeCharacteristic` is deprecated, and should be handled automatically by Flink. 
@@ -13,6 +13,20 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#2152](https://github.com/TouK/nussknacker/pull/2152) `schedulePropertyExtractor` parameter of `PeriodicDeploymentManagerProvider`
   was changed to a factory, replace with a lambda creating the original property extractor.
 * [#2159](https://github.com/TouK/nussknacker/pull/2159) `useTypingResultTypeInformation` option is now enabled by default
+* [#2108](https://github.com/TouK/nussknacker/pull/2108) Changes in `ClassExtractionSettings`:
+  - Refactor of classes defining extraction rules,
+  - `TypedClass` has private `apply` method, please use `Typed.typedClass`
+  - Fewer classes/methods are accessible in SpEL, in particular Scala collections, internal time API, methods returning or having parameters from excluded classes
+* Changes in `OAuth2` security components:
+  - refactoring of `OpenIdConnectService`, now it's named `GenericOidcService` (it's best to use `OidcService`, which can handle most of the configuration automatically)
+* New security settings, in particular new flags in `ExpressionConfig`:
+  - `strictMethodsChecking`
+  - `staticMethodInvocationsChecking`
+  - `methodExecutionForUnknownAllowed`
+  - `dynamicPropertyAccessAllowed`
+  - `spelExpressionExcludeList`
+* [#2101](https://github.com/TouK/nussknacker/pull/2101) Global permissions can be arbitrary string, for admin user it's not necessary to return global permissions
+* [#2182](https://github.com/TouK/nussknacker/pull/2182) To avoid classloader leaks during SQL `DriverManager` registration, HSQLDB (used e.g. for SQL Variable) is no longer included in model jars, it should be added in Flink `lib` dir 
 
 ## In version 0.4.0
 
