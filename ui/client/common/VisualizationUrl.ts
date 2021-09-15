@@ -3,7 +3,6 @@ import {omitBy} from "lodash"
 import Moment from "moment"
 import * as  queryString from "query-string"
 import {ParseOptions} from "query-string"
-import {BASE_PATH} from "../config"
 import {NodeId} from "../types"
 
 export const visualizationBasePath = `visualization`
@@ -21,7 +20,7 @@ function fromTimestampOrDate(tsOrDate) {
 
 export function visualizationUrl(processName: string, nodeId?: NodeId): string {
   const baseUrl = `${visualizationBasePath}/${encodeURIComponent(processName)}`
-  return BASE_PATH + baseUrl + queryString.stringify({nodeId})
+  return baseUrl + queryString.stringify({nodeId})
 }
 
 export function extractCountParams(queryParams) {
