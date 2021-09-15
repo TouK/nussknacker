@@ -37,7 +37,7 @@ object StandaloneOpenApiGenerator {
     OApiDocumentation(OPEN_API_VERSION, oApiInfo, List(serverDescription), scenarioDefinitions.asJson).asJson.spaces2
   }
 
-  private def preetyPrintMap(m: Map[String, String]): String = m.map(v => s"<b>${v._1}</b>: ${v._2}").mkString(" <br/> ")
+  private def preetyPrintMap(m: Map[String, String]): String = m.map(v => s"**${v._1}**: ${v._2}").mkString("\\\n")
 
   private def generateOApiRequestBody(schema: Json) = Map(
     "required" -> true,

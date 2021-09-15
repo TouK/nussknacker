@@ -4,13 +4,19 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 class TypingResultToJsonSchemaConverter(exampleValues: Map[String, Json]) extends LazyLogging {
 
-  def typingResultToJsonSchema(typingResult: TypingResult, paramName: Option[String] = None): Map[String, Any] = typingResult match {
-    case typed: TypedObjectTypingResult => typed.fields.map(v => v._1 -> typingResultToJsonSchema(v._2, Some(v._1)))
-    case typed: TypingResult => translateTypeResult(typed, paramName.flatMap(exampleValues.get))
-  }
+  val jsonEncoder = BestEffortJsonEncoder(failOnUnkown = true, getClass.getClassLoader)
+
+  def typingResultToJsonSchema(typingResult: TypingResult, paramName: Option[String] = None): Json =
+    jsonEncoder.encode(
+      typingResult match {
+        case typed: TypedObjectTypingResult => typed.fields.map(v => v._1 -> typingResultToJsonSchema(v._2, Some(v._1)))
+        case typed: TypingResult => translateTypeResult(typed, paramName.flatMap(exampleValues.get))
+      }
+    )
 
   private def translateTypeResult(typingResult: TypingResult, example: Option[Json] = None): Map[String, Json] = {
     (typingResult match {
