@@ -2,10 +2,11 @@ package pl.touk.nussknacker.engine.api
 
 import java.nio.charset.StandardCharsets
 import io.circe
-import io.circe.{Decoder, Encoder, KeyEncoder}
+import io.circe.{ACursor, Decoder, Encoder, HCursor, Json, KeyEncoder}
 import io.circe.generic.extras.Configuration
 
 import java.net.URI
+import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.mapAsScalaMapConverter
 
 object CirceUtil {
@@ -39,4 +40,19 @@ object CirceUtil {
     implicit lazy val uriEncoder: Encoder[URI] = Encoder.encodeString.contramap(_.toString)
 
   }
+
+  implicit class RichACursor(cursor: ACursor) {
+
+    def downAt(p: Json=> Boolean): ACursor = {
+      @tailrec
+      def go(c: ACursor): ACursor = c match {
+        case success: HCursor => if (p(success.value)) success else go(success.right)
+        case other            => other
+      }
+
+      go(cursor.downArray)
+    }
+
+  }
+
 }

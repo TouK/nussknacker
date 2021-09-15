@@ -111,8 +111,8 @@ object ValidationResults {
   object NodeValidationErrorType extends Enumeration {
 
     type NodeValidationErrorType = Value
-    implicit val encoder: Encoder[NodeValidationErrorType.Value] = Encoder.enumEncoder(NodeValidationErrorType)
-    implicit val decoder: Decoder[NodeValidationErrorType.Value] = Decoder.enumDecoder(NodeValidationErrorType)
+    implicit val encoder: Encoder[NodeValidationErrorType.Value] = Encoder.encodeEnumeration(NodeValidationErrorType)
+    implicit val decoder: Decoder[NodeValidationErrorType.Value] = Decoder.decodeEnumeration(NodeValidationErrorType)
     val RenderNotAllowed, SaveNotAllowed, SaveAllowed = Value
   }
 

@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.engine.api
 
 import java.util.concurrent.TimeUnit
-
 import io.circe.generic.extras.ConfiguredJsonCodec
 import CirceUtil._
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
-import io.circe.generic.semiauto._
+import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValue
 
 import scala.concurrent.duration.Duration
@@ -21,9 +20,9 @@ object ProcessAdditionalFields {
                                      properties: Option[Map[String, String]])
 
   implicit val circeDecoder: Decoder[ProcessAdditionalFields]
-  = deriveDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map())))
+  =  deriveConfiguredDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map())))
 
-  implicit val circeEncoder: Encoder[ProcessAdditionalFields] = deriveEncoder
+  implicit val circeEncoder: Encoder[ProcessAdditionalFields] = deriveConfiguredEncoder
 }
 
 @JsonCodec case class LayoutData(x: Long, y: Long)

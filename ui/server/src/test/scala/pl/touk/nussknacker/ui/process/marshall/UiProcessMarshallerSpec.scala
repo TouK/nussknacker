@@ -73,7 +73,7 @@ class UiProcessMarshallerSpec extends FlatSpec with Matchers {
     val canonical = ProcessConverter.fromDisplayable(displayableProcess)
 
     //TODO: set dropNullKeys as default (some util?)
-    val processAfterMarshallAndUnmarshall = Printer.noSpaces.copy(dropNullValues = true).pretty(ProcessMarshaller.toJson(canonical))
+    val processAfterMarshallAndUnmarshall = Printer.noSpaces.copy(dropNullValues = true).print(ProcessMarshaller.toJson(canonical))
 
     parse(processAfterMarshallAndUnmarshall) shouldBe parse(baseProcess)
   }

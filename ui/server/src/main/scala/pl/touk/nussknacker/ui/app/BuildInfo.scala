@@ -9,8 +9,8 @@ object BuildInfo {
   val empty = Map.empty[String, String]
 
   def writeAsJson(buildInfo: Map[String, String]): String = {
-    val prettyParams = Printer.spaces2.copy(preserveOrder = true)
-    ordered(buildInfo).asJson.pretty(prettyParams)
+    val prettyParams = Printer.spaces2.copy(sortKeys = true)
+    ordered(buildInfo).asJson.printWith(prettyParams)
   }
 
   def parseJson(json: String): Option[Map[String, String]] = {

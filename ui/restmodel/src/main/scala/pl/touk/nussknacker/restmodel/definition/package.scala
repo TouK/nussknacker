@@ -2,7 +2,7 @@ package pl.touk.nussknacker.restmodel
 
 import io.circe.Decoder
 import io.circe.generic.JsonCodec
-import io.circe.generic.semiauto.deriveDecoder
+import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.deployment.CustomAction
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.definition.TypeInfos.MethodInfo
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
+import pl.touk.nussknacker.engine.api.CirceUtil._
 
 import java.net.URI
 
@@ -76,9 +77,7 @@ package object definition {
                                                    label: Option[String])
 
   object UIParameter {
-
-    implicit def decoder(implicit typing: Decoder[TypingResult]): Decoder[UIParameter] = deriveDecoder[UIParameter]
-
+    implicit def decoder(implicit typing: Decoder[TypingResult]): Decoder[UIParameter] = deriveConfiguredDecoder[UIParameter]
   }
 
   object UICustomAction {

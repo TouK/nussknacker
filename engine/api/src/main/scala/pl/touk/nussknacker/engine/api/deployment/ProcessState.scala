@@ -59,8 +59,8 @@ object ProcessState {
 }
 
 object ProcessActionType extends Enumeration {
-  implicit val typeEncoder: Encoder[ProcessActionType.Value] = Encoder.enumEncoder(ProcessActionType)
-  implicit val typeDecoder: Decoder[ProcessActionType.Value] = Decoder.enumDecoder(ProcessActionType)
+  implicit val typeEncoder: Encoder[ProcessActionType.Value] = Encoder.encodeEnumeration(ProcessActionType)
+  implicit val typeDecoder: Decoder[ProcessActionType.Value] = Decoder.decodeEnumeration(ProcessActionType)
 
   type ProcessActionType = Value
   val Deploy: Value = Value("DEPLOY")
