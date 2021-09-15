@@ -82,7 +82,7 @@ module.exports = {
   entry: entry,
   output: {
     path: outputPath,
-    filename: isProd ? "[contenthash].js": "[name].js",
+    filename: "[name].js",
   },
   devtool: isProd ? "hidden-source-map" : "eval-source-map",
   devServer: {
@@ -161,6 +161,7 @@ module.exports = {
     }),
     new HtmlWebpackPlugin({
       title: "Nussknacker",
+      hash: true,
       chunks: ["runtime", "main"],
       //see ./config.ts
       base: isProd ? "__publicPath__/static/" : "/",
