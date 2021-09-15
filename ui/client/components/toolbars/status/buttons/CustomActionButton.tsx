@@ -29,9 +29,8 @@ export default function CustomActionButton(props: CustomActionProps) {
   const statusName = processStatus?.name
   const available = !disabled && action.allowedStateStatusNames.includes(statusName)
 
-  const toolTip = available ?
-    t("panels.actions.custom-action.tooltips.disabled", "Disabled for {{statusName}} status.", {statusName}) :
-    null
+  const toolTip = available ? null :
+    t("panels.actions.custom-action.tooltips.disabled", "Disabled for {{statusName}} status.", {statusName})
 
   const {open} = useWindows()
   return (
