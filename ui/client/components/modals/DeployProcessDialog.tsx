@@ -37,13 +37,13 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
   const confirmAction = useCallback(
     async () => {
       const deploymentPath = window.location.pathname
+      props.close()
       await action(processId, comment)
       const currentPath = window.location.pathname
       if (currentPath.startsWith(deploymentPath)) {
         dispatch(displayCurrentProcessVersion(processId))
         dispatch(displayProcessActivity(processId))
       }
-      props.close()
     },
     [action, comment, dispatch, processId, props],
   )
