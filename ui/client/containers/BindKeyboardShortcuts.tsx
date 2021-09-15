@@ -20,14 +20,13 @@ export function BindKeyboardShortcuts({disabled}: { disabled?: boolean }): JSX.E
     BACKSPACE: userActions.delete,
   }), [userActions])
 
-  const copyPasteHandlers = useMemo(() => ({
-    keydown: event => isInputEvent(event) || !disabled && keyHandlers[event.key.toUpperCase()]?.(event),
+  const eventHandlers = useMemo(() => ({
+    keydown: event => isInputEvent(event) || keyHandlers[event.key.toUpperCase()]?.(event),
     copy: event => userActions.copy ? userActions.copy(event) : null,
     paste: event => userActions.paste ? userActions.paste(event) : null,
     cut: event => userActions.cut ? userActions.cut(event) : null,
-  }), [disabled, keyHandlers, userActions])
-
-  useDocumentListeners(!disabled && copyPasteHandlers)
+  }), [keyHandlers, userActions])
+  useDocumentListeners(!disabled && eventHandlers)
 
   return null
 }
