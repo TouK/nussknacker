@@ -5,6 +5,7 @@ import {ThunkAction} from "../../reduxTypes"
 import * as UndoRedoActions from "../../undoRedoActions"
 import {displayProcessActivity} from "../displayProcessActivity"
 import {displayCurrentProcessVersion} from "../process"
+import {loadProcessToolbarsConfiguration} from "../loadProcessToolbarsConfiguration"
 
 async function doRenameProcess(processName: string, newProcessName: string) {
   const isSuccess = await HttpService.changeProcessName(processName, newProcessName)
@@ -32,5 +33,8 @@ export function saveProcess(comment: string): ThunkAction {
     await dispatch(UndoRedoActions.clear())
     await dispatch(displayCurrentProcessVersion(processId))
     await dispatch(displayProcessActivity(processId))
+    if (isRenamed) {
+      await dispatch(loadProcessToolbarsConfiguration(processId))
+    }
   }
 }
