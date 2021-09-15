@@ -270,8 +270,10 @@ jobs:
         run: docker run -d -p 8083:8080 -e COUNTS_URL=http://localhost -e SCHEMA_REGISTRY_URL=http://dummy:8888 -e KAFKA_ADDRESS=dummy:9092 -e OPENAPI_SERVICE_URL=http://dummy:5000 -e SQL_ENRICHER_URL=dummy:5432 -e CONFIG_FORCE_scenarioTypes_streaming__dev_deploymentConfig_type=stub -e CONFIG_FILE=/opt/nussknacker/conf/dev-application.conf --name nussknacker_e2e_fe touk/nussknacker:$NUSSKNACKER_VERSION
       - name: FE tests e2e
         uses: cypress-io/github-action@v2
+        env:
+          CYPRESS_BASE_URL: http://localhost:8083
         with:
-          wait-on: 'http://localhost:8083'
+          wait-on: ${{ env.CYPRESS_BASE_URL }}
           working-directory: ui/client
       - name: Kill server
         shell: bash
