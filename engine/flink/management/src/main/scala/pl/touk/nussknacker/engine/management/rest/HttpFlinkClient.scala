@@ -214,7 +214,16 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
       .response(asJson[List[KeyValueEntry]])
       .send()
       .flatMap(SttpJson.failureToFuture)
-      .map(list => Configuration.fromMap(list.map(e => e.key -> e.value).toMap.asJava))
+      .map(list => configurationFromMap(list.map(e => e.key -> e.value).toMap))
+  }
+
+  //we don't use Configuration.fromMap for Flink 1.11 compatibility
+  private def configurationFromMap(values: Map[String, String]) = {
+    val configuration = new Configuration();
+    values.foreach {
+      case (k, v) => configuration.setString(k, v)
+    }
+    configuration
   }
 
   private def handleUnitResponse(action: String)(response: Response[Either[String, String]]): Future[Unit] = (response.code, response.body) match {
