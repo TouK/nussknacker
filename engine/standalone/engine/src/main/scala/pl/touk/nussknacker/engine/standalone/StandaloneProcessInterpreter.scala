@@ -255,7 +255,13 @@ case class StandaloneProcessInterpreter(source: StandaloneSource[Any],
     }
   }
 
-  def produceOpenApiDefinition(): Option[Json] = {
+  /*
+  * TODO: responseDefinition
+  * We should somehow resolve returning type of sinks, which can be variant an sometimes can depend on external data source.
+  * I think we should generate openApi response definition for 'sinks with schema' (to be done) only.
+  * That way we can ensure that we are generating expected response.
+  * */
+  def generateOpenApiDefinition(): Option[Json] = {
     for {
       sourceDefinition <- source.openApiDefinition
       responseDefinition = Json.Null

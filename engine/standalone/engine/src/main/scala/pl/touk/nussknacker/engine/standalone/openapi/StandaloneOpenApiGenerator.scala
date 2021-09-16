@@ -15,29 +15,35 @@ object StandaloneOpenApiGenerator {
   private[standalone] def generateScenarioDefinition(processName: String,
                                                      requestDefinition: Json,
                                                      responseDefinition: Json,
-                                                     description: Map[String, String],
+                                                     description: String,
                                                      tags: List[String]
                                                     ): Json = {
-   val postOpenApiDefinition = generatePostOApiDefinition(
+    val postOpenApiDefinition = generatePostOApiDefinition(
       tags,
       processName,
-      preetyPrintMap(description),
+      description,
       requestDefinition,
       responseDefinition
     )
-    jsonEncoder.encode(postOpenApiDefinition)
+    val openApiDefinition = generateOApiDefinition(
+      postOpenApiDefinition,
+      Map(), //TODO generate openApi for GET sources
+    )
+    jsonEncoder.encode(openApiDefinition)
+  }
+
+  def generateScenarioDefinitions(pathWithInterpreter: List[(String, StandaloneProcessInterpreter)]): Json = {
+    pathWithInterpreter
+      .flatMap(a => a._2.generateOpenApiDefinition().map(oApi => a._1 -> oApi))
+      .map {
+        case (path, interpreter) => "/" + path -> interpreter
+      }.toMap.asJson
   }
 
   def generateOpenApi(pathWithInterpreter: List[(String, StandaloneProcessInterpreter)], oApiInfo: OApiInfo, serverDescription: OApiServer): String = {
-    val scenarioDefinitions: Map[String, Json] = pathWithInterpreter
-      .flatMap(a => a._2.produceOpenApiDefinition().map(oApi => a._1 -> oApi))
-      .map {
-        case (path, interpreter) => "/" + path -> interpreter
-      }.toMap
-    OApiDocumentation(OPEN_API_VERSION, oApiInfo, List(serverDescription), scenarioDefinitions.asJson).asJson.spaces2
+    val scenarioDefinitions: Json = generateScenarioDefinitions(pathWithInterpreter)
+    OApiDocumentation(OPEN_API_VERSION, oApiInfo, List(serverDescription), scenarioDefinitions).asJson.spaces2
   }
-
-  private def preetyPrintMap(m: Map[String, String]): String = m.map(v => s"**${v._1}**: ${v._2}").mkString("\\\n")
 
   private def generateOApiRequestBody(schema: Json) = Map(
     "required" -> true,
@@ -61,16 +67,21 @@ object StandaloneOpenApiGenerator {
     )
   )
 
-  private def generatePostOApiDefinition(tags: List[String], processName: String, description: String, requestSchema: Json, responseSchema: Json) = Map(
-    "post" -> Map(
+  private def generateOApiDefinition(postOpenApiDefinition: Map[String, Any], getOpenApiDefinition: Map[String, Any]) = {
+    Map.empty[String, Any] ++
+      (if(postOpenApiDefinition.isEmpty) Map.empty else Map("post" -> postOpenApiDefinition)) ++
+      (if(getOpenApiDefinition.isEmpty) Map.empty else Map("get" -> getOpenApiDefinition))
+  }
+
+  private def generatePostOApiDefinition(tags: List[String], processName: String, description: String, requestSchema: Json, responseSchema: Json) =
+    Map(
       "tags" -> tags,
       "summary" -> processName,
       "description" -> description,
       "consumes" -> List("application/json"),
       "produces" -> List("application/json"),
       "requestBody" -> generateOApiRequestBody(requestSchema),
-      "responses" -> generateOApiResponse(responseSchema) //TODO
+      "responses" -> generateOApiResponse(responseSchema)
     )
-  )
 
 }
