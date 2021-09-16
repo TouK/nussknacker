@@ -4,7 +4,6 @@ import java.time.LocalDateTime
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.generic.JsonCodec
-import io.circe.java8.time.{JavaTimeDecoders, JavaTimeEncoders}
 import pl.touk.nussknacker.engine.ProcessingTypeData.ProcessingType
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessState}
@@ -15,7 +14,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Validat
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 
-object processdetails extends JavaTimeEncoders with JavaTimeDecoders {
+object processdetails {
   sealed trait Process {
     val lastAction: Option[ProcessAction]
     def isDeployed: Boolean = !isNotDeployed && lastAction.exists(_.isDeployed)

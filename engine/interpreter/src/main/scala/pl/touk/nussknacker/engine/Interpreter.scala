@@ -194,7 +194,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
       //TODO: what about implicit??
       listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, metaData, preparedParams, result))
     }
-    interpreterShape.fromFuture(resultFuture.map(ValueWithContext(_, ctx))(SynchronousExecutionContext.ctx))
+    interpreterShape.fromFuture(SynchronousExecutionContext.ctx)(resultFuture.map(ValueWithContext(_, ctx))(SynchronousExecutionContext.ctx))
   }
 
   private def evaluateExpression[R](expr: Expression, ctx: Context, name: String)
@@ -234,7 +234,7 @@ object Interpreter {
 
     def monadError: MonadError[F, Throwable]
 
-    def fromFuture[T]: Future[T] => F[T]
+    def fromFuture[T](implicit ec: ExecutionContext): Future[T] => F[T]
 
   }
 
@@ -243,7 +243,7 @@ object Interpreter {
 
     override def monadError: MonadError[IO, Throwable] = MonadError[IO, Throwable]
 
-    override def fromFuture[T]: Future[T] => IO[T] = f => IO.fromFuture(IO.pure(f))
+    override def fromFuture[T](implicit ec: ExecutionContext): Future[T] => IO[T] = f => IO.fromFuture(IO.pure(f))(IO.contextShift(ec))
 
   }
 
@@ -251,7 +251,7 @@ object Interpreter {
 
     override def monadError: MonadError[Future, Throwable] = cats.instances.future.catsStdInstancesForFuture(ec)
 
-    override def fromFuture[T]: Future[T] => Future[T] = identity
+    override def fromFuture[T](implicit ec: ExecutionContext): Future[T] => Future[T] = identity
   }
 
 }

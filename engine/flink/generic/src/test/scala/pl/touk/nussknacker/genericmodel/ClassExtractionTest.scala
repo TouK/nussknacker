@@ -2,12 +2,6 @@ package pl.touk.nussknacker.genericmodel
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import io.circe.ObjectEncoder
-import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
-import io.circe.syntax.EncoderOps
-import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
-import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.flink.test.ClassExtractionBaseTest
 import pl.touk.nussknacker.engine.testing.LocalModelData
 

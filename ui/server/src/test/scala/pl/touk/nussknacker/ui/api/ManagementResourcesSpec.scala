@@ -239,7 +239,6 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
               .downField("nodeResults")
               .downField("endsuffix")
               .downArray
-              //.first
               .downField("context")
               .downField("variables")
 

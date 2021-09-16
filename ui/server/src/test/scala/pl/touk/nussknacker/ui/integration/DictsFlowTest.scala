@@ -183,7 +183,6 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
       .downField("invocationResults")
       .downField(EndNodeId)
       .downArray
-     // .up
       .downField("value")
       .downField("pretty")
       .as[String].right.value

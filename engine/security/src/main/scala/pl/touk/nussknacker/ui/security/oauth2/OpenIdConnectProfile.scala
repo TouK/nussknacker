@@ -5,7 +5,6 @@ import io.circe.Decoder
 import java.time.LocalDate
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
-import io.circe.java8.time.{JavaTimeDecoders, JavaTimeEncoders}
 import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2Profile.getUserRoles
 
@@ -53,7 +52,7 @@ import scala.concurrent.duration.Deadline
   val notBefore: Option[Deadline] = None
 }
 
-object OpenIdConnectUserInfo extends EpochSecondsCodecs with JavaTimeDecoders with JavaTimeEncoders with EitherCodecs {
+object OpenIdConnectUserInfo extends EpochSecondsCodecs with EitherCodecs {
   implicit val config: Configuration = Configuration.default.withDefaults
 
   lazy val decoder: Decoder[OpenIdConnectUserInfo] = deriveConfiguredDecoder[OpenIdConnectUserInfo]

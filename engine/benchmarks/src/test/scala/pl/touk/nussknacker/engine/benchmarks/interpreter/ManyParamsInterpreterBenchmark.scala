@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 import pl.touk.nussknacker.engine.spel.Implicits._
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future}
 
 /*
 [info] ManyParamsInterpreterBenchmark.benchmarkAsync  thrpt    8   69367.885 ±   239.049  ops/s

@@ -5,7 +5,6 @@ import java.time.LocalDateTime
 
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
-import io.circe.java8.time.{JavaTimeDecoders, JavaTimeEncoders}
 import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.ui.api.ProcessAttachmentService.AttachmentToAdd
 import pl.touk.nussknacker.ui.db.entity.{AttachmentEntityData, CommentActions, CommentEntityData}
@@ -72,7 +71,7 @@ case class ProcessActivityRepository(dbConfig: DbConfig)
   }
 }
 
-object ProcessActivityRepository extends JavaTimeDecoders with JavaTimeEncoders {
+object ProcessActivityRepository {
 
   @JsonCodec case class ProcessActivity(comments: List[Comment], attachments: List[Attachment])
 
