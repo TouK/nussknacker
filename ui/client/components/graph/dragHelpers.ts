@@ -1,4 +1,16 @@
 import {dia, g} from "jointjs"
+import {NodeType} from "../../types"
+
+export function getLinkNodes(link: dia.Link): { sourceNode: NodeType, targetNode: NodeType } {
+  const {graph} = link
+  const source = graph.getCell(link.getSourceElement()?.id)
+  const target = graph.getCell(link.getTargetElement()?.id)
+
+  return {
+    sourceNode: source?.get("nodeData"),
+    targetNode: target?.get("nodeData"),
+  }
+}
 
 export function filterDragHovered(links: dia.Link[] = []): dia.Link[] {
   return links

@@ -1,12 +1,13 @@
-import {ProcessType} from "../../components/Process/types"
 import HttpService from "../../http/HttpService"
-import {NodeType, NodeId, ProcessDefinitionData, ValidationResult, Process} from "../../types"
+import {NodeId, NodeType, Process, ProcessDefinitionData, ValidationResult} from "../../types"
 import {Action, ThunkAction} from "../reduxTypes"
 import {RootState} from "../../reducers"
-import {Position, layoutChanged} from "./ui/layout"
+import {layoutChanged, Position} from "./ui/layout"
 import {EditEdgeAction} from "./editEdge"
 import {EditNodeAction, RenameProcessAction} from "./editNode"
 import {getProcessDefinitionData} from "../../reducers/selectors/settings"
+import * as GraphUtils from "../../components/graph/GraphUtils"
+import {getProcessToDisplay} from "../../reducers/selectors/graph"
 
 //TODO: identify
 type Edges = $TodoType[]
@@ -104,7 +105,7 @@ export function nodesDisconnected(from: NodeId, to: NodeId): ThunkAction {
   }])
 }
 
-export function injectNode(from: NodeType, middle: NodeType, to: NodeType, edgeType: EdgeType): ThunkAction {
+function doInjectNode(from: NodeType, middle: NodeType, to: NodeType, edgeType: EdgeType): ThunkAction {
   return runSyncActionsThenValidate(state => [
     {
       type: "NODES_DISCONNECTED",
@@ -125,6 +126,23 @@ export function injectNode(from: NodeType, middle: NodeType, to: NodeType, edgeT
       processDefinitionData: state.settings.processDefinitionData,
     },
   ])
+}
+
+export function injectNode(from: NodeType, middle: NodeType, to: NodeType, edgeType: EdgeType): ThunkAction {
+  return (dispatch, getState) => {
+    const state = getState()
+    const canInjectNode = GraphUtils.canInjectNode(
+      getProcessToDisplay(state),
+      from.id,
+      middle.id,
+      to.id,
+      getProcessDefinitionData(state),
+    )
+
+    if (canInjectNode) {
+      return dispatch(doInjectNode(from, middle, to, edgeType))
+    }
+  }
 }
 
 export function nodeAdded(node: NodeType, position: Position): ThunkAction {

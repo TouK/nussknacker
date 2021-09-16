@@ -8,12 +8,11 @@ import {findDOMNode} from "react-dom"
 import {getProcessCategory, getSelectionState} from "../../reducers/selectors/graph"
 import {getLoggedUser, getProcessDefinitionData} from "../../reducers/selectors/settings"
 import "../../stylesheets/graph.styl"
-import {filterDragHovered, setLinksHovered} from "./dragHelpers"
+import {filterDragHovered, getLinkNodes, setLinksHovered} from "./dragHelpers"
 import {updateNodeCounts} from "./EspNode/element"
 import {GraphPaperContainer} from "./focusable"
 import {createPaper, directedLayout, drawGraph, isBackgroundObject, isModelElement} from "./GraphPartialsInTS"
 import styles from "./graphTheme.styl"
-import * as GraphUtils from "./GraphUtils"
 import {Events} from "./joint-events"
 import NodeUtils from "./NodeUtils"
 import {PanZoomPlugin} from "./PanZoomPlugin"
@@ -217,29 +216,15 @@ export class Graph extends React.Component {
     const [linkBelowCell] = filterDragHovered(links)
 
     if (linkBelowCell && middleMan) {
-      const source = this.graph.getCell(linkBelowCell.getSourceElement().id)
-      const target = this.graph.getCell(linkBelowCell.getTargetElement().id)
+      const {sourceNode, targetNode} = getLinkNodes(linkBelowCell)
+      const middleManNode = middleMan.get("nodeData")
 
-      const middleManNode = middleMan.attributes.nodeData
-
-      const sourceNode = source.attributes.nodeData
-      const targetNode = target.attributes.nodeData
-
-      if (GraphUtils.canInjectNode(
-        this.props.processToDisplay,
-        sourceNode.id,
-        middleMan.id,
-        targetNode.id,
-        this.props.processDefinitionData,
-      )) {
-        //TODO: consider doing inject check in actions.js?
-        this.props.actions.injectNode(
-          sourceNode,
-          middleManNode,
-          targetNode,
-          linkBelowCell.attributes.edgeData.edgeType,
-        )
-      }
+      this.props.actions.injectNode(
+        sourceNode,
+        middleManNode,
+        targetNode,
+        linkBelowCell.attributes.edgeData.edgeType,
+      )
     }
   }
 
