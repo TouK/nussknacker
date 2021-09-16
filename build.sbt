@@ -237,7 +237,6 @@ val springV = "5.1.19.RELEASE"
 val scalaTestV = "3.0.8"
 val scalaCheckV = "1.14.0"
 val logbackV = "1.1.3"
-val argonautV = "6.2.1"
 val circeV = "0.11.2"
 val circeJava8V = "0.11.1"
 val jwtCirceV = "4.0.0"
@@ -805,7 +804,6 @@ lazy val api = (project in engine("api")).
     name := "nussknacker-api",
     libraryDependencies ++= {
       Seq(
-        "io.argonaut" %% "argonaut" % argonautV,
         "io.circe" %% "circe-parser" % circeV,
         "io.circe" %% "circe-generic" % circeV,
         "io.circe" %% "circe-generic-extras" % circeV,

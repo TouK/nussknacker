@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.util.json
 
+import io.circe.Encoder.encodeZonedDateTimeWithFormatter
+
 import java.time.{Instant, LocalDate, LocalDateTime, LocalTime, OffsetDateTime, ZonedDateTime}
 import java.time.format.DateTimeFormatter
 import io.circe.{Encoder, Json}
 import io.circe.Json._
-import io.circe.java8.time
-import io.circe.java8.time._
-import pl.touk.nussknacker.engine.api.{ArgonautCirce, DisplayJson}
+import pl.touk.nussknacker.engine.api.DisplayJson
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
@@ -40,7 +40,6 @@ case class BestEffortJsonEncoder(failOnUnkown: Boolean, classLoader: ClassLoader
       case Some(a) => encode(a)
       case None => Null
       case j: Json => j
-      case j: argonaut.Json => ArgonautCirce.toCirce(j)
       case s: String => safeString(s)
       case a: Long => safeLong(a)
       case a: Double => safeDouble(a)
@@ -54,7 +53,7 @@ case class BestEffortJsonEncoder(failOnUnkown: Boolean, classLoader: ClassLoader
       case a: LocalTime => Encoder[LocalTime].apply(a)
       case a: LocalDateTime => Encoder[LocalDateTime].apply(a)
       //Default implementation serializes to ISO_ZONED_DATE_TIME which is not handled well by some parsers...
-      case a: ZonedDateTime => time.encodeZonedDateTimeWithFormatter(DateTimeFormatter.ISO_OFFSET_DATE_TIME).apply(a)
+      case a: ZonedDateTime => encodeZonedDateTimeWithFormatter(DateTimeFormatter.ISO_OFFSET_DATE_TIME).apply(a)
       case a: Instant => Encoder[Instant].apply(a)
       case a: OffsetDateTime => Encoder[OffsetDateTime].apply(a)
       case a: UUID => safeString(a.toString)
