@@ -22,7 +22,11 @@ const spec = {
   hover: (props, monitor, component: Graph) => {
     const clientOffset = monitor.getClientOffset()
     const point = component.processGraphPaper.clientToLocalPoint(clientOffset)
-    setLinksHovered(component.graph, new g.Rect(point).inflate(30, 10))
+    const rect = new g.Rect(point)
+      .inflate(RECT_WIDTH/2, RECT_HEIGHT/2)
+      .offset(RECT_WIDTH/2, RECT_HEIGHT/2)
+      .offset(RECT_WIDTH * -.8, RECT_HEIGHT * -.5)
+    setLinksHovered(component.graph, rect)
   },
 }
 
