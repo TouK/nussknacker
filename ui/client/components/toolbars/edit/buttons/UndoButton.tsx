@@ -18,7 +18,7 @@ function UndoButton(props: ToolbarButtonProps): JSX.Element {
 
   return (
     <CapabilitiesToolbarButton
-      write
+      editFrontend
       name={t("panels.actions.edit-undo.button", "undo")}
       disabled={!available}
       icon={<Icon/>}

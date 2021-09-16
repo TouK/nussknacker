@@ -15,7 +15,7 @@ function LayoutButton(props: ToolbarButtonProps) {
 
   return (
     <CapabilitiesToolbarButton
-      write
+      editFrontend
       name={t("panels.actions.edit-layout.button", "layout")}
       icon={<Icon/>}
       disabled={disabled}

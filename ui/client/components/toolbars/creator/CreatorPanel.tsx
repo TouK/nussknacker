@@ -25,7 +25,7 @@ export function CreatorPanel(): JSX.Element {
   const clearFilter = useCallback(() => setFilter(""), [])
 
   return (
-    <CollapsibleToolbar id="creator-panel" title={t("panels.creator.title", "Creator panel")} isHidden={!capabilities.write}>
+    <CollapsibleToolbar id="creator-panel" title={t("panels.creator.title", "Creator panel")} isHidden={!capabilities.editFrontend}>
       <InputWithIcon
         className={styles}
         onChange={setFilter}
