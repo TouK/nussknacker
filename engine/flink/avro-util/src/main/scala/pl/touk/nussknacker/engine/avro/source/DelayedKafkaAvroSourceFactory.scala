@@ -75,7 +75,7 @@ class DelayedKafkaAvroSourceFactory[K:ClassTag, V:ClassTag](schemaRegistryProvid
                 extractTimestampFromField(fieldName)
               )
             }).orElse(timestampAssigner)
-        createDelayedKafkaSource[K, V](preparedTopics, kafkaConfig, deserializationSchema, timestampAssignerWithExtract, formatter, flinkContextInitializer, millis)
+        createDelayedKafkaSourceWithFixedDelay[K, V](preparedTopics, kafkaConfig, deserializationSchema, timestampAssignerWithExtract, formatter, flinkContextInitializer, millis)
       case _ =>
         super.createSource(params, dependencies, finalState, preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, flinkContextInitializer)
     }

@@ -25,7 +25,7 @@ class DelayedFlinkKafkaConsumer[T](topics: List[PreparedKafkaTopic],
                                    schema: KafkaDeserializationSchema[T],
                                    config: KafkaConfig,
                                    consumerGroupId: String,
-                                   delayProvider: DelayCalculator,
+                                   delayCalculator: DelayCalculator,
                                    timestampAssigner: Option[TimestampWatermarkHandler[T]])
   extends FlinkKafkaConsumer[T](topics.map(_.prepared).asJava, schema, KafkaUtils.toProperties(config, Some(consumerGroupId))) {
 
@@ -55,7 +55,7 @@ class DelayedFlinkKafkaConsumer[T](topics: List[PreparedKafkaTopic],
       properties,
       pollTimeout,
       useMetrics,
-      delayProvider,
+      delayCalculator,
       timestampAssigner
     )
   }
@@ -78,7 +78,7 @@ class DelayedKafkaFetcher[T](sourceContext: SourceFunction.SourceContext[T],
                              kafkaProperties: Properties,
                              pollTimeout: lang.Long,
                              useMetrics: Boolean,
-                             delayProvider: DelayCalculator,
+                             delayCalculator: DelayCalculator,
                              timestampAssigner: Option[TimestampWatermarkHandler[T]]) extends KafkaFetcher[T](sourceContext, assignedPartitionsWithInitialOffsets, watermarkStrategy,
   processingTimeProvider, autoWatermarkInterval, userCodeClassLoader, taskNameWithSubtasks, deserializer, kafkaProperties, pollTimeout, metricGroup, consumerMetricGroup, useMetrics) with LazyLogging {
   import DelayedKafkaFetcher._
@@ -105,7 +105,7 @@ class DelayedKafkaFetcher[T](sourceContext: SourceFunction.SourceContext[T],
     })
 
     var currentDelay = 0L
-    val delay = delayProvider.calculateDelay(processingTimeProvider.getCurrentProcessingTime, maxEventTimestamp)
+    val delay = delayCalculator.calculateDelay(processingTimeProvider.getCurrentProcessingTime, maxEventTimestamp)
     while (delay > currentDelay) {
       val remainingDelay = delay - currentDelay
       val sleepTime = Math.min(maxSleepTime, remainingDelay)
