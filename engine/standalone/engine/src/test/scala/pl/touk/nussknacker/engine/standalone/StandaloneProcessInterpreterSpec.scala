@@ -308,6 +308,65 @@ class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryP
     result shouldBe Right(List(util.Arrays.asList("v5", "v4")))
   }
 
+  test("render schema for process") {
+    val schema = "'{\"properties\": {\"city\": {\"type\": \"string\", \"default\": \"Warsaw\"}}}'"
+    val process = EspProcessBuilder
+      .id("proc1")
+      .additionalFields(properties = Map("paramName" -> "paramValue"))
+      .exceptionHandler()
+      .source("start", "jsonSchemaSource", "schema" -> schema)
+      .sink("endNodeIID", "#input", "response-sink")
+
+    val interpreter = prepareInterpreter(process = process)
+    val openApiOpt = interpreter.generateOpenApiDefinition()
+    val expectedOpenApi =
+      """{
+        |  "post" : {
+        |    "description" : "**paramName**: paramValue",
+        |    "tags" : [
+        |      "Nussknacker"
+        |    ],
+        |    "requestBody" : {
+        |      "required" : true,
+        |      "content" : {
+        |        "application/json" : {
+        |          "schema" : {
+        |            "properties" : {
+        |              "city" : {
+        |                "type" : "string",
+        |                "default" : "Warsaw"
+        |              }
+        |            }
+        |          }
+        |        }
+        |      }
+        |    },
+        |    "produces" : [
+        |      "application/json"
+        |    ],
+        |    "consumes" : [
+        |      "application/json"
+        |    ],
+        |    "summary" : "proc1",
+        |    "responses" : {
+        |      "200" : {
+        |        "content" : {
+        |          "application/json" : {
+        |            "schema" : {
+        |              "type" : "object",
+        |              "properties" : null
+        |            }
+        |          }
+        |        }
+        |      }
+        |    }
+        |  }
+        |}""".stripMargin
+
+    openApiOpt shouldBe defined
+    openApiOpt.get.spaces2 shouldBe expectedOpenApi
+  }
+
   def runProcess(process: EspProcess,
                  input: Any,
                  creator: StandaloneProcessConfigCreator = new StandaloneProcessConfigCreator,

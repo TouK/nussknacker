@@ -10,7 +10,8 @@ import org.json.JSONObject
 import pl.touk.nussknacker.engine.api.process.SourceTestSupport
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.{TypedMap, _}
-import pl.touk.nussknacker.engine.api.{CirceUtil, MethodToInvoke, ParamName}
+import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, MethodToInvoke, ParamName}
+import pl.touk.nussknacker.engine.standalone.api.openapi.OpenApiSourceDefinition
 import pl.touk.nussknacker.engine.standalone.api.types.GenericResultType
 import pl.touk.nussknacker.engine.standalone.api.{ResponseEncoder, StandalonePostSource, StandaloneSourceFactory}
 import pl.touk.nussknacker.engine.standalone.utils.typed.SchemaTypingResult
@@ -24,7 +25,7 @@ class JsonSchemaStandaloneSourceFactory extends StandaloneSourceFactory[TypedMap
   private val jsonEncoder = BestEffortJsonEncoder(failOnUnkown = true, getClass.getClassLoader)
 
   @MethodToInvoke
-  def create(@ParamName("schema") schemaStr: String) : StandalonePostSource[TypedMap] =
+  def create(@ParamName("schema") schemaStr: String)(implicit metaData: MetaData) : StandalonePostSource[TypedMap] =
     new StandalonePostSource[TypedMap] with LazyLogging with ReturningType with SourceTestSupport[TypedMap] {
 
       protected val validator: Validator = Validator.builder().build()
@@ -43,6 +44,13 @@ class JsonSchemaStandaloneSourceFactory extends StandaloneSourceFactory[TypedMap
       override def parse(parameters: Array[Byte]): TypedMap = {
         val parametersString = new String(parameters, StandardCharsets.UTF_8)
         validateAndReturnTypedMap(parametersString)
+      }
+
+      override def openApiDefinition: Option[OpenApiSourceDefinition] = {
+        val json = decodeJsonWithError(schemaStr)
+        val properties = metaData.additionalFields.map(_.properties).getOrElse(Map.empty)
+        val description = properties.map(v => s"**${v._1}**: ${v._2}").mkString("\\\n")
+        Option(OpenApiSourceDefinition(json, description, List("Nussknacker")))
       }
 
       override def returnType: typing.TypingResult =
@@ -70,9 +78,11 @@ class JsonSchemaStandaloneSourceFactory extends StandaloneSourceFactory[TypedMap
       private def validateAndReturnTypedMap(parameters: String): TypedMap = {
         val jsonObject = new JSONObject(parameters)
         validator.performValidation(schema, jsonObject)
-        val json = CirceUtil.decodeJsonUnsafe[Json](jsonObject.toString, "Provided json is not valid")
+        val json = decodeJsonWithError(jsonObject.toString)
         jsonToTypeMap(json)
       }
+
+      private def decodeJsonWithError(str: String): Json = CirceUtil.decodeJsonUnsafe[Json](str, "Provided json is not valid")
 
   }
 
