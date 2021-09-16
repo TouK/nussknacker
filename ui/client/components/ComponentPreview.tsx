@@ -1,22 +1,35 @@
 import {useToolIcon} from "./toolbars/creator/Tool"
 import {css, cx} from "emotion"
-import {BORDER_RADIUS, CONTENT_COLOR, CONTENT_PADDING, RECT_HEIGHT, RECT_WIDTH} from "./graph/EspNode/esp"
+import {
+  BORDER_RADIUS,
+  CONTENT_COLOR,
+  CONTENT_PADDING,
+  iconBackgroundSize,
+  iconSize,
+  RECT_HEIGHT,
+  RECT_WIDTH,
+} from "./graph/EspNode/esp"
 import customAttrs from "../assets/json/nodeAttributes.json"
 import React from "react"
 import {NodeType} from "../types"
+import NodeUtils from "./graph/NodeUtils"
 
-export function ComponentPreview({node, isActive, isOver}: { node: NodeType, isActive?: boolean, isOver?: boolean }) {
+export function ComponentPreview({
+  node,
+  isActive,
+  isOver,
+}: { node: NodeType, isActive?: boolean, isOver?: boolean }): JSX.Element {
   const icon = useToolIcon(node)
   const nodeStyles = css({
+    position: "relative",
     width: RECT_WIDTH,
     height: RECT_HEIGHT,
     borderRadius: BORDER_RADIUS,
-    overflow: "hidden",
     boxSizing: "content-box",
     display: "inline-flex",
-    boxShadow: "0 5px 20px rgba(0,0,0,.5)",
+    filter: "drop-shadow(0 4px 8px rgba(0,0,0,.5))",
     borderWidth: 2,
-    borderStyle:"solid",
+    borderStyle: "solid",
     transform: `translate(-80%, -50%) rotate(${isActive ? -2 : 0}deg) scale(${isActive ? 1 : 1.5})`,
     opacity: isActive ? undefined : 0,
     transition: "all .5s, opacity .3s",
@@ -34,10 +47,10 @@ export function ComponentPreview({node, isActive, isOver}: { node: NodeType, isA
   })
 
   const imageStyles = css({
-    padding: 15,
+    padding: iconSize / 2,
     "> img": {
-      height: 30,
-      width: 30,
+      height: iconSize,
+      width: iconSize,
     },
   })
 
@@ -59,14 +72,53 @@ export function ComponentPreview({node, isActive, isOver}: { node: NodeType, isA
       overflow: "hidden",
     },
   })
+
+  const colors = isOver ? nodeColorsHover : nodeColors
   return (
-    <div className={cx(isOver ? nodeColorsHover : nodeColors, nodeStyles)}>
+    <div className={cx(colors, nodeStyles)}>
       <div className={cx(imageStyles, imageColors)}>
         <img src={icon}/>
       </div>
       <div className={contentStyles}>
         <span>{node?.id}</span>
+        {NodeUtils.hasInputs(node) && (
+          <Port
+            className={cx(
+              css({top: 0, transform: "translateY(-50%)"}),
+              colors
+            )}
+          />
+        )}
+        {NodeUtils.hasOutputs(node) && (
+          <Port
+            className={cx(
+              css({bottom: 0, transform: "translateY(50%)"}),
+              colors
+            )}
+          />
+        )}
       </div>
     </div>
+  )
+}
+
+const Port = ({className}: { className?: string }) => {
+  const size = 24
+  const position = size / 2
+  const port = css({
+    width: size,
+    height: size,
+    borderRadius: size,
+    boxSizing: "border-box",
+    borderWidth: 3,
+    borderStyle: "solid",
+    borderColor: "blue",
+    backgroundColor: "red",
+    position: "absolute",
+    bottom: -position,
+    right: iconBackgroundSize - position,
+  })
+  return (
+    <div className={cx(port, className)}/>
   )
 }
