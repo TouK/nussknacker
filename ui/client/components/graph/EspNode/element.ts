@@ -64,7 +64,7 @@ function getBodyContent(bodyContent = ""): {text: string, multiline?: boolean} {
   }
 }
 
-export function getStringWidth(str = "", pxPerChar = 8, padding = 7) {
+export function getStringWidth(str = "", pxPerChar = 8, padding = 7): number {
   return toString(str).length * pxPerChar + 2 * padding
 }
 
@@ -143,7 +143,7 @@ export function makeElement(processDefinitionData: ProcessDefinitionData): (node
       // add event listeners after element setup
       setTimeout(() => {
         e.on(Events.CHANGE_POSITION, (el: dia.Element) => {
-          if (isModelElement(el) && !isConnected(el)) {
+          if (isModelElement(el) && !isConnected(el) && el.hasPort("In") && el.hasPort("Out")) {
             setLinksHovered(el.graph, el.getBBox())
           }
         })
