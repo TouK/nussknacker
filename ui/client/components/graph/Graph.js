@@ -1,6 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
 import {dia} from "jointjs"
-import "jointjs/dist/joint.css"
 import _, {cloneDeep, debounce, isEqual, sortBy} from "lodash"
 import PropTypes from "prop-types"
 import React from "react"
@@ -124,17 +123,13 @@ export class Graph extends React.Component {
 
     //we want to inject node during 'Drag and Drop' from graph paper
     this.graph.on(Events.ADD, (cell) => {
-      if (this.isNotLink(cell)) {
+      if (isModelElement(cell)) {
         this.handleInjectBetweenNodes(cell)
-        setLinksHovered(this.graph)
+        setLinksHovered(cell.graph)
       }
     })
 
     this.panAndZoom.fitSmallAndLargeGraphs()
-  }
-
-  isNotLink(cell) {
-    return cell.attributes.type !== "link"
   }
 
   canAddNode(node) {
