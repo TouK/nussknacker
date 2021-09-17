@@ -9,7 +9,7 @@ sidebar_position: 4
 | --------------                              | ---------- | ----     | ------------- | -----------                                                                                                                                                                    |
 | http.port                                   | High       | int      | 8080          | HTTP Port of Designer app                                                                                                                                                      |
 | http.interface                              | High       | string   | "0.0.0.0"     | HTTP interface for Designer app                                                                                                                                                |
-| http.publicPath                             | Medium     | string   | ""            | if Designer used with reverse proxy and custom path, use this configuration to generate links in designer properly (Designer app is always served from root path)              |
+| http.publicPath                             | Medium     | string   | ""            | if Designer used with reverse proxy and custom path, use this configuration to generate links in Designer properly (Designer app is always served from root path)              |
 | ssl.enabled                                 | Medium     | boolean  | false         | Should Designer app be served with SSL                                                                                                                                         |
 | ssl.keyStore.location                       | Medium     | string   |               | Keystore file location (required if SSL enabled)                                                                                                                               |
 | ssl.keyStore.password                       | Medium     | string   |               | Keystore file password (required if SSL enabled)                                                                                                                               |
@@ -37,9 +37,9 @@ The table below presents most important options, or the ones that have Nussknack
 | db.user              | High       | string | "SA"                                                      |                                                                                             |
 | db.password          | High       | string | ""                                                        |                                                                                             |
 | db.connectionTimeout | Low        | int    | 30000                                                     |                                                                                             |
-| db.maximumPoolSize   | Low        | int    | 5                                                         | We have lower limits than default config, since then designer is not heavy-load application |
-| db.minimumIdle       | Low        | int    | 1                                                         | We have lower limits than default config, since then designer is not heavy-load application |
-| db.numThreads        | Low        | int    | 5                                                         | We have lower limits than default config, since then designer is not heavy-load application |
+| db.maximumPoolSize   | Low        | int    | 5                                                         | We have lower limits than default config, since then Designer is not heavy-load application |
+| db.minimumIdle       | Low        | int    | 1                                                         | We have lower limits than default config, since then Designer is not heavy-load application |
+| db.numThreads        | Low        | int    | 5                                                         | We have lower limits than default config, since then Designer is not heavy-load application |
 
 ## Metrics settings
                                                                      
