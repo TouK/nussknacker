@@ -37,6 +37,7 @@ jobs:
       - uses: dorny/paths-filter@v2
         id: filter
         with:
+          list-files: 'csv'
           filters: |
             fe_changes:
               - 'ui/client/**'
@@ -102,11 +103,17 @@ jobs:
             ~/.sbt
           key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
-      - name: Backend tests
+      - name: Backend tests with coverage
         shell: bash
+        if: ${{ github.ref == 'refs/heads/staging' }}
         run: ./ciRunSbt.sh coverage test coverageReport
+      - name: Backend tests without coverage
+        shell: bash
+        if: ${{ github.ref != 'refs/heads/staging' }}
+        run: ./ciRunSbt.sh test
       - name: Upload Coverage data to Coveralls
         shell: bash
+        if: ${{ github.ref == 'refs/heads/staging' }}
         run: ./ciRunSbt.sh coverageAggregate coveralls
         env:
           COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
