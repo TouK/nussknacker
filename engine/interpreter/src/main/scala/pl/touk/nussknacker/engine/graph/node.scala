@@ -248,8 +248,8 @@ object NodeDataCodec {
   import io.circe.generic.extras.semiauto._
   private implicit val config: Configuration = CirceUtil.configuration
 
-  implicit val nodeDataEncoder: Encoder[NodeData] = deriveEncoder
-  implicit val nodeDataDecoder: Decoder[NodeData] = deriveDecoder
+  implicit val nodeDataEncoder: Encoder[NodeData] = deriveConfiguredEncoder
+  implicit val nodeDataDecoder: Decoder[NodeData] = deriveConfiguredDecoder
 
 
 }

@@ -12,6 +12,7 @@ import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
+import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.parser.parse
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Json}
@@ -33,10 +34,11 @@ import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
+import pl.touk.nussknacker.engine.api.CirceUtil._
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-
+import io.circe.generic.extras.{Configuration, defaults}
 
 object ManagementResources {
 
@@ -63,13 +65,13 @@ object ManagementResources {
 
   implicit val testResultsEncoder: Encoder[TestResults[Json]] = new Encoder[TestResults[Json]]() {
 
-    implicit val nodeResult: Encoder[NodeResult[Json]] = io.circe.generic.semiauto.deriveEncoder
-    implicit val expressionInvocationResult: Encoder[ExpressionInvocationResult[Json]] = io.circe.generic.semiauto.deriveEncoder
-    implicit val mockedResult: Encoder[MockedResult[Json]] = io.circe.generic.semiauto.deriveEncoder
-    implicit val resultContext: Encoder[ResultContext[Json]] = io.circe.generic.semiauto.deriveEncoder
+    implicit val nodeResult: Encoder[NodeResult[Json]] = deriveConfiguredEncoder
+    implicit val expressionInvocationResult: Encoder[ExpressionInvocationResult[Json]] = deriveConfiguredEncoder
+    implicit val mockedResult: Encoder[MockedResult[Json]] = deriveConfiguredEncoder
+    implicit val resultContext: Encoder[ResultContext[Json]] = deriveConfiguredEncoder
     //TODO: do we want more information here?
     implicit val throwable: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))
-    implicit val exceptionResult: Encoder[ExceptionResult[Json]] = io.circe.generic.semiauto.deriveEncoder
+    implicit val exceptionResult: Encoder[ExceptionResult[Json]] = deriveConfiguredEncoder
 
     override def apply(a: TestResults[Json]): Json = a match {
       case TestResults(nodeResults, invocationResults, mockedResults, exceptions, _) => Json.obj(

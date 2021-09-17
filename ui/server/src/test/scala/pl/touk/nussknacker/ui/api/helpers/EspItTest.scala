@@ -332,7 +332,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   def toEntity[T:Encoder](data: T): HttpEntity.Strict = toEntity(implicitly[Encoder[T]].apply(data))
 
   private def toEntity(json: Json) = {
-    val jsonString = json.pretty(Printer.spaces2.copy(dropNullValues = true, preserveOrder = true))
+    val jsonString = json.printWith(Printer.spaces2.copy(dropNullValues = true))
     HttpEntity(ContentTypes.`application/json`, jsonString)
   }
 

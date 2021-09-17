@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.engine.kafka.consumerrecord
 
 import java.nio.charset.StandardCharsets
-import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.{Decoder, Encoder}
 import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory}
+import pl.touk.nussknacker.engine.api.CirceUtil._
 
 import scala.reflect.ClassTag
 
@@ -33,7 +34,7 @@ class ConsumerRecordToJsonFormatter[K:Encoder:Decoder, V:Encoder:Decoder](kafkaS
   override protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): Array[Byte] = {
     val deserializedRecord = kafkaSourceDeserializationSchema.deserialize(record)
     val serializableRecord = SerializableConsumerRecord(deserializedRecord)
-    val consumerRecordEncoder: Encoder[SerializableConsumerRecord[K, V]] = deriveEncoder
+    val consumerRecordEncoder: Encoder[SerializableConsumerRecord[K, V]] = deriveConfiguredEncoder
     consumerRecordEncoder(serializableRecord).noSpaces.getBytes(StandardCharsets.UTF_8)
   }
 
@@ -43,7 +44,7 @@ class ConsumerRecordToJsonFormatter[K:Encoder:Decoder, V:Encoder:Decoder](kafkaS
     * Step 3: Use interpreter to create raw kafka ConsumerRecord
     */
   override protected def parseRecord(topic: String, bytes: Array[Byte]): ConsumerRecord[Array[Byte], Array[Byte]] = {
-    val consumerRecordDecoder: Decoder[SerializableConsumerRecord[K, V]] = deriveDecoder
+    val consumerRecordDecoder: Decoder[SerializableConsumerRecord[K, V]] = deriveConfiguredDecoder[SerializableConsumerRecord[K, V]]
     val serializableConsumerRecord = CirceUtil.decodeJsonUnsafe(bytes)(consumerRecordDecoder)
     def serializeKeyValue(keyOpt: Option[K], value: V): (Array[Byte], Array[Byte]) = {
       (keyOpt.map(serialize[K]).orNull, serialize[V](value))

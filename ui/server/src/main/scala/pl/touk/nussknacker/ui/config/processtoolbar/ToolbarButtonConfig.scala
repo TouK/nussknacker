@@ -25,8 +25,8 @@ case class ToolbarButtonConfig(
 }
 
 object ToolbarButtonConfigType extends Enumeration {
-  implicit val typeEncoder: Encoder[ToolbarButtonType] = Encoder.enumEncoder(ToolbarButtonConfigType)
-  implicit val typeDecoder: Decoder[ToolbarButtonType] = Decoder.enumDecoder(ToolbarButtonConfigType)
+  implicit val typeEncoder: Encoder[ToolbarButtonType] = Encoder.encodeEnumeration(ToolbarButtonConfigType)
+  implicit val typeDecoder: Decoder[ToolbarButtonType] = Decoder.decodeEnumeration(ToolbarButtonConfigType)
 
   type ToolbarButtonType = Value
 

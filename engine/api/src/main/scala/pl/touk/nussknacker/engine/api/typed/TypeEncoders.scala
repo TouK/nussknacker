@@ -138,7 +138,7 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
 
 object TypingType extends Enumeration {
 
-  implicit val decoder: Decoder[TypingType.Value] = Decoder.enumDecoder(TypingType)
+  implicit val decoder: Decoder[TypingType.Value] = Decoder.decodeEnumeration(TypingType)
 
   type TypingType = Value
 

@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.integration
 
 import java.util.UUID
-
 import akka.http.javadsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
@@ -10,6 +9,7 @@ import com.typesafe.config.Config
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{ACursor, Json}
 import org.scalatest._
+import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
@@ -183,7 +183,6 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
       .downField("invocationResults")
       .downField(EndNodeId)
       .downArray
-      .first
       .downField("value")
       .downField("pretty")
       .as[String].right.value
