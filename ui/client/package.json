@@ -12,7 +12,7 @@
     "lint": "eslint --ext .ts,.tsx,.js,.jsx",
     "svgo": "svgo",
     "check": "npm run check-types && npm run lint -- . --rule 'i18next/no-literal-string: warn'",
-    "@comment translations json has higher priority than default labels in code, so we remove them before each start script, to make development faster": "",
+    "@comment translations json has higher priority than default labels in code, so we remove them before each start script, to make development faster foo": "",
     "clean-translations": "rm ./translations/* -rf",
     "start": "npm run clean-translations && BACKEND_DOMAIN=http://localhost:8080 webpack serve",
     "start:backend-docker": "npm run clean-translations && start-server-and-test backend:docker http-get://localhost:8080/static/main.html start",
