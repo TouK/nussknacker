@@ -1,5 +1,10 @@
 package pl.touk.nussknacker.engine.management.periodic
 
+import com.cronutils.builder.CronBuilder
+import com.cronutils.model.CronType
+import com.cronutils.model.definition.CronDefinitionBuilder
+import com.cronutils.model.field.expression.FieldExpressionFactory.{on, questionMark}
+import org.scalatest.LoneElement._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.{FunSuite, Matchers, OptionValues}
@@ -10,9 +15,9 @@ import pl.touk.nussknacker.engine.management.periodic.db.HsqlProcessRepository
 import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeploymentState, PeriodicProcessDeploymentStatus}
 import pl.touk.nussknacker.engine.management.periodic.service._
 import pl.touk.nussknacker.test.PatientScalaFutures
-import java.time.temporal.ChronoUnit
-import java.time.{Clock, Duration, Instant, LocalDateTime, ZoneOffset}
 
+import java.time._
+import java.time.temporal.ChronoUnit
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
@@ -171,9 +176,56 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     toDeployAfterFinish.head.scheduleName shouldBe Some("schedule2")
   }
 
+  test("handle multiple one time schedules") {
+    var currentTime = startTime
+    val f = new Fixture
+    def service = f.periodicProcessService(currentTime)
+    val timeToTriggerSchedule1 = startTime.plus(1, ChronoUnit.HOURS)
+    val timeToTriggerSchedule2 = startTime.plus(2, ChronoUnit.HOURS)
+
+    service.schedule(MultipleScheduleProperty(Map(
+      "schedule1" -> CronScheduleProperty(convertDateToCron(localTime(timeToTriggerSchedule1))),
+      "schedule2" -> CronScheduleProperty(convertDateToCron(localTime(timeToTriggerSchedule2))))),
+      ProcessVersion.empty.copy(processName = processName), "{}").futureValue
+
+    val latestDeploymentSchedule1 = service.getLatestDeployment(processName).futureValue.value
+    latestDeploymentSchedule1.scheduleName.value shouldBe "schedule1"
+    latestDeploymentSchedule1.runAt shouldBe localTime(timeToTriggerSchedule1)
+
+    currentTime = timeToTriggerSchedule1
+
+    val toDeployOnSchedule1 = service.findToBeDeployed.futureValue.loneElement
+    toDeployOnSchedule1.scheduleName.value shouldBe "schedule1"
+
+    service.deploy(toDeployOnSchedule1).futureValue
+
+    service.getLatestDeployment(processName).futureValue.value.state.status shouldBe PeriodicProcessDeploymentStatus.Deployed
+
+    service.handleFinished.futureValue
+
+    val toDeployAfterFinishSchedule1 = service.findToBeDeployed.futureValue
+    toDeployAfterFinishSchedule1 should have length 0
+    val latestDeploymentSchedule2 = service.getLatestDeployment(processName).futureValue.value
+    latestDeploymentSchedule2.scheduleName.value shouldBe "schedule2"
+    latestDeploymentSchedule2.runAt shouldBe localTime(timeToTriggerSchedule2)
+    latestDeploymentSchedule2.state.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
+
+    currentTime = timeToTriggerSchedule2
+
+    val toDeployOnSchedule2 = service.findToBeDeployed.futureValue.loneElement
+    toDeployOnSchedule2.scheduleName.value shouldBe "schedule2"
+
+    service.deploy(toDeployOnSchedule2).futureValue
+
+    service.getLatestDeployment(processName).futureValue.value.state.status shouldBe PeriodicProcessDeploymentStatus.Deployed
+
+    service.handleFinished.futureValue
+
+    service.getLatestDeployment(processName).futureValue shouldBe None
+  }
+
   test("Should handle failed event handler") {
     val timeToTriggerCheck = startTime.plus(2, ChronoUnit.HOURS)
-    val expectedScheduleTime = startTime.plus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS)
 
     var currentTime = startTime
 
@@ -201,5 +253,18 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
       () => service.deactivate(processName)
     }
 
+  }
+
+  private def convertDateToCron(date: LocalDateTime): String = {
+    CronBuilder.cron(CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ))
+      .withYear(on(date.getYear))
+      .withMonth(on(date.getMonth.getValue))
+      .withDoM(on(date.getDayOfMonth))
+      .withDoW(questionMark())
+      .withHour(on(date.getHour))
+      .withMinute(on(date.getMinute))
+      .withSecond(on(date.getSecond))
+      .instance()
+      .asString()
   }
 }

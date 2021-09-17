@@ -66,6 +66,8 @@ trait PeriodicProcessesRepository {
 
   def findDeployed: Action[Seq[PeriodicProcessDeployment]]
 
+  def findScheduled(id: PeriodicProcessId): Action[Seq[PeriodicProcessDeployment]]
+
   def findProcessData(id: PeriodicProcessDeploymentId): Action[PeriodicProcessDeployment]
 
   def findProcessData(processName: ProcessName): Action[Seq[PeriodicProcess]]
@@ -115,8 +117,7 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
   private def now(): LocalDateTime = LocalDateTime.now(clock)
 
   override def findToBeDeployed: Action[Seq[PeriodicProcessDeployment]] = {
-    val active = (PeriodicProcesses join PeriodicProcessDeployments on (_.id === _.periodicProcessId))
-      .filter { case (p, _) => p.active === true }
+    val active = activePeriodicProcessWithDeploymentQuery
       .filter { case (_, d) => d.runAt <= now && d.status === (PeriodicProcessDeploymentStatus.Scheduled: PeriodicProcessDeploymentStatus) }
     active
       .result
@@ -162,8 +163,8 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
   }
 
   override def getLatestDeploymentForEachSchedule(processName: ProcessName): Action[Seq[PeriodicProcessDeployment]] = {
-    val activeDeployments = (PeriodicProcesses join PeriodicProcessDeployments on (_.id === _.periodicProcessId))
-      .filter { case (p, _) => (p.active === true) && (p.processName === processName.value) }
+    val activeDeployments = activePeriodicProcessWithDeploymentQuery
+      .filter { case (p, _) => p.processName === processName.value }
     val latestRunAtForEachDeployment = activeDeployments
       .groupBy { case (_, deployment) => deployment.scheduleName }
       .map { case (scheduleName, group) =>
@@ -202,13 +203,24 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
   }
 
   override def findDeployed: Action[Seq[PeriodicProcessDeployment]] = {
-    val processWithDeployment = (PeriodicProcesses join PeriodicProcessDeployments on (_.id === _.periodicProcessId))
-      .filter { case (p, d) => (p.active === true) && (d.status === (PeriodicProcessDeploymentStatus.Deployed: PeriodicProcessDeploymentStatus)) }
+    val processWithDeployment = activePeriodicProcessWithDeploymentQuery
+      .filter { case (p, d) => d.status === (PeriodicProcessDeploymentStatus.Deployed: PeriodicProcessDeploymentStatus) }
     processWithDeployment
       .result
       .map(createPeriodicProcessDeployment)
   }
 
+  override def findScheduled(id: PeriodicProcessId): Action[Seq[PeriodicProcessDeployment]] = {
+    activePeriodicProcessWithDeploymentQuery
+      .filter { case (p, d) => p.id === id && d.status === (PeriodicProcessDeploymentStatus.Scheduled: PeriodicProcessDeploymentStatus) }
+      .result
+      .map(createPeriodicProcessDeployment)
+  }
+
+  private def activePeriodicProcessWithDeploymentQuery = {
+    (PeriodicProcesses join PeriodicProcessDeployments on (_.id === _.periodicProcessId))
+      .filter { case (p, _) => p.active === true }
+  }
 
   private def createPeriodicProcessDeployment(all: Seq[(PeriodicProcessEntity, PeriodicProcessDeploymentEntity)]): Seq[PeriodicProcessDeployment] =
     all.map((PeriodicProcessesRepository.createPeriodicProcessDeployment _).tupled)
