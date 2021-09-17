@@ -5,7 +5,7 @@ import java.time.temporal.ChronoUnit
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, DurationParameterEditor, MandatoryParameterValidator, Parameter, RegExpParameterValidator, WithExplicitMethodToInvoke}
+import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, DurationParameterEditor, MandatoryParameterValidator, Parameter, RegExpParameterValidator}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, ExceptionHandlerFactory}
 import pl.touk.nussknacker.engine.api.process._
@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{process, _}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.StandardObjectWithMethodDef
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
-import pl.touk.nussknacker.engine.util.service.SimpleServiceWithFixedParameters
+import pl.touk.nussknacker.engine.util.service.ServiceWithStaticParametersAndReturnType
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -182,7 +182,7 @@ class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
 
   case class AdditionalClass(someField: String)
 
-  case class EmptyExplicitMethodToInvoke(parameters: List[Parameter], returnType: TypingResult) extends SimpleServiceWithFixedParameters {
+  case class EmptyExplicitMethodToInvoke(parameters: List[Parameter], returnType: TypingResult) extends ServiceWithStaticParametersAndReturnType {
     override def invoke(params: Map[String, Any])(implicit ec: ExecutionContext,
                                                   collector: InvocationCollectors.ServiceInvocationCollector,
                                                   contextId: ContextId, metaData: MetaData): Future[Any] = ???

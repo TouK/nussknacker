@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocatio
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{ContextId, MetaData}
-import pl.touk.nussknacker.engine.util.service.{GenericTimeMeasuringService, SimpleServiceWithFixedParameters}
+import pl.touk.nussknacker.engine.util.service.{GenericTimeMeasuringService, ServiceWithStaticParametersAndReturnType}
 import pl.touk.nussknacker.openapi.SwaggerService
 import pl.touk.nussknacker.openapi.extractor.ParametersExtractor
 import pl.touk.nussknacker.openapi.http.SwaggerSttpService
@@ -23,7 +23,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 abstract class BaseSwaggerEnricher(rootUrl: Option[URL], swaggerService: SwaggerService,
-                                   fixedParams: Map[String, () => AnyRef]) extends SimpleServiceWithFixedParameters with GenericTimeMeasuringService {
+                                   fixedParams: Map[String, () => AnyRef]) extends ServiceWithStaticParametersAndReturnType with GenericTimeMeasuringService {
 
   override protected def serviceName: String = swaggerService.name
 

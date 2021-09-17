@@ -11,8 +11,15 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown
 import pl.touk.nussknacker.engine.api.{ContextId, EagerService, LazyParameter, MetaData, ServiceInvoker}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.runtime.BoxedUnit
 
-trait EagerServiceWithFixedParameters extends EagerService with SingleInputGenericNodeTransformation[ServiceInvoker] {
+/*
+  This is helper trait for creating Service which has parameter definitions fixed in designer (i.e. no parameters depending on each other)
+  but parameter definitions which are not fixed/known at compile time. Good example are services which take parameter
+  list from external source (e.g. configuration, OpenAPI definition, database).
+  For dynamic parameters use SingleInputGenericNodeTransformation, for parameters known at compile time - use @MethodToInvoke
+ */
+trait EagerServiceWithStaticParameters extends EagerService with SingleInputGenericNodeTransformation[ServiceInvoker] {
 
   override type State = TypingResult
 
@@ -51,7 +58,10 @@ trait EagerServiceWithFixedParameters extends EagerService with SingleInputGener
 
 }
 
-trait SimpleServiceWithFixedParameters extends EagerServiceWithFixedParameters {
+/*
+  Like in EagerServiceWithStaticParameters, but for simpler case, when return type is also known in designer (i.e. it does not depend on parameters)
+ */
+trait ServiceWithStaticParametersAndReturnType extends EagerServiceWithStaticParameters {
 
   def returnType: TypingResult
 
@@ -73,7 +83,7 @@ trait SimpleServiceWithFixedParameters extends EagerServiceWithFixedParameters {
     }
   }
 
-  override def hasOutput: Boolean = !List(Typed[Void], Typed[Unit]).contains(returnType)
+  override def hasOutput: Boolean = !List(Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(returnType)
 
   override def returnType(validationContext: ValidationContext,
                           parameters: Map[String, DefinedSingleParameter]): ValidatedNel[ProcessCompilationError, TypingResult] = Valid(returnType)

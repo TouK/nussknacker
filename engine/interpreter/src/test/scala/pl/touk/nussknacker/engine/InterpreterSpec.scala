@@ -45,7 +45,7 @@ import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCol
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.process.EmptyProcessConfigCreator
-import pl.touk.nussknacker.engine.util.service.SimpleServiceWithFixedParameters
+import pl.touk.nussknacker.engine.util.service.{EnricherContextTransformation, ServiceWithStaticParametersAndReturnType}
 import pl.touk.nussknacker.engine.util.{LoggingListener, SynchronousExecutionContext}
 
 import scala.concurrent.duration._
@@ -749,7 +749,7 @@ object InterpreterSpec {
 
   }
 
-  object WithExplicitDefinitionService extends SimpleServiceWithFixedParameters {
+  object WithExplicitDefinitionService extends ServiceWithStaticParametersAndReturnType {
 
     override def parameters: List[api.definition.Parameter]
     = List(api.definition.Parameter[Long]("param1"))
@@ -792,7 +792,7 @@ object InterpreterSpec {
     def prepare(@ParamName("eager") eagerOne: String,
                 @ParamName("lazy") lazyOne: LazyParameter[AnyRef],
                 @OutputVariableName outputVar: String)(implicit nodeId: NodeId): ContextTransformation =
-      ContextTransformation.definedBy(_.withVariable(OutputVar.variable(outputVar), lazyOne.returnType)).implementedBy({
+      EnricherContextTransformation(outputVar, lazyOne.returnType, {
         if (eagerOne != checkEager) throw new IllegalArgumentException("Should be not empty?")
         new ServiceInvoker {
           override def invokeService(params: Map[String, Any])

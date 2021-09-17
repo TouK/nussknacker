@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocatio
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{ContextId, MetaData}
-import pl.touk.nussknacker.engine.util.service.SimpleServiceWithFixedParameters
+import pl.touk.nussknacker.engine.util.service.ServiceWithStaticParametersAndReturnType
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
@@ -16,7 +16,7 @@ import scala.util.Properties
 
 //this is to simulate model reloading - we read parameters from file
 //WARN: this service is Thread unsafe for reload - currently used only in @see BaseFlowTest!
-class DynamicService extends SimpleServiceWithFixedParameters {
+class DynamicService extends ServiceWithStaticParametersAndReturnType {
 
   private val fileWithDefinition = new File(Properties.tmpDir, "nk-dynamic-params.lst")
 

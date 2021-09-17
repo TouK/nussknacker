@@ -257,27 +257,25 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
         compiledgraph.evaluatedparam.Parameter(compiledParam, paramDef)
     }
 
-    def unwrapService(value: Any) = value match {
-      case ct: ContextTransformation => ct.implementation.asInstanceOf[ServiceInvoker]
-      case sv => sv.asInstanceOf[ServiceInvoker]
-    }
-
-    def makeInvoker(service: Any, paramsDefs: List[Parameter])
-        = compiledgraph.service.ServiceRef(serviceRef.id, unwrapService(service), prepareCompiledLazyParameters(paramsDefs), resultCollector)
+    def makeInvoker(service: ServiceInvoker, paramsDefs: List[Parameter])
+        = compiledgraph.service.ServiceRef(serviceRef.id, service, prepareCompiledLazyParameters(paramsDefs), resultCollector)
 
     val compiled =
-      compileObjectWithTransformation(serviceRef.parameters, Nil, Left(validationContext), outputVar.map(_.outputName), objectWithMethodDef, ctx)
+      compileObjectWithTransformation[ServiceInvoker](serviceRef.parameters, Nil, Left(validationContext), outputVar.map(_.outputName), objectWithMethodDef, ctx)
     compiled.copy(compiledObject = compiled.compiledObject.map(makeInvoker(_, compiled.parameters.getOrElse(objectWithMethodDef.parameters))))
   }
+
+  def unwrapContextTransformation[T](value: Any): T = (value match {
+    case ct: ContextTransformation => ct.implementation
+    case a => a
+  }).asInstanceOf[T]
 
   def compileExceptionHandler(ref: ExceptionHandlerRef)
                              (implicit metaData: MetaData): (Map[String, ExpressionTypingInfo], ValidatedNel[ProcessCompilationError, EspExceptionHandler]) = {
     implicit val nodeId: NodeId = NodeId(NodeTypingInfo.ExceptionHandlerNodeId)
     if (metaData.isSubprocess) {
       //FIXME: what should be here?
-      (Map.empty, Valid(new EspExceptionHandler {
-        override def handle(exceptionInfo: EspExceptionInfo[_ <: Throwable]): Unit = {}
-      }))
+      (Map.empty, Valid((exceptionInfo: EspExceptionInfo[_ <: Throwable]) => {}))
     } else {
       createProcessObject[EspExceptionHandler](definitions.exceptionHandlerFactory, ref.parameters, List.empty, outputVariableNameOpt = None, Left(contextWithOnlyGlobalVariables), None, Seq.empty)
     }
@@ -343,7 +341,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     if (generic.isDefinedAt(nodeDefinition)) {
       val afterValidation = generic(nodeDefinition).map {
         case TransformationResult(Nil, computedParameters, outputContext, finalState) =>
-          val (typingInfo, validProcessObject) = createProcessObject[T](nodeDefinition, parameters,
+          val (typingInfo, validProcessObject) = createProcessObject(nodeDefinition, parameters,
             branchParameters, outputVar, ctx, Some(computedParameters), Seq(FinalStateValue(finalState)))
           (typingInfo, Some(computedParameters), outputContext, validProcessObject)
         case TransformationResult(h :: t, computedParameters, outputContext, _) =>
@@ -359,7 +357,8 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
       val nextCtx = validProcessObject.fold(_ => defaultCtxForCreatedObject(None), cNode =>
         contextAfterNode(cNode, ctx, (c: T) => defaultCtxForCreatedObject(Some(c)))
       )
-      NodeCompilationResult(typingInfo, None, nextCtx, validProcessObject)
+      val unwrappedProcessObject = validProcessObject.map(unwrapContextTransformation[T](_))
+      NodeCompilationResult(typingInfo, None, nextCtx, unwrappedProcessObject)
     }
   }
 

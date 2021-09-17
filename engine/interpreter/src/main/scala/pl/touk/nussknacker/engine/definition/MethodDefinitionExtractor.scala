@@ -24,18 +24,6 @@ private[definition] trait MethodDefinitionExtractor[T] {
 
 }
 
-@silent("deprecated")
-@nowarn("deprecated")
-private[definition] object WithExplicitMethodToInvokeMethodDefinitionExtractor extends MethodDefinitionExtractor[WithExplicitMethodToInvoke] {
-  override def extractMethodDefinition(obj: WithExplicitMethodToInvoke, methodToInvoke: Method, nodeConfig: SingleNodeConfig): Either[String, MethodDefinition] = {
-    val parametersList = StandardParameterEnrichment.enrichParameterDefinitions(obj.parameterDefinition, nodeConfig)
-    Right(MethodDefinition(methodToInvoke.getName,
-      (oo, args) => methodToInvoke.invoke(oo, args.toList),
-        new OrderedDependencies(parametersList ++ obj.additionalDependencies.map(TypedNodeDependency(_))),
-      obj.returnType, obj.runtimeClass, List()))
-  }
-}
-
 private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDefinitionExtractor[T] {
 
   def extractMethodDefinition(obj: T, methodToInvoke: Method, nodeConfig: SingleNodeConfig): Either[String, MethodDefinition] = {

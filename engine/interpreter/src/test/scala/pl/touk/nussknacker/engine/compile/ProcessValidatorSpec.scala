@@ -4,11 +4,10 @@ import java.util.Collections
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.instances.string._
-import com.github.ghik.silencer.silent
 import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar, PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedSingleParameter}
 import pl.touk.nussknacker.engine.api.definition._
@@ -33,12 +32,10 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
-import pl.touk.nussknacker.engine.util.service.EagerServiceWithFixedParameters
-import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.nodeId
+import pl.touk.nussknacker.engine.util.service.{EagerServiceWithStaticParameters, EnricherContextTransformation}
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.engine.variables.MetaVariables
 
-import scala.annotation.nowarn
 import scala.collection.immutable.ListMap
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -1343,19 +1340,14 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     def futureValue: Future[String] = Future.successful("123")
   }
 
-  // Remove @silent after upgrade to silencer 1.7
-  @silent("deprecated")
-  @nowarn("cat=deprecation")
   object ServiceReturningTypeSample extends EagerService {
 
     @MethodToInvoke
     def invoke(@ParamName("definition") definition: java.util.Map[String, _],
                @ParamName("inRealTime") inRealTime: LazyParameter[String],
-               @OutputVariableName variableName: String)(implicit nodeId: NodeId) =
-      ContextTransformation
-        .definedBy(_.withVariable(OutputVar.variable(variableName),
-          Typed.genericTypeClass[java.util.List[_]](List(TypingUtils.typeMapDefinition(definition)))))
-        .implementedBy(new ServiceInvoker {
+               @OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation =
+      EnricherContextTransformation(variableName, Typed.genericTypeClass[java.util.List[_]](List(
+        TypingUtils.typeMapDefinition(definition))), new ServiceInvoker {
           override def invokeService(params: Map[String, Any])
                                 (implicit ec: ExecutionContext,
                                  collector: InvocationCollectors.ServiceInvocationCollector,
@@ -1365,7 +1357,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   }
 
-  object ServiceReturningTypeWithExplicitMethodSample extends EagerServiceWithFixedParameters {
+  object ServiceReturningTypeWithExplicitMethodSample extends EagerServiceWithStaticParameters {
 
     override val hasOutput = true
 
@@ -1410,19 +1402,20 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     def invoke(@ParamName("age") age: Int,
                @ParamName("fields") fields: LazyParameter[java.util.Map[String, String]],
                @OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
-      def returnType: TypingResult = {
+      def returnType: ValidatedNel[ProcessCompilationError, TypingResult] = {
         if (age < 18) {
-          throw CustomNodeValidationException("Too young", Some("age"))
-        }
-        fields.returnType match {
-          case TypedObjectTypingResult(fields, _, _) if fields.contains("invalid") =>
-            throw CustomNodeValidationException("Service is invalid", None)
-          case TypedObjectTypingResult(fields, _, _) if fields.values.exists(_ != Typed.typedClass[String]) =>
-            throw CustomNodeValidationException("All values should be strings", Some("fields"))
-          case _ => Typed.typedClass[String]
+          Validated.invalidNel(CustomNodeError("Too young", Some("age")))
+        } else {
+          fields.returnType match {
+            case TypedObjectTypingResult(fields, _, _) if fields.contains("invalid") =>
+              Validated.invalidNel(CustomNodeError("Service is invalid", None))
+            case TypedObjectTypingResult(fields, _, _) if fields.values.exists(_ != Typed.typedClass[String]) =>
+              Validated.invalidNel(CustomNodeError("All values should be strings", Some("fields")))
+            case _ => Valid(Typed.typedClass[String])
+          }
         }
       }
-      ContextTransformation.definedBy(_.withVariable(OutputVar.variable(variableName), returnType)).implementedBy(
+      EnricherContextTransformation(variableName, returnType,
         new ServiceInvoker {
           override def invokeService(params: Map[String, Any])
                                     (implicit ec: ExecutionContext,

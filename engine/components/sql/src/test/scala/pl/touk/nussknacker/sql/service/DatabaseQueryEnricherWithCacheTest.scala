@@ -36,7 +36,7 @@ class DatabaseQueryEnricherWithCacheTest extends BaseDatabaseQueryEnricherTest {
       dependencies = Nil,
       finalState = Some(state)
     )
-    //invoker.returnType.display shouldBe "List[{ID: Integer, NAME: String}]"
+    returnType(service, state).display shouldBe "List[{ID: Integer, NAME: String}]"
     val resultF = invoker.invokeService(Map("arg1" -> 1))
     val result = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result shouldBe List(

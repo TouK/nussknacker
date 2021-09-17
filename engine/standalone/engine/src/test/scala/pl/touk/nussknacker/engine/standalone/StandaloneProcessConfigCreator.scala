@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.standalone.utils.customtransformers.{ProcessSp
 import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.standalone.utils.{JsonSchemaStandaloneSourceFactory, JsonStandaloneSourceFactory}
 import pl.touk.nussknacker.engine.util.LoggingListener
+import pl.touk.nussknacker.engine.util.service.EnricherContextTransformation
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -147,7 +148,7 @@ class EagerEnricherWithOpen extends EagerService with WithLifecycle {
 
   @MethodToInvoke
   def invoke(@ParamName("name") name: String, @OutputVariableName varName: String)(implicit nodeId: NodeId): ContextTransformation =
-    ContextTransformation.definedBy(_.withVariable(OutputVar.variable(varName), Typed[Response])).implementedBy(synchronized {
+    EnricherContextTransformation(varName, Typed[Response], synchronized {
     val newI: ServiceInvoker with WithLifecycle = new ServiceInvoker with WithLifecycle {
       override def invokeService(params: Map[String, Any])
                                 (implicit ec: ExecutionContext,

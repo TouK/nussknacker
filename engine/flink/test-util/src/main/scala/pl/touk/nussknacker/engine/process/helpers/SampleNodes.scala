@@ -31,6 +31,7 @@ import pl.touk.nussknacker.engine.flink.test.RecordingExceptionHandler
 import pl.touk.nussknacker.engine.flink.util.service.TimeMeasuringService
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
+import pl.touk.nussknacker.engine.util.service.EnricherContextTransformation
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.test.WithDataList
 
@@ -336,13 +337,11 @@ object SampleNodes {
     def invoke(@ParamName("definition") definition: java.util.List[String],
                @ParamName("toFill") toFill: LazyParameter[String],
                @ParamName("count") count: Int,
-               @OutputVariableName outputVar: String)(implicit nodeId: NodeId) = {
+               @OutputVariableName outputVar: String)(implicit nodeId: NodeId): ContextTransformation = {
       val listType = TypedObjectTypingResult(definition.asScala.map(_ -> Typed[String]).toList)
       val returnType: typing.TypingResult = Typed.genericTypeClass[java.util.List[_]](List(listType))
 
-      ContextTransformation
-        .definedBy(_.withVariable(OutputVar.variable(outputVar), returnType))
-        .implementedBy(new ServiceInvoker {
+      EnricherContextTransformation(outputVar, returnType, new ServiceInvoker {
         override def invokeService(params: Map[String, Any])
                                   (implicit ec: ExecutionContext,
                                    collector: ServiceInvocationCollector,
