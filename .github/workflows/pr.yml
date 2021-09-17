@@ -2,6 +2,8 @@ name: CI
 on:
   pull_request:
     branches:
+      # FIXME: temporary
+      - gh-actions-sppedup
       - master
       - staging
       - release/*
@@ -10,6 +12,8 @@ on:
       - 'docs/**'
   push:
     branches:
+      # FIXME: temporary
+      - gh-actions-sppedup
       - master
       - staging
       - demo
@@ -24,9 +28,24 @@ env:
   CROSS_BUILD: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      fe_changes_count: ${{ steps.filter.outputs.fe_changes_count }}
+      all_changes_count: ${{ steps.filter.outputs.all_changes_count }}
+    steps:
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            fe_changes:
+              - 'ui/client/**'
+            all_changes:
+              - '**'
   build:
     name: Build
     runs-on: ubuntu-latest
+    needs: [ changes ]
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
@@ -58,7 +77,8 @@ jobs:
   tests:
     name: Tests
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [ build ]
+    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count }}
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
@@ -95,6 +115,7 @@ jobs:
     name: CrossCompile
     runs-on: ubuntu-latest
     needs: [ build ]
+    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count }}
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
@@ -124,6 +145,7 @@ jobs:
   integrationTests:
     name: IntegrationTests
     needs: [ build ]
+    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count }}
     runs-on: ubuntu-latest
     steps:
       - name: Cancel previous runs
@@ -155,6 +177,7 @@ jobs:
     name: Slow tests
     runs-on: ubuntu-latest
     needs: [ build ]
+    if: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count }}
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
@@ -185,6 +208,8 @@ jobs:
   frontendTests:
     name: FrontendTests
     runs-on: ubuntu-latest
+    needs: [ changes ]
+    if: ${{ needs.changes.outputs.fe_changes_count > 0 }}
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
