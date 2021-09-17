@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.standalone.utils
 
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
-import org.everit.json.schema.PrimitiveValidationStrategy
 import org.everit.json.schema.loader.SchemaLoader
 import org.everit.json.schema.Validator
 import org.everit.json.schema.Schema
@@ -14,9 +13,8 @@ import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, MethodToInvoke, Para
 import pl.touk.nussknacker.engine.standalone.api.openapi.OpenApiSourceDefinition
 import pl.touk.nussknacker.engine.standalone.api.types.GenericResultType
 import pl.touk.nussknacker.engine.standalone.api.{ResponseEncoder, StandalonePostSource, StandaloneSourceFactory}
-import pl.touk.nussknacker.engine.standalone.utils.typed.SchemaTypingResult
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
-import pl.touk.nussknacker.engine.util.typing.JsonToTypedMapConverter
+import pl.touk.nussknacker.engine.util.typing.{JsonToTypedMapConverter, JsonSchemaToTypingResultConverter}
 
 import java.nio.charset.StandardCharsets
 
@@ -26,67 +24,66 @@ class JsonSchemaStandaloneSourceFactory extends StandaloneSourceFactory[TypedMap
 
   @MethodToInvoke
   def create(@ParamName("schema") schemaStr: String)(implicit metaData: MetaData) : StandalonePostSource[TypedMap] =
-    new StandalonePostSource[TypedMap] with LazyLogging with ReturningType with SourceTestSupport[TypedMap] {
-
-      protected val validator: Validator = Validator.builder().build()
-      protected def prepareSchema(rawSchema: JSONObject) = {
-        SchemaLoader.builder()
-          .useDefaults(true)
-          .schemaJson(rawSchema)
-          .draftV7Support()
-          .build().load().build()
-          .asInstanceOf[Schema]
-      }
-
-      private val rawSchema: JSONObject = new JSONObject(schemaStr)
-      private val schema: Schema = prepareSchema(rawSchema)
-
-      override def parse(parameters: Array[Byte]): TypedMap = {
-        val parametersString = new String(parameters, StandardCharsets.UTF_8)
-        validateAndReturnTypedMap(parametersString)
-      }
-
-      override def openApiDefinition: Option[OpenApiSourceDefinition] = {
-        val json = decodeJsonWithError(schemaStr)
-        val properties = metaData.additionalFields.map(_.properties).getOrElse(Map.empty)
-        val description = properties.map(v => s"**${v._1}**: ${v._2}").mkString("\\\n")
-        Option(OpenApiSourceDefinition(json, description, List("Nussknacker")))
-      }
-
-      override def returnType: typing.TypingResult =
-        SchemaTypingResult.jsonSchemaToTypingResult(schemaStr)
-
-      override def testDataParser: TestDataParser[TypedMap] = {
-        new NewLineSplittedTestDataParser[TypedMap] {
-          override def parseElement(testElement: String): TypedMap = {
-            validateAndReturnTypedMap(testElement)
-          }
-        }
-      }
-
-      override def responseEncoder: Option[ResponseEncoder[TypedMap]] = Option(new ResponseEncoder[TypedMap] {
-        override def toJsonResponse(input: TypedMap, result: List[Any]): GenericResultType[Json] = {
-          val jsonResult = result.map(jsonEncoder.encode)
-            .headOption
-            .getOrElse(throw new IllegalArgumentException(s"Process did not return any result"))
-          Right(jsonResult)
-        }
-      })
-
-      protected def jsonToTypeMap(json: Json): TypedMap = JsonToTypedMapConverter.jsonToTypedMap(json)
-
-      private def validateAndReturnTypedMap(parameters: String): TypedMap = {
-        val jsonObject = new JSONObject(parameters)
-        validator.performValidation(schema, jsonObject)
-        val json = decodeJsonWithError(jsonObject.toString)
-        jsonToTypeMap(json)
-      }
-
-      private def decodeJsonWithError(str: String): Json = CirceUtil.decodeJsonUnsafe[Json](str, "Provided json is not valid")
-
-  }
+    new JsonSchemaStandaloneSource(schemaStr, metaData, jsonEncoder)
 
   override def clazz: Class[_] = classOf[TypedMap]
 
 }
 
+class JsonSchemaStandaloneSource(schemaStr: String, metaData: MetaData, jsonEncoder: BestEffortJsonEncoder) extends StandalonePostSource[TypedMap] with LazyLogging with ReturningType with SourceTestSupport[TypedMap] {
+  protected val validator: Validator = Validator.builder().build()
+  protected def prepareSchema(rawSchema: JSONObject) = {
+    SchemaLoader.builder()
+      .useDefaults(true)
+      .schemaJson(rawSchema)
+      .draftV7Support()
+      .build().load().build()
+      .asInstanceOf[Schema]
+  }
+
+  private val rawSchema: JSONObject = new JSONObject(schemaStr)
+  private val schema: Schema = prepareSchema(rawSchema)
+
+  override def parse(parameters: Array[Byte]): TypedMap = {
+    val parametersString = new String(parameters, StandardCharsets.UTF_8)
+    validateAndReturnTypedMap(parametersString)
+  }
+
+  override def openApiDefinition: Option[OpenApiSourceDefinition] = {
+    val json = decodeJsonWithError(schemaStr)
+    val properties = metaData.additionalFields.map(_.properties).getOrElse(Map.empty)
+    val description = properties.map(v => s"**${v._1}**: ${v._2}").mkString("\\\n")
+    Option(OpenApiSourceDefinition(json, description, List("Nussknacker")))
+  }
+
+  override def returnType: typing.TypingResult = JsonSchemaToTypingResultConverter.jsonSchemaToTypingResult(schemaStr)
+
+  override def testDataParser: TestDataParser[TypedMap] = {
+    new NewLineSplittedTestDataParser[TypedMap] {
+      override def parseElement(testElement: String): TypedMap = {
+        validateAndReturnTypedMap(testElement)
+      }
+    }
+  }
+
+  override def responseEncoder: Option[ResponseEncoder[TypedMap]] = Option(new ResponseEncoder[TypedMap] {
+    override def toJsonResponse(input: TypedMap, result: List[Any]): GenericResultType[Json] = {
+      val jsonResult = result.map(jsonEncoder.encode)
+        .headOption
+        .getOrElse(throw new IllegalArgumentException(s"Process did not return any result"))
+      Right(jsonResult)
+    }
+  })
+
+  protected def jsonToTypeMap(json: Json): TypedMap = JsonToTypedMapConverter.jsonToTypedMap(json)
+
+  private def validateAndReturnTypedMap(parameters: String): TypedMap = {
+    val jsonObject = new JSONObject(parameters)
+    validator.performValidation(schema, jsonObject)
+    val json = decodeJsonWithError(jsonObject.toString)
+    jsonToTypeMap(json)
+  }
+
+  private def decodeJsonWithError(str: String): Json = CirceUtil.decodeJsonUnsafe[Json](str, "Provided json is not valid")
+
+}
