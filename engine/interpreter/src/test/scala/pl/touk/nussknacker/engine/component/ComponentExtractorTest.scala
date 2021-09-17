@@ -10,9 +10,17 @@ import pl.touk.nussknacker.engine.modelconfig.DefaultModelConfigLoader
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.test.ClassLoaderWithServices
 import net.ceedubs.ficus.Ficus._
+import pl.touk.nussknacker.engine.component.ComponentExtractorTest.largeMajorVersion
 
 import scala.concurrent.Future
 import scala.collection.JavaConverters._
+
+object ComponentExtractorTest {
+
+  //in most tests we use "standard" NU version number, we want to make sure compatibility check works there
+  val largeMajorVersion = 1024
+
+}
 
 class ComponentExtractorTest extends FunSuite with Matchers {
 
@@ -54,10 +62,12 @@ class ComponentExtractorTest extends FunSuite with Matchers {
   }
 
   test("should skip incompatible providers") {
+    //see DynamicProvider.isCompatible
+    val largeVersionNumber = new Semver(s"$largeMajorVersion.2.3")
     intercept[IllegalArgumentException] {
       extractComponents[Service](Map("components.dynamicTest.valueCount" -> 7),
-        (cl:ClassLoader) => ComponentExtractor(cl, NussknackerVersion(new Semver("1.2.3"))))
-    }.getMessage should include("is not compatible with NussknackerVersion(1.2.3)")
+        (cl:ClassLoader) => ComponentExtractor(cl, NussknackerVersion(largeVersionNumber)))
+    }.getMessage should include(s"is not compatible with NussknackerVersion(${largeVersionNumber.toString})")
   }
 
   private def extractComponents[T <: Component](map: (String, Any)*): Map[String, WithCategories[T]] =
@@ -95,7 +105,8 @@ class DynamicProvider extends ComponentProvider {
     }
   }
 
-  override def isCompatible(version: NussknackerVersion): Boolean = version.value.getMajor < 1
+  override def isCompatible(version: NussknackerVersion): Boolean = version.value.getMajor < ComponentExtractorTest.largeMajorVersion
+
 }
 
 case class DynamicService(valueToReturn: String) extends Service {

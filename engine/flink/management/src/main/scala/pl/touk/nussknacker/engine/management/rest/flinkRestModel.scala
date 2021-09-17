@@ -44,7 +44,7 @@ object flinkRestModel {
   @JsonCodec(decodeOnly = true) case class JobOverview(jid: String, name: String, `last-modification`: Long, `start-time`: Long, state: String, tasks: JobTasksOverview)
 
   @JsonCodec(decodeOnly = true) case class JobTasksOverview(total: Int, created: Int, scheduled: Int, deploying: Int, running: Int, finished: Int,
-                                                            canceling: Int, canceled: Int, failed: Int, reconciling: Int, initializing: Int)
+                                                            canceling: Int, canceled: Int, failed: Int, reconciling: Int, initializing: Option[Int])
 
   @JsonCodec(decodeOnly = true) case class JobConfig(jid: String, `execution-config`: ExecutionConfig)
 
