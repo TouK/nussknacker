@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.exception.{EspExceptionHandler, EspExcepti
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo, TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.api.process.{RunMode, Source}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.typed.{ReturningType, ServiceReturningType}
+import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.{Context, EagerService, MetaData, ServiceInvoker, VariableConstants}
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo.DefaultExpressionId
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{ExpressionCompilation, NodeCompilationResult}
@@ -241,10 +241,9 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
   private def compileEagerService(serviceRef: ServiceRef, objectWithMethodDef: ObjectWithMethodDef,
                                   validationContext: ValidationContext, outputVar: Option[OutputVar])
                                  (implicit nodeId: NodeId, metaData: MetaData): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
-    val ctx: Option[ServiceInvoker] => ValidatedNel[ProcessCompilationError, ValidationContext] = invoker => (invoker, outputVar) match {
-      case (Some(serviceRef), Some(out)) => validationContext.withVariable(out, serviceRef.returnType)
-      case (None, Some(out)) => validationContext.withVariable(out, Unknown)
-      case _ => Valid(validationContext)
+    val ctx: Option[_] => ValidatedNel[ProcessCompilationError, ValidationContext] = invoker => outputVar match {
+      case Some(out) => validationContext.withVariable(out, objectWithMethodDef.returnType)
+      case None => Valid(validationContext)
     }
 
     def prepareCompiledLazyParameters(paramsDefs: List[Parameter]) = paramsDefs.collect {
@@ -258,11 +257,16 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
         compiledgraph.evaluatedparam.Parameter(compiledParam, paramDef)
     }
 
-    def makeInvoker(service: ServiceInvoker, paramsDefs: List[Parameter])
-        = compiledgraph.service.ServiceRef(serviceRef.id, service, prepareCompiledLazyParameters(paramsDefs), resultCollector)
+    def unwrapService(value: Any) = value match {
+      case ct: ContextTransformation => ct.implementation.asInstanceOf[ServiceInvoker]
+      case sv => sv.asInstanceOf[ServiceInvoker]
+    }
+
+    def makeInvoker(service: Any, paramsDefs: List[Parameter])
+        = compiledgraph.service.ServiceRef(serviceRef.id, unwrapService(service), prepareCompiledLazyParameters(paramsDefs), resultCollector)
 
     val compiled =
-      compileObjectWithTransformation[ServiceInvoker](serviceRef.parameters, Nil, Left(validationContext), outputVar.map(_.outputName), objectWithMethodDef, ctx)
+      compileObjectWithTransformation(serviceRef.parameters, Nil, Left(validationContext), outputVar.map(_.outputName), objectWithMethodDef, ctx)
     compiled.copy(compiledObject = compiled.compiledObject.map(makeInvoker(_, compiled.parameters.getOrElse(objectWithMethodDef.parameters))))
   }
 
@@ -448,7 +452,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
       val outputCtx = outputVar match {
         case Some(output) =>
           NodeValidationExceptionHandler.handleExceptions {
-            computeReturnType(objWithMethod, computedParameters)
+            objWithMethod.returnType
           }.andThen(ctx.withVariable(output, _))
         case None => Valid(ctx)
       }
@@ -461,30 +465,6 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
       NodeCompilationResult(nodeTypingInfo, None, outputCtx, serviceRef)
     }
 
-    //this method tries to compute constant parameters if service is ServiceReturningType
-    //TODO: is it right way to do this? Maybe we just need to analyze Expression?
-    private def computeReturnType(objWithMethod: ObjectWithMethodDef,
-                                  parameters: Validated[_, List[compiledgraph.evaluatedparam.Parameter]])(implicit nodeId: NodeId): TypingResult = objWithMethod.obj match {
-      case srt: ServiceReturningType =>
-        parameters.map { validParams =>
-          val data = validParams.map { param =>
-            param.name -> (param.returnType, tryToEvaluateParam(param))
-          }.toMap
-          srt.returnType(data)
-        }.getOrElse(Unknown)
-      case _ =>
-        objWithMethod.returnType
-    }
-
-    /*
-        we try to evaluate parameter, but if it fails (e.g. it contains variable), or future does not complete immediately - we just return None
-     */
-    private def tryToEvaluateParam(param: compiledgraph.evaluatedparam.Parameter)(implicit nodeId: NodeId): Option[Any] = {
-      implicit val meta: MetaData = MetaData("", null)
-      Try {
-        expressionEvaluator.evaluateParameter(param, Context("")).value
-      }.toOption
-    }
 
   }
 }

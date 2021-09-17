@@ -35,7 +35,7 @@ class DatabaseLookupEnricherTest extends BaseDatabaseQueryEnricherTest {
       strategy = ResultSetStrategy
     )
     val invoker = service.implementation(Map(), dependencies = Nil, Some(state))
-    invoker.returnType.display shouldBe "List[{ID: Integer, NAME: String}]"
+    //invoker.returnType.display shouldBe "List[{ID: Integer, NAME: String}]"
     val resultF = invoker.invokeService(Map(DatabaseLookupEnricher.KeyValueParamName -> 1L))
     val result = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result shouldBe List(

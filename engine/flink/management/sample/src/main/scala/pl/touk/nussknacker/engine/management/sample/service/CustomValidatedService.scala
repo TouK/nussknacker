@@ -1,36 +1,45 @@
 package pl.touk.nussknacker.engine.management.sample.service
 
-import com.github.ghik.silencer.silent
-import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
-import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException, ServiceReturningType}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar}
+import pl.touk.nussknacker.engine.api.process.RunMode
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors
+import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api._
 
-import scala.annotation.nowarn
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-// Remove @silent after upgrade to silencer 1.7
-@silent("deprecated")
-@nowarn("cat=deprecation")
-class CustomValidatedService extends Service with ServiceReturningType {
+class CustomValidatedService extends EagerService {
 
   @MethodToInvoke
   def invoke(@ParamName("age") age: Int,
-             @ParamName("fields") fields: java.util.Map[String, String]): Future[String] = {
-    Future.successful(s"name: ${fields.get("name")}, age: $age")
+             @ParamName("fields") fields: LazyParameter[java.util.Map[String, String]],
+             @OutputVariableName varName: String)(implicit nodeId: NodeId): ContextTransformation = {
+    def returnType: TypingResult = {
+      if (age < 18) {
+        throw CustomNodeValidationException("Too young", Some("age"))
+      }
+      fields.returnType match {
+        case TypedObjectTypingResult(fields, _, _) if fields.contains("invalid") =>
+          throw CustomNodeValidationException("Service is invalid", None)
+        case TypedObjectTypingResult(fields, _, _) if fields.values.exists(_ != Typed.typedClass[String]) =>
+          throw CustomNodeValidationException("All of fields values should be strings", Some("fields"))
+        case TypedObjectTypingResult(fields, _, _) if !fields.keys.exists(_ == "name") =>
+          throw CustomNodeValidationException("Missing name", Some("fields"))
+        case _ => Typed.typedClass[String]
+      }
+    }
+
+    ContextTransformation.definedBy(_.withVariable(OutputVar.variable(varName), returnType)).implementedBy(new ServiceInvoker {
+      override def invokeService(params: Map[String, Any])(implicit ec: ExecutionContext,
+                                                           collector: InvocationCollectors.ServiceInvocationCollector,
+                                                           contextId: ContextId,
+                                                           runMode: RunMode): Future[Any] = {
+        Future.successful(s"name: ${params("fields").asInstanceOf[java.util.Map[String, String]].get("name")}, age: $age")
+      }
+    })
   }
 
-  def returnType(params: Map[String, (TypingResult, Option[Any])]): TypingResult = {
-    if (params("age")._2.get.asInstanceOf[Int] < 18) {
-      throw CustomNodeValidationException("Too young", Some("age"))
-    }
-    params("fields")._1 match {
-      case TypedObjectTypingResult(fields, _, _) if fields.contains("invalid") =>
-        throw CustomNodeValidationException("Service is invalid", None)
-      case TypedObjectTypingResult(fields, _, _) if fields.values.exists(_ != Typed.typedClass[String]) =>
-        throw CustomNodeValidationException("All of fields values should be strings", Some("fields"))
-      case TypedObjectTypingResult(fields, _, _) if !fields.keys.exists(_ == "name") =>
-        throw CustomNodeValidationException("Missing name", Some("fields"))
-      case _ => Typed.typedClass[String]
-    }
-  }
+
 }

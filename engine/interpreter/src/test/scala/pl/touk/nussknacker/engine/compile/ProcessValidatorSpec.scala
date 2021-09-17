@@ -8,7 +8,7 @@ import com.github.ghik.silencer.silent
 import org.scalatest.{FunSuite, Inside, Matchers}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar, PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedSingleParameter}
 import pl.touk.nussknacker.engine.api.definition._
@@ -33,7 +33,8 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
-import pl.touk.nussknacker.engine.util.service.{EagerServiceWithFixedParameters, SimpleServiceWithFixedParameters}
+import pl.touk.nussknacker.engine.util.service.EagerServiceWithFixedParameters
+import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.nodeId
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.engine.variables.MetaVariables
 
@@ -1036,13 +1037,13 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .id("process1")
         .exceptionHandler()
         .source("id1", "source")
-        .enricher("service-1", "output-1", "withCustomValidation",
+        .enricher("service-1", "output1", "withCustomValidation",
           "age" -> "12",
           "fields" -> "{:}")
-        .enricher("service-2", "output-2", "withCustomValidation",
+        .enricher("service-2", "output2", "withCustomValidation",
           "age" -> "30",
           "fields" -> "{invalid: 'yes'}")
-        .enricher("service-3", "output-3", "withCustomValidation",
+        .enricher("service-3", "output3", "withCustomValidation",
           "age" -> "30",
           "fields" -> "{name: 12}")
         .sink("id2", "''", "sink")
@@ -1349,21 +1350,21 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     @MethodToInvoke
     def invoke(@ParamName("definition") definition: java.util.Map[String, _],
-               @ParamName("inRealTime") inRealTime: LazyParameter[String]) = new ServiceInvoker {
-      override def invokeService(params: Map[String, Any])
+               @ParamName("inRealTime") inRealTime: LazyParameter[String],
+               @OutputVariableName variableName: String)(implicit nodeId: NodeId) =
+      ContextTransformation
+        .definedBy(_.withVariable(OutputVar.variable(variableName),
+          Typed.genericTypeClass[java.util.List[_]](List(TypingUtils.typeMapDefinition(definition)))))
+        .implementedBy(new ServiceInvoker {
+          override def invokeService(params: Map[String, Any])
                                 (implicit ec: ExecutionContext,
                                  collector: InvocationCollectors.ServiceInvocationCollector,
                                  contextId: ContextId,
                                  runMode: RunMode): Future[Any] = Future.successful(null)
-
-      override def returnType: TypingResult = Typed.genericTypeClass[java.util.List[_]](List(TypingUtils.typeMapDefinition(definition)))
-    }
+        })
 
   }
 
-  // Remove @silent after upgrade to silencer 1.7
-  @silent("deprecated")
-  @nowarn("cat=deprecation")
   object ServiceReturningTypeWithExplicitMethodSample extends EagerServiceWithFixedParameters {
 
     override val hasOutput = true
@@ -1385,8 +1386,6 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
                                  contextId: ContextId,
                                  runMode: RunMode): Future[Any] = Future.successful(null)
 
-
-      override def returnType: TypingResult = typingResult
     }
 
     //@ParamName("definition") definition: java.util.Map[String, _], @ParamName("inRealTime") inRealTime: String
@@ -1405,41 +1404,34 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
   }
 
-
-  // Remove @silent after upgrade to silencer 1.7
-  @silent("deprecated")
-  @nowarn("cat=deprecation")
   object ServiceWithCustomValidation extends EagerService {
 
     @MethodToInvoke
     def invoke(@ParamName("age") age: Int,
-               @ParamName("fields") fields: LazyParameter[java.util.Map[String, String]]): ServiceInvoker = {
-
-      new ServiceInvoker {
-        override def invokeService(params: Map[String, Any])
-                                  (implicit ec: ExecutionContext,
-                                   collector: InvocationCollectors.ServiceInvocationCollector,
-                                   contextId: ContextId,
-                                   runMode: RunMode): Future[Any] =
-          Future.successful(s"name: ${params("fields").asInstanceOf[java.util.Map[String, String]].get("name")}, age: $age")
-
-
-        override def returnType: TypingResult = {
-          if (age < 18) {
-            throw CustomNodeValidationException("Too young", Some("age"))
-          }
-          fields.returnType match {
-            case TypedObjectTypingResult(fields, _, _) if fields.contains("invalid") =>
-              throw CustomNodeValidationException("Service is invalid", None)
-            case TypedObjectTypingResult(fields, _, _) if fields.values.exists(_ != Typed.typedClass[String]) =>
-              throw CustomNodeValidationException("All values should be strings", Some("fields"))
-            case _ => Typed.typedClass[String]
-          }
+               @ParamName("fields") fields: LazyParameter[java.util.Map[String, String]],
+               @OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
+      def returnType: TypingResult = {
+        if (age < 18) {
+          throw CustomNodeValidationException("Too young", Some("age"))
+        }
+        fields.returnType match {
+          case TypedObjectTypingResult(fields, _, _) if fields.contains("invalid") =>
+            throw CustomNodeValidationException("Service is invalid", None)
+          case TypedObjectTypingResult(fields, _, _) if fields.values.exists(_ != Typed.typedClass[String]) =>
+            throw CustomNodeValidationException("All values should be strings", Some("fields"))
+          case _ => Typed.typedClass[String]
         }
       }
-
+      ContextTransformation.definedBy(_.withVariable(OutputVar.variable(variableName), returnType)).implementedBy(
+        new ServiceInvoker {
+          override def invokeService(params: Map[String, Any])
+                                    (implicit ec: ExecutionContext,
+                                     collector: InvocationCollectors.ServiceInvocationCollector,
+                                     contextId: ContextId,
+                                     runMode: RunMode): Future[Any] =
+            Future.successful(s"name: ${params("fields").asInstanceOf[java.util.Map[String, String]].get("name")}, age: $age")
+      })
     }
-
   }
 }
 

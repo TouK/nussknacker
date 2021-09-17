@@ -1,20 +1,21 @@
 package pl.touk.nussknacker.engine
 
 import java.util.{Collections, Optional}
-
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.effect.IO
 import com.typesafe.config.ConfigFactory
+
 import javax.annotation.Nullable
 import javax.validation.constraints.NotBlank
 import org.scalatest.{FunSuite, Matchers}
 import org.springframework.expression.spel.standard.SpelExpression
 import pl.touk.nussknacker.engine.InterpreterSpec.{DynamicEagerService, _}
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.NodeId
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedLazyParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
-import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, ParameterWithExtractor, ServiceWithExplicitMethod}
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, ParameterWithExtractor}
 import pl.touk.nussknacker.engine.api.exception.EspExceptionInfo
 import pl.touk.nussknacker.engine.api.expression.{Expression => _, _}
 import pl.touk.nussknacker.engine.api.process._
@@ -48,7 +49,7 @@ import pl.touk.nussknacker.engine.util.service.SimpleServiceWithFixedParameters
 import pl.touk.nussknacker.engine.util.{LoggingListener, SynchronousExecutionContext}
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Success, Try}
 
 class InterpreterSpec extends FunSuite with Matchers {
@@ -788,22 +789,21 @@ object InterpreterSpec {
     val checkEager = "@&#%@Q&#"
 
     @MethodToInvoke
-    def prepare(@ParamName("eager") eagerOne: String, @ParamName("lazy") lazyOne: LazyParameter[AnyRef]): ServiceInvoker = {
-      if (eagerOne != checkEager) throw new IllegalArgumentException("Should be not empty?")
-
-      new ServiceInvoker {
-
-        override def invokeService(params: Map[String, Any])
-                                  (implicit ec: ExecutionContext,
-                                   collector: InvocationCollectors.ServiceInvocationCollector,
-                                   contextId: ContextId,
-                                   runMode: RunMode): Future[AnyRef] = {
-          Future.successful(params("lazy").asInstanceOf[AnyRef])
+    def prepare(@ParamName("eager") eagerOne: String,
+                @ParamName("lazy") lazyOne: LazyParameter[AnyRef],
+                @OutputVariableName outputVar: String)(implicit nodeId: NodeId): ContextTransformation =
+      ContextTransformation.definedBy(_.withVariable(OutputVar.variable(outputVar), lazyOne.returnType)).implementedBy({
+        if (eagerOne != checkEager) throw new IllegalArgumentException("Should be not empty?")
+        new ServiceInvoker {
+          override def invokeService(params: Map[String, Any])
+                                    (implicit ec: ExecutionContext,
+                                     collector: InvocationCollectors.ServiceInvocationCollector,
+                                     contextId: ContextId,
+                                     runMode: RunMode): Future[AnyRef] = {
+            Future.successful(params("lazy").asInstanceOf[AnyRef])
+          }
         }
-
-        override def returnType: TypingResult = lazyOne.returnType
-      }
-    }
+    })
 
   }
 
@@ -833,7 +833,6 @@ object InterpreterSpec {
                                 finalState: Option[Nothing]): ServiceInvoker = {
 
       val paramName = staticParam.extractValue(params)
-      val dynamic = dynamicParam(paramName)
 
       new ServiceInvoker {
         override def invokeService(params: Map[String, Any])
@@ -843,8 +842,6 @@ object InterpreterSpec {
                                    runMode: RunMode): Future[AnyRef] = {
           Future.successful(params(paramName).asInstanceOf[AnyRef])
         }
-
-        override def returnType: TypingResult = dynamic.extractValue(params).returnType
       }
     }
 

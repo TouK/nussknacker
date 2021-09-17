@@ -40,8 +40,6 @@ trait ServiceInvoker {
                                               collector: InvocationCollectors.ServiceInvocationCollector,
                                               contextId: ContextId,
                                               runMode: RunMode): Future[Any]
-
-  def returnType: TypingResult
-
+  
 
 }

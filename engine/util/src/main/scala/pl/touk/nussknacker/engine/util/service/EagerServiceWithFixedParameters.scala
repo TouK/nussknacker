@@ -70,7 +70,6 @@ trait SimpleServiceWithFixedParameters extends EagerServiceWithFixedParameters {
                                                            runMode: RunMode): Future[Any] =
         invoke(params ++ eagerParameters)
 
-      override def returnType: TypingResult = typingResult
     }
   }
 

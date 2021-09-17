@@ -2,9 +2,9 @@ package pl.touk.nussknacker.engine.definition
 
 import java.lang.annotation.Annotation
 import java.lang.reflect.Method
-
 import com.github.ghik.silencer.silent
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.SingleNodeConfig
 import pl.touk.nussknacker.engine.api.typed.MissingOutputVariableException
@@ -46,8 +46,11 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
     }
   }
 
+  def acceptCustomTransformation: Boolean = true
+
   private def findMatchingMethod(obj: T, methodToInvoke: Method): Either[String, Method] = {
-    if (expectedReturnType.forall(returyType => returyType.isAssignableFrom(methodToInvoke.getReturnType))) {
+    if ((acceptCustomTransformation && classOf[ContextTransformation].isAssignableFrom(methodToInvoke.getReturnType)) ||
+      expectedReturnType.forall(returnType => returnType.isAssignableFrom(methodToInvoke.getReturnType))) {
       Right(methodToInvoke)
     } else {
       Left(s"Missing method with return type: $expectedReturnType on $obj")
@@ -138,11 +141,11 @@ object MethodDefinitionExtractor {
       extractorsWithDefinitions match {
         case Nil =>
           Left(s"Missing method to invoke for object: " + obj)
-        case head :: Nil =>
-          val (extractor, definition) = head
+        case head :: _ =>
+          val (_, definition) = head
           Right(definition)
-        case moreThanOne =>
-          Left(s"More than one extractor: " + moreThanOne.map(_._1) + " handles given object: " + obj)
+        //case moreThanOne =>
+        //  Left(s"More than one extractor: " + moreThanOne.map(_._1) + " handles given object: " + obj)
       }
     }
 

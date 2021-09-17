@@ -146,7 +146,8 @@ class EagerEnricherWithOpen extends EagerService with WithLifecycle {
   }
 
   @MethodToInvoke
-  def invoke(@ParamName("name") name: String): ServiceInvoker = synchronized {
+  def invoke(@ParamName("name") name: String, @OutputVariableName varName: String)(implicit nodeId: NodeId): ContextTransformation =
+    ContextTransformation.definedBy(_.withVariable(OutputVar.variable(varName), Typed[Response])).implementedBy(synchronized {
     val newI: ServiceInvoker with WithLifecycle = new ServiceInvoker with WithLifecycle {
       override def invokeService(params: Map[String, Any])
                                 (implicit ec: ExecutionContext,
@@ -156,11 +157,10 @@ class EagerEnricherWithOpen extends EagerService with WithLifecycle {
         Future.successful(Response(opened.toString))
       }
 
-      override def returnType: TypingResult = Typed[Response]
     }
     list = (name, newI)::list
     newI
-  }
+  })
 
 }
 
@@ -178,7 +178,6 @@ object CollectingEagerService extends EagerService {
       }
     }
 
-    override def returnType: TypingResult = Typed[Void]
   }
 
 }
