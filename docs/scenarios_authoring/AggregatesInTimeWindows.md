@@ -1,3 +1,4 @@
+
 ---
 sidebar_position: 4
 ---
@@ -63,7 +64,7 @@ Let’s map the above statement on the parameters of the Nussknacker Aggregate c
 * Sum - computes sum of values
 * List - returns list of inputs received by the aggregator; see aggregateBy to understand what is meant by inputs
 * Set - the result is a set of inputs received by the aggregator. Can be very ineffective for large sets, try to use ApproximateSetCardinality in this case
-* ApproximateSetCardinality - computes approximate cardinality of set using [HyperLogLog](https://en.wikipedia.org/wiki/HyperLogLog) algorithm.
+* ApproximateSetCardinality - computes approximate cardinality of a set using [HyperLogLog](https://en.wikipedia.org/wiki/HyperLogLog) algorithm. Please note that this aggregator treats null as a unique value. If this is undesirable and the set passed to ApproximateSetCardinality aggregator contained null (this can be tested with safe navigation in [SpEL](Spel#safe-navigation)), subtract 1 from the obtained result. 
 
 **output** - name of the variable which will hold the result of the aggregator.
 

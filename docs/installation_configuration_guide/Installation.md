@@ -120,7 +120,7 @@ If you want to install them from the scratch or use already installed at your or
     - Telegraf's configuration - some metric tags and names need to be cleaned
     - Importing scenario dashboard to Grafana configuration
 - Flink savepoint configuration. To be able to use scenario verification
-  (see `shouldVerifyBeforeDeploy` property in [Deployment manager documentation](./DeploymentManagerConfiguration.md))
+  (see `shouldVerifyBeforeDeploy` property in [Deployment Manager documentation](./DeploymentManagerConfiguration.md))
   you have to make sure that savepoint location is available from Nussknacker designer (e.g. via NFS like in quickstart setup)
 
 # Configuration

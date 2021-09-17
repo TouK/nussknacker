@@ -10,7 +10,7 @@ Nussknacker configuration is divided into several configuration areas, each area
 
 * [Designer](/about/GLOSSARY#nussknacker-designer) configuration
 * Scenario Types configuration, comprising of:
-    * [Deployment manager](/about/GLOSSARY#deployment-manager) / [Executor](/about/GLOSSARY#executor) configuration
+    * [Deployment Manager](/about/GLOSSARY#deployment-manager) / [Executor](/about/GLOSSARY#executor) configuration
     * [Model](/about/GLOSSARY#executor) configuration
 
 Designer configuration  contains all settings for Nussknacker Designer - e.g. web application ports, security, various UI settings. 
@@ -18,7 +18,7 @@ Designer configuration  contains all settings for Nussknacker Designer - e.g. we
 One Nussknacker Designer deployment may be used to create various Scenario Types which:
                           
 * can be deployed with various [Deployment Managers](DeploymentManagerConfiguration.md)  to e.g. different Flink clusters 
-* Use different components and [Model configurations](ModelConfiguration.md) 
+* Use different components and [model configurations](ModelConfiguration.md) 
 
 See [development configuration](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L33) (used to test various Nussknacker features) for an example of configuration with more than one Scenario Type.
 
@@ -26,6 +26,9 @@ Diagram below presents main relationships between configuration areas.
 
 ![Configuration areas](img/configuration_areas.png "configuration areas")
 
+## Environment variables
+
+Environment variables are described in [Installation guide](./Installation.md), they are mostly helpful in the docker setup.
 
 ## Hocon - configuration format
 
@@ -39,4 +42,4 @@ Following Nussknacker specific rules apply:
 * [defaultUiConfig.conf](https://github.com/TouK/nussknacker/blob/staging/ui/server/src/main/resources/defaultUiConfig.conf) contains defaults for Nussknacker Designer
 * `config.override_with_env_vars` is set to true, so it’s possible to override settings with env variables
 
-It’s important to remember that Model configuration is prepared a bit differently. Please read [Model configuration](ModelConfiguration.md) for the details. 
+It’s important to remember that model configuration is prepared a bit differently. Please read [model configuration](ModelConfiguration.md) for the details. 
