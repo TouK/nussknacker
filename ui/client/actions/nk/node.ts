@@ -6,8 +6,6 @@ import {layoutChanged, Position} from "./ui/layout"
 import {EditEdgeAction} from "./editEdge"
 import {EditNodeAction, RenameProcessAction} from "./editNode"
 import {getProcessDefinitionData} from "../../reducers/selectors/settings"
-import * as GraphUtils from "../../components/graph/GraphUtils"
-import {getProcessToDisplay} from "../../reducers/selectors/graph"
 
 //TODO: identify
 type Edges = $TodoType[]
@@ -105,7 +103,7 @@ export function nodesDisconnected(from: NodeId, to: NodeId): ThunkAction {
   }])
 }
 
-function doInjectNode(from: NodeType, middle: NodeType, to: NodeType, edgeType: EdgeType): ThunkAction {
+export function injectNode(from: NodeType, middle: NodeType, to: NodeType, edgeType: EdgeType): ThunkAction {
   return runSyncActionsThenValidate(state => [
     {
       type: "NODES_DISCONNECTED",
@@ -126,23 +124,6 @@ function doInjectNode(from: NodeType, middle: NodeType, to: NodeType, edgeType: 
       processDefinitionData: state.settings.processDefinitionData,
     },
   ])
-}
-
-export function injectNode(from: NodeType, middle: NodeType, to: NodeType, edgeType: EdgeType): ThunkAction {
-  return (dispatch, getState) => {
-    const state = getState()
-    const canInjectNode = GraphUtils.canInjectNode(
-      getProcessToDisplay(state),
-      from.id,
-      middle.id,
-      to.id,
-      getProcessDefinitionData(state),
-    )
-
-    if (canInjectNode) {
-      return dispatch(doInjectNode(from, middle, to, edgeType))
-    }
-  }
 }
 
 export function nodeAdded(node: NodeType, position: Position): ThunkAction {

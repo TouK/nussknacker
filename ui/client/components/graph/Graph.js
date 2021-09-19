@@ -18,6 +18,7 @@ import {PanZoomPlugin} from "./PanZoomPlugin"
 import {RangeSelectPlugin, SelectionMode} from "./RangeSelectPlugin"
 import "./svg-export/export.styl"
 import {prepareSvg} from "./svg-export/prepareSvg"
+import * as GraphUtils from "./GraphUtils"
 
 export class Graph extends React.Component {
 
@@ -207,6 +208,7 @@ export class Graph extends React.Component {
   }
 
   handleInjectBetweenNodes = (middleMan) => {
+    const {processToDisplay, actions, processDefinitionData} = this.props
     const links = this.graph.getLinks()
     const [linkBelowCell] = filterDragHovered(links)
 
@@ -214,12 +216,22 @@ export class Graph extends React.Component {
       const {sourceNode, targetNode} = getLinkNodes(linkBelowCell)
       const middleManNode = middleMan.get("nodeData")
 
-      this.props.actions.injectNode(
-        sourceNode,
-        middleManNode,
-        targetNode,
-        linkBelowCell.attributes.edgeData.edgeType,
+      const canInjectNode = GraphUtils.canInjectNode(
+        processToDisplay,
+        sourceNode.id,
+        middleManNode.id,
+        targetNode.id,
+        processDefinitionData,
       )
+
+      if (canInjectNode) {
+        actions.injectNode(
+          sourceNode,
+          middleManNode,
+          targetNode,
+          linkBelowCell.attributes.edgeData.edgeType,
+        )
+      }
     }
   }
 
