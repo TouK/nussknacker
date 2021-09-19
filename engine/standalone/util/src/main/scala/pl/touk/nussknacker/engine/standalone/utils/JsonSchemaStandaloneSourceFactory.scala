@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.standalone.api.openapi.OpenApiSourceDefinition
 import pl.touk.nussknacker.engine.standalone.api.types.GenericResultType
 import pl.touk.nussknacker.engine.standalone.api.{ResponseEncoder, StandalonePostSource, StandaloneSourceFactory}
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
-import pl.touk.nussknacker.engine.util.typing.{JsonToTypedMapConverter, JsonSchemaToTypingResultConverter}
+import pl.touk.nussknacker.engine.util.typing.{JsonToTypedMapConverter, SchemaToTypingResultConverter}
 
 import java.nio.charset.StandardCharsets
 
@@ -56,7 +56,9 @@ class JsonSchemaStandaloneSource(schemaStr: String, metaData: MetaData, jsonEnco
     Option(OpenApiSourceDefinition(json, description, List("Nussknacker")))
   }
 
-  override def returnType: typing.TypingResult = JsonSchemaToTypingResultConverter.jsonSchemaToTypingResult(schemaStr)
+  override def returnType: typing.TypingResult = {
+    SchemaToTypingResultConverter.jsonSchemaToTypingResult(schema)
+  }
 
   override def testDataParser: TestDataParser[TypedMap] = {
     new NewLineSplittedTestDataParser[TypedMap] {

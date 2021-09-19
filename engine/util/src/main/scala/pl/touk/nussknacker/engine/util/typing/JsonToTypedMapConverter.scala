@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.engine.util.typing
 
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.{Json, JsonObject}
+import org.everit.json.schema.{ArraySchema, BooleanSchema, FalseSchema, NullSchema, NumberSchema, ObjectSchema, Schema, StringSchema, TrueSchema}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
+
 import scala.collection.JavaConverters._
 
 object JsonToTypedMapConverter {
@@ -30,12 +32,7 @@ object JsonToTypedMapConverter {
   }
 }
 
-object JsonSchemaToTypingResultConverter {
-
-  final val TYPE_FIELD = "type"
-  final val DEFAULT_FIELD = "default"
-  final val PROPERTIES_FIELD = "properties"
-  final val ARRAY_ITEMS_FIELD = "items"
+object SchemaToTypingResultConverter {
 
   /* *
   * It is simplified schema parser. We define schema as an schema type=object : "{ "properties": { our definition } }"
@@ -44,63 +41,41 @@ object JsonSchemaToTypingResultConverter {
   * - Any type=array to have "items" field
   * */
 
-  def jsonSchemaToTypingResult(definition: String): TypingResult = {
-    val json = CirceUtil.decodeJsonUnsafe[Json](definition, "Provided json-schema is not valid")
-    parseJsonObject(json)
-  }
-
-  private def parseJsonObject(json: Json): TypingResult = {
-    val properties = json.hcursor.downField(PROPERTIES_FIELD).focus
-    if (properties.isEmpty) {
-      throw new IllegalArgumentException(s"There should be exactly one '$PROPERTIES_FIELD' field in 'object'.")
-    }
-    else jsonValuesToTypingResult(properties.get)
-  }
-
-  private def jsonValuesToTypingResult(json: Json): TypingResult = {
-    if (containsFieldType(json)) resolveJsonTypingResult(json)
-    else {
-      TypedObjectTypingResult(getJsonFirstLevelFieldsMap(json).mapValues(jsonValuesToTypingResult).toList)
+  def jsonSchemaToTypingResult(schema: Schema): TypingResult = {
+    schema match {
+      case os: ObjectSchema => parseObjectSchema(os)
+      case _ => throw new IllegalArgumentException("Schema should be represented as object schema \"type\": \"object\"")
     }
   }
 
-  private def containsFieldType(json: Json): Boolean = {
-    lazy val keyNames = getKeyNames(json)
-    keyNames.contains(TYPE_FIELD)
+  private def parseObjectSchema(schema: ObjectSchema): TypingResult = {
+    val propertySchemas = schema.getPropertySchemas.asScala.toMap
+    jsonValuesToTypingResult(propertySchemas)
   }
 
-  def getJsonFirstLevelFieldsMap(json: Json): Map[String, Json] = {
-    for {
-      jobject <- json.asObject.toList
-      (key, value) <- jobject.toVector
-    } yield (key, value)
-  }.toMap
+  private def jsonValuesToTypingResult(namedSchema: Map[String, Schema]): TypingResult = {
+    TypedObjectTypingResult(namedSchema.mapValues(resolveJsonTypingResult).toList)
+  }
 
-  def getKeyNames(json: Json): List[String] = for {
-    jobject <- json.asObject.toList
-    k <- jobject.keys
-  } yield k
-
-  def resolveJsonTypingResult(json: Json): TypingResult = {
-    val typeValue = json.hcursor.downField(TYPE_FIELD).as[String].getOrElse("null")
-    typeValue match {
-      case "array" => getArrayTypingResult(json)
-      case "boolean" => Typed.typedClass[Boolean]
-      case "integer" => Typed.typedClass[Integer]
-      case "number" => Typed.typedClass[java.math.BigDecimal]
-      case "null" => Typed.typedClass[Null]
-      case "object" => parseJsonObject(json)
-      case "string" => Typed.typedClass[String]
+  def resolveJsonTypingResult(schema: Schema): TypingResult = {
+    schema match {
+      case s:ArraySchema => getArrayTypingResult(s)
+      case s:ObjectSchema => parseObjectSchema(s)
+      case s:NumberSchema => if(s.requiresInteger()) Typed.typedClass[Integer] else Typed.typedClass[java.math.BigDecimal]
+      case _:BooleanSchema => Typed.typedClass[Boolean]
+      case _:TrueSchema => Typed.typedClass[Boolean]
+      case _:FalseSchema => Typed.typedClass[Boolean]
+      case _:NullSchema => Typed.typedClass[Null]
+      case _:StringSchema => Typed.typedClass[String]
+      case s => {
+        throw new IllegalArgumentException(s"Schema '${s.toString}' is not supported yet.")
+      }
     }
   }
 
-  def getArrayTypingResult(json: Json): TypingResult = {
-    val arrayTypes = json.hcursor.downField(ARRAY_ITEMS_FIELD).focus
-    val arrayTypingResult = if (arrayTypes.isEmpty) {
-      throw new IllegalArgumentException(s"There should be exactly one '$ARRAY_ITEMS_FIELD' field in 'array'.")
-    }
-    else resolveJsonTypingResult(arrayTypes.get)
-    Typed.genericTypeClass[java.util.List[_]](List(arrayTypingResult))
+  def getArrayTypingResult(schema: ArraySchema): TypingResult = {
+    val itemSchema = schema.getAllItemSchema
+    Typed.genericTypeClass[java.util.List[_]](List(resolveJsonTypingResult(itemSchema)))
   }
 
 }
