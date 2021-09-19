@@ -17,7 +17,11 @@ object JsonToTypedMapConverter {
     json.fold(
       jsonNull = null,
       jsonBoolean = identity,
-      jsonNumber = d => d.toBigDecimal.map(_.bigDecimal).getOrElse(d.toDouble),
+      jsonNumber = d => {
+        //circe 0.14.1 still looses precision as was in https://github.com/circe/circe/issues/1101.
+        //d.toBigDecimal.map(_.bigDecimal).getOrElse(d.toDouble)
+        new java.math.BigDecimal(d.toString)
+      },
       jsonString = identity,
       jsonArray = _.map(f => jsonToAny(f)).asJava,
       jsonObject = jsonObjectToTypedMap
