@@ -129,6 +129,9 @@ object typing {
       throw new IllegalArgumentException("Cannot have typed class of Any, use Unknown")
     } else if (klass.isPrimitive) {
       TypedClass(ClassUtils.primitiveToWrapper(klass), parameters)
+    } else if (klass.isArray) {
+      //handle array class here
+      TypedClass(klass, parameters)
     } else {
       TypedClass(klass, parameters)
     }

@@ -85,7 +85,7 @@ object ClassExtractionSettings {
       ExactClassPredicate[Class[_]],
 
       // Arrays are not supported for now
-      ClassPredicate { case cl => cl.isArray },
+//      ClassPredicate { case cl => cl.isArray },
       //we want only boxed types
       ClassPredicate { case cl => cl.isPrimitive },
 
@@ -143,10 +143,10 @@ object ClassExtractionSettings {
       // We want to hide all technical methods in every class, toString can be useful so we will leave it
       AllMethodNamesPredicate(classOf[DumpCaseClass], Set(ToStringMethod)),
       // Arrays are not supported for now
-      ClassMemberPredicate(ClassPredicate { case _ => true }, {
-        case m: Method => m.getReturnType.isArray
-        case f: Field => f.getType.isArray
-      }),
+//      ClassMemberPredicate(ClassPredicate { case _ => true }, {
+//        case m: Method => m.getReturnType.isArray
+//        case f: Field => f.getType.isArray
+//      }),
       ClassMemberPredicate(ClassPredicate { case _ => true }, {
         case m => m.getName.contains("$")
       }),
