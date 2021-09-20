@@ -1,4 +1,3 @@
-import {DebugButtons} from "@touk/window-manager/cjs/debug"
 import {UnregisterCallback} from "history"
 import _ from "lodash"
 import * as queryString from "query-string"
@@ -102,12 +101,10 @@ export class NussknackerApp extends React.Component<Props, State> {
     return this.props.resolved ?
       (
         <div id="app-container">
-          <div className="hide">{JSON.stringify(__GIT__)}</div>
           {this.renderMenu()}
           <main>
             <ErrorHandler>
               <TransitionRouteSwitch>
-                <Route path={`/$debug`} component={DebugButtons} exact/>
                 <Route
                   path={[ProcessesTabData.path, SubProcessesTabData.path, ArchiveTabData.path]}
                   component={ProcessTabs}
