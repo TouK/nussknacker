@@ -15,7 +15,7 @@
     "SharedArrayBuffer": "readonly",
     "__webpack_public_path__": "readonly",
     "__DEV__": "readonly",
-    "__GIT__": "readonly",
+    "__BUILD_VERSION__": "readonly",
     "_": "readonly"
     // TODO: remove lodash from global, fix imports
   },

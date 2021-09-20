@@ -16,8 +16,6 @@ const WebpackShellPluginNext = require("webpack-shell-plugin-next")
 const CopyPlugin = require("copy-webpack-plugin")
 
 const NODE_ENV = process.env.NODE_ENV || "development"
-const GIT_HASH = childProcess.execSync("git log -1 --format=%H").toString()
-const GIT_DATE = childProcess.execSync("git log -1 --format=%cd").toString()
 const isProd = NODE_ENV === "production"
 
 const {ModuleFederationPlugin} = webpack.container
@@ -208,10 +206,7 @@ module.exports = {
       "process.env": {
         NODE_ENV: JSON.stringify(NODE_ENV),
       },
-      __GIT__: {
-        HASH: JSON.stringify(GIT_HASH),
-        DATE: JSON.stringify(GIT_DATE),
-      },
+      __BUILD_VERSION__: JSON.stringify(require("./version")),
     }),
     new ForkTsCheckerWebpackPlugin(),
     isProd ? null : new ReactRefreshWebpackPlugin(),

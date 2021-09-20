@@ -6,6 +6,7 @@ import {Toolbar} from "../toolbarComponents/toolbar"
 import {ToolbarsConfig} from "./types"
 import {ToolbarSelector} from "./ToolbarSelector"
 import {getToolbarsConfig} from "../../reducers/selectors/toolbars"
+import {useUserSettings} from "../../common/userSettings"
 
 const parseCollection = (collection: ToolbarsConfig): Toolbar[] => uniqBy<Toolbar>(
   flatMap(

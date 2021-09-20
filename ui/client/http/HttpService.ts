@@ -39,6 +39,26 @@ export type FetchProcessQueryParams = Partial<{
 
 export type StatusesType = Record<ProcessType["name"], ProcessStateType>
 
+export interface AppBuildInfo {
+  "name": string,
+  "gitCommit": string,
+  "buildTime": string,
+  "version": string,
+  "processingType": {
+    "streaming-dev": {
+      "process-version": string,
+      "engine-version": string,
+      "generation-time": string,
+    },
+    "streaming": {
+      "name": string,
+      "version": string,
+      "buildTime": string,
+      "gitCommit": string,
+    },
+  },
+}
+
 //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
 class HttpService {
   notificationActions = null
@@ -121,6 +141,10 @@ class HttpService {
 
   fetchLoggedUser() {
     return api.get<UserData>("/user")
+  }
+
+  fetchAppBuildInfo() {
+    return api.get<AppBuildInfo>("/app/buildInfo")
   }
 
   fetchProcessDefinitionData(processingType, isSubprocess) {
@@ -408,7 +432,7 @@ class HttpService {
   }
 
   fetchOAuth2AccessToken<T>(provider: string, authorizeCode: string | string[], redirectUri: string | null) {
-    return api.get<T>(`/authentication/${provider.toLowerCase()}?code=${authorizeCode}` + (redirectUri ? `&redirect_uri=${redirectUri}` : ""))
+    return api.get<T>(`/authentication/${provider.toLowerCase()}?code=${authorizeCode}${redirectUri ? `&redirect_uri=${redirectUri}` : ""}`)
   }
 
   fetchAuthenticationSettings(authenticationProvider: string) {
