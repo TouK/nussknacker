@@ -65,7 +65,7 @@ object SchemaToTypingResultConverter {
     schema match {
       case s:ArraySchema => getArrayTypingResult(s)
       case s:ObjectSchema => parseObjectSchema(s)
-      case s:NumberSchema => if(s.requiresInteger()) Typed.typedClass[Integer] else Typed.typedClass[java.math.BigDecimal]
+      case s:NumberSchema => if(s.requiresInteger()) Typed.typedClass[java.lang.Long] else Typed.typedClass[java.math.BigDecimal]
       case _:BooleanSchema => Typed.typedClass[Boolean]
       case _:TrueSchema => Typed.typedClass[Boolean]
       case _:FalseSchema => Typed.typedClass[Boolean]

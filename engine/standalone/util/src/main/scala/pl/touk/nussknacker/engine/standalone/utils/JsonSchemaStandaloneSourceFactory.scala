@@ -49,11 +49,14 @@ class JsonSchemaStandaloneSource(schemaStr: String, metaData: MetaData, jsonEnco
     validateAndReturnTypedMap(parametersString)
   }
 
+  protected val openApiDescription: String = {
+    val properties = metaData.additionalFields.map(_.properties).getOrElse(Map.empty)
+    properties.map(v => s"**${v._1}**: ${v._2}").mkString("\\\n")
+  }
+
   override def openApiDefinition: Option[OpenApiSourceDefinition] = {
     val json = decodeJsonWithError(schemaStr)
-    val properties = metaData.additionalFields.map(_.properties).getOrElse(Map.empty)
-    val description = properties.map(v => s"**${v._1}**: ${v._2}").mkString("\\\n")
-    Option(OpenApiSourceDefinition(json, description, List("Nussknacker")))
+    Option(OpenApiSourceDefinition(json, openApiDescription, List("Nussknacker")))
   }
 
   override def returnType: typing.TypingResult = {
