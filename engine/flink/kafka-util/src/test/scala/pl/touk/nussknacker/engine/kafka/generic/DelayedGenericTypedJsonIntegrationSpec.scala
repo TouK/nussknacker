@@ -4,7 +4,7 @@ import io.circe.generic.JsonCodec
 import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.exception.{ExceptionHandlerFactory, NonTransientException}
+import pl.touk.nussknacker.engine.api.exception.ExceptionHandlerFactory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.build.EspProcessBuilder
@@ -50,7 +50,7 @@ class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec wit
 
   test("properly process data using kafka-generic-delayed source") {
     val topic = "topic-all-parameters-valid"
-    val process = createProcessWithDelayedSource(topic, BasicEvent.definition, s"'${BasicEvent.timestampFieldName}'", "0L")
+    val process = createProcessWithDelayedSource(topic, BasicEvent.definition, s"'${BasicEvent.timestampFieldName}'", "10L")
     runAndVerify(topic, process, givenObj)
   }
 
@@ -80,10 +80,10 @@ class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec wit
     val testProcessObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
     val sourceFactory = creator.sourceFactories(testProcessObjectDependencies)("kafka-generic-delayed").value.asInstanceOf[DelayedGenericTypedJsonSourceFactory]
     val recordOk = new ConsumerRecord[String, TypedMap]("dummy", 1, 1L, "", TypedMap(Map("msisdn" -> "abc", "ts" -> 456L)))
-    sourceFactory.extractTimestampFromField("ts")(recordOk, 123L) shouldEqual 456L
+    sourceFactory.extractTimestampFromField("ts").extractTimestamp(recordOk, 123L) shouldEqual 456L
 
     val recordWithNull = new ConsumerRecord[String, TypedMap]("dummy", 1, 1L, "", TypedMap(Map("msisdn" -> "abc", "ts" -> null)))
-    sourceFactory.extractTimestampFromField("ts")(recordWithNull, 123L) shouldEqual 0L
+    sourceFactory.extractTimestampFromField("ts").extractTimestamp(recordWithNull, 123L) shouldEqual 0L
 
   }
 

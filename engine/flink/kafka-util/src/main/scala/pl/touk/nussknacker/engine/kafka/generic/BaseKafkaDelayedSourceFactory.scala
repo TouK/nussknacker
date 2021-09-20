@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.generic
 
+import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner
 import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.flink.api.process.FlinkContextInitializer
@@ -35,7 +36,7 @@ trait BaseKafkaDelayedSourceFactory {
     }
   }
 
-  protected def prepareTimestampAssigner[K, V](kafkaConfig: KafkaConfig, extract: (ConsumerRecord[K, V], Long) => Long): TimestampWatermarkHandler[ConsumerRecord[K, V]] = {
+  protected def prepareTimestampAssigner[K, V](kafkaConfig: KafkaConfig, extract: SerializableTimestampAssigner[ConsumerRecord[K, V]]): TimestampWatermarkHandler[ConsumerRecord[K, V]] = {
     StandardTimestampWatermarkHandler.boundedOutOfOrderness(extract, Duration.ofMillis(kafkaConfig.defaultMaxOutOfOrdernessMillis.getOrElse(defaultMaxOutOfOrdernessMillis)))
   }
 }
