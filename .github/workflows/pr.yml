@@ -293,7 +293,7 @@ jobs:
           addDevModel: true
         shell: bash
         #Doc generation is rather costly, we don't want it in test image creation
-        run: echo "version in ThisBuild := \"${{ env.NUSSKNACKER_VERSION }}\"" > version.sbt && sbt "set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" standaloneApp/docker:publishLocal dist/docker:publishLocal
+        run: echo "version in ThisBuild := \"${{ env.NUSSKNACKER_VERSION }}\"" > version.sbt && sbt "set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" dist/docker:publishLocal
       - name: FE tests e2e
         env:
           NUSSKNACKER_VERSION: ${{ env.NUSSKNACKER_VERSION }}
