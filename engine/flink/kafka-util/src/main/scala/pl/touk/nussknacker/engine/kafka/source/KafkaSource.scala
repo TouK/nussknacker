@@ -12,8 +12,8 @@ import pl.touk.nussknacker.engine.api.process.TestDataGenerator
 import pl.touk.nussknacker.engine.api.test.TestDataParser
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializer, FlinkCustomNodeContext, FlinkIntermediateRawSource, FlinkSource, FlinkSourceTestSupport}
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
-import pl.touk.nussknacker.engine.flink.util.timestamp.{BoundedOutOfOrderPreviousElementAssigner, BoundedOutOfOrdernessPunctuatedExtractor}
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler.SimpleSerializableTimestampAssigner
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.source.KafkaSource.defaultMaxOutOfOrdernessMillis
 
@@ -88,7 +88,7 @@ class ConsumerRecordBasedKafkaSource[K, V](preparedTopics: List[PreparedKafkaTop
                      override val contextInitializer: FlinkContextInitializer[ConsumerRecord[K, V]]) extends KafkaSource[ConsumerRecord[K, V]](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter) {
 
       override def timestampAssignerForTest: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]] = timestampAssigner.orElse(Some(
-        StandardTimestampWatermarkHandler.afterEachEvent[ConsumerRecord[K, V]](_.timestamp())
+        StandardTimestampWatermarkHandler.afterEachEvent[ConsumerRecord[K, V]]((_.timestamp()): SimpleSerializableTimestampAssigner[ConsumerRecord[K, V]])
       ))
     }
 
