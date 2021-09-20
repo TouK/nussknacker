@@ -238,7 +238,7 @@ jobs:
       - name: Test FE
         run: |
           cd ui/client
-          npm ci
+          npm ci --prefer-offline --no-audit
           npm run test:unit
 
   dockerTest:
@@ -265,7 +265,7 @@ jobs:
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
       - name: Setup npm
-        run: (cd ui/client; npm ci)
+        run: (cd ui/client; npm ci --prefer-offline --no-audit)
       - name: Cache ivy packages
         uses: actions/cache@v2
         with:
@@ -347,7 +347,7 @@ jobs:
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
       - name: Setup npm
-        run: (cd ui/client; npm ci)
+        run: (cd ui/client; npm ci --prefer-offline --no-audit)
       - name: Cache ivy packages
         uses: actions/cache@v2
         with:
