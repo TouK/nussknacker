@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.standalone.api.{StandaloneCustomTransformer, S
 import pl.touk.nussknacker.engine.standalone.api.types.{EndResult, InterpreterType}
 import pl.touk.nussknacker.engine.standalone.utils.customtransformers.{ProcessSplitter, StandaloneSorter, StandaloneUnion}
 import pl.touk.nussknacker.engine.standalone.utils.service.TimeMeasuringService
-import pl.touk.nussknacker.engine.standalone.utils.JsonStandaloneSourceFactory
+import pl.touk.nussknacker.engine.standalone.utils.{JsonSchemaStandaloneSourceFactory, JsonStandaloneSourceFactory}
 import pl.touk.nussknacker.engine.util.LoggingListener
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -53,7 +53,8 @@ class StandaloneProcessConfigCreator extends ProcessConfigCreator with LazyLoggi
   )
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory[_]]] = Map(
-    "request1-post-source" -> WithCategories(new JsonStandaloneSourceFactory[Request1])
+    "request1-post-source" -> WithCategories(new JsonStandaloneSourceFactory[Request1]),
+    "jsonSchemaSource" -> WithCategories(new JsonSchemaStandaloneSourceFactory)
   )
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(

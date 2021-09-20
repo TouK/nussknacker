@@ -9,8 +9,6 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.openapi._
 import org.scalatest.{FunSuite, Matchers}
 
-import scala.jdk.CollectionConverters.mapAsScalaMapConverter
-
 class JsonToObjectTest extends FunSuite
   with Matchers {
 

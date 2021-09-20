@@ -241,6 +241,7 @@ val jwtCirceV = "4.0.0"
 val jacksonV = "2.11.3"
 val catsV = "2.6.1"
 val scalaParsersV = "1.0.4"
+val everitSchemaV = "1.13.0"
 val slf4jV = "1.7.30"
 val scalaLoggingV = "3.9.2"
 val scalaCompatV = "0.9.1"
@@ -804,6 +805,7 @@ lazy val api = (project in engine("api")).
         "io.circe" %% "circe-parser" % circeV,
         "io.circe" %% "circe-generic" % circeV,
         "io.circe" %% "circe-generic-extras" % circeV,
+        "com.github.erosb" % "everit-json-schema" % everitSchemaV,
         "com.iheart" %% "ficus" % ficusV,
         "org.apache.commons" % "commons-lang3" % commonsLangV,
         "org.apache.commons" % "commons-text" % commonsTextV,
