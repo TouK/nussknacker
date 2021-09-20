@@ -241,8 +241,8 @@ jobs:
           npm ci --prefer-offline --no-audit
           npm run test:unit
 
-  dockerTest:
-    name: Docker based tests
+  dockerTestBuildImage:
+    name: Docker based tests - build image
     runs-on: ubuntu-latest
     needs: [ build ]
     steps:
@@ -294,6 +294,45 @@ jobs:
         shell: bash
         #Doc generation is rather costly, we don't want it in test image creation
         run: echo "version in ThisBuild := \"${{ env.NUSSKNACKER_VERSION }}\"" > version.sbt && sbt "set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" dist/docker:publishLocal
+      - name: Upload nussknacker image
+        uses: ishworkh/docker-image-artifact-upload@v1
+        with:
+          image: "touk/nussknacker:${{ env.NUSSKNACKER_VERSION }}"
+
+  dockerTestRunTests:
+    name: Docker based tests - run tests
+    runs-on: ubuntu-latest
+    needs: [ dockerTestBuildImage ]
+    steps:
+      - name: Cancel previous runs
+        uses: styfle/cancel-workflow-action@0.8.0
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v2
+      - name: Cache npm
+        uses: actions/cache@v2
+        with:
+          path: |
+            **/node_modules
+          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Get Node.js version
+        id: nvm
+        run: echo ::set-output name=NODE_VERSION::$(cat .nvmrc)
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
+      - name: Setup npm
+        run: (cd ui/client; npm ci --prefer-offline --no-audit)
+      - name: set version
+        shell: bash
+        run: |
+          nk_version=`sbt -Dsbt.color=never -Dsbt.supershell=false 'inspect actual version' | grep "Setting: java.lang.String" | cut -d '=' -f2 | tr -d ' '`
+          echo "NUSSKNACKER_VERSION=${nk_version}-$GITHUB_SHA" >> $GITHUB_ENV
+      - name: Download nussknacker image
+        uses: ishworkh/docker-image-artifact-download@v1
+        with:
+          image: "touk/nussknacker:${{ env.NUSSKNACKER_VERSION }}"
       - name: FE tests e2e
         env:
           NUSSKNACKER_VERSION: ${{ env.NUSSKNACKER_VERSION }}
@@ -318,7 +357,7 @@ jobs:
 #TODO: extract to different workflow?
   publish:
     runs-on: ubuntu-latest
-    needs: [build, tests, crossCompile, integrationTests, slowTests, frontendTests, dockerTest]
+    needs: [build, tests, crossCompile, integrationTests, slowTests, frontendTests, dockerTestRunTests]
     #TODO: should we publish everything on all those branches?
     if: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     env:
