@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedVal
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 import pl.touk.nussknacker.sql.db.query.ResultSetStrategy
-import pl.touk.nussknacker.sql.db.schema.{JdbcMetaDataProvider, JdbcMetaDataProviderFactory, TableDefinition}
+import pl.touk.nussknacker.sql.db.schema.{JdbcMetaDataProvider, MetaDataProviderFactory, TableDefinition}
 import pl.touk.nussknacker.sql.utils.BaseHsqlQueryEnricherTest
 
 import scala.concurrent.Await
@@ -26,7 +26,7 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
 
   private val unknownDbUrl = s"jdbc:hsqldb:mem:dummy"
 
-  private def provider: DBPoolConfig => JdbcMetaDataProvider = (conf: DBPoolConfig) => new JdbcMetaDataProviderFactory().create(conf)
+  private def provider: DBPoolConfig => JdbcMetaDataProvider = (conf: DBPoolConfig) => new MetaDataProviderFactory().create(conf)
 
   override val service = new DatabaseLookupEnricher(hsqlDbPoolConfig, provider(hsqlDbPoolConfig))
 

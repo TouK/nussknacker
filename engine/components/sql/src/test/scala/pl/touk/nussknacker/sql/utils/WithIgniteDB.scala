@@ -4,6 +4,7 @@ import org.apache.ignite.configuration.{ClientConnectorConfiguration, IgniteConf
 import org.apache.ignite.{Ignite, Ignition}
 import org.scalatest.{BeforeAndAfterAll, Suite}
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
+import pl.touk.nussknacker.test.AvailablePortFinder
 
 import java.io.IOException
 import java.net.ServerSocket
@@ -14,7 +15,7 @@ import scala.util.Random
 trait WithIgniteDB extends BeforeAndAfterAll {
   self: Suite =>
 
-  var ignitePort: Int = findAvailablePort()
+  var ignitePort: Int = AvailablePortFinder.findAvailablePorts(1).head
   var ignite: Ignite = _
   var conn: Connection = _
 
@@ -59,18 +60,6 @@ trait WithIgniteDB extends BeforeAndAfterAll {
       Ignition.stopAll(true)
     } finally {
       super.afterAll()
-    }
-  }
-
-  @tailrec
-  private def findAvailablePort(): Int = {
-    // valid ignite port range is 1024...49151
-    val port = 1024 + Random.nextInt((49151 - 1024) + 1)
-    try {
-      new ServerSocket(port).close()
-      port
-    } catch {
-      case _: IOException => findAvailablePort()
     }
   }
 }

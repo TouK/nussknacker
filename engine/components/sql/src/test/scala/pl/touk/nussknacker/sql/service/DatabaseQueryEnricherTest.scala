@@ -2,7 +2,7 @@ package pl.touk.nussknacker.sql.service
 
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.sql.db.query.ResultSetStrategy
-import pl.touk.nussknacker.sql.db.schema.{JdbcMetaDataProviderFactory, TableDefinition}
+import pl.touk.nussknacker.sql.db.schema.{MetaDataProviderFactory, TableDefinition}
 import pl.touk.nussknacker.sql.utils.BaseHsqlQueryEnricherTest
 
 import scala.concurrent.Await
@@ -12,7 +12,7 @@ class DatabaseQueryEnricherTest extends BaseHsqlQueryEnricherTest {
   import scala.collection.JavaConverters._
   import scala.concurrent.duration._
 
-  override val service = new DatabaseQueryEnricher(hsqlDbPoolConfig, new JdbcMetaDataProviderFactory().create(hsqlDbPoolConfig))
+  override val service = new DatabaseQueryEnricher(hsqlDbPoolConfig, new MetaDataProviderFactory().create(hsqlDbPoolConfig))
 
   override val prepareHsqlDDLs: List[String] = List(
     "CREATE TABLE persons (id INT, name VARCHAR(40));",

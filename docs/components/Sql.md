@@ -72,6 +72,15 @@ components {
 | databaseQueryEnricher  | true     |         | Database query enricher component |
 | databaseLookupEnricher | true     |         | Database lookup component         |
 
+### Connecting to Apache Ignite
+
+The JDBC driver from ignite-core does not implement some methods used by `Sql` enricher component.
+That's why a custom mechanism based on HSQL was needed to compile SQL queries and calculate result typings.
+
+As presented in sample configuration above, use `driverClassName: org.apache.ignite.IgniteJdbcThinDriver` in `dbPool` configuration.
+Also make sure that both `org.apache.ignite.IgniteJdbcThinDriver` and `org.hsqldb.jdbc.JDBCDriver`
+are present in `/lib` directories to run `Sql` component with Ignite.
+
 ### Handling typical errors
 
 The most common problems are:

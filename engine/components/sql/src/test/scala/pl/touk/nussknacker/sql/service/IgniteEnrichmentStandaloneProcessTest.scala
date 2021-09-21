@@ -21,16 +21,15 @@ class IgniteEnrichmentStandaloneProcessTest extends FunSuite with Matchers with 
 
   override val prepareIgniteDDLs: List[String] = List(
     s"""DROP TABLE CITIES IF EXISTS;""",
-    s"""CREATE TABLE CITIES (ID INT primary key, NAME VARCHAR, COUNTRY VARCHAR, POPULATION BIGINT);""",
-    s"INSERT INTO CITIES VALUES (1, 'Warszawa', 'Poland', 123);",
-    s"INSERT INTO CITIES VALUES (2, 'Lublin', 'Poland', 234);"
+    s"""CREATE TABLE CITIES (ID INT primary key, NAME VARCHAR, COUNTRY VARCHAR, POPULATION BIGINT, FOUNDATION_DATE TIMESTAMP);""",
+    s"INSERT INTO CITIES VALUES (1, 'Warszawa', 'Poland', 123, CURRENT_TIMESTAMP());",
+    s"INSERT INTO CITIES VALUES (2, 'Lublin', 'Poland', 234, CURRENT_TIMESTAMP());"
   )
 
   private val config = ConfigFactory.parseMap(
     Map(
       "components" -> Map(
         "databaseEnricher" -> Map(
-          "providerType" -> "igniteEnricher",
           "config" -> Map(
             "databaseLookupEnricher" -> Map(
               "name" -> "ignite-lookup-enricher",
@@ -59,8 +58,7 @@ class IgniteEnrichmentStandaloneProcessTest extends FunSuite with Matchers with 
         "Key value" -> "#input.id",
         "Cache TTL" -> ""
       )
-      //      TODO: coś lepszego niż tylko pole name w testach
-      .emptySink("response", "response", "name" -> "#output.NAME")
+      .emptySink("response", "response", "name" -> "#output.NAME", "count" -> "")
 
     val validatedResult = runProcess(process, StandaloneRequest(1))
     validatedResult shouldBe 'right
@@ -85,8 +83,7 @@ class IgniteEnrichmentStandaloneProcessTest extends FunSuite with Matchers with 
         "Cache TTL" -> "",
         "arg1" -> s"'Lublin'"
       )
-//    TODO: coś lepszego niż tylko pole name w testach
-      .emptySink("response", "response", "name" -> "#output.NAME")
+      .emptySink("response", "response", "name" -> "#output.NAME", "count" -> "")
 
     val validatedResult = runProcess(process, StandaloneRequest(1))
     validatedResult shouldBe 'right
@@ -110,8 +107,7 @@ class IgniteEnrichmentStandaloneProcessTest extends FunSuite with Matchers with 
         "Query" -> "'SELECT COUNTRY, MAX(POPULATION) AS MAX_POPULATION FROM CITIES GROUP BY COUNTRY'",
         "Cache TTL" -> ""
       )
-//    TODO: coś lepszego niż tylko pole name w testach
-      .emptySink("response", "response", "name" -> "#output.MAX_POPULATION.toString()")
+      .emptySink("response", "response", "name" -> "#output.COUNTRY", "count" -> "#output.MAX_POPULATION")
     val validatedResult = runProcess(process, StandaloneRequest(1))
     validatedResult shouldBe 'right
 
@@ -120,7 +116,8 @@ class IgniteEnrichmentStandaloneProcessTest extends FunSuite with Matchers with 
 
     inside(resultList.head) {
       case resp: StandaloneResponse =>
-        resp.name shouldEqual "234"
+        resp.name shouldEqual "Poland"
+        resp.count shouldEqual Some(234L)
     }
   }
 }

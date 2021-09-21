@@ -54,7 +54,7 @@ class DatabaseLookupStandaloneProcessTest extends FunSuite with Matchers with St
         "Key value" -> "#input.id",
         "Cache TTL" -> ""
       )
-      .emptySink("response", "response", "name" -> "#output.NAME")
+      .emptySink("response", "response", "name" -> "#output.NAME", "count" -> "")
 
     val validatedResult = runProcess(process, StandaloneRequest(1))
     validatedResult shouldBe 'right
@@ -79,7 +79,7 @@ class DatabaseLookupStandaloneProcessTest extends FunSuite with Matchers with St
         "Key value" -> "#input.id",
         "Cache TTL" -> ""
       )
-      .emptySink("response", "response", "name" -> "#output.name")
+      .emptySink("response", "response", "name" -> "#output.name", "count" -> "")
 
     val validatedResult = runProcess(process, StandaloneRequest(1))
     validatedResult shouldBe 'right

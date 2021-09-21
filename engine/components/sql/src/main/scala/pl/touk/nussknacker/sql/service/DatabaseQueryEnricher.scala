@@ -115,7 +115,9 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
             query = query,
             argsCount = queryArgParams.size,
             tableDef = queryMetaData.tableDefinition,
-            strategy = QueryResultStrategy(strategyName).get)))
+            strategy = QueryResultStrategy(strategyName).get)
+          )
+        )
       }
   }
 

@@ -12,7 +12,7 @@ class IgniteMetaDataProvider(getConnection: () => Connection) extends JdbcMetaDa
 
   private val queryHelper = new IgniteQueryHelper(getConnection)
 
-  override def getQueryMetaData(query: String): TableMetaData = executeInH2(query, queryHelper.fetchTablesMeta) {
+  override def getQueryMetaData(query: String): TableMetaData = executeInHsql(query, queryHelper.fetchTablesMeta) {
     db => return TableMetaData(TableDefinition(db.resultSetMetaData), DbParameterMetaData(db.parameterMetaData.getParameterCount))
   }
 
@@ -20,7 +20,7 @@ class IgniteMetaDataProvider(getConnection: () => Connection) extends JdbcMetaDa
 
   override def getSchemaDefinition(): SchemaDefinition = SchemaDefinition(queryHelper.fetchTablesMeta.map(_.tableName))
 
-  private def executeInH2(query: String, tablesMeta: List[TableCatalog.TableMeta])(function: HsqlSqlQueryableDataBase => TableMetaData): TableMetaData =
+  private def executeInHsql(query: String, tablesMeta: List[TableCatalog.TableMeta])(function: HsqlSqlQueryableDataBase => TableMetaData): TableMetaData =
     Using.resource(new HsqlSqlQueryableDataBase(query, columnModel(tablesMeta))) { function }
 
   private def columnModel(tablesMeta: List[TableCatalog.TableMeta]): Map[String, ColumnModel] = tablesMeta.map(table => (table.tableName,
