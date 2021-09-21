@@ -4,6 +4,8 @@ on:
     branches:
       - master
       - staging
+      - demo
+      - preview/*
       - release/*
     paths-ignore:
       - '**.md'
@@ -15,6 +17,9 @@ on:
       - demo
       - preview/*
       - release/*
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
     #TODO: currently release is done manually, we don't want to run this pipeline on released version, to avoid accidental pushes
     tags-ignore:
       - '**'
@@ -46,13 +51,19 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     needs: [ changes ]
+    env:
+      # We can't just use conditional jobs mechanism ('if' directive) because 'dockerTest' job depends on this one
+      shouldPerformBackendBuild: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' }}
     steps:
       - name: Cancel previous runs
+        if: ${{ env.shouldPerformBackendBuild == 'true' }}
         uses: styfle/cancel-workflow-action@0.8.0
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v2
+        if: ${{ env.shouldPerformBackendBuild == 'true' }}
       - name: Cache ivy packages
+        if: ${{ env.shouldPerformBackendBuild == 'true' }}
         uses: actions/cache@v2
         with:
           path: |
@@ -61,15 +72,19 @@ jobs:
           key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
       - uses: olafurpg/setup-scala@v10
+        if: ${{ env.shouldPerformBackendBuild == 'true' }}
         with:
           java-version: "openjdk@1.11"
       - name: Build
+        if: ${{ env.shouldPerformBackendBuild == 'true' }}
         shell: bash
         run: ./ciRunSbt.sh clean compile
       - name: Tar artifacts
+        if: ${{ env.shouldPerformBackendBuild == 'true' }}
         shell: bash
         run:  find . -wholename "**/target/**/*" -printf '%P\0' | tar --null -C '.' --files-from=- -czf 'target.tgz'
       - name: Store target
+        if: ${{ env.shouldPerformBackendBuild == 'true' }}
         uses: actions/upload-artifact@v2
         with:
           name: build-target
@@ -253,6 +268,11 @@ jobs:
     name: Docker based tests
     runs-on: ubuntu-latest
     needs: [ build ]
+    env:
+      # We skip docker build for fe-only changes. Would be more clean to split this step into two steps: build image and run tests
+      # e.g. by using ishworkh/docker-image-artifact-upload/download but it caused ~3min overhead for the whole pipeline so we
+      # have this conditional logic in this step
+      shouldBuildImage: ${{ needs.changes.outputs.all_changes_count > needs.changes.outputs.fe_changes_count || github.ref == 'refs/heads/staging' }}
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.8.0
@@ -275,6 +295,7 @@ jobs:
       - name: Setup npm
         run: (cd ui/client; npm ci --prefer-offline --no-audit)
       - name: Cache ivy packages
+        if: ${{ env.shouldBuildImage == 'true' }}
         uses: actions/cache@v2
         with:
           path: |
@@ -283,25 +304,37 @@ jobs:
           key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
       - uses: olafurpg/setup-scala@v10
+        if: ${{ env.shouldBuildImage == 'true' }}
         with:
           java-version: "openjdk@1.11"
       - uses: actions/download-artifact@v2
+        if: ${{ env.shouldBuildImage == 'true' }}
         with:
           name: build-target
       - name: Untar artifacts
+        if: ${{ env.shouldBuildImage == 'true' }}
         shell: bash
         run:  tar xfz target.tgz
       - name: set version
+        if: ${{ env.shouldBuildImage == 'true' }}
         shell: bash
         run: |
           nk_version=`sbt -Dsbt.color=never -Dsbt.supershell=false 'inspect actual version' | grep "Setting: java.lang.String" | cut -d '=' -f2 | tr -d ' '`
           echo "NUSSKNACKER_VERSION=${nk_version}-$GITHUB_SHA" >> $GITHUB_ENV
       - name: Prepare docker
+        if: ${{ env.shouldBuildImage == 'true' }}
         env:
           addDevModel: true
         shell: bash
         #Doc generation is rather costly, we don't want it in test image creation
         run: echo "version in ThisBuild := \"${{ env.NUSSKNACKER_VERSION }}\"" > version.sbt && sbt "set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" dist/docker:publishLocal
+      - name: Determine docker tag version to use
+        if: ${{ env.shouldBuildImage == 'false' }}
+        shell: bash
+        # Take a look at build.sbt commonDockerSettings to see how this tag is determined. Thanks to fact that we publish all changes pushed to our "special" branches it should work quite correctly.
+        # The only thing that could go wrong is the situation when there is some run between publishing pipeline and pipeline with fe-only changes
+        run: |
+          echo "NUSSKNACKER_VERSION=`([ "${GITHUB_BASE_REF}" != "" ] && echo "${GITHUB_BASE_REF}" | sed 's/refs\/heads\///g' | sed 's/[^a-zA-Z0-9._-]/\_/g' || echo "staging") `-latest" >> $GITHUB_ENV
       - name: FE tests e2e
         env:
           NUSSKNACKER_VERSION: ${{ env.NUSSKNACKER_VERSION }}
@@ -384,7 +417,7 @@ jobs:
         run: |
           GIT_SOURCE_BRANCH=`([ "${GITHUB_HEAD_REF}" != "" ] && echo "${GITHUB_HEAD_REF}" || echo "${GITHUB_REF}") | sed 's/refs\/heads\///g' `
           echo "GIT_SOURCE_BRANCH=$GIT_SOURCE_BRANCH" >> $GITHUB_ENV
-          SANITIZED_BRANCH=`echo ${GIT_SOURCE_BRANCH} | sed 's/[^a-zA-Z0-9.\-_]/\_/g' | awk '{print tolower($0)}'`
+          SANITIZED_BRANCH=`echo ${GIT_SOURCE_BRANCH} | sed 's/[^a-zA-Z0-9._-]/\_/g' | awk '{print tolower($0)}'`
           echo "VERSION_SUFFIX=-$SANITIZED_BRANCH-$(date -I)-$GITHUB_RUN_NUMBER-$GITHUB_SHA" >> $GITHUB_ENV
       - name: Publish with scaladocs
         if: ${{ github.ref == 'refs/heads/staging' }}
