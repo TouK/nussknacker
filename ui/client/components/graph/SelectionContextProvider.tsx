@@ -1,9 +1,26 @@
 import _ from "lodash"
-import React, {createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState} from "react"
+import React, {
+  createContext,
+  PropsWithChildren,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
 import {useDebouncedCallback} from "use-debounce"
-import {copySelection, cutSelection, deleteNodes, deleteSelection, nodesWithEdgesAdded, pasteSelection, selectAll,} from "../../actions/nk"
+import {
+  copySelection,
+  cutSelection,
+  deleteNodes,
+  deleteSelection,
+  nodesWithEdgesAdded,
+  pasteSelection,
+  selectAll,
+} from "../../actions/nk"
 import {error, success} from "../../actions/notificationActions"
 import {redo, undo} from "../../actions/undoRedoActions"
 import {events} from "../../analytics/TrackingEvents"
@@ -11,7 +28,12 @@ import * as ClipboardUtils from "../../common/ClipboardUtils"
 import * as JsonUtils from "../../common/JsonUtils"
 import {isInputEvent} from "../../containers/BindKeyboardShortcuts"
 import {useDocumentListeners} from "../../containers/useDocumentListeners"
-import {canModifySelectedNodes, getProcessCategory, getSelection, getSelectionState} from "../../reducers/selectors/graph"
+import {
+  canModifySelectedNodes,
+  getProcessCategory,
+  getSelection,
+  getSelectionState,
+} from "../../reducers/selectors/graph"
 import {getCapabilities} from "../../reducers/selectors/other"
 import {getProcessDefinitionData} from "../../reducers/selectors/settings"
 import {useGraph} from "./GraphContext"
@@ -80,7 +102,7 @@ function useClipboardPermission(): boolean | string {
       permission.onchange = () => {
         setState(permission.state)
       }
-    })
+    }).catch(() => {/*do nothing*/})
     return () => {
       if (clipboardPermission.current) {
         clipboardPermission.current.onchange = undefined
