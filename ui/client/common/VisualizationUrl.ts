@@ -5,8 +5,8 @@ import * as  queryString from "query-string"
 import {ParseOptions} from "query-string"
 import {NodeId} from "../types"
 
-export const visualizationBasePath = `visualization`
-export const visualizationPath = `/${visualizationBasePath}/:processId`
+export const visualizationBasePath = `/visualization`
+export const visualizationPath = `${visualizationBasePath}/:processId`
 
 function fromTimestampOrDate(tsOrDate) {
   const asInt = parseInt(tsOrDate)
