@@ -19,15 +19,15 @@ import pl.touk.nussknacker.engine.standalone.api.types.GenericListResultType
 import pl.touk.nussknacker.engine.standalone.metrics.NoOpMetricsProvider
 import pl.touk.nussknacker.engine.standalone.metrics.dropwizard.DropwizardMetricsProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.test.VeryPatientScalaFutures
-import java.util
+import pl.touk.nussknacker.test.{PatientScalaFutures, VeryPatientScalaFutures}
 
+import java.util
 import pl.touk.nussknacker.engine.api.process.RunMode
 
 import scala.collection.immutable.ListMap
 import scala.util.Using
 
-class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with VeryPatientScalaFutures {
+class StandaloneProcessInterpreterSpec extends FunSuite with Matchers with PatientScalaFutures {
 
   import spel.Implicits._
 

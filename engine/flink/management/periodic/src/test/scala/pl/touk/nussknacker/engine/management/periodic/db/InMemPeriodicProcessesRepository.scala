@@ -103,7 +103,7 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
     val periodicProcess = PeriodicProcessEntity(
       id = id,
       processName = deploymentWithJarData.processVersion.processName.value,
-      processVersionId = deploymentWithJarData.processVersion.versionId,
+      processVersionId = deploymentWithJarData.processVersion.versionId.value,
       processJson = deploymentWithJarData.processJson,
       inputConfigDuringExecutionJson = deploymentWithJarData.inputConfigDuringExecutionJson,
       jarFileName = deploymentWithJarData.jarFileName,

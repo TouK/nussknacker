@@ -9,11 +9,11 @@ import pl.touk.nussknacker.engine.api.deployment.TestProcess.TestData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess, OnFinished}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessStatus}
-import pl.touk.nussknacker.restmodel.process.{ProcessId, ProcessIdWithName, ProcessVersionId}
+import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.db.entity.{ProcessActionEntityData, ProcessVersionEntityData}
@@ -269,10 +269,10 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
     } yield result
   }
 
-  private def findDeployedVersion(processId: ProcessIdWithName)(implicit user: LoggedUser): Future[Option[ProcessVersionId]] = for {
+  private def findDeployedVersion(processId: ProcessIdWithName)(implicit user: LoggedUser): Future[Option[VersionId]] = for {
     process <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id)
     lastAction = process.flatMap(_.lastDeployedAction)
-  } yield lastAction.map(la => ProcessVersionId(la.processVersionId))
+  } yield lastAction.map(la => la.processVersionId)
 
   private def deployProcess(processId: ProcessId, savepointPath: Option[String], comment: Option[String])
                            (implicit user: LoggedUser): Future[ProcessActionEntityData] = {
@@ -357,7 +357,7 @@ case class Test[T](id: ProcessIdWithName, processJson: String, test: TestData, u
 
 case class DeploymentDetails(version: Long, comment: Option[String], deployedAt: LocalDateTime, action: ProcessActionType) {
   //FIXME: Replace version: Long by version: ProcessVersionId
-  lazy val processVersionId: ProcessVersionId = ProcessVersionId(version)
+  lazy val processVersionId: VersionId = VersionId(version)
 }
 case class DeploymentActionFinished(id: ProcessIdWithName, user: LoggedUser, failureOrDetails: Either[Throwable, DeploymentDetails])
 
